@@ -67,6 +67,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -89,10 +90,12 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
@@ -205,6 +208,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -227,10 +231,12 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
@@ -343,6 +349,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -365,10 +372,12 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 

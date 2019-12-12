@@ -265,7 +265,7 @@ int main (int argc, char* argv[]){
     new_entries = out_adj;
     new_values = out_vals;
     std::cout << 3 << std::endl;
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     KokkosKernels::Impl::kk_print_1Dview(out_adj);
     KokkosKernels::Impl::kk_print_1Dview(out_vals);
 

@@ -44,6 +44,7 @@
 
 #include "TpetraClassic_config.h"
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
   namespace Compat {
     /// \struct NodeDevice
@@ -57,5 +58,6 @@ namespace Kokkos {
     };
   }
 }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #endif /* KOKKOS_CONFIGDEFS_HPP */

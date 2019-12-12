@@ -129,7 +129,7 @@ int main( int argc, char* argv[] ) {
     ROL::SerialConstraint<RealT> serial_con( dyn_con, *u_old, timeStamp );
     Tanks::check( serial_con, *u_bnd, *z_bnd, *outStream );
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

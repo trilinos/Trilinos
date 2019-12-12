@@ -150,6 +150,7 @@ namespace {
   /// unit test for matrix-matrix multiplication (both for Epetra and Tpetra)
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MatrixMatrix, Multiply_Epetra, M, MA, Scalar, LO, GO, Node )
   {
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::CrsMatrix<Scalar,LO,GO,Node> CrsMatrixClass;
@@ -159,7 +160,6 @@ namespace {
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     //yAB->describe(*fos, Teuchos::VERB_EXTREME);
 
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     { // Epetra test
       // get a comm and node
       RCP<const Comm<int> > comm = getDefaultComm();
@@ -263,6 +263,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MatrixMatrix, Multiply_Epetra64, M, MA, Scalar, LO, GO, Node )
   {
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::CrsMatrix<Scalar,LO,GO,Node> CrsMatrixClass;
@@ -272,7 +273,6 @@ namespace {
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     //yAB->describe(*fos, Teuchos::VERB_EXTREME);
 
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     { // Epetra test
       // get a comm and node
       RCP<const Comm<int> > comm = getDefaultComm();
@@ -394,18 +394,15 @@ namespace {
       LO nEle = 6;
       const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-      // get node
-      Teuchos::RCP<Node> pNode = map->getNode();
-
       // read in matrices
       typedef Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<Scalar, LO, GO, Node> > reader_type;
 
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpA = reader_type::readSparseFile("A.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpB = reader_type::readSparseFile("B.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAB = reader_type::readSparseFile("AB.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAtB = reader_type::readSparseFile("AtB.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpABt = reader_type::readSparseFile("ABt.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAtBt = reader_type::readSparseFile("AtBt.mat",comm,pNode );
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpA = reader_type::readSparseFile("A.mat",comm);
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpB = reader_type::readSparseFile("B.mat",comm);
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAB = reader_type::readSparseFile("AB.mat",comm);
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAtB = reader_type::readSparseFile("AtB.mat",comm);
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpABt = reader_type::readSparseFile("ABt.mat",comm);
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAtBt = reader_type::readSparseFile("AtBt.mat",comm);
 
       // transform to Xpetra
       Teuchos::RCP<CrsMatrixClass> xAmat = Teuchos::rcp(new MA(tpA));

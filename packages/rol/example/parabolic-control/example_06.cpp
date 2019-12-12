@@ -1063,7 +1063,9 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    ROL::Ptr<ROL::Algorithm<RealT> > algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>       step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Ptr<ROL::Algorithm<RealT>>  algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
 
     // Run algorithm.
     xz.zero();
@@ -1075,14 +1077,16 @@ int main(int argc, char *argv[]) {
     // Composite step.
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-10);
     // Set algorithm.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
+    step   = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     x.zero();
     std::clock_t timer_cs = std::clock();
     algo->run(x, g, l, c, obj, con, true, *outStream);
     *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC 
                << " seconds.\n";
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

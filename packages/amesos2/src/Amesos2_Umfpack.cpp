@@ -49,15 +49,13 @@
 #include "Amesos2_ExplicitInstantiationHelpers.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
-namespace Amesos2 {
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
+namespace Amesos2 {
   AMESOS2_SOLVER_EPETRA_INST(Umfpack);
-#endif
+} // namespace Amesos2
 #endif
 
-} // namespace Amesos2
 
 #define AMESOS2_UMFPACK_LOCAL_INSTANT(S,LO,GO,N) \
   template class Amesos2::Umfpack<Tpetra::CrsMatrix<S, LO, GO, N>, \

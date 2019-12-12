@@ -49,8 +49,6 @@
 */
 
 #include "ROL_Krylov.hpp"
-#include "ROL_LinearOperator.hpp"
-#include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {

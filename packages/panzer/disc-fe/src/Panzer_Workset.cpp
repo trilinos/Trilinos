@@ -60,7 +60,7 @@
 namespace panzer {
 
 void
-WorksetDetails::setup(const panzer::LocalMeshPartition<int,panzer::Ordinal64> & partition,
+WorksetDetails::setup(const panzer::LocalMeshPartition & partition,
                       const panzer::WorksetNeeds & needs)
 {
 

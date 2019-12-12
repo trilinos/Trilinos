@@ -63,7 +63,7 @@ fi
 
 echo
 echo "***"
-echo "*** $0 " "$@"
+echo "*** $0"
 echo "***"
 echo
 
@@ -111,7 +111,7 @@ source $STD_ATDM_DIR/load-env.sh ${ATDM_CHT_DEFAULT_ENV}
 # 
 
 # Must get ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX
-source $STD_ATDM_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/all_supported_builds.sh
+source $STD_ATDM_DIR/$ATDM_CONFIG_SYSTEM_NAME/all_supported_builds.sh
 #echo "ATDM_CONFIG_ALL_SUPPORTED_BUILDS = '${ATDM_CONFIG_ALL_SUPPORTED_BUILDS[@]}'"
 
 ATDM_ARRAY_OF_BUILDS=$@

@@ -39,7 +39,8 @@
 #include <tokenize.h>
 
 #include <cstddef> // for nullptr
-#include <string>  // for string
+#include <exodusII.h>
+#include <string> // for string
 
 #include "Ioss_CodeTypes.h" // for MPI_Comm
 #include "Ioss_DBUsage.h"   // for DatabaseUsage
@@ -51,10 +52,10 @@ namespace Ioss {
 
 #if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
-  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
-                                           Ioss::DatabaseUsage db_usage);
-  bool        check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
-                                         Ioss::DatabaseUsage db_usage);
+  std::string check_decomposition_property(const Ioss::PropertyManager &properties,
+                                           Ioss::DatabaseUsage          db_usage);
+  bool        check_composition_property(const Ioss::PropertyManager &properties,
+                                         Ioss::DatabaseUsage          db_usage);
 } // namespace
 #endif
 
@@ -98,13 +99,13 @@ namespace Ioex {
     bool decompose = false;
     if (proc_count > 1) {
       if (db_usage == Ioss::READ_MODEL || db_usage == Ioss::READ_RESTART) {
-        std::string method = check_decomposition_property(communicator, properties, db_usage);
+        std::string method = check_decomposition_property(properties, db_usage);
         if (!method.empty() && method != "EXTERNAL") {
           decompose = true;
         }
       }
       else if (db_usage == Ioss::WRITE_RESULTS || db_usage == Ioss::WRITE_RESTART) {
-        if (check_composition_property(communicator, properties, db_usage)) {
+        if (check_composition_property(properties, db_usage)) {
           decompose = true;
         }
       }
@@ -118,12 +119,14 @@ namespace Ioex {
 #endif
       return new Iofx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
+
+  void IOFactory::show_config() const { ex_print_config(); }
 } // namespace Ioex
 
 #if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
-  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
-                                           Ioss::DatabaseUsage db_usage)
+  std::string check_decomposition_property(const Ioss::PropertyManager &properties,
+                                           Ioss::DatabaseUsage          db_usage)
   {
     std::string decomp_method;
     std::string decomp_property;
@@ -148,8 +151,8 @@ namespace {
     return decomp_method;
   }
 
-  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
-                                  Ioss::DatabaseUsage db_usage)
+  bool check_composition_property(const Ioss::PropertyManager &properties,
+                                  Ioss::DatabaseUsage          db_usage)
   {
     bool        compose          = false;
     std::string compose_property = "COMPOSE_INVALID";

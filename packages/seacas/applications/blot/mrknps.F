@@ -35,7 +35,7 @@ C Add copyright and license notice to all files.
 C Permission to assert copyright has been granted; blot is now open source, BSD
 C
 C Revision 1.5  2000/07/11 16:50:23  gdsjaar
-C SGI had problems with logical statment function, inlined it
+C SGI had problems with logical statement function, inlined it
 C
 C Revision 1.4  1999/03/02 19:12:36  gdsjaar
 C Fixed nodeset scaling interpolation equation
@@ -112,7 +112,6 @@ C   --   Uses IS3DIM, NUMNPF of /D3NUMS/
       INTEGER IXNNPS(*)
       INTEGER LTNNPS(*)
 
-      LOGICAL GRABRT
       LOGICAL PLTGTT, PLTSTT, LDUM
       logical logt
 

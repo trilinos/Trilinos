@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -382,6 +383,72 @@ struct topology_data<topology::SHELL_LINE_3>
   static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6};
   static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  2,
                                                            1, 0,  2};
+};
+
+//***************************************************************************
+// topology::SPRING -- topology::ELEM_RANK
+// 2 or 3 nodes
+//
+//  o------o------o
+//  0      2      1
+//
+//***************************************************************************
+
+template <>
+struct topology_data<topology::SPRING_2>
+  : public topology_data<topology::LINE_2>
+{
+  typedef topology::topology_t value_type;
+  static constexpr topology::topology_t value = topology::SPRING_2;
+  static constexpr topology::topology_t base = topology::SPRING_2;
+
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::NODE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 2;
+  static constexpr unsigned num_nodes = 2;
+  static constexpr unsigned num_vertices = 2;
+  static constexpr unsigned num_edges = 0;
+  static constexpr unsigned num_faces = 0;
+  static constexpr unsigned num_permutations = 2;
+  static constexpr unsigned num_positive_permutations = 2;
+
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       true,   // 1d
+                                                       true,   // 2d
+                                                       true};  // 3d
+};
+
+
+template <>
+struct topology_data<topology::SPRING_3>
+  : public topology_data<topology::LINE_3>
+{
+  typedef topology::topology_t value_type;
+  static constexpr topology::topology_t value = topology::SPRING_3;
+  static constexpr topology::topology_t base = topology::SPRING_2;
+
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::NODE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 2;
+  static constexpr unsigned num_nodes = 3;
+  static constexpr unsigned num_vertices = 2;
+  static constexpr unsigned num_edges = 0;
+  static constexpr unsigned num_faces = 0;
+  static constexpr unsigned num_permutations = 2;
+  static constexpr unsigned num_positive_permutations = 2;
+
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       true,   // 1d
+                                                       true,   // 2d
+                                                       true};  // 3d
 };
 
 //***************************************************************************

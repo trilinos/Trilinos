@@ -43,11 +43,10 @@
 #include <iomanip>
 #include <sstream>
 
-#include <Tpetra_Core.hpp>
-#include <Tpetra_Version.hpp>
-#include <MatrixMarket_Tpetra.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_FancyOStream.hpp>
+#include "Tpetra_Core.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 #include "fem_assembly_commandLineOpts.hpp"
 #include "fem_assembly_typedefs.hpp"
@@ -63,19 +62,17 @@
 
 using namespace TpetraExamples;
 
-using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
-
-int main (int argc, char *argv[]) 
+int main (int argc, char *argv[])
 {
   using std::endl;
   using Teuchos::RCP;
 
   int status = EXIT_SUCCESS;
-  
+
   // MPI boilerplate
   Tpetra::initialize(&argc, &argv);
-  comm_ptr_t comm = Tpetra::getDefaultComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);

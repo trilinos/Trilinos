@@ -49,7 +49,10 @@
 #include "Teuchos_Assert.hpp"
 
 //**********************************************************************
-PHX::Layout::Layout(const std::string& name) : m_identifier(name) {}
+PHX::Layout::Layout(const std::string& name)
+  : m_identifier(name),
+    m_kokkos_layout_type(KokkosLayout::Default)
+{}
 
 //**********************************************************************
 bool PHX::Layout::operator==(const PHX::DataLayout& src) const
@@ -75,6 +78,12 @@ bool PHX::Layout::operator==(const PHX::DataLayout& src) const
 }
 
 //**********************************************************************
+void PHX::Layout::setKokkosLayout(const PHX::DataLayout::KokkosLayoutType& klt)
+{
+  m_kokkos_layout_type = klt;
+}
+
+//**********************************************************************
 PHX::Device::size_type PHX::Layout::rank() const
 { return static_cast<PHX::Device::size_type>(m_extents.size()); }
 
@@ -97,6 +106,12 @@ PHX::Device::size_type PHX::Layout::size() const
     }
   }
   return my_size;
+}
+
+//**********************************************************************
+PHX::DataLayout::KokkosLayoutType PHX::Layout::kokkosLayout() const
+{
+  return m_kokkos_layout_type;
 }
 
 //**********************************************************************

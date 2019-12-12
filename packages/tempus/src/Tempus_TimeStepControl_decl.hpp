@@ -117,6 +117,8 @@ public:
       { return tscPL_->get<int>   ("Maximum Order"); }
     virtual std::string getStepType() const
       { return tscPL_->get<std::string>("Integrator Step Type"); }
+    virtual bool getOutputExactly() const
+      { return tscPL_->get<bool>("Output Exactly On Output Times"); }
     virtual std::vector<int> getOutputIndices() const
       { return outputIndices_; }
     virtual std::vector<Scalar> getOutputTimes() const
@@ -160,6 +162,8 @@ public:
       { tscPL_->set<int>   ("Maximum Order"            , MaxOrder    ); }
     virtual void setStepType(std::string StepType)
       { tscPL_->set<std::string>("Integrator Step Type", StepType    ); }
+    virtual void setOutputExactly(bool OutputExactly)
+      { tscPL_->get<bool>("Output Exactly On Output Times", OutputExactly); }
     virtual void setOutputIndices(std::vector<int> OutputIndices)
       { outputIndices_ = OutputIndices;
         std::ostringstream ss;
@@ -171,9 +175,11 @@ public:
     virtual void setOutputTimes(std::vector<Scalar> OutputTimes)
       { outputTimes_ = OutputTimes;
         std::ostringstream ss;
-        std::copy(OutputTimes.begin(), OutputTimes.end()-1,
+        if (!outputTimes_.empty())
+          { std::copy(OutputTimes.begin(), OutputTimes.end()-1,
                   std::ostream_iterator<Scalar>(ss, ","));
-        ss << OutputTimes.back();
+            ss << OutputTimes.back();
+	  }
         tscPL_->set<std::string>("Output Time List", ss.str());
       }
     virtual void setMaxFailures(int MaxFailures)

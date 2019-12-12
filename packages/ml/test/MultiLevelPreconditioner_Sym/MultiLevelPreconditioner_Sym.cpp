@@ -161,7 +161,9 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList MLList;
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
+  char mystring[80];
 
+  //#if 0
   // ====================== //
   // default options for SA //
   // ====================== //
@@ -170,7 +172,6 @@ int main(int argc, char *argv[]) {
 
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Gauss-Seidel");
-  char mystring[80];
   strcpy(mystring,"SA");
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
@@ -294,6 +295,27 @@ int main(int argc, char *argv[]) {
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
   
+
+  //#endif
+  // =========================== //
+  // Rowsum test (on Heat eqn)   //
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  Epetra_Vector diagonal(Matrix->RowMap());
+  Matrix->ExtractDiagonalCopy(diagonal);
+  diagonal[0]*=1000;
+  Matrix->ReplaceDiagonalValues(diagonal);
+
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "Chebyshev");
+  MLList.set("aggregation: type","Uncoupled");
+  MLList.set("aggregation: rowsum threshold", 0.9);
+
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+
+
+
 
   // ===================== //
   // print out total error //

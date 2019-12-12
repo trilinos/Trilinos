@@ -35,25 +35,25 @@
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Functions contained in this file:
- *	generate_loadbal()
- *	generate_maps()
- *	nodal_dist()
- *	elemental_dist()
- *	ilog2i()
+ *      generate_loadbal()
+ *      generate_maps()
+ *      nodal_dist()
+ *      elemental_dist()
+ *      ilog2i()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include <cassert> // for assert
 #include <cfloat>  // for FLT_MAX
 #include <climits> // for INT_MAX
 #include <cmath>   /* Needed for ZPINCH_assign */
-#include <cstdio>  // for printf, nullptr, fprintf, etc
+#include <copy_string_cpp.h>
 #include <cstdlib> // for malloc, free, realloc, exit, etc
-#include <cstring> // for strcat, strcpy
+#include <cstring> // for strcat
+#include <fmt/ostream.h>
 
-#include "chaco.h"    // for input_assign, interface
-#include "elb.h"      // for LB_Description<INT>, etc
-#include "elb_elem.h" // for E_Type, get_elem_info, etc
-#include "elb_err.h"  // for Gen_Error
-#include "elb_format.h"
+#include "chaco.h"      // for input_assign, interface
+#include "elb.h"        // for LB_Description<INT>, etc
+#include "elb_elem.h"   // for E_Type, get_elem_info, etc
+#include "elb_err.h"    // for Gen_Error
 #include "elb_graph.h"  // for generate_graph
 #include "elb_groups.h" // for get_group_info
 #include "elb_loadbal.h"
@@ -186,10 +186,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   */
 
   if (problem->type == ELEMENTAL && problem->global_mech == 1 && problem->alloc_graph == ELB_TRUE) {
-    printf("\n==============Looking For Global Issues=================\n");
+    fmt::print("\n==============Looking For Global Issues=================\n");
     identify_mechanisms(machine, problem, mesh, lb, graph, GLOBAL_ISSUES);
-    printf("============================================================\n");
-    printf("\n");
+    fmt::print("============================================================\n");
+    fmt::print("\n");
   }
 
   /* Allocate the graph structure as Chaco expects it */
@@ -401,7 +401,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     dim[0]     = machine->num_boxes;
     FREE_GRAPH = 0; /* Don't have Chaco to free the adjacency */
 
-    printf("=======================Call Chaco===========================\n");
+    fmt::print("=======================Call Chaco===========================\n");
     time1 = get_time();
     if (lb->type == INFILE) {
       flag =
@@ -409,9 +409,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     }
     if (lb->type == ZPINCH || lb->type == BRICK || lb->type == ZOLTAN_RCB ||
         lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC) {
-      fprintf(stderr, "KDD -- ZPINCH, BRICK, ZOLTAN_RCB, ZOLTAN_RIB, and "
-                      "ZOLTAN_HSFC not supported with num_boxes > 1.\n");
-      fprintf(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
+      fmt::print(stderr, "KDD -- ZPINCH, BRICK, ZOLTAN_RCB, ZOLTAN_RIB, and "
+                         "ZOLTAN_HSFC not supported with num_boxes > 1.\n");
+      fmt::print(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
       exit(-1);
     }
     else {
@@ -423,8 +423,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     }
 
     time2 = get_time();
-    printf("============================================================\n");
-    printf("Time in Chaco: %fs\n", time2 - time1);
+    fmt::print("============================================================\n");
+    fmt::print("Time in Chaco: {}s\n", time2 - time1);
 
     if (flag != 0) {
       Gen_Error(0, "fatal: Chaco returned an error");
@@ -686,7 +686,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       }
 #endif
       else if (lb->type == LINEAR) {
-        fprintf(stderr, "Using internal linear decomposition\n");
+        fmt::print(stderr, "Using internal linear decomposition\n");
         /* assign the elements to the processors linearly */
         size_t cnt = mesh->num_elems / machine->num_procs;
 
@@ -729,15 +729,15 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         FREE_GRAPH = 0; /* Chaco not called, */
       }
       else {
-        printf("===================Call Chaco===========================\n");
+        fmt::print("===================Call Chaco===========================\n");
         time1 = get_time();
         flag  = interface(tmp_nv, (int *)tmp_start, (int *)tmp_adj, tmp_vwgts, tmp_ewgts, tmp_x,
                          tmp_y, tmp_z, const_cast<char *>(assignfile), (char *)nullptr, tmp_v2p,
                          arch, num_level, tmpdim, goal, glob_method, refine, solve->rqi_flag,
                          solve->vmax, lb->num_sects, solve->tolerance, seed);
         time2 = get_time();
-        printf("========================================================\n");
-        printf("Time in Chaco: %fs\n", time2 - time1);
+        fmt::print("========================================================\n");
+        fmt::print("Time in Chaco: {}s\n", time2 - time1);
       }
 
       if (flag != 0) {
@@ -764,7 +764,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   /* Free up coordinates if used */
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 1: free(y_node_ptr); y_node_ptr = nullptr; /* fall through */
+    case 1:
+      free(y_node_ptr);
+      y_node_ptr = nullptr;
+      FALL_THROUGH;
     case 2: free(z_node_ptr); z_node_ptr = nullptr;
     }
   }
@@ -869,7 +872,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     } /* End "if(sphere->num > 0)" */
 
     if (problem->local_mech == 1) {
-      printf("\n==============Looking For Local Issues==================\n");
+      fmt::print("\n==============Looking For Local Issues==================\n");
 
       if (problem->face_adj == 1 && problem->alloc_graph == ELB_TRUE) {
         identify_mechanisms(machine, problem, mesh, lb, graph, LOCAL_ISSUES);
@@ -913,8 +916,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         problem->face_adj    = tmp_adjacency;
       }
 
-      printf("============================================================\n");
-      printf("\n");
+      fmt::print("============================================================\n");
+      fmt::print("\n");
     }
 
     // If requested, try to discover vertical columnar structures in
@@ -922,9 +925,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     // column are not on multiple processors
     if (problem->fix_columns) {
       Gen_Error(1, "INFO: Attempting to discover columns and fix their partitioning");
-      int  nmoved = fix_column_partitions(lb, mesh, graph);
-      char mesg[256];
-      sprintf(mesg, "INFO: Reassigned partitions of %d elements", nmoved);
+      int         nmoved = fix_column_partitions(lb, mesh, graph);
+      std::string mesg;
+      mesg = fmt::format("INFO: Reassigned partitions of {} elements", nmoved);
       Gen_Error(1, mesg);
     }
 
@@ -945,14 +948,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 cleanup:
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 1:
-      if (y_node_ptr) {
-        free(y_node_ptr); /* fall through */
-      }
-    case 2:
-      if (z_node_ptr) {
-        free(z_node_ptr);
-      }
+    case 1: free(y_node_ptr); FALL_THROUGH;
+    case 2: free(z_node_ptr);
     }
   }
 
@@ -1066,8 +1063,6 @@ namespace {
     size_t           count;
     size_t           num_found = 0;
 
-    int nhold2, nsides2;
-
     std::vector<int> list_ptr;
     int              end;
 
@@ -1105,12 +1100,12 @@ namespace {
             extract_connected_lists(nrow, columns.data(), rows.data(), list.data(), list_ptr);
 
         if (components) {
-          printf("There are " ST_ZU " connected components.\n", components);
+          fmt::print("There are {} connected components.\n", components);
           for (size_t i = 0; i < components; i++) {
             ki              = list_ptr[i];
             kf              = list_ptr[i + 1] - 1;
             size_t distance = kf - ki + 1;
-            printf("Connection " ST_ZU " #elements " ST_ZU "\n", i + 1, distance);
+            fmt::print("Connection {} #elements {}\n", i + 1, distance);
           }
         }
       }
@@ -1198,12 +1193,12 @@ namespace {
                 extract_connected_lists(nrow, columns.data(), rows.data(), list.data(), list_ptr);
 
             if (components > 0) {
-              printf("For Processor %d there are %d connected components.\n", pcnt, components);
+              fmt::print("For Processor {} there are {} connected components.\n", pcnt, components);
               for (int i = 0; i < components; i++) {
                 int ki       = list_ptr[i];
                 int kf       = list_ptr[i + 1] - 1;
                 int distance = kf - ki + 1;
-                printf("Connection %d #elements %d\n", i + 1, distance);
+                fmt::print("Connection {} #elements {}\n", i + 1, distance);
               }
               if (problem->dsd_add_procs == 1) {
                 for (int i = 1; i < components; i++) {
@@ -1219,8 +1214,8 @@ namespace {
           }
         }
         if (tmp_procs != machine->num_procs) {
-          printf("\n!!! Processor count increased to %d processors\n", machine->num_procs);
-          printf("!!! in order to make connected subdomains\n\n");
+          fmt::print("\n!!! Processor count increased to {} processors\n", machine->num_procs);
+          fmt::print("!!! in order to make connected subdomains\n\n");
         }
       }
     }
@@ -1314,17 +1309,18 @@ namespace {
                      * diagonals due to triangular shells
                      */
 
-                    nsides2 = get_elem_info(NSIDES, etype2);
+                    int nsides2 = get_elem_info(NSIDES, etype2);
 
                     count = 0;
                     for (int cnt = 0; cnt < nsides2; cnt++) {
 
                       ss_to_node_list(etype2, mesh->connect[el2], (cnt + 1), side_nodes2);
 
-                      nhold2 = find_inter(graph->sur_elem[side_nodes2[0]].data(),
-                                          graph->sur_elem[side_nodes2[1]].data(),
-                                          graph->sur_elem[side_nodes2[0]].size(),
-                                          graph->sur_elem[side_nodes2[1]].size(), pt_list.data());
+                      int nhold2 =
+                          find_inter(graph->sur_elem[side_nodes2[0]].data(),
+                                     graph->sur_elem[side_nodes2[1]].data(),
+                                     graph->sur_elem[side_nodes2[0]].size(),
+                                     graph->sur_elem[side_nodes2[1]].size(), pt_list.data());
 
                       for (int i = 0; i < nhold2; i++) {
                         hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];
@@ -1363,20 +1359,20 @@ namespace {
               E_Type etype2 = mesh->elem_type[el2];
 
               if (check_type == LOCAL_ISSUES) {
-                printf("WARNING: On Processor %d Local Element " ST_ZU
-                       " (%s) has a mechanism through Global Node " ST_ZU
-                       " with Local Element " ST_ZU " (%s)\n",
-                       proc, (size_t)local_number[ecnt], elem_name_from_enum(etype), node,
-                       (size_t)local_number[el2], elem_name_from_enum(etype2));
+                fmt::print("WARNING: On Processor {} Local Element {}"
+                           " ({}) has a mechanism through Global Node {}"
+                           " with Local Element {} ({})\n",
+                           proc, (size_t)local_number[ecnt], elem_name_from_enum(etype), node,
+                           (size_t)local_number[el2], elem_name_from_enum(etype2));
                 if (problem->mech_add_procs == 1) {
                   lb->vertex2proc[el2] = machine->num_procs;
                 }
               }
               else {
-                printf("WARNING: Element " ST_ZU " (%s) has a mechanism through Node " ST_ZU
-                       " with Element " ST_ZU " (%s)\n",
-                       ecnt + 1, elem_name_from_enum(etype), node, el2 + 1,
-                       elem_name_from_enum(etype2));
+                fmt::print("WARNING: Element {} ({}) has a mechanism through Node {} with Element "
+                           "{} ({})\n",
+                           ecnt + 1, elem_name_from_enum(etype), node, el2 + 1,
+                           elem_name_from_enum(etype2));
               }
               num_found++;
             }
@@ -1385,17 +1381,17 @@ namespace {
       }
 
       if (num_found) {
-        printf("Total mechanisms found = " ST_ZU "\n", num_found);
+        fmt::print("Total mechanisms found = {}\n", num_found);
         if (check_type == LOCAL_ISSUES) {
           if (problem->mech_add_procs == 1) {
             machine->num_procs++;
-            printf("\n!!! Processor count increased to %d processors\n", machine->num_procs);
-            printf("!!! to move mechanisms to another processor\n\n");
+            fmt::print("\n!!! Processor count increased to {} processors\n", machine->num_procs);
+            fmt::print("!!! to move mechanisms to another processor\n\n");
           }
         }
       }
       else {
-        printf("NO mechanisms found\n");
+        fmt::print("NO mechanisms found\n");
       }
     }
 
@@ -1423,7 +1419,7 @@ namespace {
     lb->ext_procs.resize(machine->num_procs);
 
     time2 = get_time();
-    printf("Allocation time: %fs\n", time2 - time1);
+    fmt::print("Allocation time: {}s\n", time2 - time1);
 
     /* Find the internal, border and external nodes */
     time1 = get_time();
@@ -1466,7 +1462,7 @@ namespace {
       }
     } /* End "for(ncnt=0; ncnt < mesh->num_nodes; ncnt++)" */
     time2 = get_time();
-    printf("Time for nodal categorization: %fs\n", time2 - time1);
+    fmt::print("Time for nodal categorization: {}s\n", time2 - time1);
 
     /* Find the internal elements */
     time1 = get_time();
@@ -1489,7 +1485,7 @@ namespace {
       }
     }
     time2 = get_time();
-    printf("Elemental categorization: %fs\n", time2 - time1);
+    fmt::print("Elemental categorization: {}s\n", time2 - time1);
     return 1;
   } /*-----------------------------End nodal_dist()----------------------------*/
 
@@ -1511,7 +1507,8 @@ namespace {
 
     double time1, time2;
 
-    char cmesg[256], tmpstr[80];
+    std::string cmesg;
+    std::string tmpstr;
 
     /*-----------------------------Execution Begins------------------------------*/
 
@@ -1612,7 +1609,7 @@ namespace {
             }
           }
           else {
-            printf("WARNING: Element = " ST_ZU " is a DEGENERATE BAR\n", ecnt + 1);
+            fmt::print("WARNING: Element = {} is a DEGENERATE BAR\n", ecnt + 1);
           }
         }
         else { /* Is a hex */
@@ -1727,10 +1724,10 @@ namespace {
                   }
                   nelem = ncnt3;
                   if (!dflag && nelem > 2) {
-                    fprintf(stderr,
-                            "Possible corrupted mesh detected at element " ST_ZU
-                            ", strange connectivity.\n",
-                            ecnt);
+                    fmt::print(
+                        stderr,
+                        "Possible corrupted mesh detected at element {}, strange connectivity.\n",
+                        ecnt);
                   }
                 }
               }
@@ -1849,32 +1846,33 @@ namespace {
                    * too many errors with bad meshes, print out
                    * more information here for diagnostics
                    */
-                  sprintf(cmesg, "Error returned while getting side id for communication map.");
+                  cmesg =
+                      fmt::format("Error returned while getting side id for communication map.");
                   Gen_Error(0, cmesg);
-                  sprintf(cmesg, "Element 1: " ST_ZU "", (ecnt + 1));
+                  cmesg = fmt::format("Element 1: {}", (ecnt + 1));
                   Gen_Error(0, cmesg);
                   nnodes = get_elem_info(NNODES, etype);
-                  strcpy(cmesg, "connect table:");
+                  cmesg  = "connect table:";
                   for (int i = 0; i < nnodes; i++) {
-                    sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[ecnt][i] + 1));
-                    strcat(cmesg, tmpstr);
+                    tmpstr = fmt::format(" {}", (size_t)(mesh->connect[ecnt][i] + 1));
+                    cmesg += tmpstr;
                   }
                   Gen_Error(0, cmesg);
-                  sprintf(cmesg, "side id: " ST_ZU "", static_cast<size_t>(nscnt + 1));
+                  cmesg = fmt::format("side id: {}", static_cast<size_t>(nscnt + 1));
                   Gen_Error(0, cmesg);
-                  strcpy(cmesg, "side nodes:");
+                  cmesg = "side nodes:";
                   for (int i = 0; i < side_cnt; i++) {
-                    sprintf(tmpstr, " " ST_ZU "", (size_t)(side_nodes[i] + 1));
-                    strcat(cmesg, tmpstr);
+                    tmpstr = fmt::format(" {}", (size_t)(side_nodes[i] + 1));
+                    cmesg += tmpstr;
                   }
                   Gen_Error(0, cmesg);
-                  sprintf(cmesg, "Element 2: " ST_ZU "", (size_t)(elem + 1));
+                  cmesg = fmt::format("Element 2: {}", (size_t)(elem + 1));
                   Gen_Error(0, cmesg);
                   nnodes = get_elem_info(NNODES, etype2);
-                  strcpy(cmesg, "connect table:");
+                  cmesg  = "connect table:";
                   for (int i = 0; i < nnodes; i++) {
-                    sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[elem][i] + 1));
-                    strcat(cmesg, tmpstr);
+                    tmpstr = fmt::format(" {}", (size_t)(mesh->connect[elem][i] + 1));
+                    cmesg += tmpstr;
                   }
                   Gen_Error(0, cmesg);
                   return 0; /* and get out of here */
@@ -1892,7 +1890,7 @@ namespace {
     } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
 
     time2 = get_time();
-    printf("Time for elemental categorization: %fs\n", time2 - time1);
+    fmt::print("Time for elemental categorization: {}s\n", time2 - time1);
 
     /* Find the internal and border nodes */
 
@@ -1947,7 +1945,7 @@ namespace {
     } /* for(ncnt=0; ncnt < machine->num_nodes; ncnt++) */
 
     time2 = get_time();
-    printf("Nodal categorization: %fs\n", time2 - time1);
+    fmt::print("Nodal categorization: {}s\n", time2 - time1);
 
     /* Allocate memory for the border node processor IDs */
     for (int proc = 0; proc < machine->num_procs; proc++) {
@@ -1976,7 +1974,7 @@ namespace {
     }       /* End "for(pcnt=0; pcnt < machine->num_procs; pcnt++)" */
 
     time2 = get_time();
-    printf("Find procs for border nodes: %fs\n", time2 - time1);
+    fmt::print("Find procs for border nodes: {}s\n", time2 - time1);
 
     /* Order the element communication maps by processor */
     time1 = get_time();
@@ -1994,7 +1992,7 @@ namespace {
      */
 
     time2 = get_time();
-    printf("Order elem cmaps: %fs\n", time2 - time1);
+    fmt::print("Order elem cmaps: {}s\n", time2 - time1);
 
     /*
      * Now order the elemental communication maps so that they are
@@ -2050,13 +2048,13 @@ namespace {
         }
 
 #if 0
-	/* Old method -- can use for verification by uncommenting this if block  */
-	{
-	  int tst_fv1, tst_lv1;
-	  find_first_last(pcnt2, size, procs, &tst_fv1, &tst_lv1);
-	  assert(tst_fv1 == fv1);
-	  assert(tst_lv1 == lv1);
-	}
+        /* Old method -- can use for verification by uncommenting this if block  */
+        {
+          int tst_fv1, tst_lv1;
+          find_first_last(pcnt2, size, procs, &tst_fv1, &tst_lv1);
+          assert(tst_fv1 == fv1);
+          assert(tst_lv1 == lv1);
+        }
 #endif
 
         if (fv1 >= 0) {
@@ -2073,21 +2071,18 @@ namespace {
                           &lv2);
 #if 1
           if (lv2 - fv2 != lv1 - fv1) {
-            fprintf(stderr, "" ST_ZU ": " ST_ZU " to " ST_ZU "\n", static_cast<size_t>(pcnt2),
-                    (size_t)fv1, (size_t)lv1);
+            fmt::print(stderr, "{}: {} to {}\n", static_cast<size_t>(pcnt2), (size_t)fv1,
+                       (size_t)lv1);
             for (i = fv1; i <= lv1; i++) {
-              fprintf(stderr, "" ST_ZU ": " ST_ZU "\t" ST_ZU "\t" ST_ZU "\t" ST_ZU "\n",
-                      static_cast<size_t>(i), (size_t)lb->e_cmap_elems[pcnt][i],
-                      (size_t)lb->e_cmap_neigh[pcnt][i], (size_t)lb->e_cmap_procs[pcnt][i],
-                      (size_t)lb->e_cmap_sides[pcnt][i]);
+              fmt::print(stderr, "{}: {}\t{}\t{}\t{}\n", static_cast<size_t>(i),
+                         (size_t)lb->e_cmap_elems[pcnt][i], (size_t)lb->e_cmap_neigh[pcnt][i],
+                         (size_t)lb->e_cmap_procs[pcnt][i], (size_t)lb->e_cmap_sides[pcnt][i]);
             }
-            fprintf(stderr, "" ST_ZU ": " ST_ZU " to " ST_ZU "\n", (size_t)pcnt, (size_t)fv2,
-                    (size_t)lv2);
+            fmt::print(stderr, "{}: {} to {}\n", (size_t)pcnt, (size_t)fv2, (size_t)lv2);
             for (i = fv2; i <= lv2; i++) {
-              fprintf(stderr, "" ST_ZU ": " ST_ZU "\t" ST_ZU "\t" ST_ZU "\t" ST_ZU "\n",
-                      static_cast<size_t>(i), (size_t)lb->e_cmap_elems[pcnt2][i],
-                      (size_t)lb->e_cmap_neigh[pcnt2][i], (size_t)lb->e_cmap_procs[pcnt2][i],
-                      (size_t)lb->e_cmap_sides[pcnt2][i]);
+              fmt::print(stderr, "{}: {}\t{}\t{}\t{}\n", static_cast<size_t>(i),
+                         (size_t)lb->e_cmap_elems[pcnt2][i], (size_t)lb->e_cmap_neigh[pcnt2][i],
+                         (size_t)lb->e_cmap_procs[pcnt2][i], (size_t)lb->e_cmap_sides[pcnt2][i]);
             }
           }
 #endif
@@ -2104,7 +2099,7 @@ namespace {
     }     /* End "for(pcnt=0; pcnt < machine->num_procs; pcnt++)" */
 
     time2 = get_time();
-    printf("Make cmaps consistent: %fs\n", time2 - time1);
+    fmt::print("Make cmaps consistent: {}s\n", time2 - time1);
 
     return 1;
   } /*--------------------------End elemental_dist()---------------------------*/
@@ -2299,26 +2294,26 @@ namespace {
     double epsilon = 1e-07; /* tolerance that allows a point to be in wedge */
 
     if (ndot > 0 && (x == nullptr || y == nullptr || z == nullptr || part == nullptr)) {
-      fprintf(stderr, "KDD -- Bad input to ZPINCH_assign.\n");
-      fprintf(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
+      fmt::print(stderr, "KDD -- Bad input to ZPINCH_assign.\n");
+      fmt::print(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
       exit(-1);
     }
 
     if (machine->type != MESH) {
-      fprintf(stderr, "KDD -- Machine must be a MESH "
-                      "with # wedges * # slices processors.\n");
-      fprintf(stderr, "KDD -- Use nem_slice argument -m mesh=AxB, \n");
-      fprintf(stderr, "KDD -- where A = # wedges in x,y-plane and \n");
-      fprintf(stderr, "KDD -- B = # slices along z-axis.\n");
+      fmt::print(stderr, "KDD -- Machine must be a MESH "
+                         "with # wedges * # slices processors.\n");
+      fmt::print(stderr, "KDD -- Use nem_slice argument -m mesh=AxB, \n");
+      fmt::print(stderr, "KDD -- where A = # wedges in x,y-plane and \n");
+      fmt::print(stderr, "KDD -- B = # slices along z-axis.\n");
       exit(-1);
     }
     nwedge = machine->dim[0];
     nslice = machine->dim[1];
-    printf("ZPINCH:  Computing\n"
-           "   %d slices in the z-direction\n"
-           "   %d wedges in the x,y-plane\n"
-           "   %d partitions total\n",
-           nslice, nwedge, nslice * nwedge);
+    fmt::print("ZPINCH:  Computing\n"
+               "   {} slices in the z-direction\n"
+               "   {} wedges in the x,y-plane\n"
+               "   {} partitions total\n",
+               nslice, nwedge, nslice * nwedge);
 
     /* Compute the maximum values of z */
     for (i = 0; i < ndot; i++) {
@@ -2334,7 +2329,8 @@ namespace {
     /* Compute maximum z for each slice, using uniform partition of zmin - zmax */
     std::vector<double> slice_max_z(nslice);
     for (i = 0; i < nslice; i++) {
-      slice_max_z[i] = zmin + static_cast<double>(i + 1) * dz / static_cast<double>(nslice);
+      slice_max_z[i] =
+          static_cast<double>(zmin) + static_cast<double>(i + 1) * dz / static_cast<double>(nslice);
     }
 
     /* Compute maximum angle for each wedge, using uniform partition of 2*M_PI */
@@ -2348,14 +2344,15 @@ namespace {
 
       /* Compute the z slice that the element is in. */
       if (dz > 0.) {
-        slice = static_cast<int>(nslice * (z[i] - zmin) / dz);
+        slice =
+            static_cast<int>(nslice * (static_cast<double>(z[i]) - static_cast<double>(zmin)) / dz);
         if (slice == nslice) {
           slice--; /* Handles z[i] == zmax correctly */
         }
 
         /* Move dots within epsilon of upper end of slice into next slice */
         /* This step reduces jagged edges due to roundoff in coordinate values */
-        if (slice != nslice - 1 && z[i] > (slice_max_z[slice] - epsilon)) {
+        if (slice != nslice - 1 && static_cast<double>(z[i]) > (slice_max_z[slice] - epsilon)) {
           slice++;
         }
       }
@@ -2364,8 +2361,8 @@ namespace {
       }
 
       /* Compute polar coordinate theta in x,y-plane for the element. */
-      if (x[i] == 0.) {
-        if (y[i] >= 0.) {
+      if (x[i] == 0.0f) {
+        if (y[i] >= 0.0f) {
           theta = M_PI_2;
         }
         else {
@@ -2376,10 +2373,10 @@ namespace {
         theta = std::atan2(y[i], x[i]); /* In range -M_PI_2 to M_PI_2 */
 
         /* Convert to range 0 to 2*M_PI */
-        if (x[i] < 0.) {
+        if (x[i] < 0.0f) {
           theta += M_PI;
         }
-        else if (y[i] < 0.) {
+        else if (y[i] < 0.0f) {
           theta += 2 * M_PI;
         }
       }
@@ -2436,7 +2433,7 @@ namespace {
        using uniform partition of dmax - dmin */
     slices_d.reserve(nslices_d);
     for (i = 0; i < nslices_d; i++) {
-      slices_d.push_back(*dmin +
+      slices_d.push_back(static_cast<double>(*dmin) +
                          static_cast<double>(i + 1) * *delta / static_cast<double>(nslices_d));
     }
   }
@@ -2458,14 +2455,14 @@ namespace {
     double epsilon = 5e-06; /* tolerance that allows a point to be in subdomain*/
 
     if (delta > 0.) {
-      d_slice = static_cast<int>(nslices_d * (d - dmin) / delta);
+      d_slice = static_cast<int>(nslices_d * static_cast<double>((d - dmin)) / delta);
       if (d_slice == nslices_d) {
         d_slice--; /* Handles d == dmax correctly */
       }
 
       /* Move dots within epsilon of upper end of slice into next slice */
       /* This step reduces jagged edges due to roundoff in coordinate values */
-      if (d_slice != nslices_d - 1 && d > (slices_d[d_slice] - epsilon)) {
+      if (d_slice != nslices_d - 1 && static_cast<double>(d) > (slices_d[d_slice] - epsilon)) {
         d_slice++;
       }
     }
@@ -2500,29 +2497,29 @@ namespace {
      */
 
     if (ndot > 0 && (x == nullptr || y == nullptr || z == nullptr || part == nullptr)) {
-      fprintf(stderr, "KDD -- Bad input to BRICK_assign.\n");
-      fprintf(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
+      fmt::print(stderr, "KDD -- Bad input to BRICK_assign.\n");
+      fmt::print(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
       exit(-1);
     }
 
     if (machine->type != MESH) {
-      fprintf(stderr, "KDD -- Machine must be a MESH "
-                      "with nx * ny * nz processors.\n");
-      fprintf(stderr, "KDD -- Use nem_slice argument -m mesh=AxBxC, \n");
-      fprintf(stderr, "KDD -- where A = nx, B = ny, and "
-                      "C = nz\n");
+      fmt::print(stderr, "KDD -- Machine must be a MESH "
+                         "with nx * ny * nz processors.\n");
+      fmt::print(stderr, "KDD -- Use nem_slice argument -m mesh=AxBxC, \n");
+      fmt::print(stderr, "KDD -- where A = nx, B = ny, and "
+                         "C = nz\n");
       exit(-1);
     }
     int nx = machine->dim[0];
     int ny = machine->dim[1];
     int nz = machine->dim[2];
 
-    printf("BRICK:  Computing\n"
-           "   %d subdomains in the x direction\n"
-           "   %d subdomains in the y direction\n"
-           "   %d subdomains in the z direction\n"
-           "   %d partitions total\n",
-           nx, ny, nz, nx * ny * nz);
+    fmt::print("BRICK:  Computing\n"
+               "   {} subdomains in the x direction\n"
+               "   {} subdomains in the y direction\n"
+               "   {} subdomains in the z direction\n"
+               "   {} partitions total\n",
+               nx, ny, nz, nx * ny * nz);
 
     float               xmin, xmax; /* Minimum and maximum x-coordinate values */
     float               ymin, ymax; /* Minimum and maximum y-coordinate values */
@@ -2663,7 +2660,7 @@ namespace {
     int                   dummy0, *dummy3, *dummy4; /* Empty output from Zoltan_LB_Partition */
     int                   ierr = ZOLTAN_OK;
     float                 ver;
-    char                  str[10];
+    std::string           str;
     int                   changes;
 
     /* Copy mesh data and pointers into structure accessible from callback fns. */
@@ -2676,7 +2673,7 @@ namespace {
     /* Initialize Zoltan */
     ierr = Zoltan_Initialize(argc, argv, &ver);
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Initialize (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Initialize ({}:{})\n", __FILE__, __LINE__);
       exit(-1);
     }
     zz = Zoltan_Create(MPI_COMM_WORLD);
@@ -2686,79 +2683,79 @@ namespace {
     ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE,
                          reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_num_dim), nullptr);
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Set_Fn ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE,
                          reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_num_obj), nullptr);
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Set_Fn ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
                          reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_obj_list), nullptr);
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Set_Fn ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE,
                          reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_geom), nullptr);
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Set_Fn ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
 
     /* Set parameters for Zoltan */
-    sprintf(str, "%d", totalproc);
-    ierr = Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTITIONS", str);
+    str  = fmt::format("{}", totalproc);
+    ierr = Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTITIONS", str.c_str());
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Set_Param ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Set_Param ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Param(zz, "LB_METHOD", method);
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Set_Param ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Param(zz, "REMAP", "0");
     if (ierr == ZOLTAN_FATAL) {
-      fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_Set_Param ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
     if (vwgt != nullptr) {
       ierr = Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
       if (ierr == ZOLTAN_FATAL) {
-        fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n", __FILE__, __LINE__);
+        fmt::print(stderr, "Error returned from Zoltan_Set_Param ({}:{})\n", __FILE__, __LINE__);
         goto End;
       }
     }
     if (ignore_z != 0) {
       ierr = Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1");
       if (ierr == ZOLTAN_FATAL) {
-        fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n", __FILE__, __LINE__);
+        fmt::print(stderr, "Error returned from Zoltan_Set_Param ({}:{})\n", __FILE__, __LINE__);
         goto End;
       }
     }
 
     /* Call partitioner */
-    printf("Using Zoltan version %f, method %s\n", ver, method);
+    fmt::print("Using Zoltan version {}, method {}\n", static_cast<double>(ver), method);
     ierr = Zoltan_LB_Partition(zz, &changes, &zngid_ent, &znlid_ent, &dummy0, &dummy1, &dummy2,
                                &dummy3, &dummy4, &znobj, &zgids, &zlids, &zprocs, &zparts);
     if (ierr != 0) {
-      fprintf(stderr, "Error returned from Zoltan_LB_Partition (%s:%d)\n", __FILE__, __LINE__);
+      fmt::print(stderr, "Error returned from Zoltan_LB_Partition ({}:{})\n", __FILE__, __LINE__);
       goto End;
     }
 
     /* Sanity check */
     if (ndot != static_cast<size_t>(znobj)) {
-      fprintf(stderr, "Sanity check failed; ndot " ST_ZU " != znobj " ST_ZU ".\n", ndot,
-              static_cast<size_t>(znobj));
+      fmt::print(stderr, "Sanity check failed; ndot {} != znobj {}.\n", ndot,
+                 static_cast<size_t>(znobj));
       goto End;
     }
 
@@ -2769,8 +2766,8 @@ namespace {
 
   End:
     /* Clean up */
-    (void)Zoltan_LB_Free_Part(&zgids, &zlids, &zprocs, &zparts);
-    (void)Zoltan_Destroy(&zz);
+    Zoltan_LB_Free_Part(&zgids, &zlids, &zprocs, &zparts);
+    Zoltan_Destroy(&zz);
     if (ierr != 0) {
       MPI_Finalize();
       exit(-1);
@@ -2831,15 +2828,15 @@ namespace {
         sumwgt += cntwgt[i];
       }
       if (cnts[i] == 0) {
-        printf("ZERO on %d\n", i);
+        fmt::print("ZERO on {}\n", i);
       }
     }
 
-    printf("CNT STATS:  min = %d  max = %d  avg = %f\n", min, max,
-           static_cast<float>(sum) / static_cast<float>(npart));
+    fmt::print("CNT STATS:  min = {}  max = {}  avg = {}\n", min, max,
+               static_cast<double>(sum) / static_cast<double>(npart));
     if (wgt != nullptr) {
-      printf("WGT STATS:  min = %d  max = %d  avg = %f\n", minwgt, maxwgt,
-             static_cast<float>(sumwgt) / static_cast<float>(npart));
+      fmt::print("WGT STATS:  min = {}  max = {}  avg = {}\n", minwgt, maxwgt,
+                 static_cast<double>(sumwgt) / static_cast<double>(npart));
     }
   }
 } // namespace

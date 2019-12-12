@@ -84,7 +84,7 @@ read_matrix_hb (const std::string& hb_file,
   RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A;
   {
     Teuchos::TimeMonitor timeMon (*timer);
-    Tpetra::Utils::readHBMatrix (hb_file, comm, node, A); // OK if node is null
+    Tpetra::Utils::readHBMatrix (hb_file, comm, A);
   }
   if (comm->getRank () == 0) {
     cout << "Proc 0: Time in seconds to read the Harwell-Boeing - format "

@@ -141,8 +141,8 @@ int main(int argc, char* argv[])
     std::cout << "Teuchos::SerialDenseSolver::solve() returned : " << info << std::endl;
 
   // A matrix can be sent to the output stream:
-  std::cout<< std::endl << My_Matrix << std::endl;
-  std::cout<< X << std::endl;
+  std::cout<< std::endl << printMat(My_Matrix) << std::endl;
+  std::cout<< printMat(X) << std::endl;
 
   return 0;
 }

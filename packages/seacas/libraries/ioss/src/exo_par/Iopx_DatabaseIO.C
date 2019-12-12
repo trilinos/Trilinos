@@ -56,6 +56,7 @@
 #include <exodus/Ioex_Internals.h>
 #include <exodus/Ioex_Utils.h>
 #include <exodusII.h>
+#include <fmt/ostream.h>
 #include <functional>
 #include <iostream>
 #include <limits>
@@ -105,41 +106,6 @@ namespace {
 
   const std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
   const char *      complex_suffix[] = {".re", ".im"};
-
-  int get_parallel_io_mode(const Ioss::PropertyManager &properties)
-  {
-    static int par_mode         = 0;
-    static int par_mode_default = EX_PNETCDF; // Default...
-    //    static int par_mode_default = EX_MPIIO;
-    //    static int par_mode_default = EX_MPIPOSIX;
-
-    if (par_mode == 0) {
-      if (properties.exists("PARALLEL_IO_MODE")) {
-        std::string mode_name = properties.get("PARALLEL_IO_MODE").get_string();
-        Ioss::Utils::fixup_name(mode_name);
-        if (mode_name == "pnetcdf") {
-          par_mode = EX_PNETCDF;
-        }
-        else if (mode_name == "mpiposix") {
-          par_mode = EX_MPIPOSIX;
-        }
-        else if (mode_name == "mpiio") {
-          par_mode = EX_MPIIO;
-        }
-        else {
-          std::ostringstream errmsg;
-          errmsg << "ERROR: Unrecognized parallel io mode setting '" << mode_name
-                 << "' in the Ioss property PARALLEL_IO_MODE.  Valid values are 'pnetcdf', "
-                    "'mpiposix', or 'mpiio'";
-          IOSS_ERROR(errmsg);
-        }
-      }
-      else {
-        par_mode = par_mode_default;
-      }
-    }
-    return par_mode;
-  }
 
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id,
                              int position, int int_size_api)
@@ -255,10 +221,11 @@ namespace Iopx {
     usingParallelIO = true;
     if (!is_parallel_consistent()) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Parallel IO cannot be used in an application that is not guaranteeing "
-             << "parallel consistent calls of the get and put field data functions.\n"
-             << "The application created this database with a 'false' setting for the "
-                "isParallelConsistent property.";
+      fmt::print(errmsg,
+                 "ERROR: Parallel IO cannot be used in an application that is not guaranteeing "
+                 "parallel consistent calls of the get and put field data functions.\n"
+                 "The application created this database with a 'false' setting for the "
+                 "isParallelConsistent property.");
       IOSS_ERROR(errmsg);
     }
 
@@ -271,9 +238,11 @@ namespace Iopx {
         fileExists          = file.exists();
         if (fileExists) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: Cannot reliably append to an existing database in parallel single-file "
-                    "output mode. File '"
-                 << get_filename() << "'";
+          fmt::print(
+              errmsg,
+              "ERROR: Cannot reliably append to an existing database in parallel single-file "
+              "output mode. File '{}'",
+              get_filename());
           IOSS_ERROR(errmsg);
         }
       }
@@ -304,9 +273,8 @@ namespace Iopx {
                                         bool abort_if_error) const
   {
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = exodusFilePtr;
     assert(isParallel);
-    global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
+    int global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
 
     if (global_file_ptr < 0) {
       if (write_message || error_msg != nullptr || bad_count != nullptr) {
@@ -315,33 +283,31 @@ namespace Iopx {
 
         std::string open_create = is_input() ? "open input" : "create output";
         if (write_message || error_msg != nullptr) {
-          // See which processors could not open/create the file...
-          std::ostringstream errmsg;
-          errmsg << "ERROR: Unable to " << open_create << " exodus database file '"
-                 << get_filename() << "' on processors:\n\t";
+          std::vector<size_t> procs;
           for (int i = 0; i < util().parallel_size(); i++) {
             if (status[i] < 0) {
-              errmsg << i << ", ";
+              procs.push_back(i);
             }
           }
+          std::string error_list = Ioss::Utils::format_id_list(procs, "--");
+          // See which processors could not open/create the file...
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: Unable to {} exodus database file '{}' on processors:\n\t{}",
+                     open_create, get_filename(), error_list);
           if (error_msg != nullptr) {
             *error_msg = errmsg.str();
           }
           if (write_message && myProcessor == 0) {
-            errmsg << "\n";
-            std::cerr << errmsg.str();
+            fmt::print(errmsg, "\n");
+            fmt::print(stderr, "{}", errmsg.str());
           }
         }
         if (bad_count != nullptr) {
-          for (int i = 0; i < util().parallel_size(); i++) {
-            if (status[i] < 0) {
-              (*bad_count)++;
-            }
-          }
+          *bad_count = std::count_if(status.begin(), status.end(), [](int i) { return i < 0; });
         }
         if (abort_if_error) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: Cannot " << open_create << " file '" << get_filename() << "'";
+          fmt::print(errmsg, "ERROR: Cannot {} file '{}'", open_create, get_filename());
           IOSS_ERROR(errmsg);
         }
       }
@@ -393,16 +359,15 @@ namespace Iopx {
     Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
-    int par_mode    = get_parallel_io_mode(properties);
     int app_opt_val = ex_opts(EX_VERBOSE);
-    exodusFilePtr   = ex_open_par(filename.c_str(), EX_READ | par_mode | mode, &cpu_word_size,
-                                &io_word_size, &version, util().communicator(), info);
+    exodusFilePtr   = ex_open_par(filename.c_str(), EX_READ | mode, &cpu_word_size, &io_word_size,
+                                &version, util().communicator(), info);
 
     if (do_timer) {
       double t_end    = Ioss::Utils::timer();
       double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
       if (myProcessor == 0) {
-        std::cerr << "File Open Time = " << duration << "\n";
+        fmt::print(stderr, "File Open Time = {}\n", duration);
       }
     }
 
@@ -468,11 +433,11 @@ namespace Iopx {
     }
 #endif
 
-    int par_mode = get_parallel_io_mode(properties);
+    MPI_Info info        = MPI_INFO_NULL;
+    int      app_opt_val = ex_opts(EX_VERBOSE);
+    Ioss::DatabaseIO::openDatabase__();
 
-    MPI_Info    info        = MPI_INFO_NULL;
-    int         app_opt_val = ex_opts(EX_VERBOSE);
-    std::string filename    = get_filename();
+    std::string filename = get_dwname();
 
     Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
@@ -486,8 +451,8 @@ namespace Iopx {
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
     if (fileExists) {
-      exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
-                                  &io_word_size, &version, util().communicator(), info);
+      exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode, &cpu_word_size, &io_word_size,
+                                  &version, util().communicator(), info);
     }
     else {
       // If the first write for this file, create it...
@@ -504,8 +469,8 @@ namespace Iopx {
           mode |= EX_ALL_INT64_DB;
         }
       }
-      exodusFilePtr = ex_create_par(filename.c_str(), mode | par_mode, &cpu_word_size,
-                                    &dbRealWordSize, util().communicator(), info);
+      exodusFilePtr = ex_create_par(filename.c_str(), mode, &cpu_word_size, &dbRealWordSize,
+                                    util().communicator(), info);
     }
 
     if (do_timer) {
@@ -513,7 +478,7 @@ namespace Iopx {
       double      duration    = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
       std::string open_create = fileExists ? "Open" : "Create";
       if (myProcessor == 0) {
-        std::cerr << "File " << open_create << " Time = " << duration << "\n";
+        fmt::print(stderr, "File {} Time = {}\n", open_create, duration);
       }
     }
 
@@ -547,7 +512,7 @@ namespace Iopx {
     MPI_Initialized(&flag);
     if (flag == 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: MPI is not initialized.";
+      fmt::print(errmsg, "ERROR: MPI is not initialized.");
       IOSS_ERROR(errmsg);
     }
 
@@ -556,7 +521,7 @@ namespace Iopx {
     int fp_max = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MAX);
     if (fp_min != fp_max && fp_min < 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Inconsistent file pointer values.";
+      fmt::print(errmsg, "ERROR: Inconsistent file pointer values.");
       IOSS_ERROR(errmsg);
     }
     return Ioex::DatabaseIO::free_file_pointer();
@@ -631,36 +596,8 @@ namespace Iopx {
 
     m_groupCount[EX_SIDE_SET] = info.num_side_sets;
 
-    if (nodeCount == 0) {
-      IOSS_WARNING << "No nodes were found in the model, file '" << get_filename() << "'\n";
-    }
-    else if (nodeCount < 0) {
-      // NOTE: Code will not continue past this call...
-      std::ostringstream errmsg;
-      errmsg << "ERROR: Negative node count was found in the model\n"
-             << "       File: '" << get_filename() << "'.\n";
-      IOSS_ERROR(errmsg);
-    }
-
-    if (elementCount == 0) {
-      IOSS_WARNING << "No elements were found in the model, file: '" << get_filename() << "'\n";
-    }
-
-    if (elementCount < 0) {
-      // NOTE: Code will not continue past this call...
-      std::ostringstream errmsg;
-      errmsg << "ERROR: Negative element count was found in the model, file: '" << get_filename()
-             << "'";
-      IOSS_ERROR(errmsg);
-    }
-
-    if (elementCount > 0 && m_groupCount[EX_ELEM_BLOCK] <= 0) {
-      // NOTE: Code will not continue past this call...
-      std::ostringstream errmsg;
-      errmsg << "ERROR: No element blocks were found in the model, file: '" << get_filename()
-             << "'";
-      IOSS_ERROR(errmsg);
-    }
+    // Checks: node, element, blocks > 0; warning if == 0; error if < 0
+    check_valid_values();
 
     Ioss::Region *this_region = get_region();
 
@@ -748,7 +685,7 @@ namespace Iopx {
     // on the database.  Output a warning message if there is
     // potentially corrupt data on the database...
 
-    // Check whether user or application wants to limite the times even further...
+    // Check whether user or application wants to limit the times even further...
     // One use case is that job is restarting at a time prior to what has been
     // written to the results file, so want to start appending after
     // restart time instead of at end time on database.
@@ -769,7 +706,7 @@ namespace Iopx {
     }
 
     Ioss::Region *this_region = get_region();
-    for (int i = 0; i < timestep_count; i++) {
+    for (int i = 0; i < max_step; i++) {
       if (tsteps[i] <= last_time) {
         this_region->add_state(tsteps[i] * timeScaleFactor);
       }
@@ -780,9 +717,11 @@ namespace Iopx {
           // a warning if there is a corrupt step on processor
           // 0... Need better warnings which won't overload in the
           // worst case...
-          IOSS_WARNING << "Skipping step " << i + 1 << " at time " << tsteps[i]
-                       << " in database file\n\t" << get_filename()
-                       << ".\nThe data for that step is possibly corrupt.\n";
+          fmt::print(
+              IOSS_WARNING,
+              "Skipping step {:n} at time {} in database file\n\t{}.\nThe data for that step "
+              "is possibly corrupt.\n",
+              i + 1, tsteps[i], get_filename());
         }
       }
     }
@@ -814,9 +753,9 @@ namespace Iopx {
 
     default:
       std::ostringstream errmsg;
-      errmsg << "INTERNAL ERROR: Invalid map type. "
-             << "Something is wrong in the Iopx::DatabaseIO::get_map() function. "
-             << "Please report.\n";
+      fmt::print(errmsg, "INTERNAL ERROR: Invalid map type. "
+                         "Something is wrong in the Iopx::DatabaseIO::get_map() function. "
+                         "Please report.\n");
       IOSS_ERROR(errmsg);
     }
   }
@@ -1038,7 +977,7 @@ namespace Iopx {
       }
       else {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Invalid type in get_blocks()";
+        fmt::print(errmsg, "ERROR: Invalid type in get_blocks()");
         IOSS_ERROR(errmsg);
       }
 
@@ -1049,15 +988,13 @@ namespace Iopx {
         if (block.num_faces_per_entry > 0 && rank_offset < 1) {
           std::string storage = "Real["+std::to_string(block.num_faces_per_entry)+"]";
           io_block->field_add(Ioss::Field("connectivity_face",
-                                          io_block->field_int_type(), storage, Ioss::Field::MESH,
-                                          block.num_entry));
+                                          io_block->field_int_type(), storage, Ioss::Field::MESH));
         }
         // X -> Edge?
         if (block.num_edges_per_entry > 0 && rank_offset < 2) {
           std::string storage = "Real["+std::to_string(block.num_edges_per_entry)+"]";
           io_block->field_add(Ioss::Field("connectivity_edge",
-                                          io_block->field_int_type(), storage, Ioss::Field::MESH,
-                                          block.num_entry));
+                                          io_block->field_int_type(), storage, Ioss::Field::MESH));
         }
 #endif
 
@@ -1170,7 +1107,7 @@ namespace Iopx {
   {
     // This function creates all sidesets (surfaces) for a
     // model.  Note that a sideset contains 1 or more sideblocks
-    // which are homogenous (same topology). In serial execution,
+    // which are homogeneous (same topology). In serial execution,
     // this is fairly straightforward since there are no null sets and
     // we have all the information we need. (...except see below for
     // surface evolution).
@@ -1213,7 +1150,7 @@ namespace Iopx {
 
       // Create sidesets for each entry in the fs_set... These are the
       // sidesets which were probably written by a previous run of the
-      // IO system and are already split into homogenous pieces...
+      // IO system and are already split into homogeneous pieces...
       {
         for (auto &fs_name : fs_set) {
           auto *side_set = new Ioss::SideSet(this, fs_name);
@@ -1300,19 +1237,19 @@ namespace Iopx {
                                    Ioss::Field::MESH, number_sides);
 
             Ioss::IntVector e32(number_sides);
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(e32));
-            std::copy(e32.begin(), e32.end(), sides.begin());
             decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(e32));
             std::copy(e32.begin(), e32.end(), element.begin());
+            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(e32));
+            std::copy(e32.begin(), e32.end(), sides.begin());
           }
           else {
             Ioss::Field side_field("sides", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
                                    number_sides);
             Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
                                    number_sides);
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
             decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field,
                                      TOPTR(element));
+            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
           }
 
           if (!blockOmissions.empty() || !blockInclusions.empty()) {
@@ -1482,8 +1419,10 @@ namespace Iopx {
               block = get_region()->get_element_block(topo_or_block_name);
               if (block == nullptr || Ioss::Utils::block_is_omitted(block)) {
                 std::ostringstream errmsg;
-                errmsg << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name
-                       << "' Something is wrong in the Iopx::DatabaseIO class. Please report.\n";
+                fmt::print(errmsg,
+                           "INTERNAL ERROR: Could not find element block '{}'. Something is wrong "
+                           "in the Iopx::DatabaseIO class. Please report.\n",
+                           topo_or_block_name);
                 IOSS_ERROR(errmsg);
               }
               elem_topo = block->topology();
@@ -1545,12 +1484,12 @@ namespace Iopx {
               storage += std::to_string(side_topo->number_nodes());
               storage += "]";
               side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
-                                                Ioss::Field::MESH, my_side_count));
+                                                Ioss::Field::MESH));
             }
 
             if (side_set_name == "universal_sideset") {
               side_block->field_add(Ioss::Field("side_ids", side_block->field_int_type(), "scalar",
-                                                Ioss::Field::MESH, my_side_count));
+                                                Ioss::Field::MESH));
             }
 
             int num_attr = 0;
@@ -2189,7 +2128,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Invalid commset type " << type;
+      fmt::print(errmsg, "ERROR: Invalid commset type {}", type);
       IOSS_ERROR(errmsg);
     }
   }
@@ -2212,7 +2151,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
   int64_t entity_count = fb->entity_count();
   if (num_to_get != entity_count) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: Partial field input not yet implemented for side blocks";
+    fmt::print(errmsg, "ERROR: Partial field input not yet implemented for side blocks");
     IOSS_ERROR(errmsg);
   }
 
@@ -2293,10 +2232,11 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
           int64_t new_id = static_cast<int64_t>(10) * els[iel] + els[iel + 1];
           if (new_id > int_max) {
             std::ostringstream errmsg;
-            errmsg << "ERROR: accessing the sideset field 'ids'\n"
-                   << "\t\thas exceeded the integer bounds for entity " << els[iel]
-                   << ", local side id " << els[iel + 1]
-                   << ".\n\t\tTry using 64-bit mode to read the file '" << get_filename() << "'.\n";
+            fmt::print(errmsg,
+                       "ERROR: accessing the sideset field 'ids'\n"
+                       "\t\thas exceeded the integer bounds for entity {}, local side id {}.\n"
+                       "\t\tTry using 64-bit mode to read the file '{}'.\n",
+                       els[iel], els[iel + 1], get_filename());
             IOSS_ERROR(errmsg);
           }
 
@@ -2680,8 +2620,10 @@ int64_t DatabaseIO::read_transient_field(ex_entity_type               type,
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "IOSS_ERROR: Field storage type must be either integer or double.\n"
-             << "       Field '" << field.get_name() << "' is invalid.\n";
+      fmt::print(errmsg,
+                 "IOSS_ERROR: Field storage type must be either integer or double.\n"
+                 "       Field '{}' is invalid.\n",
+                 field.get_name());
       IOSS_ERROR(errmsg);
     }
     assert(k == num_entity);
@@ -2750,8 +2692,10 @@ int64_t DatabaseIO::read_ss_transient_field(const Ioss::Field &field, int64_t id
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "IOSS_ERROR: Field storage type must be either integer or double.\n"
-             << "       Field '" << field.get_name() << "' is invalid.\n";
+      fmt::print(errmsg,
+                 "IOSS_ERROR: Field storage type must be either integer or double.\n"
+                 "       Field '{}' is invalid.\n",
+                 field.get_name());
       IOSS_ERROR(errmsg);
     }
     if (i + 1 == comp_count) {
@@ -2947,12 +2891,13 @@ int64_t DatabaseIO::get_side_distributions(const Ioss::SideBlock *fb, int64_t id
     if (number_sides * nfnodes != number_distribution_factors &&
         number_sides != number_distribution_factors) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: SideBlock '" << fb->name() << "' has incorrect distribution factor count.\n"
-             << "\tThere are " << number_sides << " '" << ftopo->name() << "' sides with "
-             << nfnodes << " nodes per side, but there are " << number_distribution_factors
-             << " distribution factors which is not correct.\n"
-             << "\tThere should be either " << number_sides << " or " << number_sides * nfnodes
-             << " distribution factors.\n";
+      fmt::print(errmsg,
+                 "ERROR: SideBlock '{}' has incorrect distribution factor count.\n"
+                 "\tThere are {} '{}' sides with {} nodes per side, but there are {}"
+                 " distribution factors which is not correct.\n"
+                 "\tThere should be either {} or {} distribution factors.\n",
+                 fb->name(), number_sides, ftopo->name(), nfnodes, number_distribution_factors,
+                 number_sides, number_sides * nfnodes);
       IOSS_ERROR(errmsg);
     }
     std::string storage = "Real[" + std::to_string(nfnodes) + "]";
@@ -3065,8 +3010,10 @@ int64_t DatabaseIO::get_side_distributions(const Ioss::SideBlock *fb, int64_t id
 
     if (block == nullptr) {
       std::ostringstream errmsg;
-      errmsg << "INTERNAL ERROR: Could not find element block containing element with id "
-             << elem_id << "Something is wrong in the Iopx::DatabaseIO class. Please report.\n";
+      fmt::print(errmsg,
+                 "INTERNAL ERROR: Could not find element block containing element with id {}."
+                 " Something is wrong in the Iopx::DatabaseIO class. Please report.\n",
+                 elem_id);
       IOSS_ERROR(errmsg);
     }
 
@@ -3074,8 +3021,8 @@ int64_t DatabaseIO::get_side_distributions(const Ioss::SideBlock *fb, int64_t id
 
     if (topo == nullptr) {
       std::ostringstream errmsg;
-      errmsg << "INTERNAL ERROR: Could not find topology of element block boundary. "
-             << "Something is wrong in the Iopx::DatabaseIO class. Please report.\n";
+      fmt::print(errmsg, "INTERNAL ERROR: Could not find topology of element block boundary. "
+                         "Something is wrong in the Iopx::DatabaseIO class. Please report.\n");
       IOSS_ERROR(errmsg);
     }
 
@@ -3639,19 +3586,19 @@ int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void *ids, 
   }
 
   elemMap.set_size(elementCount);
-  return handle_block_ids(eb, EX_ELEM_MAP, elemMap, ids, num_to_get, offset, count);
+  return handle_block_ids(eb, EX_ELEM_MAP, elemMap, ids, num_to_get, offset);
 }
 
 int64_t DatabaseIO::handle_face_ids(const Ioss::FaceBlock *eb, void *ids, size_t num_to_get) const
 {
   faceMap.set_size(faceCount);
-  return handle_block_ids(eb, EX_FACE_MAP, faceMap, ids, num_to_get, 0, 0);
+  return handle_block_ids(eb, EX_FACE_MAP, faceMap, ids, num_to_get, 0);
 }
 
 int64_t DatabaseIO::handle_edge_ids(const Ioss::EdgeBlock *eb, void *ids, size_t num_to_get) const
 {
   edgeMap.set_size(edgeCount);
-  return handle_block_ids(eb, EX_EDGE_MAP, edgeMap, ids, num_to_get, 0, 0);
+  return handle_block_ids(eb, EX_EDGE_MAP, edgeMap, ids, num_to_get, 0);
 }
 
 void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Ioss::Field &field,
@@ -3700,7 +3647,7 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
 
       if (m_variables[EX_NODE_BLOCK].find(var_name) == m_variables[EX_NODE_BLOCK].end()) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Could not find nodal variable '" << var_name << "'\n";
+        fmt::print(errmsg, "ERROR: Could not find nodal variable '{}'\n", var_name);
         IOSS_ERROR(errmsg);
       }
 
@@ -3725,11 +3672,11 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
 
       if (num_out != static_cast<size_t>(nodeCount)) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Problem outputting nodal variable '" << var_name
-               << "' with index = " << var_index << " to file " << get_filename()
-               << " on processor " << myProcessor << "\n"
-               << "Should have output " << nodeCount << " values, but instead only output "
-               << num_out << " values.\n";
+        fmt::print(errmsg,
+                   "ERROR: Problem outputting nodal variable '{}' with index = {} to file '{}' on "
+                   "processor {}\n"
+                   "\tShould have output {:n} values, but instead only output {:n} values.\n",
+                   var_name, var_index, get_filename(), myProcessor, nodeCount, num_out);
         IOSS_ERROR(errmsg);
       }
 
@@ -3751,10 +3698,10 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
                                     proc_offset + 1, file_count, TOPTR(file_temp));
       if (ierr < 0) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Problem outputting nodal variable '" << var_name
-               << "' with index = " << var_index << " to file " << get_filename()
-               << " on processor " << myProcessor << "\n";
-        IOSS_ERROR(errmsg);
+        fmt::print(errmsg,
+                   "Problem outputting nodal variable '{}' with index = {} on processor {}\n",
+                   var_name, var_index, myProcessor);
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, errmsg.str());
       }
     }
   }
@@ -3871,8 +3818,8 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
 
       if (ierr < 0) {
         std::ostringstream extra_info;
-        extra_info << "Outputting component " << i << " of field " << field_name << " at step "
-                   << step << " on " << ge->type_string() << " " << ge->name() << ".";
+        fmt::print(extra_info, "Outputting component {} of field '{}' at step {:n} on {} '{}'.", i,
+                   field_name, step, ge->type_string(), ge->name());
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, extra_info.str());
       }
     }
@@ -4256,12 +4203,11 @@ void DatabaseIO::write_meta_data()
   // Title...
   if (region->property_exists("title")) {
     std::string title_str = region->get_property("title").get_string();
-    std::strncpy(the_title, title_str.c_str(), max_line_length);
+    Ioss::Utils::copy_string(the_title, title_str);
   }
   else {
-    std::strncpy(the_title, "IOSS Output Default Title", max_line_length);
+    Ioss::Utils::copy_string(the_title, "IOSS Output Default Title");
   }
-  the_title[max_line_length] = '\0';
 
   // Edge Blocks --
   {
@@ -4555,4 +4501,67 @@ void DatabaseIO::output_node_map() const
   }
 }
 
+void DatabaseIO::check_valid_values() const
+{
+  std::vector<int64_t> counts{nodeCount, elementCount, m_groupCount[EX_ELEM_BLOCK]};
+  std::vector<int64_t> all_counts;
+  util().all_gather(counts, all_counts);
+  // Get minimum value in `all_counts`. If >0, then don't need to check further...
+  auto min_val = *std::min_element(all_counts.begin(), all_counts.end());
+
+  if (myProcessor == 0) {
+    size_t proc_count = all_counts.size() / 3;
+
+    if (min_val < 0) {
+      static std::array<std::string, 3> label{"node", "element", "element block"};
+      // Error on one or more of the counts...
+      for (size_t j = 0; j < 3; j++) {
+        std::vector<size_t> bad_proc;
+        for (size_t i = 0; i < proc_count; i++) {
+          if (all_counts[3 * i + j] < 0) {
+            bad_proc.push_back(i);
+          }
+        }
+
+        if (!bad_proc.empty()) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: Negative {} count on {} processor{}:\n\t{}\n\n", label[j],
+                     bad_proc.size(), bad_proc.size() > 1 ? "s" : "",
+                     Ioss::Utils::format_id_list(bad_proc, ":"));
+          IOSS_ERROR(errmsg);
+        }
+      }
+    }
+
+    // Now check for warning (count == 0)
+    if (min_val <= 0) {
+      static std::array<std::string, 3> label{"nodes or elements", "elements", "element blocks"};
+      // Possible warning on one or more of the counts...
+      // Note that it is possible to have nodes on a processor with no elements,
+      // but not possible to have elements if no nodes...
+      for (size_t j = 0; j < 3; j++) {
+        std::vector<size_t> bad_proc;
+        for (size_t i = 0; i < proc_count; i++) {
+          if (all_counts[3 * i + j] == 0) {
+            bad_proc.push_back(i);
+          }
+        }
+
+        if (!bad_proc.empty()) {
+          fmt::print(IOSS_WARNING, "WARNING: No {} on processor{}:\n\t{}\n\n", label[j],
+                     bad_proc.size() > 1 ? "s" : "", Ioss::Utils::format_id_list(bad_proc, ":"));
+          if (j == 0) {
+            break;
+          }
+        }
+      }
+    }
+  }
+  else { // All other processors; need to abort if negative count
+    if (min_val < 0) {
+      std::ostringstream errmsg;
+      IOSS_ERROR(errmsg);
+    }
+  }
+}
 } // namespace Iopx

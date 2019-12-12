@@ -62,6 +62,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_Assert.hpp"
 
 int main(int argc, char *argv[]) {
   //
@@ -154,12 +155,12 @@ int main(int argc, char *argv[]) {
     //
     ilukGraph = Teuchos::rcp(new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap));
     int info = ilukGraph->ConstructFilledGraph();
-    assert( info == 0 );
+    TEUCHOS_ASSERT( info == 0 );
     ilukFactors = Teuchos::rcp(new Ifpack_CrsRiluk(*ilukGraph));
     int initerr = ilukFactors->InitValues(*A);
     if (initerr != 0) std::cout << "InitValues error = " << initerr;
     info = ilukFactors->Factor();
-    assert( info == 0 );
+    TEUCHOS_ASSERT( info == 0 );
     bool transA = false;
     double Cond_Est;
     ilukFactors->Condest(transA, Cond_Est);

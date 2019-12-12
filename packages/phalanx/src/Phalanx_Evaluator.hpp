@@ -174,7 +174,7 @@ namespace PHX {
     virtual void bindField(const PHX::FieldTag& ft, const PHX::any& f) = 0;
 
     /** @name Device DAG Methods
-        Methods required for optional Device DAG cpability. The Device DAG capability allows for the entire DAG to be evaluated on device from a single kernel launch with a Kokkos::parallel_for. This capability requires that evalautors implement a stripped down PHX::DeviceEvaluator inside the standard evalautor that is suitable for constructing and executing on all device architectures of interest.
+        Methods required for optional Device DAG cpability. The Device DAG capability allows for the entire DAG to be evaluated on device from a single kernel launch with a Kokkos::parallel_for. This capability requires that evaluators implement a stripped down PHX::DeviceEvaluator inside the standard evaluator that is suitable for constructing and executing on all device architectures of interest.
     */
     /// @{
     

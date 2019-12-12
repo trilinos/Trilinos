@@ -967,8 +967,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
     // Make a deep copy of the entire CrsMatrix.
     // originalNode can be null; only needed for type deduction.
-    Teuchos::RCP<Node> originalNode;
-    A2 = A->template clone<Node> (originalNode);
+    A2 = rcp(new MAT(*A,Teuchos::Copy));
 
     // // There isn't a really nice way to get a deep copy of an entire
     // // CrsMatrix, so we just read the file again.

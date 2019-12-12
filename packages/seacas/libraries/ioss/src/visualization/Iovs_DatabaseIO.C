@@ -116,11 +116,7 @@ namespace Iovs {
   {
 
     std::ostringstream errmsg;
-    if ((db_usage == Ioss::WRITE_RESTART) || (db_usage == Ioss::READ_RESTART)) {
-      errmsg << "ParaView catalyst database type cannot be used in a RESTART block.\n";
-      IOSS_ERROR(errmsg);
-    }
-    else if (db_usage == Ioss::WRITE_HEARTBEAT) {
+    if (db_usage == Ioss::WRITE_HEARTBEAT) {
       errmsg << "ParaView catalyst database type cannot be used in a HEARTBEAT block.\n";
       IOSS_ERROR(errmsg);
     }
@@ -128,7 +124,7 @@ namespace Iovs {
       errmsg << "ParaView catalyst database type cannot be used in a HISTORY block.\n";
       IOSS_ERROR(errmsg);
     }
-    else if (db_usage == Ioss::READ_MODEL) {
+    else if (db_usage == Ioss::READ_MODEL || db_usage == Ioss::READ_RESTART) {
       errmsg << "ParaView catalyst database type cannot be used to read a model.\n";
       IOSS_ERROR(errmsg);
     }
@@ -242,7 +238,7 @@ namespace Iovs {
   }
 
   ParaViewCatalystIossAdapterBase *
-  DatabaseIO::load_plugin_library(const std::string &plugin_name,
+    DatabaseIO::load_plugin_library(const std::string &/*plugin_name*/,
                                   const std::string &plugin_library_name)
   {
 
@@ -371,7 +367,7 @@ namespace Iovs {
     return true;
   }
 
-  bool DatabaseIO::end_state__(int state, double time)
+  bool DatabaseIO::end_state__(int /*state*/, double /*time*/)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -852,7 +848,7 @@ namespace Iovs {
 
   size_t handle_block_ids(const Ioss::EntityBlock *eb, Ioss::State db_state, Ioss::Map &entity_map,
                           void *ids, size_t int_byte_size, size_t num_to_get,
-                          /*int file_pointer,*/ int my_processor)
+                          /*int file_pointer,*/ int /*my_processor*/)
   {
     // std::cerr << "DatabaseIO::handle_block_ids executing\n";
     /*!
@@ -1015,7 +1011,7 @@ namespace Iovs {
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field,
-                                         void *data, size_t data_size) const
+                                         void */*data*/, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
     if (field.get_name() == "ids") {
@@ -1301,7 +1297,7 @@ namespace {
     else {
       std::ostringstream errmsg;
       errmsg << "Environment variable SIERRA_INSTALL_DIR not set.\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
+             << "\tUnable to find ParaView catalyst dynamic library.";
       IOSS_ERROR(errmsg);
       return;
     }
@@ -1313,7 +1309,7 @@ namespace {
     else {
       std::ostringstream errmsg;
       errmsg << "Environment variable SIERRA_SYSTEM not set.\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
+             << "\tUnable to find ParaView catalyst dynamic library.";
       IOSS_ERROR(errmsg);
       return;
     }
@@ -1325,7 +1321,7 @@ namespace {
     else {
       std::ostringstream errmsg;
       errmsg << "Environment variable SIERRA_VERSION not set.\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
+             << "\tUnable to find ParaView catalyst dynamic library.";
       IOSS_ERROR(errmsg);
       return;
     }

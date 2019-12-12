@@ -35,10 +35,12 @@
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR
 #include <cstddef>      // for nullptr
-#include <map>          // for _Rb_tree_iterator, etc
-#include <ostream>      // for operator<<, basic_ostream, etc
-#include <string>       // for char_traits, string, etc
-#include <utility>      // for pair
+#include <fmt/ostream.h>
+#include <map>     // for _Rb_tree_iterator, etc
+#include <ostream> // for basic_ostream, etc
+#include <set>
+#include <string>  // for char_traits, string, etc
+#include <utility> // for pair
 namespace {
 #if defined(IOSS_THREADSAFE)
   std::mutex m_;
@@ -94,20 +96,20 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
   if (iter == registry()->end()) {
     if (registry()->empty()) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: No database types have been registered.\n"
-             << "       Was Ioss::Init::Initializer() called?\n\n";
+      fmt::print(errmsg, "ERROR: No database types have been registered.\n"
+                         "       Was Ioss::Init::Initializer() called?\n\n");
       IOSS_ERROR(errmsg);
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "ERROR: The database type '" << type << "' is not supported.\n";
-      NameList db_types;
+      fmt::print(errmsg, "ERROR: The database type '{}' is not supported.\n", type);
+      Ioss::NameList db_types;
       describe__(registry(), &db_types);
-      errmsg << "\nSupported database types:\n\t";
+      fmt::print(errmsg, "\nSupported database types:\n\t");
       for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-        errmsg << *IF << "  ";
+        fmt::print(errmsg, "{} ", *IF);
       }
-      errmsg << "\n\n";
+      fmt::print(errmsg, "\n\n");
       IOSS_ERROR(errmsg);
     }
   }
@@ -130,6 +132,31 @@ int Ioss::IOFactory::describe(NameList *names)
 {
   IOSS_FUNC_ENTER(m_);
   return describe__(registry(), names);
+}
+
+void Ioss::IOFactory::show_configuration()
+{
+  NameList db_types;
+  describe(&db_types);
+  fmt::print(stderr, "\nSupported database types:\n\t");
+  for (const auto &db_type : db_types) {
+    fmt::print(stderr, "{} ", db_type);
+  }
+
+  fmt::print(stderr, "\n\nThird-Party Library Configuration Information:\n\n");
+
+  // Each database type may appear multiple times in the registry
+  // due to aliasing (i.e. exodus, genesis, exodusII, ...)
+  // Iterate registry and get only print config for a single
+  // instance...
+  std::set<IOFactory *> unique_facs;
+
+  for (const auto &db : *registry()) {
+    auto result = unique_facs.insert(db.second);
+    if (result.second) {
+      db.second->show_config();
+    }
+  }
 }
 
 Ioss::IOFactory::IOFactory(const std::string &type)

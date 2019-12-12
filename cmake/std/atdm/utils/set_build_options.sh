@@ -18,6 +18,7 @@
 #   ATDM_CONFIG_USE_CUDA
 #   ATDM_CONFIG_USE_PTHREADS
 #   ATDM_CONFIG_CUDA_RDC
+#   ATDM_CONFIG_FPIC
 #   ATDM_CONFIG_COMPLEX
 #   ATDM_CONFIG_SHARED_LIBS
 #   ATDM_CONFIG_PT_PACKAGES
@@ -53,7 +54,7 @@ fi
 ATDM_UTILS_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 export ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${ATDM_UTILS_SCRIPT_DIR}/..`
 
-echo "Setting compiler and build options for buld name '${ATDM_CONFIG_BUILD_NAME}'"
+echo "Setting compiler and build options for build-name '${ATDM_CONFIG_BUILD_NAME}'"
 
 # Set the defaults
 export ATDM_CONFIG_COMPILER=DEFAULT
@@ -67,8 +68,8 @@ export ATDM_CONFIG_USE_PTHREADS=OFF
 
 # Process system custom build logic
 export ATDM_CONFIG_CUSTOM_COMPILER_SET=0
-if [ -e ${ATDM_CONFIG_SCRIPT_DIR}/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/custom_builds.sh ]; then
-  source ${ATDM_CONFIG_SCRIPT_DIR}/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/custom_builds.sh
+if [ -e ${ATDM_CONFIG_SYSTEM_DIR}/custom_builds.sh ]; then
+  source ${ATDM_CONFIG_SYSTEM_DIR}/custom_builds.sh
 fi
 
 # NOTE: Currently only the specialization of ATDM_CONFIG_COMPILER from
@@ -93,8 +94,13 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0-gnu-7.4.0"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0_gnu-7.4.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0"* ]]; then
-  export ATDM_CONFIG_COMPILER=CUDA-10.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1-gnu-7.2.0"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1_gnu-7.2.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1"* ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-10.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10"* ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-10
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
@@ -111,8 +117,14 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17.0.1"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL-17.0.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-17.0.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.2
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.5"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-18.0.5
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-18.0.5
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-3.9.0"* ]]; then
@@ -222,8 +234,13 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"serial"* ]]; then
   export ATDM_CONFIG_NODE_TYPE=SERIAL
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"pthread"* ]]; then
-  export ATDM_CONFIG_USE_PTHREADS=ON
-  export ATDM_CONFIG_NODE_TYPE=THREAD
+  echo
+  echo "***"
+  echo "*** ERROR: The Kokkos Pthreads backend is no longer supported (see TRIL-272)!"
+  echo "*** Please use a different backend like 'serial', 'openmp', or 'cuda'."
+  echo "***"
+  echo
+  return
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"openmp"* ]]; then
   export ATDM_CONFIG_USE_OPENMP=ON
   export ATDM_CONFIG_NODE_TYPE=OPENMP
@@ -242,6 +259,13 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"_rdc"* ]]; then
   export ATDM_CONFIG_CUDA_RDC=ON
+fi
+
+# Use -fPIC or not
+export ATDM_CONFIG_FPIC=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"-fpic"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"_fpic"* ]]; then
+  export ATDM_CONFIG_FPIC=ON
 fi
 
 # Enable complex (double) data-types or not
@@ -266,3 +290,5 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"-pt" ]] || \
   [[ $ATDM_CONFIG_BUILD_NAME == *"_pt" ]] ; then
   export ATDM_CONFIG_PT_PACKAGES=ON
 fi
+
+export ATDM_CONFIG_FINISHED_SET_BUILD_OPTIONS=1

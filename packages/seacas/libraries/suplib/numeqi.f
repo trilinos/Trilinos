@@ -48,7 +48,7 @@ c Revision 1.1  90/08/09  13:39:40  gdsjaar
 c Initial revision
 c
 
-C   --*** NUMEQI *** (ETCLIB) Count number of occurances of integer in list
+C   --*** NUMEQI *** (ETCLIB) Count number of occurrences of integer in list
 C   --   Written by Amy Gilkey - revised 11/10/87
 C   --
 C   --NUMEQI returns the number of times the given integer occurs in a list

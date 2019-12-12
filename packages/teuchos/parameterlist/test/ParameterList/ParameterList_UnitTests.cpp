@@ -43,6 +43,7 @@
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_ParameterListModifier.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
 
@@ -67,6 +68,72 @@ public:
     std::string const& sublistName
     ) const
     {}
+};
+
+
+class SimpleModifier : public Teuchos::ParameterListModifier
+{
+public:
+
+  SimpleModifier() : Teuchos::ParameterListModifier("Simple Modifier"){}
+
+  void modify(Teuchos::ParameterList &pl, Teuchos::ParameterList &valid_pl) const
+  {
+    expandSublistsUsingBaseName("SubA", pl, valid_pl);
+  }
+
+  void reconcile(Teuchos::ParameterList &pl) const
+  {
+    // If A and B are less than 0.0 then throw an error
+    TEUCHOS_TEST_FOR_EXCEPTION(pl.get<double>("A") < 0.0 && pl.get<double>("B") < 0.0,
+        std::logic_error, "Parameters A and B can't both be less than 0.0");
+  }
+};
+
+
+class SimpleSubModifier : public Teuchos::ParameterListModifier {
+
+public:
+
+  SimpleSubModifier() : Teuchos::ParameterListModifier("Simple Sub Modifier"){}
+
+  void modify(Teuchos::ParameterList &pl, Teuchos::ParameterList &valid_pl) const
+  {
+    expandSublistsUsingBaseName("SubB", pl, valid_pl);
+  }
+  void reconcile(Teuchos::ParameterList &pl) const
+  {
+    // If E and F are less than 10 then throw an error
+    const int max_CD = 10;
+    TEUCHOS_TEST_FOR_EXCEPTION(pl.get<int>("C") > max_CD && pl.get<int>("D") > max_CD,
+        std::logic_error, "Parameters C and D can't both be greater than 10")
+  }
+};
+
+
+class ReconciliationModifier1 : public Teuchos::ParameterListModifier
+{
+public:
+  ReconciliationModifier1() : Teuchos::ParameterListModifier("Reconciliation Modifier 1"){}
+  void reconcile(Teuchos::ParameterList &pl) const
+  {
+    // This reconciliation routine needs the ReconciliationModifier2's reconcile method
+    // to be run first to create the "e" parameter.
+    Teuchos::ParameterList &subA = pl.sublist("A");
+    pl.set("b", subA.get<int>("e"));
+  }
+};
+
+
+class ReconciliationModifier2 : public Teuchos::ParameterListModifier
+{
+public:
+  ReconciliationModifier2() : Teuchos::ParameterListModifier("Reconciliation Modifier 2"){}
+  void reconcile(Teuchos::ParameterList &pl) const
+  {
+    // Add a convenience parameter
+    pl.set("e", pl.get<int>("c") + pl.get<int>("d"));
+  }
 };
 
 
@@ -783,6 +850,251 @@ TEUCHOS_UNIT_TEST( ParameterList, getIntegralValue_int )
   TEST_EQUALITY_CONST(trustRegionValue, 1);
 }
 
+
+TEUCHOS_UNIT_TEST( ParameterList, replaceScalarParameterWithArray ) {
+  ParameterList pl = ParameterList("Parameter List with Scalar Parameter");
+  const int a_val = 2, b_val = 3;
+  pl.set("A", a_val);
+  pl.set("B", b_val);
+  replaceParameterWithArray<int>("A", "A array", pl);
+  replaceParameterWithArray<int>("B", "B", pl);
+  ParameterList expected_pl = ParameterList("Parameter List with Array Parameter");
+  Array<int> a_array = tuple<int>(a_val), b_array = tuple<int>(b_val);
+  expected_pl.set("A array", a_array);
+  expected_pl.set("B", b_array);
+  TEST_ASSERT(haveSameValuesSorted(expected_pl, pl, true));
+  // Throw an error when trying to overwrite a parameter that already exists but
+  // doesn't have the same name.
+  pl.set("C", 1);
+  TEST_THROW(replaceParameterWithArray<int>("C", "B", pl), std::logic_error);
+  pl.print();
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, simpleModifierModifyReconcile )
+{
+  RCP<SimpleModifier> modifier = rcp(new SimpleModifier());
+  ParameterList valid_pl("My Valid Parameter List with a Modifier", modifier);
+  //valid_pl before modification
+  //  A: 1.0
+  //  B: 0.1
+  //  SubA:
+  //    C: 1
+  valid_pl.set("A", 1.0);
+  valid_pl.set("B", 0.1);
+  valid_pl.sublist("SubA").set("C", 1);
+  ParameterList pl("My Parameter List");
+  pl.set("A", 5.0);
+  pl.set("B", -0.1);
+  pl.sublist("SubA 1").set("C", 3);
+  pl.sublist("SubA 2").set("C", 4);
+  ParameterList expected_valid_pl(valid_pl);
+  expected_valid_pl.remove("SubA");
+  expected_valid_pl.sublist("SubA 1").set("C", 1);
+  expected_valid_pl.sublist("SubA 2").set("C", 1);
+  pl.modifyParameterList(valid_pl);
+  //valid_pl after modification
+  //  A: 1.0
+  //  B: 0.1
+  //  SubA 1:
+  //    C: 1
+  //  SubA 2:
+  //    C: 1
+  TEST_EQUALITY(valid_pl, expected_valid_pl);
+//  std::cout << haveSameValuesSorted(expected_valid_pl, valid_pl, true) << std::endl;
+  pl.validateParametersAndSetDefaults(valid_pl);
+  TEST_NOTHROW(pl.reconcileParameterList(valid_pl));
+  pl.set("A", -1.0);
+  TEST_THROW(pl.reconcileParameterList(valid_pl), std::logic_error);
+  // Test the copy constructor
+  ParameterList copy_valid_pl(valid_pl);
+  TEST_EQUALITY(valid_pl, copy_valid_pl);
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, nestedSublistExpansion ) {
+  Teuchos::RCP<SimpleModifier> modifier = Teuchos::rcp(new SimpleModifier());
+  Teuchos::RCP<SimpleSubModifier> sub_modifier = Teuchos::rcp(new SimpleSubModifier());
+  // The unmodified (template-like) validation parameter list
+  ParameterList valid_pl("valid_pl", modifier);
+  valid_pl.set("A", 1.0);
+  valid_pl.set("B", 1.0);
+  valid_pl.sublist("SubA").setModifier(sub_modifier);
+  valid_pl.sublist("SubA").set("C", 3);
+  valid_pl.sublist("SubA").set("D", 4);
+  valid_pl.sublist("SubA").sublist("SubB").set("E", 10);
+  valid_pl.sublist("SubA").sublist("SubB").set("F", 11);
+  // The user's input parameter list
+  ParameterList pl("pl");
+  pl.set("A", 1.0);
+  pl.set("B", 2.0);
+  pl.sublist("SubA 1").set("C", 3);
+  pl.sublist("SubA 1").set("D", 4);
+  pl.sublist("SubA 1").sublist("SubB 1").set("E", 51);
+  pl.sublist("SubA 1").sublist("SubB 1").set("F", 61);
+  pl.sublist("SubA 1").sublist("SubB 2").set("E", 52);
+  pl.sublist("SubA 1").sublist("SubB 2").set("F", 62);
+  pl.sublist("SubA 2").set("C", 3);
+  pl.sublist("SubA 2").set("D", 4);
+  pl.sublist("SubA 2").sublist("SubB 3").set("E", 53);
+  pl.sublist("SubA 2").sublist("SubB 3").set("F", 63);
+  // The expanded valid parameter list after modification
+  ParameterList expected_valid_pl("valid_pl_expanded");
+  expected_valid_pl.set("A", 1.0);
+  expected_valid_pl.set("B", 1.0);
+  expected_valid_pl.sublist("SubA 1").set("C", 3);
+  expected_valid_pl.sublist("SubA 1").set("D", 4);
+  expected_valid_pl.sublist("SubA 1").sublist("SubB 1").set("E", 10);
+  expected_valid_pl.sublist("SubA 1").sublist("SubB 1").set("F", 11);
+  expected_valid_pl.sublist("SubA 1").sublist("SubB 2").set("E", 10);
+  expected_valid_pl.sublist("SubA 1").sublist("SubB 2").set("F", 11);
+  expected_valid_pl.sublist("SubA 2").set("C", 3);
+  expected_valid_pl.sublist("SubA 2").set("D", 4);
+  expected_valid_pl.sublist("SubA 2").sublist("SubB 3").set("E", 10);
+  expected_valid_pl.sublist("SubA 2").sublist("SubB 3").set("F", 11);
+  // Expand the validation parameter list based on the user's input parameter list
+  pl.modifyParameterList(valid_pl);
+  // Modified parameter lists aren't equal because they don't have the same modifiers
+  TEST_ASSERT(valid_pl != expected_valid_pl);
+  // Test that they are the same except for the modifiers
+  TEST_ASSERT(haveSameValuesSorted(expected_valid_pl, valid_pl, true));
+  // Check the equality of the modifiers
+  expected_valid_pl.setModifier(modifier);
+  expected_valid_pl.sublist("SubA 1", true).setModifier(sub_modifier);
+  expected_valid_pl.sublist("SubA 2", true).setModifier(sub_modifier);
+  TEST_ASSERT(haveSameModifiers(valid_pl, expected_valid_pl));
+  // Now test the recursive reconciliation
+  TEST_NOTHROW(pl.reconcileParameterList(valid_pl));
+  pl.sublist("SubA 1").set("C", 11);
+  pl.sublist("SubA 1").set("D", 11);
+  TEST_THROW(pl.reconcileParameterList(valid_pl), std::logic_error);
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, disableRecursion ) {
+  Teuchos::RCP<SimpleModifier> modifier = Teuchos::rcp(new SimpleModifier());
+  Teuchos::RCP<SimpleSubModifier> sub_modifier = Teuchos::rcp(new SimpleSubModifier());
+  // The unmodified (template-like) validation parameter list
+  ParameterList valid_pl("valid_pl", modifier);
+  valid_pl.set("A", 1.0);
+  valid_pl.set("B", 1.0);
+  valid_pl.sublist("SubA").setModifier(sub_modifier);
+  valid_pl.sublist("SubA").set("C", 3.0);
+  valid_pl.sublist("SubA").set("D", 4);
+  valid_pl.sublist("SubA").sublist("SubB").set("E", 10);
+  valid_pl.sublist("SubA").sublist("SubB").set("F", 11);
+  // The user's input parameter list
+  ParameterList pl("pl");
+  pl.set("A", 1.0);
+  pl.set("B", 2.0);
+  pl.sublist("SubA 1").set("C", 3);
+  pl.sublist("SubA 1").set("D", 4);
+  pl.sublist("SubA 1").sublist("SubB").set("E", 53);
+  pl.sublist("SubA 1").sublist("SubB").set("E", 63);
+  // The expanded valid parameter list after modification
+  ParameterList expected_valid_pl("valid_pl");
+  expected_valid_pl.set("A", 1.0);
+  expected_valid_pl.set("B", 1.0);
+  expected_valid_pl.sublist("SubA 1").set("C", 3.0);
+  expected_valid_pl.sublist("SubA 1").set("D", 4);
+  expected_valid_pl.sublist("SubA 1").sublist("SubB").set("E", 10);
+  expected_valid_pl.sublist("SubA 1").sublist("SubB").set("F", 11);
+  // Make a copy of the user's input parameter list before it is validated
+  ParameterList copy_pl(pl);
+  // The float validator will cast integers in `pl` to floats
+  RCP<AnyNumberParameterEntryValidator> float_validator = rcp(
+    new AnyNumberParameterEntryValidator(AnyNumberParameterEntryValidator::PREFER_DOUBLE,
+        AnyNumberParameterEntryValidator::AcceptedTypes(false).allowInt(true).allowDouble(true)));
+  valid_pl.sublist("SubA").getEntry("C").setValidator(float_validator);
+  // Don't modify `SubA`
+  valid_pl.sublist("SubA").disableRecursiveModification();
+  pl.modifyParameterList(valid_pl);
+  TEST_ASSERT(haveSameValuesSorted(expected_valid_pl, valid_pl, true));
+  // Don't validate `SubA 1`
+  valid_pl.sublist("SubA 1").disableRecursiveValidation();
+  pl.validateParametersAndSetDefaults(valid_pl);
+  // If we were to validate `SubA 1` then parameter C would turn into a float and the following test would fail
+  TEST_ASSERT(haveSameValuesSorted(pl, copy_pl, true));
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, recursiveValidation ) {
+  ParameterList valid_pl("valid_pl");
+  valid_pl.set("A", 1);
+  valid_pl.sublist("SubA").set("B", 1);
+  ParameterList pl("pl");
+  pl.set("A", 1.0);
+  pl.sublist("SubA").set("B", 2);
+  ParameterList validated_pl("valid_pl");
+  validated_pl.set("A", 1.0);
+  validated_pl.sublist("SubA").set("B", 2.0);
+  // The float validator will cast integers in `pl` to floats
+  RCP<AnyNumberParameterEntryValidator> float_validator = rcp(
+    new AnyNumberParameterEntryValidator(AnyNumberParameterEntryValidator::PREFER_DOUBLE,
+        AnyNumberParameterEntryValidator::AcceptedTypes(false).allowInt(true).allowDouble(true)));
+  valid_pl.getEntry("A").setValidator(float_validator);
+  valid_pl.sublist("SubA").getEntry("B").setValidator(float_validator);
+  pl.validateParametersAndSetDefaults(valid_pl);
+  // All of the integers in `pl` should be casted to floats in `validated_pl`
+  TEST_ASSERT(haveSameValuesSorted(validated_pl, pl, true));
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, recursiveReconciliation ) {
+  Teuchos::RCP<ReconciliationModifier1> modifier1 = Teuchos::rcp(new ReconciliationModifier1());
+  Teuchos::RCP<ReconciliationModifier2> modifier2 = Teuchos::rcp(new ReconciliationModifier2());
+  ParameterList valid_pl("valid_pl");
+  valid_pl.set("a", 1);
+  valid_pl.setModifier(modifier1);
+  valid_pl.sublist("A").setModifier(modifier2);
+  valid_pl.sublist("A").set("c", 1);
+  valid_pl.sublist("A").set("d", 1);
+  ParameterList pl("pl");
+  pl.set("a", 1);
+  pl.sublist("A").set("c", 2);
+  pl.sublist("A").set("d", 3);
+  ParameterList reconciled_pl("reconciled_pl");
+  reconciled_pl.set("a", 1);
+  reconciled_pl.set("b", 5);
+  reconciled_pl.sublist("A").set("c", 2);
+  reconciled_pl.sublist("A").set("d", 3);
+  reconciled_pl.sublist("A").set("e", 5);
+  pl.reconcileParameterList(valid_pl);
+  TEST_ASSERT(haveSameValuesSorted(reconciled_pl, pl, true));
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, attachValidatorRecursively ) {
+  ParameterList valid_pl("valid_pl");
+  valid_pl.set("a", 0.);
+  valid_pl.sublist("A").set("b", 0.);
+  valid_pl.sublist("A").set("c", 0.);
+  valid_pl.sublist("A").sublist("AA").set("d", 0.);
+  ParameterList pl("pl");
+  pl.set("a", 1);
+  pl.sublist("A").set("b", 2);
+  pl.sublist("A").set("c", 3);
+  pl.sublist("A").sublist("AA").set("d", 4);
+  ParameterList validated_pl("validated_pl");
+  validated_pl.set("a", 1.);
+  validated_pl.sublist("A").set("b", 2.);
+  validated_pl.sublist("A").set("c", 3.);
+  validated_pl.sublist("A").sublist("AA").set("d", 4.);
+  // The float validator will cast integers in `pl` to floats
+  RCP<AnyNumberParameterEntryValidator> float_validator = rcp(
+    new AnyNumberParameterEntryValidator(AnyNumberParameterEntryValidator::PREFER_DOUBLE,
+        AnyNumberParameterEntryValidator::AcceptedTypes(false).allowInt(true).allowDouble(true)));
+  valid_pl.recursivelySetValidator<double>(float_validator, 1);
+  // This should fail since we only set the float validator on the top level of `valid_pl`
+  TEST_THROW(pl.validateParametersAndSetDefaults(valid_pl), std::logic_error);
+  // Now attach the validator to every double
+  valid_pl.recursivelySetValidator<double>(float_validator);
+  pl.validateParametersAndSetDefaults(valid_pl);
+  TEST_ASSERT(haveSameValuesSorted(validated_pl, pl, true));
+}
+
+// TODO: test printing of modifiers
+// valid_pl.print(std::cout, ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true));
 
 } // namespace Teuchos
 

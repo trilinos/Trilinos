@@ -729,7 +729,7 @@ RCP<StringValidator> DummyObjectGetter<StringValidator>::getDummyObject(){
 } // namespace Teuchos
 
 
-// Nonmmeber helper functions
+// Nonmember helper functions
 
 Teuchos::RCP<Teuchos::BoolParameterEntryValidator>
 Teuchos::boolParameterEntryValidator()

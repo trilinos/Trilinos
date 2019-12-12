@@ -136,20 +136,20 @@ namespace panzer_stk {
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
 
-    Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<panzer::DOFManager<int,panzer::Ordinal64> > dofManager
-          = Teuchos::rcp(new panzer::DOFManager<int,panzer::Ordinal64>(connMngr,MPI_COMM_WORLD));
+    Teuchos::RCP<panzer::DOFManager> dofManager
+          = Teuchos::rcp(new panzer::DOFManager(connMngr,MPI_COMM_WORLD));
     dofManager->addField("VAR",fp);
     dofManager->buildGlobalUnknowns();
 
-    std::vector<panzer::Ordinal64> owned;
+    std::vector<panzer::GlobalOrdinal> owned;
     dofManager->getOwnedIndices(owned);
 
     std::size_t unkCount = owned.size();
     std::size_t nodeCount = mesh->getEntityCounts(mesh->getNodeRank());
-    out << "Unknown Count = " << unkCount 
+    out << "Unknown Count = " << unkCount
         << ", Node Count = "  << nodeCount << std::endl;
 
     TEST_ASSERT(unkCount < nodeCount);

@@ -66,7 +66,6 @@ static int ulpsDistance(float a, float b)
   int distance = ia - ib;
   if (distance < 0)
     distance = -distance;
-  fprintf(stderr, "%f %f %d\n", a, b, distance);
   return distance;
 }
 static int approx_equal(float f1, float f2) { return ulpsDistance(f1, f2) <= 2; }

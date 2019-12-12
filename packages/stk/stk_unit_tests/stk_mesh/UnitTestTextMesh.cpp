@@ -246,6 +246,18 @@ TEST_F(TestTextMesh2d, singleQuad)
     }
 }
 
+TEST_F(TestTextMesh2d, twoSprings)
+{
+    std::string meshDesc = "0,1,SPRING_2,1,2\n"
+                           "0,2,SPRING_2,2,3";
+    if (get_bulk().parallel_size() == 1)
+    {
+        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        verify_single_element(get_bulk(), 1u, stk::topology::SPRING_2, stk::mesh::EntityIdVector{1,2});
+        verify_single_element(get_bulk(), 2u, stk::topology::SPRING_2, stk::mesh::EntityIdVector{2,3});
+    }
+}
+
 TEST_F(TestTextMesh2d, threeQuadsWithCoordinates)
 {
     std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4\n\

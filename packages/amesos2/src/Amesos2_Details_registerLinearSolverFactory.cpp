@@ -48,12 +48,10 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Operator.hpp"
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 #  include "Epetra_MultiVector.h"
 #  include "Epetra_Operator.h"
 #endif // HAVE_AMESOS2_EPETRA
-#endif
 
 #include "TpetraCore_ETIHelperMacros.h"
 
@@ -90,12 +88,10 @@ registerLinearSolverFactory ()
 
   // If Epetra is enabled in Amesos2, also register Amesos2's
   // LinearSolverFactory for Epetra objects.
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
   ::Amesos2::Details::LinearSolverFactory<Epetra_MultiVector,
     Epetra_Operator, double>::registerLinearSolverFactory ();
 #endif // HAVE_AMESOS2_EPETRA
-#endif // HAVE_TPETRA_INST_INT_INT
 }
 
 } // namespace Details

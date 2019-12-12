@@ -60,6 +60,7 @@
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
 #include "Panzer_Constant.hpp"
+#include "Panzer_ZeroContributedField.hpp"
 #include "user_app_Convection.hpp"
 
 // ***********************************************************************
@@ -128,6 +129,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using panzer::IntegrationRule;
   using panzer::Integrator_BasisTimesScalar;
   using panzer::Traits;
+  using panzer::ZeroContributedField;
   using PHX::Evaluator;
   using std::string;
   using std::vector;
@@ -143,6 +145,16 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   RCP<IntegrationRule> ir = this->getIntRuleForDOF(dof_names[0]); 
   RCP<BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_names[0]); 
+
+  // Initialize the residual to zero.
+  for (int i(0); i < dimension_; ++i)
+  {
+    string fieldName("RESIDUAL_" + dof_names[i]);
+    auto layout = ir->dl_scalar;
+    RCP<Evaluator<Traits>> op =
+      rcp(new ZeroContributedField<EvalT, Traits>(fieldName, *layout));
+    this->template registerEvaluator<EvalT>(fm, op);
+  } // end loop over dimension_
 
   // Transient Operator
   if (this->buildTransientSupport())
@@ -169,7 +181,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
            valName("NODE_VELOCITY_" + coord_names[i]);
     double multiplier(-1);
     RCP<Evaluator<Traits>> op = rcp(new
-      Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
+      Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::CONTRIBUTES,
       resName, valName, *basis, *ir, multiplier));
     this->template registerEvaluator<EvalT>(fm, op);
   }

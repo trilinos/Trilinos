@@ -53,15 +53,16 @@ void test_sincos_fsa(const std::string& method_name,
   RKMethods.push_back("RK Explicit 3 Stage 3rd order");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order TVD");
   RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
-  RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
+  RKMethods.push_back("RK Explicit Midpoint");
   RKMethods.push_back("RK Explicit Trapezoidal");
+  RKMethods.push_back("Heuns Method");
   RKMethods.push_back("General ERK");
 
   // Check that method_name is valid
   if (method_name != "") {
     auto it = std::find(RKMethods.begin(), RKMethods.end(), method_name);
     TEUCHOS_TEST_FOR_EXCEPTION(it == RKMethods.end(), std::logic_error,
-                               "Invalid RK method name " << method_name);
+      "Invalid RK method name '" << method_name << "'");
   }
 
   std::vector<double> RKMethodErrors;
@@ -76,6 +77,7 @@ void test_sincos_fsa(const std::string& method_name,
     RKMethodErrors.push_back(0.000261896);
     RKMethodErrors.push_back(0.00934377);
     RKMethodErrors.push_back(0.00934377);
+    RKMethodErrors.push_back(0.00934377);
     RKMethodErrors.push_back(6.88637e-06);
   }
   else {
@@ -88,6 +90,7 @@ void test_sincos_fsa(const std::string& method_name,
     RKMethodErrors.push_back(9.64964e-05);
     RKMethodErrors.push_back(0.000144616);
     RKMethodErrors.push_back(0.00826159);
+    RKMethodErrors.push_back(0.00710492);
     RKMethodErrors.push_back(0.00710492);
     RKMethodErrors.push_back(2.1915e-05);
   }

@@ -99,16 +99,6 @@ namespace Belos {
       return Teuchos::rcp (new Belos::OutputManager<Scalar> (selectVerbosity (verbose, debug)));
     }
 
-    /// \fn getNode
-    /// \brief Return an RCP to a Kokkos Node
-    ///
-    template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode() {
-      Teuchos::ParameterList defaultParams;
-      return Teuchos::rcp (new NodeType (defaultParams));
-    }
-
     /// \fn loadSparseMatrix
     /// \brief Load a sparse matrix from a Harwell-Boeing file
     ///

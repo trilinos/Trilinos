@@ -244,6 +244,19 @@ int Behavior::TAFC_OptimizationCoreCount ()
     return savedval;
 }
 
+size_t Behavior::verbosePrintCountThreshold () 
+{
+    // only call getenv once, save the value.
+    static int savedval=-1;
+    if(savedval!=-1) return static_cast<size_t>(savedval);
+    const char* varVal = std::getenv ("TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD");
+    if (varVal == nullptr) {
+        savedval = 200; 
+        return static_cast<size_t>(savedval); 
+    }
+    savedval = std::stoi(std::string(varVal));
+    return static_cast<size_t>(savedval);
+}
 
 bool Behavior::debug (const char name[])
 {

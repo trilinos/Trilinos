@@ -102,9 +102,9 @@ namespace MueLu {
     go away, while others should be moved to Xpetra.
   */
   template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class UtilitiesBase {
   public:
 #undef MUELU_UTILITIESBASE_SHORT
@@ -963,7 +963,7 @@ namespace MueLu {
       // Generate the new submaps
       std::vector<RCP<const Map> > subMaps(numSubMaps);
       for(size_t i=0; i<numSubMaps; i++) {	       
-	subMaps[i] = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(lib,Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),elementsInSubMap[i](),targetMap->getIndexBase(),targetMap->getComm(),targetMap->getNode());	
+	subMaps[i] = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(lib,Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),elementsInSubMap[i](),targetMap->getIndexBase(),targetMap->getComm());	
       }		
       
       // Build the BlockedMap

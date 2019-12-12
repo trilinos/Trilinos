@@ -847,6 +847,12 @@ iallreduce (const InputViewType& sendbuf,
   return impl_type::iallreduce (sendbuf, recvbuf, op, comm);
 }
 
+std::shared_ptr<CommRequest>
+iallreduce (const int localValue,
+            int& globalValue,
+            const ::Teuchos::EReductionType op,
+            const ::Teuchos::Comm<int>& comm);
+
 } // namespace Details
 } // namespace Tpetra
 

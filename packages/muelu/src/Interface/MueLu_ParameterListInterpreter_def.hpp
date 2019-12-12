@@ -1,4 +1,3 @@
-
 //
 // ***********************************************************************
 //
@@ -84,6 +83,7 @@
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_ScaledNullspaceFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
@@ -212,7 +212,7 @@ namespace MueLu {
     if      (paramList  .isParameter(paramName)) listWrite.set(paramName, paramList  .get<paramType>(paramName)); \
     else if (defaultList.isParameter(paramName)) listWrite.set(paramName, defaultList.get<paramType>(paramName)); \
   } \
-  catch(Teuchos::Exceptions::InvalidParameterType) { \
+  catch(Teuchos::Exceptions::InvalidParameterType&) { \
     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType, \
                                         "Error: parameter \"" << paramName << "\" must be of type " << Teuchos::TypeNameTraits<paramType>::name()); \
   } \
@@ -414,6 +414,9 @@ namespace MueLu {
     // Detect if we use implicit transpose
     changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(paramList, "transpose: use implicit", bool, this->implicitTranspose_);
 
+    if (paramList.isSublist("matvec params"))
+      this->matvecParams_ = Teuchos::parameterList(paramList.sublist("matvec params"));
+
     // Create default manager
     // FIXME: should it be here, or higher up
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -492,6 +495,7 @@ namespace MueLu {
     }
 
     VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
+
   }
 
 
@@ -849,7 +853,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_CoarseSolvers(ParameterList& paramList, const ParameterList& defaultList,
-                                     FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
+                                     FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     // FIXME: should custom coarse solver check default list too?
     bool isCustomCoarseSolver =
@@ -961,6 +965,7 @@ namespace MueLu {
       if(useKokkos_) {
         //if not using kokkos refactor Uncoupled, there is no algorithm option (always Serial)
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase 1 algorithm",  std::string, aggParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",  bool, aggParams);
       }
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 1",            bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
@@ -1033,7 +1038,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_RAP(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                           int levelID, std::vector<keep_pair>& keeps) const
+                           int /* levelID */, std::vector<keep_pair>& keeps) const
   {
     if (paramList.isParameter("A") && !paramList.get<RCP<Matrix> >("A").is_null()) {
       // We have user matrix A
@@ -1054,10 +1059,13 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift diagonal M", bool, RAPparams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift low storage", bool, RAPparams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift array", Teuchos::Array<double>, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: cfl array", Teuchos::Array<double>, RAPparams);
 
     } else {
       RAP = rcp(new RAPFactory());
     }
+
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: relative diagonal floor", Teuchos::Array<double>, RAPparams);
 
     if (paramList.isSublist("matrixmatrix: kernel params"))
       RAPparams.sublist("matrixmatrix: kernel params", false) = paramList.sublist("matrixmatrix: kernel params");
@@ -1065,7 +1073,14 @@ namespace MueLu {
       RAPparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: triple product", bool, RAPparams);
+
+    // if "rap: triple product" has not been set and algorithm is "unsmoothed" switch triple product on
+    if (!paramList.isParameter("rap: triple product") &&
+        paramList.isType<std::string>("multigrid algorithm") &&
+        paramList.get<std::string>("multigrid algorithm") == "unsmoothed")
+      paramList.set("rap: triple product", true);
+    else
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: triple product", bool, RAPparams);
 
     try {
       if (paramList.isParameter("aggregation: allow empty prolongator columns")) {
@@ -1077,7 +1092,7 @@ namespace MueLu {
         RAPparams.set("RepairMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
       }
 
-    } catch (Teuchos::Exceptions::InvalidParameterType) {
+    } catch (Teuchos::Exceptions::InvalidParameterType&) {
       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
           "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
     }
@@ -1137,12 +1152,12 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // ======================================= Restriction =================================================
+  // ======================================= Coordinates =================================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Coordinates(ParameterList& paramList, const ParameterList& defaultList,
-                                   FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
+  UpdateFactoryManager_Coordinates(ParameterList& paramList, const ParameterList& /* defaultList */,
+                                   FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     bool have_userCO = false;
     if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null())
@@ -1170,12 +1185,12 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // ======================================= Restriction =================================================
+  // =========================================== Restriction =============================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList,
-                                   FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
+  UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList , FactoryManager& manager,
+                                 int levelID, std::vector<keep_pair>& /* keeps */) const
   {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     bool have_userR = false;
@@ -1183,6 +1198,7 @@ namespace MueLu {
       have_userR = true;
 
     // === Restriction ===
+    RCP<Factory> R;
     if (!this->implicitTranspose_) {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
 
@@ -1204,7 +1220,6 @@ namespace MueLu {
         if (have_userR) {
           manager.SetFactory("R", NoFactory::getRCP());
         } else {
-          RCP<Factory> R;
           if (isSymmetric)  R = rcp(new TransPFactory());
           else              R = rcp(new GenericRFactory());
 
@@ -1212,9 +1227,24 @@ namespace MueLu {
           manager.SetFactory("R", R);
         }
 
-      } else {
-        manager.SetFactory("R", Teuchos::null);
-      }
+    } else {
+      manager.SetFactory("R", Teuchos::null);
+    }
+
+    // === Restriction: Nullspace Scaling ===
+    if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
+      RCP<TentativePFactory> tentPFactory = rcp(new TentativePFactory());
+      Teuchos::ParameterList tentPlist;  
+      tentPlist.set("Nullspace name","Scaled Nullspace");
+      tentPFactory->SetParameterList(tentPlist);
+      tentPFactory->SetFactory("Aggregates",manager.GetFactory("Aggregates"));
+      tentPFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
+
+      if(R.is_null())   R = rcp(new TransPFactory());
+      R->SetFactory("P",tentPFactory);
+    }
+
+ 
   }
 
   // =====================================================================================================
@@ -1425,8 +1455,8 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Nullspace(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                 int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const
+  UpdateFactoryManager_Nullspace(ParameterList& paramList, const ParameterList& /* defaultList */, FactoryManager& manager,
+                                 int /* levelID */, std::vector<keep_pair>& /* keeps */, RCP<Factory> & nullSpaceFactory) const
   {
     // Nullspace
     MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
@@ -1440,6 +1470,14 @@ namespace MueLu {
       manager.SetFactory("Nullspace", nullSpace);
     }
     nullSpaceFactory = nullSpace;
+
+    if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
+      using SNF = ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+      RCP<SNF> scaledNSfactory = rcp(new SNF());
+      scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
+      manager.SetFactory("Scaled Nullspace",scaledNSfactory);
+    }
+
   }
 
   // =====================================================================================================
@@ -1448,7 +1486,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_SemiCoarsen(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                   int levelID, std::vector<keep_pair>& keeps) const
+                                   int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     // === Semi-coarsening ===
     RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
@@ -1559,7 +1597,7 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_SA(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  UpdateFactoryManager_SA(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
     // Smoothed aggregation
     MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
     ParameterList Pparams;
@@ -1610,7 +1648,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_Emin(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                            int levelID, std::vector<keep_pair>& keeps) const
+                            int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
@@ -1651,8 +1689,8 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_PG(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                          int levelID, std::vector<keep_pair>& keeps) const
+  UpdateFactoryManager_PG(ParameterList& /* paramList */, const ParameterList& /* defaultList */, FactoryManager& manager,
+                          int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(this->implicitTranspose_, Exceptions::RuntimeError,
         "Implicit transpose not supported with Petrov-Galerkin smoothed transfer operators: Set \"transpose: use implicit\" to false!\n" \
@@ -1671,14 +1709,17 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_Matlab(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                              int levelID, std::vector<keep_pair>& keeps) const {
+  UpdateFactoryManager_Matlab(ParameterList& paramList, const ParameterList& /* defaultList */, FactoryManager& manager,
+                              int /* levelID */, std::vector<keep_pair>& /* keeps */) const {
 #ifdef HAVE_MUELU_MATLAB
     ParameterList Pparams = paramList.sublist("transfer: params");
     auto P = rcp(new TwoLevelMatlabFactory());
     P->SetParameterList(Pparams);
     P->SetFactory("P", manager.GetFactory("Ptent"));
     manager.SetFactory("P", P);
+#else
+    (void)paramList;
+    (void)manager;
 #endif
   }
 
@@ -1836,6 +1877,10 @@ namespace MueLu {
         this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
         hieraList.remove("transpose: use implicit");
       }
+
+      if (hieraList.isSublist("matvec params"))
+        this->matvecParams_ = Teuchos::parameterList(hieraList.sublist("matvec params"));
+
 
       if (hieraList.isParameter("coarse grid correction scaling factor")) {
         this->scalingFactor_ = hieraList.get<double>("coarse grid correction scaling factor");

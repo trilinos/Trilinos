@@ -120,7 +120,7 @@ namespace {
 
       // create CrsGraph object
       RCP<Tpetra::CrsGraph<LO, GO, NO> > graph =
-             rcp (new Tpetra::CrsGraph<LO, GO, NO> (map, 3, Tpetra::DynamicProfile));
+             rcp (new Tpetra::CrsGraph<LO, GO, NO> (map, 3, Tpetra::StaticProfile));
 
       // Create a simple tridiagonal source graph.
       Array<GO> entry(1);

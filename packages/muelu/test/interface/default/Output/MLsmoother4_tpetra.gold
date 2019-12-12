@@ -58,6 +58,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -75,6 +76,7 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -141,6 +143,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -158,6 +161,7 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -224,6 +228,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -241,6 +246,7 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -307,6 +313,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -324,6 +331,7 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
 matrixmatrix: kernel params -> 
@@ -336,6 +344,8 @@ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 smoother -> 
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------

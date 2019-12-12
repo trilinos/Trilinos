@@ -41,6 +41,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Super::name = "super";
   class St_Super : public ElementVariableType
   {
   public:

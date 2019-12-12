@@ -32,6 +32,7 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_Utils.h>
 #include <cstddef>
 #include <string>
 #include <sys/select.h>
@@ -90,6 +91,9 @@ namespace Ioss {
 
   int FileInfo::parallel_exists(MPI_Comm communicator, std::string &where) const
   {
+    PAR_UNUSED(communicator);
+    PAR_UNUSED(where);
+
 #ifdef SEACAS_HAVE_MPI
     int my_rank = 0;
     int my_size = 1;
@@ -108,19 +112,14 @@ namespace Ioss {
     MPI_Allgather(&my_val, 1, MPI_INT, &result[0], 1, MPI_INT, communicator);
 
     int sum = std::accumulate(result.begin(), result.end(), 0);
-    if (my_rank == 0 && sum > 0 && sum < my_size) {
-      bool               first = true;
-      std::ostringstream errmsg;
+    if (my_rank == 0 && sum < my_size) {
+      std::vector<size_t> procs;
       for (int i = 0; i < my_size; i++) {
         if (result[i] == 0) {
-          if (!first) {
-            errmsg << ", ";
-          }
-          errmsg << i;
-          first = false;
+          procs.push_back(i);
         }
       }
-      where = errmsg.str();
+      where = Ioss::Utils::format_id_list(procs, "--");
     }
     return sum;
 #endif

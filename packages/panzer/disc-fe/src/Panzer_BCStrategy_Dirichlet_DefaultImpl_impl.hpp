@@ -369,7 +369,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       this->template registerEvaluator<EvalT>(fm, op);
     }
     // This assumes that dofs on faces are all named "<dof>_face"
-    else if(basis->isVectorBasis()&&(dofName.compare(dofName.substr(0,dofName.find_last_of("_"))+"_face")==0)) {
+    else if(basis->isVectorBasis()&&basis->supportsDiv()) {
       RCP<const panzer::PointRule> pointRule = rcp(new panzer::PointRule(basis->name()+":BasisPoints",basis->cardinality(),cellData));
 
       ParameterList p;

@@ -89,7 +89,11 @@ int main(int argc, char *argv[]) {
        case 0: inputFile="input_Analysis_Dakota.xml"; break;
        case 1: inputFile="input_Analysis_ROL.xml"; break;
        case 2: inputFile="input_Analysis_ROL_AdjointSensitivities.xml"; break;
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
        case 3: inputFile="input_Analysis_OptiPack.xml"; break;
+#else
+       case 3: continue;
+#endif
        case 4: inputFile="input_Analysis_MOOCHO.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }

@@ -35,14 +35,15 @@
 #include "Tolerance.h"          // for Tolerance, etc
 #include "exo_entity.h"         // for Exo_Entity, EXOTYPE
 #include "exodusII.h"
+#include "fmt/color.h"
+#include "fmt/ostream.h"
 #include "smart_assert.h" // for SMART_ASSERT
 #include "stringx.h"      // for find_string, etc
 #include "util.h"
-#include <cstddef>  // for size_t
-#include <cstdio>   // for sprintf, nullptr
-#include <iostream> // for operator<<, basic_ostream, etc
-#include <string>   // for string, char_traits, etc
-#include <vector>   // for vector
+#include <cstddef> // for size_t
+#include <cstdio>  // for nullptr
+#include <string>  // for string, char_traits, etc
+#include <vector>  // for vector
 template <typename INT> class ExoII_Read;
 
 namespace {
@@ -62,10 +63,6 @@ namespace {
   void output_diff_names(const char *type, const std::vector<std::string> &names);
   void output_compare_names(const char *type, const std::vector<std::string> &names,
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2);
-} // namespace
-
-namespace {
-  char buf[256];
 } // namespace
 
 template <typename INT>
@@ -142,20 +139,18 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
   if (!interface.quiet_flag) {
     if (out_file_id >= 0) { // The files are to be differenced .. just list names.
       if (interface.coord_tol.type != IGNORE) {
-        sprintf(buf, "Coordinates:  tol: %8g %s, floor: %8g", interface.coord_tol.value,
-                interface.coord_tol.typestr(), interface.coord_tol.floor);
-        std::cout << buf << '\n';
+        fmt::print("Coordinates:  tol: {:8g} {}, floor: {:8g}\n", interface.coord_tol.value,
+                   interface.coord_tol.typestr(), interface.coord_tol.floor);
       }
       else {
-        std::cout << "Locations of nodes will not be considered.\n";
+        fmt::print("Locations of nodes will not be considered.\n");
       }
       if (interface.time_tol.type != IGNORE) {
-        sprintf(buf, "Time step values:  tol: %8g %s, floor: %8g", interface.time_tol.value,
-                interface.time_tol.typestr(), interface.time_tol.floor);
-        std::cout << buf << '\n';
+        fmt::print("Time step values:  tol: {:8g} {}, floor: {:8g}\n", interface.time_tol.value,
+                   interface.time_tol.typestr(), interface.time_tol.floor);
       }
       else {
-        std::cout << "Time step time values will not be differenced.\n";
+        fmt::print("Time step time values will not be differenced.\n");
       }
       output_diff_names("Global", interface.glob_var_names);
       output_diff_names("Nodal", interface.node_var_names);
@@ -167,30 +162,29 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
     else { // The files are to be compared .. echo additional info.
       if (Tolerance::use_old_floor) {
         std::ostringstream info;
-        info << "INFO: Using old definition of floor tolerance. |a-b|<floor.\n\n";
-        DIFF_OUT(info, trmclr::yellow);
+        fmt::print(info, "INFO: Using old definition of floor tolerance. |a-b|<floor.\n\n");
+        DIFF_OUT(info, fmt::color::yellow);
       }
       if (interface.coord_tol.type != IGNORE) {
-        sprintf(buf, "\nNodal coordinates will be compared .. tol: %8g (%s), floor: %8g",
-                interface.coord_tol.value, interface.coord_tol.typestr(),
-                interface.coord_tol.floor);
-        std::cout << buf << '\n';
+        fmt::print("\nNodal coordinates will be compared .. tol: {:8g} ({}), floor: {:8g}\n",
+                   interface.coord_tol.value, interface.coord_tol.typestr(),
+                   interface.coord_tol.floor);
       }
       else {
         std::ostringstream info;
-        info << "\nNodal coordinates will not be compared.\n";
-        DIFF_OUT(info, trmclr::yellow);
+        fmt::print(info, "\nNodal coordinates will not be compared.\n");
+        DIFF_OUT(info, fmt::color::yellow);
       }
 
       if (interface.time_tol.type != IGNORE) {
-        sprintf(buf, "Time step values will be compared .. tol: %8g (%s), floor: %8g",
-                interface.time_tol.value, interface.time_tol.typestr(), interface.time_tol.floor);
-        std::cout << buf << '\n';
+        fmt::print("Time step values will be compared  .. tol: {:8g} ({}), floor: {:8g}\n",
+                   interface.time_tol.value, interface.time_tol.typestr(),
+                   interface.time_tol.floor);
       }
       else {
         std::ostringstream info;
-        info << "Time step time values will not be compared.\n";
-        DIFF_OUT(info, trmclr::yellow);
+        fmt::print(info, "Time step time values will not be compared.\n");
+        DIFF_OUT(info, fmt::color::yellow);
       }
 
       output_compare_names("Global", interface.glob_var_names, interface.glob_var,
@@ -212,19 +206,18 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
                            file2.Num_SS_Vars());
       if (!interface.ignore_sideset_df && interface.ss_df_tol.type != IGNORE &&
           file1.Num_Side_Sets() > 0 && file2.Num_Side_Sets() > 0) {
-        sprintf(buf, "Sideset Distribution Factors will be compared .. tol: %8g (%s), floor: %8g",
-                interface.ss_df_tol.value, interface.ss_df_tol.typestr(),
-                interface.ss_df_tol.floor);
-        std::cout << buf << '\n';
+        fmt::print(
+            "Sideset Distribution Factors will be compared .. tol: {:8g} ({}), floor: {:8g}\n",
+            interface.ss_df_tol.value, interface.ss_df_tol.typestr(), interface.ss_df_tol.floor);
       }
       else {
         if (interface.ignore_sideset_df || interface.ss_df_tol.type == IGNORE) {
           std::ostringstream info;
-          info << "Sideset Distribution Factors will not be compared.\n";
-          DIFF_OUT(info, trmclr::yellow);
+          fmt::print(info, "Sideset Distribution Factors will not be compared.\n");
+          DIFF_OUT(info, fmt::color::yellow);
         }
         else {
-          std::cout << "No Sideset Distribution Factors on either file.\n";
+          fmt::print("No Sideset Distribution Factors on either file.\n");
         }
       }
     }
@@ -279,37 +272,36 @@ namespace {
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2)
   {
     if (!names.empty()) {
-      std::cout << type << " variables to be compared:\n";
+      fmt::print("{} variables to be compared:\n", type);
       for (unsigned v = 0; v < names.size(); ++v) {
         if (v == 0) {
-          sprintf(buf, "%-32s tol: %8g (%s), floor: %8g", names[v].c_str(), tol[v].value,
-                  tol[v].typestr(), tol[v].floor);
+          fmt::print("{:<32} tol: {:8g} ({}), floor: {:8g}\n", names[v], tol[v].value,
+                     tol[v].typestr(), tol[v].floor);
         }
         else {
-          sprintf(buf, "%-32s      %8g (%s),        %8g", names[v].c_str(), tol[v].value,
-                  tol[v].typestr(), tol[v].floor);
+          fmt::print("{:<32}      {:8g} ({}),        {:8g}\n", names[v], tol[v].value,
+                     tol[v].typestr(), tol[v].floor);
         }
-        std::cout << "\t" << buf << '\n';
       }
     }
     else if (num_vars1 == 0 && num_vars2 == 0) {
-      std::cout << "No " << type << " variables on either file.\n";
+      fmt::print("No {} variables on either file.\n", type);
     }
     else {
-      std::cout << type << " variables will not be compared.\n";
+      fmt::print("{} variables will not be compared.\n", type);
     }
   }
 
   void output_diff_names(const char *type, const std::vector<std::string> &names)
   {
     if (!names.empty()) {
-      std::cout << type << " variables to be differenced:\n";
+      fmt::print("{} variables to be differenced:\n", type);
       for (auto &name : names) {
-        std::cout << "\t" << name << '\n';
+        fmt::print("\t{}\n", name);
       }
     }
     else {
-      std::cout << "No " << type << " variables will be differenced.\n";
+      fmt::print("No {} variables will be differenced.\n", type);
     }
   }
 
@@ -342,8 +334,10 @@ namespace {
               *diff_found = true;
               if (!interface.quiet_flag) {
                 std::ostringstream diff;
-                diff << "exodiff: DIFFERENCE .. The " << type << " variable \"" << name
-                     << "\" is in the first file but not the second.\n";
+                fmt::print(diff,
+                           "exodiff: DIFFERENCE .. The {} variable \"{}\" is in the first file but "
+                           "not the second.\n",
+                           type, name);
                 DIFF_OUT(diff);
               }
               continue;
@@ -368,8 +362,10 @@ namespace {
               *diff_found = true;
               if (!interface.quiet_flag) {
                 std::ostringstream diff;
-                diff << "exodiff: DIFFERENCE .. The " << type << " variable \"" << name
-                     << "\" is in the second file but not the first.\n";
+                fmt::print(diff,
+                           "exodiff: DIFFERENCE .. The {} variable \"{}\" is in the second file "
+                           "but not the first.\n",
+                           type, name);
                 DIFF_OUT(diff);
               }
               continue;
@@ -400,8 +396,9 @@ namespace {
           *diff_found = true;
           if (!interface.quiet_flag) {
             std::ostringstream diff;
-            diff << "exodiff: DIFFERENCE .. The " << type << " variable \"" << name
-                 << "\" is not in the second file.\n";
+            fmt::print(diff,
+                       "exodiff: DIFFERENCE .. The {} variable \"{}\" is not in the second file.\n",
+                       type, name);
             DIFF_OUT(diff);
           }
         }
@@ -410,8 +407,10 @@ namespace {
         *diff_found = true;
         if (!interface.quiet_flag) {
           std::ostringstream diff;
-          diff << "exodiff: DIFFERENCE .. Specified " << type << " variable \"" << name
-               << "\" is not in the first file.\n";
+          fmt::print(
+              diff,
+              "exodiff: DIFFERENCE .. Specified {} variable \"{}\" is not in the first file.\n",
+              type, name);
           DIFF_OUT(diff);
         }
       }
@@ -448,8 +447,9 @@ namespace {
           if (interface.map_flag != PARTIAL) {
             *diff_found = true;
             std::ostringstream diff;
-            diff << "exodiff: DIFFERENCE " << label << " id " << set1->Id()
-                 << " exists in first file but not the second...\n";
+            fmt::print(diff,
+                       "exodiff: DIFFERENCE {} id {} exists in first file but not the second...\n",
+                       label, set1->Id());
             DIFF_OUT(diff);
           }
           continue;
@@ -460,7 +460,7 @@ namespace {
           int                idx1 = find_string(var_names1, name, interface.nocase_var_names);
           int                idx2 = find_string(var_names2, name, interface.nocase_var_names);
           if (idx1 < 0 || idx2 < 0) {
-            ERROR("Unable to find variable named '" << name << "' on database.\n");
+            Error(fmt::format("Unable to find variable named '{}' on database.\n", name));
             exit(1);
           }
 
@@ -470,20 +470,24 @@ namespace {
             }
             else if (!quiet_flag) {
               std::ostringstream diff;
-              diff << "exodiff: INFO " << label << " variable \"" << name << "\" is not saved for "
-                   << label << " id " << set1->Id() << " in the second file but is "
-                   << "in the first (by virtue of the truth tables).  "
-                   << "This variable won't be considered for this " << label << ".\n";
-              DIFF_OUT(diff, trmclr::yellow);
+              fmt::print(diff,
+                         "exodiff: INFO {0} variable \"{1}\" is not saved for {0}"
+                         " id {2} in the second file but is in the first (by virtue of the truth "
+                         "tables).  "
+                         "This variable won't be considered for this {0}.\n",
+                         label, name, set1->Id());
+              DIFF_OUT(diff, fmt::color::yellow);
             }
           }
           else if (set2->is_valid_var(idx2) && !quiet_flag) {
             std::ostringstream diff;
-            diff << "exodiff: INFO " << label << " variable \"" << name << "\" is not saved for "
-                 << label << " id " << set1->Id() << " in the first file but is "
-                 << "in the second (by virtue of the truth tables).  "
-                 << "This variable won't be considered for this " << label << ".\n";
-            DIFF_OUT(diff, trmclr::yellow);
+            fmt::print(
+                diff,
+                "exodiff: INFO {0} variable \"{1}\" is not saved for {0}"
+                " id {2} in the first file but is in the second (by virtue of the truth tables).  "
+                "This variable won't be considered for this {0}.\n",
+                label, name, set1->Id());
+            DIFF_OUT(diff, fmt::color::yellow);
           }
         }
       }

@@ -77,12 +77,12 @@ RCP<const ParameterList> MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdin
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &/* coarseLevel */) const {
   Input(fineLevel, "A");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
+void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &/* coarseLevel */) const {
   FactoryMonitor m(*this, "MatrixAnalysis Factory ", fineLevel);
 
   Teuchos::RCP<Matrix> A = Get< Teuchos::RCP<Matrix> > (fineLevel, "A");

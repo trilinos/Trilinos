@@ -59,7 +59,7 @@ C SOLGRA  REAL  Gradient in element variables for Mesh-A
 C IDBLK   INT   Element block ID for mesh-B
 C ITT     INT   Truth table
 C IM      INT   Element block being processed (not block ID)
-C TIMES   REAL  Array of times - passed thru to PNF
+C TIMES   REAL  Array of times - passed through to PNF
 C ISTP    INT   Time step
 C IST     INT   Time step if multiple time steps are in use
 C INSUB   INT   Entry into subroutine; 1-first time in; >1-second,etc

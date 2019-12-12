@@ -177,7 +177,6 @@ void BlockedEpetraOperator::WriteBlocks(const std::string & prefix) const
    }
 }
 
-#ifndef Teko_DEBUG_OFF
 bool BlockedEpetraOperator::testAgainstFullOperator(int count,double tol) const
 {
    Epetra_Vector xf(OperatorRangeMap());
@@ -204,10 +203,8 @@ bool BlockedEpetraOperator::testAgainstFullOperator(int count,double tol) const
       // check result
       result &= (diffNorm/trueNorm < tol);
    }
-
    return result;
 }
-#endif
 
 } // end namespace Epetra
 } // end namespace Teko

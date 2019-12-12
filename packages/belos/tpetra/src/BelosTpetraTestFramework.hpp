@@ -100,13 +100,8 @@ namespace Belos {
       ///
       /// \param comm [in] Communicator over which to distribute the
       ///   sparse matrices.
-      /// \param node [in] Kokkos Node instance to use for creating
-      ///   sparse matrices.  (Nonconst by Kokkos and Tpetra
-      ///   convention.)
-      HarwellBoeingReader (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                           const Teuchos::RCP<node_type>& node) :
+      HarwellBoeingReader (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
         comm_ (comm),
-        node_ (node)
       {}
 
       //! Read the sparse matrix from the file with the given name.
@@ -155,10 +150,11 @@ namespace Belos {
         typedef global_ordinal_type GO;
         typedef node_type NT;
         RCP<const map_type> rowMap =
-          createUniformContigMapWithNode<LO, GO, NT> (numRows, comm_, node_);
+          createUniformContigMapWithNode<LO, GO, NT> (numRows, comm_);
         RCP<const map_type> rangeMap = rowMap;
         RCP<const map_type> domainMap =
-          createUniformContigMapWithNode<LO, GO, NT> (numCols, comm_, node_);
+          createUniformContigMapWithNode<LO, GO, NT> (numCols, comm_);
+
         // Convert the read-in matrix data into a Tpetra::CrsMatrix.
         typedef ArrayView<const int>::size_type size_type;
         ArrayView<const double> valView (val, static_cast<size_type> (nnz));
@@ -171,8 +167,6 @@ namespace Belos {
     private:
       //! Communicator over which to distribute the sparse matrices.
       Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-      //! Kokkos Node instance to use for creating sparse matrices.
-      Teuchos::RCP<node_type> node_;
 
       /// \brief Convert the Harwell-Boeing data to a Tpetra::CrsMatrix.
       ///
@@ -279,10 +273,9 @@ namespace Belos {
       ///   On output, missing parameters will be filled in with their
       ///   default values.
       ProblemMaker (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                    const Teuchos::RCP<node_type>& node,
                     const Teuchos::RCP<Teuchos::FancyOStream>& out,
                     const Teuchos::RCP<Teuchos::ParameterList> plist) :
-        comm_ (comm), node_ (node), out_ (out), tolerant_ (false), debug_ (false)
+        comm_ (comm), out_ (out), tolerant_ (false), debug_ (false)
       {
         setParameterList (plist);
       }
@@ -299,12 +292,10 @@ namespace Belos {
       /// \param tolerant [in] Whether to parse files tolerantly.
       /// \param debug [in] Whether to print copious debugging output.
       ProblemMaker (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                    const Teuchos::RCP<node_type>& node,
                     const Teuchos::RCP<Teuchos::FancyOStream>& out,
                     const bool tolerant,
                     const bool debug) :
         comm_ (comm),
-        node_ (node),
         out_ (out),
         tolerant_ (tolerant),
         debug_ (debug)
@@ -453,7 +444,7 @@ namespace Belos {
              << "\"" << endl;
         const bool callFillComplete = true;
         RCP<sparse_matrix_type> A =
-          reader_type::readSparseFile (filename, comm_, node_, callFillComplete,
+          reader_type::readSparseFile (filename, comm_, callFillComplete,
                                        tolerant_, debug_);
         return A;
       }
@@ -658,8 +649,6 @@ namespace Belos {
     private:
       //! Communicator over which to distribute sparse matrices and dense vectors.
       Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-      //! Kokkos Node instance to use for creating Tpetra objects.
-      Teuchos::RCP<node_type> node_;
       //! Output stream for indented verbose output.
       Teuchos::RCP<Teuchos::FancyOStream> out_;
       //! Whether to parse files tolerantly.
@@ -693,7 +682,7 @@ namespace Belos {
 
         // For a square matrix, we only need a Map for the range of the matrix.
         RCP<const map_type> pRangeMap =
-          createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_, node_);
+          createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_);
         // The sparse matrix object to fill.
         RCP<sparse_matrix_type> pMat = rcp (new sparse_matrix_type (pRangeMap, 0));
 
@@ -744,7 +733,8 @@ namespace Belos {
 
         // For a square matrix, we only need a Map for the range of the matrix.
         RCP<const map_type> pRangeMap =
-          createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_, node_);
+          createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_);
+
         // The sparse matrix object to fill.
         RCP<sparse_matrix_type> pMat = rcp (new sparse_matrix_type (pRangeMap, 0));
 

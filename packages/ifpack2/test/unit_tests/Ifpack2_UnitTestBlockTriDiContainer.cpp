@@ -212,14 +212,12 @@ static void run_performance_test (const Input& in) {
     const auto n0 = T->getNorms0();
     const auto nf = T->getNormsFinal();
     bool ok = true;
-    if (n0.size() > 0) {
+    if (n0 > 0) {
       std::stringstream ss;
       ss << "Norm reduction:";
-      for (int i = 0; i < n0.size(); ++i) {
-        const auto r = nf[i] / n0[i];
-        ss << " " << r;
-        if (r > in.tol && sweep != in.iterations) ok = false;
-      }
+      const auto r = nf / n0;
+      ss << " " << r;
+      if (r > in.tol && sweep != in.iterations) ok = false;
       ss << "\n";
       if (in.verbose)
         std::cout << ss.str();

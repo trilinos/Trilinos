@@ -101,13 +101,12 @@ int main(int argc, char** argv)
 
 
   Teuchos::ParameterList defaultParameters;
-  Teuchos::RCP <node_type> node = Teuchos::rcp(new node_type(defaultParameters));
 
   /*----------------Load a test matrix---------------*/
   string matrixFileName = "wathenSmall.mtx";
 
   //Get Matrix
-  Teuchos::RCP<Matrix_t> A = Tpetra::MatrixMarket::Reader<Matrix_t>::readSparseFile(matrixFileName, comm, node); //removed node
+  Teuchos::RCP<Matrix_t> A = Tpetra::MatrixMarket::Reader<Matrix_t>::readSparseFile(matrixFileName, comm);
 
   if( &A == NULL)
     {

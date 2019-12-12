@@ -32,36 +32,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "fmt/format.h"
 #include "io_info.h"
+#include <Ioss_ScopeGuard.h>
 
 // ========================================================================
 
 namespace {
   std::string codename;
-  std::string version = "1.0";
+  std::string version = "1.05";
 } // namespace
 
 int main(int argc, char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+  ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
   Info::Interface interface;
   interface.parse_options(argc, argv);
 
-  std::string in_type = "exodusII";
+  Ioss::Init::Initializer io;
+
+  if (interface.show_config()) {
+    Ioss::IOFactory::show_configuration();
+    exit(EXIT_SUCCESS);
+  }
 
   codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
   if (ind != std::string::npos) {
     codename = codename.substr(ind + 1, codename.size());
   }
-
-  Ioss::Init::Initializer io;
-
-  OUTPUT << "Input:    '" << interface.filename() << "', Type: " << interface.type() << '\n';
-  OUTPUT << '\n';
 
   if (interface.list_groups()) {
     Ioss::io_info_group_info(interface);
@@ -70,9 +73,6 @@ int main(int argc, char *argv[])
     Ioss::io_info_file_info(interface);
   }
 
-  OUTPUT << "\n" << codename << " execution successful.\n";
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
+  fmt::print("\n{} execution successful.\n", codename);
   return EXIT_SUCCESS;
 }

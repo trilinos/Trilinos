@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- //
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  //
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- //
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -38,155 +39,158 @@
 #include <stk_util/util/StkNgpVector.hpp>
 
 namespace ngp {
-
-template <typename Mesh, typename Field, typename ReductionOp>
-struct FieldAccessFunctor
+template<typename T, typename Index>
+KOKKOS_FUNCTION
+T reduction_value_type_from_field_value(const T& i, const Index, const T&) 
 {
-    STK_FUNCTION
-    FieldAccessFunctor(const typename Mesh::BucketType *b, Field f) : bucket(b), field(f) { }
-
-    STK_FUNCTION
-    void operator()(int i, typename Field::value_type& update) const
-    {
-        ReductionOp()(update,field.get(typename Mesh::MeshIndex{bucket, static_cast<unsigned>(i)}, 0));
+  return i;
+}
+template<typename T, typename Index>
+KOKKOS_FUNCTION
+Kokkos::MinMaxScalar<T> reduction_value_type_from_field_value(const T& i, const Index, const Kokkos::MinMaxScalar<T>&)
+{
+  return {i,i};
+}
+template<typename T, typename Index>
+KOKKOS_FUNCTION
+Kokkos::ValLocScalar<T,Index> reduction_value_type_from_field_value(const T& i, const Index index, const Kokkos::ValLocScalar<T,Index>&)
+{
+  return {i,index};
+}
+template<typename T, typename Index>
+KOKKOS_FUNCTION
+Kokkos::MinMaxLocScalar<T,Index> reduction_value_type_from_field_value(const T& i, const Index index, const Kokkos::MinMaxLocScalar<T,Index>&)
+{
+  return {i,i,index,index};
+}
+template<typename T>
+struct identity {
+  KOKKOS_FUNCTION
+    T operator()(const T t) const {
+      return t;
     }
-private:
-    const typename Mesh::BucketType *bucket;
-    Field field;
 };
-
-template <typename Mesh, typename Field, typename ReductionOp>
+template<typename Mesh, typename Field, typename ReductionOp, typename Modifier = identity<typename Field::value_type>>
+struct FieldAccessFunctor{
+  using value_type = typename ReductionOp::value_type;
+  using reduction_op = ReductionOp;
+  KOKKOS_FUNCTION
+  FieldAccessFunctor(Field f, ReductionOp r) :
+    field(f), bucket(nullptr), reduction(r), fm(Modifier()) {}
+  KOKKOS_FUNCTION
+    value_type operator()(const int i, const int j) const
+    {
+      auto field_value = field.get(typename Mesh::MeshIndex{bucket, static_cast<unsigned>(i)},j);
+      auto value = fm(field_value);
+      value_type input = reduction_value_type_from_field_value(value,i,reduction.reference());
+      return input;
+    }
+  KOKKOS_FUNCTION
+    stk::mesh::EntityRank get_rank() const { return field.get_rank(); }
+  KOKKOS_FUNCTION
+    FieldAccessFunctor(const FieldAccessFunctor& rhs) = default;
+  KOKKOS_FUNCTION
+    FieldAccessFunctor(const FieldAccessFunctor& rhs, const typename Mesh::BucketType* b, ReductionOp r)
+    : field(rhs.field), bucket(b), reduction(r), fm(Modifier()) {}
+  KOKKOS_FUNCTION
+  int num_components(const int i) const {
+    stk::mesh::FastMeshIndex f = {bucket->bucket_id(), static_cast<unsigned>(i)};
+    unsigned nc = field.get_num_components_per_entity(f);
+    return nc;
+  }
+  Field field;
+  const typename Mesh::BucketType* bucket;
+  ReductionOp reduction;
+  Modifier fm;
+};
+template <typename Mesh, typename Accessor>
 struct ReductionTeamFunctor
 {
-    typedef typename Field::value_type FieldData;
+  using ReductionOp = typename Accessor::reduction_op;
+  using value_type = typename ReductionOp::value_type;
+    STK_FUNCTION
+    ReductionTeamFunctor(const Mesh m, stk::NgpVector<unsigned> b, Accessor a)
+    : mesh(m), bucketIds(b), accessor(a) {}
 
-    struct JoinOp {
-    public:
-        typedef JoinOp reducer;
-        typedef typename std::remove_cv<FieldData>::type value_type;
-        typedef Kokkos::View<value_type, typename Mesh::MeshExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > result_view_type;
-
-    private:
-        value_type* value;
-
-    public:
-        STK_FUNCTION
-        JoinOp (value_type& value_) : value (&value_) {}
-
-        STK_FUNCTION
-        void join (value_type& dest, const value_type& src) const { ReductionOp() (dest, src); }
-
-        STK_FUNCTION
-        void init (value_type& val) const {
-            ReductionOp()(val, *value);
-        }
-
-        STK_FUNCTION
-        value_type& reference() const {
-          return *value;
-        }
-
-        STK_FUNCTION
-        result_view_type view () const {
-            return result_view_type (value);
-        }
-    };
+    using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ngp::ScheduleType>::member_type;
+    STK_FUNCTION
+      void join(value_type& dest, const value_type& src) const {
+        accessor.reduction.join(dest,src);
+      }
+    STK_FUNCTION
+      void join(volatile value_type& dest, volatile const value_type& src) const {
+        accessor.reduction.join(dest,src);
+      }
 
     STK_FUNCTION
-    ReductionTeamFunctor(const Mesh m, Field f, stk::NgpVector<unsigned> b, FieldData i) : mesh(m), field(f), bucketIds(b), initialValue(i) { }
-
-    STK_FUNCTION
-    void init(FieldData &update) const
-    {
-        update = initialValue;
-    }
-
-    STK_FUNCTION
-    void join(volatile FieldData& update, volatile const FieldData& input) const
-    {
-        ReductionOp()(update, input);
-    }
-
-    typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ngp::ScheduleType>::member_type TeamHandleType;
-
-    STK_FUNCTION
-    void operator()(const TeamHandleType& team, FieldData& update) const
+    void operator()(const TeamHandleType& team, value_type& update) const
     {
         const int bucketIndex = bucketIds.device_get(team.league_rank());
-        const typename Mesh::BucketType &bucket = mesh.get_bucket(field.get_rank(), bucketIndex);
+        const typename Mesh::BucketType &bucket = mesh.get_bucket(accessor.get_rank(), bucketIndex);
         unsigned numElements = bucket.size();
-        FieldData localUpdate = initialValue;
+        value_type my_value;
+        accessor.reduction.init(my_value);
+        ReductionOp reduction(my_value);
+        Accessor thread_local_accessor(accessor, &bucket, reduction);
         Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 0u, numElements),
-                                FieldAccessFunctor<Mesh, Field, ReductionOp>(&bucket, field),
-                                JoinOp(localUpdate));
-        Kokkos::single(Kokkos::PerTeam(team), [&](){join(update, localUpdate);});
+            [&](int i, value_type& reduce){
+                const int nc = thread_local_accessor.num_components(i);
+                for(int j = 0; j < nc; ++j){
+                  value_type input = thread_local_accessor(i,j);
+                  accessor.reduction.join(reduce,input);
+                }
+            },
+            reduction);
+        Kokkos::single(Kokkos::PerTeam(team), [&](){accessor.reduction.join(update, my_value);});
     }
-
-private:
+  private:
     const Mesh mesh;
-    Field field;
     stk::NgpVector<unsigned> bucketIds;
-    FieldData initialValue;
+    Accessor accessor;
 };
-
 template <typename Mesh, typename Field, typename ReductionOp>
-typename Field::value_type get_field_reduction(Mesh &mesh, Field field, const stk::mesh::Selector &selector, const typename Field::value_type &initialValue)
+void get_field_reduction(Mesh &mesh, Field field, const stk::mesh::Selector &selector, ReductionOp& reduction)
 {
     stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(field.get_rank(), selector);
     const unsigned numBuckets = bucketIds.size();
-    ReductionTeamFunctor<Mesh, Field, ReductionOp> teamFunctor(mesh, field, bucketIds, initialValue);
-    typename Field::value_type reduction = initialValue;
+    FieldAccessFunctor<Mesh,Field,ReductionOp> accessor(field, reduction);
+    ReductionTeamFunctor<Mesh,decltype(accessor)> teamFunctor(mesh, bucketIds, accessor);
     Kokkos::parallel_reduce(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO), teamFunctor, reduction);
-    return reduction;
 }
-
-template <typename T>
-struct MinFunctor
+template <typename Mesh, typename Accessor>
+void get_field_reduction(Mesh &mesh, const stk::mesh::Selector &selector, Accessor& accessor)
 {
-    STK_FUNCTION
-    void operator()(volatile T& update, volatile const T& input) const
-    {
-        update = update < input ? update : input;
-    }
-};
-
+    stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(accessor.get_rank(), selector);
+    const unsigned numBuckets = bucketIds.size();
+    ReductionTeamFunctor<Mesh,Accessor> teamFunctor(mesh, bucketIds, accessor);
+    Kokkos::parallel_reduce(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO), teamFunctor, accessor.reduction);
+}
 template <typename Mesh, typename Field>
 typename Field::value_type get_field_min(Mesh &mesh, Field field, const stk::mesh::Selector &selector)
 {
     field.sync_to_device();
-    return get_field_reduction<Mesh, Field, MinFunctor<typename Field::value_type>>(mesh, field, selector, std::numeric_limits<typename Field::value_type>::max());
+    typename Field::value_type reduction_output;
+    Kokkos::Min<typename Field::value_type> min_reduction(reduction_output);
+    get_field_reduction(mesh, field, selector, min_reduction);
+    return reduction_output;
 }
-
-template <typename T>
-struct MaxFunctor
-{
-    STK_FUNCTION
-    void operator()(volatile T& update, volatile const T& input) const
-    {
-        update = update > input ? update : input;
-    }
-};
 template <typename Mesh, typename Field>
 typename Field::value_type get_field_max(Mesh &mesh, Field field, const stk::mesh::Selector &selector)
 {
     field.sync_to_device();
-    return get_field_reduction<Mesh, Field, MaxFunctor<typename Field::value_type>>(mesh, field, selector, std::numeric_limits<typename Field::value_type>::lowest());
+    typename Field::value_type reduction_output;
+    Kokkos::Max<typename Field::value_type> max_reduction(reduction_output);
+    get_field_reduction(mesh, field, selector, max_reduction);
+    return reduction_output;
 }
-
-template <typename T>
-struct SumFunctor
-{
-    STK_FUNCTION
-    void operator()(volatile T& update, volatile const T& input) const
-    {
-        update += input;
-    }
-};
 template <typename Mesh, typename Field>
 typename Field::value_type get_field_sum(Mesh &mesh, Field field, const stk::mesh::Selector &selector)
 {
     field.sync_to_device();
-    return get_field_reduction<Mesh, Field, SumFunctor<typename Field::value_type>>(mesh, field, selector, 0);
+    typename Field::value_type reduction_output;
+    Kokkos::Sum<typename Field::value_type> sum_reduction(reduction_output);
+    get_field_reduction(mesh, field, selector, sum_reduction);
+    return reduction_output;
 }
 
 }

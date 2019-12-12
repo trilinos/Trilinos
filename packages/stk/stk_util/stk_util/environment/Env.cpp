@@ -1,8 +1,9 @@
 /*
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -15,10 +16,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,6 +35,7 @@
  */
 
 #include <stk_util/stk_config.h>
+
 #include <stk_util/environment/Env.hpp>
 #include <time.h>                       // for localtime, strftime, time_t
 #include <limits.h>                     // for PATH_MAX
@@ -46,14 +48,10 @@
 #include <map>                          // for map<>::mapped_type
 #include <sstream>                      // for basic_ostream, operator<<, etc
 #include <stk_util/util/Signal.hpp>     // for HUP_received
-#include <stk_util/environment/EnvData.hpp>  // for EnvData, etc
-#include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/environment/RuntimeMessage.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
 #include <string>                       // for string, operator<<, etc
-#include "boost/program_options/detail/parsers.hpp"
-#include "boost/program_options/errors.hpp"  // for program_options
-#include "boost/program_options/variables_map.hpp"  // for variables_map, etc
+
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 
 #if defined(__GNUC__)
@@ -62,7 +60,17 @@
 #include <sys/resource.h>
 #endif
 
+#ifdef STK_HAVE_BOOSTLIB
+
+#include <stk_util/environment/EnvData.hpp>  // for EnvData, etc
+#include <stk_util/environment/ProgramOptions.hpp>
+#include "boost/program_options/detail/parsers.hpp"
+#include "boost/program_options/errors.hpp"  // for program_options
+#include "boost/program_options/variables_map.hpp"  // for variables_map, etc
+
 namespace boost { namespace program_options { class options_description; } }
+
+#endif
 
 using namespace std;
 
@@ -82,6 +90,33 @@ format_time(
 }
 
 namespace Env {
+
+double
+wall_now()
+{
+  timeval tp;
+  struct timezone tz;
+  gettimeofday(&tp, &tz);
+  return (tp.tv_sec + ((static_cast<double>(tp.tv_usec))/1000000.0));
+}
+
+
+double
+cpu_now()
+{
+#if ! defined(__PGI)
+  struct rusage my_rusage;
+
+  getrusage(RUSAGE_SELF, &my_rusage);
+
+  return static_cast<double>(my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec) +
+    static_cast<double>(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec)*1.0e-6;
+#else
+  return 0;
+#endif
+}
+
+#ifdef STK_HAVE_BOOSTLIB
 
 const std::string &
 product_name()
@@ -193,31 +228,6 @@ subsection_separator()
   return s_subsectionSeparator;
 }
 
-
-double
-wall_now()
-{
-  timeval tp;
-  struct timezone tz;
-  gettimeofday(&tp, &tz);
-  return (tp.tv_sec + ((static_cast<double>(tp.tv_usec))/1000000.0));
-}
-
-
-double
-cpu_now()
-{
-#if ! defined(__PGI)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return static_cast<double>(my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec) +
-    static_cast<double>(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec)*1.0e-6;
-#else
-  return 0;
-#endif
-}
 
 std::string
 section_title(
@@ -381,5 +391,8 @@ void set_mpi_communicator(MPI_Comm communicator)
   }
 }
 
+#endif
+
 } // namespace Env
 } // namespace sierra
+

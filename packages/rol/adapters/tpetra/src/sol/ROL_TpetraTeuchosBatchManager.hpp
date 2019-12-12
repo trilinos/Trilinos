@@ -58,7 +58,7 @@ class TpetraTeuchosBatchManager : public TeuchosBatchManager<Real,GO> {
   typedef TpetraMultiVector<Real,LO,GO,Node> OptVector;
 
 public:
-  TpetraTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<GO> > &comm)
+  TpetraTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
     : TeuchosBatchManager<Real,GO>(comm) {}
 
   void sumAll(Vector<Real> &input, Vector<Real> &output) {

@@ -78,7 +78,6 @@ main (int argc, char *argv[])
   typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
-  typedef MV::node_type             node_type;
 
   typedef Teuchos::CommandLineProcessor   CLP;
 
@@ -88,7 +87,6 @@ main (int argc, char *argv[])
   bool verbose = false;
   try {
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-    RCP<node_type> node; // only for type deduction; null ok
 
     //
     // Get test parameters from command-line processor
@@ -139,7 +137,7 @@ main (int argc, char *argv[])
     // Get the data from the HB file and build the Map,Matrix
     //
     RCP<Tpetra::CrsMatrix<ST> > A;
-    Tpetra::Utils::readHBMatrix (filename, comm, node, A);
+    Tpetra::Utils::readHBMatrix (filename, comm, A);
     RCP<const Tpetra::Map<> > map = A->getDomainMap ();
 
     // Create initial vectors

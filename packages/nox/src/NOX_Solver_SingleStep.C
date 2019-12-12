@@ -82,7 +82,7 @@ SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
   ignoreLinearSolverFailures = p->sublist("Single Step Solver").get<bool>("Ignore Linear Solver Failures");
   updateJacobian = p->sublist("Single Step Solver").get<bool>("Update Jacobian");
-  if (not updateJacobian)
+  if (!updateJacobian)
     frozenJacobianPtr = solnPtr->clone(DeepCopy); // take ownership of Jacobian
   printNorms =  p->sublist("Single Step Solver").get<bool>("Print Norms");
   computeRelativeNorm =  p->sublist("Single Step Solver").get<bool>("Compute Relative Norm");
@@ -286,7 +286,7 @@ void NOX::Solver::SingleStep::printUpdate()
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
     utilsPtr->out() << "-- The \"Nonlinear\" Solver Step -- \n";
     if (printNorms) {
-      if (not solnPtr->isF())
+      if (!solnPtr->isF())
         solnPtr->computeF();
       double normF = solnPtr->getF().norm();
       double normDx = solnPtr->getNewtonPtr()->norm();

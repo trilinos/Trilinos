@@ -49,7 +49,7 @@ c Revision 1.1  90/11/12  14:34:53  gdsjaar
 c Initial revision
 c
 
-C   --*** INTCNT *** (GJOIN) Returns the number of occurances in list
+C   --*** INTCNT *** (GJOIN) Returns the number of occurrences in list
 C   --   Written by Amy Gilkey - revised 09/29/87
 C   --
 C   --INTCNT returns the number of times an integer is found in a list.

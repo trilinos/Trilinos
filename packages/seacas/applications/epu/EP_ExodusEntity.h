@@ -37,8 +37,9 @@
 
 #define NO_NETCDF_2
 #include "EP_ObjectType.h"
-#include <cstring>
+#include <copy_string_cpp.h>
 #include <exodusII.h>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -89,7 +90,7 @@ namespace Excn {
         : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0), offset_(0),
           position_(0)
     {
-      strcpy(elType, "");
+      copy_string(elType, "");
     }
 
     Block(const Block &other)
@@ -97,7 +98,7 @@ namespace Excn {
           nodesPerElement(other.nodesPerElement), attributeCount(other.attributeCount),
           offset_(other.offset_), position_(other.position_)
     {
-      strcpy(elType, other.elType);
+      copy_string(elType, other.elType);
     }
 
     ~Block() = default;
@@ -116,7 +117,7 @@ namespace Excn {
 
     Block &operator=(const Block &other)
     {
-      strcpy(elType, other.elType);
+      copy_string(elType, other.elType);
       name_           = other.name_;
       id              = other.id;
       elementCount    = other.elementCount;
@@ -149,17 +150,17 @@ namespace Excn {
 
     void dump() const
     {
-      std::cerr << "NodeSet " << id << ", Name: " << name_ << ", " << nodeCount << " nodes, "
-                << dfCount << " df,\torder = " << position_ << "\n";
+      fmt::print(stderr, "NodeSet {}, Name: {}, {} nodes, {} df,\torder = {}\n", id, name_,
+                 nodeCount, dfCount, position_);
     }
 
     void dump_order() const
     {
       dump();
       for (int64_t i = 0; i < nodeCount; i++) {
-        std::cerr << nodeOrderMap[i] << ", ";
+        fmt::print(stderr, "{}, ", nodeOrderMap[i]);
       }
-      std::cerr << "\n";
+      fmt::print("\n");
     }
   };
 
@@ -184,8 +185,8 @@ namespace Excn {
 
     void dump() const
     {
-      std::cerr << "SideSet " << id << ", Name: " << name_ << ", " << sideCount << " sides, "
-                << dfCount << " df\toffset = " << offset_ << ", order = " << position_ << "\n";
+      fmt::print(stderr, "SideSet {}, Name: {}, {} sides, {} df\toffset = {}, order = {}\n", id,
+                 name_, sideCount, dfCount, offset_, position_);
     }
   };
 
@@ -210,6 +211,8 @@ namespace Excn {
           nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0)
     {
     }
+    CommunicationMetaData(const CommunicationMetaData &) = delete;
+    CommunicationMetaData &operator=(const CommunicationMetaData &other) = delete;
 
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
@@ -223,9 +226,6 @@ namespace Excn {
     int64_t nodesExternal;
     int64_t elementsInternal;
     int64_t elementsBorder;
-
-  private:
-    CommunicationMetaData(const CommunicationMetaData &);
   };
 } // namespace Excn
 #endif /* SEACAS_ExodusEntity_H */

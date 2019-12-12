@@ -1,0 +1,26 @@
+#
+# Robust install cmake -P script that will ensure that 'cmake -P
+# cmake_install.cmake' gets called in every package directory if the global
+# 'cmake -P cmake_install.cmake' command fails.
+#
+
+set(TRIBITS_ENABLED_PACKAGES_BINARY_DIRS @TRIBITS_ENABLED_PACKAGES_BINARY_DIRS@)
+
+execute_process(COMMAND @CMAKE_COMMAND@ -P cmake_install.cmake
+  RESULT_VARIABLE global_install_rtn)
+
+if (NOT global_install_rtn EQUAL 0)
+  message(
+    "\n"
+    "***\n"
+    "*** The global install failed so resorting to package-by-package installs\n"
+    "***\n"
+    "\n"
+    )
+  foreach (pkg_binary_dir ${TRIBITS_ENABLED_PACKAGES_BINARY_DIRS})
+    execute_process(COMMAND @CMAKE_COMMAND@ -P cmake_install.cmake
+      WORKING_DIRECTORY ${pkg_binary_dir}
+      RESULT_VARIABLE global_install_rtn)
+  endforeach()
+  message(SEND_ERROR "Error, full install failed!")
+endif()

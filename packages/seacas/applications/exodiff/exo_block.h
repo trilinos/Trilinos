@@ -53,12 +53,10 @@ public:
   std::string Free_Connectivity();
 
   // Access functions:
-
   const std::string &Elmt_Type() const { return elmt_type; }
   size_t             Num_Nodes_per_Elmt() const { return num_nodes_per_elmt; }
 
   // Block description access functions:
-
   const INT *Connectivity() const { return conn; }  // 1-offset connectivity
   const INT *Connectivity(size_t elmt_index) const; // 1-offset connectivity
 
@@ -67,11 +65,7 @@ public:
                                 INT *&  recv_conn); // its own to null.
 
   // Misc:
-
   int Check_State() const;
-
-  void Display_Stats(std::ostream & /*s*/ = std::cout) const;
-  void Display(std::ostream & /*s*/ = std::cout) const;
 
 private:
   Exo_Block(const Exo_Block &);                  // Not written.

@@ -183,7 +183,7 @@ class FastILDLPrec
             MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace> copyFunc1(aRowMap, lRowMap, lRowMap, diagElems);
 
             //Make sure all memory resides on the device
-            ExecSpace::fence();
+            ExecSpace().fence();
             Kokkos::parallel_for(nRows, copyFunc1);
 
             //Note that the following is a temporary measure
@@ -193,7 +193,7 @@ class FastILDLPrec
             MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace> copyFunc2(aColIdx, aRowIdx, aVal);
             MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc3(lColIdx, lVal); 
 
-            ExecSpace::fence();
+            ExecSpace().fence();
             Kokkos::parallel_for(nRows, copyFunc1);
             Kokkos::parallel_for(nnzA, copyFunc2);
             Kokkos::parallel_for(nnzL, copyFunc3);
@@ -652,24 +652,24 @@ class FastILDLPrec
         void applyDD(ScalarArray &x, ScalarArray &y)
         {
             ParScalFunctor<Ordinal, Scalar, ExecSpace> parScal(nRows, x, y, diagElemsInv);
-            ExecSpace::fence();
+            ExecSpace().fence();
             Kokkos::parallel_for(nRows, parScal);
-            ExecSpace::fence();
+            ExecSpace().fence();
 
         }
         void applyD(ScalarArray &x, ScalarArray &y)
         {
             ParScalFunctor<Ordinal, Scalar, ExecSpace> parScal(nRows, x, y, diagFact);
-            ExecSpace::fence();
+            ExecSpace().fence();
             Kokkos::parallel_for(nRows, parScal);
-            ExecSpace::fence();
+            ExecSpace().fence();
 
         }
         void applyLIC(ScalarArray &x, ScalarArray &y)
         {
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, xOld);
             Kokkos::parallel_for(nRows, parInitZero);
-            ExecSpace::fence();
+            ExecSpace().fence();
 #if 0
             JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, lRowMap, lColIdx, lVal, x, y, xOld, onesVector); 
 #endif 
@@ -681,13 +681,13 @@ class FastILDLPrec
             {
                 extent++;
             }
-            ExecSpace::fence();
+            ExecSpace().fence();
             for (Ordinal i = 0; i < nTrisol; i++) 
             {
                 Kokkos::parallel_for(extent, jacIter);
-                ExecSpace::fence();
+                ExecSpace().fence();
                 Kokkos::parallel_for(nRows, parCopy);
-                ExecSpace::fence();
+                ExecSpace().fence();
             }
             return;
         }
@@ -696,7 +696,7 @@ class FastILDLPrec
         {
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, xOld);
             Kokkos::parallel_for(nRows, parInitZero);
-            ExecSpace::fence();
+            ExecSpace().fence();
 #if 0
             JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, ltRowMap, ltColIdx, ltVal, x, y, xOld, onesVector); 
 #endif 
@@ -708,14 +708,14 @@ class FastILDLPrec
             {
                 extent++;
             }
-            ExecSpace::fence();
+            ExecSpace().fence();
 
             for (Ordinal i = 0; i < nTrisol; i++) 
             {
                 Kokkos::parallel_for(extent, jacIter);
-                ExecSpace::fence();
+                ExecSpace().fence();
                 Kokkos::parallel_for(nRows, parCopy);
-                ExecSpace::fence();
+                ExecSpace().fence();
             }
 
             return;
@@ -741,13 +741,13 @@ class FastILDLPrec
             numericILU();
             FastILDLFunctor<Ordinal, Scalar, ExecSpace> icFunctor(nRows, aRowMap, aColIdx, aRowIdx, aVal,
                     lRowMap, lColIdx, lVal, diagElems, omega);
-            ExecSpace::fence();
+            ExecSpace().fence();
 
             for (int i = 0; i < nFact; i++) 
             {
                 Kokkos::parallel_for(aRowMap[nRows], icFunctor);
             }
-            ExecSpace::fence();
+            ExecSpace().fence();
 
             double t = timer.seconds();
             computeTime = t;
@@ -764,9 +764,9 @@ class FastILDLPrec
 
             Kokkos::Impl::Timer timer;
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(nRows, xTemp, x);
-            ExecSpace::fence();
+            ExecSpace().fence();
             Kokkos::parallel_for(nRows, parCopyFunctor);
-            ExecSpace::fence();
+            ExecSpace().fence();
 
             applyD(x, xTemp);
             applyLIC(xTemp, y);
@@ -775,9 +775,9 @@ class FastILDLPrec
             applyD(y, xTemp);
 
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor2(nRows, y, xTemp);
-            ExecSpace::fence();
+            ExecSpace().fence();
             Kokkos::parallel_for(nRows, parCopyFunctor2);
-            ExecSpace::fence();
+            ExecSpace().fence();
 
             double t = timer.seconds();
             applyTime = t;

@@ -1470,7 +1470,7 @@ void KokkosSPGEMM
 
   Kokkos::Impl::Timer timer1;
   pool_memory_space m_space(num_chunks, accumulator_chunksize, pool_init_val,  my_pool_type);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tPool Alloc Time:" << timer1.seconds() << std::endl;
   }
@@ -1612,7 +1612,7 @@ void KokkosSPGEMM
 
     }
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tKernel time:" << timer1.seconds() << std::endl<< std::endl;
@@ -1914,7 +1914,7 @@ void KokkosSPGEMM
 
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum
                 <c_row_view_t, MyExecSpace>(this->a_row_cnt + 1, rowmapC_);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   auto d_c_nnz_size = Kokkos::subview(rowmapC_, this->a_row_cnt);
   auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);

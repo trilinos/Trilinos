@@ -157,7 +157,7 @@ SOLVER SPECIFICATIONS		= TOLERANCE=2.0e-3,USE_RQI,VMAX=200
 #				  The machine description is as follows:
 #					<# boxes><m|h><description>
 #					# boxes     - number of boxes, integer
-#					m | h       - designates each boxe as
+#					m | h       - designates each box as
 #						      either mesh or hypercube
 #					description - the description of the
 #						      mesh or hypercube same
@@ -176,7 +176,7 @@ MACHINE DESCRIPTION		= MESH=2x2
 #
 # This line contains any weighting information. If this line is absent,
 # then all weighting is turned off. The options are:
-#	read=<filename>		- OPTIOINAL, This is the name of an ExodusII
+#	read=<filename>		- OPTIONAL, This is the name of an ExodusII
 #				  file from which to read the vertex weights.
 #				  If this is specified, then either var_name
 #				  or var_index must be specified.

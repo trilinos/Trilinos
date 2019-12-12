@@ -74,9 +74,9 @@ namespace MueLu {
     aggregation: coarsen | describe the coarsening rate to be used in each direction
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AggregationStructuredAlgorithm :
     public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
@@ -87,7 +87,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationStructuredAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationStructuredAlgorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~AggregationStructuredAlgorithm() { }

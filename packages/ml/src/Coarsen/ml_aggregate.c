@@ -104,7 +104,8 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->coarsen_rate               = -1;
    (*ag)->semicoarsen_levels         = -1;
    (*ag)->semicoarsen_coordinate     = 'z';
-
+/*cms*/
+   (*ag)->rowsum_threshold           = -1.0; /* defaults to off */
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
@@ -670,6 +671,34 @@ int ML_Aggregate_Reset_Threshold( ML_Aggregate *ag )
       exit(-1);
    }
    ag->threshold = 0.0;
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_RowSum_Threshold( ML_Aggregate *ag, double epsilon )
+{
+   if ( ag->ML_id != ML_ID_AGGRE )
+   {
+      printf("ML_Aggregate_Set_RowSum_Threshold : wrong object. \n");
+      exit(-1);
+   }
+   if ( epsilon > 0.0 ) ag->rowsum_threshold = epsilon;
+   else                 ag->rowsum_threshold = -1.0;
+
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Reset_RowSum_Threshold( ML_Aggregate *ag )
+{
+   if ( ag->ML_id != ML_ID_AGGRE )
+   {
+      printf("ML_Aggregate_Reset_RowSum_Threshold : wrong object. \n");
+      exit(-1);
+   }
+   ag->rowsum_threshold = -1.0;
    return 0;
 }
 

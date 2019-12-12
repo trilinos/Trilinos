@@ -15,6 +15,7 @@ SET(HEADERS
   "${DIR}/Teuchos_Reader.hpp"
   "${DIR}/Teuchos_ReaderTables.hpp"
   "${DIR}/Teuchos_regex.hpp"
+  "${DIR}/Teuchos_string.hpp"
   "${DIR}/Teuchos_TableDecl.hpp"
   "${DIR}/Teuchos_XML.hpp"
   "${DIR}/Teuchos_YAML.hpp"

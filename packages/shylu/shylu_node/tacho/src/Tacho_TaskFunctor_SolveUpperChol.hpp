@@ -11,28 +11,27 @@
 
 namespace Tacho {
 
-    template<typename MatValueType, typename ExecSpace>
+    template<typename MatValueType, typename SchedulerType>
     struct TaskFunctor_SolveUpperChol {
     public:
-      typedef ExecSpace exec_space;
-
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space exec_space;
       typedef typename scheduler_type::member_type member_type;
 
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
 
       typedef int value_type; // functor return type
-      typedef Kokkos::Future<int,exec_space> future_type;
+      typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
 
       typedef MatValueType mat_value_type; // matrix value type
 
-      typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
+      typedef SupernodeInfo<mat_value_type,scheduler_type> supernode_info_type;
       typedef typename supernode_info_type::supernode_type supernode_type;
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
     private:
-      scheduler_type _sched;
+      //scheduler_type _sched;
       memory_pool_type _bufpool;
 
       supernode_info_type _info;
@@ -45,12 +44,10 @@ namespace Tacho {
       TaskFunctor_SolveUpperChol() = delete;
 
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_SolveUpperChol(const scheduler_type &sched,
-                                 const memory_pool_type &bufpool,
+      TaskFunctor_SolveUpperChol(const memory_pool_type &bufpool,
                                  const supernode_info_type &info,
                                  const ordinal_type sid)
-        : _sched(sched),
-          _bufpool(bufpool),
+        : _bufpool(bufpool),
           _info(info),
           _sid(sid) {}
           //_s(info.supernodes(sid)) {}
@@ -58,6 +55,7 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       ordinal_type 
       solve_internal(member_type &member, const ordinal_type n, const bool final) {
+
         const ordinal_type nrhs = _info.x.extent(1);
         const size_t bufsize = n*nrhs*sizeof(mat_value_type);
 
@@ -70,7 +68,7 @@ namespace Tacho {
           return -1;
         
         CholSupernodes<Algo::Workflow::Serial>
-          ::solve_upper_recursive_serial(_sched, member, _info, _sid, final, buf, bufsize);
+          ::solve_upper_recursive_serial(member, _info, _sid, final, buf, bufsize);
 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
             if (bufsize)
@@ -82,23 +80,24 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
+        auto& sched = member.scheduler();  
         const auto &_s = _info.supernodes(_sid);
         if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
           r_val = solve_internal(member, _s.max_decendant_schur_size, true);
           Kokkos::single(Kokkos::PerTeam(member), [&]() {
               if (r_val) 
-                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+                Kokkos::respawn(this, sched, Kokkos::TaskPriority::Low);
             });
         } else {
           r_val = solve_internal(member, _s.n - _s.m, false);
           Kokkos::single(Kokkos::PerTeam(member), [&]() {
               if (r_val) {
-                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+                Kokkos::respawn(this, sched, Kokkos::TaskPriority::Low);
               } else {
                 // spawn children tasks and this (their parent) depends on the children tasks
                 for (ordinal_type i=0;i<_s.nchildren;++i) {
-                  auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
-                                              TaskFunctor_SolveUpperChol(_sched, _bufpool, _info, _s.children[i]));
+                  auto f = Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::Regular),
+                                              TaskFunctor_SolveUpperChol(_bufpool, _info, _s.children[i]));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 }
               }

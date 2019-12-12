@@ -74,7 +74,7 @@ using Teuchos::rcp_dynamic_cast;
 
 namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager> buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -86,7 +86,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   return Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 }
 
 template <typename Intrepid2Type>
@@ -122,8 +122,8 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
    RCP<const panzer::FieldPattern> patternDIV
          = buildFieldPattern<Intrepid2::Basis_HDIV_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
    // build global (or serial communicator)
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -156,7 +156,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
    // unfortunatly this mesh is completly uniform
    double standardO[] = { 1.0, 1.0, -1.0, -1.0 };
    if(myRank==0) {
-      std::vector<int> gids;
+     std::vector<panzer::GlobalOrdinal> gids;
       std::vector<double> orientation;
 
       // element 0
@@ -201,7 +201,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
          TEST_EQUALITY(orientation[2*i+5],standardO[i]);
    }
    else if(myRank==1) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       std::vector<double> orientation;
 
       // element 0
@@ -265,8 +265,8 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations2)
    RCP<const panzer::FieldPattern> patternI1 
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -338,8 +338,8 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations_fail
    RCP<const panzer::FieldPattern> patternI1 
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);

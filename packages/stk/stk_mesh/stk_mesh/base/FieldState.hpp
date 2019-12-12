@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -56,15 +57,16 @@ namespace mesh {
  * See Field.hpp for more.
  */
 enum FieldState {
-  StateNone = 0,  ///< \brief State of a field with one state
-  StateNew  = 0,  ///< \brief Newest state of a field with two or more states
-  StateNP1  = 0,  ///< \brief Newest state of a field with two or more states
-  StateOld  = 1,  ///< \brief Previous state of a field with two states
-  StateN    = 1,  ///< \brief Previous state of a field with three+ states
-  StateNM1  = 2,  ///< \brief Previous-1 state of a field with three+ states
-  StateNM2  = 3,  ///< \brief Previous-2 state of a field with four+ states
-  StateNM3  = 4,  ///< \brief Previous-3 state of a field with five+ states
-  StateNM4  = 5   ///< \brief Previous-4 state of a field with six states
+  StateNone    = 0,  ///< \brief State of a field with one state
+  StateNew     = 0,  ///< \brief Newest state of a field with two or more states
+  StateNP1     = 0,  ///< \brief Newest state of a field with two or more states
+  StateOld     = 1,  ///< \brief Previous state of a field with two states
+  StateN       = 1,  ///< \brief Previous state of a field with three+ states
+  StateNM1     = 2,  ///< \brief Previous-1 state of a field with three+ states
+  StateNM2     = 3,  ///< \brief Previous-2 state of a field with four+ states
+  StateNM3     = 4,  ///< \brief Previous-3 state of a field with five+ states
+  StateNM4     = 5,  ///< \brief Previous-4 state of a field with six states
+  StateInvalid = 6
 };
 
 /** \brief Maximum number of states that a \ref stk::mesh::Field "field"

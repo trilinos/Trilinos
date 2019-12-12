@@ -10,6 +10,7 @@
 #define Tempus_StepperExplicitRKObserver_hpp
 
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_StepperObserver.hpp"
 
 
 namespace Tempus {

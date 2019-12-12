@@ -86,6 +86,10 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
 
+#if defined(HAVE_XPETRA_TPETRA)
+    #include <Tpetra_ConfigDefs.hpp>
+#endif
+
 //! %Xpetra namespace
 namespace Xpetra {
   // Used in all Xpetra code that explicitly must a type (like a loop index)
@@ -212,8 +216,8 @@ namespace Xpetra {
   //   };
 
   enum CombineMode {
-    ADD,    /*!< TODO */
-    INSERT, /*!< TODO */
+    ADD,    /*!< Existing values will be summed with new values. */
+    INSERT, /*!< Insert new values that don't currently exist. */
     ABSMAX  /*!< TODO: don't exist for Tpetra */
   };
 

@@ -118,7 +118,7 @@
 #define CTPUP 2
 #define CTPDWN 3
 
-/* text horizonal alignment */
+/* text horizontal alignment */
 #define CTALFT 0
 #define CTACTR 1
 #define CTARIT 2

@@ -132,7 +132,7 @@ std::cout << "\n\n  e dim =" << e->dimension() << "  z[i] dim =" << z[i]->dimens
       }
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try

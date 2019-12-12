@@ -67,7 +67,7 @@ private:
 
 public:
 
-  StdVector(const Ptr<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
+  StdVector(const Ptr<std::vector<Element>> & std_vec) : std_vec_(std_vec) {}
 
   StdVector(const int dim, const Element val=0.0) {
     std_vec_ = makePtr<std::vector<Element>>(dim,val);

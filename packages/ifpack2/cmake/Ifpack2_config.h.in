@@ -50,6 +50,8 @@
 /* Enable timers in BlockTriDiContainer. */
 #cmakedefine HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
 
+#cmakedefine HAVE_IFPACK2_BLOCKTRIDICONTAINER_SMALL_SCALAR
+
 /*
  * Package dependencies
  */

@@ -3,12 +3,14 @@
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "Epetra_Comm.h"
+#include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
+
 
 namespace ML_Epetra
 {
@@ -23,6 +25,9 @@ namespace ML_Epetra
   // Aggregation
   int RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::ParameterList & List, ML_Comm * ml_comm, std::string PrintMsg,
 				 ML_Aggregate_Struct *& MLAggr,ML_Operator *&P, int &NumAggregates);
+
+  // Edge Nullspace
+  Epetra_MultiVector* Build_Edge_Nullspace(const Epetra_CrsMatrix & D0Clean_Matrix, const Teuchos::ArrayRCP<int> BCedges, Teuchos::ParameterList & List, bool verbose);
 }
 
 

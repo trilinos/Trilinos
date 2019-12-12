@@ -54,12 +54,12 @@ std::vector<SideSetEntry> SkinMeshUtil::get_interior_sideset(stk::mesh::BulkData
   return skinMesh.extract_interior_sideset();
 }
 
-std::vector<SideSetEntry> SkinMeshUtil::get_all_sides_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector)
+std::vector<SideSetEntry> SkinMeshUtil::get_all_sides_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector, bool includeAuraElementSides)
 {
   bulk.initialize_face_adjacent_element_graph();
   ElemElemGraph& elemElemGraph = bulk.get_face_adjacent_element_graph();
   SkinMeshUtil skinMesh(elemElemGraph, skinSelector, nullptr);
-  return skinMesh.extract_all_sides_sideset();
+  return skinMesh.extract_all_sides_sideset(includeAuraElementSides);
 }
 
 std::vector<int> SkinMeshUtil::get_exposed_sides(stk::mesh::impl::LocalId localId, int maxSidesThisElement)
@@ -298,7 +298,50 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
     return skinnedSideSet;
 }
 
-std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
+void get_aura_element_sides_for_skinning(const stk::mesh::BulkData& bulk, stk::mesh::Entity element,
+                                 std::vector<int>& exposedSides)
+{
+    exposedSides.clear();
+    stk::topology topo = bulk.bucket(element).topology();
+    const stk::mesh::Entity* elemNodes = bulk.begin_nodes(element);
+    std::vector<stk::mesh::Entity> elems;
+
+    const unsigned maxNodesPerSide = 128;
+    stk::mesh::Entity sideNodes[maxNodesPerSide];
+    const unsigned numSides = topo.num_sides();
+    for(unsigned side = 0; side<numSides; ++side) {
+        topo.side_nodes(elemNodes, side, sideNodes);
+        unsigned numNodesThisSide = topo.side_topology(side).num_nodes();
+        stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEM_RANK,
+                                   numNodesThisSide, sideNodes, elems);
+        if (elems.size() == 1) {
+            exposedSides.push_back(side);
+        }
+        else {
+            bool connectedElementHasSmallerId = false;
+            bool connectedElementIsOwned = false;
+
+            for(unsigned elemIndex=0; elemIndex<elems.size(); ++elemIndex) {
+                if (element != elems[elemIndex]) {
+                    if (bulk.bucket(elems[elemIndex]).owned()) {
+                        connectedElementIsOwned = true;
+                        break;
+                    }
+                    if (bulk.identifier(elems[elemIndex]) < bulk.identifier(element)) {
+                        connectedElementHasSmallerId = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!connectedElementHasSmallerId && !connectedElementIsOwned) {
+                exposedSides.push_back(side);
+            }
+        }
+    }
+}
+
+std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset(bool includeAuraElementSides)
 {
     const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
 
@@ -336,6 +379,17 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
                     isElement2InSelector = remoteSkinSelector[graphEdge.elem2()];
                     if (!isElement1InSelector && !isElement2InSelector) continue;
                     should_add_side = true;
+                    if (includeAuraElementSides && isElement2InSelector) {
+                        stk::mesh::EntityId otherId = eeGraph.convert_negative_local_id_to_global_id(graphEdge.elem2());
+                        stk::mesh::Entity auraElement = bulkData.get_entity(stk::topology::ELEM_RANK, otherId);
+                        if (bulkData.is_valid(auraElement) && bulkData.bucket(auraElement).in_aura()) {
+                            get_aura_element_sides_for_skinning(bulkData, auraElement, exposedSides);
+                            for (size_t k=0; k<exposedSides.size(); ++k)
+                            {
+                                 sideSet.push_back(SideSetEntry(auraElement, static_cast<ConnectivityOrdinal>(exposedSides[k])));
+                            }
+                        }
+                    }
                 }
                 else {
                     otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2());
@@ -351,8 +405,34 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
                 {
                     sideSet.push_back(SideSetEntry(element, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1())));
                     if (!isParallelEdge) {
-                        sideSet.push_back(SideSetEntry(otherElement, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side2())));
+                        if (bulkData.identifier(otherElement) < bulkData.identifier(element)) {
+                            sideSet.back().element = otherElement;
+                            sideSet.back().side = static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side2());
+                        }
                     }
+                }
+            }
+        }
+    }
+
+    if (includeAuraElementSides)
+    {
+        std::vector<int> exposedSides;
+        const stk::mesh::BucketVector& auraBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().aura_part());
+        for (const stk::mesh::Bucket* bucketPtr : auraBuckets)
+        {
+            const stk::mesh::Bucket & bucket = *bucketPtr;
+            if (!skinSelector(bucket)) {
+                continue;
+            }
+
+            for (size_t i=0; i<bucket.size(); ++i)
+            {
+                stk::mesh::Entity element = bucket[i];
+                get_aura_element_sides_for_skinning(bulkData, element, exposedSides);
+                for (size_t k=0; k<exposedSides.size(); ++k)
+                {
+                     sideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal>(exposedSides[k])));
                 }
             }
         }
@@ -365,6 +445,4 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
 
 }
 }
-
-
 

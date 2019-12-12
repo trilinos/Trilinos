@@ -68,12 +68,13 @@ uninitialized_view(const std::string& name, const size_t& size)
 }
 
 /// \brief Implementation of padCrsArrays
-template<class RowPtr, class Indices, class Padding>
+template<class RowPtr, class Indices, class Values, class Padding>
 void
 pad_crs_arrays(
-    RowPtr& row_ptr_beg,
-    RowPtr& row_ptr_end,
+               const RowPtr& row_ptr_beg,
+               const RowPtr& row_ptr_end,
     Indices& indices,
+    Values& values,
     const Padding& padding)
 {
 
@@ -81,6 +82,8 @@ pad_crs_arrays(
     // Nothing to do
     return;
   }
+
+  auto pad_values = values.extent(0) == indices.extent(0);
 
   // Determine if the indices array is large enough
   auto num_row = row_ptr_beg.size() - 1;
@@ -106,10 +109,17 @@ pad_crs_arrays(
       }
     }, additional_size_needed);
 
-  if (additional_size_needed == 0) return;
+  if (additional_size_needed == 0)
+    return;
+
+  using ptrs_value_type = typename RowPtr::non_const_value_type;
+  using inds_value_type = typename Indices::non_const_value_type;
+  using vals_value_type = typename Values::non_const_value_type;
 
   // The indices array must be resized and the row_ptr arrays shuffled
   auto indices_new = uninitialized_view<Indices>("ind new", indices.size()+additional_size_needed);
+  auto values_new = uninitialized_view<Values>("val new", pad_values ? values.size()+additional_size_needed : 0);
+  Kokkos::deep_copy(values_new, vals_value_type(0.0));
 
   // mfh: Not so fussy about this not being a kernel initially,
   // since we're adding a new feature upon which existing code does not rely,
@@ -117,23 +127,25 @@ pad_crs_arrays(
   // for fence()ing relating to UVM.
   auto this_row_beg = row_ptr_beg(0);
   auto this_row_end = row_ptr_end(0);
-  using range = Kokkos::pair<typename RowPtr::value_type, typename RowPtr::value_type>;
+  using range = Kokkos::pair<ptrs_value_type, ptrs_value_type>;
   for (typename RowPtr::size_type i=0; i<num_row-1; i++) {
 
-    // First, copy over indices for this row
     auto used_this_row = this_row_end - this_row_beg;
-    auto indices_old_subview =
-      subview(indices, range(this_row_beg, this_row_beg+used_this_row));
-    auto indices_new_subview =
-      subview(indices_new, range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
 
-    // just call memcpy; it works fine on device if this becomes a kernel
-    using value_type = typename Indices::non_const_value_type;
-    memcpy(indices_new_subview.data(), indices_old_subview.data(),
-           used_this_row * sizeof(value_type));
+    // Copy over indices
+    {
+      auto indices_old_subview = subview(indices, range(this_row_beg, this_row_beg+used_this_row));
+      auto indices_new_subview = subview(indices_new, range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
+      // just call memcpy; it works fine on device if this becomes a kernel
+      memcpy(indices_new_subview.data(), indices_old_subview.data(), used_this_row * sizeof(inds_value_type));
+    }
 
-    // TODO could this actually have extra entries at the end of each row?
-    // If yes, then fill those entries with an "invalid" value.
+    // And then the values
+    if (pad_values) {
+      auto values_old_subview = subview(values, range(this_row_beg, this_row_beg+used_this_row));
+      auto values_new_subview = subview(values_new, range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
+      memcpy(values_new_subview.data(), values_old_subview.data(), used_this_row * sizeof(vals_value_type));
+    }
 
     // Before modifying the row_ptr arrays, save current beg, end for next iteration
     this_row_beg = row_ptr_beg(i+1);
@@ -143,20 +155,28 @@ pad_crs_arrays(
     row_ptr_beg(i+1) = row_ptr_beg(i) + entries_this_row(i);
     row_ptr_end(i+1) = row_ptr_beg(i+1) + used_next_row;
   }
+
   {
+    // Copy indices/values for last row
     row_ptr_beg(num_row) = indices_new.size();
-    // Copy indices for last row
     auto n = num_row - 1;
     auto used_this_row = row_ptr_end(n) - row_ptr_beg(n);
-    auto indices_old_subview =
-      subview(indices, range(this_row_beg, this_row_beg+used_this_row));
-    auto indices_new_subview =
-      subview(indices_new, range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
-    using value_type = typename Indices::non_const_value_type;
-    memcpy(indices_new_subview.data(), indices_old_subview.data(),
-           used_this_row * sizeof(value_type));
+
+    {
+      auto indices_old_subview = subview(indices, range(this_row_beg, this_row_beg+used_this_row));
+      auto indices_new_subview = subview(indices_new, range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
+      memcpy(indices_new_subview.data(), indices_old_subview.data(), used_this_row * sizeof(inds_value_type));
+    }
+
+    if (pad_values) {
+      auto values_old_subview = subview(values, range(this_row_beg, this_row_beg+used_this_row));
+      auto values_new_subview = subview(values_new, range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
+      memcpy(values_new_subview.data(), values_old_subview.data(), used_this_row * sizeof(vals_value_type));
+    }
   }
+
   indices = indices_new;
+  values = values_new;
 }
 
 /// \brief Implementation of insertCrsIndices
@@ -171,12 +191,17 @@ insert_crs_indices(
     IndexMap&& map,
     std::function<void(size_t const, size_t const, size_t const)> cb)
 {
-  using offset_type = typename std::decay<decltype (row_ptrs[0])>::type;
-  using ordinal_type = typename std::decay<decltype (cur_indices[0])>::type;
-
   if (new_indices.size() == 0) {
     return 0;
   }
+
+  if (cur_indices.size() == 0) {
+    // No room to insert new indices
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+
+  using offset_type = typename std::decay<decltype (row_ptrs[0])>::type;
+  using ordinal_type = typename std::decay<decltype (cur_indices[0])>::type;
 
   const offset_type start = row_ptrs[row];
   offset_type end = start + static_cast<offset_type> (num_assigned);
@@ -216,6 +241,7 @@ size_t
 find_crs_indices(
     typename Pointers::value_type const row,
     Pointers const& row_ptrs,
+    const size_t curNumEntries,
     Indices1 const& cur_indices,
     Indices2 const& new_indices,
     IndexMap&& map,
@@ -227,8 +253,8 @@ find_crs_indices(
   using ordinal = typename Indices1::value_type;
   auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
 
-  auto const start = row_ptrs[row];
-  auto const end = row_ptrs[row + 1];
+  const size_t start = static_cast<size_t> (row_ptrs[row]);
+  const size_t end = start + curNumEntries;
   size_t num_found = 0;
   for (size_t k = 0; k < new_indices.size(); k++)
   {
@@ -275,13 +301,28 @@ find_crs_indices(
 template<class RowPtr, class Indices, class Padding>
 void
 padCrsArrays(
-    RowPtr& rowPtrBeg,
-    RowPtr& rowPtrEnd,
+             const RowPtr& rowPtrBeg,
+             const RowPtr& rowPtrEnd,
     Indices& indices,
     const Padding& padding)
 {
   using impl::pad_crs_arrays;
-  pad_crs_arrays<RowPtr, Indices, Padding>(rowPtrBeg, rowPtrEnd, indices, padding);
+  // send empty values array
+  Indices values;
+  pad_crs_arrays<RowPtr, Indices, Indices, Padding>(rowPtrBeg, rowPtrEnd, indices, values, padding);
+}
+
+template<class RowPtr, class Indices, class Values, class Padding>
+void
+padCrsArrays(
+             const RowPtr& rowPtrBeg,
+             const RowPtr& rowPtrEnd,
+    Indices& indices,
+    Values& values,
+    const Padding& padding)
+{
+  using impl::pad_crs_arrays;
+  pad_crs_arrays<RowPtr, Indices, Values, Padding>(rowPtrBeg, rowPtrEnd, indices, values, padding);
 }
 
 /// \brief Insert new indices in to current list of indices
@@ -403,6 +444,7 @@ size_t
 findCrsIndices(
     typename Pointers::value_type const row,
     Pointers const& rowPtrs,
+    const size_t curNumEntries,
     Indices1 const& curIndices,
     Indices2 const& newIndices,
     Callback&& cb)
@@ -412,7 +454,7 @@ findCrsIndices(
     "Expected views to have same value type");
   // Provide a unit map for the more general find_crs_indices
   using ordinal = typename Indices2::value_type;
-  auto numFound = impl::find_crs_indices(row, rowPtrs, curIndices, newIndices,
+  auto numFound = impl::find_crs_indices(row, rowPtrs, curNumEntries, curIndices, newIndices,
     [=](ordinal ind){ return ind; }, cb);
   return numFound;
 }
@@ -422,12 +464,13 @@ size_t
 findCrsIndices(
     typename Pointers::value_type const row,
     Pointers const& rowPtrs,
+    const size_t curNumEntries,
     Indices1 const& curIndices,
     Indices2 const& newIndices,
     IndexMap&& map,
     Callback&& cb)
 {
-  return impl::find_crs_indices(row, rowPtrs, curIndices, newIndices, map, cb);
+  return impl::find_crs_indices(row, rowPtrs, curNumEntries, curIndices, newIndices, map, cb);
 }
 
 } // namespace Details

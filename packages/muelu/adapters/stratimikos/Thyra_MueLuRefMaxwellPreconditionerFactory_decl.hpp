@@ -221,7 +221,7 @@ namespace Thyra {
     /** \brief . */
     void initializePrec(const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
                         PreconditionerBase<Scalar>* prec,
-                        const ESupportSolveUse supportSolveUse
+                        const ESupportSolveUse /* supportSolveUse */
                        ) const {
       using Teuchos::rcp_dynamic_cast;
 
@@ -237,21 +237,9 @@ namespace Thyra {
       typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
       typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
       typedef Thyra::DiagonalLinearOpBase<Scalar>                              ThyDiagLinOpBase;
-#ifdef HAVE_MUELU_TPETRA
-      // TAW 1/26/2016: We deal with Tpetra objects
-#if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
-    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
-      typedef Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyTpLinOp;
-#endif
-#endif
 #if defined(HAVE_MUELU_EPETRA)
-      typedef Thyra::EpetraLinearOp                                         ThyEpLinOp;
       typedef Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>                  XpEpCrsMat;
 #endif
-
-      //std::cout << "-======---------------------------------" << std::endl;
-      //std::cout << *paramList_ << std::endl;
-      //std::cout << "-======---------------------------------" << std::endl;
 
       // Check precondition
       TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
@@ -379,6 +367,29 @@ namespace Thyra {
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M1.");
 
+          if (paramList.isParameter("Ms")) {
+            if (paramList.isType<Teuchos::RCP<TpCrsMat> >("Ms")) {
+              RCP<TpCrsMat> tMs = paramList.get<RCP<TpCrsMat> >("Ms");
+              paramList.remove("Ms");
+              RCP<XpCrsMat> xMs = rcp_dynamic_cast<XpCrsMat>(tMs, true);
+              paramList.set<RCP<XpCrsMat> >("Ms", xMs);
+            } else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("Ms")) {
+              RCP<const ThyLinOpBase> thyMs = paramList.get<RCP<const ThyLinOpBase> >("Ms");
+              paramList.remove("Ms");
+              RCP<const XpCrsMat> crsMs = XpThyUtils::toXpetra(thyMs);
+              TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMs));
+              // MueLu needs a non-const object as input
+              RCP<XpCrsMat> crsMsNonConst = Teuchos::rcp_const_cast<XpCrsMat>(crsMs);
+              TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMsNonConst));
+              // wrap as an Xpetra::Matrix that MueLu can work with
+              RCP<XpMat> Ms = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsMsNonConst));
+              paramList.set<RCP<XpMat> >("Ms", Ms);
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("Ms")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter Ms has wrong type.");
+          }
+
           if (paramList.isParameter("D0")) {
             if(paramList.isType<Teuchos::RCP<TpCrsMat> >("D0")) {
               RCP<TpCrsMat> tD0 = paramList.get<RCP<TpCrsMat> >("D0");
@@ -480,6 +491,33 @@ namespace Thyra {
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M1.");
 
+          if (paramList.isParameter("Ms")) {
+            if (paramList.isType<Teuchos::RCP<Epetra_CrsMatrix> >("Ms")) {
+              RCP<Epetra_CrsMatrix> eMs = paramList.get<RCP<Epetra_CrsMatrix> >("Ms");
+              paramList.remove("Ms");
+              RCP<XpEpCrsMat> xeMs = Teuchos::rcp(new XpEpCrsMat(eMs));
+              RCP<XpCrsMat> xCrsMs = rcp_dynamic_cast<XpCrsMat>(xeMs, true);
+              RCP<XpCrsMatWrap> xwMs = Teuchos::rcp(new XpCrsMatWrap(xCrsMs));
+              RCP<XpMat> xMs = rcp_dynamic_cast<XpMat>(xwMs);
+              paramList.set<RCP<XpMat> >("Ms", xMs);
+            }
+            else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("Ms")) {
+              RCP<const ThyLinOpBase> thyMs = paramList.get<RCP<const ThyLinOpBase> >("Ms");
+              paramList.remove("Ms");
+              RCP<const XpCrsMat> crsMs = XpThyUtils::toXpetra(thyMs);
+              TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMs));
+              // MueLu needs a non-const object as input
+              RCP<XpCrsMat> crsMsNonConst = Teuchos::rcp_const_cast<XpCrsMat>(crsMs);
+              TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMsNonConst));
+              // wrap as an Xpetra::Matrix that MueLu can work with
+              RCP<XpMat> Ms = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsMsNonConst));
+              paramList.set<RCP<XpMat> >("Ms", Ms);
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("Ms")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter Ms has wrong type.");
+          }
+
           if (paramList.isParameter("D0")) {
             if (paramList.isType<Teuchos::RCP<Epetra_CrsMatrix> >("D0")) {
               RCP<Epetra_CrsMatrix> eD0 = paramList.get<RCP<Epetra_CrsMatrix> >("D0");
@@ -557,28 +595,7 @@ namespace Thyra {
 
       } else {
         // reuse old MueLu preconditioner stored in MueLu Xpetra operator and put in new matrix
-
-        // get old MueLu preconditioner
-#if defined(HAVE_MUELU_TPETRA)
-        if (bIsTpetra) {
-#if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
-    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
-          RCP<ThyTpLinOp> tpetr_precOp = rcp_dynamic_cast<ThyTpLinOp>(thyra_precOp);
-          preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetr_precOp->getTpetraOperator(),true);
-#else
-          TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
-                                     "Thyra::MueLuRefMaxwellPreconditionerFactory: Tpetra does not support GO=int and or EpetraNode.");
-#endif
-        }
-#endif
-#if defined(HAVE_MUELU_EPETRA)// && defined(HAVE_MUELU_SERIAL)
-        if (bIsEpetra) {
-          RCP<ThyEpLinOp> epetr_precOp = rcp_dynamic_cast<ThyEpLinOp>(thyra_precOp);
-          preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(epetr_precOp->epetra_op(),true);
-        }
-#endif
-        // TODO add the blocked matrix case here...
-
+        preconditioner->resetMatrix(A);
       }
 
       // wrap preconditioner in thyraPrecOp

@@ -79,8 +79,10 @@ namespace MueLu {
     SET_VALID_ENTRY("rap: fix zero diagonals");
     SET_VALID_ENTRY("rap: shift");
     SET_VALID_ENTRY("rap: shift array");
+    SET_VALID_ENTRY("rap: cfl array");
     SET_VALID_ENTRY("rap: shift diagonal M");
     SET_VALID_ENTRY("rap: shift low storage");
+    SET_VALID_ENTRY("rap: relative diagonal floor");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -92,6 +94,10 @@ namespace MueLu {
 
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
+
+    validParamList->set<RCP<const FactoryBase> > ("deltaT", Teuchos::null, "user deltaT");
+    validParamList->set<RCP<const FactoryBase> > ("cfl", Teuchos::null, "user cfl");
+    validParamList->set<RCP<const FactoryBase> > ("cfl-based shift array", Teuchos::null, "MueLu-generated shift array for CFL-based shifting");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -128,6 +134,30 @@ namespace MueLu {
     if(!use_mdiag) Input(fineLevel, "M");
     else Input(fineLevel, "Mdiag");
 
+    // CFL array stuff
+    if(pL.isParameter("rap: cfl array") && pL.get<Teuchos::Array<double> >("rap: cfl array").size() > 0) {
+      if(fineLevel.GetLevelID() == 0) {
+        if(fineLevel.IsAvailable("deltaT", NoFactory::get())) {
+          fineLevel.DeclareInput("deltaT", NoFactory::get(), this);
+        } else {
+          TEUCHOS_TEST_FOR_EXCEPTION(fineLevel.IsAvailable("fine deltaT", NoFactory::get()),
+                                     Exceptions::RuntimeError,
+                                     "deltaT was not provided by the user on level0!");
+        }
+        
+        if(fineLevel.IsAvailable("cfl", NoFactory::get())) {
+          fineLevel.DeclareInput("cfl", NoFactory::get(), this);
+        } else {
+          TEUCHOS_TEST_FOR_EXCEPTION(fineLevel.IsAvailable("fine cfl", NoFactory::get()),
+                                   Exceptions::RuntimeError,
+                                     "cfl was not provided by the user on level0!");
+        }      
+      }
+      else {
+        Input(fineLevel,"cfl-based shift array");
+      }
+    }
+
     // call DeclareInput of all user-given transfer factories
     for(std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it!=transferFacts_.end(); ++it) {
       (*it)->CallDeclareInput(coarseLevel);
@@ -151,10 +181,56 @@ namespace MueLu {
         M_is_diagonal = use_low_storage ? true : M_is_diagonal;
       }
 
-      // Do we have an array of shifts?  If so, we set doubleShifts_
       Teuchos::ArrayView<const double> doubleShifts;
-      if(pL.isParameter("rap: shift array")) {
+      Teuchos::ArrayRCP<double> myshifts;
+      if(pL.isParameter("rap: shift array") && pL.get<Teuchos::Array<double> >("rap: shift array").size() > 0 ) {
+        // Do we have an array of shifts?  If so, we set doubleShifts_
         doubleShifts = pL.get<Teuchos::Array<double> >("rap: shift array")();
+      }
+      if(pL.isParameter("rap: cfl array") && pL.get<Teuchos::Array<double> >("rap: cfl array").size() > 0) {
+        // Do we have an array of CFLs?  If so, we calculated the shifts from them.        
+        Teuchos::ArrayView<const double> CFLs = pL.get<Teuchos::Array<double> >("rap: cfl array")();
+        if(fineLevel.GetLevelID() == 0) {
+          double dt  = Get<double>(fineLevel,"deltaT");
+          double cfl = Get<double>(fineLevel,"cfl");
+          double ts_at_cfl1 = dt / cfl;
+          myshifts.resize(CFLs.size());
+          Teuchos::Array<double> myCFLs(CFLs.size());
+          myCFLs[0] = cfl;
+
+          // Never make the CFL bigger
+          for(int i=1; i<(int)CFLs.size(); i++)
+            myCFLs[i] = (CFLs[i]> cfl) ? cfl : CFLs[i];
+          
+          {
+            std::ostringstream ofs;
+            ofs<<"RAPShiftFactory: CFL schedule = ";
+            for(int i=0; i<(int)CFLs.size(); i++)
+              ofs<<" "<<myCFLs[i];
+            GetOStream(Statistics0) <<ofs.str() << std::endl;
+          }
+          GetOStream(Statistics0)<< "RAPShiftFactory: Timestep at CFL=1 is "<< ts_at_cfl1 << "    " <<std::endl;
+
+          // The shift array needs to be 1/dt
+          for(int i=0; i<(int)myshifts.size(); i++)
+            myshifts[i] =  1.0 / (ts_at_cfl1*myCFLs[i]);
+          doubleShifts = myshifts();
+          
+          {
+            std::ostringstream ofs;
+            ofs<<"RAPShiftFactory: shift schedule = ";
+            for(int i=0; i<(int)doubleShifts.size(); i++)
+              ofs<<" "<<doubleShifts[i];
+            GetOStream(Statistics0) <<ofs.str() << std::endl;
+          }
+          Set(coarseLevel,"cfl-based shift array",myshifts);
+        }
+        else {
+          myshifts = Get<Teuchos::ArrayRCP<double> > (fineLevel,"cfl-based shift array");
+          doubleShifts = myshifts();
+          Set(coarseLevel,"cfl-based shift array",myshifts);
+          // NOTE: If we're not on level zero, then we should have a shift array
+        }
       }
       
       // Inputs: K, M, P
@@ -247,7 +323,6 @@ namespace MueLu {
             GetOStream(Warnings1) << "WARNING: RAPShiftFactory has detected a negative shift... This implies a less stable coarse grid."<<std::endl;
           shift = Teuchos::as<Scalar>(d_shift);
         }
-
         else {
           double base_shift = pL.get<double>("rap: shift");
           if(level == 1) shift = Teuchos::as<Scalar>(base_shift);
@@ -263,6 +338,11 @@ namespace MueLu {
 	Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, Teuchos::ScalarTraits<Scalar>::one(), *Mc, false, shift, Ac, GetOStream(Statistics2));
 	Ac->fillComplete();
       }
+
+      Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
+      if(relativeFloor.size() > 0) 
+        Xpetra::MatrixUtils<SC,LO,GO,NO>::RelativeDiagonalBoost(Ac, relativeFloor,GetOStream(Statistics2));
+   
 
       bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
       bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;

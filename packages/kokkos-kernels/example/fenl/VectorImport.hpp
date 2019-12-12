@@ -153,7 +153,7 @@ public:
       , buffer( arg_buffer )
     {
       Kokkos::parallel_for( "kokkos-kernels/example/fenl: Pack", index.extent(0) , *this );
-      execution_space::fence();
+      execution_space().fence();
     }
   };
 

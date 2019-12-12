@@ -139,7 +139,7 @@ namespace MueLu {
       }
     } //ReportTimeAndMemory
 #else
-    void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm)
+    void ReportTimeAndMemory(Teuchos::Time const &/* timer */, Teuchos::Comm<int> const &/* Comm */)
     {
       return;
     }

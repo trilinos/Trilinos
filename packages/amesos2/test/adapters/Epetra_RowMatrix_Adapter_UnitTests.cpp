@@ -106,8 +106,8 @@ namespace {
     clp.setOption("filedir",&filedir,"Directory of matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption("test-mpi", "test-serial", &testMpi,
-		  "Test Serial by default (for now) or force MPI test.  In a serial build,"
-		  " this option is ignored and a serial comm is always used." );
+                  "Test Serial by default (for now) or force MPI test.  In a serial build,"
+                  " this option is ignored and a serial comm is always used." );
   }
 
   const RCP<Epetra_Comm> getDefaultComm()
@@ -138,7 +138,7 @@ namespace {
     }
     return(r);
   }
-  
+
   template<typename T>
   bool contains(const ArrayView<T> a, T t)
   {
@@ -170,7 +170,7 @@ namespace {
     const int num_eqn = 100;
 
     Epetra_Map Map(num_eqn, 0, *comm);
-  
+
     // Get update list and number of local equations from newly created Map.
 
     int NumMyElements = Map.NumMyElements();
@@ -179,7 +179,7 @@ namespace {
     Map.MyGlobalElements(&MyGlobalElements[0]);
 
     // Create an integer vector NumNz that is used to build the Petra Matrix.
-    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
     // on this processor
 
     std::vector<int> NumNz(NumMyElements);
@@ -190,15 +190,15 @@ namespace {
 
     // Create a Epetra_Matrix
     Teuchos::RCP<Epetra_CrsMatrix> eye = rcp(new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
-  
+
     std::vector<double> Values(2);
     std::vector<int> Indices(2);
     double one = 1.0;
-  
+
     for (int i = 0; i < NumMyElements; ++i)
       {
-	int ierr = eye->InsertGlobalValues(MyGlobalElements[i], 1, &one, &MyGlobalElements[i]);
-	TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,std::runtime_error,"Error inserting value into matrix");
+        int ierr = eye->InsertGlobalValues(MyGlobalElements[i], 1, &one, &MyGlobalElements[i]);
+        TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,std::runtime_error,"Error inserting value into matrix");
       }
 
     eye->FillComplete();
@@ -207,7 +207,8 @@ namespace {
     // The following should all pass at compile time
     TEST_ASSERT( (is_same<double,ADAPT::scalar_t>::value) );
     TEST_ASSERT( (is_same<int,ADAPT::local_ordinal_t>::value) );
-    TEST_ASSERT( (is_same<int,ADAPT::global_ordinal_t>::value) );
+    // mfh 23 Apr 2019: I have removed the requirement that
+    // ADAPT::global_ordinal_t == int.
     TEST_ASSERT( (is_same<size_t,ADAPT::global_size_t>::value) );
     TEST_ASSERT( (is_same<MAT,ADAPT::matrix_t>::value) );
 
@@ -228,7 +229,7 @@ namespace {
     const int num_eqn = 100;
 
     Epetra_Map Map(num_eqn, 0, *comm);
-  
+
     // Get update list and number of local equations from newly created Map.
 
     int NumMyElements = Map.NumMyElements();
@@ -237,7 +238,7 @@ namespace {
     Map.MyGlobalElements(&MyGlobalElements[0]);
 
     // Create an integer vector NumNz that is used to build the Petra Matrix.
-    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
     // on this processor
 
     std::vector<int> NumNz(NumMyElements);
@@ -248,15 +249,15 @@ namespace {
 
     // Create a Epetra_Matrix
     Teuchos::RCP<Epetra_CrsMatrix> eye = rcp(new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
-  
+
     std::vector<double> Values(2);
     std::vector<int> Indices(2);
     double one = 1.0;
-  
+
     for (int i = 0; i < NumMyElements; ++i)
       {
-	int ierr = eye->InsertGlobalValues(MyGlobalElements[i], 1, &one, &MyGlobalElements[i]);
-	TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,std::runtime_error,"Error inserting value into matrix");
+        int ierr = eye->InsertGlobalValues(MyGlobalElements[i], 1, &one, &MyGlobalElements[i]);
+        TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,std::runtime_error,"Error inserting value into matrix");
       }
 
     eye->FillComplete();
@@ -277,8 +278,10 @@ namespace {
     typedef Epetra_CrsMatrix MAT;
     typedef MatrixAdapter<MAT> ADAPT;
 
+    std::cerr << "CRS_Serial test" << std::endl;
+
     /* We will be using the following matrix for this test:
-     * 
+     *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
      *   [ 0,  0,  1,  0,  0,  0 ]
@@ -293,7 +296,7 @@ namespace {
     const int num_eqn = 6;
 
     Epetra_Map Map(num_eqn, 0, *comm);
-  
+
     // Get update list and number of local equations from newly created Map.
 
     int NumMyElements = Map.NumMyElements();
@@ -302,40 +305,42 @@ namespace {
     Map.MyGlobalElements(&MyGlobalElements[0]);
 
     // Create an integer vector NumNz that is used to build the Petra Matrix.
-    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
     // on this processor
 
     int NumNz[] = {3, 2, 1, 2, 2, 2};
 
     // Create a Epetra_Matrix
     Teuchos::RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy, Map, NumNz));
-  
+
     // Construct matrix
     mat->InsertGlobalValues(0,NumNz[0],
-			    tuple<ADAPT::scalar_t>(7,-3,-1).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,2,4).getRawPtr());
+                            tuple<ADAPT::scalar_t>(7,-3,-1).getRawPtr(),
+                            tuple<int>(0,2,4).getRawPtr());
     mat->InsertGlobalValues(1,NumNz[1],
-			    tuple<ADAPT::scalar_t>(2,8).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,1).getRawPtr());
+                            tuple<ADAPT::scalar_t>(2,8).getRawPtr(),
+                            tuple<int>(0,1).getRawPtr());
     mat->InsertGlobalValues(2,NumNz[2],
-			    tuple<ADAPT::scalar_t>(1).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(2).getRawPtr());
+                            tuple<ADAPT::scalar_t>(1).getRawPtr(),
+                            tuple<int>(2).getRawPtr());
     mat->InsertGlobalValues(3,NumNz[3],
-			    tuple<ADAPT::scalar_t>(-3,5).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,3).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-3,5).getRawPtr(),
+                            tuple<int>(0,3).getRawPtr());
     mat->InsertGlobalValues(4,NumNz[4],
-			    tuple<ADAPT::scalar_t>(-1,4).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(1,4).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-1,4).getRawPtr(),
+                            tuple<int>(1,4).getRawPtr());
     mat->InsertGlobalValues(5,NumNz[5],
-			    tuple<ADAPT::scalar_t>(-2,6).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(3,5).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-2,6).getRawPtr(),
+                            tuple<int>(3,5).getRawPtr());
     mat->FillComplete();
 
     // Print for sanity sake
     // RCP<FancyOStream> os = getDefaultOStream();
     // mat->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
+    std::cerr << "Make adapter" << std::endl;
+    RCP<ADAPT> adapter;
+    TEST_NOTHROW( adapter = Amesos2::createMatrixAdapter<MAT>(mat) );
 
     Array<ADAPT::scalar_t> nzvals_test(tuple<ADAPT::scalar_t>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
     Array<ADAPT::global_ordinal_t> colind_test(tuple<ADAPT::global_ordinal_t>(0,2,4,0,1,2,0,3,1,4,3,5));
@@ -346,6 +351,7 @@ namespace {
     Array<ADAPT::global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
+    std::cerr << "Call adapter->getCrs" << std::endl;
     adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED);
 
     // getCrs does not guarantee the sorted-ness of the column
@@ -363,6 +369,7 @@ namespace {
     // Check now a rooted, sorted-indices repr //
     /////////////////////////////////////////////
 
+    std::cerr << "Call adapter->getCrs (2)" << std::endl;
     adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED,Amesos2::SORTED_INDICES);
 
     if ( rank == 0 ){
@@ -372,6 +379,8 @@ namespace {
       TEST_COMPARE_ARRAYS(rowptr, rowptr_test);
       TEST_EQUALITY_CONST(nnz, 12);
     }
+
+    std::cerr << "Reached end of test" << std::endl;
   }
 
   TEUCHOS_UNIT_TEST( CrsMatrixAdapter, CRS_Replicated )
@@ -381,12 +390,12 @@ namespace {
      */
     typedef Epetra_CrsMatrix MAT;
     typedef MatrixAdapter<MAT> ADAPT;
-    typedef int GO;
+    typedef Tpetra::Map<>::global_ordinal_type GO;
     typedef int global_size_t;
     typedef std::pair<double,GO> my_pair_t;
 
     /* We will be using the following matrix for this test:
-     * 
+     *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
      *   [ 0,  0,  1,  0,  0,  0 ]
@@ -400,7 +409,7 @@ namespace {
     const int num_eqn = 6;
 
     Epetra_Map Map(num_eqn, 0, *comm);
-  
+
     // Get update list and number of local equations from newly created Map.
 
     int NumMyElements = Map.NumMyElements();
@@ -409,33 +418,33 @@ namespace {
     Map.MyGlobalElements(&MyGlobalElements[0]);
 
     // Create an integer vector NumNz that is used to build the Petra Matrix.
-    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
     // on this processor
 
     int NumNz[] = {3, 2, 1, 2, 2, 2};
 
     // Create a Epetra_Matrix
     Teuchos::RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy, Map, NumNz));
-  
+
     // Construct matrix
     mat->InsertGlobalValues(0,NumNz[0],
-			    tuple<ADAPT::scalar_t>(7,-3,-1).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,2,4).getRawPtr());
+                            tuple<ADAPT::scalar_t>(7,-3,-1).getRawPtr(),
+                            tuple<int>(0,2,4).getRawPtr());
     mat->InsertGlobalValues(1,NumNz[1],
-			    tuple<ADAPT::scalar_t>(2,8).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,1).getRawPtr());
+                            tuple<ADAPT::scalar_t>(2,8).getRawPtr(),
+                            tuple<int>(0,1).getRawPtr());
     mat->InsertGlobalValues(2,NumNz[2],
-			    tuple<ADAPT::scalar_t>(1).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(2).getRawPtr());
+                            tuple<ADAPT::scalar_t>(1).getRawPtr(),
+                            tuple<int>(2).getRawPtr());
     mat->InsertGlobalValues(3,NumNz[3],
-			    tuple<ADAPT::scalar_t>(-3,5).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,3).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-3,5).getRawPtr(),
+                            tuple<int>(0,3).getRawPtr());
     mat->InsertGlobalValues(4,NumNz[4],
-			    tuple<ADAPT::scalar_t>(-1,4).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(1,4).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-1,4).getRawPtr(),
+                            tuple<int>(1,4).getRawPtr());
     mat->InsertGlobalValues(5,NumNz[5],
-			    tuple<ADAPT::scalar_t>(-2,6).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(3,5).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-2,6).getRawPtr(),
+                            tuple<int>(3,5).getRawPtr());
     mat->FillComplete();
 
     // Print for sanity sake
@@ -460,7 +469,7 @@ namespace {
     adapter->getCrs(nzvals,colind,rowptr,nnz,GLOBALLY_REPLICATED);
 
     // All processes check
-    
+
     // getCrs() does not guarantee a permutation of the non-zero
     // values and the column indices in the Arbitrary case, we just
     // know that they need to match up with what is expected.
@@ -472,11 +481,11 @@ namespace {
       TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
       TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
       const RCP<Array<my_pair_t> > expected_pairs
-	= zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
+        = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
       const RCP<Array<my_pair_t> > got_pairs
-	= zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
+        = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
       for ( global_size_t i = 0; i < row_nnz; ++i ){
-	TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
+        TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
       }
     }
     TEST_COMPARE_ARRAYS(rowptr, rowptr_test);
@@ -487,7 +496,7 @@ namespace {
     ///////////////////////////////////////////
 
     adapter->getCrs(nzvals,colind,rowptr,nnz,
-		    GLOBALLY_REPLICATED,Amesos2::SORTED_INDICES);
+                    GLOBALLY_REPLICATED,Amesos2::SORTED_INDICES);
 
     TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
     TEST_COMPARE_ARRAYS(colind, colind_test);
@@ -504,7 +513,7 @@ namespace {
     typedef MatrixAdapter<MAT> ADAPT;
 
     /* We will be using the following matrix for this test:
-     * 
+     *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
      *   [ 0,  0,  1,  0,  0,  0 ]
@@ -520,7 +529,7 @@ namespace {
     const int num_eqn = 6;
 
     Epetra_Map Map(num_eqn, 0, *comm);
-  
+
     // Get update list and number of local equations from newly created Map.
 
     int NumMyElements = Map.NumMyElements();
@@ -529,33 +538,33 @@ namespace {
     Map.MyGlobalElements(&MyGlobalElements[0]);
 
     // Create an integer vector NumNz that is used to build the Petra Matrix.
-    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
     // on this processor
 
     int NumNz[] = {3, 2, 1, 2, 2, 2};
 
     // Create a Epetra_Matrix
     Teuchos::RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy, Map, NumNz));
-  
+
     // Construct matrix
     mat->InsertGlobalValues(0,NumNz[0],
-			    tuple<ADAPT::scalar_t>(7,-3,-1).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,2,4).getRawPtr());
+                            tuple<ADAPT::scalar_t>(7,-3,-1).getRawPtr(),
+                            tuple<int>(0,2,4).getRawPtr());
     mat->InsertGlobalValues(1,NumNz[1],
-			    tuple<ADAPT::scalar_t>(2,8).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,1).getRawPtr());
+                            tuple<ADAPT::scalar_t>(2,8).getRawPtr(),
+                            tuple<int>(0,1).getRawPtr());
     mat->InsertGlobalValues(2,NumNz[2],
-			    tuple<ADAPT::scalar_t>(1).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(2).getRawPtr());
+                            tuple<ADAPT::scalar_t>(1).getRawPtr(),
+                            tuple<int>(2).getRawPtr());
     mat->InsertGlobalValues(3,NumNz[3],
-			    tuple<ADAPT::scalar_t>(-3,5).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,3).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-3,5).getRawPtr(),
+                            tuple<int>(0,3).getRawPtr());
     mat->InsertGlobalValues(4,NumNz[4],
-			    tuple<ADAPT::scalar_t>(-1,4).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(1,4).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-1,4).getRawPtr(),
+                            tuple<int>(1,4).getRawPtr());
     mat->InsertGlobalValues(5,NumNz[5],
-			    tuple<ADAPT::scalar_t>(-2,6).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(3,5).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-2,6).getRawPtr(),
+                            tuple<int>(3,5).getRawPtr());
     mat->FillComplete();
 
     // Print for sanity sake
@@ -581,13 +590,13 @@ namespace {
     size_t my_num_rows = OrdinalTraits<size_t>::zero();
     if ( numprocs > 1 ){
       if ( rank < 2 ){
-	my_num_rows = 3;		// total num_rows is 6
+        my_num_rows = 3;                // total num_rows is 6
       }
-    } else {			// We only have 1 proc, then she just takes it all
+    } else {                    // We only have 1 proc, then she just takes it all
       my_num_rows = 6;
     }
-    const Tpetra::Map<int,int> half_map(6, my_num_rows, 0,
-					to_teuchos_comm(comm));
+    const Tpetra::Map<> half_map(6, my_num_rows, 0,
+                                 to_teuchos_comm(comm));
 
     adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
 
@@ -622,7 +631,7 @@ namespace {
     typedef MatrixAdapter<MAT> ADAPT;
 
     /* We will be using the following matrix for this test:
-     * 
+     *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
      *   [ 0,  0,  1,  0,  0,  0 ]
@@ -636,7 +645,7 @@ namespace {
     const int num_eqn = 6;
 
     Epetra_Map Map(num_eqn, 0, *comm);
-  
+
     // Get update list and number of local equations from newly created Map.
 
     int NumMyElements = Map.NumMyElements();
@@ -645,33 +654,33 @@ namespace {
     Map.MyGlobalElements(&MyGlobalElements[0]);
 
     // Create an integer vector NumNz that is used to build the Petra Matrix.
-    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
     // on this processor
 
     int NumNz[] = {3, 2, 1, 2, 2, 2};
 
     // Create a Epetra_Matrix
     Teuchos::RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy, Map, NumNz));
-  
+
     // Construct matrix
     mat->InsertGlobalValues(0,NumNz[0],
-			    tuple<ADAPT::scalar_t>(7,-3,-1).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,2,4).getRawPtr());
+                            tuple<ADAPT::scalar_t>(7,-3,-1).getRawPtr(),
+                            tuple<int>(0,2,4).getRawPtr());
     mat->InsertGlobalValues(1,NumNz[1],
-			    tuple<ADAPT::scalar_t>(2,8).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,1).getRawPtr());
+                            tuple<ADAPT::scalar_t>(2,8).getRawPtr(),
+                            tuple<int>(0,1).getRawPtr());
     mat->InsertGlobalValues(2,NumNz[2],
-			    tuple<ADAPT::scalar_t>(1).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(2).getRawPtr());
+                            tuple<ADAPT::scalar_t>(1).getRawPtr(),
+                            tuple<int>(2).getRawPtr());
     mat->InsertGlobalValues(3,NumNz[3],
-			    tuple<ADAPT::scalar_t>(-3,5).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(0,3).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-3,5).getRawPtr(),
+                            tuple<int>(0,3).getRawPtr());
     mat->InsertGlobalValues(4,NumNz[4],
-			    tuple<ADAPT::scalar_t>(-1,4).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(1,4).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-1,4).getRawPtr(),
+                            tuple<int>(1,4).getRawPtr());
     mat->InsertGlobalValues(5,NumNz[5],
-			    tuple<ADAPT::scalar_t>(-2,6).getRawPtr(),
-			    tuple<ADAPT::global_ordinal_t>(3,5).getRawPtr());
+                            tuple<ADAPT::scalar_t>(-2,6).getRawPtr(),
+                            tuple<int>(3,5).getRawPtr());
     mat->FillComplete();
 
     // Print for sanity sake

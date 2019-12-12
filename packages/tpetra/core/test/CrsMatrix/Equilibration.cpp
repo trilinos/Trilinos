@@ -201,7 +201,6 @@ testCrsMatrixEquality (bool& success,
       out << "lclRow: " << lclRow << endl;
       Teuchos::OSTab tab2 (out);
 
-      using size_type = typename decltype (A_actual_lcl.graph)::size_type;
       out << "Expected values: [";
       for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
         out << expected_val_h[k];

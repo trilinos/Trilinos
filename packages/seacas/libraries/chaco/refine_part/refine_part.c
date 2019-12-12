@@ -38,6 +38,7 @@
 #include "smalloc.h"
 #include "structs.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /* Construct a graph representing the inter-set communication. */
 int refine_part(struct vtx_data **graph,        /* graph data structure */
@@ -58,7 +59,7 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
   double *          comm_vals = NULL;       /* edge wgts of comm graph for sorting */
   float *           term_wgts[2];           /* terminal propagation vector */
   int               hops[MAXSETS][MAXSETS]; /* preference weighting */
-  double *          temp           = NULL;  /* return argument from srealloc_ret() */
+  void *            temp           = NULL;  /* return argument from srealloc_ret() */
   int *             indices        = NULL;  /* sorted order for communication edges */
   int *             space          = NULL;  /* space for mergesort */
   int *             sizes          = NULL;  /* sizes of the different sets */
@@ -88,8 +89,9 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
   int               error;                  /* out of space? */
   int               size;                   /* array spacing */
   int               i, j, k;                /* loop counters */
-  int               abs(), kl_refine();
-  void              mergesort(), strout();
+  int               kl_refine();
+  void              strout();
+  void              ch_mergesort(double *vals, int nvals, int *indices, int *space);
 
   error        = 1;
   term_wgts[1] = NULL;
@@ -235,7 +237,7 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
     goto skip;
   }
 
-  mergesort(comm_vals, ncomm, indices, space);
+  ch_mergesort(comm_vals, ncomm, indices, space);
   sfree(space);
   sfree(comm_vals);
   space     = NULL;

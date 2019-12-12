@@ -80,13 +80,13 @@ namespace Iocgns {
   class DecompositionDataBase
   {
   public:
-    DecompositionDataBase(MPI_Comm comm) {}
+    DecompositionDataBase() {}
 
     virtual ~DecompositionDataBase();
-    virtual void   decompose_model(int serFilePtr, int filePtr, Ioss::MeshType mesh_type) = 0;
-    virtual size_t ioss_node_count() const                                                = 0;
-    virtual size_t ioss_elem_count() const                                                = 0;
-    virtual int    int_size() const                                                       = 0;
+    virtual void   decompose_model(int filePtr, Ioss::MeshType mesh_type) = 0;
+    virtual size_t ioss_node_count() const                                = 0;
+    virtual size_t ioss_elem_count() const                                = 0;
+    virtual int    int_size() const                                       = 0;
 
     virtual int    spatial_dimension() const = 0;
     virtual size_t global_node_count() const = 0;
@@ -141,7 +141,7 @@ namespace Iocgns {
 
     int int_size() const { return sizeof(INT); }
 
-    void decompose_model(int serFilePtr, int filePtr, Ioss::MeshType mesh_type);
+    void decompose_model(int filePtr, Ioss::MeshType mesh_type);
 
     int spatial_dimension() const { return m_decomposition.m_spatialDimension; }
 
@@ -196,7 +196,7 @@ namespace Iocgns {
                                   INT *data) const;
 
   private:
-    void decompose_structured(int serFilePtr, int filePtr);
+    void decompose_structured(int filePtr);
     void decompose_unstructured(int filePtr);
 
     void get_sideset_data(int filePtr);

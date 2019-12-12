@@ -365,7 +365,7 @@ namespace MueLu {
       }
 
       // amount of shared memory
-      size_t team_shmem_size( int team_size ) const {
+      size_t team_shmem_size( int /* team_size */ ) const {
         if (doQRStep) {
           int m = maxAggDofSize;
           int n = fineNS.extent(1);
@@ -390,6 +390,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Aggregates",         Teuchos::null, "Generating factory of the aggregates");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",          Teuchos::null, "Generating factory of the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("Scaled Nullspace",   Teuchos::null, "Generating factory of the scaled nullspace");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
@@ -403,13 +404,16 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
+    // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
+    std::string nspName = "Nullspace";
+    if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
     Input(fineLevel, "A");
     Input(fineLevel, "Aggregates");
-    Input(fineLevel, "Nullspace");
+    Input(fineLevel, nspName);
     Input(fineLevel, "UnAmalgamationInfo");
     Input(fineLevel, "CoarseMap");
     if( fineLevel.GetLevelID() == 0 &&
@@ -434,11 +438,14 @@ namespace MueLu {
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
     typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
     typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    const ParameterList& pL = GetParameterList();
+    std::string nspName = "Nullspace";
+    if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
     auto A             = Get< RCP<Matrix> >           (fineLevel, "A");
     auto aggregates    = Get< RCP<Aggregates_kokkos> >(fineLevel, "Aggregates");
     auto amalgInfo     = Get< RCP<AmalgamationInfo> > (fineLevel, "UnAmalgamationInfo");
-    auto fineNullspace = Get< RCP<MultiVector> >      (fineLevel, "Nullspace");
+    auto fineNullspace = Get< RCP<MultiVector> >      (fineLevel, nspName);
     auto coarseMap     = Get< RCP<const Map> >        (fineLevel, "CoarseMap");
     RCP<RealValuedMultiVector> fineCoords;
     if(bTransferCoordinates_) {
@@ -514,7 +521,7 @@ namespace MueLu {
 
                                  auto aggregate = aggGraph.rowConst(i);
 
-                                 typename Teuchos::ScalarTraits<Scalar>::coordinateType sum = 0.0; // do not use Scalar here (Stokhos)
+                                 coordinate_type sum = 0.0; // do not use Scalar here (Stokhos)
                                  for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
                                    sum += fineCoordsRandomView(aggregate(colID),j);
 
@@ -566,7 +573,7 @@ namespace MueLu {
     const size_t NSDim    = fineNullspace->getNumVectors();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
-    typedef typename ATS::magnitudeType Magnitude;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
     const SC zero = ATS::zero(), one = ATS::one();
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -761,13 +768,13 @@ namespace MueLu {
             // Extract the piece of the nullspace corresponding to the aggregate, and
             // put it in the flat array, "localQR" (in column major format) for the
             // QR routine. Trivial in 1D.
-            auto norm = ATS::magnitude(zero);
+            auto norm = impl_ATS::magnitude(zero);
 
             // Calculate QR by hand
             // FIXME: shouldn't there be stridedblock here?
             // FIXME_KOKKOS: shouldn't there be stridedblock here?
             for (decltype(aggSize) k = 0; k < aggSize; k++) {
-              auto dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
+              auto dnorm = impl_ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
               norm += dnorm*dnorm;
             }
             norm = sqrt(norm);
@@ -858,7 +865,7 @@ namespace MueLu {
         Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:for2", range_type(0, nnzEstimate),
           KOKKOS_LAMBDA(const LO j) {
             colsAux(j) = INVALID;
-            valsAux(j) = zero;
+            valsAux(j) = impl_ATS::zero();
           });
       }
 
@@ -955,8 +962,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPcoupled(RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const {
+  BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates_kokkos> /* aggregates */, RCP<AmalgamationInfo> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
+                RCP<const Map> /* coarseMap */, RCP<Matrix>& /* Ptentative */, RCP<MultiVector>& /* coarseNullspace */) const {
     throw Exceptions::RuntimeError("MueLu: Construction of coupled tentative P is not implemented");
   }
 

@@ -94,7 +94,7 @@ DOF(const Teuchos::ParameterList & p) :
 
   this->addDependentField(dof_basis);
 
-  std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
+  std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::print<EvalT>()+")";
   this->setName(n);
 }
 
@@ -127,7 +127,7 @@ DOF(const PHX::FieldTag & input,
 
   this->addDependentField(dof_basis);
 
-  std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
+  std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::print<EvalT>()+")";
   this->setName(n);
 }
 
@@ -233,7 +233,7 @@ DOF(const Teuchos::ParameterList & p) :
 
   std::string n = "DOF: " + dof_basis.fieldTag().name() 
                           + ( accelerate_jacobian_enabled ? " accel_jac " : "slow_jac" ) 
-                          + " ("+PHX::typeAsString<panzer::Traits::Jacobian>()+")";
+                          + " ("+PHX::print<panzer::Traits::Jacobian>()+")";
   this->setName(n);
 }
 
@@ -268,7 +268,7 @@ DOF(const PHX::FieldTag & input,
 
   this->addDependentField(dof_basis);
 
-  std::string n = "DOF: " + dof_basis.fieldTag().name() + " slow_jac(descriptor) ("+PHX::typeAsString<typename TRAITS::Jacobian>()+")";
+  std::string n = "DOF: " + dof_basis.fieldTag().name() + " slow_jac(descriptor) ("+PHX::print<typename TRAITS::Jacobian>()+")";
   this->setName(n);
 }
 

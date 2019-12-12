@@ -28,7 +28,12 @@ endif()
 # B) Include modules
 
 set(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
-include("${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch/TribitsGetVersionDate.cmake")
+SET(CMAKE_MODULE_PATH
+   ${${PROJECT_NAME}_TRIBITS_DIR}/core/utils
+   ${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch
+   )
+
+include(TribitsGetVersionDate)
 
 # C) Find Git
 

@@ -61,6 +61,15 @@
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 
+#include "Xpetra_IO.hpp"
+
+#ifdef HAVE_XPETRA_TPETRA
+#include "Xpetra_TpetraMultiVector.hpp"
+#include <Tpetra_RowMatrixTransposer.hpp>
+#include <Tpetra_Details_extractBlockDiagonal.hpp>
+#include <Tpetra_Details_scaleBlockDiagonal.hpp>
+#endif
+
 namespace Xpetra {
 
 /*!
@@ -73,9 +82,9 @@ namespace Xpetra {
 
 */
 template <class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class MatrixUtils {
 #undef XPETRA_MATRIXUTILS_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -432,7 +441,7 @@ public:
       }
     }
     return bA;
-  }
+  } // SplitMatrix
 
   /** Given a matrix A, detect too small diagonals and replace any found with ones. */
 
@@ -528,6 +537,108 @@ public:
     }
 #endif
   } //CheckRepairMainDiagonal
+
+
+
+  /** Given a matrix A, boost the diagonal to a relative floor.  Multiple PDEs will be scaled differently.
+      Each PDE can be given its own relative threshold, or a single threshold can be used for all PDEs
+      NOTE: This is not Kokkos-ized
+      Precondition: A->GetFixedBlockSize() == relativeThreshold.size()  OR relativeThreshold.size() == 1
+  **/
+
+  static void RelativeDiagonalBoost(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+                                    const Teuchos::ArrayView<const double> & relativeThreshold, Teuchos::FancyOStream &fos)
+  {
+    Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("RelativeDiagonalBoost"));
+
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != relativeThreshold.size()  && relativeThreshold.size() != 1,Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::RelativeDiagonal Boost:  Either A->GetFixedBlockSize() != relativeThreshold.size() OR relativeThreshold.size() == 1");
+    
+    LocalOrdinal numPDEs = A->GetFixedBlockSize();
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    Scalar zero = TST::zero();
+    Scalar one = TST::one();
+    
+    // Get the diagonal
+    RCP<Vector> diag = VectorFactory::Build(A->getRowMap());
+    A->getLocalDiagCopy(*diag);
+    Teuchos::ArrayRCP< const Scalar > dataVal = diag->getData(0);
+    size_t N = A->getRowMap()->getNodeNumElements();
+
+    // Compute the diagonal maxes for each PDE
+    std::vector<MT> l_diagMax(numPDEs), g_diagMax(numPDEs);
+    for(size_t i=0; i<N; i++) {
+      int pde = (int) (i % numPDEs);
+      if((int)i < numPDEs) 
+        l_diagMax[pde] = TST::magnitude(dataVal[i]);
+      else
+        l_diagMax[pde] = std::max(l_diagMax[pde],TST::magnitude(dataVal[i]));
+    }
+    Teuchos::reduceAll(*A->getRowMap()->getComm(), Teuchos::REDUCE_MAX, numPDEs, l_diagMax.data(), g_diagMax.data() );
+
+    // Apply the diagonal maxes via matrix-matrix addition
+    RCP<Matrix> boostMatrix = MatrixFactory::Build(A->getRowMap(),1);
+    Teuchos::Array<GlobalOrdinal> index(1);
+    Teuchos::Array<Scalar> value(1);
+    for (size_t i = 0; i<N; i++) {
+      GlobalOrdinal GRID = A->getRowMap()->getGlobalElement(i);
+      int pde = (int) (i % numPDEs);
+      index[0] = GRID;
+      if (TST::magnitude(dataVal[i]) < relativeThreshold[pde] * g_diagMax[pde]) 
+        value[0] = relativeThreshold[pde] * g_diagMax[pde] - TST::magnitude(dataVal[i]);
+      else
+        value[0] =zero;
+      boostMatrix->insertGlobalValues(GRID,index(),value());      
+    }
+    boostMatrix->fillComplete(A->getDomainMap(),A->getRangeMap());
+
+    // FIXME: We really need an add that lets you "add into"
+    RCP<Matrix> newA;
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*A,false,one, *boostMatrix,false,one,newA,fos);
+    if (A->IsView("stridedMaps"))
+      newA->CreateView("stridedMaps", A);
+    A = newA;
+    A->fillComplete();
+  }
+
+
+  // Extracting the block diagonal of a matrix
+  static void extractBlockDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A,
+                                   Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & diagonal) {
+    const UnderlyingLib lib = A.getRowMap()->lib();
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::extractBlockDiagonal not available for Epetra."));
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & At = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+        Tpetra::MultiVector<SC,LO,GO,NO> &     Dt = Xpetra::toTpetra(diagonal);
+        Tpetra::Details::extractBlockDiagonal(At,Dt);
+#endif // HAVE_XPETRA_TPETRA
+      }
+  }
+
+  // Inverse scaling by a block-diagonal matrix
+  static void inverseScaleBlockDiagonal(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & blockDiagonal,
+                                 Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & toBeScaled) {
+                            
+    const UnderlyingLib lib = blockDiagonal.getMap()->lib();
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::inverseScaleBlockDiagonal not available for Epetra."));
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        const Tpetra::MultiVector<SC,LO,GO,NO> & Dt = Xpetra::toTpetra(blockDiagonal);
+        Tpetra::MultiVector<SC,LO,GO,NO> &       St = Xpetra::toTpetra(toBeScaled);
+        Tpetra::Details::inverseScaleBlockDiagonal(Dt,St);
+#endif // HAVE_XPETRA_TPETRA
+      }
+  }
+
 
 };
 

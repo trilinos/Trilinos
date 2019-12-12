@@ -46,156 +46,165 @@
 
 
 namespace FROSch {
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class GDSWCoarseOperator : public HarmonicCoarseOperator<SC,LO,GO,NO> {
-        
-    public:
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr UNVecPtr;
 
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecView GOVecView;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::BoolVecPtr BoolVecPtr;
-            
-        
-        GDSWCoarseOperator(CrsMatrixPtr k,
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    class GDSWCoarseOperator : public HarmonicCoarseOperator<SC,LO,GO,NO> {
+
+    protected:
+
+        using CommPtr                       = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
+
+        using XMapPtr                       = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr            = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+        using XMapPtrVecPtr2D               = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr2D;
+        using ConstXMapPtrVecPtr2D          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr2D;
+
+        using XMatrixPtr                    = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr               = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
+
+        using XMultiVectorPtr               = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtrVecPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
+
+        using ParameterListPtr              = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
+
+        using DDInterfacePtr                = typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr;
+
+        using EntitySetPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
+
+        using SubdomainSolverPtr            = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+
+        using UN                            = typename SchwarzOperator<SC,LO,GO,NO>::UN;
+        using UNVecPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;
+
+        using LOVec                         = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
+        using LOVecPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr;
+        using LOVecPtr2D                    = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
+
+        using GOVec                         = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
+        using GOVecPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr;
+        using GOVecView                     = typename SchwarzOperator<SC,LO,GO,NO>::GOVecView;
+        using GOVecPtr2D                    = typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D;
+
+        using SCVec                         = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
+        using SCVecPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+
+        using BoolVecPtr                    = typename SchwarzOperator<SC,LO,GO,NO>::BoolVecPtr;
+
+    public:
+
+        GDSWCoarseOperator(ConstXMatrixPtr k,
                            ParameterListPtr parameterList);
-        
+
         virtual int initialize()
         {
             FROSCH_ASSERT(false,"GDSWCoarseOperator cannot be built without a repeated Map");
             return 0;
         };
-        
+
         int initialize(UN dimension,
-                       MapPtr repeatedMap);
-        
+                       ConstXMapPtr repeatedMap);
+
         int initialize(UN dimension,
-                       MapPtr repeatedMap,
+                       ConstXMapPtr repeatedMap,
                        GOVecPtr dirichletBoundaryDofs);
-        
+
         int initialize(UN dimension,
                        UN dofsPerNode,
-                       MapPtr repeatedNodesMap,
-                       MapPtrVecPtr RepeatedDofMaps);
-        
+                       ConstXMapPtr repeatedNodesMap,
+                       ConstXMapPtrVecPtr RepeatedDofMaps);
+
         int initialize(UN dimension,
                        UN dofsPerNode,
-                       MapPtr repeatedNodesMap,
-                       MapPtrVecPtr RepeatedDofMaps,
+                       ConstXMapPtr repeatedNodesMap,
+                       ConstXMapPtrVecPtr RepeatedDofMaps,
                        GOVecPtr dirichletBoundaryDofs);
-        
+
         int initialize(UN dimension,
                        UN dofsPerNode,
-                       MapPtr repeatedNodesMap,
-                       MapPtrVecPtr RepeatedDofMaps,
-                       MultiVectorPtr nodeList);
-        
+                       ConstXMapPtr repeatedNodesMap,
+                       ConstXMapPtrVecPtr RepeatedDofMaps,
+                       ConstXMultiVectorPtr nodeList);
+
         int initialize(UN dimension,
                        UN dofsPerNode,
-                       MapPtr repeatedNodesMap,
-                       MapPtrVecPtr RepeatedDofMaps,
+                       ConstXMapPtr repeatedNodesMap,
+                       ConstXMapPtrVecPtr RepeatedDofMaps,
                        GOVecPtr dirichletBoundaryDofs,
-                       MultiVectorPtr nodeList);
-        
+                       ConstXMultiVectorPtr nodeList);
+
         int initialize(UN dimension,
                        UNVecPtr dofsPerNodeVec,
-                       MapPtrVecPtr repeatedNodesMapVec,
-                       MapPtrVecPtr2D repeatedDofMapsVec,
+                       ConstXMapPtrVecPtr repeatedNodesMapVec,
+                       ConstXMapPtrVecPtr2D repeatedDofMapsVec,
                        GOVecPtr2D dirichletBoundaryDofsVec,
-                       MultiVectorPtrVecPtr nodeListVec);
-        
-        void describe(Teuchos::FancyOStream &out,
-                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-        
+                       ConstXMultiVectorPtrVecPtr nodeListVec);
+
+        void describe(FancyOStream &out,
+                      const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
+
         std::string description() const;
-        
+
     protected:
-        
+
         int buildCoarseSpace(UN dimension,
-                             MapPtr nodesMap);
-        
+                             ConstXMapPtr nodesMap);
+
         int buildCoarseSpace(UN dimension,
-                             MapPtr nodesMap,
+                             ConstXMapPtr nodesMap,
                              GOVecPtr dirichletBoundaryDofs); // Das kann man auch mit in den Fall davor reinnehmen ?!
-        
+
         int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
-                             MapPtr nodesMap,
-                             MapPtrVecPtr dofsMaps);
-        
+                             ConstXMapPtr nodesMap,
+                             ConstXMapPtrVecPtr dofsMaps);
+
         int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
-                             MapPtr nodesMap,
-                             MapPtrVecPtr dofsMaps,
+                             ConstXMapPtr nodesMap,
+                             ConstXMapPtrVecPtr dofsMaps,
                              GOVecPtr dirichletBoundaryDofs);
-        
+
         int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
-                             MapPtr nodesMap,
-                             MapPtrVecPtr dofsMaps,
-                             MultiVectorPtr nodeList);
-        
+                             ConstXMapPtr nodesMap,
+                             ConstXMapPtrVecPtr dofsMaps,
+                             ConstXMultiVectorPtr nodeList);
+
         int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
-                             MapPtr nodesMap,
-                             MapPtrVecPtr dofsMaps,
+                             ConstXMapPtr nodesMap,
+                             ConstXMapPtrVecPtr dofsMaps,
                              GOVecPtr dirichletBoundaryDofs,
-                             MultiVectorPtr nodeList);
-        
+                             ConstXMultiVectorPtr nodeList);
+
         int buildCoarseSpace(UN dimension,
                              UNVecPtr dofsPerNodeVec,
-                             MapPtrVecPtr repeatedNodesMapVec,
-                             MapPtrVecPtr2D repeatedDofMapsVec,
+                             ConstXMapPtrVecPtr repeatedNodesMapVec,
+                             ConstXMapPtrVecPtr2D repeatedDofMapsVec,
                              GOVecPtr2D dirichletBoundaryDofsVec,
-                             MultiVectorPtrVecPtr nodeListVec);
-        
+                             ConstXMultiVectorPtrVecPtr nodeListVec);
+
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
-                                          MapPtr nodesMap,
-                                          MapPtrVecPtr dofsMaps,
+                                          ConstXMapPtr nodesMap,
+                                          ConstXMapPtrVecPtr dofsMaps,
                                           GOVecPtr dirichletBoundaryDofs,
-                                          MultiVectorPtr nodeList);                
-        
-        DDInterfacePtr DDInterface_;
+                                          ConstXMultiVectorPtr nodeList);
 
+        DDInterfacePtr DDInterface_;
     };
-    
+
 }
 
 #endif

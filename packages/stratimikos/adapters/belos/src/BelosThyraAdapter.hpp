@@ -280,10 +280,10 @@ namespace Belos {
 
       const int m = B.numRows();
       const int n = B.numCols();
+      auto vs = A.domain();
       // Create a view of the B object!
       Teuchos::RCP< const TMVB >
-        B_thyra = Thyra::createMembersView(
-          A.domain(),
+        B_thyra = vs->createCachedMembersView(
           RTOpPack::ConstSubMultiVectorView<ScalarType>(
             0, m, 0, n,
             arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()
@@ -339,10 +339,10 @@ namespace Belos {
       // Create a multivector to hold the result (m by n)
       int m = A.domain()->dim();
       int n = mv.domain()->dim();
+      auto vs = A.domain();
       // Create a view of the B object!
       Teuchos::RCP< TMVB >
-        B_thyra = Thyra::createMembersView(
-          A.domain(),
+        B_thyra = vs->createCachedMembersView(
           RTOpPack::SubMultiVectorView<ScalarType>(
             0, m, 0, n,
             arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()

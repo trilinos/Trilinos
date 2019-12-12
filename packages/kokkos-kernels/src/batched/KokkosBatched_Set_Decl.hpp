@@ -7,38 +7,35 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 
-
 namespace KokkosBatched {
-  namespace Experimental {
-    ///
-    /// Serial Set
-    ///
+  ///
+  /// Serial Set
+  ///
 
-    struct SerialSet {
-      template<typename ScalarType,
-               typename AViewType>
-      KOKKOS_INLINE_FUNCTION
-      static int
-      invoke(const ScalarType alpha,
-             const AViewType &A);
-    };
+  struct SerialSet {
+    template<typename ScalarType,
+             typename AViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const ScalarType alpha,
+           const AViewType &A);
+  };
 
-    ///
-    /// Team Set
-    ///
+  ///
+  /// Team Set
+  ///
 
-    template<typename MemberType>
-    struct TeamSet {
-      template<typename ScalarType,
-               typename AViewType>
-      KOKKOS_INLINE_FUNCTION
-      static int
-      invoke(const MemberType &member,
-             const ScalarType alpha,
-             const AViewType &A);
-    };
+  template<typename MemberType>
+  struct TeamSet {
+    template<typename ScalarType,
+             typename AViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member,
+           const ScalarType alpha,
+           const AViewType &A);
+  };
 
-  }
 }
 
 

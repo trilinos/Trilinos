@@ -153,8 +153,7 @@ namespace MueLu {
                                                          Teuchos::OrdinalTraits<GO>::invalid(),
                                                          geoData->getNumCoarseNodes(),
                                                          fineCoordinates->getMap()->getIndexBase(),
-                                                         fineCoordinates->getMap()->getComm(),
-                                                         fineCoordinates->getMap()->getNode());
+                                                         fineCoordinates->getMap()->getComm());
       coarseCoordinates = Xpetra::MultiVectorFactory<real_type,LO,GO,Node>::
         Build(coarseCoordsMap, fineCoordinates->getNumVectors());
 

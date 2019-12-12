@@ -77,7 +77,9 @@ namespace MueLu {
     This is not a problem, since after the previous aggregation phases one should not be able to build too large aggregates.
   */
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AggregationPhase2bAlgorithm :
     public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
@@ -88,7 +90,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationPhase2bAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationPhase2bAlgorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~AggregationPhase2bAlgorithm() { }

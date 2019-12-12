@@ -83,7 +83,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
 
@@ -521,8 +521,7 @@ namespace MueLu {
         stridingInfo_,
         rowMap->getComm(),
         -1, /* strided block id */
-        0, /* domain gid offset */
-        rowMap->getNode());
+        0 /* domain gid offset */);
 
 
     //coarseMap = MapFactory::createContigMapWithNode(rowMap->lib(),(NCLayers*GNdofs)/nz, NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()), rowMap->getNode());

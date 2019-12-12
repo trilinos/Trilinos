@@ -159,7 +159,6 @@ C
      *   ' at time ',A16,'.')
   150 FORMAT (/,1X,A)
 
-  160 CONTINUE
       CALL PRTERR ('PROGRAM',
      *   'Internal code error, contact sponsor')
       STOP 'SUMNOD'

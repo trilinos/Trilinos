@@ -55,6 +55,7 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_State.h"
 #include "Ioss_Utils.h"
 #include "vector3d.h"
@@ -100,11 +101,11 @@ int main(int argc, char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+  ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
   std::string in_type  = "exodusII";
   std::string out_type = "exodusII";
-  std::string ss_type  = "exodusII";
 
   Globals globals;
 
@@ -223,9 +224,6 @@ int main(int argc, char *argv[])
   file_copy(in_file, in_type, out_file, out_type, globals);
 
   std::cerr << "\n" << codename << " execution successful.\n";
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
   return EXIT_SUCCESS;
 }
 
@@ -312,7 +310,6 @@ namespace {
   {
     const Ioss::NodeBlockContainer &         nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i   = nbs.begin();
-    int                                      id  = 1;
     while (i != nbs.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -328,7 +325,6 @@ namespace {
       auto nb = new Ioss::NodeBlock(output_region.get_database(), name, 2 * num_nodes, degree);
       output_region.add(nb);
       ++i;
-      ++id;
     }
     if (debug) {
       std::cerr << '\n';

@@ -49,9 +49,8 @@ void addDiscreteGradientToRequestHandler(
 
   typedef double Scalar;
   typedef int LocalOrdinalEpetra;
-  typedef int GlobalOrdinalEpetra;
   typedef int LocalOrdinalTpetra;
-  typedef panzer::Ordinal64 GlobalOrdinalTpetra;
+  typedef panzer::GlobalOrdinal GlobalOrdinalTpetra;
 
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraBlockedLinObjFactory;
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraBlockedLinObjFactory;
@@ -66,12 +65,12 @@ void addDiscreteGradientToRequestHandler(
   if (tblof != Teuchos::null) {
     typedef LocalOrdinalTpetra LocalOrdinal;
     typedef GlobalOrdinalTpetra GlobalOrdinal;
-    typedef panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> UGI;
+    typedef panzer::GlobalIndexer UGI;
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> matrix;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> map;
 
-    RCP<const panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> > blockedDOFMngr = tblof->getGlobalIndexer();
+    RCP<const panzer::BlockedDOFManager> blockedDOFMngr = tblof->getGlobalIndexer();
 
     // get global indexers for edges and nodes
     std::vector<RCP<UGI> > fieldDOFMngrs = blockedDOFMngr->getFieldDOFManagers();
@@ -105,6 +104,7 @@ void addDiscreteGradientToRequestHandler(
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
+    std::vector<bool> insertedEdges(rowmap->getNodeNumElements(),false);
     for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
 
       // loop over elements
@@ -129,8 +129,8 @@ void addDiscreteGradientToRequestHandler(
 
         // loop over edges
         for(std::size_t eIter = 0; eIter < eFieldOffsets.size(); ++eIter){
- 
-          if(isOwned[eIter]){
+
+          if(isOwned[eIter] && !insertedEdges[eLIDs[eIter]]){
 
             int headIndex = cell_topology.getNodeMap(1, eIter, 0);
             int tailIndex = cell_topology.getNodeMap(1, eIter, 1);
@@ -142,31 +142,27 @@ void addDiscreteGradientToRequestHandler(
  
             // get LIDs associated with nodes
             int indices[2] = {nLIDs[tailIndex],nLIDs[headIndex]};
- 
-            // insert values in matrix
-            LocalOrdinal err = grad_matrix->replaceLocalValues(eLIDs[eIter], 2, values, indices);
-            if (err<2)
-              grad_matrix->insertLocalValues(eLIDs[eIter], 2, values, indices);
+            grad_matrix->insertLocalValues(eLIDs[eIter], 2, values, indices);
+            insertedEdges[eLIDs[eIter]] = true;
           }//end if
         }//end edge loop
       }//end element loop
     }//end element block loop
     grad_matrix->fillComplete(domainmap,rangemap);
 
-    RCP<Thyra::LinearOpBase<double> > thyra_gradient = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(domainmap),
-                                                                                                                                           Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(rangemap),grad_matrix);
+    RCP<Thyra::LinearOpBase<double> > thyra_gradient = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(rangemap),
+                                                                                                                                           Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(domainmap),
+                                                                                                                                           grad_matrix);
 
     // add gradient callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
   } else if (eblof != Teuchos::null) {
-    typedef LocalOrdinalEpetra LocalOrdinal;
-    typedef GlobalOrdinalEpetra GlobalOrdinal;
-    typedef panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> UGI;
+    typedef panzer::GlobalIndexer UGI;
     typedef typename panzer::BlockedEpetraLinearObjContainer linObjContainer;
     typedef Epetra_CrsMatrix matrix;
     typedef Epetra_Map map;
 
-    RCP<const panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> > blockedDOFMngr = eblof->getGlobalIndexer();
+    RCP<const panzer::BlockedDOFManager> blockedDOFMngr = eblof->getGlobalIndexer();
 
     // get global indexers for edges and nodes
     std::vector<RCP<UGI> > fieldDOFMngrs = blockedDOFMngr->getFieldDOFManagers();
@@ -200,6 +196,7 @@ void addDiscreteGradientToRequestHandler(
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
+    std::vector<bool> insertedEdges(rowmap->NumMyElements(),false);
     for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
 
       // loop over elements
@@ -207,9 +204,9 @@ void addDiscreteGradientToRequestHandler(
       for(std::size_t elemIter = 0; elemIter < elementIds.size(); ++elemIter){
 
         // get IDs for edges and nodes
-        std::vector<GlobalOrdinal> eGIDs;
+        std::vector<panzer::GlobalOrdinal> eGIDs;
         eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
-        std::vector<GlobalOrdinal> nGIDs;
+        std::vector<panzer::GlobalOrdinal> nGIDs;
         nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
         auto eLIDs = eUgi->getElementLIDs(elementIds[elemIter]);
         auto nLIDs = nUgi->getElementLIDs(elementIds[elemIter]);
@@ -225,7 +222,7 @@ void addDiscreteGradientToRequestHandler(
         // loop over edges
         for(std::size_t eIter = 0; eIter < eFieldOffsets.size(); ++eIter){
 
-          if(isOwned[eIter]){
+          if(isOwned[eIter] && !insertedEdges[eLIDs[eIter]]){
 
             int headIndex = cell_topology.getNodeMap(1, eIter, 0);
             int tailIndex = cell_topology.getNodeMap(1, eIter, 1);
@@ -239,10 +236,9 @@ void addDiscreteGradientToRequestHandler(
             int indices[2] = {nLIDs[tailIndex],nLIDs[headIndex]};
 
             // insert values in matrix
-            int err = grad_matrix->ReplaceMyValues(eLIDs[eIter], 2, values, indices);
-            if (err != 0)
-              err = grad_matrix->InsertMyValues(eLIDs[eIter], 2, values, indices);
+            int err = grad_matrix->InsertMyValues(eLIDs[eIter], 2, values, indices);
             TEUCHOS_ASSERT_EQUALITY(err,0);
+            insertedEdges[eLIDs[eIter]] = true;
           }//end if
         }//end edge loop
       }//end element loop

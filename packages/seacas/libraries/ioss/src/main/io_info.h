@@ -79,8 +79,6 @@
 
 #include "info_interface.h"
 
-#define OUTPUT std::cout
-
 namespace Ioss {
 
   // internal to io_info

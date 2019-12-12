@@ -51,7 +51,7 @@
 namespace Iodw {
   namespace Utils {
 
-    void msg(std::string m) { std::cout << m << std::endl; };
+    void msg(const std::string &m) { std::cout << m << std::endl; };
     void msg(int m) { std::cout << m << std::endl; };
     void msg(int64_t m) { std::cout << m << std::endl; };
     void msg(double m) { std::cout << m << std::endl; };

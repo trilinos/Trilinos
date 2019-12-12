@@ -52,6 +52,7 @@
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Parameters.hpp"
+#include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -88,7 +89,6 @@ namespace Ifpack2 {
     template<class ScalarType>
     inline typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     ilutDefaultDropTolerance () {
-      using Teuchos::as;
       typedef Teuchos::ScalarTraits<ScalarType> STS;
       typedef typename STS::magnitudeType magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> STM;
@@ -99,7 +99,7 @@ namespace Ifpack2 {
       // The min ensures that in case magnitude_type has very low
       // precision, we'll at least get some value strictly less than
       // one.
-      return std::min (as<magnitude_type> (1000) * STS::magnitude (STS::eps ()), oneHalf);
+      return std::min (static_cast<magnitude_type> (1000) * STS::magnitude (STS::eps ()), oneHalf);
     }
 
     // Full specialization for ScalarType = double.
@@ -133,10 +133,6 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   allocateSolvers();
 }
 
-template <class MatrixType>
-ILUT<MatrixType>::~ILUT()
-{}
-
 template<class MatrixType>
 void ILUT<MatrixType>::allocateSolvers ()
 {
@@ -144,57 +140,26 @@ void ILUT<MatrixType>::allocateSolvers ()
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
 }
 
-namespace { // (anonymous)
-
-  template<class MagnitudeType>
-  std::pair<MagnitudeType, bool>
-  getMagnitudeOrDoubleParameterAsMagnitude (const Teuchos::ParameterList& params,
-					    const char parameterName[],
-					    const MagnitudeType& currentValue)
-  {
-    const std::string pname (parameterName);
-
-    if (params.isType<MagnitudeType> (pname)) {
-      const MagnitudeType value = params.get<MagnitudeType> (pname);
-      return {value, true};
-    }
-    else if (! std::is_same<MagnitudeType, double>::value &&
-	     params.isType<double> (pname)) {
-      const MagnitudeType value = params.get<double> (pname);
-      return {value, true};
-    }
-    else {
-      return {currentValue, false};
-    }
-  }
-
-} // namespace (anonymous)
-
-
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
+  using Details::getParamTryingTypes;
+  const char prefix[] = "Ifpack2::ILUT: ";
+
   // Don't actually change the instance variables until we've checked
   // all parameters.  This ensures that setParameters satisfies the
   // strong exception guarantee (i.e., is transactional).
 
   // Fill level in ILUT is a double, not a magnitude_type, because it
-  // depends on LO and GO, not on Scalar.
+  // depends on LO and GO, not on Scalar.  Also, you can't cast
+  // arbitrary magnitude_type (e.g., Sacado::MP::Vector) to double.
   double fillLevel = LevelOfFill_;
-  bool gotFillLevel = false;
   {
-    const std::string fillLevelParamName ("fact: ilut level-of-fill");
-    if (params.isType<double> (fillLevelParamName)) {
-      fillLevel = params.get<double> (fillLevelParamName);
-      gotFillLevel = true;
-    }
-    else if (! std::is_same<magnitude_type, double>::value &&
-	     params.isType<double> (fillLevelParamName)) {
-      fillLevel = params.get<double> (fillLevelParamName);
-      gotFillLevel = true;
-    }
+    const std::string paramName ("fact: ilut level-of-fill");
+    getParamTryingTypes<double, double, float>
+      (fillLevel, params, paramName, prefix);
     TEUCHOS_TEST_FOR_EXCEPTION
-      (gotFillLevel && fillLevel < 1.0, std::runtime_error,
+      (fillLevel < 1.0, std::runtime_error,
        "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be >= "
        "1.0, but you set it to " << fillLevel << ".  For ILUT, the fill level "
        "means something different than it does for ILU(k).  ILU(0) produces "
@@ -204,34 +169,43 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
        "fill-in.");
   }
 
-  const auto absThreshResult =
-    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: absolute threshold", Athresh_);
-  const auto relThreshResult =
-    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: relative threshold", Rthresh_);
-  const auto relaxResult =
-    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: relax value", RelaxValue_);
-  const auto dropResult =
-    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: drop tolerance", DropTolerance_);
+  magnitude_type absThresh = Athresh_;
+  {
+    const std::string paramName ("fact: absolute threshold");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (absThresh, params, paramName, prefix);
+  }
+
+  magnitude_type relThresh = Rthresh_;
+  {
+    const std::string paramName ("fact: relative threshold");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (relThresh, params, paramName, prefix);
+  }
+
+  magnitude_type relaxValue = RelaxValue_;
+  {
+    const std::string paramName ("fact: relax value");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (relaxValue, params, paramName, prefix);
+  }
+
+  magnitude_type dropTol = DropTolerance_;
+  {
+    const std::string paramName ("fact: drop tolerance");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (dropTol, params, paramName, prefix);
+  }
 
   // Forward to trisolvers.
   L_solver_->setParameters(params);
   U_solver_->setParameters(params);
 
-  if (gotFillLevel) {
-    LevelOfFill_ = fillLevel;
-  }
-  if (absThreshResult.second) {
-    Athresh_ = absThreshResult.first;
-  }
-  if (relThreshResult.second) {
-    Rthresh_ = relThreshResult.first;
-  }
-  if (relaxResult.second) {
-    RelaxValue_ = relaxResult.first;
-  }
-  if (dropResult.second) {
-    DropTolerance_ = dropResult.first;
-  }
+  LevelOfFill_ = fillLevel;
+  Athresh_ = absThresh;
+  Rthresh_ = relThresh;
+  RelaxValue_ = relaxValue;
+  DropTolerance_ = dropTol;
 }
 
 
@@ -464,15 +438,6 @@ void ILUT<MatrixType>::compute ()
     const scalar_type one  = STS::one ();
 
     const local_ordinal_type myNumRows = A_local_->getNodeNumRows ();
-    L_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
-    U_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
-
-    // CGB: note, this caching approach may not be necessary anymore
-    // We will store ArrayView objects that are views of the rows of U, so that
-    // we don't have to repeatedly retrieve the view for each row. These will
-    // be populated row by row as the factorization proceeds.
-    Array<ArrayView<const local_ordinal_type> > Uindices (myNumRows);
-    Array<ArrayView<const scalar_type> >       Ucoefs (myNumRows);
 
     // If this macro is defined, files containing the L and U factors
     // will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
@@ -499,8 +464,10 @@ void ILUT<MatrixType>::compute ()
 
     Array<scalar_type> InvDiagU (myNumRows, zero);
 
-    Array<local_ordinal_type> tmp_idx;
-    Array<scalar_type> tmpv;
+    Array<Array<local_ordinal_type> > L_tmp_idx(myNumRows);
+    Array<Array<scalar_type> > L_tmpv(myNumRows);
+    Array<Array<local_ordinal_type> > U_tmp_idx(myNumRows);
+    Array<Array<scalar_type> > U_tmpv(myNumRows);
 
     enum { UNUSED, ORIG, FILL };
     local_ordinal_type max_col = myNumRows;
@@ -612,8 +579,8 @@ void ILUT<MatrixType>::compute ()
 
         /* Reduce current row */
 
-        ArrayView<const local_ordinal_type>& ColIndicesU = Uindices[row_k];
-        ArrayView<const scalar_type>& ColValuesU = Ucoefs[row_k];
+        ArrayView<local_ordinal_type> ColIndicesU = U_tmp_idx[row_k]();
+        ArrayView<scalar_type> ColValuesU = U_tmpv[row_k]();
         size_type ColNnzU = ColIndicesU.size();
 
         for(size_type j=0; j<ColNnzU; ++j) {
@@ -645,16 +612,16 @@ void ILUT<MatrixType>::compute ()
       //   first, the original entries from the L section of A:
       for (size_type i = 0; i < ColIndicesA.size (); ++i) {
         if (ColIndicesA[i] < row_i) {
-          tmp_idx.push_back(ColIndicesA[i]);
-          tmpv.push_back(cur_row[ColIndicesA[i]]);
+          L_tmp_idx[row_i].push_back(ColIndicesA[i]);
+          L_tmpv[row_i].push_back(cur_row[ColIndicesA[i]]);
           pattern[ColIndicesA[i]] = UNUSED;
         }
       }
 
       //   next, the L entries resulting from fill:
       for (size_type j = 0; j < L_vals_heaplen; ++j) {
-        tmp_idx.push_back(L_vals_heap[j]);
-        tmpv.push_back(cur_row[L_vals_heap[j]]);
+        L_tmp_idx[row_i].push_back(L_vals_heap[j]);
+        L_tmpv[row_i].push_back(cur_row[L_vals_heap[j]]);
         pattern[L_vals_heap[j]] = UNUSED;
       }
 
@@ -663,26 +630,27 @@ void ILUT<MatrixType>::compute ()
       // triangular solve can assume a unit diagonal, take a short-cut
       // and perform faster.
 
-      L_->insertLocalValues (row_i, tmp_idx (), tmpv ());
 #ifdef IFPACK2_WRITE_FACTORS
-      for (size_type ii = 0; ii < tmp_idx.size (); ++ii) {
-        ofsL << row_i << " " << tmp_idx[ii] << " " << tmpv[ii] << std::endl;
+      for (size_type ii = 0; ii < L_tmp_idx[row_i].size (); ++ii) {
+        ofsL << row_i << " " << L_tmp_idx[row_i][ii] << " " 
+                             << L_tmpv[row_i][ii] << std::endl;
       }
 #endif
 
-      tmp_idx.clear();
-      tmpv.clear();
 
       // Pick out the diagonal element, store its reciprocal.
       if (cur_row[row_i] == zero) {
-        std::cerr << "Ifpack2::ILUT::Compute: zero pivot encountered! Replacing with rownorm and continuing...(You may need to set the parameter 'fact: absolute threshold'.)" << std::endl;
+        std::cerr << "Ifpack2::ILUT::Compute: zero pivot encountered! "
+                  << "Replacing with rownorm and continuing..."
+                  << "(You may need to set the parameter "
+                  << "'fact: absolute threshold'.)" << std::endl;
         cur_row[row_i] = rownorm;
       }
       InvDiagU[row_i] = one / cur_row[row_i];
 
       // Non-inverted diagonal is stored for U:
-      tmp_idx.push_back(row_i);
-      tmpv.push_back(cur_row[row_i]);
+      U_tmp_idx[row_i].push_back(row_i);
+      U_tmpv[row_i].push_back(cur_row[row_i]);
       unorm[row_i] = scalar_mag(cur_row[row_i]);
       pattern[row_i] = UNUSED;
 
@@ -704,31 +672,27 @@ void ILUT<MatrixType>::compute ()
           }
         }
         else {
-          tmp_idx.push_back(col);
-          tmpv.push_back(cur_row[col]);
+          U_tmp_idx[row_i].push_back(col);
+          U_tmpv[row_i].push_back(cur_row[col]);
           unorm[row_i] += scalar_mag(cur_row[col]);
         }
         pattern[col] = UNUSED;
       }
 
       for(size_type j=0; j<U_vals_heaplen; ++j) {
-        tmp_idx.push_back(U_vals_heap[j]);
-        tmpv.push_back(cur_row[U_vals_heap[j]]);
+        U_tmp_idx[row_i].push_back(U_vals_heap[j]);
+        U_tmpv[row_i].push_back(cur_row[U_vals_heap[j]]);
         unorm[row_i] += scalar_mag(cur_row[U_vals_heap[j]]);
       }
 
       unorm[row_i] /= (orig_U_len + U_vals_heaplen);
 
-      U_->insertLocalValues(row_i, tmp_idx(), tmpv() );
 #ifdef IFPACK2_WRITE_FACTORS
-      for(int ii=0; ii<tmp_idx.size(); ++ii) {
-        ofsU <<row_i<< " " <<tmp_idx[ii]<< " " <<tmpv[ii]<< std::endl;
+      for(int ii=0; ii<U_tmp_idx[row_i].size(); ++ii) {
+        ofsU <<row_i<< " " <<U_tmp_idx[row_i][ii]<< " " 
+                           <<U_tmpv[row_i][ii]<< std::endl;
       }
 #endif
-      tmp_idx.clear();
-      tmpv.clear();
-
-      U_->getLocalRowView(row_i, Uindices[row_i], Ucoefs[row_i] );
 
       L_cols_heap.clear();
       U_cols.clear();
@@ -736,8 +700,33 @@ void ILUT<MatrixType>::compute ()
       U_vals_heap.clear();
     } // end of for(row_i) loop
 
-    // FIXME (mfh 03 Apr 2013) Do we need to supply a domain and range Map?
-    L_->fillComplete();
+    // Now allocate and fill the matrices
+    Array<size_t> nnzPerRow(myNumRows);
+
+    for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
+      nnzPerRow[row_i] = L_tmp_idx[row_i].size();
+    }
+
+    L_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(),
+                                   nnzPerRow(), Tpetra::StaticProfile));
+
+    for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
+      L_->insertLocalValues (row_i, L_tmp_idx[row_i](), L_tmpv[row_i]());
+    }
+
+    L_->fillComplete(); 
+
+    for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
+      nnzPerRow[row_i] = U_tmp_idx[row_i].size();
+    }
+
+    U_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(),
+                                   nnzPerRow(), Tpetra::StaticProfile));
+
+    for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
+      U_->insertLocalValues (row_i, U_tmp_idx[row_i](), U_tmpv[row_i]());
+    }
+
     U_->fillComplete();
 
     L_solver_->setMatrix(L_);

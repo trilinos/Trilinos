@@ -258,7 +258,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool doFillComplete, bool doOptimizeStorage) {
+  void Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& /* Op */, const Teuchos::ArrayRCP<Scalar>& /* scalingVector */, bool /* doFillComplete */, bool /* doOptimizeStorage */) {
     throw Exceptions::RuntimeError("MyOldScaleMatrix_Epetra: Epetra needs SC=double and LO=GO=int.");
   }
 
@@ -414,6 +414,7 @@ namespace MueLu {
   DetectDirichletCols(const Xpetra::Matrix<SC,LO,GO,NO>& A,
                       const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
     using ATS        = Kokkos::ArithTraits<SC>;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     SC zero = ATS::zero();
@@ -453,8 +454,8 @@ namespace MueLu {
     const typename ATS::magnitudeType eps = 2.0*ATS::eps();
 
     Kokkos::parallel_for("MueLu:Utils::DetectDirichletCols2", range_type(0,numColEntries),
-                         KOKKOS_LAMBDA(const size_t i) {
-                           dirichletCols(i) = ATS::magnitude(myCols(i,0))>eps;
+                         KOKKOS_LAMBDA (const size_t i) {
+                           dirichletCols(i) = impl_ATS::magnitude(myCols(i,0))>eps;
                          });
     return dirichletCols;
   }
@@ -483,7 +484,6 @@ namespace MueLu {
   ZeroDirichletRows(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     Scalar replaceWith) {
-    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto localMatrix = A->getLocalMatrix();
@@ -562,7 +562,6 @@ namespace MueLu {
   ZeroDirichletCols(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
                     Scalar replaceWith) {
-    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto localMatrix = A->getLocalMatrix();

@@ -498,6 +498,13 @@ namespace {
     const auto numProcs = comm->getSize();
     const auto myRank    = comm->getRank();
 
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+    if (lib == Xpetra::UseEpetra) {
+      out << "Xpetra: localMap only valid when using Tpetra" << std::endl;
+      return;
+    }
+
     const auto INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
     {

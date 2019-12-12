@@ -256,8 +256,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
   MV Z1 (Z0, Teuchos::Copy);
   Z1.reduce ();
   {
-    const SC TWO = STS::one () + STS::one ();
-
     Z1.sync_host ();
     auto Z1_lcl = Z1.getLocalViewHost ();
     bool reduce_expected_result = true;

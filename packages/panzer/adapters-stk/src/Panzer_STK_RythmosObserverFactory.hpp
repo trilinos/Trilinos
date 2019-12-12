@@ -48,7 +48,7 @@
 #include "Teuchos_Assert.hpp"
 
 #include "Panzer_STK_Interface.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
@@ -66,7 +66,7 @@ namespace panzer_stk {
 
     virtual Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & dof_manager,
+			 const Teuchos::RCP<const panzer::GlobalIndexer> & dof_manager,
 			 const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const = 0;
   };
 

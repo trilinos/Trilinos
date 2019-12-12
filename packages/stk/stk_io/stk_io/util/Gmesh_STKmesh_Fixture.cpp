@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -47,35 +48,6 @@ namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk {
 namespace io {
 namespace util {
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-  STK_DEPRECATED Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
-						, const std::string& gmesh_spec
-						, bool use_64bit_int_IO_api
-						, stk::mesh::ConnectivityMap * connectivity_map
-						)
-  : m_mesh_data(comm, connectivity_map)
-{
-  if (use_64bit_int_IO_api) {
-    m_mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", 8));
-  }
-  size_t ifh = m_mesh_data.add_mesh_database(gmesh_spec, "generated", stk::io::READ_MESH);
-  m_mesh_data.set_active_mesh(ifh);
-  m_mesh_data.create_input_mesh();
-
-  auto iossRegion = m_mesh_data.get_input_io_region();
-  const Iogn::DatabaseIO* database = dynamic_cast<const Iogn::DatabaseIO*>(iossRegion->get_database());
-//  database->set_int_byte_size_api(Ioss::USE_INT64_API);
-
-  // get face parts names; need to convert these to strings
-  const std::vector<std::string> sideset_names = database->get_sideset_names();
-
-  for (std::vector<std::string>::const_iterator itr = sideset_names.begin(); itr != sideset_names.end(); ++itr) {
-    m_sideset_names.push_back(*itr);
-    m_sideset_parts.push_back(m_mesh_data.meta_data().get_part(*itr));
-  }
-}
-#endif
 
   Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
 						, const std::string& gmesh_spec

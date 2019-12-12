@@ -77,7 +77,7 @@ ResponseScatterEvaluator_ProbeBase(
   const Teuchos::Array<double>& point,
   const IntegrationRule & ir,
   const Teuchos::RCP<const PureBasis>& basis,
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
   const Teuchos::RCP<ProbeScatterBase> & probeScatter)
   : responseName_(responseName)
   , fieldName_(fieldName)

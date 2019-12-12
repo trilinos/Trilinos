@@ -12,7 +12,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_StepperNewmarkImplicitAForm.hpp"
+#include "Tempus_StepperFactory.hpp"
 
 #include "../TestModels/HarmonicOscillatorModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -368,8 +368,9 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
     Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
   // Setup Stepper for field solve ----------------------------
+  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   RCP<Tempus::StepperNewmarkImplicitAForm<double> > stepper =
-    Teuchos::rcp(new Tempus::StepperNewmarkImplicitAForm<double>(model));
+    sf->createStepperNewmarkImplicitAForm(model, Teuchos::null);
 
   // Setup TimeStepControl ------------------------------------
   RCP<Tempus::TimeStepControl<double> > timeStepControl =

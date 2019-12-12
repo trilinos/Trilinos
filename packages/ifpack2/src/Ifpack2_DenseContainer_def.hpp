@@ -45,7 +45,7 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
-#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_BlockMultiVector.hpp"
 
 #ifdef HAVE_MPI
 #  include <mpi.h>
@@ -57,164 +57,60 @@
 namespace Ifpack2 {
 
 template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType, true>::
+DenseContainer<MatrixType, LocalScalarType>::
 DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                const Teuchos::RCP<const import_type>& importer,
-                int OverlapLevel,
-                scalar_type DampingFactor) :
-  Container<MatrixType> (matrix, partitions, importer, OverlapLevel,
-                         DampingFactor),
-  scalars_ (nullptr),
+                const Teuchos::Array<Teuchos::Array<LO> >& partitions,
+                const Teuchos::RCP<const import_type>&,
+                bool pointIndexed) :
+  ContainerImpl<MatrixType, LocalScalarType> (matrix, partitions, pointIndexed),
   scalarOffsets_ (this->numBlocks_)
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ptr;
-  using Teuchos::toString;
-  typedef typename ArrayView<const local_ordinal_type>::size_type size_type;
   TEUCHOS_TEST_FOR_EXCEPTION(
     !matrix->hasColMap(), std::invalid_argument, "Ifpack2::DenseContainer: "
     "The constructor's input matrix must have a column Map.");
 
   //compute scalarOffsets_
-  global_ordinal_type totalScalars = 0;
-  for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+  GO totalScalars = 0;
+  for(LO i = 0; i < this->numBlocks_; i++)
   {
     scalarOffsets_[i] = totalScalars;
-    totalScalars += this->blockRows_[i] * this->blockRows_[i]
-                    * this->bcrsBlockSize_ * this->bcrsBlockSize_;
+    totalScalars += this->blockSizes_[i] * this->scalarsPerRow_ *
+                    this->blockSizes_[i] * this->scalarsPerRow_;
   }
-  scalars_ = new local_scalar_type[totalScalars];
+  scalars_.resize(totalScalars);
   for(int i = 0; i < this->numBlocks_; i++)
   {
-    int nnodes = this->blockRows_[i];
-    int denseRows = nnodes * this->bcrsBlockSize_;
+    LO denseRows = this->blockSizes_[i] * this->scalarsPerRow_;
     //create square dense matrix (stride is same as rows and cols)
-    diagBlocks_.emplace_back(Teuchos::View, scalars_ + scalarOffsets_[i], denseRows, denseRows, denseRows);
-    diagBlocks_[i].putScalar(0);
+    diagBlocks_.emplace_back(Teuchos::View, scalars_.data() + scalarOffsets_[i], denseRows, denseRows, denseRows);
   }
 
-  ipiv_.resize(this->partitions_.size() * this->bcrsBlockSize_);
-
-  for(int i = 0; i < this->numBlocks_; i++)
-  {
-    Teuchos::ArrayView<const local_ordinal_type> localRows = this->getLocalRows(i);
-    // Check whether the input set of local row indices is correct.
-    const map_type& rowMap = * (matrix->getRowMap ());
-    const size_type numRows = localRows.size ();
-    bool rowIndicesValid = true;
-    Array<local_ordinal_type> invalidLocalRowIndices;
-    for(size_type j = 0; j < numRows; j++) {
-      if(!rowMap.isNodeLocalElement(localRows[j])) {
-        rowIndicesValid = false;
-        invalidLocalRowIndices.push_back(localRows[j]);
-        break;
-      }
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      !rowIndicesValid, std::invalid_argument, "Ifpack2::DenseContainer: "
-      "On process " << rowMap.getComm()->getRank() << " of "
-      << rowMap.getComm()->getSize() << ", in the given set of local row "
-      "indices localRows = " << toString(localRows) << ", the following "
-      "entries are not valid local row indices on the calling process: "
-      << toString(invalidLocalRowIndices) << ".");
-  }
-  IsInitialized_ = false;
-  IsComputed_ = false;
+  ipiv_.resize(this->blockRows_.size() * this->scalarsPerRow_);
 }
 
 template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType, true>::
-DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                const Teuchos::Array<local_ordinal_type>& localRows) :
-  Container<MatrixType>(matrix, localRows),
-  scalars_(nullptr)
-{
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
- using Teuchos::toString;
-  typedef typename ArrayView<const local_ordinal_type>::size_type size_type;
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !matrix->hasColMap(), std::invalid_argument, "Ifpack2::DenseContainer: "
-    "The constructor's input matrix must have a column Map.");
-  diagBlocks_.emplace_back(this->blockRows_[0] * this->bcrsBlockSize_,
-                           this->blockRows_[0] * this->bcrsBlockSize_);
-  diagBlocks_[0].putScalar(0);
-
-  ipiv_.resize(this->partitions_.size() * this->bcrsBlockSize_);
-
-  for(int i = 0; i < this->numBlocks_; i++)
-  {
-    // Check whether the input set of local row indices is correct.
-    const map_type& rowMap = *(matrix->getRowMap());
-    const size_type numRows = localRows.size ();
-    bool rowIndicesValid = true;
-    Array<local_ordinal_type> invalidLocalRowIndices;
-    for(size_type j = 0; j < numRows; j++)
-    {
-      if(!rowMap.isNodeLocalElement(localRows[j]))
-      {
-        rowIndicesValid = false;
-        invalidLocalRowIndices.push_back(localRows[j]);
-        break;
-      }
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      !rowIndicesValid, std::invalid_argument, "Ifpack2::DenseContainer: "
-      "On process " << rowMap.getComm()->getRank() << " of "
-      << rowMap.getComm()->getSize() << ", in the given set of local row "
-      "indices localRows = " << toString (localRows) << ", the following "
-      "entries are not valid local row indices on the calling process: "
-      << toString(invalidLocalRowIndices) << ".");
-  }
-  // FIXME (mfh 25 Aug 2013) What if the matrix's row Map has a
-  // different index base than zero?
-  IsInitialized_ = false;
-  IsComputed_ = false;
-}
-
-template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType, true>::~DenseContainer()
-{
-  if(scalars_)
-    delete[] scalars_;
-}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, true>::
-setParameters (const Teuchos::ParameterList& /* List */)
-{
-  // the solver doesn't currently take any parameters
-}
+DenseContainer<MatrixType, LocalScalarType>::
+~DenseContainer () {}
 
 template<class MatrixType, class LocalScalarType>
 void
-DenseContainer<MatrixType, LocalScalarType, true>::
+DenseContainer<MatrixType, LocalScalarType>::
 initialize ()
 {
-  using Teuchos::null;
-  using Teuchos::rcp;
-
-  // We assume that if you called this method, you intend to recompute
-  // everything.
-  IsInitialized_ = false;
-  IsComputed_ = false;
-
   // Fill the diagonal block and LU permutation array with zeros.
   for(int i = 0; i < this->numBlocks_; i++)
-    diagBlocks_[i].putScalar(Teuchos::ScalarTraits<local_scalar_type>::zero());
+    diagBlocks_[i].putScalar(Teuchos::ScalarTraits<LSC>::zero());
   std::fill (ipiv_.begin (), ipiv_.end (), 0);
-  IsInitialized_ = true;
+
+  this->IsInitialized_ = true;
+  // We assume that if you called this method, you intend to recompute
+  // everything.
+  this->IsComputed_ = false;
 }
 
 template<class MatrixType, class LocalScalarType>
 void
-DenseContainer<MatrixType, LocalScalarType, true>::
+DenseContainer<MatrixType, LocalScalarType>::
 compute ()
 {
 // FIXME: I am commenting this out because it breaks block CRS support
@@ -223,28 +119,132 @@ compute ()
 //    "Ifpack2::DenseContainer::compute: ipiv_ array has the wrong size.  "
 //    "Please report this bug to the Ifpack2 developers.");
 
-  IsComputed_ = false;
-  if (! this->isInitialized ()) {
+  this->IsComputed_ = false;
+  if (!this->isInitialized ()) {
     this->initialize();
   }
 
-  // Extract the submatrix.
-  extract ();
-  factor (); // factor the submatrices
-
-  IsComputed_ = true;
+  extract (); // Extract the submatrices
+  factor ();  // Factor them
+  this->IsComputed_ = true;
 }
 
 template<class MatrixType, class LocalScalarType>
+void DenseContainer<MatrixType, LocalScalarType>::extract()
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using STS = Teuchos::ScalarTraits<SC>;
+  SC zero = STS::zero();
+  const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  //To extract diagonal blocks, need to translate local rows to local columns.
+  //Strategy: make a lookup table that translates local cols in the matrix to offsets in blockRows_:
+  //blockOffsets_[b] <= offset < blockOffsets_[b+1]: tests whether the column is in block b.
+  //offset - blockOffsets_[b]: gives the column within block b.
+  //
+  //This provides the block and col within a block in O(1).
+  if(this->scalarsPerRow_ > 1)
+  {
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      LO blockStart = this->blockOffsets_[i];
+      LO blockEnd = blockStart + this->blockSizes_[i];
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(size_t j = 0; j < size_t(blockRows.size()); j++)
+      {
+        LO localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      for(LO blockRow = 0; blockRow < LO(blockRows.size()); blockRow++)
+      {
+        //get a raw view of the whole block row
+        const LO* indices;
+        SC* values;
+        LO numEntries;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
+        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
+        for(LO k = 0; k < numEntries; k++)
+        {
+          LO colOffset = colToBlockOffset[indices[k]];
+          if(blockStart <= colOffset && colOffset < blockEnd)
+          {
+            //This entry does appear in the diagonal block.
+            //(br, bc) identifies the scalar's position in the BlockCrs block.
+            //Convert this to (r, c) which is its position in the container block.
+            LO blockCol = colOffset - blockStart;
+            for(LO bc = 0; bc < this->bcrsBlockSize_; bc++)
+            {
+              for(LO br = 0; br < this->bcrsBlockSize_; br++)
+              {
+                LO r = this->bcrsBlockSize_ * blockRow + br;
+                LO c = this->bcrsBlockSize_ * blockCol + bc;
+                auto val = values[k * (this->bcrsBlockSize_ * this->bcrsBlockSize_) + (br + this->bcrsBlockSize_ * bc)];
+                if(val != zero)
+                  diagBlocks_[i](r, c) = val;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    //get the mapping from point-indexed matrix columns to offsets in blockRows_
+    //(this includes regular CrsMatrix columns, in which case bcrsBlockSize_ == 1)
+    Array<LO> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      LO blockStart = this->blockOffsets_[i];
+      LO blockEnd = blockStart + this->blockSizes_[i];
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(size_t j = 0; j < size_t(blockRows.size()); j++)
+      {
+        //translateRowToCol will return the corresponding split column
+        LO localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      for(size_t blockRow = 0; blockRow < size_t(blockRows.size()); blockRow++)
+      {
+        //get a view of the split row
+        LO inputPointRow = this->blockRows_[blockStart + blockRow];
+        auto rowView = this->getInputRowView(inputPointRow);
+        for(size_t k = 0; k < rowView.size(); k++)
+        {
+          LO colOffset = colToBlockOffset[rowView.ind(k)];
+          if(blockStart <= colOffset && colOffset < blockEnd)
+          {
+            LO blockCol = colOffset - blockStart;
+            auto val = rowView.val(k);
+            if(val != zero)
+              diagBlocks_[i](blockRow, blockCol) = rowView.val(k);
+          }
+        }
+      }
+    }
+  }
+}
+
+
+template<class MatrixType, class LocalScalarType>
 void
-DenseContainer<MatrixType, LocalScalarType, true>::
+DenseContainer<MatrixType, LocalScalarType>::
 factor ()
 {
-  Teuchos::LAPACK<int, local_scalar_type> lapack;
+  Teuchos::LAPACK<int, LSC> lapack;
   for(int i = 0; i < this->numBlocks_; i++)
   {
     int INFO = 0;
-    int* blockIpiv = ipiv_.getRawPtr() + this->partitionIndices_[i] * this->bcrsBlockSize_;
+    int* blockIpiv = &ipiv_[this->blockOffsets_[i] * this->scalarsPerRow_];
     lapack.GETRF(diagBlocks_[i].numRows(),
                  diagBlocks_[i].numCols(),
                  diagBlocks_[i].values(),
@@ -270,174 +270,65 @@ factor ()
 
 template<class MatrixType, class LocalScalarType>
 void
-DenseContainer<MatrixType, LocalScalarType, true>::
-applyImplBlockCrs (HostViewLocal& X,
-           HostViewLocal& Y,
+DenseContainer<MatrixType, LocalScalarType>::
+solveBlock(HostSubviewLocal X,
+           HostSubviewLocal Y,
            int blockIndex,
-           int stride,
            Teuchos::ETransp mode,
-           local_scalar_type alpha,
-           local_scalar_type beta) const
+           LSC alpha,
+           LSC beta) const
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::Ptr;
-  using Teuchos::ptr;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
-
-  typedef Teuchos::ScalarTraits<local_scalar_type> STS;
-  const size_t numRows = X.extent(0);
-  const size_t numVecs = X.extent(1);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    static_cast<size_t> (X.extent (0)) != static_cast<size_t> (diagBlocks_[blockIndex].numRows ()),
-    std::logic_error, "Ifpack2::DenseContainer::applyImpl: X and Y have "
-    "different number of rows than block matrix (" << X.extent(0) << " resp. "
-    << diagBlocks_[blockIndex].numRows() << ").  Please report this bug to "
-    "the Ifpack2 developers.");
-
-  if (alpha == STS::zero ()) { // don't need to solve the linear system
-    if (beta == STS::zero ()) {
-      // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
-      // any Inf or NaN values in Y (rather than multiplying them by
-      // zero, resulting in NaN values).
-      for(size_t i = 0; i < numRows; i++)
-        for(size_t j = 0; j < numVecs; j++)
-          Y(i, j) = STS::zero();
-    }
-    else { // beta != 0
-      for(size_t i = 0; i < numRows; i++)
-        for(size_t j = 0; j < numVecs; j++)
-          Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
-    }
-  }
-  else { // alpha != 0; must solve the linear system
-    Teuchos::LAPACK<int, local_scalar_type> lapack;
-    // If beta is nonzero or Y is not constant stride, we have to use
-    // a temporary output multivector.  It gets a (deep) copy of X,
-    // since GETRS overwrites its (multi)vector input with its output.
-    Ptr<HostViewLocal> Y_tmp;
-    bool deleteYT = false;
-    if (beta == STS::zero () ){
-      Kokkos::deep_copy(Y, X);
-      Y_tmp = ptr(&Y);
-    }
-    else {
-      Y_tmp = ptr (new HostViewLocal ("", X.extent(0), X.extent(1)));
-      Kokkos::deep_copy(*Y_tmp, X);
-      deleteYT = true;
-    }
-    local_scalar_type* const Y_ptr = (local_scalar_type*) Y_tmp->data();
-    int INFO = 0;
-    const char trans =
-      (mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
-    int* blockIpiv = (int*) ipiv_.getRawPtr()
-      + this->partitionIndices_[blockIndex] * this->bcrsBlockSize_;
-    lapack.GETRS (trans,
-                  diagBlocks_[blockIndex].numRows (),
-                  numVecs,
-                  diagBlocks_[blockIndex].values (),
-                  diagBlocks_[blockIndex].stride (),
-                  blockIpiv,
-                  Y_ptr,
-                  stride, &INFO);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      INFO != 0, std::runtime_error, "Ifpack2::DenseContainer::applyImpl: "
-      "LAPACK's _GETRS (solve using LU factorization with partial pivoting) "
-      "failed with INFO = " << INFO << " != 0.");
-
-    if (beta != STS::zero ()) {
-      for(size_t i = 0; i < Y.extent(0); i++)
-      {
-        for(size_t j = 0; j < Y.extent(1); j++)
-        {
-          Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
-          Y(i, j) += alpha * (*Y_tmp)(i, j);
-        }
-      }
-    }
-    if(deleteYT)
-      delete Y_tmp.get();
-  }
-}
-
-template<class MatrixType, class LocalScalarType>
-void
-DenseContainer<MatrixType, LocalScalarType, true>::
-applyImpl (HostViewLocal& X,
-           HostViewLocal& Y,
-           int blockIndex,
-           int stride,
-           Teuchos::ETransp mode,
-           local_scalar_type alpha,
-           local_scalar_type beta) const
-{
-  using Teuchos::ArrayRCP;
-  using Teuchos::Ptr;
-  using Teuchos::ptr;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
-
+  #ifdef HAVE_IFPACK2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.extent (0) != Y.extent (0),
-    std::logic_error, "Ifpack2::DenseContainer::applyImpl: X and Y have "
+    std::logic_error, "Ifpack2::DenseContainer::solveBlock: X and Y have "
     "incompatible dimensions (" << X.extent (0) << " resp. "
     << Y.extent (0) << ").  Please report this bug to "
     "the Ifpack2 developers.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.extent (1) != Y.extent(1),
-    std::logic_error, "Ifpack2::DenseContainer::applyImpl: X and Y have "
+    std::logic_error, "Ifpack2::DenseContainer::solveBlock: X and Y have "
     "incompatible numbers of vectors (" << X.extent (1) << " resp. "
     << Y.extent (1) << ").  Please report this bug to "
     "the Ifpack2 developers.");
+  #endif
 
-  if(this->hasBlockCrs_) {
-    applyImplBlockCrs(X,Y,blockIndex,stride,mode,alpha,beta);
-    return;
-  }
-
-  typedef Teuchos::ScalarTraits<local_scalar_type> STS;
+  typedef Teuchos::ScalarTraits<LSC> STS;
+  size_t numRows = X.extent(0);
   size_t numVecs = X.extent(1);
   if(alpha == STS::zero()) { // don't need to solve the linear system
     if(beta == STS::zero()) {
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
       // any Inf or NaN values in Y (rather than multiplying them by
       // zero, resulting in NaN values).
-      for(size_t i = 0; i < Y.extent(0); i++)
+      for(size_t j = 0; j < numVecs; j++)
       {
-        for(size_t j = 0; j < Y.extent(1); j++)
+        for(size_t i = 0; i < numRows; i++)
           Y(i, j) = STS::zero();
       }
     }
     else // beta != 0
-      for(size_t i = 0; i < Y.extent(0); i++)
+      for(size_t j = 0; j < numVecs; j++)
       {
-        for(size_t j = 0; j < Y.extent(1); j++)
-          Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
+        for(size_t i = 0; i < numRows; i++)
+          Y(i, j) = beta * Y(i, j);
       }
   }
   else { // alpha != 0; must solve the linear system
-    Teuchos::LAPACK<int, local_scalar_type> lapack;
+    Teuchos::LAPACK<int, LSC> lapack;
     // If beta is nonzero or Y is not constant stride, we have to use
     // a temporary output multivector.  It gets a (deep) copy of X,
     // since GETRS overwrites its (multi)vector input with its output.
-    Ptr<HostViewLocal> Y_tmp;
-    bool deleteYT = false;
-    if (beta == STS::zero () ){
-      Kokkos::deep_copy (Y, X);
-      Y_tmp = ptr (&Y);
+    std::vector<LSC> yTemp(numVecs * numRows);
+    for(size_t j = 0; j < numVecs; j++)
+    {
+      for(size_t i = 0; i < numRows; i++)
+        yTemp[j * numRows + i] = X(i, j);
     }
-    else {
-      Y_tmp = ptr (new HostViewLocal ("", Y.extent(0), Y.extent(1)));
-      Kokkos::deep_copy(*Y_tmp, X);
-      deleteYT = true;
-    }
-    local_scalar_type* Y_ptr = (local_scalar_type*) Y_tmp->data();
+
     int INFO = 0;
-    int* blockIpiv = (int*) ipiv_.getRawPtr() + this->partitionIndices_[blockIndex] * this->bcrsBlockSize_;
+    int* blockIpiv = &ipiv_[this->blockOffsets_[blockIndex] * this->scalarsPerRow_];
     const char trans =
       (mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
     lapack.GETRS (trans,
@@ -446,404 +337,38 @@ applyImpl (HostViewLocal& X,
                   diagBlocks_[blockIndex].values (),
                   diagBlocks_[blockIndex].stride (),
                   blockIpiv,
-                  Y_ptr,
-                  stride, &INFO);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      INFO != 0, std::runtime_error, "Ifpack2::DenseContainer::applyImpl: "
-      "LAPACK's _GETRS (solve using LU factorization with partial pivoting) "
-      "failed with INFO = " << INFO << " != 0.");
+                  yTemp.data(),
+                  numRows,
+                  &INFO);
 
     if (beta != STS::zero ()) {
-      for(size_t i = 0; i < Y.extent(0); i++)
+      for(size_t j = 0; j < numVecs; j++)
       {
-        for(size_t j = 0; j < Y.extent(1); j++)
-          Y(i, j) = Y(i, j) * (local_impl_scalar_type) beta + (local_impl_scalar_type) alpha * (*Y_tmp)(i, j);
+        for(size_t i = 0; i < numRows; i++)
+        {
+          Y(i, j) *= ISC(beta);
+          Y(i, j) += ISC(alpha * yTemp[j * numRows + i]);
+        }
       }
     }
-    if(deleteYT)
-      delete Y_tmp.get();
-  }
-}
-
-template<class MatrixType, class LocalScalarType>
-void
-DenseContainer<MatrixType, LocalScalarType, true>::
-applyBlockCrs (HostView& XIn,
-       HostView& YIn,
-       int blockIndex,
-       int stride,
-       Teuchos::ETransp mode,
-       scalar_type alpha,
-       scalar_type beta) const
-{
-  using Teuchos::ArrayView;
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  const size_t numRows = this->blockRows_[blockIndex];
-
-  // The local operator might have a different Scalar type than
-  // MatrixType.  This means that we might have to convert X and Y to
-  // the Tpetra::MultiVector specialization that the local operator
-  // wants.  This class' X_ and Y_ internal fields are of the right
-  // type for the local operator, so we can use those as targets.
-
-  const char prefix[] = "Ifpack2::DenseContainer::weightedApply: ";
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, prefix << "You must have called the "
-    "compute() method before you may call this method.  You may call "
-    "apply() as many times as you want after calling compute() once, "
-    "but you must have called compute() at least once first.");
-  const size_t numVecs = XIn.extent (1);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numVecs != YIn.extent (1), std::runtime_error,
-    prefix << "X and Y have different numbers of vectors (columns).  X has "
-    << XIn.extent (1) << ", but Y has " << YIn.extent (1) << ".");
-
-  if (numVecs == 0) {
-    return; // done! nothing to do
-  }
-
-  // The local operator works on a permuted subset of the local parts
-  // of X and Y.  The subset and permutation are defined by the index
-  // array returned by getLocalRows().  If the permutation is trivial
-  // and the subset is exactly equal to the local indices, then we
-  // could use the local parts of X and Y exactly, without needing to
-  // permute.  Otherwise, we have to use temporary storage to permute
-  // X and Y.  For now, we always use temporary storage.
-  //
-  // Create temporary permuted versions of the input and output.
-  // (Re)allocate X_ and/or Y_ only if necessary.  We'll use them to
-  // store the permuted versions of X resp. Y.  Note that X_local has
-  // the domain Map of the operator, which may be a permuted subset of
-  // the local Map corresponding to X.getMap().  Similarly, Y_local
-  // has the range Map of the operator, which may be a permuted subset
-  // of the local Map corresponding to Y.getMap().  numRows_ here
-  // gives the number of rows in the row Map of the local Inverse_
-  // operator.
-  //
-  // FIXME (mfh 20 Aug 2013) There might be an implicit assumption
-  // here that the row Map and the range Map of that operator are
-  // the same.
-  //
-  // FIXME (mfh 20 Aug 2013) This "local permutation" functionality
-  // really belongs in Tpetra.
-
-  if(X_local.size() == 0)
-  {
-    //create all X_local and Y_local managed Views at once, are
-    //reused in subsequent apply() calls
-    for(int i = 0; i < this->numBlocks_; i++)
-    {
-      X_local.emplace_back("", this->blockRows_[i] * this->bcrsBlockSize_, numVecs);
+    else {
+      for(size_t j = 0; j < numVecs; j++)
+      {
+        for(size_t i = 0; i < numRows; i++)
+          Y(i, j) = ISC(yTemp[j * numRows + i]);
+      }
     }
-    for(int i = 0; i < this->numBlocks_; i++)
-    {
-      Y_local.emplace_back("", this->blockRows_[i] * this->bcrsBlockSize_, numVecs);
-    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      INFO != 0, std::runtime_error, "Ifpack2::DenseContainer::solveBlock: "
+      "LAPACK's _GETRS (solve using LU factorization with partial pivoting) "
+      "failed with INFO = " << INFO << " != 0.");
   }
-  HostViewLocal& XOut = X_local[blockIndex];
-  HostViewLocal& YOut = Y_local[blockIndex];
-
-  ArrayView<const local_ordinal_type> localRows = this->getLocalRows(blockIndex);
-  // Gather x
-  for (size_t j = 0; j < numVecs; ++j) {
-    for (size_t i = 0; i < numRows; ++i) {
-      const size_t i_perm = localRows[i];
-      for (int k = 0; k < this->bcrsBlockSize_; ++k)
-        XOut(i*this->bcrsBlockSize_+k, j) = XIn(i_perm*this->bcrsBlockSize_+k, j);
-    }
-  }
-
-  // We must gather the contents of the output multivector Y even on
-  // input to applyImpl(), since the inverse operator might use it as
-  // an initial guess for a linear solve.  We have no way of knowing
-  // whether it does or does not.
-
-  // gather Y
-  for (size_t j = 0; j < numVecs; ++j) {
-    for (size_t i = 0; i < numRows; ++i) {
-      const size_t i_perm = localRows[i];
-      for (int k = 0; k < this->bcrsBlockSize_; ++k)
-        YOut(i*this->bcrsBlockSize_+k, j) = YIn(i_perm*this->bcrsBlockSize_+k, j);
-    }
-  }
-
-  // Apply the local operator:
-  // Y_local := beta*Y_local + alpha*M^{-1}*X_local
-  this->applyImpl (XOut, YOut, blockIndex, stride, mode, as<local_scalar_type>(alpha),
-                   as<local_scalar_type>(beta));
-
-  // Scatter the permuted subset output vector Y_local back into the
-  // original output multivector Y.
-  for(size_t j = 0; j < numVecs; ++j) {
-    for(size_t i = 0; i < numRows; ++i) {
-      const size_t i_perm = localRows[i];
-      for(int k = 0; k < this->bcrsBlockSize_; ++k)
-        YIn(i_perm*this->bcrsBlockSize_+k, j) = YOut(i*this->bcrsBlockSize_+k, j);
-    }
-  }
-}
-
-template<class MatrixType, class LocalScalarType>
-void
-DenseContainer<MatrixType, LocalScalarType, true>::
-apply (HostView& X,
-       HostView& Y,
-       int blockIndex,
-       int stride,
-       Teuchos::ETransp mode,
-       scalar_type alpha,
-       scalar_type beta) const
-{
-  using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  // if we have a block CRS matrix, call the appropriate method
-  if(this->hasBlockCrs_) {
-    applyBlockCrs(X,Y,blockIndex,stride,mode,alpha,beta);
-    return;
-  }
-  const size_t numVecs = X.extent(1);
-
-  // The local operator might have a different Scalar type than
-  // MatrixType.  This means that we might have to convert X and Y to
-  // the Tpetra::MultiVector specialization that the local operator
-  // wants.  This class' X_ and Y_ internal fields are of the right
-  // type for the local operator, so we can use those as targets.
-
-  const char prefix[] = "Ifpack2::DenseContainer::weightedApply: ";
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, prefix << "You must have called the "
-    "compute() method before you may call this method.  You may call "
-    "apply() as many times as you want after calling compute() once, "
-    "but you must have called compute() at least once first.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    X.extent (1) != Y.extent (1), std::runtime_error,
-    prefix << "X and Y have different numbers of vectors (columns).  X has "
-    << X.extent (1) << ", but Y has " << Y.extent (1) << ".");
-
-  if (numVecs == 0) {
-    return; // done! nothing to do
-  }
-
-  // The local operator works on a permuted subset of the local parts
-  // of X and Y.  The subset and permutation are defined by the index
-  // array returned by getLocalRows().  If the permutation is trivial
-  // and the subset is exactly equal to the local indices, then we
-  // could use the local parts of X and Y exactly, without needing to
-  // permute.  Otherwise, we have to use temporary storage to permute
-  // X and Y.  For now, we always use temporary storage.
-  //
-  // Create temporary permuted versions of the input and output.
-  // (Re)allocate X_ and/or Y_ only if necessary.  We'll use them to
-  // store the permuted versions of X resp. Y.  Note that X_local has
-  // the domain Map of the operator, which may be a permuted subset of
-  // the local Map corresponding to X.getMap().  Similarly, Y_local
-  // has the range Map of the operator, which may be a permuted subset
-  // of the local Map corresponding to Y.getMap().  numRows_ here
-  // gives the number of rows in the row Map of the local Inverse_
-  // operator.
-  //
-  // FIXME (mfh 20 Aug 2013) There might be an implicit assumption
-  // here that the row Map and the range Map of that operator are
-  // the same.
-  //
-  // FIXME (mfh 20 Aug 2013) This "local permutation" functionality
-  // really belongs in Tpetra.
-
-  if(X_local.size() == 0)
-  {
-    //create all X_local and Y_local managed Views at once, are
-    //reused in subsequent apply() calls
-    for(int i = 0; i < this->numBlocks_; i++)
-    {
-      X_local.emplace_back("", this->blockRows_[i], numVecs);
-    }
-    for(int i = 0; i < this->numBlocks_; i++)
-    {
-      Y_local.emplace_back("", this->blockRows_[i], numVecs);
-    }
-  }
-
-  const ArrayView<const local_ordinal_type> localRows = this->getLocalRows(blockIndex);
-
-  Details::MultiVectorLocalGatherScatter<mv_type, local_mv_type> mvgs;
-  mvgs.gatherViewToView (X_local[blockIndex], X, localRows);
-
-  // We must gather the contents of the output multivector Y even on
-  // input to applyImpl(), since the inverse operator might use it as
-  // an initial guess for a linear solve.  We have no way of knowing
-  // whether it does or does not.
-
-  mvgs.gatherViewToView (Y_local[blockIndex], Y, localRows);
-
-  // Apply the local operator:
-  // Y_local := beta*Y_local + alpha*M^{-1}*X_local
-  this->applyImpl (X_local[blockIndex], Y_local[blockIndex], blockIndex, stride, mode,
-                   as<local_scalar_type>(alpha), as<local_scalar_type>(beta));
-
-  // Scatter the permuted subset output vector Y_local back into the
-  // original output multivector Y.
-  mvgs.scatterViewToView (Y, Y_local[blockIndex], localRows);
-}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, true>::
-weightedApply (HostView& X,
-               HostView& Y,
-               HostView& D,
-               int blockIndex,
-               int stride,
-               Teuchos::ETransp mode,
-               scalar_type alpha,
-               scalar_type beta) const
-{
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::Range1D;
-  using Teuchos::Ptr;
-  using Teuchos::ptr;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
-  using std::endl;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-
-  // The local operator template parameter might have a different
-  // Scalar type than MatrixType.  This means that we might have to
-  // convert X and Y to the Tpetra::MultiVector specialization that
-  // the local operator wants.  This class' X_ and Y_ internal fields
-  // are of the right type for the local operator, so we can use those
-  // as targets.
-
-  const char prefix[] = "Ifpack2::DenseContainer::weightedApply: ";
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, prefix << "You must have called the "
-    "compute() method before you may call this method.  You may call "
-    "weightedApply() as many times as you want after calling compute() once, "
-    "but you must have called compute() at least once first.");
-
-  const size_t numVecs = X.extent(1);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    X.extent(1) != Y.extent(1), std::runtime_error,
-    prefix << "X and Y have different numbers of vectors (columns).  X has "
-    << X.extent(1) << ", but Y has " << Y.extent(1) << ".");
-
-  if(numVecs == 0) {
-    return; // done! nothing to do
-  }
-
-  const size_t numRows = this->blockRows_[blockIndex];
-
-  // The local operator works on a permuted subset of the local parts
-  // of X and Y.  The subset and permutation are defined by the index
-  // array returned by getLocalRows().  If the permutation is trivial
-  // and the subset is exactly equal to the local indices, then we
-  // could use the local parts of X and Y exactly, without needing to
-  // permute.  Otherwise, we have to use temporary storage to permute
-  // X and Y.  For now, we always use temporary storage.
-  //
-  // Create temporary permuted versions of the input and output.
-  // (Re)allocate X_ and/or Y_ only if necessary.  We'll use them to
-  // store the permuted versions of X resp. Y.  Note that X_local has
-  // the domain Map of the operator, which may be a permuted subset of
-  // the local Map corresponding to X.getMap().  Similarly, Y_local
-  // has the range Map of the operator, which may be a permuted subset
-  // of the local Map corresponding to Y.getMap().  numRows_ here
-  // gives the number of rows in the row Map of the local operator.
-  //
-  // FIXME (mfh 20 Aug 2013) There might be an implicit assumption
-  // here that the row Map and the range Map of that operator are
-  // the same.
-  //
-  // FIXME (mfh 20 Aug 2013) This "local permutation" functionality
-  // really belongs in Tpetra.
-
-  if(X_local.size() == 0)
-  {
-    //create all X_local and Y_local managed Views at once, are
-    //reused in subsequent apply() calls
-    for(int i = 0; i < this->numBlocks_; i++)
-    {
-      X_local.emplace_back("", this->blockRows_[i], numVecs);
-    }
-    for(int i = 0; i < this->numBlocks_; i++)
-    {
-      Y_local.emplace_back("", this->blockRows_[i], numVecs);
-    }
-  }
-
-  ArrayView<const local_ordinal_type> localRows = this->getLocalRows(blockIndex);
-
-  Details::MultiVectorLocalGatherScatter<mv_type, local_mv_type> mvgs;
-  mvgs.gatherViewToView (X_local[blockIndex], X, localRows);
-  // We must gather the output multivector Y even on input to
-  // applyImpl(), since the local operator might use it as an initial
-  // guess for a linear solve.  We have no way of knowing whether it
-  // does or does not.
-
-  mvgs.gatherViewToView (Y_local[blockIndex], Y, localRows);
-
-  // Apply the diagonal scaling D to the input X.  It's our choice
-  // whether the result has the original input Map of X, or the
-  // permuted subset Map of X_local.  If the latter, we also need to
-  // gather D into the permuted subset Map.  We choose the latter, to
-  // save memory and computation.  Thus, we do the following:
-  //
-  // 1. Gather D into a temporary vector D_local.
-  // 2. Create a temporary X_scaled to hold diag(D_local) * X_local.
-  // 3. Compute X_scaled := diag(D_loca) * X_local.
-
-  HostViewLocal D_local("", numRows, 1);
-  mvgs.gatherViewToView (D_local, D, localRows);
-  HostViewLocal X_scaled("", numRows, numVecs);
-  for(size_t j = 0; j < numVecs; j++)
-    for(size_t i = 0; i < numRows; i++)
-      X_scaled(i, j) = X_local[blockIndex](i, j) * D_local(i, 0);
-
-  // Y_temp will hold the result of M^{-1}*X_scaled.  If beta == 0, we
-  // can write the result of Inverse_->apply() directly to Y_local, so
-  // Y_temp may alias Y_local.  Otherwise, if beta != 0, we need
-  // temporary storage for M^{-1}*X_scaled, so Y_temp must be
-  // different than Y_local.
-  Ptr<HostViewLocal> Y_temp;
-  bool deleteYT = false;
-  if(beta == STS::zero())
-  {
-    Y_temp = ptr(&Y_local[blockIndex]);
-  } else {
-    Y_temp = ptr(new HostViewLocal("", numRows, numVecs));
-    deleteYT = true;
-  }
-
-  // Apply the local operator: Y_temp := M^{-1} * X_scaled
-  this->applyImpl (X_scaled, *Y_temp, blockIndex, stride, mode, STS::one(), STS::zero());
-  // Y_local := beta * Y_local + alpha * diag(D_local) * Y_temp.
-  //
-  // Note that we still use the permuted subset scaling D_local here,
-  // because Y_temp has the same permuted subset Map.  That's good, in
-  // fact, because it's a subset: less data to read and multiply.
-  for(size_t j = 0; j < numVecs; j++)
-    for(size_t i = 0; i < numRows; i++)
-      Y_local[blockIndex](i, j) = Y_local[blockIndex](i, j) * (local_impl_scalar_type) beta + (local_impl_scalar_type) alpha * (*Y_temp)(i, j) * D_local(i, 0);
-
-  if(deleteYT)
-    delete Y_temp.get();
-
-  // Copy the permuted subset output vector Y_local into the original
-  // output multivector Y.
-  mvgs.scatterViewToView (Y, Y_local[blockIndex], localRows);
 }
 
 template<class MatrixType, class LocalScalarType>
 std::ostream&
-DenseContainer<MatrixType, LocalScalarType, true>::
+DenseContainer<MatrixType, LocalScalarType>::
 print (std::ostream& os) const
 {
   Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
@@ -854,13 +379,13 @@ print (std::ostream& os) const
 
 template<class MatrixType, class LocalScalarType>
 std::string
-DenseContainer<MatrixType, LocalScalarType, true>::
+DenseContainer<MatrixType, LocalScalarType>::
 description () const
 {
   std::ostringstream oss;
   oss << "Ifpack::DenseContainer: ";
-  if (isInitialized()) {
-    if (isComputed()) {
+  if (this->isInitialized()) {
+    if (this->isComputed()) {
       oss << "{status = initialized, computed";
     }
     else {
@@ -877,7 +402,7 @@ description () const
 
 template<class MatrixType, class LocalScalarType>
 void
-DenseContainer<MatrixType, LocalScalarType, true>::
+DenseContainer<MatrixType, LocalScalarType>::
 describe (Teuchos::FancyOStream& os,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -887,499 +412,26 @@ describe (Teuchos::FancyOStream& os,
   os << "Ifpack2::DenseContainer" << endl;
   for(int i = 0; i < this->numBlocks_; i++)
   {
-    os << "Block " << i << " number of rows          = " << this->blockRows_[i] << endl;
+    os << "Block " << i << " number of rows          = " << this->blockSizes_[i] << endl;
   }
-  os << "isInitialized()         = " << IsInitialized_ << endl;
-  os << "isComputed()            = " << IsComputed_ << endl;
+  os << "isInitialized()         = " << this->IsInitialized_ << endl;
+  os << "isComputed()            = " << this->IsComputed_ << endl;
   os << "================================================================================" << endl;
   os << endl;
 }
 
-
 template<class MatrixType, class LocalScalarType>
-void
-DenseContainer<MatrixType, LocalScalarType, true>::
-extractBlockCrs ()
+void DenseContainer<MatrixType, LocalScalarType>::clearBlocks()
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::toString;
-  auto& A = this->inputMatrix_;
-  const size_t inputMatrixNumRows = A->getNodeNumRows();
-  // We only use the rank of the calling process and the number of MPI
-  // processes for generating error messages.  Extraction itself is
-  // entirely local to each participating MPI process.
-  const int myRank = A->getRowMap ()->getComm ()->getRank ();
-  const int numProcs = A->getRowMap ()->getComm ()->getSize ();
-
-  // Sanity check that the local row indices to extract fall within
-  // the valid range of local row indices for the input matrix.
-  for(int i = 0; i < this->numBlocks_; ++i) {
-    ArrayView<const local_ordinal_type> localRows = this->getLocalRows(i);
-    for(local_ordinal_type j = 0; j < this->blockRows_[i]; ++j) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        localRows[j] < 0 ||
-        static_cast<size_t>(localRows[j]) >= inputMatrixNumRows,
-        std::runtime_error, "Ifpack2::DenseContainer::extract: On process " <<
-        myRank << " of " << numProcs << ", localRows[j=" << j << "] = " <<
-        localRows[j] << ", which is out of the valid range of local row indices "
-        "indices [0, " << (inputMatrixNumRows - 1) << "] for the input matrix.");
-    }
-  }
-
-  // Convert the local row indices we want into local column indices.
-  // For every local row ii_local = localRows[i] we take, we also want
-  // to take the corresponding column.  To find the corresponding
-  // column, we use the row Map to convert the local row index
-  // ii_local into a global index ii_global, and then use the column
-  // Map to convert ii_global into a local column index jj_local.  If
-  // the input matrix doesn't have a column Map, we need to be using
-  // global indices anyway...
-
-  // We use the domain Map to exclude off-process global entries.
-  auto globalRowMap = A->getRowMap ();
-  auto globalColMap = A->getColMap ();
-  auto globalDomMap = A->getDomainMap ();
-
-  for(int blockIndex = 0; blockIndex < this->numBlocks_; blockIndex++)
-  {
-    const local_ordinal_type numRows_ = this->blockRows_[blockIndex];
-    Teuchos::ArrayView<const local_ordinal_type> localRows = this->getLocalRows(blockIndex);
-    bool rowIndsValid = true;
-    bool colIndsValid = true;
-    Array<local_ordinal_type> localCols(numRows_);
-    // For error messages, collect the sets of invalid row indices and
-    // invalid column indices.  They are otherwise not useful.
-    Array<local_ordinal_type> invalidLocalRowInds;
-    Array<global_ordinal_type> invalidGlobalColInds;
-    for (local_ordinal_type i = 0; i < numRows_; i++)
-    {
-      // ii_local is the (local) row index we want to look up.
-      const local_ordinal_type ii_local = localRows[i];
-      // Find the global index jj_global corresponding to ii_local.
-      // Global indices are the same (rather, are required to be the
-      // same) in all three Maps, which is why we use jj (suggesting a
-      // column index, which is how we will use it below).
-      const global_ordinal_type jj_global = globalRowMap->getGlobalElement(ii_local);
-      if(jj_global == Teuchos::OrdinalTraits<global_ordinal_type>::invalid())
-      {
-        // If ii_local is not a local index in the row Map on the
-        // calling process, that means localRows is incorrect.  We've
-        // already checked for this in the constructor, but we might as
-        // well check again here, since it's cheap to do so (just an
-        // integer comparison, since we need jj_global anyway).
-        rowIndsValid = false;
-        invalidLocalRowInds.push_back(ii_local);
-        break;
-      }
-      // Exclude "off-process" entries: that is, those in the column Map
-      // on this process that are not in the domain Map on this process.
-      if(globalDomMap->isNodeGlobalElement(jj_global))
-      {
-        // jj_global is not an off-process entry.  Look up its local
-        // index in the column Map; we want to extract this column index
-        // from the input matrix.  If jj_global is _not_ in the column
-        // Map on the calling process, that could mean that the column
-        // in question is empty on this process.  That would be bad for
-        // solving linear systems with the extract submatrix.  We could
-        // solve the resulting singular linear systems in a minimum-norm
-        // least-squares sense, but for now we simply raise an exception.
-        const local_ordinal_type jj_local = globalColMap->getLocalElement(jj_global);
-        if(jj_local == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
-        {
-          colIndsValid = false;
-          invalidGlobalColInds.push_back(jj_global);
-          break;
-        }
-        localCols[i] = jj_local;
-      }
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      !rowIndsValid, std::logic_error, "Ifpack2::DenseContainer::extract: "
-      "On process " << myRank << ", at least one row index in the set of local "
-      "row indices given to the constructor is not a valid local row index in "
-      "the input matrix's row Map on this process.  This should be impossible "
-      "because the constructor checks for this case.  Here is the complete set "
-      "of invalid local row indices: " << toString(invalidLocalRowInds) << ".  "
-      "Please report this bug to the Ifpack2 developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      !colIndsValid, std::runtime_error, "Ifpack2::DenseContainer::extract: "
-      "On process " << myRank << ", "
-      "At least one row index in the set of row indices given to the constructor "
-      "does not have a corresponding column index in the input matrix's column "
-      "Map.  This probably means that the column(s) in question is/are empty on "
-      "this process, which would make the submatrix to extract structurally "
-      "singular.  Here is the compete set of invalid global column indices: "
-      << toString(invalidGlobalColInds) << ".");
-
-    diagBlocks_[blockIndex].putScalar(Teuchos::ScalarTraits<local_scalar_type>::zero());
-
-    const size_t maxNumEntriesInRow = A->getNodeMaxNumRowEntries();
-    Array<local_ordinal_type> ind(maxNumEntriesInRow);
-
-    const local_ordinal_type INVALID = Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
-
-    Array<scalar_type> val(maxNumEntriesInRow * this->bcrsBlockSize_ * this->bcrsBlockSize_);
-    for(local_ordinal_type i = 0; i < numRows_; i++)
-    {
-      const local_ordinal_type localRow = localRows[i];
-      size_t numEntries;
-      A->getLocalRowCopy(localRow, ind(), val(), numEntries);
-
-      for(size_t k = 0; k < numEntries; k++)
-      {
-        const local_ordinal_type localCol = ind[k];
-        // Skip off-process elements
-        //
-        // FIXME (mfh 24 Aug 2013) This assumes the following:
-        //
-        // 1. The column and row Maps begin with the same set of
-        //    on-process entries, in the same order.  That is,
-        //    on-process row and column indices are the same.
-        // 2. All off-process indices in the column Map of the input
-        //    matrix occur after that initial set.
-        if(localCol >= 0 && static_cast<size_t> (localCol) < inputMatrixNumRows)
-        {
-          // for local column IDs, look for each ID in the list
-          // of columns hosted by this object
-          local_ordinal_type jj = INVALID;
-          for(local_ordinal_type kk = 0; kk < numRows_; kk++)
-          {
-            if(localRows[kk] == localCol)
-              jj = kk;
-          }
-          if(jj != INVALID)
-          {
-            // copy entire diagonal block
-            for(local_ordinal_type c = 0; c < this->bcrsBlockSize_; c++)
-            {
-              for(local_ordinal_type r = 0; r < this->bcrsBlockSize_; r++)
-                diagBlocks_[blockIndex](this->bcrsBlockSize_ * i + r,
-                                        this->bcrsBlockSize_ * jj + c)
-                  = val[k * (this->bcrsBlockSize_ * this->bcrsBlockSize_)
-                    + (r + this->bcrsBlockSize_ * c)];
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-
-template<class MatrixType, class LocalScalarType>
-void
-DenseContainer<MatrixType, LocalScalarType, true>::
-extract ()
-{
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::toString;
-  auto& A = *this->inputMatrix_;
-  const size_t inputMatrixNumRows = A.getNodeNumRows();
-  // We only use the rank of the calling process and the number of MPI
-  // processes for generating error messages.  Extraction itself is
-  // entirely local to each participating MPI process.
-  const int myRank = A.getRowMap ()->getComm ()->getRank ();
-  const int numProcs = A.getRowMap ()->getComm ()->getSize ();
-
-  for(int blockIndex = 0; blockIndex < this->numBlocks_; blockIndex++)
-  {
-    local_ordinal_type numRows_ = this->blockRows_[blockIndex];
-    // If this is a block CRS matrix, call the appropriate function
-    if(this->hasBlockCrs_)
-    {
-      extractBlockCrs();
-      return;
-    }
-
-    // Sanity check that the local row indices to extract fall within
-    // the valid range of local row indices for the input matrix.
-    ArrayView<const local_ordinal_type> localRows = this->getLocalRows(blockIndex);
-    for(local_ordinal_type j = 0; j < numRows_; j++)
-    {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        localRows[j] < 0 ||
-        static_cast<size_t> (localRows[j]) >= inputMatrixNumRows,
-        std::runtime_error, "Ifpack2::DenseContainer::extract: On process " <<
-        myRank << " of " << numProcs << ", localRows[j=" << j << "] = " <<
-        localRows[j] << ", which is out of the valid range of local row indices "
-        "indices [0, " << (inputMatrixNumRows - 1) << "] for the input matrix.");
-    }
-
-    // Convert the local row indices we want into local column indices.
-    // For every local row ii_local = localRows[i] we take, we also want
-    // to take the corresponding column.  To find the corresponding
-    // column, we use the row Map to convert the local row index
-    // ii_local into a global index ii_global, and then use the column
-    // Map to convert ii_global into a local column index jj_local.  If
-    // the input matrix doesn't have a column Map, we need to be using
-    // global indices anyway...
-
-    // We use the domain Map to exclude off-process global entries.
-    const map_type& globalRowMap = * (A.getRowMap ());
-    const map_type& globalColMap = * (A.getColMap ());
-    const map_type& globalDomMap = * (A.getDomainMap ());
-
-    bool rowIndsValid = true;
-    bool colIndsValid = true;
-    Array<local_ordinal_type> localCols(numRows_);
-    // For error messages, collect the sets of invalid row indices and
-    // invalid column indices.  They are otherwise not useful.
-    Array<local_ordinal_type> invalidLocalRowInds;
-    Array<global_ordinal_type> invalidGlobalColInds;
-    for(local_ordinal_type i = 0; i < numRows_; i++)
-    {
-      // ii_local is the (local) row index we want to look up.
-      const local_ordinal_type ii_local = localRows[i];
-      // Find the global index jj_global corresponding to ii_local.
-      // Global indices are the same (rather, are required to be the
-      // same) in all three Maps, which is why we use jj (suggesting a
-      // column index, which is how we will use it below).
-      const global_ordinal_type jj_global = globalRowMap.getGlobalElement(ii_local);
-      if(jj_global == Teuchos::OrdinalTraits<global_ordinal_type>::invalid())
-      {
-        // If ii_local is not a local index in the row Map on the
-        // calling process, that means localRows is incorrect.  We've
-        // already checked for this in the constructor, but we might as
-        // well check again here, since it's cheap to do so (just an
-        // integer comparison, since we need jj_global anyway).
-        rowIndsValid = false;
-        invalidLocalRowInds.push_back(ii_local);
-        break;
-      }
-      // Exclude "off-process" entries: that is, those in the column Map
-      // on this process that are not in the domain Map on this process.
-      if(globalDomMap.isNodeGlobalElement(jj_global))
-      {
-        // jj_global is not an off-process entry.  Look up its local
-        // index in the column Map; we want to extract this column index
-        // from the input matrix.  If jj_global is _not_ in the column
-        // Map on the calling process, that could mean that the column
-        // in question is empty on this process.  That would be bad for
-        // solving linear systems with the extract submatrix.  We could
-        // solve the resulting singular linear systems in a minimum-norm
-        // least-squares sense, but for now we simply raise an exception.
-        const local_ordinal_type jj_local = globalColMap.getLocalElement(jj_global);
-        if(jj_local == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())
-        {
-          colIndsValid = false;
-          invalidGlobalColInds.push_back(jj_global);
-          break;
-        }
-        localCols[i] = jj_local;
-      }
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      !rowIndsValid, std::logic_error, "Ifpack2::DenseContainer::extract: "
-      "On process " << myRank << ", at least one row index in the set of local "
-      "row indices given to the constructor is not a valid local row index in "
-      "the input matrix's row Map on this process.  This should be impossible "
-      "because the constructor checks for this case.  Here is the complete set "
-      "of invalid local row indices: " << toString(invalidLocalRowInds) << ".  "
-      "Please report this bug to the Ifpack2 developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      !colIndsValid, std::runtime_error, "Ifpack2::DenseContainer::extract: "
-      "On process " << myRank << ", "
-      "At least one row index in the set of row indices given to the constructor "
-      "does not have a corresponding column index in the input matrix's column "
-      "Map.  This probably means that the column(s) in question is/are empty on "
-      "this process, which would make the submatrix to extract structurally "
-      "singular.  Here is the compete set of invalid global column indices: "
-      << toString(invalidGlobalColInds) << ".");
-
-    diagBlocks_[blockIndex].putScalar(Teuchos::ScalarTraits<local_scalar_type>::zero());
-
-    const size_t maxNumEntriesInRow = A.getNodeMaxNumRowEntries();
-    Array<local_ordinal_type> ind(maxNumEntriesInRow);
-
-    const local_ordinal_type INVALID = Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
-
-    Array<scalar_type> val(maxNumEntriesInRow);
-    for (local_ordinal_type i = 0; i < numRows_; i++)
-    {
-      const local_ordinal_type localRow = localRows[i];
-      size_t numEntries;
-      A.getLocalRowCopy(localRow, ind(), val(), numEntries);
-      for (size_t k = 0; k < numEntries; ++k)
-      {
-        const local_ordinal_type localCol = ind[k];
-        // Skip off-process elements
-        //
-        // FIXME (mfh 24 Aug 2013) This assumes the following:
-        //
-        // 1. The column and row Maps begin with the same set of
-        //    on-process entries, in the same order.  That is,
-        //    on-process row and column indices are the same.
-        // 2. All off-process indices in the column Map of the input
-        //    matrix occur after that initial set.
-        if(localCol >= 0 && static_cast<size_t> (localCol) < inputMatrixNumRows)
-        {
-          // for local column IDs, look for each ID in the list
-          // of columns hosted by this object
-          local_ordinal_type jj = INVALID;
-          for(local_ordinal_type kk = 0; kk < numRows_; kk++)
-          {
-            if(localRows[kk] == localCol)
-              jj = kk;
-          }
-          if(jj != INVALID)
-            diagBlocks_[blockIndex](i, jj) += val[k]; // ???
-        }
-      }
-    }
-  }
+  diagBlocks_.clear();
+  scalars_.clear();
+  ContainerImpl<MatrixType, LocalScalarType>::clearBlocks();
 }
 
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, true>::clearBlocks()
-{
-  std::vector<Teuchos::SerialDenseMatrix<int, local_scalar_type>> empty1;
-  std::swap(diagBlocks_, empty1);
-  Teuchos::Array<int> empty2;
-  Teuchos::swap(ipiv_, empty2);
-  std::vector<HostViewLocal> empty3;
-  std::swap(X_local, empty3);
-  std::vector<HostViewLocal> empty4;
-  std::swap(Y_local, empty4);
-  Container<MatrixType>::clearBlocks();
-}
-
-template<class MatrixType, class LocalScalarType>
-std::string DenseContainer<MatrixType, LocalScalarType, true>::getName()
+std::string DenseContainer<MatrixType, LocalScalarType>::getName()
 {
   return "Dense";
-}
-
-template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType, false>::
-DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                const Teuchos::RCP<const import_type>& importer,
-                int OverlapLevel,
-                scalar_type DampingFactor) :
-  Container<MatrixType> (matrix, partitions, importer, OverlapLevel,
-                         DampingFactor)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Ifpack2::DenseContainer: Not implemented for "
-     "LocalScalarType = " << Teuchos::TypeNameTraits<LocalScalarType>::name ()
-     << ".");
-}
-
-template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType, false>::
-DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                const Teuchos::Array<local_ordinal_type>& localRows) :
-  Container<MatrixType>(matrix, localRows)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Ifpack2::DenseContainer: Not implemented for "
-     "LocalScalarType = " << Teuchos::TypeNameTraits<LocalScalarType>::name ()
-     << ".");
-}
-
-template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType, false>::~DenseContainer() {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-setParameters (const Teuchos::ParameterList& /* List */) {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::initialize() {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::compute() {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::factor() {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-applyImplBlockCrs (HostViewLocal& X,
-           HostViewLocal& Y,
-           int blockIndex,
-           int stride,
-           Teuchos::ETransp mode,
-           local_scalar_type alpha,
-           local_scalar_type beta) const {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-applyImpl (HostViewLocal& X,
-           HostViewLocal& Y,
-           int blockIndex,
-           int stride,
-           Teuchos::ETransp mode,
-           local_scalar_type alpha,
-           local_scalar_type beta) const {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-applyBlockCrs (HostView& XIn,
-       HostView& YIn,
-       int blockIndex,
-       int stride,
-       Teuchos::ETransp mode,
-       scalar_type alpha,
-       scalar_type beta) const {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-apply (HostView& X,
-       HostView& Y,
-       int blockIndex,
-       int stride,
-       Teuchos::ETransp mode,
-       scalar_type alpha,
-       scalar_type beta) const {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-weightedApply (HostView& X,
-               HostView& Y,
-               HostView& D,
-               int blockIndex,
-               int stride,
-               Teuchos::ETransp mode,
-               scalar_type alpha,
-               scalar_type beta) const {}
-
-template<class MatrixType, class LocalScalarType>
-std::ostream& DenseContainer<MatrixType, LocalScalarType, false>::
-print (std::ostream& os) const
-{
-  return os;
-}
-
-template<class MatrixType, class LocalScalarType>
-std::string DenseContainer<MatrixType, LocalScalarType, false>::
-description () const
-{
-  return "";
-}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-describe (Teuchos::FancyOStream& os,
-          const Teuchos::EVerbosityLevel verbLevel) const {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-extractBlockCrs () {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::
-extract () {}
-
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType, false>::clearBlocks() {}
-
-template<class MatrixType, class LocalScalarType>
-std::string DenseContainer<MatrixType, LocalScalarType, false>::getName()
-{
-  return "";
 }
 
 } // namespace Ifpack2

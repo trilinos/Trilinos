@@ -118,8 +118,10 @@ public:
   //! The communicator over which the graph is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //! The graph's Node instance.
-  virtual Teuchos::RCP<node_type> getNode () const;
+  virtual TPETRA_DEPRECATED Teuchos::RCP<node_type> getNode () const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The Map that describes the distribution of rows over processes.
   virtual Teuchos::RCP<const map_type> getRowMap () const;

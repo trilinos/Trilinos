@@ -247,7 +247,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
   // compare matrix values.  Thus, we need to do a fence before
   // comparing matrix values, in order to ensure that changes made on
   // device are visible on host.
-  execution_space::fence ();
+  execution_space().fence ();
 
   out << "Comparing matrices after unpackCrsMatrixAndCombine "
     "with CombineMode=REPLACE" << endl;
@@ -610,7 +610,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
   // compare matrix values.  Thus, we need to do a fence before
   // comparing matrix values, in order to ensure that changes made on
   // device are visible on host.
-  execution_space::fence ();
+  execution_space().fence ();
 
   out << "Comparing matrices after unpackCrsMatrixAndCombine "
     "with CombineMode=REPLACE" << endl;

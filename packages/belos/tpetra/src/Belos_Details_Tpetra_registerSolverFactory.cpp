@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
@@ -45,31 +43,29 @@
 
 #include "BelosSolverFactory_Tpetra.hpp"
 
-#include "BelosBiCGStabSolMgr.hpp"
-#include "BelosBlockCGSolMgr.hpp"
-#include "BelosBlockGmresSolMgr.hpp"
-#include "BelosFixedPointSolMgr.hpp"
-#include "BelosGCRODRSolMgr.hpp"
-#include "BelosGmresPolySolMgr.hpp"
-#include "BelosLSQRSolMgr.hpp"
-#include "BelosMinresSolMgr.hpp"
-#include "BelosPCPGSolMgr.hpp"
-#include "BelosPseudoBlockCGSolMgr.hpp"
-#include "BelosPseudoBlockGmresSolMgr.hpp"
-#include "BelosPseudoBlockTFQMRSolMgr.hpp"
-#include "BelosRCGSolMgr.hpp"
-#include "BelosTFQMRSolMgr.hpp"
-
 namespace BelosTpetra {
 namespace Impl {
 
+extern void register_BiCGStab (const bool verbose);
+extern void register_BlockCG (const bool verbose);
+extern void register_BlockGmres (const bool verbose);
 extern void register_CgPipeline (const bool verbose);
 extern void register_CgSingleReduce (const bool verbose);
+extern void register_FixedPoint (const bool verbose);
+extern void register_GCRODR (const bool verbose);
 extern void register_GmresPipeline (const bool verbose);
+extern void register_GmresPoly (const bool verbose);
 extern void register_GmresSingleReduce (const bool verbose);
-  
+extern void register_LSQR (const bool verbose);
+extern void register_Minres (const bool verbose);
+extern void register_PCPG (const bool verbose);
+extern void register_PseudoBlockCG (const bool verbose);
+extern void register_PseudoBlockGmres (const bool verbose);
+extern void register_PseudoBlockTFQMR (const bool verbose);
+extern void register_TFQMR (const bool verbose);
+
 } // namespace Impl
-} // namespace BelosTpetra  
+} // namespace BelosTpetra
 
 #include "TpetraCore_ETIHelperMacros.h"
 TPETRA_ETI_MANGLING_TYPEDEFS()
@@ -79,72 +75,23 @@ namespace Details {
 namespace Tpetra {
 
 void registerSolverFactory() {
+  ::BelosTpetra::Impl::register_BiCGStab (false);
+  ::BelosTpetra::Impl::register_BlockCG (false);
+  ::BelosTpetra::Impl::register_BlockGmres (false);
   ::BelosTpetra::Impl::register_CgPipeline (false);
   ::BelosTpetra::Impl::register_CgSingleReduce (false);
+  ::BelosTpetra::Impl::register_FixedPoint (false);
+  ::BelosTpetra::Impl::register_GCRODR (false);
   ::BelosTpetra::Impl::register_GmresPipeline (false);
+  ::BelosTpetra::Impl::register_GmresPoly (false);
   ::BelosTpetra::Impl::register_GmresSingleReduce (false);
-  
-  #define BELOS_LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)   \
-    Impl::registerSolverSubclassForTypes<                           \
-      manager<SC,::Tpetra::MultiVector<SC, LO, GO, NT>,             \
-      ::Tpetra::Operator<SC, LO, GO, NT>>, SC,                      \
-      ::Tpetra::MultiVector<SC, LO, GO, NT>,                        \
-      ::Tpetra::Operator<SC, LO, GO, NT>> (name);
-
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(BiCGStabSolMgr, "BICGSTAB", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(BlockCGSolMgr, "BLOCK CG", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(BlockGmresSolMgr, "BLOCK GMRES", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(FixedPointSolMgr, "FIXED POINT", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(GCRODRSolMgr, "GCRODR", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(GmresPolySolMgr, "HYBRID BLOCK GMRES", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(LSQRSolMgr, "LSQR", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(MinresSolMgr, "MINRES", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(PCPGSolMgr, "PCPG", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(PseudoBlockCGSolMgr, "PSEUDOBLOCK CG", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(PseudoBlockGmresSolMgr, "PSEUDOBLOCK GMRES", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(PseudoBlockTFQMRSolMgr, "PSEUDOBLOCK TFQMR", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(RCGSolMgr, "RCG", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  #undef LCL_CALL
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(TFQMRSolMgr, "TFQMR", SC, LO, GO, NT)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+  ::BelosTpetra::Impl::register_LSQR (false);
+  ::BelosTpetra::Impl::register_Minres (false);
+  ::BelosTpetra::Impl::register_PCPG (false);
+  ::BelosTpetra::Impl::register_PseudoBlockCG (false);
+  ::BelosTpetra::Impl::register_PseudoBlockGmres (false);
+  ::BelosTpetra::Impl::register_PseudoBlockTFQMR (false);
+  ::BelosTpetra::Impl::register_TFQMR (false);
 }
 
 } // namespace Tpetra

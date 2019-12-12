@@ -2063,6 +2063,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
      Threshold = List_.get("aggregation: threshold", Threshold);
      ML_Aggregate_Set_Threshold(agg_,Threshold);
 
+     double RowSumThreshold = -1.0;
+     RowSumThreshold = List_.get("aggregation: rowsum threshold", RowSumThreshold);
+     ML_Aggregate_Set_RowSum_Threshold(agg_,RowSumThreshold);
+
      int MaxCoarseSize = 128;
      if (List_.isSublist("coarse: list")) {
        ParameterList &coarseList = List_.sublist("coarse: list");
@@ -2635,6 +2639,9 @@ ReComputePreconditioner(bool keepFineLevelSmoother)
 
   profileIterations_ = List_.get("profile: operator iterations", 0);
   ML_Operator_Profile_SetIterations(profileIterations_);
+  ML_CHK_ERR(SetNullSpace());
+  NumPDEEqns_ = List_.get("PDE equations", 1);
+  ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
   ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
 
   if (verbose_)

@@ -15,28 +15,41 @@
 
 namespace Tempus {
 
+
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog()
 {
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
+  this->setStepperType(        "Leapfrog");
+  this->setUseFSAL(            this->getUseFSALDefault());
+  this->setICConsistency(      this->getICConsistencyDefault());
+  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+
+  this->setObserver();
 }
+
 
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  Teuchos::RCP<Teuchos::ParameterList> pList)
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck)
 {
-  this->setParameterList(pList);
+  this->setStepperType(        "Leapfrog");
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
 
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
+  this->setObserver(obs);
+
+  if (appModel != Teuchos::null) {
+
     this->setModel(appModel);
     this->initialize();
   }
 }
+
 
 template<class Scalar>
 void StepperLeapfrog<Scalar>::setObserver(
@@ -48,13 +61,13 @@ void StepperLeapfrog<Scalar>::setObserver(
       stepperLFObserver_ =
         Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
       this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperLFObserver_);
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperLFObserver_,true);
      }
   } else {
     this->stepperObserver_ = obs;
     stepperLFObserver_ =
       Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> >
-        (this->stepperObserver_);
+        (this->stepperObserver_,true);
   }
 }
 
@@ -66,7 +79,6 @@ void StepperLeapfrog<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperLeapfrog::initialize()\n");
 
-  this->setParameterList(this->stepperPL_);
   this->setObserver();
 }
 
@@ -137,10 +149,12 @@ void StepperLeapfrog<Scalar>::takeStep(
     if (!Teuchos::is_null(stepperLFObserver_))
       stepperLFObserver_->observeBeforeExplicit(solutionHistory, *this);
 
+    auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+
     // Evaluate xDotDot = f(x,t).
     this->evaluateExplicitODE(workingState->getXDotDot(),
                               workingState->getX(),
-                              Teuchos::null, time+dt);
+                              Teuchos::null, time+dt, p);
 
     if (!Teuchos::is_null(stepperLFObserver_))
       stepperLFObserver_->observeBeforeXDotUpdate(solutionHistory, *this);
@@ -175,16 +189,8 @@ Teuchos::RCP<Tempus::StepperState<Scalar> > StepperLeapfrog<Scalar>::
 getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
-    rcp(new StepperState<Scalar>(description()));
+    rcp(new StepperState<Scalar>(this->getStepperType()));
   return stepperState;
-}
-
-
-template<class Scalar>
-std::string StepperLeapfrog<Scalar>::description() const
-{
-  std::string name = "Leapfrog";
-  return(name);
 }
 
 
@@ -193,30 +199,8 @@ void StepperLeapfrog<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
-  out << description() << "::describe:" << std::endl
+  out << this->getStepperType() << "::describe:" << std::endl
       << "appModel_ = " << this->appModel_->description() << std::endl;
-}
-
-
-template <class Scalar>
-void StepperLeapfrog<Scalar>::setParameterList(
-  const Teuchos::RCP<Teuchos::ParameterList> & pList)
-{
-  if (pList == Teuchos::null) {
-    // Create default parameters if null, otherwise keep current parameters.
-    if (this->stepperPL_ == Teuchos::null)
-      this->stepperPL_ = this->getDefaultParameters();
-  } else {
-    this->stepperPL_ = pList;
-  }
-  this->stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  std::string stepperType =
-    this->stepperPL_->template get<std::string>("Stepper Type");
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Leapfrog",
-    std::logic_error,
-       "Error - Stepper Type is not 'Leapfrog'!\n"
-    << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
 }
 
 
@@ -225,45 +209,10 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperLeapfrog<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", "Leapfrog",
-                       "'Stepper Type' must be 'Leapfrog'.");
-  this->getValidParametersBasic(pl);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
+  getValidParametersBasic(pl, this->getStepperType());
+  pl->set<std::string>("Initial Condition Consistency",
+                       this->getICConsistencyDefault());
   return pl;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperLeapfrog<Scalar>::getDefaultParameters() const
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-  using Teuchos::rcp_const_cast;
-
-  RCP<ParameterList> pl =
-    rcp_const_cast<ParameterList>(this->getValidParameters());
-
-  return pl;
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperLeapfrog<Scalar>::getNonconstParameterList()
-{
-  return(this->stepperPL_);
-}
-
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-StepperLeapfrog<Scalar>::unsetParameterList()
-{
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
-  this->stepperPL_ = Teuchos::null;
-  return(temp_plist);
 }
 
 

@@ -601,9 +601,9 @@ void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh,
     }
     mesh.modification_end();
 
-    Part* elem_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    Part* edge_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::LINE_2));
-    Part* node_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    Part* elem_topo_part = &meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    Part* edge_topo_part = &meta_data.get_topology_root_part(stk::topology::LINE_2);
+    Part* node_topo_part = &meta_data.get_topology_root_part(stk::topology::NODE);
     Part* universal_part = &meta_data.universal_part();
     Part* owned_part     = &meta_data.locally_owned_part();
     Part* shared_part    = &meta_data.globally_shared_part();
@@ -663,9 +663,9 @@ void checkStatesAfterCEO_4Elem4ProcEdge(stk::unit_test_util::BulkDataTester &mes
 
     const stk::mesh::MetaData &meta_data = mesh.mesh_meta_data();
 
-    Part* elem_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    Part* edge_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::LINE_2));
-    Part* node_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    Part* elem_topo_part = &meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    Part* edge_topo_part = &meta_data.get_topology_root_part(stk::topology::LINE_2);
+    Part* node_topo_part = &meta_data.get_topology_root_part(stk::topology::NODE);
     Part* elem_part =      meta_data.get_part("elem_part");
     Part* elem_block =     meta_data.get_part("elem_block");
     Part* edge_part =      meta_data.get_part("edge_part");
@@ -1158,9 +1158,9 @@ void checkStatesAfterCEOME_4Elem4ProcEdge(stk::unit_test_util::BulkDataTester &m
 
     const stk::mesh::MetaData &meta_data = mesh.mesh_meta_data();
 
-    Part* elem_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    Part* edge_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::LINE_2));
-    Part* node_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    Part* elem_topo_part = &meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    Part* edge_topo_part = &meta_data.get_topology_root_part(stk::topology::LINE_2);
+    Part* node_topo_part = &meta_data.get_topology_root_part(stk::topology::NODE);
     Part* elem_part =      meta_data.get_part("elem_part");
     Part* edge_part =      meta_data.get_part("edge_part");
     Part* node_part =      meta_data.get_part("node_part");

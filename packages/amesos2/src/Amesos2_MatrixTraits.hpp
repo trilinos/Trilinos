@@ -50,14 +50,12 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 #  include <Epetra_RowMatrix.h>
 #  include <Epetra_CrsMatrix.h>
 // #  include <Epetra_MsrMatrix.h>
 #  include <Epetra_VbrMatrix.h>
 // and perhaps some others later...
-#endif
 #endif
 
 #include "Amesos2_Util.hpp"
@@ -119,14 +117,13 @@ namespace Amesos2 {
   };
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 
   template <>
   struct MatrixTraits<Epetra_RowMatrix> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef int global_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
     typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_RowMatrix matrix_type;
@@ -142,7 +139,7 @@ namespace Amesos2 {
   struct MatrixTraits<Epetra_CrsMatrix> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef int global_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
     typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_CrsMatrix matrix_type;
@@ -158,7 +155,7 @@ namespace Amesos2 {
   // struct MatrixTraits<Epetra_MsrMatrix> {
   //   typedef double scalar_t;
   //   typedef int local_ordinal_t;
-  //   typedef int global_ordinal_t;
+  //   typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
   //   typedef Tpetra::Map<>::node_type node_t;
 
   //   typedef row_access major_access;
@@ -168,7 +165,7 @@ namespace Amesos2 {
   struct MatrixTraits<Epetra_VbrMatrix> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef int global_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
     typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_VbrMatrix matrix_type;
@@ -180,7 +177,6 @@ namespace Amesos2 {
     typedef row_access major_access;
   };
 
-#endif
 #endif
 
 }

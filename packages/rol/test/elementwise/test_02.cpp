@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     errorFlag += std::abs(w2.reduce(maximum)-pow(dim,2)) > errtol ? 1 : 0;
  
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try

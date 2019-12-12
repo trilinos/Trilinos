@@ -98,7 +98,7 @@ namespace Thyra {
     typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
     typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
     typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
 #ifdef HAVE_MUELU_TPETRA
     typedef MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> MueTpOp;
@@ -188,7 +188,7 @@ namespace Thyra {
 
     if (startingOver == true) {
       // extract coordinates from parameter list
-      Teuchos::RCP<XpMultVecDouble> coordinates = Teuchos::null;
+      RCP<XpMultVecDouble> coordinates = Teuchos::null;
       coordinates = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ExtractCoordinatesFromParameterList(paramList);
 
       // TODO check for Xpetra or Thyra vectors?
@@ -206,7 +206,14 @@ namespace Thyra {
       }
 #endif
       // build a new MueLu hierarchy
-      H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates, nullspace);
+      ParameterList& userParamList = paramList.sublist("user data");
+      if(Teuchos::nonnull(coordinates)) {
+        userParamList.set<RCP<XpMultVecDouble> >("Coordinates", coordinates);
+      }
+      if(Teuchos::nonnull(nullspace)) {
+        userParamList.set<RCP<XpMultVec> >("Nullspace", nullspace);
+      }
+      H = MueLu::CreateXpetraPreconditioner(A, paramList);
 
     } else {
       // reuse old MueLu hierarchy stored in MueLu Tpetra/Epetra operator and put in new matrix

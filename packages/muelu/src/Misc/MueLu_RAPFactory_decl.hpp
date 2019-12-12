@@ -69,7 +69,10 @@ namespace MueLu {
     @class RAPFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class RAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_RAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -116,8 +119,7 @@ namespace MueLu {
   private:
 
     //@{
-
-
+    
     mutable
     bool hasDeclaredInput_;
 

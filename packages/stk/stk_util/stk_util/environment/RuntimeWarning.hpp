@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -271,103 +272,6 @@ public:
 private:
   const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
 };
-
-#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 5, 2019
-/**
- * @brief Class <b>RuntimeWarningDeferred</b> reports a deferred warning message to the report
- * system.
- *
- * For example:
- *
- * <PRE>
- *     if (deferred_runtime_warning_condition) {
- *       static MessageCode mc;
- *       RuntimeWarningDeferred(mc) << "My useful message about " << some_data;
- *     }
- *
- *     if (deferred_runtime_warning_condition) {
- *       static MessageCode mc;
- *       RuntimeWarningDeferred x;
- *       x << "My useful message about " << some_data;
- *       x.aggregate << proc_specific_data;
- *     }
- * </PRE>
- */
-class RuntimeWarningDeferred
-{
-public:
-  /**
-   * @brief Creates a new <b>RuntimeWarningDeferred</b> instance, setting the message code.
-   *
-   * @param message_code	an <b>MessageCode</b> const reference to the message code associated
-   *                            with this message.
-   */
-  explicit RuntimeWarningDeferred(const MessageCode &message_code);
-
-  /**
-   * @brief Destroys a <b>RuntimeWarning</b> instance.
-   *
-   * The message is displayed by calling the add_deferred_message() function.
-   */
-  ~RuntimeWarningDeferred();
-
-private:
-  /**
-   * @brief Make copy of <b>RuntimeWarningDeferred</b> invalid.
-   */
-  RuntimeWarningDeferred(const RuntimeWarningDeferred &);
-
-  /**
-   * @brief Make assignment of <b>RuntimeWarningDeferred</b> invalid.
-   */
-  RuntimeWarningDeferred &operator=(const RuntimeWarningDeferred &);
-
-public:
-  /**
-   * @brief Member function <b>operator&lt;&lt;</b> passes the ios_base manipulator
-   * to the output stream.
-   *
-   * @return			a <b>RuntimeWarningDeferred</b> reference to this object
-   */
-  RuntimeWarningDeferred &operator<<(OStreamFunctionPtr f) {
-    f(message);
-    return *this;
-  }
-
-  /**
-   * @brief Member function <b>operator&lt;&lt;</b> passes the ios_base manipulator
-   * to the output stream.
-   *
-   * @return			a <b>RuntimeWarningDeferred</b> reference to this object
-   */
-  RuntimeWarningDeferred &operator<<(IOSBaseFunctionPtr f) {
-    f(message);
-    return *this;
-  }
-
-  /**
-   * @brief Member function <b>operator&lt;&lt;</b> passes any data type to the
-   * exception string class for conversion to a string.
-   *
-   * @param t			a <b>T</b> const reference that is to be converted
-   *				to a string.
-   *
-   * @return			a <b>RuntimeWarningDeferred</b> reference to this object;
-   */
-  template <class T>
-  RuntimeWarningDeferred &operator<<(const T &t) {
-    message << t;
-    return *this;
-  }
-
-public:
-  std::ostringstream    message;                ///< Stream to receive message header content
-  std::ostringstream    aggregate;              ///< Stream to receive message aggregate content
-
-private:
-  const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
-};
-#endif
 
 using RuntimeWarningP0 = stk::RuntimeWarningSymmetric;
 using RuntimeWarning   = stk::RuntimeWarningAdHoc;

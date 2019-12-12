@@ -160,7 +160,7 @@ namespace Impl{
 
       Kokkos::Impl::Timer timer1;
       viennacl::compressed_matrix<value_type> C = viennacl::linalg::prod(A, B);
-      MyExecSpace::fence();
+      MyExecSpace().fence();
 
       if (verbose)
       std::cout << "Actual VIENNACL SPMM Time:" << timer1.seconds() << std::endl;
@@ -187,11 +187,11 @@ namespace Impl{
           //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
           entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , cnnz);
           valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  cnnz);
-	  MyExecSpace::fence();
+	  MyExecSpace().fence();
           KokkosKernels::Impl::copy_vector<unsigned int const *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m + 1, rows_start, row_mapC);
           KokkosKernels::Impl::copy_vector<unsigned int const *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (cnnz, columns, entriesC);
           KokkosKernels::Impl::copy_vector<value_type   const *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (cnnz, values, valuesC);
-          MyExecSpace::fence();
+          MyExecSpace().fence();
 
 
           double copy_time_d = copy_time.seconds();

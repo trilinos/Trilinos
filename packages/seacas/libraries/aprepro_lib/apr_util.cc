@@ -39,7 +39,7 @@
 #include <cmath>            // for math_errhandling, etc
 #include <cstdio>           // for perror
 #include <cstdlib>          // for mkstemp
-#include <cstring>          // for strlen, strcpy, memcpy, etc
+#include <cstring>          // for strlen, etc
 #include <iostream>         // for operator<<, cerr, ostream
 #include <string>           // for allocator, operator+, etc
 #include <sys/stat.h>       // for stat, S_ISDIR
@@ -61,14 +61,27 @@
 namespace {
   std::vector<char *> allocations;
 
+  void copy_string(char *dest, const char *source, long int elements)
+  {
+    char *d;
+    for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+      *d = *source;
+    }
+    *d = '\0';
+  }
+
+  void copy_string(char *dest, const std::string &source, long int elements)
+  {
+    copy_string(dest, source.c_str(), elements);
+  }
+
   void new_string_int(const char *from, char **to)
   {
     int len = strlen(from);
     *to     = new char[len + 1];
-    std::memcpy(*to, from, len + 1);
+    copy_string(*to, from, len + 1);
     allocations.push_back(*to);
   }
-
 } // namespace
 
 namespace SEAMS {
@@ -109,10 +122,11 @@ namespace SEAMS {
 
   void concat_string(const char *from1, const char *from2, char **to)
   {
-    int len = strlen(from1) + strlen(from2);
+    std::string tmp{from1};
+    tmp += from2;
+    int len = tmp.length();
     *to     = new char[len + 1];
-    std::strcpy(*to, from1);
-    std::strcat(*to, from2);
+    copy_string(*to, tmp, len + 1);
     allocations.push_back(*to);
   }
 
@@ -124,17 +138,16 @@ namespace SEAMS {
   char *get_temp_filename()
   {
     static char tmp_name[] = "./aprepro_temp_XXXXXX";
-    int         fd;
 
-    std::strcpy(tmp_name, "./aprepro_temp_XXXXXX");
+    copy_string(tmp_name, "./aprepro_temp_XXXXXX", strlen(tmp_name) + 1);
 #if defined(__CYGWIN__) && defined(__NO_CYGWIN_OPTION__)
-    fd = mkstemps(tmp_name, 0);
+    int fd = mkstemps(tmp_name, 0);
     if (fd >= 0)
       close(fd);
 #elif defined(_WIN32)
-    std::strcpy(tmp_name, _mktemp(tmp_name));
+    copy_string(tmp_name, _mktemp(tmp_name), strlen(tmp_name) + 1);
 #else
-    fd = mkstemp(tmp_name);
+    int fd = mkstemp(tmp_name);
     if (fd >= 0) {
       close(fd);
     }
@@ -184,13 +197,13 @@ namespace SEAMS {
         yyerror(apr, function);
       }
       if (errno == EDOM) {
-        perror("	DOMAIN error");
+        perror("        DOMAIN error");
       }
       else if (errno == ERANGE) {
-        perror("	RANGE error");
+        perror("        RANGE error");
       }
       else if (errno != 0) {
-        perror("	Unknown error");
+        perror("        Unknown error");
       }
       errno = 0;
     }
@@ -200,13 +213,13 @@ namespace SEAMS {
       }
 
       if (std::fetestexcept(FE_INVALID) != 0) {
-        std::cerr << "	DOMAIN error\n";
+        std::cerr << "  DOMAIN error\n";
       }
       else if (std::fetestexcept(FE_OVERFLOW) != 0) {
         std::cerr << "  RANGE error -- overflow\n";
       }
       else if (std::fetestexcept(FE_DIVBYZERO) != 0) {
-        std::cerr << "	RANGE error -- divide by zero\n";
+        std::cerr << "  RANGE error -- divide by zero\n";
       }
     }
   }

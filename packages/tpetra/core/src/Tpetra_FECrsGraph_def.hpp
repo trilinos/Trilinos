@@ -317,7 +317,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::beginFill() {
 //
 // Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_FECRSGRAPH_GRAPH_INSTANT(LO,GO,NODE) \
+#define TPETRA_FECRSGRAPH_INSTANT(LO,GO,NODE) \
   template class FECrsGraph<LO, GO, NODE>;
 
 

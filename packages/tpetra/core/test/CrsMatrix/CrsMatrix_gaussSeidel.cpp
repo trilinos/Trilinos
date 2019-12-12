@@ -104,7 +104,6 @@ namespace {
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
 {
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createNonContigMapWithNode;
   using Tpetra::createMultiVector;
   using Tpetra::global_size_t;
   using Tpetra::Map;
@@ -579,7 +578,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
 {
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createNonContigMapWithNode;
   using Tpetra::createMultiVector;
   using Tpetra::global_size_t;
   using Tpetra::Map;

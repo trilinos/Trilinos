@@ -114,9 +114,9 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_Probe<EvalT,LO,GO>::
 typeSupported() const
 {
-  if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Residual>()  ||
-     PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Tangent>() ||
-     PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Jacobian>()
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>()  ||
+     PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>() ||
+     PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>()
     )
     return true;
 

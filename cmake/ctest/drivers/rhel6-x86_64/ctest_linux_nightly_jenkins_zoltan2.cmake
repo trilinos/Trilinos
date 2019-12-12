@@ -137,10 +137,7 @@ setConfig( $ENV{JENKINS_Tpetra_INST_INT_INT}            Tpetra_INST_INT_INT )
 setConfig( $ENV{JENKINS_Tpetra_INST_INT_UNSIGNED}       Tpetra_INST_INT_UNSIGNED )
 setConfig( $ENV{JENKINS_Tpetra_INST_INT_UNSIGNED_LONG}  Tpetra_INST_INT_UNSIGNED_LONG )
 setConfig( $ENV{JENKINS_Tpetra_INST_INT_LONG}           Tpetra_INST_INT_LONG )
-
-# Special case - If Tpetra_INST_INT_LONG_LONG is on we also turn on Teuchos_ENABLE_LONG_LONG_INT
-setConfig( $ENV{JENKINS_Tpetra_INST_INT_LONG_LONG} Tpetra_INST_INT_LONG_LONG )
-setConfig( $ENV{JENKINS_Tpetra_INST_INT_LONG_LONG} Teuchos_ENABLE_LONG_LONG_INT )
+setConfig( $ENV{JENKINS_Tpetra_INST_INT_LONG_LONG}      Tpetra_INST_INT_LONG_LONG )
 
 # Special handling of the packages for cdash - handles Blank, TRUE, FALSE, EXCLUDE, or INCLUDE
 checkPackage( $ENV{JENKINS_USE_EPETRA}      Trilinos_ENABLE_Epetra    Epetra    )

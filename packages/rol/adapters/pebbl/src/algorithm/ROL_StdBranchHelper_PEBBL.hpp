@@ -62,18 +62,15 @@ template <class Real>
 class StdBranchHelper_PEBBL : public BranchHelper_PEBBL<Real> {
 private:
   const Real tol_;
+  const int method_;
 
   Ptr<const std::vector<Real>> getConstData(const Vector<Real> &x) const {
     return dynamic_cast<const StdVector<Real>&>(x).getVector();
   }
 
-public:
-  StdBranchHelper_PEBBL(const Real tol = 1e-6) : tol_(tol) {}
-
-  StdBranchHelper_PEBBL(const StdBranchHelper_PEBBL &BH)
-    : tol_(BH.tol_) {}
-
-  int getMyIndex(const Vector<Real> &x) const {
+  // Branching based on distance to integer.
+  int getMyIndex_D(const Vector<Real> &x, const Vector<Real> &lam,
+                    Objective<Real> &obj, Constraint<Real> &con) const {
     // Get index closest to 0.5
     Ptr<const std::vector<Real>> xval = getConstData(x);
     int index = 0;
@@ -91,6 +88,52 @@ public:
     }
     return index;
   }
+
+  // Branching based on directional derivatives (similar to pseudo costs).
+  int getMyIndex_PC(const Vector<Real> &x, const Vector<Real> &lam,
+                    Objective<Real> &obj, Constraint<Real> &con) const {
+    Real tol = static_cast<Real>(1e-8);
+    Ptr<Vector<Real>> g = x.dual().clone();
+    Ptr<Vector<Real>> J = x.dual().clone();
+    Ptr<const std::vector<Real>> xval = getConstData(x);
+    Ptr<const std::vector<Real>> gval = getConstData(*g);
+    obj.gradient(*g,x,tol);
+    con.applyAdjointJacobian(*J,lam,x,tol);
+    g->plus(*J);
+    Real maxD(ROL_NINF<Real>()), Li(0), Ui(0), mini(0);
+    int index = 0, size = gval->size();
+    for (int i = 0; i < size; ++i) {
+      Li   = (*gval)[i] * (std::floor((*xval)[i]) - (*xval)[i]);
+      Ui   = (*gval)[i] * (std::ceil((*xval)[i])  - (*xval)[i]);
+      mini = std::min(std::abs(Li),std::abs(Ui));
+      if (mini > maxD) {
+        maxD  = mini;
+        index = i;
+      }
+    }
+    return index;
+  }
+
+public:
+  StdBranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
+    : tol_(tol), method_(method) {}
+
+  StdBranchHelper_PEBBL(const StdBranchHelper_PEBBL &BH)
+    : tol_(BH.tol_), method_(BH.method_) {}
+
+  //int getMyIndex(const Vector<Real> &x) const {
+  int getMyIndex(const Vector<Real> &x, const Vector<Real> &lam,
+                 Objective<Real> &obj, Constraint<Real> &con) const {
+    int index(0);
+    if (method_ == 1) {
+      index = getMyIndex_D(x,lam,obj,con);
+    }
+    else {
+      index = getMyIndex_PC(x,lam,obj,con);
+    }
+    return index;
+  }
+
 
   void getMyNumFrac(int &nfrac, Real &integralityMeasure,
                   const Vector<Real> &x) const {

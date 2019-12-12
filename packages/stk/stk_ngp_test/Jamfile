@@ -1,10 +1,11 @@
-#---------------------------------------------------------------
-#    Copyright 2006 - 2010 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
-#---------------------------------------------------------------
+#--------------------------------------------------------------------
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
+#    of Contract DE-NA0003525 with NTESS, there is a                 
+#    non-exclusive license for use of this work by or on behalf      
+#    of the U.S. Government.  Export of this program may require     
+#    a license from the United States Government.                    
+#--------------------------------------------------------------------
 
 #
 # The signature for Boost.build rules is described here:
@@ -160,7 +161,7 @@ lib stk_ngp_test
         [ glob $(stk_ngp_test-root)/stk_ngp_test/*.cpp ]
     ]
     /tpl/gtest//gtest
-    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/trilinos//kokkoscore
     /mpi//mpi
   :
     [ ifuserbuild
@@ -172,6 +173,7 @@ lib stk_ngp_test
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
     <toolset>nvidia,<gpu-arch>pascal:<cflags>--maxrregcount=96
+    <toolset>nvidia,<gpu-arch>volta:<cflags>--maxrregcount=160
     <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
   ;
@@ -184,7 +186,7 @@ lib stk_ngp_test_main
         [ glob $(stk_ngp_test-root)/stk_ngp_test/main/main.cpp ]
     ]
     /tpl/gtest//gtest
-    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/trilinos//kokkoscore
     /mpi//mpi
   :
     [ ifuserbuild

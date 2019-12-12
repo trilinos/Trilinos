@@ -50,6 +50,7 @@
 #include <exodus/Ioex_Internals.h>
 #include <exodus/Ioex_Utils.h>
 #include <exodusII.h>
+#include <fmt/ostream.h>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -126,20 +127,23 @@ namespace Ioex {
 
     // Set exodusII warning level.
     if (util().get_environment("EX_DEBUG", isParallel)) {
-      std::cerr
-          << "IOEX: Setting EX_VERBOSE|EX_DEBUG because EX_DEBUG environment variable is set.\n";
+      fmt::print(
+          stderr,
+          "IOEX: Setting EX_VERBOSE|EX_DEBUG because EX_DEBUG environment variable is set.\n");
       ex_opts(EX_VERBOSE | EX_DEBUG);
     }
 
     if (!is_input()) {
       if (util().get_environment("EX_MODE", exodusMode, isParallel)) {
-        std::cerr << "IOEX: Exodus create mode set to " << exodusMode
-                  << " from value of EX_MODE environment variable.\n";
+        fmt::print(
+            stderr,
+            "IOEX: Exodus create mode set to {} from value of EX_MODE environment variable.\n",
+            exodusMode);
       }
 
       if (util().get_environment("EX_MINIMIZE_OPEN_FILES", isParallel)) {
-        std::cerr << "IOEX: Minimizing open files because EX_MINIMIZE_OPEN_FILES environment "
-                     "variable is set.\n";
+        fmt::print(stderr, "IOEX: Minimizing open files because EX_MINIMIZE_OPEN_FILES environment "
+                           "variable is set.\n");
         minimizeOpenFiles = true;
       }
       else {
@@ -311,12 +315,12 @@ namespace Ioex {
       double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
       ex_close(exodusFilePtr);
-
+      closeDW();
       if (do_timer && isParallel) {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          std::cerr << "File Close Time = " << duration << "\n";
+          fmt::print(stderr, "File Close Time = {}\n", duration);
         }
       }
     }
@@ -368,8 +372,8 @@ namespace Ioex {
     // Check byte-size of integers stored on the database...
     if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
       if (myProcessor == 0) {
-        std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte "
-                     "integers.\n";
+        fmt::print(stderr, "IOSS: Input database contains 8-byte integers. Setting Ioss to use "
+                           "8-byte integers.\n");
       }
       ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
       set_int_byte_size_api(Ioss::USE_INT64_API);
@@ -396,8 +400,8 @@ namespace Ioex {
 
     if (exodusFilePtr < 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not open group named '" << m_groupName << "' in file '"
-             << get_filename() << "'.\n";
+      fmt::print(errmsg, "ERROR: Could not open group named '{}' in file '{}'.\n", m_groupName,
+                 get_filename());
       IOSS_ERROR(errmsg);
     }
     else {
@@ -417,8 +421,8 @@ namespace Ioex {
       // separator character in a full group path
       if (group_name.find('/') != std::string::npos) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Invalid group name '" << m_groupName
-               << "' contains a '/' which is not allowed.\n";
+        fmt::print(errmsg, "ERROR: Invalid group name '{}' contains a '/' which is not allowed.\n",
+                   m_groupName);
         IOSS_ERROR(errmsg);
       }
 
@@ -426,8 +430,8 @@ namespace Ioex {
       exoid       = ex_create_group(exoid, m_groupName.c_str());
       if (exoid < 0) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Could not create group named '" << m_groupName << "' in file '"
-               << get_filename() << "'.\n";
+        fmt::print(errmsg, "ERROR: Could not create group named '{}' in file '{}'.\n", m_groupName,
+                   get_filename());
         IOSS_ERROR(errmsg);
       }
       else {
@@ -460,14 +464,10 @@ namespace Ioex {
       {
         int j = 0;
         for (size_t i = 0; i < num_qa_records; i++) {
-          std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          qa[i].qa_record[0][0][MAX_STR_LENGTH] = '\0';
-          qa[i].qa_record[0][1][MAX_STR_LENGTH] = '\0';
-          qa[i].qa_record[0][2][MAX_STR_LENGTH] = '\0';
-          qa[i].qa_record[0][3][MAX_STR_LENGTH] = '\0';
+          Ioss::Utils::copy_string(qa[i].qa_record[0][0], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][1], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][2], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][3], qaRecords[j++], MAX_STR_LENGTH + 1);
         }
       }
 
@@ -484,14 +484,8 @@ namespace Ioex {
         version = get_region()->get_property("code_version").get_string();
       }
 
-      char buffer[MAX_STR_LENGTH + 1];
-      std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
-      buffer[MAX_STR_LENGTH] = '\0';
-      std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
-
-      std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
-      buffer[MAX_STR_LENGTH] = '\0';
-      std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
+      Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][0], codename, MAX_STR_LENGTH + 1);
+      Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][1], version, MAX_STR_LENGTH + 1);
 
       int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1, qa[0].qa_record);
       if (ierr < 0) {
@@ -540,20 +534,18 @@ namespace Ioex {
           total_lines, max_line_length); // 'total_lines' pointers to char buffers
 
       int i = 0;
-      std::strncpy(info[i++], Ioss::Utils::platform_information().c_str(), max_line_length);
+      Ioss::Utils::copy_string(info[i++], Ioss::Utils::platform_information(), max_line_length + 1);
 
-      std::strncpy(info[i++], Ioex::Version(), max_line_length);
+      Ioss::Utils::copy_string(info[i++], Ioex::Version(), max_line_length + 1);
 
       // Copy input file lines into 'info' array...
       for (size_t j = 0; j < input_lines.size(); j++, i++) {
-        std::strncpy(info[i], input_lines[j].c_str(), max_line_length);
-        info[i][max_line_length] = '\0'; // Once more for good luck...
+        Ioss::Utils::copy_string(info[i], input_lines[j], max_line_length + 1);
       }
 
       // Copy "information_records" property data ...
       for (size_t j = 0; j < informationRecords.size(); j++, i++) {
-        std::strncpy(info[i], informationRecords[j].c_str(), max_line_length);
-        info[i][max_line_length] = '\0'; // Once more for good luck...
+        Ioss::Utils::copy_string(info[i], informationRecords[j], max_line_length + 1);
       }
 
       int ierr = ex_put_info(get_file_pointer(), total_lines, info);
@@ -578,10 +570,12 @@ namespace Ioex {
 
     if (step <= 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: No currently active state.  The calling code must call "
-                "Ioss::Region::begin_state(int step)\n"
-             << "       to set the database timestep from which to read the transient data.\n"
-             << "       [" << get_filename() << "]\n";
+      fmt::print(errmsg,
+                 "ERROR: No currently active state.  The calling code must call "
+                 "Ioss::Region::begin_state(int step)\n"
+                 "       to set the database timestep from which to read the transient data.\n"
+                 "       [{}]\n",
+                 get_filename());
       IOSS_ERROR(errmsg);
     }
     return step;
@@ -622,7 +616,7 @@ namespace Ioex {
   // common
   size_t DatabaseIO::handle_block_ids(const Ioss::EntityBlock *eb, ex_entity_type map_type,
                                       Ioss::Map &entity_map, void *ids, size_t num_to_get,
-                                      size_t offset, size_t count) const
+                                      size_t offset) const
   {
     /*!
      * NOTE: "element" is generic for "element", "face", or "edge"
@@ -775,7 +769,8 @@ namespace Ioex {
       }
       else {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
+        fmt::print(errmsg,
+                   "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions");
         IOSS_ERROR(errmsg);
       }
       return num_to_get;
@@ -808,10 +803,12 @@ namespace Ioex {
       }
       else {
         std::ostringstream errmsg;
-        errmsg << "ERROR: The variable named '" << field.get_name()
-               << "' is of the wrong type. A region variable must be of type"
-               << " TRANSIENT or REDUCTION.\n"
-               << "This is probably an internal error; please notify gdsjaar@sandia.gov";
+        fmt::print(
+            errmsg,
+            "ERROR: The variable named '{}' is of the wrong type. A region variable must be of type"
+            " TRANSIENT or REDUCTION.\n"
+            "This is probably an internal error; please notify gdsjaar@sandia.gov",
+            field.get_name());
         IOSS_ERROR(errmsg);
       }
       return num_to_get;
@@ -990,8 +987,7 @@ namespace Ioex {
     step         = get_database_step(step);
     size_t count = globalValues.size();
     if (count > 0) {
-      int ierr = ex_put_var(get_file_pointer(), step, EX_GLOBAL, 1, 0, count,
-                            (double *)TOPTR(globalValues));
+      int ierr = ex_put_var(get_file_pointer(), step, EX_GLOBAL, 1, 0, count, globalValues.data());
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
@@ -1096,12 +1092,11 @@ namespace Ioex {
     // Title...
     if (get_region()->property_exists("title")) {
       std::string title_str = get_region()->get_property("title").get_string();
-      std::strncpy(the_title, title_str.c_str(), max_line_length);
+      Ioss::Utils::copy_string(the_title, title_str);
     }
     else {
-      std::strncpy(the_title, "IOSS Default Title", max_line_length);
+      Ioss::Utils::copy_string(the_title, "IOSS Default Title");
     }
-    the_title[max_line_length] = '\0';
 
     Ioex::Mesh mesh(spatialDimension, the_title, !usingParallelIO);
     mesh.populate(get_region());
@@ -1563,17 +1558,17 @@ namespace Ioex {
       // have already created the output database and populated the set/block names. At this point,
       // it is too late to change the size of the names stored on the output database... (I think...
       // try changing DIM_STR_NAME value and see if works...)
-      if (name_length > (size_t)maximumNameLength) {
+      if (name_length > static_cast<size_t>(maximumNameLength)) {
         if (myProcessor == 0) {
-          IOSS_WARNING << "WARNING: There are variables names whose length (" << name_length
-                       << ") exceeds the current "
-                          "maximum name length ("
-                       << maximumNameLength << ") set for this database (" << get_filename()
-                       << ").\n"
-                       << "         You should either reduce the length of the variable name, or "
-                          "set the 'MAXIMUM_NAME_LENGTH' property "
-                       << "to at least " << name_length
-                       << ".\n         Contact gdsjaar@sandia.gov for more information.\n\n";
+          fmt::print(
+              IOSS_WARNING,
+              "WARNING: There are variables names whose name length ({0}) exceeds the current "
+              "maximum name length ({1})\n         set for this database ({2}).\n"
+              "         You should either reduce the length of the variable name, or "
+              "set the 'MAXIMUM_NAME_LENGTH' property\n"
+              "         to at least {0}.\n         Contact gdsjaar@sandia.gov for more "
+              "information.\n\n",
+              name_length, maximumNameLength, get_filename());
         }
       }
       int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
@@ -1647,11 +1642,19 @@ namespace Ioex {
     // finished. Hopefully the netcdf no-fsync fix along with this fix
     // results in negligible impact on runtime with more syncs.
 
+    // Need to be able to handle a flushInterval == 1 to force flush
+    // every time step even in a serial run.
+    // The default setting for flushInterval is 1, but in the past, 
+    // it was not checked for serial runs.  Now, set the default to -1
+    // and if that is the value and serial, then do the time-based
+    // check; otherwise, use flushInterval setting...
+    
     bool do_flush = true;
-    if (flushInterval != 1) {
-      if (flushInterval == 0 || state % flushInterval != 0) {
-        do_flush = false;
-      }
+    if (flushInterval == 1) {
+      do_flush = true;
+    }
+    else if (flushInterval == 0) {
+      do_flush = false;
     }
     else if (dbUsage == Ioss::WRITE_HISTORY || !isParallel) {
       assert(myProcessor == 0);
@@ -1664,6 +1667,13 @@ namespace Ioex {
         do_flush = false;
       }
     }
+    
+    if (!do_flush && flushInterval > 0) {
+      if (state % flushInterval == 0) {
+        do_flush = true;
+      }
+    }
+
     if (do_flush) {
       flush_database__();
     }
@@ -1722,10 +1732,8 @@ namespace Ioex {
         // higher-order storage type.
 
         for (int i = 0; i < attribute_count; i++) {
-          int writ = ::snprintf(names[i], maximumNameLength + 1, "attribute_%d", i + 1);
-          if (writ > maximumNameLength) {
-            names[i][maximumNameLength] = '\0';
-          }
+          std::string tmp = fmt::format("attribute_{}", i + 1);
+          Ioss::Utils::copy_string(names[i], tmp, maximumNameLength + 1);
         }
       }
       else {
@@ -1774,8 +1782,10 @@ namespace Ioex {
         for (const auto &field : attributes) {
           if (block->field_exists(field.get_name())) {
             std::ostringstream errmsg;
-            errmsg << "ERROR: In block '" << block->name() << "', attribute '" << field.get_name()
-                   << "' is defined multiple times which is not allowed.\n";
+            fmt::print(errmsg,
+                       "ERROR: In block '{}', attribute '{}' is defined multiple times which is "
+                       "not allowed.\n",
+                       block->name(), field.get_name());
             IOSS_ERROR(errmsg);
           }
           block->field_add(field);
@@ -1794,10 +1804,7 @@ namespace Ioex {
           if (attribute_count == block->get_property("topology_node_count").get_int()) {
             att_name = "nodal_thickness";
 
-            std::string storage = "Real[";
-            storage += std::to_string(attribute_count);
-            storage += "]";
-
+            std::string storage = fmt::format("Real[{}]", attribute_count);
             block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
                                          Ioss::Field::ATTRIBUTE, my_element_count, 1));
           }
@@ -1815,11 +1822,12 @@ namespace Ioex {
         else if (Ioss::Utils::case_strcmp(type, "sphere-mass") == 0) {
           if (attribute_count != 10) {
             if (myProcessor == 0) {
-              IOSS_WARNING << "For element block '" << block->name() << "' of type '" << type
-                           << "' there were " << attribute_count
-                           << " attributes instead of the expected 10 attributes "
-                           << "known to the IO Subsystem. "
-                           << " The attributes can be accessed as the field named 'attribute'";
+              fmt::print(IOSS_WARNING,
+                         "For element block '{}' of type '{}' there were {} attributes instead of "
+                         "the expected 10 attributes "
+                         "known to the IO Subsystem. "
+                         " The attributes can be accessed as the field named 'attribute'",
+                         block->name(), type, attribute_count);
             }
           }
           else {
@@ -1900,10 +1908,8 @@ namespace Ioex {
         if (unknown_attributes > 0) {
           att_name = "extra_attribute_";
           att_name += std::to_string(unknown_attributes);
-          std::string storage = "Real[";
-          storage += std::to_string(unknown_attributes);
-          storage += "]";
-          size_t index = attribute_count - unknown_attributes + 1;
+          std::string storage = fmt::format("Real[{}]", unknown_attributes);
+          size_t      index   = attribute_count - unknown_attributes + 1;
           block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage, Ioss::Field::ATTRIBUTE,
                                        my_element_count, index));
         }
@@ -1912,9 +1918,7 @@ namespace Ioex {
       // Always create a field called "attribute" containing data
       // for all attributes on the mesh
       std::string att_name = "attribute"; // Default
-      std::string storage  = "Real[";
-      storage += std::to_string(attribute_count);
-      storage += "]";
+      std::string storage  = fmt::format("Real[{}]", attribute_count);
 
       block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage, Ioss::Field::ATTRIBUTE,
                                    my_element_count, 1));
@@ -2058,20 +2062,23 @@ namespace {
 
       if (field_offset + comp_count - 1 > attribute_count) {
         std::ostringstream errmsg;
-        errmsg << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
-               << "', the indexing is incorrect.\n"
-               << "Something is wrong in the Ioex::DatabaseIO class, function "
-                  "check_attribute_index_error. Please report.\n";
+        fmt::print(
+            errmsg,
+            "INTERNAL ERROR: For block '{}', attribute '{}', the indexing is incorrect.\n"
+            "Something is wrong in the Ioex::DatabaseIO class, function {}. Please report.\n",
+            block->name(), field_name, __func__);
         IOSS_ERROR(errmsg);
       }
 
       for (int i = field_offset; i < field_offset + comp_count; i++) {
         if (attributes[i] != 0) {
           std::ostringstream errmsg;
-          errmsg << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
-                 << "', indexes into the same location as a previous attribute.\n"
-                 << "Something is wrong in the Ioex::DatabaseIO class, function "
-                    "check_attribute_index_error. Please report.\n";
+          fmt::print(
+              errmsg,
+              "INTERNAL ERROR: For block '{}', attribute '{}', indexes into the same location as a "
+              "previous attribute.\n"
+              "Something is wrong in the Ioex::DatabaseIO class, function {}. Please report.\n",
+              block->name(), field_name, __func__);
           IOSS_ERROR(errmsg);
         }
         else {
@@ -2082,11 +2089,11 @@ namespace {
 
     if (component_sum > attribute_count) {
       std::ostringstream errmsg;
-      errmsg << "INTERNAL ERROR: Block '" << block->name() << "' is supposed to have "
-             << attribute_count << " attributes, but " << component_sum
-             << " attributes were counted.\n"
-             << "Something is wrong in the Ioex::DatabaseIO class, function "
-                "check_attribute_index_error. Please report.\n";
+      fmt::print(errmsg,
+                 "INTERNAL ERROR: Block '{}' is supposed to have {} attributes, but {} attributes "
+                 "were counted.\n"
+                 "Something is wrong in the Ioex::DatabaseIO class, function {}. Please report.\n",
+                 block->name(), attribute_count, component_sum, __func__);
       IOSS_ERROR(errmsg);
     }
 
@@ -2097,10 +2104,11 @@ namespace {
       for (int i = 1; i <= attribute_count; i++) {
         if (attributes[i] == 0) {
           std::ostringstream errmsg;
-          errmsg << "INTERNAL ERROR: Block '" << block->name()
-                 << "' has an incomplete set of attributes.\n"
-                 << "Something is wrong in the Ioex::DatabaseIO class, function "
-                    "check_attribute_index_error. Please report.\n";
+          fmt::print(
+              errmsg,
+              "INTERNAL ERROR: Block '{}' has an incomplete set of attributes.\n"
+              "Something is wrong in the Ioex::DatabaseIO class, function {}. Please report.\n",
+              block->name(), __func__);
           IOSS_ERROR(errmsg);
         }
       }
@@ -2188,6 +2196,10 @@ namespace {
   void check_variable_consistency(const ex_var_params &exo_params, int my_processor,
                                   const std::string &filename, const Ioss::ParallelUtils &util)
   {
+    PAR_UNUSED(exo_params);
+    PAR_UNUSED(my_processor);
+    PAR_UNUSED(filename);
+    PAR_UNUSED(util);
 #ifdef SEACAS_HAVE_MPI
     const int        num_types = 10;
     std::vector<int> var_counts(num_types);
@@ -2232,21 +2244,21 @@ namespace {
             if (!diff[iv]) {
               Ioss::FileInfo db(filename);
               diff[iv] = true;
-              errmsg << "\nERROR: Number of " << type
-                     << " variables is not consistent on all processors.\n"
-                     << "       Database: " << db.tailname() << "\n"
-                     << "\tProcessor 0 count = " << var_counts[iv] << "\n";
+              fmt::print(errmsg,
+                         "\nERROR: Number of {} variables is not consistent on all processors.\n"
+                         "       Database: '{}'\n"
+                         "\tProcessor 0 count = {}\n",
+                         type, db.tailname(), var_counts[iv]);
             }
-            errmsg << "\tProcessor " << ip << " count = " << all_counts[ip * num_types + iv]
-                   << "\n";
+            fmt::print(errmsg, "\tProcessor {} count = {}\n", ip, all_counts[ip * num_types + iv]);
           }
         }
       }
     }
     else {
       // Give the other processors something to say...
-      errmsg << "ERROR: Variable type counts are inconsistent. See processor 0 output for more "
-                "details.\n";
+      fmt::print(errmsg, "ERROR: Variable type counts are inconsistent. See processor 0 output for "
+                         "more details.\n");
     }
     int idiff = any_diff ? 1 : 0;
     MPI_Bcast(&idiff, 1, MPI_INT, 0, util.communicator());

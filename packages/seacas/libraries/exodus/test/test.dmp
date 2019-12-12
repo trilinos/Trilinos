@@ -397,7 +397,7 @@ data:
   "testwt",
   "07/07/93",
   "15:41:33",
-  "",
+  "Thirty-Two character QA Record|",
   "                            ",
   "",
   "                        " ;
@@ -405,7 +405,7 @@ data:
  info_records =
   "This is the first information record.",
   "",
-  "                                     " ;
+  "This info record is exactly 80 characters long.  last character should be pipe |" ;
 
  name_glo_var =
   "glo_vars" ;

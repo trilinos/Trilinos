@@ -114,13 +114,6 @@ template<class Scalar>
 void IntegratorBasic<Scalar>::setStepperWStepper(
   Teuchos::RCP<Stepper<Scalar> > newStepper)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  // Make integratorPL_ consistent with new stepper.
-  RCP<ParameterList> newStepperPL = newStepper->getNonconstParameterList();
-  integratorPL_->set("Stepper Name", newStepperPL->name());
-  tempusPL_->set(newStepperPL->name(), *newStepperPL);
   stepper_ = newStepper;
 }
 
@@ -498,6 +491,11 @@ void IntegratorBasic<Scalar>::startTimeStep()
     wsmd->setOutputScreen(false);
   else
     wsmd->setOutputScreen(true);
+
+  const int initial = timeStepControl_->getInitIndex();
+  const int interval = integratorPL_->get<int>("Screen Output Index Interval");
+  if ( (wsmd->getIStep() - initial) % interval == 0)
+    wsmd->setOutputScreen(true);
 }
 
 
@@ -610,18 +608,11 @@ void IntegratorBasic<Scalar>::parseScreenOutput()
     pos = str.find_first_of(delimiters, lastPos);
   }
 
-  int outputScreenIndexInterval =
-    integratorPL_->get<int>("Screen Output Index Interval", 1000000);
-  int outputScreen_i   = timeStepControl_->getInitIndex();
-  const int finalIStep = timeStepControl_->getFinalIndex();
-  while (outputScreen_i <= finalIStep) {
-    outputScreenIndices_.push_back(outputScreen_i);
-    outputScreen_i += outputScreenIndexInterval;
-  }
-
-  // order output indices
+  // order output indices and remove duplicates.
   std::sort(outputScreenIndices_.begin(),outputScreenIndices_.end());
-
+  outputScreenIndices_.erase(std::unique(outputScreenIndices_.begin(),
+                                         outputScreenIndices_.end()   ),
+                                         outputScreenIndices_.end()     );
   return;
 }
 

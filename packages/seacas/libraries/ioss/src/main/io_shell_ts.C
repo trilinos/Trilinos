@@ -181,7 +181,6 @@ int main(int argc, char *argv[])
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
-  std::cout.imbue(std::locale(std::locale(), new my_numpunct));
   std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
 
 #ifdef SEACAS_HAVE_KOKKOS
@@ -207,9 +206,9 @@ int main(int argc, char *argv[])
   OUTPUT << '\n';
 
 #ifdef SEACAS_HAVE_KOKKOS
-  OUTPUT << "Kokkos default execution space configuration:" << std::endl;
-  Kokkos::DefaultExecutionSpace::print_configuration(std::cout, false);
-  OUTPUT << std::endl;
+  OUTPUT << "Kokkos default execution space configuration:\n";
+  Kokkos::DefaultExecutionSpace::print_configuration(std::cerr, false);
+  OUTPUT << "\n";
 #endif
 
   file_copy(interface);
@@ -290,7 +289,7 @@ namespace {
     }
 
     if (interface.memory_statistics) {
-      properties.add(Ioss::Property("DECOMP_SHOW_PROGRESS", true));
+      properties.add(Ioss::Property("ENABLE_TRACING", true));
     }
 
     if (!interface.decomp_method.empty()) {
@@ -306,7 +305,7 @@ namespace {
       dbi->set_parallel_consistency(false);
 
       if (mem_stats) {
-        dbi->util().progress("Database Creation");
+        dbi->progress("Database Creation");
       }
       if (!interface.lower_case_variable_names) {
         dbi->set_lower_case_variable_names(false);
@@ -391,7 +390,7 @@ namespace {
         OUTPUT << "DEFINING MODEL ... \n";
       }
       if (mem_stats) {
-        dbi->util().progress("DEFINING MODEL");
+        dbi->progress("DEFINING MODEL");
       }
       if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
         OUTPUT << "ERROR: Could not put output region into define model state\n";
@@ -435,7 +434,7 @@ namespace {
         OUTPUT << "END STATE_DEFINE_MODEL... " << '\n';
       }
       if (mem_stats) {
-        dbi->util().progress("END STATE_DEFINE_MODEL");
+        dbi->progress("END STATE_DEFINE_MODEL");
       }
 
       output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
@@ -444,7 +443,7 @@ namespace {
         OUTPUT << "TRANSFERRING MESH FIELD DATA ... " << '\n';
       }
       if (mem_stats) {
-        dbi->util().progress("TRANSFERRING MESH FIELD DATA ... ");
+        dbi->progress("TRANSFERRING MESH FIELD DATA ... ");
       }
 
       // Model defined, now fill in the model data...
@@ -525,16 +524,16 @@ namespace {
         OUTPUT << "END STATE_MODEL... " << '\n';
       }
       if (mem_stats) {
-        dbi->util().progress("END STATE_MODEL... ");
+        dbi->progress("END STATE_MODEL... ");
       }
       output_region.end_mode(Ioss::STATE_MODEL);
 
       if (interface.delete_timesteps) {
         if (mem_stats) {
-          dbi->util().progress("Prior to Memory Released... ");
+          dbi->progress("Prior to Memory Released... ");
           dbi->release_memory();
           dbo->release_memory();
-          dbi->util().progress("Memory Released... ");
+          dbi->progress("Memory Released... ");
         }
         return;
       }
@@ -543,7 +542,7 @@ namespace {
         OUTPUT << "DEFINING TRANSIENT FIELDS ... " << '\n';
       }
       if (mem_stats) {
-        dbi->util().progress("DEFINING TRANSIENT FIELDS ... ");
+        dbi->progress("DEFINING TRANSIENT FIELDS ... ");
       }
 
       if (region.property_exists("state_count") &&
@@ -608,7 +607,7 @@ namespace {
           OUTPUT << "END STATE_DEFINE_TRANSIENT... " << '\n';
         }
         if (mem_stats) {
-          dbi->util().progress("END STATE_DEFINE_TRANSIENT... ");
+          dbi->progress("END STATE_DEFINE_TRANSIENT... ");
         }
         output_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
       }
@@ -617,7 +616,7 @@ namespace {
         OUTPUT << "TRANSFERRING TRANSIENT FIELDS ... " << '\n';
       }
       if (mem_stats) {
-        dbi->util().progress("TRANSFERRING TRANSIENT FIELDS... ");
+        dbi->progress("TRANSFERRING TRANSIENT FIELDS... ");
       }
 
       output_region.begin_mode(Ioss::STATE_TRANSIENT);
@@ -699,15 +698,15 @@ namespace {
         OUTPUT << "END STATE_TRANSIENT... " << '\n';
       }
       if (mem_stats) {
-        dbi->util().progress("END STATE_TRANSIENT ... ");
+        dbi->progress("END STATE_TRANSIENT ... ");
       }
       output_region.end_mode(Ioss::STATE_TRANSIENT);
 
       if (mem_stats) {
-        dbi->util().progress("Prior to Memory Released... ");
+        dbi->progress("Prior to Memory Released... ");
         dbi->release_memory();
         dbo->release_memory();
-        dbi->util().progress("Memory Released... ");
+        dbi->progress("Memory Released... ");
       }
     }
   }
@@ -795,7 +794,7 @@ namespace {
 
   void *transfer_fields_ts(void *varg)
   {
-    param *arg           = (param *)varg;
+    param *arg           = static_cast<param *>(varg);
     auto   entity        = arg->entity;
     auto   output_region = arg->output_region;
     auto   interface     = arg->interface;
@@ -844,7 +843,7 @@ namespace {
 
   void *transfer_field_data_ts(void *varg)
   {
-    param *arg           = (param *)varg;
+    param *arg           = static_cast<param *>(varg);
     auto   entity        = arg->entity;
     auto   output_region = arg->output_region;
     auto   interface     = arg->interface;
@@ -1077,7 +1076,7 @@ namespace {
     for (const auto &field_name : fields) {
       Ioss::Field field = ige->get_field(field_name);
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.length() == 0 ||
+          (prefix.empty() ||
            std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
         // If the field does not already exist, add it to the output node block
         oge->field_add(field);
@@ -1357,9 +1356,8 @@ namespace {
         continue;
       }
 
-      if (field_name != "ids" &&
-          (prefix.length() == 0 ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+      if (field_name != "ids" && (prefix.empty() || std::strncmp(prefix.c_str(), field_name.c_str(),
+                                                                 prefix.length()) == 0)) {
         assert(oge->field_exists(field_name));
         transfer_field_data_internal(ige, oge, field_name, interface);
       }

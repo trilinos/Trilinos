@@ -36,7 +36,7 @@
 
 #include <climits>
 #include <cstdlib>
-
+#include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -69,7 +69,7 @@ Excn::ExodusFile::ExodusFile(size_t which) : myLocation_(which)
     fileids_[which] = ex_open(filenames_[which].c_str(), EX_READ | exodusMode_, &cpu_word_size,
                               &io_wrd_size, &version);
     if (fileids_[which] < 0) {
-      std::cerr << "Cannot open file '" << filenames_[which] << "' - exiting" << '\n';
+      fmt::print(stderr, "Cannot open file '{}' - exiting\n", filenames_[which]);
       exit(1);
     }
     ex_set_max_name_length(fileids_[which], maximumNameLength_);
@@ -123,12 +123,12 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
   if (si.inputFiles_.size() <= max_files) {
     keepOpen_ = true;
     if ((si.debug() & 1) != 0) {
-      std::cout << "Files kept open... (Max open = " << max_files << ")\n\n";
+      fmt::print("Files kept open... (Max open = {})\n\n", max_files);
     }
   }
   else {
     keepOpen_ = false;
-    std::cout << "Single file mode... (Max open = " << max_files << ")\n\n";
+    fmt::print("Single file mode... (Max open = {})\n\n", max_files);
   }
 
   float version = 0.0;
@@ -148,7 +148,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
       int io_wrd_size   = 0;
       int exoid = ex_open(filenames_[p].c_str(), EX_READ, &cpu_word_size, &io_wrd_size, &version);
       if (exoid < 0) {
-        std::cerr << "Cannot open file '" << filenames_[p] << "'" << '\n';
+        fmt::print(stderr, "Cannot open file '{}'\n", filenames_[p]);
         return false;
       }
 
@@ -177,14 +177,14 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
 
       fileids_[p] = ex_open(filenames_[p].c_str(), mode, &cpuWordSize_, &io_wrd_size, &version);
       if (fileids_[p] < 0) {
-        std::cerr << "Cannot open file '" << filenames_[p] << "'" << '\n';
+        fmt::print(stderr, "Cannot open file '{}'\n", filenames_[p]);
         return false;
       }
 
       SMART_ASSERT(ioWordSize_ == io_wrd_size)(ioWordSize_)(io_wrd_size);
     }
 
-    std::cout << "Part " << p + 1 << ": '" << name << "'" << '\n';
+    fmt::print("Part {}: '{}'\n", p + 1, name);
   }
 
   maximumNameLength_ = overall_max_name_length;
@@ -213,10 +213,10 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
     mode |= EX_NETCDF4;
   }
 
-  std::cout << "Output:   '" << outputFilename_ << "'" << '\n';
+  fmt::print("Output:   '{}'\n", outputFilename_);
   outputId_ = ex_create(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_);
   if (outputId_ < 0) {
-    std::cerr << "Cannot open file '" << outputFilename_ << "'" << '\n';
+    fmt::print(stderr, "Cannot open file '{}'\n", outputFilename_);
     return false;
   }
 
@@ -225,7 +225,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
     ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
   }
 
-  std::cout << "IO Word size is " << ioWordSize_ << " bytes.\n";
+  fmt::print("IO Word size is {} bytes.\n", ioWordSize_);
   ex_set_max_name_length(outputId_, maximumNameLength_);
   return true;
 }

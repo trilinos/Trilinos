@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include "stk_ngp_test/ngp_test.hpp"
 #include <stk_ngp/Ngp.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
@@ -128,8 +129,57 @@ void run_vector_gpu_test()
     for(size_t i=0; i<n; i++)
         EXPECT_EQ(i, vec[i]);
 }
+
 TEST(StkVectorGpuTest, gpu_runs)
 {
     run_vector_gpu_test();
 }
+
+void check_volatile_fast_shared_comm_map_values_on_device(const ngp::Mesh & ngpMesh, int proc, const ngp::DeviceCommMapIndices & deviceCommMapIndicesGold)
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t i)
+  {
+    ngp::DeviceCommMapIndices deviceCommMapIndices = ngpMesh.volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
+
+    for (size_t entry = 0; entry < deviceCommMapIndices.size(); ++entry) {
+      NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_id, deviceCommMapIndices[entry].bucket_id);
+      NGP_EXPECT_EQ(deviceCommMapIndicesGold[entry].bucket_ord, deviceCommMapIndices[entry].bucket_ord);
+    }
+  });
+}
+
+using HostCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, ngp::HostExecSpace>;
+
+NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) return;
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::io::fill_mesh("generated:1x1x4", get_bulk());
+
+  ngp::Mesh ngpMesh(get_bulk());
+  std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
+
+  for (int proc : comm_procs) {
+    const stk::mesh::BucketIndices & stkBktIndices = get_bulk().volatile_fast_shared_comm_map(stk::topology::NODE_RANK)[proc];
+    ngp::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", stkBktIndices.ords.size());
+    ngp::DeviceCommMapIndices::HostMirror hostNgpMeshIndices = Kokkos::create_mirror_view(deviceNgpMeshIndices);
+
+    size_t entryIndex = 0;
+    size_t stkOrdinalIndex = 0;
+    for (size_t i = 0; i < stkBktIndices.bucket_info.size(); ++i) {
+      const unsigned bucketId = stkBktIndices.bucket_info[i].bucket_id;
+      const unsigned numEntitiesThisBucket = stkBktIndices.bucket_info[i].num_entities_this_bucket;
+      for (size_t n = 0; n < numEntitiesThisBucket; ++n) {
+        const unsigned ordinal = stkBktIndices.ords[stkOrdinalIndex++];
+        const stk::mesh::FastMeshIndex stkFastMeshIndex{bucketId, ordinal};
+        hostNgpMeshIndices[entryIndex++] = stkFastMeshIndex;
+      }
+    }
+    Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);
+    check_volatile_fast_shared_comm_map_values_on_device(ngpMesh, proc, deviceNgpMeshIndices);
+  }
+}
+
+
 

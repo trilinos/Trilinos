@@ -8016,6 +8016,7 @@ be documented in `TribitsBuildReference`_.
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`_
 * `${PROJECT_NAME}_C_Standard`_
 * `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
@@ -8037,6 +8038,8 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`_
 * `${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
+* `${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`_
+* `${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE`_
 * `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
@@ -8052,6 +8055,26 @@ a given TriBITS project are:
 * `PythonInterp_FIND_VERSION`_
 
 These options are described below.
+
+.. _${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE:
+
+**${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE**
+
+  The CMake cache variable ``${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`` is
+  used to define how some invalid TriBITS usage checks are handled.  The valid
+  values include 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', and 'IGNORE'.  The
+  default value is 'FATAL_ERROR' for a project when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE=ON``, which is best for
+  development mode for a project that currently has no invalid usage patterns.
+  The default is 'IGNORE' when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE=OFF``.  But a project with some
+  existing invalid usage patterns might want to set, for example, a default of
+  'WARNING' in order to allow for a smooth upgrade of TriBITS.  To do so,
+  set::
+
+    SET(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT WARNING)
+
+  in the project's base `<projectDir>/ProjectName.cmake`_ file.
 
 .. _${PROJECT_NAME}_C_Standard:
 
@@ -8357,14 +8380,16 @@ These options are described below.
   then ``<PackageName>Config.cmake`` files are created at configure time in
   the build tree and installed into the install tree.  These files are used by
   external CMake projects to pull in the list of compilers, compiler options,
-  include directories and libraries.  The TriBITS default is ``ON`` but a
+  include directories and libraries.  The TriBITS default is ``OFF`` but a
   project can change the default by setting, for example::
 
-    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
+    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
 
-  A project would want to turn off the creation and installation of
+  A project would want to leave off the creation and installation of
   ``<PackageName>Config.cmake`` files if it was only installing and providing
   executables (see `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_).
+  However, if it is wanting to provide libraries for other projects to use,
+  then it should turn on the default generation of these files.
 
 .. _${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:
 
@@ -8467,6 +8492,31 @@ These options are described below.
   
     SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  OFF)
 
+.. _${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE:
+
+.. _${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE:
+
+**${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE**
+**${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE**
+
+  Determines the permissions for directories created during the execution of
+  the of the ``install`` target.  The default permissions are those for the
+  user running the ``install`` target.  For CMake versions 3.11.0+, the user
+  can change these permissions explicitly by setting the CMake vars
+  ``${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`` and/or
+  ``${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE``.
+
+  To make the created directories by world readable for the project by
+  default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
+
+  To make the created directories by only group readable for the project by
+  default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
+
+  These can be set in the `<projectDir>/ProjectName.cmake`_ file.
 
 .. _${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS:
 

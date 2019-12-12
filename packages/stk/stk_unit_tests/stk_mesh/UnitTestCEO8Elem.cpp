@@ -712,7 +712,7 @@ void fillMeshfor8Elem4ProcMoveTopAndTest(stk::unit_test_util::BulkDataTester &me
     //stk::mesh::Part * elem_part = &meta.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
 
 
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     setup8Quad4ProcMesh2D(mesh);
 
@@ -768,7 +768,7 @@ void checkStatesAfterCEO_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester &
 
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * block_1 = meta.get_part("block_1");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -1499,7 +1499,7 @@ void p0_checks_for_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester& mesh)
 {
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * block_1 = meta.get_part("block_1");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -1695,7 +1695,7 @@ void p1_checks_for_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester& mesh)
 {
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * block_1 = meta.get_part("block_1");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -1876,7 +1876,7 @@ void p2_checks_for_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester& mesh)
 {
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * block_1 = meta.get_part("block_1");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
@@ -2057,7 +2057,7 @@ void p3_checks_for_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester& mesh)
 {
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * block_1 = meta.get_part("block_1");
-    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+    stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();

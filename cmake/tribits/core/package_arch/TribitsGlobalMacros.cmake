@@ -51,6 +51,7 @@ INCLUDE(TribitsVerbosePrintVar)
 INCLUDE(TribitsProcessEnabledTpl)
 INCLUDE(TribitsInstallHeaders)
 INCLUDE(TribitsGetVersionDate)
+INCLUDE(TribitsReportInvalidTribitsUsage)
 
 # Standard TriBITS utilities includes
 INCLUDE(TribitsAddOptionAndDefine)
@@ -271,6 +272,28 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_OPTION(${PROJECT_NAME}_SKIP_FORTRANCINTERFACE_VERIFY_TEST
     "Skip the Fortran/C++ compatibility test"
     OFF )
+
+  IF (NOT CMAKE_VERSION VERSION_LESS 3.11.0)
+
+    ADVANCED_SET(
+      ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE
+      "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT}"
+      CACHE BOOL
+      "If TRUE, the directory and file permissions on the installed directories and files will be set to world readable.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
+      )
+  
+    IF ("${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}" STREQUAL "")
+      SET(${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT
+        "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE}")
+    ENDIF()
+    ADVANCED_SET(
+      ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE
+      "${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}"
+      CACHE BOOL
+      "If TRUE, the directory and file permissions on the installed directories and files will be set to group readable.  Setting ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE=ON implies this is 'ON' as well.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
+      )
+
+  ENDIF()
 
   IF ("${${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT TRUE)
@@ -600,15 +623,31 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Relative CPU speed of the computer used to scale performance tests (default 1.0)."
     )
 
+  IF ("${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT ON)
+  ENDIF()
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
     ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}
     CACHE BOOL
-    "Determines if a variety of development mode checks are turned on by default or not." )
+    "Determines if a variety of development mode checks are turned on by default or not."
+    )
 
   ADVANCED_SET( ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES
     ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE}
     CACHE BOOL
     "Determines if asserts are performed on missing packages or not." )
+
+  IF ("${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT}" STREQUAL "")
+    IF (${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+      SET(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT FATAL_ERROR)
+    ELSE()
+      SET(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT IGNORE)
+    ENDIF()
+  ENDIF()
+  ADVANCED_SET( ${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE
+    "${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT}"
+    CACHE BOOL
+    "Assert correct usage of TriBITS.  Value values include 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', and 'IGNORE'.  Default '${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT}' " )
 
   ADVANCED_SET( ${PROJECT_NAME}_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES
     FALSE  CACHE  BOOL
@@ -904,6 +943,64 @@ MACRO(TRIBITS_SETUP_INSTALLATION_PATHS)
   ENDIF()
   STRING(REPLACE ":" ";" CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}")
   PRINT_VAR(CMAKE_INSTALL_RPATH)
+
+  #
+  # E) Set permissions on created installation directories
+  #
+
+  IF (
+    (NOT "${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE}" STREQUAL "")
+    OR
+    (NOT "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE}" STREQUAL "")
+    )
+
+    IF (NOT CMAKE_VERSION VERSION_LESS 3.11.0)
+
+      PRINT_VAR(${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE)
+      PRINT_VAR(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE)
+  
+      # Group permissions
+      IF (${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE 
+        OR ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE
+        )
+        SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_GROUP
+          GROUP_READ GROUP_EXECUTE)
+      ELSE()
+        SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_GROUP) # Empty
+      ENDIF()
+  
+      # World permissions
+      IF (${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE)
+        SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_WORLD
+          WORLD_READ WORLD_EXECUTE)
+      ELSE()
+        SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_WORLD) # Empty
+      ENDIF()
+  
+      # Directory permissions
+      SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE
+        ${CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_GROUP}
+        ${CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_WORLD}
+        )
+  
+      # Print the permissions in a way that allows for strong testing
+      STRING(REPLACE ";" " " CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_W_SPACES
+        "${CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS}" )
+      MESSAGE("-- " "CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS = "
+       "(${CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_W_SPACES})")
+
+    ELSE()
+
+      MESSAGE("NOTE: CMAKE_VERSION = ${CMAKE_VERSION} < 3.11.0 and"
+        " the options ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE"
+        " and ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE are no-ops"
+        " because CMake does not support the var"
+        " CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS!" )
+
+    ENDIF()
+
+  ENDIF()
 
 ENDMACRO()
 
@@ -2488,9 +2585,9 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
           INCLUDE("${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         ENDIF()
         IF (NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS)
-          MESSAGE(FATAL_ERROR
-            "ERROR: Forgot to call TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}"
-            )
+          TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+            "ERROR: Forgot to call TRIBITS_PACKAGE_POSTPROCESS() in"
+            " ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         ENDIF()
 
         LIST(APPEND ENABLED_PACKAGE_LIBS_TARGETS ${TRIBITS_PACKAGE}_libs)
@@ -2821,6 +2918,28 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
     ENDIF()
 
   ENDIF()
+
+  # Create custom 'install/package_by_package' target
+
+  SET(TRIBITS_ENABLED_PACKAGES_BINARY_DIRS)
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+    LIST(APPEND TRIBITS_ENABLED_PACKAGES_BINARY_DIRS "${${TRIBITS_PACKAGE}_BINARY_DIR}")
+  ENDFOREACH()
+
+  CONFIGURE_FILE(
+    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/cmake_pbp_install.cmake.in
+    cmake_pbp_install.cmake
+    @ONLY
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_PBP_RUNNER "" CACHE FILEPATH
+    "Program used to run cmake -P cmake_pbp_install.cmake to change user for 'install_package_by_package' target")
+
+  ADD_CUSTOM_TARGET(install_package_by_package
+   ${${PROJECT_NAME}_INSTALL_PBP_RUNNER}
+    ${CMAKE_COMMAND} -P cmake_pbp_install.cmake
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    )
 
 ENDMACRO()
 

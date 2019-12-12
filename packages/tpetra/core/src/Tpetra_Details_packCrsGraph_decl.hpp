@@ -149,25 +149,35 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 /// \param exportLIDs [in] Local indices of the rows to pack.
 ///
 /// \param constantNumPackets [out] Same as the constantNumPackets
-///   output argument of Tpetra::DistObject::packAndPrepareNew (which
+///   output argument of Tpetra::DistObject::packAndPrepare (which
 ///   see).
 ///
 /// \param distor [in] (Not used.)
 ///
 /// This method implements CrsGraph::packNew, and thus
-/// CrsGraph::packAndPrepareNew, for the case where the graph to
+/// CrsGraph::packAndPrepare, for the case where the graph to
 /// pack has a valid KokkosSparse::CrsGraph.
 template<typename LO, typename GO, typename NT>
 void
 packCrsGraphNew (const CrsGraph<LO, GO, NT>& sourceGraph,
-                 Kokkos::DualView<typename CrsGraph<LO,GO,NT>::packet_type*,
-                                  typename CrsGraph<LO,GO,NT>::buffer_device_type>&
-                                  exports,
-                 const Kokkos::DualView<size_t*,
-                                        typename CrsGraph<LO,GO,NT>::buffer_device_type>&
-                                        numPacketsPerLID,
-                 const Kokkos::DualView<const LO*, typename NT::device_type>& exportLIDs,
+                 const Kokkos::DualView<
+                   const LO*,
+                   typename CrsGraph<LO, GO, NT>::buffer_device_type
+                 >& exportLIDs,
+                 const Kokkos::DualView<
+                   const int*,
+                   typename CrsGraph<LO, GO, NT>::buffer_device_type
+                 >& exportPIDs,
+                 Kokkos::DualView<
+                   typename CrsGraph<LO, GO, NT>::packet_type*,
+                   typename CrsGraph<LO, GO, NT>::buffer_device_type
+                 >& exports,
+                 Kokkos::DualView<
+                   size_t*,
+                   typename CrsGraph<LO, GO, NT>::buffer_device_type
+                 > numPacketsPerLID,
                  size_t& constantNumPackets,
+                 const bool pack_pids,
                  Distributor& distor);
 
 /// \brief Pack specified entries of the given local sparse graph for

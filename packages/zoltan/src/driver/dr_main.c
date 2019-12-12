@@ -465,7 +465,7 @@ if (iteration == 1) {
       int i, j;
       float tmp;
       float twiddle = 0.01;
-      char str[4];
+      char str[32];
       /* Perturb coordinates of mesh */
       if (mesh.data_type == ZOLTAN_GRAPH){
         for (i = 0; i < mesh.num_elems; i++) {

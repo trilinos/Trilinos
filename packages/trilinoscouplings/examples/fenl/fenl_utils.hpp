@@ -147,50 +147,6 @@ struct CMD {
 // Print command line
 void print_cmdline( std::ostream & s , const CMD & cmd );
 
-// Create Tpetra node
-template <typename NodeType>
-Teuchos::RCP<NodeType>
-createKokkosNode( const CMD & cmd , const Teuchos::Comm<int>& comm ) {
-  Teuchos::ParameterList params;
-  params.set("Verbose", 0);
-  if ( cmd.USE_THREADS  )
-    params.set("Num Threads", cmd.USE_THREADS);
-  else if ( cmd.USE_OPENMP  )
-    params.set("Num Threads", cmd.USE_OPENMP);
-  if ( cmd.USE_NUMA  && cmd.USE_CORE_PER_NUMA  ) {
-    params.set("Num NUMA", cmd.USE_NUMA );
-    params.set("Num CoresPerNUMA", cmd.USE_CORE_PER_NUMA );
-  }
-  if ( cmd.USE_CUDA  )
-    params.set("Device", cmd.USE_CUDA_DEV  );
-  Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
-
-  if ( cmd.VERBOSE ) {
-    typedef typename NodeType::execution_space Device;
-    if (comm.getRank() == 0)
-      Device::print_configuration(std::cout);
-    std::cout.flush();
-    if ( cmd.USE_CUDA  ) {
-      for (int i=0; i<comm.getSize(); ++i) {
-        comm.barrier();
-        comm.barrier();
-        comm.barrier();
-        if ( i == comm.getRank() ) {
-          std::cout << "MPI rank " << comm.getRank()
-                    << " attached to CUDA device "
-                    << cmd.USE_CUDA_DEV  << std::endl;
-          std::cout.flush();
-        }
-        comm.barrier();
-        comm.barrier();
-        comm.barrier();
-      }
-    }
-  }
-
-  return node;
-}
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Display performance:

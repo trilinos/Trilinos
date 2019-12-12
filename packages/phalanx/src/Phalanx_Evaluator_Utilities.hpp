@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -51,33 +51,24 @@
 
 namespace PHX {
 
-  // Forward declaration
-  template<typename DataT, int Rank> class Field;
+  // Forward declarations
+  template<typename DataT, int Rank, typename Layout> class Field;
+  template <typename DataT,typename...Props> class MDField;
 
-  // Forward declaration
-  template <typename DataT,
-            typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-            typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-  class MDField;
-
-  /*! @brief Utilities to hide templating in concrete Evaluators.
-   
-  */
-  template<typename EvalT, typename Traits> 
+  /*! @brief Utilities to hide templating in concrete Evaluators. */
+  template<typename EvalT, typename Traits>
   struct EvaluatorUtilities {
 
-    template <typename DataT,
-	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	      typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void setFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
-		      Tag6,Tag7>& f, PHX::FieldManager<Traits>& fm) 
+    template <typename DataT,typename...Props>
+    void setFieldData(PHX::MDField<DataT,Props...>& f,
+                      PHX::FieldManager<Traits>& fm)
     {
       fm.template getFieldData<EvalT>(f);
     }
 
     template <typename DataT,int Rank>
-              void setFieldData(PHX::Field<DataT,Rank>& f,
-                                PHX::FieldManager<Traits>& fm) 
+    void setFieldData(PHX::Field<DataT,Rank>& f,
+                      PHX::FieldManager<Traits>& fm)
     {
       fm.template getFieldData<EvalT,DataT>(f);
     }
@@ -86,9 +77,7 @@ namespace PHX {
     void setFieldData(const PHX::FieldTag& /* ft */,
                       Kokkos::View<DataT,Props...>& /* f */,
                       PHX::FieldManager<Traits>& /* fm */)
-    {
-
-    }
+    {}
 
   };
 }

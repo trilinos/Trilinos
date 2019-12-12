@@ -312,13 +312,10 @@ template<typename Scalar>
 void
 Piro::InvertMassMatrixDecorator<Scalar>::reportFinalPoint(
 #endif
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& /* finalPoint */,
-    const bool /* wasSolved */)
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint,
+    const bool wasSolved)
 {
-  // TODO
-  TEUCHOS_TEST_FOR_EXCEPTION(true,
-         Teuchos::Exceptions::InvalidParameter,
-         "Calling reportFinalPoint in Piro_InvertMassMatrixDecorator_Def.hpp line 215" << std::endl);
+  model->reportFinalPoint(finalPoint,wasSolved);
 }
 
 #ifdef ALBANY_BUILD

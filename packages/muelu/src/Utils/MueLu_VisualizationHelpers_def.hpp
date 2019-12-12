@@ -85,7 +85,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doPointCloud(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doPointCloud(std::vector<int>& vertices, std::vector<int>& geomSizes, LO /* numLocalAggs */, LO numFineNodes) {
     vertices.reserve(numFineNodes);
     geomSizes.reserve(numFineNodes);
     for(LocalOrdinal i = 0; i < numFineNodes; i++)
@@ -132,7 +132,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& /* isRoot */, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords) {
     for(int agg = 0; agg < numLocalAggs; agg++) {
       std::list<int> aggNodes;
       for(int i = 0; i < numFineNodes; i++) {
@@ -323,7 +323,7 @@ namespace MueLu {
 #endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& zCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& /* isRoot */, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& zCoords) {
     //Use 3D quickhull algo.
     //Vector of node indices representing triangle vertices
     //Note: Calculate the hulls first since will only include point data for points in the hulls
@@ -762,7 +762,7 @@ namespace MueLu {
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fx, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fy, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fz) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & /* fx */, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & /* fy */, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & /* fz */) {
     ArrayView<const Scalar> values;
     ArrayView<const LocalOrdinal> neighbors;
 
@@ -1237,7 +1237,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::string VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getPVTUFileName(int numProcs, int myRank, int level, const Teuchos::ParameterList & pL) const {
+  std::string VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getPVTUFileName(int numProcs, int /* myRank */, int level, const Teuchos::ParameterList & pL) const {
     std::string filenameToWrite = getBaseFileName(numProcs, level, pL);
     std::string masterStem = filenameToWrite.substr(0, filenameToWrite.rfind(".vtu"));
     masterStem = this->replaceAll(masterStem, "%PROCID", "");
@@ -1326,7 +1326,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKCells(std::ofstream & fout, std::vector<int> & uniqueFine, std::vector<LocalOrdinal> & vertices, std::vector<LocalOrdinal> & geomSize) const {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKCells(std::ofstream & fout, std::vector<int> & /* uniqueFine */, std::vector<LocalOrdinal> & vertices, std::vector<LocalOrdinal> & geomSize) const {
     std::string indent = "      ";
     fout << "      <Cells>" << std::endl;
     fout << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << std::endl;
@@ -1386,7 +1386,7 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writePVTU(std::ofstream& pvtu, std::string baseFname, int numProcs, bool bFineEdges, bool bCoarseEdges) const {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writePVTU(std::ofstream& pvtu, std::string baseFname, int numProcs, bool bFineEdges, bool /* bCoarseEdges */) const {
     //If using vtk, filenameToWrite now contains final, correct ***.vtu filename (for the current proc)
     //So the root proc will need to use its own filenameToWrite to make a list of the filenames of all other procs to put in
     //pvtu file.

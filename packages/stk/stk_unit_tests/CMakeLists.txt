@@ -1,18 +1,49 @@
 TRIBITS_SUBPACKAGE(Unit_tests)
 
-ADD_SUBDIRECTORY(stk_mesh_fixtures)
-TRIBITS_ADD_TEST_DIRECTORIES(stk_balance)
-TRIBITS_ADD_TEST_DIRECTORIES(stk_mesh)
-TRIBITS_ADD_TEST_DIRECTORIES(stk_ngp)
-TRIBITS_ADD_TEST_DIRECTORIES(stk_ngp_test)
-
-IF ( TPL_ENABLE_BoostLib )
-  TRIBITS_ADD_TEST_DIRECTORIES(stk_topology)
+IF(Trilinos_ENABLE_STKSimd)
+TRIBITS_ADD_TEST_DIRECTORIES(stk_simd)
 ENDIF()
 
-TRIBITS_ADD_TEST_DIRECTORIES(stk_io)
-TRIBITS_ADD_TEST_DIRECTORIES(stk_util)
+IF(Trilinos_ENABLE_STKTransfer)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_transfer)
-TRIBITS_ADD_TEST_DIRECTORIES(stk_tools)
+ENDIF()
+
+IF(Trilinos_ENABLE_STKMesh)
+  ADD_SUBDIRECTORY(stk_mesh_fixtures)
+ENDIF()
+
+IF(Trilinos_ENABLE_STKNGP_TEST)
+
+    IF(Trilinos_ENABLE_STKMesh)
+    TRIBITS_ADD_TEST_DIRECTORIES(stk_mesh)
+    ENDIF()
+    
+    IF(Trilinos_ENABLE_STKBalance)
+    TRIBITS_ADD_TEST_DIRECTORIES(stk_balance)
+    ENDIF()
+    
+    IF(Trilinos_ENABLE_STKNGP)
+    TRIBITS_ADD_TEST_DIRECTORIES(stk_ngp)
+    ENDIF()
+    
+    TRIBITS_ADD_TEST_DIRECTORIES(stk_ngp_test)
+    
+    IF(Trilinos_ENABLE_STKTopology)
+    TRIBITS_ADD_TEST_DIRECTORIES(stk_topology)
+    ENDIF()
+    
+    IF(Trilinos_ENABLE_STKIO)
+    TRIBITS_ADD_TEST_DIRECTORIES(stk_io)
+    ENDIF()
+    
+    IF(Trilinos_ENABLE_STKUtil)
+    TRIBITS_ADD_TEST_DIRECTORIES(stk_util)
+    ENDIF()
+    
+    IF(Trilinos_ENABLE_STKTools)
+    TRIBITS_ADD_TEST_DIRECTORIES(stk_tools)
+    ENDIF()
+
+ENDIF()
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()

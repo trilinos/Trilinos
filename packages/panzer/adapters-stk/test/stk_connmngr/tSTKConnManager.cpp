@@ -124,7 +124,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
-   STKConnManager<int> connMngr(mesh);
+   STKConnManager connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    // did we get the element block correct?
@@ -158,12 +158,12 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
        }
    }
 
-   STKConnManager<int>::GlobalOrdinal maxEdgeId = mesh->getMaxEntityId(mesh->getEdgeRank());
-   STKConnManager<int>::GlobalOrdinal nodeCount = mesh->getEntityCounts(mesh->getNodeRank());
+   STKConnManager::GlobalOrdinal maxEdgeId = mesh->getMaxEntityId(mesh->getEdgeRank());
+   STKConnManager::GlobalOrdinal nodeCount = mesh->getEntityCounts(mesh->getNodeRank());
 
    if(numProcs==1) {
-      const int * conn1 = connMngr.getConnectivity(1);
-      const int * conn2 = connMngr.getConnectivity(2);
+      const auto * conn1 = connMngr.getConnectivity(1);
+      const auto * conn2 = connMngr.getConnectivity(2);
       TEST_EQUALITY(conn1[0],1);  
       TEST_EQUALITY(conn1[1],2);  
       TEST_EQUALITY(conn1[2],7);  
@@ -181,8 +181,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
 
    }
    else {
-      const int * conn0 = connMngr.getConnectivity(0);
-      const int * conn1 = connMngr.getConnectivity(1);
+      const auto * conn0 = connMngr.getConnectivity(0);
+      const auto * conn1 = connMngr.getConnectivity(1);
 
       TEST_EQUALITY(conn0[0],0+myRank);  
       TEST_EQUALITY(conn0[1],1+myRank);  
@@ -197,8 +197,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
       TEST_EQUALITY(conn0[8],nodeCount+(maxEdgeId+1)+1+myRank);
       TEST_EQUALITY(conn1[8],nodeCount+(maxEdgeId+1)+3+myRank);
 
-      const int * conn2 = connMngr.getConnectivity(2); // this is the "neighbor element"
-      const int * conn3 = connMngr.getConnectivity(3); // this is the "neighbor element"
+      const auto * conn2 = connMngr.getConnectivity(2); // this is the "neighbor element"
+      const auto * conn3 = connMngr.getConnectivity(3); // this is the "neighbor element"
 
       int otherRank = myRank==0 ? 1 : 0;
 
@@ -233,7 +233,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
-   STKConnManager<int> connMngr(mesh);
+   STKConnManager connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    // did we get the element block correct?
@@ -293,7 +293,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
          TEST_ASSERT(false); 
       }
 
-      const int * conn = connMngr.getConnectivity(localId);
+      const auto * conn = connMngr.getConnectivity(localId);
       for(std::size_t i=0;(int) i<connMngr.getConnectivitySize(localId);i++)
          TEST_EQUALITY(conn[i],conn_true[i]-1);
    }
@@ -320,10 +320,10 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, noConnectivityClone)
    RCP<const panzer::FieldPattern> fp_const 
          = buildConstantFieldPattern(*ct);
 
-   STKConnManager<int> connMngr_const(mesh);
+   STKConnManager connMngr_const(mesh);
    connMngr_const.buildConnectivity(*fp_const);
 
-   RCP<STKConnManager<int> > connMngr_hgrad = rcp_dynamic_cast<STKConnManager<int> >(connMngr_const.noConnectivityClone());
+   RCP<STKConnManager> connMngr_hgrad = rcp_dynamic_cast<STKConnManager>(connMngr_const.noConnectivityClone());
    TEST_ASSERT(connMngr_hgrad!=Teuchos::null);
    connMngr_hgrad->buildConnectivity(*fp_hgrad);
 
@@ -377,7 +377,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, noConnectivityClone)
             TEST_ASSERT(false); 
          }
    
-         const int * conn = connMngr_const.getConnectivity(localId);
+         const auto * conn = connMngr_const.getConnectivity(localId);
          for(std::size_t i=0;(int) i<connMngr_const.getConnectivitySize(localId);i++)
             TEST_EQUALITY(conn[i],conn_true[i]);
       }
@@ -442,7 +442,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, noConnectivityClone)
             TEST_ASSERT(false); 
          }
    
-         const int * conn = connMngr_hgrad->getConnectivity(localId);
+         const auto * conn = connMngr_hgrad->getConnectivity(localId);
          for(std::size_t i=0;(int) i<connMngr_hgrad->getConnectivitySize(localId);i++)
             TEST_EQUALITY(conn[i],conn_true[i]-1);
       }
@@ -463,7 +463,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
-   STKConnManager<int> connMngr(mesh);
+   STKConnManager connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    TEUCHOS_ASSERT(numProcs<=2);
@@ -493,7 +493,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
 }
 
 namespace {
-void testAssociatedNeighbors(const STKConnManager<int>& connMngr,
+void testAssociatedNeighbors(const STKConnManager& connMngr,
   const std::vector<std::vector<int> > vals, Teuchos::FancyOStream& out,
   bool& success)
 {
@@ -520,7 +520,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks_interface)
    RCP<const panzer::FieldPattern>
      fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
-   STKConnManager<int> connMngr(mesh);
+   STKConnManager connMngr(mesh);
    connMngr.associateElementsInSideset("vertical_0");
    connMngr.associateElementsInSideset("left");
    connMngr.buildConnectivity(*fp);

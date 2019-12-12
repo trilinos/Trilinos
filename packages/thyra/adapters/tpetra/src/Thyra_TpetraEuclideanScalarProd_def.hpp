@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -71,17 +71,10 @@ void TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scalarPr
     X_tpetra->dot(*Y_tpetra, scalarProds_out);
   } else {
     // If one of the casts succeeded, sync that MV to host space
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    if (nonnull(X_tpetra))
-      Teuchos::rcp_const_cast<TMV>(X_tpetra)->template sync<Kokkos::HostSpace>();
-    if (nonnull(Y_tpetra))
-      Teuchos::rcp_const_cast<TMV>(Y_tpetra)->template sync<Kokkos::HostSpace>();
-#else
     if (nonnull(X_tpetra))
       Teuchos::rcp_const_cast<TMV>(X_tpetra)->sync_host ();
     if (nonnull(Y_tpetra))
       Teuchos::rcp_const_cast<TMV>(Y_tpetra)->sync_host ();
-#endif
 
     EuclideanScalarProd<Scalar>::scalarProdsImpl(X, Y, scalarProds_out);
   }

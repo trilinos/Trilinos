@@ -62,18 +62,15 @@ template <class Ordinal, class Real>
 class TeuchosBranchHelper_PEBBL : public BranchHelper_PEBBL<Real> {
 private:
   const Real tol_;
+  const int method_;
 
   Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> getConstData(const Vector<Real> &x) const {
     return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(x).getVector();
   }
 
-public:
-  TeuchosBranchHelper_PEBBL(const Real tol = 1e-6) : tol_(tol) {}
-
-  TeuchosBranchHelper_PEBBL(const TeuchosBranchHelper_PEBBL &BH)
-    : tol_(BH.tol_) {}
-
-  int getMyIndex(const Vector<Real> &x) const {
+  // Branching based on distance to integer
+  int getMyIndex_D(const Vector<Real> &x, const Vector<Real> &lam,
+                   Objective<Real> &obj, Constraint<Real> &con) const {
     // Get index closest to 0.5
     Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> xval = getConstData(x);
     int index = 0;
@@ -88,6 +85,50 @@ public:
         minX = std::abs(minD-half);
         index = i;
       }
+    }
+    return index;
+  }
+
+  // Branching based on directional derivatives (similar to pseudo costs).
+  int getMyIndex_PC(const Vector<Real> &x, const Vector<Real> &lam,
+                    Objective<Real> &obj, Constraint<Real> &con) const {
+    Real tol = static_cast<Real>(1e-8);
+    Ptr<Vector<Real>> g = x.dual().clone();
+    Ptr<Vector<Real>> J = x.dual().clone();
+    Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> xval = getConstData(x);
+    Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> gval = getConstData(*g);
+    obj.gradient(*g,x,tol);
+    con.applyAdjointJacobian(*J,lam,x,tol);
+    g->plus(*J);
+    Real maxD(ROL_NINF<Real>()), Li(0), Ui(0), mini(0);
+    int index = 0, size = gval->length();
+    for (int i = 0; i < size; ++i) {
+      Li   = (*gval)[i] * (std::floor((*xval)[i]) - (*xval)[i]);
+      Ui   = (*gval)[i] * (std::ceil((*xval)[i])  - (*xval)[i]);
+      mini = std::min(std::abs(Li),std::abs(Ui));
+      if (mini > maxD) {
+        maxD  = mini;
+        index = i;
+      }
+    }
+    return index;
+  }
+
+public:
+  TeuchosBranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
+    : tol_(tol), method_(method) {}
+
+  TeuchosBranchHelper_PEBBL(const TeuchosBranchHelper_PEBBL &BH)
+    : tol_(BH.tol_), method_(BH.method_) {}
+
+  int getMyIndex(const Vector<Real> &x, const Vector<Real> &lam,
+                 Objective<Real> &obj, Constraint<Real> &con) const {
+    int index(0);
+    if (method_ == 1) {
+      index = getMyIndex_D(x,lam,obj,con);
+    }
+    else {
+      index = getMyIndex_PC(x,lam,obj,con);
     }
     return index;
   }

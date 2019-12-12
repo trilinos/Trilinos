@@ -239,10 +239,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   Teuchos::ParameterList paramList;
   paramList.set("verbosity", "none");
-  if (xmlFileName != "")
+  if(lib == Xpetra::UseEpetra) {
+    out << "Setting: \"use kokkos refactor\" to: false" << std::endl;
+    paramList.set("use kokkos refactor", false);
+  }
+  if (xmlFileName != "") {
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-
-  out << "Parameter list:" << std::endl << paramList << std::endl;
+  }
+  Teuchos::ParameterList userParamList = paramList.sublist("user data");
+  userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
 
   // =========================================================================
   // Setup #1 (no reuse)
@@ -260,7 +265,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
         tm->start();
 
       A->SetMaxEigenvalueEstimate(-one);
-      H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
+      H = MueLu::CreateXpetraPreconditioner(A, paramList);
 
       // Stop timing
       if (!(numRebuilds && i == 0)) {
@@ -275,7 +280,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
     // Run a build for matrix B to record its convergence
     B->SetMaxEigenvalueEstimate(-one);
-    H = MueLu::CreateXpetraPreconditioner(B, paramList, coordinates);
+    H = MueLu::CreateXpetraPreconditioner(B, paramList);
 
     X->putScalar(zero);
     H->Iterate(*Y, *X, nIts);
@@ -298,7 +303,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     paramList.set("reuse: type", reuseTypes[k]);
 
     out << thinSeparator << " " << reuseTypes[k] << " (initial) " << thinSeparator << std::endl;
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList);
 
     X->putScalar(zero);
     H->Iterate(*Y, *X, nIts);

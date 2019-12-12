@@ -94,13 +94,13 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
           TEST_ASSERT((timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
           timer.stop(label);
-          TEST_ASSERT(not (timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
+          TEST_ASSERT(!(timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
         } else {
           timer.start("Not Rank 0");
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
           TEST_ASSERT((timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
           timer.stop("Not Rank 0");
-          TEST_ASSERT(not (timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
+          TEST_ASSERT(!(timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
         }
       }
       timer.stop("Solve");
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
       std::smatch regexSMatch;
       std::regex timerName(std::get<0>(check));
       std::regex_search(line,regexSMatch,timerName);
-      TEST_ASSERT(not regexSMatch.empty());
+      TEST_ASSERT(!regexSMatch.empty());
 
       // Split string to get time and count
       std::regex delimiter(":\\s|\\s\\[|\\]\\s");

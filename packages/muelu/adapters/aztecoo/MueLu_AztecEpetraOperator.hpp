@@ -39,7 +39,7 @@ namespace MueLu {
 
     //@}
 
-    int SetUseTranspose(bool UseTransposeBool) { return -1; }
+    int SetUseTranspose(bool /* UseTransposeBool */) { return -1; }
 
     //! @name Mathematical functions
     //@{
@@ -53,7 +53,7 @@ namespace MueLu {
 
       \return Integer error code, set to 0 if successful.
     */
-    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { return -1; }
+    int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const { return -1; }
 
     //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
     /*!

@@ -11,15 +11,11 @@
 // TODO See also: Teuchos::ParameterListAcceptor, Teko::Clonable
 
 namespace MueLu {
-  using Teuchos::ParameterList;
+
   using Teuchos::ParameterEntry;
-  using Teuchos::RCP;
 
   // Printing the valid parameter list only showing documentation fields
-  inline void printParameterListOptions(std::ostream &os, const Teuchos::ParameterList & p) {
-    p.print(os, Teuchos::ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true));
-    os << std::endl;
-  }
+  void printParameterListOptions(std::ostream &os, const Teuchos::ParameterList & p);
 
   /*! @class ParameterListAcceptor
       @brief Abstract interface of a class accepting parameter lists.
@@ -31,9 +27,9 @@ namespace MueLu {
 
     //! @name Constructors/Destructors
     //! @{
-    ParameterListAcceptor() { }
+    ParameterListAcceptor();
 
-    virtual ~ParameterListAcceptor() { }
+    virtual ~ParameterListAcceptor() = default;
 
     //! @}
     //! @name Get/Set methods.
@@ -55,7 +51,7 @@ namespace MueLu {
     // One solution is to never set any unused parameter in getValidParameters().
     // If some parameters are available only conditionnaly, do not set them by default in setValidParameters when the conditions are not met.
     //
-    virtual RCP<const ParameterList> GetValidParameterList() const = 0;
+    virtual Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const = 0;
 
     //! @brief Set parameters from a parameter list and return with default values.
     //
@@ -70,7 +66,7 @@ namespace MueLu {
     //
     // What we really want is for the user to have a const version outside and MueLu having a non-const version inside.
     // Is there a C++ pattern to do that?
-    virtual void SetParameterList(const ParameterList& paramList) = 0;
+    virtual void SetParameterList(const Teuchos::ParameterList& paramList) = 0;
 
     // Get the parameter list.
     // Teuchos::ParameterListAcceptor also provides a non-const version of this but I don't see why.
@@ -96,88 +92,21 @@ namespace MueLu {
 
   public:
 
-    ParameterListAcceptorImpl() { }
+    ParameterListAcceptorImpl();
 
-    virtual ~ParameterListAcceptorImpl() {
-      // TAW: 3/17/2016
-      // The following code is useless. Comment it out to make coverity happy (CID22611)
-      /*bool warnings = false; //TODO
-      if (warnings)
-        paramList_.unused(std::cout);*/
-    }
+    virtual ~ParameterListAcceptorImpl() = default;
 
-    virtual void SetParameterList(const ParameterList& paramList) {
-      // This call is only for cosmetic reasons.
-      // If one calls SetParameterList before GetParameterList, that would mean
-      // that paramList_ has not been initialized yet. Therefore, the parameter
-      // would be put in it in the order user provided, and not in the order of
-      // valid parameter list. We'd like to have consistency in the order, so
-      // we do this extra call, which is no-op if paramList_ has already been
-      // initialized.
-      paramList_ = GetParameterList();
-
-      paramList_.setParameters(paramList);
-
-      // Validate and add defaults parameters.
-      RCP<const ParameterList> validParamList = GetValidParameterList();
-      if (validParamList != Teuchos::null) {
-        paramList_.validateParametersAndSetDefaults(*validParamList);
-      } else {
-        // Teuchos::null means that GetValidParameterList() not implemented.
-        // As such, we skip validation and have not way to set default values,
-        // which is potentially dangerous
-      }
-    }
+    virtual void SetParameterList(const Teuchos::ParameterList& paramList);
 
     // The returned list always has an entry for each valid parameter.
     // Therefore, there is not need to test if a parameter is present before getting it.
-    virtual const Teuchos::ParameterList& GetParameterList() const {
-      if (paramList_.numParams() == 0) {
-        // Set paramList_ to the default list
-        RCP<const ParameterList> validParamList = GetValidParameterList();
-        if (validParamList != Teuchos::null) {
-          // Instead of simply doing
-          //   paramList_ = *validParamList;
-          // we use more complicated Teuchos calls, because we would like to
-          // have [default] values in the beginning
-          paramList_.validateParametersAndSetDefaults(*validParamList);
-        }
+    virtual const Teuchos::ParameterList& GetParameterList() const;
 
-      } else {
-        // We are sure that the list has all the valid parameters defined
-        // because the parameter list validation process adds the default
-        // values to the user list
-      }
+    void SetParameter(const std::string& name, const ParameterEntry& entry);
 
-      return paramList_;
-    }
+    const ParameterEntry & GetParameter(const std::string &name) const;
 
-    void SetParameter(const std::string& name, const ParameterEntry& entry) {
-      Teuchos::ParameterList paramList;
-      paramList.setEntry(name, entry);
-      SetParameterList(paramList); // This forces revalidation of the list
-    }
-
-    const ParameterEntry & GetParameter(const std::string &name) const {
-      return GetParameterList().getEntry(name);
-    }
-
-    virtual void GetDocumentation(std::ostream &os) const {
-      // default implementation
-
-      RCP<const ParameterList> validParamList = GetValidParameterList();
-      if (validParamList == Teuchos::null) {
-        os << "## Documentation not available:" << std::endl;
-        return;
-      }
-
-      os << "## Parameters:" << std::endl;
-      printParameterListOptions(os, *validParamList);
-
-      os << "## Fully described default method:" << std::endl;
-      validParamList->print(os, 2, true, false);
-      os << std::endl;
-    }
+    virtual void GetDocumentation(std::ostream &os) const;
 
   private:
 

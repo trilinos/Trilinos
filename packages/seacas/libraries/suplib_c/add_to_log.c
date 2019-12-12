@@ -131,7 +131,9 @@ void add_to_log(const char *my_name, double elapsed)
 
         snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",
                  codename, username, time_string, u_time, s_time, minutes, seconds,
-                 sys_info.nodename);
+                 sys_info.nodename) < 0
+            ? abort()
+            : (void)0;
 
         fprintf(audit, "%s", log_string);
         fclose(audit);

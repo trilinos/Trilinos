@@ -121,7 +121,7 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  build_map_for
   fflush(stdout);
 #endif
 
-  return Xpetra::MapFactory<LO,GO,Node>::Build(lib,oldMap->getGlobalNumElements(),elems(),oldMap->getIndexBase(),oldMap->getComm(),oldMap->getNode());
+  return Xpetra::MapFactory<LO,GO,Node>::Build(lib,oldMap->getGlobalNumElements(),elems(),oldMap->getIndexBase(),oldMap->getComm());
 
 }
 
@@ -163,7 +163,7 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  build_map_for
   Teuchos::reduce(&i_am_active,&num_active,1,Teuchos::REDUCE_SUM,0,*oldMap->getComm());
   if(MyPID==0) printf("Repartitioning to %d/%d processors\n",num_active,Nproc);
 
-  return Xpetra::MapFactory<LO,GO,Node>::Build(lib,oldMap->getGlobalNumElements(),elems(),oldMap->getIndexBase(),oldMap->getComm(),oldMap->getNode());
+  return Xpetra::MapFactory<LO,GO,Node>::Build(lib,oldMap->getGlobalNumElements(),elems(),oldMap->getIndexBase(),oldMap->getComm());
 
 }
 

@@ -3,7 +3,7 @@ The Nemesis library is licensed under the terms of the BSD License.
 Legal stuff (copyright, licensing restrictions, etc.) can be found in
 the file COPYRIGHT which contains:
 
-1. The Sandia Corporation Copyright Notice.
+1. The NTESS Copyright Notice.
 2. The BSD License text.
 
 We appreciate feedback from users of this package.  Please send
@@ -23,5 +23,5 @@ that reads EXODUSII files can be used on files which contain NEMESIS
 information. The NEMESIS information is written and read via C or C++
 callable functions which compromise the NEMESIS I API.
 
-The exodusII package is available at http://sourceforge.net/projects/exodusii
+The exodusII package is available at https://github.com/gsjaardema/seacas.git
 

@@ -11,74 +11,74 @@
 
 namespace PHX {
   
-  template<typename ScalarT, typename Device>
+  template<typename ScalarT, typename Layout, typename Device>
   class KokkosViewFactory {
   public:
     static PHX::any buildView(const PHX::FieldTag& t, const std::vector<PHX::index_size_type>& extended_dimensions = std::vector<PHX::index_size_type>(0));
   };
 
   // *********************************************
-  // Default implementation.  NOTE: for DFad types we implement
-  // partial specializations below.
+  // Default implementation for non-FAD types.  NOTE: for DFad types
+  // we implement partial specializations below.
   // *********************************************
-  template<typename ScalarT, typename Device>
+  template<typename ScalarT, typename Layout, typename Device>
   PHX::any 
-  KokkosViewFactory<ScalarT,Device>::buildView(const PHX::FieldTag& t,
-					       const std::vector<PHX::index_size_type>& )
+  KokkosViewFactory<ScalarT,Layout,Device>::buildView(const PHX::FieldTag& t,
+                                                      const std::vector<PHX::index_size_type>& )
   {
     PHX::any a;
     const PHX::DataLayout& dl = t.dataLayout();
 
     if (dl.rank() == 1)
-      a = PHX::View<ScalarT*>(t.identifier(),
-			      dl.dimension(0));
+      a = Kokkos::View<ScalarT*,Layout,Device>(t.identifier(),
+                                               dl.dimension(0));
     else if (dl.rank() == 2)
-      a = PHX::View<ScalarT**>(t.identifier(),
-			       dl.dimension(0),
-			       dl.dimension(1));
+      a = Kokkos::View<ScalarT**,Layout,Device>(t.identifier(),
+                                                dl.dimension(0),
+                                                dl.dimension(1));
     else if (dl.rank() == 3)
-      a = PHX::View<ScalarT***>(t.identifier(),
-				dl.dimension(0),
-				dl.dimension(1),
-				dl.dimension(2));
+      a = Kokkos::View<ScalarT***,Layout,Device>(t.identifier(),
+                                                 dl.dimension(0),
+                                                 dl.dimension(1),
+                                                 dl.dimension(2));
     else if (dl.rank() == 4)
-      a = PHX::View<ScalarT****>(t.identifier(),
-				 dl.dimension(0),
-				 dl.dimension(1),
-				 dl.dimension(2),
-				 dl.dimension(3));
+      a = Kokkos::View<ScalarT****,Layout,Device>(t.identifier(),
+                                                  dl.dimension(0),
+                                                  dl.dimension(1),
+                                                  dl.dimension(2),
+                                                  dl.dimension(3));
     else if (dl.rank() == 5)
-      a = PHX::View<ScalarT*****>(t.identifier(),
-				  dl.dimension(0),
-				  dl.dimension(1),
-				  dl.dimension(2),
-				  dl.dimension(3),
-				  dl.dimension(4));
+      a = Kokkos::View<ScalarT*****,Layout,Device>(t.identifier(),
+                                                   dl.dimension(0),
+                                                   dl.dimension(1),
+                                                   dl.dimension(2),
+                                                   dl.dimension(3),
+                                                   dl.dimension(4));
     else if (dl.rank() == 6)
-      a = PHX::View<ScalarT******>(t.identifier(),
-				   dl.dimension(0),
-				   dl.dimension(1),
-				   dl.dimension(2),
-				   dl.dimension(3),
-				   dl.dimension(4),
-				   dl.dimension(5));
+      a = Kokkos::View<ScalarT******,Layout,Device>(t.identifier(),
+                                                    dl.dimension(0),
+                                                    dl.dimension(1),
+                                                    dl.dimension(2),
+                                                    dl.dimension(3),
+                                                    dl.dimension(4),
+                                                    dl.dimension(5));
     else if (dl.rank() == 7)
-      a = PHX::View<ScalarT*******>(t.identifier(),
-				    dl.dimension(0),
-				    dl.dimension(1),
-				    dl.dimension(2),
-				    dl.dimension(3),
-				    dl.dimension(4),
-				    dl.dimension(5),
-				    dl.dimension(6));
+      a = Kokkos::View<ScalarT*******,Layout,Device>(t.identifier(),
+                                                     dl.dimension(0),
+                                                     dl.dimension(1),
+                                                     dl.dimension(2),
+                                                     dl.dimension(3),
+                                                     dl.dimension(4),
+                                                     dl.dimension(5),
+                                                     dl.dimension(6));
     return a;
   }
   
   // *********************************************
   // Sacado::Fad::DFad Partial Specialization
   // *********************************************
-  template<typename ScalarT, typename Device>
-  class KokkosViewFactory<Sacado::Fad::DFad<ScalarT>,Device> {
+  template<typename ScalarT, typename Layout, typename Device>
+  class KokkosViewFactory<Sacado::Fad::DFad<ScalarT>,Layout,Device> {
   public:
     static 
     PHX::any 
@@ -96,56 +96,55 @@ namespace PHX {
       const PHX::index_size_type hDim = derivative_dimensions[0] + 1;
       
       if (dl.rank() == 1)
-	a = PHX::View<Sacado::Fad::DFad<ScalarT>*>(t.identifier(),
-						   dl.dimension(0),
-						   hDim);
+	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>*,Layout,Device>(t.identifier(),
+                                                                    dl.dimension(0),
+                                                                    hDim);
       else if (dl.rank() == 2)
-	a = PHX::View<Sacado::Fad::DFad<ScalarT>**>(t.identifier(),
-						    dl.dimension(0),
-						    dl.dimension(1),
-						    hDim);
+	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>**,Layout,Device>(t.identifier(),
+                                                                     dl.dimension(0),
+                                                                     dl.dimension(1),
+                                                                     hDim);
       else if (dl.rank() == 3)
-	a = PHX::View<Sacado::Fad::DFad<ScalarT>***>(t.identifier(),
-						     dl.dimension(0),
-						     dl.dimension(1),
-						     dl.dimension(2),
-						     hDim);
+	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>***,Layout,Device>(t.identifier(),
+                                                                      dl.dimension(0),
+                                                                      dl.dimension(1),
+                                                                      dl.dimension(2),
+                                                                      hDim);
       else if (dl.rank() == 4)
-	a = PHX::View<Sacado::Fad::DFad<ScalarT>****>(t.identifier(),
-						      dl.dimension(0),
-						      dl.dimension(1),
-						      dl.dimension(2),
-						      dl.dimension(3),
-						      hDim);
+	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>****,Layout,Device>(t.identifier(),
+                                                                       dl.dimension(0),
+                                                                       dl.dimension(1),
+                                                                       dl.dimension(2),
+                                                                       dl.dimension(3),
+                                                                       hDim);
       else if (dl.rank() == 5)
-	a = PHX::View<Sacado::Fad::DFad<ScalarT>*****>(t.identifier(),
-						       dl.dimension(0),
-						       dl.dimension(1),
-						       dl.dimension(2),
-						       dl.dimension(3),
-						       dl.dimension(4),
-						       hDim);
+	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>*****,Layout,Device>(t.identifier(),
+                                                                        dl.dimension(0),
+                                                                        dl.dimension(1),
+                                                                        dl.dimension(2),
+                                                                        dl.dimension(3),
+                                                                        dl.dimension(4),
+                                                                        hDim);
       else if (dl.rank() == 6)
-	a = PHX::View<Sacado::Fad::DFad<ScalarT>******>(t.identifier(),
-							dl.dimension(0),
-							dl.dimension(1),
-							dl.dimension(2),
-							dl.dimension(3),
-							dl.dimension(4),
-							dl.dimension(5),
-							hDim);
+	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>******,Layout,Device>(t.identifier(),
+                                                                         dl.dimension(0),
+                                                                         dl.dimension(1),
+                                                                         dl.dimension(2),
+                                                                         dl.dimension(3),
+                                                                         dl.dimension(4),
+                                                                         dl.dimension(5),
+                                                                         hDim);
       else if (dl.rank() == 7)
-      	a = PHX::View<Sacado::Fad::DFad<ScalarT>*******>(t.identifier(),
-							 dl.dimension(0),
-							 dl.dimension(1),
-							 dl.dimension(2),
-							 dl.dimension(3),
-							 dl.dimension(4),
-							 dl.dimension(5),
-							 dl.dimension(6),
-							 hDim);
-      
-      
+        a = Kokkos::View<Sacado::Fad::DFad<ScalarT>*******,Layout,Device>(t.identifier(),
+                                                                          dl.dimension(0),
+                                                                          dl.dimension(1),
+                                                                          dl.dimension(2),
+                                                                          dl.dimension(3),
+                                                                          dl.dimension(4),
+                                                                          dl.dimension(5),
+                                                                          dl.dimension(6),
+                                                                          hDim);
+
       return a;
     }
   };
@@ -153,8 +152,8 @@ namespace PHX {
   // *********************************************
   // Sacado::ELRCacheFad::DFad Partial Specialization
   // *********************************************
-  template<typename ScalarT, typename Device>
-  class KokkosViewFactory<Sacado::ELRCacheFad::DFad<ScalarT>,Device> {
+  template<typename ScalarT, typename Layout, typename Device>
+  class KokkosViewFactory<Sacado::ELRCacheFad::DFad<ScalarT>,Layout,Device> {
   public:
     static 
     PHX::any 
@@ -172,56 +171,55 @@ namespace PHX {
       const PHX::index_size_type hDim = derivative_dimensions[0] + 1;
       
       if (dl.rank() == 1)
-	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>*>(t.identifier(),
-							   dl.dimension(0),
-							   hDim);
+	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>*,Layout,Device>(t.identifier(),
+                                                                            dl.dimension(0),
+                                                                            hDim);
       else if (dl.rank() == 2)
-	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>**>(t.identifier(),
-							    dl.dimension(0),
-							    dl.dimension(1),
-							    hDim);
+	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>**,Layout,Device>(t.identifier(),
+                                                                             dl.dimension(0),
+                                                                             dl.dimension(1),
+                                                                             hDim);
       else if (dl.rank() == 3)
-	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>***>(t.identifier(),
-							     dl.dimension(0),
-							     dl.dimension(1),
-							     dl.dimension(2),
-							     hDim);
+	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>***,Layout,Device>(t.identifier(),
+                                                                              dl.dimension(0),
+                                                                              dl.dimension(1),
+                                                                              dl.dimension(2),
+                                                                              hDim);
       else if (dl.rank() == 4)
-	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>****>(t.identifier(),
-							      dl.dimension(0),
-							      dl.dimension(1),
-							      dl.dimension(2),
-							      dl.dimension(3),
-							      hDim);
+	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>****,Layout,Device>(t.identifier(),
+                                                                               dl.dimension(0),
+                                                                               dl.dimension(1),
+                                                                               dl.dimension(2),
+                                                                               dl.dimension(3),
+                                                                               hDim);
       else if (dl.rank() == 5)
-	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>*****>(t.identifier(),
-							       dl.dimension(0),
-							       dl.dimension(1),
-							       dl.dimension(2),
-							       dl.dimension(3),
-							       dl.dimension(4),
-							       hDim);
+	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>*****,Layout,Device>(t.identifier(),
+                                                                                dl.dimension(0),
+                                                                                dl.dimension(1),
+                                                                                dl.dimension(2),
+                                                                                dl.dimension(3),
+                                                                                dl.dimension(4),
+                                                                                hDim);
       else if (dl.rank() == 6)
-	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>******>(t.identifier(),
-								dl.dimension(0),
-								dl.dimension(1),
-								dl.dimension(2),
-								dl.dimension(3),
-								dl.dimension(4),
-								dl.dimension(5),
-								hDim);
+	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>******,Layout,Device>(t.identifier(),
+                                                                                 dl.dimension(0),
+                                                                                 dl.dimension(1),
+                                                                                 dl.dimension(2),
+                                                                                 dl.dimension(3),
+                                                                                 dl.dimension(4),
+                                                                                 dl.dimension(5),
+                                                                                 hDim);
       else if (dl.rank() == 7)
-      	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>*******>(t.identifier(),
-								 dl.dimension(0),
-								 dl.dimension(1),
-								 dl.dimension(2),
-								 dl.dimension(3),
-								 dl.dimension(4),
-								 dl.dimension(5),
-								 dl.dimension(6),
-								 hDim);
-      
-      
+        a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>*******,Layout,Device>(t.identifier(),
+                                                                                  dl.dimension(0),
+                                                                                  dl.dimension(1),
+                                                                                  dl.dimension(2),
+                                                                                  dl.dimension(3),
+                                                                                  dl.dimension(4),
+                                                                                  dl.dimension(5),
+                                                                                  dl.dimension(6),
+                                                                                  hDim);
+
       return a;
     }
   };
@@ -230,8 +228,8 @@ namespace PHX {
   // *********************************************
   // Sacado::Fad::SLFad Partial Specialization
   // *********************************************
-  template<typename ScalarT, typename Device, int N>
-  class KokkosViewFactory<Sacado::Fad::SLFad<ScalarT,N>,Device> {
+  template<typename ScalarT, typename Layout, typename Device, int N>
+  class KokkosViewFactory<Sacado::Fad::SLFad<ScalarT,N>,Layout,Device> {
   public:
     static 
     PHX::any 
@@ -255,56 +253,55 @@ namespace PHX {
 				 << derivative_dimensions[0] << ", is larger.");
       
       if (dl.rank() == 1)
-	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>*>(t.identifier(),
-						      dl.dimension(0),
-						      hDim);
+	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>*,Layout,Device>(t.identifier(),
+                                                                       dl.dimension(0),
+                                                                       hDim);
       else if (dl.rank() == 2)
-	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>**>(t.identifier(),
-						       dl.dimension(0),
-						       dl.dimension(1),
-						       hDim);
+	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>**,Layout,Device>(t.identifier(),
+                                                                        dl.dimension(0),
+                                                                        dl.dimension(1),
+                                                                        hDim);
       else if (dl.rank() == 3)
-	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>***>(t.identifier(),
-							dl.dimension(0),
-							dl.dimension(1),
-							dl.dimension(2),
-							hDim);
+	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>***,Layout,Device>(t.identifier(),
+                                                                         dl.dimension(0),
+                                                                         dl.dimension(1),
+                                                                         dl.dimension(2),
+                                                                         hDim);
       else if (dl.rank() == 4)
-	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>****>(t.identifier(),
-							 dl.dimension(0),
-							 dl.dimension(1),
-							 dl.dimension(2),
-							 dl.dimension(3),
-							 hDim);
+	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>****,Layout,Device>(t.identifier(),
+                                                                          dl.dimension(0),
+                                                                          dl.dimension(1),
+                                                                          dl.dimension(2),
+                                                                          dl.dimension(3),
+                                                                          hDim);
       else if (dl.rank() == 5)
-	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>*****>(t.identifier(),
-							  dl.dimension(0),
-							  dl.dimension(1),
-							  dl.dimension(2),
-							  dl.dimension(3),
-							  dl.dimension(4),
-							  hDim);
+	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>*****,Layout,Device>(t.identifier(),
+                                                                           dl.dimension(0),
+                                                                           dl.dimension(1),
+                                                                           dl.dimension(2),
+                                                                           dl.dimension(3),
+                                                                           dl.dimension(4),
+                                                                           hDim);
       else if (dl.rank() == 6)
-	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>******>(t.identifier(),
-							   dl.dimension(0),
-							   dl.dimension(1),
-							   dl.dimension(2),
-							   dl.dimension(3),
-							   dl.dimension(4),
-							   dl.dimension(5),
-							   hDim);
+	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>******,Layout,Device>(t.identifier(),
+                                                                            dl.dimension(0),
+                                                                            dl.dimension(1),
+                                                                            dl.dimension(2),
+                                                                            dl.dimension(3),
+                                                                            dl.dimension(4),
+                                                                            dl.dimension(5),
+                                                                            hDim);
       else if (dl.rank() == 7)
-      	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>*******>(t.identifier(),
-							    dl.dimension(0),
-							    dl.dimension(1),
-							    dl.dimension(2),
-							    dl.dimension(3),
-							    dl.dimension(4),
-							    dl.dimension(5),
-							    dl.dimension(6),
-							    hDim);
-      
-      
+        a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>*******,Layout,Device>(t.identifier(),
+                                                                             dl.dimension(0),
+                                                                             dl.dimension(1),
+                                                                             dl.dimension(2),
+                                                                             dl.dimension(3),
+                                                                             dl.dimension(4),
+                                                                             dl.dimension(5),
+                                                                             dl.dimension(6),
+                                                                             hDim);
+
       return a;
     }
   };

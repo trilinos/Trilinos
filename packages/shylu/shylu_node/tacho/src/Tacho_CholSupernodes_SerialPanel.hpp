@@ -40,13 +40,11 @@ namespace Tacho {
 
     template<>
     struct CholSupernodes<Algo::Workflow::SerialPanel> {
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      factorize(SchedulerType &sched,
-                MemberType &member,
+      factorize(MemberType &member,
                 const SupernodeInfoType &info,
                 const ordinal_type sid) {
         typedef SupernodeInfoType supernode_info_type;
@@ -75,25 +73,23 @@ namespace Tacho {
         // m is available, then factorize the supernode block
         if (m > 0) {
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;
-          Chol<Uplo::Upper,CholAlgoType>::invoke(sched, member, ATL);
+          Chol<Uplo::Upper,CholAlgoType>::invoke(member, ATL);
 
           // n is available, then solve interface block
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> ATR(ptr, m, n);
             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
-              ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
+              ::invoke(member, Diag::NonUnit(), 1.0, ATL, ATR);
           }
         }
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      update(SchedulerType &sched,
-             MemberType &member,
+      update(MemberType &member,
              const SupernodeInfoType &info,
              const ordinal_type offn, // ATR and ABR panel offset
              const ordinal_type np,   // ATR and ABR panel width
@@ -156,10 +152,10 @@ namespace Tacho {
 
           if (offn == 0 && nb == n)
             Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
-              ::invoke(sched, member, -1.0, ATR, 0.0, ABR);            
+              ::invoke(member, -1.0, ATR, 0.0, ABR);            
           else 
             Gemm<Trans::ConjTranspose,Trans::NoTranspose,GemmAlgoType>
-              ::invoke(sched, member, -1.0, ABL, ATR, 0.0, ABR);  
+              ::invoke(member, -1.0, ABL, ATR, 0.0, ABR);  
           
           // short cut to direct update
           if ((send - sbeg) == 1) {
@@ -366,13 +362,11 @@ namespace Tacho {
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      factorize_recursive_serial(SchedulerType &sched,
-                                 MemberType &member,
+      factorize_recursive_serial(MemberType &member,
                                  const SupernodeInfoType &info,
                                  const ordinal_type sid,
                                  const bool final,
@@ -388,7 +382,7 @@ namespace Tacho {
         if (final) {
           // serial recursion
           for (ordinal_type i=0;i<s.nchildren;++i)
-            factorize_recursive_serial(sched, member, info, 
+            factorize_recursive_serial(member, info, 
                                        s.children[i], final, buf, bufsize,
                                        np);
         }
@@ -404,11 +398,11 @@ namespace Tacho {
                                "bufsize is smaller than required");
           
           CholSupernodes<Algo::Workflow::SerialPanel>
-            ::factorize(sched, member, info, sid);
+            ::factorize(member, info, sid);
 
           for (ordinal_type offn=0; offn<n; offn+=np) {
             CholSupernodes<Algo::Workflow::SerialPanel>
-              ::update(sched, member, info, offn, np, sid, bufsize, (void*)buf);
+              ::update(member, info, offn, np, sid, bufsize, (void*)buf);
           }
         }
         return 0;

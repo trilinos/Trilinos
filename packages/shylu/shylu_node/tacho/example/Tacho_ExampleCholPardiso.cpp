@@ -71,7 +71,7 @@ int main (int argc, char *argv[]) {
     std::cout << "PardisoChol:: init ::time = " << t << std::endl;
     
     std::cout << "PardisoChol:: import input file = " << file_input << std::endl;
-    CrsMatrixBaseType A("A"), Asym("Asym");
+    CrsMatrixBaseType A, Asym;
     timer.reset();
     {
       {
@@ -82,7 +82,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      A = MatrixMarket<value_type>::read(file_input);
+      MatrixMarket<value_type>::read(file_input, A);
       
       // somehow pardiso does not like symmetric full matrix (store only half)
       Asym.createConfTo(A);

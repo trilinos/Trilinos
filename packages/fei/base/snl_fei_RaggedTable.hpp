@@ -239,8 +239,7 @@ bool RaggedTable<MAP_TYPE,SET_TYPE>::equal(const RaggedTable<MAP_TYPE,SET_TYPE>&
    m_end  = map_.end();
 
   typename map_type::const_iterator
-   rhs_iter = rhs.getMap().begin(),
-   rhs_end  = rhs.getMap().end();
+   rhs_iter = rhs.getMap().begin();
 
   for(; m_iter != m_end; ++m_iter, ++rhs_iter) {
     if (rhs_iter->first != m_iter->first) {

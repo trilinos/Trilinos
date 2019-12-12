@@ -138,8 +138,6 @@ C      --   HIDDEN routine for partial line
       INTEGER IELBST(NELBLK)
       INTEGER IF2EL(*)
 
-      INTEGER IX(3)
-
       LOGICAL NEWNPD, NEWNPU, NEWELD, NEWELU
       SAVE NEWNPU, NEWELU
 

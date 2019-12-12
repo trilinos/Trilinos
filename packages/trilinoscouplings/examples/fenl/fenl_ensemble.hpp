@@ -52,6 +52,7 @@
 
 #if defined( HAVE_STOKHOS_BELOS )
 #include "Belos_TpetraAdapter_MP_Vector.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #endif
 
 #if defined( HAVE_STOKHOS_MUELU )

@@ -230,6 +230,8 @@ namespace MueLu {
               level->Set(varName, Teuchos::getValue<RCP<Matrix> >(it2->second), NoFactory::get());
             else if(typeName == "multivector")
               level->Set(varName, Teuchos::getValue<RCP<MultiVector> >(it2->second), NoFactory::get());
+            else if(typeName == "vector")
+              level->Set(varName, Teuchos::getValue<RCP<Vector> >(it2->second), NoFactory::get());
             else if(typeName == "map")
               level->Set(varName, Teuchos::getValue<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
             else if(typeName == "ordinalvector")

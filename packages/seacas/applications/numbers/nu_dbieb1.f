@@ -58,7 +58,7 @@ C   --   NUMATR - IN  - the number of attributes;
 C   --                  negate to not store attributes
 C   --   LINK   - OUT - the element connectivity for this block
 C   --   ATRIB  - OUT - the attributes for this block
-C   --	 NATRDM - IN  - dimension of atrib array
+C   --   NATRDM - IN  - dimension of atrib array
 C   --   NLNKDM - IN  - dimension of link array
 C   --   *      - OUT - return statement if end of file or read error
 

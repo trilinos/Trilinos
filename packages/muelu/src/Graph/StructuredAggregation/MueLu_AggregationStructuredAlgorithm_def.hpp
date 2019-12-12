@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph,
+  BuildAggregates(const Teuchos::ParameterList& /* params */, const GraphBase& graph,
                   Aggregates& aggregates, std::vector<unsigned>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
@@ -187,8 +187,7 @@ namespace MueLu {
                                  geoData->getNumGlobalCoarseNodes(),
                                  ghostedCoarseNodeCoarseGIDs(),
                                  graph.GetDomainMap()->getIndexBase(),
-                                 graph.GetDomainMap()->getComm(),
-                                 graph.GetDomainMap()->getNode());
+                                 graph.GetDomainMap()->getComm());
 
       LO coarseNodeIdx = 0;
       Array<GO> coarseNodeCoarseGIDs, coarseNodeFineGIDs;
@@ -203,20 +202,17 @@ namespace MueLu {
                                     geoData->getNumGlobalCoarseNodes(),
                                     coarseNodeCoarseGIDs(),
                                     graph.GetDomainMap()->getIndexBase(),
-                                    graph.GetDomainMap()->getComm(),
-                                    graph.GetDomainMap()->getNode());
+                                    graph.GetDomainMap()->getComm());
       coarseCoordinatesMap = MapFactory::Build(graph.GetDomainMap()->lib(),
                                                geoData->getNumGlobalCoarseNodes(),
                                                coarseNodeCoarseGIDs(),
                                                graph.GetDomainMap()->getIndexBase(),
-                                               graph.GetDomainMap()->getComm(),
-                                               graph.GetDomainMap()->getNode());
+                                               graph.GetDomainMap()->getComm());
       coarseCoordinatesFineMap = MapFactory::Build(graph.GetDomainMap()->lib(),
                                                    geoData->getNumGlobalCoarseNodes(),
                                                    coarseNodeFineGIDs(),
                                                    graph.GetDomainMap()->getIndexBase(),
-                                                   graph.GetDomainMap()->getComm(),
-                                                   graph.GetDomainMap()->getNode());
+                                                   graph.GetDomainMap()->getComm());
     } else {
       // In this case the map will compute the global number of nodes on the coarse mesh
       // and it will assign GIDs to the local coarse nodes.
@@ -224,8 +220,7 @@ namespace MueLu {
                                  Teuchos::OrdinalTraits<GO>::invalid(),
                                  geoData->getNumLocalCoarseNodes()*dofsPerNode,
                                  graph.GetDomainMap()->getIndexBase(),
-                                 graph.GetDomainMap()->getComm(),
-                                 graph.GetDomainMap()->getNode());
+                                 graph.GetDomainMap()->getComm());
       domainMap = colMap;
 
       Array<GO> coarseNodeCoarseGIDs(geoData->getNumLocalCoarseNodes());
@@ -235,21 +230,19 @@ namespace MueLu {
                                                Teuchos::OrdinalTraits<GO>::invalid(),
                                                geoData->getNumLocalCoarseNodes(),
                                                graph.GetDomainMap()->getIndexBase(),
-                                               graph.GetDomainMap()->getComm(),
-                                               graph.GetDomainMap()->getNode());
+                                               graph.GetDomainMap()->getComm());
       coarseCoordinatesFineMap = MapFactory::Build(graph.GetDomainMap()->lib(),
                                                    Teuchos::OrdinalTraits<GO>::invalid(),
                                                    coarseNodeFineGIDs(),
                                                    graph.GetDomainMap()->getIndexBase(),
-                                                   graph.GetDomainMap()->getComm(),
-                                                   graph.GetDomainMap()->getNode());
+                                                   graph.GetDomainMap()->getComm());
     }
 
     *out << "Call constructor of CrsGraph" << std::endl;
     myGraph = CrsGraphFactory::Build(rowMap,
                                      colMap,
                                      nnzOnRow,
-                                     Xpetra::DynamicProfile);
+                                     Xpetra::StaticProfile);
 
     *out << "Fill CrsGraph" << std::endl;
     LO rowIdx = 0;
@@ -270,7 +263,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
-                           const LO dofsPerNode, const int numInterpolationPoints,
+                           const LO dofsPerNode, const int /* numInterpolationPoints */,
                            ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                            Array<LO>& colIndex) const {
 
@@ -325,7 +318,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-  ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
+  ComputeGraphDataLinear(const GraphBase& /* graph */, RCP<IndexManager>& geoData,
                          const LO dofsPerNode, const int numInterpolationPoints,
                          ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                          Array<LO>& colIndex) const {
@@ -343,7 +336,6 @@ namespace MueLu {
     Array<LO> ghostedIdx(3,0);
     Array<LO> coarseIdx(3,0);
     Array<LO> ijkRem(3,0);
-    int rate = 0;
     const LO coarsePointOffset[8][3] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
                                         {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}};
 
@@ -354,15 +346,16 @@ namespace MueLu {
       for(int dim=0; dim < numDimensions; dim++){
         coarseIdx[dim] = ghostedIdx[dim] / geoData->getCoarseningRate(dim);
         ijkRem[dim]    = ghostedIdx[dim] % geoData->getCoarseningRate(dim);
-        if(ghostedIdx[dim] - geoData->getOffset(dim)
-           < geoData->getLocalFineNodesInDir(dim) - geoData->getCoarseningEndRate(dim)) {
-          rate = geoData->getCoarseningRate(dim);
+        if(coupled) {
+          if (geoData->getStartGhostedCoarseNode(dim)*geoData->getCoarseningRate(dim)
+                       > geoData->getStartIndex(dim)) {
+            --coarseIdx[dim];
+          }
         } else {
-          rate = geoData->getCoarseningEndRate(dim);
+          if(ghostedIdx[dim] == geoData->getLocalFineNodesInDir(dim) - 1) {
+            coarseIdx[dim] = geoData->getLocalCoarseNodesInDir(dim) - 1;
+          }
         }
-        if(ijkRem[dim] > (rate / 2)) {++coarseIdx[dim];}
-        if(coupled && (geoData->getStartGhostedCoarseNode(dim)*geoData->getCoarseningRate(dim)
-                       > geoData->getStartIndex(dim))) {--coarseIdx[dim];}
       }
 
       // Fill Graph

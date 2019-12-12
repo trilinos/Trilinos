@@ -75,18 +75,6 @@ class SerializationTraits<Ordinal,unsigned long>
   : public DirectSerializationTraits<Ordinal,unsigned long>
 {};
 #endif
-#if defined(TEUCHOS_SERIALIZATIONTRAITS_LONG_LONG) || !defined(HAVE_TEUCHOS_LONG_LONG_INT)
-template<typename Ordinal>
-class SerializationTraits<Ordinal,long long>
-  : public DirectSerializationTraits<Ordinal,long long>
-{};
-#endif
-#if defined(TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_LONG_LONG) || !defined(HAVE_TEUCHOS_LONG_LONG_INT)
-template<typename Ordinal>
-class SerializationTraits<Ordinal,unsigned long long>
-  : public DirectSerializationTraits<Ordinal,unsigned long long>
-{};
-#endif
 }
 %}
 
@@ -95,7 +83,7 @@ class SerializationTraits<Ordinal,unsigned long long>
 ///////////////////////////////////
 %include "Teuchos_ScalarTraitsDecl.hpp"
 // Specialization of ScalarTraits<> for type long
-%inline 
+%inline
 %{
 namespace Teuchos
 {
@@ -114,7 +102,7 @@ struct ScalarTraits<unsigned char>
   static inline unsigned char conjugate(unsigned char x) { return x; }
   static inline unsigned char real(unsigned char x) { return x; }
   static inline unsigned char imag(unsigned char x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); 
+  static inline void seedrandom(unsigned int s) { std::srand(s);
 #ifdef __APPLE__
     random(); // throw away first random number to address bug 3655
 #endif
@@ -143,7 +131,7 @@ struct ScalarTraits<unsigned short>
   static inline unsigned short conjugate(unsigned short x) { return x; }
   static inline unsigned short real(unsigned short x) { return x; }
   static inline unsigned short imag(unsigned short x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); 
+  static inline void seedrandom(unsigned int s) { std::srand(s);
 #ifdef __APPLE__
     random(); // throw away first random number to address bug 3655
 #endif
@@ -173,7 +161,7 @@ struct ScalarTraits<unsigned int>
   static inline unsigned int conjugate(unsigned int x) { return x; }
   static inline unsigned int real(unsigned int x) { return x; }
   static inline unsigned int imag(unsigned int x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); 
+  static inline void seedrandom(unsigned int s) { std::srand(s);
 #ifdef __APPLE__
     random(); // throw away first random number to address bug 3655
 #endif
@@ -203,7 +191,7 @@ struct ScalarTraits<unsigned long>
   static inline unsigned long conjugate(unsigned long x) { return x; }
   static inline unsigned long real(unsigned long x) { return x; }
   static inline unsigned long imag(unsigned long x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); 
+  static inline void seedrandom(unsigned int s) { std::srand(s);
 #ifdef __APPLE__
     random(); // throw away first random number to address bug 3655
 #endif
@@ -214,66 +202,6 @@ struct ScalarTraits<unsigned long>
   { return (unsigned long) std::sqrt((double) x); }
   static inline unsigned long pow(unsigned long x, unsigned long y)
   { return (unsigned long) std::pow((double)x,(double)y); }
-};
-#endif
-
-#if defined(TEUCHOS_SCALARTRAITS_LONG_LONG) || !defined(HAVE_TEUCHOS_LONG_LONG_INT)
-// Type long long
-template<>
-struct ScalarTraits<long long>
-{
-  typedef long long magnitudeType;
-  static const bool isComplex = false;
-  static const bool isComparable = true;
-  static const bool hasMachineParameters = false;
-  static inline magnitudeType magnitude(long long a)
-  { return static_cast<long long>(std::fabs(static_cast<double>(a))); }
-  static inline long long zero()  { return 0; }
-  static inline long long one()   { return 1; }
-  static inline long long conjugate(long long x) { return x; }
-  static inline long long real(long long x) { return x; }
-  static inline long long imag(long long x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); 
-#ifdef __APPLE__
-    random(); // throw away first random number to address bug 3655
-#endif
-  }
-  static inline long long random() { return (-1 + 2*rand()); }
-  static inline std::string name() { return "long long"; }
-  static inline long long squareroot(long long x)
-  { return (long long) std::sqrt((double) x); }
-  static inline long long pow(long long x, long long y)
-  { return (long long) std::pow((double)x,(double)y); }
-};
-#endif
-
-#if defined(TEUCHOS_SCALARTRAITS_UNSIGNED_LONG_LONG) || !defined(HAVE_TEUCHOS_LONG_LONG_INT)
-// Type unsigned long long
-template<>
-struct ScalarTraits<unsigned long long>
-{
-  typedef unsigned long long magnitudeType;
-  static const bool isComplex = false;
-  static const bool isComparable = true;
-  static const bool hasMachineParameters = false;
-  static inline magnitudeType magnitude(unsigned long long a)
-  { return static_cast<unsigned long long>(std::fabs(static_cast<double>(a))); }
-  static inline unsigned long long zero()  { return 0; }
-  static inline unsigned long long one()   { return 1; }
-  static inline unsigned long long conjugate(unsigned long long x) { return x; }
-  static inline unsigned long long real(unsigned long long x) { return x; }
-  static inline unsigned long long imag(unsigned long long x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); 
-#ifdef __APPLE__
-    random(); // throw away first random number to address bug 3655
-#endif
-  }
-  static inline unsigned long long random() { return std::rand(); }
-  static inline std::string name() { return "unsigned long long"; }
-  static inline unsigned long long squareroot(unsigned long long x)
-  { return (unsigned long long) std::sqrt((double) x); }
-  static inline unsigned long long pow(unsigned long long x, unsigned long long y)
-  { return (unsigned long long) std::pow((double)x,(double)y); }
 };
 #endif
 

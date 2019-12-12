@@ -154,7 +154,7 @@ C     in the sideset...
       do iess = 1, numess
         call exgsp(ndb, idess(iess), nsess, ndfss, ierr)
         if (nness(iess) .ne. ndfss .and. ndfss .gt. 0) then
-           write (stra, 10001) idess(iess), ndfss, nness(iess)
+           write (stra, 10002) idess(iess), ndfss, nness(iess)
 10002      FORMAT('SIDESET ERROR: In sideset ', I12,
      *          ' the number of distribution factors (', I12,
      *          ') does not match the sideset node count (', I12, ')')

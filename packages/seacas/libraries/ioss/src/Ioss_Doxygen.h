@@ -107,7 +107,8 @@ ENABLE_FILE_GROUPS | on/[off]   | experimental
   Property | Value    | Description
  ----------|:--------:|------------
  LOGGING   | on/[off] | enable/disable logging of field input/output
- DECOMP_SHOW_PROGRESS | on/[off] | show memory and elapsed time during autodecomp.
+ ENABLE_TRACING | on/[off] | show memory and elapsed time during some IOSS calls (mainly decomp).
+ DECOMP_SHOW_PROGRESS | on/[off] | use `ENABLE_TRACING`.
  DECOMP_SHOW_HWM      | on/[off] | show high-water memory during autodecomp
  IOSS_TIME_FILE_OPEN_CLOSE | on/[off] | show elapsed time during parallel-io file open/close/create
  CHECK_PARALLEL_CONSISTENCY | on/[off] | check Ioss::GroupingEntity parallel consistency

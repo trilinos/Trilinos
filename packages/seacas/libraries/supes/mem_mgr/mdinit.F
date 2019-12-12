@@ -149,7 +149,7 @@ C
 C
 C     Dictionary and tables lengths.
 C
-C     LDICT     Maximum number of dictionary entrys/allocated arrays.
+C     LDICT     Maximum number of dictionary entries/allocated arrays.
 C
 C     LVOID     Maximum number of voids.
 C
@@ -484,7 +484,7 @@ C
 C
 C***********************************************************************
 C
-C     This resets the number of occurances of a particular error.
+C     This resets the number of occurrences of a particular error.
 C     If the requested error number (enum) is out of range, an error
 C     is flagged.
 C
@@ -521,7 +521,7 @@ C
 C
 C***********************************************************************
 C
-C     This reports the number of occurances of a particular error.
+C     This reports the number of occurrences of a particular error.
 C     If the requested error number (ENUM) is out of range, a -1
 C     is returned.
 C
