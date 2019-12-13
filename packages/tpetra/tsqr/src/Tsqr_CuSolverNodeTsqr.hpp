@@ -362,7 +362,7 @@ namespace TSQR {
                                  const Scalar A[],
                                  const LocalOrdinal lda,
                                  const Scalar tau[],
-                                 const Scalar C[],
+                                 Scalar C[],
                                  const LocalOrdinal ldc) const
     {
       using TSQR::Impl::CuSolver;

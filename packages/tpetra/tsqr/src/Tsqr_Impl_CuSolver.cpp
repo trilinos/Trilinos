@@ -80,6 +80,36 @@ public:
                              A, lda, tau, C, ldc,
                              work, lwork, devInfo);
   }
+
+  static cusolverStatus_t
+  compute_explicit_Q_lwork (cusolverDnHandle_t handle,
+                            int m,
+                            int n,
+                            int k,
+                            const impl_scalar_type *A,
+                            int lda,
+                            const impl_scalar_type *tau,
+                            int *lwork)
+  {
+    return cusolverDnDorgqr_bufferSize(handle, m, n, k, A, lda,
+                                       tau, lwork);
+  }
+
+  static cusolverStatus_t
+  compute_explicit_Q (cusolverDnHandle_t handle,
+                      int m,
+                      int n,
+                      int k,
+                      impl_scalar_type *A,
+                      int lda,
+                      const impl_scalar_type *tau,
+                      impl_scalar_type *work,
+                      int lwork,
+                      int *devInfo)
+  {
+    return cusolverDnDorgqr(handle, m, n, k, A, lda, tau,
+                            work, lwork, devInfo);
+  }
 };
 
 template<>
@@ -151,6 +181,36 @@ public:
     return cusolverDnSormqr (handle, side, trans, m, n, k,
                              A, lda, tau, C, ldc,
                              work, lwork, devInfo);
+  }
+
+  static cusolverStatus_t
+  compute_explicit_Q_lwork (cusolverDnHandle_t handle,
+                            int m,
+                            int n,
+                            int k,
+                            const impl_scalar_type *A,
+                            int lda,
+                            const impl_scalar_type *tau,
+                            int *lwork)
+  {
+    return cusolverDnSorgqr_bufferSize(handle, m, n, k, A, lda,
+                                       tau, lwork);
+  }
+
+  static cusolverStatus_t
+  compute_explicit_Q (cusolverDnHandle_t handle,
+                      int m,
+                      int n,
+                      int k,
+                      impl_scalar_type *A,
+                      int lda,
+                      const impl_scalar_type *tau,
+                      impl_scalar_type *work,
+                      int lwork,
+                      int *devInfo)
+  {
+    return cusolverDnSorgqr(handle, m, n, k, A, lda, tau,
+                            work, lwork, devInfo);
   }
 };
 
@@ -225,6 +285,36 @@ public:
                              A, lda, tau, C, ldc,
                              work, lwork, devInfo);
   }
+
+  static cusolverStatus_t
+  compute_explicit_Q_lwork (cusolverDnHandle_t handle,
+                            int m,
+                            int n,
+                            int k,
+                            const impl_scalar_type *A,
+                            int lda,
+                            const impl_scalar_type *tau,
+                            int *lwork)
+  {
+    return cusolverDnZungqr_bufferSize(handle, m, n, k, A, lda,
+                                       tau, lwork);
+  }
+
+  static cusolverStatus_t
+  compute_explicit_Q (cusolverDnHandle_t handle,
+                      int m,
+                      int n,
+                      int k,
+                      impl_scalar_type *A,
+                      int lda,
+                      const impl_scalar_type *tau,
+                      impl_scalar_type *work,
+                      int lwork,
+                      int *devInfo)
+  {
+    return cusolverDnZungqr(handle, m, n, k, A, lda, tau,
+                            work, lwork, devInfo);
+  }
 };
 
 template<>
@@ -297,6 +387,36 @@ public:
                              A, lda, tau, C, ldc,
                              work, lwork, devInfo);
   }
+
+  static cusolverStatus_t
+  compute_explicit_Q_lwork (cusolverDnHandle_t handle,
+                            int m,
+                            int n,
+                            int k,
+                            const impl_scalar_type *A,
+                            int lda,
+                            const impl_scalar_type *tau,
+                            int *lwork)
+  {
+    return cusolverDnCungqr_bufferSize(handle, m, n, k, A, lda,
+                                       tau, lwork);
+  }
+
+  static cusolverStatus_t
+  compute_explicit_Q (cusolverDnHandle_t handle,
+                      int m,
+                      int n,
+                      int k,
+                      impl_scalar_type *A,
+                      int lda,
+                      const impl_scalar_type *tau,
+                      impl_scalar_type *work,
+                      int lwork,
+                      int *devInfo)
+  {
+    return cusolverDnCungqr(handle, m, n, k, A, lda, tau,
+                            work, lwork, devInfo);
+  }
 };
 #endif // defined(HAVE_TPETRATSQR_COMPLEX)
 
@@ -365,7 +485,7 @@ apply_Q_factor_lwork (const char side,
                       const Scalar Q[],
                       const int ldq,
                       const Scalar tau[],
-                      const Scalar C[],
+                      Scalar C[],
                       const int ldc) const
 {
   auto rawHandle =
@@ -422,6 +542,51 @@ apply_Q_factor (const char side,
                                nrows, ncols_C, ncols_Q,
                                Q_raw, ldq, tau_raw, C_raw, ldc,
                                work_raw, lwork, info_);
+  TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
+}
+
+template<class Scalar>
+int
+CuSolver<Scalar>::
+compute_explicit_Q_lwork(const int m, const int n, const int k,
+                         Scalar A[], const int lda,
+                         const Scalar tau[]) const
+{
+  auto rawHandle =
+    reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
+  int lwork = 0;
+
+  using IST = typename CudaValue<Scalar>::type;
+  const IST* A_raw = reinterpret_cast<const IST*> (A);
+  const IST* tau_raw = reinterpret_cast<const IST*> (tau);
+
+  using impl_type = RawCuSolver<IST>;
+  const auto status =
+    impl_type::compute_explicit_Q_lwork (rawHandle, m, n, k,
+                                         A_raw, lda, tau_raw, &lwork);
+  TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
+  return lwork;
+}
+
+template<class Scalar>
+void
+CuSolver<Scalar>::
+compute_explicit_Q(const int m, const int n, const int k,
+                   Scalar A[], const int lda,
+                   const Scalar tau[],
+                   Scalar work[], const int lwork) const
+{
+  auto rawHandle =
+    reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
+  using IST = typename CudaValue<Scalar>::type;
+  IST* A_raw = reinterpret_cast<IST*> (A);
+  const IST* tau_raw = reinterpret_cast<const IST*> (tau);
+  IST* work_raw = reinterpret_cast<IST*> (work);
+
+  using impl_type = RawCuSolver<IST>;
+  const auto status =
+    impl_type::compute_explicit_Q (rawHandle, m, n, k, A_raw, lda,
+                                   tau_raw, work_raw, lwork, info_);
   TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
 }
 
