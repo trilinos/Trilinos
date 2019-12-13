@@ -101,14 +101,13 @@ namespace TSQR {
       TEUCHOS_ASSERT( lwork1 >= num_cols_Q );
 
       const int ldc = nrows;
-      Scalar work {};
-      lapack_.apply_Q_factor ('L', 'N',
-                              nrows, num_cols_C, num_cols_Q,
-                              nullptr, lda, nullptr,
-                              nullptr, ldc, &work, -1);
-      const int lwork2 = int (STS::real (work));
+      const int lwork2 =
+        lapack_.apply_Q_factor_lwork ('L', 'N',
+                                      nrows, num_cols_C, num_cols_Q,
+                                      nullptr, lda, nullptr,
+                                      nullptr, ldc);
       TEUCHOS_ASSERT( lwork2 >= 0 );
-      return size_t (lwork1 < lwork2 ? lwork2 : lwork1);
+      return size_t (std::max (lwork1, lwork2));
     }
 
     void

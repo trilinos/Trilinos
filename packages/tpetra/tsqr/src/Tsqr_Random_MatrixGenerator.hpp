@@ -180,25 +180,29 @@ namespace TSQR {
         implicit_Q (V, tau_V.data());
 
         // Workspace query for ORMQR.
-        Scalar _lwork1, _lwork2;
         Impl::Lapack<Scalar> lapack;
-        lapack.apply_Q_factor ('L', 'N', nrows, ncols, ncols,
-                               U.data(), U.stride(1), tau_U.data(),
-                               A, lda, &_lwork1, -1);
+        const int lwork1 =
+          lapack.apply_Q_factor_lwork ('L', 'N', nrows, ncols, ncols,
+                                       U.data (), U.stride (1),
+                                       tau_U.data (), A, lda);
+        int lwork2 = 0;
         if (STS::isComplex) {
-          lapack.apply_Q_factor ('R', 'C', nrows, ncols, ncols,
-                                 V.data(), V.stride(1), tau_V.data(),
-                                 A, lda, &_lwork2, -1);
+          lwork2 =
+            lapack.apply_Q_factor_lwork ('R', 'C',
+                                         nrows, ncols, ncols,
+                                         V.data (), V.stride (1),
+                                         tau_V.data (), A, lda);
         }
         else {
-          lapack.apply_Q_factor ('R', 'T', nrows, ncols, ncols,
-                                 V.data(), V.stride(1), tau_V.data(),
-                                 A, lda, &_lwork2, -1);
+          lwork2 =
+            lapack.apply_Q_factor_lwork ('R', 'T',
+                                         nrows, ncols, ncols,
+                                         V.data (), V.stride (1),
+                                         tau_V.data (), A, lda);
         }
 
         // Allocate workspace.
-        Ordinal lwork = checkedCast (std::max (STS::magnitude (_lwork1),
-                                               STS::magnitude (_lwork2)));
+        Ordinal lwork (std::max (lwork1, lwork2));
         std::vector<Scalar> work (lwork);
 
         // Apply U to the left side of A, and V^H to the right side of A.

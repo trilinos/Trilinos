@@ -32,6 +32,13 @@ public:
              const int lda, value_type TAU[], value_type WORK[],
              const int lwork) const override;
 
+  int
+  apply_Q_factor_lwork(const char SIDE, const char TRANS,
+                       const int m, const int n, const int k,
+                       const value_type A[], const int lda,
+                       const value_type TAU[],
+                       value_type C[], const int ldc) const;
+
   void
   apply_Q_factor(const char SIDE, const char TRANS,
                  const int m, const int n, const int k,

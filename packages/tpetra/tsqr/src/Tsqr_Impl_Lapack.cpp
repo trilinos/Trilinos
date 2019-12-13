@@ -107,6 +107,39 @@ compute_QR(const int m, const int n, value_type A[], const int lda,
 }
 
 template<class Scalar>
+int Lapack<Scalar>::
+apply_Q_factor_lwork(const char SIDE, const char TRANS,
+                     const int m, const int n, const int k,
+                     const value_type A[], const int lda,
+                     const value_type TAU[],
+                     value_type C[], const int ldc) const
+{
+  Teuchos::LAPACK<int, value_type> lapack;
+  value_type WORK {};
+  int lwork = -1;
+  int info = 0;
+  value_type* A_nc = const_cast<value_type*>(A);
+  lapack.UNMQR(SIDE, TRANS, m, n, k, A_nc, lda, TAU, C, ldc, &WORK,
+               lwork, &info);
+  if (info != 0) {
+    std::ostringstream os;
+    os << "LAPACK UNMQR (apply Q factor from GEQRF) LWORK query "
+      "failed with INFO = " << info << ".";
+    throw std::logic_error (os.str());
+  }
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using mag_type = typename STS::magnitudeType;
+  lwork = mag_type (STS::real (WORK));
+  if (lwork < mag_type {}) {
+    std::ostringstream os;
+    os << "LAPACK UNMQR (apply Q factor from GEQRF) LWORK query "
+      "returned INFO=0, but WORK=" << lwork << " < 0.";
+    throw std::logic_error (os.str ());
+  }
+  return lwork;
+}
+
+template<class Scalar>
 void Lapack<Scalar>::
 apply_Q_factor(const char SIDE, const char TRANS,
                const int m, const int n, const int k,
