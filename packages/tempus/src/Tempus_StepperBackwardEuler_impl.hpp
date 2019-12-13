@@ -212,6 +212,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;

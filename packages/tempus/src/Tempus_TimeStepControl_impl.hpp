@@ -64,11 +64,10 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     };
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
     const Scalar lastTime = solutionHistory->getCurrentState()->getTime();
-    const int iStep = metaData->getIStep();
-    int order = metaData->getOrder();
-    Scalar dt = metaData->getDt();
+    const int iStep = workingState->getIndex();
+    int order = workingState->getOrder();
+    Scalar dt = workingState->getTimeStep();
     bool output = false;
 
     RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
@@ -96,16 +95,16 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
     }
 
-    // update dt in metaData for the step control strategy to be informed
-    metaData->setDt(dt);
+    // update dt for the step control strategy to be informed
+    workingState->setTimeStep(dt);
 
     // call the step control strategy (to update order/dt if needed)
     stepControlStrategy_->getNextTimeStep(*this, solutionHistory,
                                          integratorStatus);
 
     // get the order and dt (probably have changed by stepControlStrategy_)
-    order = metaData->getOrder();
-    dt = metaData->getDt();
+    order = workingState->getOrder();
+    dt = workingState->getTimeStep();
 
     if (getStepType() == "Variable") {
       if (dt < getMinTimeStep()) { // decreased below minimum dt
@@ -224,10 +223,10 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       << getFinalTime() << "]\n"
       "    T + dt = " << lastTime <<" + "<< dt <<" = " << lastTime + dt <<"\n");
 
-    metaData->setOrder(order);
-    metaData->setDt(dt);
-    metaData->setTime(lastTime + dt);
-    metaData->setOutput(output);
+    workingState->setOrder(order);
+    workingState->setTimeStep(dt);
+    workingState->setTime(lastTime + dt);
+    workingState->setOutput(output);
   }
   return;
 }

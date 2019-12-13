@@ -162,6 +162,7 @@ void StepperForwardEuler<Scalar>::takeStep(
 
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;

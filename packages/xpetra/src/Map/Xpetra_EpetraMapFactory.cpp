@@ -91,10 +91,6 @@ namespace Xpetra {
     {
       XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
         return rcp( new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg) );
@@ -133,10 +129,6 @@ namespace Xpetra {
     {
       XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, numLocalElements, indexBase, comm) );
@@ -173,9 +165,6 @@ namespace Xpetra {
           int indexBase,
           const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     {
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
       XPETRA_MONITOR("MapFactory::Build");
 #ifdef HAVE_XPETRA_TPETRA
@@ -198,10 +187,6 @@ namespace Xpetra {
           int                                                   numDofPerNode)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
       RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
       if(!bmap.is_null())
@@ -245,10 +230,6 @@ namespace Xpetra {
                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -298,10 +279,6 @@ namespace Xpetra {
     {
        XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
@@ -350,10 +327,6 @@ namespace Xpetra {
     {
        XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
@@ -384,10 +357,6 @@ namespace Xpetra {
                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -420,10 +389,6 @@ namespace Xpetra {
                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
        #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -468,10 +433,6 @@ namespace Xpetra {
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = int;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -544,10 +505,6 @@ namespace Xpetra {
     {
       XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg) );
@@ -585,10 +542,6 @@ namespace Xpetra {
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -628,10 +581,6 @@ namespace Xpetra {
     {
       XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm) );
@@ -651,10 +600,6 @@ namespace Xpetra {
            int numDofPerNode)
     {
       XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
       RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
       if(!bmap.is_null()) {
@@ -689,10 +634,6 @@ namespace Xpetra {
                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -733,10 +674,6 @@ namespace Xpetra {
                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
        XPETRA_MONITOR("MapFactory::Build");
-
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
@@ -783,10 +720,6 @@ namespace Xpetra {
     {
        XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
@@ -818,10 +751,6 @@ namespace Xpetra {
     {
        XPETRA_MONITOR("MapFactory::Build");
 
-      using LocalOrdinal  = int;
-      using GlobalOrdinal = long long;
-      using Node          = EpetraNode;
-
 #ifdef HAVE_XPETRA_TPETRA
        if (lib == UseTpetra)
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
@@ -847,10 +776,6 @@ namespace Xpetra {
                                                             const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
     {
         XPETRA_MONITOR("MapFactory::Build");
-
-        using LocalOrdinal  = int;
-        using GlobalOrdinal = long long;
-        using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
         if(lib == UseTpetra)
@@ -896,10 +821,6 @@ namespace Xpetra {
                             const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
     {
         XPETRA_MONITOR("MapFactory::Build");
-
-        using LocalOrdinal  = int;
-        using GlobalOrdinal = long long;
-        using Node          = EpetraNode;
 
 #ifdef HAVE_XPETRA_TPETRA
         if(lib == UseTpetra)

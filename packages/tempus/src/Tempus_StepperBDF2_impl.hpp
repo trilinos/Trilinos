@@ -222,6 +222,7 @@ void StepperBDF2<Scalar>::takeStep(
 
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(getOrder());
+    workingState->computeNorms(currentState);
     //this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;

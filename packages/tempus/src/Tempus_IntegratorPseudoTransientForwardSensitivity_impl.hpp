@@ -484,10 +484,10 @@ buildSolutionHistory()
       x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
     }
 
-    RCP<SolutionState<Scalar> > prod_state =
-      rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
-                                    x, x_dot, x_dot_dot,
-                                    state->getStepperState()->clone()));
+    RCP<SolutionState<Scalar> > prod_state = state->clone();
+    prod_state->setX(x);
+    prod_state->setXDot(x_dot);
+    prod_state->setXDotDot(x_dot_dot);
     solutionHistory_->addState(prod_state);
   }
 
@@ -536,10 +536,10 @@ buildSolutionHistory()
       x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
     }
 
-    RCP<SolutionState<Scalar> > prod_state =
-      rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
-                                    x, x_dot, x_dot_dot,
-                                    state->getStepperState()->clone()));
+    RCP<SolutionState<Scalar> > prod_state = state->clone();
+    prod_state->setX(x);
+    prod_state->setXDot(x_dot);
+    prod_state->setXDotDot(x_dot_dot);
     solutionHistory_->addState(prod_state);
   }
 }
