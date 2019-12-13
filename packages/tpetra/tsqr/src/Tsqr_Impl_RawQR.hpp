@@ -23,6 +23,13 @@ public:
 
   virtual ~RawQR() = default;
 
+  /// \brief Whether the subclass takes arrays and pointers as
+  ///   "device" (GPU) memory.
+  ///
+  /// Unlike with NodeTsqr, this means <i>all</i> array and pointers,
+  /// not just "large" ones.
+  virtual bool wants_device_memory () const { return false; }
+
   //! Get recommended work array size for compute_QR.
   virtual int
   compute_QR_lwork (const int m, const int n,

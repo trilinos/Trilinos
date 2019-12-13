@@ -18,6 +18,8 @@ class CuSolver : public RawQR<Scalar> {
 public:
   CuSolver(CuSolverHandle handle, int* const info);
 
+  virtual bool wants_device_memory () const { return true; }
+
   int
   compute_QR_lwork(const int nrows,
                    const int ncols,
