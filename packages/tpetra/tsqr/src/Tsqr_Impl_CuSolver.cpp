@@ -42,18 +42,18 @@ public:
   }
 
   static cusolverStatus_t
-  unmqr_bufferSize (cusolverDnHandle_t handle,
-                    cublasSideMode_t side,
-                    cublasOperation_t trans,
-                    int m,
-                    int n,
-                    int k,
-                    const impl_scalar_type* A,
-                    int lda,
-                    const impl_scalar_type* tau,
-                    const impl_scalar_type* C,
-                    int ldc,
-                    int *lwork)
+  apply_Q_factor_lwork (cusolverDnHandle_t handle,
+                        cublasSideMode_t side,
+                        cublasOperation_t trans,
+                        int m,
+                        int n,
+                        int k,
+                        const impl_scalar_type* A,
+                        int lda,
+                        const impl_scalar_type* tau,
+                        const impl_scalar_type* C,
+                        int ldc,
+                        int *lwork)
   {
     return cusolverDnDormqr_bufferSize (handle, side, trans,
                                         m, n, k, A, lda, tau,
@@ -61,20 +61,20 @@ public:
   }
 
   static cusolverStatus_t
-  unmqr (cusolverDnHandle_t handle,
-         cublasSideMode_t side,
-         cublasOperation_t trans,
-         int m,
-         int n,
-         int k,
-         const impl_scalar_type* A,
-         int lda,
-         const impl_scalar_type* tau,
-         impl_scalar_type* C,
-         int ldc,
-         impl_scalar_type* work,
-         int lwork,
-         int* devInfo)
+  apply_Q_factor (cusolverDnHandle_t handle,
+                  cublasSideMode_t side,
+                  cublasOperation_t trans,
+                  int m,
+                  int n,
+                  int k,
+                  const impl_scalar_type* A,
+                  int lda,
+                  const impl_scalar_type* tau,
+                  impl_scalar_type* C,
+                  int ldc,
+                  impl_scalar_type* work,
+                  int lwork,
+                  int* devInfo)
   {
     return cusolverDnDormqr (handle, side, trans, m, n, k,
                              A, lda, tau, C, ldc,
@@ -114,18 +114,18 @@ public:
   }
 
   static cusolverStatus_t
-  unmqr_bufferSize (cusolverDnHandle_t handle,
-                    cublasSideMode_t side,
-                    cublasOperation_t trans,
-                    int m,
-                    int n,
-                    int k,
-                    const impl_scalar_type* A,
-                    int lda,
-                    const impl_scalar_type* tau,
-                    const impl_scalar_type* C,
-                    int ldc,
-                    int *lwork)
+  apply_Q_factor_lwork (cusolverDnHandle_t handle,
+                        cublasSideMode_t side,
+                        cublasOperation_t trans,
+                        int m,
+                        int n,
+                        int k,
+                        const impl_scalar_type* A,
+                        int lda,
+                        const impl_scalar_type* tau,
+                        const impl_scalar_type* C,
+                        int ldc,
+                        int *lwork)
   {
     return cusolverDnSormqr_bufferSize (handle, side, trans,
                                         m, n, k, A, lda, tau,
@@ -133,20 +133,20 @@ public:
   }
 
   static cusolverStatus_t
-  unmqr (cusolverDnHandle_t handle,
-         cublasSideMode_t side,
-         cublasOperation_t trans,
-         int m,
-         int n,
-         int k,
-         const impl_scalar_type* A,
-         int lda,
-         const impl_scalar_type* tau,
-         impl_scalar_type* C,
-         int ldc,
-         impl_scalar_type* work,
-         int lwork,
-         int* devInfo)
+  apply_Q_factor (cusolverDnHandle_t handle,
+                  cublasSideMode_t side,
+                  cublasOperation_t trans,
+                  int m,
+                  int n,
+                  int k,
+                  const impl_scalar_type* A,
+                  int lda,
+                  const impl_scalar_type* tau,
+                  impl_scalar_type* C,
+                  int ldc,
+                  impl_scalar_type* work,
+                  int lwork,
+                  int* devInfo)
   {
     return cusolverDnSormqr (handle, side, trans, m, n, k,
                              A, lda, tau, C, ldc,
@@ -187,18 +187,18 @@ public:
   }
 
   static cusolverStatus_t
-  unmqr_bufferSize (cusolverDnHandle_t handle,
-                    cublasSideMode_t side,
-                    cublasOperation_t trans,
-                    int m,
-                    int n,
-                    int k,
-                    const impl_scalar_type* A,
-                    int lda,
-                    const impl_scalar_type* tau,
-                    const impl_scalar_type* C,
-                    int ldc,
-                    int *lwork)
+  apply_Q_factor_lwork (cusolverDnHandle_t handle,
+                        cublasSideMode_t side,
+                        cublasOperation_t trans,
+                        int m,
+                        int n,
+                        int k,
+                        const impl_scalar_type* A,
+                        int lda,
+                        const impl_scalar_type* tau,
+                        const impl_scalar_type* C,
+                        int ldc,
+                        int *lwork)
   {
     return cusolverDnZunmqr_bufferSize (handle, side, trans,
                                         m, n, k, A, lda, tau,
@@ -206,20 +206,20 @@ public:
   }
 
   static cusolverStatus_t
-  unmqr (cusolverDnHandle_t handle,
-         cublasSideMode_t side,
-         cublasOperation_t trans,
-         int m,
-         int n,
-         int k,
-         const impl_scalar_type* A,
-         int lda,
-         const impl_scalar_type* tau,
-         impl_scalar_type* C,
-         int ldc,
-         impl_scalar_type* work,
-         int lwork,
-         int* devInfo)
+  apply_Q_factor (cusolverDnHandle_t handle,
+                  cublasSideMode_t side,
+                  cublasOperation_t trans,
+                  int m,
+                  int n,
+                  int k,
+                  const impl_scalar_type* A,
+                  int lda,
+                  const impl_scalar_type* tau,
+                  impl_scalar_type* C,
+                  int ldc,
+                  impl_scalar_type* work,
+                  int lwork,
+                  int* devInfo)
   {
     return cusolverDnZunmqr (handle, side, trans, m, n, k,
                              A, lda, tau, C, ldc,
@@ -259,18 +259,18 @@ public:
   }
 
   static cusolverStatus_t
-  unmqr_bufferSize (cusolverDnHandle_t handle,
-                    cublasSideMode_t side,
-                    cublasOperation_t trans,
-                    int m,
-                    int n,
-                    int k,
-                    const impl_scalar_type* A,
-                    int lda,
-                    const impl_scalar_type* tau,
-                    const impl_scalar_type* C,
-                    int ldc,
-                    int *lwork)
+  apply_Q_factor_lwork (cusolverDnHandle_t handle,
+                        cublasSideMode_t side,
+                        cublasOperation_t trans,
+                        int m,
+                        int n,
+                        int k,
+                        const impl_scalar_type* A,
+                        int lda,
+                        const impl_scalar_type* tau,
+                        const impl_scalar_type* C,
+                        int ldc,
+                        int *lwork)
   {
     return cusolverDnCunmqr_bufferSize (handle, side, trans,
                                         m, n, k, A, lda, tau,
@@ -278,20 +278,20 @@ public:
   }
 
   static cusolverStatus_t
-  unmqr (cusolverDnHandle_t handle,
-         cublasSideMode_t side,
-         cublasOperation_t trans,
-         int m,
-         int n,
-         int k,
-         const impl_scalar_type* A,
-         int lda,
-         const impl_scalar_type* tau,
-         impl_scalar_type* C,
-         int ldc,
-         impl_scalar_type* work,
-         int lwork,
-         int* devInfo)
+  apply_Q_factor (cusolverDnHandle_t handle,
+                  cublasSideMode_t side,
+                  cublasOperation_t trans,
+                  int m,
+                  int n,
+                  int k,
+                  const impl_scalar_type* A,
+                  int lda,
+                  const impl_scalar_type* tau,
+                  impl_scalar_type* C,
+                  int ldc,
+                  impl_scalar_type* work,
+                  int lwork,
+                  int* devInfo)
   {
     return cusolverDnCunmqr (handle, side, trans, m, n, k,
                              A, lda, tau, C, ldc,
@@ -357,16 +357,16 @@ compute_QR (const int nrows,
 template<class Scalar>
 int
 CuSolver<Scalar>::
-unmqrBufferSize (const char side,
-                 const char trans,
-                 const int nrows,
-                 const int ncols_C,
-                 const int ncols_Q,
-                 const Scalar Q[],
-                 const int ldq,
-                 const Scalar tau[],
-                 const Scalar C[],
-                 const int ldc)
+apply_Q_factor_lwork (const char side,
+                      const char trans,
+                      const int nrows,
+                      const int ncols_C,
+                      const int ncols_Q,
+                      const Scalar Q[],
+                      const int ldq,
+                      const Scalar tau[],
+                      const Scalar C[],
+                      const int ldc)
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -381,10 +381,10 @@ unmqrBufferSize (const char side,
 
   using impl_type = RawCuSolver<IST>;
   const auto status =
-    impl_type::unmqr_bufferSize (rawHandle, cuSide, cuTrans,
-                                 nrows, ncols_C, ncols_Q,
-                                 Q_raw, ldq, tau_raw,
-                                 C_raw, ldc, &lwork);
+    impl_type::apply_Q_factor_lwork (rawHandle, cuSide, cuTrans,
+                                     nrows, ncols_C, ncols_Q,
+                                     Q_raw, ldq, tau_raw,
+                                     C_raw, ldc, &lwork);
   TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
   return lwork;
 }
@@ -392,18 +392,18 @@ unmqrBufferSize (const char side,
 template<class Scalar>
 void
 CuSolver<Scalar>::
-unmqr (const char side,
-       const char trans,
-       const int nrows,
-       const int ncols_C,
-       const int ncols_Q,
-       const Scalar Q[],
-       const int ldq,
-       const Scalar tau[],
-       Scalar C[],
-       const int ldc,
-       Scalar work[],
-       const int lwork)
+apply_Q_factor (const char side,
+                const char trans,
+                const int nrows,
+                const int ncols_C,
+                const int ncols_Q,
+                const Scalar Q[],
+                const int ldq,
+                const Scalar tau[],
+                Scalar C[],
+                const int ldc,
+                Scalar work[],
+                const int lwork)
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -418,10 +418,10 @@ unmqr (const char side,
 
   using impl_type = RawCuSolver<IST>;
   const auto status =
-    impl_type::unmqr (rawHandle, cuSide, cuTrans,
-                      nrows, ncols_C, ncols_Q,
-                      Q_raw, ldq, tau_raw, C_raw, ldc,
-                      work_raw, lwork, info_);
+    impl_type::apply_Q_factor (rawHandle, cuSide, cuTrans,
+                               nrows, ncols_C, ncols_Q,
+                               Q_raw, ldq, tau_raw, C_raw, ldc,
+                               work_raw, lwork, info_);
   TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
 }
 

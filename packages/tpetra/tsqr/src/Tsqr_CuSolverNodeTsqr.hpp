@@ -355,15 +355,15 @@ namespace TSQR {
     }
 
     nonowning_work_type
-    get_work_for_unmqr (const ApplyType& apply_type,
-                        const LocalOrdinal nrows,
-                        const LocalOrdinal ncols_C,
-                        const LocalOrdinal ncols_Q,
-                        const Scalar A[],
-                        const LocalOrdinal lda,
-                        const Scalar tau[],
-                        const Scalar C[],
-                        const LocalOrdinal ldc) const
+    get_work_for_apply_Q_factor (const ApplyType& apply_type,
+                                 const LocalOrdinal nrows,
+                                 const LocalOrdinal ncols_C,
+                                 const LocalOrdinal ncols_Q,
+                                 const Scalar A[],
+                                 const LocalOrdinal lda,
+                                 const Scalar tau[],
+                                 const Scalar C[],
+                                 const LocalOrdinal ldc) const
     {
       using TSQR::Impl::CuSolver;
       using TSQR::Impl::CuSolverHandle;
@@ -374,9 +374,9 @@ namespace TSQR {
       const char side = 'L';
       const char trans = apply_type.toString ()[0];
       const int lwork =
-        solver.unmqrBufferSize (side, trans,
-                                nrows, ncols_C, ncols_Q,
-                                A, lda, tau, C, ldc);
+        solver.apply_Q_factor_lwork (side, trans,
+                                     nrows, ncols_C, ncols_Q,
+                                     A, lda, tau, C, ldc);
       // Avoid constant reallocation by setting a minimum lwork.
       constexpr int min_lwork = 128;
       const int new_lwork = lwork < min_lwork ? min_lwork : lwork;
@@ -525,9 +525,10 @@ namespace TSQR {
       // assumes that.
       const Scalar* tau_raw =
         reinterpret_cast<const Scalar*> (tau.data ());
-      auto work = get_work_for_unmqr (apply_type,
-                                      nrows, ncols_C, ncols_Q,
-                                      Q, ldq, tau_raw, C, ldc);
+      auto work =
+        get_work_for_apply_Q_factor (apply_type,
+                                     nrows, ncols_C, ncols_Q,
+                                     Q, ldq, tau_raw, C, ldc);
       Scalar* work_raw = reinterpret_cast<Scalar*> (work.data ());
       const int lwork (work.extent (0));
       auto info = get_info ();
@@ -536,8 +537,11 @@ namespace TSQR {
       using TSQR::Impl::CuSolverHandle;
       CuSolver<Scalar> solver
         {CuSolverHandle::getSingleton (), info.data ()};
-      solver.unmqr (side, trans, nrows, ncols_C, ncols_Q,
-                    Q, ldq, tau_raw, C, ldc, work_raw, lwork);
+      solver.apply_Q_factor (side, trans,
+                             nrows, ncols_C, ncols_Q,
+                             Q, ldq, tau_raw,
+                             C, ldc,
+                             work_raw, lwork);
     }
 
     void

@@ -33,30 +33,30 @@ public:
               const int lwork);
 
   int
-  unmqrBufferSize (const char side,
-                   const char trans,
-                   const int nrows,
-                   const int ncols_C,
-                   const int ncols_Q,
-                   const Scalar Q[],
-                   const int ldq,
-                   const Scalar tau[],
-                   const Scalar C[],
-                   const int ldc);
+  apply_Q_factor_lwork (const char side,
+                        const char trans,
+                        const int nrows,
+                        const int ncols_C,
+                        const int ncols_Q,
+                        const Scalar Q[],
+                        const int ldq,
+                        const Scalar tau[],
+                        const Scalar C[],
+                        const int ldc);
 
   void
-  unmqr (const char side,
-         const char trans,
-         const int nrows,
-         const int ncols_C,
-         const int ncols_Q,
-         const Scalar Q[],
-         const int ldq,
-         const Scalar tau[],
-         Scalar C[],
-         const int ldc,
-         Scalar work[],
-         const int lwork);
+  apply_Q_factor (const char side,
+                  const char trans,
+                  const int nrows,
+                  const int ncols_C,
+                  const int ncols_Q,
+                  const Scalar Q[],
+                  const int ldq,
+                  const Scalar tau[],
+                  Scalar C[],
+                  const int ldc,
+                  Scalar work[],
+                  const int lwork);
 
 private:
   CuSolverHandle handle_;
