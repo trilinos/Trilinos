@@ -81,27 +81,49 @@ IF (${PACKAGE_NAME}_ENABLE_PuLP)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-TRIBITS_ADD_TEST(
-  test_driver
-  NAME pulpVwgtTest
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  ARGS
-  "./driverinputs/pulpVwgtTest.xml"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME pulpVwgtTest
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/pulpVwgtTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
-TRIBITS_ADD_TEST(
-  test_driver
-  NAME pulpVwgtTestNoDistrib
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  ARGS
-  "./driverinputs/pulpVwgtTestNoDistrib.xml"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME pulpVwgtTestNoDistrib
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/pulpVwgtTestNoDistrib.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME xtrapulpVwgtTest2
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/xtrapulpVwgtTest2.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME xtrapulpVwgtTest2NoDistrib
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/xtrapulpVwgtTest2NoDistrib.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 ENDIF()
 

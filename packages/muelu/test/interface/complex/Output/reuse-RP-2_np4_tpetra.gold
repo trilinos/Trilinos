@@ -18,6 +18,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -154,6 +155,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -314,6 +316,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -371,6 +374,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -431,4 +435,60 @@ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
+
+Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
+keep smoother data = 1
+PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+presmoother -> 
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
+
+Build (MueLu::RebalanceTransferFactory)
+Using original prolongator
+repartition: rebalance P and R = 0
+repartition: rebalance Nullspace = 1   [default]
+transpose: use implicit = 0   [default]
+repartition: use subcommunicators = 1   [default]
+type = Interpolation
+write start = -1   [default]
+write end = -1   [default]
+
+Computing Ac (MueLu::RebalanceAcFactory)
+Computing Ac (MueLu::RAPFactory)
+Reusing previous AP data
+Reusing previous RAP data
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
+Transferring coordinates
+Reusing coordinates
+structured aggregation = 0   [default]
+aggregation coupled = 0   [default]
+Geometric = 0   [default]
+write start = -1   [default]
+write end = -1   [default]
+hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
+
+transpose: use implicit = 1
+rap: triple product = 0   [default]
+rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
+CheckMainDiagonal = 0   [default]
+RepairMainDiagonal = 0   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+Replacing maps with a subcommunicator
+repartition: use subcommunicators = 1   [default]
+
+Setup Smoother (<Direct> solver interface)
+keep smoother data = 1
+PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+presmoother -> 
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
