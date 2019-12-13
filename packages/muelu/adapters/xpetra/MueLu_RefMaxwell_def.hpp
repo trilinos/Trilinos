@@ -136,6 +136,7 @@ namespace MueLu {
     dump_matrices_             = list.get("refmaxwell: dump matrices",MasterList::getDefault<bool>("refmaxwell: dump matrices"));
     implicitTranspose_         = list.get("transpose: use implicit",MasterList::getDefault<bool>("transpose: use implicit"));
     fuseProlongationAndUpdate_ = list.get("fuse prolongation and update",MasterList::getDefault<bool>("fuse prolongation and update"));
+    syncTimers_                = list.get("sync timers",false);
     numItersH_                 = list.get("refmaxwell: num iters H",1);
     numIters22_                = list.get("refmaxwell: num iters 22",1);
 
@@ -191,7 +192,7 @@ namespace MueLu {
       timerLabel = "MueLu RefMaxwell: compute (reuse)";
     else
       timerLabel = "MueLu RefMaxwell: compute";
-    Teuchos::TimeMonitor tmCompute(*Teuchos::TimeMonitor::getNewTimer(timerLabel));
+    RCP<Teuchos::TimeMonitor> tmCompute = getTimer(timerLabel);
 
     std::map<std::string, MsgType> verbMap;
     verbMap["none"]    = None;
@@ -588,7 +589,7 @@ namespace MueLu {
 
       if (doRebalancing) { // rebalance AH
         if (!reuse) {
-          Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Rebalance AH"));
+          RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu RefMaxwell: Rebalance AH");
 
           Level fineLevel, coarseLevel;
           fineLevel.SetFactoryManager(null);
@@ -771,7 +772,7 @@ namespace MueLu {
       GetOStream(Runtime0) << "RefMaxwell::compute(): building MG for (2,2)-block" << std::endl;
 
       { // build fine grid operator for (2,2)-block, D0* SM D0  (aka TMT)
-        Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A22"));
+        RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu RefMaxwell: Build A22");
 
         Level fineLevel, coarseLevel;
         fineLevel.SetFactoryManager(null);
@@ -1220,6 +1221,19 @@ namespace MueLu {
     if (dump_matrices_) {
       GetOStream(Runtime0) << "Dumping to " << name << std::endl;
       Xpetra::IO<coordinateType, LO, GO, NO>::Write(name, X);
+    }
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Teuchos::TimeMonitor> RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm) const {
+    if (!syncTimers_)
+      return Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(name)));
+    else {
+      if (comm.is_null())
+        return Teuchos::rcp(new Teuchos::SyncTimeMonitor(*Teuchos::TimeMonitor::getNewTimer(name), SM_Matrix_->getRowMap()->getComm().ptr()));
+      else
+        return Teuchos::rcp(new Teuchos::SyncTimeMonitor(*Teuchos::TimeMonitor::getNewTimer(name), comm.ptr()));
     }
   }
 
@@ -1758,7 +1772,7 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
-    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse (1,1) matrix"));
+    RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu RefMaxwell: Build coarse (1,1) matrix");
     
     // coarse matrix for P11* (M1 + D1* M2 D1) P11
     RCP<Matrix> Matrix1;
@@ -1820,7 +1834,7 @@ namespace MueLu {
     }
     else {
       if (Addon_Matrix_.is_null()) {
-        Teuchos::TimeMonitor tmAddon(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse addon matrix"));
+        RCP<Teuchos::TimeMonitor> tmAddon = getTimer("MueLu RefMaxwell: Build coarse addon matrix");
         // catch a failure
         TEUCHOS_TEST_FOR_EXCEPTION(M0inv_Matrix_==Teuchos::null,std::invalid_argument,
                                    "MueLu::RefMaxwell::formCoarseMatrix(): Inverse of "
@@ -1910,7 +1924,7 @@ namespace MueLu {
 
     { // compute residual
 
-      Teuchos::TimeMonitor tmRes(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: residual calculation"));
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu RefMaxwell: residual calculation");
       Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
     }
 
@@ -1918,44 +1932,44 @@ namespace MueLu {
 
       if (implicitTranspose_) {
         {
-          Teuchos::TimeMonitor tmP11(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: restriction coarse (1,1) (implicit)"));
+          RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (implicit)");
           P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
         }
         {
-          Teuchos::TimeMonitor tmD0(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: restriction (2,2) (implicit)"));
+          RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restriction (2,2) (implicit)");
           D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
         }
       } else {
         {
-          Teuchos::TimeMonitor tmP11(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)"));
+          RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
           R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
         }
         {
-          Teuchos::TimeMonitor tmD0(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: restriction (2,2) (explicit)"));
+          RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restriction (2,2) (explicit)");
           D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
         }
       }
     }
 
     {
-      Teuchos::TimeMonitor tmSubSolves(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: subsolves"));
+      RCP<Teuchos::TimeMonitor> tmSubSolves = getTimer("MueLu RefMaxwell: subsolves");
 
       // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
 
       if (!ImporterH_.is_null()) {
-        Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: import coarse (1,1)"));
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
         P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
         P11res_.swap(P11resTmp_);
       }
       if (!Importer22_.is_null()) {
-        Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: import (2,2)"));
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
         D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
         D0res_.swap(D0resTmp_);
       }
 
       // iterate on coarse (1, 1) block
       if (!AH_.is_null()) {
-        Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve coarse (1,1)"));
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: solve coarse (1,1)", AH_->getRowMap()->getComm());
 
         RCP<const Map> origXMap = P11x_->getMap();
         RCP<const Map> origRhsMap = P11res_->getMap();
@@ -1970,7 +1984,7 @@ namespace MueLu {
 
       // iterate on (2, 2) block
       if (!A22_.is_null()) {
-        Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve (2,2)"));
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: solve (2,2)", A22_->getRowMap()->getComm());
 
         RCP<const Map> origXMap = D0x_->getMap();
         RCP<const Map> origRhsMap = D0res_->getMap();
@@ -1984,13 +1998,13 @@ namespace MueLu {
       }
 
       if (!Importer22_.is_null()) {
-        Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: export (2,2)"));
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: export (2,2)");
         D0xTmp_->doExport(*D0x_, *Importer22_, Xpetra::INSERT);
         D0x_.swap(D0xTmp_);
       }
 
       if (!ImporterH_.is_null()) {
-        Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: export coarse (1,1)"));
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: export coarse (1,1)");
         P11xTmp_->doExport(*P11x_, *ImporterH_, Xpetra::INSERT);
         P11x_.swap(P11xTmp_);
       }
@@ -1999,27 +2013,27 @@ namespace MueLu {
 
     if (fuseProlongationAndUpdate_) {
       { // prolongate (1,1) block
-        Teuchos::TimeMonitor tmP11(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation coarse (1,1) (fused)"));
+        RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: prolongation coarse (1,1) (fused)");
         P11_->apply(*P11x_,X,Teuchos::NO_TRANS,one,one);
       }
 
       { // prolongate (2,2) block
-        Teuchos::TimeMonitor tmD0(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation (2,2) (fused)"));
+        RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: prolongation (2,2) (fused)");
         D0_Matrix_->apply(*D0x_,X,Teuchos::NO_TRANS,one,one);
       }
     } else {
       { // prolongate (1,1) block
-        Teuchos::TimeMonitor tmP11(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation coarse (1,1) (unfused)"));
+        RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: prolongation coarse (1,1) (unfused)");
         P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
       }
 
       { // prolongate (2,2) block
-        Teuchos::TimeMonitor tmD0(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: prolongation (2,2) (unfused)"));
+        RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: prolongation (2,2) (unfused)");
         D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS,one,one);
       }
 
       { // update current solution
-        Teuchos::TimeMonitor tmUpdate(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: update"));
+        RCP<Teuchos::TimeMonitor> tmUpdate = getTimer("MueLu RefMaxwell: update");
         X.update(one, *residual_, one);
       }
     }
@@ -2067,7 +2081,7 @@ namespace MueLu {
     Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
     { // compute residual
-      Teuchos::TimeMonitor tmRes(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: residual calculation"));
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu RefMaxwell: residual calculation");
       Utilities::Residual(*SM_Matrix_, X, RHS,*residual_);
       if (implicitTranspose_)
         P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
@@ -2077,12 +2091,12 @@ namespace MueLu {
 
     { // solve coarse (1,1) block
       if (!ImporterH_.is_null()) {
-        Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: import coarse (1,1)"));
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
         P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
         P11res_.swap(P11resTmp_);
       }
       if (!AH_.is_null()) {
-        Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve coarse (1,1)"));
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: solve coarse (1,1)", AH_->getRowMap()->getComm());
 
         RCP<const Map> origXMap = P11x_->getMap();
         RCP<const Map> origRhsMap = P11res_->getMap();
@@ -2095,14 +2109,14 @@ namespace MueLu {
         P11res_->replaceMap(origRhsMap);
       }
       if (!ImporterH_.is_null()) {
-        Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: export coarse (1,1)"));
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: export coarse (1,1)");
         P11xTmp_->doExport(*P11x_, *ImporterH_, Xpetra::INSERT);
         P11x_.swap(P11xTmp_);
       }
     }
 
     { // update current solution
-      Teuchos::TimeMonitor tmUp(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: update"));
+      RCP<Teuchos::TimeMonitor> tmUp = getTimer("MueLu RefMaxwell: update");
       P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
       X.update(one, *residual_, one);
     }
@@ -2116,7 +2130,7 @@ namespace MueLu {
     Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
     { // compute residual
-      Teuchos::TimeMonitor tmRes(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: residual calculation"));
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu RefMaxwell: residual calculation");
       Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
       if (implicitTranspose_)
         D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
@@ -2126,12 +2140,12 @@ namespace MueLu {
 
     { // solve (2,2) block
       if (!Importer22_.is_null()) {
-        Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: import (2,2)"));
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
         D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
         D0res_.swap(D0resTmp_);
       }
       if (!A22_.is_null()) {
-        Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve (2,2)"));
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: solve (2,2)", A22_->getRowMap()->getComm());
 
         RCP<const Map> origXMap = D0x_->getMap();
         RCP<const Map> origRhsMap = D0res_->getMap();
@@ -2144,14 +2158,14 @@ namespace MueLu {
         D0res_->replaceMap(origRhsMap);
       }
       if (!Importer22_.is_null()) {
-        Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: export (2,2)"));
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: export (2,2)");
         D0xTmp_->doExport(*D0x_, *Importer22_, Xpetra::INSERT);
         D0x_.swap(D0xTmp_);
       }
     }
 
     { //update current solution
-      Teuchos::TimeMonitor tmUp(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: update"));
+      RCP<Teuchos::TimeMonitor> tmUp = getTimer("MueLu RefMaxwell: update");
       D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
       X.update(one, *residual_, one);
     }
@@ -2165,7 +2179,7 @@ namespace MueLu {
                                                                   Scalar /* alpha */,
                                                                   Scalar /* beta */) const {
 
-    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve"));
+    RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu RefMaxwell: solve");
 
     // make sure that we have enough temporary memory
     if (X.getNumVectors() != P11res_->getNumVectors())
@@ -2173,7 +2187,7 @@ namespace MueLu {
 
     { // apply pre-smoothing
 
-      Teuchos::TimeMonitor tmSm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: smoothing"));
+      RCP<Teuchos::TimeMonitor> tmSm = getTimer("MueLu RefMaxwell: smoothing");
 
 #if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
       if (useHiptmairSmoothing_) {
@@ -2205,7 +2219,7 @@ namespace MueLu {
 
     { // apply post-smoothing
 
-      Teuchos::TimeMonitor tmSm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: smoothing"));
+      RCP<Teuchos::TimeMonitor> tmSm = getTimer("MueLu RefMaxwell: smoothing");
 
 #if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
       if (useHiptmairSmoothing_)
