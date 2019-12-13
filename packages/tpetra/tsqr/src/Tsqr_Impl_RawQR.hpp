@@ -23,12 +23,25 @@ public:
 
   virtual ~RawQR() = default;
 
+  //! Get recommended work array size for compute_QR.
+  virtual int
+  compute_QR_lwork (const int m, const int n,
+                    value_type A[], const int lda) const = 0;
+
   //! Compute QR factorization of a general m by n matrix A.
   virtual void
   compute_QR(const int m, const int n,
              value_type A[], const int lda,
              value_type TAU[],
              value_type WORK[], const int lwork) const = 0;
+
+  //! Get recommended work array size for apply_Q_factor.
+  virtual int
+  apply_Q_factor_lwork(const char SIDE, const char TRANS,
+                       const int m, const int n, const int k,
+                       const value_type A[], const int lda,
+                       const value_type TAU[],
+                       value_type C[], const int ldc) const = 0;
 
   /// \brief Apply Householder reflectors.
   ///
@@ -45,6 +58,12 @@ public:
                  const value_type TAU[],
                  value_type C[], const int ldc,
                  value_type WORK[], const int lwork) const = 0;
+
+  //! Get recommended work array size for compute_explicit_Q.
+  virtual int
+  compute_explicit_Q_lwork (const int m, const int n, const int k,
+                            value_type A[], const int lda,
+                            const value_type TAU[]) const = 0;
 
   /// \brief Compute explicit QR factor from QR factorization (GEQRF).
   ///
