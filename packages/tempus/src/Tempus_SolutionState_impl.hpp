@@ -416,5 +416,37 @@ void SolutionState<Scalar>::describe(
   }
 }
 
+
+template<class Scalar>
+void SolutionState<Scalar>::computeNorms(
+  const Teuchos::RCP<const SolutionState<Scalar> >& ssIn)
+{
+  if (!getComputeNorms()) return;
+
+  auto x   = this->getX();
+  this->setXNormL2(Thyra::norm(*x));
+
+  if (ssIn != Teuchos::null) {
+    auto xIn = ssIn->getX();
+
+    // dx = x - xIn
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > dx = Thyra::createMember(x->space());
+    Thyra::V_VmV(dx.ptr(), *x, *xIn);
+    Scalar dxNorm = Thyra::norm(*dx);
+    Scalar xInNorm = Thyra::norm(*xIn);
+    this->setDxNormL2Abs(dxNorm);
+    // Compute change, e.g., ||x^n-x^(n-1)||/||x^(n-1)||
+    const Scalar eps = std::numeric_limits<Scalar>::epsilon();
+    const Scalar min = std::numeric_limits<Scalar>::min();
+    if ( xInNorm < min/eps ) {  // numerically zero
+      this->setDxNormL2Rel(std::numeric_limits<Scalar>::infinity());
+    } else {
+      //this->setDxNormL2Rel(dxNorm/(xInNorm + eps));
+      this->setDxNormL2Rel(dxNorm/(xInNorm*(1.0 + 1.0e4*eps)));
+    }
+  }
+}
+
+
 } // namespace Tempus
 #endif // Tempus_SolutionState_impl_hpp

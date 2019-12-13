@@ -9,6 +9,7 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_PreconditionerBase.hpp"
+#include "Tpetra_Import_Util2.hpp"  //for sortCrsEntries
 
 // Tpetra support
 #include "Thyra_TpetraThyraWrappers.hpp"
@@ -159,6 +160,9 @@ EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::createGraph()
     ColumnIndexCompFunctor<size_type, LO> functor(indices, offsets, counts, numMyNodes, numProcs, myRank);
     Kokkos::parallel_for("column indices comp", numMyNodes, functor);
   }
+
+  //Sort the indices within each row.
+  Tpetra::Import_Util::sortCrsEntries(offsets, indices);
 
   // Construct the graph
   Teuchos::RCP<tpetra_graph> W_graph =

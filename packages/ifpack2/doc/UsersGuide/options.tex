@@ -97,9 +97,22 @@ The following parameters are used in the point relaxation methods:
      and communication) to count diagonal entries that are zero, have negative
      real part, or are small in magnitude. This information can be later shown
      in the description.}
+\ccc{relaxation: mtgs cluster size}
+    {int}
+    {1}
+    {Only has an effect if {\tt "relaxation: type"} is {\tt "MT Gauss-Seidel"}
+     or {\tt "MT Symmetric Gauss-Seidel"}. If equal to 1 (default), point
+     coloring parallel Gauss-Seidel is used. This has a faster \texttt{compute()}
+     but may cause the preconditioned solver
+     to converge more slowly. If set to $k > 1$, then multicolor block Gauss-Seidel
+     is used with blocks of size $k$ (see \cite{Saad1999}).
+     In the \texttt{apply()} there is significantly less
+     error due to parallel updates of the LHS vector.}
 \ccc{relaxation: local smoothing indices}
     {Teuchos::ArrayRCP<local\_ordinal>}
     {empty}
+    {}
+
 %Teuchos::ArrayRCP MatrixType::local_ordinal_type}{\texttt{Teuchos::null}}
     {A given method will only relax on the local indices listed in the
      \texttt{ArrayRCP}, in the order that they are listed. This can be used to

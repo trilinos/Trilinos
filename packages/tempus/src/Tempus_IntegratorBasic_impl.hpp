@@ -135,12 +135,12 @@ initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
     RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
       stepper_->getModel(), stepper_->getDefaultStepperState(), Teuchos::null));
 
-    // Set SolutionState MetaData from TimeStepControl
+    // Set SolutionState from TimeStepControl
     newState->setTime    (timeStepControl_->getInitTime());
     newState->setIndex   (timeStepControl_->getInitIndex());
     newState->setTimeStep(timeStepControl_->getInitTimeStep());
-    newState->getMetaData()->setTolRel(timeStepControl_->getMaxRelError());
-    newState->getMetaData()->setTolAbs(timeStepControl_->getMaxAbsError());
+    newState->setTolRel  (timeStepControl_->getMaxRelError());
+    newState->setTolAbs  (timeStepControl_->getMaxAbsError());
     int order = timeStepControl_->getInitOrder();
     if (order == 0) order = stepper_->getOrder();
     if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
@@ -190,8 +190,7 @@ initializeSolutionHistory(Scalar t0,
   RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
     x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
 
-  // Set SolutionState MetaData from TimeStepControl
-  //newState->setTime    (timeStepControl_->getInitTime());
+  // Set SolutionState from TimeStepControl
   newState->setTime    (t0);
   newState->setIndex   (timeStepControl_->getInitIndex());
   newState->setTimeStep(timeStepControl_->getInitTimeStep());
@@ -447,8 +446,7 @@ bool IntegratorBasic<Scalar>::advanceTime()
       integratorObserver_->observeNextTimeStep(*this);
 
       if (integratorStatus_ == Status::FAILED) break;
-      solutionHistory_->getWorkingState()->getMetaData()->
-        setSolutionStatus(WORKING);
+      solutionHistory_->getWorkingState()->setSolutionStatus(WORKING);
 
       integratorObserver_->observeBeforeTakeStep(*this);
 
@@ -475,27 +473,26 @@ bool IntegratorBasic<Scalar>::advanceTime()
 template <class Scalar>
 void IntegratorBasic<Scalar>::startTimeStep()
 {
-  Teuchos::RCP<SolutionStateMetaData<Scalar> > wsmd =
-    solutionHistory_->getWorkingState()->getMetaData();
+  auto ws = solutionHistory_->getWorkingState();
 
   //set the Abs/Rel tolerance
-  wsmd->setTolRel(timeStepControl_->getMaxRelError());
-  wsmd->setTolAbs(timeStepControl_->getMaxAbsError());
+  ws->setTolRel(timeStepControl_->getMaxRelError());
+  ws->setTolAbs(timeStepControl_->getMaxAbsError());
 
   // Check if we need to dump screen output this step
   std::vector<int>::const_iterator it =
     std::find(outputScreenIndices_.begin(),
               outputScreenIndices_.end(),
-              wsmd->getIStep());
+              ws->getIndex());
   if (it == outputScreenIndices_.end())
-    wsmd->setOutputScreen(false);
+    ws->setOutputScreen(false);
   else
-    wsmd->setOutputScreen(true);
+    ws->setOutputScreen(true);
 
   const int initial = timeStepControl_->getInitIndex();
   const int interval = integratorPL_->get<int>("Screen Output Index Interval");
-  if ( (wsmd->getIStep() - initial) % interval == 0)
-    wsmd->setOutputScreen(true);
+  if ( (ws->getIndex() - initial) % interval == 0)
+    ws->setOutputScreen(true);
 }
 
 
@@ -503,26 +500,25 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::checkTimeStep()
 {
   using Teuchos::RCP;
-  RCP<SolutionStateMetaData<Scalar> > wsmd =
-    solutionHistory_->getWorkingState()->getMetaData();
+  auto ws = solutionHistory_->getWorkingState();
 
   // Too many TimeStep failures, Integrator fails.
-  if (wsmd->getNFailures() >= timeStepControl_->getMaxFailures()) {
+  if (ws->getNFailures() >= timeStepControl_->getMaxFailures()) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,2,"checkTimeStep");
     *out << "Failure - Stepper has failed more than the maximum allowed.\n"
-         << "  (nFailures = "<<wsmd->getNFailures()<< ") >= (nFailuresMax = "
+         << "  (nFailures = "<<ws->getNFailures()<< ") >= (nFailuresMax = "
          << timeStepControl_->getMaxFailures()<<")" << std::endl;
     integratorStatus_ = Status::FAILED;
     return;
   }
-  if (wsmd->getNConsecutiveFailures()
+  if (ws->getNConsecutiveFailures()
       >= timeStepControl_->getMaxConsecFailures()){
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"checkTimeStep");
     *out << "Failure - Stepper has failed more than the maximum "
          << "consecutive allowed.\n"
-         << "  (nConsecutiveFailures = "<<wsmd->getNConsecutiveFailures()
+         << "  (nConsecutiveFailures = "<<ws->getNConsecutiveFailures()
          << ") >= (nConsecutiveFailuresMax = "
          << timeStepControl_->getMaxConsecFailures()
          << ")" << std::endl;
@@ -531,40 +527,40 @@ void IntegratorBasic<Scalar>::checkTimeStep()
   }
 
   // Check Stepper failure.
-  if (wsmd->getSolutionStatus() == Status::FAILED or
+  if (ws->getSolutionStatus() == Status::FAILED or
        // Constant time step failure
        ((timeStepControl_->getStepType() == "Constant") and
-        (wsmd->getDt() != timeStepControl_->getInitTimeStep()) and
-        (wsmd->getOutput() != true) and
-        (wsmd->getTime() != timeStepControl_->getFinalTime())
+        (ws->getTimeStep() != timeStepControl_->getInitTimeStep()) and
+        (ws->getOutput() != true) and
+        (ws->getTime() != timeStepControl_->getFinalTime())
        )
      )
   {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,0,"checkTimeStep");
     *out <<std::scientific
-      <<std::setw( 6)<<std::setprecision(3)<<wsmd->getIStep()
-      <<std::setw(11)<<std::setprecision(3)<<wsmd->getTime()
-      <<std::setw(11)<<std::setprecision(3)<<wsmd->getDt()
+      <<std::setw( 6)<<std::setprecision(3)<<ws->getIndex()
+      <<std::setw(11)<<std::setprecision(3)<<ws->getTime()
+      <<std::setw(11)<<std::setprecision(3)<<ws->getTimeStep()
       << "  STEP FAILURE!! - ";
-    if (wsmd->getSolutionStatus() == Status::FAILED) {
-      *out << "Solution Status = " << toString(wsmd->getSolutionStatus())
+    if (ws->getSolutionStatus() == Status::FAILED) {
+      *out << "Solution Status = " << toString(ws->getSolutionStatus())
            << std::endl;
     } else if ((timeStepControl_->getStepType() == "Constant") and
-               (wsmd->getDt() != timeStepControl_->getInitTimeStep())) {
+               (ws->getTimeStep() != timeStepControl_->getInitTimeStep())) {
       *out << "dt != Constant dt (="<<timeStepControl_->getInitTimeStep()<<")"
            << std::endl;
     }
 
-    wsmd->setNFailures(wsmd->getNFailures()+1);
-    wsmd->setNRunningFailures(wsmd->getNRunningFailures()+1);
-    wsmd->setNConsecutiveFailures(wsmd->getNConsecutiveFailures()+1);
-    wsmd->setSolutionStatus(Status::FAILED);
+    ws->setNFailures(ws->getNFailures()+1);
+    ws->setNRunningFailures(ws->getNRunningFailures()+1);
+    ws->setNConsecutiveFailures(ws->getNConsecutiveFailures()+1);
+    ws->setSolutionStatus(Status::FAILED);
     return;
   }
 
   // TIME STEP PASSED basic tests!  Ensure it is set as such.
-  wsmd->setSolutionStatus(Status::PASSED);
+  ws->setSolutionStatus(Status::PASSED);
 
 }
 
