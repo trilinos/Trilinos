@@ -106,9 +106,21 @@ namespace Test {
     Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
     // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in Trilinos issue #6418 
-    Kokkos::fill_random(A,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarA>::max());
-    Kokkos::fill_random(B,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarB>::max());
-    Kokkos::fill_random(C,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarC>::max());
+#ifdef KOKKOS_ENABLE_CUDA
+    if (std::is_same<execution_space,Kokkos::Cuda>::value) 
+    {
+      Kokkos::fill_random(A,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarA>::max());
+      Kokkos::fill_random(B,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarB>::max());
+      Kokkos::fill_random(C,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarC>::max());
+    }
+    else
+#else
+    {
+      Kokkos::fill_random(A,rand_pool,ScalarA(10));
+      Kokkos::fill_random(B,rand_pool,ScalarB(10));
+      Kokkos::fill_random(C,rand_pool,ScalarC(10));
+    }
+#endif
     
     Kokkos::deep_copy(C2,C);
 
