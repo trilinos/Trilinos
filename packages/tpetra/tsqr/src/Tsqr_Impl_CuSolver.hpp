@@ -21,7 +21,7 @@ public:
   compute_QR_lwork (const int nrows,
                     const int ncols,
                     Scalar A_raw[],
-                    const int lda);
+                    const int lda) const /* override */;
 
   void
   compute_QR (const int nrows,
@@ -30,7 +30,7 @@ public:
               const int lda,
               Scalar tau[],
               Scalar work[],
-              const int lwork);
+              const int lwork) const /* override */;
 
   int
   apply_Q_factor_lwork (const char side,
@@ -42,7 +42,7 @@ public:
                         const int ldq,
                         const Scalar tau[],
                         const Scalar C[],
-                        const int ldc);
+                        const int ldc) const /* override */;
 
   void
   apply_Q_factor (const char side,
@@ -56,7 +56,7 @@ public:
                   Scalar C[],
                   const int ldc,
                   Scalar work[],
-                  const int lwork);
+                  const int lwork) const /* override */;
 
 private:
   CuSolverHandle handle_;

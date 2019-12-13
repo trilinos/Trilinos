@@ -311,7 +311,7 @@ CuSolver<Scalar>::
 compute_QR_lwork (const int nrows,
                   const int ncols,
                   Scalar A[],
-                  const int lda)
+                  const int lda) const
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -337,7 +337,7 @@ compute_QR (const int nrows,
             const int lda,
             Scalar tau[],
             Scalar work[],
-            const int lwork)
+            const int lwork) const
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -366,7 +366,7 @@ apply_Q_factor_lwork (const char side,
                       const int ldq,
                       const Scalar tau[],
                       const Scalar C[],
-                      const int ldc)
+                      const int ldc) const
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
@@ -403,7 +403,7 @@ apply_Q_factor (const char side,
                 Scalar C[],
                 const int ldc,
                 Scalar work[],
-                const int lwork)
+                const int lwork) const
 {
   auto rawHandle =
     reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
