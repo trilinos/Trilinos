@@ -144,7 +144,8 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildSystem(const Teuchos::RCP<const T
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,3);
 
    ST values[] = { -1.0, 2.0, -1.0};
-   GO iTemp[] = {-1,0,1}, indices[3];
+   int iTemp[] = {-1,0,1};
+   GO indices[3];
    ST * vPtr;
    GO * iPtr;
    for(size_t i=0;i<map->getNodeNumElements();i++) {
@@ -234,19 +235,20 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildStridedSystem(const Teuchos::RCP<
   int numUnks = 2;
   ST valuesA[] = { -1.0, 2.0, 7.0, -1.0 };
   ST valuesB[] = { -1.0, 2.0, 9.0, -1.0 };
-  GO iTempA[] = {-numUnks,0, 1,numUnks}, indices[4];
-  GO iTempB[] = {-numUnks,0,-1,numUnks};
+  int iTempA[] = {-numUnks,0, 1,numUnks};
+  GO indices[4];
+  int iTempB[] = {-numUnks,0,-1,numUnks};
   ST * vPtr;
   GO * iPtr;
 
   for(size_t i=0;i<map->getNodeNumElements()/numUnks;i++) {
      int count = 4;
-     GO gidA = map->getGlobalElement(2*i);
-     GO gidB = gidA+1;
+     auto gidA = map->getGlobalElement(2*i);
+     auto gidB = gidA+1;
 
-     for(int n=0;n<numUnks;n++) {
-        GO * iTemp = (n==0) ? iTempA : iTempB;
-        GO gid = (n==0) ? gidA : gidB;
+     for(auto n=0;n<numUnks;n++) {
+        auto * iTemp = (n==0) ? iTempA : iTempB;
+        auto gid = (n==0) ? gidA : gidB;
 
         indices[0] = gid+iTemp[0];
         indices[1] = gid+iTemp[1];
@@ -256,7 +258,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildStridedSystem(const Teuchos::RCP<
         vPtr = (n==0) ? valuesA : valuesB;
         iPtr = indices;
      
-        if(gid<numUnks) {
+        if(gid<(GO)numUnks) {
            vPtr++;
            iPtr = &indices[1];
            count = 3;

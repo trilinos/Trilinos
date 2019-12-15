@@ -87,11 +87,11 @@ double compareTpetraMVToThyra(const Tpetra_MultiVector & eX,
                             int indexStart=-1,int indexEnd=-1); */
 double compareTpetraMVToThyra(const Tpetra::MultiVector<ST,LO,GO,NT> & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<ST> > & tX,
-                            int verbosity,std::ostream & os,GO indexStart=-1,GO indexEnd=-1);
+                            int verbosity,std::ostream & os,int indexStart=-1,GO indexEnd=-1);
 
 double compareTpetraMVToThyra(const Tpetra::MultiVector<ST,LO,GO,NT> & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<ST> > & tX,
-                            int verbosity,std::ostream & os,GO indexStart,GO indexEnd)
+                            int verbosity,std::ostream & os,int indexStart,GO indexEnd)
 {
    using Teuchos::outArg;
    if(indexStart<0) {

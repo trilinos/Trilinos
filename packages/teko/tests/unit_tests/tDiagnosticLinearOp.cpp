@@ -131,7 +131,8 @@ const RCP<Thyra::LinearOpBase<ST> > buildSystem(const Teuchos::RCP<const Teuchos
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,3);
 
    ST values[] = { -1.0, 2.0, -1.0};
-   GO iTemp[] = {-1,0,1}, indices[3];
+   int iTemp[] = {-1,0,1};
+   GO indices[3];
    ST * vPtr;
    GO * iPtr;
    for(size_t i=0;i<map->getNodeNumElements();i++) {

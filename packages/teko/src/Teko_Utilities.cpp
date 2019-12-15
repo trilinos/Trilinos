@@ -234,21 +234,21 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
                                                        stencil.getGlobalMaxNumRowEntries()+1));
 
    // allocate an additional value for the diagonal, if neccessary
-   std::vector<ST> rowData(stencil.getGlobalMaxNumRowEntries()+1);
-   std::vector<GO> rowInd(stencil.getGlobalMaxNumRowEntries()+1);
+   auto sz = stencil.getGlobalMaxNumRowEntries()+1; 
+   Teuchos::Array<ST> rowData(sz);
+   Teuchos::Array<GO> rowInd(sz);
 
    // loop over all the rows
    for(LO j=0;j< (LO) gl->getNodeNumRows();j++) {
       GO row = gl->getRowMap()->getGlobalElement(j);
       ST diagValue = 0.0;
-      GO diagInd = -1;
+      int diagInd = -1;
       size_t rowSz = 0;
 
       // extract a copy of this row...put it in rowData, rowIndicies
       stencil.getGlobalRowCopy(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData),rowSz);
- 
       // loop over elements of row
-      for(size_t i=0;i<rowSz;i++) {
+      for(GO i=0;i<rowSz;i++) {
          GO col = rowInd[i];
 
          // is this a 0 entry masquerading as some thing else?
@@ -261,8 +261,9 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
             rowData[i] = -1.0/d;
             diagValue += rowData[i];
          }
-         else 
+         else {
             diagInd = i;
+         }
       }
     
       // handle diagonal entry
@@ -372,14 +373,15 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
                                                        stencil.getGlobalMaxNumRowEntries()+1),true);
 
    // allocate an additional value for the diagonal, if neccessary
-   std::vector<ST> rowData(stencil.getGlobalMaxNumRowEntries()+1);
-   std::vector<GO> rowInd(stencil.getGlobalMaxNumRowEntries()+1);
+   auto sz = stencil.getGlobalMaxNumRowEntries()+1; 
+   Teuchos::Array<ST> rowData(sz);
+   Teuchos::Array<GO> rowInd(sz);
 
    // loop over all the rows
    for(LO j=0;j<(LO) gl->getNodeNumRows();j++) {
       GO row = gl->getRowMap()->getGlobalElement(j);
       ST diagValue = 0.0;
-      GO diagInd = -1;
+      int diagInd = -1;
       size_t rowSz = 0;
 
       // extract a copy of this row...put it in rowData, rowIndicies

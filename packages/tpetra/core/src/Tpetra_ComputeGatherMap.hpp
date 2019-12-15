@@ -93,6 +93,9 @@ namespace Tpetra {
 
       template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
       getMpiDatatype<long long> () { return MPI_LONG_LONG; }
+
+      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype<unsigned long> () { return MPI_UNSIGNED_LONG; }
 #endif // HAVE_MPI
 
       template<class IntType>
