@@ -281,42 +281,6 @@ namespace TSQR {
     }
 
   private:
-
-  public:
-    void
-    extract_R (const LocalOrdinal nrows,
-               const LocalOrdinal ncols,
-               const Scalar A[], // DEVICE POINTER
-               const LocalOrdinal lda,
-               Scalar R[], // HOST POINTER
-               const LocalOrdinal ldr,
-               const bool /* contiguous_cache_blocks */) const
-    {
-      using Kokkos::ALL;
-      using Kokkos::subview;
-      auto A_view =
-        Impl::get_device_mat_view<Scalar> (nrows, ncols, A, lda);
-      auto R_view =
-        Impl::get_host_mat_view<Scalar> (ncols, ncols, R, ldr);
-
-      // Fill R (including lower triangle) with zeros.
-      Kokkos::deep_copy (R_view, kokkos_value_type {});
-
-      // Copy out the upper triangle of the R factor from A into R.
-      //copy_upper_triangle (R_view, A_view);
-
-      using LO = LocalOrdinal;
-      const std::pair<LO, LO> colRange (0, ncols);
-      Kokkos::deep_copy (R_view, subview (A_view, ALL (), colRange));
-      for (LO j = 0; j < ncols; ++j) {
-        auto R_j = subview (R_view, Kokkos::ALL (), j);
-        for (LO i = j + LO(1); i < LO (R_j.extent(0)); ++i) {
-          R_j(i) = kokkos_value_type {};
-        }
-      }
-    }
-
-  private:
     using tau_type = Impl::device_vector_type<kokkos_value_type>;
 
     // must return owning, since we'll pass off to factor output
@@ -425,6 +389,71 @@ namespace TSQR {
       return Impl::device_mat_view_type<kokkos_value_type> (B_copy_);
     }
 
+    void
+    extract_R (const LocalOrdinal nrows,
+               const LocalOrdinal ncols,
+               const Scalar A[], // DEVICE POINTER
+               const LocalOrdinal lda,
+               Scalar R[], // HOST POINTER
+               const LocalOrdinal ldr,
+               const bool /* contiguous_cache_blocks */) const
+    {
+      auto A_view = Impl::get_device_mat_view<const Scalar>
+        (nrows, ncols, A, lda);
+      auto R_view = Impl::get_host_mat_view<Scalar>
+        (ncols, ncols, R, ldr);
+
+      try {
+        // Fill R (including lower triangle) with zeros.
+        Kokkos::deep_copy (R_view, kokkos_value_type {});
+      }
+      catch (std::exception& e) {
+        std::ostringstream err;
+        err << "TSQR::CuSolverNodeTsqr::extract_R: "
+          "Kokkos::deep_copy(R_view, 0) threw an exception: "
+          << std::endl << e.what ();
+        throw std::runtime_error (err.str ());
+      }
+
+      // Copy out the upper triangle of the R factor from A into R.
+      //
+      // The following (pseudo)code does not work:
+      //
+      // auto A_view_top = subview(A_view, {0, ncols}, ALL());
+      // Kokkos::deep_copy(R_view, A_view_top);
+      //
+      // Kokkos throws an exception, claiming "no available copy
+      // mechanism."  This is probably because A_view is not packed.
+      // This means that cudaMemcpy won't work, so Kokkos must execute
+      // a kernel to copy the data.  However, that kernel must be able
+      // to access both Views.  In this case, it (thinks it) can't,
+      // because R_view is a HostSpace View and A_view_top is a device
+      // View (even though it may be a CudaUVMSpace View).
+
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      using LO = LocalOrdinal;
+      const std::pair<LO, LO> rowRange (0, ncols);
+      auto A_view_top = subview (A_view, rowRange, ALL ());
+      try {
+        Kokkos::deep_copy (R_view, A_view_top);
+      }
+      catch (std::exception& e) {
+        // Packed device version of R.
+        using Impl::reallocDeviceMatrixIfNeeded;
+        reallocDeviceMatrixIfNeeded (R_copy_, "R_copy", ncols, ncols);
+        Kokkos::deep_copy (R_copy_, A_view_top);
+        Kokkos::deep_copy (R_view, R_copy_);
+      }
+
+      for (LO j = 0; j < ncols; ++j) {
+        auto R_j = subview (R_view, Kokkos::ALL (), j);
+        for (LO i = j + LO(1); i < LO (R_j.extent(0)); ++i) {
+          R_j(i) = kokkos_value_type {};
+        }
+      }
+    }
+
   public:
     Teuchos::RCP<factor_output_type>
     factor (const LocalOrdinal nrows,
@@ -433,7 +462,7 @@ namespace TSQR {
             const LocalOrdinal lda,
             Scalar R[],
             const LocalOrdinal ldr,
-            const bool /* contigCacheBlocks */) const override
+            const bool contigCacheBlocks) const override
     {
       // It's a common case to call factor() again and again with the
       // same pointers.  In that case, it's wasteful for us to
@@ -454,7 +483,26 @@ namespace TSQR {
       using TSQR::Impl::CuSolverHandle;
       CuSolver<Scalar> solver
         {CuSolverHandle::getSingleton (), info.data ()};
-      solver.compute_QR (nrows, ncols, A, lda, tau_raw, work_raw, lwork);
+      try {
+        solver.compute_QR (nrows, ncols, A, lda, tau_raw,
+                           work_raw, lwork);
+      }
+      catch (std::exception& e) {
+        std::ostringstream err;
+        err << "TSQR::CuSolverNodeTsqr::factor: CuSolver::compute_QR "
+          "threw an exception: " << std::endl << e.what ();
+        throw std::runtime_error (err.str ());
+      }
+      try {
+        this->extract_R (nrows, ncols, A, lda, R, ldr,
+                         contigCacheBlocks);
+      }
+      catch (std::exception& e) {
+        std::ostringstream err;
+        err << "TSQR::CuSolverNodeTsqr::factor: extract_R "
+          "threw an exception: " << std::endl << e.what ();
+        throw std::runtime_error (err.str ());
+      }
       return Teuchos::rcp (new my_factor_output_type (tau, info));
     }
 
@@ -637,6 +685,7 @@ namespace TSQR {
     mutable tau_type tau_;
     mutable work_type work_;
     mutable Impl::info_type info_;
+    mutable Impl::device_matrix_type<kokkos_value_type> R_copy_;
     mutable Impl::device_matrix_type<kokkos_value_type> Q_copy_;
     mutable Impl::device_matrix_type<kokkos_value_type> B_copy_;
   };
