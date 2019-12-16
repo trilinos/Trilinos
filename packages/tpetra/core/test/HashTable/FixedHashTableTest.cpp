@@ -290,10 +290,9 @@ namespace { // (anonymous)
     TEST_NOTHROW( val = table->get (key) );
     TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
 
-    //IKT - commenting the following out to get test to pass 
-    /*key = -1;
+    key = -1;
     TEST_NOTHROW( val = table->get (key) );
-    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );*/
+    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
 
     key = 42;
     TEST_NOTHROW( val = table->get (key) );
