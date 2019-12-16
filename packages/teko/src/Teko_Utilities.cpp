@@ -238,17 +238,11 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
    Teuchos::Array<ST> rowData(sz);
    Teuchos::Array<GO> rowInd(sz);
 
-#ifdef HAVE_TPETRA_INT_UNSIGNED_LONG
-   long diagInd;
-#else
-   GO diagInd; 
-#endif
-
    // loop over all the rows
    for(LO j=0;j< (LO) gl->getNodeNumRows();j++) {
       GO row = gl->getRowMap()->getGlobalElement(j);
       ST diagValue = 0.0;
-      diagInd = -1;
+      GO diagInd = Teuchos::OrdinalTraits<GO>::invalid();
       size_t rowSz = 0;
 
       // extract a copy of this row...put it in rowData, rowIndicies
@@ -271,9 +265,8 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
             diagInd = i;
          }
       }
-    
       // handle diagonal entry
-      if(diagInd<0) { // diagonal not in row
+      if(diagInd == Teuchos::OrdinalTraits<GO>::invalid()) { // diagonal not in row
          rowData[rowSz] = -diagValue;
          rowInd[rowSz] = row;
          rowSz++;
