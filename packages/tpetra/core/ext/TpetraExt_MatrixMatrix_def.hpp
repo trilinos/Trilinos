@@ -569,9 +569,7 @@ add (const Scalar& alpha,
   if(transposeB)
   {
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(Brcp);
-    RCP<ParameterList> transposeParams(new ParameterList);
-    transposeParams->set ("sort", false);
-    Brcp = transposer.createTranspose(transposeParams);
+    Brcp = transposer.createTranspose();
   }
   //Check that A,B are fillComplete before getting B's column map
   TEUCHOS_TEST_FOR_EXCEPTION
