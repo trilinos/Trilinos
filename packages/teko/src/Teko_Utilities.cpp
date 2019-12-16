@@ -248,7 +248,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
       // extract a copy of this row...put it in rowData, rowIndicies
       stencil.getGlobalRowCopy(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData),rowSz);
       // loop over elements of row
-      for(GO i=0;i<rowSz;i++) {
+      for(size_t i=0;i<rowSz;i++) {
          GO col = rowInd[i];
 
          // is this a 0 entry masquerading as some thing else?

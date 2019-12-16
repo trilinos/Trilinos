@@ -94,7 +94,8 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int
    RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy,map,0));
 
    double values[] = { -1.0, 2.0, -1.0};
-   int iTemp[] = {-1,0,1}, indices[3];
+   GO iTemp[] = {Teuchos::OrdinalTraits<GO>::invalid(),0,1}; 
+   int indices[3];
    double * vPtr;
    int * iPtr;
 
@@ -105,7 +106,12 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int
       vPtr = values;
       iPtr = indices;
 
-      indices[0] = gid+iTemp[0];
+      if (iTemp[0] == Teuchos::OrdinalTraits<GO>::invalid()) {
+        indices[0] = gid -1; 
+      }
+      else {
+        indices[0] = gid+iTemp[0];
+      }
       indices[1] = gid+iTemp[1];
       indices[2] = gid+iTemp[2];
       
@@ -132,7 +138,7 @@ const RCP<Thyra::LinearOpBase<ST> > buildSystem(const Teuchos::RCP<const Teuchos
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,3);
 
    ST values[] = { -1.0, 2.0, -1.0};
-   int iTemp[] = {-1,0,1};
+   GO iTemp[] = {Teuchos::OrdinalTraits<GO>::invalid(),0,1};
    GO indices[3];
    ST * vPtr;
    GO * iPtr;
@@ -142,8 +148,12 @@ const RCP<Thyra::LinearOpBase<ST> > buildSystem(const Teuchos::RCP<const Teuchos
 
       vPtr = values;
       iPtr = indices;
-
-      indices[0] = gid+iTemp[0];
+      if (iTemp[0] == Teuchos::OrdinalTraits<GO>::invalid()) {
+        indices[0] = gid-1; 
+      }
+      else {
+        indices[0] = gid+iTemp[0];
+      }
       indices[1] = gid+iTemp[1];
       indices[2] = gid+iTemp[2];
       

@@ -87,14 +87,15 @@ double compareTpetraMVToThyra(const Tpetra_MultiVector & eX,
                             int indexStart=-1,int indexEnd=-1); */
 double compareTpetraMVToThyra(const Tpetra::MultiVector<ST,LO,GO,NT> & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<ST> > & tX,
-                            int verbosity,std::ostream & os,int indexStart=-1,GO indexEnd=-1);
+                            int verbosity,std::ostream & os,GO indexStart=Teuchos::OrdinalTraits<GO>::invalid(),
+                            GO indexEnd=Teuchos::OrdinalTraits<GO>::invalid());
 
 double compareTpetraMVToThyra(const Tpetra::MultiVector<ST,LO,GO,NT> & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<ST> > & tX,
-                            int verbosity,std::ostream & os,int indexStart,GO indexEnd)
+                            int verbosity,std::ostream & os,GO indexStart,GO indexEnd)
 {
    using Teuchos::outArg;
-   if(indexStart<0) {
+   if(indexStart==Teuchos::OrdinalTraits<GO>::invalid()) {
       indexStart = 0;
       indexEnd = eX.getGlobalLength();
    }
@@ -151,7 +152,7 @@ double compareTpetraMVToThyra(const Tpetra::MultiVector<ST,LO,GO,NT> & eX,
          GO gid = map.getGlobalElement(i);
 
          // this is not in the range of vector elements we are interested in
-         if(gid<indexStart || gid>=indexEnd) continue;
+         if(gid<indexStart || gid>=indexEnd || gid==Teuchos::OrdinalTraits<GO>::invalid()) continue;
 
          // these values should be equal
          for(int j=0;j<vecs;j++) {

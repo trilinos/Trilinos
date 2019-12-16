@@ -269,7 +269,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
          // if global id is not owned by this column
 
          GO gid = local2ContigGIDs.getData()[indices[localCol]];
-         if(gid==-1) continue; // in contiguous row
+         if(gid==Teuchos::OrdinalTraits<GO>::invalid()) continue; // in contiguous row
          numOwnedCols++;
       }
       nEntriesPerRow[localRow] = numOwnedCols;
@@ -295,7 +295,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
          // if global id is not owned by this column
 
          GO gid = local2ContigGIDs.getData()[indices[localCol]];
-         if(gid==-1) continue; // in contiguous row
+         if(gid==Teuchos::OrdinalTraits<GO>::invalid()) continue; // in contiguous row
 
          colIndices[numOwnedCols] = gid;
          colValues[numOwnedCols] = values[localCol];
@@ -364,7 +364,7 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
          
          // if global id is not owned by this column
          GO gid = local2ContigGIDs.getData()[indices[localCol]];
-         if(gid==-1) continue; // in contiguous row
+         if(gid==Teuchos::OrdinalTraits<GO>::invalid()) continue; // in contiguous row
 
          colIndices[numOwnedCols] = gid;
          colValues[numOwnedCols] = values[localCol];
