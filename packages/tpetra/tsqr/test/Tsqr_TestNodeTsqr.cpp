@@ -264,6 +264,57 @@ namespace TSQR {
     }
 
     template<class Scalar>
+    using kokkos_value_type = typename std::conditional<
+        std::is_const<Scalar>::value,
+        const typename Kokkos::ArithTraits<
+          typename std::remove_const<Scalar>::type>::val_type,
+        typename Kokkos::ArithTraits<Scalar>::val_type
+      >::type;
+
+    template<class LO, class Scalar>
+    Kokkos::View<kokkos_value_type<Scalar>**,
+                 Kokkos::LayoutLeft, Kokkos::HostSpace,
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+    getHostMatrixView (const MatView<LO, Scalar>& A)
+    {
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      using IST = kokkos_value_type<Scalar>;
+      using host_mat_view_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+      const size_t nrows (A.extent (0));
+      const size_t ncols (A.extent (1));
+      const size_t lda (A.stride (1));
+      IST* A_raw = reinterpret_cast<IST*> (A.data ());
+      host_mat_view_type A_full (A_raw, lda, ncols);
+      const std::pair<size_t, size_t> rowRange (0, nrows);
+      return Kokkos::subview (A_full, rowRange, Kokkos::ALL ());
+    }
+
+    template<class LO, class Scalar>
+    Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type**,
+                 Kokkos::LayoutLeft>
+    getDeviceMatrixCopy (const MatView<LO, Scalar>& A,
+                         const std::string& label)
+    {
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
+      using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+      using device_matrix_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft>;
+
+      const size_t nrows (A.extent (0));
+      const size_t ncols (A.extent (1));
+      device_matrix_type A_dev
+        (view_alloc (label, WithoutInitializing), nrows, ncols);
+      auto A_host = getHostMatrixView (A);
+      Kokkos::deep_copy (A_dev, A_host);
+      return A_dev;
+    }
+
+    template<class Scalar>
     static int
     lworkQueryLapackQr (Impl::Lapack<Scalar>& lapack,
                         const int nrows,
@@ -410,28 +461,18 @@ namespace TSQR {
       using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
       using device_matrix_type =
         Kokkos::View<IST**, Kokkos::LayoutLeft>;
-      using host_mat_view_type =
-        Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace,
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-      const std::pair<int, int> rowRange (0, nrows);
-      host_mat_view_type A_full_h
-        (reinterpret_cast<IST*> (A.data ()), A.stride (1), ncols);
-      auto A_h = subview (A_full_h, rowRange, ALL ());
-      host_mat_view_type A_copy_full_h
-        (reinterpret_cast<IST*> (A_copy.data ()), A_copy.stride (1), ncols);
-      auto A_copy_h = subview (A_copy_full_h, rowRange, ALL ());
-      host_mat_view_type Q_full_h
-        (reinterpret_cast<IST*> (Q.data ()), Q.stride (1), ncols);
-      auto Q_h = subview (Q_full_h, rowRange, ALL ());
+      auto A_h = getHostMatrixView (A.view ());
+      auto A_copy_h = getHostMatrixView (A_copy.view ());
+      auto Q_h = getHostMatrixView (Q.view ());
 
       device_matrix_type A_d;
       device_matrix_type A_copy_d;
       device_matrix_type Q_d;
       if (actor.wants_device_memory ()) {
-        A_d = device_matrix_type ("A_d", nrows, ncols);
+        A_d = getDeviceMatrixCopy (A.view (), "A_d");
+        // Don't copy A_copy yet; see below.
         A_copy_d = device_matrix_type ("A_copy_d", nrows, ncols);
-        Kokkos::deep_copy (A_d, A_h);
         Q_d = device_matrix_type ("Q_d", nrows, ncols);
       }
 
@@ -441,7 +482,7 @@ namespace TSQR {
         }
         deep_copy (A_copy, A);
         if (actor.wants_device_memory ()) {
-          Kokkos::deep_copy (A_copy_d, A_d);
+          deep_copy (A_copy_d, A_d);
         }
       }
       else {
@@ -470,12 +511,8 @@ namespace TSQR {
           deep_copy (A2, std::numeric_limits<Scalar>::quiet_NaN ());
         }
         if (actor.wants_device_memory ()) {
-          host_mat_view_type A2_full_h
-            (reinterpret_cast<IST*> (A2.data ()), A2.stride (1), ncols);
-          auto A2_h = subview (A2_full_h, rowRange, ALL ());
-          device_matrix_type A2_d ("A2_d", nrows, ncols);
-          Kokkos::deep_copy (A2_d, A2_h);
-
+          auto A2_h = getHostMatrixView (A2.view ());
+          auto A2_d = getDeviceMatrixCopy (A2.view (), "A2_d");
           Scalar* A2_d_raw = reinterpret_cast<Scalar*> (A2_d.data ());
           const Scalar* A_copy_d_raw =
             reinterpret_cast<const Scalar*> (A_copy_d.data ());
@@ -727,7 +764,7 @@ namespace TSQR {
       return success;
     }
 
-    template<class Scalar>
+    template<class LapackType, class Scalar>
     static void
     verifyLapackTmpl (std::ostream& out,
                       std::vector<int>& iseed,
@@ -743,10 +780,16 @@ namespace TSQR {
       const std::string scalarType = TypeNameTraits<Scalar>::name ();
       const std::string fileSuffix =
         getFileSuffix<Scalar> ("Lapack");
-      if (verbose) {
-        cerr << "Test LAPACK with Scalar=" << scalarType << endl;
-      }
 
+      LapackType lapack;
+      if (verbose) {
+        cerr << "Test RawQR<" << scalarType << " subclass "
+             << TypeNameTraits<LapackType>::name () << endl;
+        if (lapack.wants_device_memory ()) {
+          cerr << "-- RawQR subclass claims to want device memory"
+               << endl;
+        }
+      }
       const int nrows = params.numRows;
       const int ncols = params.numCols;
 
@@ -793,7 +836,6 @@ namespace TSQR {
       if (verbose) {
         cerr << "-- Do LAPACK lwork query" << endl;
       }
-      Impl::Lapack<Scalar> lapack;
       const int lwork =
         lworkQueryLapackQr (lapack, nrows, ncols, A_copy.stride (1));
       if (verbose) {
@@ -896,13 +938,17 @@ namespace TSQR {
       std::vector<int> iseed {{0, 0, 0, 1}};
 
       if (p.testReal) {
-        verifyLapackTmpl<float> (out, iseed, p);
-        verifyLapackTmpl<double> (out, iseed, p);
+        verifyLapackTmpl<Impl::Lapack<float>,
+          float> (out, iseed, p);
+        verifyLapackTmpl<Impl::Lapack<double>,
+          double> (out, iseed, p);
       }
       if (p.testComplex) {
 #ifdef HAVE_TPETRATSQR_COMPLEX
-        verifyLapackTmpl<std::complex<float>> (out, iseed, p);
-        verifyLapackTmpl<std::complex<double>> (out, iseed, p);
+        verifyLapackTmpl<Impl::Lapack<std::complex<float>>,
+          std::complex<float>> (out, iseed, p);
+        verifyLapackTmpl<Impl::Lapack<std::complex<double>>,
+          std::complex<double>> (out, iseed, p);
 #else // HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
