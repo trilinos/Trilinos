@@ -776,29 +776,29 @@ namespace TSQR {
       return success;
     }
 
-    template<class LapackType, class Scalar>
+    template<template<class SC> class LapackType, class Scalar>
     static void
     verifyLapackTmpl (std::ostream& out,
                       std::vector<int>& iseed,
+                      LapackType<Scalar>& lapack,
                       const NodeTestParameters& params,
                       const std::string& lapackImplName)
     {
-      using Teuchos::TypeNameTraits;
       using std::cerr;
       using std::endl;
       using STS = Teuchos::ScalarTraits<Scalar>;
       using mag_type = typename STS::magnitudeType;
       const bool verbose = params.verbose;
 
-      const std::string scalarType = TypeNameTraits<Scalar>::name ();
+      const std::string scalarType =
+        Teuchos::TypeNameTraits<Scalar>::name ();
       const std::string fileSuffix =
         getFileSuffix<Scalar> ("Lapack");
 
-      LapackType lapack;
       if (verbose) {
         cerr << "Test RawQR<" << scalarType << "> implementation "
              << lapackImplName << " whose type is "
-             << TypeNameTraits<LapackType>::name () << endl;
+             << Teuchos::typeName (lapack) << endl;
         if (lapack.wants_device_memory ()) {
           cerr << "-- RawQR subclass claims to want device memory"
                << endl;
@@ -923,8 +923,15 @@ namespace TSQR {
         Scalar* work_d_raw =
           reinterpret_cast<Scalar*> (work_d.data ());
         TEUCHOS_ASSERT( ncols == 0 || tau_d_raw != nullptr );
-        TEUCHOS_ASSERT( size_t (tau_d.extent (0)) >= size_t (lwork) );
+        TEUCHOS_ASSERT( size_t (tau_d.extent (0)) >= size_t (ncols) );
         TEUCHOS_ASSERT( lwork == 0 || work_d_raw != nullptr );
+        TEUCHOS_ASSERT( size_t (work_d.extent (0)) >= size_t (lwork) );
+        TEUCHOS_ASSERT( nrows == 0 || ncols == 0 ||
+                        A_copy_d_raw != nullptr );
+        TEUCHOS_ASSERT( size_t (A_copy_d.extent (0)) ==
+                        size_t (nrows) );
+        TEUCHOS_ASSERT( size_t (A_copy_d.extent (1)) ==
+                        size_t (ncols) );
         lapack.compute_QR (nrows, ncols, A_copy_d_raw,
                            A_copy_d.stride (1), tau_d_raw,
                            work_d_raw, lwork);
@@ -1023,6 +1030,29 @@ namespace TSQR {
       }
     }
 
+    template<class Scalar>
+    void
+    verifyLapackImplementations (std::ostream& out,
+                                 std::vector<int>& iseed,
+                                 const NodeTestParameters& p)
+    {
+#if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+      {
+        // Make sure that both Lapack and CuSolver get the same
+        // pseudorandom seed.
+        std::vector<int> iseed_copy (iseed);
+        auto handle = Impl::CuSolverHandle::getSingleton ();
+        Kokkos::View<int> info ("info");
+        Impl::CuSolver<Scalar> solver (handle, info.data ());
+        verifyLapackTmpl (out, iseed_copy, solver, p, "CUSOLVER");
+      }
+#endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER
+      {
+        Impl::Lapack<Scalar> lapack;
+        verifyLapackTmpl (out, iseed, lapack, p, "LAPACK");
+      }
+    }
+
     void
     verifyLapack (std::ostream& out,
                   const NodeTestParameters& p)
@@ -1030,21 +1060,17 @@ namespace TSQR {
       // We do tests one after another, using the seed from the
       // previous test in the current test, so that the pseudorandom
       // streams used by the tests are independent.
-
       std::vector<int> iseed {{0, 0, 0, 1}};
-
       if (p.testReal) {
-        verifyLapackTmpl<Impl::Lapack<float>,
-          float> (out, iseed, p, "LAPACK");
-        verifyLapackTmpl<Impl::Lapack<double>,
-          double> (out, iseed, p, "LAPACK");
+        verifyLapackImplementations<float> (out, iseed, p);
+        verifyLapackImplementations<double> (out, iseed, p);
       }
       if (p.testComplex) {
 #ifdef HAVE_TPETRATSQR_COMPLEX
-        verifyLapackTmpl<Impl::Lapack<std::complex<float>>,
-          std::complex<float>> (out, iseed, p, "LAPACK");
-        verifyLapackTmpl<Impl::Lapack<std::complex<double>>,
-          std::complex<double>> (out, iseed, p, "LAPACK");
+        verifyLapackImplementations<std::complex<float>>
+          (out, iseed, p);
+        verifyLapackImplementations<std::complex<double>>
+          (out, iseed, p);
 #else // HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
