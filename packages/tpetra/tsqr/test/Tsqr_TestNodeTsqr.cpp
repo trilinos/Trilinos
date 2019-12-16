@@ -456,8 +456,6 @@ namespace TSQR {
         cerr << "-- NodeTsqr claims to want device memory" << endl;
       }
 
-      using Kokkos::ALL;
-      using Kokkos::subview;
       using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
       using device_matrix_type =
         Kokkos::View<IST**, Kokkos::LayoutLeft>;
@@ -465,7 +463,6 @@ namespace TSQR {
       auto A_h = getHostMatrixView (A.view ());
       auto A_copy_h = getHostMatrixView (A_copy.view ());
       auto Q_h = getHostMatrixView (Q.view ());
-
       device_matrix_type A_d;
       device_matrix_type A_copy_d;
       device_matrix_type Q_d;
@@ -548,10 +545,19 @@ namespace TSQR {
         if (actor.wants_device_memory ()) {
           Scalar* A_copy_d_raw =
             reinterpret_cast<Scalar*> (A_copy_d.data ());
-          return actor.factor (nrows, ncols, A_copy_d_raw,
-                               A_copy_d.stride (1),
-                               R.data (), R.stride (1),
-                               params.contiguousCacheBlocks);
+          TEUCHOS_ASSERT( nrows == 0 || ncols == 0 ||
+                          A_copy_d_raw != nullptr );
+          TEUCHOS_ASSERT( size_t (A_copy_d.extent (0)) ==
+                          size_t (nrows) );
+          TEUCHOS_ASSERT( size_t (A_copy_d.extent (1)) ==
+                          size_t (ncols) );
+          auto result =
+            actor.factor (nrows, ncols, A_copy_d_raw,
+                          A_copy_d.stride (1),
+                          R.data (), R.stride (1),
+                          params.contiguousCacheBlocks);
+          Kokkos::deep_copy (A_copy_h, A_copy_d);
+          return result;
         }
         else {
           return actor.factor (nrows, ncols, A_copy.data (),
@@ -579,11 +585,17 @@ namespace TSQR {
         const Scalar* A_copy_d_raw =
           reinterpret_cast<const Scalar*> (A_copy_d.data ());
         Scalar* Q_d_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+        TEUCHOS_ASSERT( nrows == 0 || ncols == 0 ||
+                        Q_d_raw != nullptr );
+        TEUCHOS_ASSERT( size_t (Q_d.extent (0)) == size_t (nrows) );
+        TEUCHOS_ASSERT( size_t (Q_d.extent (1)) == size_t (ncols) );
         actor.explicit_Q (nrows, ncols,
                           A_copy_d_raw, A_copy_d.stride (1),
                           *factorOutput, ncols,
                           Q_d_raw, Q_d.stride (1),
                           params.contiguousCacheBlocks);
+        // We copy back to Q_h below, either with un_cache_block (if
+        // contiguous cache blocks) or directly (if not).
       }
       else {
         actor.explicit_Q (nrows, ncols,
@@ -768,7 +780,8 @@ namespace TSQR {
     static void
     verifyLapackTmpl (std::ostream& out,
                       std::vector<int>& iseed,
-                      const NodeTestParameters& params)
+                      const NodeTestParameters& params,
+                      const std::string& lapackImplName)
     {
       using Teuchos::TypeNameTraits;
       using std::cerr;
@@ -783,7 +796,8 @@ namespace TSQR {
 
       LapackType lapack;
       if (verbose) {
-        cerr << "Test RawQR<" << scalarType << " subclass "
+        cerr << "Test RawQR<" << scalarType << "> implementation "
+             << lapackImplName << " whose type is "
              << TypeNameTraits<LapackType>::name () << endl;
         if (lapack.wants_device_memory ()) {
           cerr << "-- RawQR subclass claims to want device memory"
@@ -828,35 +842,100 @@ namespace TSQR {
         fileOut.close ();
       }
 
+      using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+      using device_matrix_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft>;
+
+      auto A_h = getHostMatrixView (A.view ());
+      auto A_copy_h = getHostMatrixView (A_copy.view ());
+      auto Q_h = getHostMatrixView (Q.view ());
+      device_matrix_type A_d;
+      device_matrix_type A_copy_d;
+      device_matrix_type Q_d;
+      if (lapack.wants_device_memory ()) {
+        A_d = getDeviceMatrixCopy (A.view (), "A_d");
+        // Don't copy A_copy yet; see below.
+        A_copy_d = device_matrix_type ("A_copy_d", nrows, ncols);
+        Q_d = device_matrix_type ("Q_d", nrows, ncols);
+      }
+
       if (verbose) {
         cerr << "-- Copy A into A_copy" << endl;
       }
       deep_copy (A_copy, A);
+      if (lapack.wants_device_memory ()) {
+        deep_copy (A_copy_d, A_d);
+      }
+
+      if (verbose) {
+        cerr << "-- Fill R with zeros" << endl;
+      }
+      // We need to do this because the factorization may not
+      // overwrite the strict lower triangle of R.  R is always in
+      // host memory.
+      deep_copy (R, Scalar {});
 
       if (verbose) {
         cerr << "-- Do LAPACK lwork query" << endl;
       }
-      const int lwork =
-        lworkQueryLapackQr (lapack, nrows, ncols, A_copy.stride (1));
+      const int lwork = [&] () {
+        if (lapack.wants_device_memory ()) {
+          Scalar* A_copy_d_raw =
+            reinterpret_cast<Scalar*> (A_copy_d.data ());
+          const int A_copy_d_lda (A_copy_d.stride (1));
+          TEUCHOS_ASSERT( nrows == 0 || ncols == 0 ||
+                          A_copy_d_raw != nullptr );
+          TEUCHOS_ASSERT( size_t (A_copy_d.extent (0)) ==
+                          size_t (nrows) );
+          TEUCHOS_ASSERT( size_t (A_copy_d.extent (1)) ==
+                          size_t (ncols) );
+          return lapack.compute_QR_lwork (nrows, ncols, A_copy_d_raw,
+                                          A_copy_d_lda);
+        }
+        else {
+          Scalar* A_copy_raw = A_copy.data ();
+          const int A_copy_lda (A_copy.stride (1));
+          return lapack.compute_QR_lwork (nrows, ncols, A_copy_raw,
+                                          A_copy_lda);
+        }
+      } ();
       if (verbose) {
         cerr << "-- lwork=" << lwork << endl;
       }
       std::vector<Scalar> work (lwork);
       std::vector<Scalar> tau (ncols);
 
-      if (verbose) {
-        cerr << "-- Fill R with zeros" << endl;
+      Kokkos::View<IST*> work_d;
+      Kokkos::View<IST*> tau_d;
+      if (lapack.wants_device_memory ()) {
+        work_d = Kokkos::View<IST*> ("work_d", lwork);
+        tau_d = Kokkos::View<IST*> ("tau_d", ncols);
       }
-      // We need to fill R with zeros, since the factorization may not
-      // overwrite the strict lower triangle of R.
-      deep_copy (R, Scalar {});
 
       if (verbose) {
-        cerr << "-- Call Lapack::compute_QR" << endl;
+        cerr << "-- Call compute_QR" << endl;
       }
-      lapack.compute_QR (nrows, ncols, A_copy.data (),
-                         A_copy.stride (1), tau.data (),
-                         work.data(), lwork);
+
+      if (lapack.wants_device_memory ()) {
+        Scalar* A_copy_d_raw =
+          reinterpret_cast<Scalar*> (A_copy_d.data ());
+        Scalar* tau_d_raw = reinterpret_cast<Scalar*> (tau_d.data ());
+        Scalar* work_d_raw =
+          reinterpret_cast<Scalar*> (work_d.data ());
+        TEUCHOS_ASSERT( ncols == 0 || tau_d_raw != nullptr );
+        TEUCHOS_ASSERT( size_t (tau_d.extent (0)) >= size_t (lwork) );
+        TEUCHOS_ASSERT( lwork == 0 || work_d_raw != nullptr );
+        lapack.compute_QR (nrows, ncols, A_copy_d_raw,
+                           A_copy_d.stride (1), tau_d_raw,
+                           work_d_raw, lwork);
+        Kokkos::deep_copy (A_copy_h, A_copy_d);
+      }
+      else {
+        lapack.compute_QR (nrows, ncols, A_copy.data (),
+                           A_copy.stride (1), tau.data (),
+                           work.data (), lwork);
+      }
+
       if (verbose) {
         cerr << "-- Copy R out of in-place result" << endl;
       }
@@ -875,12 +954,29 @@ namespace TSQR {
       // The explicit Q factor will be computed in place, so copy the
       // result of the factorization into Q.
       deep_copy (Q, A_copy);
+      if (lapack.wants_device_memory ()) {
+        deep_copy (Q_d, A_copy_d);
+      }
 
       if (verbose) {
         cerr << "-- Call Lapack::compute_explicit_Q" << endl;
       }
-      lapack.compute_explicit_Q (nrows, ncols, ncols, Q.data (), ldq,
-                                 tau.data (), work.data (), lwork);
+      if (lapack.wants_device_memory ()) {
+        Scalar* Q_d_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+        const Scalar* tau_d_raw =
+          reinterpret_cast<const Scalar*> (tau_d.data ());
+        Scalar* work_d_raw =
+          reinterpret_cast<Scalar*> (work_d.data ());
+        lapack.compute_explicit_Q (nrows, ncols, ncols,
+                                   Q_d_raw, ldq, tau_d_raw,
+                                   work_d_raw, lwork);
+        deep_copy (Q_h, Q_d);
+      }
+      else {
+        lapack.compute_explicit_Q (nrows, ncols, ncols,
+                                   Q.data (), ldq, tau.data (),
+                                   work.data (), lwork);
+      }
 
       if (params.saveMatrices) {
         std::string filename = std::string ("Q") + fileSuffix;
@@ -901,7 +997,7 @@ namespace TSQR {
                                    Q.data (), ldq, R.data (), ldr);
 
       if (params.humanReadable) {
-        out << "LAPACK QR:" << endl
+        out << lapackImplName << ":" << endl
             << "  - Scalar type: " << scalarType << endl
             << "  - Matrix dimensions: " << nrows << " by " << ncols
             << endl
@@ -914,7 +1010,7 @@ namespace TSQR {
             << endl;
       }
       else {
-        out << "LAPACK"
+        out << lapackImplName
             << "," << scalarType
             << "," << nrows
             << "," << ncols
@@ -939,16 +1035,16 @@ namespace TSQR {
 
       if (p.testReal) {
         verifyLapackTmpl<Impl::Lapack<float>,
-          float> (out, iseed, p);
+          float> (out, iseed, p, "LAPACK");
         verifyLapackTmpl<Impl::Lapack<double>,
-          double> (out, iseed, p);
+          double> (out, iseed, p, "LAPACK");
       }
       if (p.testComplex) {
 #ifdef HAVE_TPETRATSQR_COMPLEX
         verifyLapackTmpl<Impl::Lapack<std::complex<float>>,
-          std::complex<float>> (out, iseed, p);
+          std::complex<float>> (out, iseed, p, "LAPACK");
         verifyLapackTmpl<Impl::Lapack<std::complex<double>>,
-          std::complex<double>> (out, iseed, p);
+          std::complex<double>> (out, iseed, p, "LAPACK");
 #else // HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error, "TSQR was not built with complex "
