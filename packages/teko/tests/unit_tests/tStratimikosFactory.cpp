@@ -258,7 +258,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildStridedSystem(const Teuchos::RCP<
         vPtr = (n==0) ? valuesA : valuesB;
         iPtr = indices;
      
-        if(gid<(GO)numUnks) {
+        if(gid<static_cast<GO>(numUnks)) {
            vPtr++;
            iPtr = &indices[1];
            count = 3;
