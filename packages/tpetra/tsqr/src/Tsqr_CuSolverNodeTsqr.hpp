@@ -58,6 +58,9 @@ namespace TSQR {
     using cusolver_memory_space = Kokkos::CudaSpace;
     using cusolver_execution_space = Kokkos::Cuda;
 
+    // Mapping from Scalar to Kokkos value type.
+    // e.g., Scalar=std::complex<double> -> Kokkos::complex<double>.
+
     template<class Scalar>
     using non_const_kokkos_value_type = typename Kokkos::ArithTraits<
         typename std::remove_const<Scalar>::type
@@ -70,30 +73,49 @@ namespace TSQR {
         non_const_kokkos_value_type<Scalar>
       >::type;
 
+    // vector_type & device_vector_type
+
+    template<class T, class MemorySpace>
+    using vector_type = Kokkos::View<T*, MemorySpace>;
+
+    template<class T>
+    using device_vector_type = vector_type<T, cusolver_memory_space>;
+
+    template<class T>
+    void
+    reallocDeviceVectorIfNeeded (device_vector_type<T>& vec,
+                                 const char label[],
+                                 const size_t minSize)
+    {
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
+
+      if (size_t (vec.size ()) < minSize) {
+        vec = device_vector_type<T> ();
+        auto alloc = view_alloc (std::string (label), WithoutInitializing);
+        vec = device_vector_type<T> (alloc, minSize);
+      }
+    }
+
+    // vec_view_type & device_vec_view_type
+
+    template<class T, class MemorySpace>
+    using vec_view_type =
+      Kokkos::View<T*, MemorySpace,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+    template<class T>
+    using device_vec_view_type = vec_view_type<T, cusolver_memory_space>;
+
+    // matrix_type & device_matrix_type
+
     template<class T, class MemorySpace>
     using matrix_type = Kokkos::View<T**, Kokkos::LayoutLeft, MemorySpace>;
 
     template<class T>
     using device_matrix_type = matrix_type<T, cusolver_memory_space>;
 
-    template<class T>
-    void
-    reallocDeviceMatrixIfNeeded (device_matrix_type<T>& mat,
-                                 const char label[],
-                                 const size_t minNumRows,
-                                 const size_t minNumCols)
-    {
-      using Kokkos::view_alloc;
-      using Kokkos::WithoutInitializing;
-
-      if (size_t (mat.extent (0)) < minNumRows ||
-          size_t (mat.extent (1)) < minNumCols) {
-        mat = device_matrix_type<T> ();
-        auto alloc =
-          view_alloc (std::string (label), WithoutInitializing);
-        mat = device_matrix_type<T> (alloc, minNumRows, minNumCols);
-      }
-    }
+    // mat_view_type, device_mat_view_type, & host_mat_view_type
 
     template<class T, class MemorySpace>
     using mat_view_type =
@@ -105,6 +127,8 @@ namespace TSQR {
 
     template<class T>
     using host_mat_view_type = mat_view_type<T, Kokkos::HostSpace>;
+
+    // get_mat_view, get_host_mat_view, & get_device_mat_view
 
     template<class Scalar, class MemorySpace>
     static mat_view_type<kokkos_view_value_type<Scalar>, MemorySpace>
@@ -138,6 +162,16 @@ namespace TSQR {
       return get_mat_view<Scalar, Kokkos::HostSpace> (nrows, ncols, A, lda);
     }
 
+    template<class Scalar, class Ordinal>
+    static host_mat_view_type<kokkos_view_value_type<Scalar>>
+    get_host_mat_view (const MatView<Ordinal, Scalar>& A_host)
+    {
+      const size_t nrows (A_host.extent (0));
+      const size_t ncols (A_host.extent (1));
+      const size_t lda (A_host.stride (1));
+      return get_host_mat_view (nrows, ncols, A_host.data (), lda);
+    }
+
     template<class Scalar>
     static device_mat_view_type<kokkos_view_value_type<Scalar>>
     get_device_mat_view (const size_t nrows,
@@ -148,35 +182,40 @@ namespace TSQR {
       return get_mat_view<Scalar, cusolver_memory_space> (nrows, ncols, A, lda);
     }
 
-    template<class T, class MemorySpace>
-    using vector_type = Kokkos::View<T*, MemorySpace>;
-
+    /// \brief Given rank-1 backing storage, return a device matrix
+    ///   view with the given dimensions (numRows by numCols), that
+    ///   has contiguous storage.  Reallocate storage if needed.
+    ///
+    /// "Contiguous storage" means that if A is the matrix view
+    /// result, then A.stride(1) == A.extent(0).
     template<class T>
-    using device_vector_type = vector_type<T, cusolver_memory_space>;
-
-    template<class T>
-    void
-    reallocDeviceVectorIfNeeded (device_vector_type<T>& vec,
-                                 const char label[],
-                                 const size_t minSize)
+    device_mat_view_type<T>
+    get_contiguous_device_mat_view (device_vector_type<T>& storage,
+                                    const size_t numRows,
+                                    const size_t numCols)
     {
-      using Kokkos::view_alloc;
-      using Kokkos::WithoutInitializing;
+      const size_t currentStorageSize (storage.extent (0));
+      const size_t requiredStorageSize = numRows * numCols;
+      if (currentStorageSize < requiredStorageSize) {
+        // It costs about as much to allocate 8B on device as 800B.
+        constexpr size_t minStorageSize = 100;
+        const size_t newStorageSize =
+          std::max (minStorageSize, requiredStorageSize);
 
-      if (size_t (vec.size ()) < minSize) {
-        vec = device_vector_type<T> ();
-        auto alloc = view_alloc (std::string (label), WithoutInitializing);
-        vec = device_vector_type<T> (alloc, minSize);
+        // Free it first, so that two allocations won't coexist.
+        storage = device_vector_type<T> ();
+        using Kokkos::view_alloc;
+        using Kokkos::WithoutInitializing;
+        const char label[] = "TSQR::CuSolverNodeTsqr matrix storage";
+        storage = device_vector_type<T>
+          (view_alloc (std::string (label), WithoutInitializing),
+           newStorageSize);
       }
+      return device_mat_view_type<T> (storage.data (),
+                                      numRows, numCols);
     }
 
-    template<class T, class MemorySpace>
-    using vec_view_type =
-      Kokkos::View<T*, MemorySpace,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-
-    template<class T>
-    using device_vec_view_type = vec_view_type<T, cusolver_memory_space>;
+    // info_type & const_info_type
 
     using info_type = Kokkos::View<int, cusolver_memory_space>;
     using const_info_type = Kokkos::View<const int, cusolver_memory_space>;
@@ -378,14 +417,17 @@ namespace TSQR {
     Impl::device_mat_view_type<kokkos_value_type>
     get_Q_copy (const LocalOrdinal nrows,
                 const LocalOrdinal ncols,
-                const Scalar Q[],
+                const Scalar Q[], // DEVICE MEMORY
                 const LocalOrdinal ldq) const
     {
-      using Impl::reallocDeviceMatrixIfNeeded;
-      reallocDeviceMatrixIfNeeded (Q_copy_, "Q_copy", nrows, ncols);
+      using Impl::get_contiguous_device_mat_view;
+      auto Q_copy =
+        get_contiguous_device_mat_view (matrixStorage_, nrows, ncols);
       auto Q_view = Impl::get_device_mat_view (nrows, ncols, Q, ldq);
-      Kokkos::deep_copy (Q_copy_, Q_view);
-      return Impl::device_mat_view_type<kokkos_value_type> (Q_copy_);
+      // NOTE (mfh 17 Dec 2019) We're copying device to device, so the
+      // Kokkos::deep_copy noncontiguity problem does not apply.
+      Kokkos::deep_copy (Q_copy, Q_view);
+      return Q_copy;
     }
 
     Impl::device_mat_view_type<kokkos_value_type>
@@ -393,15 +435,20 @@ namespace TSQR {
                 const Scalar B[], // HOST MEMORY
                 const LocalOrdinal ldb) const
     {
-      using Impl::reallocDeviceMatrixIfNeeded;
-      reallocDeviceMatrixIfNeeded (B_copy_, "B_copy",
-                                   nrows_and_ncols,
-                                   nrows_and_ncols);
-      using Impl::get_host_mat_view;
-      auto B_view = get_host_mat_view (nrows_and_ncols,
-                                       nrows_and_ncols, B, ldb);
-      Kokkos::deep_copy (B_copy_, B_view);
-      return Impl::device_mat_view_type<kokkos_value_type> (B_copy_);
+      auto B_copy =
+        Impl::get_contiguous_device_mat_view (matrixStorage_,
+                                              nrows_and_ncols,
+                                              nrows_and_ncols);
+      // Use copy_from_host, which knows how to avoid the
+      // Kokkos::deep_copy noncontiguity problem.
+      Scalar* B_copy_raw = reinterpret_cast<Scalar*> (B_copy.data ());
+      const LocalOrdinal B_copy_stride (B_copy.extent (1));
+      MatView<LocalOrdinal, Scalar> B_copy_matview
+        (nrows_and_ncols, nrows_and_ncols, B_copy_raw, B_copy_stride);
+      MatView<LocalOrdinal, const Scalar> B_matview
+        (nrows_and_ncols, nrows_and_ncols, B, ldb);
+      this->copy_from_host (B_copy_matview, B_matview);
+      return B_copy;
     }
 
     void
@@ -453,12 +500,13 @@ namespace TSQR {
       try {
         Kokkos::deep_copy (R_view, A_view_top);
       }
-      catch (std::exception& e) {
+      catch (std::exception& /* e */) {
         // Packed device version of R.
-        using Impl::reallocDeviceMatrixIfNeeded;
-        reallocDeviceMatrixIfNeeded (R_copy_, "R_copy", ncols, ncols);
-        Kokkos::deep_copy (R_copy_, A_view_top);
-        Kokkos::deep_copy (R_view, R_copy_);
+        using Impl::get_contiguous_device_mat_view;
+        auto R_copy = get_contiguous_device_mat_view (matrixStorage_,
+                                                      ncols, ncols);
+        Kokkos::deep_copy (R_copy, A_view_top);
+        Kokkos::deep_copy (R_view, R_copy);
       }
 
       for (LO j = 0; j < ncols; ++j) {
@@ -607,6 +655,97 @@ namespace TSQR {
                              work_raw, lwork);
     }
 
+    /// \brief Copy from a host matrix, to "native" NodeTsqr device
+    ///   storage.
+    virtual void
+    copy_from_host (const MatView<LocalOrdinal, Scalar>& C_dev,
+                    const MatView<LocalOrdinal, const Scalar>& C_host) const
+    {
+      using Impl::get_device_mat_view;
+      using Impl::get_host_mat_view;
+
+      const size_t nrows (C_dev.extent (0));
+      const size_t ncols (C_dev.extent (1));
+      TEUCHOS_ASSERT( nrows == size_t (C_host.extent (0)) );
+      TEUCHOS_ASSERT( ncols == size_t (C_host.extent (1)) );
+
+      auto C_dev_view = Impl::get_device_mat_view<Scalar>
+        (nrows, ncols, C_dev.data (), C_dev.stride (1));
+      auto C_host_view = Impl::get_host_mat_view<const Scalar>
+        (nrows, ncols, C_host.data (), C_host.stride (1));
+
+      // NOTE (mfh 17 Dec 2019) If C_host is contiguous, that is, if
+      // C_host.stride(1) == C_host.extent(0), then we can
+      // Kokkos::deep_copy directly.  Otherwise, Kokkos::deep_copy
+      // will throw an exception, claiming "no available copy
+      // mechanism."  This is because cudaMemcpy won't work, so Kokkos
+      // must execute a kernel to copy the data.  (Kokkos doesn't seem
+      // to exploit any of the various 2-D or 3-D array copying
+      // functions that CUDA provides.)  That kernel must be able to
+      // access both Views.  We do a try-catch here just in case
+      // Kokkos::deep_copy ever starts working with noncontiguous
+      // Views.
+      try {
+        Kokkos::deep_copy (C_dev_view, C_host_view);
+      }
+      catch (std::exception& /* e */) {
+        // We need to make a contiguous copy of host storage.  Host
+        // allocations are cheap compared to device allocations, so
+        // there's no need to cache the host allocation.
+        //
+        // NOTE (mfh 17 Dec 2019) The following code generates a
+        // warning in CUDA builds: "non-constant array new length must
+        // be specified without parentheses around the type-id
+        // [-Wvla]".  I can't fix that.  I tried replacing the curly
+        // braces with parenthesis, and I also tried obfuscating by
+        // separating the "new" from the unique_ptr construction, but
+        // neither helped.  std::make_unique might help too, but it
+        // doesn't exist until C++14 and we're still using C++11.
+        std::unique_ptr<Scalar[]> hostStorage
+          {new Scalar [nrows * ncols]};
+        auto C_host_copy = Impl::get_host_mat_view<Scalar>
+          (nrows, ncols, hostStorage.get (), nrows);
+        Kokkos::deep_copy (C_host_copy, C_host_view);
+        Kokkos::deep_copy (C_dev_view, C_host_copy);
+      }
+    }
+
+    /// \brief Copy from "native" NodeTsqr device storage, to a packed
+    ///   host matrix.
+    Matrix<LocalOrdinal, Scalar>
+    copy_to_host
+      (const MatView<LocalOrdinal, Scalar>& C) const override
+    {
+      using LO = LocalOrdinal;
+      const LO nrows (C.extent (0));
+      const LO ncols (C.extent (1));
+      const LO ldc (C.stride (1));
+      auto C_dev =
+        Impl::get_device_mat_view<const Scalar> (nrows, ncols,
+                                                 C.data (), ldc);
+      Matrix<LO, Scalar> C_copy (nrows, ncols);
+      auto C_host = Impl::get_host_mat_view (C_copy.view ());
+
+      // NOTE (mfh 17 Dec 2019) Directly calling
+      // Kokkos::deep_copy(C_host, C_dev) may not necessarily work,
+      // since C_dev need not be contiguous.  In that case, Kokkos
+      // would throw an exception, claiming "no available copy
+      // mechanism."  The work-around is to create a packed device
+      // View, copy C_dev into it, then copy the packed View to
+      // C_host.
+      try {
+        Kokkos::deep_copy (C_host, C_dev);
+      }
+      catch (std::exception& /* e */) {
+        auto C_dev_copy =
+          Impl::get_contiguous_device_mat_view (matrixStorage_,
+                                                nrows, ncols);
+        Kokkos::deep_copy (C_dev_copy, C_dev);
+        Kokkos::deep_copy (C_host, C_dev_copy);
+      }
+      return C_copy;
+    }
+
     /// \brief Fill C (DEVICE MEMORY) with the first C.extent(1)
     ///   columns of the identity matrix.  Assume that C has already
     ///   been pre-filled with zeros.
@@ -715,9 +854,7 @@ namespace TSQR {
     mutable tau_type tau_;
     mutable work_type work_;
     mutable Impl::info_type info_;
-    mutable Impl::device_matrix_type<kokkos_value_type> R_copy_;
-    mutable Impl::device_matrix_type<kokkos_value_type> Q_copy_;
-    mutable Impl::device_matrix_type<kokkos_value_type> B_copy_;
+    mutable Impl::device_vector_type<kokkos_value_type> matrixStorage_;
   };
 
 } // namespace TSQR
