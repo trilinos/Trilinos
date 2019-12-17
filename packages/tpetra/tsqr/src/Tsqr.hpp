@@ -289,6 +289,15 @@ namespace TSQR {
         mat_view_type Q_top (numCols, numCols, Q_top_block.data(),
                              Q_top_block.stride(1));
         mat_view_type R_view (numCols, numCols, R, LDR);
+
+        // FIXME (mfh 16 Dec 2019) DistTsqr doesn't know what to do
+        // with device memory, so we will need to copy the top block
+        // of Q if applicable.  The same concerns as in
+        // CuSolverNodeTsqr::extract_R, about Kokkos::deep_copy not
+        // wanting to copy from noncontiguous device memory to
+        // contiguous host memory, apply here.  It would make sense
+        // for NodeTsqr to expose a method for doing this top-block
+        // copy (say "copy_from_top_block").
         distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
       // Apply the local part of the Q factor to the result of the
@@ -445,6 +454,22 @@ namespace TSQR {
       mat_view_type C_top_view (ncols_C, ncols_C, C_view_top_block.data(),
                                 C_view_top_block.stride(1));
 
+      // FIXME (mfh 16 Dec 2019) DistTsqr doesn't know what to do with
+      // device memory, so we will need to copy the top block of C if
+      // applicable.
+      //
+      // That "matrix_type C_top" is the temporary copy of C_top_view.
+      // C_top_view here is the "top block of C" that might live in
+      // device memory.
+      //
+      // The same concern applies here as in
+      // CuSolverNodeTsqr::extract_R, about Kokkos::deep_copy not
+      // wanting to copy from noncontiguous device memory to
+      // contiguous host memory.  It would make sense for NodeTsqr to
+      // expose a method for doing this top-block copy
+      // ("copy_from_top_block").  We already do something like that
+      // below with C_top (which is a deep_copy of C_top_view).
+
       if (! transposed) {
         // C_top (small compact storage) gets a deep copy of the top
         // ncols_C by ncols_C block of C_local.
@@ -482,6 +507,9 @@ namespace TSQR {
 
         // Copy the result from C_top back into the top ncols_C by
         // ncols_C block of C_local.
+        //
+        // FIXME (mfh 16 Dec 2019) This calls for
+        // NodeTsqr::copy_to_top_block.
         deep_copy (C_top_view, C_top);
       }
     }
@@ -538,6 +566,11 @@ namespace TSQR {
         // View of this node's local part of the matrix Q_out.
         mat_view_type Q_out_view (nrows_local, ncols_Q_out,
                                   Q_local_out, ldq_local_out);
+
+        // FIXME (mfh 17 Dec 2019) Q_out is device memory, so we
+        // shouldn't write directly to it.  NodeTsqr should expose
+        // something like fill_with_identity_columns.  Note that we've
+        // already filled Q_out with zeros above.
 
         // View of the topmost cache block of Q_out.  It is
         // guaranteed to have at least as many rows as columns.
@@ -671,15 +704,15 @@ namespace TSQR {
       // computing environment).  For now, we just do this computation
       // redundantly, and hope that all the returned rank values are
       // the same.
-      matrix_type U (ncols, ncols, STS::zero());
+      matrix_type U (ncols, ncols, Scalar {});
       const ordinal_type rank =
-        reveal_R_rank (ncols, R, ldr, U.data(), U.stride(1), tol);
+        reveal_R_rank (ncols, R, ldr, U.data (), U.stride (1), tol);
       if (rank < ncols) {
         // If R is not full rank: reveal_R_rank() already computed
         // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
         // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
         // := Q \cdot U\f$, respecting cache blocks of Q.
-        Q_times_B (nrows, ncols, Q, ldq, U.data(), U.stride(1),
+        Q_times_B (nrows, ncols, Q, ldq, U.data (), U.stride (1),
                    contiguousCacheBlocks);
       }
       return rank;
