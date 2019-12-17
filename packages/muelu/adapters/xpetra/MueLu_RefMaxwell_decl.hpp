@@ -330,17 +330,6 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-    template <class NewNode>
-    Teuchos::RCP< RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
-    MUELU_DEPRECATED
-    clone (const RCP<NewNode>& new_node) const {
-      return Teuchos::rcp (new RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode>
-                           (HierarchyH_->template clone<NewNode> (new_node),
-                            Hierarchy22_->template clone<NewNode> (new_node)));
-    }
-#endif
-
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
     //! Compute a residual R = B - (*this) * X

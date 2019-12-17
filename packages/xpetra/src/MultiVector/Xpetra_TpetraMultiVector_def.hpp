@@ -350,19 +350,7 @@ namespace Xpetra {
     this->getTpetra_MultiVector()->replaceMap(toTpetra(map));
   }
   
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template<class Node2>
-  RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  XPETRA_DEPRECATED 
-  TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
-  clone(const RCP<Node2> &node2) const {
-    XPETRA_MONITOR("TpetraMultiVector::clone");
-    return RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(vec_->clone(node2)));
-  }
-#endif
-
-
-  //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector objecT
+//! TpetraMultiVector constructor to wrap a Tpetra::MultiVector objecT
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
   TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : vec_(vec) { } //TODO removed const
@@ -664,11 +652,7 @@ namespace Xpetra {
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) { }
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
-#endif
-    //@}
+//@}
 
     //! @name Xpetra specific
     //@{
@@ -939,11 +923,7 @@ namespace Xpetra {
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) { }
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
-#endif
-    //@}
+//@}
 
     //! @name Xpetra specific
     //@{

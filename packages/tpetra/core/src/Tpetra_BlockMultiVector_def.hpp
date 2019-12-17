@@ -482,11 +482,7 @@ checkSizes (const Tpetra::SrcDistObject& src)
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
 copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 (const SrcDistObject& src,
  const size_t numSameIDs,
  const Kokkos::DualView<const local_ordinal_type*,
@@ -502,11 +498,7 @@ copyAndPermute
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
 packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 (const SrcDistObject& src,
  const Kokkos::DualView<const local_ordinal_type*,
  buffer_device_type>& exportLIDs,
@@ -525,11 +517,7 @@ packAndPrepare
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
 unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 (const Kokkos::DualView<const local_ordinal_type*,
  buffer_device_type>& importLIDs,
  Kokkos::DualView<packet_type*,

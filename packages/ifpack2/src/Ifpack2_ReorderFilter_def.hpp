@@ -95,15 +95,6 @@ Teuchos::RCP<const Teuchos::Comm<int> > ReorderFilter<MatrixType>::getComm() con
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-TPETRA_DEPRECATED
-Teuchos::RCP<typename ReorderFilter<MatrixType>::node_type>
-ReorderFilter<MatrixType>::getNode () const
-{
-  return Teuchos::null;
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class MatrixType>

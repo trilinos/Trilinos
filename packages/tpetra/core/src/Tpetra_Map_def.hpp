@@ -154,19 +154,6 @@ namespace Tpetra {
     Tpetra::Details::initializeKokkos ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  TPETRA_DEPRECATED
-  Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (const global_size_t numGlobalElements,
-       const global_ordinal_type indexBase,
-       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-       const LocalGlobal lOrG,
-       const Teuchos::RCP<Node> &/* node */) :
-    Map<LocalOrdinal,GlobalOrdinal,Node>::Map(numGlobalElements, indexBase,
-                                              comm, lOrG)
- {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -320,20 +307,6 @@ namespace Tpetra {
     //setupDirectory ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  TPETRA_DEPRECATED
-  Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (const global_size_t numGlobalElements,
-       const size_t numLocalElements,
-       const global_ordinal_type indexBase,
-       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-       const Teuchos::RCP<Node> &/* node */) :
-    Map<LocalOrdinal,GlobalOrdinal,Node>::Map(numGlobalElements,
-                                              numLocalElements,
-                                              indexBase, comm)
-  {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -832,18 +805,6 @@ namespace Tpetra {
     initWithNonownedHostIndexList (numGlobalElements, inds, indexBase, comm);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (const global_size_t numGlobalElements,
-       const Teuchos::ArrayView<const GlobalOrdinal>& entryList,
-       const GlobalOrdinal indexBase,
-       const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-       const Teuchos::RCP<Node>& /* node */) :
-    Map<LocalOrdinal,GlobalOrdinal,Node>::Map(numGlobalElements, entryList,
-                                              indexBase, comm)
-  {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -2103,16 +2064,6 @@ namespace Tpetra {
     return comm_;
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  TPETRA_DEPRECATED
-  Teuchos::RCP<Node>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::getNode () const {
-    // Node instances don't do anything any more, but sometimes it
-    // helps for them to be nonnull.
-    return Teuchos::rcp (new Node);
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
   bool Map<LocalOrdinal,GlobalOrdinal,Node>::checkIsDist() const {
@@ -2175,19 +2126,6 @@ Tpetra::createUniformContigMap (const global_size_t numElements,
   return createUniformContigMapWithNode<LO, GO, NT> (numElements, comm);
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createUniformContigMapWithNode (const global_size_t numElements,
-                                        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                        const Teuchos::RCP<Node>& /* node */
-)
-{
-  return Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>
-                 (numElements, comm);
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -2202,19 +2140,6 @@ Tpetra::createUniformContigMapWithNode (const global_size_t numElements,
   return rcp (new map_type (numElements, indexBase, comm, GloballyDistributed));
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createLocalMapWithNode (const size_t numElements,
-                                const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                const Teuchos::RCP<Node>& /* node */
-)
-{
-  return Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>
-                 (numElements, comm);
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -2231,20 +2156,6 @@ Tpetra::createLocalMapWithNode (const size_t numElements,
   return rcp (new map_type (globalNumElts, indexBase, comm, LocallyReplicated));
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createContigMapWithNode (const Tpetra::global_size_t numElements,
-                                 const size_t localNumElements,
-                                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                 const Teuchos::RCP<Node>& /* node */
-)
-{
-  return Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>
-                 (numElements, localNumElements, comm);
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -2287,19 +2198,6 @@ Tpetra::createNonContigMap(const Teuchos::ArrayView<const GlobalOrdinal>& elemen
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
-                                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                    const Teuchos::RCP<Node>& /* node */
-)
-{
-  return Tpetra::createNonContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>
-                 (elementList, comm);
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -2319,41 +2217,6 @@ Tpetra::createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal
   return rcp (new map_type (INV, elementList, indexBase, comm));
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createWeightedContigMapWithNode (const int myWeight,
-                                         const Tpetra::global_size_t numElements,
-                                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                         const Teuchos::RCP<Node>& /* node */
-)
-{
-  Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
-  int sumOfWeights, elemsLeft, localNumElements;
-  const int numImages = comm->getSize();
-  const int myImageID = comm->getRank();
-  Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM,myWeight,Teuchos::outArg(sumOfWeights));
-  const double myShare = ((double)myWeight) / ((double)sumOfWeights);
-  localNumElements = (int)std::floor( myShare * ((double)numElements) );
-  // std::cout << "numElements: " << numElements << "  myWeight: " << myWeight << "  sumOfWeights: " << sumOfWeights << "  myShare: " << myShare << std::endl;
-  Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM,localNumElements,Teuchos::outArg(elemsLeft));
-  elemsLeft = numElements - elemsLeft;
-  // std::cout << "(before) localNumElements: " << localNumElements << "  elemsLeft: " << elemsLeft << std::endl;
-  // i think this is true. just test it for now.
-  TEUCHOS_TEST_FOR_EXCEPT(elemsLeft < -numImages || numImages < elemsLeft);
-  if (elemsLeft < 0) {
-    // last elemsLeft nodes lose an element
-    if (myImageID >= numImages-elemsLeft) --localNumElements;
-  }
-  else if (elemsLeft > 0) {
-    // first elemsLeft nodes gain an element
-    if (myImageID < elemsLeft) ++localNumElements;
-  }
-  // std::cout << "(after) localNumElements: " << localNumElements << std::endl;
-  return createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements,localNumElements,comm);
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LO, class GO, class NT>
@@ -2534,64 +2397,6 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
 //
 
 //! Explicit instantiation macro supporting the Map class. Instantiates the class and the non-member constructors.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-#define TPETRA_MAP_INSTANT(LO,GO,NODE) \
-  \
-  template class Map< LO , GO , NODE >; \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createLocalMapWithNode<LO,GO,NODE> (const size_t numElements, \
-                                      const Teuchos::RCP< const Teuchos::Comm< int > >& comm); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createContigMapWithNode<LO,GO,NODE> (const global_size_t numElements, \
-                                       const size_t localNumElements,   \
-                                       const Teuchos::RCP< const Teuchos::Comm< int > >& comm); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createNonContigMapWithNode(const Teuchos::ArrayView<const GO> &elementList, \
-                             const Teuchos::RCP<const Teuchos::Comm<int> > &comm); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createUniformContigMapWithNode<LO,GO,NODE> (const global_size_t numElements, \
-                                              const Teuchos::RCP< const Teuchos::Comm< int > >& comm); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createLocalMapWithNode<LO,GO,NODE> (const size_t numElements, \
-                                      const Teuchos::RCP< const Teuchos::Comm< int > >& comm, \
-                                      const Teuchos::RCP< NODE >& node); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createContigMapWithNode<LO,GO,NODE> (const global_size_t numElements, \
-                                       const size_t localNumElements,   \
-                                       const Teuchos::RCP< const Teuchos::Comm< int > >& comm, \
-                                       const Teuchos::RCP< NODE > &node); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createNonContigMapWithNode(const Teuchos::ArrayView<const GO> &elementList, \
-                             const Teuchos::RCP<const Teuchos::Comm<int> > &comm, \
-                             const Teuchos::RCP<NODE> &node); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createUniformContigMapWithNode<LO,GO,NODE> (const global_size_t numElements, \
-                                              const Teuchos::RCP< const Teuchos::Comm< int > >& comm, \
-                                              const Teuchos::RCP< NODE > &node); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,NODE> > \
-  createWeightedContigMapWithNode<LO,GO,NODE> (const int thisNodeWeight, \
-                                               const global_size_t numElements, \
-                                               const Teuchos::RCP< const Teuchos::Comm< int > >& comm, \
-                                               const Teuchos::RCP< NODE >& node); \
-  \
-  template Teuchos::RCP<const Map<LO,GO,NODE> > \
-  createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> >& M); \
-  \
-  template Teuchos::RCP<const Map<LO,GO,NODE> > \
-  createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> >& M, \
-                  const Tpetra::Details::TieBreak<LO,GO>& tie_break); \
-
-#else // !TPETRA_ENABLE_DEPRECATED_CODE
 
 #define TPETRA_MAP_INSTANT(LO,GO,NODE) \
   \
@@ -2621,7 +2426,6 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> >& M, \
                   const Tpetra::Details::TieBreak<LO,GO>& tie_break); \
 
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 //! Explicit instantiation macro supporting the Map class, on the default node for specified ordinals.
 #define TPETRA_MAP_INSTANT_DEFAULTNODE(LO,GO) \

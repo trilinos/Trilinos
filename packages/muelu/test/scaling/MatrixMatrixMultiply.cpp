@@ -285,7 +285,7 @@ namespace MueLuTests {
     LO realMaxEntriesPerRow = maxEntriesPerRow;
     if (maxEntriesPerRow > numGlobalRows)
       realMaxEntriesPerRow = numGlobalRows;
-    RCP<Matrix> A = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, eprData, Xpetra::StaticProfile));
+    RCP<Matrix> A = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, eprData));
 
     Array<Scalar> vals(realMaxEntriesPerRow);
     //stick in ones for values
