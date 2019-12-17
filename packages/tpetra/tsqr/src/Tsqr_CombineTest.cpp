@@ -59,6 +59,19 @@
 namespace TSQR {
   namespace Test {
 
+    template<class Ordinal, class Scalar>
+    void
+    fill_with_identity_columns (const MatView<Ordinal, Scalar>& A)
+    {
+      deep_copy (A, Scalar {});
+      const Ordinal numCols = A.extent (1);
+      // FIXME (mfh 08 Dec 2019) Eventually stop writing to Matrix or
+      // MatView entries on host, for eventual GPU-ization.
+      for (Ordinal j = 0; j < numCols; ++j) {
+        A(j,j) = Scalar (1.0);
+      }
+    }
+
     template<class Ordinal, class MagnitudeType, class NormalGenType>
     void
     generateSingularValues (NormalGenType& magGen,

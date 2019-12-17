@@ -688,7 +688,8 @@ namespace TSQR {
       // Don't just call fill_with_identity_columns(C_view), because
       // that doesn't respect contigCacheBlocks.
       auto C_top = this->top_block (C_view, contigCacheBlocks);
-      fill_with_identity_columns (C_top);
+      deep_copy (C_top, Scalar {});
+      this->fill_with_identity_columns (C_top);
       apply (ApplyType::NoTranspose,
              nrows, ncols_Q, Q, ldq, factor_output,
              ncols_C, C, ldc, contigCacheBlocks);

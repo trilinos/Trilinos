@@ -337,12 +337,13 @@ namespace TSQR {
          "first call init() with a valid MessengerBase instance.");
       MatView<ordinal_type, scalar_type> Q_mine_view
         (ncols_Q, ncols_Q, Q_mine, ldq_mine);
+      deep_copy (Q_mine_view, scalar_type {});
+
       const int myRank = messenger_->rank ();
       if (myRank == 0) {
-        fill_with_identity_columns (Q_mine_view);
-      }
-      else {
-        deep_copy (Q_mine_view, scalar_type {});
+        for (ordinal_type j = 0; j < ncols_Q; ++j) {
+          Q_mine_view(j,j) = scalar_type (1.0);
+        }
       }
       apply (ApplyType::NoTranspose, ncols_Q, ncols_Q,
              Q_mine, ldq_mine, factor_output);

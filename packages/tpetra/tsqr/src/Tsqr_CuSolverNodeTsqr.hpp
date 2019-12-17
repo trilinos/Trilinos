@@ -211,11 +211,11 @@ namespace TSQR {
     };
 
     template<class ScalarType, class IndexType>
-    class FillWithIdentityColumns {
+    class SetDiagonalEntriesToOne {
       static_assert (! std::is_const<ScalarType>::value,
-        "FillWithIdentityColumns requires a View of nonconst.");
+        "SetDiagonalEntriesToOne requires a View of nonconst.");
     public:
-      FillWithIdentityColumns
+      SetDiagonalEntriesToOne
         (const device_mat_view_type<ScalarType>& A) : A_ (A) {}
       KOKKOS_INLINE_FUNCTION void
       operator() (const IndexType j) const {
@@ -227,19 +227,19 @@ namespace TSQR {
 
     template<class ScalarType>
     void
-    fill_with_identity_columns
+    set_diagonal_entries_to_one
       (const device_mat_view_type<ScalarType>& A)
     {
       static_assert (! std::is_const<ScalarType>::value,
-        "fill_with_identity_columns requires a View of nonconst.");
+        "set_diagonal_entries_to_one requires a View of nonconst.");
       using LO =
         typename std::make_signed<decltype (A.extent (1)) >::type;
       const LO ncols = std::min (A.extent (0), A.extent (1));
       using Kokkos::RangePolicy;
       RangePolicy<cusolver_execution_space, LO> range (0, ncols);
       Kokkos::parallel_for
-        ("fill_with_identity_columns", range,
-         FillWithIdentityColumns<ScalarType, LO> (A));
+        ("set_diagonal_entries_to_one", range,
+         SetDiagonalEntriesToOne<ScalarType, LO> (A));
     }
 
   } // namespace Impl
@@ -617,7 +617,7 @@ namespace TSQR {
       auto C_view =
         Impl::get_device_mat_view (C.extent (0), C.extent (1),
                                    C.data (), C.stride (1));
-      Impl::fill_with_identity_columns (C_view);
+      Impl::set_diagonal_entries_to_one (C_view);
     }
 
     void
@@ -635,7 +635,7 @@ namespace TSQR {
       auto C_view = get_device_mat_view (nrows, ncols_C, C, ldc);
       using IST = Impl::non_const_kokkos_value_type<Scalar>;
       deep_copy (C_view, IST {});
-      Impl::fill_with_identity_columns (C_view);
+      Impl::set_diagonal_entries_to_one (C_view);
       apply (ApplyType::NoTranspose,
              nrows, ncols_Q, Q, ldq, factor_output,
              ncols_C, C, ldc, contigCacheBlocks);
