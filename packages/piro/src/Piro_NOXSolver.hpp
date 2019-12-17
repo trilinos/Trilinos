@@ -75,6 +75,10 @@ class NOXSolver
 
   Teuchos::RCP<Thyra::NOXNonlinearSolver> getSolver() {return solver;}
 
+  Teuchos::RCP<ObserverBase<Scalar> > getObserver() {return observer;}
+
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > getSubModel() {return model;}
+
   private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{

@@ -80,8 +80,8 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
     out(Teuchos::VerboseObjectBase::getDefaultOStream()),
     model(in_model_),
     writeOnlyConvergedSol(appParams_->get("Write Only Converged Solution", true)),
-    current_iteration(-1),
-    solveState(true)
+    solveState(true),
+    current_iteration(-1)
     {
   using Teuchos::RCP;
 
@@ -165,7 +165,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
               if(Teuchos::nonnull(this->observer))
                 this->observer->parameterChanged(paramNames[0]);
             }
-            optimizationParams.template set<bool>("Optimization Variables Changed", false);
+            optimizationParams.set("Optimization Variables Changed", false);
           }
         }
       }
@@ -191,7 +191,13 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     const RCP<const Thyra::VectorBase<Scalar> > modelNominalState =
         this->getModel().getNominalValues().get_x();
 
-    const RCP<Thyra::VectorBase<Scalar> > initial_guess = modelNominalState->clone_v();
+
+    RCP<Thyra::VectorBase<Scalar> > initial_guess;
+    if(Teuchos::nonnull(inArgs.get_x())) { //used in optimization
+      initial_guess = inArgs.get_x()->clone_v();
+    } else {
+      initial_guess = modelNominalState->clone_v();
+    }
 
     solve_status = solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);
 
@@ -207,8 +213,8 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     if(appParams->isSublist("Analysis")){
       Teuchos::ParameterList& analysisParams = appParams->sublist("Analysis");
       if(analysisParams.isSublist("Optimization Status")) {
-        analysisParams.sublist("Optimization Status").set<bool>("State Solve Converged", solve_status.solveStatus==Thyra::SOLVE_STATUS_CONVERGED);
-        analysisParams.sublist("Optimization Status").set<bool>("Compute State", false);
+        analysisParams.sublist("Optimization Status").set("State Solve Converged", solve_status.solveStatus==Thyra::SOLVE_STATUS_CONVERGED);
+        analysisParams.sublist("Optimization Status").set("Compute State", false);
       }
     }
 
@@ -547,7 +553,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
             auto xbar = createMembers(dgdx->range(), num_cols);
             {
-              const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Piro::NOXSolver::evalModelImpl::calc xbar")));
+              Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer("Piro::NOXSolver::evalModelImpl::calc xbar"));
               xbar->assign(0);
               Thyra::solve(
                   *jacobian,
@@ -689,8 +695,8 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                       else {
                         Thyra::DetachedMultiVectorView<Scalar> xbar_view(xbar);
                         Thyra::DetachedMultiVectorView<Scalar> dfdp_view(dfdp);
-                        for (int ip=0; ip<dgdp_out_view.numSubCols(); ip++)
-                          for (int ig=0; ig<dgdp_out_view.subDim(); ig++)
+                        for (int ip=0; ip<dgdp_out_view.subDim(); ip++)
+                          for (int ig=0; ig<dgdp_out_view.numSubCols(); ig++)
                             for (int ix=0; ix<xbar_view.subDim(); ix++)
                               dgdp_out_view(ig,ip) += xbar_view(ig,ix)*dfdp_view(ix,ip);
                       }

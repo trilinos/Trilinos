@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
       Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(&appParams));
 
       Teuchos::ParameterList piroParams = appParams.sublist("Piro");
-      Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
+      Teuchos::ParameterList& analysisParams = piroParams.sublist("Analysis");
 
 #ifdef HAVE_PIRO_NOX
       solverFactory.setSource<NOX::Epetra::Observer>(
