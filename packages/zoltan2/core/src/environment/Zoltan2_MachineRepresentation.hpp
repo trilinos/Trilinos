@@ -60,7 +60,9 @@ public:
   #endif
     
 #else
-  #if defined(ZOLTAN2_MACHINE_TORUS)
+  #if defined(ZOLTAN2_MACHINE_FATTREE)
+    typedef MachineFatTreeForTesting<pcoord_t, part_t> machine_t;
+  #elif defined(ZOLTAN2_MACHINE_TORUS)
     typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
   #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)
     typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
