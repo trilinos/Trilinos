@@ -219,84 +219,11 @@ namespace TSQR {
                     const LocalOrdinal LDR,
                     const bool forceNonnegativeDiagonal=false)
     {
-      const bool contiguousCacheBlocks = false;
-
-      // Sanity checks for matrix dimensions.
-      if (numRows < numCols) {
-        std::ostringstream os;
-        os << "In Tsqr::factorExplicit: input matrix A has " << numRows
-           << " local rows, and " << numCols << " columns.  The input "
-          "matrix must have at least as many rows on each processor as "
-          "there are columns.";
-        throw std::invalid_argument (os.str ());
-      }
-
-      // Check for quick exit, based on matrix dimensions.
-      if (numCols == 0) {
-        return;
-      }
-
-      // Fill R initially with zeros.
-      {
-        Scalar* R_j = R;
-        for (LocalOrdinal j = 0; j < numCols; ++j) {
-          for (LocalOrdinal i = 0; i < numCols; ++i) {
-            R_j[i] = STS::zero ();
-          }
-          R_j += LDR;
-        }
-      }
-      // Compute the local QR factorization, in place in A, with the R
-      // factor written to R.
-      NodeOutput nodeResults =
-        nodeTsqr_->factor (numRows, numCols, A, LDA, R, LDR,
-                           contiguousCacheBlocks);
-      // Prepare the output matrix Q by filling with zeros.
-      nodeTsqr_->fill_with_zeros (numRows, numCols, Q, LDQ,
-                                  contiguousCacheBlocks);
-      // Wrap the output matrix Q in a "view."
-      mat_view_type Q_rawView (numRows, numCols, Q, LDQ);
-      // Wrap the uppermost cache block of Q.  We will need to extract
-      // its numCols x numCols uppermost block below.  We can't just
-      // extract the numCols x numCols top block from all of Q, in
-      // case Q is arranged using contiguous cache blocks.
-      mat_view_type Q_top_block =
-        nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
-      if (Q_top_block.extent (0) < numCols) {
-        std::ostringstream os;
-        os << "The top block of Q has too few rows.  This means that the "
-           << "the intranode TSQR implementation has a bug in its top_block"
-           << "() method.  The top block should have at least " << numCols
-           << " rows, but instead has only " << Q_top_block.extent (1)
-           << " rows.";
-        throw std::logic_error (os.str ());
-      }
-      // Use the numCols x numCols top block of Q and the local R
-      // factor (computed above) to compute the distributed-memory
-      // part of the QR factorization.
-      {
-        mat_view_type Q_top (numCols, numCols, Q_top_block.data(),
-                            Q_top_block.stride(1));
-        mat_view_type R_view (numCols, numCols, R, LDR);
-        distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
-      }
-      // Apply the local part of the Q factor to the result of the
-      // distributed-memory QR factorization, to get the explicit Q
-      // factor.
-      nodeTsqr_->apply (ApplyType::NoTranspose,
-                        numRows, numCols, A, LDA,
-                        nodeResults, numCols, Q, LDQ,
-                        contiguousCacheBlocks);
-
-      // If necessary, and if the user asked, force the R factor to
-      // have a nonnegative diagonal.
-      if (forceNonnegativeDiagonal &&
-          ! QR_produces_R_factor_with_nonnegative_diagonal ()) {
-        details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
-        mat_view_type Q_mine (numRows, numCols, Q, LDQ);
-        mat_view_type R_mine (numCols, numCols, R, LDR);
-        forcer.force (Q_mine, R_mine);
-      }
+      constexpr bool contiguousCacheBlocks = false;
+      this->factorExplicitRaw (numRows, numCols,
+                               A, LDA, Q, LDQ, R, LDR,
+                               contiguousCacheBlocks,
+                               forceNonnegativeDiagonal);
     }
 
     void
@@ -327,15 +254,9 @@ namespace TSQR {
       }
 
       // Fill R initially with zeros.
-      {
-        Scalar* R_j = R;
-        for (LocalOrdinal j = 0; j < numCols; ++j) {
-          for (LocalOrdinal i = 0; i < numCols; ++i) {
-            R_j[i] = STS::zero ();
-          }
-          R_j += LDR;
-        }
-      }
+      mat_view_type R_view (numCols, numCols, R, LDR);
+      deep_copy (R_view, Scalar {});
+
       // Compute the local QR factorization, in place in A, with the R
       // factor written to R.
       auto nodeResults =
@@ -366,7 +287,7 @@ namespace TSQR {
       // part of the QR factorization.
       {
         mat_view_type Q_top (numCols, numCols, Q_top_block.data(),
-                            Q_top_block.stride(1));
+                             Q_top_block.stride(1));
         mat_view_type R_view (numCols, numCols, R, LDR);
         distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
@@ -382,10 +303,10 @@ namespace TSQR {
       // have a nonnegative diagonal.
       if (forceNonnegativeDiagonal &&
           ! QR_produces_R_factor_with_nonnegative_diagonal ()) {
-        details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
-        mat_view_type Q_mine (numRows, numCols, Q, LDQ);
-        mat_view_type R_mine (numCols, numCols, R, LDR);
-        forcer.force (Q_mine, R_mine);
+        // We ignore contiguousCacheBlocks here, since we're only
+        // looking at the top block of Q.
+        nodeTsqr_->force_nonnegative_diagonal (numRows, numCols,
+                                               Q, LDQ, R, LDR);
       }
     }
 

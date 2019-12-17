@@ -248,6 +248,47 @@ namespace TSQR {
                 const Ordinal ldc,
                 const bool contiguousCacheBlocks) const = 0;
 
+    /// \brief Force the diagonal entries of the R factor to be
+    ///   nonnegative, and change the columns of Q (result of
+    ///   explicit_Q) to match (if needed).
+    virtual void
+    force_nonnegative_diagonal (const Ordinal nrows,
+                                const Ordinal ncols,
+                                Scalar Q[],
+                                const Ordinal ldq,
+                                Scalar R[],
+                                const Ordinal ldr) const
+    {
+      mat_view_type Q_view (nrows, ncols, Q, ldq);
+      mat_view_type R_view (ncols, ncols, R, ldr);
+
+      // The complex-arithmetic specialization does nothing, since
+      // _GEQR{2,F} for complex arithmetic returns an R factor with
+      // nonnegative diagonal already.  However, we need the code to
+      // compile regardless.
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      if (! STS::isComplex) {
+        using mag_type = typename STS::magnitudeType;
+        constexpr mag_type ZERO {};
+
+        for (Ordinal k = 0; k < ncols; ++k) {
+          if (STS::real (R_view(k,k)) < ZERO) {
+            // Scale column k of Q_view.
+            Scalar* const Q_k = &Q_view(0,k);
+            for (Ordinal i = 0; i < nrows; ++i) {
+              Q_k[i] = -Q_k[i];
+            }
+            // Scale row k of R_view.  R_view is upper triangular,
+            // so we only have to scale right of (and including) the
+            // diagonal entry.
+            for (int j = k; j < ncols; ++j) {
+              R_view(k,j) = -R_view(k,j);
+            }
+          }
+        }
+      }
+    }
+
     /// \brief Cache block A_in into A_out.
     ///
     /// \param nrows [in] Number of rows in A_in and A_out.
