@@ -483,9 +483,9 @@ public:
 */
     srand(this->myRank);
 
-    int x = rand() % 11;
-    int y = rand() % 6;
-    int z = rand() % 16;
+    int x = this->myRank * 131 % 11;
+    int y = this->myRank * 131 % 6;
+    int z = this->myRank * 131 % 16;
 
     xyz[0] = x; 
     xyz[1] = y; 
