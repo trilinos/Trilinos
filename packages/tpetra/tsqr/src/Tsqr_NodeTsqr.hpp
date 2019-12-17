@@ -459,15 +459,14 @@ namespace TSQR {
       deep_copy (C_device, C_host);
     }
 
-    /// \brief Fill C with the first C.extent(1) columns of the
-    ///   identity matrix.  Assume that C has already been pre-filled
-    ///   with zeros.
+    //! Set the first C.extent(1) diagonal entries of C to 1.0.
     virtual void
-    fill_with_identity_columns
+    set_diagonal_entries_to_one
       (const MatView<Ordinal, Scalar>& C) const
     {
-      // FIXME (mfh 17 Dec 2019) Need to reimplement in
-      // CuSolverNodeTsqr, since C is device memory there.
+      // NOTE (mfh 17 Dec 2019) Downstream classes must reimplement
+      // this if C is device memory for those classes.  See
+      // wants_device_memory above.
       const Ordinal ncols = C.extent (1);
       for (Ordinal j = 0; j < ncols; ++j) {
         C(j,j) = Scalar (1.0);

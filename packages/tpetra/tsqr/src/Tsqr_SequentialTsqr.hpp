@@ -685,11 +685,11 @@ namespace TSQR {
     {
       mat_view_type C_view (nrows, ncols_C, C, ldc);
       deep_copy (C_view, Scalar {});
-      // Don't just call fill_with_identity_columns(C_view), because
+      // Don't just call set_diagonal_entries_to_one(C_view), because
       // that doesn't respect contigCacheBlocks.
       auto C_top = this->top_block (C_view, contigCacheBlocks);
       deep_copy (C_top, Scalar {});
-      this->fill_with_identity_columns (C_top);
+      this->set_diagonal_entries_to_one (C_top);
       apply (ApplyType::NoTranspose,
              nrows, ncols_Q, Q, ldq, factor_output,
              ncols_C, C, ldc, contigCacheBlocks);

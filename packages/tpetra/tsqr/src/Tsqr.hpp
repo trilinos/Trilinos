@@ -565,7 +565,7 @@ namespace TSQR {
         // to it.  Instead, let NodeTsqr fill it with the first
         // ncols_Q_out columns of the identity matrix.  Note that
         // we've already filled Q_out with zeros above.
-        nodeTsqr_->fill_with_identity_columns (Q_out_top);
+        nodeTsqr_->set_diagonal_entries_to_one (Q_out_top);
       }
       apply ("N", nrows_local,
              ncols_Q_in, Q_local_in, ldq_local_in, factorOutput,

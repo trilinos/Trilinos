@@ -238,7 +238,7 @@ namespace TSQR {
     {
       mat_view_type C_view (nrows, ncols_C, C, ldc);
       deep_copy (C_view, Scalar {});
-      this->fill_with_identity_columns (C_view);
+      this->set_diagonal_entries_to_one (C_view);
       // Apply the Q factor to C, to extract the first ncols_C columns
       // of Q in explicit form.
       apply (ApplyType::NoTranspose,

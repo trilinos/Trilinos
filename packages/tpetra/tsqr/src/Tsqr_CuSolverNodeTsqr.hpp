@@ -611,7 +611,7 @@ namespace TSQR {
     ///   columns of the identity matrix.  Assume that C has already
     ///   been pre-filled with zeros.
     void
-    fill_with_identity_columns
+    set_diagonal_entries_to_one
       (const MatView<LocalOrdinal, Scalar>& C) const override
     {
       auto C_view =
