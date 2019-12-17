@@ -105,8 +105,6 @@ int main(int argc, char *argv[]) {
        case 3: inputFile="input_Analysis_ROL_FullSpace_Tpetra.xml"; break;
        case 4: inputFile="input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml"; break;
        case 5: inputFile="input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml"; break;
-       case 6: inputFile="input_Analysis_OptiPack.xml"; break;
-       case 7: inputFile="input_Analysis_MOOCHO.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -165,7 +163,7 @@ int main(int argc, char *argv[]) {
       RCP<Thyra::VectorBase<double>> p;
       status = Piro::PerformAnalysis(*piro, analysisParams, p);
 
-      if (Teuchos::nonnull(p)) { //p might be null if the packages ROL, Moocho, OptiPack are not enabled
+      if (Teuchos::nonnull(p)) { //p might be null if the package ROL is not enabled
         Thyra::DetachedVectorView<double> p_view(p);
         double p_exact[2] = {1,3};
         double tol = 1e-5;

@@ -295,14 +295,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="MOOCHO">
-        <ParameterList name="Parameter Guess">
-          <Parameter name="Explicit Array" type="string" value="{1.1, 1.1}" />
-        </ParameterList>
-        <ParameterList name="Parameter Lower Bounds">
-          <Parameter name="Explicit Array" type="string" value="{0.0, 0.0}" />
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
   </ParameterList>
 </ParameterList>

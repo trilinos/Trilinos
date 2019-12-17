@@ -153,8 +153,6 @@
         <Parameter name="Restart File" type="string" value="dak.res" />
         <Parameter name="Error File" type="string" value="dak.err" />
       </ParameterList>
-      <ParameterList name="MOOCHO">
-      </ParameterList>
     </ParameterList>
   </ParameterList>
 </ParameterList>

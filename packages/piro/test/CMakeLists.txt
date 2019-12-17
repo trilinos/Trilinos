@@ -171,7 +171,6 @@ IF (Piro_ENABLE_NOX)
                  input_Solve_TR.xml
                  input_Solve_NB.xml
           input_Analysis_Dakota.xml dak.in
-          input_Analysis_MOOCHO.xml input_Analysis_OptiPack.xml
           input_Analysis_ROL.xml
           input_Analysis_ROL_OldReducedSpace_Tpetra.xml
           input_Analysis_ROL_ReducedSpace_NOXSolver_Tpetra.xml
