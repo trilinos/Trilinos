@@ -3395,15 +3395,23 @@ namespace Tpetra {
     // be exactly what we need, so we won't have to resize them later.
     {
       const size_t newSize = X.imports_.extent (0) / numCols;
+      const size_t offset = j*newSize;
       auto newImports = X.imports_;
-      newImports.d_view = subview (X.imports_.d_view, range_type (0, newSize));
-      newImports.h_view = subview (X.imports_.h_view, range_type (0, newSize));
+      newImports.d_view = subview (X.imports_.d_view,
+                                   range_type (offset, offset+newSize));
+      newImports.h_view = subview (X.imports_.h_view,
+                                   range_type (offset, offset+newSize));
+      this->imports_ = newImports;
     }
     {
       const size_t newSize = X.exports_.extent (0) / numCols;
+      const size_t offset = j*newSize;
       auto newExports = X.exports_;
-      newExports.d_view = subview (X.exports_.d_view, range_type (0, newSize));
-      newExports.h_view = subview (X.exports_.h_view, range_type (0, newSize));
+      newExports.d_view = subview (X.exports_.d_view,
+                                   range_type (offset, offset+newSize));
+      newExports.h_view = subview (X.exports_.h_view,
+                                   range_type (offset, offset+newSize));
+      this->exports_ = newExports;
     }
     // These two DualViews already either have the right number of
     // entries, or zero entries.  This means that we don't need to
