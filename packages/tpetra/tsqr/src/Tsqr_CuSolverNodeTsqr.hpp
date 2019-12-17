@@ -210,21 +210,36 @@ namespace TSQR {
       const_info_type info_;
     };
 
-    template<class T>
+    template<class ScalarType, class IndexType>
+    class FillWithIdentityColumns {
+      static_assert (! std::is_const<ScalarType>::value,
+        "FillWithIdentityColumns requires a View of nonconst.");
+    public:
+      FillWithIdentityColumns
+        (const device_mat_view_type<ScalarType>& A) : A_ (A) {}
+      KOKKOS_INLINE_FUNCTION void
+      operator() (const IndexType j) const {
+        A_(j,j) = ScalarType (1.0);
+      }
+    private:
+      device_mat_view_type<ScalarType> A_;
+    };
+
+    template<class ScalarType>
     void
-    fill_with_identity_columns (const device_mat_view_type<T>& A)
+    fill_with_identity_columns
+      (const device_mat_view_type<ScalarType>& A)
     {
-      static_assert (! std::is_const<T>::value,
-                     "fill_with_identity_columns requires a "
-                     "View of nonconst.");
-      Kokkos::deep_copy (A, T {});
-      using LO = decltype (A.extent (1));
+      static_assert (! std::is_const<ScalarType>::value,
+        "fill_with_identity_columns requires a View of nonconst.");
+      using LO =
+        typename std::make_signed<decltype (A.extent (1)) >::type;
       const LO ncols = std::min (A.extent (0), A.extent (1));
       using Kokkos::RangePolicy;
       RangePolicy<cusolver_execution_space, LO> range (0, ncols);
       Kokkos::parallel_for
         ("fill_with_identity_columns", range,
-         KOKKOS_LAMBDA (const LO j) { A(j,j) = T (1.0); });
+         FillWithIdentityColumns<ScalarType, LO> (A));
     }
 
   } // namespace Impl
@@ -592,6 +607,19 @@ namespace TSQR {
                              work_raw, lwork);
     }
 
+    /// \brief Fill C (DEVICE MEMORY) with the first C.extent(1)
+    ///   columns of the identity matrix.  Assume that C has already
+    ///   been pre-filled with zeros.
+    void
+    fill_with_identity_columns
+      (const MatView<LocalOrdinal, Scalar>& C) const override
+    {
+      auto C_view =
+        Impl::get_device_mat_view (C.extent (0), C.extent (1),
+                                   C.data (), C.stride (1));
+      Impl::fill_with_identity_columns (C_view);
+    }
+
     void
     explicit_Q (const LocalOrdinal nrows,
                 const LocalOrdinal ncols_Q,
@@ -603,8 +631,10 @@ namespace TSQR {
                 const LocalOrdinal ldc,
                 const bool contigCacheBlocks) const override
     {
-      auto C_view =
-        Impl::get_device_mat_view (nrows, ncols_C, C, ldc);
+      using Impl::get_device_mat_view;
+      auto C_view = get_device_mat_view (nrows, ncols_C, C, ldc);
+      using IST = Impl::non_const_kokkos_value_type<Scalar>;
+      deep_copy (C_view, IST {});
       Impl::fill_with_identity_columns (C_view);
       apply (ApplyType::NoTranspose,
              nrows, ncols_Q, Q, ldq, factor_output,

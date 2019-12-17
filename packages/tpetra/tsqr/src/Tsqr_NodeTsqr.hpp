@@ -463,7 +463,8 @@ namespace TSQR {
     ///   identity matrix.  Assume that C has already been pre-filled
     ///   with zeros.
     virtual void
-    fill_with_identity_columns (const MatView<Ordinal, Scalar>& C) const
+    fill_with_identity_columns
+      (const MatView<Ordinal, Scalar>& C) const
     {
       // FIXME (mfh 17 Dec 2019) Need to reimplement in
       // CuSolverNodeTsqr, since C is device memory there.
