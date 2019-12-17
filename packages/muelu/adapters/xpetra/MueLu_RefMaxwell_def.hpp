@@ -1303,7 +1303,9 @@ namespace MueLu {
       }
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
       double dropTol = parameterList_.get("aggregation: drop tol",0.0);
+      std::string dropScheme = parameterList_.get("aggregation: drop scheme","classical");
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
+      dropFact->SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(dropScheme));
 
       UncoupledAggFact->SetFactory("Graph", dropFact);
       int minAggSize = parameterList_.get("aggregation: min agg size",2);
