@@ -133,8 +133,6 @@ namespace Thyra {
                                                 const SC alpha,
                                                 const SC beta) const
     {
-        const EOpTransp real_M_trans = real_trans(M_trans);
-
         FROSCH_ASSERT(getConstXpetraOperator()!=null,"XpetraLinearOp::applyImpl: internal Operator is null.");
         RCP< const Comm<int> > comm = getConstXpetraOperator()->getRangeMap()->getComm();
         //Transform to Xpetra MultiVector
@@ -149,6 +147,8 @@ namespace Thyra {
         }
         //Epetra NodeType
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+        const EOpTransp real_M_trans = real_trans(M_trans);
+
         if (this->bIsEpetra_) {
             const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
 

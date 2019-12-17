@@ -650,15 +650,6 @@ public:
   getLocalDiagOffsets (const Kokkos::View<size_t*, device_type,
                          Kokkos::MemoryUnmanaged>& offsets) const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /// \brief DEPRECATED overload of this method that writes offsets to
-  ///   a Teuchos::ArrayRCP instead of a Kokkos::View.
-  ///
-  /// Please use the version of this method directly above, that
-  /// writes offsets a Kokkos::View instead of to a Teuchos::ArrayRCP.
-  void TPETRA_DEPRECATED
-  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Variant of getLocalDiagCopy() that uses precomputed
   ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
@@ -697,24 +688,6 @@ public:
                                        Kokkos::MemoryUnmanaged>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.
-  ///
-  /// \warning This overload of the method is DEPRECATED.  Call the
-  ///   overload above that returns the diagonal blocks as a 3-D
-  ///   Kokkos::View.
-  ///
-  /// This method uses the offsets of the diagonal entries, as
-  /// precomputed by getLocalDiagOffsets(), to speed up copying the
-  /// diagonal of the matrix.
-  ///
-  /// If the matrix has a const ("static") graph, and if that graph
-  /// is fill complete, then the offsets array remains valid through
-  /// calls to fillComplete() and resumeFill().
-  void TPETRA_DEPRECATED
-  getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
-                    const Teuchos::ArrayView<const size_t>& offsets) const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
@@ -748,11 +721,7 @@ protected:
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
 
   virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& sourceObj,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*,
@@ -761,11 +730,7 @@ protected:
      buffer_device_type>& permuteFromLIDs);
 
   virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& sourceObj,
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& exportLIDs,
@@ -777,11 +742,7 @@ protected:
    Distributor& /* distor */);
 
   virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& importLIDs,
    Kokkos::DualView<packet_type*,
@@ -1168,10 +1129,6 @@ public:
   //! The communicator over which this matrix is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  //! The Kokkos Node instance.
-  virtual TPETRA_DEPRECATED Teuchos::RCP<Node> getNode() const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The global number of columns of this matrix.
   virtual global_size_t getGlobalNumCols() const;
@@ -1232,49 +1189,6 @@ public:
   //! Whether this object implements getLocalRowView() and getGlobalRowView().
   virtual bool supportsRowViews () const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /// \brief Number of diagonal entries in the matrix's graph, over
-  ///   all processes in the matrix's communicator.
-  ///
-  /// \pre <tt>! this->isFillActive()</tt>
-  ///
-  /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
-  ///   go away at any time.
-  virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const;
-
-  /// \brief Number of diagonal entries in the matrix's graph, on the
-  ///   calling process.
-  ///
-  /// \pre <tt>! this->isFillActive()</tt>
-  ///
-  /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
-  ///   go away at any time.
-  virtual size_t TPETRA_DEPRECATED getNodeNumDiags() const;
-
-  /// \brief Whether the matrix's graph is locally lower triangular.
-  ///
-  /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-  ///   and will DISAPPEAR VERY SOON per #2630.
-  ///
-  /// \pre <tt>! isFillActive()</tt>.
-  ///   If fill is active, this method's behavior is undefined.
-  ///
-  /// \note This is entirely a local property.  That means this
-  ///   method may return different results on different processes.
-  virtual bool TPETRA_DEPRECATED isLowerTriangular () const;
-
-  /// \brief Whether the matrix's graph is locally upper triangular.
-  ///
-  /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-  ///   and will DISAPPEAR VERY SOON per #2630.
-  ///
-  /// \pre <tt>! isFillActive()</tt>.
-  ///   If fill is active, this method's behavior is undefined.
-  ///
-  /// \note This is entirely a local property.  That means this
-  ///   method may return different results on different processes.
-  virtual bool TPETRA_DEPRECATED isUpperTriangular () const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //@}
   //! @name Extraction Methods

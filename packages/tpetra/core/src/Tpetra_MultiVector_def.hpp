@@ -944,11 +944,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& sourceObj,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
@@ -1256,11 +1252,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& sourceObj,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
    Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
@@ -1505,11 +1497,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
    Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
@@ -2075,100 +2063,6 @@ namespace Tpetra {
     this->norm2 (norms_av);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights,
-                const Teuchos::ArrayView<mag_type> &norms) const
-  {
-    using Kokkos::ALL;
-    using Kokkos::subview;
-    using Teuchos::Comm;
-    using Teuchos::null;
-    using Teuchos::RCP;
-    using Teuchos::reduceAll;
-    using Teuchos::REDUCE_SUM;
-    typedef Kokkos::ArithTraits<impl_scalar_type> ATS;
-    typedef Kokkos::ArithTraits<mag_type> ATM;
-    typedef Kokkos::View<mag_type*, Kokkos::HostSpace> norms_view_type;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    const char tfecfFuncName[] = "normWeighted: ";
-
-    const size_t numVecs = this->getNumVectors ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (norms.size ()) != numVecs, std::runtime_error,
-      "norms.size() = " << norms.size () << " != this->getNumVectors() = "
-      << numVecs << ".");
-
-    const bool OneW = (weights.getNumVectors () == 1);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! OneW && weights.getNumVectors () != numVecs, std::runtime_error,
-      "The input MultiVector of weights must contain either one column, "
-      "or must have the same number of columns as *this.  "
-      "weights.getNumVectors() = " << weights.getNumVectors ()
-      << " and this->getNumVectors() = " << numVecs << ".");
-
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
-
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! this->getMap ()->isCompatible (*weights.getMap ()), std::runtime_error,
-         "MultiVectors do not have compatible Maps:" << std::endl
-         << "this->getMap(): " << std::endl << *this->getMap()
-         << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
-    }
-    else {
-      const size_t lclNumRows = this->getLocalLength ();
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (lclNumRows != weights.getLocalLength (), std::runtime_error,
-         "MultiVectors do not have the same local length.");
-    }
-
-    norms_view_type lclNrms ("Tpetra::MV::lclNrms", numVecs);
-
-    // FIXME (mfh 18 May 2016) Yes, I know "const" is a lie.
-    const_cast<MV*> (this)->sync_device ();
-    const_cast<MV&> (weights).sync_device ();
-
-    auto X_lcl = this->getLocalViewDevice ();
-    auto W_lcl = weights.getLocalViewDevice ();
-
-    if (isConstantStride () && ! OneW) {
-      KokkosBlas::nrm2w_squared (lclNrms, X_lcl, W_lcl);
-    }
-    else {
-      for (size_t j = 0; j < numVecs; ++j) {
-        const size_t X_col = this->isConstantStride () ? j :
-          this->whichVectors_[j];
-        const size_t W_col = OneW ? static_cast<size_t> (0) :
-          (weights.isConstantStride () ? j : weights.whichVectors_[j]);
-        KokkosBlas::nrm2w_squared (subview (lclNrms, j),
-                                   subview (X_lcl, ALL (), X_col),
-                                   subview (W_lcl, ALL (), W_col));
-      }
-    }
-
-    const mag_type OneOverN =
-      ATM::one () / static_cast<mag_type> (this->getGlobalLength ());
-    RCP<const Comm<int> > comm = this->getMap ().is_null () ?
-      Teuchos::null : this->getMap ()->getComm ();
-
-    if (! comm.is_null () && this->isDistributed ()) {
-      // Assume that MPI can access device memory.
-      reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                                lclNrms.data (), norms.getRawPtr ());
-      for (size_t k = 0; k < numVecs; ++k) {
-        norms[k] = ATM::sqrt (norms[k] * OneOverN);
-      }
-    }
-    else {
-      for (size_t k = 0; k < numVecs; ++k) {
-        norms[k] = ATM::sqrt (ATS::magnitude (lclNrms(k)) * OneOverN);
-      }
-    }
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4254,15 +4148,6 @@ namespace Tpetra {
     return Kokkos::Compat::persistingView (X_col.d_view);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type
-  TPETRA_DEPRECATED
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getDualView () const {
-    return view_;
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

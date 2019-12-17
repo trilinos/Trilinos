@@ -298,8 +298,7 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc, const int numLevels,
   const int maxLevel = numLevels - 1;
   coarseCompOp = MatrixFactory::Build(compRowMaps[maxLevel],
                                        // This estimate is very conservative and probably costs us lots of memory...
-                                      8*regMatrices[maxLevel][0]->getCrsGraph()->getNodeMaxNumRowEntries(),
-                                      Xpetra::DynamicProfile);
+                                      8*regMatrices[maxLevel][0]->getCrsGraph()->getNodeMaxNumRowEntries());
   //      coarseCompOp->setAllToScalar(SC_ZERO);
   //      coarseCompOp->describe(*fos, Teuchos::VERB_EXTREME);
 
