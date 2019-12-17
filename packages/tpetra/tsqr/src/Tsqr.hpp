@@ -40,8 +40,8 @@
 /// \file Tsqr.hpp
 /// \brief Parallel Tall Skinny QR (TSQR) implementation
 
-#ifndef __TSQR_Tsqr_hpp
-#define __TSQR_Tsqr_hpp
+#ifndef TSQR_TSQR_HPP
+#define TSQR_TSQR_HPP
 
 #include "Tsqr_ApplyType.hpp"
 #include "Tsqr_Matrix.hpp"
@@ -286,19 +286,25 @@ namespace TSQR {
       // factor (computed above) to compute the distributed-memory
       // part of the QR factorization.
       {
-        mat_view_type Q_top (numCols, numCols, Q_top_block.data(),
-                             Q_top_block.stride(1));
+        mat_view_type Q_top (numCols, numCols, Q_top_block.data (),
+                             Q_top_block.stride (1));
         mat_view_type R_view (numCols, numCols, R, LDR);
 
-        // FIXME (mfh 16 Dec 2019) DistTsqr doesn't know what to do
-        // with device memory, so we will need to copy the top block
-        // of Q if applicable.  The same concerns as in
-        // CuSolverNodeTsqr::extract_R, about Kokkos::deep_copy not
-        // wanting to copy from noncontiguous device memory to
-        // contiguous host memory, apply here.  It would make sense
-        // for NodeTsqr to expose a method for doing this top-block
-        // copy (say "copy_from_top_block").
-        distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
+        if (nodeTsqr_->wants_device_memory ()) {
+          // DistTsqr doesn't know what to do with device memory, so
+          // if Q_top is device memory, we need to work in a host copy
+          // and copy back to Q_top.  Q_top is an output argument
+          // here, so we can just fill Q_top_copy with zeros.
+          matrix_type Q_top_copy (Q_top.extent (0), Q_top.extent (1),
+                                  Scalar {});
+          distTsqr_->factorExplicit (R_view, Q_top_copy.view (),
+                                     forceNonnegativeDiagonal);
+          nodeTsqr_->copy_from_host (Q_top, Q_top_copy.view ());
+        }
+        else {
+          distTsqr_->factorExplicit (R_view, Q_top,
+                                     forceNonnegativeDiagonal);
+        }
       }
       // Apply the local part of the Q factor to the result of the
       // distributed-memory QR factorization, to get the explicit Q
@@ -375,7 +381,7 @@ namespace TSQR {
       deep_copy (R_view, Scalar {});
       auto nodeResults =
         nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local,
-                           R_view.data(), R_view.stride(1),
+                           R_view.data (), R_view.stride (1),
                            contiguousCacheBlocks);
       DistOutput distResults = distTsqr_->factor (R_view);
       return {nodeResults, distResults};
@@ -454,36 +460,24 @@ namespace TSQR {
       mat_view_type C_top_view (ncols_C, ncols_C, C_view_top_block.data(),
                                 C_view_top_block.stride(1));
 
-      // FIXME (mfh 16 Dec 2019) DistTsqr doesn't know what to do with
-      // device memory, so we will need to copy the top block of C if
-      // applicable.
+      // DistTsqr doesn't know what to do with device memory, so we
+      // need to copy the top block of C if applicable.  The NodeTsqr
+      // implementation can decide if that's necessary.
       //
       // That "matrix_type C_top" is the temporary copy of C_top_view.
       // C_top_view here is the "top block of C" that might live in
       // device memory.
-      //
-      // The same concern applies here as in
-      // CuSolverNodeTsqr::extract_R, about Kokkos::deep_copy not
-      // wanting to copy from noncontiguous device memory to
-      // contiguous host memory.  It would make sense for NodeTsqr to
-      // expose a method for doing this top-block copy
-      // ("copy_from_top_block").  We already do something like that
-      // below with C_top (which is a deep_copy of C_top_view).
 
       if (! transposed) {
         // C_top (small compact storage) gets a deep copy of the top
         // ncols_C by ncols_C block of C_local.
-        matrix_type C_top (C_top_view);
-
-        // Compute in place on all processors' C_top blocks.
-        distTsqr_->apply (applyType, C_top.extent(1), ncols_Q,
-                          C_top.data(), C_top.stride(1),
+        matrix_type C_top = nodeTsqr_->copy_to_host (C_top_view);
+        // Compute in place on all processes' C_top blocks.
+        distTsqr_->apply (applyType, C_top.extent (1), ncols_Q,
+                          C_top.data (), C_top.stride (1),
                           factor_output.second);
-
-        // Copy the result from C_top back into the top ncols_C by
-        // ncols_C block of C_local.
-        deep_copy (C_top_view, C_top);
-
+        // Copy result back to the top block of C_local.
+        nodeTsqr_->copy_from_host (C_top_view, C_top.view ());
         // Apply the local Q factor to C_local.
         nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
                           Q_local, ldq_local, *(factor_output.first),
@@ -499,22 +493,17 @@ namespace TSQR {
 
         // C_top (small compact storage) gets a deep copy of the top
         // ncols_C by ncols_C block of C_local.
-        matrix_type C_top (C_top_view);
+        matrix_type C_top = nodeTsqr_->copy_to_host (C_top_view);
 
         // Compute in place on all processors' C_top blocks.
         distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.data(),
                           C_top.stride(1), factor_output.second);
-
-        // Copy the result from C_top back into the top ncols_C by
-        // ncols_C block of C_local.
-        //
-        // FIXME (mfh 16 Dec 2019) This calls for
-        // NodeTsqr::copy_to_top_block.
-        deep_copy (C_top_view, C_top);
+        // Copy result back to the top block of C_local.
+        nodeTsqr_->copy_from_host (C_top_view, C_top.view ());
       }
     }
 
-    /// \brief Compute the explicit Q factor from factor()
+    /// \brief Compute the explicit Q factor from result of factor().
     ///
     /// Compute the explicit version of the Q factor computed by
     /// factor() and represented implicitly (via Q_local_in and
@@ -567,21 +556,16 @@ namespace TSQR {
         mat_view_type Q_out_view (nrows_local, ncols_Q_out,
                                   Q_local_out, ldq_local_out);
 
-        // FIXME (mfh 17 Dec 2019) Q_out is device memory, so we
-        // shouldn't write directly to it.  NodeTsqr should expose
-        // something like fill_with_identity_columns.  Note that we've
-        // already filled Q_out with zeros above.
-
         // View of the topmost cache block of Q_out.  It is
         // guaranteed to have at least as many rows as columns.
         mat_view_type Q_out_top =
           nodeTsqr_->top_block (Q_out_view, contiguousCacheBlocks);
 
-        // Fill (topmost cache block of) Q_out with the first
-        // ncols_Q_out columns of the identity matrix.
-        for (ordinal_type j = 0; j < ncols_Q_out; ++j) {
-          Q_out_top(j, j) = Scalar (1);
-        }
+        // Q_out_top is device memory, so we shouldn't write directly
+        // to it.  Instead, let NodeTsqr fill it with the first
+        // ncols_Q_out columns of the identity matrix.  Note that
+        // we've already filled Q_out with zeros above.
+        nodeTsqr_->fill_with_identity_columns (Q_out_top);
       }
       apply ("N", nrows_local,
              ncols_Q_in, Q_local_in, ldq_local_in, factorOutput,
@@ -757,4 +741,4 @@ namespace TSQR {
 
 } // namespace TSQR
 
-#endif // __TSQR_Tsqr_hpp
+#endif // TSQR_TSQR_HPP

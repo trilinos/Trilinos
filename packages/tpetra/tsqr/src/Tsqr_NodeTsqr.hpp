@@ -430,6 +430,49 @@ namespace TSQR {
                              C_top.stride(1));
     }
 
+    /// \brief Copy from "native" NodeTsqr device storage, to a packed
+    ///   host matrix.
+    virtual Matrix<Ordinal, Scalar>
+    copy_to_host (const MatView<Ordinal, Scalar>& C) const
+    {
+      // FIXME (mfh 17 Dec 2019) Need to reimplement in
+      // CuSolverNodeTsqr, since C is device memory there.
+      //
+      // The same concerns as in CuSolverNodeTsqr::extract_R, about
+      // Kokkos::deep_copy not wanting to copy from noncontiguous
+      // device memory to contiguous host memory, apply here.
+      return Matrix<Ordinal, Scalar> (C);
+    }
+
+    /// \brief Copy from a host matrix, to "native" NodeTsqr device
+    ///   storage.
+    virtual void
+    copy_from_host (const MatView<Ordinal, Scalar>& C_device,
+                    const MatView<Ordinal, const Scalar>& C_host) const
+    {
+      // FIXME (mfh 17 Dec 2019) Need to reimplement in
+      // CuSolverNodeTsqr, since C_device is device memory there.
+      //
+      // The same concerns as in CuSolverNodeTsqr::extract_R, about
+      // Kokkos::deep_copy not wanting to copy between noncontiguous
+      // device memory and contiguous host memory, apply here.
+      deep_copy (C_device, C_host);
+    }
+
+    /// \brief Fill C with the first C.extent(1) columns of the
+    ///   identity matrix.  Assume that C has already been pre-filled
+    ///   with zeros.
+    virtual void
+    fill_with_identity_columns (const MatView<Ordinal, Scalar>& C) const
+    {
+      // FIXME (mfh 17 Dec 2019) Need to reimplement in
+      // CuSolverNodeTsqr, since C is device memory there.
+      const Ordinal ncols = C.extent (1);
+      for (Ordinal j = 0; j < ncols; ++j) {
+        C(j,j) = Scalar (1.0);
+      }
+    }
+
     /// \brief Does factor() compute R with nonnegative diagonal?
     ///
     /// When using a QR factorization to orthogonalize a block of
