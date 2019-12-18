@@ -58,6 +58,58 @@
 
 namespace TSQR {
   namespace Test {
+
+    template<class Scalar>
+    using kokkos_value_type = typename std::conditional<
+        std::is_const<Scalar>::value,
+        const typename Kokkos::ArithTraits<
+          typename std::remove_const<Scalar>::type>::val_type,
+        typename Kokkos::ArithTraits<Scalar>::val_type
+      >::type;
+
+    template<class LO, class Scalar>
+    Kokkos::View<kokkos_value_type<Scalar>**,
+                 Kokkos::LayoutLeft, Kokkos::HostSpace,
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+    getHostMatrixView (const MatView<LO, Scalar>& A)
+    {
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      using IST = kokkos_value_type<Scalar>;
+      using host_mat_view_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+      const size_t nrows (A.extent (0));
+      const size_t ncols (A.extent (1));
+      const size_t lda (A.stride (1));
+      IST* A_raw = reinterpret_cast<IST*> (A.data ());
+      host_mat_view_type A_full (A_raw, lda, ncols);
+      const std::pair<size_t, size_t> rowRange (0, nrows);
+      return Kokkos::subview (A_full, rowRange, Kokkos::ALL ());
+    }
+
+    template<class LO, class Scalar>
+    Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type**,
+                 Kokkos::LayoutLeft>
+    getDeviceMatrixCopy (const MatView<LO, Scalar>& A,
+                         const std::string& label)
+    {
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
+      using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+      using device_matrix_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft>;
+
+      const size_t nrows (A.extent (0));
+      const size_t ncols (A.extent (1));
+      device_matrix_type A_dev
+        (view_alloc (label, WithoutInitializing), nrows, ncols);
+      auto A_host = getHostMatrixView (A);
+      Kokkos::deep_copy (A_dev, A_host);
+      return A_dev;
+    }
+
     /// \class FullTsqrVerifier
     /// \brief Test (correctness and) accuracy of Tsqr for one Scalar
     ///   type.
@@ -207,7 +259,6 @@ namespace TSQR {
         using Teuchos::rcp_implicit_cast;
         using matrix_type = Matrix<ordinal_type, scalar_type>;
         using mat_view_type = MatView<ordinal_type, scalar_type>;
-        using factor_output_type = typename tsqr_type::FactorOutput;
 
         bool success = true;
 
@@ -320,28 +371,67 @@ namespace TSQR {
         // updates it internally, so we have to ask for its copy.
         gen.getSeed (randomSeed);
 
+        if (myRank == 0 && verbose) {
+          cerr << "-- tsqr->wants_device_memory() = "
+               << (tsqr->wants_device_memory () ? "true" : "false")
+               << endl;
+        }
+
+        using IST =
+          typename Kokkos::ArithTraits<scalar_type>::val_type;
+        using device_matrix_type =
+          Kokkos::View<IST**, Kokkos::LayoutLeft>;
+
+        auto A_h = getHostMatrixView (A_local.view ());
+        auto A_copy_h = getHostMatrixView (A_copy.view ());
+        auto Q_h = getHostMatrixView (Q_local.view ());
+        device_matrix_type A_d;
+        device_matrix_type A_copy_d;
+        device_matrix_type Q_d;
+        if (tsqr->wants_device_memory ()) {
+          A_d = getDeviceMatrixCopy (A_local.view (), "A_d");
+          // Don't copy A_copy yet; see below.
+          A_copy_d = device_matrix_type ("A_copy_d",
+                                         numRowsLocal, numCols);
+          Q_d = device_matrix_type ("Q_d", numRowsLocal, numCols);
+        }
+
         // If specified in the test parameters, rearrange cache blocks
         // in the copy.  Otherwise, just copy the test problem into
         // A_copy.  The factorization overwrites the input matrix, so
         // we have to make a copy in order to validate the final
         // result.
-        if (contiguousCacheBlocks) {
+
+        if (! contiguousCacheBlocks) {
           if (myRank == 0 && verbose) {
-            cerr << "  - Cache-block the test problem" << endl;
+            cerr << "  - Copy A into A_copy" << endl;
           }
-          tsqr->cache_block (numRowsLocal, numCols, A_copy.data(),
-                             A_local.data(), A_local.stride(1));
-          if (myRank == 0 && verbose) {
-            cerr << "  - Finished cache-blocking the test problem"
-                 << endl;
+          deep_copy (A_copy, A_local);
+          if (tsqr->wants_device_memory ()) {
+            deep_copy (A_copy_d, A_d);
           }
         }
         else {
           if (myRank == 0 && verbose) {
-            cerr << "  - Copy the test problem (no cache blocking)"
+            cerr << "  - Copy A into A_copy via cache_block" << endl;
+          }
+          if (tsqr->wants_device_memory ()) {
+            Scalar* A_copy_d_raw =
+              reinterpret_cast<Scalar*> (A_copy_d.data ());
+            const Scalar* A_d_raw =
+              reinterpret_cast<const Scalar*> (A_d.data ());
+            tsqr->cache_block (numRowsLocal, numCols, A_copy_d_raw,
+                               A_d_raw, A_d.stride (1));
+            deep_copy (A_copy_h, A_copy_d);
+          }
+          else {
+            tsqr->cache_block (numRowsLocal, numCols, A_copy.data (),
+                               A_local.data (), A_local.stride (1));
+          }
+          if (myRank == 0 && verbose) {
+            cerr << "  - Finished cache-blocking the test problem"
                  << endl;
           }
-          deep_copy (A_copy, A_local);
         }
 
         if (testFactorExplicit) {
@@ -349,14 +439,39 @@ namespace TSQR {
             cerr << "  - Call factorExplicitRaw" << endl;
           }
           try {
-            tsqr->factorExplicitRaw (A_copy.extent (0),
-                                     A_copy.extent (1),
-                                     A_copy.data (),
-                                     A_copy.stride (1),
-                                     Q_local.data (),
-                                     Q_local.stride (1),
-                                     R.data (), R.stride (1),
-                                     contiguousCacheBlocks);
+            if (tsqr->wants_device_memory ()) {
+              Scalar* A_raw =
+                reinterpret_cast<Scalar*> (A_copy_d.data ());
+              Scalar* Q_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+              tsqr->factorExplicitRaw (A_copy_d.extent (0),
+                                       A_copy_d.extent (1),
+                                       A_raw,
+                                       A_copy_d.stride (1),
+                                       Q_raw,
+                                       Q_d.stride (1),
+                                       R.data (), R.stride (1),
+                                       contiguousCacheBlocks);
+              if (myRank == 0 && verbose) {
+                cerr << "  - Finished factorExplicitRaw; now "
+                  "deep_copy(Q_h, Q_d)" << endl;
+              }
+              deep_copy (Q_h, Q_d);
+            }
+            else {
+              Scalar* A_raw = A_copy.data ();
+              Scalar* Q_raw = Q_local.data ();
+              tsqr->factorExplicitRaw (A_copy.extent (0),
+                                       A_copy.extent (1),
+                                       A_raw,
+                                       A_copy.stride (1),
+                                       Q_raw,
+                                       Q_local.stride (1),
+                                       R.data (), R.stride (1),
+                                       contiguousCacheBlocks);
+              if (myRank == 0 && verbose) {
+                cerr << "  - Finished factorExplicitRaw" << endl;
+              }
+            }
           }
           catch (std::exception& e) {
             std::ostringstream os;
@@ -365,13 +480,7 @@ namespace TSQR {
             cerr << os.str ();
             MPI_Abort (MPI_COMM_WORLD, -1);
           }
-          if (myRank == 0 && verbose) {
-            cerr << "  - Finished factorExplicitRaw" << endl;
-          }
 
-          // FIXME (mfh 06 Dec 2019) Eventually we want to get rid of
-          // all host access of MatView, so that we can replace it
-          // with Kokkos::View.
           bool found_nonzero_in_R = false;
           for (ordinal_type j = 0; j < numCols; ++j) {
             for (ordinal_type i = 0; i < numCols; ++i) {
@@ -398,18 +507,51 @@ namespace TSQR {
           if (myRank == 0 && verbose) {
             cerr << "  - Call factor" << endl;
           }
-          factor_output_type factorOutput =
-            tsqr->factor (numRowsLocal, numCols, A_copy.data(),
-                          A_copy.stride(1), R.data(), R.stride(1),
-                          contiguousCacheBlocks);
+          auto factorOutput = [&] () {
+            if (tsqr->wants_device_memory ()) {
+              Scalar* A_raw =
+                reinterpret_cast<Scalar*> (A_copy_d.data ());
+              auto result =
+                tsqr->factor (numRowsLocal, numCols,
+                              A_raw, A_copy_d.stride (1),
+                              R.data (), R.stride (1),
+                              contiguousCacheBlocks);
+              deep_copy (A_copy_h, A_copy_d);
+              return result;
+            }
+            else {
+              Scalar* A_raw =
+                reinterpret_cast<Scalar*> (A_copy_d.data ());
+              return tsqr->factor (numRowsLocal, numCols,
+                                   A_raw, A_copy.stride (1),
+                                   R.data (), R.stride (1),
+                                   contiguousCacheBlocks);
+            }
+          } ();
+
           if (myRank == 0 && verbose) {
             cerr << "  - Finished factor; call explicit_Q" << endl;
           }
-          // Compute the explicit Q factor in Q_local.
-          tsqr->explicit_Q (numRowsLocal, numCols, A_copy.data(),
-                            A_copy.stride(1), factorOutput, numCols,
-                            Q_local.data(), Q_local.stride(1),
-                            contiguousCacheBlocks);
+          if (tsqr->wants_device_memory ()) {
+            const Scalar* A_raw =
+              reinterpret_cast<const Scalar*> (A_copy_d.data ());
+            Scalar* Q_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+            tsqr->explicit_Q (numRowsLocal, numCols,
+                              A_raw, A_copy_d.stride (1),
+                              factorOutput, numCols,
+                              Q_raw, Q_d.stride (1),
+                              contiguousCacheBlocks);
+            deep_copy (Q_h, Q_d);
+          }
+          else {
+            const Scalar* A_raw = A_copy.data ();
+            Scalar* Q_raw = Q_local.data ();
+            tsqr->explicit_Q (numRowsLocal, numCols,
+                              A_raw, A_copy.stride (1),
+                              factorOutput, numCols,
+                              Q_raw, Q_local.stride (1),
+                              contiguousCacheBlocks);
+          }
           if (myRank == 0 && verbose) {
             cerr << "  - Finished explicit_Q" << endl;
           }
@@ -432,13 +574,17 @@ namespace TSQR {
           if (myRank == 0 && verbose) {
             cerr << "  - Call revealRankRaw" << endl;
           }
-          const ordinal_type rank =
-            tsqr->revealRankRaw (Q_local.extent (0),
-                                 Q_local.extent (1),
-                                 Q_local.data (),
-                                 Q_local.stride (1),
-                                 R.data (), R.stride (1),
-                                 tol, contiguousCacheBlocks);
+          const ordinal_type rank = [&] () {
+            Scalar* Q_raw = tsqr->wants_device_memory () ?
+              reinterpret_cast<Scalar*> (Q_d.data ()) :
+              Q_local.data ();
+            const ordinal_type ldq = tsqr->wants_device_memory () ?
+              Q_d.stride (1) : Q_local.stride (1);
+            return tsqr->revealRankRaw (numRowsLocal, numCols,
+                                        Q_raw, ldq,
+                                        R.data (), R.stride (1),
+                                        tol, contiguousCacheBlocks);
+          } ();
           if (myRank == 0 && verbose) {
             cerr << "  - Finished revealRankRaw" << endl;
           }
@@ -471,19 +617,36 @@ namespace TSQR {
         // were used.  This is only necessary because global_verify()
         // doesn't currently support contiguous cache blocks.
         if (contiguousCacheBlocks) {
+          // Use A_copy(_d) as scratch for un-cache-blocking Q_local.
           if (myRank == 0 && verbose) {
-            cerr << "  - Call un_cache_block" << endl;
+            cerr << "  - Call Tsqr::un_cache_block" << endl;
           }
-          // We can use A_copy as scratch space for
-          // un-cache-blocking Q_local, since we're done using
-          // A_copy for other things.
-          tsqr->un_cache_block (numRowsLocal, numCols, A_copy.data(),
-                                A_copy.stride(1), Q_local.data());
+          if (tsqr->wants_device_memory ()) {
+            Scalar* A_copy_d_raw =
+              reinterpret_cast<Scalar*> (A_copy_d.data ());
+            const Scalar* Q_d_raw =
+              reinterpret_cast<const Scalar*> (Q_d.data ());
+            tsqr->un_cache_block (numRowsLocal, numCols,
+                                  A_copy_d_raw,
+                                  A_copy_d.stride (1),
+                                  Q_d_raw);
+            deep_copy (Q_h, A_copy_d);
+          }
+          else {
+            tsqr->un_cache_block (numRowsLocal, numCols,
+                                  A_copy.data (),
+                                  A_copy.stride (1),
+                                  Q_local.data ());
+            deep_copy (Q_local, A_copy);
+          }
           if (myRank == 0 && verbose) {
             cerr << "  - Finished Tsqr::un_cache_block" << endl;
           }
-          // Overwrite Q_local with the un-cache-blocked Q factor.
-          deep_copy (Q_local, A_copy);
+        }
+        else {
+          if (tsqr->wants_device_memory ()) {
+            deep_copy (Q_h, Q_d);
+          }
         }
 
         if (myRank == 0 && verbose) {

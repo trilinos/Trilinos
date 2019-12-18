@@ -53,8 +53,31 @@
 #include <memory>
 #include <type_traits>
 
+#define TSQR_IMPL_CATCH( message ) \
+  catch (std::exception& e) { \
+    threw = true; \
+    err = std::unique_ptr<std::ostringstream> (new std::ostringstream); \
+    *err << prefix << message << std::endl << e.what (); \
+  } \
+  TEUCHOS_TEST_FOR_EXCEPTION \
+    (threw, std::runtime_error, \
+     (err.get () == nullptr ? "Unknown error" : err->str ())); \
+  do {} while (false)
+
+#define TSQR_IMPL_CHECK_LAST_CUDA_ERROR( location ) \
+  do { \
+    cudaError_t errCode = cudaGetLastError (); \
+    if (errCode != cudaSuccess ) { \
+      const char* errorString = cudaGetErrorString (errCode); \
+      TEUCHOS_TEST_FOR_EXCEPTION \
+        (true, std::runtime_error, "At \"" << (location) << "\", " \
+         "CUDA is in the following error state: " << errorString); \
+    } \
+  } while (false)
+
 namespace TSQR {
   namespace Impl {
+
     using cusolver_memory_space = Kokkos::CudaSpace;
     using cusolver_execution_space = Kokkos::Cuda;
 
@@ -123,10 +146,14 @@ namespace TSQR {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
     template<class T>
-    using device_mat_view_type = mat_view_type<T, cusolver_memory_space>;
+    using device_mat_view_type =
+      mat_view_type<T, cusolver_memory_space>;
+
+    using host_device_type = Kokkos::Device<
+      Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
 
     template<class T>
-    using host_mat_view_type = mat_view_type<T, Kokkos::HostSpace>;
+    using host_mat_view_type = mat_view_type<T, host_device_type>;
 
     // get_mat_view, get_host_mat_view, & get_device_mat_view
 
@@ -159,7 +186,8 @@ namespace TSQR {
                        Scalar A[],
                        const size_t lda)
     {
-      return get_mat_view<Scalar, Kokkos::HostSpace> (nrows, ncols, A, lda);
+      return get_mat_view<Scalar, host_device_type>
+        (nrows, ncols, A, lda);
     }
 
     template<class Scalar, class Ordinal>
@@ -169,7 +197,8 @@ namespace TSQR {
       const size_t nrows (A_host.extent (0));
       const size_t ncols (A_host.extent (1));
       const size_t lda (A_host.stride (1));
-      return get_host_mat_view (nrows, ncols, A_host.data (), lda);
+      return get_mat_view<Scalar, host_device_type>
+        (nrows, ncols, A_host.data (), lda);
     }
 
     template<class Scalar>
@@ -194,6 +223,10 @@ namespace TSQR {
                                     const size_t numRows,
                                     const size_t numCols)
     {
+      const char prefix[] = "TSQR::Impl::get_contiguous_device_mat_view: ";
+
+      TSQR_IMPL_CHECK_LAST_CUDA_ERROR( prefix );
+
       const size_t currentStorageSize (storage.extent (0));
       const size_t requiredStorageSize = numRows * numCols;
       if (currentStorageSize < requiredStorageSize) {
@@ -206,10 +239,22 @@ namespace TSQR {
         storage = device_vector_type<T> ();
         using Kokkos::view_alloc;
         using Kokkos::WithoutInitializing;
-        const char label[] = "TSQR::CuSolverNodeTsqr matrix storage";
-        storage = device_vector_type<T>
-          (view_alloc (std::string (label), WithoutInitializing),
-           newStorageSize);
+        const char label[] = "matrixStorage";
+
+        TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::Impl::get_contiguous_device_mat_view: Right before allocating" );
+        
+        try {
+          storage = device_vector_type<T>
+            (view_alloc (std::string (label), WithoutInitializing),
+             newStorageSize);
+        }
+        catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, prefix << "Allocating rank-1 "
+             "View of size " << newStorageSize << " to represent a "
+             << numRows << " x " << numCols << " matrix threw: "
+             << std::endl << e.what ());
+        }
       }
       return device_mat_view_type<T> (storage.data (),
                                       numRows, numCols);
@@ -460,26 +505,51 @@ namespace TSQR {
                const LocalOrdinal ldr,
                const bool /* contiguous_cache_blocks */) const
     {
-      auto A_view = Impl::get_device_mat_view<const Scalar>
-        (nrows, ncols, A, lda);
-      auto R_view = Impl::get_host_mat_view<Scalar>
-        (ncols, ncols, R, ldr);
+      using std::endl;
+      const char prefix[] = "TSQR::CuSolverNodeTsqr::extract_R: ";
+
+      TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "Top of TSQR::CuSolverNodeTsqr::extract_R" );
+
+      std::unique_ptr<std::ostringstream> err;
+      bool threw = false;
+
+      using Impl::get_device_mat_view;
+      using a_view_type = decltype (get_device_mat_view<const Scalar>
+                                    (nrows, ncols, A, lda));
+      a_view_type A_view;
+      try {
+        A_view = get_device_mat_view<const Scalar>
+          (nrows, ncols, A, lda);
+      }
+      TSQR_IMPL_CATCH( "get_device_mat_view of A threw: " );
+
+      auto R_view =
+        Impl::get_host_mat_view<Scalar> (ncols, ncols, R, ldr);
 
       try {
         // Fill R (including lower triangle) with zeros.
-        Kokkos::deep_copy (R_view, kokkos_value_type {});
+        //Kokkos::deep_copy (R_view, kokkos_value_type {});
+
+        // The above code throws the following exception, even though
+        // R_view is most definitely a host View:
+        //
+        // TSQR::CuSolverNodeTsqr::extract_R:
+        // Kokkos::deep_copy(R_view, 0) threw an exception:
+        // cudaDeviceSynchronize() error( cudaErrorIllegalAddress): an
+        // illegal memory access was encountered
+        // .../kokkos/core/src/Cuda/Kokkos_Cuda_Instance.cpp:120
+
+        MatView<LocalOrdinal, Scalar> R_mv (ncols, ncols, R, ldr);
+        deep_copy (R_mv, Scalar {});
       }
-      catch (std::exception& e) {
-        std::ostringstream err;
-        err << "TSQR::CuSolverNodeTsqr::extract_R: "
-          "Kokkos::deep_copy(R_view, 0) threw an exception: "
-          << std::endl << e.what ();
-        throw std::runtime_error (err.str ());
-      }
+      TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_view, 0.0) threw: " );
+
+      TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::CuSolverNodeTsqr::extract_R, "
+                                       "after deep_copy(R_mv, 0.0)" );
 
       // Copy out the upper triangle of the R factor from A into R.
       //
-      // The following (pseudo)code does not work:
+      // The following (pseudo)code often does not work:
       //
       // auto A_view_top = subview(A_view, {0, ncols}, ALL());
       // Kokkos::deep_copy(R_view, A_view_top);
@@ -497,24 +567,51 @@ namespace TSQR {
       using LO = LocalOrdinal;
       const std::pair<LO, LO> rowRange (0, ncols);
       auto A_view_top = subview (A_view, rowRange, ALL ());
-      try {
-        Kokkos::deep_copy (R_view, A_view_top);
+
+      if (size_t (A_view_top.stride (1)) == size_t (A_view_top.extent (0))) {
+        try {
+          Kokkos::deep_copy (R_view, A_view_top);
+        }
+        TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_view, A_view_top) "
+                         "for contiguous A_view_top threw: ");
+        TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::CuSolverNodeTsqr::extract_R, "
+                                         "after attempting "
+                                         "Kokkos::deep_copy(R_view, A_view_top) "
+                                         "with contiguous A_view_top" );
       }
-      catch (std::exception& /* e */) {
+      else { // A_view_top is NOT contiguous
         // Packed device version of R.
-        using Impl::get_contiguous_device_mat_view;
-        auto R_copy = get_contiguous_device_mat_view (matrixStorage_,
-                                                      ncols, ncols);
-        Kokkos::deep_copy (R_copy, A_view_top);
-        Kokkos::deep_copy (R_view, R_copy);
+        Impl::device_mat_view_type<kokkos_value_type> R_copy;
+        try {
+          using Impl::get_contiguous_device_mat_view;
+          R_copy = get_contiguous_device_mat_view (matrixStorage_,
+                                                   ncols, ncols);
+        }
+        TSQR_IMPL_CATCH( "R_copy = get_contiguous_device_mat_view threw: " );
+
+        TEUCHOS_ASSERT( size_t (R_copy.extent (0)) == size_t (ncols) );
+        TEUCHOS_ASSERT( size_t (R_copy.extent (1)) == size_t (ncols) );
+        TEUCHOS_ASSERT( size_t (R_copy.stride (1)) == size_t (ncols) );
+
+        try {
+          Kokkos::deep_copy (R_copy, A_view_top);
+        }
+        TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_copy, A_view_top) threw: ");
+        try {
+          Kokkos::deep_copy (R_view, R_copy);
+        }
+        TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_view, R_copy) threw: ");
       }
 
-      for (LO j = 0; j < ncols; ++j) {
-        auto R_j = subview (R_view, Kokkos::ALL (), j);
-        for (LO i = j + LO(1); i < LO (R_j.extent(0)); ++i) {
-          R_j(i) = kokkos_value_type {};
+      try {
+        for (LO j = 0; j < ncols; ++j) {
+          auto R_j = subview (R_view, ALL (), j);
+          for (LO i = j + LO(1); i < LO (R_j.extent(0)); ++i) {
+            R_j(i) = kokkos_value_type {};
+          }
         }
       }
+      TSQR_IMPL_CATCH( "Filling lower triangle of R_view with zeros threw: ");
     }
 
   public:
@@ -527,6 +624,8 @@ namespace TSQR {
             const LocalOrdinal ldr,
             const bool contigCacheBlocks) const override
     {
+      TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::CuSolverNodeTsqr::factor (top)" );
+
       // It's a common case to call factor() again and again with the
       // same pointers.  In that case, it's wasteful for us to
       // allocate a new tau array each time, especially since most
@@ -546,6 +645,9 @@ namespace TSQR {
       using TSQR::Impl::CuSolverHandle;
       CuSolver<Scalar> solver
         {CuSolverHandle::getSingleton (), info.data ()};
+
+      TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::CuSolverNodeTsqr::factor, "
+                                       "before solver.compute_QR" );
       try {
         solver.compute_QR (nrows, ncols, A, lda, tau_raw,
                            work_raw, lwork);
@@ -556,6 +658,9 @@ namespace TSQR {
           "threw an exception: " << std::endl << e.what ();
         throw std::runtime_error (err.str ());
       }
+      TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::CuSolverNodeTsqr::factor, "
+                                       "after solver.compute_QR, "
+                                       "before extract_R" );
       try {
         this->extract_R (nrows, ncols, A, lda, R, ldr,
                          contigCacheBlocks);
@@ -566,6 +671,9 @@ namespace TSQR {
           "threw an exception: " << std::endl << e.what ();
         throw std::runtime_error (err.str ());
       }
+
+      TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::CuSolverNodeTsqr::factor, "
+                                       "after extract_R" );
       return Teuchos::rcp (new my_factor_output_type (tau, info));
     }
 
@@ -661,8 +769,8 @@ namespace TSQR {
     copy_from_host (const MatView<LocalOrdinal, Scalar>& C_dev,
                     const MatView<LocalOrdinal, const Scalar>& C_host) const
     {
-      using Impl::get_device_mat_view;
-      using Impl::get_host_mat_view;
+      const char prefix[] =
+        "TSQR::CuSolverNodeTsqr::copy_from_host: ";
 
       const size_t nrows (C_dev.extent (0));
       const size_t ncols (C_dev.extent (1));
@@ -682,13 +790,23 @@ namespace TSQR {
       // must execute a kernel to copy the data.  (Kokkos doesn't seem
       // to exploit any of the various 2-D or 3-D array copying
       // functions that CUDA provides.)  That kernel must be able to
-      // access both Views.  We do a try-catch here just in case
-      // Kokkos::deep_copy ever starts working with noncontiguous
-      // Views.
-      try {
-        Kokkos::deep_copy (C_dev_view, C_host_view);
+      // access both Views.  We deal with this with a fall-back path
+      // that uses temporary contiguous storage.
+
+      if (C_dev_view.stride (1) == C_dev_view.extent (0) &&
+          C_host_view.stride (1) == C_host_view.extent (0)) {
+        // Both Views are contiguous.
+        try {
+          Kokkos::deep_copy (C_dev_view, C_host_view);
+        }
+        catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, prefix <<
+             "Kokkos::deep_copy(C_dev_view, C_host_view) (both "
+             "contiguous) threw: " << e.what ());
+        }
       }
-      catch (std::exception& /* e */) {
+      else {
         // We need to make a contiguous copy of host storage.  Host
         // allocations are cheap compared to device allocations, so
         // there's no need to cache the host allocation.
@@ -705,8 +823,51 @@ namespace TSQR {
           {new Scalar [nrows * ncols]};
         auto C_host_copy = Impl::get_host_mat_view<Scalar>
           (nrows, ncols, hostStorage.get (), nrows);
-        Kokkos::deep_copy (C_host_copy, C_host_view);
-        Kokkos::deep_copy (C_dev_view, C_host_copy);
+        TEUCHOS_ASSERT( C_host_copy.stride (1) ==
+                        C_host_copy.extent (0) );
+        try {
+          Kokkos::deep_copy (C_host_copy, C_host_view);
+        }
+        catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, prefix <<
+             "Kokkos::deep_copy(C_host_copy, C_host_view) threw: "
+             << e.what ());
+        }
+
+        if (C_dev_view.stride (1) == C_dev_view.extent (0)) {
+          try {
+            Kokkos::deep_copy (C_dev_view, C_host_copy);
+          }
+          catch (std::exception& e) {
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (true, std::runtime_error, prefix <<
+               "Kokkos::deep_copy(C_dev_view, C_host_copy) threw: "
+               << e.what ());
+          }
+        }
+        else {
+          auto C_dev_copy = Impl::get_contiguous_device_mat_view
+            (matrixStorage_, nrows, ncols);
+          try {
+            Kokkos::deep_copy (C_dev_copy, C_host_copy);
+          }
+          catch (std::exception& e) {
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (true, std::runtime_error, prefix <<
+               "Kokkos::deep_copy(C_dev_copy, C_host_copy) threw: "
+               << e.what ());
+          }
+          try {
+            Kokkos::deep_copy (C_dev_view, C_dev_copy);
+          }
+          catch (std::exception& e) {
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (true, std::runtime_error, prefix <<
+               "Kokkos::deep_copy(C_dev_view, C_dev_copy) threw: "
+               << e.what ());
+          }
+        }        
       }
     }
 

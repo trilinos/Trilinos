@@ -133,7 +133,10 @@ namespace TSQR {
           const dist_tsqr_ptr& distTsqr) :
       nodeTsqr_ (nodeTsqr),
       distTsqr_ (distTsqr)
-    {}
+    {
+      TEUCHOS_ASSERT( ! nodeTsqr_.is_null () );
+      TEUCHOS_ASSERT( ! distTsqr_.is_null () );
+    }
 
     /// \brief Cache size hint in bytes used by the intranode part of TSQR.
     ///
@@ -156,6 +159,13 @@ namespace TSQR {
       // internode) produce an R factor with a nonnegative diagonal.
       return nodeTsqr_->QR_produces_R_factor_with_nonnegative_diagonal() &&
         distTsqr_->QR_produces_R_factor_with_nonnegative_diagonal();
+    }
+
+    /// \brief Whether the implementation wants device memory for
+    ///   "large" arrays, like the input matrix, and the output Q
+    ///   factor or C apply result.
+    bool wants_device_memory () const {
+      return nodeTsqr_->wants_device_memory ();
     }
 
     /// \brief Compute QR factorization with explicit Q factor: "raw"
@@ -238,6 +248,8 @@ namespace TSQR {
                        const bool contiguousCacheBlocks,
                        const bool forceNonnegativeDiagonal = false)
     {
+      const char prefix[] = "TSQR::Tsqr::factorExplicitRaw: ";
+      
       // Sanity checks for matrix dimensions.
       if (numRows < numCols) {
         std::ostringstream os;
@@ -255,16 +267,40 @@ namespace TSQR {
 
       // Fill R initially with zeros.
       mat_view_type R_view (numCols, numCols, R, LDR);
-      deep_copy (R_view, Scalar {});
+      try {
+        deep_copy (R_view, Scalar {});
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, prefix <<
+           "deep_copy(R_view, 0.0) threw: " << e.what ());
+      }
 
       // Compute the local QR factorization, in place in A, with the R
       // factor written to R.
-      auto nodeResults =
-        nodeTsqr_->factor (numRows, numCols, A, LDA, R, LDR,
-                           contiguousCacheBlocks);
+      Teuchos::RCP<NodeOutput> nodeResults;
+      try {
+        nodeResults =
+          nodeTsqr_->factor (numRows, numCols, A, LDA, R, LDR,
+                             contiguousCacheBlocks);
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, prefix <<
+           "nodeTsqr_->factor(...) threw: " << e.what ());
+      }
+      
       // Prepare the output matrix Q by filling with zeros.
-      nodeTsqr_->fill_with_zeros (numRows, numCols, Q, LDQ,
-                                  contiguousCacheBlocks);
+      try {
+        nodeTsqr_->fill_with_zeros (numRows, numCols, Q, LDQ,
+                                    contiguousCacheBlocks);
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, prefix <<
+           "nodeTsqr_->fill_with_zeros(...) threw: " << e.what ());
+      }
+      
       // Wrap the output matrix Q in a "view."
       mat_view_type Q_rawView (numRows, numCols, Q, LDQ);
       // Wrap the uppermost cache block of Q.  We will need to extract
@@ -297,22 +333,52 @@ namespace TSQR {
           // here, so we can just fill Q_top_copy with zeros.
           matrix_type Q_top_copy (Q_top.extent (0), Q_top.extent (1),
                                   Scalar {});
-          distTsqr_->factorExplicit (R_view, Q_top_copy.view (),
-                                     forceNonnegativeDiagonal);
-          nodeTsqr_->copy_from_host (Q_top, Q_top_copy.view ());
+          try {
+            distTsqr_->factorExplicit (R_view, Q_top_copy.view (),
+                                       forceNonnegativeDiagonal);
+          }
+          catch (std::exception& e) {
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (true, std::runtime_error, prefix << "distTsqr_->"
+               "factorExplicit (wants_device_memory()=true case) "
+               "threw: " << e.what ());
+          }
+          try {
+            nodeTsqr_->copy_from_host (Q_top, Q_top_copy.view ());
+          }
+          catch (std::exception& e) {
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (true, std::runtime_error, prefix << "nodeTsqr_->"
+               "copy_from_host threw: " << e.what ());
+          }
         }
         else {
-          distTsqr_->factorExplicit (R_view, Q_top,
-                                     forceNonnegativeDiagonal);
+          try {
+            distTsqr_->factorExplicit (R_view, Q_top,
+                                       forceNonnegativeDiagonal);
+          }
+          catch (std::exception& e) {
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (true, std::runtime_error, prefix << "distTsqr_->"
+               "factorExplicit (wants_device_memory()=false case) "
+               "threw: " << e.what ());
+          }
         }
       }
       // Apply the local part of the Q factor to the result of the
       // distributed-memory QR factorization, to get the explicit Q
       // factor.
-      nodeTsqr_->apply (ApplyType::NoTranspose,
-                        numRows, numCols, A, LDA,
-                        *nodeResults, numCols, Q, LDQ,
-                        contiguousCacheBlocks);
+      try {
+        nodeTsqr_->apply (ApplyType::NoTranspose,
+                          numRows, numCols, A, LDA,
+                          *nodeResults, numCols, Q, LDQ,
+                          contiguousCacheBlocks);
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, prefix << "nodeTsqr_->"
+           "apply threw: " << e.what ());
+      }
 
       // If necessary, and if the user asked, force the R factor to
       // have a nonnegative diagonal.
@@ -320,8 +386,15 @@ namespace TSQR {
           ! QR_produces_R_factor_with_nonnegative_diagonal ()) {
         // We ignore contiguousCacheBlocks here, since we're only
         // looking at the top block of Q.
-        nodeTsqr_->force_nonnegative_diagonal (numRows, numCols,
-                                               Q, LDQ, R, LDR);
+        try {
+          nodeTsqr_->force_nonnegative_diagonal (numRows, numCols,
+                                                 Q, LDQ, R, LDR);
+        }
+        catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, prefix << "nodeTsqr_->"
+             "force_nonnegative_diagonal threw: " << e.what ());
+        }
       }
     }
 
