@@ -755,7 +755,7 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions ();
-    if(!params.is_null() && !params->get<bool>("sorted"))
+    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
       indicesAreSorted_ = false;
     else
       indicesAreSorted_ = true;
@@ -793,7 +793,7 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
     staticAssertions ();
-    if(!params.is_null() && !params->get<bool>("sorted"))
+    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
       indicesAreSorted_ = false;
     else
       indicesAreSorted_ = true;
@@ -874,7 +874,7 @@ namespace Tpetra {
       ! lclInds2D_.is_null () || ! gblInds2D_.is_null (), std::logic_error,
       ": cannot have 2D data structures allocated.");
 
-    if(!params.is_null() && !params->get<bool>("sorted"))
+    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
       indicesAreSorted_ = false;
     else
       indicesAreSorted_ = true;
@@ -947,7 +947,7 @@ namespace Tpetra {
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
 
-    if(!params.is_null() && !params->get<bool>("sorted"))
+    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
       indicesAreSorted_ = false;
     else
       indicesAreSorted_ = true;
