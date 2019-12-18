@@ -64,8 +64,7 @@ import subprocess
 
 # Default list of package enables and disables.  Trikota, STK, and
 # Optika are disabled due to explicit dependencies which can't always
-# be met.  Mesquite is disabled because it doesn't generate a
-# MesquiteConfig.cmake file.
+# be met.  
 DEFAULT_ENABLE_DISABLE_LIST = [
   ("Amesos", True),
   ("Amesos2", True),
@@ -74,7 +73,6 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("AztecOO", True),
   ("Belos", True),
   ("CTrilinos", True),
-  ("Claps", False),
   ("Didasko", False),
   ("Epetra", True),
   ("EpetraExt", True),
@@ -89,7 +87,6 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Isorropia", True),
   ("Kokkos", True),
   ("Komplex", True),
-  ("Mesquite", True),
   ("ML", True),
   ("Moertel", True),
   ("MOOCHO", True),

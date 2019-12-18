@@ -90,7 +90,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   OptiPack              packages/optipack                 PT
   Isorropia             packages/isorropia                PT
   Pliris                packages/pliris                   ST
-  Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PT
   Galeri                packages/galeri                   PT
   Amesos                packages/amesos                   PT
