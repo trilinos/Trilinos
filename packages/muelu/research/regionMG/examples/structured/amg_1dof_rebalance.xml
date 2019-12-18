@@ -39,7 +39,7 @@
   <!-- ===========  REPARTITIONING  =========== -->
     <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
     <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
-    <Parameter        name="repartition: start level"             type="int"      value="2"/>
+    <Parameter        name="repartition: start level"             type="int"      value="1"/>
     <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
     <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
     <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>

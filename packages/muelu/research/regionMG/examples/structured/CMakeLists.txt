@@ -18,7 +18,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       structured_1dof.xml
       structured_1dof_3level.xml
       structured_1dof-complex.xml
-      structured_1dof_coarse_amg.xml
       structured_linear_1dof.xml
       structured_linear_3dof.xml
       structured_unstructured_1dof.xml
@@ -59,7 +58,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
-    
+
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_CoarseSmoother_Tpetra"
@@ -96,6 +95,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Star2D_AMG_CoarseSolver_repartitioning_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof_rebalance.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
