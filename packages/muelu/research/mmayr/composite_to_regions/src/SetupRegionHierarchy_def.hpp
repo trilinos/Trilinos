@@ -300,6 +300,21 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
                                      compCoordMapData(),
                                      compRowMap->getIndexBase(),
                                      compRowMap->getComm());
+
+    std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > quasiRegCoordMap(maxRegPerProc);
+    for(int regionIdx = 0; regionIdx < maxRegPerProc; ++regionIdx) {
+      Array<GlobalOrdinal> quasiRegCoordMapData(quasiRegRowMap[regionIdx]->getNodeNumElements() / dofsPerNode);
+      ArrayView<const GlobalOrdinal> quasiRegRowMapData = quasiRegRowMap[regionIdx]->getNodeElementList();
+      for(size_type nodeIdx = 0; nodeIdx < quasiRegCoordMapData.size(); ++nodeIdx) {
+        quasiRegCoordMapData[nodeIdx] = quasiRegRowMapData[nodeIdx*dofsPerNode] / dofsPerNode;
+      }
+      quasiRegCoordMap[regionIdx] = MapFactory::Build(quasiRegRowMap[regionIdx]->lib(),
+                                                      quasiRegRowMap[regionIdx]->getGlobalNumElements() / dofsPerNode,
+                                                      quasiRegCoordMapData(),
+                                                      quasiRegRowMap[regionIdx]->getIndexBase(),
+                                                      quasiRegRowMap[regionIdx]->getComm());
+      regCoordImporter[regionIdx] = ImportFactory::Build(compCoordMap, quasiRegRowMap[regionIdx]);
+    }
   }
   compCoarseCoordinates = MultiVectorFactory::Build(compCoordMap, regCoarseCoordinates[0]->getNumVectors());
   TEUCHOS_ASSERT(Teuchos::nonnull(compCoarseCoordinates));
@@ -603,8 +618,8 @@ void createRegionHierarchy(const int maxRegPerProc,
       regProlong[l][j]  = level->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
       regMatrices[l][j] = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
 
-      regRowMaps[l][j]  = Teuchos::rcp_const_cast<Xpetra::Map<LO,GO,NO> >(regMatrices[l][j]->getRowMap()); // ToDo (mayr.mt) Should we rather copy?
-      regColMaps[l][j]  = Teuchos::rcp_const_cast<Xpetra::Map<LO,GO,NO> >(regMatrices[l][j]->getColMap()); // ToDo (mayr.mt) Should we rather copy?
+      regRowMaps[l][j]  = Teuchos::rcp_const_cast<Xpetra::Map<LO,GO,NO> >(regMatrices[l][j]->getRowMap());
+      regColMaps[l][j]  = Teuchos::rcp_const_cast<Xpetra::Map<LO,GO,NO> >(regMatrices[l][j]->getColMap());
     }
 
     // Create residual and solution vectors and cache them for vCycle apply
