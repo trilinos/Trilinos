@@ -86,6 +86,7 @@ namespace MueLu {
                                                  "Number of spacial dimensions in the problem.");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null,
                                                  "Number of nodes per spatial dimension on the coarse grid.");
+    validParamList->set<bool>                   ("keep coarse coords", false, "Flag to keep coordinates for special coarse grid solve");
 
     return validParamList;
   }
@@ -159,6 +160,10 @@ namespace MueLu {
       coarseCoordinates->replaceMap(coarseCoordsMap);
 
       Set(coarseLevel, "Coordinates", coarseCoordinates);
+
+      if(pL.get<bool>("keep coarse coords")) {
+        coarseLevel.Set<RCP<realvaluedmultivector_type> >("Coordinates2", coarseCoordinates, NoFactory::get());
+      }
     }
 
     *out << "Fine and coarse coordinates have been loaded from the fine level and set on the coarse level." << std::endl;

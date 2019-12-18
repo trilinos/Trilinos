@@ -14,9 +14,11 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(StructuredRegion_cp
     SOURCE_FILES
       amg_1dof.xml
+      amg_1dof_rebalance.xml
       structured_1dof.xml
       structured_1dof_3level.xml
       structured_1dof-complex.xml
+      structured_1dof_coarse_amg.xml
       structured_linear_1dof.xml
       structured_linear_3dof.xml
       structured_unstructured_1dof.xml
