@@ -1,7 +1,9 @@
 //@HEADER
 #ifndef _ZOLTAN2_ICESHEET_HPP_
 #define _ZOLTAN2_ICESHEET_HPP_
-
+#include<unordered_set>
+#include<utility>
+#include<vector>
 #include<Zoltan2_GraphModel.hpp>
 #include<Zoltan2_Algorithm.hpp>
 #include<Zoltan2_PartitioningSolution.hpp>
@@ -161,17 +163,135 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
     }
   }
   RCP<const map_t > mapWithCopies = rcp(new map_t(dummy, gids, 0, problemComm));
+ 
+  //communicate boundary edges back to owning processors
+  //
+  //NOTE: as of right now it is necessary to use MPI functions, due to 
+  //if problemComm represents a subcommunicator, this will likely hang on MPI collectives
+  //
+  //Not sure if this is an immediate problem.
+  //Teuchos::ArrayView<int> owners;
+  //Teuchos::ArrayView<gno_t> boundary(num_boundary_edges*2);
+  std::vector<int> owners_vec;
+  std::vector<gno_t> boundary_vec;
+  for(int i = 0; i < num_boundary_edges*2; i++){
+    boundary_vec.push_back(boundary_edges[i]);
+    owners_vec.push_back(0);
+  }
+  Teuchos::ArrayView<gno_t> boundary = Teuchos::arrayViewFromVector(boundary_vec);
+  Teuchos::ArrayView<int> owners = Teuchos::arrayViewFromVector(owners_vec);
+  mapWithCopies->getRemoteIndexList(boundary,owners);
   
+  int me = problemComm->getRank();
+  int nprocs = problemComm->getSize();
+  //send boundary edges to any remote processes that own an endpoint
+  int* sendcnts = new int[nprocs];
+  for(int i = 0; i < nprocs; i++) sendcnts[i] = 0;
+  for(int i = 0; i < num_boundary_edges*2; i+= 2){
+    if(owners[i] != me){
+      sendcnts[owners[i]] +=2;
+    }
+    if(owners[i+1] != me && owners[i] != owners[i+1]){
+      sendcnts[owners[i+1]] +=2;
+    }
+  }
+  int* recvcnts = new int[nprocs];
+  for(int i = 0; i < nprocs; i++) recvcnts[i]=0;
+  //send the number of vertex IDs to be sent.
+  int status = MPI_Alltoall(sendcnts, 1, MPI_INT, recvcnts, 1, MPI_INT, MPI_COMM_WORLD);
+
+  int* sdispls = new int[nprocs];
+  int* rdispls = new int[nprocs];
+  sdispls[0] = 0;
+  rdispls[0] = 0;
+  for(int i = 1; i < nprocs; i++){
+    sdispls[i] = sdispls[i-1] + sendcnts[i-1];
+    rdispls[i] = rdispls[i-1] + recvcnts[i-1];
+  } 
+
+  int sendsize = 0;
+  int recvsize = 0;
+  int* sentcount = new int[nprocs];
+  for(int i = 0; i < nprocs; i++){
+    sendsize += sendcnts[i];
+    recvsize += recvcnts[i];
+    sentcount[i] = 0;
+  }
+
+  unsigned long long* sendbuf = new unsigned long long[sendsize];
+  unsigned long long* recvbuf = new unsigned long long[recvsize];
+  
+  //build the send buffer, boundary edges represented by GID in an arbitrary order (we'll order the endpoints later)
+  for(int i = 0; i > num_boundary_edges*2; i+=2){
+    if(owners[i] != me){
+      int proc_to_send = owners[i];
+      unsigned long long sendbufidx = sdispls[proc_to_send] + sentcount[proc_to_send];
+      sentcount[proc_to_send] += 2;
+      sendbuf[sendbufidx++] = boundary[i];
+      sendbuf[sendbufidx++] = boundary[i+1];
+    }
+    if(owners[i+1] != me && owners[i] != owners[i+1]){
+      int proc_to_send = owners[i];
+      unsigned long long sendbufidx = sdispls[proc_to_send] + sentcount[proc_to_send];
+      sentcount[proc_to_send] += 2;
+      sendbuf[sendbufidx++] = boundary[i];
+      sendbuf[sendbufidx++] = boundary[i+1];
+    }
+  }
+
+  status = MPI_Alltoallv(sendbuf,sendcnts,sdispls,MPI_UNSIGNED_LONG_LONG,recvbuf,recvcnts,rdispls,MPI_UNSIGNED_LONG_LONG,MPI_COMM_WORLD);
+
+  //create the set to see if we've counted this boundary edge before
+  struct pair_hash {
+    inline std::size_t operator()(const std::pair<gno_t,gno_t>& v) const {
+      return v.first * 10 + v.second;
+    }
+  };
+
+  std::unordered_set<std::pair<gno_t,gno_t>,pair_hash> edge_set;
   int* local_boundary_counts = new int[nVtx];
   for(size_t i = 0; i < nVtx; i++){
     local_boundary_counts[i] = 0;
   }
+  
+  //insert the local boundary edges into the set, small global endpoint first.
+  for(int i = 0; i < num_boundary_edges*2; i+=2){
+    if(owners[i] == me || owners[i+1] == me){
+      if(boundary_edges[i] < boundary_edges[i+1]){
+        edge_set.insert(std::make_pair(boundary_edges[i],boundary_edges[i+1]));
+      } else {
+        edge_set.insert(std::make_pair(boundary_edges[i+1],boundary_edges[i]));
+      }
+    }
+  }
+  //factor in the locally-owned boundary edges
   for(int i = 0; i < num_boundary_edges*2; i++){
     if(map->getLocalElement(boundary_edges[i]) != fail){
       local_boundary_counts[map->getLocalElement(boundary_edges[i])]++;
     }
   }
   
+  //use the received boundary edges, but check to make sure they haven't been used yet.
+  for(int i = 0; i < recvsize; i+=2){
+    //make sure the edge has not been used (if count returns 1 for one of these, the edge has been used)
+    if(edge_set.count(std::make_pair(recvbuf[i], recvbuf[i+1])) == 0 && edge_set.count(std::make_pair(recvbuf[i+1],recvbuf[i])) == 0){
+      //check which endpoints are owned locally, and set the boundary counts appropriately
+      if(map->getLocalElement(recvbuf[i]) != fail){
+        local_boundary_counts[map->getLocalElement(recvbuf[i])]++;
+      }
+      if(map->getLocalElement(recvbuf[i+1]) != fail){
+        local_boundary_counts[map->getLocalElement(recvbuf[i+1])]++;
+      }
+      //add the received edge to the set, to ensure no received duplicates are counted
+      if(recvbuf[i] < recvbuf[i+1]){
+        edge_set.insert(std::make_pair(recvbuf[i],recvbuf[i+1]));
+      } else {
+	edge_set.insert(std::make_pair(recvbuf[i+1],recvbuf[i]));
+      }
+    }
+  }
+  //we should now have complete local knowledge of the boundary.
+
   //convert adjacency array to use local identifiers instead of global.
   
   Teuchos::Array<int> out_edges_lid(nEdge);

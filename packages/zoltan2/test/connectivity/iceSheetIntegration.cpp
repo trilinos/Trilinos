@@ -128,6 +128,38 @@ int main(int argc, char** argv)
     }
   }
   
+  //read the answers and validate that we have the correct one.
+  
+  int* ans_removed = new int[nglobal];
+  if(me == 0){
+    for(int i = 0; i < nglobal;i++) ans_removed[i] = 0;
+    std::ifstream fin(argv[5]);
+    if(!fin){
+      std::cout<<"Unable to open "<<argv[5]<<"\n";
+      exit(0);
+    }
+    int ans_count = 0;
+    int vertex = -1;
 
+    while(fin>>vertex){
+      std::cout<<"vertex "<<vertex<<" should be removed\n";
+      ans_removed[vertex]=1;
+    }
+  }  
+  
+  Teuchos::broadcast<int,int>(*comm,0,nglobal,ans_removed);
+  
+  int local_mismatches = 0;
+  for(int i = 0; i < nlocal; i++){
+    if(removeFlags[i] > -2 && !ans_removed[vtxIDs[i]] || remove[i] == -2 && ans_removed[vtxIDs[i]]){
+      local_mismatches++;
+      std::cout<<me<<": Found a mismatch, vertex "<<vtxIDs[i]<<"\n";
+    }
+  }
+  
+  //collect global mismatches
+  int global_mismatches = 0;
+  Teuchos::reduceAll<int,int
+  
   return 0;
 }
