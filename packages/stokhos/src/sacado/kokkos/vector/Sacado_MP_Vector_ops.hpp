@@ -126,7 +126,7 @@ namespace Sacado {                                                      \
       typedef typename Tnv::base_expr_type base_expr_type;              \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      OP(const T& expr_) : expr(expr_)  {}                              \
+      explicit OP(const T& expr_) : expr(expr_)  {}                     \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       std::string name() const {                                        \

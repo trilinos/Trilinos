@@ -111,9 +111,6 @@ namespace Tpetra {
 
       static Teuchos::RCP<const map_type>
       makeRangeMap (const Teuchos::RCP<const comm_type>& pComm,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                    const Teuchos::RCP<node_type>& pNode,
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                     const global_ordinal_type numRows)
       {
         using Teuchos::rcp;
@@ -121,9 +118,6 @@ namespace Tpetra {
         return rcp (new map_type (static_cast<global_size_t> (numRows),
                                   static_cast<global_ordinal_type> (0),
                                   pComm, GloballyDistributed
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                  , pNode
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                   ));
       }
 
@@ -150,9 +144,6 @@ namespace Tpetra {
       ///   typical case is to pass in null here, which is why we call
       ///   this routine "makeRowMap".
       /// \param pComm [in] Global communicator.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      /// \param pNode [in] Kokkos Node object.
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
       /// \param numRows [in] Global number of rows in the matrix.  If
       ///   pRowMap is nonnull, used only for error checking.
       ///
@@ -160,9 +151,6 @@ namespace Tpetra {
       static Teuchos::RCP<const map_type>
       makeRowMap (const Teuchos::RCP<const map_type>& pRowMap,
                   const Teuchos::RCP<const comm_type>& pComm,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                  const Teuchos::RCP<node_type>& pNode,
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                   const global_ordinal_type numRows)
       {
         using Teuchos::rcp;
@@ -172,9 +160,6 @@ namespace Tpetra {
           return rcp (new map_type (static_cast<global_size_t> (numRows),
                                     static_cast<global_ordinal_type> (0),
                                     pComm, GloballyDistributed
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                    , pNode
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                    ));
         } else {
           TEUCHOS_TEST_FOR_EXCEPTION(
@@ -222,9 +207,6 @@ namespace Tpetra {
         } else {
           return createUniformContigMapWithNode<LO,GO,NT> (numCols,
                                                            pRangeMap->getComm ()
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                                           ,pRangeMap->getNode ()
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                                           );
         }
       }
@@ -564,20 +546,6 @@ namespace Tpetra {
                               const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
                               const bool callFillComplete=true,
                               const bool debug = false)
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      {
-        return generate_miniFE_matrix(nx, pComm, Teuchos::null, callFillComplete,
-                                      debug);
-      }
-
-      static Teuchos::RCP<SparseMatrixType>
-      TPETRA_DEPRECATED
-      generate_miniFE_matrix (int nx,
-                              const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                              const Teuchos::RCP<node_type>& pNode,
-                              const bool callFillComplete=true,
-                              const bool debug = false)
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
       {
         using Teuchos::ArrayRCP;
         using Teuchos::null;
@@ -607,15 +575,9 @@ namespace Tpetra {
         dims[2] = nnz;
 
         Teuchos::RCP<const map_type> pRangeMap = makeRangeMap (pComm,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                                               pNode,
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                                                dims[0]);
         Teuchos::RCP<const map_type> pDomainMap = makeDomainMap (pRangeMap, dims[0], dims[1]);
         Teuchos::RCP<const map_type> pRowMap = makeRowMap (null, pComm,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                                           pNode,
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                                            dims[0]);
 
         size_t startrow = pRowMap->getMinGlobalIndex();
@@ -758,22 +720,6 @@ namespace Tpetra {
            int nx,
            const Teuchos::RCP<const Teuchos::Comm<int> >& pComm
        )
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-       {
-         return generate_miniFE_vector(nx, pComm, Teuchos::null);
-       }
-
-       static Teuchos::RCP<Tpetra::Vector<scalar_type,
-                                            local_ordinal_type,
-                                            global_ordinal_type,
-                                            node_type> >
-       TPETRA_DEPRECATED
-       generate_miniFE_vector(
-           int nx,
-           const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-           const Teuchos::RCP<node_type>& pNode
-       )
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
        {
          using Teuchos::ArrayRCP;
          using Teuchos::RCP;
@@ -795,9 +741,6 @@ namespace Tpetra {
          // const size_t numCols = static_cast<size_t> (dims[1]);
 
          RCP<const map_type> map = createUniformContigMapWithNode<LO, GO, NT> (numRows, pComm
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-         , pNode
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
          );
          int start = map->getMinGlobalIndex();
          int end = map->getMaxGlobalIndex()+1;

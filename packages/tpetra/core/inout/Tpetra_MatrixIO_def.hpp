@@ -51,73 +51,6 @@
 namespace Tpetra {
 namespace Utils {
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-void
-generateMatrix (const Teuchos::RCP<Teuchos::ParameterList> &plist,
-                const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &A)
-{
-  generateMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (plist, comm, Teuchos::null, A);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-void
-generateMatrix (const Teuchos::RCP<Teuchos::ParameterList> &plist,
-                const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                const Teuchos::RCP<Node> & /* node */,
-                Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &A)
-{
-  using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-
-  TEUCHOS_TEST_FOR_EXCEPTION( plist == Teuchos::null, std::runtime_error,
-      "Tpetra::Utils::generateMatrix(): ParameterList is null.");
-  TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::isParameterType<std::string>(*plist,"mat_type") == false, std::runtime_error,
-      "Tpetra::Utils::generateMatrix(): ParameterList did not contain string parameter ""mat_type"".");
-  std::string mat_type = plist->get<std::string>("mat_type");
-  if (mat_type == "Lap3D") {
-    // 3D Laplacian, grid is a cube with dimension gridSize x gridSize x gridSize
-    const GlobalOrdinal gridSize = as<GlobalOrdinal>(plist->get<int>("gridSize",100));
-    const GlobalOrdinal gS2 = gridSize*gridSize;
-    const GlobalOrdinal numRows = gS2*gridSize;
-    Teuchos::RCP<map_type> rowMap;
-    rowMap = Teuchos::rcp (new map_type (static_cast<global_size_t> (numRows),
-                                         static_cast<GlobalOrdinal> (0),
-                                         comm, GloballyDistributed));
-    A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,7,Tpetra::StaticProfile));
-    // fill matrix, one row at a time
-    Teuchos::Array<GlobalOrdinal> neighbors;
-    Teuchos::Array<Scalar> values(7, -ST::one());
-    values[0] = (Scalar)6;
-    for (GlobalOrdinal r = rowMap->getMinGlobalIndex(); r <= rowMap->getMaxGlobalIndex(); ++r) {
-      neighbors.clear();
-      neighbors.push_back(r); // add diagonal
-      GlobalOrdinal ixy, iz, ix, iy;  // (x,y,z) coords and index in xy plane
-      ixy = r%gS2;
-      iz = (r - ixy)/gS2;
-      ix = ixy%gridSize;
-      iy = (ixy - ix)/gridSize;
-      //
-      if ( ix != 0 )          neighbors.push_back( r-1 );
-      if ( ix != gridSize-1 ) neighbors.push_back( r+1 );
-      if ( iy != 0 )          neighbors.push_back( r-gridSize );
-      if ( iy != gridSize-1 ) neighbors.push_back( r+gridSize );
-      if ( iz != 0 )          neighbors.push_back( r-gS2 );
-      if ( iz != gridSize-1 ) neighbors.push_back( r+gS2 );
-      A->insertGlobalValues( r, neighbors(), values(0,neighbors.size()) );
-    }
-    A->fillComplete();
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error,
-        "Tpetra::Utils::generateMatrix(): ParameterList specified unsupported ""mat_type"".");
-  }
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
@@ -295,20 +228,6 @@ readHBMatrix (const std::string &filename,
   A->fillComplete(domMap,rowMap,params);
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-void
-readHBMatrix (const std::string &filename,
-              const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-              const Teuchos::RCP<Node> &/* node */,
-              Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
-              Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap,
-              const Teuchos::RCP<Teuchos::ParameterList> &params)
-{
-  readHBMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(filename, comm, A, rowMap, params);
-}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 } // namespace Utils
 } // namespace Tpetra
@@ -319,36 +238,6 @@ readHBMatrix (const std::string &filename,
 // Must be expanded from within the Tpetra::Utils namespace!
 //
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-#define TPETRA_MATRIXIO_INSTANT(SCALAR,LO,GO,NODE) \
-  template void \
-  readHBMatrix< SCALAR, LO, GO, NODE > (const std::string&, \
-                                        const Teuchos::RCP<const Teuchos::Comm<int> > &, \
-                                        Teuchos::RCP<CrsMatrix< SCALAR, LO, GO, NODE > >&, \
-                                        Teuchos::RCP<const Tpetra::Map< LO, GO, NODE> >, \
-                                        const Teuchos::RCP<Teuchos::ParameterList>& ); \
-  \
-  template void \
-  generateMatrix< SCALAR, LO, GO, NODE> (const Teuchos::RCP<Teuchos::ParameterList>&, \
-                                         const Teuchos::RCP<const Teuchos::Comm<int> > &, \
-                                         Teuchos::RCP<CrsMatrix< SCALAR, LO, GO, NODE > >& ); \
- \
-  template void \
-  readHBMatrix< SCALAR, LO, GO, NODE > (const std::string&, \
-                                        const Teuchos::RCP<const Teuchos::Comm<int> > &, \
-                                        const Teuchos::RCP< NODE > &, \
-                                        Teuchos::RCP<CrsMatrix< SCALAR, LO, GO, NODE > >&, \
-                                        Teuchos::RCP<const Tpetra::Map< LO, GO, NODE> >, \
-                                        const Teuchos::RCP<Teuchos::ParameterList>& ); \
-  \
-  template void \
-  generateMatrix< SCALAR, LO, GO, NODE> (const Teuchos::RCP<Teuchos::ParameterList>&, \
-                                         const Teuchos::RCP<const Teuchos::Comm<int> > &, \
-                                         const Teuchos::RCP< NODE > &,\
-                                         Teuchos::RCP<CrsMatrix< SCALAR, LO, GO, NODE > >& );
-
-#else // !TPETRA_ENABLE_DEPRECATED_CODE
 
 #define TPETRA_MATRIXIO_INSTANT(SCALAR,LO,GO,NODE) \
   template void \
@@ -359,6 +248,5 @@ readHBMatrix (const std::string &filename,
                                         const Teuchos::RCP<Teuchos::ParameterList>& ); 
 
 
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #endif

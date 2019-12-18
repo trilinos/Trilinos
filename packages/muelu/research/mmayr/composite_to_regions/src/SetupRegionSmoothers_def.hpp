@@ -98,6 +98,9 @@ void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
                  const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) ///< row importer in region layout [in]
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Relaxation Setup")));
+
   // Get max number of regions per proc
   const int maxRegPerProc = regionGrpMats.size();
 
@@ -139,6 +142,8 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
     )
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Jacobi Iterate")));
 
   // Get max number of regions per proc
   const int maxRegPerProc = regX.size();
@@ -187,6 +192,8 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
                )
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Gauss-Seidel Iterate")));
 
   // Get max number of regions per proc
   const int maxRegPerProc = regX.size();
@@ -340,6 +347,9 @@ void chebyshevSetup(RCP<Teuchos::ParameterList> params,
                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Chebyshev Setup")));
+
   const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
 
@@ -384,6 +394,9 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
                    )
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Chebyshev Iterate")));
+
   // Get max number of regions per proc
   const int maxRegPerProc = regX.size();
 
@@ -449,6 +462,9 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
                    const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceScaling,
                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) ///< row importer in region layout [in]
 {
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Smoother: 1 - Setup")));
+
   const std::string type = params->get<std::string>("smoother: type");
 
   std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
@@ -484,6 +500,9 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
                    const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) {
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Smoother: 2 - Apply")));
+
   const std::string type = params->get<std::string>("smoother: type");
 
   std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();

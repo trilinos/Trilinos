@@ -392,29 +392,20 @@ void StepperSubcycling<Scalar>::takeStep(
     scTSC->setFinalTime  (workingState->getTime());
     scTSC->setMaxTimeStep(workingState->getTimeStep());
 
-    Teuchos::RCP<SolutionStateMetaData<Scalar> > scMD =
-      rcp(new SolutionStateMetaData<Scalar>());
-    scMD->copy(currentState->getMetaData());
-    scMD->setDt(scTSC->getInitTimeStep());
-    scMD->setOrder(scIntegrator_->getStepper()->getOrder());
-    scMD->setIStep(0);
-    scMD->setNFailures(0);
-    scMD->setNRunningFailures(0);
-    scMD->setNConsecutiveFailures(0);
-    scMD->setOutput(false);
-    scMD->setOutputScreen(false);
+    auto subcyclingState = currentState->clone();
+    subcyclingState->setTimeStep(scTSC->getInitTimeStep());
+    subcyclingState->setOrder(scIntegrator_->getStepper()->getOrder());
+    subcyclingState->setIndex(0);
+    subcyclingState->setNFailures(0);
+    subcyclingState->setNRunningFailures(0);
+    subcyclingState->setNConsecutiveFailures(0);
+    subcyclingState->setOutput(false);
+    subcyclingState->setOutputScreen(false);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(!scMD->getIsSynced(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(!subcyclingState->getIsSynced(),std::logic_error,
       "Error - StepperSubcycling<Scalar>::takeStep(...)\n"
       "        Subcycling requires the the solution is synced!\n"
       "        (i.e., x, xDot, and xDotDot at the same time level.\n");
-
-    auto subcyclingState = rcp(new SolutionState<Scalar>( scMD,
-                                           currentState->getX(),
-                                           currentState->getXDot(),
-                                           currentState->getXDotDot(),
-                                           currentState->getStepperState(),
-                                           currentState->getPhysicsState()));
 
     auto scSH = rcp(new Tempus::SolutionHistory<Scalar>());
     scSH->setName("Subcycling States");
@@ -447,6 +438,7 @@ void StepperSubcycling<Scalar>::takeStep(
     if (pass == true) workingState->setSolutionStatus(Status::PASSED);
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(scCS->getOrder());
+    workingState->computeNorms(currentState);
     scSH->clear();
     stepperSCObserver_->observeEndTakeStep(solutionHistory, *this);
   }

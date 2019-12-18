@@ -140,18 +140,18 @@ namespace FROSch {
 
         SubdomainSolverPtr ExtensionSolver_;
 
-        CoarseSpacePtrVecPtr InterfaceCoarseSpaces_;
+        CoarseSpacePtrVecPtr InterfaceCoarseSpaces_ = CoarseSpacePtrVecPtr(0);
         CoarseSpacePtr AssembledInterfaceCoarseSpace_;
 
-        UNVecPtr Dimensions_;
-        UNVecPtr DofsPerNode_;
+        UNVecPtr Dimensions_ = UNVecPtr(0);
+        UNVecPtr DofsPerNode_ = UNVecPtr(0);
 
-        LOVecPtr2D GammaDofs_;
-        LOVecPtr2D IDofs_;
+        LOVecPtr2D GammaDofs_ = GammaDofs_(0);
+        LOVecPtr2D IDofs_ = IDofs_(0);
 
-        ConstXMapPtrVecPtr2D DofsMaps_; // notwendig??
+        ConstXMapPtrVecPtr2D DofsMaps_ = DofsMaps_(0); // notwendig??
 
-        UN NumberOfBlocks_;
+        UN NumberOfBlocks_ = 0;
     };
 
 }

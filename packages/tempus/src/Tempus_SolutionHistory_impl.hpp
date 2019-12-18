@@ -15,7 +15,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 // Tempus
-#include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_InterpolatorFactory.hpp"
 
 //#include "Thyra_VectorStdOps.hpp"
@@ -136,13 +135,13 @@ void SolutionHistory<Scalar>::addWorkingState(
 
   addState(state);
   workingState_ = (*history_)[getNumStates()-1];
-  RCP<SolutionStateMetaData<Scalar> > csmd = getCurrentState()->getMetaData();
-  RCP<SolutionStateMetaData<Scalar> > wsmd = workingState_    ->getMetaData();
-  wsmd->setSolutionStatus(Status::WORKING);
-  wsmd->setIStep(csmd->getIStep()+1);
+  auto cs = getCurrentState();
+  auto ws = getWorkingState();
+  ws->setSolutionStatus(Status::WORKING);
+  ws->setIndex(cs->getIndex()+1);
   if (updateTime) {
-    wsmd->setTime(csmd->getTime() + csmd->getDt());
-    wsmd->setDt(csmd->getDt());
+    ws->setTime(cs->getTime() + cs->getTimeStep());
+    ws->setTimeStep(cs->getTimeStep());
   }
 }
 
@@ -261,15 +260,14 @@ void SolutionHistory<Scalar>::initWorkingState()
 template<class Scalar>
 void SolutionHistory<Scalar>::promoteWorkingState()
 {
-  Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
-    getWorkingState()->getMetaData();
+  auto ws = getWorkingState();
 
-  if ( md->getSolutionStatus() == Status::PASSED ) {
-    md->setNFailures(std::max(0,md->getNFailures()-1));
-    md->setNConsecutiveFailures(0);
-    md->setSolutionStatus(Status::PASSED);
-    //md->setIsSynced(true);
-    md->setIsInterpolated(false);
+  if ( ws->getSolutionStatus() == Status::PASSED ) {
+    ws->setNFailures(std::max(0,ws->getNFailures()-1));
+    ws->setNConsecutiveFailures(0);
+    ws->setSolutionStatus(Status::PASSED);
+    //ws->setIsSynced(true);
+    ws->setIsInterpolated(false);
     workingState_ = Teuchos::null;
   } else {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();

@@ -87,7 +87,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(A==Teuchos::null, Exceptions::BadCast, "MueLu::RepartitionBlockDiagonalFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
 
     // Build the block diagonal
-    RCP<BlockCrs> DiagonalMatrix = Teuchos::rcp(new BlockCrs(A->getBlockedRangeMap(),A->getBlockedDomainMap(),0,Xpetra::StaticProfile));    
+    RCP<BlockCrs> DiagonalMatrix = Teuchos::rcp(new BlockCrs(A->getBlockedRangeMap(),A->getBlockedDomainMap(),0));
     for(size_t i=0; i< A->Rows(); i++)
       DiagonalMatrix->setMatrix(i,i,A->getMatrix(i,i));
 

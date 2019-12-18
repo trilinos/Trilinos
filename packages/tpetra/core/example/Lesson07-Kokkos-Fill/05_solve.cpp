@@ -52,6 +52,7 @@
 #include <Kokkos_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_Import_Util2.hpp>  //for sortCrsEntries
 #include <iostream>
 
 #ifdef KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA
@@ -374,6 +375,8 @@ int main (int argc, char* argv[]) {
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid ();
     RCP<const Tpetra::Map<> > colMap =
       rcp (new Tpetra::Map<> (INV, colInds.data (), colInds.extent (0), indexBase, comm));
+
+    Tpetra::Import_Util::sortCrsEntries(rowOffsets, colIndices, matrixValues);
 
     Tpetra::CrsMatrix<double> A (rowMap, colMap, rowOffsets,
 			         colIndices, matrixValues);

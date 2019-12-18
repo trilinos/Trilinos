@@ -780,9 +780,6 @@ add (const Scalar& alpha,
   auto Bcolmap = Bprime->getColMap();
   if(!matchingColMaps)
   {
-    using KCRS            = typename crs_matrix_type::local_matrix_type;
-    using size_type       = typename KCRS::size_type;
-    using lno_t           = typename KCRS::ordinal_type;
     using global_col_inds_array = typename AddKern::global_col_inds_array;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::null;
@@ -3386,6 +3383,20 @@ template \
                      const CrsMatrix<SCALAR, LO, GO, NODE>& B, \
                      const Teuchos::RCP<const Map<LO, GO, NODE> >& domainMap, \
                      const Teuchos::RCP<const Map<LO, GO, NODE> >& rangeMap, \
+                     const Teuchos::RCP<Teuchos::ParameterList>& params); \
+\
+  template \
+  void \
+  MatrixMatrix::add< SCALAR , LO, GO , NODE > \
+                    (const SCALAR & alpha, \
+                     const bool transposeA, \
+                     const CrsMatrix< SCALAR , LO, GO , NODE >& A, \
+                     const SCALAR& beta, \
+                     const bool transposeB, \
+                     const CrsMatrix< SCALAR , LO, GO , NODE >& B, \
+                     CrsMatrix< SCALAR , LO, GO , NODE >& C, \
+                     const Teuchos::RCP<const Map<LO, GO , NODE > >& domainMap, \
+                     const Teuchos::RCP<const Map<LO, GO , NODE > >& rangeMap, \
                      const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
   template struct MMdetails::AddKernels<SCALAR, LO, GO, NODE>;

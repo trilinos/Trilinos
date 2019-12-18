@@ -58,22 +58,16 @@ struct CmdLineOpts
   bool timing;
   // saveMM - Save the crsMatrix into a MatrixMarket file.
   bool saveMM;
-  // StaticProfile
-  bool useStaticProfile;
-  // execInsertGlobalIndicesFEDP - execute the FE Insert Global Indices kernel
-  bool execInsertGlobalIndicesFE;
-  // execInsertGlobalIndicesDP - execute the Insert Global Indices kernel
-  bool execInsertGlobalIndices;
-  // execLocalElementLoopDP - execute the Local Element Loop kernel
-  bool execLocalElementLoop;
-  // execTotalElementLoopDP - execute the Total Element Loop kernel
-  bool execTotalElementLoop;
   // repetitions - how many times to execute the kernel for testing
   size_t repetitions;
   // Use Kokkos assembly for matrix
   bool useKokkosAssembly;
   // Number of doubles per element (for simulated state transfer)
   int numStateDoublesPerElement;
+  // execInsertGlobalIndicesFE - execute the FE Insert Global Indices kernel
+  bool execInsertGlobalIndicesFE;
+  // execTotalElementLoop - execute the Total Element Loop kernel
+  bool execTotalElementLoop;
 };
 
 // Use a utility from the Teuchos package of Trilinos to set up
@@ -92,14 +86,11 @@ setCmdLineOpts (struct CmdLineOpts& opts,
   opts.verbose = false;
   opts.timing = true;
   opts.saveMM = false;
-  opts.useStaticProfile  = true;
-  opts.execInsertGlobalIndices   = false;
-  opts.execInsertGlobalIndicesFE = false;
-  opts.execLocalElementLoop      = false;
-  opts.execTotalElementLoop      = false;
   opts.repetitions  = 1;
   opts.useKokkosAssembly = false;
   opts.numStateDoublesPerElement = 4;
+  opts.execInsertGlobalIndicesFE = false;
+  opts.execTotalElementLoop = false;
 
   clp.setOption("num-elements-x", &(opts.numElementsX), "Number of elements to generate in the X-directon of the 2D grid.");
   clp.setOption("num-elements-y", &(opts.numElementsY), "Number of elements to generate in the Y-direction of the 2D grid.");
@@ -107,23 +98,37 @@ setCmdLineOpts (struct CmdLineOpts& opts,
   clp.setOption("verbose", "without-verbose", &(opts.verbose), "Execute example with high verbosity.");
   clp.setOption("timing",  "without-timing",  &(opts.timing),  "Print out timing information at the end of execution.");
   clp.setOption("save-mm", "without-save-mm", &(opts.saveMM),  "Save the generated CrsMatrix into a Matrix Market file.");
-
-  clp.setOption("with-StaticProfile", "with-DynamicProfile", &(opts.useStaticProfile), "Use StaticProfile or DynamicProfile");
-
-  clp.setOption("with-insert-global-indices-fe", "without-insert-global-indices-fe", &(opts.execInsertGlobalIndicesFE),
-                "Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.");
-  clp.setOption("with-insert-global-indices", "without-insert-global-indices", &(opts.execInsertGlobalIndices),
-                "Execute the Insert Global Indices FEM Assembly kernel.");
-  clp.setOption("with-local-element-loop",    "without-local-element-loop",    &(opts.execLocalElementLoop),
-                "Execute the Local Element Loop FEM Assembly kernel.");
-  clp.setOption("with-total-element-loop",    "without-total-element-loop",    &(opts.execTotalElementLoop),
-                "Execute the Total Element Loop FEM Assembly kernel.");
   clp.setOption("repetitions", &(opts.repetitions), "Number of times to repeat the kernel.");
   clp.setOption("kokkos", "no-kokkos", &(opts.useKokkosAssembly), "Use Kokkos assembly.");
   clp.setOption("state-per-element",&(opts.numStateDoublesPerElement),"Number of doubles per element to store element state");
+  clp.setOption("with-insert-global-indices-fe", "without-insert-global-indices-fe", &(opts.execInsertGlobalIndicesFE),
+                "Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.");
+  clp.setOption("with-total-element-loop", "without-total-element-loop", &(opts.execTotalElementLoop),
+                "Execute the Total Element Loop FEM Assembly kernel.");
 }
 
-
+// Check the command-line options that were read in by
+// parseCmdLineOpts.  Return 0 if all correct, else return nonzero,
+// using the LAPACK error reporting convention of the negative of
+// the argument in its original order (starting with 1) as the error
+// code.  Print informative error messages to the given output
+// stream \c out.
+int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
+{
+  int err = 0;
+  // Currently we only have StaticProfile for TotalElementLoop
+  if(1 != (opts.execInsertGlobalIndicesFE + opts.execTotalElementLoop))
+  {
+    out << std::endl
+      << "  The FE assembly has two main modes, insert-global-indices-fe and total-element-loop." << std::endl
+      << "  Exactly one of them should be enabled in a given run." << std::endl
+      << "  --with-insert-global-indices-fe : Execute the FE Insert Global Indices example." << std::endl
+      << "  --with-total-element-loop       : Execute the Total Element Loop example." << std::endl
+      << std::endl;
+    err = -1;
+  }
+  return err;
+}
 
 // Actually read the command-line options from the command line,
 // using the argc and argv arguments to main().  Use the clp output
@@ -150,42 +155,6 @@ int parseCmdLineOpts(Teuchos::CommandLineProcessor& clp, int argc, char* argv[])
     default:
       return -1;
   }
-}
-
-// Check the command-line options that were read in by
-// parseCmdLineOpts.  Return 0 if all correct, else return nonzero,
-// using the LAPACK error reporting convention of the negative of
-// the argument in its original order (starting with 1) as the error
-// code.  Print informative error messages to the given output
-// stream \c out.
-int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
-{
-  int err = 0;
-
-  if( !opts.useStaticProfile && 1 != (opts.execInsertGlobalIndices + opts.execLocalElementLoop + opts.execTotalElementLoop))
-  {
-    out << std::endl
-        << "Please select one algorithm to run.  Options are:" << std::endl
-        << "  --with-insert-global-indices     :  Execute the Insert Global Indices example." << std::endl
-        << "  --with-local-element-loop        :  Execute the Local Element Loop example." << std::endl
-        << "  --with-total-element-loop        :  Execute the Total Element Loop example." << std::endl
-        << std::endl;
-    err = -1;
-  }
-  else
-  {
-    // Currently we only have StaticProfile for TotalElementLoop
-    if(opts.useStaticProfile && 1 != (opts.execInsertGlobalIndicesFE + opts.execTotalElementLoop))
-    {
-      out << std::endl
-        << "  --with-insert-global-indices-fe  :  Execute the FE Insert Global Indices example." << std::endl
-          << "StaticProfile is currently only implemented with Total Element Loop, please use:" << std::endl
-          << "  --with-total-element-loop :  Execute the Total Element Loop example." << std::endl
-          << std::endl;
-      err = 1;
-    }
-  }
-  return err;
 }
 
 int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char* argv[])
@@ -222,12 +191,9 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
         << "verbose      : " << opts.verbose          << endl
         << "timing       : " << opts.timing           << endl
         << "saveMM       : " << opts.saveMM           << endl
-        << "staticProfile: " << opts.useStaticProfile << endl
         << "repetitions  : " << opts.repetitions      << endl
         << endl
         << "execInsertGlobalIndicesFE : " << opts.execInsertGlobalIndicesFE << endl
-        << "execInsertGlobalIndices   : " << opts.execInsertGlobalIndices << endl
-        << "execLocalElementLoop      : " << opts.execLocalElementLoop    << endl
         << "execTotalElementLoop      : " << opts.execTotalElementLoop    << endl
         << endl;
   }

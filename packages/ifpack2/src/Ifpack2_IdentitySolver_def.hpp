@@ -44,6 +44,9 @@
 #define IFPACK2_IDENTITY_SOLVER_DEF_HPP
 
 #include "Ifpack2_IdentitySolver_decl.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Export.hpp"
 
 namespace Ifpack2 {
 

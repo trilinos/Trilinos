@@ -299,7 +299,7 @@ public:
       *out << "  ";
       if (state == getWorkingState()) *out << "w - ";
       else if (state == getCurrentState()) *out << "c - ";
-      else if (state->getMetaData()->getIsInterpolated() == true) *out<<"i - ";
+      else if (state->getIsInterpolated() == true) *out<<"i - ";
       else *out << "    ";
       *out << "[" << i << "] = " << state << std::endl;
       if (verb == "medium" or verb == "high") {

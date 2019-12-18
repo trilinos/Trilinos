@@ -25,12 +25,12 @@ ATDM_SET_CACHE(TPL_ENABLE_yaml-cpp OFF CACHE BOOL)
 
 # Packages and sub-packages disables common to both SPARC and EMPIRE
 SET(ATDM_SE_PACKAGE_DISABLES
+  TrilinosFrameworkTests
   MiniTensor
   GlobiPack
   OptiPack
   Isorropia
   KokkosExample
-  MiniTensor
   Domi
   Pliris
   Komplex
@@ -68,11 +68,39 @@ IF (NOT ATDM_ENABLE_SPARC_SETTINGS)
   # at a time in an orderly fashion.
 ENDIF()
 
-# Disable MueLu for all cuda+complex builds for now since there are build
-# errors in the MueLu library that takes out everything downstream that
-# depends on MueLu (see #4599).
 IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
-  ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
+
+  # Disable extra packages not being used by GEMMA in cuda+complex builds (see
+  # ATDV-263, ATDV-265)
+  SET(ATDM_SE_PACKAGE_DISABLES
+    ${ATDM_SE_PACKAGE_DISABLES}
+    ShyLU_Node
+    Amesos2
+    SEACAS
+    Anasazi
+    Ifpack2
+    Stratimikos
+    Teko
+    Intrepid
+    Intrepid2
+    STK
+    Percept
+    NOX
+    Moertel
+    MueLu
+    Rythmos
+    Tempus
+    ROL
+    Piro
+    Panzer
+    )
+  # Note, above:
+  # * We are allowing the enable of Zoltan2 for now even though GEMMA is not
+  #   currently using it because Zoltan2 developers want to maintain it (see
+  #   discussion in ATDV-263).
+  # * The package MueLu does not currently build for cuda+complex builds so
+  #   therefore must be disabled (see #4599)
+
 ENDIF()
 
 
@@ -102,7 +130,9 @@ SET(ATDM_SE_PACKAGE_TEST_DISABLES
   Pamgen
   Ifpack
   ML
+  Anasazi
   Intrepid
+  Piro
   )
 
 #
@@ -196,6 +226,15 @@ ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
 # int instatiation (see #5411)
 ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_EXE_DISABLE ON)
 ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_MPI_4_DISABLE ON)
+
+# Diable experimental Belos HybridGMES tests in all ATDM Trilinos builds as
+# none of the ATDM customer codes are using this solver (see #4159)
+ATDM_SET_ENABLE(Belos_Tpetra_HybridGMRES_hb_test_1_MPI_4_DISABLE ON)
+ATDM_SET_ENABLE(Belos_Tpetra_HybridGMRES_hb_test_0_MPI_4_DISABLE ON)
+
+# Disable test for Belos recycling CG solver that is not used by ATDM APPs
+# (see #2919)
+ATDM_SET_ENABLE(Belos_rcg_hb_MPI_4_DISABLE ON)
 
 # Disable Piro_ThyraSolver exec that does not build with no global int
 # instantiation (see #5412)

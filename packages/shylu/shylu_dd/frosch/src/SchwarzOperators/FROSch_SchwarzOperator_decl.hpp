@@ -214,18 +214,18 @@ namespace FROSch {
     protected:
 
         CommPtr MpiComm_;
-        CommPtr SerialComm_;
+        CommPtr SerialComm_ = createSerialComm<int>();
 
         ConstXMatrixPtr K_;
 
         ParameterListPtr ParameterList_;
 
-        bool Verbose_;
+        bool Verbose_ = false;
 
-        bool IsInitialized_;
-        bool IsComputed_;
+        bool IsInitialized_ = false;
+        bool IsComputed_ = false;
 
-        ConstUN LevelID_;
+        ConstUN LevelID_ = 1;
     };
 
 }

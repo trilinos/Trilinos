@@ -30,6 +30,29 @@ public:
   /// Default constructor.
   SolutionStateMetaData();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  /// Constructor - Deprecated!
+  TEMPUS_DEPRECATED_MSG("Please use constructor with 21 arguments.")
+  SolutionStateMetaData(
+    const Scalar time,
+    const int    iStep,
+    const Scalar dt,
+    const Scalar errorAbs,
+    const Scalar errorRel,
+    const int    order,
+    const int    nFailures,
+    const int    nRunningFailures,
+    const int    nConsecutiveFailures,
+    const Scalar tolRel,
+    const Scalar tolAbs,
+    const Status solutionStatus,
+    const bool   output,
+    const bool   outputScreen,
+    const bool   isSynced,
+    const bool   isInterpolated,
+    const Scalar accuracy);
+#endif
+
   /// Constructor
   SolutionStateMetaData(
     const Scalar time,
@@ -43,6 +66,10 @@ public:
     const int    nConsecutiveFailures,
     const Scalar tolRel,
     const Scalar tolAbs,
+    const Scalar xNormL2,
+    const Scalar dxNormL2Rel,
+    const Scalar dxNormL2Abs,
+    const bool   computeNorms,
     const Status solutionStatus,
     const bool   output,
     const bool   outputScreen,
@@ -75,6 +102,10 @@ public:
     int    getNConsecutiveFailures() const {return nConsecutiveFailures_;}
     Scalar getTolAbs()               const {return tolAbs_;}
     Scalar getTolRel()               const {return tolRel_;}
+    Scalar getXNormL2()              const {return xNormL2_;}
+    Scalar getDxNormL2Abs()          const {return dxNormL2Abs_;}
+    Scalar getDxNormL2Rel()          const {return dxNormL2Rel_;}
+    bool   getComputeNorms()         const {return computeNorms_;}
     Status getSolutionStatus()       const {return solutionStatus_;}
     bool   getOutput()               const {return output_;}
     bool   getOutputScreen()         const {return outputScreen_;}
@@ -82,27 +113,30 @@ public:
     bool   getIsInterpolated()       const {return isInterpolated_;}
     Scalar getAccuracy()             const {return accuracy_;}
 
-    void setTime(Scalar time) {time_ = time;}
-    void setIStep(int iStep) {iStep_ = iStep;}
-    void setDt(Scalar dt) {dt_ = dt;}
-    void setErrorAbs (Scalar errorAbs){errorAbs_ = errorAbs;}
-    void setErrorRel (Scalar errorRel){errorRel_ = errorRel;}
-    void setOrder(Scalar order) {order_ = order;}
-    void setNFailures(int nFailures) {nFailures_ = nFailures;}
-    void setNRunningFailures(int nFailures) {nRunningFailures_ = nFailures;}
+    void setTime(Scalar time)                  {time_ = time;}
+    void setIStep(int iStep)                   {iStep_ = iStep;}
+    void setDt(Scalar dt)                      {dt_ = dt;}
+    void setErrorAbs (Scalar errorAbs)         {errorAbs_ = errorAbs;}
+    void setErrorRel (Scalar errorRel)         {errorRel_ = errorRel;}
+    void setOrder(Scalar order)                {order_ = order;}
+    void setNFailures(int nFailures)           {nFailures_ = nFailures;}
+    void setNRunningFailures(int nFailures)    {nRunningFailures_ = nFailures;}
     void setNConsecutiveFailures(int nConsecutiveFailures)
       {nConsecutiveFailures_ = nConsecutiveFailures;}
-    void setTolRel (Scalar tolRel){tolRel_ = tolRel;}
-    void setTolAbs (Scalar tolAbs){tolAbs_ = tolAbs;}
+    void setTolRel (Scalar tolRel)             {tolRel_ = tolRel;}
+    void setTolAbs (Scalar tolAbs)             {tolAbs_ = tolAbs;}
+    void setXNormL2 (Scalar xNormL2)           {xNormL2_ = xNormL2;}
+    void setDxNormL2Rel (Scalar dxNormL2Rel)   {dxNormL2Rel_ = dxNormL2Rel;}
+    void setDxNormL2Abs (Scalar dxNormL2Abs)   {dxNormL2Abs_ = dxNormL2Abs;}
+    void setComputeNorms (bool computeNorms)   {computeNorms_ = computeNorms;}
     void setSolutionStatus(Status solutionStatus)
       {solutionStatus_ = solutionStatus;}
-    void setOutput(bool output) {output_ = output;}
-    void setOutputScreen(bool outputScreen) {outputScreen_ = outputScreen;}
-    void setIsSynced(bool isSynced) {isSynced_=isSynced;}
+    void setOutput(bool output)                {output_ = output;}
+    void setOutputScreen(bool outputScreen)    {outputScreen_ = outputScreen;}
+    void setIsSynced(bool isSynced)            {isSynced_=isSynced;}
     void setIsInterpolated(bool isInterpolated)
       {isInterpolated_ = isInterpolated;}
-    void setAccuracy(Scalar accuracy) {accuracy_ = accuracy;}
-
+    void setAccuracy(Scalar accuracy)          {accuracy_ = accuracy;}
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -122,8 +156,12 @@ protected:
   int nFailures_;            ///< Total number of stepper failures
   int nRunningFailures_;     ///< Total number of running stepper failures
   int nConsecutiveFailures_; ///< Consecutive number of stepper failures
-  Scalar tolRel_;            ///< Absolute tolerance
-  Scalar tolAbs_;            ///< Relative tolerance
+  Scalar tolRel_;            ///< Relative tolerance
+  Scalar tolAbs_;            ///< Absolute tolerance
+  Scalar xNormL2_;           ///< L2-Norm of the solution
+  Scalar dxNormL2Rel_;       ///< Relative L2-Norm of the change in solution, ||x_i-x_{i-1}||/||x_{i-1}||
+  Scalar dxNormL2Abs_;       ///< Absolute L2-Norm of the change in solution, ||x_i-x_{i-1}||
+  bool   computeNorms_;      ///< flag to compute norms of solution
 
   /** \brief The solutionStatus is used to indicate
       - if the solution is still being worked on; WORKING

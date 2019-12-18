@@ -232,26 +232,26 @@ namespace FROSch {
 
     protected:
 
-        EntityType Type_;
+        EntityType Type_ = DefaultType;
 
-        EntityFlag Flag_;
+        EntityFlag Flag_ = DefaultFlag;
 
-        NodeVec NodeVector_;
+        NodeVec NodeVector_ = NodeVec(0);
 
-        IntVec SubdomainsVector_;
+        IntVec SubdomainsVector_ = IntVec(0);
 
         EntitySetPtr Ancestors_;
         EntitySetPtr Offspring_;
         EntitySetPtr Roots_;
 
-        SCVecPtrVec DistancesVector_; // AH 08/08/2019 TODO: make a MultiVector out of this
+        SCVecPtrVec DistancesVector_ = SCVecPtrVec(0); // AH 08/08/2019 TODO: make a MultiVector out of this
 
-        UN DofsPerNode_;
-        UN Multiplicity_;
-        GO UniqueID_;
-        LO LocalID_;
-        LO RootID_;
-        LO LeafID_;
+        UN DofsPerNode_ = 1;
+        UN Multiplicity_ = 1;
+        GO UniqueID_ = -1;
+        LO LocalID_ = -1;
+        LO RootID_ = -1;
+        LO LeafID_ = -1;
     };
 
     template <class SC,class LO,class GO,class NO>

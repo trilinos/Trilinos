@@ -53,11 +53,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstXMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
-    SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
-    OperatorVector_ (0),
-    XTmp_ (),
-    YTmp_ (),
-    EnableOperators_ (0)
+    SchwarzOperator<SC,LO,GO,NO> (k, parameterList)
     {
         FROSCH_TIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
     }
@@ -66,11 +62,7 @@ namespace FROSch {
     MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstXMatrixPtr k,
                                                                 SchwarzOperatorPtrVecPtr operators,
                                                                 ParameterListPtr parameterList) :
-    SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
-    OperatorVector_ (0),
-    XTmp_ (),
-    YTmp_ (),
-    EnableOperators_ (0)
+    SchwarzOperator<SC,LO,GO,NO> (k, parameterList)
     {
         FROSCH_TIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
         OperatorVector_.push_back(operators.at(0));

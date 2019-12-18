@@ -53,31 +53,21 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     SchwarzOperator<SC,LO,GO,NO>::SchwarzOperator(CommPtr comm) :
     MpiComm_ (comm),
-    SerialComm_ (),
-    K_ (),
-    ParameterList_ (),
-    Verbose_ (comm->getRank()==0),
-    IsInitialized_ (false),
-    IsComputed_ (false),
-    LevelID_ (1)
+    Verbose_ (comm->getRank()==0)
     {
-        SerialComm_ = createSerialComm<int>();
+        
     }
 
     template<class SC,class LO,class GO,class NO>
     SchwarzOperator<SC,LO,GO,NO>::SchwarzOperator(ConstXMatrixPtr k,
                                                   ParameterListPtr parameterList) :
     MpiComm_ (k->getRangeMap()->getComm()),
-    SerialComm_ (),
     K_ (k),
     ParameterList_ (parameterList),
     Verbose_ (MpiComm_->getRank()==0),
-    IsInitialized_ (false),
-    IsComputed_ (false),
     LevelID_ (ParameterList_->get("Level ID",UN(1)))
     {
         FROSCH_ASSERT(getDomainMap()->isSameAs(*getRangeMap()),"SchwarzOperator assumes DomainMap==RangeMap");
-        SerialComm_ = createSerialComm<int>();
     }
 
     template<class SC,class LO,class GO,class NO>

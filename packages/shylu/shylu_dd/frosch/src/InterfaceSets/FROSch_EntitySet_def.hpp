@@ -51,11 +51,8 @@ namespace FROSch {
     using namespace Xpetra;
     
     template<class SC,class LO,class GO,class NO>
-    EntitySet<SC,LO,GO,NO>::EntitySet(EntityType type):
-    Type_ (type),
-    EntityVector_ (0),
-    EntityMapIsUpToDate_ (false),
-    EntityMap_ ()
+    EntitySet<SC,LO,GO,NO>::EntitySet(EntityType type) :
+    Type_ (type)
     {
 
     }
@@ -63,9 +60,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     EntitySet<SC,LO,GO,NO>::EntitySet(const EntitySet<SC,LO,GO,NO> &entitySet) :
     Type_ (entitySet.getEntityType()),
-    EntityVector_ (entitySet.getEntityVector()),
-    EntityMapIsUpToDate_ (false),
-    EntityMap_ ()
+    EntityVector_ (entitySet.getEntityVector())
     {
 
     }
