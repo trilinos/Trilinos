@@ -248,7 +248,9 @@ namespace PHX {
     using array_type = typename traits::array_type;
     using size_type = typename device_type::size_type;
     using execution_space = typename array_type::execution_space;
-
+#ifdef PHX_DEBUG
+    enum { rank_value = traits::rank }; // for printing in debug mode
+#endif
     typedef Scalar value_type;
     typedef Scalar& reference_type;
 

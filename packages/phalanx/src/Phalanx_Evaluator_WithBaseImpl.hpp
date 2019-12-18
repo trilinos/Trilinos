@@ -48,6 +48,7 @@
 #include <vector>
 #include <functional>
 #include <unordered_map>
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
@@ -176,6 +177,8 @@ namespace PHX {
 
     virtual void deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const override;
 
+    virtual void printFieldValues(std::ostream& os) const override;
+
   private:
 
     std::vector< Teuchos::RCP<FieldTag> > evaluated_;
@@ -194,6 +197,15 @@ namespace PHX {
      *  std::unordered_multimap instead of std::unordered_map.
      */
     std::unordered_multimap<std::string,std::function<void(const PHX::any& f)>> field_binders_;
+
+#ifdef PHX_DEBUG
+    /** \brief Functors that print evaluator fields. Note
+     *  that two MDFields might point to the same underlying field in
+     *  a single evaluator. For this reason we use
+     *  std::unordered_multimap instead of std::unordered_map.
+     */
+    std::unordered_multimap<std::string,std::function<void(std::ostream& os)>> field_printers_;
+#endif
   };
 
 }

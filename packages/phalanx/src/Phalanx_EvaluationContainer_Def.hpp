@@ -232,6 +232,19 @@ postRegistrationSetup(typename Traits::SetupData d,
   // anymore in the postRegistrationSetup() as we now do it for them
   // above.
   this->dag_manager_.postRegistrationSetup(d,fm,build_device_dag_);
+
+#ifdef PHX_DEBUG
+  // Useful debugging options
+  auto print_dag_to_screen = std::getenv("PHX_PRINT_DAG_SCREEN");
+  if (print_dag_to_screen)
+    this->dag_manager_.print(std::cout);
+
+  auto print_dag_to_file = std::getenv("PHX_PRINT_DAG");
+  if (print_dag_to_file) {
+    std::string filename = std::string("phalanx_dag_")+PHX::print<EvalT>();
+    this->dag_manager_.writeGraphvizFileNew(filename,true,true);
+  }
+#endif
 }
 
 // *************************************************************************
@@ -393,7 +406,6 @@ assignSharedFields()
     printf("  Evalaution Type: %s\n",PHX::print<EvalT>().c_str());
     printf("*******************************************\n");
   }
-
 }
 
 // *************************************************************************

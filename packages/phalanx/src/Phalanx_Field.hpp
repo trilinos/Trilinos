@@ -104,6 +104,9 @@ namespace PHX {
     typedef typename array_type::device_type device_type;
     typedef typename PHX::Device::size_type size_type;
     typedef typename array_type::execution_space execution_space;
+#ifdef PHX_DEBUG
+    enum { rank_value = Rank }; // for printing in debug mode
+#endif
 
     Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl);
 

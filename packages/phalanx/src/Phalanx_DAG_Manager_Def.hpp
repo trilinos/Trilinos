@@ -44,6 +44,7 @@
 #ifndef PHX_DAG_MANAGER_DEF_HPP
 #define PHX_DAG_MANAGER_DEF_HPP
 
+#include <cstdlib> // for std::getenv
 #include <cstddef>
 #include <iostream>
 #include <sstream>
@@ -447,8 +448,29 @@ evaluateFields(typename Traits::EvalData d)
 #ifdef PHX_DEBUG
     if (nonnull(start_stop_debug_ostream_)) {
       *start_stop_debug_ostream_ << "Phalanx::DagManager: Starting node: "
-                                 << nodes_[topoSortEvalIndex[n]].getNonConst()->getName()
+                                 << nodes_[topoSortEvalIndex[n]].get()->getName()
                                  << std::endl;
+    }
+
+    auto print_fields = std::getenv("PHX_PRINT_FIELDS");
+    if (print_fields) {
+      std::cout << "************************************************\n"
+                << "Printing fields BEFORE executing evaluator: "
+                << nodes_[topoSortEvalIndex[n]].get()->getName()
+                << "\n  Evaluated Fields:\n";
+      auto& eft = nodes_[topoSortEvalIndex[n]].get()->evaluatedFields();
+      for (const auto& t : eft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout << "  Contributed Fields:\n";
+      auto& cft = nodes_[topoSortEvalIndex[n]].get()->contributedFields();
+      for (const auto& t : cft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout << "  Dependent Fields:\n";
+      auto& dft = nodes_[topoSortEvalIndex[n]].get()->dependentFields();
+      for (const auto& t : dft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout  << "************************************************\n";
+      nodes_[topoSortEvalIndex[n]].get()->printFieldValues(std::cout);
     }
 #endif
 
@@ -460,6 +482,26 @@ evaluateFields(typename Traits::EvalData d)
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
 
 #ifdef PHX_DEBUG
+    if (print_fields) {
+      std::cout << "************************************************\n"
+                << "Printing fields AFTER executing evaluator: "
+                << nodes_[topoSortEvalIndex[n]].get()->getName()
+                << "\n  Evaluated Fields:\n";
+      auto& eft = nodes_[topoSortEvalIndex[n]].get()->evaluatedFields();
+      for (const auto& t : eft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout << "  Contributed Fields:\n";
+      auto& cft = nodes_[topoSortEvalIndex[n]].get()->contributedFields();
+      for (const auto& t : cft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout << "  Dependent Fields:\n";
+      auto& dft = nodes_[topoSortEvalIndex[n]].get()->dependentFields();
+      for (const auto& t : dft)
+        std::cout << "    " << t->identifier() << std::endl;
+      std::cout  << "************************************************\n";
+      nodes_[topoSortEvalIndex[n]].get()->printFieldValues(std::cout);
+    }
+
     if (nonnull(start_stop_debug_ostream_)) {
       *start_stop_debug_ostream_ << "Phalanx::DagManager: Completed node: "
                                  << nodes_[topoSortEvalIndex[n]].getNonConst()->getName()
@@ -771,7 +813,6 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
 
   node.setColor(PHX::Color::BLACK);
 }
-
 
 //=======================================================================
 template<typename Traits>

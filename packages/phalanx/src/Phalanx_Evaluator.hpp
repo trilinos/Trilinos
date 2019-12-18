@@ -191,6 +191,9 @@ namespace PHX {
     //! Call dtor and delete device memory. Only used for Device DAG support
     virtual void deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const = 0;
 
+    /// Print the field values for all fields in the evaluator.
+    virtual void printFieldValues(std::ostream& os) const = 0;
+
     // @}
 
   };
