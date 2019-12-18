@@ -1892,6 +1892,72 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(
   mat->fillComplete(domainMap, rowRangeMap);
   return mat;
 }
+
+template<typename SC, typename LO, typename GO, typename NT>
+RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getUnsortedTestMatrix(
+    RCP<const Tpetra::Map<LO, GO, NT>> rowRangeMap,
+    RCP<const Tpetra::Map<LO, GO, NT>> domainMap,
+    RCP<const Tpetra::Map<LO, GO, NT>> colMap,
+    int seed)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using KCRS = typename crs_matrix_type::local_matrix_type;
+  using size_type = typename KCRS::row_map_type::non_const_value_type;
+  using lno_t =     typename KCRS::index_type::non_const_value_type;
+  using kk_scalar_t =  typename KCRS::values_type::non_const_value_type;
+  //Get consistent results between runs on a given machine
+  srand(seed);
+  lno_t numLocalRows = rowRangeMap->getNodeNumElements();
+  lno_t numLocalCols = colMap->getNodeNumElements();
+  Array<int> entriesPerRow(numLocalRows, 0);
+  for(LO i = 0; i < numLocalRows; i++)
+    entriesPerRow[i] = rand() % numLocalCols;
+  size_type numEntries = 0;
+  for(LO i = 0; i < numLocalRows; i++)
+    numEntries += entriesPerRow[i];
+  Array<lno_t> rowptrs(numLocalRows + 1);
+  Array<lno_t> colinds(numEntries);
+  Array<kk_scalar_t> values(numEntries);
+  size_type accum = 0;
+  for(lno_t i = 0; i <= numLocalRows; i++)
+  {
+    rowptrs[i] = accum;
+    if(i == numLocalRows)
+      break;
+    accum += entriesPerRow[i];
+  }
+  for(lno_t i = 0; i < numLocalRows; i++)
+  {
+    Array<lno_t> unused(numLocalCols);
+    for(lno_t j = 0; j < numLocalCols; j++)
+      unused[j] = j;
+    for(lno_t j = 0; j < entriesPerRow[i]; j++)
+    {
+      //Select a random column from the columns not used yet
+      size_t index = rand() % unused.size();
+      colinds[rowptrs[i] + j] = unused[index];
+      values[rowptrs[i] + j] = 10.0 * rand() / RAND_MAX;
+      //efficiently remove index element from unused, don't care about order
+      unused[index] = unused.back();
+      unused.pop_back();
+    }
+  }
+  //Construct the local matrix
+  KCRS lclMatrix(std::string("UnsortedLcl"), numLocalRows, numLocalCols, numEntries, values.data(), rowptrs.data(), colinds.data());
+  auto matParams = rcp(new ParameterList);
+  matParams->set("sorted", false);
+  auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(rowRangeMap, colMap, lclMatrix, matParams));
+  //mat will be returned as fill-complete
+  TEUCHOS_TEST_FOR_EXCEPTION(!mat->isFillComplete(), std::logic_error,
+      "Test matrix must be fill-complete");
+  TEUCHOS_TEST_FOR_EXCEPTION(mat->getCrsGraph()->isSorted(), std::logic_error,
+      "This test matrix isn't supposed to be locally sorted.");
+  return mat;
+}
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT)
@@ -1995,33 +2061,45 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   //To compute A + B^T, domain map of A must match range map of B and vice versa.
-  GO numGlobalRows = 500;
-  GO numGlobalCols = 500;
-  GO AindexBase = 100;
+  GO numGlobalRows = 400;
+  GO numGlobalCols = 400;
   GO numLocalCols = numGlobalCols / nprocs;
   //This is the row, domain and range map for both A and B
   RCP<const map_type> map = rcp(new map_type(numGlobalRows, 0, comm));
-  //Generate A/B column maps each covering a different uniform random subset (30 out of 1000) of all global cols,
-  //except A's column map has index base 100.
-  GO AminCol = numLocalCols * (rank - 1);
-  if(AminCol < AindexBase)
-    AminCol = AindexBase;
-  GO ABmaxCol = numLocalCols * (rank + 2);
-  if(ABmaxCol > numGlobalCols)
-    ABmaxCol = numGlobalCols;
-  GO BminCol = numLocalCols * (rank - 1);
-  if(BminCol < 0)
-    BminCol = 0;
-  auto Acolmap = buildRandomColMap<LO, GO, NT>(map, AindexBase, AminCol, ABmaxCol, 234 + rank, 0.7);
-  auto Bcolmap = buildRandomColMap<LO, GO, NT>(map, 0, BminCol, ABmaxCol, 236 + rank, 0.7);
-  auto A = getTestMatrix<SC, LO, GO, NT>(map, map, Acolmap, 123);
-  auto B = getTestMatrix<SC, LO, GO, NT>(map, map, Bcolmap, 321);
+  auto colmap = buildRandomColMap<LO, GO, NT>(map, 0, numLocalCols * rank, numLocalCols * (rank + 1), 234 + rank, 1.0);
+  auto A = getTestMatrix<SC, LO, GO, NT>(map, map, colmap, 123);
+  auto B = getTestMatrix<SC, LO, GO, NT>(map, map, colmap, 321);
   auto one = Teuchos::ScalarTraits<SC>::one();
   RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, true, *B);
   TEST_ASSERT(C->isFillComplete());
   TEST_ASSERT(checkLocallySorted(*C));
   auto Btrans = Tpetra::RowMatrixTransposer<SC, LO, GO, NT>(B).createTranspose(Teuchos::null);
   TEST_ASSERT(verifySum(*A, *Btrans, *C));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT)
+{
+  using namespace AddTestUtils;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
+  //To compute A + B^T, domain map of A must match range map of B and vice versa.
+  GO numGlobalRows = 120;
+  GO numGlobalCols = 120;
+  GO numLocalCols = numGlobalCols / nprocs;
+  //This is the row, domain and range map for both A and B
+  RCP<const map_type> map = rcp(new map_type(numGlobalRows, 0, comm));
+  auto colmap = buildRandomColMap<LO, GO, NT>(map, 0, numLocalCols * rank, numLocalCols * (rank + 1), 234 + rank, 1.0);
+  //A and B must have the same column maps
+  auto A = getTestMatrix<SC, LO, GO, NT>(map, map, colmap, 123);
+  auto B = getUnsortedTestMatrix<SC, LO, GO, NT>(map, map, colmap, 321);
+  auto one = Teuchos::ScalarTraits<SC>::one();
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B);
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  TEST_ASSERT(verifySum(*A, *B, *C));
 }
 
 /*
@@ -2075,6 +2153,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT)
 
