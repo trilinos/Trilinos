@@ -1,3 +1,0 @@
-@INCLUDE=teuchos/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/globipackBrowser.tag=$(TRILINOS_HOME)/packages/globipack/browser/doc/html

@@ -58,13 +58,6 @@
 #include "MoochoPack_MoochoThyraSolver.hpp"
 #endif
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-#ifdef HAVE_PIRO_OPTIPACK
-#include "OptiPack_NonlinearCG.hpp"
-#include "GlobiPack_BrentsLineSearch.hpp"
-#endif
-#endif
-
 #ifdef HAVE_PIRO_ROL
 #include "ROL_ThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
@@ -121,18 +114,6 @@ Piro::PerformAnalysis(
   }
 #endif
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-#ifdef HAVE_PIRO_OPTIPACK
-  else if (analysis == "OptiPack") {
-    *out << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
-    status = Piro::PerformOptiPackAnalysis(piroModel,
-                    analysisParams.sublist("OptiPack"),
-                    analysisParams.sublist("GlobiPack"), result);
-
-  }
-#endif
-#endif
-
 #ifdef HAVE_PIRO_ROL
   else if (analysis == "ROL") {
     *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
@@ -143,18 +124,12 @@ Piro::PerformAnalysis(
 #endif
   else {
     if (analysis == "Dakota" || 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-        analysis == "OptiPack" || 
-#endif
         analysis == "MOOCHO" || analysis == "ROL")
       *out << "ERROR: Trilinos/Piro was not configured to include \n "
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
            << "       Valid analysis types are: Solve, Dakota, MOOCHO, "
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-           << "OptiPack, " 
-#endif
            << "ROL\n" << endl;
     status = 0; // Should not fail tests
   }
@@ -262,68 +237,6 @@ Piro::PerformDakotaAnalysis(
  return 0;  // should not fail tests
 #endif
 }
-
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-int
-#ifdef HAVE_PIRO_OPTIPACK
-// Spew deprecation warnings only if Piro user has requested OptiPack.
-OPTIPACK_DEPRECATED
-#endif
-Piro::PerformOptiPackAnalysis(
-    Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& optipackParams,
-    Teuchos::ParameterList& globipackParams,
-    RCP< Thyra::VectorBase<double> >& p)
-{
-   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-#ifdef HAVE_PIRO_OPTIPACK
-  // First, Linesearch stuff
-  const RCP<GlobiPack::BrentsLineSearch<double> >
-    linesearch = GlobiPack::brentsLineSearch<double>();
-  const RCP<ParameterList> lsPL = rcp(&globipackParams, false);
-  linesearch->setParameterList(lsPL);
-
-  // Temporary Debug
-  *out << "\nCurrent LineSearch parameters" << endl;
-  lsPL->print(*out);
-
-  // Second, Optimization stuff
-
-  p = Thyra::createMember(piroModel.get_p_space(0));
-
-  RCP<const Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(0);
-
-  Thyra::copy(*p_init, p.ptr());
-
-  const RCP<OptiPack::NonlinearCG<double> > cgSolver =
-    OptiPack::nonlinearCG<double>(rcp(&piroModel,false), 0, 0, linesearch);
-
-  const RCP<ParameterList> pl = rcp(&optipackParams,false);
-  cgSolver->setParameterList(pl);
-
-  // Temporary Debug Info
-  *out << "\nCurrent nonlinearCG parameter list" << endl;
-  pl->print(*out);
-
-  // Solve the prob
-  double g_opt;  // optimal value of the response
-  int numIters;  // number of iteration taken
-  const OptiPack::NonlinearCGUtils::ESolveReturn solveResult =
-    cgSolver->doSolve( p.ptr(), outArg(g_opt),
-                       null, null, null, outArg(numIters) );
-
-  return (int) solveResult;
-#else
-  (void)piroModel;
-  (void)optipackParams;
-  (void)globipackParams;
-  (void)p;
- *out << "ERROR: Trilinos/Piro was not configured to include OptiPack analysis."
-      << endl;
- return 0;  // should not fail tests
-#endif
-}
-#endif // !OPTIPACK_HIDE_DEPRECATED_CODE
 
 int
 Piro::PerformROLAnalysis(
@@ -514,14 +427,10 @@ Piro::getValidPiroAnalysisParameters()
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      rcp(new Teuchos::ParameterList("Valid Piro Analysis Params"));;
 
-  validPL->set<std::string>("Analysis Package", "","Must be: Solve, MOOCHO, Dakota, or OptiPack.");
+  validPL->set<std::string>("Analysis Package", "","Must be: Solve, MOOCHO, or Dakota.");
   validPL->set<bool>("Output Final Parameters", false, "");
   validPL->sublist("Solve",     false, "");
   validPL->sublist("MOOCHO",    false, "");
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-  validPL->sublist("OptiPack",  false, "");
-  validPL->sublist("GlobiPack", false, "");
-#endif
   validPL->sublist("Dakota",    false, "");
   validPL->sublist("ROL",       false, "");
   validPL->set<int>("Write Interval", 1, "Iterval between writes to mesh");

@@ -80,7 +80,6 @@ As a ResponseOnlyModelEvaluator, any %Piro solver will
 satisfy the interface for non-intrusive optimization
 and UQ algorithms. In Trilinos, these include:
 <ul>
-<li>OptiPack: Distributed memory optimization algorithms with line searches
 <li>MOOCHO: Distributed memory SQP methods with constraints
 <li>Dakota via %TriKota: The entire Dakota framework
 (developed at Sandia independently from Trilinos) is available
@@ -130,7 +129,7 @@ and not just two.
 %Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey,
 Roger Pawlowski, and Eric Phipps. Much of the code is adapted from
 tests and examples for NOX, LOCA, Rythmos, Stokhos, MOOCHO,
-OptiPack, and %TriKota, and was developed and matured in the Albany
+and %TriKota, and was developed and matured in the Albany
 application code before being library-ized into %Piro.
 
 */

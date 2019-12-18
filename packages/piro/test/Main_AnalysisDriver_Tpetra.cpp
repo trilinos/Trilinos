@@ -95,14 +95,13 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<2; iTest++) {
+  for (int iTest=0; iTest<3; iTest++) {
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Analysis_ROL_Tpetra.xml"; break;
        case 1: inputFile="input_Analysis_ROL_AdjointSensitivities_Tpetra.xml"; break;
-       case 2: inputFile="input_Analysis_OptiPack.xml"; break;
-       case 3: inputFile="input_Analysis_MOOCHO.xml"; break;
+       case 2: inputFile="input_Analysis_MOOCHO.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -164,7 +163,7 @@ int main(int argc, char *argv[]) {
       RCP<Thyra::VectorBase<double>> p;
       status = Piro::PerformAnalysis(*piro, analysisParams, p);
 
-      if (Teuchos::nonnull(p)) { //p might be null if the packages ROL, Moocho, OptiPack are not enabled
+      if (Teuchos::nonnull(p)) { //p might be null if the packages ROL, Moocho are not enabled
         Thyra::DetachedVectorView<double> p_view(p);
         double p_exact[2] = {1,3};
         double tol = 1e-6;
