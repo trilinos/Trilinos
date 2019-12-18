@@ -89,7 +89,7 @@ public:
     actual_procCoords(NULL),
     transformed_machine_extent(NULL),
     actual_machine_extent(NULL),
-    num_unique_groups(0),
+    num_unique_groups(1),
     group_count(NULL),
     is_transformed(false), 
     pl(NULL) {
@@ -118,7 +118,7 @@ public:
           sizeof(pcoord_t) * this->numRanks);
     }
 
-    pcoord_t *xyz = new pcoord_t[transformed_networkDim];
+    pcoord_t *xyz = new pcoord_t[actual_networkDim];
     getMyActualMachineCoordinate(xyz);
     for (int i = 0; i < actual_networkDim; ++i)
       actual_procCoords[i][this->myRank] = xyz[i];
@@ -187,7 +187,7 @@ public:
     actual_procCoords(NULL),
     transformed_machine_extent(NULL),
     actual_machine_extent(NULL),
-    num_unique_groups(0),
+    num_unique_groups(1),
     group_count(NULL),
     is_transformed(false), 
     pl(&pl_)

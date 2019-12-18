@@ -13,6 +13,7 @@
 #include <Zoltan2_MachineTorusRCAForTesting.hpp>
 #include <Zoltan2_MachineDragonflyRCA.hpp>
 #include <Zoltan2_MachineDragonflyRCAForTesting.hpp>
+#include <Zoltan2_MachineFatTreeForTesting.hpp>
 #include <Zoltan2_Environment.hpp>
 
 //#define HAVE_ZOLTAN2_BGQTEST
@@ -67,7 +68,8 @@ public:
   #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)
     typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
   #else 
-    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+//    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+    typedef MachineFatTreeForTesting<pcoord_t, part_t> machine_t;
 //    typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
 //    typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
   #endif

@@ -38,7 +38,7 @@ public:
     actual_procCoords(NULL),
     transformed_machine_extent(NULL),
     actual_machine_extent(NULL), 
-    num_unique_groups(0),
+    num_unique_groups(1),
     group_count(NULL),
     is_transformed(false),
     pl(NULL) {
@@ -67,7 +67,7 @@ public:
           sizeof(pcoord_t) * this->numRanks);
     }
 
-    pcoord_t *xyz = new pcoord_t[transformed_networkDim];
+    pcoord_t *xyz = new pcoord_t[actual_networkDim];
     getMyActualMachineCoordinate(xyz);
     for (int i = 0; i < actual_networkDim; ++i)
       actual_procCoords[i][this->myRank] = xyz[i];
@@ -136,7 +136,7 @@ public:
     actual_procCoords(NULL),
     transformed_machine_extent(NULL),
     actual_machine_extent(NULL),
-    num_unique_groups(0),
+    num_unique_groups(1),
     group_count(NULL), 
     is_transformed(false),
     pl(&pl_) { 
@@ -481,11 +481,13 @@ public:
     return false;
 #endif
 */
-    srand(this->myRank);
+//    srand(this->myRank);
 
-    int x = this->myRank * 131 % 11;
-    int y = this->myRank * 131 % 6;
-    int z = this->myRank * 131 % 16;
+    int large_prime = 1117;  
+
+    int x = this->myRank * large_prime % 11;
+    int y = this->myRank * large_prime % 6;
+    int z = this->myRank * large_prime % 16;
 
     xyz[0] = x; 
     xyz[1] = y; 
