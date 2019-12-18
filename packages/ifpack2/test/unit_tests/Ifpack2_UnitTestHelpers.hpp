@@ -884,9 +884,6 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
     NotCrsMatrix (Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) : A_(A){;}
     virtual ~NotCrsMatrix(){;}
     virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const {return A_->getComm();}
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual TPETRA_DEPRECATED Teuchos::RCP<Node> getNode() const {return Teuchos::null;}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
     getRangeMap () const {return A_->getRangeMap();}
     virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >

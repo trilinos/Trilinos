@@ -499,16 +499,6 @@ getComm() const
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-//! Get this Map's Node object.
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Node>
-BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
-getNode() const
-{
-    return fullmap_->getNode();
-}
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>

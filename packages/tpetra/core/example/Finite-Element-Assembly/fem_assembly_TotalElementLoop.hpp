@@ -38,8 +38,8 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TOTALELEMENTLOOP_SP_HPP
-#define TPETRAEXAMPLES_FEM_ASSEMBLY_TOTALELEMENTLOOP_SP_HPP
+#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TOTALELEMENTLOOP_HPP
+#define TPETRAEXAMPLES_FEM_ASSEMBLY_TOTALELEMENTLOOP_HPP
 
 #include <cmath>
 #include <iostream>
@@ -661,4 +661,4 @@ executeTotalElementLoopSPKokkos_
 
 } // namespace TpetraExamples
 
-#endif // TPETRAEXAMPLES_FEM_ASSEMBLY_LOCALELEMENTLOOP_DP_HPP
+#endif // TPETRAEXAMPLES_FEM_ASSEMBLY_TOTALELEMENTLOOP_HPP
