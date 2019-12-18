@@ -1986,6 +1986,44 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, different_index_base, SC, LO
   TEST_ASSERT(verifySum(*A, *B, *C));
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT)
+{
+  using namespace AddTestUtils;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
+  //To compute A + B^T, domain map of A must match range map of B and vice versa.
+  GO numGlobalRows = 500;
+  GO numGlobalCols = 500;
+  GO AindexBase = 100;
+  GO numLocalCols = numGlobalCols / nprocs;
+  //This is the row, domain and range map for both A and B
+  RCP<const map_type> map = rcp(new map_type(numGlobalRows, 0, comm));
+  //Generate A/B column maps each covering a different uniform random subset (30 out of 1000) of all global cols,
+  //except A's column map has index base 100.
+  GO AminCol = numLocalCols * (rank - 1);
+  if(AminCol < AindexBase)
+    AminCol = AindexBase;
+  GO ABmaxCol = numLocalCols * (rank + 2);
+  if(ABmaxCol > numGlobalCols)
+    ABmaxCol = numGlobalCols;
+  GO BminCol = numLocalCols * (rank - 1);
+  if(BminCol < 0)
+    BminCol = 0;
+  auto Acolmap = buildRandomColMap<LO, GO, NT>(map, AindexBase, AminCol, ABmaxCol, 234 + rank, 0.7);
+  auto Bcolmap = buildRandomColMap<LO, GO, NT>(map, 0, BminCol, ABmaxCol, 236 + rank, 0.7);
+  auto A = getTestMatrix<SC, LO, GO, NT>(map, map, Acolmap, 123);
+  auto B = getTestMatrix<SC, LO, GO, NT>(map, map, Bcolmap, 321);
+  auto one = Teuchos::ScalarTraits<SC>::one();
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, true, *B);
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  auto Btrans = Tpetra::RowMatrixTransposer<SC, LO, GO, NT>(B).createTranspose(Teuchos::null);
+  TEST_ASSERT(verifySum(*A, *Btrans, *C));
+}
+
 /*
  * This test was added at the request of Chris Siefert
  * Turns out it fails because the original algorithm in
@@ -2036,6 +2074,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, different_index_base, SC, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT)
 

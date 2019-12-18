@@ -494,7 +494,8 @@ namespace Tpetra {
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Constructor specifying column Map and arrays containing
-    ///   the graph with sorted local indices.
+    ///   the graph. In almost all cases the indices must be sorted on input,
+    ///   but if they aren't sorted, "sorted" must be set to false in params.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -521,7 +522,8 @@ namespace Tpetra {
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
-    ///   the graph with sorted local indices.
+    ///   the graph. In almost all cases the indices must be sorted on input,
+    ///   but if they aren't sorted, "sorted" must be set to false in params.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -547,8 +549,10 @@ namespace Tpetra {
               const Teuchos::ArrayRCP<local_ordinal_type>& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying column Map and a local (sorted)
+    /// \brief Constructor specifying column Map and a local
     ///   graph, which the resulting CrsGraph views.
+    ///   In almost all cases the local graph must be sorted on input,
+    ///   but if it isn't sorted, "sorted" must be set to false in params.
     ///
     /// Unlike most other CrsGraph constructors, successful completion
     /// of this constructor will result in a fill-complete graph.
@@ -572,7 +576,9 @@ namespace Tpetra {
               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Constructor specifying column, domain and range maps, and a
-    ///   local (sorted) graph, which the resulting CrsGraph views.
+    ///   local graph, which the resulting CrsGraph views.
+    ///   In almost all cases the local graph must be sorted on input,
+    ///   but if it isn't sorted, "sorted" must be set to false in params.
     ///
     /// Unlike most other CrsGraph constructors, successful completion
     /// of this constructor will result in a fill-complete graph.
@@ -603,6 +609,9 @@ namespace Tpetra {
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Create a fill-complete CrsGraph from all the things it needs.
+    /// \param lclGraph [in] The local graph.  In almost all cases the
+    ///   local graph must be sorted on input,
+    ///   but if it isn't sorted, "sorted" must be set to false in params.
     CrsGraph (const local_graph_type& lclGraph,
               const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
