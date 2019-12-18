@@ -102,7 +102,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   ShyLU_Node            packages/shylu/shylu_node         PT
   Amesos2               packages/amesos2                  PT
   SEACAS                packages/seacas                   PT # Depends on netcdf, optionally hdf5, xdmf, pamgen
-  Trios                 packages/trios                    EX #temporary
   Komplex               packages/komplex                  ST
   Anasazi               packages/anasazi                  PT
   Ifpack2               packages/ifpack2                  PT
@@ -138,7 +137,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
-  Mesquite              packages/mesquite                 ST
   TrilinosCouplings     packages/trilinoscouplings        PT
   Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST
@@ -192,6 +190,4 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Anasazi Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Mesquite AIX)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Trios Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Panzer Windows)

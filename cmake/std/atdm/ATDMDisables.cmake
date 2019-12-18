@@ -34,7 +34,6 @@ SET(ATDM_SE_PACKAGE_DISABLES
   Domi
   Pliris
   Komplex
-  Trios
   FEI
   TriKota
   STKClassic
