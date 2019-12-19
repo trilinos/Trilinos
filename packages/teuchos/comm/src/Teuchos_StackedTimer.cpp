@@ -56,6 +56,12 @@ StackedTimer::LevelTimer::findBaseTimer(const std::string &name) const {
 BaseTimer::TimeInfo
 StackedTimer::LevelTimer::findTimer(const std::string &name, bool& found) {
   BaseTimer::TimeInfo t;
+  auto full_name = get_full_name();
+  auto level=0;
+  if (full_name.size() > name.size())
+    return t;
+  if ( strncmp(full_name.c_str(), name.c_str(), full_name.size()))
+    return t;
   if (get_full_name() == name) {
     t = BaseTimer::TimeInfo(this);
     found = true;
