@@ -60,7 +60,6 @@
 #include "Piro_NOXSolver.hpp"
 #endif
 
-#define HAVE_PIRO_ROL
 #ifdef HAVE_PIRO_ROL
 #include "ROL_ThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
