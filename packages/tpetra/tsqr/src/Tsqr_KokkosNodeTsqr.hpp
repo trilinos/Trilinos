@@ -1602,11 +1602,13 @@ namespace TSQR {
       std::vector<Scalar> tau (R_top.extent (1));
 
       const LocalOrdinal ncol = R_top.extent (1);
-      const size_t lwork = combine.work_size (2 * ncol, ncol, ncol);
-      if (lwork > work_.size ()) {
+      const LocalOrdinal lwork
+        (combine.work_size (2 * ncol, ncol, ncol));
+      if (lwork > LocalOrdinal (work_.size ())) {
         work_.resize (lwork);
       }
-      combine.factor_pair (R_top, R_bot, tau.data (), work_.data ());
+      combine.factor_pair (R_top, R_bot, tau.data (),
+                           work_.data (), lwork);
       return tau;
     }
 
@@ -1657,15 +1659,15 @@ namespace TSQR {
                const mat_view_type& C_top,
                const mat_view_type& C_bot) const
     {
-      const size_t lwork =
-        combine.work_size (C_bot.extent (0),
-                           R_bot.extent (1),
-                           C_bot.extent (1));
-      if (lwork > work_.size ()) {
+      const LocalOrdinal lwork
+        (combine.work_size (C_bot.extent (0),
+                            R_bot.extent (1),
+                            C_bot.extent (1)));
+      if (lwork > LocalOrdinal (work_.size ())) {
         work_.resize (lwork);
       }
       combine.apply_pair (applyType, R_bot, tau.data (),
-                          C_top, C_bot, work_.data ());
+                          C_top, C_bot, work_.data (), lwork);
     }
 
     void

@@ -252,7 +252,8 @@ namespace TSQR {
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
       const Ordinal numRows = Ordinal(2) * R_top.extent (1);
       const Ordinal numCols = R_top.extent (1);
@@ -268,7 +269,6 @@ namespace TSQR {
       copy_upper_triangle (A_buf_tb.first, R_top);
       copy_upper_triangle (A_buf_tb.second, R_bot);
 
-      const int lwork = static_cast<int> (numCols);
       lapack_.compute_QR (numRows, numCols,
                           A_buf_.data(), A_buf_.stride(1),
                           tau, work, lwork);
@@ -286,7 +286,8 @@ namespace TSQR {
                 const Scalar tau[],
                 const MatView<Ordinal, Scalar>& C_top,
                 const MatView<Ordinal, Scalar>& C_bot,
-                Scalar work[])
+                Scalar work[],
+                const Ordinal lwork)
     {
       const Ordinal ncols_C = C_top.extent (1);
       const Ordinal ncols_Q = R_bot.extent (1);
@@ -303,7 +304,6 @@ namespace TSQR {
       deep_copy (C_buf_tb.first, C_top);
       deep_copy (C_buf_tb.second, C_bot);
 
-      const int lwork = ncols_Q;
       const std::string trans = apply_type.toString ();
       lapack_.apply_Q_factor ('L', trans[0], numRows, ncols_C,
                               ncols_Q, A_buf_.data (),

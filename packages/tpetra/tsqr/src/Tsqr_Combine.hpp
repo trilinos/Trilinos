@@ -262,9 +262,10 @@ namespace TSQR {
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
-      impl_.factor_pair (R_top, R_bot, tau, work);
+      impl_.factor_pair (R_top, R_bot, tau, work, lwork);
     }
 
     /// \brief Apply the result of \c factor_pair().
@@ -284,9 +285,11 @@ namespace TSQR {
                 const Scalar tau[],
                 const MatView<Ordinal, Scalar>& C_top,
                 const MatView<Ordinal, Scalar>& C_bot,
-                Scalar work[])
+                Scalar work[],
+                const Ordinal lwork)
     {
-      impl_.apply_pair (apply_type, R_bot, tau, C_top, C_bot, work);
+      impl_.apply_pair (apply_type, R_bot, tau, C_top, C_bot,
+                        work, lwork);
     }
 
   private:

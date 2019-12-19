@@ -387,11 +387,11 @@ namespace TSQR {
 
           std::vector<scalar_type> tau (numCols);
 
-          const size_t lwork =
-            combine_.work_size (2 * numCols, numCols, numCols);
+          const LocalOrdinal lwork
+            (combine_.work_size (2 * numCols, numCols, numCols));
           work_.resize (lwork);
           combine_.factor_pair (R_mine, R_other.view (),
-                                tau.data (), work_.data ());
+                                tau.data (), work_.data (), lwork);
           QFactors.push_back (R_other);
           tauArrays.push_back (tau);
         }
@@ -449,8 +449,17 @@ namespace TSQR {
           // where Q_other = zeros(Q_mine.extent(0), Q_mine.extent(1)).
           // Overwrite both Q_mine and Q_other with the result.
           deep_copy (Q_other, scalar_type {});
+
+          const LocalOrdinal pair_nrows
+            (Q_mine.extent (0) + Q_other.extent (0));
+          const LocalOrdinal pair_ncols (Q_mine.extent (1));
+          const LocalOrdinal lwork
+            (combine_.work_size (pair_nrows, pair_ncols, pair_ncols));
+          if (lwork > LocalOrdinal (work_.size ())) {
+            work_.resize (lwork);
+          }
           combine_.apply_pair (ApplyType::NoTranspose, Q_bot, tau,
-                               Q_mine, Q_other, work_.data ());
+                               Q_mine, Q_other, work_.data (), lwork);
           // Send the resulting Q_other, and the final R factor, to P_mid.
           send_Q_R (Q_other, R_mine, P_mid);
           newpos = curpos - 1;

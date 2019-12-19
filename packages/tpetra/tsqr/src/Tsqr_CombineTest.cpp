@@ -365,11 +365,11 @@ namespace TSQR {
              << " by " << numCols << endl << endl;
       }
       combiner.factor_pair (R1.view (), R2.view (),
-                            tau_R1R2.data (), work.data ());
+                            tau_R1R2.data (), work.data (), lwork);
       combiner.apply_pair (ApplyType ("N"), R2.view (),
                            tau_R1R2.data (),
                            Q_R1_Q_R2.first, Q_R1_Q_R2.second,
-                           work.data ());
+                           work.data (), lwork);
       if (debug) {
         cerr << "Results of first test problem:" << endl;
         cerr << "-- Copy of test problem:" << endl;

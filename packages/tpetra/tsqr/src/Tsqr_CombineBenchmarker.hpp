@@ -714,18 +714,18 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const size_t lwork =
-          combiner.work_size (2 * numCols, numCols, numCols);
+        const Ordinal lwork
+          (combiner.work_size (2 * numCols, numCols, numCols));
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_pair (R1_view, R2_view,
-                                tau.data (), work.data ());
-          combiner.apply_pair (ApplyType ("N"), R2_view,
-                               tau.data (), Q_top_Q_bot.first,
-                               Q_top_Q_bot.second, work.data ());
+          combiner.factor_pair (R1_view, R2_view, tau.data (),
+                                work.data (), lwork);
+          combiner.apply_pair (ApplyType ("N"), R2_view, tau.data (),
+                               Q_top_Q_bot.first, Q_top_Q_bot.second,
+                               work.data (), lwork);
         }
 
         // How much time numTrials runs must take in order for
@@ -750,11 +750,12 @@ namespace TSQR {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
-            combiner.factor_pair (R1_view, R2_view,
-                                  tau.data (), work.data ());
+            combiner.factor_pair (R1_view, R2_view, tau.data (),
+                                  work.data (), lwork);
             combiner.apply_pair (ApplyType ("N"), R2_view,
                                  tau.data (), Q_top_Q_bot.first,
-                                 Q_top_Q_bot.second, work.data ());
+                                 Q_top_Q_bot.second,
+                                 work.data (), lwork);
           }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
@@ -821,18 +822,18 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const size_t lwork =
-          combiner.work_size (2 * numCols, numCols, numCols);
+        const Ordinal lwork
+          (combiner.work_size (2 * numCols, numCols, numCols));
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_pair (R1_view, R2_view,
-                                tau.data (), work.data ());
-          combiner.apply_pair (ApplyType ("N"), R2_view,
-                               tau.data (), Q_top_Q_bot.first,
-                               Q_top_Q_bot.second, work.data ());
+          combiner.factor_pair (R1_view, R2_view, tau.data (),
+                                work.data (), lwork);
+          combiner.apply_pair (ApplyType ("N"), R2_view, tau.data (),
+                               Q_top_Q_bot.first, Q_top_Q_bot.second,
+                               work.data (), lwork);
         }
         //
         // The actual timing runs.
@@ -840,11 +841,11 @@ namespace TSQR {
         timer_type timer ("Combine pair");
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_pair (R1_view, R2_view,
-                                tau.data (), work.data ());
-          combiner.apply_pair (ApplyType ("N"), R2_view,
-                               tau.data (), Q_top_Q_bot.first,
-                               Q_top_Q_bot.second, work.data ());
+          combiner.factor_pair (R1_view, R2_view, tau.data (),
+                                work.data (), lwork);
+          combiner.apply_pair (ApplyType ("N"), R2_view, tau.data (),
+                               Q_top_Q_bot.first, Q_top_Q_bot.second,
+                               work.data (), lwork);
         }
         return timer.stop();
       }
