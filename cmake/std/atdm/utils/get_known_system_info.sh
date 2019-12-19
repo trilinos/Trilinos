@@ -95,19 +95,19 @@ elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
 
-# Specifically named cts1 systems
+# Specifically named cts1 systems (currently maps to 'serrano' env)
 elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
   hostnameMatch=serrano
-  hostnameMatchSystemName=cts1
+  hostnameMatchSystemName=serrano
 elif [[ $realHostname == "eclipse"* ]] || [[ $realHostname =~ ec[0-9]+ ]] ; then
   hostnameMatch=eclipse
-  hostnameMatchSystemName=cts1
+  hostnameMatchSystemName=serrano
 elif [[ $realHostname == "ghost"* ]] || [[ $realHostname =~ gho[0-9]+ ]] ; then
   hostnameMatch=ghost
-  hostnameMatchSystemName=cts1
+  hostnameMatchSystemName=serrano
 elif [[ $realHostname == "attaway"* ]] || [[ $realHostname =~ swa[0-9]+ ]] ; then
   hostnameMatch=attaway
-  hostnameMatchSystemName=cts1
+  hostnameMatchSystemName=serrano
 # End specifically named systems
 fi
 
@@ -140,7 +140,6 @@ if [[ $SNLSYSTEM == "cts1" ]] ; then
   systemNameTypeMatchedList+=(cts1)
   systemNameTypeMatchedListHostNames[cts1]=$SNLCLUSTER
 fi
-
 
 # SEMS RHEL6 and RHEL7 systems
 if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
@@ -199,8 +198,7 @@ ATDM_SYSTEM_NAME=
 if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${knownSystemNameInBuildName}" != "" ]] ; then
   ATDM_SYSTEM_NAME=${knownSystemNameInBuildName}
   ATDM_HOSTNAME=${systemNameTypeMatchedListHostNames[${ATDM_SYSTEM_NAME}]}
-  assert_selected_system_matches_known_host_in_build_name || return
-  assert_selected_system_matches_known_system_type_mathces || return
+  assert_selected_system_matches_known_system_type_matches || return
 fi
 
 # D.2) Last, go with the hostname match or matching system type
