@@ -15,6 +15,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     SOURCE_FILES
       amg_1dof.xml
       amg_1dof_rebalance.xml
+      amg_3dof_rebalance.xml
       structured_1dof.xml
       structured_1dof_3level.xml
       structured_1dof-complex.xml
@@ -175,6 +176,14 @@ TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Elasticity3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=7 --ny=7 --nz=7 --smootherIts=2 --tol=1.0e-8 --convergence-log=Elasticity3D_linear_4.log"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Linear_Elasticity3D_repartitioning_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --tol=1.0e-8  --coarseSolverType=amg --coarseAmgXml=amg_3dof_rebalance.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
