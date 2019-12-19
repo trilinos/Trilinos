@@ -111,6 +111,27 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   )
 
+IF (TpetraTSQR_ENABLE_CUDA_TESTS)
+  TRIBITS_ADD_TEST(
+    NodeTsqr
+    NAME CuSolverNodeTsqr_11_5
+    COMM serial mpi
+    ARGS "--verify --NodeTsqr=CuSolverNodeTsqr --numRows=11 --numCols=5"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    NodeTsqr
+    NAME CuSolverNodeTsqr_5000_20
+    COMM serial mpi
+    ARGS "--verify --NodeTsqr=CuSolverNodeTsqr --numRows=5000 --numCols=20"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+ENDIF ()
+
+
 # Performance and accuracy test suite for TSQR::KokkosNodeTsqr
 # TRIBITS_ADD_TEST(
 #   NodeTsqr
@@ -164,10 +185,6 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 SET(TSQR_FULL_BASE_ARGS "--testFactorExplicit")
-SET(TSQR_FULL_COMPLEX_BROKEN OFF)
-IF(TSQR_FULL_COMPLEX_BROKEN)
-  SET(TSQR_FULL_BASE_ARGS "${TSQR_FULL_BASE_ARGS} --noTestComplex")
-ENDIF()
 
 TRIBITS_ADD_TEST(
   FullTsqr
@@ -204,3 +221,30 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 4
 )
+
+IF (TpetraTSQR_ENABLE_CUDA_TESTS)
+  TRIBITS_ADD_TEST(
+    FullTsqr
+    NAME FullTsqr_Accuracy_1000rows_15cols_CuSolver
+    COMM mpi
+    ARGS "--numRowsLocal=1000 --numCols=15 --NodeTsqr=CuSolverNodeTsqr ${TSQR_FULL_BASE_ARGS}"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 4
+  )
+ENDIF ()
+
+IF(TSQR_SEQUENTIALTSQR_COMPLEX_BROKEN)
+  SET(TSQR_FULL_BASE_ARGS_SEQ "--noTestComplex")
+ELSE()
+  SET(TSQR_FULL_BASE_ARGS_SEQ "--testComplex")
+ENDIF()
+
+TRIBITS_ADD_TEST(
+  FullTsqr
+  NAME FullTsqr_Accuracy_5000rows_100cols_Sequential
+  COMM mpi
+  ARGS "--numRowsLocal=5000 --numCols=100 --NodeTsqr=SequentialTsqr ${TSQR_FULL_BASE_ARGS_SEQ}"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 4
+)
+
