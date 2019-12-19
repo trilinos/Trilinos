@@ -79,7 +79,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   AvatarT               packages/avatart                  EX
   Zoltan                packages/zoltan                   PT
   Shards                packages/shards                   PT
-  GlobiPack             packages/globipack                PT
   Triutils              packages/triutils                 PT
   EpetraExt             packages/epetraext                PT	
   Tpetra                packages/tpetra                   PT
@@ -87,7 +86,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Domi                  packages/domi                     PT
   Thyra                 packages/thyra                    PT
   Xpetra                packages/xpetra                   PT
-  OptiPack              packages/optipack                 PT
   Isorropia             packages/isorropia                PT
   Pliris                packages/pliris                   ST
   Claps                 packages/claps                    EX

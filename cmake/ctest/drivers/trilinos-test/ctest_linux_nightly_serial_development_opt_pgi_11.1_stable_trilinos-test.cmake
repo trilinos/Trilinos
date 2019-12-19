@@ -68,7 +68,7 @@ SET(CTEST_TEST_TYPE Nightly)
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
-SET(Trilinos_PACKAGES FEApp Mesquite Didasko MOOCHO Moertel NOX RBGen Stratimikos ML Komplex Ifpack Pamgen Amesos Galeri AztecOO Pliris OptiPack EpetraExt Triutils GlobiPack Shards Zoltan Kokkos RTOp TriBITS)
+SET(Trilinos_PACKAGES FEApp Mesquite Didasko MOOCHO Moertel NOX RBGen Stratimikos ML Komplex Ifpack Pamgen Amesos Galeri AztecOO Pliris EpetraExt Triutils Shards Zoltan Kokkos RTOp TriBITS)
 
 SET( EXTRA_EXCLUDE_PACKAGES Rythmos Piro Panzer PyTrilinos)
 
