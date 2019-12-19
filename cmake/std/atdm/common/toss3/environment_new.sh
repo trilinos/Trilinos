@@ -34,11 +34,11 @@ fi
 
 # Common paths and modules for both intel-1{8,9}
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
-module load mkl/18.0.5.274
 module load cmake/3.12.2
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
     module load intel/18.0.2.199
+    module load mkl/18.0.5.274 # Needed to address defect in MKL (#5316, #3992, #3914)
     module load openmpi-intel/2.0
 
     sparc_tpl_ext=cts1-bdw_intel-18.0.2
@@ -48,6 +48,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
     module load intel/19.0.5.281
+    module load mkl/18.0.5.274 # Needed to find libmkl_intel_lp64.so (ATDV-212)
     module load openmpi-intel/4.0
 
     sparc_tpl_ext=cts1-bdw_intel-19.0.5
