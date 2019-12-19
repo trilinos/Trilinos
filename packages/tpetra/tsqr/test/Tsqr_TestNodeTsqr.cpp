@@ -314,9 +314,10 @@ namespace TSQR {
       return A_dev;
     }
 
-    template<class Scalar>
+
+    template<template<class SC> class LapackType, class Scalar>
     static int
-    lworkQueryLapackQr (Impl::Lapack<Scalar>& lapack,
+    lworkQueryLapackQr (LapackType<Scalar>& lapack,
                         const int nrows,
                         const int ncols,
                         const int lda)
@@ -1093,17 +1094,19 @@ namespace TSQR {
           << ",timing" << std::endl;
     }
 
-    template<class Scalar>
+    template<template<class SC> class LapackType, class Scalar>
     void
     benchmarkLapackTmpl (std::ostream& out,
                          std::vector<int>& iseed,
-                         const NodeTestParameters& testParams)
+                         LapackType<Scalar>& lapack,
+                         const NodeTestParameters& params,
+                         const std::string& lapackImplName)
     {
       using std::endl;
 
-      const int numRows = testParams.numRows;
-      const int numCols = testParams.numCols;
-      const int numTrials = testParams.numTrials;
+      const int numRows = params.numRows;
+      const int numCols = params.numCols;
+      const int numTrials = params.numTrials;
 
       Matrix<int, Scalar> A (numRows, numCols);
       Matrix<int, Scalar> Q (numRows, numCols);
@@ -1119,45 +1122,96 @@ namespace TSQR {
         gen.getSeed (iseed);
       }
 
+      using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+      using device_matrix_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft>;
+
+      auto A_h = getHostMatrixView (A.view ());
+      auto Q_h = getHostMatrixView (Q.view ());
+      device_matrix_type A_d;
+      device_matrix_type Q_d;
+      if (lapack.wants_device_memory ()) {
+        A_d = getDeviceMatrixCopy (A.view (), "A_d");
+        Q_d = device_matrix_type ("Q_d", numRows, numCols);
+      }
+
       // Copy A into Q, since LAPACK QR overwrites the input.  We only
       // need Q because LAPACK's computation of the explicit Q factor
       // occurs in place.  This doesn't work with TSQR.  To give
       // LAPACK QR the fullest possible advantage over TSQR, we don't
       // allocate an A_copy here (as we would when benchmarking TSQR).
       deep_copy (Q, A);
+      if (lapack.wants_device_memory ()) {
+        deep_copy (Q_d, A_d);
+      }
 
       // Determine the required workspace for the factorization
-      Impl::Lapack<Scalar> lapack;
       const int lwork =
         lworkQueryLapackQr (lapack, numRows, numCols, lda);
       std::vector<Scalar> work (lwork);
       std::vector<Scalar> tau (numCols);
 
+      Kokkos::View<IST*> work_d;
+      Kokkos::View<IST*> tau_d;
+      if (lapack.wants_device_memory ()) {
+        work_d = Kokkos::View<IST*> ("work_d", lwork);
+        tau_d = Kokkos::View<IST*> ("tau_d", numCols);
+      }
+
       // Benchmark LAPACK's QR factorization for numTrials trials.
       Teuchos::Time timer ("LAPACK");
       timer.start ();
       for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
-        lapack.compute_QR (numRows, numCols, Q.data (), ldq,
-                           tau.data (), work.data (), lwork);
-        // Extract the upper triangular factor R from Q (where it was
-        // computed in place by GEQRF), since UNGQR will overwrite all
-        // of Q with the explicit Q factor.
-        copy_upper_triangle (R, Q);
-        lapack.compute_explicit_Q (numRows, numCols, numCols,
-                                   Q.data (), ldq, tau.data (),
-                                   work.data (), lwork);
+        if (lapack.wants_device_memory ()) {
+          Scalar* Q_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+          Scalar* tau_raw = reinterpret_cast<Scalar*> (tau_d.data ());
+          Scalar* work_raw =
+            reinterpret_cast<Scalar*> (work_d.data ());
+          lapack.compute_QR (numRows, numCols,
+                             Q_raw, Q_d.stride (1),
+                             tau_raw, work_raw, lwork);
+        }
+        else {
+          lapack.compute_QR (numRows, numCols,
+                             Q.data (), ldq,
+                             tau.data (), work.data (), lwork);
+        }
+
+        if (lapack.wants_device_memory ()) {
+          // FIXME (mfh 18 Dec 2019) We should actually extract the
+          // upper triangle here and copy it to host, to get a fair
+          // comparison with TSQR.
+
+          Scalar* Q_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+          const Scalar* tau_raw =
+            reinterpret_cast<const Scalar*> (tau_d.data ());
+          Scalar* work_raw =
+            reinterpret_cast<Scalar*> (work_d.data ());
+          lapack.compute_explicit_Q (numRows, numCols, numCols,
+                                     Q_raw, Q_d.stride (1),
+                                     tau_raw, work_raw, lwork);
+        }
+        else {
+          // Extract the upper triangular factor R from Q (where it was
+          // computed in place by GEQRF), since UNGQR will overwrite all
+          // of Q with the explicit Q factor.
+          copy_upper_triangle (R, Q);
+          lapack.compute_explicit_Q (numRows, numCols, numCols,
+                                     Q.data (), ldq, tau.data (),
+                                     work.data (), lwork);
+        }
       }
       const double lapackTiming = timer.stop ();
 
       const std::string scalarType =
         Teuchos::TypeNameTraits<Scalar>::name ();
 
-      if (testParams.humanReadable) {
-        out << "LAPACK\'s QR factorization (_GEQRF + _UNGQR):"
-            << endl << "  Scalar type = " << scalarType << endl
-            << "  # rows = " << numRows << endl
-            << "  # columns = " << numCols << endl
-            << "  # trials = " << numTrials << endl
+      if (params.humanReadable) {
+        out << lapackImplName << ":" << endl
+            << "  Scalar: " << scalarType << endl
+            << "  numRows: " << numRows << endl
+            << "  numCols: " << numCols << endl
+            << "  numTrials: " << numTrials << endl
             << "Total time (s) = " << lapackTiming << endl
             << endl;
       }
@@ -1168,7 +1222,7 @@ namespace TSQR {
         // both cases).  "false" (that follows 0) refers to whether or
         // not contiguous cache blocks were used (see TSQR::NodeTsqr);
         // this is also not applicable here.
-        out << "LAPACK"
+        out << lapackImplName
             << "," << scalarType
             << "," << numRows
             << "," << numCols
@@ -1179,19 +1233,42 @@ namespace TSQR {
       }
     }
 
+    template<class Scalar>
+    void
+    benchmarkLapackImplementations (std::ostream& out,
+                                    std::vector<int>& iseed,
+                                    const NodeTestParameters& p)
+    {
+#if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+      {
+        // Make sure that both Lapack and CuSolver get the same
+        // pseudorandom seed.
+        std::vector<int> iseed_copy (iseed);
+        auto handle = Impl::CuSolverHandle::getSingleton ();
+        Kokkos::View<int> info ("info");
+        Impl::CuSolver<Scalar> solver (handle, info.data ());
+        benchmarkLapackTmpl (out, iseed_copy, solver, p, "CUSOLVER");
+      }
+#endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER
+      {
+        Impl::Lapack<Scalar> lapack;
+        benchmarkLapackTmpl (out, iseed, lapack, p, "LAPACK");
+      }
+    }
+
     void
     benchmarkLapack (std::ostream& out,
                      const NodeTestParameters& p)
     {
       std::vector<int> iseed {{0, 0, 0, 1}};
       if (p.testReal) {
-        benchmarkLapackTmpl<float> (out, iseed, p);
-        benchmarkLapackTmpl<double> (out, iseed, p);
+        benchmarkLapackImplementations<float> (out, iseed, p);
+        benchmarkLapackImplementations<double> (out, iseed, p);
       }
       if (p.testComplex) {
 #ifdef HAVE_TPETRATSQR_COMPLEX
-        benchmarkLapackTmpl<std::complex<float>> (out, iseed, p);
-        benchmarkLapackTmpl<std::complex<double>> (out, iseed, p);
+        benchmarkLapackImplementations<std::complex<float>> (out, iseed, p);
+        benchmarkLapackImplementations<std::complex<double>> (out, iseed, p);
 #else // Don't HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error,
