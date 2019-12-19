@@ -72,14 +72,14 @@
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
-              <Parameter name="Preconditioner Type" type="string" value="Ifpack" />
+              <Parameter name="Preconditioner Type" type="string" value="Ifpack2" />
               <ParameterList name="Preconditioner Types">
-                <ParameterList name="Ifpack">
+                <ParameterList name="Ifpack2">
                   <Parameter name="Overlap" type="int" value="1" />
-                  <Parameter name="Prec Type" type="string" value="ILU" />
-                  <ParameterList name="Ifpack Settings">
+                  <Parameter name="Prec Type" type="string" value="RILUK" />
+                  <ParameterList name="Ifpack2 Settings">
                     <Parameter name="fact: drop tolerance" type="double" value="0" />
-                    <Parameter name="fact: ilut level-of-fill" type="double" value="1" />
+                    <Parameter name="fact: iluk level-of-fill" type="int" value="0" />
                     <Parameter name="fact: level-of-fill" type="int" value="1" />
                   </ParameterList>
                 </ParameterList>
@@ -156,7 +156,6 @@
         <Parameter name="Error File" type="string" value="dak.err" />
       </ParameterList>
       <ParameterList name="ROL">
-        <Parameter name="Use Old Reduced Space Interface" type="bool" value="true" />
         <Parameter name="Response Vector Index" type="int" value="0" />
         <Parameter name="Parameter Vector Index" type="int" value="0" />
         <Parameter name="Print Output" type="bool" value="true" />
@@ -179,6 +178,10 @@
 
         <Parameter name="Bound Constrained" type="bool" value="true" />
         <Parameter name="epsilon bound" type="double" value="1e-4" />
+
+        <Parameter name="Step Method" type="string" value="Line Search" />
+        <Parameter name="Full Space" type="bool" value="false" />
+        <Parameter name="Use NOX Solver" type="bool" value="true" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
         <ParameterList name="ROL Options">

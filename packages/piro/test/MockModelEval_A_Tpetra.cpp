@@ -320,13 +320,19 @@ void MockModelEval_A_Tpetra::evalModelImpl(
   auto p = p_vec->getData();
 
   if (f_out != Teuchos::null) {
+    f_out->putScalar(0.0);
+    auto f_out_data = f_out->getDataNonConst();
     for (int i=0; i<myVecLength; i++) {
       int gid = x_in->getMap()->getGlobalElement(i);
 
-      if (gid==0) // f_0 = (x_0)^2 - p_0
-       f_out->getDataNonConst()[i] = x[i] * x[i] -  p[0];
-      else // f_i = x_i^2 - (i+p_1)^2 (for i != 0)
-       f_out->getDataNonConst()[i] = x[i] * x[i] - (gid + p[1])*(gid + p[1]);
+      if (gid==0) {// f_0 = (x_0)^3 - p_0
+        f_out_data[i] = x[i] * x[i] * x[i] -  p[0];
+       for (int j=0; j<myVecLength; j++)
+         if(i != j)
+           f_out_data[j] -= 0.5*(x[i] - p[0]);
+      }
+      else // f_i = x_i - (i+p_1) - 0.5*(x_0 - p_0) (for i != 0)
+        f_out_data[i] += x[i] - (gid + p[1]);
     }
     auto f = f_out->getData();
   }
@@ -336,10 +342,20 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     W_out_crs->resumeFill();
     W_out_crs->setAllToScalar(0.0);
 
-    double diag=0.0;
+    double diag=0, extra_diag=-0.5;
     for (int i=0; i<myVecLength; i++) {
-      diag = 2.0 * x[i];
-      W_out_crs->replaceLocalValues(i, 1, &diag, &i);
+      int gid = x_in->getMap()->getGlobalElement(i);
+      if(gid==0) {
+        diag = 3.0 * x[i] * x[i];
+        W_out_crs->replaceLocalValues(i, 1, &diag, &i);
+        for (int j=0; j<myVecLength; j++)
+          if(i != j)
+            W_out_crs->replaceLocalValues(j, 1, &extra_diag, &i);
+      }
+      else {
+        diag = 1.0;
+        W_out_crs->replaceLocalValues(i, 1, &diag, &i);
+      }
     }
     if(!Teuchos::nonnull(x_dot_in))
       W_out_crs->fillComplete();
@@ -347,10 +363,18 @@ void MockModelEval_A_Tpetra::evalModelImpl(
 
   if (Teuchos::nonnull(dfdp_out)) {
     dfdp_out->putScalar(0.0);
+    auto dfdp_out_data_0 = dfdp_out->getVectorNonConst(0)->getDataNonConst();
+    auto dfdp_out_data_1 = dfdp_out->getVectorNonConst(1)->getDataNonConst();
     for (int i=0; i<myVecLength; i++) {
       const int gid = x_in->getMap()->getGlobalElement(i);
-      if  (gid==0) dfdp_out->getVectorNonConst(0)->getDataNonConst()[i] = -1.0;
-      else         dfdp_out->getVectorNonConst(1)->getDataNonConst()[i] =  -2.0* (gid + p[1]);
+      if  (gid==0) {
+        dfdp_out_data_0[i] = -1.0;
+        for (int j=0; j<myVecLength; j++)
+          if(i != j)
+            dfdp_out_data_0[j] = 0.5;
+      }
+      else
+        dfdp_out_data_1[i] = -1.0;
     }
   }
 
@@ -388,10 +412,10 @@ void MockModelEval_A_Tpetra::evalModelImpl(
 
     if (f_out != Teuchos::null) {
       // f(x, x_dot) = f(x) - x_dot
+      auto f_out_data = f_out->getDataNonConst();
       for (int i=0; i<myVecLength; i++) {
-        f_out->getDataNonConst()[i] = -x_dot_in->getData()[i] + f_out->getData()[i];
+        f_out_data[i] = -x_dot_in->getData()[i] + f_out->getData()[i];
       }
-      std::cerr << "Am I here?? " << __FILE__ << ":" << __LINE__<<std::endl;
     }
     if (W_out != Teuchos::null) {
       // W(x, x_dot) = beta * W(x) - alpha * Id

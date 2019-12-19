@@ -10,8 +10,6 @@
 	<Parameter name="Parameter Vector Index" type="int" value="1"/>
 	<Parameter name="Response Vector Index" type="int" value="4"/>
       </ParameterList>
-      <ParameterList name="MOOCHO">
-      </ParameterList>
     </ParameterList>
 
     <Parameter name="Solver Type" type="string" value="NOX"/>
