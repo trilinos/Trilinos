@@ -140,14 +140,13 @@ public:
     // Allows forward and backwards compatibility.
     const gno_t * ptr_ids;
     getIDsView(ptr_ids);
-    typedef Kokkos::View<gno_t *, typename node_t::device_type> view_t;
-    view_t non_const_ids = view_t("ptr_ids", getLocalNumIDs());
-    typename view_t::HostMirror host_ids = Kokkos::create_mirror_view(non_const_ids);
-    for(size_t i = 0; i < this->getLocalNumIDs(); ++i) {
-       host_ids(i) = ptr_ids[i];
-    }
-    Kokkos::deep_copy(non_const_ids, host_ids);
-    ids = non_const_ids;
+    // cast to non-const just for the mirror and copy - then back to const in ids
+    Kokkos::View<gno_t *, Kokkos::Serial, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+      host_ids(const_cast<gno_t*>(ptr_ids), getLocalNumIDs()); // make kokkos view
+    typedef typename node_t::device_type::memory_space memory_space; // target memory space
+    auto device_ids = Kokkos::create_mirror_view(memory_space(), host_ids);  // make view for target memory space
+    Kokkos::deep_copy(device_ids, host_ids); // copy host to device.      - This won’t compile since device_ids is const elements
+    ids = device_ids; // target ids is a View<const gno_t*, typename node_t::device_type>
   }
 
   ///*! \brief Provide pointer to a weight array with stride.
