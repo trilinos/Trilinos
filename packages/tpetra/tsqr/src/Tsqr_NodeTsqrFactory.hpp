@@ -44,7 +44,6 @@
 #ifndef TSQR_NODETSQRFACTORY_HPP
 #define TSQR_NODETSQRFACTORY_HPP
 
-#include "Tsqr_KokkosNodeTsqr.hpp"
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr_CombineNodeTsqr.hpp"
 #include "Tsqr_CuSolverNodeTsqr.hpp"
@@ -122,11 +121,6 @@ namespace TSQR {
           return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
         }
         else {
-          // NOTE (mfh 02 Dec 2019) KokkosNodeTsqr is not currently
-          // correct, so we just defer to SequentialTsqr.  In the
-          // future, if execution_space().concurrency() is 1, it would
-          // make sense to return SequentialTsqr (with its lower
-          // overhead) instead of KokkosNodeTsqr.
           return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
         }
 
@@ -138,9 +132,8 @@ namespace TSQR {
     /// \brief Get a specific implementation of NodeTsqr.
     ///
     /// \param name [in] Either "SequentialTsqr", "CombineNodeTsqr",
-    ///   "KokkosNodeTsqr", or "Default".  "Default" means "return
-    ///   what the above zero-argument overload of getNodeTsqr()
-    ///   returns."
+    ///   or "Default".  "Default" means "return what the above
+    ///   zero-argument overload of getNodeTsqr() returns."
     static Teuchos::RCP<node_tsqr_type>
     getNodeTsqr (const std::string& name)
     {
@@ -150,9 +143,6 @@ namespace TSQR {
       }
       else if (name == "CombineNodeTsqr" || name == "Combine") {
         return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
-      }
-      else if (name == "KokkosNodeTsqr" || name == "Kokkos") {
-        return rcp (new KokkosNodeTsqr<LocalOrdinal, Scalar>);
       }
 #if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
       else if (name == "CuSolverNodeTsqr" || name == "CuSolver") {
@@ -167,7 +157,6 @@ namespace TSQR {
         const std::vector<std::string> validNames
           {{"SequentialTsqr",
             "CombineNodeTsqr",
-            "KokkosNodeTsqr",
 #if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
             "CuSolverNodeTsqr",
 #endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER
