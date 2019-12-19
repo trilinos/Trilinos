@@ -96,29 +96,43 @@ namespace TSQR {
     {
       using Teuchos::rcp;
 
-      // NOTE (mfh 02 Dec 2019) SequentialTsqr does not currently give
-      // correct results for complex Scalar types, so we use
-      // CombineNodeTsqr in that case.
-#ifdef HAVE_TPETRATSQR_COMPLEX
-      constexpr bool is_complex =
-        std::is_same<Scalar, std::complex<double>>::value ||
-        std::is_same<Scalar, std::complex<float>>::value ||
-        std::is_same<Scalar, Kokkos::complex<double>>::value ||
-        std::is_same<Scalar, Kokkos::complex<float>>::value;
-#else
-      constexpr bool is_complex = false;
-#endif // HAVE_TPETRATSQR_COMPLEX
-      if (is_complex) {
-        return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
+#if defined(KOKKOS_ENABLE_CUDA) && defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+      using execution_space = typename Device::execution_space;
+      constexpr bool is_cuda =
+        std::is_same<execution_space, Kokkos::Cuda>::value;
+      if (is_cuda) {
+        return rcp (new CuSolverNodeTsqr<LocalOrdinal, Scalar>);
       }
       else {
-        // NOTE (mfh 02 Dec 2019) KokkosNodeTsqr is not currently
-        // correct, so we just defer to SequentialTsqr.  In the future,
-        // if execution_space().concurrency() is 1, it would make sense
-        // to return SequentialTsqr (with its lower overhead) instead of
-        // KokkosNodeTsqr.
-        return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
+#endif
+
+        // NOTE (mfh 02 Dec 2019) SequentialTsqr does not currently
+        // give correct results for complex Scalar types, so we use
+        // CombineNodeTsqr in that case.
+#ifdef HAVE_TPETRATSQR_COMPLEX
+        constexpr bool is_complex =
+          std::is_same<Scalar, std::complex<double>>::value ||
+          std::is_same<Scalar, std::complex<float>>::value ||
+          std::is_same<Scalar, Kokkos::complex<double>>::value ||
+          std::is_same<Scalar, Kokkos::complex<float>>::value;
+#else
+        constexpr bool is_complex = false;
+#endif // HAVE_TPETRATSQR_COMPLEX
+        if (is_complex) {
+          return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
+        }
+        else {
+          // NOTE (mfh 02 Dec 2019) KokkosNodeTsqr is not currently
+          // correct, so we just defer to SequentialTsqr.  In the
+          // future, if execution_space().concurrency() is 1, it would
+          // make sense to return SequentialTsqr (with its lower
+          // overhead) instead of KokkosNodeTsqr.
+          return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
+        }
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)        
       }
+#endif
     }
 
     /// \brief Get a specific implementation of NodeTsqr.
