@@ -644,7 +644,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<std::vector<RCP<Matrix> > > regProlong; // regional prolongators on each level
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
   Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
-  Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
   RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
   coarseSolverData->set<std::string>("coarse solver type", coarseSolverType);
   coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
@@ -677,7 +676,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         regProlong,
                         regRowImporters,
                         regInterfaceScalings,
-                        coarseCompOp,
                         maxRegPerGID,
                         compositeToRegionLIDs(),
                         coarseSolverData,
@@ -839,7 +837,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         vCycle(0, numLevels,
                regX, regB, regMatrices,
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-               regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData, hierarchyData);
+               regInterfaceScalings, smootherParams, coarseSolverData, hierarchyData);
     }
     if (myRank == 0)
       std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;
