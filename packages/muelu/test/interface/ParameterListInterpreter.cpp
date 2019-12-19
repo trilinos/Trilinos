@@ -221,10 +221,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         continue;
       }
 
-      std::stringbuf buffer;
+      std::filebuf    buffer;
       std::streambuf* oldbuffer = NULL;
-      //   // Redirect output
-      oldbuffer = std::cout.rdbuf(&buffer);
+      if (myRank == 0) {
+        // Redirect output
+        buffer.open((baseFile + ".out").c_str(), std::ios::out);
+        oldbuffer = std::cout.rdbuf(&buffer);
+      }
 
       // NOTE: we cannot use ParameterListInterpreter(xmlFile, comm), because we want to update the ParameterList
       // first to include "test" verbosity
@@ -292,13 +295,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         timer.stop();
-
       } catch (Teuchos::ExceptionBase& e) {
         std::string msg = e.what();
         msg = msg.substr(msg.find_last_of('\n')+1);
 
-        if (myRank == 0)
+        if (myRank == 0) {
           std::cout << "Caught exception: " << msg << std::endl;
+
+          // Redirect output back
+          std::cout.rdbuf(oldbuffer);
+          buffer.close();
+        }
 
         if (msg == "Zoltan interface is not available" ||
             msg == "Zoltan2 interface is not available" ||
@@ -311,27 +318,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
 
-      // Redirect output back
-      std::cout.rdbuf(oldbuffer);
-#ifdef HAVE_MPI
-      std::string logStr = buffer.str();
-      RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm)->getRawMpiComm();
-      MPI_File logfile;
-      MPI_File_open((*mpiComm)(), (baseFile + ".out").c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &logfile);
-      MPI_File_set_atomicity(logfile, true);
-      const char* msg = logStr.c_str();
-      int err = MPI_File_write_ordered(logfile, msg, logStr.size(), MPI_CHAR, MPI_STATUS_IGNORE);
-      TEUCHOS_ASSERT(err == MPI_SUCCESS);
-      MPI_File_close(&logfile);
-#else
-      std::ofstream outStream;
-      outStream.open((baseFile + ".out").c_str(), std::ofstream::out);
-      outStream << buffer.str();
-      outStream.close();
-#endif
-
       std::string cmd;
       if (myRank == 0) {
+        // Redirect output back
+        std::cout.rdbuf(oldbuffer);
+        buffer.close();
+
         // Create a copy of outputs
         cmd = "cp -f ";
         system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
