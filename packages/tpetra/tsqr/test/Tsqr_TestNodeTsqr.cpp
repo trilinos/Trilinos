@@ -1297,32 +1297,68 @@ namespace TSQR {
       Matrix<int, Scalar> A_copy (numRows, numCols);
       Matrix<int, Scalar> Q (numRows, numCols);
       Matrix<int, Scalar> R (numCols, numCols);
-      const int lda = numRows;
-      const int ldq = numRows;
 
       {
         using prng_type = TSQR::Random::NormalGenerator<int, Scalar>;
         prng_type gen (iseed);
         nodeTestProblem (gen, numRows, numCols,
-                         A.data (), lda, false);
+                         A.data (), A.stride (1), false);
         gen.getSeed (iseed);
       }
       deep_copy (A_copy, A); // need copy since TSQR overwrites
 
+      using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+      using device_matrix_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft>;
+
+      auto A_copy_h = getHostMatrixView (A_copy.view ());
+      auto Q_h = getHostMatrixView (Q.view ());
+      device_matrix_type A_copy_d;
+      device_matrix_type Q_d;
+      if (actor.wants_device_memory ()) {
+        A_copy_d = getDeviceMatrixCopy (A_copy.view (), "A_copy_d");
+        Q_d = device_matrix_type ("Q_d", numRows, numCols);
+      }
+
       // Benchmark sequential TSQR for numTrials trials.
       Teuchos::Time timer ("NodeTsqr");
-      timer.start();
+      timer.start ();
       for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
-        // Factor the matrix and extract the resulting R factor
-        auto factorOutput =
-          actor.factor (numRows, numCols, A_copy.data(), lda,
-                        R.data(), R.stride(1), contiguousCacheBlocks);
-        // Compute the explicit Q factor.  Unlike with LAPACK, this
-        // doesn't happen in place: the implicit Q factor is stored in
-        // A_copy, and the explicit Q factor is written to Q.
-        actor.explicit_Q (numRows, numCols, A_copy.data (), lda,
-                          *factorOutput, numCols, Q.data (), ldq,
+        if (actor.wants_device_memory ()) {
+          Scalar* A_raw =
+            reinterpret_cast<Scalar*> (A_copy_d.data ());
+          auto factorOutput =
+            actor.factor (numRows, numCols,
+                          A_raw, A_copy_d.stride (1),
+                          R.data (), R.stride (1),
                           contiguousCacheBlocks);
+          // Unlike with LAPACK, this doesn't happen in place: the
+          // implicit Q factor is stored in A_copy_d, and the explicit
+          // Q factor is written to Q_d.
+          Scalar* Q_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+          actor.explicit_Q (numRows, numCols,
+                            A_raw, A_copy_d.stride (1),
+                            *factorOutput, numCols,
+                            Q_raw, Q_d.stride (1),
+                            contiguousCacheBlocks);
+        }
+        else {
+          Scalar* A_raw = A_copy.data ();
+          auto factorOutput =
+            actor.factor (numRows, numCols,
+                          A_raw, A_copy.stride (1),
+                          R.data (), R.stride (1),
+                          contiguousCacheBlocks);
+          // Unlike with LAPACK, this doesn't happen in place: the
+          // implicit Q factor is stored in A_copy, and the explicit Q
+          // factor is written to Q.
+          Scalar* Q_raw = Q.data ();
+          actor.explicit_Q (numRows, numCols,
+                            A_raw, A_copy.stride (1),
+                            *factorOutput, numCols,
+                            Q_raw, Q.stride (1),
+                            contiguousCacheBlocks);
+        }
       }
       const double nodeTsqrTiming = timer.stop ();
 
