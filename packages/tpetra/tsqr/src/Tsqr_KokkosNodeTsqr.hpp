@@ -164,10 +164,11 @@ namespace TSQR {
       std::vector<Scalar>
       factorFirstCacheBlock (Combine<LocalOrdinal, Scalar>& combine,
                              const mat_view_type& A_top,
-                             Scalar work[]) const
+                             Scalar work[],
+                             const LocalOrdinal lwork) const
       {
         std::vector<Scalar> tau (A_top.extent(1));
-        combine.factor_first (A_top, tau.data (), work);
+        combine.factor_first (A_top, tau.data (), work, lwork);
         return tau;
       }
 
@@ -229,7 +230,8 @@ namespace TSQR {
 
         // Factor the first cache block.
         tauArrays_[curTauIdx++] =
-          factorFirstCacheBlock (combine, A_top, work.data ());
+          factorFirstCacheBlock (combine, A_top, work.data (),
+                                 first_lwork);
 
         // Move past the first cache block.
         ++cbIter;

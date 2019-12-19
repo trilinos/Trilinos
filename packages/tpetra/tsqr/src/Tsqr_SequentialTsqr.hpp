@@ -186,10 +186,11 @@ namespace TSQR {
     factor_first_block (Combine<LocalOrdinal, Scalar>& combine,
                         const mat_view_type& A_top,
                         std::vector<Scalar>& tau,
-                        Scalar work[]) const
+                        Scalar work[],
+                        const LocalOrdinal lwork) const
     {
       const LocalOrdinal ncols = A_top.extent (1);
-      combine.factor_first (A_top, tau.data (), work);
+      combine.factor_first (A_top, tau.data (), work, lwork);
       return partition_2x1 (A_top, ncols).first;
     }
 
@@ -460,7 +461,8 @@ namespace TSQR {
       CacheBlocker<LocalOrdinal, Scalar> blocker
         (nrows, ncols, strategy_);
       Combine<LocalOrdinal, Scalar> combine;
-      const size_t lwork = combine.work_size (nrows, ncols, ncols);
+      const LocalOrdinal lwork
+        (combine.work_size (nrows, ncols, ncols));
       std::vector<Scalar> work (lwork);
       Teuchos::RCP<my_factor_output_type> tau_arrays
         (new my_factor_output_type);
@@ -482,7 +484,8 @@ namespace TSQR {
       // Factor the topmost block of A.
       std::vector<Scalar> tau_first (ncols);
       mat_view_type R_view =
-        factor_first_block (combine, A_cur, tau_first, work.data ());
+        factor_first_block (combine, A_cur, tau_first,
+                            work.data (), lwork);
       tau_arrays->add_and_consume (std::move (tau_first));
 
       while (! empty (A_rest)) {

@@ -149,9 +149,10 @@ namespace TSQR {
     void
     factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[])
+                  Scalar work[],
+                  const Ordinal lwork)
     {
-      return impl_.factor_first (A, tau, work);
+      return impl_.factor_first (A, tau, work, lwork);
     }
 
     /// \brief Apply the result of factor_first() to C.

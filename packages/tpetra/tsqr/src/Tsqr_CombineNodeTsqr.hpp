@@ -130,10 +130,10 @@ namespace TSQR {
       const Ordinal ncols = A.extent (1);
       TEUCHOS_ASSERT( R.extent (0) == ncols &&
                       R.extent (1) == ncols );
-      const size_t lwork =
-        combine.work_size (A.extent (0), ncols, ncols);
+      const Ordinal lwork
+        (combine.work_size (A.extent (0), ncols, ncols));
       std::vector<Scalar> work (lwork);
-      combine.factor_first (A, tau.data (), work.data ());
+      combine.factor_first (A, tau.data (), work.data (), lwork);
 
       // Copy the R factor resulting from the factorization out of the
       // topmost block of A) into the R output argument.

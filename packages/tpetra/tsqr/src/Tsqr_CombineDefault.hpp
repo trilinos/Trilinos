@@ -113,9 +113,9 @@ namespace TSQR {
     void
     factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[])
+                  Scalar work[],
+                  const Ordinal lwork)
     {
-      const int lwork = A.extent (1);
       lapack_.compute_QR (A.extent (0), A.extent (1),
                           A.data (), A.stride (1),
                           tau, work, lwork);
@@ -124,11 +124,12 @@ namespace TSQR {
     void
     factor_first (Matrix<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[])
+                  Scalar work[],
+                  const Ordinal lwork)
     {
       MatView<Ordinal, Scalar> A_view
         (A.extent (0), A.extent (1), A.data (), A.stride (1));
-      factor_first (A_view, tau, work);
+      factor_first (A_view, tau, work, lwork);
     }
 
     void

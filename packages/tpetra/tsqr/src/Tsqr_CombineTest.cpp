@@ -564,8 +564,8 @@ namespace TSQR {
 
       // Workspace array for factorization and applying the Q factor.
       // We recycle this workspace for all tests.
-      const size_t lwork =
-        combiner.work_size (numRows, numCols, numCols);
+      const Ordinal lwork
+        (combiner.work_size (numRows, numCols, numCols));
       vector<Scalar> work (lwork);
 
       if (debug) {
@@ -575,7 +575,7 @@ namespace TSQR {
           "A2 each " << numRows << " by " << numCols << endl << endl;
       }
       // qr( A1 )
-      combiner.factor_first (A1, tau1.data(), work.data());
+      combiner.factor_first (A1, tau1.data (), work.data (), lwork);
       // View of numCols by numCols upper triangle of A1.
       mat_view_type R1 (numCols, numCols, A1.data(), A1.stride(1));
       // qr( [R1; A2] )

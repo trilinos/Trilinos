@@ -320,18 +320,18 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const size_t lwork =
-          combiner.work_size (numRows, numCols, numCols);
+        const Ordinal lwork
+          (combiner.work_size (numRows, numCols, numCols));
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"),
-                                A.view(), tau.data(),
-                                Q.view(), work.data(),
-                                static_cast<Ordinal> (lwork));
+          combiner.factor_first (A.view (), tau.data (),
+                                 work.data (), lwork);
+          combiner.apply_first (ApplyType ("N"),
+                                A.view (), tau.data (),
+                                Q.view (), work.data (), lwork);
         }
 
         // How much time numTrials runs must take in order for
@@ -356,11 +356,11 @@ namespace TSQR {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
-            combiner.factor_first (A.view(), tau.data(), work.data());
-            combiner.apply_first (ApplyType("N"),
-                                  A.view(), tau.data(),
-                                  Q.view(), work.data(),
-                                  static_cast<Ordinal> (lwork));
+            combiner.factor_first (A.view (), tau.data (),
+                                   work.data (), lwork);
+            combiner.apply_first (ApplyType ("N"),
+                                  A.view (), tau.data (),
+                                  Q.view (), work.data (), lwork);
           }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
@@ -419,19 +419,18 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const size_t lwork =
-          combiner.work_size (numRows, numCols, numCols);
+        const Ordinal lwork
+          (combiner.work_size (numRows, numCols, numCols));
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
           combiner.factor_first (A.view (), tau.data (),
-                                 work.data ());
+                                 work.data (), lwork);
           combiner.apply_first (ApplyType ("N"),
                                 A.view (), tau.data (),
-                                Q.view (), work.data (),
-                                static_cast<Ordinal> (lwork));
+                                Q.view (), work.data (), lwork);
         }
         //
         // The actual timing runs.
@@ -440,11 +439,10 @@ namespace TSQR {
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
           combiner.factor_first (A.view (), tau.data (),
-                                 work.data ());
+                                 work.data (), lwork);
           combiner.apply_first (ApplyType ("N"),
                                 A.view (), tau.data (),
-                                Q.view (), work.data (),
-                                static_cast<Ordinal> (lwork));
+                                Q.view (), work.data (), lwork);
         }
         return timer.stop();
       }
