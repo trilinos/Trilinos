@@ -43,6 +43,8 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
 
     sparc_tpl_ext=cts1-bdw_intel-18.0.2
     sparc_tpl_mpi_ext=cts1-bdw_intel-18.0.2_openmpi-2.0.3
+    # rabartl: ToDo: Above, we need to find a way to extract 'cts1-bdw' out of
+    # this file for this to be general!
 
     export PATH=/usr/tce/packages/gcc/gcc-6.1.0/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
@@ -53,6 +55,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
 
     sparc_tpl_ext=cts1-bdw_intel-19.0.5
     sparc_tpl_mpi_ext=cts1-bdw_intel-19.0.5_openmpi-4.0.1
+    # rabartl: ToDo: Above, we need to find a way to extract 'cts1-bdw' out of
+    # this file for this to be general!
 
     export CBLAS_ROOT=/projects/global/toss3/compilers/intel/intel_2019/compilers_and_libraries_2019.5.281/linux
     export COMPILER_ROOT=/projects/global/toss3/compilers/intel/intel_2017/compilers_and_libraries_2019.5.281/linux
