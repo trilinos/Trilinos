@@ -337,10 +337,19 @@ namespace TSQR {
     Teuchos::RCP<
       typename ::TSQR::NodeTsqrFactory<SC, int, device_type>::node_tsqr_type
     >
-    getNodeTsqr (const NodeTestParameters& p)
+    getNodeTsqr (const NodeTestParameters& p,
+                 const std::string& overrideNodeTsqrType = "")
     {
+      const std::string nodeTsqrType = [&] () {
+        if (overrideNodeTsqrType == "") {
+          return p.nodeTsqrType;
+        }
+        else {
+          return overrideNodeTsqrType;
+        }
+      } ();
       using fct_type = ::TSQR::NodeTsqrFactory<SC, int, device_type>;
-      auto nodeTsqr = fct_type::getNodeTsqr (p.nodeTsqrType);
+      auto nodeTsqr = fct_type::getNodeTsqr (nodeTsqrType);
       TEUCHOS_ASSERT( ! nodeTsqr.is_null () );
       auto nodeTsqrParams = Teuchos::parameterList ("NodeTsqr");
       nodeTsqrParams->set ("Cache Size Hint", p.cacheSizeHint);
@@ -1281,17 +1290,17 @@ namespace TSQR {
     void
     benchmarkNodeTsqrTmpl (std::ostream& out,
                            std::vector<int>& iseed,
-                           const NodeTestParameters& testParams)
+                           NodeTsqr<int, Scalar>& actor,
+                           const NodeTestParameters& params,
+                           const std::string& nodeTsqrType)
     {
       using std::endl;
-      auto nodeTsqrPtr = getNodeTsqr<Scalar> (testParams);
-      auto& actor = *nodeTsqrPtr;
 
-      const int numRows = testParams.numRows;
-      const int numCols = testParams.numCols;
-      const int numTrials = testParams.numTrials;
+      const int numRows = params.numRows;
+      const int numCols = params.numCols;
+      const int numTrials = params.numTrials;
       const bool contiguousCacheBlocks =
-        testParams.contiguousCacheBlocks;
+        params.contiguousCacheBlocks;
 
       Matrix<int, Scalar> A (numRows, numCols);
       Matrix<int, Scalar> A_copy (numRows, numCols);
@@ -1365,13 +1374,14 @@ namespace TSQR {
       const std::string scalarType =
         Teuchos::TypeNameTraits<Scalar>::name ();
 
-      if (testParams.humanReadable) {
+      if (params.humanReadable) {
         out << "NodeTsqr:" << endl
-            << "  Scalar type = " << scalarType << endl
-            << "  # rows = " << numRows << endl
-            << "  # columns = " << numCols << endl
-            << "  cache size hint in bytes = "
-            << testParams.cacheSizeHint << endl
+            << "  Implementation: " << nodeTsqrType << endl
+            << "  Scalar: " << scalarType << endl
+            << "  numRows: " << numRows << endl
+            << "  numCols: " << numCols << endl
+            << "  cache size hint (bytes): "
+            << params.cacheSizeHint << endl
             << "  contiguous cache blocks? "
             << (contiguousCacheBlocks ? "true" : "false") << endl
             << "  # trials = " << numTrials << endl
@@ -1379,14 +1389,57 @@ namespace TSQR {
             << endl;
       }
       else {
-        out << testParams.nodeTsqrType
+        out << nodeTsqrType
             << "," << scalarType
             << "," << numRows
             << "," << numCols
-            << "," << testParams.cacheSizeHint
+            << "," << params.cacheSizeHint
             << "," << (contiguousCacheBlocks ? "true" : "false")
             << "," << numTrials
             << "," << nodeTsqrTiming << endl;
+      }
+    }
+
+    // If nodeTsqrType == "", use p.nodeTsqrType.
+    template<class Scalar>
+    void
+    benchmarkNodeTsqrImplementation (std::ostream& out,
+                                     const std::vector<int>& iseed,
+                                     const NodeTestParameters& p,
+                                     const std::string& nodeTsqrType = "")
+    {
+      // Make sure that all NodeTsqr implementations get the same
+      // pseudorandom seed.  That way, if there are any data-dependent
+      // performance effects (e.g., subnorms), all implementations
+      // will see them.
+      std::vector<int> iseed_copy (iseed);
+      auto nodeTsqrPtr = getNodeTsqr<Scalar> (p, nodeTsqrType);
+      benchmarkNodeTsqrTmpl (out, iseed_copy, *nodeTsqrPtr, p,
+                             nodeTsqrType);
+    }
+    
+    template<class Scalar>
+    void
+    benchmarkNodeTsqrImplementations (std::ostream& out,
+                                      std::vector<int>& iseed,
+                                      const NodeTestParameters& p)
+    {
+
+      if (p.nodeTsqrType == "all" || p.nodeTsqrType == "ALL" ||
+          p.nodeTsqrType == "All") {
+        const char* nodeTsqrImpls[] =
+          {"CombineNodeTsqr",
+#if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+           "CuSolverNodeTsqr",
+#endif           
+           "SequentialTsqr"};
+        for (auto&& nodeTsqrType : nodeTsqrImpls) {
+          benchmarkNodeTsqrImplementation<Scalar> (out, iseed, p,
+                                                   nodeTsqrType);
+        }
+      }
+      else {
+        benchmarkNodeTsqrImplementation<Scalar> (out, iseed, p);
       }
     }
 
@@ -1399,13 +1452,15 @@ namespace TSQR {
 
       std::vector<int> iseed {{0, 0, 0, 1}};
       if (p.testReal) {
-        benchmarkNodeTsqrTmpl<float> (out, iseed, p);
-        benchmarkNodeTsqrTmpl<double> (out, iseed, p);
+        benchmarkNodeTsqrImplementations<float> (out, iseed, p);
+        benchmarkNodeTsqrImplementations<double> (out, iseed, p);
       }
       if (p.testComplex) {
 #ifdef HAVE_TPETRATSQR_COMPLEX
-        benchmarkNodeTsqrTmpl<std::complex<float>> (out, iseed, p);
-        benchmarkNodeTsqrTmpl<std::complex<double>> (out, iseed, p);
+        benchmarkNodeTsqrImplementations<std::complex<float>>
+          (out, iseed, p);
+        benchmarkNodeTsqrImplementations<std::complex<double>>
+          (out, iseed, p);
 #else // Don't HAVE_TPETRATSQR_COMPLEX
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error,
