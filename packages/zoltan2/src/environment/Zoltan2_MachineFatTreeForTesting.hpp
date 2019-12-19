@@ -49,15 +49,6 @@ public:
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
     
-    // Number of ranks in each FatTree network group 
-    // (i.e. RCA's X coord == Grp g)
-//    group_count = new part_t[actual_machine_extent[0]];
-
-//    memset(group_count, 0, sizeof(part_t) * actual_machine_extent[0]);
-    
-    // Transformed dims = 1 + N_y + N_z
-//    transformed_networkDim = 1 + actual_machine_extent[1] + 
-//      actual_machine_extent[2];
     transformed_machine_extent = new int[transformed_networkDim];
 
     // Allocate memory for processor coords
@@ -76,50 +67,11 @@ public:
       actual_procCoords[i][this->myRank] = xyz[i];
     delete [] xyz;
 
-    // Gather number of ranks in each FatTree network group 
-    // from across all ranks
-//    part_t *tmp_vec = new part_t[actual_machine_extent[0]];
-//    memset(tmp_vec, 0, sizeof(part_t) * actual_machine_extent[0]);
-
-//    Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
-//                                    actual_machine_extent[0], 
-//                                    group_count, 
-//                                    tmp_vec);
-
-    // remove zero entries from reduced array
-//    num_unique_groups = 0;
-
-//    for (int i = 0; i < actual_machine_extent[0]; ++i) {
-//      if (tmp_vec[i] > 0) {
-//        ++num_unique_groups;
-//      }
-//    }
-
-    // Reset group_count array to new size
-//    delete[] group_count;
-//    group_count = new part_t[num_unique_groups];
-   
-//    int pos = 0;
-//    for (int i = 0; i < actual_machine_extent[0]; ++i) {
-//      if (tmp_vec[i] > 0) {
-//        group_count[pos] = tmp_vec[i];
-//        ++pos;
-//      }
-//    } 
-
-//    delete[] tmp_vec;
 
     // reduceAll the coordinates of each processor.
     gatherMachineCoordinates(this->actual_procCoords,
         this->actual_networkDim, comm);
   }
-
-  // No necessary wrap arounds for dragonfly networks. Groups
-  // have wrap around, but group all-to-all connection makes unneccessary.
-  virtual bool getMachineExtentWrapArounds(bool *wrap_around) const {
-    return false;
-  }
-
 
  /*! \brief Constructor: FatTree (e.g. Cori & Trinity) network 
    *  machine description;
@@ -151,13 +103,30 @@ public:
     
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
-    
-    // Number of parts in each FatTree network group 
-    // (i.e. RCA's X coord == Grp g)
-//    group_count = new part_t[actual_machine_extent[0]];
+   
+    transformed_machine_extent = new int[transformed_networkDim];    
 
-//    memset(group_count, 0, sizeof(part_t) * actual_machine_extent[0]);
-    
+    transformed_machine_extent[0] = this->nborhoods_per_row * this->actual_machine_extent[0];
+    transformed_machine_extent[1] = this->actual_machine_extent[1] / this->nborhoods_per_row;
+    transformed_machine_extent[2] = this->actual_machine_extent[2];
+
+    // Number of parts in each FatTree network neighborhood
+    // a neighborhood is defined as links connected by the L1 switch 
+    // (below director level switches) 
+    // (i.e. Row * nborhoods_per_row + ( Col / (num_cols / nborhoods_per_row))  == Grp g)
+    group_count = new part_t[transformed_machine_extent[0]];
+
+    memset(group_count, 0, sizeof(part_t) * transformed_machine_extent[0]);
+   
+    num_unique_subgroups = new part_t[transformed_machine_extent[0]];
+
+    subgroup_counts = new part_t*[transformed_machine_extent[0]];
+
+    for (int i = 0; i < transformed_machine_extent[0]; ++i) {
+      subgroup_counts[i] = new part_t[transformed_machine_extent[1]];
+      memset(subgroup_counts[i], 0, sizeof(part_t) * transformed_machine_extent[1]);
+    }
+
     // Allocate memory for processor coords
     actual_procCoords = new pcoord_t *[actual_networkDim];
 //    transformed_procCoords = new pcoord_t *[transformed_networkDim];
@@ -167,37 +136,82 @@ public:
 
     // Gather number of ranks in each FatTree network group 
     // from across all ranks
-//    part_t *tmp_vec = new part_t[actual_machine_extent[0]];
-//    memset(tmp_vec, 0, sizeof(part_t) * actual_machine_extent[0]);
+    part_t *tmp_vec = new part_t[transformed_machine_extent[0]];
+    memset(tmp_vec, 0, sizeof(part_t) * transformed_machine_extent[0]);
 
-//    Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
-//                                    actual_machine_extent[0], 
-//                                    group_count, 
-//                                    tmp_vec);
+    Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
+                                    transformed_machine_extent[0], 
+                                    group_count, 
+                                    tmp_vec);
 
     // remove zero entries from reduced vector
-//    num_unique_groups = 0;
+    num_unique_groups = 0;
 
-//    for (int i = 0; i < actual_machine_extent[0]; ++i) {
-//      if (tmp_vec[i] > 0) {
-//        ++num_unique_groups;
-//      }
-//    }
+    for (int i = 0; i < transformed_machine_extent[0]; ++i) {
+      if (tmp_vec[i] > 0) {
+        ++num_unique_groups;
+      }
+    }
 
     // Reset group_count array to new size (# of nonzero groups)
-//    delete[] group_count;
-//    group_count = new part_t[num_unique_groups];
+    delete[] group_count;
+    group_count = new part_t[num_unique_groups];
    
-//    int pos = 0;
-//    for (int i = 0; i < actual_machine_extent[0]; ++i)
-//    {
-//      if (tmp_vec[i] > 0) {
-//        group_count[pos] = tmp_vec[i];
-//        ++pos;
-//      }
+    int pos = 0;
+    for (int i = 0; i < transformed_machine_extent[0]; ++i)
+    {
+      if (tmp_vec[i] > 0) {
+        group_count[pos] = tmp_vec[i];
+        ++pos;
+      }
+      
+    } 
+    delete[] tmp_vec;
+
+    std::cout << "GroupCount: " << std::endl;
+    if (this->myRank == 0) {
+      for (int i = 0; i < num_unique_groups; ++i) {
+        std::cout << i << ": " << group_count[i] << std::endl;
+      }
+    }
+
+    std::cout << "\nGetting subgroup Coordinates" << std::endl;
+
+    // Gather number of ranks in each FatTree network subgroup
+    // from across all ranks
+    part_t *tmp_subgrp = new part_t[transformed_machine_extent[1]];
+
+//    for (int i = 0; i < this->transformed_machine_extent[0]; ++i) {
+//      tmp_mat[i] = new part_t[transformed_machine_extent[1]];
+//      memset(tmp_mat[i], 0, sizeof(part_t) * transformed_machine_extent[1]);
 //    } 
-//    delete[] tmp_vec;
-     
+
+    for (int i = 0; i < this->transformed_machine_extent[0]; ++i) {
+      Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
+                                      this->transformed_machine_extent[1], 
+                                      subgroup_counts[i], tmp_subgrp);
+      part_t *tmp = tmp_subgrp;
+      tmp_subgrp = subgroup_counts[i];
+      subgroup_counts[i] = tmp;
+    }
+    delete [] tmp_subgrp;
+  
+    if (this->myRank == 0) {
+      std::cout << "\nSubgroup_Counts: " << std::endl;
+      for (int i = 0; i < transformed_machine_extent[0]; ++i) {
+        std::cout << "\nGroup: " << i;
+        for (int j = 0; j < transformed_machine_extent[1]; ++j) {
+          std::cout << " " << subgroup_counts[i][j];
+        }
+      }
+    }
+    std::cout << std::endl;
+
+
+
+
+    std::cout << "\nTransforming Coordinates" << std::endl;
+    
     const Teuchos::ParameterEntry *pe2 = 
       this->pl->getEntryPtr("Machine_Optimization_Level");
 
@@ -220,21 +234,21 @@ public:
         }
         
         // Calculate transformed coordinates and machine extents
-        int nx = this->actual_machine_extent[0];
-        int ny = this->actual_machine_extent[1];
-        int nz = this->actual_machine_extent[2];
+//        int nx = this->actual_machine_extent[0];
+//        int ny = this->actual_machine_extent[1];
+//        int nz = this->actual_machine_extent[2];
 
         // x: A-H row, y: 0-35 col, z: 0-17 node in rack
 
-        transformed_machine_extent[0] = this->nborhoods_per_row * nx;
-        transformed_machine_extent[1] = ny / this->nborhoods_per_row;
-        transformed_machine_extent[2] = nz;
+//        transformed_machine_extent[0] = this->nborhoods_per_row * nx;
+//        transformed_machine_extent[1] = ny / this->nborhoods_per_row;
+//        transformed_machine_extent[2] = nz;
 
         // A1-A18 is one neighborhood, A19-A36 is another neighborhood
-        transformed_procCoords[0][this->myRank] = this->nborhoods_per_row * xyz[0] + int(xyz[1] / (ny / this->nborhoods_per_row));
+        transformed_procCoords[0][this->myRank] = this->nborhoods_per_row * xyz[0] + int(xyz[1] / (transformed_machine_extent[1]));
 
         // Rack within neighborhood
-        transformed_procCoords[1][this->myRank] = xyz[1] % (ny / this->nborhoods_per_row);
+        transformed_procCoords[1][this->myRank] = int(xyz[1]) % (transformed_machine_extent[1]);
         // Node within rack
         transformed_procCoords[2][this->myRank] = xyz[2];
          
@@ -347,12 +361,19 @@ public:
         }
       } 
     }
- 
+
+    if (subgroup_counts != NULL) {
+      for (int i = 0; i < transformed_machine_extent[0]; ++i) {
+        delete [] subgroup_counts[i];
+      }
+    }
+
     delete [] actual_procCoords;
     delete [] transformed_procCoords;  
    
     delete [] actual_machine_extent;
-//    delete [] group_count;
+    delete [] group_count;
+    delete [] num_unique_subgroups;
   }
 
   bool hasMachineCoordinates() const { return true; }
@@ -465,22 +486,20 @@ public:
   // Return the allocated node counts subgroup counts within each groupi
   //
   // Ex. num_unique_groups = 4, and group_count = [16, 8, 8, 4]
-  // and let the pretrimmed subgroup_counts = 
+  // and let the original subgroup_counts = 
   //      [[4, 0, 0, 0, ..., 8, 4],    // (3 unique subgroups)
   //       [2, 2, 0, 0, ..., 2, 2],    // (4 unique subgroups)
   //       [0, 0, 2, 2, ..., 2, 2],    // (4 unique subgroups)
   //       [2, 0, 0, 0, ..., 2, 0]]    // (2 unique subgroups)
   //
   // then num_unique subgroups = [3, 4, 4, 2]
-  // now the trimmed subgroup_counts = 
+  // now the returned subgroup_counts = 
   //    [[4, 8, 4, ...],    // (3 unique subgroups)
   //     [2, 2, 2, 2, ...],    // (4 unique subgroups)
   //     [2, 2, 2, 2, ...],    // (4 unique subgroups)
   //     [2, 2, ...]]    // (2 unique subgroups)
   //
   // then num_unique subgroups = [3, 4, 4, 2]
-
-
   bool getSubgroupCounts(part_t **subgrp_counts) const override {
     
     if (subgroup_counts != NULL) {
@@ -493,7 +512,7 @@ public:
       return true;
     }
     else 
-      return false
+      return false;
   }
 
 
@@ -627,7 +646,8 @@ public:
 //    xyz[1] = this->numRanks;
 //    xyz[2] = this->numRanks + 1;
 
-//    group_count[x]++;
+    group_count[int(xyz[0])]++;
+    subgroup_counts[int(xyz[0])][int(xyz[1])]++;
     
     return true; 
   }
@@ -689,6 +709,12 @@ public:
     }
 
     return true;
+  }
+
+  // No necessary wrap arounds for dragonfly networks. Groups
+  // have wrap around, but group all-to-all connection makes unneccessary.
+  virtual bool getMachineExtentWrapArounds(bool *wrap_around) const {
+    return false;
   }
 
   // Return (approx) hop count from rank1 to rank2. Does not account for 
@@ -773,7 +799,7 @@ private:
 
   // Number of subgroup
   part_t *num_unique_subgroups;
-  part_t **subgroup_count;
+  part_t **subgroup_counts;
 
   // Are out coordinates transformed?
   bool is_transformed;

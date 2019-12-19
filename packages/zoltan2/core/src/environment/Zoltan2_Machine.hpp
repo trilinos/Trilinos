@@ -129,6 +129,15 @@ public:
       return false;
     }
 
+    virtual bool getNumUniqueSubgroups(part_t *num_unique_subgrps) const {
+      return false;
+    }
+
+    virtual bool getSubgroupCounts(part_t **subgrp_counts) const {
+      return false;
+    }
+
+
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
 
 };

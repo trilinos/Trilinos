@@ -111,13 +111,6 @@ public:
         this->actual_networkDim, comm);
   }
 
-  // No necessary wrap arounds for dragonfly networks. Groups
-  // have wrap around, but group all-to-all connection makes unneccessary.
-  virtual bool getMachineExtentWrapArounds(bool *wrap_around) const {
-    return false;
-  }
-
-
  /*! \brief Constructor: Dragonfly (e.g. Cori & Trinity) network 
    *  machine description;
    *
@@ -544,6 +537,12 @@ public:
     }
 
     return true;
+  }
+
+  // No necessary wrap arounds for dragonfly networks. Groups
+  // have wrap around, but group all-to-all connection makes unneccessary.
+  virtual bool getMachineExtentWrapArounds(bool *wrap_around) const {
+    return false;
   }
 
   // Return (approx) hop count from rank1 to rank2. Does not account for 
