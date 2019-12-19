@@ -385,7 +385,8 @@ namespace TSQR {
                             const const_mat_view_type& Q_top,
                             const std::vector<Scalar>& tau,
                             const mat_view_type& C_top,
-                            Scalar work[]) const
+                            Scalar work[],
+                            const LocalOrdinal lwork) const
       {
         const char prefix[] =
           "ApplyFirstPass::applyFirstCacheBlock: ";
@@ -397,7 +398,7 @@ namespace TSQR {
            "tau.size()=" << tau.size () << " < number of columns "
            << ncols_Q << " in the Q factor." << suffix);
         combine.apply_first (applyType, Q_top, tau.data (),
-                             C_top, work);
+                             C_top, work, lwork);
       }
 
       void
@@ -519,7 +520,8 @@ namespace TSQR {
           work.resize (first_lwork);
           applyFirstCacheBlock (combine, applyType, Q_top,
                                 tauArrays_[curTauIndex++], C_top,
-                                work.data ());
+                                work.data (),
+                                static_cast<LocalOrdinal> (first_lwork));
 
           // Apply the rest of the blocks, if any.
           ++Q_rangeIter;
@@ -629,7 +631,8 @@ namespace TSQR {
           }
           applyFirstCacheBlock (combine, applyType, Q_top,
                                 tauArrays_[curTauIndex--],
-                                C_top, work.data ());
+                                C_top, work.data (),
+                                static_cast<LocalOrdinal> (first_lwork));
         }
       }
 

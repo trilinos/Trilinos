@@ -222,7 +222,8 @@ namespace TSQR {
       mat_view_type C_view (nrows, ncols_C, C, ldc);
       const auto tau = output.tau ();
       combine.apply_first (applyType, Q_view, tau.data (),
-                           C_view, work.data ());
+                           C_view, work.data (),
+                           static_cast<Ordinal> (lwork));
     }
 
     void

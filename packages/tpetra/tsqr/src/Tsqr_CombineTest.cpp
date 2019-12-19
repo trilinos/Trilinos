@@ -597,9 +597,9 @@ namespace TSQR {
       // (working up the matrix A,) finishing with A1.
       combiner.apply_inner (ApplyType::NoTranspose, A2, tau2.data (),
                             Q1_Q2.first, Q1_Q2.second, work.data ());
-      combiner.apply_first (ApplyType::NoTranspose,
-                            A1, tau1.data (),
-                            Q1_Q2.first, work.data ());
+      combiner.apply_first (ApplyType::NoTranspose, A1, tau1.data (),
+                            Q1_Q2.first, work.data (),
+                            static_cast<Ordinal> (lwork));
       if (debug) {
         cerr << "Results of first test problem:" << endl;
         cerr << "-- Test matrix A:" << endl;

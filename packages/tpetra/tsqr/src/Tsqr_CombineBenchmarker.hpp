@@ -330,7 +330,8 @@ namespace TSQR {
           combiner.factor_first (A.view(), tau.data(), work.data());
           combiner.apply_first (ApplyType("N"),
                                 A.view(), tau.data(),
-                                Q.view(), work.data());
+                                Q.view(), work.data(),
+                                static_cast<Ordinal> (lwork));
         }
 
         // How much time numTrials runs must take in order for
@@ -358,7 +359,8 @@ namespace TSQR {
             combiner.factor_first (A.view(), tau.data(), work.data());
             combiner.apply_first (ApplyType("N"),
                                   A.view(), tau.data(),
-                                  Q.view(), work.data());
+                                  Q.view(), work.data(),
+                                  static_cast<Ordinal> (lwork));
           }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
@@ -428,7 +430,8 @@ namespace TSQR {
                                  work.data ());
           combiner.apply_first (ApplyType ("N"),
                                 A.view (), tau.data (),
-                                Q.view (), work.data ());
+                                Q.view (), work.data (),
+                                static_cast<Ordinal> (lwork));
         }
         //
         // The actual timing runs.
@@ -440,7 +443,8 @@ namespace TSQR {
                                  work.data ());
           combiner.apply_first (ApplyType ("N"),
                                 A.view (), tau.data (),
-                                Q.view (), work.data ());
+                                Q.view (), work.data (),
+                                static_cast<Ordinal> (lwork));
         }
         return timer.stop();
       }

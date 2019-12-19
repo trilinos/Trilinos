@@ -48,7 +48,6 @@
 #include "Tsqr_CacheBlockingStrategy.hpp"
 #include "Tsqr_CacheBlocker.hpp"
 #include "Tsqr_Combine.hpp"
-#include "Tsqr_LocalVerify.hpp"
 #include "Tsqr_NodeTsqr.hpp"
 #include "Tsqr_Util.hpp"
 #include "Tsqr_Impl_SystemBlas.hpp"
@@ -201,10 +200,11 @@ namespace TSQR {
                        const const_mat_view_type& Q_first,
                        const std::vector<Scalar>& tau,
                        const mat_view_type& C_first,
-                       Scalar work[]) const
+                       Scalar work[],
+                       const LocalOrdinal lwork) const
     {
       combine.apply_first (applyType, Q_first, tau.data (),
-                           C_first, work);
+                           C_first, work, lwork);
     }
 
     void
@@ -641,7 +641,8 @@ namespace TSQR {
         auto tau_iter = tau_arrays.begin();
         const std::vector<Scalar>& tau = *tau_iter++;
         apply_first_block (combine, apply_type, Q_cur, tau,
-                           C_cur, work.data ());
+                           C_cur, work.data (),
+                           static_cast<LocalOrdinal> (lwork));
         while (! empty (Q_rest)) {
           Q_cur = blocker.split_top_block (Q_rest, contigCacheBlocks);
           C_cur = blocker.split_top_block (C_rest, contigCacheBlocks);
@@ -665,7 +666,8 @@ namespace TSQR {
         }
         // Apply to last (topmost) cache block.
         apply_first_block (combine, apply_type, Q_cur, *tau_iter++,
-                           C_cur, work.data ());
+                           C_cur, work.data (),
+                           static_cast<LocalOrdinal> (lwork));
       }
     }
 

@@ -136,7 +136,8 @@ namespace TSQR {
                  const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
       const Ordinal nrows = A.extent(0);
       const Ordinal ncols_C = C.extent(1);
@@ -150,10 +151,9 @@ namespace TSQR {
       // transpose.  That means we can make the strings more verbose,
       // as in "Left" here for the SIDE parameter.
       const std::string trans = applyType.toString ();
-      const int lwork = ncols_C;
       lapack_.apply_Q_factor ('L', trans[0], nrows, ncols_C, ncols_A,
                               A.data(), lda, tau, C.data(), ldc,
-                              work, lwork);
+                              work, static_cast<int> (lwork));
     }
 
     void

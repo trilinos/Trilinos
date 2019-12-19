@@ -163,9 +163,10 @@ namespace TSQR {
                  const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
-      return impl_.apply_first (applyType, A, tau, C, work);
+      return impl_.apply_first (applyType, A, tau, C, work, lwork);
     }
 
     /// Apply the result of factor_inner().

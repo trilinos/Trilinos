@@ -118,9 +118,10 @@ namespace TSQR {
                  const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
-      return default_.apply_first (applyType, A, tau, C, work);
+      return default_.apply_first (applyType, A, tau, C, work, lwork);
     }
 
     void
@@ -268,9 +269,10 @@ namespace TSQR {
                  const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
-      return default_.apply_first (applyType, A, tau, C, work);
+      return default_.apply_first (applyType, A, tau, C, work, lwork);
     }
 
     void
@@ -342,9 +344,10 @@ namespace TSQR {
                  const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
-      return default_.apply_first (applyType, A, tau, C, work);
+      return default_.apply_first (applyType, A, tau, C, work, lwork);
     }
 
     void
