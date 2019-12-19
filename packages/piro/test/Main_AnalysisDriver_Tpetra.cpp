@@ -95,14 +95,16 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<2; iTest++) {
+  for (int iTest=0; iTest<6; iTest++) {
 
     if (doAll) {
       switch (iTest) {
-       case 0: inputFile="input_Analysis_ROL_Tpetra.xml"; break;
-       case 1: inputFile="input_Analysis_ROL_AdjointSensitivities_Tpetra.xml"; break;
-       case 2: inputFile="input_Analysis_OptiPack.xml"; break;
-       case 3: inputFile="input_Analysis_MOOCHO.xml"; break;
+       case 0: inputFile="input_Analysis_ROL_OldReducedSpace_Tpetra.xml"; break;
+       case 1: inputFile="input_Analysis_ROL_ReducedSpace_NOXSolver_Tpetra.xml"; break;
+       case 2: inputFile="input_Analysis_ROL_ReducedSpace_Tpetra.xml"; break;
+       case 3: inputFile="input_Analysis_ROL_FullSpace_Tpetra.xml"; break;
+       case 4: inputFile="input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml"; break;
+       case 5: inputFile="input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -127,7 +129,7 @@ int main(int argc, char *argv[]) {
       Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(appParams.get()));
 
       const RCP<Teuchos::ParameterList>  piroParams = Teuchos::sublist(appParams,"Piro");
-      Teuchos::ParameterList& analysisParams = appParams->sublist("Analysis");
+      Teuchos::ParameterList& analysisParams = piroParams->sublist("Analysis");
 
 
       Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
@@ -155,19 +157,16 @@ int main(int argc, char *argv[]) {
       RCP<Thyra::ModelEvaluator<double>> ModelWithSolve = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(
           Model, lowsFactory));
 
-      // Use these two objects to construct a Piro solved application
-      // Thyra::ModelEvaluator is the base class of all Piro::Epetra solvers
       const RCP<Thyra::ModelEvaluatorDefaultBase<double>> piro = solverFactory.createSolver(piroParams, ModelWithSolve);
-      // END Builder
 
       // Call the analysis routine
       RCP<Thyra::VectorBase<double>> p;
       status = Piro::PerformAnalysis(*piro, analysisParams, p);
 
-      if (Teuchos::nonnull(p)) { //p might be null if the packages ROL, Moocho, OptiPack are not enabled
+      if (Teuchos::nonnull(p)) { //p might be null if the package ROL is not enabled
         Thyra::DetachedVectorView<double> p_view(p);
         double p_exact[2] = {1,3};
-        double tol = 1e-6;
+        double tol = 1e-5;
 
         double l2_diff = std::sqrt(std::pow(p_view(0)-p_exact[0],2) + std::pow(p_view(1)-p_exact[1],2));
         if(l2_diff > tol) {
