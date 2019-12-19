@@ -354,8 +354,8 @@ namespace TSQR {
 
       // Workspace array for factorization and applying the Q factor.
       // We recycle this workspace for all tests.
-      const size_t lwork =
-        combiner.work_size (numRows, numCols, numCols);
+      const Ordinal lwork
+        (combiner.work_size (numRows, numCols, numCols));
       vector<Scalar> work (lwork);
 
       if (debug) {
@@ -401,10 +401,10 @@ namespace TSQR {
              << endl << endl;
       }
       combiner.factor_inner (R3.view (), A.view (),
-                             tau_R3A.data (), work.data ());
+                             tau_R3A.data (), work.data (), lwork);
       combiner.apply_inner (ApplyType ("N"), A.view (),
                             tau_R3A.data (), Q_R3_A.first,
-                            Q_R3_A.second, work.data ());
+                            Q_R3_A.second, work.data (), lwork);
       if (debug) {
         cerr << "Results of second test problem:" << endl;
         cerr << "-- Copy of test problem:" << endl;
@@ -579,7 +579,8 @@ namespace TSQR {
       // View of numCols by numCols upper triangle of A1.
       mat_view_type R1 (numCols, numCols, A1.data(), A1.stride(1));
       // qr( [R1; A2] )
-      combiner.factor_inner (R1, A2, tau2.data(), work.data());
+      combiner.factor_inner (R1, A2, tau2.data (),
+                             work.data (), lwork);
       // Extract (a deep copy of) the R factor.
       matrix_type R (R1);
       // Zero out everything below the diagonal of R.
@@ -596,10 +597,10 @@ namespace TSQR {
       // Compute the explicit Q factor, by starting with A2 and
       // (working up the matrix A,) finishing with A1.
       combiner.apply_inner (ApplyType::NoTranspose, A2, tau2.data (),
-                            Q1_Q2.first, Q1_Q2.second, work.data ());
+                            Q1_Q2.first, Q1_Q2.second,
+                            work.data (), lwork);
       combiner.apply_first (ApplyType::NoTranspose, A1, tau1.data (),
-                            Q1_Q2.first, work.data (),
-                            static_cast<Ordinal> (lwork));
+                            Q1_Q2.first, work.data (), lwork);
       if (debug) {
         cerr << "Results of first test problem:" << endl;
         cerr << "-- Test matrix A:" << endl;

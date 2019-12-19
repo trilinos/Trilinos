@@ -203,9 +203,11 @@ namespace TSQR {
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
-      impl_.apply_inner (apply_type, A, tau, C_top, C_bot, work);
+      impl_.apply_inner (apply_type, A, tau, C_top, C_bot,
+                         work, lwork);
     }
 
     /// \brief Factor [R; A] for square upper triangular R and cache block A.
@@ -246,9 +248,10 @@ namespace TSQR {
     factor_inner (const MatView<Ordinal, Scalar>& R,
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[])
+                  Scalar work[],
+                  const Ordinal lwork)
     {
-      impl_.factor_inner (R, A, tau, work);
+      impl_.factor_inner (R, A, tau, work, lwork);
     }
 
     /// \brief Factor the pair of square upper triangular matrices [R_top; R_bot].

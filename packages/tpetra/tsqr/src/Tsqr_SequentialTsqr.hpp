@@ -215,10 +215,11 @@ namespace TSQR {
                    const std::vector<Scalar>& tau,
                    const mat_view_type& C_top,
                    const mat_view_type& C_cur,
-                   Scalar work[]) const
+                   Scalar work[],
+                   const LocalOrdinal lwork) const
     {
       combine.apply_inner (apply_type, Q_cur, tau.data (),
-                           C_top, C_cur, work);
+                           C_top, C_cur, work, lwork);
     }
 
     void
@@ -226,9 +227,10 @@ namespace TSQR {
                     const mat_view_type& R,
                     const mat_view_type& A_cur,
                     std::vector<Scalar>& tau,
-                    Scalar work[]) const
+                    Scalar work[],
+                    const LocalOrdinal lwork) const
     {
-      combine.factor_inner (R, A_cur, tau.data (), work);
+      combine.factor_inner (R, A_cur, tau.data (), work, lwork);
     }
 
   public:
@@ -491,7 +493,8 @@ namespace TSQR {
       while (! empty (A_rest)) {
         A_cur = blocker.split_top_block (A_rest, contigCacheBlocks);
         std::vector<Scalar> tau (ncols);
-        combine_factor (combine, R_view, A_cur, tau, work.data ());
+        combine_factor (combine, R_view, A_cur, tau,
+                        work.data (), lwork);
         tau_arrays->add_and_consume (std::move (tau));
       }
 
@@ -609,8 +612,8 @@ namespace TSQR {
       CacheBlocker<LocalOrdinal, Scalar> blocker
         (nrows, ncols_Q, strategy_);
       Combine<LocalOrdinal, Scalar> combine;
-      const size_t lwork =
-        combine.work_size (nrows, ncols_Q, ncols_C);
+      const LocalOrdinal lwork
+        (combine.work_size (nrows, ncols_Q, ncols_C));
       std::vector<Scalar> work (lwork);
 
       const bool transposed = apply_type.transposed ();
@@ -644,13 +647,12 @@ namespace TSQR {
         auto tau_iter = tau_arrays.begin();
         const std::vector<Scalar>& tau = *tau_iter++;
         apply_first_block (combine, apply_type, Q_cur, tau,
-                           C_cur, work.data (),
-                           static_cast<LocalOrdinal> (lwork));
+                           C_cur, work.data (), lwork);
         while (! empty (Q_rest)) {
           Q_cur = blocker.split_top_block (Q_rest, contigCacheBlocks);
           C_cur = blocker.split_top_block (C_rest, contigCacheBlocks);
           combine_apply (combine, apply_type, Q_cur, *tau_iter++,
-                         C_top, C_cur, work.data ());
+                         C_top, C_cur, work.data (), lwork);
         }
       }
       else {
@@ -663,14 +665,15 @@ namespace TSQR {
           blocker.split_bottom_block (C_rest, contigCacheBlocks);
         while (! empty (Q_rest)) {
           combine_apply (combine, apply_type, Q_cur, *tau_iter++,
-                         C_top, C_cur, work.data ());
-          Q_cur = blocker.split_bottom_block (Q_rest, contigCacheBlocks);
-          C_cur = blocker.split_bottom_block (C_rest, contigCacheBlocks);
+                         C_top, C_cur, work.data (), lwork);
+          Q_cur =
+            blocker.split_bottom_block (Q_rest, contigCacheBlocks);
+          C_cur =
+            blocker.split_bottom_block (C_rest, contigCacheBlocks);
         }
         // Apply to last (topmost) cache block.
         apply_first_block (combine, apply_type, Q_cur, *tau_iter++,
-                           C_cur, work.data (),
-                           static_cast<LocalOrdinal> (lwork));
+                           C_cur, work.data (), lwork);
       }
     }
 

@@ -131,13 +131,15 @@ namespace TSQR {
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
-                 Scalar work[]) const;
+                 Scalar work[],
+                 const Ordinal lwork) const;
 
     void
     factor_inner (const MatView<Ordinal, Scalar>& R,
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[]) const;
+                  Scalar work[],
+                  const Ordinal lwork) const;
 
     void
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
@@ -281,14 +283,16 @@ namespace TSQR {
     factor_inner (const MatView<Ordinal, Scalar>& R,
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[]) const;
+                  Scalar work[],
+                  const Ordinal lwork) const;
     void
     apply_inner (const ApplyType& applyType,
                  const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
-                 Scalar work[]) const;
+                 Scalar work[],
+                 const Ordinal lwork) const;
 
     void
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
@@ -359,19 +363,21 @@ namespace TSQR {
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
-                 Scalar work[]) const
+                 Scalar work[],
+                 const Ordinal lwork) const
     {
       return default_.apply_inner (applyType, A, tau,
-                                   C_top, C_bot, work);
+                                   C_top, C_bot, work, lwork);
     }
 
     void
     factor_inner (const MatView<Ordinal, Scalar>& R,
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[]) const
+                  Scalar work[],
+                  const Ordinal lwork) const
     {
-      return default_.factor_inner (R, A, tau, work);
+      return default_.factor_inner (R, A, tau, work, lwork);
     }
 
     void
@@ -499,22 +505,26 @@ namespace TSQR {
   factor_inner (const MatView<Ordinal, Scalar>& R,
                 const MatView<Ordinal, Scalar>& A,
                 Scalar tau[],
-                Scalar work[]) const
+                Scalar work[],
+                const Ordinal lwork) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
     using mat_type = matrix_type<scalar_type>;
     using nonconst_vec_type = vector_type<scalar_type>;
-    using range_type = std::pair<Ordinal, Ordinal>;
+    using range = std::pair<Ordinal, Ordinal>;
 
-    mat_type A_full (A.data(), A.stride(1), A.extent(1));
-    mat_type A_view =
-      subview (A_full, range_type (0, A.extent(0)), ALL ());
-    mat_type R_full (R.data(), R.stride(1), R.extent(1));
-    mat_type R_view =
-      subview (R_full, range_type (0, R.extent(1)), ALL ());
-    nonconst_vec_type tau_view (tau, R.extent(1));
-    nonconst_vec_type work_view (work, R.extent(1));
+    const Ordinal numRows (A.extent (0));
+    const Ordinal A_numCols (A.extent (1));
+    const Ordinal lda (A.stride (1));
+    const Ordinal R_numCols (R.extent (1));
+
+    mat_type A_full (A.data (), lda, A_numCols);
+    mat_type A_view = subview (A_full, range (0, numRows), ALL ());
+    mat_type R_full (R.data (), R.stride (1), R_numCols);
+    mat_type R_view = subview (R_full, range (0, R_numCols), ALL ());
+    nonconst_vec_type tau_view (tau, R_numCols);
+    nonconst_vec_type work_view (work, lwork);
 
     this->factor_inner (R_view, A_view, tau_view, work_view);
   }
@@ -580,7 +590,8 @@ namespace TSQR {
                const Scalar tau[],
                const MatView<Ordinal, Scalar>& C_top,
                const MatView<Ordinal, Scalar>& C_bot,
-               Scalar work[]) const
+               Scalar work[],
+               const Ordinal lwork) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -603,7 +614,7 @@ namespace TSQR {
       (C_bot.data (), C_bot.stride (1), ncols_C);
     auto C_bot_view = subview (C_bot_full, range_type (0, m), ALL ());
     const_vec_type tau_view (tau, ncols_Q);
-    nonconst_vec_type work_view (work, ncols_C);
+    nonconst_vec_type work_view (work, lwork);
 
     this->apply_inner (applyType, A_view, tau_view, C_top_view,
                        C_bot_view, work_view);

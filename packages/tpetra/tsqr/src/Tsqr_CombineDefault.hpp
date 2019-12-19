@@ -163,7 +163,8 @@ namespace TSQR {
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
-                 Scalar work[])
+                 Scalar work[],
+                 const Ordinal lwork)
     {
       const Ordinal m = A.extent (0);
       TEUCHOS_ASSERT( m == Ordinal (C_bot.extent (0)) );
@@ -184,7 +185,6 @@ namespace TSQR {
       deep_copy (C_buf_top_bot.second, C_bot);
 
       const std::string trans = apply_type.toString ();
-      const int lwork = ncols_C;
       lapack_.apply_Q_factor ('L', trans[0],
                               numRows, ncols_C, ncols_Q,
                               A_buf_.data (), A_buf_.stride (1), tau,
@@ -199,12 +199,14 @@ namespace TSQR {
     factor_inner (const MatView<Ordinal, Scalar>& R,
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
-                  Scalar work[])
+                  Scalar work[],
+                  const Ordinal lwork)
     {
-      const Ordinal m = A.extent(0);
-      const Ordinal n = A.extent(1);
-      factor_inner_impl (m, n, R.data(), R.stride(1),
-                         A.data(), A.stride(1), tau, work);
+      const Ordinal m = A.extent (0);
+      const Ordinal n = A.extent (1);
+      const Ordinal lda = A.stride (1);
+      factor_inner_impl (m, n, R.data (), R.stride (1),
+                         A.data (), lda, tau, work, lwork);
     }
 
   private:
@@ -216,7 +218,8 @@ namespace TSQR {
                        Scalar A[],
                        const Ordinal lda,
                        Scalar tau[],
-                       Scalar work[])
+                       Scalar work[],
+                       const Ordinal lwork)
     {
       const Ordinal numRows = m + n;
 
@@ -235,10 +238,8 @@ namespace TSQR {
       MatView<Ordinal, Scalar> A_buf_bot (m, n, &A_buf_(n, 0),
                                           A_buf_.stride(1));
       deep_copy (A_buf_bot, A_view);
-
-      const int lwork = n;
-      lapack_.compute_QR (numRows, n, A_buf_.data(), A_buf_.stride(1),
-                          tau, work, lwork);
+      lapack_.compute_QR (numRows, n, A_buf_.data (),
+                          A_buf_.stride (1), tau, work, lwork);
       // Copy back the results.  R might be a view of the upper
       // triangle of a cache block, so only copy into the upper
       // triangle of R.

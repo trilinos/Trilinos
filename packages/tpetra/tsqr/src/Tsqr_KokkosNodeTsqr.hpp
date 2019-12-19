@@ -176,10 +176,11 @@ namespace TSQR {
       factorCacheBlock (Combine<LocalOrdinal, Scalar>& combine,
                         const mat_view_type& A_top,
                         const mat_view_type& A_cur,
-                        Scalar work[]) const
+                        Scalar work[],
+                        const LocalOrdinal lwork) const
       {
         std::vector<Scalar> tau (A_top.extent(1));
-        combine.factor_inner (A_top, A_cur, tau.data (), work);
+        combine.factor_inner (A_top, A_cur, tau.data (), work, lwork);
         return tau;
       }
 
@@ -264,7 +265,8 @@ namespace TSQR {
             work.resize (new_lwork);
           }
           tauArrays_[curTauIdx++] =
-            factorCacheBlock (combine, A_top, A_cur, work.data ());
+            factorCacheBlock (combine, A_top, A_cur,
+                              work.data (), new_lwork);
           ++count;
           ++cbIter;
         }
@@ -410,7 +412,8 @@ namespace TSQR {
                        const std::vector<Scalar>& tau,
                        const mat_view_type& C_top,
                        const mat_view_type& C_cur,
-                       Scalar work[]) const
+                       Scalar work[],
+                       const LocalOrdinal lwork) const
       {
         const char prefix[] =
           "TSQR::KokkosNodeTsqr::ApplyFirstPass::applyCacheBlock: ";
@@ -425,7 +428,7 @@ namespace TSQR {
            << suffix);
         try {
           combine.apply_inner (applyType, Q_cur, tau.data (),
-                               C_top, C_cur, work);
+                               C_top, C_cur, work, lwork);
         }
         catch (std::exception& e) {
           std::ostringstream os;
@@ -516,14 +519,13 @@ namespace TSQR {
           LocalOrdinal curTauIndex = cbIndices.first;
 
           // Apply the first block.
-          const size_t first_lwork =
-            combine.work_size (Q_top.extent (0), Q_top.extent (1),
-                               C_top.extent (1));
+          const LocalOrdinal first_lwork
+            (combine.work_size (Q_top.extent (0), Q_top.extent (1),
+                                C_top.extent (1)));
           work.resize (first_lwork);
           applyFirstCacheBlock (combine, applyType, Q_top,
                                 tauArrays_[curTauIndex++], C_top,
-                                work.data (),
-                                static_cast<LocalOrdinal> (first_lwork));
+                                work.data (), first_lwork);
 
           // Apply the rest of the blocks, if any.
           ++Q_rangeIter;
@@ -542,15 +544,16 @@ namespace TSQR {
               deep_copy (C_cur, Scalar {});
             }
 
-            const size_t next_lwork =
-              combine.work_size (Q_cur.extent (0), Q_cur.extent (1),
-                                 C_cur.extent (1));
-            if (next_lwork > work.size ()) {
+            const LocalOrdinal next_lwork
+              (combine.work_size (Q_cur.extent (0), Q_cur.extent (1),
+                                  C_cur.extent (1)));
+            if (next_lwork > LocalOrdinal (work.size ())) {
               work.resize (next_lwork);
             }
-            applyCacheBlock (combine, applyType, Q_cur,
-                             tauArrays_[curTauIndex++],
-                             C_top, C_cur, work.data ());
+            applyCacheBlock (combine, applyType,
+                             Q_cur, tauArrays_[curTauIndex++],
+                             C_top, C_cur,
+                             work.data (), next_lwork);
           }
         }
         else {
@@ -607,15 +610,16 @@ namespace TSQR {
                "range [" << cbIndices.first << ","
                << cbIndices.second << ")." << suffix);
 
-            const size_t next_lwork =
-              combine.work_size (Q_cur.extent (0), Q_cur.extent (1),
-                                 C_cur.extent (1));
-            if (next_lwork > work.size ()) {
+            const LocalOrdinal next_lwork
+              (combine.work_size (Q_cur.extent (0), Q_cur.extent (1),
+                                  C_cur.extent (1)));
+            if (next_lwork > LocalOrdinal (work.size ())) {
               work.resize (next_lwork);
             }
             applyCacheBlock (combine, applyType, Q_cur,
                              tauArrays_[curTauIndex--],
-                             C_top, C_cur, work.data ());
+                             C_top, C_cur,
+                             work.data (), next_lwork);
             ++Q_rangeIter;
             ++C_rangeIter;
           }
@@ -625,16 +629,15 @@ namespace TSQR {
              "[" << cbIndices.first << "," << cbIndices.second << ")."
              << suffix);
           // Apply the first block.
-          const size_t first_lwork =
-            combine.work_size (Q_top.extent (0), Q_top.extent (1),
-                               C_top.extent (1));
-          if (first_lwork > work.size ()) {
+          const LocalOrdinal first_lwork
+            (combine.work_size (Q_top.extent (0), Q_top.extent (1),
+                                C_top.extent (1)));
+          if (first_lwork > LocalOrdinal (work.size ())) {
             work.resize (first_lwork);
           }
           applyFirstCacheBlock (combine, applyType, Q_top,
                                 tauArrays_[curTauIndex--],
-                                C_top, work.data (),
-                                static_cast<LocalOrdinal> (first_lwork));
+                                C_top, work.data (), first_lwork);
         }
       }
 
