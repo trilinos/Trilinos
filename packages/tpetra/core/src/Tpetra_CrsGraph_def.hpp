@@ -581,7 +581,7 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& colMap,
             const typename local_graph_type::row_map_type& rowPointers,
             const typename local_graph_type::entries_type::non_const_type& columnIndices,
-            const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_(rowMap)
     , colMap_(colMap)
@@ -599,13 +599,16 @@ namespace Tpetra {
     , fillComplete_(false)
     , lowerTriangular_ (false)
     , upperTriangular_ (false)
-    , indicesAreSorted_(true)
     , noRedundancies_(true)
     , haveLocalConstants_ (false)
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions ();
+    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
+      indicesAreSorted_ = false;
+    else
+      indicesAreSorted_ = true;
     setAllIndices (rowPointers, columnIndices);
     checkInternalState ();
   }
@@ -616,7 +619,7 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& colMap,
             const Teuchos::ArrayRCP<size_t>& rowPointers,
             const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
-            const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
@@ -634,13 +637,16 @@ namespace Tpetra {
     , fillComplete_ (false)
     , lowerTriangular_ (false)
     , upperTriangular_ (false)
-    , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
     staticAssertions ();
+    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
+      indicesAreSorted_ = false;
+    else
+      indicesAreSorted_ = true;
     setAllIndices (rowPointers, columnIndices);
     checkInternalState ();
   }
@@ -685,7 +691,6 @@ namespace Tpetra {
     , fillComplete_ (false)
     , lowerTriangular_ (false)
     , upperTriangular_ (false)
-    , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
     , haveGlobalConstants_ (false)
@@ -704,6 +709,7 @@ namespace Tpetra {
       "number of rows.  The row Map claims " << rowMap->getNodeNumElements ()
       << " row(s), but the local graph claims " << k_local_graph_.numRows ()
       << " row(s).");
+
     // NOTE (mfh 17 Mar 2014) getNodeNumRows() returns
     // rowMap_->getNodeNumElements(), but it doesn't have to.
     // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -717,6 +723,11 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! lclInds2D_.is_null () || ! gblInds2D_.is_null (), std::logic_error,
       ": cannot have 2D data structures allocated.");
+
+    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
+      indicesAreSorted_ = false;
+    else
+      indicesAreSorted_ = true;
 
     setDomainRangeMaps (domainMap.is_null() ? rowMap_ : domainMap,
                         rangeMap .is_null() ? rowMap_ : rangeMap);
@@ -770,7 +781,6 @@ namespace Tpetra {
     fillComplete_ (false), // not yet, but see below
     lowerTriangular_ (false),
     upperTriangular_ (false),
-    indicesAreSorted_ (true),
     noRedundancies_ (true),
     haveLocalConstants_ (false),
     haveGlobalConstants_ (false),
@@ -786,6 +796,12 @@ namespace Tpetra {
 
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
+
+    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
+      indicesAreSorted_ = false;
+    else
+      indicesAreSorted_ = true;
+
     const bool callComputeGlobalConstants =
       params.get () == nullptr ||
       params->get ("compute global constants", true);
@@ -2023,14 +2039,14 @@ namespace Tpetra {
     this->k_numRowEntries_(myRow) += numNewInds;
     this->setLocallyModified ();
 
-#ifdef HAVE_TPETRA_DEBUG
-    const size_t chkNewNumEntries = this->getNumEntriesInLocalRow (myRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (chkNewNumEntries != newNumEntries, std::logic_error,
-       "getNumEntriesInLocalRow(" << myRow << ") = " << chkNewNumEntries
-       << " != newNumEntries = " << newNumEntries
-       << ".  Please report this bug to the Tpetra developers.");
-#endif
+    if(::Tpetra::Details::Behavior::debug ()) {
+      const size_t chkNewNumEntries = this->getNumEntriesInLocalRow (myRow);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (chkNewNumEntries != newNumEntries, std::logic_error,
+         "getNumEntriesInLocalRow(" << myRow << ") = " << chkNewNumEntries
+         << " != newNumEntries = " << newNumEntries
+         << ".  Please report this bug to the Tpetra developers.");
+    }
   }
 
 
@@ -3059,7 +3075,7 @@ namespace Tpetra {
       }
     }
 
-    if (Tpetra::Details::Behavior::debug()) {
+    if (this->isSorted() && Tpetra::Details::Behavior::debug()) {
       // Verify that the local indices are actually sorted
       int notSorted = 0;
       using exec_space = typename local_graph_type::execution_space;

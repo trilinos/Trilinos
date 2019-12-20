@@ -67,7 +67,7 @@ SET(CTEST_TEST_TYPE Experimental)
 SET(ENV{LD_LIBRARY_PATH} "$ENV{LD_LIBRARY_PATH}:/opt/intel/Compiler/11.1/064/lib/intel64:/opt/intel/Compiler/11.1/064/mkl/lib/em64t")
 #SET(CTEST_TEST_TIMEOUT 900)
 
-#SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos)
+#SET(Trilinos_PACKAGES Teuchos RTOp Thyra Stratimikos Phalanx Rythmos)
 
 SET(EXTRA_EXCLUDE_PACKAGES Panzer)
 

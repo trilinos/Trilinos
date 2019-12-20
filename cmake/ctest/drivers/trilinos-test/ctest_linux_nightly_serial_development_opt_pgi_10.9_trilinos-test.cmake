@@ -68,7 +68,7 @@ SET(CTEST_TEST_TYPE EXPERIMENTAL)
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
-SET(EXTRA_EXCLUDE_PACKAGES Claps CTrilinos Didasko FEApp Phalanx Piro RBGen Rythmos STK Stokhos Sundance Teko TrilinosCouplings Panzer PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES CTrilinos Didasko FEApp Phalanx Piro RBGen Rythmos STK Stokhos Sundance Teko TrilinosCouplings Panzer PyTrilinos)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
