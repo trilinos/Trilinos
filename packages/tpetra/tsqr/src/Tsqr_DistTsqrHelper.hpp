@@ -37,12 +37,12 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_Tsqr_DistTsqrHelper_hpp
-#define __TSQR_Tsqr_DistTsqrHelper_hpp
+#ifndef TSQR_DISTTSQRHELPER_HPP
+#define TSQR_DISTTSQRHELPER_HPP
 
 #include "Tsqr_MatView.hpp"
 #include "Tsqr_MessengerBase.hpp"
-#include "Tsqr_Combine.hpp"
+#include "Tsqr_Impl_CombineUser.hpp"
 #include "Tsqr_Util.hpp"
 
 #include <algorithm> // std::min, std::max
@@ -59,12 +59,11 @@ namespace TSQR {
   /// The only reason to mess with this class is if you want to change
   /// how the internode part of TSQR is implemented.
   template<class LocalOrdinal, class Scalar>
-  class DistTsqrHelper {
+  class DistTsqrHelper :
+    private Impl::CombineUser<LocalOrdinal, Scalar> {
   public:
-    DistTsqrHelper () = default;
-
     size_t work_size (const LocalOrdinal ncols) {
-      Combine<LocalOrdinal, Scalar> combine;
+      auto& combine = this->getCombine (ncols);
       return combine.work_size (2*ncols, ncols, ncols);
     }
 
@@ -102,7 +101,7 @@ namespace TSQR {
       messenger->swapData (R_mine.data (), R_other.data (),
                            nelts, P_other, tag);
 
-      Combine<LO, Scalar> combine;
+      auto& combine = this->getCombine (ncols);
       if (P_mine == P_top) {
         combine.factor_pair (R_mine_view, R_other_view,
                              tau.data(), work, lwork);
@@ -248,7 +247,7 @@ namespace TSQR {
 
       const_mat_view_type Q_bot
         (ncols_Q, ncols_Q, Q_cur.data (), ldq);
-      Combine<LO, Scalar> combine;
+      auto& combine = this->getCombine (std::max (ncols_Q, ncols_C));
       if (P_mine == P_top) {
         mat_view_type C_top (ncols_Q, ncols_C, C_mine, ldc_mine);
         mat_view_type C_bot (ncols_Q, ncols_C, C_other, ldc_other);
@@ -383,4 +382,4 @@ namespace TSQR {
 
 } // namespace TSQR
 
-#endif // __TSQR_Tsqr_DistTsqrHelper_hpp
+#endif // TSQR_DISTTSQRHELPER_HPP

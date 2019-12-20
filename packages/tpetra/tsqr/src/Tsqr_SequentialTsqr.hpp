@@ -47,7 +47,7 @@
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_CacheBlockingStrategy.hpp"
 #include "Tsqr_CacheBlocker.hpp"
-#include "Tsqr_Combine.hpp"
+#include "Tsqr_Impl_CombineUser.hpp"
 #include "Tsqr_NodeTsqr.hpp"
 #include "Tsqr_Util.hpp"
 #include "Tsqr_Impl_SystemBlas.hpp"
@@ -59,7 +59,6 @@
 #include <limits>
 #include <sstream>
 #include <string>
-#include <utility> // std::pair
 #include <vector>
 
 namespace TSQR {
@@ -138,7 +137,8 @@ namespace TSQR {
   ///   can be fixed as soon as RCPs are made thread safe.
   template<class LocalOrdinal, class Scalar>
   class SequentialTsqr :
-    public NodeTsqr<LocalOrdinal, Scalar>
+    public NodeTsqr<LocalOrdinal, Scalar>,
+    private Impl::CombineUser<LocalOrdinal, Scalar>
   {
   private:
     using base_type = NodeTsqr<LocalOrdinal, Scalar>;
@@ -155,6 +155,20 @@ namespace TSQR {
     using factor_output_type = typename base_type::factor_output_type;
 
   private:
+    Combine<ordinal_type, scalar_type>&
+    getMyCombine (const ordinal_type /* maxNumCols */) const
+    {
+      // FIXME (mfh 20 Dec 2019) If SequentialTsqr has more than one
+      // cache block, it only passes tests if you use CombineNative.
+      // This likely explains why it fails with complex Scalar types,
+      // since CombineNative just uses CombineDefault in that case.  I
+      // tried making SequentialTsqr's implementation of
+      // QR_produces_R_factor_with_nonnegative_diagonal always return
+      // false, but that didn't help, so the issue likely is
+      // CombineDefault.
+      return this->getCombine ("CombineNative");
+    }
+
     /// \brief Factor the first cache block of the matrix.
     ///
     /// Compute the QR factorization of the first cache block A_top.
@@ -189,8 +203,8 @@ namespace TSQR {
                         Scalar work[],
                         const LocalOrdinal lwork) const
     {
-      const LocalOrdinal ncols = A_top.extent (1);
       combine.factor_first (A_top, tau.data (), work, lwork);
+      const LocalOrdinal ncols = A_top.extent (1);
       return partition_2x1 (A_top, ncols).first;
     }
 
@@ -362,8 +376,12 @@ namespace TSQR {
     bool
     QR_produces_R_factor_with_nonnegative_diagonal () const override
     {
-      using combine_type = Combine<LocalOrdinal, Scalar>;
-      return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      // FIXME (19 Dec 2019) If the combine type is dynamic, we can't
+      // answer this question without knowing the number of columns.
+      // Just guess for now.
+      constexpr LocalOrdinal fakeNumCols = 10;
+      auto& c = this->getMyCombine (fakeNumCols);
+      return c.QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     /// \brief Cache size hint (in bytes) used for the factorization.
@@ -421,11 +439,10 @@ namespace TSQR {
             const LocalOrdinal ldr,
             const bool contigCacheBlocks) const override
     {
-      CacheBlocker<LocalOrdinal, Scalar> blocker
-        (nrows, ncols, strategy_);
-      Combine<LocalOrdinal, Scalar> combine;
-      const LocalOrdinal lwork
-        (combine.work_size (nrows, ncols, ncols));
+      using LO = LocalOrdinal;
+      CacheBlocker<LO, Scalar> blocker (nrows, ncols, strategy_);
+      auto& combine = this->getMyCombine (ncols);
+      const LO lwork (combine.work_size (nrows, ncols, ncols));
       std::vector<Scalar> work (lwork);
       Teuchos::RCP<my_factor_output_type> tau_arrays
         (new my_factor_output_type);
@@ -494,8 +511,9 @@ namespace TSQR {
                              const LocalOrdinal lda,
                              const bool contigCacheBlocks) const
     {
-      CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
-      LocalOrdinal count = 0;
+      using LO = LocalOrdinal;
+      CacheBlocker<LO, Scalar> blocker (nrows, ncols, strategy_);
+      LO count = 0;
 
       const_mat_view_type A_rest (nrows, ncols, A, lda);
       if (empty (A_rest)) {
@@ -527,6 +545,7 @@ namespace TSQR {
            const LocalOrdinal ldc,
            const bool contigCacheBlocks) const override
     {
+      using LO = LocalOrdinal;
       const char prefix[] = "TSQR::SequentialTsqr::apply: ";
 
       // Quick exit and error tests
@@ -570,11 +589,10 @@ namespace TSQR {
       // same convention as we did for factor().  Otherwise, we are
       // free to choose the cache block dimensions as we wish in
       // apply(), independently of what we did in factor().
-      CacheBlocker<LocalOrdinal, Scalar> blocker
-        (nrows, ncols_Q, strategy_);
-      Combine<LocalOrdinal, Scalar> combine;
-      const LocalOrdinal lwork
-        (combine.work_size (nrows, ncols_Q, ncols_C));
+      CacheBlocker<LO, Scalar> blocker (nrows, ncols_Q, strategy_);
+      auto& combine =
+        this->getMyCombine (std::max (ncols_Q, ncols_C));
+      const LO lwork (combine.work_size (nrows, ncols_Q, ncols_C));
       std::vector<Scalar> work (lwork);
 
       const bool transposed = apply_type.transposed ();

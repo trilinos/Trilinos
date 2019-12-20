@@ -38,18 +38,17 @@
 //@HEADER
 
 /// \file Tsqr_Combine.hpp
-/// \brief TSQR's six computational kernels.
+/// \brief Interface to TSQR's six computational kernels.
 
 #ifndef TSQR_COMBINE_HPP
 #define TSQR_COMBINE_HPP
 
-#include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_ApplyType.hpp"
-#include "Tsqr_CombineNative.hpp"
+#include "Tsqr_MatView.hpp"
 
 namespace TSQR {
   /// \class Combine
-  /// \brief TSQR's six computational kernels
+  /// \brief Interface to TSQR's six computational kernels
   /// \author Mark Hoemmen
   ///
   /// This class provides the six computational primitives required by
@@ -69,13 +68,8 @@ namespace TSQR {
   ///
   /// \tparam Ordinal Type of indices into matrices.
   /// \tparam Scalar Type of entries of matrices.
-  /// \tparam CombineImpl Type of a particular implementation of
-  ///   Combine.  Its public interface must contain this class'
-  ///   interface.
   ///
-  /// All Combine methods are implemented using CombineImpl methods
-  /// with the same name.  TSQR includes two implementations of the
-  /// CombineImpl interface:
+  /// TSQR includes two implementations of the Combine interface:
   ///
   /// <ul>
   /// <li> CombineDefault, which uses LAPACK and copies in and out of
@@ -87,28 +81,21 @@ namespace TSQR {
   /// There used to be a third implementation, CombineFortran, but it
   /// relied on a Fortran 9x compiler and was thus not often tested,
   /// so we removed it.
-  template<class Ordinal,
-           class Scalar,
-           class CombineImpl = CombineNative<Ordinal, Scalar, Teuchos::ScalarTraits<Scalar>::isComplex>>
+  template<class Ordinal, class Scalar>
   class Combine {
   public:
     //! Type of matrix entries.
     using scalar_type = Scalar;
     //! Type of (intraprocess) matrix indices.
     using ordinal_type = Ordinal;
-    //! Type of the implementation of Combine.
-    using combine_impl_type = CombineImpl;
 
-    //! Constructor.
-    Combine () = default;
+    virtual ~Combine () = default;
 
-    /// Whether or not the QR factorizations computed by methods of
-    /// this class produce an R factor with all nonnegative diagonal
-    /// entries.
-    static bool QR_produces_R_factor_with_nonnegative_diagonal () {
-      return combine_impl_type::
-        QR_produces_R_factor_with_nonnegative_diagonal ();
-    }
+    /// \brief Whether or not the QR factorizations computed by
+    ///   methods of this class produce an R factor with all
+    ///   nonnegative diagonal entries.
+    virtual bool
+    QR_produces_R_factor_with_nonnegative_diagonal () const = 0;
 
     /// \brief Best work array size.
     ///
@@ -123,13 +110,10 @@ namespace TSQR {
     /// \param num_cols_C [in] Number of columns of the matrix output
     ///   of apply_first, apply_inner, or apply_pair (use the max of
     ///   all three).
-    size_t
+    virtual size_t
     work_size (const Ordinal num_rows_Q,
                const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const
-    {
-      return impl_.work_size (num_rows_Q, num_cols_Q, num_cols_C);
-    }
+               const Ordinal num_cols_C) const = 0;
 
     /// \brief Factor the first cache block.
     ///
@@ -146,69 +130,23 @@ namespace TSQR {
     /// \param tau [out] Array of length ncols; on output, the
     ///   scaling factors for the Householder reflectors
     /// \param work [out] Workspace array of length ncols
-    void
+    virtual void
     factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork)
-    {
-      return impl_.factor_first (A, tau, work, lwork);
-    }
+                  const Ordinal lwork) = 0;
 
     /// \brief Apply the result of factor_first() to C.
     ///
     /// Apply the Q factor, as computed by factor_first() and stored
     /// implicitly in A and tau, to the matrix C.
-    void
+    virtual void
     apply_first (const ApplyType& applyType,
                  const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork)
-    {
-      return impl_.apply_first (applyType, A, tau, C, work, lwork);
-    }
-
-    /// Apply the result of factor_inner().
-    ///
-    /// Apply the Q factor stored in [R; A] to [C_top; C_bot], where
-    ///
-    /// <ul>
-    /// <li> A is     m       by ncols_Q, </li>
-    /// <li> R is     ncols_Q by ncols Q, </li>
-    /// <li> C_top is ncols_Q by ncols_C, and </li>
-    /// <li> C_bot is m       by ncols_C. </li>
-    /// </ul>
-    ///
-    /// The C blocks are allowed, but not required, to have different
-    /// strides ("leading dimensions," in BLAS and LAPACK terms).  R
-    /// is upper triangular, so we do not need an explicit version of
-    /// R here.  The Householder reflectors representing the Q factor
-    /// are stored compactly in A (specifically, in all of A, not just
-    /// the lower triangle) and tau.
-    ///
-    /// \param apply_type [in] NoTranspose means apply Q, Transpose
-    ///   means apply Q^T, and ConjugateTranspose means apply Q^H.
-    /// \param A [in] m by ncols_Q matrix, in which the Householder
-    ///   reflectors representing the Q factor are stored
-    /// \param tau [in] array of length ncols_Q, storing the scaling
-    ///   factors for the Householder reflectors representing Q
-    /// \param C_top [inout]  ncols_Q by ncols_C matrix
-    /// \param C_bot [inout]  m by ncols_C matrix
-    /// \param work [out]     workspace array of length ncols_C
-    void
-    apply_inner (const ApplyType& apply_type,
-                 const MatView<Ordinal, const Scalar>& A,
-                 const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C_top,
-                 const MatView<Ordinal, Scalar>& C_bot,
-                 Scalar work[],
-                 const Ordinal lwork)
-    {
-      impl_.apply_inner (apply_type, A, tau, C_top, C_bot,
-                         work, lwork);
-    }
+                 const Ordinal lwork) = 0;
 
     /// \brief Factor [R; A] for square upper triangular R and cache block A.
     ///
@@ -244,29 +182,60 @@ namespace TSQR {
     ///   Corresponds to the TAU output of LAPACK's _GEQRF.
     /// \param work [out] Workspace (length >= n; don't need lwork or
     ///   workspace query)
-    void
+    virtual void
     factor_inner (const MatView<Ordinal, Scalar>& R,
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork)
-    {
-      impl_.factor_inner (R, A, tau, work, lwork);
-    }
+                  const Ordinal lwork) = 0;
 
-    /// \brief Factor the pair of square upper triangular matrices [R_top; R_bot].
+    /// Apply the result of factor_inner().
+    ///
+    /// Apply the Q factor stored in [R; A] to [C_top; C_bot], where
+    ///
+    /// <ul>
+    /// <li> A is     m       by ncols_Q, </li>
+    /// <li> R is     ncols_Q by ncols Q, </li>
+    /// <li> C_top is ncols_Q by ncols_C, and </li>
+    /// <li> C_bot is m       by ncols_C. </li>
+    /// </ul>
+    ///
+    /// The C blocks are allowed, but not required, to have different
+    /// strides ("leading dimensions," in BLAS and LAPACK terms).  R
+    /// is upper triangular, so we do not need an explicit version of
+    /// R here.  The Householder reflectors representing the Q factor
+    /// are stored compactly in A (specifically, in all of A, not just
+    /// the lower triangle) and tau.
+    ///
+    /// \param apply_type [in] NoTranspose means apply Q, Transpose
+    ///   means apply Q^T, and ConjugateTranspose means apply Q^H.
+    /// \param A [in] m by ncols_Q matrix, in which the Householder
+    ///   reflectors representing the Q factor are stored
+    /// \param tau [in] array of length ncols_Q, storing the scaling
+    ///   factors for the Householder reflectors representing Q
+    /// \param C_top [inout]  ncols_Q by ncols_C matrix
+    /// \param C_bot [inout]  m by ncols_C matrix
+    /// \param work [out]     workspace array of length ncols_C
+    virtual void
+    apply_inner (const ApplyType& apply_type,
+                 const MatView<Ordinal, const Scalar>& A,
+                 const Scalar tau[],
+                 const MatView<Ordinal, Scalar>& C_top,
+                 const MatView<Ordinal, Scalar>& C_bot,
+                 Scalar work[],
+                 const Ordinal lwork) = 0;
+
+    /// \brief Factor the pair of square upper triangular matrices
+    ///   [R_top; R_bot].
     ///
     /// Store the resulting R factor in R_top, and the resulting
     /// Householder reflectors implicitly in R_bot and tau.
-    void
+    virtual void
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork)
-    {
-      impl_.factor_pair (R_top, R_bot, tau, work, lwork);
-    }
+                 const Ordinal lwork) = 0;
 
     /// \brief Apply the result of \c factor_pair().
     ///
@@ -279,22 +248,14 @@ namespace TSQR {
     ///
     /// \param apply_type [in] NoTranspose means apply Q, Transpose
     ///   means apply Q^T, and ConjugateTranspose means apply Q^H.
-    void
+    virtual void
     apply_pair (const ApplyType& apply_type,
                 const MatView<Ordinal, const Scalar>& R_bot,
                 const Scalar tau[],
                 const MatView<Ordinal, Scalar>& C_top,
                 const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork)
-    {
-      impl_.apply_pair (apply_type, R_bot, tau, C_top, C_bot,
-                        work, lwork);
-    }
-
-  private:
-    //! The implementation of Combine.
-    combine_impl_type impl_;
+                const Ordinal lwork) = 0;
   };
 
 } // namespace TSQR

@@ -38,16 +38,16 @@
 //@HEADER
 
 /// \file Tsqr_CombineDefault.hpp
-/// \brief Default copy-in, copy-out implementation of \c TSQR::Combine.
-///
+/// \brief Default copy-in, copy-out implementation of TSQR::Combine.
+
 #ifndef TSQR_COMBINEDEFAULT_HPP
 #define TSQR_COMBINEDEFAULT_HPP
 
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Tsqr_ApplyType.hpp"
+#include "Tsqr_Combine.hpp"
 #include "Tsqr_Impl_Lapack.hpp"
 #include "Tsqr_Matrix.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace TSQR {
 
@@ -63,13 +63,14 @@ namespace TSQR {
   /// that should be zero because of the input's structure (e.g.,
   /// upper triangular).
   template<class Ordinal, class Scalar>
-  class CombineDefault {
+  class CombineDefault : public Combine<Ordinal, Scalar> {
   public:
-    typedef Ordinal ordinal_type;
-    typedef Scalar scalar_type;
-    typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
-    typedef MatView<Ordinal, const Scalar> const_mat_view_type;
-    typedef MatView<Ordinal, Scalar> mat_view_type;
+    using ordinal_type = Ordinal;
+    using scalar_type = Scalar;
+    using const_mat_view_type = MatView<Ordinal, const Scalar>;
+    using mat_view_type = MatView<Ordinal, Scalar>;
+
+    ~CombineDefault () override = default;
 
     /// \brief Does the R factor have a nonnegative diagonal?
     ///
@@ -79,15 +80,17 @@ namespace TSQR {
     /// entries.  This Boolean tells you whether CombineDefault
     /// promises to compute an R factor whose diagonal entries are all
     /// nonnegative.
-    static bool QR_produces_R_factor_with_nonnegative_diagonal()
+    bool
+    QR_produces_R_factor_with_nonnegative_diagonal () const override
     {
-      return false; // lapack_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      // FIXME (mfh 19 Dec 2019) This _should_ depend on Impl::Lapack.
+      return false;
     }
 
     size_t
     work_size (const Ordinal num_rows_Q,
                const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const
+               const Ordinal num_cols_C) const override
     {
       using STS = Teuchos::ScalarTraits<Scalar>;
 
@@ -114,7 +117,7 @@ namespace TSQR {
     factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork)
+                  const Ordinal lwork) override
     {
       lapack_.compute_QR (A.extent (0), A.extent (1),
                           A.data (), A.stride (1),
@@ -129,7 +132,7 @@ namespace TSQR {
     {
       MatView<Ordinal, Scalar> A_view
         (A.extent (0), A.extent (1), A.data (), A.stride (1));
-      factor_first (A_view, tau, work, lwork);
+      this->factor_first (A_view, tau, work, lwork);
     }
 
     void
@@ -138,7 +141,7 @@ namespace TSQR {
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork)
+                 const Ordinal lwork) override
     {
       const Ordinal nrows = A.extent(0);
       const Ordinal ncols_C = C.extent(1);
@@ -158,13 +161,27 @@ namespace TSQR {
     }
 
     void
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
+                  Scalar tau[],
+                  Scalar work[],
+                  const Ordinal lwork) override
+    {
+      const Ordinal m = A.extent (0);
+      const Ordinal n = A.extent (1);
+      const Ordinal lda = A.stride (1);
+      factor_inner_impl (m, n, R.data (), R.stride (1),
+                         A.data (), lda, tau, work, lwork);
+    }
+    
+    void
     apply_inner (const ApplyType& apply_type,
                  const MatView<Ordinal, const Scalar>& A,
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork)
+                 const Ordinal lwork) override
     {
       const Ordinal m = A.extent (0);
       TEUCHOS_ASSERT( m == Ordinal (C_bot.extent (0)) );
@@ -193,20 +210,6 @@ namespace TSQR {
       // Copy back the results.
       deep_copy (C_top, C_buf_top_bot.first);
       deep_copy (C_bot, C_buf_top_bot.second);
-    }
-
-    void
-    factor_inner (const MatView<Ordinal, Scalar>& R,
-                  const MatView<Ordinal, Scalar>& A,
-                  Scalar tau[],
-                  Scalar work[],
-                  const Ordinal lwork)
-    {
-      const Ordinal m = A.extent (0);
-      const Ordinal n = A.extent (1);
-      const Ordinal lda = A.stride (1);
-      factor_inner_impl (m, n, R.data (), R.stride (1),
-                         A.data (), lda, tau, work, lwork);
     }
 
   private:
@@ -253,7 +256,7 @@ namespace TSQR {
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork)
+                 const Ordinal lwork) override
     {
       const Ordinal numRows = Ordinal(2) * R_top.extent (1);
       const Ordinal numCols = R_top.extent (1);
@@ -287,7 +290,7 @@ namespace TSQR {
                 const MatView<Ordinal, Scalar>& C_top,
                 const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork)
+                const Ordinal lwork) override
     {
       const Ordinal ncols_C = C_top.extent (1);
       const Ordinal ncols_Q = R_bot.extent (1);

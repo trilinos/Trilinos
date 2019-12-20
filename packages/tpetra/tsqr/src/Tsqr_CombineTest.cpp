@@ -42,7 +42,7 @@
 #include "Tsqr_Random_NormalGenerator.hpp"
 #include "Tsqr_Random_MatrixGenerator.hpp"
 
-#include "Tsqr_Combine.hpp"
+#include "Tsqr_CombineFactory.hpp"
 #include "Tsqr_LocalVerify.hpp"
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_Util.hpp"
@@ -459,21 +459,30 @@ namespace TSQR {
       Random::NormalGenerator<int, Scalar> normgenS (iseed);
       Random::NormalGenerator<int, mag_type> normgenM (iseed);
 
+      using factory_type = CombineFactory<int, Scalar>;
       {
-        using combiner_type =
-          Combine<int, Scalar, CombineNative<int, Scalar>>;
-        combiner_type combiner;
         const std::string combinerName ("Native");
-        verifyCombineTemplate (normgenS, normgenM, combiner,
+        auto combiner = factory_type::create (combinerName);
+        TEUCHOS_ASSERT( combiner.get () != nullptr );
+        // Make sure it's the right type.
+        using expected_type = CombineNative<int, Scalar>;
+        expected_type* combinerPtr =
+          dynamic_cast<expected_type*> (combiner.get ());
+        TEUCHOS_ASSERT( combinerPtr != nullptr );
+        verifyCombineTemplate (normgenS, normgenM, *combiner,
                                combinerName, numRows, numCols,
                                debug);
       }
       {
-        using combiner_type =
-          Combine<int, Scalar, CombineDefault<int, Scalar>>;
-        combiner_type combiner;
         const std::string combinerName ("Default");
-        verifyCombineTemplate (normgenS, normgenM, combiner,
+        auto combiner = factory_type::create (combinerName);
+        TEUCHOS_ASSERT( combiner.get () != nullptr );
+        // Make sure it's the right type.
+        using expected_type = CombineDefault<int, Scalar>;
+        expected_type* combinerPtr =
+          dynamic_cast<expected_type*> (combiner.get ());
+        TEUCHOS_ASSERT( combinerPtr != nullptr );
+        verifyCombineTemplate (normgenS, normgenM, *combiner,
                                combinerName, numRows, numCols,
                                debug);
       }
@@ -698,10 +707,11 @@ namespace TSQR {
             using scalar_type = float;
 
             NormalGenerator<int, scalar_type> normgenS (iseed);
-            Combine<int, scalar_type> combiner;
+            auto combiner =
+              CombineFactory<int, scalar_type>::create (numCols);
             const std::string combinerName ("?");
             const auto results =
-              verifyCombineSeqTemplate (normgenS, normgenS, combiner,
+              verifyCombineSeqTemplate (normgenS, normgenS, *combiner,
                                         numRows, numCols, debug);
             const std::string scalarName =
               Teuchos::TypeNameTraits<scalar_type>::name ();
@@ -713,10 +723,11 @@ namespace TSQR {
             using scalar_type = double;
 
             NormalGenerator<int, scalar_type> normgenS (iseed);
-            Combine<int, scalar_type> combiner;
+            auto combiner =
+              CombineFactory<int, scalar_type>::create (numCols);
             const std::string combinerName ("?");
             const auto results =
-              verifyCombineSeqTemplate (normgenS, normgenS, combiner,
+              verifyCombineSeqTemplate (normgenS, normgenS, *combiner,
                                         numRows, numCols, debug);
             const std::string scalarName =
               Teuchos::TypeNameTraits<scalar_type>::name ();
@@ -734,10 +745,11 @@ namespace TSQR {
 
             NormalGenerator<int, scalar_type> normgenS (iseed);
             NormalGenerator<int, mag_type> normgenM (iseed);
-            Combine<int, scalar_type> combiner;
+            auto combiner =
+              CombineFactory<int, scalar_type>::create (numCols);
             const std::string combinerName ("?");
             const auto results =
-              verifyCombineSeqTemplate (normgenS, normgenM, combiner,
+              verifyCombineSeqTemplate (normgenS, normgenM, *combiner,
                                         numRows, numCols, debug);
             const std::string scalarName =
               Teuchos::TypeNameTraits<scalar_type>::name ();
@@ -751,10 +763,11 @@ namespace TSQR {
 
             NormalGenerator<int, scalar_type> normgenS (iseed);
             NormalGenerator<int, mag_type> normgenM (iseed);
-            Combine<int, scalar_type> combiner;
+            auto combiner =
+              CombineFactory<int, scalar_type>::create (numCols);
             const std::string combinerName ("?");
             const auto results =
-              verifyCombineSeqTemplate (normgenS, normgenM, combiner,
+              verifyCombineSeqTemplate (normgenS, normgenM, *combiner,
                                         numRows, numCols, debug);
             const std::string scalarName =
               Teuchos::TypeNameTraits<scalar_type>::name ();

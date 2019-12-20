@@ -39,11 +39,11 @@
 //@HEADER
 */
 
-#ifndef __TSQR_DistTsqrRB_hpp
-#define __TSQR_DistTsqrRB_hpp
+#ifndef TSQR_DISTTSQRRB_HPP
+#define TSQR_DISTTSQRRB_HPP
 
 #include "Tsqr_ApplyType.hpp"
-#include "Tsqr_Combine.hpp"
+#include "Tsqr_Impl_CombineUser.hpp"
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_StatTimeMonitor.hpp"
 
@@ -145,15 +145,15 @@ namespace TSQR {
   /// broadcast.  The implicit Q factor data stay on the MPI process
   /// where they were computed.
   template<class LocalOrdinal, class Scalar>
-  class DistTsqrRB {
+  class DistTsqrRB : private Impl::CombineUser<LocalOrdinal, Scalar> {
   public:
-    typedef LocalOrdinal ordinal_type;
-    typedef Scalar scalar_type;
-    typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
-    typedef MatView<ordinal_type, scalar_type> mat_view_type;
-    typedef Matrix<ordinal_type, scalar_type> matrix_type;
-    typedef int rank_type;
-    typedef Combine<ordinal_type, scalar_type> combine_type;
+    using ordinal_type = LocalOrdinal;
+    using scalar_type = Scalar;
+    using magnitude_type =
+      typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
+    using mat_view_type = MatView<ordinal_type, scalar_type>;
+    using matrix_type = Matrix<ordinal_type, scalar_type>;
+    using rank_type = int;
 
     /// \brief Constructor
     ///
@@ -192,10 +192,10 @@ namespace TSQR {
     /// timings from factorExplicit().  The vector gets resized if
     /// necessary to fit all the labels.
     void
-    getStatsLabels (std::vector< std::string >& labels) const
+    getStatsLabels (std::vector<std::string>& labels) const
     {
       const int numTimers = 5;
-      labels.resize (std::max (labels.size(), static_cast<size_t>(numTimers)));
+      labels.resize (std::max (labels.size (), size_t (numTimers)));
 
       labels[0] = totalTime_->name();
       labels[1] = reduceCommTime_->name();
@@ -207,7 +207,12 @@ namespace TSQR {
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      // FIXME (20 Dec 2019) If the combine type is dynamic, we can't
+      // answer this question without knowing the number of columns.
+      // Just guess for now.
+      constexpr LocalOrdinal fakeNumCols = 10;
+      auto& c = this->getCombine (fakeNumCols);
+      return c.QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     /// \brief Internode TSQR with explicit Q factor
@@ -387,11 +392,12 @@ namespace TSQR {
 
           std::vector<scalar_type> tau (numCols);
 
+          auto& combine = this->getCombine (numCols);
           const LocalOrdinal lwork
-            (combine_.work_size (2 * numCols, numCols, numCols));
+            (combine.work_size (2 * numCols, numCols, numCols));
           work_.resize (lwork);
-          combine_.factor_pair (R_mine, R_other.view (),
-                                tau.data (), work_.data (), lwork);
+          combine.factor_pair (R_mine, R_other.view (),
+                               tau.data (), work_.data (), lwork);
           QFactors.push_back (R_other);
           tauArrays.push_back (tau);
         }
@@ -412,6 +418,8 @@ namespace TSQR {
                         std::vector< matrix_type >& QFactors,
                         std::vector< std::vector< scalar_type > >& tauArrays)
     {
+      using LO = LocalOrdinal;
+      
       if (P_last < P_first) {
         std::ostringstream os;
         os << "explicitQBroadcast: interval [P_first=" << P_first
@@ -450,16 +458,17 @@ namespace TSQR {
           // Overwrite both Q_mine and Q_other with the result.
           deep_copy (Q_other, scalar_type {});
 
-          const LocalOrdinal pair_nrows
+          const LO pair_nrows
             (Q_mine.extent (0) + Q_other.extent (0));
-          const LocalOrdinal pair_ncols (Q_mine.extent (1));
-          const LocalOrdinal lwork
-            (combine_.work_size (pair_nrows, pair_ncols, pair_ncols));
-          if (lwork > LocalOrdinal (work_.size ())) {
+          const LO pair_ncols (Q_mine.extent (1));
+          auto& combine = this->getCombine (pair_ncols);
+          const LO lwork
+            (combine.work_size (pair_nrows, pair_ncols, pair_ncols));
+          if (lwork > LO (work_.size ())) {
             work_.resize (lwork);
           }
-          combine_.apply_pair (ApplyType::NoTranspose, Q_bot, tau,
-                               Q_mine, Q_other, work_.data (), lwork);
+          combine.apply_pair (ApplyType::NoTranspose, Q_bot, tau,
+                              Q_mine, Q_other, work_.data (), lwork);
           // Send the resulting Q_other, and the final R factor, to P_mid.
           send_Q_R (Q_other, R_mine, P_mid);
           newpos = curpos - 1;
@@ -603,7 +612,6 @@ namespace TSQR {
     }
 
   private:
-    combine_type combine_;
     Teuchos::RCP<MessengerBase<scalar_type>> messenger_;
     std::vector<scalar_type> work_;
 
@@ -624,4 +632,4 @@ namespace TSQR {
 
 } // namespace TSQR
 
-#endif // __TSQR_DistTsqrRB_hpp
+#endif // TSQR_DISTTSQRRB_HPP

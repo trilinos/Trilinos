@@ -46,7 +46,7 @@
 #define TSQR_COMBINENODETSQR_HPP
 
 #include "Tsqr_NodeTsqr.hpp"
-#include "Tsqr_Combine.hpp"
+#include "Tsqr_Impl_CombineUser.hpp"
 #include "Tsqr_Impl_SystemBlas.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include <memory>
@@ -77,25 +77,13 @@ namespace TSQR {
   /// \brief Implementation of NodeTsqr (intranode TSQR) that just
   ///   uses Combine for all the operations on an MPI process.
   template<class Ordinal, class Scalar>
-  class CombineNodeTsqr : public NodeTsqr<Ordinal, Scalar> {
+  class CombineNodeTsqr :
+    public NodeTsqr<Ordinal, Scalar>,
+    private Impl::CombineUser<Ordinal, Scalar> {
   private:
     using base_type = NodeTsqr<Ordinal, Scalar>;
     using my_factor_output_type =
       Impl::CombineNodeFactorOutput<Ordinal, Scalar>;
-
-    mutable std::unique_ptr<Combine<Ordinal, Scalar>> combine_;
-    Combine<Ordinal, Scalar>&
-    getCombine (const Ordinal /* max(numCols_Q,numCols_C) */) const {
-      if (combine_.get () == nullptr) {
-        // FIXME (mfh 19 Dec 2019) Change to use a factory.
-        using combine_type = Combine<Ordinal, Scalar>;
-
-        // NOTE (mfh 19 Dec 2019) We can't use std::make_unique yet,
-        // because it requires C++14.
-        combine_ = std::unique_ptr<combine_type> (new combine_type);
-      }
-      return *combine_;
-    }
 
   public:
     using ordinal_type = typename base_type::ordinal_type;
@@ -144,7 +132,7 @@ namespace TSQR {
       const Ordinal ncols = A.extent (1);
       TEUCHOS_ASSERT( R.extent (0) == ncols &&
                       R.extent (1) == ncols );
-      auto& combine = getCombine (ncols);
+      auto& combine = this->getCombine (ncols);
       const Ordinal lwork
         (combine.work_size (A.extent (0), ncols, ncols));
       std::vector<Scalar> work (lwork);
@@ -228,7 +216,7 @@ namespace TSQR {
         return *output_ptr;
       } ();
 
-      auto& combine = getCombine (std::max (ncols_Q, ncols_C));
+      auto& combine = this->getCombine (std::max (ncols_Q, ncols_C));
       const size_t lwork =
         combine.work_size (nrows, ncols_C, ncols_C);
       std::vector<Scalar> work (lwork);
@@ -338,7 +326,7 @@ namespace TSQR {
       // answer this question without knowing the number of columns.
       // Just guess for now.
       constexpr Ordinal fakeNumCols = 10;
-      auto& c = getCombine (fakeNumCols);
+      auto& c = this->getCombine (fakeNumCols);
       return c.QR_produces_R_factor_with_nonnegative_diagonal ();
     }
   };

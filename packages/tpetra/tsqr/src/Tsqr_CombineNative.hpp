@@ -73,18 +73,20 @@ namespace TSQR {
   template<class Ordinal,
            class Scalar,
            bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex>
-  class CombineNative {
+  class CombineNative : public Combine<Ordinal, Scalar> {
   public:
     using ordinal_type = Ordinal;
     using scalar_type = Scalar;
-    using mag_type =
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
   private:
+    using mag_type =
+      typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
     using combine_default_type =
       CombineDefault<ordinal_type, scalar_type>;
 
   public:
+    ~CombineNative () override = default;
+
     /// Whether or not the QR factorizations computed by methods of
     /// this class produce an R factor with all nonnegative diagonal
     /// entries.  It depends on LAPACK because this implementation
@@ -92,15 +94,17 @@ namespace TSQR {
     /// Householder reflectors; only LAPACK versions >= 3.2 have one
     /// of {LARFGP, LARFP}, which is necessary to ensure that the BETA
     /// output of the function is always nonnegative.
-    static bool QR_produces_R_factor_with_nonnegative_diagonal () {
-      return combine_default_type::
+    bool
+    QR_produces_R_factor_with_nonnegative_diagonal () const override
+    {
+      return default_.
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     size_t
     work_size (const Ordinal /* num_rows_Q */,
                const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const
+               const Ordinal num_cols_C) const override
     {
       return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
     }
@@ -109,7 +113,7 @@ namespace TSQR {
     factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) const
+                  const Ordinal lwork) override
     {
       return default_.factor_first (A, tau, work, lwork);
     }
@@ -120,10 +124,17 @@ namespace TSQR {
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork)
+                 const Ordinal lwork) override
     {
       return default_.apply_first (applyType, A, tau, C, work, lwork);
     }
+
+    void
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
+                  Scalar tau[],
+                  Scalar work[],
+                  const Ordinal lwork) override;
 
     void
     apply_inner (const ApplyType& applyType,
@@ -132,21 +143,14 @@ namespace TSQR {
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork) const;
-
-    void
-    factor_inner (const MatView<Ordinal, Scalar>& R,
-                  const MatView<Ordinal, Scalar>& A,
-                  Scalar tau[],
-                  Scalar work[],
-                  const Ordinal lwork) const;
+                 const Ordinal lwork) override;
 
     void
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork) const;
+                 const Ordinal lwork) override;
 
     void
     apply_pair (const ApplyType& applyType,
@@ -155,30 +159,26 @@ namespace TSQR {
                 const MatView<Ordinal, Scalar>& C_top,
                 const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork) const;
+                const Ordinal lwork) override;
 
   private:
-    mutable combine_default_type default_;
+    combine_default_type default_;
   };
 
   //! Specialization of CombineNative for the real-arithmetic case.
   template<class Ordinal, class Scalar>
-  class CombineNative<Ordinal, Scalar, false> {
-  private:
-    using memory_space = Kokkos::HostSpace;
-#ifdef KOKKOS_ENABLE_SERIAL
-    using execution_space = Kokkos::Serial;
-#else // NOT KOKKOS_ENABLE_SERIAL
-    using execution_space = Kokkos::HostSpace::execution_space;
-#endif // KOKKOS_ENABLE_SERIAL
-
+  class CombineNative<Ordinal, Scalar, false> :
+    public Combine<Ordinal, Scalar> {
   public:
     using ordinal_type = Ordinal;
     using scalar_type = Scalar;
+
+  private:
     using mag_type =
       typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using execution_space = Kokkos::DefaultHostExecutionSpace;
+    using memory_space = Kokkos::HostSpace;    
     using device_type = Kokkos::Device<execution_space, memory_space>;
-
     template<class SC>
     using matrix_type =
       Kokkos::View<SC**, Kokkos::LayoutLeft, device_type,
@@ -187,10 +187,6 @@ namespace TSQR {
     using vector_type =
       Kokkos::View<SC*, Kokkos::LayoutLeft, device_type,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-
-  private:
-    using combine_default_type =
-      CombineDefault<ordinal_type, scalar_type>;
 
     void
     GER (const mag_type alpha,
@@ -246,17 +242,19 @@ namespace TSQR {
                  const vector_type<scalar_type>& work) const;
 
   public:
-    CombineNative () = default;
+    ~CombineNative () override = default;
 
-    static bool QR_produces_R_factor_with_nonnegative_diagonal () {
-      return combine_default_type::
+    bool
+    QR_produces_R_factor_with_nonnegative_diagonal () const override
+    {
+      return default_.
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     size_t
     work_size (const Ordinal /* num_rows_Q */,
                const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const
+               const Ordinal num_cols_C) const override
     {
       return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
     }
@@ -265,7 +263,7 @@ namespace TSQR {
     factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) const
+                  const Ordinal lwork) override
     {
       return default_.factor_first (A, tau, work, lwork);
     }
@@ -276,7 +274,7 @@ namespace TSQR {
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork)
+                 const Ordinal lwork) override
     {
       return default_.apply_first (applyType, A, tau, C, work, lwork);
     }
@@ -286,7 +284,7 @@ namespace TSQR {
                   const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) const;
+                  const Ordinal lwork) override;
     void
     apply_inner (const ApplyType& applyType,
                  const MatView<Ordinal, const Scalar>& A,
@@ -294,14 +292,14 @@ namespace TSQR {
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork) const;
+                 const Ordinal lwork) override;
 
     void
     factor_pair (const MatView<Ordinal, Scalar>& R_top,
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork) const;
+                 const Ordinal lwork) override;
     void
     apply_pair (const ApplyType& applyType,
                 const MatView<Ordinal, const Scalar>& R_bot,
@@ -309,34 +307,38 @@ namespace TSQR {
                 const MatView<Ordinal, Scalar>& C_top,
                 const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork) const;
+                const Ordinal lwork) override;
 
   private:
-    mutable combine_default_type default_;
+    CombineDefault<ordinal_type, scalar_type> default_;
   };
 
   //! Specialization of CombineNative for complex Scalar.
   template<class Ordinal, class Scalar>
-  class CombineNative<Ordinal, Scalar, true> {
+  class CombineNative<Ordinal, Scalar, true> :
+    public Combine<Ordinal, Scalar> {
   public:
     using ordinal_type = Ordinal;
     using scalar_type = Scalar;
-    using mag_type = typename Teuchos::ScalarTraits<Scalar>;
 
   private:
-    using combine_default_type =
-      CombineDefault<ordinal_type, scalar_type>;
+    using mag_type =
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
   public:
-    static bool QR_produces_R_factor_with_nonnegative_diagonal () {
-      return combine_default_type::
+    ~CombineNative () override = default;
+
+    bool
+    QR_produces_R_factor_with_nonnegative_diagonal () const override
+    {
+      return default_.
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     size_t
     work_size (const Ordinal /* num_rows_Q */,
                const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const
+               const Ordinal num_cols_C) const override
     {
       return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
     }
@@ -345,7 +347,7 @@ namespace TSQR {
     factor_first (const MatView<Ordinal, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) const
+                  const Ordinal lwork) override
     {
       return default_.factor_first (A, tau, work, lwork);
     }
@@ -356,9 +358,19 @@ namespace TSQR {
                  const Scalar tau[],
                  const MatView<Ordinal, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork)
+                 const Ordinal lwork) override
     {
       return default_.apply_first (applyType, A, tau, C, work, lwork);
+    }
+
+    void
+    factor_inner (const MatView<Ordinal, Scalar>& R,
+                  const MatView<Ordinal, Scalar>& A,
+                  Scalar tau[],
+                  Scalar work[],
+                  const Ordinal lwork) override
+    {
+      return default_.factor_inner (R, A, tau, work, lwork);
     }
 
     void
@@ -368,20 +380,10 @@ namespace TSQR {
                  const MatView<Ordinal, Scalar>& C_top,
                  const MatView<Ordinal, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork) const
+                 const Ordinal lwork) override
     {
       return default_.apply_inner (applyType, A, tau,
                                    C_top, C_bot, work, lwork);
-    }
-
-    void
-    factor_inner (const MatView<Ordinal, Scalar>& R,
-                  const MatView<Ordinal, Scalar>& A,
-                  Scalar tau[],
-                  Scalar work[],
-                  const Ordinal lwork) const
-    {
-      return default_.factor_inner (R, A, tau, work, lwork);
     }
 
     void
@@ -389,7 +391,7 @@ namespace TSQR {
                  const MatView<Ordinal, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork) const
+                 const Ordinal lwork) override
     {
       return default_.factor_pair (R_top, R_bot, tau, work, lwork);
     }
@@ -401,14 +403,14 @@ namespace TSQR {
                 const MatView<Ordinal, Scalar>& C_top,
                 const MatView<Ordinal, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork) const
+                const Ordinal lwork) override
     {
       return default_.apply_pair (applyType, R_bot, tau,
                                   C_top, C_bot, work, lwork);
     }
 
   private:
-    mutable combine_default_type default_;
+    CombineDefault<ordinal_type, scalar_type> default_;
   };
 
   template<class Ordinal, class Scalar>
@@ -512,7 +514,7 @@ namespace TSQR {
                 const MatView<Ordinal, Scalar>& A,
                 Scalar tau[],
                 Scalar work[],
-                const Ordinal lwork) const
+                const Ordinal lwork)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -597,7 +599,7 @@ namespace TSQR {
                const MatView<Ordinal, Scalar>& C_top,
                const MatView<Ordinal, Scalar>& C_bot,
                Scalar work[],
-               const Ordinal lwork) const
+               const Ordinal lwork)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -683,7 +685,7 @@ namespace TSQR {
                const MatView<Ordinal, Scalar>& R_bot,
                Scalar tau[],
                Scalar work[],
-               const Ordinal lwork) const
+               const Ordinal lwork)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -725,7 +727,6 @@ namespace TSQR {
     }
   }
 
-
   template<class Ordinal, class Scalar>
   void
   CombineNative<Ordinal, Scalar, false>::
@@ -735,7 +736,7 @@ namespace TSQR {
               const MatView<Ordinal, Scalar>& C_top,
               const MatView<Ordinal, Scalar>& C_bot,
               Scalar work[],
-              const Ordinal lwork) const
+              const Ordinal lwork)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
