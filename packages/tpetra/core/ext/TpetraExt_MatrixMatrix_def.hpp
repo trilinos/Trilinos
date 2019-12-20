@@ -569,9 +569,7 @@ add (const Scalar& alpha,
   if(transposeB)
   {
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(Brcp);
-    RCP<ParameterList> transposeParams(new ParameterList);
-    transposeParams->set ("sort", false);
-    Brcp = transposer.createTranspose(transposeParams);
+    Brcp = transposer.createTranspose();
   }
   //Check that A,B are fillComplete before getting B's column map
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -684,14 +682,11 @@ add (const Scalar& alpha,
 #endif // HAVE_TPETRA_DEBUG
 
   using Teuchos::ParameterList;
-  RCP<ParameterList> transposeParams (new ParameterList);
-  transposeParams->set ("sort", false);
-
   // Form the explicit transpose of A if necessary.
   RCP<const crs_matrix_type> Aprime = rcpFromRef(A);
   if (transposeA) {
     transposer_type transposer (Aprime);
-    Aprime = transposer.createTranspose (transposeParams);
+    Aprime = transposer.createTranspose ();
   }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -711,7 +706,7 @@ add (const Scalar& alpha,
       std::cerr << os.str ();
     }
     transposer_type transposer (Bprime);
-    Bprime = transposer.createTranspose (transposeParams);
+    Bprime = transposer.createTranspose ();
   }
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
@@ -3383,6 +3378,20 @@ template \
                      const CrsMatrix<SCALAR, LO, GO, NODE>& B, \
                      const Teuchos::RCP<const Map<LO, GO, NODE> >& domainMap, \
                      const Teuchos::RCP<const Map<LO, GO, NODE> >& rangeMap, \
+                     const Teuchos::RCP<Teuchos::ParameterList>& params); \
+\
+  template \
+  void \
+  MatrixMatrix::add< SCALAR , LO, GO , NODE > \
+                    (const SCALAR & alpha, \
+                     const bool transposeA, \
+                     const CrsMatrix< SCALAR , LO, GO , NODE >& A, \
+                     const SCALAR& beta, \
+                     const bool transposeB, \
+                     const CrsMatrix< SCALAR , LO, GO , NODE >& B, \
+                     CrsMatrix< SCALAR , LO, GO , NODE >& C, \
+                     const Teuchos::RCP<const Map<LO, GO , NODE > >& domainMap, \
+                     const Teuchos::RCP<const Map<LO, GO , NODE > >& rangeMap, \
                      const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
   template struct MMdetails::AddKernels<SCALAR, LO, GO, NODE>;

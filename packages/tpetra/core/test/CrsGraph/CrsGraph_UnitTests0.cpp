@@ -287,42 +287,6 @@ namespace {
       TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    // Test (GitHub Issue) #2565 fix, while we're at it.
-    //
-    // clts == 0: Don't set "compute local triangular constants"
-    // clts == 1: Set "compute local triangular constants" to false
-    // clts == 2: Set "compute local triangular constants" to true
-    for (int clts : {0, 1, 2}) {
-      // send in a parameterlist, check the defaults
-      RCP<ParameterList> params = parameterList();
-      if (clts == 1) {
-        params->set ("compute local triangular constants", false);
-      }
-      else if (clts == 2) {
-        params->set ("compute local triangular constants", true);
-      }
-
-      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph (map, 3, Tpetra::DynamicProfile);
-      for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
-        graph.insertGlobalIndices (i, tuple<GO> (i));
-      }
-      params->set("Optimize Storage",false);
-      graph.fillComplete(params);
-      TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
-      TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
-      //
-      graph.resumeFill();
-      for (int i=0; i < numLocal; ++i) graph.removeLocalIndices(i);
-      params->set("Optimize Storage",true);
-      graph.fillComplete(params);
-      TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
-      TEST_EQUALITY(graph.getNodeNumEntries(), 0);
-      TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
-      TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
-    }
-#endif
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -443,12 +407,8 @@ namespace {
       }
 
       for (int T=0; T<4; ++T) {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : Tpetra::DynamicProfile;
-#else
         if ( (T & 1) != 1 ) continue;
         ProfileType pftype = StaticProfile;
-#endif
         params->set("Optimize Storage",((T & 2) == 2));
         GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
         Array<GO> GCopy(4); Array<LO> LCopy(4);
@@ -842,12 +802,8 @@ namespace {
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
 
     for (int T=0; T<4; ++T) {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : Tpetra::DynamicProfile;
-#else
       if ( (T & 1) != 1 ) continue;
       ProfileType pftype = StaticProfile;
-#endif
       RCP<ParameterList> params = parameterList ();
       params->set("Optimize Storage",((T & 2) == 2));
 
@@ -947,18 +903,8 @@ namespace {
       }
       Teuchos::OSTab tab1 (out);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      const Tpetra::ProfileType profileTypes[2] =
-        {Tpetra::DynamicProfile, Tpetra::StaticProfile};
-#else
       const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
-#endif
       for (ProfileType pftype : profileTypes) {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        out << "ProfileType: "
-            << (pftype == StaticProfile ? "StaticProfile" : "DynamicProfile")
-            << endl;
-#endif
         Teuchos::OSTab tab2 (out);
         for (bool optimizeStorage : {false, true}) {
           out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
@@ -1060,10 +1006,6 @@ namespace {
             // entry on parallel runs, three on serial runs
             ArrayView<const GO> myrow_gbl;
             ngraph.getGlobalRowView (myrowind, myrow_gbl);
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-            TEST_EQUALITY_CONST( myrow_gbl.size(),
-              ( numProcs == 1 && pftype == Tpetra::DynamicProfile ? 3 : 1 ));
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
             // after globalAssemble(), storage should be maxed out
             out << "Calling globalAssemble()" << endl;

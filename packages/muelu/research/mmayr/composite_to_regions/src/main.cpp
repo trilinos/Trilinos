@@ -779,7 +779,6 @@ int main_(int argc, char *argv[]) {
                         regProlong,
                         regRowImporters,
                         regInterfaceScalings,
-                        coarseCompOp,
                         smootherParams);
   Comm->barrier();
 
@@ -936,7 +935,7 @@ int main_(int argc, char *argv[]) {
       vCycle(0, numLevels,
              regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, smootherParams, coarseCompOp);
+             regInterfaceScalings, smootherParams);
     }
 
     ////////////////////////////////////////////////////////////////////////

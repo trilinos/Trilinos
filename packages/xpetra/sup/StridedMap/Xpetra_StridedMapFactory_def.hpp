@@ -69,24 +69,6 @@ StridedMapFactory()
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>>
-StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::
-Build(UnderlyingLib                                 lib,
-      global_size_t                                 numGlobalElements,
-      GlobalOrdinal                                 indexBase,
-      std::vector<size_t>&                          stridingInfo,
-      const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-      LocalOrdinal                                  stridedBlockId,
-      GlobalOrdinal                                 offset,
-      LocalGlobal                                   lg,
-      const Teuchos::RCP<Node>&                     /* node */)
-{
-    return Build(lib, numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, lg);
-}
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -105,24 +87,6 @@ Build(UnderlyingLib                                 lib,
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-RCP<Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node>>
-StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::
-Build(UnderlyingLib                                 lib,
-      global_size_t                                 numGlobalElements,
-      size_t                                        numLocalElements,
-      GlobalOrdinal                                 indexBase,
-      std::vector<size_t>&                          stridingInfo,
-      const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-      LocalOrdinal                                  stridedBlockId,
-      GlobalOrdinal                                 offset,
-      const Teuchos::RCP<Node>&                     /* node */)
-{
-    return Build(lib, numGlobalElements, numLocalElements, indexBase, stridingInfo, comm, stridedBlockId, offset);
-}
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -227,24 +191,6 @@ Build(const StridedMap& map)
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>>
-StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::
-Build(UnderlyingLib                                  lib,
-      global_size_t                                  numGlobalElements,
-      const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
-      GlobalOrdinal                                  indexBase,
-      std::vector<size_t>&                           stridingInfo,
-      const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
-      LocalOrdinal                                   stridedBlockId,      // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
-      GlobalOrdinal                                  offset,
-      const Teuchos::RCP<Node>&                      /* node */)
-{
-    return Build(lib, numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId, offset);
-}
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -100,14 +100,8 @@ RCP<crs_matrix_type>
 createTestMatrix (RCP<const Comm<int>> comm, const LO lclNumRows)
 {
   RCP<crs_matrix_type> A;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  A = rcp (new crs_matrix_type (makeRowMap (comm, lclNumRows),
-                                makeColumnMap (comm), size_t (1),
-                                Tpetra::StaticProfile));
-#else
   A = rcp (new crs_matrix_type (makeRowMap (comm, lclNumRows),
                                 makeColumnMap (comm), size_t (1)));
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   constexpr LO numEnt = 1;
   std::array<LO, 1> lclCols {{ 0 }};

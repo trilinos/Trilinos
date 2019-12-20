@@ -1547,7 +1547,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( CrsMatrix, ConstructMatrixKokkos, M##LO##GO##Node, SC, LO, GO, Node )
 
 
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_INT_INT)
+#if defined(HAVE_XPETRA_TPETRA)
 
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>

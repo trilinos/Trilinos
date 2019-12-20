@@ -465,6 +465,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, NonMemberConstructorsEpetra, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
+#ifdef HAVE_XPETRA_EPETRA
     // typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -476,7 +477,6 @@ namespace {
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
         Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm);
     //Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Xpetra::UseEpetra, INVALID, numLocal, 0, comm);
-#ifdef HAVE_XPETRA_EPETRA
     if(mylib==Xpetra::UseEpetra) {
       RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > emap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       RCP<Epetra_MultiVector> mvec = Teuchos::rcp(new Epetra_MultiVector(emap->getEpetra_Map(),numVecs));

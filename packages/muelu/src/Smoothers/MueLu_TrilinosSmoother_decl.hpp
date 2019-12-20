@@ -138,13 +138,6 @@ namespace MueLu {
     friend class TrilinosSmoother;
 #endif
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-    template<typename Node2>    
-    RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
-    MUELU_DEPRECATED
-    clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const;
-#endif
-
     //! Convert an Ifpack2 preconditioner name to Ifpack
     // As a temporary solution.
     // See https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c5 for what I proposed to do
@@ -206,40 +199,6 @@ namespace MueLu {
     std::string errorEpetra_, errorTpetra_;
 
   }; // class TrilinosSmoother
-
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template<typename Node2>
-  MUELU_DEPRECATED
-  Teuchos::RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-  TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const {
-#if defined(HAVE_MUELU_IFPACK2)
-    RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother =
-        rcp(new TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, this->GetParameterList(), overlap_));
-    Teuchos::RCP<MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  cloneSB;
-
-    Teuchos::RCP<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ifpack2Smoother =
-        Teuchos::rcp_dynamic_cast<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(this->s_);
-    if (ifpack2Smoother != Teuchos::null){
-      cloneSB = ifpack2Smoother->template clone<Node2>(node2, A_newnode);
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::invalid_argument, "MueLu::TrilinosSmoother: "
-          "Invalid smoother type to clone (not type Ifpack2)\"");
-    }
-    RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clonedProto =
-        Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node2>  >(cloneSB);
-    cloneSmoother->s_ = clonedProto;
-    cloneSmoother->IsSetup(true);
-    return cloneSmoother;
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "MueLu::SmootherClone: "
-      "clone() only available with IFPACK2 enabled.");
-#endif
-  }
-#endif
 
 } // namespace MueLu
 

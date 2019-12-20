@@ -120,10 +120,6 @@ namespace Tpetra {
     //! The communicator over which this matrix is distributed.
     virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! The Kokkos Node instance.
-    virtual TPETRA_DEPRECATED Teuchos::RCP<Node> getNode() const = 0;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! The Map that describes the distribution of rows over processes.
     virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const = 0;
@@ -232,51 +228,6 @@ namespace Tpetra {
     //! Whether this object implements getLocalRowView() and getGlobalRowView().
     virtual bool supportsRowViews() const = 0;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Number of diagonal entries in the matrix's graph, over
-    ///   all processes in the matrix's communicator.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const = 0;
-
-    /// \brief Number of diagonal entries in the matrix's graph, on
-    ///   the calling process.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
-
-    /// \brief Whether the matrix is locally lower triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    virtual bool TPETRA_DEPRECATED isLowerTriangular () const = 0;
-
-    /// \brief Whether the matrix is locally upper triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
     //! @name Extraction Methods

@@ -55,7 +55,7 @@
 #include <stdexcept>
 #include <string>
 
-/// \file Tpetra_Details_packCrsMatrix.hpp
+/// \file Tpetra_Details_packCrsMatrix_def.hpp
 /// \brief Functions for packing the entries of a Tpetra::CrsMatrix
 ///   for communication, in the case where it is valid to go to the
 ///   KokkosSparse::CrsMatrix (local sparse matrix data structure)

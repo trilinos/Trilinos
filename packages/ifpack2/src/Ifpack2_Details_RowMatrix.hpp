@@ -45,9 +45,6 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-#  include "Ifpack2_Details_throwBecauseDeprecated.hpp"
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 namespace Ifpack2 {
 namespace Details {
@@ -85,54 +82,6 @@ public:
 
   //@}
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /// \name Work-around implementations of deprecated virtual methods
-  ///
-  /// These methods exist to smooth the path for fixing GitHub Issue
-  /// #2630.  This is why their existence depends on a Tpetra macro.
-  //@{
-
-  /// \brief The global number of diagonal entries.
-  ///
-  /// \warning This method is DEPRECATED and will be removed soon!
-  Tpetra::global_size_t IFPACK2_DEPRECATED
-  getGlobalNumDiags () const final
-  {
-    throwBecauseDeprecated ("getGlobalNumDiags");
-    return Tpetra::global_size_t (0);
-  }
-
-  /// \brief The local number of diagonal entries.
-  ///
-  /// \warning This method is DEPRECATED and will be removed soon!
-  std::size_t IFPACK2_DEPRECATED
-  getNodeNumDiags () const final
-  {
-    throwBecauseDeprecated ("getNodeNumDiags");
-    return std::size_t (0);
-  }
-
-  /// \brief Whether this graph is locally lower triangular.
-  ///
-  /// \warning This method is DEPRECATED and will be removed soon!
-  bool IFPACK2_DEPRECATED
-  isLowerTriangular () const final
-  {
-    throwBecauseDeprecated ("isLowerTriangular");
-    return false;
-  }
-
-  /// \brief Whether this graph is locally upper triangular.
-  ///
-  /// \warning This method is DEPRECATED and will be removed soon!
-  bool IFPACK2_DEPRECATED isUpperTriangular() const final
-  {
-    throwBecauseDeprecated ("isUpperTriangular");
-    return false;
-  }
-
-  //@}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 };
 
 } // namespace Details

@@ -54,11 +54,6 @@ IF PACKAGE belos THEN
 REMOVE --enable-belos
 DONE
 
-# Claps ------------------------------------------------------------------------
-IF PACKAGE claps THEN
-REMOVE --enable-claps
-DONE
-
 # CTrilinos --------------------------------------------------------------------
 IF PACKAGE CTrilinos THEN
 REMOVE --enable-ctrilinos
@@ -78,7 +73,6 @@ REMOVE --with-loca-anasazi
 REMOVE --enable-aristos
 REMOVE --enable-aztecoo
 REMOVE --enable-belos
-REMOVE --enable-claps
 REMOVE --enable-epetraext
 REMOVE --enable-galeri
 REMOVE --enable-ifpack

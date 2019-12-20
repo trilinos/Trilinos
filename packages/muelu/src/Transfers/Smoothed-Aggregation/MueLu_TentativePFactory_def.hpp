@@ -320,7 +320,7 @@ namespace MueLu {
     size_t nnzEstimate = numRows * NSDim;
 
     // Time to construct the matrix and fill in the values
-    Ptentative = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0, Xpetra::StaticProfile));
+    Ptentative = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
     RCP<CrsMatrix> PtentCrs   = rcp_dynamic_cast<CrsMatrixWrap>(Ptentative)->getCrsMatrix();
 
     ArrayRCP<size_t>  iaPtent;
@@ -719,7 +719,7 @@ namespace MueLu {
 
     RCP<CrsMatrix> PtentCrs;
 
-    RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+    RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim));
     PtentCrs   = PtentCrsWrap->getCrsMatrix();
     Ptentative = PtentCrsWrap;
 

@@ -1061,45 +1061,6 @@ public:
     graph_.getLocalDiagOffsets (offsets);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LO, class GO, class Node>
-  void TPETRA_DEPRECATED
-  BlockCrsMatrix<Scalar,LO,GO,Node>::
-  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
-  {
-    // mfh 19 Mar 2016: We plan to deprecate the ArrayRCP version of
-    // this method in CrsGraph too, so don't call it (otherwise build
-    // warnings will show up and annoy users).  Instead, copy results
-    // in and out, if the memory space requires it.
-
-    const size_t lclNumRows = graph_.getNodeNumRows ();
-    if (static_cast<size_t> (offsets.size ()) < lclNumRows) {
-      offsets.resize (lclNumRows);
-    }
-
-    // The input ArrayRCP must always be a host pointer.  Thus, if
-    // device_type::memory_space is Kokkos::HostSpace, it's OK for us
-    // to write to that allocation directly as a Kokkos::View.
-    typedef typename device_type::memory_space memory_space;
-    if (std::is_same<memory_space, Kokkos::HostSpace>::value) {
-      // It is always syntactically correct to assign a raw host
-      // pointer to a device View, so this code will compile correctly
-      // even if this branch never runs.
-      typedef Kokkos::View<size_t*, device_type,
-                           Kokkos::MemoryUnmanaged> output_type;
-      output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
-      graph_.getLocalDiagOffsets (offsetsOut);
-    }
-    else {
-      Kokkos::View<size_t*, device_type> offsetsTmp ("diagOffsets", lclNumRows);
-      graph_.getLocalDiagOffsets (offsetsTmp);
-      typedef Kokkos::View<size_t*, Kokkos::HostSpace,
-                           Kokkos::MemoryUnmanaged> output_type;
-      output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
-      Kokkos::deep_copy (offsetsOut, offsetsTmp);
-    }
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LO, class GO, class Node>
   void
@@ -1249,37 +1210,6 @@ public:
       "reorderedGaussSeidelCopy: Not implemented.");
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LO, class GO, class Node>
-  void TPETRA_DEPRECATED
-  BlockCrsMatrix<Scalar,LO,GO,Node>::
-  getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
-                    const Teuchos::ArrayView<const size_t>& offsets) const
-  {
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
-
-    const size_t myNumRows = rowMeshMap_.getNodeNumElements();
-    const LO* columnIndices;
-    Scalar* vals;
-    LO numColumns;
-    Teuchos::Array<LO> cols(1);
-
-    // FIXME (mfh 12 Aug 2014) Should use a "little block" for this instead.
-    Teuchos::Array<Scalar> zeroMat (blockSize_*blockSize_, ZERO);
-    for (size_t i = 0; i < myNumRows; ++i) {
-      cols[0] = i;
-      if (offsets[i] == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        diag.replaceLocalValues (i, cols.getRawPtr (), zeroMat.getRawPtr (), 1);
-      }
-      else {
-        getLocalRowView (i, columnIndices, vals, numColumns);
-        diag.replaceLocalValues (i, cols.getRawPtr(), &vals[offsets[i]*blockSize_*blockSize_], 1);
-      }
-    }
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LO, class GO, class Node>
   void
@@ -2130,11 +2060,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const ::Tpetra::SrcDistObject& source,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*,
@@ -2793,11 +2719,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const ::Tpetra::SrcDistObject& source,
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& exportLIDs,
@@ -3052,11 +2974,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& importLIDs,
    Kokkos::DualView<packet_type*,
@@ -3678,17 +3596,6 @@ public:
     return graph_.getComm();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  TPETRA_DEPRECATED
-  Teuchos::RCP<Node>
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNode() const
-  {
-    return Teuchos::null;
-
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template<class Scalar, class LO, class GO, class Node>
   global_size_t
@@ -3738,25 +3645,6 @@ public:
     return graph_.getNumEntriesInGlobalRow(globalRow);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  global_size_t TPETRA_DEPRECATED
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalNumDiags () const
-  {
-    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
-    return dynamic_cast<const HDM&> (this->graph_).getGlobalNumDiagsImpl ();
-  }
-
-  template<class Scalar, class LO, class GO, class Node>
-  size_t TPETRA_DEPRECATED
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumDiags () const
-  {
-    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
-    return dynamic_cast<const HDM&> (this->graph_).getNodeNumDiagsImpl ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template<class Scalar, class LO, class GO, class Node>
   size_t
@@ -3774,25 +3662,6 @@ public:
     return graph_.hasColMap();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  bool TPETRA_DEPRECATED
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  isLowerTriangular () const
-  {
-    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
-    return dynamic_cast<const HDM&> (this->graph_).isLowerTriangularImpl ();
-  }
-
-  template<class Scalar, class LO, class GO, class Node>
-  bool TPETRA_DEPRECATED
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  isUpperTriangular () const
-  {
-    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
-    return dynamic_cast<const HDM&> (this->graph_).isUpperTriangularImpl ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template<class Scalar, class LO, class GO, class Node>
   bool

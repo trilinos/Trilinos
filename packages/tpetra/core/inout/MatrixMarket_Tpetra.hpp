@@ -206,12 +206,6 @@ namespace Tpetra {
       typedef Teuchos::Comm<int> comm_type;
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      // DEPRECATED typedefs for backwards compatibility.
-      typedef Teuchos::RCP<const comm_type> comm_ptr TPETRA_DEPRECATED;
-      typedef Teuchos::RCP<const map_type> map_ptr TPETRA_DEPRECATED;
-      typedef Teuchos::RCP<node_type> node_ptr TPETRA_DEPRECATED;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     private:
       /// \typedef size_type
@@ -1681,26 +1675,6 @@ namespace Tpetra {
         // exception.
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      /// \brief Variant of readSparseGraphFile (filename, comm,
-      ///   callFillComplete, tolerant, debug) that takes a Node
-      ///   object.
-      ///
-      /// Please don't call this method; call the one above.
-      /// DO NOT CREATE EXPLICIT NODE OBJECTS.
-      static Teuchos::RCP<sparse_graph_type>  TPETRA_DEPRECATED
-      readSparseGraphFile (const std::string& filename,
-                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                           const Teuchos::RCP<node_type>& /* pNode*/,
-                           const bool callFillComplete=true,
-                           const bool tolerant=false,
-                           const bool debug=false)
-      {
-        // Call the overload below.
-        return readSparseGraphFile (filename, comm,
-                                    callFillComplete, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read sparse graph from the given Matrix Market file.
       ///
@@ -1771,28 +1745,6 @@ namespace Tpetra {
         // exception.
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      /// \brief Variant of readSparseGraphFile (filename, comm,
-      ///   constructorParams, fillCompleteParams, tolerant, debug)
-      ///   that takes a Node object.
-      ///
-      /// Please don't call this method; call the one above.
-      /// DO NOT CREATE EXPLICIT NODE OBJECTS.
-      static Teuchos::RCP<sparse_graph_type> TPETRA_DEPRECATED
-      readSparseGraphFile (const std::string& filename,
-                           const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                           const Teuchos::RCP<node_type>& /*pNode*/,
-                           const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                           const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                           const bool tolerant=false,
-                           const bool debug=false)
-      {
-        // Call the overload below.
-        return readSparseGraphFile (filename, pComm,
-                                    constructorParams, fillCompleteParams,
-                                    tolerant, debug);
-      }
-#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read sparse graph from the given Matrix Market file,
       ///   with provided Maps.
@@ -1925,21 +1877,6 @@ namespace Tpetra {
         return graph;
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Variant of readSparseGraph() above that takes a Node object.
-      static Teuchos::RCP<sparse_graph_type> TPETRA_DEPRECATED
-      readSparseGraph (std::istream& in,
-                       const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                       const Teuchos::RCP<node_type>& /* pNode */,
-                       const bool callFillComplete=true,
-                       const bool tolerant=false,
-                       const bool debug=false)
-      {
-        // Call the overload below.
-        return readSparseGraph (in, pComm, callFillComplete,
-                                tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read sparse graph from the given Matrix Market input
       ///   stream.
@@ -1988,22 +1925,6 @@ namespace Tpetra {
         return graph;
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Variant of the above readSparseGraph() method that takes a Kokkos Node.
-      static Teuchos::RCP<sparse_graph_type> TPETRA_DEPRECATED
-      readSparseGraph (std::istream& in,
-                       const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                       const Teuchos::RCP<node_type>& /* pNode */,
-                       const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                       const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                       const bool tolerant=false,
-                       const bool debug=false)
-      {
-        // Call the overload below.
-        return readSparseGraph (in, pComm, constructorParams,
-                                fillCompleteParams, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read sparse matrix from the given Matrix Market input
       ///   stream, with provided Maps.
@@ -2114,19 +2035,6 @@ namespace Tpetra {
         // exception.
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Variant of readSparseFile that takes a Node object.
-      static Teuchos::RCP<sparse_matrix_type>  TPETRA_DEPRECATED
-      readSparseFile (const std::string& filename,
-                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                      const Teuchos::RCP<node_type>& /* pNode */,
-                      const bool callFillComplete=true,
-                      const bool tolerant=false,
-                      const bool debug=false)
-      {
-        return readSparseFile (filename, pComm, callFillComplete, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read sparse matrix from the given Matrix Market file.
       ///
@@ -2172,22 +2080,6 @@ namespace Tpetra {
                            fillCompleteParams, tolerant, debug);
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Variant of readSparseFile above that takes a Node object.
-      static Teuchos::RCP<sparse_matrix_type>  TPETRA_DEPRECATED
-      readSparseFile (const std::string& filename,
-                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                      const Teuchos::RCP<node_type>& /* pNode */,
-                      const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                      const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                      const bool tolerant=false,
-                      const bool debug=false)
-      {
-        return readSparseFile (filename, pComm,
-                               constructorParams, fillCompleteParams,
-                               tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read sparse matrix from the given Matrix Market file,
       ///   with provided Maps.
@@ -2820,19 +2712,6 @@ namespace Tpetra {
         return pMatrix;
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Variant of readSparse() above that takes a Node object.
-      static Teuchos::RCP<sparse_matrix_type>  TPETRA_DEPRECATED
-      readSparse (std::istream& in,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                  const Teuchos::RCP<node_type>& /* pNode */,
-                  const bool callFillComplete=true,
-                  const bool tolerant=false,
-                  const bool debug=false)
-      {
-        return readSparse (in, pComm, callFillComplete, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read sparse matrix from the given Matrix Market input stream.
       ///
@@ -3377,21 +3256,6 @@ namespace Tpetra {
         return pMatrix;
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Variant of the above readSparse() method that takes a Kokkos Node.
-      static Teuchos::RCP<sparse_matrix_type>  TPETRA_DEPRECATED
-      readSparse (std::istream& in,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                  const Teuchos::RCP<node_type>& /* pNode */,
-                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                  const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                  const bool tolerant=false,
-                  const bool debug=false)
-      {
-        return readSparse (in, pComm, constructorParams,
-                           fillCompleteParams, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read sparse matrix from the given Matrix Market input
       ///   stream, with provided Maps.
@@ -4068,19 +3932,6 @@ namespace Tpetra {
         return readDense (in, comm, map, tolerant, debug);
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Variant of readDenseMatrix (see above) that takes a Node.
-      static Teuchos::RCP<multivector_type>  TPETRA_DEPRECATED
-      readDenseFile (const std::string& filename,
-                     const Teuchos::RCP<const comm_type>& comm,
-                     const Teuchos::RCP<node_type>& /* pNode*/,
-                     Teuchos::RCP<const map_type>& map,
-                     const bool tolerant=false,
-                     const bool debug=false)
-      {
-        return readDenseFile(filename, comm, map, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read a Vector from the given Matrix Market file.
       ///
@@ -4125,20 +3976,6 @@ namespace Tpetra {
         return readVector (in, comm, map, tolerant, debug);
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      /// \brief Like readVectorFile() (see above), but with a
-      ///   supplied Node object.
-      static Teuchos::RCP<vector_type>  TPETRA_DEPRECATED
-      readVectorFile (const std::string& filename,
-                      const Teuchos::RCP<const comm_type>& comm,
-                      const Teuchos::RCP<node_type>& /* pNode */,
-                      Teuchos::RCP<const map_type>& map,
-                      const bool tolerant=false,
-                      const bool debug=false)
-      {
-        return readVectorFile(filename, comm, map, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read dense matrix (as a MultiVector) from the given
       ///   Matrix Market input stream.
@@ -4218,19 +4055,6 @@ namespace Tpetra {
         return readDenseImpl<scalar_type> (in, comm, map, err, tolerant, debug);
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Variant of readDense (see above) that takes a Node.
-      static Teuchos::RCP<multivector_type>  TPETRA_DEPRECATED
-      readDense (std::istream& in,
-                 const Teuchos::RCP<const comm_type>& comm,
-                 const Teuchos::RCP<node_type>& /* pNode */,
-                 Teuchos::RCP<const map_type>& map,
-                 const bool tolerant=false,
-                 const bool debug=false)
-      {
-        return readDense (in, comm, map, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       //! Read Vector from the given Matrix Market input stream.
       static Teuchos::RCP<vector_type>
@@ -4245,19 +4069,6 @@ namespace Tpetra {
         return readVectorImpl<scalar_type> (in, comm, map, err, tolerant, debug);
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      //! Read Vector from the given Matrix Market input stream, with a supplied Node.
-      static Teuchos::RCP<vector_type> TPETRA_DEPRECATED
-      readVector (std::istream& in,
-                 const Teuchos::RCP<const comm_type>& comm,
-                 const Teuchos::RCP<node_type>& /* pNode */,
-                 Teuchos::RCP<const map_type>& map,
-                 const bool tolerant=false,
-                 const bool debug=false)
-      {
-        return readVector(in, comm,  map, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read Map (as a MultiVector) from the given
       ///   Matrix Market file.
@@ -4304,19 +4115,6 @@ namespace Tpetra {
         return readMap (in, comm, tolerant, debug);
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      /// \brief Variant of readMapFile (above) that takes an explicit
-      ///   Node instance.
-      static Teuchos::RCP<const map_type>  TPETRA_DEPRECATED
-      readMapFile (const std::string& filename,
-                   const Teuchos::RCP<const comm_type>& comm,
-                   const Teuchos::RCP<node_type>& /* pNode */,
-                   const bool tolerant=false,
-                   const bool debug=false)
-      {
-        return readMapFile (filename, comm, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     private:
       template<class MultiVectorScalarType>
@@ -5369,19 +5167,6 @@ namespace Tpetra {
         return readMap (in, comm, err, tolerant, debug);
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      /// \brief Variant of readMap (above) that takes an explicit
-      ///   Node instance.
-      static Teuchos::RCP<const map_type>  TPETRA_DEPRECATED
-      readMap (std::istream& in,
-               const Teuchos::RCP<const comm_type>& comm,
-               const Teuchos::RCP<node_type>& /* pNode */,
-               const bool tolerant=false,
-               const bool debug=false)
-      {
-        return readMap(in, comm, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read Map (as a MultiVector) from the given input
       ///   stream, with optional debugging output stream.
@@ -5762,20 +5547,6 @@ namespace Tpetra {
         return newMap;
       }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      /// \brief Variant of readMap (above) that takes an explicit
-      ///   Node instance.
-      static Teuchos::RCP<const map_type>  TPETRA_DEPRECATED
-      readMap (std::istream& in,
-               const Teuchos::RCP<const comm_type>& comm,
-               const Teuchos::RCP<node_type>& /* pNode */,
-               const Teuchos::RCP<Teuchos::FancyOStream>& err,
-               const bool tolerant=false,
-               const bool debug=false)
-      {
-        return readMap (in, comm, err, tolerant, debug);
-      }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     private:
 
