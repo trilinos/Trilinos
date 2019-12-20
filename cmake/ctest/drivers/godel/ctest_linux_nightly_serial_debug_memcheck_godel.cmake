@@ -68,8 +68,8 @@ SET(CTEST_TEST_TYPE Nightly)
 
 SET(CTEST_DO_MEMORY_TESTING TRUE)
 
-SET(Trilinos_PACKAGES Teuchos RTOp Epetra GlobiPack Tpetra EpetraExt
-  Sacado Thyra OptiPack AztecOO Ifpack ML Stratimikos Rythmos MOOCHO)
+SET(Trilinos_PACKAGES Teuchos RTOp Epetra Tpetra EpetraExt
+  Sacado Thyra AztecOO Ifpack ML Stratimikos Rythmos MOOCHO)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"

@@ -181,7 +181,7 @@ defaults = [
   \"-j4\",
   \"--use-ninja\",
   \"--ctest-timeout=300\",
-  \"--disable-packages=PyTrilinos,Claps,TriKota\",
+  \"--disable-packages=PyTrilinos,TriKota\",
   \"--skip-case-no-email\",
   ]
   " > $_LOCAL_CHECKIN_TEST_DEFAULTS

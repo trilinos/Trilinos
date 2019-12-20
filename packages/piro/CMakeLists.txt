@@ -29,11 +29,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT NOX_ENABLE_Epetra)
   MESSAGE(FATAL_ERROR "Piro configuration error: Enabling Epetra in Piro also requires that Epetra be enabled in NOX (-DNOX_ENABLE_Epetra:BOOL=ON)")
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_OptiPack)
-  MESSAGE(WARNING "***** WARNING:  OptiPack is deprecated in April 2019; it will be  removed in May 2019 ***** ")
-  MESSAGE(WARNING "***** WARNING:  Option Piro_ENABLE_OptiPack is deprecated in April 2019; it will be removed in May 2019 ***** ")
-ENDIF()
-
 #
 # C) Add the libraries, tests, and examples
 #
