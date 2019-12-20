@@ -2023,14 +2023,14 @@ namespace Tpetra {
     this->k_numRowEntries_(myRow) += numNewInds;
     this->setLocallyModified ();
 
-#ifdef HAVE_TPETRA_DEBUG
-    const size_t chkNewNumEntries = this->getNumEntriesInLocalRow (myRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (chkNewNumEntries != newNumEntries, std::logic_error,
-       "getNumEntriesInLocalRow(" << myRow << ") = " << chkNewNumEntries
-       << " != newNumEntries = " << newNumEntries
-       << ".  Please report this bug to the Tpetra developers.");
-#endif
+    if(::Tpetra::Details::Behavior::debug ()) {
+      const size_t chkNewNumEntries = this->getNumEntriesInLocalRow (myRow);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (chkNewNumEntries != newNumEntries, std::logic_error,
+         "getNumEntriesInLocalRow(" << myRow << ") = " << chkNewNumEntries
+         << " != newNumEntries = " << newNumEntries
+         << ".  Please report this bug to the Tpetra developers.");
+    }
   }
 
 
