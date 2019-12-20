@@ -80,6 +80,8 @@ namespace TSQR {
 
     using cusolver_memory_space = Kokkos::CudaSpace;
     using cusolver_execution_space = Kokkos::Cuda;
+    using host_device_type = Kokkos::Device<
+      Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
 
     // Mapping from Scalar to Kokkos value type.
     // e.g., Scalar=std::complex<double> -> Kokkos::complex<double>.
@@ -96,13 +98,16 @@ namespace TSQR {
         non_const_kokkos_value_type<Scalar>
       >::type;
 
-    // vector_type & device_vector_type
+    // vector_type, device_vector_type, and host_vector_type
 
     template<class T, class MemorySpace>
     using vector_type = Kokkos::View<T*, MemorySpace>;
 
     template<class T>
     using device_vector_type = vector_type<T, cusolver_memory_space>;
+
+    template<class T>
+    using host_vector_type = vector_type<T, host_device_type>;
 
     template<class T>
     void
@@ -148,9 +153,6 @@ namespace TSQR {
     template<class T>
     using device_mat_view_type =
       mat_view_type<T, cusolver_memory_space>;
-
-    using host_device_type = Kokkos::Device<
-      Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
 
     template<class T>
     using host_mat_view_type = mat_view_type<T, host_device_type>;
@@ -242,7 +244,7 @@ namespace TSQR {
         const char label[] = "matrixStorage";
 
         TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::Impl::get_contiguous_device_mat_view: Right before allocating" );
-        
+
         try {
           storage = device_vector_type<T>
             (view_alloc (std::string (label), WithoutInitializing),
@@ -258,6 +260,45 @@ namespace TSQR {
       }
       return device_mat_view_type<T> (storage.data (),
                                       numRows, numCols);
+    }
+
+    template<class T>
+    host_mat_view_type<T>
+    get_contiguous_host_mat_view (host_vector_type<T>& storage,
+                                  const size_t numRows,
+                                  const size_t numCols)
+    {
+      const char prefix[] = "TSQR::Impl::get_contiguous_host_mat_view: ";
+
+      const size_t currentStorageSize (storage.extent (0));
+      const size_t requiredStorageSize = numRows * numCols;
+      if (currentStorageSize < requiredStorageSize) {
+        // It costs about as much to allocate 8B on host as 800B.
+        constexpr size_t minStorageSize = 100;
+        const size_t newStorageSize =
+          std::max (minStorageSize, requiredStorageSize);
+
+        // Free it first, so that two allocations won't coexist.
+        storage = host_vector_type<T> ();
+        using Kokkos::view_alloc;
+        using Kokkos::WithoutInitializing;
+        const char label[] = "hostMatrixStorage";
+
+        try {
+          storage = host_vector_type<T>
+            (view_alloc (std::string (label), WithoutInitializing),
+             newStorageSize);
+        }
+        catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, prefix << "Allocating rank-1 "
+             "host View of size " << newStorageSize << " to store a "
+             << numRows << " x " << numCols << " matrix threw: "
+             << std::endl << e.what ());
+        }
+      }
+      return host_mat_view_type<T> (storage.data (),
+                                    numRows, numCols);
     }
 
     // info_type & const_info_type
@@ -807,22 +848,9 @@ namespace TSQR {
         }
       }
       else {
-        // We need to make a contiguous copy of host storage.  Host
-        // allocations are cheap compared to device allocations, so
-        // there's no need to cache the host allocation.
-        //
-        // NOTE (mfh 17 Dec 2019) The following code generates a
-        // warning in CUDA builds: "non-constant array new length must
-        // be specified without parentheses around the type-id
-        // [-Wvla]".  I can't fix that.  I tried replacing the curly
-        // braces with parenthesis, and I also tried obfuscating by
-        // separating the "new" from the unique_ptr construction, but
-        // neither helped.  std::make_unique might help too, but it
-        // doesn't exist until C++14 and we're still using C++11.
-        std::unique_ptr<Scalar[]> hostStorage
-          {new Scalar [nrows * ncols]};
-        auto C_host_copy = Impl::get_host_mat_view<Scalar>
-          (nrows, ncols, hostStorage.get (), nrows);
+        // We need to make a contiguous copy of host storage.
+        auto C_host_copy = Impl::get_contiguous_host_mat_view
+          (hostMatrixStorage_, nrows, ncols);
         TEUCHOS_ASSERT( C_host_copy.stride (1) ==
                         C_host_copy.extent (0) );
         try {
@@ -867,7 +895,7 @@ namespace TSQR {
                "Kokkos::deep_copy(C_dev_view, C_dev_copy) threw: "
                << e.what ());
           }
-        }        
+        }
       }
     }
 
@@ -1016,6 +1044,7 @@ namespace TSQR {
     mutable work_type work_;
     mutable Impl::info_type info_;
     mutable Impl::device_vector_type<kokkos_value_type> matrixStorage_;
+    mutable Impl::host_vector_type<kokkos_value_type> hostMatrixStorage_;
   };
 
 } // namespace TSQR
