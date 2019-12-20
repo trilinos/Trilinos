@@ -100,7 +100,7 @@ struct DynamicConstraintCheck {
 
     auto update_uo = con_check.update_uo( un, z );
     auto update_un = con_check.update_un( uo, z );
-    auto update_z  = con_check.update_z( un, uo );
+    auto update_z  = con_check.update_z( uo, un );
   
     auto value_uo = con_check.value_uo( un, z );
     auto value_un = con_check.value_un( uo, z );
