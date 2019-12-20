@@ -313,12 +313,3 @@ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 
-Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
-keep smoother data = 1
-PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
-PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
-presmoother -> 
- A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- fix nullspace = 0   [default]
-

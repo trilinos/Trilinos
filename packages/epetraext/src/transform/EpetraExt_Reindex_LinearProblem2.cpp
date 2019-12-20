@@ -81,21 +81,20 @@ operator()( OriginalTypeRef orig )
     int NumMyElements = OldRowMap.NumMyElements();
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(OldRowMap.GlobalIndicesInt()) {
-	int NumGlobalElements = OldRowMap.NumGlobalElements();
-    NewRowMap_ = new Epetra_Map( NumGlobalElements, NumMyElements, 0, OldRowMap.Comm() );
-  }
-  else
+    if(OldRowMap.GlobalIndicesInt()) {
+      int NumGlobalElements = OldRowMap.NumGlobalElements();
+      NewRowMap_ = new Epetra_Map( NumGlobalElements, NumMyElements, 0, OldRowMap.Comm() );
+    }
+    else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-  if(OldRowMap.GlobalIndicesLongLong()) {
-	long long NumGlobalElements = OldRowMap.NumGlobalElements64();
-    NewRowMap_ = new Epetra_Map( NumGlobalElements, NumMyElements, 0LL, OldRowMap.Comm() );
-  }
-  else
+    if(OldRowMap.GlobalIndicesLongLong()) {
+      long long NumGlobalElements = OldRowMap.NumGlobalElements64();
+      NewRowMap_ = new Epetra_Map( NumGlobalElements, NumMyElements, 0LL, OldRowMap.Comm() );
+    }
+    else
 #endif
-    throw "LinearProblem_Reindex2::operator(): GlobalIndices type unknown";
-
+      throw "LinearProblem_Reindex2::operator(): GlobalIndices type unknown";
     NewRowMapOwned_ = true;
   }
 

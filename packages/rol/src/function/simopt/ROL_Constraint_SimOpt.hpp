@@ -118,6 +118,8 @@ private:
   const int  DEFAULT_solverType_;
 
   // User-set parameters for solve (backtracking Newton)
+
+protected:
   Real atol_;
   Real rtol_;
   Real stol_;

@@ -27,15 +27,9 @@
 #cmakedefine HAVE_PIRO_TEMPUS
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Tempus
-#cmakedefine HAVE_PIRO_MOOCHO
-/* DEPRECATED */
-#cmakedefine Piro_ENABLE_MOOCHO
 #cmakedefine HAVE_PIRO_STOKHOS
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Stokhos
-#cmakedefine HAVE_PIRO_OPTIPACK
-/* DEPRECATED */
-#cmakedefine Piro_ENABLE_OptiPack
 #cmakedefine HAVE_PIRO_TRIKOTA
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_TriKota
