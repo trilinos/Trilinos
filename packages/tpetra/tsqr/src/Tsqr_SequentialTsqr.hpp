@@ -194,45 +194,6 @@ namespace TSQR {
       return partition_2x1 (A_top, ncols).first;
     }
 
-    //! Apply first cache block's Q factor to C's first cache block.
-    void
-    apply_first_block (Combine<LocalOrdinal, Scalar>& combine,
-                       const ApplyType& applyType,
-                       const const_mat_view_type& Q_first,
-                       const std::vector<Scalar>& tau,
-                       const mat_view_type& C_first,
-                       Scalar work[],
-                       const LocalOrdinal lwork) const
-    {
-      combine.apply_first (applyType, Q_first, tau.data (),
-                           C_first, work, lwork);
-    }
-
-    void
-    combine_apply (Combine<LocalOrdinal, Scalar>& combine,
-                   const ApplyType& apply_type,
-                   const const_mat_view_type& Q_cur,
-                   const std::vector<Scalar>& tau,
-                   const mat_view_type& C_top,
-                   const mat_view_type& C_cur,
-                   Scalar work[],
-                   const LocalOrdinal lwork) const
-    {
-      combine.apply_inner (apply_type, Q_cur, tau.data (),
-                           C_top, C_cur, work, lwork);
-    }
-
-    void
-    combine_factor (Combine<LocalOrdinal, Scalar>& combine,
-                    const mat_view_type& R,
-                    const mat_view_type& A_cur,
-                    std::vector<Scalar>& tau,
-                    Scalar work[],
-                    const LocalOrdinal lwork) const
-    {
-      combine.factor_inner (R, A_cur, tau.data (), work, lwork);
-    }
-
   public:
     /// \brief The standard constructor.
     ///
@@ -493,8 +454,8 @@ namespace TSQR {
       while (! empty (A_rest)) {
         A_cur = blocker.split_top_block (A_rest, contigCacheBlocks);
         std::vector<Scalar> tau (ncols);
-        combine_factor (combine, R_view, A_cur, tau,
-                        work.data (), lwork);
+        combine.factor_inner (R_view, A_cur, tau.data (),
+                              work.data (), lwork);
         tau_arrays->add_and_consume (std::move (tau));
       }
 
@@ -645,14 +606,16 @@ namespace TSQR {
 
         // Apply the topmost block of Q.
         auto tau_iter = tau_arrays.begin();
-        const std::vector<Scalar>& tau = *tau_iter++;
-        apply_first_block (combine, apply_type, Q_cur, tau,
-                           C_cur, work.data (), lwork);
+        const std::vector<Scalar>& tau_first = *tau_iter++;
+        combine.apply_first (apply_type, Q_cur, tau_first.data (),
+                             C_cur, work.data (), lwork);
         while (! empty (Q_rest)) {
           Q_cur = blocker.split_top_block (Q_rest, contigCacheBlocks);
           C_cur = blocker.split_top_block (C_rest, contigCacheBlocks);
-          combine_apply (combine, apply_type, Q_cur, *tau_iter++,
-                         C_top, C_cur, work.data (), lwork);
+          const Scalar* tau = tau_iter->data ();
+          combine.apply_inner (apply_type, Q_cur, tau, C_top, C_cur,
+                               work.data (), lwork);
+          tau_iter++;
         }
       }
       else {
@@ -664,16 +627,19 @@ namespace TSQR {
         mat_view_type C_cur =
           blocker.split_bottom_block (C_rest, contigCacheBlocks);
         while (! empty (Q_rest)) {
-          combine_apply (combine, apply_type, Q_cur, *tau_iter++,
-                         C_top, C_cur, work.data (), lwork);
+          const Scalar* tau = tau_iter->data ();
+          combine.apply_inner (apply_type, Q_cur, tau, C_top, C_cur,
+                               work.data (), lwork);
+          tau_iter++;
           Q_cur =
             blocker.split_bottom_block (Q_rest, contigCacheBlocks);
           C_cur =
             blocker.split_bottom_block (C_rest, contigCacheBlocks);
         }
         // Apply to last (topmost) cache block.
-        apply_first_block (combine, apply_type, Q_cur, *tau_iter++,
-                           C_cur, work.data (), lwork);
+        const std::vector<Scalar>& tau_first = *tau_iter++;
+        combine.apply_first (apply_type, Q_cur, tau_first.data (),
+                             C_cur, work.data (), lwork);
       }
     }
 
