@@ -88,7 +88,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Xpetra                packages/xpetra                   PT
   Isorropia             packages/isorropia                PT
   Pliris                packages/pliris                   ST
-  Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PT
   Galeri                packages/galeri                   PT
   Amesos                packages/amesos                   PT

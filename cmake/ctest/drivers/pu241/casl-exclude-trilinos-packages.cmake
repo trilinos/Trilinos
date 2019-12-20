@@ -6,7 +6,6 @@ IF (NOT ${PROJECT_NAME}_EXCLUDE_PACKAGES)
   SET(${PROJECT_NAME}_EXCLUDE_PACKAGES
     Sacado
     Pliris
-    Claps
     Galeri
     Amesos2
     Pamgen
@@ -26,7 +25,6 @@ IF (NOT ${PROJECT_NAME}_EXCLUDE_PACKAGES)
     PyTrilinos
     Didasko
     Optika
-    Mesquite
     FEApp
     Zoltan2
     ShyLU

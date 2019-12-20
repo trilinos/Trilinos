@@ -488,20 +488,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Claps" dir="packages/claps" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="METIS"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="claps-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="AztecOO" dir="packages/aztecoo" type="PT">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Triutils"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos"/>

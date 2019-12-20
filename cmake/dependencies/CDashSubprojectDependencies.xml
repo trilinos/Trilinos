@@ -110,13 +110,6 @@
       <Email address="pliris-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="Claps">
-    <Dependency name="Teuchos" type="TR"/>
-    <Dependency name="Epetra" type="LR"/>
-    <EmailAddresses>
-      <Email address="claps-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="AztecOO">
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="Epetra" type="LR"/>

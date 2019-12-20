@@ -22,12 +22,10 @@ packages/amesos amesos-checkins@software.sandia.gov
 packages/belos belos-checkins@software.sandia.gov
 packages/anasazi anasazi-checkins@software.sandia.gov
 packages/meros meros-checkins@software.sandia.gov
-packages/mesquite mesquite-checkins@software.sandia.gov
 packages/teuchos teuchos-checkins@software.sandia.gov
 packages/kokkos kokkos-checkins@software.sandia.gov
 packages/pliris pliris-checkins@software.sandia.gov
 packages/cmmlib cmmlib-checkins@software.sandia.gov
-packages/claps claps-checkins@software.sandia.gov
 packages/CTrilinos Ctrilinos-checkins@software.sandia.gov
 packages/didasko didasko-checkins@software.sandia.gov
 packages/pamgen pamgen-checkins@software.sandia.gov
