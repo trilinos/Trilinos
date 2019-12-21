@@ -1,5 +1,43 @@
 # Change Log
 
+## [3.0.00](https://github.com/kokkos/kokkos/tree/3.0.00) (2019-12-20)
+[Full Changelog](https://github.com/kokkos/kokkos/compare/2.9.00...3.0.00)
+
+**Implemented enhancements:**
+
+- CMake: Standalone Modern CMake Support
+- CMake: Add Alias with Namespace Kokkos:: to Interal Libraries [\#2530](https://github.com/kokkos/kokkos/issues/2530)
+- CMake: namespaces \(and other modern cmake cleanup\) [\#1924](https://github.com/kokkos/kokkos/issues/1924)
+- CMake: Universal Kokkos find\_package [\#2099](https://github.com/kokkos/kokkos/issues/2099)
+- CMake: Add Test which guarantees same KokkosCore\_config.h for three build modes [\#2333](https://github.com/kokkos/kokkos/issues/2333)
+- CMake: Dropping support for Kokkos\_{DEVICES,OPTIONS,ARCH} in CMake [\#2329](https://github.com/kokkos/kokkos/issues/2329)
+- CMake: Drop CMake option SEPARATE\_TESTS [\#2266](https://github.com/kokkos/kokkos/issues/2266)
+- CMake: Set Kokkos\_DEVICES and Kokkos\_ARCH variables in exported CMake configuration [\#2193](https://github.com/kokkos/kokkos/issues/2193)
+- BuildSystem: Remove capability to install Kokkos via GNU Makefiles [\#2332](https://github.com/kokkos/kokkos/issues/2332)
+- CodeStyle: ClangFormat Style [\#2157](https://github.com/kokkos/kokkos/issues/2157)
+- Compilers: Drop support for CUDA 7 and CUDA 8 [\#2489](https://github.com/kokkos/kokkos/issues/2489)
+- Documentation: Document build system and CMake philosophy [\#2263](https://github.com/kokkos/kokkos/issues/2263)
+- Documentation: Remove PDF document in Kokkos replace with link [\#2244](https://github.com/kokkos/kokkos/issues/2244)
+- nvccwrapper: Support expt-relaxed-constexpr same as expt-extended-lambda [\#2411](https://github.com/kokkos/kokkos/issues/2411)
+- nvccwrapper: Add Xnvlink to command line options allowed in nvcc\_wrapper [\#2197](https://github.com/kokkos/kokkos/issues/2197)
+- nvccwrappers and c++ 14 [\#2035](https://github.com/kokkos/kokkos/issues/2035)
+- View: Memory Error Cleanup [\#2480](https://github.com/kokkos/kokkos/issues/2480)
+- Vector: implement “insert” method for Kokkos\_Vector  \(as a serial function on host\) [\#2437](https://github.com/kokkos/kokkos/issues/2437)
+- View: Add Method to Resize View without Initialization [\#2048](https://github.com/kokkos/kokkos/issues/2048)
+
+**Fixed bugs:**
+
+- CMake: Install Kokkos config files and target files to correct folders [\#2162](https://github.com/kokkos/kokkos/issues/2162)
+- nvccwrapper: --host-only fails with mutiple -W\* flags [\#2484](https://github.com/kokkos/kokkos/issues/2484)
+- nvccwrapper: taking first -std option is counterintuitive [\#2553](https://github.com/kokkos/kokkos/issues/2553)
+- Profiling: Missing DeepCopy instrumentation in Kokkos [\#2522](https://github.com/kokkos/kokkos/issues/2522)
+- OffsetView: missing constructor which takes pointer [\#2247](https://github.com/kokkos/kokkos/issues/2247)
+- OffsetView: allow offset=0 [\#2246](https://github.com/kokkos/kokkos/issues/2246)
+- Subview: Error taking subviews of views with static_extents of min rank [\#2448](https://github.com/kokkos/kokkos/issues/2448)
+- TeamPolicy: reducers with valuetypes without += broken on CUDA [\#2410](https://github.com/kokkos/kokkos/issues/2410)
+- Complex: operator\>\> for complex\<T\> uses std::ostream, not std::istream [\#2313](https://github.com/kokkos/kokkos/issues/2313)
+- Restrict not honored for non-intel compilers  [\#1922](https://github.com/kokkos/kokkos/issues/1922)
+
 ## [2.9.00](https://github.com/kokkos/kokkos/tree/2.9.00) (2019-06-24)
 [Full Changelog](https://github.com/kokkos/kokkos/compare/2.8.00...2.9.00)
 
