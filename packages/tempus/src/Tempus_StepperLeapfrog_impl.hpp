@@ -55,16 +55,20 @@ template<class Scalar>
 void StepperLeapfrog<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-
   if (this->stepperObserver_ == Teuchos::null)
     this->stepperObserver_  =
       Teuchos::rcp(new StepperObserverComposite<Scalar>());
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
-    obs = Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
-
-  this->stepperObserver_->addObserver(
-      Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> > (obs, true) );
+  if (obs == Teuchos::null) {
+    if (stepperLFObserver_ == Teuchos::null)
+      stepperLFObserver_ = Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
+    if (this->stepperObserver_->getSize() == 0)
+      this->stepperObserver_->addObserver(stepperLFObserver_);
+  } else {
+    stepperLFObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> >(obs,true);
+    this->stepperObserver_->addObserver(stepperLFObserver_);
+  }
 
   this->isInitialized_ = false;
 }
