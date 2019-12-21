@@ -129,12 +129,12 @@ namespace TSQR {
                 const mat_view_type& A,
                 std::vector<Scalar>& tau) const
     {
-      const Ordinal ncols = A.extent (1);
+      const ordinal_type ncols = A.extent (1);
       TEUCHOS_ASSERT( R.extent (0) == ncols &&
                       R.extent (1) == ncols );
       auto& combine = this->getCombine (ncols);
-      const Ordinal lwork
-        (combine.work_size (A.extent (0), ncols, ncols));
+      const ordinal_type lwork =
+        combine.work_size (A.extent (0), ncols, ncols);
       std::vector<Scalar> work (lwork);
       combine.factor_first (A, tau.data (), work.data (), lwork);
 
@@ -146,12 +146,12 @@ namespace TSQR {
 
   public:
     Teuchos::RCP<factor_output_type>
-    factor (const Ordinal nrows,
-            const Ordinal ncols,
+    factor (const ordinal_type nrows,
+            const ordinal_type ncols,
             Scalar A[],
-            const Ordinal lda,
+            const ordinal_type lda,
             Scalar R[],
-            const Ordinal ldr,
+            const ordinal_type ldr,
             const bool /* contiguousCacheBlocks */) const override
     {
       // The "contiguous cache blocks" option does nothing here, since
@@ -167,14 +167,14 @@ namespace TSQR {
 
     void
     apply (const ApplyType& applyType,
-           const Ordinal nrows,
-           const Ordinal ncols_Q,
+           const ordinal_type nrows,
+           const ordinal_type ncols_Q,
            const Scalar Q[],
-           const Ordinal ldq,
+           const ordinal_type ldq,
            const factor_output_type& factorOutput,
-           const Ordinal ncols_C,
+           const ordinal_type ncols_C,
            Scalar C[],
-           const Ordinal ldc,
+           const ordinal_type ldc,
            const bool /* contiguousCacheBlocks */) const override
     {
       const char prefix[] = "TSQR::CombineNodeTsqr::apply: ";
@@ -217,7 +217,7 @@ namespace TSQR {
       } ();
 
       auto& combine = this->getCombine (std::max (ncols_Q, ncols_C));
-      const size_t lwork =
+      const ordinal_type lwork =
         combine.work_size (nrows, ncols_C, ncols_C);
       std::vector<Scalar> work (lwork);
 
@@ -225,19 +225,18 @@ namespace TSQR {
       mat_view_type C_view (nrows, ncols_C, C, ldc);
       const auto tau = output.tau ();
       combine.apply_first (applyType, Q_view, tau.data (),
-                           C_view, work.data (),
-                           static_cast<Ordinal> (lwork));
+                           C_view, work.data (), lwork);
     }
 
     void
-    explicit_Q (const Ordinal nrows,
-                const Ordinal ncols_Q,
+    explicit_Q (const ordinal_type nrows,
+                const ordinal_type ncols_Q,
                 const Scalar Q[],
-                const Ordinal ldq,
+                const ordinal_type ldq,
                 const factor_output_type& factorOutput,
-                const Ordinal ncols_C,
+                const ordinal_type ncols_C,
                 Scalar C[],
-                const Ordinal ldc,
+                const ordinal_type ldc,
                 const bool contiguousCacheBlocks) const override
     {
       mat_view_type C_view (nrows, ncols_C, C, ldc);
@@ -251,28 +250,28 @@ namespace TSQR {
     }
 
     void
-    cache_block (const Ordinal /* nrows */,
-                 const Ordinal /* ncols */,
+    cache_block (const ordinal_type /* nrows */,
+                 const ordinal_type /* ncols */,
                  Scalar /* A_out */ [],
                  const Scalar /* A_in */ [],
-                 const Ordinal /* lda_in */) const override
+                 const ordinal_type /* lda_in */) const override
     {}
 
     void
-    un_cache_block (const Ordinal /* nrows */,
-                    const Ordinal /* ncols */,
+    un_cache_block (const ordinal_type /* nrows */,
+                    const ordinal_type /* ncols */,
                     Scalar /* A_out */ [],
-                    const Ordinal /* lda_out */,
+                    const ordinal_type /* lda_out */,
                     const Scalar /* A_in */ []) const override
     {}
 
     void
-    Q_times_B (const Ordinal nrows,
-               const Ordinal ncols,
+    Q_times_B (const ordinal_type nrows,
+               const ordinal_type ncols,
                Scalar Q[],
-               const Ordinal ldq,
+               const ordinal_type ldq,
                const Scalar B[],
-               const Ordinal ldb,
+               const ordinal_type ldb,
                const bool /* contiguousCacheBlocks */) const override
     {
       using Teuchos::NO_TRANS;
@@ -289,7 +288,7 @@ namespace TSQR {
       mat_view_type Q_view (nrows, ncols, Q, ldq);
       // GEMM doesn't like its input and output arguments to alias
       // each other, so we use a (deep) copy.
-      Matrix<Ordinal, Scalar> Q_copy (Q_view);
+      Matrix<ordinal_type, Scalar> Q_copy (Q_view);
 
       // Q_view := Q_copy * B.
       blas.GEMM (NO_TRANS, NO_TRANS,
@@ -300,10 +299,10 @@ namespace TSQR {
     }
 
     void
-    fill_with_zeros (const Ordinal nrows,
-                     const Ordinal ncols,
+    fill_with_zeros (const ordinal_type nrows,
+                     const ordinal_type ncols,
                      Scalar A[],
-                     const Ordinal lda,
+                     const ordinal_type lda,
                      const bool /* contiguousCacheBlocks */) const override
     {
       mat_view_type A_view (nrows, ncols, A, lda);
@@ -325,7 +324,7 @@ namespace TSQR {
       // FIXME (19 Dec 2019) If the combine type is dynamic, we can't
       // answer this question without knowing the number of columns.
       // Just guess for now.
-      constexpr Ordinal fakeNumCols = 10;
+      constexpr ordinal_type fakeNumCols = 10;
       auto& c = this->getCombine (fakeNumCols);
       return c.QR_produces_R_factor_with_nonnegative_diagonal ();
     }

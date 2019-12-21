@@ -101,65 +101,65 @@ namespace TSQR {
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
-    size_t
-    work_size (const Ordinal /* num_rows_Q */,
-               const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const override
+    ordinal_type
+    work_size (const ordinal_type /* num_rows_Q */,
+               const ordinal_type num_cols_Q,
+               const ordinal_type num_cols_C) const override
     {
-      return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
+      return num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q;
     }
 
     void
-    factor_first (const MatView<Ordinal, Scalar>& A,
+    factor_first (const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) override
+                  const ordinal_type lwork) override
     {
       return default_.factor_first (A, tau, work, lwork);
     }
 
     void
     apply_first (const ApplyType& applyType,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C,
+                 const MatView<ordinal_type, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork) override
+                 const ordinal_type lwork) override
     {
       return default_.apply_first (applyType, A, tau, C, work, lwork);
     }
 
     void
-    factor_inner (const MatView<Ordinal, Scalar>& R,
-                  const MatView<Ordinal, Scalar>& A,
+    factor_inner (const MatView<ordinal_type, Scalar>& R,
+                  const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) override;
+                  const ordinal_type lwork) override;
 
     void
     apply_inner (const ApplyType& applyType,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C_top,
-                 const MatView<Ordinal, Scalar>& C_bot,
+                 const MatView<ordinal_type, Scalar>& C_top,
+                 const MatView<ordinal_type, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork) override;
+                 const ordinal_type lwork) override;
 
     void
-    factor_pair (const MatView<Ordinal, Scalar>& R_top,
-                 const MatView<Ordinal, Scalar>& R_bot,
+    factor_pair (const MatView<ordinal_type, Scalar>& R_top,
+                 const MatView<ordinal_type, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork) override;
+                 const ordinal_type lwork) override;
 
     void
     apply_pair (const ApplyType& applyType,
-                const MatView<Ordinal, const Scalar>& R_bot,
+                const MatView<ordinal_type, const Scalar>& R_bot,
                 const Scalar tau[],
-                const MatView<Ordinal, Scalar>& C_top,
-                const MatView<Ordinal, Scalar>& C_bot,
+                const MatView<ordinal_type, Scalar>& C_top,
+                const MatView<ordinal_type, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork) override;
+                const ordinal_type lwork) override;
 
   private:
     combine_default_type default_;
@@ -195,12 +195,12 @@ namespace TSQR {
          const matrix_type<scalar_type>& A) const;
 
     void
-    LARFG (const Ordinal n,
+    LARFG (const ordinal_type n,
            scalar_type& alpha,
            const vector_type<scalar_type>& x,
            scalar_type& tau) const
     {
-      constexpr Ordinal incx {1};
+      constexpr ordinal_type incx {1};
       Impl::Lapack<scalar_type> lapack;
       lapack.LARFG (n, alpha, x.data (), incx, tau);
     }
@@ -251,63 +251,63 @@ namespace TSQR {
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
-    size_t
-    work_size (const Ordinal /* num_rows_Q */,
-               const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const override
+    ordinal_type
+    work_size (const ordinal_type /* num_rows_Q */,
+               const ordinal_type num_cols_Q,
+               const ordinal_type num_cols_C) const override
     {
-      return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
+      return num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q;
     }
 
     void
-    factor_first (const MatView<Ordinal, Scalar>& A,
+    factor_first (const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) override
+                  const ordinal_type lwork) override
     {
       return default_.factor_first (A, tau, work, lwork);
     }
 
     void
     apply_first (const ApplyType& applyType,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C,
+                 const MatView<ordinal_type, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork) override
+                 const ordinal_type lwork) override
     {
       return default_.apply_first (applyType, A, tau, C, work, lwork);
     }
 
     void
-    factor_inner (const MatView<Ordinal, Scalar>& R,
-                  const MatView<Ordinal, Scalar>& A,
+    factor_inner (const MatView<ordinal_type, Scalar>& R,
+                  const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) override;
+                  const ordinal_type lwork) override;
     void
     apply_inner (const ApplyType& applyType,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C_top,
-                 const MatView<Ordinal, Scalar>& C_bot,
+                 const MatView<ordinal_type, Scalar>& C_top,
+                 const MatView<ordinal_type, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork) override;
+                 const ordinal_type lwork) override;
 
     void
-    factor_pair (const MatView<Ordinal, Scalar>& R_top,
-                 const MatView<Ordinal, Scalar>& R_bot,
+    factor_pair (const MatView<ordinal_type, Scalar>& R_top,
+                 const MatView<ordinal_type, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork) override;
+                 const ordinal_type lwork) override;
     void
     apply_pair (const ApplyType& applyType,
-                const MatView<Ordinal, const Scalar>& R_bot,
+                const MatView<ordinal_type, const Scalar>& R_bot,
                 const Scalar tau[],
-                const MatView<Ordinal, Scalar>& C_top,
-                const MatView<Ordinal, Scalar>& C_bot,
+                const MatView<ordinal_type, Scalar>& C_top,
+                const MatView<ordinal_type, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork) override;
+                const ordinal_type lwork) override;
 
   private:
     CombineDefault<ordinal_type, scalar_type> default_;
@@ -335,75 +335,75 @@ namespace TSQR {
         QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
-    size_t
-    work_size (const Ordinal /* num_rows_Q */,
-               const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const override
+    ordinal_type
+    work_size (const ordinal_type /* num_rows_Q */,
+               const ordinal_type num_cols_Q,
+               const ordinal_type num_cols_C) const override
     {
-      return size_t (num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q);
+      return num_cols_Q < num_cols_C ? num_cols_C : num_cols_Q;
     }
 
     void
-    factor_first (const MatView<Ordinal, Scalar>& A,
+    factor_first (const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) override
+                  const ordinal_type lwork) override
     {
       return default_.factor_first (A, tau, work, lwork);
     }
 
     void
     apply_first (const ApplyType& applyType,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C,
+                 const MatView<ordinal_type, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork) override
+                 const ordinal_type lwork) override
     {
       return default_.apply_first (applyType, A, tau, C, work, lwork);
     }
 
     void
-    factor_inner (const MatView<Ordinal, Scalar>& R,
-                  const MatView<Ordinal, Scalar>& A,
+    factor_inner (const MatView<ordinal_type, Scalar>& R,
+                  const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) override
+                  const ordinal_type lwork) override
     {
       return default_.factor_inner (R, A, tau, work, lwork);
     }
 
     void
     apply_inner (const ApplyType& applyType,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C_top,
-                 const MatView<Ordinal, Scalar>& C_bot,
+                 const MatView<ordinal_type, Scalar>& C_top,
+                 const MatView<ordinal_type, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork) override
+                 const ordinal_type lwork) override
     {
       return default_.apply_inner (applyType, A, tau,
                                    C_top, C_bot, work, lwork);
     }
 
     void
-    factor_pair (const MatView<Ordinal, Scalar>& R_top,
-                 const MatView<Ordinal, Scalar>& R_bot,
+    factor_pair (const MatView<ordinal_type, Scalar>& R_top,
+                 const MatView<ordinal_type, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork) override
+                 const ordinal_type lwork) override
     {
       return default_.factor_pair (R_top, R_bot, tau, work, lwork);
     }
 
     void
     apply_pair (const ApplyType& applyType,
-                const MatView<Ordinal, const Scalar>& R_bot,
+                const MatView<ordinal_type, const Scalar>& R_bot,
                 const Scalar tau[],
-                const MatView<Ordinal, Scalar>& C_top,
-                const MatView<Ordinal, Scalar>& C_bot,
+                const MatView<ordinal_type, Scalar>& C_top,
+                const MatView<ordinal_type, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork) override
+                const ordinal_type lwork) override
     {
       return default_.apply_pair (applyType, R_bot, tau,
                                   C_top, C_bot, work, lwork);
@@ -422,17 +422,17 @@ namespace TSQR {
        const matrix_type<scalar_type>& A) const
   {
     constexpr scalar_type ZERO {0.0};
-    const Ordinal m = A.extent (0);
-    const Ordinal n = A.extent (1);
+    const ordinal_type m = A.extent (0);
+    const ordinal_type n = A.extent (1);
 
-    constexpr Ordinal incy {1};
-    //Ordinal jy = (incy > 0) ? 1 : 1 - (n-1) * incy;
-    Ordinal jy = 1;
+    constexpr ordinal_type incy {1};
+    //ordinal_type jy = (incy > 0) ? 1 : 1 - (n-1) * incy;
+    ordinal_type jy = 1;
 
-    for (Ordinal j = 0; j < n; ++j) {
+    for (ordinal_type j = 0; j < n; ++j) {
       if (y[jy-1] != ZERO) {
         const scalar_type temp = alpha * y[jy-1];
-        for (Ordinal i = 0; i < m; ++i) {
+        for (ordinal_type i = 0; i < m; ++i) {
           A(i,j) = A(i,j) + x[i] * temp;
         }
       }
@@ -452,10 +452,10 @@ namespace TSQR {
   {
     using y_vec_type = vector_type<scalar_type>;
     using x_vec_type = vector_type<const scalar_type>;
-    using range_type = std::pair<Ordinal, Ordinal>;
+    using range_type = std::pair<ordinal_type, ordinal_type>;
 
-    const Ordinal m = A.extent (0);
-    const Ordinal n = A.extent (1);
+    const ordinal_type m = A.extent (0);
+    const ordinal_type n = A.extent (1);
 
     const bool no_trans = (trans[0] == 'N' || trans[0] == 'n');
     x_vec_type x_view = Kokkos::subview (x, range_type (0, no_trans ? n : m));
@@ -474,17 +474,17 @@ namespace TSQR {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using range_type = std::pair<Ordinal, Ordinal>;
+    using range_type = std::pair<ordinal_type, ordinal_type>;
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
-    const Ordinal m = A_view.extent (0);
-    const Ordinal n = A_view.extent (1);
+    const ordinal_type m = A_view.extent (0);
+    const ordinal_type n = A_view.extent (1);
 
-    for (Ordinal k = 0; k < n; ++k) {
+    for (ordinal_type k = 0; k < n; ++k) {
       work_view(k) = ZERO;
     }
 
-    for (Ordinal k = 0; k < n-1; ++k) {
+    for (ordinal_type k = 0; k < n-1; ++k) {
       Scalar& R_kk = R_view(k, k);
       auto A_1k = subview (A_view, ALL (), k);
       auto A_1kp1 =
@@ -493,7 +493,7 @@ namespace TSQR {
       this->LARFG (m + 1, R_kk, A_1k, tau_view[k]);
       this->GEMV ("T", ONE, A_1kp1, A_1k, ZERO, work_view);
 
-      for (Ordinal j = k+1; j < n; ++j) {
+      for (ordinal_type j = k+1; j < n; ++j) {
         Scalar& R_kj = R_view(k, j);
 
         work_view(j-k-1) += R_kj;
@@ -510,22 +510,22 @@ namespace TSQR {
   template<class Ordinal, class Scalar>
   void
   CombineNative<Ordinal, Scalar, false>::
-  factor_inner (const MatView<Ordinal, Scalar>& R,
-                const MatView<Ordinal, Scalar>& A,
+  factor_inner (const MatView<ordinal_type, Scalar>& R,
+                const MatView<ordinal_type, Scalar>& A,
                 Scalar tau[],
                 Scalar work[],
-                const Ordinal lwork)
+                const ordinal_type lwork)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
     using mat_type = matrix_type<scalar_type>;
     using nonconst_vec_type = vector_type<scalar_type>;
-    using range = std::pair<Ordinal, Ordinal>;
+    using range = std::pair<ordinal_type, ordinal_type>;
 
-    const Ordinal numRows (A.extent (0));
-    const Ordinal A_numCols (A.extent (1));
-    const Ordinal lda (A.stride (1));
-    const Ordinal R_numCols (R.extent (1));
+    const ordinal_type numRows (A.extent (0));
+    const ordinal_type A_numCols (A.extent (1));
+    const ordinal_type lda (A.stride (1));
+    const ordinal_type R_numCols (R.extent (1));
 
     mat_type A_full (A.data (), lda, A_numCols);
     mat_type A_view = subview (A_full, range (0, numRows), ALL ());
@@ -552,15 +552,15 @@ namespace TSQR {
     using const_vec_type = vector_type<const scalar_type>;
     constexpr scalar_type ZERO {0.0};
 
-    const Ordinal m = A.extent (0);
-    const Ordinal ncols_Q = A.extent (1);
-    const Ordinal ncols_C = C_top.extent (1);
+    const ordinal_type m = A.extent (0);
+    const ordinal_type ncols_Q = A.extent (1);
+    const ordinal_type ncols_C = C_top.extent (1);
 
-    for (Ordinal i = 0; i < ncols_C; ++i) {
+    for (ordinal_type i = 0; i < ncols_C; ++i) {
       work(i) = ZERO;
     }
 
-    Ordinal j_start, j_end, j_step;
+    ordinal_type j_start, j_end, j_step;
     if (applyType == ApplyType::NoTranspose) {
       j_start = ncols_Q - 1;
       j_end = -1; // exclusive
@@ -571,18 +571,18 @@ namespace TSQR {
       j_end = ncols_Q; // exclusive
       j_step = +1;
     }
-    for (Ordinal j = j_start; j != j_end; j += j_step) {
+    for (ordinal_type j = j_start; j != j_end; j += j_step) {
       const_vec_type A_1j = subview (A, ALL (), j);
 
       //blas.GEMV ("T", m, ncols_C, ONE, C_bot, ldc_bot, A_1j, 1, ZERO, &y[0], 1);
-      for (Ordinal i = 0; i < ncols_C; ++i) {
+      for (ordinal_type i = 0; i < ncols_C; ++i) {
         work(i) = ZERO;
-        for (Ordinal k = 0; k < m; ++k) {
+        for (ordinal_type k = 0; k < m; ++k) {
           work(i) += A_1j(k) * C_bot(k, i);
         }
         work(i) += C_top(j, i);
       }
-      for (Ordinal k = 0; k < ncols_C; ++k) {
+      for (ordinal_type k = 0; k < ncols_C; ++k) {
         C_top(j, k) -= tau[j] * work(k);
       }
 
@@ -594,12 +594,12 @@ namespace TSQR {
   void
   CombineNative<Ordinal, Scalar, false>::
   apply_inner (const ApplyType& applyType,
-               const MatView<Ordinal, const Scalar>& A,
+               const MatView<ordinal_type, const Scalar>& A,
                const Scalar tau[],
-               const MatView<Ordinal, Scalar>& C_top,
-               const MatView<Ordinal, Scalar>& C_bot,
+               const MatView<ordinal_type, Scalar>& C_top,
+               const MatView<ordinal_type, Scalar>& C_bot,
                Scalar work[],
-               const Ordinal lwork)
+               const ordinal_type lwork)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -607,11 +607,11 @@ namespace TSQR {
     using nonconst_mat_type = matrix_type<scalar_type>;
     using const_vec_type = vector_type<const scalar_type>;
     using nonconst_vec_type = vector_type<scalar_type>;
-    using range_type = std::pair<Ordinal, Ordinal>;
+    using range_type = std::pair<ordinal_type, ordinal_type>;
 
-    const Ordinal m = A.extent (0);
-    const Ordinal ncols_Q = A.extent (1);
-    const Ordinal ncols_C = C_top.extent (1);
+    const ordinal_type m = A.extent (0);
+    const ordinal_type ncols_Q = A.extent (1);
+    const ordinal_type ncols_C = C_top.extent (1);
 
     const_mat_type A_full (A.data (), A.stride (1), ncols_Q);
     auto A_view = subview (A_full, range_type (0, m), ALL ());
@@ -639,16 +639,16 @@ namespace TSQR {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using range_type = std::pair<Ordinal, Ordinal>;
+    using range_type = std::pair<ordinal_type, ordinal_type>;
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
 
-    const Ordinal n = R_top.extent (0);
-    for (Ordinal k = 0; k < n; ++k) {
+    const ordinal_type n = R_top.extent (0);
+    for (ordinal_type k = 0; k < n; ++k) {
       work_view(k) = ZERO;
     }
 
-    for (Ordinal k = 0; k < n-1; ++k) {
+    for (ordinal_type k = 0; k < n-1; ++k) {
       scalar_type& R_top_kk = R_top(k, k);
       auto R_bot_1k = subview (R_bot, ALL (), k);
       auto R_bot_1kp1 =
@@ -662,7 +662,7 @@ namespace TSQR {
 
       this->GEMV ("T", ONE, R_bot_1kp1, R_bot_1k, ZERO, work_view);
 
-      for (Ordinal j = k+1; j < n; ++j) {
+      for (ordinal_type j = k+1; j < n; ++j) {
         scalar_type& R_top_kj = R_top(k, j);
         work_view(j-k-1) += R_top_kj;
         R_top_kj -= tau_view[k] * work_view(j-k-1);
@@ -681,17 +681,17 @@ namespace TSQR {
   template<class Ordinal, class Scalar>
   void
   CombineNative<Ordinal, Scalar, false>::
-  factor_pair (const MatView<Ordinal, Scalar>& R_top,
-               const MatView<Ordinal, Scalar>& R_bot,
+  factor_pair (const MatView<ordinal_type, Scalar>& R_top,
+               const MatView<ordinal_type, Scalar>& R_bot,
                Scalar tau[],
                Scalar work[],
-               const Ordinal lwork)
+               const ordinal_type lwork)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using range_type = std::pair<Ordinal, Ordinal>;
+    using range_type = std::pair<ordinal_type, ordinal_type>;
 
-    const Ordinal numCols = R_top.extent (1);
+    const ordinal_type numCols = R_top.extent (1);
     matrix_type<scalar_type> R_top_full
       (R_top.data(), R_top.stride (1), numCols);
     matrix_type<scalar_type> R_bot_full
@@ -731,23 +731,23 @@ namespace TSQR {
   void
   CombineNative<Ordinal, Scalar, false>::
   apply_pair (const ApplyType& applyType,
-              const MatView<Ordinal, const Scalar>& R_bot,
+              const MatView<ordinal_type, const Scalar>& R_bot,
               const Scalar tau[],
-              const MatView<Ordinal, Scalar>& C_top,
-              const MatView<Ordinal, Scalar>& C_bot,
+              const MatView<ordinal_type, Scalar>& C_top,
+              const MatView<ordinal_type, Scalar>& C_bot,
               Scalar work[],
-              const Ordinal lwork)
+              const ordinal_type lwork)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using range_type = std::pair<Ordinal, Ordinal>;
+    using range_type = std::pair<ordinal_type, ordinal_type>;
     using const_mat_type = matrix_type<const scalar_type>;
     using nonconst_mat_type = matrix_type<scalar_type>;
     using const_vec_type = vector_type<const scalar_type>;
     using nonconst_vec_type = vector_type<scalar_type>;
 
-    const Ordinal ncols_Q = R_bot.extent (1);
-    const Ordinal ncols_C = C_top.extent (1);
+    const ordinal_type ncols_Q = R_bot.extent (1);
+    const ordinal_type ncols_C = C_top.extent (1);
     const_mat_type R_bot_full
       (R_bot.data (), R_bot.stride (1), ncols_Q);
     nonconst_mat_type C_top_full
@@ -781,10 +781,10 @@ namespace TSQR {
     using Kokkos::subview;
     using const_vec_type = vector_type<const scalar_type>;
     constexpr scalar_type ZERO {0.0};
-    const Ordinal ncols_C = C_top.extent (1);
-    const Ordinal ncols_Q = R_bot.extent (1);
+    const ordinal_type ncols_C = C_top.extent (1);
+    const ordinal_type ncols_Q = R_bot.extent (1);
 
-    Ordinal j_start, j_end, j_step;
+    ordinal_type j_start, j_end, j_step;
     if (applyType == ApplyType::NoTranspose) {
       j_start = ncols_Q - 1;
       j_end = -1; // exclusive
@@ -795,7 +795,7 @@ namespace TSQR {
       j_end = ncols_Q; // exclusive
       j_step = +1;
     }
-    for (Ordinal j_Q = j_start; j_Q != j_end; j_Q += j_step) {
+    for (ordinal_type j_Q = j_start; j_Q != j_end; j_Q += j_step) {
       // Using Householder reflector stored in column j_Q of R_bot
       const_vec_type R_bot_col = subview (R_bot, ALL (), j_Q);
 
@@ -803,7 +803,7 @@ namespace TSQR {
       // (inclusive): (Output is length ncols_C row vector)
       //
       // work(1:j) := R_bot(1:j,j)' * C_bot(1:j, 1:ncols_C) - C_top(j, 1:ncols_C)
-      for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
+      for (ordinal_type j_C = 0; j_C < ncols_C; ++j_C) {
         // For each column j_C of [C_top; C_bot], update row j_Q
         // of C_top and rows 1:j_Q of C_bot.  (Again, this is in
         // 1-based indexing notation.
@@ -811,13 +811,13 @@ namespace TSQR {
         scalar_type work_j_C = ZERO;
         const_vec_type C_bot_col = subview (C_bot, ALL (), j_C);
 
-        for (Ordinal k = 0; k <= j_Q; ++k) {
+        for (ordinal_type k = 0; k <= j_Q; ++k) {
           work_j_C += R_bot_col(k) * C_bot_col(k);
         }
         work_j_C += C_top(j_Q, j_C);
         work_view(j_C) = work_j_C;
       }
-      for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
+      for (ordinal_type j_C = 0; j_C < ncols_C; ++j_C) {
         C_top(j_Q, j_C) -= tau_view[j_Q] * work_view(j_C);
       }
       this->GER (-tau_view[j_Q], R_bot_col, work_view, C_bot);

@@ -354,8 +354,8 @@ namespace TSQR {
 
       // Workspace array for factorization and applying the Q factor.
       // We recycle this workspace for all tests.
-      const Ordinal lwork
-        (combiner.work_size (numRows, numCols, numCols));
+      const Ordinal lwork =
+        combiner.work_size (numRows, numCols, numCols);
       vector<Scalar> work (lwork);
 
       if (debug) {
@@ -573,8 +573,8 @@ namespace TSQR {
 
       // Workspace array for factorization and applying the Q factor.
       // We recycle this workspace for all tests.
-      const Ordinal lwork
-        (combiner.work_size (numRows, numCols, numCols));
+      const Ordinal lwork =
+        combiner.work_size (numRows, numCols, numCols);
       vector<Scalar> work (lwork);
 
       if (debug) {

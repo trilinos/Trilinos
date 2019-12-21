@@ -442,7 +442,7 @@ namespace TSQR {
       using LO = LocalOrdinal;
       CacheBlocker<LO, Scalar> blocker (nrows, ncols, strategy_);
       auto& combine = this->getMyCombine (ncols);
-      const LO lwork (combine.work_size (nrows, ncols, ncols));
+      const LO lwork = combine.work_size (nrows, ncols, ncols);
       std::vector<Scalar> work (lwork);
       Teuchos::RCP<my_factor_output_type> tau_arrays
         (new my_factor_output_type);
@@ -592,7 +592,7 @@ namespace TSQR {
       CacheBlocker<LO, Scalar> blocker (nrows, ncols_Q, strategy_);
       auto& combine =
         this->getMyCombine (std::max (ncols_Q, ncols_C));
-      const LO lwork (combine.work_size (nrows, ncols_Q, ncols_C));
+      const LO lwork = combine.work_size (nrows, ncols_Q, ncols_C);
       std::vector<Scalar> work (lwork);
 
       const bool transposed = apply_type.transposed ();

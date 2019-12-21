@@ -320,8 +320,8 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const Ordinal lwork
-          (combiner.work_size (numRows, numCols, numCols));
+        const Ordinal lwork =
+          combiner.work_size (numRows, numCols, numCols);
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
@@ -419,8 +419,8 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const Ordinal lwork
-          (combiner.work_size (numRows, numCols, numCols));
+        const Ordinal lwork =
+          combiner.work_size (numRows, numCols, numCols);
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
@@ -514,8 +514,8 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const Ordinal lwork
-          (combiner.work_size (numRows, numCols, numCols));
+        const Ordinal lwork =
+          combiner.work_size (numRows, numCols, numCols);
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
@@ -621,8 +621,8 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const Ordinal lwork
-          (combiner.work_size (numRows, numCols, numCols));
+        const Ordinal lwork =
+          combiner.work_size (numRows, numCols, numCols);
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
@@ -714,8 +714,8 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const Ordinal lwork
-          (combiner.work_size (2 * numCols, numCols, numCols));
+        const Ordinal lwork =
+          combiner.work_size (2 * numCols, numCols, numCols);
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.
@@ -822,8 +822,8 @@ namespace TSQR {
         combine_type combiner;
 
         // Work space array for factorization and applying the Q factor.
-        const Ordinal lwork
-          (combiner.work_size (2 * numCols, numCols, numCols));
+        const Ordinal lwork =
+          combiner.work_size (2 * numCols, numCols, numCols);
         std::vector<Scalar> work (lwork);
 
         // A few warmup runs just to avoid timing anomalies.

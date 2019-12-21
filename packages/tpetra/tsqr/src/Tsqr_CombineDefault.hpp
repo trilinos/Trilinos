@@ -67,8 +67,8 @@ namespace TSQR {
   public:
     using ordinal_type = Ordinal;
     using scalar_type = Scalar;
-    using const_mat_view_type = MatView<Ordinal, const Scalar>;
-    using mat_view_type = MatView<Ordinal, Scalar>;
+    using const_mat_view_type = MatView<ordinal_type, const Scalar>;
+    using mat_view_type = MatView<ordinal_type, Scalar>;
 
     ~CombineDefault () override = default;
 
@@ -87,10 +87,10 @@ namespace TSQR {
       return false;
     }
 
-    size_t
-    work_size (const Ordinal num_rows_Q,
-               const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const override
+    ordinal_type
+    work_size (const ordinal_type num_rows_Q,
+               const ordinal_type num_cols_Q,
+               const ordinal_type num_cols_C) const override
     {
       using STS = Teuchos::ScalarTraits<Scalar>;
 
@@ -110,14 +110,14 @@ namespace TSQR {
                                       nullptr, lda, nullptr,
                                       nullptr, ldc);
       TEUCHOS_ASSERT( lwork2 >= 0 );
-      return size_t (std::max (lwork1, lwork2));
+      return std::max (lwork1, lwork2);
     }
 
     void
-    factor_first (const MatView<Ordinal, Scalar>& A,
+    factor_first (const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) override
+                  const ordinal_type lwork) override
     {
       lapack_.compute_QR (A.extent (0), A.extent (1),
                           A.data (), A.stride (1),
@@ -125,29 +125,29 @@ namespace TSQR {
     }
 
     void
-    factor_first (Matrix<Ordinal, Scalar>& A,
+    factor_first (Matrix<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork)
+                  const ordinal_type lwork)
     {
-      MatView<Ordinal, Scalar> A_view
+      MatView<ordinal_type, Scalar> A_view
         (A.extent (0), A.extent (1), A.data (), A.stride (1));
       this->factor_first (A_view, tau, work, lwork);
     }
 
     void
     apply_first (const ApplyType& applyType,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C,
+                 const MatView<ordinal_type, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork) override
+                 const ordinal_type lwork) override
     {
-      const Ordinal nrows = A.extent(0);
-      const Ordinal ncols_C = C.extent(1);
-      const Ordinal ncols_A = A.extent(1);
-      const Ordinal lda = A.stride(1);
-      const Ordinal ldc = C.stride(1);
+      const ordinal_type nrows = A.extent(0);
+      const ordinal_type ncols_C = C.extent(1);
+      const ordinal_type ncols_A = A.extent(1);
+      const ordinal_type lda = A.stride(1);
+      const ordinal_type ldc = C.stride(1);
 
       // LAPACK has the nice feature that it only reads the first
       // letter of input strings that specify things like which side
@@ -161,34 +161,34 @@ namespace TSQR {
     }
 
     void
-    factor_inner (const MatView<Ordinal, Scalar>& R,
-                  const MatView<Ordinal, Scalar>& A,
+    factor_inner (const MatView<ordinal_type, Scalar>& R,
+                  const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) override
+                  const ordinal_type lwork) override
     {
-      const Ordinal m = A.extent (0);
-      const Ordinal n = A.extent (1);
-      const Ordinal lda = A.stride (1);
+      const ordinal_type m = A.extent (0);
+      const ordinal_type n = A.extent (1);
+      const ordinal_type lda = A.stride (1);
       factor_inner_impl (m, n, R.data (), R.stride (1),
                          A.data (), lda, tau, work, lwork);
     }
-    
+
     void
     apply_inner (const ApplyType& apply_type,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C_top,
-                 const MatView<Ordinal, Scalar>& C_bot,
+                 const MatView<ordinal_type, Scalar>& C_top,
+                 const MatView<ordinal_type, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork) override
+                 const ordinal_type lwork) override
     {
-      const Ordinal m = A.extent (0);
-      TEUCHOS_ASSERT( m == Ordinal (C_bot.extent (0)) );
-      const Ordinal ncols_Q = A.extent (1);
-      const Ordinal ncols_C = C_top.extent (1);
-      TEUCHOS_ASSERT( ncols_C == Ordinal (C_bot.extent (1)) );
-      const Ordinal numRows = ncols_Q + m;
+      const ordinal_type m = A.extent (0);
+      TEUCHOS_ASSERT( m == ordinal_type (C_bot.extent (0)) );
+      const ordinal_type ncols_Q = A.extent (1);
+      const ordinal_type ncols_C = C_top.extent (1);
+      TEUCHOS_ASSERT( ncols_C == ordinal_type (C_bot.extent (1)) );
+      const ordinal_type numRows = ncols_Q + m;
 
       A_buf_.reshape (numRows, ncols_Q);
       deep_copy (A_buf_, Scalar {});
@@ -214,17 +214,17 @@ namespace TSQR {
 
   private:
     void
-    factor_inner_impl (const Ordinal m,
-                       const Ordinal n,
+    factor_inner_impl (const ordinal_type m,
+                       const ordinal_type n,
                        Scalar R[],
-                       const Ordinal ldr,
+                       const ordinal_type ldr,
                        Scalar A[],
-                       const Ordinal lda,
+                       const ordinal_type lda,
                        Scalar tau[],
                        Scalar work[],
-                       const Ordinal lwork)
+                       const ordinal_type lwork)
     {
-      const Ordinal numRows = m + n;
+      const ordinal_type numRows = m + n;
 
       A_buf_.reshape (numRows, n);
       deep_copy (A_buf_, Scalar {});
@@ -232,13 +232,13 @@ namespace TSQR {
       // we only want to include the upper triangle in the
       // factorization.  Thus, only copy the upper triangle of R into
       // the appropriate place in the buffer.
-      MatView<Ordinal, Scalar> R_view (n, n, R, ldr);
-      MatView<Ordinal, Scalar> A_buf_top (n, n, A_buf_.data(),
+      MatView<ordinal_type, Scalar> R_view (n, n, R, ldr);
+      MatView<ordinal_type, Scalar> A_buf_top (n, n, A_buf_.data(),
                                           A_buf_.stride(1));
       deep_copy (A_buf_top, R_view);
 
-      MatView<Ordinal, Scalar> A_view (m, n, A, lda);
-      MatView<Ordinal, Scalar> A_buf_bot (m, n, &A_buf_(n, 0),
+      MatView<ordinal_type, Scalar> A_view (m, n, A, lda);
+      MatView<ordinal_type, Scalar> A_buf_bot (m, n, &A_buf_(n, 0),
                                           A_buf_.stride(1));
       deep_copy (A_buf_bot, A_view);
       lapack_.compute_QR (numRows, n, A_buf_.data (),
@@ -252,14 +252,14 @@ namespace TSQR {
 
   public:
     void
-    factor_pair (const MatView<Ordinal, Scalar>& R_top,
-                 const MatView<Ordinal, Scalar>& R_bot,
+    factor_pair (const MatView<ordinal_type, Scalar>& R_top,
+                 const MatView<ordinal_type, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork) override
+                 const ordinal_type lwork) override
     {
-      const Ordinal numRows = Ordinal(2) * R_top.extent (1);
-      const Ordinal numCols = R_top.extent (1);
+      const ordinal_type numRows = ordinal_type(2) * R_top.extent (1);
+      const ordinal_type numCols = R_top.extent (1);
 
       A_buf_.reshape (numRows, numCols);
       deep_copy (A_buf_, Scalar {});
@@ -285,17 +285,17 @@ namespace TSQR {
 
     void
     apply_pair (const ApplyType& apply_type,
-                const MatView<Ordinal, const Scalar>& R_bot,
+                const MatView<ordinal_type, const Scalar>& R_bot,
                 const Scalar tau[],
-                const MatView<Ordinal, Scalar>& C_top,
-                const MatView<Ordinal, Scalar>& C_bot,
+                const MatView<ordinal_type, Scalar>& C_top,
+                const MatView<ordinal_type, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork) override
+                const ordinal_type lwork) override
     {
-      const Ordinal ncols_C = C_top.extent (1);
-      const Ordinal ncols_Q = R_bot.extent (1);
-      const Ordinal numRows = Ordinal(2) * ncols_Q;
-      const Ordinal ldr_bot = R_bot.stride (1);
+      const ordinal_type ncols_C = C_top.extent (1);
+      const ordinal_type ncols_Q = R_bot.extent (1);
+      const ordinal_type numRows = ordinal_type(2) * ncols_Q;
+      const ordinal_type ldr_bot = R_bot.stride (1);
 
       A_buf_.reshape (numRows, ncols_Q);
       deep_copy (A_buf_, Scalar {});
@@ -320,8 +320,8 @@ namespace TSQR {
 
   private:
     Impl::Lapack<Scalar> lapack_;
-    Matrix<Ordinal, Scalar> A_buf_;
-    Matrix<Ordinal, Scalar> C_buf_;
+    Matrix<ordinal_type, Scalar> A_buf_;
+    Matrix<ordinal_type, Scalar> C_buf_;
   };
 } // namespace TSQR
 

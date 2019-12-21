@@ -393,8 +393,8 @@ namespace TSQR {
           std::vector<scalar_type> tau (numCols);
 
           auto& combine = this->getCombine (numCols);
-          const LocalOrdinal lwork
-            (combine.work_size (2 * numCols, numCols, numCols));
+          const ordinal_type lwork =
+            combine.work_size (2 * numCols, numCols, numCols);
           work_.resize (lwork);
           combine.factor_pair (R_mine, R_other.view (),
                                tau.data (), work_.data (), lwork);
@@ -415,11 +415,11 @@ namespace TSQR {
                         const rank_type P_first,
                         const rank_type P_last,
                         const rank_type curpos,
-                        std::vector< matrix_type >& QFactors,
-                        std::vector< std::vector< scalar_type > >& tauArrays)
+                        std::vector<matrix_type>& QFactors,
+                        std::vector<std::vector<scalar_type>>& tauArrays)
     {
       using LO = LocalOrdinal;
-      
+
       if (P_last < P_first) {
         std::ostringstream os;
         os << "explicitQBroadcast: interval [P_first=" << P_first
@@ -462,8 +462,8 @@ namespace TSQR {
             (Q_mine.extent (0) + Q_other.extent (0));
           const LO pair_ncols (Q_mine.extent (1));
           auto& combine = this->getCombine (pair_ncols);
-          const LO lwork
-            (combine.work_size (pair_nrows, pair_ncols, pair_ncols));
+          const LO lwork =
+            combine.work_size (pair_nrows, pair_ncols, pair_ncols);
           if (lwork > LO (work_.size ())) {
             work_.resize (lwork);
           }

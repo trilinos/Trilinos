@@ -110,10 +110,10 @@ namespace TSQR {
     /// \param num_cols_C [in] Number of columns of the matrix output
     ///   of apply_first, apply_inner, or apply_pair (use the max of
     ///   all three).
-    virtual size_t
-    work_size (const Ordinal num_rows_Q,
-               const Ordinal num_cols_Q,
-               const Ordinal num_cols_C) const = 0;
+    virtual ordinal_type
+    work_size (const ordinal_type num_rows_Q,
+               const ordinal_type num_cols_Q,
+               const ordinal_type num_cols_C) const = 0;
 
     /// \brief Factor the first cache block.
     ///
@@ -131,10 +131,10 @@ namespace TSQR {
     ///   scaling factors for the Householder reflectors
     /// \param work [out] Workspace array of length ncols
     virtual void
-    factor_first (const MatView<Ordinal, Scalar>& A,
+    factor_first (const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) = 0;
+                  const ordinal_type lwork) = 0;
 
     /// \brief Apply the result of factor_first() to C.
     ///
@@ -142,11 +142,11 @@ namespace TSQR {
     /// implicitly in A and tau, to the matrix C.
     virtual void
     apply_first (const ApplyType& applyType,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C,
+                 const MatView<ordinal_type, Scalar>& C,
                  Scalar work[],
-                 const Ordinal lwork) = 0;
+                 const ordinal_type lwork) = 0;
 
     /// \brief Factor [R; A] for square upper triangular R and cache block A.
     ///
@@ -183,11 +183,11 @@ namespace TSQR {
     /// \param work [out] Workspace (length >= n; don't need lwork or
     ///   workspace query)
     virtual void
-    factor_inner (const MatView<Ordinal, Scalar>& R,
-                  const MatView<Ordinal, Scalar>& A,
+    factor_inner (const MatView<ordinal_type, Scalar>& R,
+                  const MatView<ordinal_type, Scalar>& A,
                   Scalar tau[],
                   Scalar work[],
-                  const Ordinal lwork) = 0;
+                  const ordinal_type lwork) = 0;
 
     /// Apply the result of factor_inner().
     ///
@@ -218,12 +218,12 @@ namespace TSQR {
     /// \param work [out]     workspace array of length ncols_C
     virtual void
     apply_inner (const ApplyType& apply_type,
-                 const MatView<Ordinal, const Scalar>& A,
+                 const MatView<ordinal_type, const Scalar>& A,
                  const Scalar tau[],
-                 const MatView<Ordinal, Scalar>& C_top,
-                 const MatView<Ordinal, Scalar>& C_bot,
+                 const MatView<ordinal_type, Scalar>& C_top,
+                 const MatView<ordinal_type, Scalar>& C_bot,
                  Scalar work[],
-                 const Ordinal lwork) = 0;
+                 const ordinal_type lwork) = 0;
 
     /// \brief Factor the pair of square upper triangular matrices
     ///   [R_top; R_bot].
@@ -231,11 +231,11 @@ namespace TSQR {
     /// Store the resulting R factor in R_top, and the resulting
     /// Householder reflectors implicitly in R_bot and tau.
     virtual void
-    factor_pair (const MatView<Ordinal, Scalar>& R_top,
-                 const MatView<Ordinal, Scalar>& R_bot,
+    factor_pair (const MatView<ordinal_type, Scalar>& R_top,
+                 const MatView<ordinal_type, Scalar>& R_bot,
                  Scalar tau[],
                  Scalar work[],
-                 const Ordinal lwork) = 0;
+                 const ordinal_type lwork) = 0;
 
     /// \brief Apply the result of \c factor_pair().
     ///
@@ -250,12 +250,12 @@ namespace TSQR {
     ///   means apply Q^T, and ConjugateTranspose means apply Q^H.
     virtual void
     apply_pair (const ApplyType& apply_type,
-                const MatView<Ordinal, const Scalar>& R_bot,
+                const MatView<ordinal_type, const Scalar>& R_bot,
                 const Scalar tau[],
-                const MatView<Ordinal, Scalar>& C_top,
-                const MatView<Ordinal, Scalar>& C_bot,
+                const MatView<ordinal_type, Scalar>& C_top,
+                const MatView<ordinal_type, Scalar>& C_bot,
                 Scalar work[],
-                const Ordinal lwork) = 0;
+                const ordinal_type lwork) = 0;
   };
 
 } // namespace TSQR

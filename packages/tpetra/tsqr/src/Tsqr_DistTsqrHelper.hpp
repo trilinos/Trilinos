@@ -62,27 +62,30 @@ namespace TSQR {
   class DistTsqrHelper :
     private Impl::CombineUser<LocalOrdinal, Scalar> {
   public:
-    size_t work_size (const LocalOrdinal ncols) {
+    using ordinal_type = LocalOrdinal;
+    using scalar_type = Scalar;
+
+    ordinal_type work_size (const ordinal_type ncols) {
       auto& combine = this->getCombine (ncols);
       return combine.work_size (2*ncols, ncols, ncols);
     }
 
     void
-    factor_pair (const LocalOrdinal ncols,
-                 std::vector<Scalar>& R_mine,
-                 const LocalOrdinal P_mine,
-                 const LocalOrdinal P_other,
-                 const LocalOrdinal tag,
-                 MessengerBase<Scalar>* const messenger,
-                 std::vector<std::vector<Scalar>>& Q_factors,
-                 std::vector<std::vector<Scalar>>& tau_arrays,
-                 Scalar work[],
-                 const LocalOrdinal lwork)
+    factor_pair (const ordinal_type ncols,
+                 std::vector<scalar_type>& R_mine,
+                 const ordinal_type P_mine,
+                 const ordinal_type P_other,
+                 const ordinal_type tag,
+                 MessengerBase<scalar_type>* const messenger,
+                 std::vector<std::vector<scalar_type>>& Q_factors,
+                 std::vector<std::vector<scalar_type>>& tau_arrays,
+                 scalar_type work[],
+                 const ordinal_type lwork)
     {
       using std::endl;
       using std::ostringstream;
       using std::vector;
-      using LO = LocalOrdinal;
+      using LO = ordinal_type;
       if (P_mine == P_other) {
         return; // nothing to do
       }
@@ -90,12 +93,12 @@ namespace TSQR {
       const int P_bot = std::max (P_mine, P_other);
       const LO nelts = ncols * ncols;
       const LO ldr = ncols;
-      MatView<LO, Scalar> R_mine_view
+      MatView<LO, scalar_type> R_mine_view
         (ncols, ncols, R_mine.data (), ldr);
-      vector<Scalar> R_other (nelts);
-      MatView<LO, Scalar> R_other_view
+      vector<scalar_type> R_other (nelts);
+      MatView<LO, scalar_type> R_other_view
         (ncols, ncols, R_other.data (), ldr);
-      vector<Scalar> tau (ncols);
+      vector<scalar_type> tau (ncols);
 
       // Send and receive R factor.
       messenger->swapData (R_mine.data (), R_other.data (),
@@ -126,17 +129,17 @@ namespace TSQR {
     }
 
     void
-    factor_helper (const LocalOrdinal ncols,
-                   std::vector< Scalar >& R_mine,
-                   const LocalOrdinal my_rank,
-                   const LocalOrdinal P_first,
-                   const LocalOrdinal P_last,
-                   const LocalOrdinal tag,
-                   MessengerBase< Scalar >* const messenger,
-                   std::vector< std::vector< Scalar > >& Q_factors,
-                   std::vector< std::vector< Scalar > >& tau_arrays,
-                   Scalar work[],
-                   const LocalOrdinal lwork)
+    factor_helper (const ordinal_type ncols,
+                   std::vector<scalar_type>& R_mine,
+                   const ordinal_type my_rank,
+                   const ordinal_type P_first,
+                   const ordinal_type P_last,
+                   const ordinal_type tag,
+                   MessengerBase<scalar_type>* const messenger,
+                   std::vector<std::vector<scalar_type>>& Q_factors,
+                   std::vector<std::vector<scalar_type>>& tau_arrays,
+                   scalar_type work[],
+                   const ordinal_type lwork)
     {
       using std::endl;
       using std::ostringstream;
@@ -211,26 +214,26 @@ namespace TSQR {
 
     void
     apply_pair (const ApplyType& apply_type,
-                const LocalOrdinal ncols_C,
-                const LocalOrdinal ncols_Q,
-                Scalar C_mine[],
-                const LocalOrdinal ldc_mine,
-                Scalar C_other[], // contiguous ncols_C x ncols_C scratch
-                const LocalOrdinal P_mine,
-                const LocalOrdinal P_other,
-                const LocalOrdinal tag,
-                MessengerBase<Scalar>* const messenger,
-                const std::vector<Scalar>& Q_cur,
-                const std::vector<Scalar>& tau_cur,
-                Scalar work[],
-                const LocalOrdinal lwork)
+                const ordinal_type ncols_C,
+                const ordinal_type ncols_Q,
+                scalar_type C_mine[],
+                const ordinal_type ldc_mine,
+                scalar_type C_other[], // contiguous ncols_C x ncols_C scratch
+                const ordinal_type P_mine,
+                const ordinal_type P_other,
+                const ordinal_type tag,
+                MessengerBase<scalar_type>* const messenger,
+                const std::vector<scalar_type>& Q_cur,
+                const std::vector<scalar_type>& tau_cur,
+                scalar_type work[],
+                const ordinal_type lwork)
     {
       using std::endl;
       using std::ostringstream;
       using std::vector;
-      using LO = LocalOrdinal;
-      using const_mat_view_type = MatView<LO, const Scalar>;
-      using mat_view_type = MatView<LO, Scalar>;
+      using LO = ordinal_type;
+      using const_mat_view_type = MatView<LO, const scalar_type>;
+      using mat_view_type = MatView<LO, scalar_type>;
 
       if (P_mine == P_other) {
         return; // nothing to do
@@ -271,21 +274,21 @@ namespace TSQR {
 
     void
     apply_helper (const ApplyType& apply_type,
-                  const LocalOrdinal ncols_C,
-                  const LocalOrdinal ncols_Q,
-                  Scalar C_mine[],
-                  const LocalOrdinal ldc_mine,
-                  Scalar C_other[], // contiguous ncols_C x ncols_C scratch
-                  const LocalOrdinal my_rank,
-                  const LocalOrdinal P_first,
-                  const LocalOrdinal P_last,
-                  const LocalOrdinal tag,
-                  MessengerBase<Scalar>* const messenger,
-                  const std::vector<std::vector<Scalar>>& Q_factors,
-                  const std::vector<std::vector<Scalar>>& tau_arrays,
-                  const LocalOrdinal cur_pos,
-                  Scalar work[],
-                  const LocalOrdinal lwork)
+                  const ordinal_type ncols_C,
+                  const ordinal_type ncols_Q,
+                  scalar_type C_mine[],
+                  const ordinal_type ldc_mine,
+                  scalar_type C_other[], // contiguous ncols_C x ncols_C scratch
+                  const ordinal_type my_rank,
+                  const ordinal_type P_first,
+                  const ordinal_type P_last,
+                  const ordinal_type tag,
+                  MessengerBase<scalar_type>* const messenger,
+                  const std::vector<std::vector<scalar_type>>& Q_factors,
+                  const std::vector<std::vector<scalar_type>>& tau_arrays,
+                  const ordinal_type cur_pos,
+                  scalar_type work[],
+                  const ordinal_type lwork)
     {
       using std::endl;
       using std::ostringstream;

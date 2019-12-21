@@ -66,7 +66,7 @@ namespace TSQR {
   public:
     using scalar_type = Scalar;
     using ordinal_type = LocalOrdinal;
-    
+
   private:
     using VecVec = std::vector<std::vector<scalar_type>>;
 
@@ -281,7 +281,7 @@ namespace TSQR {
       const int my_rank = messenger_->rank();
       const int first_tag = 0;
 
-      const ordinal_type lwork (helper.work_size (ncols));
+      const ordinal_type lwork = helper.work_size (ncols);
       std::vector<scalar_type> work (lwork);
       helper.factor_helper (ncols, R_local, my_rank, 0, P-1,
                             first_tag, messenger_.get (),
@@ -313,7 +313,7 @@ namespace TSQR {
       const int first_tag = 0;
       std::vector<scalar_type> C_other (ncols_C * ncols_C);
       DistTsqrHelper<ordinal_type, scalar_type> helper;
-      const ordinal_type lwork (helper.work_size (ncols_C));
+      const ordinal_type lwork = helper.work_size (ncols_C);
       std::vector<scalar_type> work (lwork);
 
       const VecVec& Q_factors = factor_output.first;
