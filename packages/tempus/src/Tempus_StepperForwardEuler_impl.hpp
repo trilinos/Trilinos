@@ -24,14 +24,14 @@ StepperForwardEuler<Scalar>::StepperForwardEuler()
   this->setICConsistency(      this->getICConsistencyDefault());
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
 
-  this->setObserver(Teuchos::rcp(new StepperForwardEulerObserver<Scalar>()));
+  this->setObserver();
 }
 
 
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperForwardEulerObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck)
@@ -52,12 +52,22 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperFEObserver_ = obs;
-
-  if (stepperFEObserver_ == Teuchos::null)
-    stepperFEObserver_ = Teuchos::rcp(new StepperForwardEulerObserver<Scalar>());
+  if (obs == Teuchos::null) {
+    // Create default observer, otherwise keep current observer.
+    if (this->stepperObserver_ == Teuchos::null) {
+      stepperFEObserver_ =
+        Teuchos::rcp(new StepperForwardEulerObserver<Scalar>());
+      this->stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperFEObserver_,true);
+    }
+  } else {
+    this->stepperObserver_ = obs;
+    stepperFEObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperForwardEulerObserver<Scalar> >
+        (this->stepperObserver_,true);
+  }
 
   this->isInitialized_ = false;
 }
@@ -95,7 +105,7 @@ void StepperForwardEuler<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    stepperFEObserver_->observeBeginTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
 
@@ -148,7 +158,7 @@ void StepperForwardEuler<Scalar>::takeStep(
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    stepperFEObserver_->observeEndTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

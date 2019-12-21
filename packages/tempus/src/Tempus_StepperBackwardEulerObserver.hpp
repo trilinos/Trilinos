@@ -9,7 +9,6 @@
 #ifndef Tempus_StepperBackwardEulerObserver_hpp
 #define Tempus_StepperBackwardEulerObserver_hpp
 
-#include "Tempus_StepperObserver.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 

@@ -51,7 +51,7 @@ public:
   StepperOperatorSplit(
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
     std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
-    const Teuchos::RCP<StepperOperatorSplitObserver<Scalar> >& obs,
+    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -73,10 +73,11 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
 
-    virtual void setObserver(Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > obs);
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    virtual Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > getObserver() const
-    { return stepperOSObserver_; }
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperOSObserver_; }
 
     virtual void setTempState(Teuchos::RCP<Tempus::SolutionState<Scalar>> state)
       { tempState_ = state; }

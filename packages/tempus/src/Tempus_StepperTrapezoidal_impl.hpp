@@ -31,7 +31,7 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
-  this->setObserver(Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>()));
+  this->setObserver();
   this->setDefaultSolver();
 }
 
@@ -39,7 +39,7 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal()
 template<class Scalar>
 StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperTrapezoidalObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   bool useFSAL,
   std::string ICConsistency,
@@ -65,12 +65,23 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
 
 template<class Scalar>
 void StepperTrapezoidal<Scalar>::setObserver(
-  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperTrapObserver_ = obs;
-
-  if (stepperTrapObserver_ == Teuchos::null)
-    stepperTrapObserver_ = Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
+  if (obs == Teuchos::null) {
+    // Create default observer, otherwise keep current observer.
+    if (this->stepperObserver_ == Teuchos::null) {
+      stepperTrapObserver_ =
+        Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
+      this->stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
+          (stepperTrapObserver_, true);
+     }
+  } else {
+    this->stepperObserver_ = obs;
+    stepperTrapObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperTrapezoidalObserver<Scalar> >
+        (this->stepperObserver_, true);
+  }
 
   this->isInitialized_ = false;
 }
@@ -121,7 +132,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    stepperTrapObserver_->observeBeginTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -156,7 +167,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    stepperTrapObserver_->observeEndTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

@@ -11,7 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_StepperObserver.hpp"
 
 namespace Tempus {
 
@@ -71,6 +70,7 @@ public:
   /// Constructor
   StepperNewmarkExplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -78,7 +78,8 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(Teuchos::RCP<StepperObserver<Scalar> > /*obs*/){}
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }

@@ -56,7 +56,7 @@ TEUCHOS_UNIT_TEST(ERK_Merson45, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperRKObserver<double>());
+  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
 
   bool useFSAL              = stepper->getUseFSALDefault();
   std::string ICConsistency = stepper->getICConsistencyDefault();

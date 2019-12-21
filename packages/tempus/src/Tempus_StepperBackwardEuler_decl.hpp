@@ -49,7 +49,7 @@ public:
   /// Constructor
   StepperBackwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperBackwardEulerObserver<Scalar> >& obs,
+    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
     bool useFSAL,
@@ -62,9 +62,10 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setObserver(Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs);
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    virtual Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > getObserver() const
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return stepperBEObserver_; }
 
     /// Set the predictor

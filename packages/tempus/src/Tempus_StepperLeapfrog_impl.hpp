@@ -24,14 +24,14 @@ StepperLeapfrog<Scalar>::StepperLeapfrog()
   this->setICConsistency(      this->getICConsistencyDefault());
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
 
-  this->setObserver(Teuchos::rcp(new StepperLeapfrogObserver<Scalar>()));
+  this->setObserver();
 }
 
 
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperLeapfrogObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck)
@@ -53,12 +53,18 @@ StepperLeapfrog<Scalar>::StepperLeapfrog(
 
 template<class Scalar>
 void StepperLeapfrog<Scalar>::setObserver(
-  Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperLFObserver_ = obs;
 
-  if (stepperLFObserver_ == Teuchos::null)
-    stepperLFObserver_ = Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
+  if (this->stepperObserver_ == Teuchos::null)
+    this->stepperObserver_  =
+      Teuchos::rcp(new StepperObserverComposite<Scalar>());
+
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
+    obs = Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
+
+  this->stepperObserver_->addObserver(
+      Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> > (obs, true) );
 
   this->isInitialized_ = false;
 }
@@ -107,7 +113,7 @@ void StepperLeapfrog<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    stepperLFObserver_->observeBeginTakeStep(solutionHistory, *this);
+    //this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar time = currentState->getTime();
@@ -157,7 +163,7 @@ void StepperLeapfrog<Scalar>::takeStep(
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    stepperLFObserver_->observeEndTakeStep(solutionHistory, *this);
+    //this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

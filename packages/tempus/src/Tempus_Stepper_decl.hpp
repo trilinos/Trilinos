@@ -19,6 +19,7 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_StepperObserver.hpp"
 
 
 namespace Tempus {
@@ -55,9 +56,6 @@ enum OrderODE {
  *       with ModelEvaluator C using Solver B
  *   - Steppers may maintain their own time history of the solution, e.g.,
  *     BDF steppers.
- *   - Stepper are expected to have a setObserver() and a getObserver()
- *     function, however they will have specific arguments for that
- *     Stepper's Observer, so this can not be enforced by a pure virtual.
  */
 template<class Scalar>
 class Stepper
@@ -79,6 +77,13 @@ public:
     /// Get solver
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
       getSolver() const = 0;
+
+    /// Set Observer
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null) = 0;
+
+    /// Get Observer
+    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const = 0;
 
     /// Initialize after construction and changing input parameters.
     virtual void initialize();

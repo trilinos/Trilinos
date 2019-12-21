@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partition, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperRKObserver<double>());
+  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
   auto solver = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 

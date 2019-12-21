@@ -55,7 +55,7 @@ TEUCHOS_UNIT_TEST(SDIRK_2Stage2ndOrder, Construction)
 
 
   // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperRKObserver<double>());
+  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
   auto solver = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 

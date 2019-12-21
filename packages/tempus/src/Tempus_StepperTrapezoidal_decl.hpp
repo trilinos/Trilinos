@@ -52,7 +52,7 @@ public:
   /// Constructor
   StepperTrapezoidal(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperTrapezoidalObserver<Scalar> >& obs,
+    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -61,10 +61,11 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > obs);
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    virtual Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > getObserver() const
-    { return stepperTrapObserver_; }
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperTrapObserver_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (

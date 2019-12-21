@@ -72,7 +72,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, Construction)
 
   // Full argument list construction.
   stepper = rcp(new Tempus::StepperNewmarkExplicitAForm<double>(
-    model, useFSAL, ICConsistency, ICConsistencyCheck, gamma));
+    model, Teuchos::null, useFSAL, ICConsistency, ICConsistencyCheck, gamma));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }

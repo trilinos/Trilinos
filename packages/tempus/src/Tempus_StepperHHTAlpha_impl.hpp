@@ -256,6 +256,7 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
   this->setAlphaF(             0.0);
   this->setAlphaM(             0.0);
 
+  this->setObserver();
   this->setDefaultSolver();
 }
 
@@ -263,6 +264,7 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
 template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   bool useFSAL,
   std::string ICConsistency,
@@ -288,6 +290,7 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   this->setAlphaF(             alpha_f);
   this->setAlphaM(             alpha_m);
 
+  this->setObserver(obs);
   this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
