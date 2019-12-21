@@ -48,6 +48,7 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
 
 #include <Xpetra_MapExtractor_decl.hpp>
 

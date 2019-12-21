@@ -241,7 +241,6 @@ namespace {
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const size_t numLocal = 10;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
-    using MV  = Xpetra::MultiVector<Scalar,LO,GO,Node>;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -250,6 +249,7 @@ namespace {
 
 
 #ifdef HAVE_XPETRA_TPETRA
+    using MV  = Xpetra::MultiVector<Scalar,LO,GO,Node>;
     typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     RCP<const Xpetra::Map<LO,GO,Node> > map =
       Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);   

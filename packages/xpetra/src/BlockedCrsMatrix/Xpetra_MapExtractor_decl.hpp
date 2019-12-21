@@ -60,6 +60,8 @@
 #include <Xpetra_MapUtils.hpp>
 #include <Xpetra_MultiVector_decl.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_BlockedMultiVector_decl.hpp>
+#include <Xpetra_MultiVectorFactory_decl.hpp>
 
 namespace Xpetra {
 

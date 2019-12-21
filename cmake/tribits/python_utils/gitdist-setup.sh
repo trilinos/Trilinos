@@ -19,10 +19,32 @@ fi
 alias gitdist-status="gitdist dist-repo-status"
 alias gitdist-mod="gitdist --dist-mod-only"
 alias gitdist-mod-status="gitdist --dist-mod-only dist-repo-status"
+
 function gitdist-repo-versions {
   gitdist "$@" --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" | grep -v "^$"
 }
+export -f gitdist-repo-versions
 
-# Setup for completions for git command and gitdist options commands!
-complete -o default -o nospace -F _git -W "dist-repo-status --dist-help --dist-use-git --dist-repos --dist-not-repos --dist-version-file --dist-version-file2 --dist-no-color --dist-debug --dist-no-opt --dist-mod-only --dist-legend" gitdist gitdist-mod
-complete -o default -o nospace -W "--dist-use-git --dist-repos --dist-not-repos --dist-no-color --dist-debug --dist-no-opt --dist-mod-only" gitdist-repo-versions
+function gitdist-show-full-repo-state {
+  echo
+  echo "Repo versions:"
+  echo
+  gitdist-repo-versions "$@"
+  echo
+  echo "Repo branch status:"
+  echo
+  gitdist-status "$@" | grep -v "^$" | grep -v "(tip: to see a legend"
+  echo
+  echo "Repo remotes:"
+  echo
+  gitdist --dist-no-color "$@" remote -v | grep "\(Git Repo\|push\)"
+}
+export -f gitdist-show-full-repo-state
+
+# Setup for completions for git command and gitdist options commands
+complete -o default -o nospace -F _git \
+   -W "dist-repo-status --dist-help --dist-use-git --dist-repos --dist-not-repos --dist-version-file --dist-version-file2 --dist-no-color --dist-debug --dist-no-opt --dist-mod-only --dist-legend" \
+   gitdist gitdist-mod
+complete -o default -o nospace \
+   -W "--dist-use-git --dist-repos --dist-not-repos --dist-no-color --dist-debug --dist-no-opt --dist-mod-only" \
+   gitdist-repo-versions gitdist-show-full-repo-state
