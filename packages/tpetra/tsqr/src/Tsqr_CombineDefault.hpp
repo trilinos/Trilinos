@@ -295,7 +295,6 @@ namespace TSQR {
       const ordinal_type ncols_C = C_top.extent (1);
       const ordinal_type ncols_Q = R_bot.extent (1);
       const ordinal_type numRows = ordinal_type(2) * ncols_Q;
-      const ordinal_type ldr_bot = R_bot.stride (1);
 
       A_buf_.reshape (numRows, ncols_Q);
       deep_copy (A_buf_, Scalar {});
