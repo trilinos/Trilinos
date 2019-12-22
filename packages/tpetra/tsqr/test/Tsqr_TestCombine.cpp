@@ -37,16 +37,9 @@
 // ************************************************************************
 //@HEADER
 
-#include "Tsqr_ConfigDefs.hpp"
-#include "Teuchos_ConfigDefs.hpp" // HAVE_MPI
-#ifdef HAVE_MPI
-#  include "Teuchos_GlobalMPISession.hpp"
-#  include "Teuchos_oblackholestream.hpp"
-#endif // HAVE_MPI
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_Time.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_Time.hpp"
 #include "Tsqr_CombineBenchmark.hpp"
 #include "Tsqr_CombineTest.hpp"
 
@@ -54,7 +47,7 @@
 #  include <complex>
 #endif // HAVE_TPETRATSQR_COMPLEX
 
-#include <fstream>
+#include "Kokkos_Core.hpp"
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -232,10 +225,9 @@ namespace {
   TestParameters
   parseOptions (int argc,
                 char* argv[],
-                const bool allowedToPrint,
+                std::ostream& err,
                 bool& printedHelp)
   {
-    using std::cerr;
     using std::endl;
 
     printedHelp = false;
@@ -336,8 +328,7 @@ namespace {
       cmdLineProc.parse (argc, argv);
     }
     catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
-      if (allowedToPrint)
-        cerr << "Unrecognized command-line option: " << e.what() << endl;
+      err << "Unrecognized command-line option: " << e.what() << endl;
       throw e;
     }
     catch (Teuchos::CommandLineProcessor::HelpPrinted& e) {
@@ -345,18 +336,24 @@ namespace {
       return params; // Don't verify parameters in this case
     }
 
-    if (params.numRows <= 0) {
-      throw std::invalid_argument ("Number of rows must be positive");
-    }
-    else if (params.numCols <= 0) {
-      throw std::invalid_argument ("Number of columns must be positive");
-    }
-    else if (params.numRows < params.numCols) {
-      throw std::invalid_argument ("Number of rows must be >= number of columns");
-    }
-    else if (params.benchmark && params.numTrials < 1) {
-      throw std::invalid_argument ("Benchmark requires numTrials >= 1");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (params.numRows <= 0, std::invalid_argument, "Number of "
+       "rows must be positive, but you set --numRows=" <<
+       params.numRows << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (params.numCols <= 0, std::invalid_argument, "Number of "
+       "columns must be positive, but you set --numCols=" <<
+       params.numCols << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (params.numRows < params.numCols, std::invalid_argument,
+       "Number of rows must be >= number of columns, but "
+       "--numRows=" << params.numRows << " and --numCols=" <<
+       params.numCols << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (params.benchmark && params.numTrials < 1,
+       std::invalid_argument, "If you set --benchmark, then the "
+       "number of trials must be positive, but you set --numTrials="
+       << params.numTrials << ".");
     return params;
   }
 } // namespace (anonymous)
@@ -364,52 +361,34 @@ namespace {
 int
 main (int argc, char *argv[])
 {
+  using std::cout;
+  using std::cerr;
   using std::endl;
-
-#ifdef HAVE_MPI
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-  auto comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
-  // Only Rank 0 gets to write to stdout.  The other MPI process ranks
-  // send their output to something that looks like /dev/null (and
-  // likely is, on Unix-y operating systems).
-  std::ostream& out = (myRank == 0) ? std::cout : blackhole;
-  // Only Rank 0 performs the tests.
-  const bool performingTests = (myRank == 0);
-  const bool allowedToPrint = (myRank == 0);
-#else // Don't HAVE_MPI: single-node test
-  const bool performingTests = true;
-  const bool allowedToPrint = true;
-  std::ostream& out = std::cout;
-#endif // HAVE_MPI
 
   // Fetch command-line parameters.
   bool printedHelp = false;
-  TestParameters params =
-    parseOptions (argc, argv, allowedToPrint, printedHelp);
-  if (printedHelp) {
+  auto params = parseOptions(argc, argv, cerr, printedHelp);
+  if(printedHelp) {
     return EXIT_SUCCESS;
   }
   bool success = false;
   constexpr bool actually_print_caught_exceptions = true;
   try {
-    if (performingTests) {
-      if (params.benchmark) {
-        benchmark (out, params);
-      }
-      // We allow the same run to do both benchmark and verify.
-      if (params.verify) {
-        verify (out, params);
-      }
-      success = true;
-      if (params.printTrilinosTestStuff) {
-        // The Trilinos test framework expects a message like this.
-        out << "\nEnd Result: TEST PASSED" << endl;
-      }
+    Kokkos::ScopeGuard kokkosScope(argc, argv);
+    if(params.benchmark) {
+      benchmark(cout, params);
+    }
+    // We allow the same run to do both benchmark and verify.
+    if(params.verify) {
+      verify(cout, params);
+    }
+    success = true;
+    if(params.printTrilinosTestStuff) {
+      // The Trilinos test framework expects a message like this.
+      cout << "\nEnd Result: TEST PASSED" << endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS
-    (actually_print_caught_exceptions, std::cerr, success);
+    (actually_print_caught_exceptions, cerr, success);
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

@@ -1115,14 +1115,12 @@ main (int argc, char *argv[])
 
   // Fetch command-line parameters.
   bool printedHelp = false;
-  DistTsqrTestParameters params =
-    parseOptions(argc, argv, err, printedHelp);
+  auto params = parseOptions(argc, argv, err, printedHelp);
   if(printedHelp) {
     return EXIT_SUCCESS;
   }
-
   bool success = false;
-  bool verbose = false;
+  constexpr bool actually_print_caught_exceptions = true;
   try {
     if(params.verify) {
       std::vector<int> seed(4);
@@ -1143,6 +1141,7 @@ main (int argc, char *argv[])
       out << "\nEnd Result: TEST PASSED" << std::endl;
     }
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, err, success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS
+    (actually_print_caught_exceptions, err, success);
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
