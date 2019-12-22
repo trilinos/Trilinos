@@ -38,13 +38,8 @@
 //@HEADER
 
 #include "Tsqr_FullTsqrTest.hpp"
-
-#ifdef HAVE_MPI
-#  include "Teuchos_GlobalMPISession.hpp"
-#  include "Teuchos_oblackholestream.hpp"
-#endif // HAVE_MPI
+#include "Tsqr_Test_MpiAndKokkosScope.cpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #ifdef HAVE_TPETRATSQR_COMPLEX
@@ -52,9 +47,6 @@
 #endif // HAVE_TPETRATSQR_COMPLEX
 
 namespace {
-  using Teuchos::CommandLineProcessor;
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
   using Teuchos::parameterList;
 
   // Documentation string to print out if --help is a command-line
@@ -68,29 +60,29 @@ namespace {
     // Given a default valid parameter list from
     // FullTsqrVerifierCaller, fill in the command-line options with
     // their default values.
-    CmdLineOptions (const RCP<const ParameterList>& testParams) :
-      cacheSizeHint (testParams->get<size_t> ("Cache Size Hint")),
-      numRowsLocal (testParams->get<int> ("numRowsLocal")),
-      numCols (testParams->get<int> ("numCols")),
-      contiguousCacheBlocks (testParams->get<bool> ("contiguousCacheBlocks")),
-      testFactorExplicit (testParams->get<bool> ("testFactorExplicit")),
-      testRankRevealing (testParams->get<bool> ("testRankRevealing")),
-      printFieldNames (testParams->get<bool> ("printFieldNames")),
-      printResults (testParams->get<bool> ("printResults")),
-      failIfInaccurate (testParams->get<bool> ("failIfInaccurate")),
-      nodeTsqr (testParams->get<std::string> ("NodeTsqr")),
+    CmdLineOptions(const Teuchos::RCP<const Teuchos::ParameterList>& testParams) :
+      cacheSizeHint(testParams->get<size_t>("Cache Size Hint")),
+      numRowsLocal(testParams->get<int>("numRowsLocal")),
+      numCols(testParams->get<int>("numCols")),
+      contiguousCacheBlocks(testParams->get<bool>("contiguousCacheBlocks")),
+      testFactorExplicit(testParams->get<bool>("testFactorExplicit")),
+      testRankRevealing(testParams->get<bool>("testRankRevealing")),
+      printFieldNames(testParams->get<bool>("printFieldNames")),
+      printResults(testParams->get<bool>("printResults")),
+      failIfInaccurate(testParams->get<bool>("failIfInaccurate")),
+      nodeTsqr(testParams->get<std::string>("NodeTsqr")),
 #ifdef HAVE_TPETRATSQR_COMPLEX
-      testComplex (true),
+      testComplex(true),
 #else
-      testComplex (false),
+      testComplex(false),
 #endif // HAVE_TPETRATSQR_COMPLEX
-      testReal (true),
-      verbose (testParams->get<bool> ("verbose"))
+      testReal(true),
+      verbose(testParams->get<bool>("verbose"))
     {}
 
     size_t cacheSizeHint = 0;
     int numRowsLocal = 10000;
-    int numCols= 5;
+    int numCols = 5;
     bool contiguousCacheBlocks = false;
     bool testFactorExplicit = true;
     bool testRankRevealing = true;
@@ -116,105 +108,114 @@ namespace {
     //
     // \param argv [in] As usual in C(++).
     //
-    // \param allowedToPrint [in] Whether this (MPI) process is allowed
-    //   to print to stdout/stderr.  Different per (MPI) process.
-    //
-    // \param printedHelp [out] Whether this (MPI) process printed the
-    //   "help" display (summary of command-line options)
-    //
     // \param testParams [in] List of test parameters for the
     //   FullTsqrVerifierCaller.
     //
+    // \param err [out] Output stream to which to print error
+    //   messages.  Different per (MPI) process.
+    //
     // \return Whether help was printed.
     bool
-    read (int argc,
-          char* argv[],
-          const RCP<const ParameterList>& defaultParams,
-          const bool allowedToPrint)
+    read(int argc,
+         char* argv[],
+         const Teuchos::RCP<const Teuchos::ParameterList>& defaultParams,
+         std::ostream& err)
     {
-      using std::cerr;
+      using Teuchos::CommandLineProcessor;
       using std::endl;
 
       try {
         const bool throwExceptions = true;
         const bool recognizeAllOptions = true;
-        CommandLineProcessor cmdLineProc (throwExceptions,
-                                          recognizeAllOptions);
-        cmdLineProc.setDocString (docString);
-        cmdLineProc.setOption ("testReal",
-                               "noTestReal",
-                               &testReal,
-                               "Test real Scalar types");
-        cmdLineProc.setOption
-          ("testComplex",
-           "noTestComplex",
-           &testComplex,
-           "Test complex Scalar types; must be false if complex "
-           "Scalar types were disabled at configure (pre-build) "
-           "time");
+        CommandLineProcessor cmdLineProc(throwExceptions,
+                                         recognizeAllOptions);
+        cmdLineProc.setDocString(docString);
+        cmdLineProc.setOption("testReal",
+                              "noTestReal",
+                              &testReal,
+                              "Test real Scalar types");
+        cmdLineProc.setOption("testComplex",
+                              "noTestComplex",
+                              &testComplex,
+                              "Test complex Scalar types; must be "
+                              "false if complex Scalar types were "
+                              "disabled at configure (pre-build) "
+                              "time");
         // CommandLineProcessor takes int arguments, but not size_t
         // arguments, so we have to read in the argument as an int and
         // convert back to size_t later.
         int cacheSizeHintAsInt = cacheSizeHint;
-        cmdLineProc.setOption ("cacheSizeHint",
-                               &cacheSizeHintAsInt,
-                               defaultParams->getEntry("Cache Size Hint").docString().c_str());
-        cmdLineProc.setOption ("numRowsLocal",
-                               &numRowsLocal,
-                               defaultParams->getEntry("numRowsLocal").docString().c_str());
-        cmdLineProc.setOption ("numCols",
-                               &numCols,
-                               defaultParams->getEntry("numCols").docString().c_str());
-        cmdLineProc.setOption ("contiguousCacheBlocks",
-                               "noContiguousCacheBlocks",
-                               &contiguousCacheBlocks,
-                               defaultParams->getEntry("contiguousCacheBlocks").docString().c_str());
-        cmdLineProc.setOption ("testFactorExplicit",
-                               "noTestFactorExplicit",
-                               &testFactorExplicit,
-                               defaultParams->getEntry("testFactorExplicit").docString().c_str());
-        cmdLineProc.setOption ("testRankRevealing",
-                               "noTestRankRevealing",
-                               &testRankRevealing,
-                               defaultParams->getEntry("testRankRevealing").docString().c_str());
-        cmdLineProc.setOption ("printFieldNames",
-                               "noPrintFieldNames",
-                               &printFieldNames,
-                               defaultParams->getEntry("printFieldNames").docString().c_str());
-        cmdLineProc.setOption ("printResults",
-                               "noPrintResults",
-                               &printResults,
-                               defaultParams->getEntry("printResults").docString().c_str());
-        cmdLineProc.setOption ("failIfInaccurate",
-                               "noFailIfInaccurate",
-                               &failIfInaccurate,
-                               defaultParams->getEntry("failIfInaccurate").docString().c_str());
-        cmdLineProc.setOption ("NodeTsqr",
-                               &nodeTsqr,
-                               defaultParams->getEntry("NodeTsqr").docString().c_str());
-        cmdLineProc.setOption ("verbose",
-                               "quiet",
-                               &verbose,
-                               defaultParams->getEntry("verbose").docString().c_str());
-        cmdLineProc.parse (argc, argv);
-        cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
+        cmdLineProc.setOption("cacheSizeHint",
+                              &cacheSizeHintAsInt,
+                              defaultParams->getEntry
+                              ("Cache Size Hint").docString().c_str());
+        cmdLineProc.setOption("numRowsLocal",
+                              &numRowsLocal,
+                              defaultParams->getEntry
+                              ("numRowsLocal").docString().c_str());
+        cmdLineProc.setOption("numCols",
+                              &numCols,
+                              defaultParams->getEntry
+                              ("numCols").docString().c_str());
+        cmdLineProc.setOption("contiguousCacheBlocks",
+                              "noContiguousCacheBlocks",
+                              &contiguousCacheBlocks,
+                              defaultParams->getEntry
+                              ("contiguousCacheBlocks").docString().c_str());
+        cmdLineProc.setOption("testFactorExplicit",
+                              "noTestFactorExplicit",
+                              &testFactorExplicit,
+                              defaultParams->getEntry
+                              ("testFactorExplicit").docString().c_str());
+        cmdLineProc.setOption("testRankRevealing",
+                              "noTestRankRevealing",
+                              &testRankRevealing,
+                              defaultParams->getEntry
+                              ("testRankRevealing").docString().c_str());
+        cmdLineProc.setOption("printFieldNames",
+                              "noPrintFieldNames",
+                              &printFieldNames,
+                              defaultParams->getEntry
+                              ("printFieldNames").docString().c_str());
+        cmdLineProc.setOption("printResults",
+                              "noPrintResults",
+                              &printResults,
+                              defaultParams->getEntry
+                              ("printResults").docString().c_str());
+        cmdLineProc.setOption("failIfInaccurate",
+                              "noFailIfInaccurate",
+                              &failIfInaccurate,
+                              defaultParams->getEntry
+                              ("failIfInaccurate").docString().c_str());
+        cmdLineProc.setOption("NodeTsqr",
+                              &nodeTsqr,
+                              defaultParams->getEntry
+                              ("NodeTsqr").docString().c_str());
+        cmdLineProc.setOption("verbose",
+                              "quiet",
+                              &verbose,
+                              defaultParams->getEntry
+                              ("verbose").docString().c_str());
+        cmdLineProc.parse(argc, argv);
+        cacheSizeHint = size_t(cacheSizeHintAsInt);
       }
-      catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
-        if (allowedToPrint) {
-          cerr << "Unrecognized command-line option: " << e.what() << endl;
-        }
+      catch(Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
+        err << "Unrecognized command-line option: " << e.what()
+            << endl;
         throw e;
       }
-      catch (Teuchos::CommandLineProcessor::HelpPrinted& e) {
+      catch(Teuchos::CommandLineProcessor::HelpPrinted& e) {
         return true;
       }
 
       // Validate command-line options.  We provide default values
       // for unset options, so we don't have to validate those.
-      TEUCHOS_TEST_FOR_EXCEPTION(numRowsLocal <= 0, std::invalid_argument,
-                                 "Number of rows per process must be positive.");
-      TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
-                                 "Number of columns must be positive.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numRowsLocal <= 0, std::invalid_argument,
+         "Number of rows per process must be positive.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numCols <= 0, std::invalid_argument,
+         "Number of columns must be positive.");
       return false; // Did not print help
     }
   };
@@ -224,35 +225,35 @@ namespace {
   // and the values of command-line options (that were read in from
   // the command line), return a parameter list describing the test.
   //
-  RCP<ParameterList>
-  testParameters (const RCP<const ParameterList>& validParams,
-                  const CmdLineOptions& options)
+  Teuchos::RCP<Teuchos::ParameterList>
+  testParameters(const Teuchos::RCP<const Teuchos::ParameterList>& validParams,
+                 const CmdLineOptions& options)
   {
     auto testParams = parameterList ("FullTsqrVerifier");
-    testParams->set ("Cache Size Hint", options.cacheSizeHint);
-    testParams->set ("numRowsLocal", options.numRowsLocal);
-    testParams->set ("numCols", options.numCols);
-    testParams->set ("testFactorExplicit",
-                     options.testFactorExplicit);
-    testParams->set ("testRankRevealing", options.testRankRevealing);
-    testParams->set ("contiguousCacheBlocks",
-                     options.contiguousCacheBlocks);
-    testParams->set ("printFieldNames", options.printFieldNames);
-    testParams->set ("printResults", options.printResults);
-    testParams->set ("failIfInaccurate", options.failIfInaccurate);
-    testParams->set ("NodeTsqr", options.nodeTsqr);
-    testParams->set ("verbose", options.verbose);
+    testParams->set("Cache Size Hint", options.cacheSizeHint);
+    testParams->set("numRowsLocal", options.numRowsLocal);
+    testParams->set("numCols", options.numCols);
+    testParams->set("testFactorExplicit",
+                    options.testFactorExplicit);
+    testParams->set("testRankRevealing", options.testRankRevealing);
+    testParams->set("contiguousCacheBlocks",
+                    options.contiguousCacheBlocks);
+    testParams->set("printFieldNames", options.printFieldNames);
+    testParams->set("printResults", options.printResults);
+    testParams->set("failIfInaccurate", options.failIfInaccurate);
+    testParams->set("NodeTsqr", options.nodeTsqr);
+    testParams->set("verbose", options.verbose);
 
-    testParams->validateParametersAndSetDefaults (*validParams);
+    testParams->validateParametersAndSetDefaults(*validParams);
     return testParams;
   }
 
   // Return true if all tests were successful, else false.
   bool
-  test (int argc,
-        char* argv[],
-        const RCP<const Teuchos::Comm<int> >& comm,
-        const bool allowedToPrint)
+  test(int argc,
+       char* argv[],
+       const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+       std::ostream& err)
   {
     using TSQR::Test::NullCons;
     using TSQR::Test::Cons;
@@ -264,22 +265,22 @@ namespace {
 
     // The Caller iterates the test over all Scalar types.
     using caller_type = TSQR::Test::FullTsqrVerifierCaller;
-    caller_type caller (comm, caller_type::defaultRandomSeed ());
+    caller_type caller(comm, caller_type::defaultRandomSeed ());
 
     // Read command-line options
     auto defaultParams = caller.getValidParameterList();
-    CmdLineOptions cmdLineOpts (defaultParams);
+    CmdLineOptions cmdLineOpts(defaultParams);
     const bool printedHelp =
-      cmdLineOpts.read (argc, argv, defaultParams, allowedToPrint);
+      cmdLineOpts.read(argc, argv, defaultParams, err);
     // Don't run the tests (and do succeed) if help was printed.
-    if (printedHelp) {
+    if(printedHelp) {
       return true;
     }
 
     //
     // Use read-in command-line options to set up test parameters.
     //
-    auto testParams = testParameters (defaultParams, cmdLineOpts);
+    auto testParams = testParameters(defaultParams, cmdLineOpts);
     defaultParams = null; // save a little space
 
     // Define lists of Scalar types to test.  We keep separate lists
@@ -299,11 +300,11 @@ namespace {
     // line, but since they do not apply to all Scalar types, they
     // don't belong in testParams.
     const bool realResult = cmdLineOpts.testReal ?
-      caller.run<real_type_list> (testParams) :
+      caller.run<real_type_list>(testParams) :
       true;
 #ifdef HAVE_TPETRATSQR_COMPLEX
     const bool complexResult = cmdLineOpts.testComplex ?
-      caller.run<complex_type_list> (testParams) :
+      caller.run<complex_type_list>(testParams) :
       true;
 #else
     const bool complexResult = true;
@@ -317,36 +318,22 @@ namespace {
 int
 main (int argc, char* argv[])
 {
-  using TSQR::Test::NullCons;
-  using TSQR::Test::Cons;
-  using Teuchos::null;
-  using Teuchos::ParameterList;
-  using Teuchos::parameterList;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
   using std::endl;
-
-#ifdef HAVE_MPI
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-  auto comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
-  const bool allowedToPrint = (myRank == 0);
-#else // Don't HAVE_MPI: single-process test
-  const bool allowedToPrint = true;
-#endif // HAVE_MPI
-  Kokkos::ScopeGuard kokkosScope (argc, argv);
+  TSQR::Test::MpiAndKokkosScope testScope(&argc, &argv);
+  auto comm = testScope.getComm();
+  std::ostream& out = testScope.outStream();
+  std::ostream& err = testScope.errStream();
 
   constexpr bool actually_print_caught_exceptions = true;
   bool success = false; // hopefully this will be true later
   try {
-    success = test (argc, argv, comm, allowedToPrint);
-    if (allowedToPrint && success) {
+    success = test(argc, argv, comm, err);
+    if(success) {
       // The Trilinos test framework expects a message like this.
-      std::cout << "\nEnd Result: TEST PASSED" << endl;
+      out << "\nEnd Result: TEST PASSED" << endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS
-    (actually_print_caught_exceptions, std::cerr, success);
+    (actually_print_caught_exceptions, err, success);
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

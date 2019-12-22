@@ -419,7 +419,6 @@ namespace TSQR {
       }
     };
 
-
     /// \class DistTsqrBenchmarker
     /// \brief Generic version of DistTsqr performance test.
     template< class Ordinal, class Scalar>
