@@ -44,16 +44,11 @@
 #include "Tsqr_GlobalVerify.hpp"
 #include "Tsqr_printGlobalMatrix.hpp"
 
+#include "Tsqr_Test_MpiAndKokkosScope.cpp"
 #include "Tsqr_TeuchosMessenger.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
-
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#include "Kokkos_Core.hpp"
 
 #include <algorithm>
 #ifdef HAVE_TPETRATSQR_COMPLEX
@@ -1110,38 +1105,10 @@ parseOptions (int argc,
   return params;
 }
 
-class MpiAndKokkosScope {
-public:
-  MpiAndKokkosScope(int* argc, char*** argv) :
-    mpiScope_(argc, argv, &blackHole_),
-    kokkosScope_(*argc, *argv)
-  {}
-
-  Teuchos::RCP<const Teuchos::Comm<int>> getComm() const {
-    return Teuchos::DefaultComm<int>::getComm();
-  }
-
-  std::ostream& outStream() {
-    // Only Process 0 gets to write to cout and cerr.  The other MPI
-    // processes send their output to a "black hole" (something that
-    // acts like /dev/null).
-    return getComm()->getRank() == 0 ? std::cout : blackHole_;
-  }
-
-  std::ostream& errStream() {
-    return getComm()->getRank() == 0 ? std::cerr : blackHole_;
-  }
-
-private:
-  Teuchos::oblackholestream blackHole_;
-  Teuchos::GlobalMPISession mpiScope_;
-  Kokkos::ScopeGuard kokkosScope_;
-};
-
 int
 main (int argc, char *argv[])
 {
-  MpiAndKokkosScope testScope(&argc, &argv);
+  TSQR::Test::MpiAndKokkosScope testScope(&argc, &argv);
   auto comm = testScope.getComm();
   std::ostream& out = testScope.outStream();
   std::ostream& err = testScope.errStream();
@@ -1149,33 +1116,33 @@ main (int argc, char *argv[])
   // Fetch command-line parameters.
   bool printedHelp = false;
   DistTsqrTestParameters params =
-    parseOptions (argc, argv, err, printedHelp);
-  if (printedHelp) {
+    parseOptions(argc, argv, err, printedHelp);
+  if(printedHelp) {
     return EXIT_SUCCESS;
   }
 
   bool success = false;
   bool verbose = false;
   try {
-    if (params.verify) {
+    if(params.verify) {
       std::vector<int> seed(4);
       const bool useSeed = false;
-      verify (comm, params, out, err, seed, useSeed);
+      verify(comm, params, out, err, seed, useSeed);
     }
 
-    if (params.benchmark) {
+    if(params.benchmark) {
       std::vector<int> seed(4);
       const bool useSeed = false;
-      benchmark (comm, params, out, err, seed, useSeed);
+      benchmark(comm, params, out, err, seed, useSeed);
     }
 
     success = true;
 
-    if (params.printTrilinosTestStuff) {
+    if(params.printTrilinosTestStuff) {
       // The Trilinos test framework expects a message like this.
       out << "\nEnd Result: TEST PASSED" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, err, success);
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

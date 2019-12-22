@@ -137,13 +137,30 @@ ENDIF ()
 
 # Performance and accuracy test suite for TSQR::DistTsqr (which
 # combines triangular factors from different MPI processes).
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DistTsqr_Accuracy
+
+# Accuracy test for TSQR::Tsqr (the full TSQR implementation).
+TRIBITS_ADD_EXECUTABLE(
+  DistTsqr
   SOURCES Tsqr_TestDistTsqr.cpp
-  COMM mpi
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  DistTsqr
+  NAME DistTsqr_1_proc
+  COMM serial mpi
   ARGS "--verify --ncols=5 --explicit --implicit --real"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_TEST(
+  DistTsqr
+  NAME DistTsqr_4_proc
+  COMM mpi
+  ARGS "--verify --ncols=5 --explicit --implicit --real"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 4
 )
 
 # Accuracy test for TSQR::Tsqr (the full TSQR implementation).
@@ -216,4 +233,3 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 4
 )
-
