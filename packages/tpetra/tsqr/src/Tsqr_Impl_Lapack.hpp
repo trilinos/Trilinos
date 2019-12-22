@@ -8,24 +8,26 @@
 namespace TSQR {
 namespace Impl {
 
-// CombineNative needs LARFG, but it's not properly part of RawQR.
-// RawQR needs to be able to wrap lots of different functions,
-// including whatever cuSOLVER provides.  It doesn't make sense to
-// launch a device kernel from host for ever column of the matrix,
-// especially not when cuSOLVER already has all the needed QR
-// factorization and apply Q factor functions.
-
+/// \brief Implementation of RawQR that uses the system's LAPACK
+///   library via Teuchos::LAPACK.
+///
+/// This class provides functions not in RawQR for the sake of
+/// CombineNative.  CombineNative needs LARFG, but it's not properly
+/// part of RawQR.  It doesn't make sense to launch a device kernel
+/// from host for every column of the matrix, especially not when
+/// cuSOLVER already has all the needed QR factorization and apply Q
+/// factor functions.
 template<class Scalar>
 class Lapack : public RawQR<Scalar> {
 public:
   using value_type = Scalar;
   using magnitude_type = decltype(std::abs(Scalar{}));
 
-  ~Lapack() = default;
+  ~Lapack() override = default;
 
   int
-  compute_QR_lwork (const int m, const int n,
-                    value_type A[], const int lda) const override;
+  compute_QR_lwork(const int m, const int n,
+                   value_type A[], const int lda) const override;
 
   void
   compute_QR(const int m, const int n, value_type A[],
@@ -48,9 +50,9 @@ public:
                  value_type WORK[], const int lwork) const override;
 
   int
-  compute_explicit_Q_lwork (const int m, const int n, const int k,
-                            value_type A[], const int lda,
-                            const value_type TAU[]) const override;
+  compute_explicit_Q_lwork(const int m, const int n, const int k,
+                           value_type A[], const int lda,
+                           const value_type TAU[]) const override;
 
   void
   compute_explicit_Q(const int m, const int n, const int k,

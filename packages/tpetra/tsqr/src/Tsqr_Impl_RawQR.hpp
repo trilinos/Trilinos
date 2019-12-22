@@ -28,12 +28,12 @@ public:
   ///
   /// Unlike with NodeTsqr, this means <i>all</i> array and pointers,
   /// not just "large" ones.
-  virtual bool wants_device_memory () const { return false; }
+  virtual bool wants_device_memory() const { return false; }
 
   //! Get recommended work array size for compute_QR.
   virtual int
-  compute_QR_lwork (const int m, const int n,
-                    value_type A[], const int lda) const = 0;
+  compute_QR_lwork(const int m, const int n,
+                   value_type A[], const int lda) const = 0;
 
   //! Compute QR factorization of a general m by n matrix A.
   virtual void
@@ -68,9 +68,9 @@ public:
 
   //! Get recommended work array size for compute_explicit_Q.
   virtual int
-  compute_explicit_Q_lwork (const int m, const int n, const int k,
-                            value_type A[], const int lda,
-                            const value_type TAU[]) const = 0;
+  compute_explicit_Q_lwork(const int m, const int n, const int k,
+                           value_type A[], const int lda,
+                           const value_type TAU[]) const = 0;
 
   /// \brief Compute explicit QR factor from QR factorization (GEQRF).
   ///
