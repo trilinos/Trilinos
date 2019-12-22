@@ -67,67 +67,53 @@ namespace {
   // parameters.
   //
   struct TestParameters {
-    TestParameters () :
-      verify (true),
-      benchmark (false),
-      numRows (100),
-      numCols (5),
-      numTrials (3),
-      calibrate (false),
-      averageTimings (true),
-      testReal (true),
-#ifdef HAVE_TPETRATSQR_COMPLEX
-      testComplex (true),
-#else
-      testComplex (false),
-#endif // HAVE_TPETRATSQR_COMPLEX
-      printFieldNames (true),
-      printTrilinosTestStuff (true),
-      strictPerfTests (false),
-      allowance (1.2),
-      verbose (true),
-      debug (false)
-    {}
+    TestParameters() = default;
 
     // Whether to run the accuracy test.
-    bool verify;
+    bool verify = true;
     // Whether to run the performance test.
-    bool benchmark;
+    bool benchmark = false;
     // Number of rows in the test matrix.
-    int numRows;
+    int numRows = 100;
     // Number of columns in the test matrix.
-    int numCols;
+    int numCols = 5;
     // Number of trials (benchmark only).
-    int numTrials;
+    int numTrials = 3;
     // Whether to pick the number of trials automatically, using an
     // iterative calibration process (benchmark only).
-    bool calibrate;
-    // Whether to print averaged timings over all trials (true), or the cumulative timing over all trials (false).
-    bool averageTimings;
+    bool calibrate = false;
+    // Whether to print averaged timings over all trials (true), or
+    // the cumulative timing over all trials (false).
+    bool averageTimings = true;
     // Whether to test real-arithmetic routines.
-    bool testReal;
+    bool testReal = true;
     // Whether to test complex-arithmetic routines.  If TSQR was not
     // built with complex arithmetic support, then this must always be
     // false.
-    bool testComplex;
+#ifdef HAVE_TPETRATSQR_COMPLEX
+    bool testComplex = true;
+#else
+    bool testComplex = false;
+#endif // HAVE_TPETRATSQR_COMPLEX
     // Whether to print column (field) names.
-    bool printFieldNames;
+    bool printFieldNames = true;
     // Whether to print output that the Trilinos test framework
     // expects, in order to judge a test as passed or failed.
-    bool printTrilinosTestStuff;
+    bool printTrilinosTestStuff = true;
     // Whether the benchmark should fail if performance of
-    // TSQR::CombineNative (and TSQR::CombineFortran, if applicable)
-    // relative to that of TSQR::CombineDefault is not good enough.
-    bool strictPerfTests;
+    // TSQR::CombineNative relative to that of TSQR::CombineDefault is
+    // not good enough.
+    bool strictPerfTests = false;
     // If strictPerfTests is true: how much slower CombineNative (and
     // CombineFortran, if applicable) is allowed to be, relative to
     // CombineDefault.
-    double allowance;
+    double allowance = 1.2;
     // Whether to print verbose status output.
-    bool verbose;
+    bool verbose = true;
     // Whether to print debugging output to stderr.
-    bool debug;
-    std::string additionalFieldNames, additionalData;
+    bool debug = false;
+    std::string additionalFieldNames;
+    std::string additionalData;
   };
 
   // Benchmark TSQR::Combine.
@@ -139,18 +125,15 @@ namespace {
   //   the following fields: numRows, numCols, numTrials,
   //   testReal, testComplex.
   //
-  // Warning: Call only on (MPI) rank 0.  Otherwise, you'll run the
-  //   test routine on every MPI rank simultaneously, but only report
-  //   results on rank 0.
+  // Warning: Call only on (MPI) Process 0.  Otherwise, you'll run the
+  //   test routine on every MPI process simultaneously, but only
+  //   report results on Process 0.
   void
-  benchmark (std::ostream& out,
-             const TestParameters& params)
+  benchmark(std::ostream& out,
+            const TestParameters& params)
   {
     std::vector<int> seed(4);
     const bool useSeedValues = false; // Fill in seed with defaults.
-
-    using TSQR::Test::benchmarkCombine;
-    typedef Teuchos::Time timer_type;
 
     TSQR::Test::CombineBenchmarkParameters testParams;
     testParams.numRows = params.numRows;
@@ -173,7 +156,8 @@ namespace {
     testParams.printFieldNames = params.printFieldNames;
     testParams.debug = params.debug;
 
-    benchmarkCombine<timer_type> (out, testParams);
+    using timer_type = Teuchos::Time;
+    TSQR::Test::benchmarkCombine<timer_type>(out, testParams);
   }
 
   // Test accuracy of TSQR::Combine.
@@ -189,10 +173,9 @@ namespace {
   //   test routine on every MPI process simultaneously, but only
   //   report results on Process 0.
   void
-  verify (std::ostream& out,
-          const TestParameters& params)
+  verify(std::ostream& out, const TestParameters& params)
   {
-    typedef int ordinal_type;
+    using ordinal_type = int;
 
     const ordinal_type numRows = params.numRows;
     const ordinal_type numCols = params.numCols;
@@ -206,8 +189,8 @@ namespace {
     const bool debug = false;
 
     using TSQR::Test::verifyCombine;
-    verifyCombine (numRows, numCols, params.testReal, testComplex,
-                   printFieldNames, simulateSequentialTsqr, debug);
+    verifyCombine(numRows, numCols, params.testReal, testComplex,
+                  printFieldNames, simulateSequentialTsqr, debug);
   }
 
   // \brief Parse command-line options for this test
@@ -223,10 +206,10 @@ namespace {
   //
   // Return: Encapsulation of command-line options.
   TestParameters
-  parseOptions (int argc,
-                char* argv[],
-                std::ostream& err,
-                bool& printedHelp)
+  parseOptions(int argc,
+               char* argv[],
+               std::ostream& err,
+               bool& printedHelp)
   {
     using std::endl;
 
@@ -235,103 +218,104 @@ namespace {
     // Command-line parameters, set to their default values.
     TestParameters params;
     try {
-      using Teuchos::CommandLineProcessor;
+      using CLP = Teuchos::CommandLineProcessor;
 
-      CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true,
-                                        /* recognizeAllOptions=*/ true);
-      cmdLineProc.setDocString (docString);
-      cmdLineProc.setOption ("verify",
-                             "noverify",
-                             &params.verify,
-                             "Test accuracy of TSQR::Combine implementations.");
-      cmdLineProc.setOption ("benchmark",
-                             "nobenchmark",
-                             &params.benchmark,
-                             "Test performance of TSQR::Combine implementations.");
-      cmdLineProc.setOption ("debug",
-                             "nodebug",
-                             &params.debug,
-                             "Print copious debugging information to stderr.");
-      cmdLineProc.setOption ("numRows",
-                             &params.numRows,
-                             "Number of rows in the cache block test.");
-      cmdLineProc.setOption ("numCols",
-                             &params.numCols,
-                             "Number of columns in the cache block test, and "
-                             "number of rows and columns in each upper triangular "
-                             "matrix in the pair test.");
-      cmdLineProc.setOption ("numTrials",
-                             &params.numTrials,
-                             "For benchmarks: Number of trials.  "
-                             "Ignored if --calibrate option is set.");
-      cmdLineProc.setOption ("calibrate",
-                             "noCalibrate",
-                             &params.calibrate,
-                             "For benchmarks: ignore numTrials, and calibrate "
-                             "the number of trials based on computed timer "
-                             "resolution and problem size (numRows and "
-                             "numCols).");
-      cmdLineProc.setOption ("meanTimings",
-                             "sumTimings",
-                             &params.averageTimings,
-                             "For benchmarks: whether timings should be "
-                             "computed as an arithmetic mean (true) or as a "
-                             "sum (false) over all trials.");
-      cmdLineProc.setOption ("testReal",
-                             "noTestReal",
-                             &params.testReal,
-                             "Test real-arithmetic routines.");
-      cmdLineProc.setOption ("testComplex",
-                             "noTestComplex",
-                             &params.testComplex,
-                             "Test complex-arithmetic routines.  This option "
-                             "may only be true if Trilinos was built with "
-                             "complex arithmetic support.");
-      cmdLineProc.setOption ("strictPerfTests",
-                             "noStrictPerfTests",
-                             &params.strictPerfTests,
-                             "For benchmarks: whether the test should fail if "
-                             "run time of TSQR::CombineNative / run time of "
-                             "TSQR::CombineDefault (both for the cache block "
-                             "benchmark) is greater than the given slowdown "
-                             "allowance.  Ditto for TSQR::CombineFortran, if "
-                             "TSQR was built with Fortran support.");
-      cmdLineProc.setOption ("allowance",
-                             &params.allowance,
-                             "For benchmarks: if strictPerfTests is true: "
-                             "allowed slowdown factor.  If exceeded, the test "
-                             "fails.");
-      cmdLineProc.setOption ("additionalFieldNames",
-                             &params.additionalFieldNames,
-                             "Any additional field name(s) (comma-delimited "
-                             "string) to add to the benchmark output.  Empty "
-                             "by default.  Good for things known when invoking "
-                             "the benchmark executable, but not (easily) known "
-                             "inside the benchmark -- e.g., environment "
-                             "variables.");
-      cmdLineProc.setOption ("additionalData",
-                             &params.additionalData,
-                             "Any additional data to add to the output, "
-                             "corresponding to the above field name(s). "
-                             "Empty by default.");
-      cmdLineProc.setOption ("printFieldNames",
-                             "noPrintFieldNames",
-                             &params.printFieldNames,
-                             "Print field names for benchmark output (including "
-                             "any arguments to --fieldNames).");
-      cmdLineProc.setOption ("printTrilinosTestStuff",
-                             "noPrintTrilinosTestStuff",
-                             &params.printTrilinosTestStuff,
-                             "Print output that makes the Trilinos test "
-                             "framework happy (but makes benchmark results "
-                             "parsing scripts unhappy)");
-      cmdLineProc.parse (argc, argv);
+      constexpr bool throwExceptions = true;
+      constexpr bool recognizeAllOptions = true;
+      CLP cmdLineProc(throwExceptions, recognizeAllOptions);
+      cmdLineProc.setDocString(docString);
+      cmdLineProc.setOption("verify",
+                            "noverify",
+                            &params.verify,
+                            "Test accuracy of TSQR::Combine implementations.");
+      cmdLineProc.setOption("benchmark",
+                            "nobenchmark",
+                            &params.benchmark,
+                            "Test performance of TSQR::Combine implementations.");
+      cmdLineProc.setOption("debug",
+                            "nodebug",
+                            &params.debug,
+                            "Print copious debugging information to stderr.");
+      cmdLineProc.setOption("numRows",
+                            &params.numRows,
+                            "Number of rows in the cache block test.");
+      cmdLineProc.setOption("numCols",
+                            &params.numCols,
+                            "Number of columns in the cache block test, and "
+                            "number of rows and columns in each upper triangular "
+                            "matrix in the pair test.");
+      cmdLineProc.setOption("numTrials",
+                            &params.numTrials,
+                            "For benchmarks: Number of trials.  "
+                            "Ignored if --calibrate option is set.");
+      cmdLineProc.setOption("calibrate",
+                            "noCalibrate",
+                            &params.calibrate,
+                            "For benchmarks: ignore numTrials, and calibrate "
+                            "the number of trials based on computed timer "
+                            "resolution and problem size (numRows and "
+                            "numCols).");
+      cmdLineProc.setOption("meanTimings",
+                            "sumTimings",
+                            &params.averageTimings,
+                            "For benchmarks: whether timings should be "
+                            "computed as an arithmetic mean (true) or as a "
+                            "sum (false) over all trials.");
+      cmdLineProc.setOption("testReal",
+                            "noTestReal",
+                            &params.testReal,
+                            "Test real-arithmetic routines.");
+      cmdLineProc.setOption("testComplex",
+                            "noTestComplex",
+                            &params.testComplex,
+                            "Test complex-arithmetic routines.  This option "
+                            "may only be true if Trilinos was built with "
+                            "complex arithmetic support.");
+      cmdLineProc.setOption("strictPerfTests",
+                            "noStrictPerfTests",
+                            &params.strictPerfTests,
+                            "For benchmarks: whether the test should fail if "
+                            "run time of TSQR::CombineNative / run time of "
+                            "TSQR::CombineDefault (both for the cache block "
+                            "benchmark) is greater than the given slowdown "
+                            "allowance.  Ditto for TSQR::CombineFortran, if "
+                            "TSQR was built with Fortran support.");
+      cmdLineProc.setOption("allowance",
+                            &params.allowance,
+                            "For benchmarks: if strictPerfTests is true: "
+                            "allowed slowdown factor.  If exceeded, the test "
+                            "fails.");
+      cmdLineProc.setOption("additionalFieldNames",
+                            &params.additionalFieldNames,
+                            "Any additional field name(s) (comma-delimited "
+                            "string) to add to the benchmark output.  Empty "
+                            "by default.  Good for things known when invoking "
+                            "the benchmark executable, but not (easily) known "
+                            "inside the benchmark -- e.g., environment "
+                            "variables.");
+      cmdLineProc.setOption("additionalData",
+                            &params.additionalData,
+                            "Any additional data to add to the output, "
+                            "corresponding to the above field name(s). "
+                            "Empty by default.");
+      cmdLineProc.setOption("printFieldNames",
+                            "noPrintFieldNames",
+                            &params.printFieldNames,
+                            "Print field names for benchmark output (including "
+                            "any arguments to --fieldNames).");
+      cmdLineProc.setOption("printTrilinosTestStuff",
+                            "noPrintTrilinosTestStuff",
+                            &params.printTrilinosTestStuff,
+                            "Print output that makes the Trilinos test "
+                            "framework happy (but makes benchmark results "
+                            "parsing scripts unhappy)");
+      cmdLineProc.parse(argc, argv);
     }
-    catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
+    catch(Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
       err << "Unrecognized command-line option: " << e.what() << endl;
       throw e;
     }
-    catch (Teuchos::CommandLineProcessor::HelpPrinted& e) {
+    catch(Teuchos::CommandLineProcessor::HelpPrinted& e) {
       printedHelp = true;
       return params; // Don't verify parameters in this case
     }
@@ -359,7 +343,7 @@ namespace {
 } // namespace (anonymous)
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
   using std::cout;
   using std::cerr;
