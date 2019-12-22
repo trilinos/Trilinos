@@ -67,8 +67,6 @@ namespace {
   // parameters.
   //
   struct TestParameters {
-    TestParameters() = default;
-
     // Whether to run the accuracy test.
     bool verify = true;
     // Whether to run the performance test.
@@ -112,6 +110,7 @@ namespace {
     bool verbose = true;
     // Whether to print debugging output to stderr.
     bool debug = false;
+
     std::string additionalFieldNames;
     std::string additionalData;
   };
@@ -139,11 +138,7 @@ namespace {
     testParams.numRows = params.numRows;
     testParams.numCols = params.numCols;
     testParams.testReal = params.testReal;
-#ifdef HAVE_TPETRATSQR_COMPLEX
     testParams.testComplex = params.testComplex;
-#else
-    testParams.testComplex = false;
-#endif // HAVE_TPETRATSQR_COMPLEX
     testParams.numTrials = params.numTrials;
     testParams.calibrate = params.calibrate;
     testParams.averageTimings = params.averageTimings;
@@ -175,22 +170,13 @@ namespace {
   void
   verify(std::ostream& out, const TestParameters& params)
   {
-    using ordinal_type = int;
-
-    const ordinal_type numRows = params.numRows;
-    const ordinal_type numCols = params.numCols;
-#ifdef HAVE_TPETRATSQR_COMPLEX
-    const bool testComplex = params.testComplex;
-#else
-    const bool testComplex = false;
-#endif // HAVE_TPETRATSQR_COMPLEX
-    const bool printFieldNames = params.printFieldNames;
-    const bool simulateSequentialTsqr = false;
-    const bool debug = false;
+    constexpr bool simulateSequentialTsqr = false;
+    constexpr bool debug = false;
 
     using TSQR::Test::verifyCombine;
-    verifyCombine(numRows, numCols, params.testReal, testComplex,
-                  printFieldNames, simulateSequentialTsqr, debug);
+    verifyCombine(params.numRows, params.numCols, params.testReal,
+                  params.testComplex, params.printFieldNames,
+                  simulateSequentialTsqr, debug);
   }
 
   // \brief Parse command-line options for this test
@@ -216,12 +202,11 @@ namespace {
     printedHelp = false;
 
     // Command-line parameters, set to their default values.
-    TestParameters params;
+    TestParameters params {};
     try {
-      using CLP = Teuchos::CommandLineProcessor;
-
       constexpr bool throwExceptions = true;
       constexpr bool recognizeAllOptions = true;
+      using CLP = Teuchos::CommandLineProcessor;
       CLP cmdLineProc(throwExceptions, recognizeAllOptions);
       cmdLineProc.setDocString(docString);
       cmdLineProc.setOption("verify",
@@ -338,6 +323,12 @@ namespace {
        std::invalid_argument, "If you set --benchmark, then the "
        "number of trials must be positive, but you set --numTrials="
        << params.numTrials << ".");
+#ifndef HAVE_TPETRATSQR_COMPLEX
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (params.testComplex, std::invalid_argument, "Complex "
+       "arithmetic support was not enabled at configure time, "
+       "but you set --testComplex.");
+#endif // HAVE_TPETRATSQR_COMPLEX
     return params;
   }
 } // namespace (anonymous)

@@ -102,28 +102,28 @@ namespace TSQR {
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      DistTsqrVerifier (const Teuchos::RCP<MessengerBase<Ordinal> >& ordinalComm,
-                        const Teuchos::RCP<MessengerBase<Scalar> >& scalarComm,
-                        const std::vector<int>& seed,
-                        const std::string& scalarTypeName,
-                        std::ostream& out,
-                        std::ostream& err,
-                        const bool testFactorExplicit,
-                        const bool testFactorImplicit,
-                        const bool humanReadable,
-                        const bool printMatrices,
-                        const bool debug) :
-        gen_ (seed),
-        ordinalComm_ (ordinalComm),
-        scalarComm_ (scalarComm),
-        scalarTypeName_ (scalarTypeName),
-        out_ (out),
-        err_ (err),
-        testFactorExplicit_ (testFactorExplicit),
-        testFactorImplicit_ (testFactorImplicit),
-        humanReadable_ (humanReadable),
-        printMatrices_ (printMatrices),
-        debug_ (debug)
+      DistTsqrVerifier(const Teuchos::RCP<MessengerBase<Ordinal> >& ordinalComm,
+                       const Teuchos::RCP<MessengerBase<Scalar> >& scalarComm,
+                       const std::vector<int>& seed,
+                       const std::string& scalarTypeName,
+                       std::ostream& out,
+                       std::ostream& err,
+                       const bool testFactorExplicit,
+                       const bool testFactorImplicit,
+                       const bool humanReadable,
+                       const bool printMatrices,
+                       const bool debug) :
+        gen_(seed),
+        ordinalComm_(ordinalComm),
+        scalarComm_(scalarComm),
+        scalarTypeName_(scalarTypeName),
+        out_(out),
+        err_(err),
+        testFactorExplicit_(testFactorExplicit),
+        testFactorImplicit_(testFactorImplicit),
+        humanReadable_(humanReadable),
+        printMatrices_(printMatrices),
+        debug_(debug)
       {}
 
       /// \brief Constructor, with default seed value
@@ -147,26 +147,26 @@ namespace TSQR {
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      DistTsqrVerifier (const Teuchos::RCP<MessengerBase<Ordinal> >& ordinalComm,
-                        const Teuchos::RCP<MessengerBase<Scalar> >& scalarComm,
-                        const std::string& scalarTypeName,
-                        std::ostream& out,
-                        std::ostream& err,
-                        const bool testFactorExplicit,
-                        const bool testFactorImplicit,
-                        const bool humanReadable,
-                        const bool printMatrices,
-                        const bool debug) :
-        ordinalComm_ (ordinalComm),
-        scalarComm_ (scalarComm),
-        scalarTypeName_ (scalarTypeName),
-        out_ (out),
-        err_ (err),
-        testFactorExplicit_ (testFactorExplicit),
-        testFactorImplicit_ (testFactorImplicit),
-        humanReadable_ (humanReadable),
-        printMatrices_ (printMatrices),
-        debug_ (debug)
+      DistTsqrVerifier(const Teuchos::RCP<MessengerBase<Ordinal> >& ordinalComm,
+                       const Teuchos::RCP<MessengerBase<Scalar> >& scalarComm,
+                       const std::string& scalarTypeName,
+                       std::ostream& out,
+                       std::ostream& err,
+                       const bool testFactorExplicit,
+                       const bool testFactorImplicit,
+                       const bool humanReadable,
+                       const bool printMatrices,
+                       const bool debug) :
+        ordinalComm_(ordinalComm),
+        scalarComm_(scalarComm),
+        scalarTypeName_(scalarTypeName),
+        out_(out),
+        err_(err),
+        testFactorExplicit_(testFactorExplicit),
+        testFactorImplicit_(testFactorImplicit),
+        humanReadable_(humanReadable),
+        printMatrices_(printMatrices),
+        debug_(debug)
       {}
 
       /// \brief Get seed vector for pseudorandom number generator
@@ -176,9 +176,9 @@ namespace TSQR {
       /// can use this to resume the pseudorandom number stream from
       /// where you last were.
       void
-      getSeed (std::vector<int>& seed) const
+      getSeed(std::vector<int>& seed) const
       {
-        gen_.getSeed (seed);
+        gen_.getSeed(seed);
       }
 
       /// \brief Run the DistTsqr accuracy test
@@ -186,28 +186,28 @@ namespace TSQR {
       /// \param numCols [in] Number of columns in the matrix to test.
       ///   Number of rows := (# MPI processors) * ncols.
       void
-      verify (const Ordinal numCols,
-              const std::string& additionalFieldNames,
-              const std::string& additionalData,
-              const bool printFieldNames)
+      verify(const Ordinal numCols,
+             const std::string& additionalFieldNames,
+             const std::string& additionalData,
+             const bool printFieldNames)
       {
         using std::endl;
 
         const int myRank = scalarComm_->rank();
-        if (debug_)
-          {
-            scalarComm_->barrier();
-            if (myRank == 0)
-              err_ << "Verifying DistTsqr:" << endl;
-            scalarComm_->barrier();
+        if(debug_) {
+          scalarComm_->barrier();
+          if(myRank == 0) {
+            err_ << "Verifying DistTsqr:" << endl;
           }
+          scalarComm_->barrier();
+        }
 
         // Generate test problem.
-        Matrix< Ordinal, Scalar > A_local, Q_local, R;
-        testProblem (A_local, Q_local, R, numCols);
-        if (debug_) {
+        Matrix<Ordinal, Scalar> A_local, Q_local, R;
+        testProblem(A_local, Q_local, R, numCols);
+        if(debug_) {
           scalarComm_->barrier();
-          if (myRank == 0) {
+          if(myRank == 0) {
             err_ << "-- Generated test problem." << endl;
           }
           scalarComm_->barrier();
@@ -216,9 +216,9 @@ namespace TSQR {
         // Set up TSQR implementation.
         DistTsqr<Ordinal, Scalar> par;
         par.init (scalarComm_);
-        if (debug_) {
+        if(debug_) {
           scalarComm_->barrier();
-          if (myRank == 0) {
+          if(myRank == 0) {
             err_ << "-- DistTsqr object initialized" << endl << endl;
           }
         }
@@ -228,83 +228,89 @@ namespace TSQR {
         bool printedFieldNames = false;
 
         // Test DistTsqr::factor() and DistTsqr::explicit_Q().
-        if (testFactorImplicit_) {
+        if(testFactorImplicit_) {
           // Factor the matrix A (copied into R, which will be
           // overwritten on output)
           typedef typename DistTsqr<Ordinal, Scalar>::FactorOutput
             factor_output_type;
           factor_output_type factorOutput = par.factor (R.view());
-          if (debug_) {
+          if(debug_) {
             scalarComm_->barrier();
-            if (myRank == 0) {
+            if(myRank == 0) {
               err_ << "-- Finished DistTsqr::factor" << endl;
             }
           }
           // Compute the explicit Q factor
-          par.explicit_Q (numCols, Q_local.data(), Q_local.stride(1), factorOutput);
-          if (debug_) {
+          par.explicit_Q(numCols, Q_local.data(), Q_local.stride(1),
+                         factorOutput);
+          if(debug_) {
             scalarComm_->barrier();
-            if (myRank == 0) {
+            if(myRank == 0) {
               err_ << "-- Finished DistTsqr::explicit_Q" << endl;
             }
           }
           // Verify the factorization
-          result_type result =
-            global_verify (numCols, numCols, A_local.data(), A_local.stride(1),
-                           Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
-                           scalarComm_.get());
-          if (debug_) {
+          auto result =
+            global_verify(numCols, numCols, A_local.data(),
+                          A_local.stride(1), Q_local.data(),
+                          Q_local.stride(1), R.data(), R.stride(1),
+                          scalarComm_.get());
+          if(debug_) {
             scalarComm_->barrier();
-            if (myRank == 0) {
+            if(myRank == 0) {
               err_ << "-- Finished global_verify" << endl;
             }
           }
-          reportResults ("DistTsqr", numCols, result,
-                         additionalFieldNames, additionalData,
-                         printFieldNames && (! printedFieldNames));
-          if (printFieldNames && (! printedFieldNames))
+          reportResults("DistTsqr", numCols, result,
+                        additionalFieldNames, additionalData,
+                        printFieldNames && (! printedFieldNames));
+          if(printFieldNames && (! printedFieldNames)) {
             printedFieldNames = true;
+          }
         }
 
         // Test DistTsqr::factorExplicit()
-        if (testFactorExplicit_) {
+        if(testFactorExplicit_) {
           // Factor the matrix and compute the explicit Q factor, both
           // in a single operation.
-          par.factorExplicit (R.view(), Q_local.view());
-          if (debug_) {
+          par.factorExplicit(R.view(), Q_local.view());
+          if(debug_) {
             scalarComm_->barrier();
-            if (myRank == 0) {
+            if(myRank == 0) {
               err_ << "-- Finished DistTsqr::factorExplicit" << endl;
             }
           }
 
-          if (printMatrices_) {
-            if (myRank == 0) {
+          if(printMatrices_) {
+            if(myRank == 0) {
               err_ << std::endl << "Computed Q factor:" << std::endl;
             }
-            printGlobalMatrix (err_, Q_local, scalarComm_.get(), ordinalComm_.get());
-            if (myRank == 0) {
+            printGlobalMatrix(err_, Q_local, scalarComm_.get(),
+                              ordinalComm_.get());
+            if(myRank == 0) {
               err_ << std::endl << "Computed R factor:" << std::endl;
-              print_local_matrix (err_, R.extent(0), R.extent(1), R.data(), R.stride(1));
+              print_local_matrix (err_, R.extent(0), R.extent(1),
+                                  R.data(), R.stride(1));
               err_ << std::endl;
             }
           }
 
           // Verify the factorization
           result_type result =
-            global_verify (numCols, numCols, A_local.data(), A_local.stride(1),
-                           Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
-                           scalarComm_.get());
-          if (debug_) {
+            global_verify(numCols, numCols, A_local.data(),
+                          A_local.stride(1), Q_local.data(),
+                          Q_local.stride(1), R.data(), R.stride(1),
+                          scalarComm_.get());
+          if(debug_) {
             scalarComm_->barrier();
-            if (myRank == 0) {
+            if(myRank == 0) {
               err_ << "-- Finished global_verify" << endl;
             }
           }
-          reportResults ("DistTsqrRB", numCols, result,
-                         additionalFieldNames, additionalData,
-                         printFieldNames && (! printedFieldNames));
-          if (printFieldNames && (! printedFieldNames)) {
+          reportResults("DistTsqrRB", numCols, result,
+                        additionalFieldNames, additionalData,
+                        printFieldNames && (! printedFieldNames));
+          if(printFieldNames && (! printedFieldNames)) {
             printedFieldNames = true;
           }
         }
@@ -312,7 +318,7 @@ namespace TSQR {
 
     private:
       /// Report verification results.  Call on ALL MPI processes, not
-      /// just Rank 0.
+      /// just Process 0.
       ///
       /// \param method [in] String to print before reporting results
       /// \param numCols [in] Number of columns in the matrix tested.
@@ -330,54 +336,51 @@ namespace TSQR {
         const int numProcs = scalarComm_->size();
         const int myRank = scalarComm_->rank();
 
-        if (myRank == 0)
-          {
-            if (humanReadable_)
-              {
-                out_ << method << " accuracy results:" << endl
-                     << "Scalar type = " << scalarTypeName_ << endl
-                     << "Number of columns = " << numCols << endl
-                     << "Number of (MPI) processes = " << numProcs << endl
-                     << "Absolute residual $\\| A - Q R \\|_2: "
-                     << result[0] << endl
-                     << "Absolute orthogonality $\\| I - Q^* Q \\|_2$: "
-                     << result[1] << endl
-                     << "Test matrix norm $\\| A \\|_F$: "
-                     << result[2] << endl;
-              }
-            else
-              {
-                // Use scientific notation for floating-point numbers
-                out_ << std::scientific;
-
-                if (printFieldNames)
-                  {
-                    out_ << "%method,scalarType,numCols,numProcs"
-                      ",absFrobResid,absFrobOrthog,frobA";
-                    if (! additionalFieldNames.empty())
-                      out_ << "," << additionalFieldNames;
-                    out_ << endl;
-                  }
-
-                out_ << method
-                     << "," << scalarTypeName_
-                     << "," << numCols
-                     << "," << numProcs
-                     << "," << result[0]
-                     << "," << result[1]
-                     << "," << result[2];
-                if (! additionalData.empty())
-                  out_ << "," << additionalData;
-                out_ << endl;
-              }
+        if(myRank == 0) {
+          if(humanReadable_) {
+            out_ << method << " accuracy results:" << endl
+                 << "Scalar: " << scalarTypeName_ << endl
+                 << "numCols: " << numCols << endl
+                 << "Number of (MPI) processes: " << numProcs << endl
+                 << "Absolute residual $\\| A - Q R \\|_2: "
+                 << result[0] << endl
+                 << "Absolute orthogonality $\\| I - Q^* Q \\|_2$: "
+                 << result[1] << endl
+                 << "Test matrix norm $\\| A \\|_F$: "
+                 << result[2] << endl;
           }
+          else {
+            // Use scientific notation for floating-point numbers
+            out_ << std::scientific;
+
+            if(printFieldNames) {
+              out_ << "%method,scalarType,numCols,numProcs"
+                ",absFrobResid,absFrobOrthog,frobA";
+              if(! additionalFieldNames.empty())
+                out_ << "," << additionalFieldNames;
+              out_ << endl;
+            }
+
+            out_ << method
+                 << "," << scalarTypeName_
+                 << "," << numCols
+                 << "," << numProcs
+                 << "," << result[0]
+                 << "," << result[1]
+                 << "," << result[2];
+            if(! additionalData.empty()) {
+              out_ << "," << additionalData;
+            }
+            out_ << endl;
+          }
+        }
       }
 
       void
-      testProblem (Matrix< Ordinal, Scalar >& A_local,
-                   Matrix< Ordinal, Scalar >& Q_local,
-                   Matrix< Ordinal, Scalar >& R,
-                   const Ordinal numCols)
+      testProblem(Matrix<Ordinal, Scalar>& A_local,
+                  Matrix<Ordinal, Scalar>& Q_local,
+                  Matrix<Ordinal, Scalar>& R,
+                  const Ordinal numCols)
       {
         const Ordinal numRowsLocal = numCols;
 
@@ -386,32 +389,33 @@ namespace TSQR {
         //
         // A_global: Global matrix (only nonempty on Proc 0); only
         //   used temporarily.
-        Matrix< Ordinal, Scalar > A_global;
+        Matrix<Ordinal, Scalar> A_global;
 
         // This modifies A_local on all procs, and A_global on Proc 0.
-        par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
+        par_tsqr_test_problem(gen_, A_local, A_global, numCols, scalarComm_);
 
-        if (printMatrices_) {
+        if(printMatrices_) {
           const int myRank = scalarComm_->rank();
-          if (myRank == 0) {
+          if(myRank == 0) {
             err_ << "Input matrix A:" << std::endl;
           }
-          printGlobalMatrix (err_, A_local, scalarComm_.get(), ordinalComm_.get());
-          if (myRank == 0) {
+          printGlobalMatrix(err_, A_local, scalarComm_.get(),
+                            ordinalComm_.get());
+          if(myRank == 0) {
             err_ << std::endl;
           }
         }
 
         // Copy the test problem input into R, since the factorization
         // will overwrite it in place with the final R factor.
-        R.reshape (numCols, numCols);
-        deep_copy (R, Scalar {});
-        deep_copy (R, A_local);
+        R.reshape(numCols, numCols);
+        deep_copy(R, Scalar{});
+        deep_copy(R, A_local);
 
         // Prepare space in which to construct the explicit Q factor
         // (local component on this processor)
-        Q_local.reshape (numRowsLocal, numCols);
-        deep_copy (Q_local, Scalar {});
+        Q_local.reshape(numRowsLocal, numCols);
+        deep_copy(Q_local, Scalar {});
       }
     };
 
@@ -427,14 +431,14 @@ namespace TSQR {
 
       std::ostream& out_;
       std::ostream& err_;
-      const bool testFactorExplicit_, testFactorImplicit_;
-      const bool humanReadable_, debug_;
+      const bool testFactorExplicit_;
+      const bool testFactorImplicit_;
+      const bool humanReadable_;
+      const bool debug_;
 
     public:
       using ordinal_type = Ordinal;
       using scalar_type = Scalar;
-      using mag_type =
-        typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
       using timer_type = Teuchos::Time;
 
       /// \brief Constructor, with custom seed value
@@ -460,26 +464,26 @@ namespace TSQR {
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      DistTsqrBenchmarker (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
-                           const Teuchos::RCP< MessengerBase< double > >& doubleComm,
-                           const std::vector<int>& seed,
-                           const std::string& scalarTypeName,
-                           std::ostream& out,
-                           std::ostream& err,
-                           const bool testFactorExplicit,
-                           const bool testFactorImplicit,
-                           const bool humanReadable,
-                           const bool debug) :
-        gen_ (seed),
-        scalarComm_ (scalarComm),
-        doubleComm_ (doubleComm),
-        scalarTypeName_ (scalarTypeName),
-        out_ (out),
-        err_ (err),
-        testFactorExplicit_ (testFactorExplicit),
-        testFactorImplicit_ (testFactorImplicit),
-        humanReadable_ (humanReadable),
-        debug_ (debug)
+      DistTsqrBenchmarker(const Teuchos::RCP<MessengerBase<Scalar>>& scalarComm,
+                          const Teuchos::RCP<MessengerBase<double>>& doubleComm,
+                          const std::vector<int>& seed,
+                          const std::string& scalarTypeName,
+                          std::ostream& out,
+                          std::ostream& err,
+                          const bool testFactorExplicit,
+                          const bool testFactorImplicit,
+                          const bool humanReadable,
+                          const bool debug) :
+        gen_(seed),
+        scalarComm_(scalarComm),
+        doubleComm_(doubleComm),
+        scalarTypeName_(scalarTypeName),
+        out_(out),
+        err_(err),
+        testFactorExplicit_(testFactorExplicit),
+        testFactorImplicit_(testFactorImplicit),
+        humanReadable_(humanReadable),
+        debug_(debug)
       {}
 
       /// \brief Constructor, with default seed value
@@ -506,24 +510,24 @@ namespace TSQR {
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      DistTsqrBenchmarker (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
-                           const Teuchos::RCP< MessengerBase< double > >& doubleComm,
-                           const std::string& scalarTypeName,
-                           std::ostream& out,
-                           std::ostream& err,
-                           const bool testFactorExplicit,
-                           const bool testFactorImplicit,
-                           const bool humanReadable,
-                           const bool debug) :
-        scalarComm_ (scalarComm),
-        doubleComm_ (doubleComm),
-        scalarTypeName_ (scalarTypeName),
-        out_ (out),
-        err_ (err),
-        testFactorExplicit_ (testFactorExplicit),
-        testFactorImplicit_ (testFactorImplicit),
-        humanReadable_ (humanReadable),
-        debug_ (debug)
+      DistTsqrBenchmarker(const Teuchos::RCP<MessengerBase<Scalar>>& scalarComm,
+                          const Teuchos::RCP<MessengerBase<double>>& doubleComm,
+                          const std::string& scalarTypeName,
+                          std::ostream& out,
+                          std::ostream& err,
+                          const bool testFactorExplicit,
+                          const bool testFactorImplicit,
+                          const bool humanReadable,
+                          const bool debug) :
+        scalarComm_(scalarComm),
+        doubleComm_(doubleComm),
+        scalarTypeName_(scalarTypeName),
+        out_(out),
+        err_(err),
+        testFactorExplicit_(testFactorExplicit),
+        testFactorImplicit_(testFactorImplicit),
+        humanReadable_(humanReadable),
+        debug_(debug)
       {}
 
       /// \brief Get seed vector for pseudorandom number generator
@@ -533,9 +537,9 @@ namespace TSQR {
       /// can use this to resume the pseudorandom number stream from
       /// where you last were.
       void
-      getSeed (std::vector<int>& seed) const
+      getSeed(std::vector<int>& seed) const
       {
-        gen_.getSeed (seed);
+        gen_.getSeed(seed);
       }
 
       /// \brief Run the DistTsqr benchmark
@@ -545,127 +549,119 @@ namespace TSQR {
       /// \param numCols [in] Number of columns in the matrix to test.
       ///   Number of rows := (# MPI processors) * ncols
       void
-      benchmark (const int numTrials,
-                 const Ordinal numCols,
-                 const std::string& additionalFieldNames,
-                 const std::string& additionalData,
-                 const bool printFieldNames)
+      benchmark(const int numTrials,
+                const Ordinal numCols,
+                const std::string& additionalFieldNames,
+                const std::string& additionalData,
+                const bool printFieldNames)
       {
         using std::endl;
 
         // Set up test problem.
-        Matrix< Ordinal, Scalar > A_local, Q_local, R;
-        testProblem (A_local, Q_local, R, numCols);
+        Matrix<Ordinal, Scalar> A_local, Q_local, R;
+        testProblem(A_local, Q_local, R, numCols);
 
         // Set up TSQR implementation.
         DistTsqr<Ordinal, Scalar> par;
-        par.init (scalarComm_);
+        par.init(scalarComm_);
 
         // Whether we've printed field names (i.e., column headers)
         // yet.  Only matters for non-humanReadable output.
         bool printedFieldNames = false;
 
-        if (testFactorImplicit_)
-          {
-            std::string timerName ("DistTsqr");
-            typedef typename DistTsqr<Ordinal, Scalar>::FactorOutput
-              factor_output_type;
+        if(testFactorImplicit_) {
+          std::string timerName("DistTsqr");
 
-            // Throw away some number of runs, because some MPI libraries
-            // (recent versions of OpenMPI at least) do autotuning for the
-            // first few collectives calls.
-            const int numThrowAwayRuns = 5;
-            for (int runNum = 0; runNum < numThrowAwayRuns; ++runNum)
-              {
-                // Factor the matrix A (copied into R, which will be
-                // overwritten on output)
-                factor_output_type factorOutput = par.factor (R.view());
-                // Compute the explicit Q factor
-                par.explicit_Q (numCols, Q_local.data(), Q_local.stride(1), factorOutput);
-              }
-
-            // Now do the actual timing runs.  Benchmark DistTsqr
-            // (factor() and explicit_Q()) for numTrials trials.
-            timer_type timer (timerName);
-            timer.start();
-            for (int trialNum = 0; trialNum < numTrials; ++trialNum)
-              {
-                // Factor the matrix A (copied into R, which will be
-                // overwritten on output)
-                factor_output_type factorOutput = par.factor (R.view());
-                // Compute the explicit Q factor
-                par.explicit_Q (numCols, Q_local.data(), Q_local.stride(1), factorOutput);
-              }
-            // Cumulative timing on this MPI process.
-            // "Cumulative" means the elapsed time of numTrials executions.
-            const double localCumulativeTiming = timer.stop();
-
-            // reportResults() must be called on all processes, since this
-            // figures out the min and max timings over all processes.
-            reportResults (timerName, numTrials, numCols, localCumulativeTiming,
-                           additionalFieldNames, additionalData,
-                           printFieldNames && (! printedFieldNames));
-            if (printFieldNames && (! printedFieldNames))
-              printedFieldNames = true;
+          // Throw away some number of runs, because some MPI libraries
+          // (recent versions of OpenMPI at least) do autotuning for the
+          // first few collectives calls.
+          const int numThrowAwayRuns = 5;
+          for(int runNum = 0; runNum < numThrowAwayRuns; ++runNum) {
+            auto factorOutput = par.factor(R.view());
+            par.explicit_Q(numCols, Q_local.data(),
+                           Q_local.stride(1), factorOutput);
           }
 
-        if (testFactorExplicit_)
-          {
-            std::string timerName ("DistTsqrRB");
-
-            // Throw away some number of runs, because some MPI libraries
-            // (recent versions of OpenMPI at least) do autotuning for the
-            // first few collectives calls.
-            const int numThrowAwayRuns = 5;
-            for (int runNum = 0; runNum < numThrowAwayRuns; ++runNum)
-              {
-                par.factorExplicit (R.view(), Q_local.view());
-              }
-
-            // Benchmark DistTsqr::factorExplicit() for numTrials trials.
-            timer_type timer (timerName);
-            timer.start();
-            for (int trialNum = 0; trialNum < numTrials; ++trialNum)
-              {
-                par.factorExplicit (R.view(), Q_local.view());
-              }
-            // Cumulative timing on this MPI process.
-            // "Cumulative" means the elapsed time of numTrials executions.
-            const double localCumulativeTiming = timer.stop();
-
-            // Report cumulative (not per-invocation) timing results
-            reportResults (timerName, numTrials, numCols, localCumulativeTiming,
-                           additionalFieldNames, additionalData,
-                           printFieldNames && (! printedFieldNames));
-            if (printFieldNames && (! printedFieldNames))
-              printedFieldNames = true;
-
-            // Per-invocation timings (for factorExplicit() benchmark
-            // only).  localTimings were computed on this MPI process;
-            // globalTimings are statistical summaries of those over
-            // all MPI processes.  We only collect that data for
-            // factorExplicit().
-            std::vector< TimeStats > localTimings;
-            std::vector< TimeStats > globalTimings;
-            par.getFactorExplicitTimings (localTimings);
-            for (std::vector< TimeStats >::size_type k = 0; k < localTimings.size(); ++k)
-              globalTimings.push_back (globalTimeStats (*doubleComm_, localTimings[k]));
-            std::vector< std::string > timingLabels;
-            par.getFactorExplicitTimingLabels (timingLabels);
-
-            if (humanReadable_)
-              out_ << timerName << " per-invocation benchmark results:" << endl;
-
-            const std::string labelLabel ("label,scalarType");
-            for (std::vector< std::string >::size_type k = 0; k < timingLabels.size(); ++k)
-              {
-                // Only print column headers (i.e., field names) once, if at all.
-                const bool printHeaders = (k == 0) && printFieldNames;
-                globalTimings[k].print (out_, humanReadable_,
-                                        timingLabels[k] + "," + scalarTypeName_,
-                                        labelLabel, printHeaders);
-              }
+          // Now do the actual timing runs.  Benchmark DistTsqr
+          // (factor() and explicit_Q()) for numTrials trials.
+          timer_type timer (timerName);
+          timer.start();
+          for(int trialNum = 0; trialNum < numTrials; ++trialNum) {
+            auto factorOutput = par.factor(R.view());
+            par.explicit_Q(numCols, Q_local.data(),
+                           Q_local.stride(1), factorOutput);
           }
+          // Cumulative timing on this MPI process.  "Cumulative"
+          // means the elapsed time of numTrials executions.
+          const double localCumulativeTiming = timer.stop();
+
+          // reportResults() must be called on all processes, since this
+          // figures out the min and max timings over all processes.
+          reportResults(timerName, numTrials, numCols,
+                        localCumulativeTiming, additionalFieldNames,
+                        additionalData,
+                        printFieldNames && (! printedFieldNames));
+          if(printFieldNames && (! printedFieldNames)) {
+            printedFieldNames = true;
+          }
+        }
+
+        if(testFactorExplicit_) {
+          std::string timerName ("DistTsqrRB");
+
+          // Throw away some number of runs, because some MPI libraries
+          // (recent versions of OpenMPI at least) do autotuning for the
+          // first few collectives calls.
+          const int numThrowAwayRuns = 5;
+          for(int runNum = 0; runNum < numThrowAwayRuns; ++runNum) {
+            par.factorExplicit(R.view(), Q_local.view());
+          }
+
+          // Benchmark DistTsqr::factorExplicit() for numTrials trials.
+          timer_type timer(timerName);
+          timer.start();
+          for(int trialNum = 0; trialNum < numTrials; ++trialNum) {
+            par.factorExplicit(R.view(), Q_local.view());
+          }
+          // Cumulative timing on this MPI process.
+          // "Cumulative" means the elapsed time of numTrials executions.
+          const double localCumulativeTiming = timer.stop();
+
+          // Report cumulative (not per-invocation) timing results
+          reportResults(timerName, numTrials, numCols, localCumulativeTiming,
+                        additionalFieldNames, additionalData,
+                        printFieldNames && (! printedFieldNames));
+          if(printFieldNames && (! printedFieldNames)) {
+            printedFieldNames = true;
+          }
+
+          // Per-invocation timings (for factorExplicit() benchmark
+          // only).  localTimings were computed on this MPI process;
+          // globalTimings are statistical summaries of those over
+          // all MPI processes.  We only collect that data for
+          // factorExplicit().
+          std::vector<TimeStats> localTimings;
+          std::vector<TimeStats> globalTimings;
+          par.getFactorExplicitTimings(localTimings);
+          for(size_t k = 0; k < localTimings.size(); ++k) {
+            globalTimings.push_back
+              (globalTimeStats(*doubleComm_, localTimings[k]));
+          }
+          std::vector<std::string> timingLabels;
+          par.getFactorExplicitTimingLabels(timingLabels);
+
+          if(humanReadable_) {
+            out_ << timerName << " per-invocation benchmark results:" << endl;
+          }
+          const std::string labelLabel("label,scalarType");
+          for (size_t k = 0; k < timingLabels.size(); ++k) {
+            // Only print column headers (i.e., field names) once, if at all.
+            const bool printHeaders = (k == 0) && printFieldNames;
+            globalTimings[k].print (out_, humanReadable_,
+                                    timingLabels[k] + "," + scalarTypeName_,
+                                    labelLabel, printHeaders);
+          }
+        }
       }
 
     private:
@@ -682,13 +678,13 @@ namespace TSQR {
       ///
       /// \warning Call on ALL MPI processes, not just Rank 0!
       void
-      reportResults (const std::string& method,
-                     const int numTrials,
-                     const ordinal_type numCols,
-                     const double localTiming,
-                     const std::string& additionalFieldNames,
-                     const std::string& additionalData,
-                     const bool printFieldNames)
+      reportResults(const std::string& method,
+                    const int numTrials,
+                    const ordinal_type numCols,
+                    const double localTiming,
+                    const std::string& additionalFieldNames,
+                    const std::string& additionalData,
+                    const bool printFieldNames)
       {
         using std::endl;
 
@@ -699,77 +695,77 @@ namespace TSQR {
 
         // Only Rank 0 prints the final results.
         const bool printResults = (doubleComm_->rank() == 0);
-        if (printResults)
-          {
-            const int numProcs = doubleComm_->size();
-            if (humanReadable_)
-              {
-                out_ << method << " cumulative benchmark results (total time over all trials):" << endl
-                     << "Scalar type = " << scalarTypeName_ << endl
-                     << "Number of columns = " << numCols << endl
-                     << "Number of (MPI) processes = " << numProcs << endl
-                     << "Number of trials = " << numTrials << endl
-                     << "Min timing (in seconds) = " << globalStats.min() << endl
-                     << "Mean timing (in seconds) = " << globalStats.mean() << endl
-                     << "Max timing (in seconds) = " << globalStats.max() << endl
-                     << endl;
-              }
-            else
-              {
-                // Use scientific notation for floating-point numbers
-                out_ << std::scientific;
-
-                if (printFieldNames)
-                  {
-                    out_ << "%method,scalarType,numCols,numProcs,numTrials"
-                         << ",minTiming,meanTiming,maxTiming";
-                    if (! additionalFieldNames.empty())
-                      out_ << "," << additionalFieldNames;
-                    out_ << endl;
-                  }
-
-                out_ << method
-                     << "," << scalarTypeName_
-                     << "," << numCols
-                     << "," << numProcs
-                     << "," << numTrials
-                     << "," << globalStats.min()
-                     << "," << globalStats.mean()
-                     << "," << globalStats.max();
-                if (! additionalData.empty())
-                  out_ << "," << additionalData;
-                out_ << endl;
-              }
+        if(printResults) {
+          const int numProcs = doubleComm_->size();
+          if(humanReadable_) {
+            out_ << method << " cumulative benchmark results "
+                 << "(total time over all trials):" << endl
+                 << "Scalar: " << scalarTypeName_ << endl
+                 << "numCols: " << numCols << endl
+                 << "MPI comm size: " << numProcs << endl
+                 << "numTrials: " << numTrials << endl
+                 << "Min timing (s): " << globalStats.min() << endl
+                 << "Mean timing (s): " << globalStats.mean() << endl
+                 << "Max timing (s): " << globalStats.max() << endl
+                 << endl;
           }
+          else {
+            // Use scientific notation for floating-point numbers
+            out_ << std::scientific;
+
+            if(printFieldNames) {
+              out_ << "%method,scalarType,numCols,numProcs,numTrials"
+                   << ",minTiming,meanTiming,maxTiming";
+              if(! additionalFieldNames.empty()) {
+                out_ << "," << additionalFieldNames;
+              }
+              out_ << endl;
+            }
+
+            out_ << method
+                 << "," << scalarTypeName_
+                 << "," << numCols
+                 << "," << numProcs
+                 << "," << numTrials
+                 << "," << globalStats.min()
+                 << "," << globalStats.mean()
+                 << "," << globalStats.max();
+            if(! additionalData.empty()) {
+              out_ << "," << additionalData;
+            }
+            out_ << endl;
+          }
+        }
       }
 
       void
-      testProblem (Matrix< Ordinal, Scalar >& A_local,
-                   Matrix< Ordinal, Scalar >& Q_local,
-                   Matrix< Ordinal, Scalar >& R,
-                   const Ordinal numCols)
+      testProblem(Matrix<Ordinal, Scalar>& A_local,
+                  Matrix<Ordinal, Scalar>& Q_local,
+                  Matrix<Ordinal, Scalar>& R,
+                  const Ordinal numCols)
       {
         const Ordinal numRowsLocal = numCols;
 
         // A_local: Space for the matrix A to factor -- local to each
-        //   processor.
+        //   (MPI) process.
         //
         // A_global: Global matrix (only nonempty on Proc 0); only
         //   used temporarily.
         Matrix<Ordinal, Scalar> A_global;
 
         // This modifies A_local on all procs, and A_global on Proc 0.
-        par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
+        par_tsqr_test_problem(gen_, A_local, A_global, numCols,
+                              scalarComm_);
 
         // Copy the test problem input into R, since the factorization
         // will overwrite it in place with the final R factor.
-        R.reshape (numCols, numCols);
-        deep_copy (R, A_local);
+        R.reshape(numCols, numCols);
+        deep_copy(R, A_local);
 
         // Prepare space in which to construct the explicit Q factor
         // (local component on this processor)
-        Q_local.reshape (numRowsLocal, numCols);
-        deep_copy (Q_local, Scalar {});
+        Q_local.reshape(numRowsLocal, numCols);
+        deep_copy(Q_local, Scalar {});
       }
     };
   } // namespace Test
@@ -787,7 +783,7 @@ public:
     >;
 
   static pair_type
-  makePair (const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
+  makePair(const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -796,13 +792,13 @@ public:
     using TSQR::TeuchosMessenger;
 
     auto derivedOrdinalComm =
-      rcp (new TeuchosMessenger<ordinal_type> (comm));
+      rcp(new TeuchosMessenger<ordinal_type>(comm));
     auto ordinalComm =
-      rcp_implicit_cast<MessengerBase<ordinal_type> > (derivedOrdinalComm);
+      rcp_implicit_cast<MessengerBase<ordinal_type>>(derivedOrdinalComm);
     auto derivedScalarComm =
-      rcp (new TeuchosMessenger<scalar_type> (comm));
+      rcp (new TeuchosMessenger<scalar_type>(comm));
     auto scalarComm =
-      rcp_implicit_cast<MessengerBase<scalar_type>> (derivedScalarComm);
+      rcp_implicit_cast<MessengerBase<scalar_type>>(derivedScalarComm);
 
     return {ordinalComm, scalarComm};
   }
@@ -858,9 +854,6 @@ public:
 /// \class DistTsqrTestParameters
 /// \brief Encapsulates values of command-line parameters
 struct DistTsqrTestParameters {
-  DistTsqrTestParameters () = default;
-
-  std::string additionalFieldNames, additionalData;
   int numCols = 10;
   int numTrials = 10;
   bool verify = true;
@@ -868,6 +861,8 @@ struct DistTsqrTestParameters {
   bool testReal = true;
 #ifdef HAVE_TPETRATSQR_COMPLEX
   bool testComplex = true;
+#else
+  bool testComplex = false;
 #endif // HAVE_TPETRATSQR_COMPLEX
   bool testFactorExplicit = true;
   bool testFactorImplicit = true;
@@ -876,23 +871,21 @@ struct DistTsqrTestParameters {
   bool humanReadable = false;
   bool printMatrices = false;
   bool debug = false;
+
+  std::string additionalFieldNames;
+  std::string additionalData;
 };
 
 static void
-verify (Teuchos::RCP<const Teuchos::Comm<int>> comm,
-        const DistTsqrTestParameters& params,
-        std::ostream& out,
-        std::ostream& err,
-        std::vector<int>& seed,
-        const bool useSeed)
+verify(Teuchos::RCP<const Teuchos::Comm<int>> comm,
+       const DistTsqrTestParameters& params,
+       std::ostream& out,
+       std::ostream& err,
+       std::vector<int>& seed,
+       const bool useSeed)
 {
   const bool testReal = params.testReal;
-#ifdef HAVE_TPETRATSQR_COMPLEX
   const bool testComplex = params.testComplex;
-#else // Don't HAVE_TPETRATSQR_COMPLEX
-  const bool testComplex = false;
-#endif // HAVE_TPETRATSQR_COMPLEX
-
   const int numCols = params.numCols;
   const bool testFactorExplicit = params.testFactorExplicit;
   const bool testFactorImplicit = params.testFactorImplicit;
@@ -900,18 +893,18 @@ verify (Teuchos::RCP<const Teuchos::Comm<int>> comm,
   const bool printMatrices = params.printMatrices;
   const bool debug = params.debug;
 
-  if (! useSeed) {
-    seed.resize (4);
+  if(! useSeed) {
+    seed.resize(4);
     seed[0] = 0;
     seed[1] = 0;
     seed[2] = 0;
     seed[3] = 1;
   }
-  if (testReal) {
+  if(testReal) {
     TSQR_TEST_DIST_TSQR( float, "float" );
     TSQR_TEST_DIST_TSQR( double, "double" );
   }
-  if (testComplex) {
+  if(testComplex) {
 #ifdef HAVE_TPETRATSQR_COMPLEX
     using std::complex;
 
@@ -919,30 +912,25 @@ verify (Teuchos::RCP<const Teuchos::Comm<int>> comm,
     TSQR_TEST_DIST_TSQR( complex<double>, "complex<double>" );
 
 #else // Don't HAVE_TPETRATSQR_COMPLEX
-    throw std::logic_error ("TSQR was not built with complex "
-                            "arithmetic support");
+    throw std::logic_error("TSQR was not built with complex "
+                           "arithmetic support");
 #endif // HAVE_TPETRATSQR_COMPLEX
   }
 }
 
 
 static void
-benchmark (Teuchos::RCP<const Teuchos::Comm<int>> comm,
-           const DistTsqrTestParameters& params,
-           std::ostream& out,
-           std::ostream& err,
-           std::vector<int>& seed,
-           const bool useSeed)
+benchmark(Teuchos::RCP<const Teuchos::Comm<int>> comm,
+          const DistTsqrTestParameters& params,
+          std::ostream& out,
+          std::ostream& err,
+          std::vector<int>& seed,
+          const bool useSeed)
 {
   using timer_type = Teuchos::Time;
 
   const bool testReal = params.testReal;
-#ifdef HAVE_TPETRATSQR_COMPLEX
   const bool testComplex = params.testComplex;
-#else // Don't HAVE_TPETRATSQR_COMPLEX
-  const bool testComplex = false;
-#endif // HAVE_TPETRATSQR_COMPLEX
-
   const int numCols = params.numCols;
   const int numTrials = params.numTrials;
   const bool testFactorExplicit = params.testFactorExplicit;
@@ -950,26 +938,26 @@ benchmark (Teuchos::RCP<const Teuchos::Comm<int>> comm,
   const bool humanReadable = params.humanReadable;
   const bool debug = params.debug;
 
-  if (! useSeed) {
-    seed.resize (4);
+  if(! useSeed) {
+    seed.resize(4);
     seed[0] = 0;
     seed[1] = 0;
     seed[2] = 0;
     seed[3] = 1;
   }
   using Teuchos::rcp;
-  using Teuchos::rcp_implicit_cast;
-  using TSQR::MessengerBase;
   auto doubleCommSub =
-    rcp (new TSQR::TeuchosMessenger<double> (comm));
+    rcp(new TSQR::TeuchosMessenger<double>(comm));
+  using TSQR::MessengerBase;
+  using Teuchos::rcp_implicit_cast;
   auto doubleComm =
-    rcp_implicit_cast<MessengerBase<double>> (doubleCommSub);
+    rcp_implicit_cast<MessengerBase<double>>(doubleCommSub);
 
-  if (testReal) {
+  if(testReal) {
     TSQR_BENCHMARK_DIST_TSQR( float, "float" );
     TSQR_BENCHMARK_DIST_TSQR( double, "double" );
   }
-  if (testComplex) {
+  if(testComplex) {
 #ifdef HAVE_TPETRATSQR_COMPLEX
     using std::complex;
 
@@ -977,8 +965,8 @@ benchmark (Teuchos::RCP<const Teuchos::Comm<int>> comm,
     TSQR_BENCHMARK_DIST_TSQR( complex<double>, "complex<double>" );
 
 #else // Don't HAVE_TPETRATSQR_COMPLEX
-    throw std::logic_error ("TSQR was not built with complex "
-                            "arithmetic support");
+    throw std::logic_error("TSQR was not built with complex "
+                           "arithmetic support");
 #endif // HAVE_TPETRATSQR_COMPLEX
   }
 }
@@ -995,42 +983,43 @@ benchmark (Teuchos::RCP<const Teuchos::Comm<int>> comm,
 ///
 /// \return Encapsulation of command-line options
 static DistTsqrTestParameters
-parseOptions (int argc,
-              char* argv[],
-              std::ostream& err,
-              bool& printedHelp)
+parseOptions(int argc,
+             char* argv[],
+             std::ostream& err,
+             bool& printedHelp)
 {
   using std::endl;
   printedHelp = false;
 
   // Command-line parameters, set to their default values.
-  DistTsqrTestParameters params;
+  DistTsqrTestParameters params {};
   try {
-    using Teuchos::CommandLineProcessor;
-    CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true,
-                                      /* recognizeAllOptions=*/ true);
+    constexpr bool throwExceptions = true;
+    constexpr bool recognizeAllOptions = true;
+    using CLP = Teuchos::CommandLineProcessor;
+    CLP cmdLineProc(throwExceptions, recognizeAllOptions);
 
     const char docString[] = "This program tests TSQR::DistTsqr, which "
       "implements the internode-parallel part of TSQR (TSQR::Tsqr).  "
       "Accuracy and performance tests are included.";
-    cmdLineProc.setDocString (docString);
-    cmdLineProc.setOption ("verify",
+    cmdLineProc.setDocString(docString);
+    cmdLineProc.setOption("verify",
         "noverify",
         &params.verify,
         "Test accuracy");
-    cmdLineProc.setOption ("benchmark",
+    cmdLineProc.setOption("benchmark",
         "nobenchmark",
         &params.benchmark,
         "Test performance");
-    cmdLineProc.setOption ("implicit",
+    cmdLineProc.setOption("implicit",
         "noimplicit",
         &params.testFactorImplicit,
         "Test DistTsqr\'s factor() and explicit_Q()");
-    cmdLineProc.setOption ("explicit",
+    cmdLineProc.setOption("explicit",
         "noexplicit",
         &params.testFactorExplicit,
         "Test DistTsqr\'s factorExplicit()");
-    cmdLineProc.setOption ("field-names",
+    cmdLineProc.setOption("field-names",
         &params.additionalFieldNames,
         "Any additional field name(s) (comma-delimited "
         "string) to add to the benchmark output.  Empty "
@@ -1038,50 +1027,50 @@ parseOptions (int argc,
         "the benchmark executable, but not (easily) known "
         "inside the benchmark -- e.g., environment "
         "variables.");
-    cmdLineProc.setOption ("output-data",
+    cmdLineProc.setOption("output-data",
         &params.additionalData,
         "Any additional data to add to the output, "
         "corresponding to the above field name(s). "
         "Empty by default.");
-    cmdLineProc.setOption ("print-field-names",
+    cmdLineProc.setOption("print-field-names",
         "no-print-field-names",
         &params.printFieldNames,
         "Print field names (for machine-readable output only)");
-    cmdLineProc.setOption ("print-trilinos-test-stuff",
+    cmdLineProc.setOption("print-trilinos-test-stuff",
         "no-print-trilinos-test-stuff",
         &params.printTrilinosTestStuff,
         "Print output that makes the Trilinos test "
         "framework happy (but makes benchmark results "
         "parsing scripts unhappy)");
-    cmdLineProc.setOption ("print-matrices",
+    cmdLineProc.setOption("print-matrices",
         "no-print-matrices",
         &params.printMatrices,
         "Print global test matrices and computed results to stderr");
-    cmdLineProc.setOption ("debug",
+    cmdLineProc.setOption("debug",
         "nodebug",
         &params.debug,
         "Print debugging information");
-    cmdLineProc.setOption ("human-readable",
+    cmdLineProc.setOption("human-readable",
         "machine-readable",
         &params.humanReadable,
         "If set, make output easy to read by humans "
         "(but hard to parse)");
-    cmdLineProc.setOption ("ncols",
+    cmdLineProc.setOption("ncols",
         &params.numCols,
         "Number of columns in the test matrix");
-    cmdLineProc.setOption ("ntrials",
+    cmdLineProc.setOption("ntrials",
         &params.numTrials,
         "Number of trials (only used when \"--benchmark\"");
-    cmdLineProc.setOption ("real",
+    cmdLineProc.setOption("real",
         "noreal",
         &params.testReal,
         "Test real arithmetic routines");
-#ifdef HAVE_TPETRATSQR_COMPLEX
-    cmdLineProc.setOption ("complex",
+    cmdLineProc.setOption("complex",
         "nocomplex",
         &params.testComplex,
-        "Test complex arithmetic routines");
-#endif // HAVE_TPETRATSQR_COMPLEX
+        "Test complex arithmetic routines (only set to true if "
+        "complex arithmetic support was enabled at configure "
+        "time)");
     cmdLineProc.parse (argc, argv);
   }
   catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
@@ -1102,11 +1091,17 @@ parseOptions (int argc,
     (params.benchmark && params.numTrials < 1, std::invalid_argument,
      "\"--benchmark\" option requires positive --numTrials, but you "
      "set --numTrials=" << params.numTrials << ".");
+#ifndef HAVE_TPETRATSQR_COMPLEX
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (params.testComplex, std::invalid_argument, "Complex "
+       "arithmetic support was not enabled at configure time, "
+       "but you set --testComplex.");
+#endif // HAVE_TPETRATSQR_COMPLEX
   return params;
 }
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
   TSQR::Test::MpiAndKokkosScope testScope(&argc, &argv);
   auto comm = testScope.getComm();
