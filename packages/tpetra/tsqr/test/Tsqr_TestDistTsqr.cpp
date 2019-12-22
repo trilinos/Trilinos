@@ -45,16 +45,15 @@
 #include "Tsqr_printGlobalMatrix.hpp"
 
 #include "Tsqr_TeuchosMessenger.hpp"
-#ifdef HAVE_MPI
-#  include "Teuchos_GlobalMPISession.hpp"
-#  include "Teuchos_oblackholestream.hpp"
-#endif // HAVE_MPI
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_oblackholestream.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Kokkos_Core.hpp"
 
 #include <algorithm>
 #ifdef HAVE_TPETRATSQR_COMPLEX
@@ -82,11 +81,11 @@ namespace TSQR {
       const bool humanReadable_, printMatrices_, debug_;
 
     public:
-      typedef Ordinal ordinal_type;
-      typedef Scalar scalar_type;
-      typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-      typedef typename std::vector<magnitude_type> result_type;
-      typedef Matrix<ordinal_type, scalar_type> matrix_type;
+      using ordinal_type = Ordinal;
+      using scalar_type = Scalar;
+      using mag_type =
+        typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
+      using result_type = std::vector<mag_type>;
 
       /// \brief Constructor, with custom seed value
       ///
@@ -439,7 +438,7 @@ namespace TSQR {
     public:
       using ordinal_type = Ordinal;
       using scalar_type = Scalar;
-      using magnitude_type =
+      using mag_type =
         typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
       using timer_type = Teuchos::Time;
 
@@ -1003,12 +1002,10 @@ benchmark (Teuchos::RCP<const Teuchos::Comm<int>> comm,
 static DistTsqrTestParameters
 parseOptions (int argc,
               char* argv[],
-              const bool allowedToPrint,
+              std::ostream& err,
               bool& printedHelp)
 {
-  using std::cerr;
   using std::endl;
-
   printedHelp = false;
 
   // Command-line parameters, set to their default values.
@@ -1093,8 +1090,7 @@ parseOptions (int argc,
     cmdLineProc.parse (argc, argv);
   }
   catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
-    if (allowedToPrint)
-      cerr << "Unrecognized command-line option: " << e.what() << endl;
+    err << "Unrecognized command-line option: " << e.what() << endl;
     throw e;
   }
   catch (Teuchos::CommandLineProcessor::HelpPrinted& e) {
@@ -1103,40 +1099,57 @@ parseOptions (int argc,
 
   // Validate command-line options.  We provide default values
   // for unset options, so we don't have to validate those.
-  if (params.numCols <= 0) {
-    throw std::invalid_argument ("Number of columns must be positive");
-  }
-  else if (params.benchmark && params.numTrials < 1) {
-    throw std::invalid_argument ("\"--benchmark\" option requires numTrials >= 1");
-  }
-
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (params.numCols <= 0, std::invalid_argument,
+     "You set --numCols=" << params.numCols << ".  The number of "
+     "columns in the matrix to test must be positive.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (params.benchmark && params.numTrials < 1, std::invalid_argument,
+     "\"--benchmark\" option requires positive --numTrials, but you "
+     "set --numTrials=" << params.numTrials << ".");
   return params;
 }
+
+class MpiAndKokkosScope {
+public:
+  MpiAndKokkosScope(int* argc, char*** argv) :
+    mpiScope_(argc, argv, &blackHole_),
+    kokkosScope_(*argc, *argv)
+  {}
+
+  Teuchos::RCP<const Teuchos::Comm<int>> getComm() const {
+    return Teuchos::DefaultComm<int>::getComm();
+  }
+
+  std::ostream& outStream() {
+    // Only Process 0 gets to write to cout and cerr.  The other MPI
+    // processes send their output to a "black hole" (something that
+    // acts like /dev/null).
+    return getComm()->getRank() == 0 ? std::cout : blackHole_;
+  }
+
+  std::ostream& errStream() {
+    return getComm()->getRank() == 0 ? std::cerr : blackHole_;
+  }
+
+private:
+  Teuchos::oblackholestream blackHole_;
+  Teuchos::GlobalMPISession mpiScope_;
+  Kokkos::ScopeGuard kokkosScope_;
+};
 
 int
 main (int argc, char *argv[])
 {
-#ifdef HAVE_MPI
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-  auto comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
-  // Only Rank 0 gets to write to cout and cerr.  The other MPI
-  // process ranks send their output to a "black hole" (something that
-  // acts like /dev/null, and may be /dev/null).
-  const bool allowedToPrint = (myRank == 0);
-  std::ostream& out = allowedToPrint ? std::cout : blackhole;
-  std::ostream& err = allowedToPrint ? std::cerr : blackhole;
-#else // Don't HAVE_MPI: single-node test
-  const bool allowedToPrint = true;
-  std::ostream& out = std::cout;
-  std::ostream& err = std::cerr;
-#endif // HAVE_MPI
+  MpiAndKokkosScope testScope(&argc, &argv);
+  auto comm = testScope.getComm();
+  std::ostream& out = testScope.outStream();
+  std::ostream& err = testScope.errStream();
 
   // Fetch command-line parameters.
   bool printedHelp = false;
   DistTsqrTestParameters params =
-    parseOptions (argc, argv, allowedToPrint, printedHelp);
+    parseOptions (argc, argv, err, printedHelp);
   if (printedHelp) {
     return EXIT_SUCCESS;
   }
@@ -1158,11 +1171,11 @@ main (int argc, char *argv[])
 
     success = true;
 
-    if (allowedToPrint && params.printTrilinosTestStuff) {
+    if (params.printTrilinosTestStuff) {
       // The Trilinos test framework expects a message like this.
       out << "\nEnd Result: TEST PASSED" << std::endl;
     }
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, err, success);
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
