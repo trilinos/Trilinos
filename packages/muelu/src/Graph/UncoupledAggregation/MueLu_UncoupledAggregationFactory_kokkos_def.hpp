@@ -188,7 +188,7 @@ namespace MueLu {
     const LO numRows = graph->GetNodeNumVertices();
 
     // construct aggStat information
-    Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space> aggStat("aggregation status",
+    Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space> aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"),
                                                                            numRows);
     Kokkos::deep_copy(aggStat, READY);
 

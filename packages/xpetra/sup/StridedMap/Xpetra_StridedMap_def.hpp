@@ -49,7 +49,7 @@
 #ifndef XPETRA_STRIDEDMAP_DEF_HPP
 #define XPETRA_STRIDEDMAP_DEF_HPP
 
-#include "Xpetra_StridedMap_decl.hpp"
+#include "Xpetra_StridedMap.hpp"
 
 #include <Teuchos_OrdinalTraits.hpp>
 

@@ -64,12 +64,12 @@ public:
 
   ThyraProductME_Objective(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null) :
     thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_) {
-    valueUpdated = gradientUpdated = false;
+    computeValue = true;
     value_ = 0;
-    x_ptr = Teuchos::null;
-    grad_ptr = Teuchos::null;
-    if(params != Teuchos::null)
+    if(params != Teuchos::null) {
       params->set<int>("Optimizer Iteration Number", -1);
+      params->set<bool>("Compute State", true);
+    }
   };
 
   /** \brief Compute value.
@@ -80,8 +80,11 @@ public:
   */
   Real value( const Vector<Real> &rol_x, Real &tol ) {
 
-    if(!x_hasChanged(rol_x) &&  valueUpdated)
+    if(!computeValue)
        return value_;
+
+    Real norm = rol_x.norm();
+    std::cout << "Value norm: " << norm << std::endl;
 
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
@@ -97,9 +100,12 @@ public:
 
     thyra_model.evalModel(inArgs, outArgs);
 
-    value_ = ::Thyra::get_ele(*g,0);
+    if ((params == Teuchos::null) || !params->isParameter("State Solve Converged") || params->get<bool>("State Solve Converged"))
+      value_ = ::Thyra::get_ele(*g,0);
+    else
+      value_ = 1.0e100;
 
-    valueUpdated = true;
+    computeValue = false;
 
     return value_;
   };
@@ -113,13 +119,8 @@ public:
   */
   void gradient( Vector<Real> &rol_g, const Vector<Real> &rol_x, Real &tol ) {
 
-    if( !x_hasChanged(rol_x) && gradientUpdated)
-      return rol_g.set(*grad_ptr);
-
-    if(params != Teuchos::null) {
-      params->set<bool>("Update Functional", !valueUpdated);
-      params->set<bool>("Update Functional Gradient", !gradientUpdated);
-    }
+    Real norm = rol_x.norm();
+    std::cout << "In Gradient, Value norm: " << norm << std::endl;
 
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
@@ -137,7 +138,7 @@ public:
 
     Teuchos::RCP< Thyra::VectorBase<Real> > g;
 
-    if(!valueUpdated) {
+    if(computeValue) {
       g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
       outArgs.set_g(g_index, g);
     }
@@ -159,56 +160,31 @@ public:
     }
     thyra_model.evalModel(inArgs, outArgs);
 
-    if (grad_ptr == Teuchos::null)
-      grad_ptr = rol_g.clone();
-    grad_ptr->set(rol_g);
-
-    if(!valueUpdated) {
+    if(computeValue) {
       value_ = ::Thyra::get_ele(*g,0);
-      valueUpdated = true;
+      computeValue = false;
     }
-    gradientUpdated = true;
   };
 
-  void update( const Vector<Real> & /*x*/, bool flag, int iter) {
-     if(params != Teuchos::null)
-       params->set<int>("Optimizer Iteration Number", iter);
-  }
-
-  bool x_hasChanged(const Vector<Real> &rol_x) {
-    bool changed;
-    if (x_ptr == Teuchos::null) {
-      x_ptr = rol_x.clone();
-      x_ptr->set(rol_x);
-      gradientUpdated = false;
-      valueUpdated = false;
-      changed = true;
-    }
-    else {
-      x_ptr->axpy( -1.0, rol_x );
-      Real norm = x_ptr->norm();
-      x_ptr->set(rol_x);
-      if (norm == 0) changed = false;
-      else {
-        gradientUpdated = false;
-        valueUpdated = false;
-        changed = true;
+  void update( const Vector<Real> & /*x*/, bool flag = true, int iter = -1 ) {
+    computeValue = flag;
+    if(Teuchos::nonnull(params)) {
+      params->set<int>("Optimizer Iteration Number", iter);
+      if(flag == true) {
+        params->set<bool>("Compute State", true);
+        params->set<bool>("Optimization Variables Changed", true);
       }
     }
-    if (params != Teuchos::null)
-      params->set<bool>("Optimization Variables Changed", changed);
-    return changed;
   }
 
 public:
-  bool gradientUpdated, valueUpdated;
+  bool computeValue;
 
 private:
   Thyra::ModelEvaluatorDefaultBase<Real>& thyra_model;
   const int g_index;
   const std::vector<int> p_indices;
   Real value_;
-  Teuchos::RCP<Vector<Real> > x_ptr, grad_ptr;
   Teuchos::RCP<Teuchos::ParameterList> params;
 
 }; // class Objective

@@ -57,10 +57,6 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Piro_ConfigDefs.hpp"
-#ifdef HAVE_PIRO_OPTIPACK
-#include "OptiPack_Config.h"
-#endif
-
 
 int main(int argc, char *argv[]) {
 
@@ -86,19 +82,13 @@ int main(int argc, char *argv[]) {
 
   Piro::Epetra::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<5; iTest++) {
+  for (int iTest=0; iTest<3; iTest++) {
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Analysis_Dakota.xml"; break;
        case 1: inputFile="input_Analysis_ROL.xml"; break;
        case 2: inputFile="input_Analysis_ROL_AdjointSensitivities.xml"; break;
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-       case 3: inputFile="input_Analysis_OptiPack.xml"; break;
-#else
-       case 3: continue;
-#endif
-       case 4: inputFile="input_Analysis_MOOCHO.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -123,7 +113,7 @@ int main(int argc, char *argv[]) {
       Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(&appParams));
 
       Teuchos::ParameterList piroParams = appParams.sublist("Piro");
-      Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
+      Teuchos::ParameterList& analysisParams = piroParams.sublist("Analysis");
 
 #ifdef HAVE_PIRO_NOX
       solverFactory.setSource<NOX::Epetra::Observer>(

@@ -156,18 +156,6 @@ namespace TSQR {
     /// most cases, however.
     size_t size_of_scalar () const { return size_of_scalar_; }
 
-    //! True if and only if the two strategies are the same.
-    bool operator== (const CacheBlockingStrategy& rhs) const {
-      return cache_size_hint() == rhs.cache_size_hint() &&
-        size_of_scalar() == rhs.size_of_scalar();
-    }
-
-    //! True if and only if the two strategies are not the same.
-    bool operator!= (const CacheBlockingStrategy& rhs) const {
-      return cache_size_hint() != rhs.cache_size_hint() ||
-        size_of_scalar() != rhs.size_of_scalar();
-    }
-
     /// \brief Pointer offset for the cache block with the given index.
     ///
     /// The pointer offset depends on whether cache blocks are stored
@@ -221,14 +209,14 @@ namespace TSQR {
                         const LocalOrdinal nrows_cache_block,
                         const bool contiguous_cache_blocks) const
     {
-      if (contiguous_cache_blocks)
-        {
-          std::pair<LocalOrdinal, LocalOrdinal> result =
-            cache_block (index, nrows, ncols, nrows_cache_block);
-          return result.second; // Number of rows in the cache block
-        }
-      else
+      if (contiguous_cache_blocks) {
+        std::pair<LocalOrdinal, LocalOrdinal> result =
+          cache_block (index, nrows, ncols, nrows_cache_block);
+        return result.second; // Number of rows in the cache block
+      }
+      else {
         return lda;
+      }
     }
 
     /// \brief Start and size of cache block number \c index.
@@ -257,39 +245,46 @@ namespace TSQR {
       LocalOrdinal my_row_start, my_nrows;
 
       my_row_start = index * nrows_cache_block;
-      if (quotient == 0)
-        { // There is only one cache block.
-          if (index == 0)
-            my_nrows = remainder;
-          else
-            my_nrows = 0; // Out-of-range block, therefore empty
+      if (quotient == 0) { // There is only one cache block.
+        if (index == 0) {
+          my_nrows = remainder;
         }
-      else if (remainder < ncols)
-        { // There are quotient cache blocks.
-          if (index < 0)
-            my_nrows = 0; // Out-of-range block, therefore empty
-          else if (index < quotient - 1)
-            my_nrows = nrows_cache_block;
-          else if (index == quotient - 1)
-            // The last cache block gets the leftover rows, so that no
-            // cache block has fewer than ncols rows.
-            my_nrows = nrows_cache_block + remainder;
-          else
-            my_nrows = 0; // Out-of-range block, therefore empty
+        else {
+          my_nrows = 0; // Out-of-range block, therefore empty
         }
-      else
-        { // There are quotient+1 cache blocks.
-          if (index < 0)
-            my_nrows = 0; // Out-of-range block, therefore empty
-          else if (index < quotient)
-            my_nrows = nrows_cache_block;
-          else if (index == quotient)
-            // The last cache block has the leftover rows, which are
-            // >= ncols and < nrows_cache_block.
-            my_nrows = remainder;
-          else
-            my_nrows = 0; // Out-of-range block, therefore empty
+      }
+      else if (remainder < ncols) { // There are quotient cache blocks.
+        if (index < 0) {
+          my_nrows = 0; // Out-of-range block, therefore empty
         }
+        else if (index < quotient - 1) {
+          my_nrows = nrows_cache_block;
+        }
+        else if (index == quotient - 1) {
+          // The last cache block gets the leftover rows, so that no
+          // cache block has fewer than ncols rows.
+          my_nrows = nrows_cache_block + remainder;
+        }
+        else {
+          my_nrows = 0; // Out-of-range block, therefore empty
+        }
+      }
+      else { // There are quotient+1 cache blocks.
+        if (index < 0) {
+          my_nrows = 0; // Out-of-range block, therefore empty
+        }
+        else if (index < quotient) {
+          my_nrows = nrows_cache_block;
+        }
+        else if (index == quotient) {
+          // The last cache block has the leftover rows, which are
+          // >= ncols and < nrows_cache_block.
+          my_nrows = remainder;
+        }
+        else {
+          my_nrows = 0; // Out-of-range block, therefore empty
+        }
+      }
       return std::make_pair (my_row_start, my_nrows);
     }
 
@@ -316,7 +311,6 @@ namespace TSQR {
     /// \note This method has an \f$O(1)\f$ cost, so that
     ///   parallelization by calling this method repeatedly for a
     ///   sequence of cache block indices is not expensive.
-    ///
     std::vector<LocalOrdinal>
     cache_block_details (const LocalOrdinal index,
                          const LocalOrdinal nrows,

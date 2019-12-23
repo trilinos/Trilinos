@@ -37,17 +37,20 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_Test_FullTsqrTest_hpp
-#define __TSQR_Test_FullTsqrTest_hpp
+#ifndef TSQR_TEST_FULLTSQRTEST_HPP
+#define TSQR_TEST_FULLTSQRTEST_HPP
 
 #include "Tsqr.hpp"
+#include "Tsqr_NodeTsqrFactory.hpp"
 #include "Tsqr_Random_NormalGenerator.hpp"
 #include "Tsqr_Random_GlobalMatrix.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr_TestSetup.hpp"
 #include "Tsqr_GlobalVerify.hpp"
 #include "Tsqr_TeuchosMessenger.hpp"
 #include "Tsqr_TestUtils.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -56,93 +59,181 @@
 namespace TSQR {
   namespace Test {
 
-    /// \class TsqrInaccurate
-    /// \brief Signals that a TSQR test failed due to insufficient accuracy.
-    class TsqrInaccurate : public std::exception {
-    public:
-      //! Constructor
-      TsqrInaccurate (const std::string& msg) : msg_ (msg) {}
+    template<class Scalar>
+    using kokkos_value_type = typename std::conditional<
+        std::is_const<Scalar>::value,
+        const typename Kokkos::ArithTraits<
+          typename std::remove_const<Scalar>::type>::val_type,
+        typename Kokkos::ArithTraits<Scalar>::val_type
+      >::type;
 
-      //! The error message
-      const char* what() const throw() { return msg_.c_str(); }
+    template<class LO, class Scalar>
+    Kokkos::View<kokkos_value_type<Scalar>**,
+                 Kokkos::LayoutLeft, Kokkos::HostSpace,
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+    getHostMatrixView (const MatView<LO, Scalar>& A)
+    {
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      using IST = kokkos_value_type<Scalar>;
+      using host_mat_view_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-      //! Destructor (declared virtual for memory safety of subclasses).
-      virtual ~TsqrInaccurate() throw() {}
+      const size_t nrows (A.extent (0));
+      const size_t ncols (A.extent (1));
+      const size_t lda (A.stride (1));
+      IST* A_raw = reinterpret_cast<IST*> (A.data ());
+      host_mat_view_type A_full (A_raw, lda, ncols);
+      const std::pair<size_t, size_t> rowRange (0, nrows);
+      return Kokkos::subview (A_full, rowRange, Kokkos::ALL ());
+    }
 
-    private:
-      std::string msg_;
-    };
+    template<class LO, class Scalar>
+    Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type**,
+                 Kokkos::LayoutLeft>
+    getDeviceMatrixCopy (const MatView<LO, Scalar>& A,
+                         const std::string& label)
+    {
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
+      using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+      using device_matrix_type =
+        Kokkos::View<IST**, Kokkos::LayoutLeft>;
+
+      const size_t nrows (A.extent (0));
+      const size_t ncols (A.extent (1));
+      device_matrix_type A_dev
+        (view_alloc (label, WithoutInitializing), nrows, ncols);
+      auto A_host = getHostMatrixView (A);
+      Kokkos::deep_copy (A_dev, A_host);
+      return A_dev;
+    }
 
     /// \class FullTsqrVerifier
-    /// \brief Test (correctness and) accuracy of Tsqr for one Scalar type.
+    /// \brief Test (correctness and) accuracy of Tsqr for one Scalar
+    ///   type.
     /// \author Mark Hoemmen
     ///
-    /// This class is meant to be used only by \c
-    /// FullTsqrVerifierCaller.  It performs one accuracy test of \c
-    /// Tsqr for the given Scalar type (that is, the type of the
-    /// matrix entries).  An accuracy test is also a correctness test.
-    /// This test computes accuracy bounds for both orthogonality and
-    /// forward errors, and if those bounds are exceeded and the
-    /// failIfInaccurate option is enabled, the test will throw a \c
+    /// \tparam Scalar Type of each matrix entry.
+    ///
+    /// This class is meant to be used only by FullTsqrVerifierCaller.
+    /// It performs one accuracy test of Tsqr for the given Scalar
+    /// type.  An accuracy test is also a correctness test.  This test
+    /// computes accuracy bounds for both orthogonality and forward
+    /// errors, and if those bounds are exceeded and the
+    /// failIfInaccurate option is enabled, the test will throw a
     /// TsqrInaccurate exception.
     ///
-    /// The test takes a \c Teuchos::ParameterList input.  For a
+    /// The test takes a Teuchos::ParameterList input.  For a
     /// ParameterList with all parameters, their default values, and
-    /// documentation, see the relevant class method in \c
+    /// documentation, see the relevant class method in
     /// FullTsqrVerifierCaller.
-    ///
-    /// This class currently only tests the version of Tsqr that is
-    /// the composition of NodeTsqrType=SequentialTsqr and
-    /// DistTsqrType=DistTsqr.  This should suffice to test
-    /// correctness, as long as the other NodeTsqrType possibilities
-    /// (such as TbbTsqr) are tested separately.
-    ///
     template<class Scalar>
     class FullTsqrVerifier {
     public:
-      typedef Scalar scalar_type;
-      typedef int ordinal_type;
-      typedef SequentialTsqr<ordinal_type, scalar_type> node_tsqr_type;
-      typedef DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-      typedef Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
+      using scalar_type = Scalar;
+      using ordinal_type = int;
+      using node_tsqr_type = NodeTsqr<ordinal_type, scalar_type>;
+      using dist_tsqr_type = DistTsqr<ordinal_type, scalar_type>;
+      using tsqr_type = Tsqr<ordinal_type, scalar_type>;
 
     private:
+      static Teuchos::RCP<node_tsqr_type>
+      getNodeTsqr (const Teuchos::RCP<Teuchos::ParameterList>& testParams,
+                   const bool myRank,
+                   const bool verbose,
+                   const std::string inputPrefix)
+      {
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        using Teuchos::rcp_implicit_cast;
+        using std::cerr;
+        using std::endl;
+        using device_type =
+          Kokkos::DefaultExecutionSpace::device_type;
+        const char cacheSizeHintParamName[] = "Cache Size Hint";
+        const std::string prefix = inputPrefix + "  ";
+
+        auto nodeTsqrParams = Teuchos::parameterList ("NodeTsqr");
+
+        size_t cacheSizeHint = 0;
+        if (testParams->isType<size_t> (cacheSizeHintParamName)) {
+          cacheSizeHint =
+            testParams->get<size_t> (cacheSizeHintParamName);
+          nodeTsqrParams->set (cacheSizeHintParamName, cacheSizeHint);
+        }
+        else if (testParams->isType<int> (cacheSizeHintParamName)) {
+          cacheSizeHint = static_cast<size_t>
+            (testParams->get<int> (cacheSizeHintParamName));
+          nodeTsqrParams->set (cacheSizeHintParamName, cacheSizeHint);
+        }
+
+        std::string nodeTsqrName ("Default");
+        if (testParams->isType<std::string> ("NodeTsqr")) {
+          nodeTsqrName = testParams->get<std::string> ("NodeTsqr");
+        }
+        if (myRank == 0 && verbose) {
+          cerr << prefix << "getNodeTsqr:" << endl
+               << prefix << "  - NodeTsqr: " << nodeTsqrName << endl
+               << prefix << "  - Cache Size Hint: " << cacheSizeHint
+               << endl;
+        }
+
+        RCP<node_tsqr_type> nodeTsqr;
+        using node_tsqr_factory_type = TSQR::NodeTsqrFactory<
+          scalar_type, ordinal_type, device_type>;
+        nodeTsqr = node_tsqr_factory_type::getNodeTsqr (nodeTsqrName);
+        TEUCHOS_ASSERT( ! nodeTsqr.is_null () );
+
+        if (myRank == 0 && verbose) {
+          using execution_space = device_type::execution_space;
+          const std::string spaceName =
+            Teuchos::TypeNameTraits<execution_space>::name ();
+          const std::string myPrefix = prefix + "  * ";
+
+          cerr << myPrefix << "execution_space: " << spaceName << endl
+               << myPrefix << "concurrency: "
+               << execution_space ().concurrency () << endl
+               << myPrefix << "Requested NodeTsqr subclass type: "
+               << nodeTsqrName << endl
+               << myPrefix << "Actual NodeTsqr subclass type: "
+               << Teuchos::typeName (*nodeTsqr) << endl;
+        }
+        return nodeTsqr;
+      }
 
       //! Instantiate and return a (full) Tsqr instance.
       static Teuchos::RCP<tsqr_type>
       getTsqr (const Teuchos::RCP<Teuchos::ParameterList>& testParams,
-               const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+               const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+               const bool verbose)
       {
-        using Teuchos::ParameterList;
-        using Teuchos::parameterList;
-        using Teuchos::rcp_implicit_cast;
         using Teuchos::RCP;
         using Teuchos::rcp;
+        using Teuchos::rcp_implicit_cast;
+        using std::cerr;
+        using std::endl;
+        const int myRank = comm->getRank ();
 
-        const size_t cacheSizeHint = testParams->get<size_t> ("cacheSizeHint");
-        //const int numTasks = testParams->get<int> ("numTasks");
+        const std::string prefix ("  ");
 
-        //RCP<ParameterList> tsqrParams = parameterList ("NodeTsqr");
-        //tsqrParams->set ("Cache Size Hint", cacheSizeHint);
-        //tsqrParams->set ("Num Tasks", numCores);
-
-        // TODO (mfh 21 Oct 2011) Some node_tsqr_type classes need a
-        // Kokkos Node instance.  SequentialTsqr doesn't, so this code
-        // should be fine for now.
-        RCP<node_tsqr_type> seqTsqr = rcp (new node_tsqr_type (cacheSizeHint));
-
-        RCP<TeuchosMessenger<scalar_type> > scalarMess =
+        if (myRank == 0 && verbose) {
+          cerr << prefix << "- Set up TSQR::Tsqr instance" << endl;
+        }
+        auto nodeTsqr =
+          getNodeTsqr (testParams, myRank, verbose, prefix);
+        auto scalarMess =
           rcp (new TeuchosMessenger<scalar_type> (comm));
-        RCP<MessengerBase<scalar_type> > scalarMessBase =
-          rcp_implicit_cast<MessengerBase<scalar_type> > (scalarMess);
-        RCP<dist_tsqr_type> distTsqr = rcp (new dist_tsqr_type);
+        auto scalarMessBase =
+          rcp_implicit_cast<MessengerBase<scalar_type>> (scalarMess);
+        RCP<dist_tsqr_type> distTsqr (new dist_tsqr_type);
         distTsqr->init (scalarMessBase);
 
-        return rcp (new tsqr_type (seqTsqr, distTsqr));
+        return rcp (new tsqr_type (nodeTsqr, distTsqr));
       }
 
     public:
-
       /// \brief Run the test for the Scalar type.
       ///
       /// \param comm [in] Communicator over which to run the test.
@@ -151,7 +242,9 @@ namespace TSQR {
       /// \param randomSeed [in/out] On input: the random seed for
       ///   LAPACK's pseudorandom number generator.  On output: the
       ///   updated random seed.
-      static void
+      ///
+      /// \return Whether the test passed.
+      static bool
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
            const Teuchos::RCP<Teuchos::ParameterList>& testParams,
            std::vector<int>& randomSeed)
@@ -159,31 +252,52 @@ namespace TSQR {
         using std::cerr;
         using std::cout;
         using std::endl;
-        using Teuchos::arcp;
         using Teuchos::ParameterList;
         using Teuchos::parameterList;
         using Teuchos::RCP;
         using Teuchos::rcp;
-        using Teuchos::rcp_const_cast;
         using Teuchos::rcp_implicit_cast;
-        typedef Matrix<ordinal_type, scalar_type> matrix_type;
-        typedef MatView<ordinal_type, scalar_type> mat_view_type;
-        typedef typename tsqr_type::FactorOutput factor_output_type;
+        using matrix_type = Matrix<ordinal_type, scalar_type>;
+        using mat_view_type = MatView<ordinal_type, scalar_type>;
 
-        const int myRank = Teuchos::rank (*comm);
-        const int numProcs = Teuchos::size (*comm);
+        bool success = true;
 
-        // Construct TSQR implementation instance.
-        RCP<tsqr_type> tsqr = getTsqr (testParams, comm);
+        TEUCHOS_ASSERT( ! comm.is_null () );
+        TEUCHOS_ASSERT( ! testParams.is_null () );
 
-        // Fetch test parameters from the input parameter list.
-        const ordinal_type numRowsLocal = testParams->get<ordinal_type> ("numRowsLocal");
-        const ordinal_type numCols = testParams->get<ordinal_type> ("numCols");
-        const int numCores = testParams->get<int> ("numCores");
-        const bool contiguousCacheBlocks = testParams->get<bool> ("contiguousCacheBlocks");
-        const bool testFactorExplicit = testParams->get<bool> ("testFactorExplicit");
-        const bool testRankRevealing = testParams->get<bool> ("testRankRevealing");
-        const bool debug = testParams->get<bool> ("debug");
+        const int myRank = comm->getRank ();
+        const int numProcs = comm->getSize ();
+        const bool verbose = testParams->get<bool> ("verbose");
+        const ordinal_type numRowsLocal =
+          testParams->get<ordinal_type> ("numRowsLocal");
+        const ordinal_type numCols =
+          testParams->get<ordinal_type> ("numCols");
+        //const int numCores = testParams->get<int> ("numCores");
+        const bool contiguousCacheBlocks =
+          testParams->get<bool> ("contiguousCacheBlocks");
+        const bool testFactorExplicit =
+          testParams->get<bool> ("testFactorExplicit");
+        const bool testRankRevealing =
+          testParams->get<bool> ("testRankRevealing");
+
+        if (myRank == 0 && verbose) {
+          cerr << "Full TSQR test: Scalar="
+               << Teuchos::TypeNameTraits<Scalar>::name () << endl
+               << "  - Command-line arguments:" << endl
+               << "    * numRowsLocal: " << numRowsLocal << endl
+               << "    * numCols: " << numCols << endl
+               << "    * contiguousCacheBlocks: "
+               << (contiguousCacheBlocks ? "true" : "false") << endl
+               << "    * testFactorExplicit: "
+               << (testFactorExplicit ? "true" : "false") << endl
+               << "    * testRankRevealing: "
+               << (testRankRevealing ? "true" : "false") << endl
+               << "    * verbose: "
+               << (verbose ? "true" : "false") << endl;
+        }
+
+        RCP<tsqr_type> tsqr = getTsqr (testParams, comm, verbose);
+        TEUCHOS_ASSERT( ! tsqr.is_null () );
 
         // Space for each process's local part of the test problem.
         // A_local, A_copy, and Q_local are distributed matrices, and
@@ -193,7 +307,7 @@ namespace TSQR {
         matrix_type Q_local (numRowsLocal, numCols);
         matrix_type R (numCols, numCols);
 
-        // Start out by filling the test problem with zeros.
+        // Start by filling the test problem with zeros.
         deep_copy (A_local, Scalar {});
         deep_copy (A_copy, Scalar {});
         deep_copy (Q_local, Scalar {});
@@ -222,15 +336,21 @@ namespace TSQR {
 
         // We need a Messenger for Ordinal-type data, so that we can
         // build a global random test matrix.
-        RCP<MessengerBase<ordinal_type>> ordinalMessenger =
-          rcp_implicit_cast<MessengerBase<ordinal_type>> (rcp (new TeuchosMessenger<ordinal_type> (comm)));
+        auto ordinalMessenger =
+          rcp_implicit_cast<MessengerBase<ordinal_type>>
+            (rcp (new TeuchosMessenger<ordinal_type> (comm)));
 
         // We also need a Messenger for Scalar-type data.  The TSQR
         // implementation already constructed one, but it's OK to
         // construct another one; TeuchosMessenger is just a thin
         // wrapper over the Teuchos::Comm object.
-        RCP<MessengerBase<scalar_type>> scalarMessenger =
-          rcp_implicit_cast<MessengerBase<scalar_type>> (rcp (new TeuchosMessenger<scalar_type> (comm)));
+        auto scalarMessenger =
+          rcp_implicit_cast<MessengerBase<scalar_type>>
+            (rcp (new TeuchosMessenger<scalar_type> (comm)));
+
+        if (myRank == 0 && verbose) {
+          cerr << "  - Generate test problem" << endl;
+        }
 
         {
           // Generate a global distributed matrix (whose part local to
@@ -239,68 +359,201 @@ namespace TSQR {
           using TSQR::Random::randomGlobalMatrix;
           mat_view_type A_local_view (A_local.extent(0),
                                       A_local.extent(1),
-                                      A_local.data(), A_local.stride(1));
+                                      A_local.data(),
+                                      A_local.stride(1));
           const magnitude_type* const singVals = singularValues.data();
-          randomGlobalMatrix<mat_view_type, generator_type> (&gen, A_local_view, singVals,
-                                                             ordinalMessenger.getRawPtr(),
-                                                             scalarMessenger.getRawPtr());
+          randomGlobalMatrix (&gen, A_local_view, singVals,
+                              ordinalMessenger.getRawPtr(),
+                              scalarMessenger.getRawPtr());
         }
         // Save the pseudorandom number generator's seed for any later
         // tests.  The generator keeps its own copy of the seed and
         // updates it internally, so we have to ask for its copy.
         gen.getSeed (randomSeed);
 
+        if (myRank == 0 && verbose) {
+          cerr << "-- tsqr->wants_device_memory() = "
+               << (tsqr->wants_device_memory () ? "true" : "false")
+               << endl;
+        }
+
+        using IST =
+          typename Kokkos::ArithTraits<scalar_type>::val_type;
+        using device_matrix_type =
+          Kokkos::View<IST**, Kokkos::LayoutLeft>;
+
+        auto A_h = getHostMatrixView (A_local.view ());
+        auto A_copy_h = getHostMatrixView (A_copy.view ());
+        auto Q_h = getHostMatrixView (Q_local.view ());
+        device_matrix_type A_d;
+        device_matrix_type A_copy_d;
+        device_matrix_type Q_d;
+        if (tsqr->wants_device_memory ()) {
+          A_d = getDeviceMatrixCopy (A_local.view (), "A_d");
+          // Don't copy A_copy yet; see below.
+          A_copy_d = device_matrix_type ("A_copy_d",
+                                         numRowsLocal, numCols);
+          Q_d = device_matrix_type ("Q_d", numRowsLocal, numCols);
+        }
+
         // If specified in the test parameters, rearrange cache blocks
         // in the copy.  Otherwise, just copy the test problem into
         // A_copy.  The factorization overwrites the input matrix, so
         // we have to make a copy in order to validate the final
         // result.
-        if (contiguousCacheBlocks) {
-          tsqr->cache_block (numRowsLocal, numCols, A_copy.data(),
-                             A_local.data(), A_local.stride(1));
-          if (debug) {
-            Teuchos::barrier (*comm);
-            if (myRank == 0)
-              cerr << "-- Finished Tsqr::cache_block" << endl;
+
+        if (! contiguousCacheBlocks) {
+          if (myRank == 0 && verbose) {
+            cerr << "  - Copy A into A_copy" << endl;
+          }
+          deep_copy (A_copy, A_local);
+          if (tsqr->wants_device_memory ()) {
+            deep_copy (A_copy_d, A_d);
           }
         }
         else {
-          deep_copy (A_copy, A_local);
+          if (myRank == 0 && verbose) {
+            cerr << "  - Copy A into A_copy via cache_block" << endl;
+          }
+          if (tsqr->wants_device_memory ()) {
+            Scalar* A_copy_d_raw =
+              reinterpret_cast<Scalar*> (A_copy_d.data ());
+            const Scalar* A_d_raw =
+              reinterpret_cast<const Scalar*> (A_d.data ());
+            tsqr->cache_block (numRowsLocal, numCols, A_copy_d_raw,
+                               A_d_raw, A_d.stride (1));
+            deep_copy (A_copy_h, A_copy_d);
+          }
+          else {
+            tsqr->cache_block (numRowsLocal, numCols, A_copy.data (),
+                               A_local.data (), A_local.stride (1));
+          }
+          if (myRank == 0 && verbose) {
+            cerr << "  - Finished cache-blocking the test problem"
+                 << endl;
+          }
         }
 
-        // "factorExplicit" is an alternate, hopefully faster way of
-        // factoring the matrix, when only the explicit Q factor is
-        // wanted.
         if (testFactorExplicit) {
-          tsqr->factorExplicitRaw (A_copy.extent (0), A_copy.extent (1),
-                                   A_copy.data (), A_copy.stride (1),
-                                   Q_local.data (), Q_local.stride (1),
-                                   R.data (), R.stride (1),
-                                   contiguousCacheBlocks);
-          if (debug) {
-            Teuchos::barrier (*comm);
-            if (myRank == 0)
-              cerr << "-- Finished Tsqr::factorExplicit" << endl;
+          if (myRank == 0 && verbose) {
+            cerr << "  - Call factorExplicitRaw" << endl;
+          }
+          try {
+            if (tsqr->wants_device_memory ()) {
+              Scalar* A_raw =
+                reinterpret_cast<Scalar*> (A_copy_d.data ());
+              Scalar* Q_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+              tsqr->factorExplicitRaw (A_copy_d.extent (0),
+                                       A_copy_d.extent (1),
+                                       A_raw,
+                                       A_copy_d.stride (1),
+                                       Q_raw,
+                                       Q_d.stride (1),
+                                       R.data (), R.stride (1),
+                                       contiguousCacheBlocks);
+              if (myRank == 0 && verbose) {
+                cerr << "  - Finished factorExplicitRaw; now "
+                  "deep_copy(Q_h, Q_d)" << endl;
+              }
+              deep_copy (Q_h, Q_d);
+            }
+            else {
+              Scalar* A_raw = A_copy.data ();
+              Scalar* Q_raw = Q_local.data ();
+              tsqr->factorExplicitRaw (A_copy.extent (0),
+                                       A_copy.extent (1),
+                                       A_raw,
+                                       A_copy.stride (1),
+                                       Q_raw,
+                                       Q_local.stride (1),
+                                       R.data (), R.stride (1),
+                                       contiguousCacheBlocks);
+              if (myRank == 0 && verbose) {
+                cerr << "  - Finished factorExplicitRaw" << endl;
+              }
+            }
+          }
+          catch (std::exception& e) {
+            std::ostringstream os;
+            os << "Proc " << myRank << " threw an exception: "
+               << e.what () << endl;
+            cerr << os.str ();
+            MPI_Abort (MPI_COMM_WORLD, -1);
+          }
+
+          bool found_nonzero_in_R = false;
+          for (ordinal_type j = 0; j < numCols; ++j) {
+            for (ordinal_type i = 0; i < numCols; ++i) {
+              if (R(i,j) != scalar_type {}) {
+                found_nonzero_in_R = true;
+              }
+            }
+          }
+
+          if (! found_nonzero_in_R) {
+            success = false;
+            if (myRank == 0) {
+              const std::string prefix
+                (verbose ? "  - *** " : "*** ");
+              const std::string scalarName =
+                Teuchos::TypeNameTraits<scalar_type>::name ();
+              cerr << prefix << "For Scalar=" << scalarName
+                   << ": R factor resulting from factorExplicitRaw "
+                   << "is zero." << endl;
+            }
           }
         }
         else {
-          // Factor the (copy of the) matrix.
-          factor_output_type factorOutput =
-            tsqr->factor (numRowsLocal, numCols, A_copy.data(), A_copy.stride(1),
-                          R.data(), R.stride(1), contiguousCacheBlocks);
-          if (debug) {
-            Teuchos::barrier (*comm);
-            if (myRank == 0)
-              cerr << "-- Finished Tsqr::factor" << endl;
+          if (myRank == 0 && verbose) {
+            cerr << "  - Call factor" << endl;
           }
-          // Compute the explicit Q factor in Q_local.
-          tsqr->explicit_Q (numRowsLocal, numCols, A_copy.data(), A_copy.stride(1),
-                            factorOutput, numCols, Q_local.data(), Q_local.stride(1),
-                            contiguousCacheBlocks);
-          if (debug) {
-            Teuchos::barrier (*comm);
-            if (myRank == 0)
-              cerr << "-- Finished Tsqr::explicit_Q" << endl;
+          auto factorOutput = [&] () {
+            if (tsqr->wants_device_memory ()) {
+              Scalar* A_raw =
+                reinterpret_cast<Scalar*> (A_copy_d.data ());
+              auto result =
+                tsqr->factor (numRowsLocal, numCols,
+                              A_raw, A_copy_d.stride (1),
+                              R.data (), R.stride (1),
+                              contiguousCacheBlocks);
+              deep_copy (A_copy_h, A_copy_d);
+              return result;
+            }
+            else {
+              Scalar* A_raw =
+                reinterpret_cast<Scalar*> (A_copy_d.data ());
+              return tsqr->factor (numRowsLocal, numCols,
+                                   A_raw, A_copy.stride (1),
+                                   R.data (), R.stride (1),
+                                   contiguousCacheBlocks);
+            }
+          } ();
+
+          if (myRank == 0 && verbose) {
+            cerr << "  - Finished factor; call explicit_Q" << endl;
+          }
+          if (tsqr->wants_device_memory ()) {
+            const Scalar* A_raw =
+              reinterpret_cast<const Scalar*> (A_copy_d.data ());
+            Scalar* Q_raw = reinterpret_cast<Scalar*> (Q_d.data ());
+            tsqr->explicit_Q (numRowsLocal, numCols,
+                              A_raw, A_copy_d.stride (1),
+                              factorOutput, numCols,
+                              Q_raw, Q_d.stride (1),
+                              contiguousCacheBlocks);
+            deep_copy (Q_h, Q_d);
+          }
+          else {
+            const Scalar* A_raw = A_copy.data ();
+            Scalar* Q_raw = Q_local.data ();
+            tsqr->explicit_Q (numRowsLocal, numCols,
+                              A_raw, A_copy.stride (1),
+                              factorOutput, numCols,
+                              Q_raw, Q_local.stride (1),
+                              contiguousCacheBlocks);
+          }
+          if (myRank == 0 && verbose) {
+            cerr << "  - Finished explicit_Q" << endl;
           }
         }
 
@@ -318,12 +571,23 @@ namespace TSQR {
           // tolerance of zero to test the purported rank with the
           // actual numerical rank.
           const magnitude_type tol = STM::zero();
-          const ordinal_type rank =
-            tsqr->revealRankRaw (Q_local.extent (0), Q_local.extent (1),
-                                 Q_local.data (), Q_local.stride (1),
-                                 R.data (), R.stride (1), tol,
-                                 contiguousCacheBlocks);
-
+          if (myRank == 0 && verbose) {
+            cerr << "  - Call revealRankRaw" << endl;
+          }
+          const ordinal_type rank = [&] () {
+            Scalar* Q_raw = tsqr->wants_device_memory () ?
+              reinterpret_cast<Scalar*> (Q_d.data ()) :
+              Q_local.data ();
+            const ordinal_type ldq = tsqr->wants_device_memory () ?
+              Q_d.stride (1) : Q_local.stride (1);
+            return tsqr->revealRankRaw (numRowsLocal, numCols,
+                                        Q_raw, ldq,
+                                        R.data (), R.stride (1),
+                                        tol, contiguousCacheBlocks);
+          } ();
+          if (myRank == 0 && verbose) {
+            cerr << "  - Finished revealRankRaw" << endl;
+          }
           magnitude_type two_to_the_numCols = STM::one();
           for (int k = 0; k < numCols; ++k) {
             const magnitude_type two = STM::one() + STM::one();
@@ -333,22 +597,19 @@ namespace TSQR {
           // rounding error (so the test only fails if something is
           // really broken).
           if (two_to_the_numCols > magnitude_type(10) * STM::eps ()) {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              rank != numCols, std::logic_error, "The matrix of " << numCols
-              << " columns should have full numerical rank, but Tsqr reports "
-              "that it has rank " << rank << ".  Please report this bug to "
-              "the Kokkos developers.");
-            if (debug) {
-              Teuchos::barrier (*comm);
-              if (myRank == 0)
-                cerr << "-- Tested rank-revealing capability" << endl;
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (rank != numCols, std::logic_error, "The matrix of " <<
+               numCols << " columns should have full numerical rank, "
+               "but Tsqr reports that it has rank " << rank << ".  "
+               "Please report this bug to the Kokkos developers.");
+            if (myRank == 0 && verbose) {
+              cerr << "  - Tested rank-revealing capability" << endl;
             }
           }
           else {
-            if (debug) {
-              Teuchos::barrier (*comm);
-              if (myRank == 0)
-                cerr << "-- Not testing rank-revealing capability; too many columns" << endl;
+            if (myRank == 0 && verbose) {
+              cerr << "  - Not testing rank-revealing capability; "
+                "too many columns" << endl;
             }
           }
         }
@@ -356,29 +617,49 @@ namespace TSQR {
         // were used.  This is only necessary because global_verify()
         // doesn't currently support contiguous cache blocks.
         if (contiguousCacheBlocks) {
-          // We can use A_copy as scratch space for
-          // un-cache-blocking Q_local, since we're done using
-          // A_copy for other things.
-          tsqr->un_cache_block (numRowsLocal, numCols, A_copy.data(),
-                                A_copy.stride(1), Q_local.data());
-          // Overwrite Q_local with the un-cache-blocked Q factor.
-          deep_copy (Q_local, A_copy);
-          if (debug) {
-            Teuchos::barrier (*comm);
-            if (myRank == 0)
-              cerr << "-- Finished Tsqr::un_cache_block" << endl;
+          // Use A_copy(_d) as scratch for un-cache-blocking Q_local.
+          if (myRank == 0 && verbose) {
+            cerr << "  - Call Tsqr::un_cache_block" << endl;
+          }
+          if (tsqr->wants_device_memory ()) {
+            Scalar* A_copy_d_raw =
+              reinterpret_cast<Scalar*> (A_copy_d.data ());
+            const Scalar* Q_d_raw =
+              reinterpret_cast<const Scalar*> (Q_d.data ());
+            tsqr->un_cache_block (numRowsLocal, numCols,
+                                  A_copy_d_raw,
+                                  A_copy_d.stride (1),
+                                  Q_d_raw);
+            deep_copy (Q_h, A_copy_d);
+          }
+          else {
+            tsqr->un_cache_block (numRowsLocal, numCols,
+                                  A_copy.data (),
+                                  A_copy.stride (1),
+                                  Q_local.data ());
+            deep_copy (Q_local, A_copy);
+          }
+          if (myRank == 0 && verbose) {
+            cerr << "  - Finished Tsqr::un_cache_block" << endl;
+          }
+        }
+        else {
+          if (tsqr->wants_device_memory ()) {
+            deep_copy (Q_h, Q_d);
           }
         }
 
-        // Test accuracy of the factorization.
-        const std::vector<magnitude_type> results =
-          global_verify (numRowsLocal, numCols, A_local.data(), A_local.stride(1),
-                         Q_local.data(), Q_local.stride(1), R.data(), R.stride(1),
+        if (myRank == 0 && verbose) {
+          cerr << "  - Call global_verify" << endl;
+        }
+        const auto results =
+          global_verify (numRowsLocal, numCols,
+                         A_local.data(), A_local.stride(1),
+                         Q_local.data(), Q_local.stride(1),
+                         R.data(), R.stride(1),
                          scalarMessenger.getRawPtr());
-        if (debug) {
-          Teuchos::barrier (*comm);
-          if (myRank == 0)
-            cerr << "-- Finished global_verify" << endl;
+        if (myRank == 0 && verbose) {
+          cerr << "  - Finished global_verify" << endl;
         }
 
         // Print the results on Proc 0.
@@ -390,7 +671,6 @@ namespace TSQR {
                  << ",numRowsLocal"
                  << ",numCols"
                  << ",numProcs"
-                 << ",numCores"
                  << ",cacheSizeHint"
                  << ",contiguousCacheBlocks"
                  << ",absFrobResid"
@@ -401,12 +681,13 @@ namespace TSQR {
             testParams->set ("printFieldNames", false);
           }
           if (testParams->get<bool> ("printResults")) {
+            const std::string scalarName =
+              Teuchos::TypeNameTraits<scalar_type>::name ();
             cout << "Tsqr"
-                 << "," << Teuchos::TypeNameTraits<scalar_type>::name()
+                 << "," << scalarName
                  << "," << numRowsLocal
                  << "," << numCols
                  << "," << numProcs
-                 << "," << numCores
                  << "," << tsqr->cache_size_hint()
                  << "," << contiguousCacheBlocks
                  << "," << results[0]
@@ -414,7 +695,7 @@ namespace TSQR {
                  << "," << results[2]
                  << endl;
           }
-        } // if (myRank == 0)
+        }
 
         // If requested, check accuracy and fail if results are not
         // sufficiently accurate.
@@ -447,28 +728,52 @@ namespace TSQR {
             magnitude_type(10*numCols*numCols) * STM::eps();
 
           // Avoid division by zero.
-          const magnitude_type relResidError =
-            results[0] / (results[2] == STM::zero() ? STM::one() : results[2]);
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            relResidError > relResidBound, TsqrInaccurate, "Full Tsqr "
-            "has an inaccurate relative residual ||A - QR||_F"
-            << (results[2] == STM::zero() ? " / ||A||_F" : "")
-            << " = " << relResidError << ", which is greater than the bound "
-            << relResidBound << " by a factor of "
-            << relResidError / relResidBound << ".");
+          const magnitude_type relResidError = results[0] /
+            (results[2] == STM::zero() ? STM::one() : results[2]);
+
+          if (relResidError > relResidBound) {
+            success = false;
+            if (myRank == 0) {
+              const std::string prefix
+                (verbose ? "  - *** " : "*** ");
+              const std::string scalarName =
+                Teuchos::TypeNameTraits<scalar_type>::name ();
+              const std::string relResStr
+                (results[2] == STM::zero() ? " / ||A||_F" : "");
+              cerr << prefix << "For Scalar=" << scalarName
+                   << ": Inaccurate residual ||A - QR||_F"
+                   << relResStr
+                   << (results[2] == STM::zero() ? " / ||A||_F" : "")
+                   << " = " << relResidError << "." << endl
+                   << prefix << "It's greater than the bound "
+                   << relResidBound << " by a factor of "
+                   << relResidError / relResidBound << "." << endl;
+            }
+          }
           const magnitude_type orthoError = results[1];
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            orthoError > orthoBound, TsqrInaccurate,
-            "Full Tsqr has an inaccurate orthogonality measure ||I - Q^* Q||_F"
-            << results[1] << " = " << orthoError << ", which is greater than "
-            "the bound " << orthoBound << " by a factor of "
-            << orthoError / orthoBound << ".");
+          if (orthoError > orthoBound) {
+            success = false;
+            if (myRank == 0) {
+              const std::string prefix
+                (verbose ? "  - *** " : "*** ");
+              const std::string scalarName =
+                Teuchos::TypeNameTraits<scalar_type>::name ();
+              cerr << prefix << "For Scalar=" << scalarName
+                   << ": Inaccurate orthogonality measure "
+                   << "||I - Q^* Q||_F = " << orthoError << "."
+                   << endl << prefix << "It's greater than the bound "
+                   << orthoBound << " by a factor of "
+                   << orthoError / orthoBound << "." << endl;
+            }
+          }
         } // if (the tests should fail on inaccuracy)
+        return success;
       }
     };
 
     /// \class FullTsqrVerifierCallerImpl
-    /// \brief This class implements a "function template specialization."
+    /// \brief This class implements a "function template
+    ///   specialization."
     /// \author Mark Hoemmen
     ///
     /// We want to make FullTsqrVerifierCaller::run() a template
@@ -489,7 +794,7 @@ namespace TSQR {
     template<class TypeListType>
     class FullTsqrVerifierCallerImpl {
     public:
-      static void
+      static bool
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
            const Teuchos::RCP<Teuchos::ParameterList>& testParams,
            std::vector<int>& randomSeed);
@@ -499,17 +804,21 @@ namespace TSQR {
     // Partial specialization for Cons<CarType, CdrType>.
     //
     template<class CarType, class CdrType>
-    class FullTsqrVerifierCallerImpl<TSQR::Test::Cons<CarType, CdrType> > {
+    class FullTsqrVerifierCallerImpl<TSQR::Test::Cons<CarType, CdrType>>
+    {
     public:
-      static void
+      static bool
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
            const Teuchos::RCP<Teuchos::ParameterList>& testParams,
            std::vector<int>& randomSeed)
       {
-        typedef CarType car_type;
-        typedef CdrType cdr_type;
-        FullTsqrVerifier<car_type>::run (comm, testParams, randomSeed);
-        FullTsqrVerifierCallerImpl<cdr_type>::run (comm, testParams, randomSeed);
+        using car_type = FullTsqrVerifier<CarType>;
+        using cdr_type = FullTsqrVerifierCallerImpl<CdrType>;
+        const bool success1 =
+          car_type::run (comm, testParams, randomSeed);
+        const bool success2 =
+          cdr_type::run (comm, testParams, randomSeed);
+        return success1 && success2;
       }
     };
 
@@ -519,22 +828,23 @@ namespace TSQR {
     template<>
     class FullTsqrVerifierCallerImpl<TSQR::Test::NullCons> {
     public:
-      static void
+      static bool
       run (const Teuchos::RCP<const Teuchos::Comm<int> >&,
            const Teuchos::RCP<Teuchos::ParameterList>&,
            std::vector<int>&)
       {
-        // We're at the end of the type list, so do nothing.
+        return true;
       }
     };
 
     /// \class FullTsqrVerifierCaller
-    /// \brief Invokes FullTsqrVerifier::run() over all Scalar types in a type list.
+    /// \brief Invokes FullTsqrVerifier::run() over all Scalar types
+    ///   in a type list.
     /// \author Mark Hoemmen
     ///
     /// Use this class to test the full TSQR implementation in Tsqr.
     /// It will test Tsqr over a list of Scalar types that you define,
-    /// using \c Cons and \c NullCons.
+    /// using Cons and NullCons.
     class FullTsqrVerifierCaller {
     public:
       /// \typedef ordinal_type
@@ -556,7 +866,7 @@ namespace TSQR {
         RCP<ParameterList> plist = parameterList ("FullTsqrVerifier");
 
         const size_t cacheSizeHint = 0;
-        const int numCores = 1;
+        // const int numCores = 1;
         const ordinal_type numRowsLocal = 100;
         const ordinal_type numCols = 10;
         const bool contiguousCacheBlocks = false;
@@ -565,66 +875,66 @@ namespace TSQR {
         const bool printFieldNames = true;
         const bool printResults = true;
         const bool failIfInaccurate = true;
-        const bool debug = false;
+        const std::string nodeTsqr ("Default");
+        const bool verbose = false;
 
         // Parameters for configuring Tsqr itself.
-        plist->set ("cacheSizeHint", cacheSizeHint,
+        plist->set ("Cache Size Hint", cacheSizeHint,
                     "Cache size hint in bytes.  "
                     "Zero means TSQR picks a reasonable default.");
-        plist->set ("numCores", numCores,
-                    "Number of partition(s) to use for TbbTsqr (if "
-                    "applicable).  Must be a positive integer.");
 
         // Parameters for testing Tsqr.
         plist->set ("numRowsLocal", numRowsLocal,
-                    "Number of rows per (MPI) process in the test matrix.  "
-                    "Must be >= the number of columns.");
+                    "Number of rows per (MPI) process in the test "
+                    "matrix.  Must be >= the number of columns.");
         plist->set ("numCols", numCols,
                     "Number of columns in the test matrix.");
         plist->set ("contiguousCacheBlocks", contiguousCacheBlocks,
-                    "Whether to test the factorization with contiguously "
-                    "stored cache blocks.");
+                    "Whether to test the factorization with "
+                    "contiguously stored cache blocks.");
         plist->set ("testFactorExplicit", testFactorExplicit,
-                    "Whether to test TSQR's factorExplicit() (a hopefully "
-                    "faster path than calling factor() and explicit_Q() in "
-                    "sequence).");
+                    "Whether to test TSQR's factorExplicit() (a "
+                    "hopefully faster path than calling factor() and "
+                    "explicit_Q() in sequence).");
         plist->set ("testRankRevealing", testRankRevealing,
                     "Whether to test TSQR's rank-revealing capability.");
         plist->set ("printFieldNames", printFieldNames,
-                    "Whether to print field names (this is only done once, "
-                    "for all Scalar types tested).");
+                    "Whether to print field names (this is only done "
+                    "once, for all Scalar types tested).");
         plist->set ("printResults", printResults,
                     "Whether to print test results.");
         plist->set ("failIfInaccurate", failIfInaccurate,
                     "Whether to fail the test if the factorization "
                     "is not sufficiently accurate.");
-        plist->set ("debug", debug,
-                    "Whether to print debugging output.");
+        plist->set ("NodeTsqr", nodeTsqr, "NodeTsqr subclass to use; "
+                    "\"Default\" means let TSQR pick it");
+        plist->set ("verbose", verbose,
+                    "Whether to print verbose debugging output.");
         return plist;
       }
 
-      /// \brief Run TsqrVerifier<T>::run() for every type in the type list.
+      /// \brief Run TsqrVerifier<T>::run() for every type in the type
+      ///   list.
       ///
-      /// TypeListType should be either a \c NullCons (representing an
+      /// TypeListType should be either a NullCons (representing an
       /// empty type list, in which case this function does nothing),
-      /// or a \c Cons (whose CarType is a Scalar type to test, and
-      /// whose CdrType is either a NullCons or a Cons).
+      /// or a Cons (whose CarType is a Scalar type to test, and whose
+      /// CdrType is either a NullCons or a Cons).
       ///
       /// \param testParams [in/out] List of parameters for all tests
-      ///   to run.  Call \c getValidParameterList() to get a valid
-      ///   list of parameters with default values and documentation.
+      ///   to run.  Call getValidParameterList() to get a valid list
+      ///   of parameters with default values and documentation.
       ///
       template<class TypeListType>
-      void
+      bool
       run (const Teuchos::RCP<Teuchos::ParameterList>& testParams)
       {
         // Using a class with a static method is a way to implement
         // "partial specialization of function templates" (which by
         // itself is not allowed in C++).
-        typedef FullTsqrVerifierCallerImpl<TypeListType> impl_type;
-        impl_type::run (comm_, testParams, randomSeed_);
+        using impl_type = FullTsqrVerifierCallerImpl<TypeListType>;
+        return impl_type::run (comm_, testParams, randomSeed_);
       }
-
 
       /// \brief Full constructor.
       ///
@@ -660,17 +970,19 @@ namespace TSQR {
       static std::vector<int>
       validateRandomSeed (const std::vector<int>& seed)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          seed.size () < 4, std::invalid_argument, "Invalid random seed: "
-          "Need an array of four integers.");
-        for (std::vector<int>::size_type k = 0; k < seed.size (); ++k) {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            seed[k] < 0 || seed[k] > 4095, std::invalid_argument, "Invalid "
-            "random seed: Each of the four integers must be in [0, 4095].");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (seed.size () < 4, std::invalid_argument, "Invalid random "
+           "seed: Need an array of four integers, but you gave us "
+           << seed.size () << " of them.");
+        for (size_t k = 0; k < seed.size (); ++k) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (seed[k] < 0 || seed[k] > 4095, std::invalid_argument,
+             "seed[" << k << "]=" << seed[k] << " is invalid.  "
+             "Each of the four seeds must be in [0, 4095].");
         }
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          seed[3] % 2 != 1, std::invalid_argument, "Invalid random seed: "
-          "The last of the four integers must be odd.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (seed[3] % 2 != 1, std::invalid_argument, "seed[3]="
+           << seed[3] << " is invalid: it must be odd.");
         return seed;
       }
 
@@ -691,7 +1003,7 @@ namespace TSQR {
       ///
       /// This communicator may include one or more processes.
       /// MPI is not required (it may be a "serial communicator").
-      Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+      Teuchos::RCP<const Teuchos::Comm<int>> comm_;
 
       /// \brief The seed for LAPACK's pseudorandom number generator.
       ///
@@ -704,5 +1016,4 @@ namespace TSQR {
   } // namespace Test
 } // namespace TSQR
 
-#endif // __TSQR_Test_FullTsqrTest_hpp
-
+#endif // TSQR_TEST_FULLTSQRTEST_HPP
