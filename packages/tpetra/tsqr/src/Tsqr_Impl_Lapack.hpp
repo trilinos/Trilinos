@@ -23,7 +23,12 @@ public:
   using value_type = Scalar;
   using magnitude_type = decltype(std::abs(Scalar{}));
 
-  ~Lapack() override = default;
+  // NOTE (mfh 22 Dec 2019) I would normally write "= default;" here,
+  // but Intel 17 appears to have a bug that requires an explicit
+  // nondefault definition.  See discussion here:
+  //
+  // https://github.com/trilinos/Trilinos/pull/6488#issuecomment-568351758
+  ~Lapack() override {}
 
   int
   compute_QR_lwork(const int m, const int n,
