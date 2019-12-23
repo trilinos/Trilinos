@@ -97,7 +97,11 @@ public:
 #endif // defined(HAVE_TPETRATSQR_COMPLEX)
 
 template<class Scalar>
-CuBlas<Scalar>::CuBlas (CuBlasHandle handle) :
+CuBlas<Scalar>::CuBlas () :
+  handle_ (getCuBlasHandleSingleton ()) {}
+
+template<class Scalar>
+CuBlas<Scalar>::CuBlas (const std::shared_ptr<CuBlasHandle>& handle) :
   handle_ (handle) {}
 
 template<class Scalar>
@@ -112,8 +116,7 @@ gemm (const char transa,
       const Scalar beta,
       Scalar* C, const int ldc)
 {
-  auto rawHandle =
-    reinterpret_cast<cublasHandle_t> (handle_.getHandle ());
+  cublasHandle_t rawHandle = handle_->getHandle ();
   const cublasOperation_t cuTransa = cuBlasTrans (transa);
   const cublasOperation_t cuTransb = cuBlasTrans (transb);
 

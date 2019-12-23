@@ -3,7 +3,7 @@
 
 #include "TpetraTSQR_config.h"
 #if defined(HAVE_TPETRATSQR_CUBLAS)
-#  include "Tsqr_Impl_CuBlasHandle.hpp"
+#  include "Tsqr_Impl_CuBlasHandle_fwd.hpp"
 #  if defined(HAVE_TPETRATSQR_COMPLEX)
 #    include <complex>
 #  endif // HAVE_TPETRATSQR_COMPLEX
@@ -14,7 +14,9 @@ namespace Impl {
 template<class Scalar>
 class CuBlas {
 public:
-  CuBlas (CuBlasHandle handle);
+  // Use the default handle.
+  CuBlas ();
+  CuBlas (const std::shared_ptr<CuBlasHandle>& handle);
 
   void
   gemm (const char transa,
@@ -27,7 +29,7 @@ public:
         Scalar* C, const int ldc);
 
 private:
-  CuBlasHandle handle_;
+  std::shared_ptr<CuBlasHandle> handle_;
 };
 
 extern template class CuBlas<double>;
