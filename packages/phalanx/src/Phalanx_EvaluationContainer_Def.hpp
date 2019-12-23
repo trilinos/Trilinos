@@ -346,7 +346,11 @@ assignSharedFields()
     // Loop over remaining candidate fields and and share memory if
     // the ranges don't overlap
     if (!f_is_unshared) {
-      std::vector<CandidateFieldsType::const_iterator> fields_to_erase;
+      // Bug in gcc 4.8 - can't erase with const iterator. Revert this
+      // when when we stop supporting gcc 4.8.
+      // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=57158
+      // std::vector<CandidateFieldsType::const_iterator> fields_to_erase;
+      std::vector<CandidateFieldsType::iterator> fields_to_erase;
       for (auto tmp = candidate_fields.begin(); tmp != candidate_fields.end(); ++tmp) {
         bool can_share_memory = true;
         const auto tmp_name = std::get<1>(*tmp)->identifier();
