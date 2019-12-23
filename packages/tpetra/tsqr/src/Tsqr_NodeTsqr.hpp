@@ -48,11 +48,21 @@
 #include "Teuchos_as.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Tsqr_Impl_Lapack.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include <vector>
 
 namespace TSQR {
+  namespace Impl {
+    template<class Ordinal, class Scalar>
+    class NodeFactorOutput {
+    public:
+      virtual ~NodeFactorOutput() = default;
+    };
+  } // namespace Impl
+
   /// \class NodeTsqr
   /// \brief Common interface and functionality for intranode TSQR.
   ///
@@ -63,43 +73,33 @@ namespace TSQR {
   /// \tparam Ordinal The (local) Ordinal type; the type of indices
   ///   into a matrix on a node
   /// \tparam Scalar Tthe type of elements stored in the matrix
-  /// \tparam FactorOutputType The type returned by factor().
-  ///
-  /// We template on FactorOutputType for compile-time polymorphism.
-  /// This lets subclasses define the \c factor() method, without
-  /// constraining them to inherit their particular FactorOutputType
-  /// from a common abstract base class.  FactorOutputType is meant to
-  /// be either just a simple composition of std::pair and
-  /// std::vector, or a simple struct.  Its contents are specific to
-  /// each intranode TSQR implementation.  and are not intended to be
-  /// polymorphic, so it would not make sense for all the different
-  /// FactorOutputType types to inherit from a common base class.
-  ///
-  /// Templating on FactorOutputType means that we can't use run-time
-  /// polymorphism to swap between NodeTsqr subclasses, since the
-  /// latter are really subclasses of different NodeTsqr
-  /// instantiations (i.e., different FactorOutputType types).
-  /// However, inheriting from different specializations of NodeTsqr
-  /// does enforce correct compile-time polymorphism in a syntactic
-  /// way.  It also avoids repeated code for common functionality.
-  /// Full run-time polymorphism of different NodeTsqr subclasses
-  /// would not be useful.  This is because ultimately each subclass
-  /// is bound to a Kokkos Node type, and those only use compile-time
-  /// polymorphism.
-  template<class Ordinal, class Scalar, class FactorOutputType>
+  template<class Ordinal, class Scalar>
   class NodeTsqr : public Teuchos::Describable {
   public:
-    typedef Ordinal ordinal_type;
-    typedef Scalar scalar_type;
-    typedef FactorOutputType factor_output_type;
-    typedef MatView<Ordinal, Scalar> mat_view_type;
-    typedef MatView<Ordinal, const Scalar> const_mat_view_type;
+    using ordinal_type = Ordinal;
+    using scalar_type = Scalar;
+    using magnitude_type =
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using factor_output_type = Impl::NodeFactorOutput<Ordinal, Scalar>;
+    using mat_view_type = MatView<Ordinal, Scalar>;
+    using const_mat_view_type = MatView<Ordinal, const Scalar>;
 
     //! Constructor
     NodeTsqr() = default;
 
     //! Virtual destructor, for memory safety of derived classes.
     virtual ~NodeTsqr() = default;
+
+    //! List of valid parameters for the NodeTsqr subclass.
+    virtual Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const = 0;
+
+    //! Validate and read in parameters.
+    virtual void
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& paramList) = 0;
+
+    //! Whether the subclass wants large arrays as GPU device memory.
+    virtual bool wants_device_memory () const { return false; }
 
     /// \brief Whether this object is ready to perform computations.
     ///
@@ -162,7 +162,7 @@ namespace TSQR {
     ///
     /// \return Part of the implicit representation of the Q factor.
     ///   The other part is the A matrix on output.
-    virtual factor_output_type
+    virtual Teuchos::RCP<factor_output_type>
     factor (const Ordinal nrows,
             const Ordinal ncols,
             Scalar A[],
@@ -203,7 +203,7 @@ namespace TSQR {
            const Ordinal ncols_Q,
            const Scalar Q[],
            const Ordinal ldq,
-           const FactorOutputType& factorOutput,
+           const factor_output_type& factorOutput,
            const Ordinal ncols_C,
            Scalar C[],
            const Ordinal ldc,
@@ -247,6 +247,47 @@ namespace TSQR {
                 Scalar C[],
                 const Ordinal ldc,
                 const bool contiguousCacheBlocks) const = 0;
+
+    /// \brief Force the diagonal entries of the R factor to be
+    ///   nonnegative, and change the columns of Q (result of
+    ///   explicit_Q) to match (if needed).
+    virtual void
+    force_nonnegative_diagonal (const Ordinal nrows,
+                                const Ordinal ncols,
+                                Scalar Q[],
+                                const Ordinal ldq,
+                                Scalar R[],
+                                const Ordinal ldr) const
+    {
+      mat_view_type Q_view (nrows, ncols, Q, ldq);
+      mat_view_type R_view (ncols, ncols, R, ldr);
+
+      // The complex-arithmetic specialization does nothing, since
+      // _GEQR{2,F} for complex arithmetic returns an R factor with
+      // nonnegative diagonal already.  However, we need the code to
+      // compile regardless.
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      if (! STS::isComplex) {
+        using mag_type = typename STS::magnitudeType;
+        constexpr mag_type ZERO {};
+
+        for (Ordinal k = 0; k < ncols; ++k) {
+          if (STS::real (R_view(k,k)) < ZERO) {
+            // Scale column k of Q_view.
+            Scalar* const Q_k = &Q_view(0,k);
+            for (Ordinal i = 0; i < nrows; ++i) {
+              Q_k[i] = -Q_k[i];
+            }
+            // Scale row k of R_view.  R_view is upper triangular,
+            // so we only have to scale right of (and including) the
+            // diagonal entry.
+            for (int j = k; j < ncols; ++j) {
+              R_view(k,j) = -R_view(k,j);
+            }
+          }
+        }
+      }
+    }
 
     /// \brief Cache block A_in into A_out.
     ///
@@ -339,7 +380,9 @@ namespace TSQR {
     /// \endcode
     virtual const_mat_view_type
     const_top_block (const const_mat_view_type& C,
-                     const bool contiguousCacheBlocks) const = 0;
+                     const bool /* contiguousCacheBlocks */) const {
+      return C;
+    }
 
   public:
     /// \brief Return view of topmost cache block of C.
@@ -385,6 +428,49 @@ namespace TSQR {
       return MatrixViewType (C_top.extent(0), C_top.extent(1),
                              const_cast<pointer> (C_top.data()),
                              C_top.stride(1));
+    }
+
+    /// \brief Copy from "native" NodeTsqr device storage, to a packed
+    ///   host matrix.
+    virtual Matrix<Ordinal, Scalar>
+    copy_to_host (const MatView<Ordinal, Scalar>& C) const
+    {
+      // FIXME (mfh 17 Dec 2019) Need to reimplement in
+      // CuSolverNodeTsqr, since C is device memory there.
+      //
+      // The same concerns as in CuSolverNodeTsqr::extract_R, about
+      // Kokkos::deep_copy not wanting to copy from noncontiguous
+      // device memory to contiguous host memory, apply here.
+      return Matrix<Ordinal, Scalar> (C);
+    }
+
+    /// \brief Copy from a host matrix, to "native" NodeTsqr device
+    ///   storage.
+    virtual void
+    copy_from_host (const MatView<Ordinal, Scalar>& C_device,
+                    const MatView<Ordinal, const Scalar>& C_host) const
+    {
+      // FIXME (mfh 17 Dec 2019) Need to reimplement in
+      // CuSolverNodeTsqr, since C_device is device memory there.
+      //
+      // The same concerns as in CuSolverNodeTsqr::extract_R, about
+      // Kokkos::deep_copy not wanting to copy between noncontiguous
+      // device memory and contiguous host memory, apply here.
+      deep_copy (C_device, C_host);
+    }
+
+    //! Set the first C.extent(1) diagonal entries of C to 1.0.
+    virtual void
+    set_diagonal_entries_to_one
+      (const MatView<Ordinal, Scalar>& C) const
+    {
+      // NOTE (mfh 17 Dec 2019) Downstream classes must reimplement
+      // this if C is device memory for those classes.  See
+      // wants_device_memory above.
+      const Ordinal ncols = C.extent (1);
+      for (Ordinal j = 0; j < ncols; ++j) {
+        C(j,j) = Scalar (1.0);
+      }
     }
 
     /// \brief Does factor() compute R with nonnegative diagonal?
@@ -454,9 +540,9 @@ namespace TSQR {
   };
 
 
-  template<class Ordinal, class Scalar, class FactorOutputType>
+  template<class Ordinal, class Scalar>
   Ordinal
-  NodeTsqr<Ordinal, Scalar, FactorOutputType>::
+  NodeTsqr<Ordinal, Scalar>::
   reveal_R_rank (const Ordinal ncols,
                  Scalar R[],
                  const Ordinal ldr,
@@ -467,7 +553,6 @@ namespace TSQR {
     using Teuchos::as;
     using Teuchos::TypeNameTraits;
     typedef Teuchos::ScalarTraits<Scalar> STS;
-    typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
     TEUCHOS_TEST_FOR_EXCEPTION(tol < 0, std::invalid_argument,
@@ -612,9 +697,9 @@ namespace TSQR {
     return rank;
   }
 
-  template<class Ordinal, class Scalar, class FactorOutputType>
+  template<class Ordinal, class Scalar>
   Ordinal
-  NodeTsqr<Ordinal, Scalar, FactorOutputType>::
+  NodeTsqr<Ordinal, Scalar>::
   reveal_rank (const Ordinal nrows,
                const Ordinal ncols,
                Scalar Q[],

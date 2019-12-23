@@ -37,54 +37,49 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_Trilinos_TsqrFactory_TbbTsqr_hpp
-#define __TSQR_Trilinos_TsqrFactory_TbbTsqr_hpp
+#ifndef TSQR_COMBINEUSER_HPP
+#define TSQR_COMBINEUSER_HPP
 
-/// \file TsqrFactory_TbbTsqr.hpp
-///
-/// \warning Trilinos users should _not_ include this file directly.
-
-#include "Tsqr_ConfigDefs.hpp"
-
-#ifdef HAVE_KOKKOSTSQR_TBB
-#  include "TbbTsqr.hpp"
-#endif // HAVE_KOKKOSTSQR_TBB
+#include "Tsqr_CombineFactory.hpp"
 
 namespace TSQR {
-  namespace Trilinos {
+namespace Impl {
 
-#ifdef HAVE_KOKKOSTSQR_TBB
-    /// \class TbbTsqrFactory
-    /// \brief Subclass of TsqrFactory that uses \c TSQR::TBB::TbbTsqr.
-    /// \author Mark Hoemmen
-    ///
-    /// \tparam LO "LocalOrdinal": the type of indices into the
-    ///   node-local part of the matrix.
-    ///
-    /// \tparam S "Scalar": the type of entries in the node-local part
-    ///   of the matrix.
-    ///
-    /// All of this class' public methods, other than the constructor
-    /// and destructor, are implemented in the parent class.
-    template<class LO, class S>
-    class TbbTsqrFactory :
-      public TsqrFactory<LO, S, TSQR::TBB::TbbTsqr<LO, S>, DistTsqr<LO, S> > {
-    public:
-      // Help C++ pull in the typedefs from the base class.  C++ needs
-      // help when both the base and the derived classes are
-      // templated.
-      typedef typename base_type::node_tsqr_type node_tsqr_type;
-      typedef typename base_type::dist_tsqr_type dist_tsqr_type;
-      typedef typename base_type::tsqr_type tsqr_type;
-      typedef typename base_type::scalar_messenger_type scalar_messenger_type;
+/// \class CombineUser
+/// \brief Private base class for TSQR classes that use Combine.
+///
+/// Classes that use Combine should inherit privately from this class,
+/// in order to reuse getCombine.
+template<class LocalOrdinal, class Scalar>
+class CombineUser {
+public:
+  /// \brief Given the maximum number of columns that the caller
+  ///   intends to give to Combine functions, return the best choice
+  ///   of Combine implementation.
+  Combine<LocalOrdinal, Scalar>&
+  getCombine (const LocalOrdinal maxNumCols) const {
+    if (combine_.get () == nullptr) {
+      using factory_type = CombineFactory<LocalOrdinal, Scalar>;
+      combine_ = factory_type::create (maxNumCols);
+    }
+    return *combine_;
+  }
 
-      TbbTsqrFactory () {}
-      virtual ~TbbTsqrFactory () {}
-    };
-#endif // HAVE_KOKKOSTSQR_TBB
+  //! Return a specific Combine implementation.
+  Combine<LocalOrdinal, Scalar>&
+  getCombine (const std::string& combineType) const {
+    if (combine_.get () == nullptr) {
+      using factory_type = CombineFactory<LocalOrdinal, Scalar>;
+      combine_ = factory_type::create (combineType);
+    }
+    return *combine_;
+  }
 
-  } // namespace Trilinos
+private:
+  mutable std::unique_ptr<Combine<LocalOrdinal, Scalar>> combine_;
+};
+
+} // namespace Impl
 } // namespace TSQR
 
-
-#endif // __TSQR_Trilinos_TsqrFactory_TbbTsqr_hpp
+#endif // TSQR_COMBINEUSER_HPP
