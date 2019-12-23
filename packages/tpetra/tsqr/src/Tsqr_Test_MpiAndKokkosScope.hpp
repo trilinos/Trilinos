@@ -11,11 +11,16 @@ class ScopeGuard;
 
 namespace Teuchos {
 template<class OrdinalType> class Comm;
-class GlobalMPISession;
 } // namespace Teuchos
 
 namespace TSQR {
 namespace Test {
+
+class MpiScope {
+public:
+  MpiScope(int* argc, char*** argv);
+  ~MpiScope();
+};
 
 // Scope guard for TSQR's tests, that automatically initializes and
 // finalizes both MPI (if building with MPI enabled) and Kokkos.
@@ -28,11 +33,14 @@ public:
   std::ostream& errStream() const;
 
 private:
+  static Teuchos::RCP<const Teuchos::Comm<int>> getDefaultComm();
+
+  MpiScope mpiScope_;
   std::unique_ptr<std::ostream> blackHole_;
+  Teuchos::RCP<const Teuchos::Comm<int>> comm_;
   // The only reason ever to handle a scope guard by pointer is for
   // implementation hiding via the "pImpl" (pointer to implementation)
   // idiom.
-  std::unique_ptr<Teuchos::GlobalMPISession> mpiScope_;
   std::unique_ptr<Kokkos::ScopeGuard> kokkosScope_;
 };
 
