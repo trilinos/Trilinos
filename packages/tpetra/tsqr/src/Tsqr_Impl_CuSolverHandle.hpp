@@ -1,28 +1,27 @@
 #ifndef TSQR_IMPL_CUSOLVERHANDLE_HPP
 #define TSQR_IMPL_CUSOLVERHANDLE_HPP
 
-#include "TpetraTSQR_config.h"
+#include "Tsqr_Impl_CuSolverHandle_fwd.hpp"
 #ifdef HAVE_TPETRATSQR_CUSOLVER
+#include <cusolverDn.h>
 
 namespace TSQR {
 namespace Impl {
 
 class CuSolverHandle {
-private:
-  // This is actually a cusolverDnHandle_t, which is a pointer type.
-  void* handle_ {nullptr};
-
-  CuSolverHandle (void* handle);
-
 public:
-  static CuSolverHandle getSingleton ();
+  CuSolverHandle () = delete;
+  CuSolverHandle (const CuSolverHandle&) = delete;
+  CuSolverHandle& operator= (const CuSolverHandle&) = delete;
+  CuSolverHandle (CuSolverHandle&&) = delete;
+  CuSolverHandle& operator= (CuSolverHandle&&) = delete;
 
-  // This is not really encapsulation, because the "handle" type is
-  // just a pointer.  However, it lets us define cuSolver wrapper
-  // functions without needing to make them friends of CuSolverHandle.
-  void* getHandle () const {
-    return handle_;
-  }
+  CuSolverHandle (cusolverDnHandle_t handle);
+  cusolverDnHandle_t getHandle () const;
+
+private:
+  // cusolverDnHandle_t is actually a pointer type.
+  cusolverDnHandle_t handle_ {nullptr};
 };
 
 } // namespace Impl

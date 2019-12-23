@@ -442,12 +442,8 @@ namespace TSQR {
                         Scalar A[],
                         const LocalOrdinal lda) const
     {
-      using TSQR::Impl::CuSolver;
-      using TSQR::Impl::CuSolverHandle;
-
       auto info = get_info ();
-      CuSolver<Scalar> solver
-        {CuSolverHandle::getSingleton (), info.data ()};
+      TSQR::Impl::CuSolver<Scalar> solver (info.data ());
       const int lwork =
         solver.compute_QR_lwork (numRows, numCols, A, lda);
       // Avoid constant reallocation by setting a minimum lwork.
@@ -469,12 +465,8 @@ namespace TSQR {
                                  Scalar C[],
                                  const LocalOrdinal ldc) const
     {
-      using TSQR::Impl::CuSolver;
-      using TSQR::Impl::CuSolverHandle;
-
       auto info = get_info ();
-      CuSolver<Scalar> solver
-        {CuSolverHandle::getSingleton (), info.data ()};
+      TSQR::Impl::CuSolver<Scalar> solver (info.data ());
       const char side = 'L';
       const char trans = apply_type.toString ()[0];
       const int lwork =
@@ -682,11 +674,7 @@ namespace TSQR {
       const int lwork (work.extent (0));
       auto info = get_info ();
 
-      using TSQR::Impl::CuSolver;
-      using TSQR::Impl::CuSolverHandle;
-      CuSolver<Scalar> solver
-        {CuSolverHandle::getSingleton (), info.data ()};
-
+      TSQR::Impl::CuSolver<Scalar> solver (info.data ());
       TSQR_IMPL_CHECK_LAST_CUDA_ERROR( "TSQR::CuSolverNodeTsqr::factor, "
                                        "before solver.compute_QR" );
       try {
@@ -793,10 +781,7 @@ namespace TSQR {
       const int lwork (work.extent (0));
       auto info = get_info ();
 
-      using TSQR::Impl::CuSolver;
-      using TSQR::Impl::CuSolverHandle;
-      CuSolver<Scalar> solver
-        {CuSolverHandle::getSingleton (), info.data ()};
+      TSQR::Impl::CuSolver<Scalar> solver (info.data ());
       solver.apply_Q_factor (side, trans,
                              nrows, ncols_C, ncols_Q,
                              Q, ldq, tau_raw,

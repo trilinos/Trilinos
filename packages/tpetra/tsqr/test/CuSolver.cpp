@@ -37,7 +37,6 @@
 // ************************************************************************
 //@HEADER
 
-#include "Tsqr_Impl_CuSolverHandle.hpp"
 #include "Tsqr_Impl_CuBlas.hpp"
 #include "Tsqr_Impl_CuSolver.hpp"
 #include "Tsqr_Impl_CuTypes.hpp"
@@ -55,11 +54,12 @@ verifyReal (std::ostream& out, bool& success)
 {
   using TSQR::Impl::CuSolver;
   using TSQR::Impl::CuSolverHandle;
+  using TSQR::Impl::getCuSolverHandleSingleton;
   using TSQR::Impl::CudaValue;
   using std::endl;
 
-  CuSolverHandle s = CuSolverHandle::getSingleton ();
-  TEST_ASSERT( s.getHandle () != nullptr );
+  std::shared_ptr<CuSolverHandle> s = getCuSolverHandleSingleton ();
+  TEST_ASSERT( s.get () != nullptr );
 
   Kokkos::View<int, Kokkos::CudaSpace> info ("info");
   CuSolver<RealType> solver (s, info.data ());
@@ -70,7 +70,6 @@ verifyReal (std::ostream& out, bool& success)
   const RealType x (666.0);
   out << "Original x: " << x << ": Converted x: "
       << CudaValue<RealType>::makeValue (x) << endl;
-
 
   using TSQR::Impl::CuBlasHandle;
   using TSQR::Impl::getCuBlasHandleSingleton;
@@ -118,11 +117,12 @@ verifyComplex (std::ostream& out, bool& success)
 {
   using TSQR::Impl::CuSolver;
   using TSQR::Impl::CuSolverHandle;
+  using TSQR::Impl::getCuSolverHandleSingleton;
   using TSQR::Impl::CudaValue;
   using std::endl;
 
-  CuSolverHandle s = CuSolverHandle::getSingleton ();
-  TEST_ASSERT( s.getHandle () != nullptr );
+  std::shared_ptr<CuSolverHandle> s = getCuSolverHandleSingleton ();
+  TEST_ASSERT( s.get () != nullptr );
 
   Kokkos::View<int, Kokkos::CudaSpace> info ("info");
   CuSolver<ComplexType> solver (s, info.data ());
