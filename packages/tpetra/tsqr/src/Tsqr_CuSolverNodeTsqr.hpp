@@ -994,9 +994,8 @@ namespace TSQR {
       constexpr Scalar ZERO {};
       constexpr Scalar ONE (1.0);
 
-      using TSQR::Impl::CuBlas;
-      using TSQR::Impl::CuBlasHandle;
-      CuBlas<Scalar> blas {CuBlasHandle::getSingleton ()};
+      using Impl::CuBlas;
+      CuBlas<Scalar> blas;
 
       const char transa = 'N';
       const char transb = 'N';
