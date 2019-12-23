@@ -29,5 +29,5 @@ TRIBITS_ADD_LIBRARY(
 # / from this directory, or to / from the 'impl' subdirectory.  That ensures
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
-# Behold: Another such change that I hath wrought.
+# Behold: Another such change that I hath wrought, and another.
 #

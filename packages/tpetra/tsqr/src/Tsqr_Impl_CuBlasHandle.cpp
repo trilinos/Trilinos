@@ -3,7 +3,6 @@
 #ifdef HAVE_TPETRATSQR_CUBLAS
 #include "Kokkos_Core.hpp"
 #include "Teuchos_Assert.hpp"
-#include <cublas_v2.h>
 
 namespace TSQR {
 namespace Impl {
