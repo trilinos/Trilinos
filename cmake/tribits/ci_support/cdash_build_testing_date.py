@@ -46,7 +46,7 @@ import datetime
 #
 
 
-usageHelp = r"""cdash_testing_date.py --cdash-project-start-time="HH:MM" [other options]
+usageHelp = r"""cdash_testing_date.py --cdash-project-start-time="hh:mm" [other options]
 
 Returns to STDOUT the date string YYYY-MM-DD that corresponds the the matching
 CDash test day.  Is should be compatible with the 'date=YYYY-MM-DD' argument
@@ -74,7 +74,7 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
   
   clp.add_option(
     "--cdash-project-start-time", dest="cdashProjectStartTimeUtcStr", type="string", default="",
-    help="Starting time for the CDash testing day in 'hh:mmm' in UTC."\
+    help="Starting time for the CDash testing day in 'hh:mm' in UTC."\
       + " Check the CDash project settings for the testing day start time." )
   
   clp.add_option(
@@ -98,7 +98,7 @@ def getCmndLineOptions():
   (options, args) = clp.parse_args()
   if options.cdashProjectStartTimeUtcStr == "":
     raise Exception("Error, input argument --cdash-project-start-time must be non"\
-      +"-empty and must be of the format HH:MM UTC")
+      +"-empty and must be of the format hh:mm UTC")
   return options
 
 

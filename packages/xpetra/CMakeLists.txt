@@ -22,7 +22,7 @@ IF( DEFINED ${PROJECT_NAME}_ENABLE_Tpetra AND ${${PACKAGE_NAME}_ENABLE_Tpetra} )
   TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 ELSE()
   MESSAGE( STATUS "Xpetra: Skipping ETI check because Tpetra is not enabled." )
-  SET( HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION OFF BOOL "Set to OFF by CMake because Tpetra isn't enabled" )
+  SET( HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION OFF )
 ENDIF()
 
 # Deprecation stuff
