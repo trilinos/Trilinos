@@ -123,8 +123,6 @@ class Doxy2SWIG:
         data is stored in `self.pieces`.
         """
         self.parse(self.xmldoc)
-        for i in range(len(self.pieces)):
-            print("pieces[%d]: '%s'" % (i, self.pieces[i]))
 
     def parse(self, node):
         """
