@@ -60,7 +60,7 @@ template<class Real>
 class TrustRegion {
 private:
 
-  ROL::Ptr<Vector<Real> > prim_, dual_;
+  ROL::Ptr<Vector<Real> > prim_, dual_, xtmp_;
 
   ETrustRegionModel TRmodel_;
 
@@ -129,6 +129,7 @@ public:
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
     prim_ = x.clone();
     dual_ = g.clone();
+    xtmp_ = x.clone();
   }
 
   virtual void update( Vector<Real>           &x,
@@ -174,6 +175,9 @@ public:
     }
     // Evaluate objective function at new iterate
     prim_->set(x); prim_->plus(s);
+    if (bnd.isActivated()) {
+      bnd.project(*prim_);
+    }
     obj.update(*prim_);
     fnew = obj.value(*prim_,ftol);
 
@@ -237,7 +241,6 @@ public:
     /***************************************************************************************************/
     // FINISH COMPUTE RATIO OF ACTUAL AND PREDICTED REDUCTION
     /***************************************************************************************************/
-
 
     /***************************************************************************************************/
     // BEGIN CHECK SUFFICIENT DECREASE FOR BOUND CONSTRAINED PROBLEMS
@@ -311,16 +314,17 @@ public:
     }
     else if ((rho >= eta0_ && flagTR != TRUSTREGION_FLAG_NPOSPREDNEG) ||
              (flagTR == TRUSTREGION_FLAG_POSPREDNEG)) { // Step Accepted
-      x.plus(s);
       // Perform line search (smoothing) to ensure decrease 
       if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
         Real tol = std::sqrt(ROL_EPSILON<Real>());
         // Compute new gradient
-        obj.gradient(*dual_,x,tol); // MUST DO SOMETHING HERE WITH TOL
+        xtmp_->set(x); xtmp_->plus(s);
+        bnd.project(*xtmp_);
+        obj.gradient(*dual_,*xtmp_,tol); // MUST DO SOMETHING HERE WITH TOL
         ngrad++;
         // Compute smoothed step
         Real alpha(1);
-        prim_->set(x);
+        prim_->set(*xtmp_);
         prim_->axpy(-alpha/alpha_init_,dual_->dual());
         bnd.project(*prim_);
         // Compute new objective value
@@ -330,8 +334,8 @@ public:
         // Perform smoothing
         int cnt = 0;
         alpha = alpha_init_;
-        while ( (fnew-ftmp) <= mu_*(fnew-fold) ) { 
-          prim_->set(x);
+        while ( (ftmp-fnew) >= mu_*aRed ) { 
+          prim_->set(*xtmp_);
           prim_->axpy(-alpha/alpha_init_,dual_->dual());
           bnd.project(*prim_);
           obj.update(*prim_);
@@ -348,14 +352,17 @@ public:
           flagTR = TRUSTREGION_FLAG_NAN;
           del = gamma1_*std::min(snorm,del);
 	  rho = static_cast<Real>(-1);
-	  x.axpy(static_cast<Real>(-1),s);
-	  //obj.update(x,true,iter);
+	  //x.axpy(static_cast<Real>(-1),s);
+	  obj.update(x,true,iter);
 	  fnew = fold1;
 	}
 	else {
           fnew = ftmp;
           x.set(*prim_);
 	}
+      }
+      else {
+        x.plus(s);
       }
       if (rho >= eta2_) { // Increase trust-region radius
         del = gamma2_*del;
