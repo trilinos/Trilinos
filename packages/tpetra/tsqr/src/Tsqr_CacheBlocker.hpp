@@ -158,14 +158,14 @@ namespace TSQR {
     ///   matrix with which this CacheBlocker was initialized.
     template< class MatrixViewType >
     MatrixViewType
-    split_top_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
+    split_top_block (MatrixViewType& A,
+                     const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       const ordinal_type nrows_top =
         strategy_.top_block_split_nrows (A.extent(0), extent(1),
                                          nrows_cache_block());
-      // split_top() sets A to A_rest, and returns A_top.
-      return A.split_top (nrows_top, contiguous_cache_blocks);
+      return split_top (A, nrows_top, contiguous_cache_blocks);
     }
 
     /// \brief View of the topmost cache block of A.
@@ -188,7 +188,7 @@ namespace TSQR {
         strategy_.top_block_split_nrows (A.extent(0), extent(1),
                                          nrows_cache_block());
       MatrixViewType A_copy (A);
-      return A_copy.split_top (nrows_top, contiguous_cache_blocks);
+      return split_top (A_copy, nrows_top, contiguous_cache_blocks);
     }
 
     /// \brief Split A in place into [A_rest; A_bot].
@@ -207,7 +207,8 @@ namespace TSQR {
     ///
     template< class MatrixViewType >
     MatrixViewType
-    split_bottom_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
+    split_bottom_block (MatrixViewType& A,
+                        const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       // Ignore the number of columns in A, since we want to block all
@@ -216,7 +217,7 @@ namespace TSQR {
         strategy_.bottom_block_split_nrows (A.extent(0), extent(1),
                                             nrows_cache_block());
       // split_bottom() sets A to A_rest, and returns A_bot.
-      return A.split_bottom (nrows_bottom, contiguous_cache_blocks);
+      return split_bottom (A, nrows_bottom, contiguous_cache_blocks);
     }
 
     /// \brief Fill the matrix A with zeros, respecting cache blocks.
@@ -241,7 +242,7 @@ namespace TSQR {
       // won't be the correct leading dimension of A, but it won't
       // matter: we only ever operate on A_cur here, and A_cur's
       // leading dimension is set correctly by split_top_block().
-      while (! A.empty()) {
+      while (! empty (A)) {
         // This call modifies the matrix view A, but that's OK since
         // we passed the input view by copy, not by reference.
         MatrixViewType A_cur = split_top_block (A, contiguous_cache_blocks);
@@ -280,10 +281,10 @@ namespace TSQR {
       // Note: if the cache blocks are stored contiguously, lda won't
       // be the correct leading dimension of A, but it won't matter:
       // we only ever operate on A_cur here, and A_cur's leading
-      // dimension is set correctly by A_rest.split_top().
+      // dimension is set correctly by split_top_block.
       mat_view_type A_rest (num_rows, num_cols, A, lda);
 
-      while (! A_rest.empty()) {
+      while (! empty (A_rest)) {
         // This call modifies A_rest.
         mat_view_type A_cur = split_top_block (A_rest, contiguous_cache_blocks);
         deep_copy (A_cur, Scalar {});
@@ -322,8 +323,8 @@ namespace TSQR {
       // Leading dimension doesn't matter since A_out will be cache blocked.
       mat_view_type A_out_rest (num_rows, num_cols, A_out, lda_in);
 
-      while (! A_in_rest.empty()) {
-        if (A_out_rest.empty()) {
+      while (! empty (A_in_rest)) {
+        if (empty (A_out_rest)) {
           throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
         }
         // This call modifies A_in_rest.
@@ -351,8 +352,8 @@ namespace TSQR {
       const_mat_view_type A_in_rest (num_rows, num_cols, A_in, lda_out);
       mat_view_type A_out_rest (num_rows, num_cols, A_out, lda_out);
 
-      while (! A_in_rest.empty()) {
-        if (A_out_rest.empty()) {
+      while (! empty (A_in_rest)) {
+        if (empty (A_out_rest)) {
           throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
         }
         // This call modifies A_in_rest.
@@ -389,9 +390,9 @@ namespace TSQR {
       const ordinal_type num_cache_blocks =
         strategy_.num_cache_blocks (A.extent(0), A.extent(1), nrows_cache_block());
 
-      if (cache_block_index >= num_cache_blocks)
-        return MatrixViewType (0, 0, NULL, 0); // empty
-
+      if (cache_block_index >= num_cache_blocks) {
+        return MatrixViewType {}; // empty
+      }
       // result[0] = starting row index of the cache block
       // result[1] = number of rows in the cache block
       // result[2] = pointer offset (A.data() + result[2])
@@ -402,8 +403,7 @@ namespace TSQR {
                                        nrows_cache_block(),
                                        contiguous_cache_blocks);
       if (result[1] == 0) {
-        // For some reason, the cache block is empty.
-        return MatrixViewType (0, 0, nullptr, 0);
+        return MatrixViewType {};
       }
 
       // We expect that ordinal_type is signed, so adding signed
@@ -412,19 +412,6 @@ namespace TSQR {
       return MatrixViewType (result[1], A.extent(1),
                              A.data() + size_t(result[2]),
                              result[3]);
-    }
-
-    /// \brief Equality operator.
-    ///
-    /// Two cache blockers are "equal" if they correspond to matrices
-    /// with the same dimensions (number of rows and number of
-    /// columns), and if their cache blocking strategies are equal.
-    bool
-    operator== (const CacheBlockingStrategy<Ordinal, Scalar>& rhs) const
-    {
-      return extent(0) == rhs.extent(0) &&
-        extent(1) == rhs.extent(1) &&
-        strategy_ == rhs.strategy_;
     }
 
   private:

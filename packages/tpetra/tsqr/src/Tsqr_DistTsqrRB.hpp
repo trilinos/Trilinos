@@ -39,11 +39,11 @@
 //@HEADER
 */
 
-#ifndef __TSQR_DistTsqrRB_hpp
-#define __TSQR_DistTsqrRB_hpp
+#ifndef TSQR_DISTTSQRRB_HPP
+#define TSQR_DISTTSQRRB_HPP
 
 #include "Tsqr_ApplyType.hpp"
-#include "Tsqr_Combine.hpp"
+#include "Tsqr_Impl_CombineUser.hpp"
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_StatTimeMonitor.hpp"
 
@@ -129,7 +129,6 @@ namespace TSQR {
     };
   } // namespace details
 
-
   /// \class DistTsqrRB
   /// \brief Reduce-and-Broadcast (RB) version of DistTsqr.
   /// \author Mark Hoemmen
@@ -146,15 +145,15 @@ namespace TSQR {
   /// broadcast.  The implicit Q factor data stay on the MPI process
   /// where they were computed.
   template<class LocalOrdinal, class Scalar>
-  class DistTsqrRB {
+  class DistTsqrRB : private Impl::CombineUser<LocalOrdinal, Scalar> {
   public:
-    typedef LocalOrdinal ordinal_type;
-    typedef Scalar scalar_type;
-    typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
-    typedef MatView<ordinal_type, scalar_type> mat_view_type;
-    typedef Matrix<ordinal_type, scalar_type> matrix_type;
-    typedef int rank_type;
-    typedef Combine<ordinal_type, scalar_type> combine_type;
+    using ordinal_type = LocalOrdinal;
+    using scalar_type = Scalar;
+    using magnitude_type =
+      typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
+    using mat_view_type = MatView<ordinal_type, scalar_type>;
+    using matrix_type = Matrix<ordinal_type, scalar_type>;
+    using rank_type = int;
 
     /// \brief Constructor
     ///
@@ -193,10 +192,10 @@ namespace TSQR {
     /// timings from factorExplicit().  The vector gets resized if
     /// necessary to fit all the labels.
     void
-    getStatsLabels (std::vector< std::string >& labels) const
+    getStatsLabels (std::vector<std::string>& labels) const
     {
       const int numTimers = 5;
-      labels.resize (std::max (labels.size(), static_cast<size_t>(numTimers)));
+      labels.resize (std::max (labels.size (), size_t (numTimers)));
 
       labels[0] = totalTime_->name();
       labels[1] = reduceCommTime_->name();
@@ -208,7 +207,12 @@ namespace TSQR {
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      // FIXME (20 Dec 2019) If the combine type is dynamic, we can't
+      // answer this question without knowing the number of columns.
+      // Just guess for now.
+      constexpr LocalOrdinal fakeNumCols = 10;
+      auto& c = this->getCombine (fakeNumCols);
+      return c.QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     /// \brief Internode TSQR with explicit Q factor
@@ -244,25 +248,23 @@ namespace TSQR {
       // R_mine has columns, but Q_mine may have any number of
       // columns.  (It depends on how many columns of the explicit Q
       // factor we want to compute.)
-      if (R_mine.extent(0) < R_mine.extent(1))
-        {
-          std::ostringstream os;
-          os << "R factor input has fewer rows (" << R_mine.extent(0)
-             << ") than columns (" << R_mine.extent(1) << ")";
-          // This is a logic error because TSQR users should not be
-          // calling this method directly.
-          throw std::logic_error (os.str());
-        }
-      else if (Q_mine.extent(0) != R_mine.extent(1))
-        {
-          std::ostringstream os;
-          os << "Q factor input must have the same number of rows as the R "
-            "factor input has columns.  Q has " << Q_mine.extent(0)
-             << " rows, but R has " << R_mine.extent(1) << " columns.";
-          // This is a logic error because TSQR users should not be
-          // calling this method directly.
-          throw std::logic_error (os.str());
-        }
+      if (R_mine.extent(0) < R_mine.extent(1)) {
+        std::ostringstream os;
+        os << "R factor input has fewer rows (" << R_mine.extent(0)
+           << ") than columns (" << R_mine.extent(1) << ")";
+        // This is a logic error because TSQR users should not be
+        // calling this method directly.
+        throw std::logic_error (os.str());
+      }
+      else if (Q_mine.extent(0) != R_mine.extent(1)) {
+        std::ostringstream os;
+        os << "Q factor input must have the same number of rows as the R "
+          "factor input has columns.  Q has " << Q_mine.extent(0)
+           << " rows, but R has " << R_mine.extent(1) << " columns.";
+        // This is a logic error because TSQR users should not be
+        // calling this method directly.
+        throw std::logic_error (os.str());
+      }
 
       // The factorization is a recursion over processors [P_first, P_last].
       const rank_type P_mine = messenger_->rank();
@@ -389,13 +391,13 @@ namespace TSQR {
           recv_R (R_other, P_mid);
 
           std::vector<scalar_type> tau (numCols);
-          // Don't shrink the workspace array; doing so may
-          // require expensive reallocation every time we send /
-          // receive data.
-          resizeWork (numCols);
 
-          combine_.factor_pair (R_mine, R_other.view (),
-                                tau.data(), work_.data());
+          auto& combine = this->getCombine (numCols);
+          const ordinal_type lwork =
+            combine.work_size (2 * numCols, numCols, numCols);
+          work_.resize (lwork);
+          combine.factor_pair (R_mine, R_other.view (),
+                               tau.data (), work_.data (), lwork);
           QFactors.push_back (R_other);
           tauArrays.push_back (tau);
         }
@@ -413,9 +415,11 @@ namespace TSQR {
                         const rank_type P_first,
                         const rank_type P_last,
                         const rank_type curpos,
-                        std::vector< matrix_type >& QFactors,
-                        std::vector< std::vector< scalar_type > >& tauArrays)
+                        std::vector<matrix_type>& QFactors,
+                        std::vector<std::vector<scalar_type>>& tauArrays)
     {
+      using LO = LocalOrdinal;
+
       if (P_last < P_first) {
         std::ostringstream os;
         os << "explicitQBroadcast: interval [P_first=" << P_first
@@ -444,8 +448,8 @@ namespace TSQR {
             throw std::logic_error (os.str());
           }
           // Q_impl, tau: implicitly stored local Q factor.
-          matrix_type& Q_impl = QFactors[curpos];
-          std::vector<scalar_type>& tau = tauArrays[curpos];
+          auto Q_bot = QFactors[curpos].view ();
+          const scalar_type* tau = tauArrays[curpos].data ();
 
           // Apply implicitly stored local Q factor to
           //   [Q_mine;
@@ -453,13 +457,18 @@ namespace TSQR {
           // where Q_other = zeros(Q_mine.extent(0), Q_mine.extent(1)).
           // Overwrite both Q_mine and Q_other with the result.
           deep_copy (Q_other, scalar_type {});
-          combine_.apply_pair (ApplyType::NoTranspose,
-                               Q_mine.extent(1), Q_impl.extent(1),
-                               Q_impl.data(), Q_impl.stride(1),
-                               tau.data(),
-                               Q_mine.data(), Q_mine.stride(1),
-                               Q_other.data(), Q_other.stride(1),
-                               work_.data());
+
+          const LO pair_nrows
+            (Q_mine.extent (0) + Q_other.extent (0));
+          const LO pair_ncols (Q_mine.extent (1));
+          auto& combine = this->getCombine (pair_ncols);
+          const LO lwork =
+            combine.work_size (pair_nrows, pair_ncols, pair_ncols);
+          if (lwork > LO (work_.size ())) {
+            work_.resize (lwork);
+          }
+          combine.apply_pair (ApplyType::NoTranspose, Q_bot, tau,
+                              Q_mine, Q_other, work_.data (), lwork);
           // Send the resulting Q_other, and the final R factor, to P_mid.
           send_Q_R (Q_other, R_mine, P_mid);
           newpos = curpos - 1;
@@ -476,9 +485,9 @@ namespace TSQR {
                               newpos, QFactors, tauArrays);
         }
         else { // Interval [P_mid, P_last]
-            explicitQBroadcast (R_mine, Q_mine, Q_other,
-                                P_mine, P_mid, P_last,
-                                newpos, QFactors, tauArrays);
+          explicitQBroadcast (R_mine, Q_mine, Q_other,
+                              P_mine, P_mid, P_last,
+                              newpos, QFactors, tauArrays);
         }
       }
     }
@@ -499,14 +508,15 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      resizeWork (numElts);
+      work_.resize (numElts);
 
       // Pack the Q data into the workspace array.
-      mat_view_type Q_contig (Q.extent(0), Q.extent(1), work_.data(), Q.extent(0));
+      mat_view_type Q_contig (Q.extent (0), Q.extent (1),
+                              work_.data (), Q.extent (0));
       deep_copy (Q_contig, Q);
       // Pack the R data into the workspace array.
       pack_R (R, &work_[Q_size]);
-      messenger_->send (work_.data(), numElts, destProc, 0);
+      messenger_->send (work_.data (), numElts, destProc, 0);
     }
 
     template< class MatrixType1, class MatrixType2 >
@@ -525,12 +535,13 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      resizeWork (numElts);
+      work_.resize (numElts);
 
-      messenger_->recv (work_.data(), numElts, srcProc, 0);
+      messenger_->recv (work_.data (), numElts, srcProc, 0);
 
       // Unpack the C data from the workspace array.
-      deep_copy (Q, mat_view_type (Q.extent(0), Q.extent(1), work_.data(), Q.extent(0)));
+      deep_copy (Q, mat_view_type (Q.extent (0), Q.extent (1),
+                                   work_.data (), Q.extent (0)));
       // Unpack the R data from the workspace array.
       unpack_R (R, &work_[Q_size]);
     }
@@ -547,10 +558,10 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      resizeWork (numElts);
+      work_.resize (numElts);
       // Pack the R data into the workspace array.
-      pack_R (R, work_.data());
-      messenger_->send (work_.data(), numElts, destProc, 0);
+      pack_R (R, work_.data ());
+      messenger_->send (work_.data (), numElts, destProc, 0);
     }
 
     template< class MatrixType >
@@ -565,23 +576,26 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      resizeWork (numElts);
-      messenger_->recv (work_.data(), numElts, srcProc, 0);
+      work_.resize (numElts);
+      messenger_->recv (work_.data (), numElts, srcProc, 0);
       // Unpack the R data from the workspace array.
-      unpack_R (R, work_.data());
+      unpack_R (R, work_.data ());
     }
 
     template< class MatrixType >
     static void
     unpack_R (MatrixType& R, const scalar_type buf[])
     {
+      // FIXME (mfh 08 Dec 2019) Rewrite to use deep_copy; we don't
+      // want to access Matrix or MatView entries on host directly any
+      // more.
       ordinal_type curpos = 0;
-      for (ordinal_type j = 0; j < R.extent(1); ++j)
-        {
-          scalar_type* const R_j = &R(0, j);
-          for (ordinal_type i = 0; i <= j; ++i)
-            R_j[i] = buf[curpos++];
+      for (ordinal_type j = 0; j < R.extent(1); ++j) {
+        scalar_type* const R_j = &R(0, j);
+        for (ordinal_type i = 0; i <= j; ++i) {
+          R_j[i] = buf[curpos++];
         }
+      }
     }
 
     template< class ConstMatrixType >
@@ -589,37 +603,33 @@ namespace TSQR {
     pack_R (const ConstMatrixType& R, scalar_type buf[])
     {
       ordinal_type curpos = 0;
-      for (ordinal_type j = 0; j < R.extent(1); ++j)
-        {
-          const scalar_type* const R_j = &R(0, j);
-          for (ordinal_type i = 0; i <= j; ++i)
-            buf[curpos++] = R_j[i];
+      for (ordinal_type j = 0; j < R.extent(1); ++j) {
+        const scalar_type* const R_j = &R(0, j);
+        for (ordinal_type i = 0; i <= j; ++i) {
+          buf[curpos++] = R_j[i];
         }
-    }
-
-    void
-    resizeWork (const ordinal_type numElts)
-    {
-      typedef typename std::vector< scalar_type >::size_type vec_size_type;
-      work_.resize (std::max (work_.size(), static_cast< vec_size_type >(numElts)));
+      }
     }
 
   private:
-    combine_type combine_;
-    Teuchos::RCP< MessengerBase< scalar_type > > messenger_;
-    std::vector< scalar_type > work_;
+    Teuchos::RCP<MessengerBase<scalar_type>> messenger_;
+    std::vector<scalar_type> work_;
 
     // Timers for various phases of the factorization.  Time is
     // cumulative over all calls of factorExplicit().
-    Teuchos::RCP< Teuchos::Time > totalTime_;
-    Teuchos::RCP< Teuchos::Time > reduceCommTime_;
-    Teuchos::RCP< Teuchos::Time > reduceTime_;
-    Teuchos::RCP< Teuchos::Time > bcastCommTime_;
-    Teuchos::RCP< Teuchos::Time > bcastTime_;
+    Teuchos::RCP<Teuchos::Time> totalTime_;
+    Teuchos::RCP<Teuchos::Time> reduceCommTime_;
+    Teuchos::RCP<Teuchos::Time> reduceTime_;
+    Teuchos::RCP<Teuchos::Time> bcastCommTime_;
+    Teuchos::RCP<Teuchos::Time> bcastTime_;
 
-    TimeStats totalStats_, reduceCommStats_, reduceStats_, bcastCommStats_, bcastStats_;
+    TimeStats totalStats_;
+    TimeStats reduceCommStats_;
+    TimeStats reduceStats_;
+    TimeStats bcastCommStats_;
+    TimeStats bcastStats_;
   };
 
 } // namespace TSQR
 
-#endif // __TSQR_DistTsqrRB_hpp
+#endif // TSQR_DISTTSQRRB_HPP

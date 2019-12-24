@@ -42,9 +42,6 @@
 
 #include "Tsqr_ConfigDefs.hpp"
 #include "Tsqr_Mgs.hpp"
-#ifdef HAVE_KOKKOSTSQR_TBB
-#  include "TbbTsqr_TbbMgs.hpp"
-#endif // HAVE_KOKKOSTSQR_TBB
 #include "Tsqr_TestSetup.hpp"
 #include "Tsqr_GlobalVerify.hpp"
 #include "Tsqr_printGlobalMatrix.hpp"
@@ -67,13 +64,6 @@ namespace TSQR {
     {
       if (which == "MpiSeqMGS") {
         return std::string ("MPI parallel / sequential MGS");
-      }
-      else if (which == "MpiTbbMGS") {
-#ifdef HAVE_KOKKOSTSQR_TBB
-        return std::string ("MPI parallel / TBB parallel MGS");
-#else
-        throw std::logic_error("MGS not built with Intel TBB support");
-#endif // HAVE_KOKKOSTSQR_TBB
       }
       else {
         throw std::logic_error("Unknown MGS implementation type \"" + which + "\"");
@@ -184,16 +174,7 @@ namespace TSQR {
         }
       }
 
-      if (which == "MpiTbbMGS") {
-#ifdef HAVE_KOKKOSTSQR_TBB
-        typedef TSQR::TBB::TbbMgs< Ordinal, Scalar > mgs_type;
-        mgs_type mgser (scalarComm);
-        MgsVerifier< mgs_type >::verify (mgser, scalarComm, Q_local, R, b_debug);
-#else
-        throw std::logic_error("MGS not built with Intel TBB support");
-#endif // HAVE_KOKKOSTSQR_TBB
-      }
-      else if (which == "MpiSeqMGS") {
+      if (which == "MpiSeqMGS") {
         typedef MGS<Ordinal, Scalar> mgs_type;
         mgs_type mgser (scalarComm);
         MgsVerifier< mgs_type >::verify (mgser, scalarComm, Q_local, R, b_debug);
@@ -238,9 +219,6 @@ namespace TSQR {
                << "# rows = " << nrows_global << endl
                << "# columns = " << ncols << endl
                << "# MPI processes = " << nprocs << endl;
-          if (which == "MpiTbbTSQR") {
-            cout << "# cores per process = " << num_cores << endl;
-          }
           cout << "Absolute residual $\\|A - Q*R\\|_2: "
                << results[0] << endl
                << "Absolute orthogonality $\\|I - Q^T*Q\\|_2$: "
@@ -253,11 +231,8 @@ namespace TSQR {
           cout << which
                << "," << nrows_global
                << "," << ncols
-               << "," << nprocs;
-          if (which == "MpiTbbTSQR") {
-            cout << "," << num_cores << endl;
-          }
-          cout << "," << results[0]
+               << "," << nprocs
+               << "," << results[0]
                << "," << results[1]
                << "," << results[2]
                << endl;
@@ -384,17 +359,7 @@ namespace TSQR {
 
       // Set up MGS and run the benchmark.
       double mgs_timing; // Total run time in seconds of all ntrials trials
-      if (which == "MpiTbbMGS") {
-#ifdef HAVE_KOKKOSTSQR_TBB
-        typedef TSQR::TBB::TbbMgs<Ordinal, Scalar> mgs_type;
-        mgs_type mgser (scalarComm);
-        mgs_timing = do_mgs_benchmark< mgs_type, TimerType > (mgser, Q_local, R,
-                                                              ntrials, human_readable);
-#else
-        throw std::logic_error("MGS not built with Intel TBB support");
-#endif // HAVE_KOKKOSTSQR_TBB
-      }
-      else if (which == "MpiSeqMGS") {
+      if (which == "MpiSeqMGS") {
         typedef MGS<Ordinal, Scalar> mgs_type;
         mgs_type mgser (scalarComm);
         mgs_timing = do_mgs_benchmark<mgs_type, TimerType> (mgser, Q_local, R,
@@ -428,11 +393,8 @@ namespace TSQR {
           cout << mgs_human_readable_name(which) << ":" << endl
                << "# rows = " << nrows_global << endl
                << "# columns = " << ncols << endl
-               << "# MPI processes = " << nprocs << endl;
-          if (which == "MpiTbbTSQR") {
-            cout << "# cores per process = " << num_cores << endl;
-          }
-          cout << "# trials = " << ntrials << endl
+               << "# MPI processes = " << nprocs << endl
+               << "# trials = " << ntrials << endl
                << "Min total time (s) over all MPI processes = "
                << min_mgs_timing << endl
                << "Max total time (s) over all MPI processes = "
@@ -443,11 +405,8 @@ namespace TSQR {
           cout << which
                << "," << nrows_global
                << "," << ncols
-               << "," << nprocs;
-          if (which == "MpiTbbTSQR") {
-            cout << "," << num_cores << endl;
-          }
-          cout << "," << ntrials
+               << "," << nprocs
+               << "," << ntrials
                << "," << min_mgs_timing
                << "," << max_mgs_timing
                << endl;

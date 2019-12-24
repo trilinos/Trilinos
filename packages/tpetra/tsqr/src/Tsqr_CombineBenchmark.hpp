@@ -44,9 +44,6 @@
 #include "Tsqr_CombineBenchmarker.hpp"
 #include "Tsqr_CombineDefault.hpp"
 #include "Tsqr_CombineNative.hpp"
-#ifdef HAVE_KOKKOSTSQR_FORTRAN
-#  include "Tsqr_CombineFortran.hpp"
-#endif // HAVE_KOKKOSTSQR_FORTRAN
 
 #include <algorithm>
 #include <iostream>
@@ -320,51 +317,18 @@ namespace TSQR {
                                                          params.additionalData);
         const double slowdown = nativeTimings[1] / defaultTimings[1];
         const bool tooSlow = slowdown > params.allowance;
-        // FIXME (mfh 24 May 2011) Replace std::runtime_error with a
-        // more appropriately named exception.
-        TEUCHOS_TEST_FOR_EXCEPTION(params.strictPerfTests && tooSlow,
-                           std::runtime_error,
-                           "CombineNative is too slow!  For cache block "
-                           "benchmark with numRows=" << numRows << " and numCols="
-                           << numCols << ", CombineNative time (= "
-                           << nativeTimings[1] << ") / CombineDefault time (= "
-                           << defaultTimings[1] << ") = " << slowdown
-                           << " > the allowed fraction " << params.allowance
-                           << ".");
+        // FIXME (mfh 10 Dec 2019) Return an error code / bool,
+        // instead of throwing.
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (params.strictPerfTests && tooSlow, std::runtime_error,
+           "CombineNative is too slow!  For cache block benchmark "
+           "with numRows=" << numRows << " and numCols=" << numCols
+           << ", CombineNative time (= " << nativeTimings[1] <<
+           ") / CombineDefault time (= " << defaultTimings[1] <<
+           ") = " << slowdown << " > the allowed fraction " <<
+           params.allowance << ".");
       }
-
-#ifdef HAVE_KOKKOSTSQR_FORTRAN
-      std::vector<double> fortranTimings;
-      {
-        typedef CombineFortran<Scalar> combine_type;
-        std::string combineTypeName ("Fortran");
-        fortranTimings =
-          benchmarkCombineType<combine_type, TimerType> (out, params.seed,
-                                                         dataTypeName,
-                                                         combineTypeName,
-                                                         numRows,
-                                                         numCols,
-                                                         cacheBlockNumTrials,
-                                                         pairNumTrials,
-                                                         params.averageTimings,
-                                                         params.additionalData);
-        const double slowdown = fortranTimings[1] / defaultTimings[1];
-        const bool tooSlow = slowdown > params.allowance;
-        // FIXME (mfh 24 May 2011) Replace std::runtime_error with a
-        // more appropriately named exception.
-        TEUCHOS_TEST_FOR_EXCEPTION(params.strictPerfTests && tooSlow,
-                           std::runtime_error,
-                           "CombineFortran is too slow!  For cache block "
-                           "benchmark with numRows=" << numRows << " and numCols="
-                           << numCols << ", CombineFortran time (= "
-                           << fortranTimings[1] << ") / CombineDefault time (= "
-                           << defaultTimings[1] << ") = " << slowdown
-                           << " > the allowed fraction " << params.allowance
-                           << ".");
-      }
-#endif // HAVE_KOKKOSTSQR_FORTRAN
     }
-
 
     template<class TimerType>
     static void
@@ -393,7 +357,7 @@ namespace TSQR {
         }
       if (params.testComplex)
         {
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
           using std::complex;
 
           dataTypeName = "complex<float>";
@@ -403,9 +367,9 @@ namespace TSQR {
           benchmarkAllCombineTypes<complex<double>, TimerType> (out, dataTypeName,
                                                                 params, timerResolution);
 
-#else // Don't HAVE_KOKKOSTSQR_COMPLEX
+#else // Don't HAVE_TPETRATSQR_COMPLEX
           throw std::logic_error("TSQR not built with complex arithmetic support");
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
         }
     }
 

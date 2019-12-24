@@ -100,17 +100,12 @@ namespace TSQR {
         std::vector<Scalar> tau (std::min(nrows, ncols));
 
         // Workspace query
-        Scalar _lwork1, _lwork2;
-        lapack.compute_QR (nrows, ncols, Q, ldq, tau.data(), &_lwork1, -1);
-        lapack.compute_explicit_Q (nrows, ncols, ncols,
-                                   Q, ldq, tau.data(),
-                                   &_lwork2, -1);
-
-        // Allocate workspace.  abs() returns a magnitude_type, and we
-        // can compare those using std::max.  If Scalar is complex,
-        // you can't compare it using max.
-        const Ordinal lwork = checkedCast (std::max (STS::magnitude (_lwork1),
-                                                     STS::magnitude (_lwork2)));
+        const int lwork1 =
+          lapack.compute_QR_lwork (nrows, ncols, Q, ldq);
+        const int lwork2 =
+          lapack.compute_explicit_Q_lwork (nrows, ncols, ncols,
+                                           Q, ldq, tau.data ());
+        const Ordinal lwork = std::max (lwork1, lwork2);
         std::vector<Scalar> work (lwork);
 
         lapack.compute_QR (nrows, ncols, Q, ldq, tau.data(),
@@ -140,19 +135,12 @@ namespace TSQR {
         // Fill Q with random numbers
         this->fill_random (nrows, ncols, Q, ldq);
 
-        // Get ready for QR factorization
         Impl::Lapack<Scalar> lapack;
-
-        // Workspace query
-        Scalar _lwork1;
-        lapack.compute_QR (nrows, ncols, Q, ldq, tau, &_lwork1, -1);
-
-        // Allocate workspace.
-        const Ordinal lwork = checkedCast (STS::magnitude (_lwork1));
+        const int lwork =
+          lapack.compute_QR_lwork (nrows, ncols, Q, ldq);
         std::vector<Scalar> work (lwork);
-
         lapack.compute_QR (nrows, ncols, Q, ldq, tau,
-                           work.data(), lwork);
+                           work.data (), lwork);
       }
 
       template< class MatrixViewType >
@@ -192,25 +180,29 @@ namespace TSQR {
         implicit_Q (V, tau_V.data());
 
         // Workspace query for ORMQR.
-        Scalar _lwork1, _lwork2;
         Impl::Lapack<Scalar> lapack;
-        lapack.apply_Q_factor ('L', 'N', nrows, ncols, ncols,
-                               U.data(), U.stride(1), tau_U.data(),
-                               A, lda, &_lwork1, -1);
+        const int lwork1 =
+          lapack.apply_Q_factor_lwork ('L', 'N', nrows, ncols, ncols,
+                                       U.data (), U.stride (1),
+                                       tau_U.data (), A, lda);
+        int lwork2 = 0;
         if (STS::isComplex) {
-          lapack.apply_Q_factor ('R', 'C', nrows, ncols, ncols,
-                                 V.data(), V.stride(1), tau_V.data(),
-                                 A, lda, &_lwork2, -1);
+          lwork2 =
+            lapack.apply_Q_factor_lwork ('R', 'C',
+                                         nrows, ncols, ncols,
+                                         V.data (), V.stride (1),
+                                         tau_V.data (), A, lda);
         }
         else {
-          lapack.apply_Q_factor ('R', 'T', nrows, ncols, ncols,
-                                 V.data(), V.stride(1), tau_V.data(),
-                                 A, lda, &_lwork2, -1);
+          lwork2 =
+            lapack.apply_Q_factor_lwork ('R', 'T',
+                                         nrows, ncols, ncols,
+                                         V.data (), V.stride (1),
+                                         tau_V.data (), A, lda);
         }
 
         // Allocate workspace.
-        Ordinal lwork = checkedCast (std::max (STS::magnitude (_lwork1),
-                                               STS::magnitude (_lwork2)));
+        Ordinal lwork (std::max (lwork1, lwork2));
         std::vector<Scalar> work (lwork);
 
         // Apply U to the left side of A, and V^H to the right side of A.
@@ -258,16 +250,13 @@ namespace TSQR {
         std::vector<Scalar> tau (n);
 
         // Workspace size query for QR factorization.
-        Scalar _lwork1;
         Impl::Lapack<Scalar> lapack;
-        lapack.compute_QR (n, n, R, ldr, tau.data(), &_lwork1, -1);
-
-        // Allocate workspace
-        Ordinal lwork = checkedCast (STS::magnitude (_lwork1));
-        std::vector<Scalar> work (lwork);
+        const int lwork = lapack.compute_QR_lwork (n, n, R, ldr);
 
         // Compute QR factorization (implicit representation in place).
-        lapack.compute_QR (n, n, R, ldr, tau.data(), work.data(), lwork);
+        std::vector<Scalar> work (lwork);
+        lapack.compute_QR (n, n, R, ldr, tau.data (),
+                           work.data (), lwork);
 
         // Zero out the stuff below the diagonal of R, leaving just the R factor.
         for (Ordinal j = 0; j < n; ++j) {

@@ -40,14 +40,15 @@
 /// \file Tsqr_Util.hpp
 /// \brief Utilities for TSQR (the Tall Skinny QR factorization)
 
-#ifndef __TSQR_Tsqr_Util_hpp
-#define __TSQR_Tsqr_Util_hpp
+#ifndef TSQR_UTIL_HPP
+#define TSQR_UTIL_HPP
 
 #include "Teuchos_ScalarTraits.hpp"
+#include "Tsqr_MatView.hpp"
 
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 
 #include <algorithm>
 #include <ostream>
@@ -143,36 +144,6 @@ namespace TSQR {
     }
   }
 
-  template< class Ordinal, class Scalar >
-  void
-  copy_upper_triangle (const Ordinal nrows,
-                       const Ordinal ncols,
-                       Scalar* const R_out,
-                       const Ordinal ldr_out,
-                       const Scalar* const R_in,
-                       const Ordinal ldr_in)
-  {
-    if (nrows >= ncols) {
-      for (Ordinal j = 0; j < ncols; ++j) {
-        Scalar* const A_j = &R_out[j*ldr_out];
-        const Scalar* const B_j = &R_in[j*ldr_in];
-        for (Ordinal i = 0; i <= j; ++i) {
-          A_j[i] = B_j[i];
-        }
-      }
-    }
-    else {
-      copy_upper_triangle (nrows, nrows, R_out, ldr_out, R_in, ldr_in);
-      for (Ordinal j = nrows; j < ncols; j++) {
-        Scalar* const A_j = &R_out[j*ldr_out];
-        const Scalar* const B_j = &R_in[j*ldr_in];
-        for (Ordinal i = 0; i < nrows; i++)
-          A_j[i] = B_j[i];
-      }
-    }
-  }
-
-
   template< class Scalar >
   class SumSquare {
   public:
@@ -181,7 +152,7 @@ namespace TSQR {
     }
   };
 
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
   // Specialization for complex numbers
   template<class Scalar>
   class SumSquare<std::complex<Scalar> >  {
@@ -192,58 +163,8 @@ namespace TSQR {
       return result + absval * absval;
     }
   };
-#endif // HAVE_KOKKOSTSQR_COMPLEX
-
-  template<class Ordinal, class Scalar>
-  void
-  pack_R_factor (const Ordinal nrows,
-                 const Ordinal ncols,
-                 const Scalar R_in[],
-                 const Ordinal ldr_in,
-                 Scalar buffer[])
-  {
-    Ordinal count = 0; // current position in output buffer
-    if (nrows >= ncols) {
-      for (Ordinal j = 0; j < ncols; ++j) {
-        for (Ordinal i = 0; i <= j; ++i) {
-          buffer[count++] = R_in[i + j*ldr_in];
-        }
-      }
-    }
-    else {
-      for (Ordinal j = 0; j < nrows; ++j) {
-        for (Ordinal i = 0; i <= j; ++i) {
-          buffer[count++] = R_in[i + j*ldr_in];
-        }
-      }
-    }
-  }
-
-  template< class Ordinal, class Scalar >
-  void
-  unpack_R_factor (const Ordinal nrows,
-                   const Ordinal ncols,
-                   Scalar R_out[],
-                   const Ordinal ldr_out,
-                   const Scalar buffer[])
-  {
-    Ordinal count = 0; // current position in input buffer
-    if (nrows >= ncols) {
-      for (Ordinal j = 0; j < ncols; ++j) {
-        for (Ordinal i = 0; i <= j; ++i) {
-          R_out[i + j*ldr_out] = buffer[count++];
-        }
-      }
-    }
-    else {
-      for (Ordinal j = 0; j < nrows; ++j) {
-        for (Ordinal i = 0; i <= j; ++i) {
-          R_out[i + j*ldr_out] = buffer[count++];
-        }
-      }
-    }
-  }
+#endif // HAVE_TPETRATSQR_COMPLEX
 
 } // namespace TSQR
 
-#endif // __TSQR_Tsqr_Util_hpp
+#endif // TSQR_UTIL_HPP

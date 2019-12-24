@@ -40,8 +40,8 @@
 /// \file Tsqr_DistTsqr.hpp
 /// \brief Internode part of TSQR.
 ///
-#ifndef __TSQR_Tsqr_DistTsqr_hpp
-#define __TSQR_Tsqr_DistTsqr_hpp
+#ifndef TSQR_DISTTSQR_HPP
+#define TSQR_DISTTSQR_HPP
 
 #include "Tsqr_DistTsqrHelper.hpp"
 #include "Tsqr_DistTsqrRB.hpp"
@@ -64,12 +64,16 @@ namespace TSQR {
   template<class LocalOrdinal, class Scalar>
   class DistTsqr : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
-    typedef Scalar scalar_type;
-    typedef LocalOrdinal ordinal_type;
-    typedef MatView<ordinal_type, scalar_type > mat_view_type;
-    typedef std::vector<std::vector<scalar_type> > VecVec;
-    typedef std::pair<VecVec, VecVec> FactorOutput;
-    typedef int rank_type;
+    using scalar_type = Scalar;
+    using ordinal_type = LocalOrdinal;
+
+  private:
+    using VecVec = std::vector<std::vector<scalar_type>>;
+
+  public:
+    using mat_view_type = MatView<ordinal_type, scalar_type>;
+    using FactorOutput = std::pair<VecVec, VecVec>;
+    using rank_type = int;
 
     /// \brief Constructor (that accepts a parameter list).
     ///
@@ -125,10 +129,10 @@ namespace TSQR {
     /// communicator, if the latter is an MPI communicator.  If it's a
     /// serial "communicator," the rank is always zero.
     rank_type rank() const {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
       return messenger_->rank();
     }
 
@@ -138,18 +142,14 @@ namespace TSQR {
     /// communicator, if the latter is an MPI communicator.  If it's a
     /// serial "communicator," the size is always one.
     rank_type size() const {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
       return messenger_->size();
     }
 
-    /// \brief Destructor.
-    ///
-    /// The destructor doesn't need to do anything, thanks to smart
-    /// pointers.
-    virtual ~DistTsqr () {}
+    virtual ~DistTsqr () = default;
 
     /// \brief Does the R factor have a nonnegative diagonal?
     ///
@@ -159,14 +159,16 @@ namespace TSQR {
     /// negative entries.  This Boolean tells you whether DistTsqr
     /// promises to compute an R factor whose diagonal entries are all
     /// nonnegative.
-    bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
-      typedef Combine<ordinal_type, scalar_type> combine_type;
-      return combine_type::QR_produces_R_factor_with_nonnegative_diagonal() &&
-        reduceBroadcastImpl_->QR_produces_R_factor_with_nonnegative_diagonal();
+    bool
+    QR_produces_R_factor_with_nonnegative_diagonal () const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
+      TEUCHOS_ASSERT( reduceBroadcastImpl_.getRawPtr () != nullptr );
+      return reduceBroadcastImpl_->
+        QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
     /// \brief Internode TSQR with explicit Q factor.
@@ -198,10 +200,10 @@ namespace TSQR {
                     mat_view_type Q_mine,
                     const bool forceNonnegativeDiagonal=false)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
       reduceBroadcastImpl_->factorExplicit (R_mine, Q_mine,
                                             forceNonnegativeDiagonal);
     }
@@ -214,10 +216,10 @@ namespace TSQR {
     void
     getFactorExplicitTimings (std::vector<TimeStats>& stats) const
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
       reduceBroadcastImpl_->getStats (stats);
     }
 
@@ -229,10 +231,10 @@ namespace TSQR {
     void
     getFactorExplicitTimingLabels (std::vector<std::string>& labels) const
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
       reduceBroadcastImpl_->getStatsLabels (labels);
     }
 
@@ -262,10 +264,10 @@ namespace TSQR {
     FactorOutput
     factor (mat_view_type R_mine)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
       VecVec Q_factors, tau_arrays;
       DistTsqrHelper<ordinal_type, scalar_type> helper;
       const ordinal_type ncols = R_mine.extent(1);
@@ -278,9 +280,13 @@ namespace TSQR {
       const int P = messenger_->size();
       const int my_rank = messenger_->rank();
       const int first_tag = 0;
-      std::vector<scalar_type> work (ncols);
-      helper.factor_helper (ncols, R_local, my_rank, 0, P-1, first_tag,
-                            messenger_.get(), Q_factors, tau_arrays, work);
+
+      const ordinal_type lwork = helper.work_size (ncols);
+      std::vector<scalar_type> work (lwork);
+      helper.factor_helper (ncols, R_local, my_rank, 0, P-1,
+                            first_tag, messenger_.get (),
+                            Q_factors, tau_arrays,
+                            work.data (), lwork);
       deep_copy (R_mine, R_local_view);
       return std::make_pair (Q_factors, tau_arrays);
     }
@@ -294,10 +300,10 @@ namespace TSQR {
            const ordinal_type ldc_mine,
            const FactorOutput& factor_output)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
       const bool transposed = apply_type.transposed();
       TEUCHOS_TEST_FOR_EXCEPTION(transposed, std::logic_error,
                                  "DistTsqr: Applying Q^T or Q^H has not yet "
@@ -306,18 +312,20 @@ namespace TSQR {
       const int my_rank = messenger_->rank();
       const int first_tag = 0;
       std::vector<scalar_type> C_other (ncols_C * ncols_C);
-      std::vector<scalar_type> work (ncols_C);
+      DistTsqrHelper<ordinal_type, scalar_type> helper;
+      const ordinal_type lwork = helper.work_size (ncols_C);
+      std::vector<scalar_type> work (lwork);
 
       const VecVec& Q_factors = factor_output.first;
       const VecVec& tau_arrays = factor_output.second;
 
       // assert (Q_factors.size() == tau_arrays.size());
       const int cur_pos = Q_factors.size() - 1;
-      DistTsqrHelper<ordinal_type, scalar_type> helper;
-      helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                           C_other.data(), my_rank, 0, P-1, first_tag,
-                           messenger_.get(), Q_factors, tau_arrays, cur_pos,
-                           work);
+
+      helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine,
+                           ldc_mine, C_other.data (), my_rank, 0, P-1,
+                           first_tag, messenger_.get (), Q_factors,
+                           tau_arrays, cur_pos, work.data (), lwork);
     }
 
     //! Apply the result of \c factor() to compute the explicit Q factor.
@@ -327,20 +335,18 @@ namespace TSQR {
                 const ordinal_type ldq_mine,
                 const FactorOutput& factor_output)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
-                                 "Before using DistTsqr computational methods, "
-                                 "you must first call init() with a valid "
-                                 "MessengerBase instance.");
-      const int myRank = messenger_->rank ();
-
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ready (), std::logic_error, "Before using DistTsqr "
+         "computational methods, you must first call init() with a "
+         "valid MessengerBase instance.");
       MatView<ordinal_type, scalar_type> Q_mine_view
         (ncols_Q, ncols_Q, Q_mine, ldq_mine);
       deep_copy (Q_mine_view, scalar_type {});
+
+      const int myRank = messenger_->rank ();
       if (myRank == 0) {
         for (ordinal_type j = 0; j < ncols_Q; ++j) {
-          // FIXME (26 Nov 2019) Eventually, we only want to write to
-          // a matrix through a Kokkos kernel or a TPL.
-          Q_mine[j + j*ldq_mine] = scalar_type (1.0);
+          Q_mine_view(j,j) = scalar_type (1.0);
         }
       }
       apply (ApplyType::NoTranspose, ncols_Q, ncols_Q,
@@ -348,17 +354,18 @@ namespace TSQR {
     }
 
   private:
-    Teuchos::RCP<MessengerBase<scalar_type> > messenger_;
-    Teuchos::RCP<DistTsqrRB<ordinal_type, scalar_type> > reduceBroadcastImpl_;
+    Teuchos::RCP<MessengerBase<scalar_type>> messenger_;
+    Teuchos::RCP<DistTsqrRB<ordinal_type, scalar_type>> reduceBroadcastImpl_;
 
     /// \brief Whether this object is ready to perform computations.
     ///
     /// It is <i>not</i> ready until after \c init() has been called.
     bool ready() const {
-      return ! messenger_.is_null() && ! reduceBroadcastImpl_.is_null();
+      return ! messenger_.is_null () &&
+        ! reduceBroadcastImpl_.is_null ();
     }
   };
 
 } // namespace TSQR
 
-#endif // __TSQR_Tsqr_DistTsqr_hpp
+#endif // TSQR_DISTTSQR_HPP

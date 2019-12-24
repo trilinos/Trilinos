@@ -37,108 +37,146 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_NodeTsqrFactory_hpp
-#define __TSQR_NodeTsqrFactory_hpp
+/// \file Tsqr_NodeTsqrFactory.hpp
+/// \brief Declaration and definition of a factory for creating an
+///   instance of the right NodeTsqr subclass.
 
-#include "Tsqr_ConfigDefs.hpp"
-#include "Kokkos_DefaultNode.hpp"
+#ifndef TSQR_NODETSQRFACTORY_HPP
+#define TSQR_NODETSQRFACTORY_HPP
 
-#ifdef HAVE_KOKKOSTSQR_TBB
-#  include "TbbTsqr.hpp"
-#endif // HAVE_KOKKOSTSQR_TBB
-
-#include "Tsqr_KokkosNodeTsqr.hpp"
 #include "Tsqr_SequentialTsqr.hpp"
-
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterListExceptions.hpp"
+#include "Tsqr_CombineNodeTsqr.hpp"
+#include "Tsqr_CuSolverNodeTsqr.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
-
-#include <stdexcept>
-
+#include "Teuchos_TestForException.hpp"
+#ifdef HAVE_TPETRATSQR_COMPLEX
+#  include "Kokkos_Complex.hpp"
+#endif // HAVE_TPETRATSQR_COMPLEX
+#include <string>
+#include <vector>
 
 namespace TSQR {
-
   /// \class NodeTsqrFactory
-  /// \brief Factory for creating an instance of the right \c NodeTsqr subclass.
+  /// \brief Factory for creating an instance of the right NodeTsqr
+  ///   subclass.
   /// \author Mark Hoemmen
   ///
-  /// \tparam Node The Kokkos Node type
-  /// \tparam Scalar The type of entries in the matrices to factor
-  /// \tparam LocalOrdinal The type of local indices in the matrices to factor
+  /// \tparam Scalar The type of entries in the matrices to factor.
+  /// \tparam LocalOrdinal The type of local indices in the matrices
+  ///   to factor.
+  /// \tparam Device Kokkos::Device specialization used by the
+  ///   matrices to factor.
   ///
-  /// This class maps from a particular Kokkos \c Node type, to the
-  /// corresponding \c NodeTsqr subclass.  It lets you construct a
-  /// default ParameterList for that \c NodeTsqr subclass, as well as
-  /// an instance of the \c NodeTsqr subclass.  It also provides
-  /// typedefs for template metaprogramming.
+  /// This class maps from (Scalar, LocalOrdinal, Device), to the
+  /// corresponding NodeTsqr subclass.  It lets you construct a
+  /// default ParameterList for that NodeTsqr subclass, as well as an
+  /// instance of the NodeTsqr subclass.  It also provides type
+  /// aliases for template metaprogramming.
   ///
-  /// The "right" \c NodeTsqr subclass is a function of the \c Node
-  /// template parameter, and possibly also of the other template
-  /// parameters.
+  /// The "right" NodeTsqr subclass is a function of Device, and
+  /// possibly also of the other template parameters.
   ///
   /// \note If this class does <i>not</i> have a partial
-  ///   specialization for your \c Node type, it defaults to use
+  ///   specialization for your Device type, it defaults to use
   ///   SequentialTsqr.  That class does <i>not</i> use threads, and
   ///   only knows how to deal with host data; it cannot handle GPU
   ///   device-resident data.  Thus, it may perform poorly.
-  template<class Node, class Scalar, class LocalOrdinal>
+  template<class Scalar, class LocalOrdinal, class Device>
   class NodeTsqrFactory {
   public:
-    //! The Kokkos Node type.
-    typedef Node node_type;
-    //! Pointer (RCP) to node_type.
-    typedef Teuchos::RCP<node_type> node_ptr;
+    using node_tsqr_type = NodeTsqr<LocalOrdinal, Scalar>;
 
-    //! The NodeTsqr subclass corresponding to the Kokkos Node type.
-    typedef SequentialTsqr<LocalOrdinal, Scalar> node_tsqr_type;
-
-    /// \brief Default parameter list for intranode TSQR.
+    /// \brief Get the default implementation of NodeTsqr.
     ///
-    /// \note The default implementation returns an empty (not null)
-    ///   parameter list.  Each specialization for a specific Node
-    ///   type redefines this method to return a parameter list
-    ///   appropriate for that Node type's TSQR implementation.
-    static Teuchos::RCP<const Teuchos::ParameterList>
-    getDefaultParameters ()
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
-      RCP<ParameterList> params = parameterList ("NodeTsqr");
-      // Create a temporary node_tsqr_type instance in order to get
-      // default parameters.  The empty input parameter list will get
-      // filled in with default values of missing parameters.
-      node_tsqr_type nodeTsqr (params);
-
-      return params;
-    }
-
-    /// \brief Return a pointer to the intranode TSQR implementation.
-    ///
-    /// \param node [in/out] Pointer to the Kokkos Node instance.
-    ///
-    /// \param plist [in/out] Parameter list for configuring the
-    ///   NodeTsqr implementation.
+    /// The default implementation is a function of the template
+    /// parameters, especialy Scalar and Device.
     static Teuchos::RCP<node_tsqr_type>
-    makeNodeTsqr (const Teuchos::RCP<node_type>& node,
-                  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    getNodeTsqr ()
     {
-      (void) node;
-      return rcp (new node_tsqr_type (plist));
+      using Teuchos::rcp;
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+      using execution_space = typename Device::execution_space;
+      constexpr bool is_cuda =
+        std::is_same<execution_space, Kokkos::Cuda>::value;
+      if (is_cuda) {
+        return rcp (new CuSolverNodeTsqr<LocalOrdinal, Scalar>);
+      }
+      else {
+#endif
+
+        // NOTE (mfh 02 Dec 2019) SequentialTsqr does not currently
+        // give correct results for complex Scalar types, so we use
+        // CombineNodeTsqr in that case.
+#ifdef HAVE_TPETRATSQR_COMPLEX
+        constexpr bool is_complex =
+          std::is_same<Scalar, std::complex<double>>::value ||
+          std::is_same<Scalar, std::complex<float>>::value ||
+          std::is_same<Scalar, Kokkos::complex<double>>::value ||
+          std::is_same<Scalar, Kokkos::complex<float>>::value;
+#else
+        constexpr bool is_complex = false;
+#endif // HAVE_TPETRATSQR_COMPLEX
+        if (is_complex) {
+          return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
+        }
+        else {
+          return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
+        }
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)        
+      }
+#endif
     }
 
-    /// \brief Prepare the NodeTsqr instance for use.
+    /// \brief Get a specific implementation of NodeTsqr.
     ///
-    /// \pre <tt> ! nodeTsqr.is_null() </tt>
-    /// \post <tt> nodeTsqr->ready() </tt>
-    static void
-    prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& /* nodeTsqr */)
-    {}
+    /// \param name [in] Either "SequentialTsqr", "CombineNodeTsqr",
+    ///   or "Default".  "Default" means "return what the above
+    ///   zero-argument overload of getNodeTsqr() returns."
+    static Teuchos::RCP<node_tsqr_type>
+    getNodeTsqr (const std::string& name)
+    {
+      using Teuchos::rcp;
+      if (name == "SequentialTsqr" || name == "Sequential") {
+        return rcp (new SequentialTsqr<LocalOrdinal, Scalar>);
+      }
+      else if (name == "CombineNodeTsqr" || name == "Combine") {
+        return rcp (new CombineNodeTsqr<LocalOrdinal, Scalar>);
+      }
+#if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+      else if (name == "CuSolverNodeTsqr" || name == "CuSolver") {
+        return rcp (new CuSolverNodeTsqr<LocalOrdinal, Scalar>);
+      }
+#endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER
+      else if (name == "Default") {
+        return getNodeTsqr ();
+      }
+      else {
+        const char prefix[] = "TSQR::NodeTsqrFactory::getNodeTsqr: ";
+        const std::vector<std::string> validNames
+          {{"SequentialTsqr",
+            "CombineNodeTsqr",
+#if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
+            "CuSolverNodeTsqr",
+#endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER
+            "Default"}};
+        std::ostringstream os;
+        os << prefix << "Invalid NodeTsqr subclass name \"" << name
+           << "\".  Valid names are: {";
+        for (size_t k = 0; k < validNames.size (); ++k) {
+          os << "\"" << validNames[k] << "\"";
+          if (k + size_t (1) < validNames.size ()) {
+            os << ", ";
+          }
+        }
+        os << "}.";
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::invalid_argument, os.str ());
+      }
+    }
+
   };
 } // namespace TSQR
 
-#endif // __TSQR_NodeTsqrFactory_hpp
+#endif // TSQR_NODETSQRFACTORY_HPP
