@@ -13,12 +13,6 @@ namespace Impl {
 /// CUDA stream instance (cudaStream_t) and a cuSOLVER handle
 /// (cusolverDnHandle_t).
 ///
-/// WORK size query ("LWORK query") happens as in LAPACK, by passing
-/// in lwork = -1.  A cuSOLVER Implementation would just check if
-/// lwork is -1, and call cusolverDn?geqrf_bufferSize in that case
-/// (replace the question mark with S, D, C, or Z as appropriate for
-/// the Scalar type).
-///
 /// Methods are virtual because they are meant to be called from host.
 /// (For the CUDA case, we plan to make cuSOLVER calls from host; we
 /// don't need to call QR from device.)
@@ -29,12 +23,32 @@ public:
 
   virtual ~RawQR() = default;
 
+  /// \brief Whether the subclass takes arrays and pointers as
+  ///   "device" (GPU) memory.
+  ///
+  /// Unlike with NodeTsqr, this means <i>all</i> array and pointers,
+  /// not just "large" ones.
+  virtual bool wants_device_memory() const { return false; }
+
+  //! Get recommended work array size for compute_QR.
+  virtual int
+  compute_QR_lwork(const int m, const int n,
+                   value_type A[], const int lda) const = 0;
+
   //! Compute QR factorization of a general m by n matrix A.
   virtual void
   compute_QR(const int m, const int n,
              value_type A[], const int lda,
              value_type TAU[],
              value_type WORK[], const int lwork) const = 0;
+
+  //! Get recommended work array size for apply_Q_factor.
+  virtual int
+  apply_Q_factor_lwork(const char SIDE, const char TRANS,
+                       const int m, const int n, const int k,
+                       const value_type A[], const int lda,
+                       const value_type TAU[],
+                       value_type C[], const int ldc) const = 0;
 
   /// \brief Apply Householder reflectors.
   ///
@@ -51,6 +65,12 @@ public:
                  const value_type TAU[],
                  value_type C[], const int ldc,
                  value_type WORK[], const int lwork) const = 0;
+
+  //! Get recommended work array size for compute_explicit_Q.
+  virtual int
+  compute_explicit_Q_lwork(const int m, const int n, const int k,
+                           value_type A[], const int lda,
+                           const value_type TAU[]) const = 0;
 
   /// \brief Compute explicit QR factor from QR factorization (GEQRF).
   ///
