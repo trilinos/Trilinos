@@ -118,7 +118,6 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("TriKota", False),
   ("TrilinosCouplings", True),
   ("TrilinosFramework", False),
-  ("Trios", False),
   ("Triutils", True),
   ("WebTrilinos", False),
   ("Xpetra", True),
