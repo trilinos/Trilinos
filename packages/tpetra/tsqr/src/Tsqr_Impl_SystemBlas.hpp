@@ -58,10 +58,10 @@ public: \
 TSQR_IMPL_SYSTEMBLAS_DECL( float )
 TSQR_IMPL_SYSTEMBLAS_DECL( double )
 
-#ifdef HAVE_KOKKOSTSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
 TSQR_IMPL_SYSTEMBLAS_DECL( std::complex<float> )
 TSQR_IMPL_SYSTEMBLAS_DECL( std::complex<double> )
-#endif // HAVE_KOKKOSTSQR_COMPLEX
+#endif // HAVE_TPETRATSQR_COMPLEX
 
 } // namespace Impl
 } // namespace TSQR

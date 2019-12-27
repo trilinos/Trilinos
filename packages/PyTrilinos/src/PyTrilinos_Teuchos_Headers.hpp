@@ -78,6 +78,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_ParameterListModifier.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ReductionOp.hpp"

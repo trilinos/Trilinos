@@ -37,15 +37,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_Tsqr_MatView_hpp
-#define __TSQR_Tsqr_MatView_hpp
+#ifndef TSQR_MATVIEW_HPP
+#define TSQR_MATVIEW_HPP
 
-// Define for bounds checking and other safety features, undefine for speed.
-// #define TSQR_MATVIEW_DEBUG 1
-
-#ifdef TSQR_MATVIEW_DEBUG
-#  include <limits>
-#endif // TSQR_MATVIEW_DEBUG
+#include "Teuchos_TestForException.hpp"
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
@@ -91,50 +86,6 @@ namespace TSQR {
     return true;
   }
 
-#ifdef TSQR_MATVIEW_DEBUG
-  template<class Ordinal, class Scalar>
-  class MatViewVerify {
-  public:
-    static void
-    verify (const Ordinal num_rows,
-            const Ordinal num_cols,
-            const Scalar* const A,
-            const Ordinal leading_dim)
-    {
-      using std::endl;
-
-      bool good = true;
-      std::ostringstream os;
-      if (! std::numeric_limits<Ordinal>::is_integer) {
-        good = false;
-        os << "Error: Ordinal type must be an integer.";
-      }
-      if (std::numeric_limits<Ordinal>::is_signed) {
-        if (num_rows < 0) {
-          good = false;
-          os << "Error: num_rows (= " << num_rows << ") < 0.";
-        }
-        if (num_cols < 0) {
-          good = false;
-          os << "Error: num_cols (= " << num_cols << ") < 0.";
-        }
-        if (leading_dim < 0) {
-          good = false;
-          os << "Error: leading_dim (= " << leading_dim << ") < 0.";
-        }
-      }
-      if (leading_dim < num_rows) {
-        good = false;
-        os << "Error: leading_dim (= " << leading_dim << ") < num_rows (= "
-           << num_rows << ").";
-      }
-      if (! good) {
-        throw std::invalid_argument (os.str ());
-      }
-    }
-  };
-#endif // TSQR_MATVIEW_DEBUG
-
   // Forward declaration
   template<class Ordinal, class Scalar>
   class Matrix;
@@ -163,12 +114,7 @@ namespace TSQR {
       ncols_(num_cols),
       lda_(leading_dim),
       A_(A)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      MatViewVerify<ordinal_type, non_const_value_type>::
-        verify (num_rows, num_cols, A, leading_dim);
-#endif // TSQR_MATVIEW_DEBUG
-    }
+    {}
 
     MatView (const MatView& view) = default;
     MatView& operator= (const MatView& view) = default;
@@ -197,154 +143,10 @@ namespace TSQR {
     operator() (const ordinal_type i,
                 const ordinal_type j) const
     {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits<ordinal_type>::is_signed) {
-        if (i < 0 || i >= extent(0)) {
-          throw std::invalid_argument("Row range invalid");
-        }
-        else if (j < 0 || j >= extent(1)) {
-          throw std::invalid_argument("Column range invalid");
-        }
-      }
-      else {
-        if (i >= extent(0)) {
-          throw std::invalid_argument("Row range invalid");
-        }
-        else if (j >= extent(1)) {
-          throw std::invalid_argument("Column range invalid");
-        }
-      }
-      if (A_ == nullptr) {
-        throw std::logic_error("Attempt to reference NULL data");
-      }
-#endif // TSQR_MATVIEW_DEBUG
       return A_[i + j * this->stride(1)];
     }
 
     pointer data() const { return A_; }
-
-    bool empty() const { return extent(0) == 0 || extent(1) == 0; }
-
-    /// Return a "row block" (submatrix of consecutive rows in the
-    /// inclusive range [firstRow,lastRow]).
-    MatView row_block (const ordinal_type firstRow,
-                       const ordinal_type lastRow)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits<ordinal_type>::is_signed) {
-        if (firstRow < 0 || firstRow > lastRow || lastRow >= extent(0)) {
-          throw std::invalid_argument ("Row range invalid");
-        }
-      }
-      else {
-        if (firstRow > lastRow || lastRow >= extent(0)) {
-          throw std::invalid_argument ("Row range invalid");
-        }
-      }
-#endif // TSQR_MATVIEW_DEBUG
-      return MatView (lastRow - firstRow + 1, extent(1), data() + firstRow, stride(1));
-    }
-
-    /// Split off and return the top cache block of nrows_top rows.
-    /// Modify *this to be the "rest" of the matrix.
-    ///
-    /// \note Only use this method to split off a single cache block.
-    ///   It breaks if you try to use it otherwise.
-    ///
-    /// \param nrows_top [in] Number of rows in the top block (which
-    ///   this method returns)
-    ///
-    /// \param b_contiguous_blocks [in] Whether or not the entries of
-    ///   the top block are stored contiguously in *this.  The default
-    ///   is no (false).
-    ///
-    /// \return The top block of nrows_top rows.  Data is a shallow
-    ///   copy of the data in *this.
-    MatView
-    split_top (const ordinal_type nrows_top,
-               const bool b_contiguous_blocks = false)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits<ordinal_type>::is_signed && nrows_top < 0) {
-        std::ostringstream os;
-        os << "nrows_top (= " << nrows_top << ") < 0";
-        throw std::invalid_argument (os.str());
-      }
-      else if (nrows_top > extent(0)) {
-        std::ostringstream os;
-        os << "nrows_top (= " << nrows_top << ") > nrows (= " << extent(0) << ")";
-        throw std::invalid_argument (os.str());
-      }
-#endif // TSQR_MATVIEW_DEBUG
-
-      pointer const A_top_ptr = data();
-      pointer A_rest_ptr;
-      const ordinal_type nrows_rest = extent(0) - nrows_top;
-      ordinal_type lda_top, lda_rest;
-      if (b_contiguous_blocks) {
-        lda_top = nrows_top;
-        lda_rest = nrows_rest;
-        A_rest_ptr = A_top_ptr + nrows_top * extent(1);
-      }
-      else {
-        lda_top = stride(1);
-        lda_rest = stride(1);
-        A_rest_ptr = A_top_ptr + nrows_top;
-      }
-      MatView A_top (nrows_top, extent(1), data(), lda_top);
-      A_ = A_rest_ptr;
-      nrows_ = nrows_rest;
-      lda_ = lda_rest;
-
-      return A_top;
-    }
-
-    /// Split off and return the bottom block.  Modify *this to be the
-    /// "rest" of the matrix.
-    MatView
-    split_bottom (const ordinal_type nrows_bottom,
-                  const bool b_contiguous_blocks = false)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits<ordinal_type>::is_signed && nrows_bottom < 0) {
-        throw std::invalid_argument ("nrows_bottom < 0");
-      }
-      if (nrows_bottom > extent(0)) {
-        throw std::invalid_argument ("nrows_bottom > nrows");
-      }
-#endif // TSQR_MATVIEW_DEBUG
-
-      pointer const A_rest_ptr = data();
-      pointer A_bottom_ptr;
-      const ordinal_type nrows_rest = extent(0) - nrows_bottom;
-      ordinal_type lda_bottom, lda_rest;
-      if (b_contiguous_blocks) {
-        lda_bottom = nrows_bottom;
-        lda_rest = extent(0) - nrows_bottom;
-        A_bottom_ptr = A_rest_ptr + nrows_rest * extent(1);
-      }
-      else {
-        lda_bottom = stride(1);
-        lda_rest = stride(1);
-        A_bottom_ptr = A_rest_ptr + nrows_rest;
-      }
-      MatView A_bottom (nrows_bottom, extent(1), A_bottom_ptr, lda_bottom);
-      A_ = A_rest_ptr;
-      nrows_ = nrows_rest;
-      lda_ = lda_rest;
-
-      return A_bottom;
-    }
-
-    bool operator== (const MatView& rhs) const {
-      return extent(0) == rhs.extent(0) && extent(1) == rhs.extent(1) &&
-        stride(1) == rhs.stride(1) && data() == rhs.data();
-    }
-
-    bool operator!= (const MatView& rhs) const {
-      return extent(0) != rhs.extent(0) || extent(1) != rhs.extent(1) ||
-        stride(1) != rhs.stride(1) || data() != rhs.data();
-    }
 
   private:
     ordinal_type nrows_ = 0;
@@ -378,21 +180,24 @@ namespace TSQR {
   {
     const ptrdiff_t tgt_nrows (tgt.extent (0));
     const ptrdiff_t tgt_ncols (tgt.extent (1));
-    if (tgt_nrows != ptrdiff_t (src.extent (0)) ||
-        tgt_ncols != ptrdiff_t (src.extent (1))) {
-      std::ostringstream os;
-      os << "TSQR::deep_copy: dimensions of tgt (output matrix) and "
-        "src (input matrix) are not compatible.  tgt is "
-         << tgt.extent (0) << " x " << tgt.extent (1) << ", but src "
-        "is " << src.extent (0) << " x " << src.extent (1) << ".";
-      throw std::invalid_argument (os.str ());
-    }
-    for (ptrdiff_t j = 0; j < tgt_ncols; ++j) {
-      auto* const tgt_j = &tgt(0,j);
-      const auto* const src_j = &src(0,j);
-      for (ptrdiff_t i = 0; i < tgt_nrows; ++i) {
-        tgt_j[i] = src_j[i];
+
+    if (tgt_nrows == ptrdiff_t (src.extent (0)) ||
+        tgt_ncols == ptrdiff_t (src.extent (1))) {
+      for (ptrdiff_t j = 0; j < tgt_ncols; ++j) {
+        auto* const tgt_j = &tgt(0,j);
+        const auto* const src_j = &src(0,j);
+        for (ptrdiff_t i = 0; i < tgt_nrows; ++i) {
+          tgt_j[i] = src_j[i];
+        }
       }
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::invalid_argument, "TSQR::deep_copy: dimensions "
+         "of tgt (output matrix) and src (input matrix) are not "
+         "compatible.  tgt is " << tgt.extent (0) << " x " <<
+         tgt.extent (1) << ", but src is " << src.extent (0) << " x "
+         << src.extent (1) << ".");
     }
   }
 
@@ -427,7 +232,130 @@ namespace TSQR {
     return {A_top, A_bot};
   }
 
+  template<class MatViewType>
+  std::pair<MatViewType, MatViewType>
+  partition_1x2 (const MatViewType& A,
+                 const typename MatViewType::ordinal_type ncols_left)
+  {
+    using ordinal_type = typename MatViewType::ordinal_type;
+    using pointer = typename MatViewType::pointer;
+
+    const ordinal_type nrows = A.extent(0);
+    const ordinal_type ncols = A.extent(1);
+    const ordinal_type ncols_right = ncols - ncols_left;
+    // assumes column major
+    const auto right_offset = A.stride(1) * ncols_right;
+
+    pointer A_top_ptr = A.data();
+    pointer A_bot_ptr = A.data() + right_offset;
+
+    MatViewType A_top (nrows, ncols_left, A_top_ptr, A.stride(1));
+    MatViewType A_bot (nrows, ncols_right, A_bot_ptr, A.stride(1));
+    return {A_top, A_bot};
+  }
+
+  /// \brief Split off and return the top block of nrows_top rows.
+  ///   Modify A in place to be the "rest" of the matrix.
+  ///
+  /// \param A [in] On input: The whole matrix view.  On output: A
+  ///   view of the "rest" of the matrix, that is, the part "below"
+  ///   the returned matrix view.
+  ///
+  /// \param nrows_top [in] Number of rows in the top block (which
+  ///   this method returns).
+  ///
+  /// \param contiguousCacheBlocks [in] Whether or not the entries of
+  ///   the top block are stored contiguously in A.  The default is no
+  ///   (false).
+  ///
+  /// \return A view of the top block of nrows_top rows.
+  template<class LO, class SC>
+  MatView<LO, SC>
+  split_top (MatView<LO, SC>& A,
+             const LO nrows_top,
+             const bool contiguousCacheBlocks = false)
+  {
+    using pointer = typename MatView<LO, SC>::pointer;
+    pointer A_top_ptr = A.data();
+    pointer A_rest_ptr {};
+    const LO nrows_rest = A.extent(0) - nrows_top;
+    const LO ncols = A.extent(1);
+
+    LO lda_top, lda_rest;
+    if (contiguousCacheBlocks) {
+      lda_top = nrows_top;
+      lda_rest = nrows_rest;
+      A_rest_ptr = A_top_ptr + nrows_top * ncols;
+    }
+    else {
+      lda_top = A.stride(1);
+      lda_rest = A.stride(1);
+      A_rest_ptr = A_top_ptr + nrows_top;
+    }
+    MatView<LO, SC> A_top (nrows_top, ncols, A_top_ptr, lda_top);
+    A = MatView<LO, SC> (nrows_rest, ncols, A_rest_ptr, lda_rest);
+    return A_top;
+  }
+
+  /// \brief Split off and return the bottom block.  Modify A to be
+  ///   the "rest" of the matrix.
+  template<class LO, class SC>
+  MatView<LO, SC>
+  split_bottom (MatView<LO, SC>& A,
+                const LO nrows_bottom,
+                const bool contiguousCacheBlocks = false)
+  {
+    using pointer = typename MatView<LO, SC>::pointer;
+
+    pointer A_rest_ptr = A.data();
+    pointer A_bottom_ptr {};
+    const LO nrows_rest = A.extent(0) - nrows_bottom;
+    const LO ncols = A.extent(1);
+
+    LO lda_bottom, lda_rest;
+    if (contiguousCacheBlocks) {
+      lda_bottom = nrows_bottom;
+      lda_rest = A.extent(0) - nrows_bottom;
+      A_bottom_ptr = A_rest_ptr + nrows_rest * ncols;
+    }
+    else {
+      lda_bottom = A.stride(1);
+      lda_rest = A.stride(1);
+      A_bottom_ptr = A_rest_ptr + nrows_rest;
+    }
+    MatView<LO, SC> A_bottom (nrows_bottom, ncols, A_bottom_ptr, lda_bottom);
+    A = MatView<LO, SC> (nrows_rest, ncols, A_rest_ptr, lda_rest);
+    return A_bottom;
+  }
+
+  template<class LO, class SC>
+  bool empty (const MatView<LO, SC>& A) {
+    return A.extent(0) == 0 || A.extent(1) == 0;
+  }
+
+  template<class LO, class TargetScalar, class SourceScalar>
+  void
+  copy_upper_triangle (const MatView<LO, TargetScalar>& R_out,
+                       const MatView<LO, SourceScalar>& R_in)
+  {
+    const LO nrows = R_out.extent (0);
+    const LO ncols = R_out.extent (1);
+
+    if (nrows >= ncols) {
+      for (LO j = 0; j < ncols; ++j) {
+        for (LO i = 0; i <= j; ++i) {
+          R_out(i,j) = R_in(i,j);
+        }
+      }
+    }
+    else {
+      auto R_out_lr = partition_1x2 (R_out, nrows);
+      auto R_in_lr = partition_1x2 (R_in, nrows);
+      copy_upper_triangle (R_out_lr.first, R_in_lr.first);
+      deep_copy (R_out_lr.second, R_in_lr.second);
+    }
+  }
+
 } // namespace TSQR
 
-
-#endif // __TSQR_Tsqr_MatView_hpp
+#endif // TSQR_MATVIEW_HPP
