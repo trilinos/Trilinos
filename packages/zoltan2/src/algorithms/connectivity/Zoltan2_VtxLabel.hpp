@@ -229,7 +229,7 @@ struct SerializationTraits<Ordinal, iceProp::vtxLabel> :
 {};
 }//end namespace Teuchos
 
-namespace iceProp{
+namespace Zoltan2{
 template<typename MAP>
 class iceSheetPropagation {
 public:
@@ -237,7 +237,7 @@ public:
   //typedef Tpetra::Map<> map_t;
   typedef typename MAP::local_ordinal_type lno_t;
   typedef typename MAP::global_ordinal_type gno_t;
-  typedef vtxLabel scalar_t;
+  typedef iceProp::vtxLabel scalar_t;
   typedef Tpetra::FEMultiVector<scalar_t,lno_t, gno_t> femv_t;	
   
   
@@ -312,13 +312,13 @@ public:
     while(true){
       femv->switchActiveMultiVector(); 
       for(int i = 0; i < g->n; i++){
-        vtxLabel curr_node = femvData[i];
-        if(curr_node.is_art && curr_node.getGroundingStatus() == FULL){
+	iceProp::vtxLabel curr_node = femvData[i];
+        if(curr_node.is_art && curr_node.getGroundingStatus() == iceProp::FULL){
           int out_degree = out_degree(g, curr_node.id);
           int* outs = out_vertices(g, curr_node.id);
           for(int j = 0; j < out_degree; j++){
-            vtxLabel neighbor = femvData[outs[j]];
-            if(neighbor.getGroundingStatus() == HALF && neighbor.first_label != curr_node.id && neighbor.first_sender == curr_node.id){
+            iceProp::vtxLabel neighbor = femvData[outs[j]];
+            if(neighbor.getGroundingStatus() == iceProp::HALF && neighbor.first_label != curr_node.id && neighbor.first_sender == curr_node.id){
               iceProp::reg.push(curr_node.id);
             }
           }
@@ -331,9 +331,9 @@ public:
       if(done) break;
 
       for(int i = 0; i < g->n; i++){
-        vtxLabel curr_node = femvData[i];
-        if(curr_node.getGroundingStatus() == HALF){
-          vtxLabel cleared(curr_node.id);
+	iceProp::vtxLabel curr_node = femvData[i];
+        if(curr_node.getGroundingStatus() == iceProp::HALF){
+	  iceProp::vtxLabel cleared(curr_node.id);
           cleared.is_art = curr_node.is_art;
           femv->replaceLocalValue(i,0,cleared);
         }
@@ -346,10 +346,10 @@ public:
     //return flags for each node, -2 for keep, -1 for remove, <vtxID> for singly grounded nodes.
     int* removed = new int[g->n];
     for(int i = 0; i < g->n; i++){
-      vtxLabel curr_node = femvData[i];
-      Grounding_Status gs = curr_node.getGroundingStatus();
-      if(gs == FULL) removed[i] = -2;
-      else if(gs == HALF) removed[i] = curr_node.first_label;
+      iceProp::vtxLabel curr_node = femvData[i];
+      iceProp::Grounding_Status gs = curr_node.getGroundingStatus();
+      if(gs == iceProp::FULL) removed[i] = -2;
+      else if(gs == iceProp::HALF) removed[i] = curr_node.first_label;
       else removed[i] = -1;
     }
     femv->switchActiveMultiVector();
@@ -373,7 +373,7 @@ public:
       if(iceProp::reg.empty()) curr = &iceProp::art;
       else curr = &iceProp::reg;
       while(!curr->empty()){
-        vtxLabel curr_node = femvData[curr->front()];
+	iceProp::vtxLabel curr_node = femvData[curr->front()];
         curr->pop();
         
         //if the current node is a copy, it shouldn't propagate out to its neighbors.
@@ -382,8 +382,8 @@ public:
         int out_degree = out_degree(g, curr_node.id);
         int* outs = out_vertices(g, curr_node.id);
         for(int i = 0; i < out_degree; i++){
-          vtxLabel neighbor = femvData[outs[i]];
-          Grounding_Status old_gs = neighbor.getGroundingStatus();
+	  iceProp::vtxLabel neighbor = femvData[outs[i]];
+	  iceProp::Grounding_Status old_gs = neighbor.getGroundingStatus();
           
           //give curr_node's neighbor some more labels
           giveLabels(curr_node, neighbor);
@@ -418,31 +418,31 @@ public:
   
   //function that exchanges labels between two nodes
   //curr_node gives its labels to neighbor.
-  void giveLabels(vtxLabel& curr_node, vtxLabel& neighbor){
-    Grounding_Status curr_gs = curr_node.getGroundingStatus();
-    Grounding_Status nbor_gs = neighbor.getGroundingStatus();
+  void giveLabels(iceProp::vtxLabel& curr_node, iceProp::vtxLabel& neighbor){
+    iceProp::Grounding_Status curr_gs = curr_node.getGroundingStatus();
+    iceProp::Grounding_Status nbor_gs = neighbor.getGroundingStatus();
     int curr_node_gid = mapWithCopies->getGlobalElement(curr_node.id);
     //if the neighbor is full, we don't need to pass labels
-    if(nbor_gs == FULL) return;
+    if(nbor_gs == iceProp::FULL) return;
     //if the current nod is empty (shouldn't happen) we can't pass any labels
-    if(curr_gs == NONE) return;
+    if(curr_gs == iceProp::NONE) return;
     //if the current node is full (and not an articulation point), pass both labels on
-    if(curr_gs == FULL && !curr_node.is_art){
+    if(curr_gs == iceProp::FULL && !curr_node.is_art){
       neighbor.first_label = curr_node.first_label;
       neighbor.first_sender = curr_node_gid;
       neighbor.second_label = curr_node.second_label;
       neighbor.second_sender = curr_node_gid;
       neighbor.bcc_name = curr_node.bcc_name;
       return;
-    } else if (curr_gs == FULL) {
+    } else if (curr_gs == iceProp::FULL) {
       //if it is an articulation point, and it hasn't sent to this neighbor
       if(neighbor.first_sender != curr_node_gid){
         //send itself as a label
-        if(nbor_gs == NONE){
+        if(nbor_gs == iceProp::NONE){
           neighbor.first_label = curr_node_gid;
           neighbor.first_sender = curr_node_gid;
           neighbor.bcc_name = curr_node.bcc_name;
-        } else if(nbor_gs == HALF){
+        } else if(nbor_gs == iceProp::HALF){
           if(neighbor.first_label != curr_node_gid){
             neighbor.second_label = curr_node_gid;
             neighbor.second_sender = curr_node_gid;
@@ -452,13 +452,13 @@ public:
       return;
     }
     //if the current node has only one label
-    if(curr_gs == HALF){
+    if(curr_gs == iceProp::HALF){
       //pass that on appropriately
-      if(nbor_gs == NONE){
+      if(nbor_gs == iceProp::NONE){
         neighbor.first_label = curr_node.first_label;
         neighbor.first_sender = curr_node_gid;
         neighbor.bcc_name = curr_node.bcc_name;
-      } else if(nbor_gs == HALF){
+      } else if(nbor_gs == iceProp::HALF){
         //make sure you aren't giving a duplicate label, and that
         //you haven't sent a label to this neighbor before.
         if(neighbor.first_label != curr_node.first_label && neighbor.first_sender != curr_node_gid){
@@ -496,13 +496,13 @@ public:
         int foundGhostPair = 0;
         int ownedVtx = -1, ghostVtx = -1;
         for(int i = 0; i < nLocalOwned; i++){
-          if(femvData[i].getGroundingStatus() == NONE){
+          if(femvData[i].getGroundingStatus() == iceProp::NONE){
             int out_degree = out_degree(g, i);
             int* outs = out_vertices(g, i);
             for(int j = 0; j < out_degree; j++){
               if(outs[j] >= nLocalOwned){
                 //we're dealing with a ghosted vertex
-                if(femvData[outs[j]].getGroundingStatus() == NONE){
+                if(femvData[outs[j]].getGroundingStatus() == iceProp::NONE){
                   ownedVtx = i;
                   ghostVtx = outs[j];
                   foundGhostPair = 1;
@@ -544,11 +544,11 @@ public:
           int vtx1 = -1, vtx2 = -1;
           //if none are found, find any pair of empty vertices. (similar procedure)
           for(int i = 0; i < nLocalOwned; i++){
-            if(femvData[i].getGroundingStatus() == NONE){
+            if(femvData[i].getGroundingStatus() == iceProp::NONE){
               int out_degree = out_degree(g, i);
               int* outs = out_vertices(g, i);
               for(int j = 0; j < out_degree; j++){
-                if(femvData[outs[j]].getGroundingStatus() == NONE){
+                if(femvData[outs[j]].getGroundingStatus() == iceProp::NONE){
                   foundEmptyPair = 1;
                   vtx1 = i;
                   vtx2 = outs[j];
@@ -602,7 +602,7 @@ public:
           int out_degree = out_degree(g, art_pt);
           int* outs = out_vertices(g, art_pt);
           for(int i = 0;i < out_degree; i++){
-            if(femvData[outs[i]].getGroundingStatus() == NONE){
+            if(femvData[outs[i]].getGroundingStatus() == iceProp::NONE){
               //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(art_queue.front())<<" and neighbor "<<mapWithCopies->getGlobalElement(outs[i])<<"\n";
               iceProp::vtxLabel neighbor = femvData[outs[i]];
               iceProp::vtxLabel artvtx = femvData[art_pt];
@@ -632,11 +632,11 @@ public:
       //std::cout<<me<<": Checking for articulation points\n";
       //check for OWNED articulation points
       for(int i = 0; i < nLocalOwned; i++){
-        if(femvData[i].getGroundingStatus() == FULL){
+        if(femvData[i].getGroundingStatus() == iceProp::FULL){
           int out_degree = out_degree(g, i);
           int* outs = out_vertices(g, i);
           for(int j = 0; j < out_degree; j++){
-            if(femvData[outs[j]].getGroundingStatus() < FULL){
+            if(femvData[outs[j]].getGroundingStatus() < iceProp::FULL){
               art_queue.push(i);
               articulation_point_flags[i] = 1;
               break;
@@ -648,7 +648,7 @@ public:
       //clear half labels
       for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
         iceProp::vtxLabel label = femvData[i];
-        if(label.getGroundingStatus() == HALF){
+        if(label.getGroundingStatus() == iceProp::HALF){
           label.first_label = -1;
           label.first_sender = -1;
           label.bcc_name = -1;
@@ -667,7 +667,7 @@ public:
           int* art_outs = out_vertices(g,art_queue.front());
         
           for(int i = 0; i < top_art_degree; i++){
-            if(femvData[art_outs[i]].getGroundingStatus() < FULL){
+            if(femvData[art_outs[i]].getGroundingStatus() < iceProp::FULL){
               pop_art = false;
             }
           }
@@ -686,7 +686,7 @@ public:
     }
     return femv->getData(0);
   }
-  int vtxLabelUnitTest();
+  //int vtxLabelUnitTest();
 
 private:
   int me; 	    //my processor rank
@@ -736,7 +736,7 @@ private:
 //  for exercising the articulation point logic are the cases where
 //  suspected articulation points are on the right hand side of the +=.
 //
-template<typename MAP>
+/*template<typename MAP>
 int  iceProp::iceSheetPropagation<MAP>::vtxLabelUnitTest()
 {
   int ierr = 0;
@@ -1100,7 +1100,7 @@ int  iceProp::iceSheetPropagation<MAP>::vtxLabelUnitTest()
     std::cout<<"iceSheetPropagation::giveLabels OK\n";
   }
   return ierr;
-}
+}*/
 
 
 #endif

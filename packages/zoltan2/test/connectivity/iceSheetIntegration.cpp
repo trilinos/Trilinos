@@ -159,7 +159,7 @@ int main(int argc, char** argv)
   
   //collect global mismatches
   int global_mismatches = 0;
-  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &local_misatches, &global_mismatches);
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &local_mismatches, &global_mismatches);
   //if there were any global mismatches, print FAIL; else print PASS
   if(me == 0 && global_mismatches){
     std::cout<<"FAIL "<<global_mismatches<<" mismatches\n";

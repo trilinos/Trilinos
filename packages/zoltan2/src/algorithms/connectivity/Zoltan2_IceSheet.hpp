@@ -10,6 +10,7 @@
 #include<Zoltan2_Util.hpp>
 #include<Zoltan2_TPLTraits.hpp>
 #include<Zoltan2_VtxLabel.hpp>
+#include<Zoltan2_AlltoAll.hpp>
 
 namespace Zoltan2{
   template <typename Adapter>
@@ -185,7 +186,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   int me = problemComm->getRank();
   int nprocs = problemComm->getSize();
   //send boundary edges to any remote processes that own an endpoint
-  int* sendcnts = new int[nprocs];
+  std::vector<int> sendcnts(nprocs,0);
   for(int i = 0; i < nprocs; i++) sendcnts[i] = 0;
   for(int i = 0; i < num_boundary_edges*2; i+= 2){
     if(owners[i] != me){
@@ -195,10 +196,13 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
       sendcnts[owners[i+1]] +=2;
     }
   }
-  int* recvcnts = new int[nprocs];
+  std::vector<int> recvcnts(nprocs,0);
   for(int i = 0; i < nprocs; i++) recvcnts[i]=0;
   //send the number of vertex IDs to be sent.
-  int status = MPI_Alltoall(sendcnts, 1, MPI_INT, recvcnts, 1, MPI_INT, MPI_COMM_WORLD);
+  ArrayView<const int> sendCount = Teuchos::arrayViewFromVector(sendcnts);
+  ArrayView<int> recvCount = Teuchos::arrayViewFromVector(recvcnts);
+  Zoltan2::AlltoAllCount(*problemComm,*env,sendCount, recvCount);
+  /*int status = MPI_Alltoall(sendcnts, 1, MPI_INT, recvcnts, 1, MPI_INT, MPI_COMM_WORLD);
 
   int* sdispls = new int[nprocs];
   int* rdispls = new int[nprocs];
@@ -239,7 +243,44 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
     }
   }
 
-  status = MPI_Alltoallv(sendbuf,sendcnts,sdispls,MPI_UNSIGNED_LONG_LONG,recvbuf,recvcnts,rdispls,MPI_UNSIGNED_LONG_LONG,MPI_COMM_WORLD);
+  status = MPI_Alltoallv(sendbuf,sendcnts,sdispls,MPI_UNSIGNED_LONG_LONG,recvbuf,recvcnts,rdispls,MPI_UNSIGNED_LONG_LONG,MPI_COMM_WORLD);*/
+  
+  //create sdispls and sentcount to build sendbuf
+  std::vector<int> sdispls(nprocs,0);
+  sdispls[0] = 0;
+  for(int i = 1; i < nprocs; i++){
+    sdispls[i] = sdispls[i-1] + sendcnts[i-1];
+  }
+
+  std::vector<int> sentcount(nprocs,0);
+  int sendsize = 0;
+  int recvsize = 0;
+  for(int i = 0; i < nprocs; i++){
+    sendsize += sendCount[i];
+    recvsize += recvCount[i];
+  }
+  
+  std::vector<gno_t> sendbuf(sendsize,0);
+  for(int i = 0; i > num_boundary_edges*2; i+=2){
+    if(owners[i] != me){
+      int proc_to_send = owners[i];
+      int sendbufidx = sdispls[proc_to_send] + sentcount[proc_to_send];
+      sentcount[proc_to_send] += 2;
+      sendbuf[sendbufidx++] = boundary[i];
+      sendbuf[sendbufidx++] = boundary[i+1];
+    }
+    if(owners[i+1] != me && owners[i] != owners[i+1]){
+      int proc_to_send = owners[i];
+      int sendbufidx = sdispls[proc_to_send] + sentcount[proc_to_send];
+      sentcount[proc_to_send] += 2;
+      sendbuf[sendbufidx++] = boundary[i];
+      sendbuf[sendbufidx++] = boundary[i+1];
+    }
+  }
+  
+  Teuchos::ArrayRCP<gno_t> recvbuf;
+  Teuchos::ArrayView<const gno_t> sendBuf = Teuchos::arrayViewFromVector(sendbuf);
+  Zoltan2::AlltoAllv(*problemComm,*env,sendBuf,sendCount,recvbuf,recvCount);
 
   //create the set to see if we've counted this boundary edge before
   struct pair_hash {
@@ -301,7 +342,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
 
   graph* g = new graph({nVtx, nEdge, &out_edges_lid[0],out_offsets, 0,0.0});
 
-  iceProp::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
+  Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
   
   int* removed = prop.propagate();
   
