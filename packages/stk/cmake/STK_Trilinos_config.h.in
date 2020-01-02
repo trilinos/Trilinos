@@ -32,18 +32,34 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_search_SearchMethod_hpp
-#define stk_search_SearchMethod_hpp
+#cmakedefine HAVE_STK_Trilinos
 
-namespace stk { namespace search {
+#cmakedefine STK_SHOW_DEPRECATED_WARNINGS
 
-enum SearchMethod {
-    BOOST_RTREE,
-    KDTREE,
-    MORTON_LINEARIZED_BVH,  // Coming soon!
-    USE_DEPRECATED_BOOST_RTREE
-};
+#cmakedefine STK_DISABLE_MPI_NEIGHBOR_COMM
 
-}}
+#cmakedefine STK_HAVE_BOOST
 
-#endif
+#cmakedefine STK_HAVE_KOKKOSCORE
+
+#cmakedefine STK_HAVE_STKMESH
+
+#cmakedefine STK_HAVE_STKIO
+
+#cmakedefine STK_HAVE_STKNGP_TEST
+
+#cmakedefine HAVE_MPI
+
+#cmakedefine HAVE_STK_CUDA
+
+/* Non-typical "not" macro for optional dependence on SEACASAprepro_lib (See
+ * STK #17354) */
+#cmakedefine NOT_HAVE_STK_SEACASAPREPRO_LIB
+
+#cmakedefine FORTRAN_NO_UNDERSCORE
+
+#cmakedefine FORTRAN_ONE_UNDERSCORE
+
+#cmakedefine FORTRAN_TWO_UNDERSCORES
+
+#define SIERRA_MIGRATION

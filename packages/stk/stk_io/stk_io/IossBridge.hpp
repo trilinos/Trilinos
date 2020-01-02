@@ -56,9 +56,6 @@
 #include "stk_io/OutputParams.hpp"
 #include "stk_io/FieldAndName.hpp"
 
-namespace Ioss { class ElementTopology; }
-namespace Ioss { class EntityBlock; }
-namespace Ioss { class Region; }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class FieldRestriction; } }
@@ -78,6 +75,8 @@ class Field;
 class GroupingEntity;
 class Region;
 class ElementTopology;
+class EntityBlock;
+class DatabaseIO;
 }
 
 void STKIORequire(bool cond);
@@ -493,6 +492,21 @@ bool has_io_part_attribute(mesh::Part &part);
 size_t db_api_int_size(const Ioss::GroupingEntity *entity);
 
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
+
+Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename, int index_subdomain, int num_subdomains);
+
+void add_properties_for_subdomain(stk::mesh::BulkData& bulkData, Ioss::Region &out_region, int index_subdomain,
+                                  int num_subdomains, int global_num_nodes, int global_num_elems);
+
+void write_mesh_data_for_subdomain(Ioss::Region& out_region, stk::mesh::BulkData& bulkData, const EntitySharingInfo& nodeSharingInfo);
+
+int write_transient_data_for_subdomain(Ioss::Region &out_region, stk::mesh::BulkData& bulkData, double timeStep);
+
+void write_file_for_subdomain(Ioss::Region &out_region,
+                              stk::mesh::BulkData& bulkData,
+                              const EntitySharingInfo &nodeSharingInfo,
+                              int numSteps = -1,
+                              double timeStep = 0.0);
 
 void write_file_for_subdomain(const std::string &baseFilename,
                               int index_subdomain,

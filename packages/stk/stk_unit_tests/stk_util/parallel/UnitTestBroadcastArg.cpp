@@ -50,7 +50,7 @@ namespace {
             argv = new char*[argc];
         }
         for(int i=0; i<argc; ++i) {
-            argv[i] = new char(strings[i].size()+1);
+            argv[i] = new char[strings[i].size()+1];
             std::copy(strings[i].begin(), strings[i].end(), argv[i]);
             argv[i][strings[i].size()] = '\0';
         }

@@ -33,6 +33,7 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/OptionsSpecification.hpp>
+#include <stk_util/util/string_utils.hpp>
 
 namespace stk {
 
@@ -168,17 +169,28 @@ void OptionsSpecification::print(std::ostream& out) const
     int strLen = optionString.size();
     maxOptStrLen = std::max(maxOptStrLen,strLen);
   }
+
   int padWidth = maxOptStrLen+3;
+  int descrWidth = lineLength - padWidth;
+  descrWidth = std::max(descrWidth, 20);
+
   for(const auto& opt : options) {
     std::string optionString(dash_it(opt->name)+(!opt->abbrev.empty() ? ",-"+opt->abbrev : ""));
-    std::string defaultOrImplicit = opt->isImplicit ? "implicit" : "default";
-    out << optionString<<std::setw(padWidth+opt->description.size()-optionString.size())<<opt->description<<(opt->isRequired ? " (required)":"")
-        <<(!opt->defaultValue.empty() ? (" "+defaultOrImplicit+": "+opt->defaultValue) : "")
-        <<std::endl;
+    std::vector<std::string> descrStrs = make_vector_of_strings(opt->description, ' ', descrWidth);
+    out << optionString<<std::setw(padWidth-optionString.size())<<" "<<descrStrs[0]<<std::endl;
+    for(unsigned i=1; i<descrStrs.size(); ++i) {
+      out << std::setw(padWidth)<<" "<<descrStrs[i]<<std::endl;
+    }
+    std::string requiredOrDefault = (opt->isRequired ? " (required)":"");
+    requiredOrDefault += (!opt->defaultValue.empty() ? (" (default: "+opt->defaultValue+")") : "");
+    if (!requiredOrDefault.empty()) {
+      out << std::setw(padWidth)<<" "<< requiredOrDefault <<std::endl;
+    }
   }
 
   out << std::endl;
 }
 
-}//namespace stk
+}
+//namespace stk
 

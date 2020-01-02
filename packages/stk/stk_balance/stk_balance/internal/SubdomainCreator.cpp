@@ -2,10 +2,29 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
+#include <stk_tools/transfer_utils/TransientFieldTransferById.hpp>
 
 namespace stk {
 namespace balance {
 namespace internal {
+
+SubdomainCreator::SubdomainCreator(stk::mesh::BulkData &bulk, int numTarget)
+    : mMeta(bulk.mesh_meta_data()), mBulk(bulk), mNumSubdomains(numTarget), mTransientIo(nullptr)
+{
+
+}
+
+SubdomainCreator::SubdomainCreator(stk::io::StkMeshIoBroker& ioBroker, int numTarget)
+    : mMeta(ioBroker.meta_data()), mBulk(ioBroker.bulk_data()), mNumSubdomains(numTarget), 
+      mTransientIo(new stk::transfer_utils::MtoNTransientFieldTransferById(ioBroker, numTarget))
+{
+
+}
+
+SubdomainCreator::~SubdomainCreator() 
+{
+    delete mTransientIo;
+}
 
 std::string SubdomainCreator::getSubdomainPartName(int subdomainId)
 {
@@ -92,7 +111,13 @@ void SubdomainCreator::create_subdomain_and_write(const std::string &filename,
     stk::mesh::MetaData newMeta;
     stk::mesh::BulkData newBulkData(newMeta, MPI_COMM_SELF);
     stk::tools::copy_mesh(mBulk, *mMeta.get_part(getSubdomainPartName(subdomain)), newBulkData);
-    stk::io::write_file_for_subdomain(filename, subdomain, mNumSubdomains, global_num_nodes, global_num_elems, newBulkData, nodeSharingInfo, numSteps, timeStep);
-}
+
+    if(mTransientIo == nullptr) {
+        stk::io::write_file_for_subdomain(filename, subdomain, mNumSubdomains, global_num_nodes, global_num_elems, newBulkData, nodeSharingInfo, numSteps, timeStep);
+    } else {
+        mTransientIo->setup_subdomain(newBulkData, filename, subdomain, nodeSharingInfo, global_num_nodes, global_num_elems);
+        mTransientIo->transfer_and_write_transient_data(subdomain);
+    }
+}     
 
 }}}

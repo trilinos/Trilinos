@@ -83,6 +83,13 @@ void extract_blocks_and_ns_from_file(const std::string &inFile,
 #endif
                                , (stk::mesh::FieldDataManager*)nullptr);
 
+    stk::mesh::MetaData outMeta;
+    stk::mesh::BulkData outBulk(outMeta, comm, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+                                , false
+#endif
+                                , (stk::mesh::FieldDataManager*)nullptr);
+
     stk::io::StkMeshIoBroker stkInput;
     stk::io::fill_mesh_preexisting(stkInput, inFile, inBulk);
 
@@ -102,9 +109,13 @@ void extract_blocks_and_ns_from_file(const std::string &inFile,
 
     stk::mesh::Selector nodeset_and_block_selector = stk::mesh::selectUnion(parts);
 
+    stk::mesh::Selector nothingSelector_byDefaultConstruction;
+    stk::mesh::Selector allSelector(!nothingSelector_byDefaultConstruction);
+
+    stk::tools::copy_mesh(inBulk, allSelector, outBulk);
 
     stk::io::StkMeshIoBroker stkOutput;
-    stkOutput.set_bulk_data(inBulk);
+    stkOutput.set_bulk_data(outBulk);
     stkOutput.set_attribute_field_ordering_stored_by_part_ordinal(stkInput.get_attribute_field_ordering_stored_by_part_ordinal());
 
     stk::transfer_utils::TransientFieldTransferById transfer(stkInput, stkOutput);
