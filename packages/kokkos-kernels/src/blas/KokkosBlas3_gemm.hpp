@@ -117,14 +117,16 @@ gemm (const char transA[],
   bool B_t = !(transB[0] == 'N' || transB[0] == 'n');
   int64_t A0 = A.extent(0);
   int64_t A1 = A.extent(1);
-  int64_t B0 = B.extent(0);
+  // B0 is a `#define`'d constant in 
+  // certain MacOSX SDKs in termios.h:291
+  int64_t B_0 = B.extent(0);
   int64_t B1 = B.extent(1);
   int64_t C0 = C.extent(0);
   int64_t C1 = C.extent(1);
 
   if ( ((A_t?A1:A0) != C0) ||
-       ((B_t?B0:B1) != C1) ||
-       ((A_t?A0:A1) != (B_t?B1:B0)) ) {
+       ((B_t?B_0:B1) != C1) ||
+       ((A_t?A0:A1) != (B_t?B1:B_0)) ) {
       std::ostringstream os;
       os << "KokkosBlas::gemm: Dimensions of A, B, and C do not match: "
          << "transA: " << transA[0] << " transB: " << transB[0]
