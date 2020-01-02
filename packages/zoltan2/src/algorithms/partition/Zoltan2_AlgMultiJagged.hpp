@@ -59,6 +59,7 @@
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Kokkos_Sort.hpp>
 
 #include <algorithm>    // std::sort
 #include <vector>
@@ -4828,6 +4829,12 @@ mj_create_new_partitions(
   }
   delete [] reduce_array;
 #endif
+
+  // the last member is utility used for atomically inserting the values.
+  // Sorting here avoids potential indeterminancy in the partitioning results
+  auto track_on_cuts_sort = Kokkos::subview(track_on_cuts,
+    std::pair<mj_lno_t, mj_lno_t>(0, track_on_cuts.size() - 1));
+  Kokkos::sort(track_on_cuts_sort);
 
   bool uniform_weights0 = this->mj_uniform_weights(0);
   Kokkos::parallel_for(
