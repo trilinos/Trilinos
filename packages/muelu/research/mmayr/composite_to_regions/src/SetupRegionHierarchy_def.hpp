@@ -281,6 +281,8 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
     TEUCHOS_ASSERT(check == 0);
   }
 
+  coarseCompOp->SetFixedBlockSize(dofsPerNode);
+
   RCP<Map> compCoordMap;
   std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > regCoordImporter(maxRegPerProc);
   if(dofsPerNode == 1) {
@@ -388,6 +390,7 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
                           RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coordinates)
 {
 #include "MueLu_UseShortNames.hpp"
+  using coordinates_type = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
 
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
@@ -405,8 +408,73 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
   // Add nullspace information
   {
     // Compute nullspace
-    RCP<MultiVector> nullspace = MultiVectorFactory::Build(compOp->getRowMap(), 1);
-    nullspace->putScalar(one);
+    RCP<MultiVector> nullspace;
+    if(compOp->GetFixedBlockSize() == 1) { // Scalar problem, constant nullspace
+      nullspace = MultiVectorFactory::Build(compOp->getRowMap(), 1);
+      nullspace->putScalar(one);
+    } else if(compOp->GetFixedBlockSize() == 2) { // 2D Elasticity
+      nullspace = MultiVectorFactory::Build(compOp->getRowMap(), 3);
+      Array<ArrayRCP<SC> > nullspaceData(3);
+      Array<ArrayRCP<const coordinates_type> > coordinateData(2);
+
+      // Calculate center
+      const coordinates_type cx = coordinates->getVector(0)->meanValue();
+      const coordinates_type cy = coordinates->getVector(1)->meanValue();
+
+      coordinateData[0] = coordinates->getData(0);
+      coordinateData[1] = coordinates->getData(1);
+
+      for(int vecIdx = 0; vecIdx < 3; ++vecIdx) {
+        nullspaceData[vecIdx] = nullspace->getDataNonConst(vecIdx);
+      }
+
+      for(size_t nodeIdx = 0; nodeIdx < coordinates->getLocalLength(); ++nodeIdx) {
+        // translations
+        nullspaceData[0][2*nodeIdx + 0] = one;
+        nullspaceData[1][2*nodeIdx + 1] = one;
+
+        // rotation about z axis
+        nullspaceData[2][2*nodeIdx + 0] = -(coordinateData[1][nodeIdx] - cy);
+        nullspaceData[2][2*nodeIdx + 1] =  (coordinateData[0][nodeIdx] - cx);
+      }
+
+    } else if(compOp->GetFixedBlockSize() == 3) { // 3D Elasticity
+      nullspace = MultiVectorFactory::Build(compOp->getRowMap(), 6);
+      Array<ArrayRCP<SC> > nullspaceData(6);
+      Array<ArrayRCP<const coordinates_type> > coordinateData(3);
+
+      // Calculate center
+      const coordinates_type cx = coordinates->getVector(0)->meanValue();
+      const coordinates_type cy = coordinates->getVector(1)->meanValue();
+      const coordinates_type cz = coordinates->getVector(2)->meanValue();
+
+      coordinateData[0] = coordinates->getData(0);
+      coordinateData[1] = coordinates->getData(1);
+      coordinateData[2] = coordinates->getData(2);
+
+      for(int vecIdx = 0; vecIdx < 6; ++vecIdx) {
+        nullspaceData[vecIdx] = nullspace->getDataNonConst(vecIdx);
+      }
+
+      for(size_t nodeIdx = 0; nodeIdx < coordinates->getLocalLength(); ++nodeIdx) {
+        // translations
+        nullspaceData[0][3*nodeIdx + 0] = one;
+        nullspaceData[1][3*nodeIdx + 1] = one;
+        nullspaceData[2][3*nodeIdx + 2] = one;
+
+        // rotation about z axis
+        nullspaceData[3][3*nodeIdx + 0] = -(coordinateData[1][nodeIdx] - cy);
+        nullspaceData[3][3*nodeIdx + 1] =  (coordinateData[0][nodeIdx] - cx);
+
+        // rotation about x axis
+        nullspaceData[4][3*nodeIdx + 1] = -(coordinateData[2][nodeIdx] - cz);
+        nullspaceData[4][3*nodeIdx + 2] =  (coordinateData[1][nodeIdx] - cy);
+
+        // rotation about y axis
+        nullspaceData[5][3*nodeIdx + 0] =  (coordinateData[2][nodeIdx] - cz);
+        nullspaceData[5][3*nodeIdx + 2] = -(coordinateData[0][nodeIdx] - cx);
+      }
+    }
 
     // Insert into parameter list
     userParamList.set("Nullspace", nullspace);
@@ -664,13 +732,13 @@ void createRegionHierarchy(const int maxRegPerProc,
   if (coarseSolverType == "direct")
   {
     RCP<DirectCoarseSolver> coarseDirectSolver = MakeCompositeDirectSolver(coarseCompOp);
-    coarseSolverData->set<RCP<DirectCoarseSolver>>("direct solver object", coarseDirectSolver);
+    coarseSolverData->set<RCP<DirectCoarseSolver> >("direct solver object", coarseDirectSolver);
   }
   else if (coarseSolverType == "amg")
   {
     std::string amgXmlFileName = coarseSolverData->get<std::string>("amg xml file");
     RCP<Hierarchy> coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName, compCoarseCoordinates);
-    coarseSolverData->set<RCP<Hierarchy>>("amg hierarchy object", coarseAMGHierarchy);
+    coarseSolverData->set<RCP<Hierarchy> >("amg hierarchy object", coarseAMGHierarchy);
   }
   else
   {
