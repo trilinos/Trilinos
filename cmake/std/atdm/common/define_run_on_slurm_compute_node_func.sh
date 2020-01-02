@@ -9,11 +9,11 @@
 #     [<timeout>] [<account>]
 #
 # If <timeout> is not given, then it is set to the env var
-# ATDM_CONFIG_SBATCH_DEFUALT_TIMEOUT if != "".  Otherwise, a default is set
+# ATDM_CONFIG_SBATCH_DEFAULT_TIMEOUT if != "".  Otherwise, a default is set
 # internally.
 #
 # If <account> is not given, then it is set to the env var
-# ATDM_CONFIG_SBATCH_DEFUALT_ACCOUNT if != "".  Otherwise, a default is set
+# ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT if != "".  Otherwise, a default is set
 # internally.
 #
 # In this case, sbatch is used to run the script but it also sends ouptut to
@@ -46,16 +46,16 @@ function atdm_run_script_on_compute_node {
 
   if [[ "${timeout_input}" != "" ]] ; then
     timeout=${timeout_input}
-  elif [[ "${ATDM_CONFIG_SBATCH_DEFUALT_TIMEOUT}" != "" ]] ; then
-    timeout=${ATDM_CONFIG_SBATCH_DEFUALT_TIMEOUT}
+  elif [[ "${ATDM_CONFIG_SBATCH_DEFAULT_TIMEOUT}" != "" ]] ; then
+    timeout=${ATDM_CONFIG_SBATCH_DEFAULT_TIMEOUT}
   else
     timeout=1:30:00
   fi
 
   if [ "${account_input}" != "" ] ; then
     account=${account_input}
-  elif [[ "${ATDM_CONFIG_SBATCH_DEFUALT_ACCOUNT}" != "" ]] ; then
-    timeout=${ATDM_CONFIG_SBATCH_DEFUALT_ACCOUNT}
+  elif [[ "${ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT}" != "" ]] ; then
+    timeout=${ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT}
   else
     account=fy150090
   fi
