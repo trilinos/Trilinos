@@ -46,6 +46,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   ride
   mutrino   # Will be repalced by 'ats1'
   waterman
+  serrano   # Default to 'seranno' for backward compatibility for now
   cts1
   tlcc2
   sems-rhel7
