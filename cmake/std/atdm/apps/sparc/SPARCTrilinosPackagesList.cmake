@@ -17,7 +17,6 @@ SET(SPARC_Trilinos_Packages
   Amesos2
   Ifpack2
   MueLu
-  Zoltan2
   STKTransfer
   STKSearch
   STKUtil
@@ -26,4 +25,5 @@ SET(SPARC_Trilinos_Packages
   SEACAS
   Gtest
   ROL
+  TriKota
   )
