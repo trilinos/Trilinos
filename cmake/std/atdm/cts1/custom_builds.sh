@@ -1,5 +1,5 @@
 #
-# Custom builds for cee-rhel6 env
+# Custom builds for 'cts1' env
 #
 # NOTE: This file gets sourced in atdm/utils/set_build_options.sh before the
 # default grep logic is applied.
