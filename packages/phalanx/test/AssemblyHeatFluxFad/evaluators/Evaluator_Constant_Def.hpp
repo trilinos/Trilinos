@@ -61,20 +61,24 @@ void Constant<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData /* d */,
 		      PHX::FieldManager<Traits>& /* vm */)
 {
-  constant.deep_copy(value);
+  num_points = static_cast<int>(constant.extent(0));
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void Constant<EvalT, Traits>::evaluateFields(typename Traits::EvalData /* d */)
-{ }
+{
+  constant.deep_copy(value);
+}
 
 //**********************************************************************
+// Needed for task parallel interface
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
-void Constant<EvalT, Traits>::operator () (const int ) const
+void Constant<EvalT, Traits>::operator () (const int cell) const
 {
-  // Needed for task parallel interface
+  for (int pt=0; pt < num_points; ++pt)
+    constant(cell,pt) = value; 
 }
 
 //**********************************************************************

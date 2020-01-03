@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -67,26 +67,39 @@ namespace PHX {
   */
   template <typename EvalT, typename Traits>
   class EvaluationContainer : public PHX::EvaluationContainerBase<Traits> {
-    
+
   public:
-    
+
     EvaluationContainer();
-    
+
     ~EvaluationContainer();
-    
+
     //! Requests that the container must compute this field.
     void requireField(const PHX::FieldTag& f);
 
     void aliasField(const PHX::FieldTag& aliasedField,
                     const PHX::FieldTag& targetField);
 
-    void 
+    void
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
 
     PHX::any getFieldData(const PHX::FieldTag& f);
 
-    //! Set the memory for an unmanaged field
-    void setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a);
+    /** \brief Set the memory for an unmanaged field
+     *
+     * NOTE: If this method is called after postRegistrationSetup(),
+     * the field might be reported as shared when priting even though
+     * it is no longer shared (now points to user supplied
+     * memory). Output from DAG may be incorrect. Searching the field
+     * lists for potential sharing wastes time as this function may be
+     * called in the middle of an evaluation, so we will not clean up
+     * output or add this to the unmanaged field list unless the user
+     * explicitly asks for this cleanup to happen. Execution will
+     * always be correct.
+    */
+    void setUnmanagedField(const PHX::FieldTag& f,
+                           const PHX::any& a,
+                           const bool cleanup_output = true);
 
     //! Bind the memory pointer for a field in all evaluators
     void bindField(const PHX::FieldTag& f, const PHX::any& a);
@@ -161,6 +174,8 @@ namespace PHX {
 
   protected:
 
+    void assignSharedFields();
+
     bool post_registration_setup_called_;
 
     std::unordered_map<std::string,PHX::any> fields_;
@@ -168,18 +183,35 @@ namespace PHX {
     std::unordered_map<std::string,PHX::any> unmanaged_fields_;
 
     std::unordered_map<std::string,std::string> aliased_fields_;
-    
+
+    /** Shared fields are fields where their use range in the
+        topological sort of the dag does not overlap. Therefore, the
+        fields can share the same memory allocation tracker. The key
+        is the identifier for the field that will not be allocated
+        since it will use another field's memory. The value is a pair
+        where first is an RCP to the shared field tag, and second is
+        the field string identifier whose memory the shared field will
+        point to.
+     */
+    std::unordered_map<std::string,std::pair<Teuchos::RCP<PHX::FieldTag>,std::string>> shared_fields_;
+
     std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
 
     bool build_device_dag_;
 
+    // Enables shared memory use if set to true.
     bool minimize_dag_memory_use_;
 
     std::shared_ptr<PHX::MemoryManager> memory_manager_;
+
+    /// Size in bytes of view allocation. This includes padding if the view supports/requires it.
+    std::unordered_map<std::string,std::size_t> field_allocation_sizes_;
+
+    std::vector<std::pair<std::size_t,Teuchos::RCP<PHX::FieldTag>>> fields_to_allocate_;
   };
-  
-} 
+
+}
 
 #include "Phalanx_EvaluationContainer_Def.hpp"
 
-#endif 
+#endif

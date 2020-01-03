@@ -51,6 +51,9 @@
 #include <type_traits>
 #include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
+#ifdef PHX_DEBUG
+#include "Phalanx_Kokkos_PrintViewValues.hpp"
+#endif
 
 namespace PHX {
 
@@ -85,9 +88,9 @@ namespace PHX {
         *ptr_ = tmp;
       }
       catch (std::exception& ) {
-        std::cout << "\n\nError in MemoryBinder using PHX::any_cast. Tried to cast a field "
-                  << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
-                  << "\" from a PHX::any object containing a type of \""
+        std::cout << "\n\nERROR in MemoryBinder using PHX::any_cast. Tried to cast a field "
+                  << "to the type:\n  \"" << Teuchos::demangleName(typeid(non_const_view).name())
+                  << "\"\nfrom a PHX::any object containing a field of type:\n  \""
                   << Teuchos::demangleName(f.type().name()) << "\"." << std::endl;
         throw;
       }
@@ -104,6 +107,53 @@ namespace PHX {
     DummyMemoryBinder& operator=(DummyMemoryBinder&& ) = default;
     void operator()(const PHX::any& /* f */) { /* DO NOTHING! */ }
   };
+
+#ifdef PHX_DEBUG
+  //! Functor to print field values to an ostream
+  template <typename FieldType>
+  class FieldPrinter {
+    FieldType* field_;
+  public:
+    FieldPrinter(FieldType* f) : field_(f) {}
+    FieldPrinter(const FieldPrinter& ) = default;
+    FieldPrinter& operator=(const FieldPrinter& ) = default;
+    FieldPrinter(FieldPrinter&& ) = default;
+    FieldPrinter& operator=(FieldPrinter&& ) = default;
+
+    // Use SFINAE to select this for non-Kokkos::View (i.e. Field and MDField).
+    template<typename T=FieldType>
+    typename std::enable_if<!Kokkos::is_view<T>::value,void>::type
+    operator()(std::ostream& os)
+    {
+      PHX::PrintViewValues<typename FieldType::array_type,FieldType::rank_value> p;
+      p.print(field_->get_static_view(),os);
+    }
+
+    // Use SFINAE to select this for Kokkos::View.
+    template<typename T=FieldType>
+    typename std::enable_if<Kokkos::is_view<T>::value,void>::type
+    operator()(std::ostream& os)
+    {
+      PHX::PrintViewValues<FieldType,FieldType::Rank> p;
+      p.print(*field_,os);
+    }
+  };
+
+  //! Dummy functor to satisfy binding to dummy field tags.
+  class DummyFieldPrinter {
+  public:
+    DummyFieldPrinter() {}
+    DummyFieldPrinter(const DummyFieldPrinter& ) = default;
+    DummyFieldPrinter& operator=(const DummyFieldPrinter& ) = default;
+    DummyFieldPrinter(DummyFieldPrinter&& ) = default;
+    DummyFieldPrinter& operator=(DummyFieldPrinter&& ) = default;
+    void operator()(std::ostream& os)
+    {
+      os << "  ** No field/view was registered with this evaluator.\n"
+         << "  ** Must be user controlled or a dummy field." << std::endl;
+    }
+  };
+#endif // PHX_DEBUG
 
 } // namespace PHX
 
@@ -138,6 +188,10 @@ addEvaluatedField(const PHX::FieldTag& ft)
     evaluated_.push_back(ft.clone());
 
   this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
+
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(ft.identifier(),PHX::DummyFieldPrinter());
+#endif
 }
 
 //**********************************************************************
@@ -151,6 +205,11 @@ addEvaluatedField(const PHX::MDField<DataT,Props...>& f)
   using NCF = PHX::MDField<DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(f.fieldTag().identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -164,6 +223,11 @@ addEvaluatedField(const PHX::Field<DataT,Rank,Layout>& f)
   using NCF = PHX::Field<DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(f.fieldTag().identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -178,6 +242,11 @@ addEvaluatedField(const PHX::FieldTag& ft,
   using NCF = Kokkos::View<DataT,Properties...>;
   this->field_binders_.emplace(ft.identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(ft.identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -193,6 +262,10 @@ addContributedField(const PHX::FieldTag& ft)
     contributed_.push_back(ft.clone());
 
   this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
+
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(ft.identifier(),PHX::DummyFieldPrinter());
+#endif
 }
 
 //**********************************************************************
@@ -206,6 +279,10 @@ addContributedField(const PHX::MDField<DataT,Props...>& f)
   using NCF = PHX::MDField<DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(f.fieldTag().identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -219,6 +296,10 @@ addContributedField(const PHX::Field<DataT,Rank,Layout>& f)
   using NCF = PHX::Field<DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(f.fieldTag().identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -233,6 +314,10 @@ addContributedField(const PHX::FieldTag& ft,
   using NCF = Kokkos::View<DataT,Properties...>;
   this->field_binders_.emplace(ft.identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(ft.identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -248,6 +333,10 @@ addDependentField(const PHX::FieldTag& ft)
     required_.push_back(ft.clone());
 
   this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
+
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(ft.identifier(),PHX::DummyFieldPrinter());
+#endif
 }
 
 //**********************************************************************
@@ -262,6 +351,10 @@ addDependentField(const PHX::MDField<DataT,Props...>& f)
   using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(f.fieldTag().identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -275,6 +368,10 @@ addDependentField(const PHX::MDField<const DataT,Props...>& f)
   using NCF = PHX::MDField<const DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(f.fieldTag().identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -288,6 +385,10 @@ addDependentField(const PHX::Field<const DataT,Rank,Layout>& f)
   using NCF = PHX::Field<const DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(f.fieldTag().identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
 }
 
 //**********************************************************************
@@ -318,6 +419,18 @@ addDependentField(const PHX::FieldTag& ft,
   using NCF = Kokkos::View<DataT,Properties...>;
   this->field_binders_.emplace(ft.identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
+#ifdef PHX_DEBUG
+  this->field_printers_.emplace(ft.identifier(),
+                                PHX::FieldPrinter<NCF>(const_cast<NCF*>(&f)));
+#endif
+}
+
+//**********************************************************************
+template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addUnsharedField(const Teuchos::RCP<PHX::FieldTag>& ft)
+{
+  unshared_.push_back(ft);
 }
 
 //**********************************************************************
@@ -350,6 +463,12 @@ template<typename Traits>
 const std::vector< Teuchos::RCP<PHX::FieldTag> >&
 PHX::EvaluatorWithBaseImpl<Traits>::dependentFields() const
 { return required_; }
+
+//**********************************************************************
+template<typename Traits>
+const std::vector< Teuchos::RCP<PHX::FieldTag> >&
+PHX::EvaluatorWithBaseImpl<Traits>::unsharedFields() const
+{ return unshared_; }
 
 //**********************************************************************
 #ifdef PHX_ENABLE_KOKKOS_AMT
@@ -434,6 +553,19 @@ PHX::EvaluatorWithBaseImpl<Traits>::deleteDeviceEvaluator(PHX::DeviceEvaluator<T
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for deleteDeviceEvaluator() that is required when using Device DAG support.  Please implement the deleteDeviceEvaluator() method in this Evaluator.");
+}
+
+//**********************************************************************
+template<typename Traits>
+void
+PHX::EvaluatorWithBaseImpl<Traits>::printFieldValues(std::ostream& os) const
+{
+#ifdef PHX_DEBUG
+  for (auto it = field_printers_.begin(); it != field_printers_.end(); ++it) {
+    os << it->first << std::endl;
+    (it->second)(os);
+  }
+#endif
 }
 
 //**********************************************************************
