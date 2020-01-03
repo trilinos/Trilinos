@@ -4766,9 +4766,13 @@ mj_create_new_partitions(
     }
   }, total_on_cut);
 
-  Kokkos::View<mj_lno_t *, device_t> track_on_cuts(
-    "track_on_cuts", // would do WithoutInitialization but need last init to 0
-    total_on_cut + 1); // extra index to use for tracking
+  Kokkos::View<mj_lno_t *, device_t> track_on_cuts;
+  if(total_on_cut > 0) {
+    track_on_cuts = Kokkos::View<mj_lno_t *, device_t>(
+      "track_on_cuts", // would do WithoutInitialization but need last init to 0
+      total_on_cut + 1); // extra index to use for tracking
+  }
+
 
   // here we need to parallel reduce an array to count coords in each part
   // atomically adding, especially for low part count would kill us
@@ -4832,9 +4836,11 @@ mj_create_new_partitions(
 
   // the last member is utility used for atomically inserting the values.
   // Sorting here avoids potential indeterminancy in the partitioning results
-  auto track_on_cuts_sort = Kokkos::subview(track_on_cuts,
-    std::pair<mj_lno_t, mj_lno_t>(0, track_on_cuts.size() - 1));
-  Kokkos::sort(track_on_cuts_sort);
+  if(track_on_cuts.size() > 0) { // size 0 unused, or size is minimum of 2
+    auto track_on_cuts_sort = Kokkos::subview(track_on_cuts,
+      std::pair<mj_lno_t, mj_lno_t>(0, track_on_cuts.size() - 1)); // do not sort last element
+    Kokkos::sort(track_on_cuts_sort);
+  }
 
   bool uniform_weights0 = this->mj_uniform_weights(0);
   Kokkos::parallel_for(
