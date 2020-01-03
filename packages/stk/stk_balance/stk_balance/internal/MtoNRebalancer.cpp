@@ -6,6 +6,7 @@
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/entityDataToField.hpp>
 #include <stk_balance/internal/MxNutils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
 namespace stk {
 namespace balance {
@@ -14,6 +15,13 @@ namespace internal {
 MtoNRebalancer::MtoNRebalancer(stk::mesh::BulkData &bulkData, stk::mesh::Field<double> &targetField,
                                const stk::balance::BalanceSettings &graphSettings, int numTargetProcs)
 : mBulkData(bulkData), subdomainCreator(bulkData, numTargetProcs), targetDecompField(targetField), decomp()
+{
+    decomp = stk::balance::internal::get_element_decomp(subdomainCreator.get_num_subdomains(), mBulkData, graphSettings);
+}
+
+MtoNRebalancer::MtoNRebalancer(stk::io::StkMeshIoBroker& ioBroker, stk::mesh::Field<double> &targetField,
+                               const stk::balance::BalanceSettings &graphSettings, int numTargetProcs)
+: mBulkData(ioBroker.bulk_data()), subdomainCreator(ioBroker, numTargetProcs), targetDecompField(targetField), decomp()
 {
     decomp = stk::balance::internal::get_element_decomp(subdomainCreator.get_num_subdomains(), mBulkData, graphSettings);
 }
@@ -116,6 +124,11 @@ void MtoNRebalancer::create_subdomain_and_write(const std::string &filename,
                                                 nodeSharingInfo,
                                                 numSteps,
                                                 timeStep);
+}
+
+int MtoNRebalancer::get_num_target_subdomains()
+{
+  return subdomainCreator.get_num_subdomains();
 }
 
 }}}

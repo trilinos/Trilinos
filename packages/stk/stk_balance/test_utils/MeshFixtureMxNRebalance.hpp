@@ -67,7 +67,7 @@ protected:
     void write_rebalanced_mxn()
     {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename());
+        EXPECT_TRUE(stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename()));
     }
 
     // FIXME

@@ -56,7 +56,7 @@
 #include "stk_mesh/base/Comm.hpp"
 
 #include <string>
-
+#include <algorithm>
 
 namespace {
 
@@ -121,7 +121,7 @@ stk::mesh::PartVector setup_mesh_1block_1quad(stk::mesh::BulkData& bulk)
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -129,10 +129,10 @@ stk::mesh::PartVector setup_mesh_1block_1quad(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_2quad(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                            0,2,QUAD_4_2D,2,5,6,4,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,1 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -141,10 +141,10 @@ stk::mesh::PartVector setup_mesh_2block_2quad(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_2";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_2";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,1 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2};
 }
@@ -152,10 +152,10 @@ stk::mesh::PartVector setup_mesh_2block_2quad(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_2quad_1node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,7,5,6,4,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,7,5,6,4,block_1";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,1, 1,1, 2,0, 2,1, (1+EPS),0 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -164,10 +164,10 @@ stk::mesh::PartVector setup_mesh_2block_2quad_1node_hinge(stk::mesh::BulkData& b
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,7,5,6,4,block_2";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,7,5,6,4,block_2";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,1, 1,1, 2,0, 2,1, (1+EPS),0 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2};
 }
@@ -175,10 +175,10 @@ stk::mesh::PartVector setup_mesh_2block_2quad_1node_hinge(stk::mesh::BulkData& b
 stk::mesh::PartVector setup_mesh_1block_2quad_2hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,3,4,1,2,block_1\n \
-                          0,2,QUAD_4_2D,2,6,4,5,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,3,4,1,2,block_1\n"
+                         "0,2,QUAD_4_2D,2,6,4,5,block_1";
   std::vector<double> coordinates = { 0,2, 2,1, 1,2, 2,3, 3,2, 4,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -187,10 +187,10 @@ stk::mesh::PartVector setup_mesh_2block_2quad_2hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  std::string meshDesc = "0,1,QUAD_4_2D,3,4,1,2,block_1\n \
-                          0,2,QUAD_4_2D,2,6,4,5,block_2";
+  std::string meshDesc = "0,1,QUAD_4_2D,3,4,1,2,block_1\n"
+                         "0,2,QUAD_4_2D,2,6,4,5,block_2";
   std::vector<double> coordinates = { 0,2, 2,1, 1,2, 2,3, 3,2, 4,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2};
 }
@@ -198,11 +198,11 @@ stk::mesh::PartVector setup_mesh_2block_2quad_2hinge(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_3quad_1hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_1\n \
-                          0,3,QUAD_4_2D,4,7,8,9,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_1\n"
+                         "0,3,QUAD_4_2D,4,7,8,9,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, 1,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -210,11 +210,11 @@ stk::mesh::PartVector setup_mesh_1block_3quad_1hinge(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_3quad_1hinge_linear_stack(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_1\n \
-                          0,3,QUAD_4_2D,7,8,9,6,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_1\n"
+                         "0,3,QUAD_4_2D,7,8,9,6,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, (2-EPS),0, 2,1, (2+EPS),0, 3,0, 3,1 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -224,11 +224,11 @@ stk::mesh::PartVector setup_mesh_3block_3quad_1hinge_linear_stack(stk::mesh::Bul
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_2\n \
-                          0,3,QUAD_4_2D,7,8,9,6,block_3";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_2\n"
+                         "0,3,QUAD_4_2D,7,8,9,6,block_3";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, (2-EPS),0, 2,1, (2+EPS),0, 3,0, 3,1 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3};
 }
@@ -236,12 +236,13 @@ stk::mesh::PartVector setup_mesh_3block_3quad_1hinge_linear_stack(stk::mesh::Bul
 stk::mesh::PartVector setup_mesh_1block_4quad_bowtie_1hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,5,6,7,4,block_1\n \
-                          0,3,QUAD_4_2D,4,8,9,10,block_1\n \
-                          0,4,QUAD_4_2D,4,11,12,13,block_1";
-  std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, (1+EPS),2, (1-EPS),2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,5,6,7,4,block_1\n"
+                         "0,3,QUAD_4_2D,4,8,9,10,block_1\n"
+                         "0,4,QUAD_4_2D,4,11,12,13,block_1";
+  std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0,
+                                      2,0, 2,(1-EPS), 2,(1+EPS), 2,2, (1+EPS),2, (1-EPS),2, 0,2, 0,(1+EPS) };
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -249,12 +250,12 @@ stk::mesh::PartVector setup_mesh_1block_4quad_bowtie_1hinge(stk::mesh::BulkData&
 stk::mesh::PartVector setup_mesh_1block_4quad_2hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_1\n \
-                          0,3,QUAD_4_2D,6,7,8,9,block_1\n \
-                          0,4,QUAD_4_2D,3,9,8,10,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_1\n"
+                         "0,3,QUAD_4_2D,6,7,8,9,block_1\n"
+                         "0,4,QUAD_4_2D,3,9,8,10,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,(1-EPS), 2,0, 2,1, 2,2, 1,2, 1,(1+EPS), 0,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -265,12 +266,12 @@ stk::mesh::PartVector setup_mesh_4block_4quad_2hinge(stk::mesh::BulkData& bulk)
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 4);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_2\n \
-                          0,3,QUAD_4_2D,6,7,8,9,block_3\n \
-                          0,4,QUAD_4_2D,3,9,8,10,block_4";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_2\n"
+                         "0,3,QUAD_4_2D,6,7,8,9,block_3\n"
+                         "0,4,QUAD_4_2D,3,9,8,10,block_4";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,(1-EPS), 2,0, 2,1, 2,2, 1,2, 1,(1+EPS), 0,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -278,12 +279,12 @@ stk::mesh::PartVector setup_mesh_4block_4quad_2hinge(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_4quad_4hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,7,block_1\n \
-                          0,3,QUAD_4_2D,6,9,10,8,block_1\n \
-                          0,4,QUAD_4_2D,3,11,10,12,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,7,block_1\n"
+                         "0,3,QUAD_4_2D,6,9,10,8,block_1\n"
+                         "0,4,QUAD_4_2D,3,11,10,12,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,1, 1,1, 1,1, 2,2, 1,2, 1,1, 0,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -294,12 +295,12 @@ stk::mesh::PartVector setup_mesh_4block_4quad_4hinge(stk::mesh::BulkData& bulk)
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 4);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,7,block_2\n \
-                          0,3,QUAD_4_2D,6,9,10,8,block_3\n \
-                          0,4,QUAD_4_2D,3,11,10,12,block_4";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,7,block_2\n"
+                         "0,3,QUAD_4_2D,6,9,10,8,block_3\n"
+                         "0,4,QUAD_4_2D,3,11,10,12,block_4";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,1, 1,1, 1,1, 2,2, 1,2, 1,1, 0,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -307,12 +308,12 @@ stk::mesh::PartVector setup_mesh_4block_4quad_4hinge(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_4quad_pacman(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_1\n \
-                          0,3,QUAD_4_2D,4,7,8,9,block_1\n \
-                          0,4,QUAD_4_2D,3,4,9,10,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_1\n"
+                         "0,3,QUAD_4_2D,4,7,8,9,block_1\n"
+                         "0,4,QUAD_4_2D,3,4,9,10,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, 1,2, 0,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -323,12 +324,12 @@ stk::mesh::PartVector setup_mesh_4block_4quad_pacman(stk::mesh::BulkData& bulk)
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 1);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 1);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_2\n \
-                          0,3,QUAD_4_2D,4,7,8,9,block_3\n \
-                          0,4,QUAD_4_2D,3,4,9,10,block_4";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_2\n"
+                         "0,3,QUAD_4_2D,4,7,8,9,block_3\n"
+                         "0,4,QUAD_4_2D,3,4,9,10,block_4";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, 1,2, 0,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -336,12 +337,12 @@ stk::mesh::PartVector setup_mesh_4block_4quad_pacman(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_4quad_1hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,5,6,7,4,block_1\n \
-                          0,3,QUAD_4_2D,7,8,9,4,block_1\n \
-                          0,4,QUAD_4_2D,4,9,10,11,block_1";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,5,6,7,4,block_1\n"
+                         "0,3,QUAD_4_2D,7,8,9,4,block_1\n"
+                         "0,4,QUAD_4_2D,4,9,10,11,block_1";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,1, 2,2, 1,2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -352,12 +353,12 @@ stk::mesh::PartVector setup_mesh_4block_4quad_1hinge(stk::mesh::BulkData& bulk)
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 4);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,5,6,7,4,block_2\n \
-                          0,3,QUAD_4_2D,7,8,9,4,block_3\n \
-                          0,4,QUAD_4_2D,4,9,10,11,block_4";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,5,6,7,4,block_2\n"
+                         "0,3,QUAD_4_2D,7,8,9,4,block_3\n"
+                         "0,4,QUAD_4_2D,4,9,10,11,block_4";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,1, 2,2, 1,2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -366,13 +367,13 @@ stk::mesh::PartVector setup_mesh_2block_3quad_2tri_1hinge(stk::mesh::BulkData& b
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::TRI_3_2D, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  std::string meshDesc = "0,1,TRI_3_2D,1,2,4,block_1\n \
-                          0,2,TRI_3_2D,1,4,3,block_1\n \
-                          0,3,QUAD_4_2D,5,6,7,4,block_2\n \
-                          0,4,QUAD_4_2D,7,8,9,4,block_2\n \
-                          0,5,QUAD_4_2D,4,9,10,11,block_2";
+  std::string meshDesc = "0,1,TRI_3_2D,1,2,4,block_1\n"
+                         "0,2,TRI_3_2D,1,4,3,block_1\n"
+                         "0,3,QUAD_4_2D,5,6,7,4,block_2\n"
+                         "0,4,QUAD_4_2D,7,8,9,4,block_2\n"
+                         "0,5,QUAD_4_2D,4,9,10,11,block_2";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,1, 2,2, 1,2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2};
 }
@@ -384,13 +385,13 @@ stk::mesh::PartVector setup_mesh_5block_3quad_2tri_1hinge(stk::mesh::BulkData& b
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 4);
   stk::mesh::Part & block5 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_5", 5);
-  std::string meshDesc = "0,1,TRI_3_2D,1,2,4,block_1\n \
-                          0,2,TRI_3_2D,1,4,3,block_2\n \
-                          0,3,QUAD_4_2D,5,6,7,4,block_3\n \
-                          0,4,QUAD_4_2D,7,8,9,4,block_4\n \
-                          0,5,QUAD_4_2D,4,9,10,11,block_5";
+  std::string meshDesc = "0,1,TRI_3_2D,1,2,4,block_1\n"
+                         "0,2,TRI_3_2D,1,4,3,block_2\n"
+                         "0,3,QUAD_4_2D,5,6,7,4,block_3\n"
+                         "0,4,QUAD_4_2D,7,8,9,4,block_4\n"
+                         "0,5,QUAD_4_2D,4,9,10,11,block_5";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,1, 2,2, 1,2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4,&block5};
 }
@@ -401,7 +402,7 @@ stk::mesh::PartVector setup_mesh_1block_1hex(stk::mesh::BulkData& bulk)
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1";
   std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1};
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -409,14 +410,15 @@ stk::mesh::PartVector setup_mesh_1block_1hex(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_2hex(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,5,6,7,8,9,10,11,12,block_1";
-  std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0,
-                                      0,0,1, 1,0,1, 1,1,1, 0,1,1,
-                                      0,0,2, 1,0,2, 1,1,2, 0,1,2
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 1,0,0, 1,1,0, 0,1,0,
+    0,0,1, 1,0,1, 1,1,1, 0,1,1,
+    0,0,2, 1,0,2, 1,1,2, 0,1,2
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -424,15 +426,16 @@ stk::mesh::PartVector setup_mesh_1block_2hex(stk::mesh::BulkData& bulk)
 stk::mesh::PartVector setup_mesh_1block_2hex_1node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,5,9,10,11,12,13,14,15,block_1";
-  std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0,
-                                      0,0,1, 1,0,1, 1,1,1, 0,1,1,
-                                      1,0,(1+EPS), 1,1,(1+EPS), 0,1,(1+EPS), 0,0,2,
-                                      1,0,2, 1,1,2, 0,1,2
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,5,9,10,11,12,13,14,15,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 1,0,0, 1,1,0, 0,1,0,
+    0,0,1, 1,0,1, 1,1,1, 0,1,1,
+    1,0,(1+EPS), 1,1,(1+EPS), 0,1,(1+EPS), 0,0,2,
+    1,0,2, 1,1,2, 0,1,2
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -440,14 +443,15 @@ stk::mesh::PartVector setup_mesh_1block_2hex_1node_hinge(stk::mesh::BulkData& bu
 stk::mesh::PartVector setup_mesh_1block_2hex_2node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,2,9,4,10,11,12,13,14,block_1";
-  std::vector<double> coordinates = { 0,0,0, 1,0,0, 0.5,0.5,0, 0,1,0,
-                                      0,0,1, 1,0,1, 0.5,0.5,1, 0,1,1,
-                                      1,1,0, (0.5+EPS),(0.5+EPS),0, 1,EPS,1, 1,1,1, 0,(1+EPS),1, (0.5+EPS),(0.5+EPS),1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,2,9,4,10,11,12,13,14,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 1,0,0, 0.5,0.5,0, 0,1,0,
+    0,0,1, 1,0,1, 0.5,0.5,1, 0,1,1,
+    1,1,0, (0.5+EPS),(0.5+EPS),0, 1,EPS,1, 1,1,1, 0,(1+EPS),1, (0.5+EPS),(0.5+EPS),1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -455,16 +459,17 @@ stk::mesh::PartVector setup_mesh_1block_2hex_2node_hinge(stk::mesh::BulkData& bu
 stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n \
-                          0,3,HEX_8,13,14,15,16,6,17,18,19,block_1";
-  std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0,
-                                      0,0,1, 1,0,1, 1,1,1, 0,1,1,
-                                      0,0,2, 1,0,2, 1,1,2, 0,1,2,
-                                      (1+EPS),0,0, 2,0,0, 2,1,0, (1+EPS),1,0, 2,0,1, 2,1,1, (1+EPS),1,1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n"
+                         "0,3,HEX_8,13,14,15,16,6,17,18,19,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 1,0,0, 1,1,0, 0,1,0,
+    0,0,1, 1,0,1, 1,1,1, 0,1,1,
+    0,0,2, 1,0,2, 1,1,2, 0,1,2,
+    (1+EPS),0,0, 2,0,0, 2,1,0, (1+EPS),1,0, 2,0,1, 2,1,1, (1+EPS),1,1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -472,13 +477,14 @@ stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge(stk::mesh::BulkData& bu
 stk::mesh::PartVector setup_mesh_1block_2hex_face_test(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,2,9,10,3,6,11,12,7,block_1";
-  std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1,
-                                      2,0,0, 2,1,0, 2,0,1, 2,1,1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,2,9,10,3,6,11,12,7,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1,
+    2,0,0, 2,1,0, 2,0,1, 2,1,1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -487,25 +493,26 @@ stk::mesh::PartVector setup_mesh_1block_2hex_face_test(stk::mesh::BulkData& bulk
 stk::mesh::PartVector setup_mesh_1block_8hex_flower_1node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,9,10,11,12,13,14,15,7,block_1\n \
-                          0,3,HEX_8,16,17,18,19,20,7,21,22,block_1\n \
-                          0,4,HEX_8,23,24,25,26,7,27,28,29,block_1\n \
-                          0,5,HEX_8,30,31,7,32,33,34,35,36,block_1\n \
-                          0,6,HEX_8,37,38,39,7,40,41,42,43,block_1\n \
-                          0,7,HEX_8,7,44,45,46,47,48,49,50,block_1\n \
-                          0,8,HEX_8,51,7,52,53,54,55,56,57,block_1";
-  std::vector<double> coordinates = { 0,0,0, (1-EPS),0,0, (1-EPS),(1-EPS),0, 0,(1-EPS),0, 0,0,(1-EPS), (1-EPS),0,(1-EPS), 1,1,1, 0,(1-EPS),(1-EPS),
-                                      (1+EPS),0,0, 2,0,0, 2,(1-EPS),0, (1+EPS),(1-EPS),0, (1+EPS),0,(1-EPS), 2,0,(1-EPS), 2,(1-EPS),(1-EPS),
-                                      0,(1+EPS),0, (1-EPS),(1+EPS),0, (1-EPS),2,0, 0,2,0, 0,(1+EPS),(1-EPS), (1-EPS),2,(1-EPS), 0,2,(1-EPS),
-                                      (1+EPS),(1+EPS),0, 2,(1+EPS),0, 2,2,0, (1+EPS),2,0, 2,(1+EPS),(1-EPS), 2,2,(1-EPS), (1+EPS),2,(1-EPS),
-                                      0,0,(1+EPS), (1-EPS),0,(1+EPS), 0,(1-EPS),(1+EPS), 0,0,2, (1-EPS),0,2, (1-EPS),(1-EPS),2, 0,(1-EPS),2,
-                                      (1+EPS),0,(1+EPS), 2,0,(1+EPS), 2,(1-EPS),(1+EPS), (1+EPS),0,2, 2,0,2, 2,(1-EPS),2, (1+EPS),(1-EPS),2,
-                                      2,(1+EPS),(1+EPS), 2,2,(1+EPS), (1+EPS),2,(1+EPS), (1+EPS),(1+EPS),2, 2,(1+EPS),2, 2,2,2, (1+EPS),2,2,
-                                      0,(1+EPS),(1+EPS), (1-EPS),2,(1+EPS), 0,2,(1+EPS), 0,(1+EPS),2, (1-EPS),(1+EPS),2, (1-EPS),2,2, 0,2,2
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,7,block_1\n"
+                         "0,3,HEX_8,16,17,18,19,20,7,21,22,block_1\n"
+                         "0,4,HEX_8,23,24,25,26,7,27,28,29,block_1\n"
+                         "0,5,HEX_8,30,31,7,32,33,34,35,36,block_1\n"
+                         "0,6,HEX_8,37,38,39,7,40,41,42,43,block_1\n"
+                         "0,7,HEX_8,7,44,45,46,47,48,49,50,block_1\n"
+                         "0,8,HEX_8,51,7,52,53,54,55,56,57,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, (1-EPS),0,0, (1-EPS),(1-EPS),0, 0,(1-EPS),0, 0,0,(1-EPS), (1-EPS),0,(1-EPS), 1,1,1, 0,(1-EPS),(1-EPS),
+    (1+EPS),0,0, 2,0,0, 2,(1-EPS),0, (1+EPS),(1-EPS),0, (1+EPS),0,(1-EPS), 2,0,(1-EPS), 2,(1-EPS),(1-EPS),
+    0,(1+EPS),0, (1-EPS),(1+EPS),0, (1-EPS),2,0, 0,2,0, 0,(1+EPS),(1-EPS), (1-EPS),2,(1-EPS), 0,2,(1-EPS),
+    (1+EPS),(1+EPS),0, 2,(1+EPS),0, 2,2,0, (1+EPS),2,0, 2,(1+EPS),(1-EPS), 2,2,(1-EPS), (1+EPS),2,(1-EPS),
+    0,0,(1+EPS), (1-EPS),0,(1+EPS), 0,(1-EPS),(1+EPS), 0,0,2, (1-EPS),0,2, (1-EPS),(1-EPS),2, 0,(1-EPS),2,
+    (1+EPS),0,(1+EPS), 2,0,(1+EPS), 2,(1-EPS),(1+EPS), (1+EPS),0,2, 2,0,2, 2,(1-EPS),2, (1+EPS),(1-EPS),2,
+    2,(1+EPS),(1+EPS), 2,2,(1+EPS), (1+EPS),2,(1+EPS), (1+EPS),(1+EPS),2, 2,(1+EPS),2, 2,2,2, (1+EPS),2,2,
+    0,(1+EPS),(1+EPS), (1-EPS),2,(1+EPS), 0,2,(1+EPS), 0,(1+EPS),2, (1-EPS),(1+EPS),2, (1-EPS),2,2, 0,2,2
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -514,13 +521,14 @@ stk::mesh::PartVector setup_mesh_1block_8hex_flower_1node_hinge(stk::mesh::BulkD
 stk::mesh::PartVector setup_mesh_1block_2tet_1node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::TET_4, "block_1", 1);
-  std::string meshDesc = "0,1,TET_4,1,2,3,4,block_1\n \
-                          0,2,TET_4,3,5,6,7,block_1";
-  std::vector<double> coordinates = { 0,0,0, 1,0,0, 0,1,0, 0,0,1,
-                                      1,1,0, 0,2,0, 0,1,1
-                                    };
+  std::string meshDesc = "0,1,TET_4,1,2,3,4,block_1\n"
+                         "0,2,TET_4,3,5,6,7,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 1,0,0, 0,1,0, 0,0,1,
+    1,1,0, 0,2,0, 0,1,1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -528,13 +536,14 @@ stk::mesh::PartVector setup_mesh_1block_2tet_1node_hinge(stk::mesh::BulkData& bu
 stk::mesh::PartVector setup_mesh_1block_2hex_1edge_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_1";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -543,13 +552,14 @@ stk::mesh::PartVector setup_mesh_2block_2hex_1edge_hinge(stk::mesh::BulkData& bu
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_2";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_2";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2};
 }
@@ -557,15 +567,16 @@ stk::mesh::PartVector setup_mesh_2block_2hex_1edge_hinge(stk::mesh::BulkData& bu
 stk::mesh::PartVector setup_mesh_1block_3hex_1edge_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,2,9,10,3,6,11,12,7,block_1\n \
-                          0,3,HEX_8,13,14,15,16,8,7,17,18,block_1";
-  std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1,
-                                      2,0,0, 2,1,0, 2,0,1, 2,1,1,
-                                      0,(1+EPS),0, 1,(1+EPS),0, 1,2,0, 0,2,0, 1,2,1, 0,2,1,
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,2,9,10,3,6,11,12,7,block_1\n"
+                         "0,3,HEX_8,13,14,15,16,8,7,17,18,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1,
+    2,0,0, 2,1,0, 2,0,1, 2,1,1,
+    0,(1+EPS),0, 1,(1+EPS),0, 1,2,0, 0,2,0, 1,2,1, 0,2,1,
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -575,15 +586,16 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1edge_hinge(stk::mesh::BulkData& bu
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,2,9,10,3,6,11,12,7,block_2\n \
-                          0,3,HEX_8,13,14,15,16,8,7,17,18,block_3";
-  std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1,
-                                      2,0,0, 2,1,0, 2,0,1, 2,1,1,
-                                      0,(1+EPS),0, 1,(1+EPS),0, 1,2,0, 0,2,0, 1,2,1, 0,2,1,
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,2,9,10,3,6,11,12,7,block_2\n"
+                         "0,3,HEX_8,13,14,15,16,8,7,17,18,block_3";
+  std::vector<double> coordinates = {
+    0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1,
+    2,0,0, 2,1,0, 2,0,1, 2,1,1,
+    0,(1+EPS),0, 1,(1+EPS),0, 1,2,0, 0,2,0, 1,2,1, 0,2,1,
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3};
 }
@@ -591,15 +603,16 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1edge_hinge(stk::mesh::BulkData& bu
 stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge_1edge_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_1\n \
-                          0,3,HEX_8,8,15,16,17,18,19,20,21,block_1";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
-                                      2,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_1\n"
+                         "0,3,HEX_8,8,15,16,17,18,19,20,21,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
+    2,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -609,15 +622,16 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge(stk::mesh::
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 21);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_2\n \
-                          0,3,HEX_8,8,15,16,17,18,19,20,21,block_3";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
-                                      2,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_2\n"
+                         "0,3,HEX_8,8,15,16,17,18,19,20,21,block_3";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
+    2,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3};
 }
@@ -625,15 +639,16 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge(stk::mesh::
 stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge_1edge_hinge2(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_1\n \
-                          0,3,HEX_8,15,12,16,17,18,19,20,21,block_1";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
-                                      1,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_1\n"
+                         "0,3,HEX_8,15,12,16,17,18,19,20,21,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
+    1,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -643,15 +658,16 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge2(stk::mesh:
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_2\n \
-                          0,3,HEX_8,15,12,16,17,18,19,20,21,block_3";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
-                                      1,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_2\n"
+                         "0,3,HEX_8,15,12,16,17,18,19,20,21,block_3";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
+    1,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3};
 }
@@ -659,15 +675,16 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge2(stk::mesh:
 stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge_1edge_hinge3(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_1\n \
-                          0,3,HEX_8,15,16,13,17,18,19,20,21,block_1";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
-                                      1,(1+EPS),0, 2,(1+EPS),0, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_1\n"
+                         "0,3,HEX_8,15,16,13,17,18,19,20,21,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
+    1,(1+EPS),0, 2,(1+EPS),0, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -677,15 +694,16 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge3(stk::mesh:
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_2\n \
-                          0,3,HEX_8,15,16,13,17,18,19,20,21,block_3";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
-                                      1,(1+EPS),0, 2,(1+EPS),0, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_2\n"
+                         "0,3,HEX_8,15,16,13,17,18,19,20,21,block_3";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
+    1,(1+EPS),0, 2,(1+EPS),0, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3};
 }
@@ -693,14 +711,18 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge3(stk::mesh:
 stk::mesh::PartVector setup_mesh_1block_4hex_bowtie_1edge_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,4,3,14,15,17,16,block_1\n \
-                          0,2,HEX_8,5,6,7,4,18,19,20,17,block_1\n \
-                          0,3,HEX_8,4,8,9,10,17,21,22,23,block_1\n \
-                          0,4,HEX_8,4,11,12,13,17,24,25,26,block_1";
-  std::vector<double> coordinates = { 0,0,0,  (1-EPS),0,0,  0,(1-EPS),0,  1,1,0,  (1+EPS),0,0,  2,0,0,  2,(1-EPS),0,  2,(1+EPS),0,  2,2,0,  (1+EPS),2,0,  (1-EPS),2,0,  0,2,0,  0,(1+EPS),0,
-                                      0,0,1,  (1-EPS),0,1,  0,(1-EPS),1,  1,1,1,  (1+EPS),0,1,  2,0,1,  2,(1-EPS),1,  2,(1+EPS),1,  2,2,1,  (1+EPS),2,1,  (1-EPS),2,1,  0,2,1,  0,(1+EPS),1
-                                    };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  std::string meshDesc = "0,1,HEX_8,1,2,4,3,14,15,17,16,block_1\n"
+                         "0,2,HEX_8,5,6,7,4,18,19,20,17,block_1\n"
+                         "0,3,HEX_8,4,8,9,10,17,21,22,23,block_1\n"
+                         "0,4,HEX_8,4,11,12,13,17,24,25,26,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, (1-EPS),0,0, 0,(1-EPS),0, 1,1,0, (1+EPS),0,0, 2,0,0, 2,(1-EPS),0, 2,(1+EPS),0,
+    2,2,0, (1+EPS),2,0, (1-EPS),2,0, 0,2,0, 0,(1+EPS),0,
+    0,0,1, (1-EPS),0,1, 0,(1-EPS),1, 1,1,1, (1+EPS),0,1, 2,0,1, 2,(1-EPS),1, 2,(1+EPS),1,
+    2,2,1, (1+EPS),2,1, (1-EPS),2,1, 0,2,1, 0,(1+EPS),1
+  };
+
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -711,14 +733,18 @@ stk::mesh::PartVector setup_mesh_4block_4hex_bowtie_1edge_hinge(stk::mesh::BulkD
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_4", 4);
-  std::string meshDesc = "0,1,HEX_8,1,2,4,3,14,15,17,16,block_1\n \
-                          0,2,HEX_8,5,6,7,4,18,19,20,17,block_2\n \
-                          0,3,HEX_8,4,8,9,10,17,21,22,23,block_3\n \
-                          0,4,HEX_8,4,11,12,13,17,24,25,26,block_4";
-  std::vector<double> coordinates = { 0,0,0,  (1-EPS),0,0,  0,(1-EPS),0,  1,1,0,  (1+EPS),0,0,  2,0,0,  2,(1-EPS),0,  2,(1+EPS),0,  2,2,0,  (1+EPS),2,0,  (1-EPS),2,0,  0,2,0,  0,(1+EPS),0,
-                                      0,0,1,  (1-EPS),0,1,  0,(1-EPS),1,  1,1,1,  (1+EPS),0,1,  2,0,1,  2,(1-EPS),1,  2,(1+EPS),1,  2,2,1,  (1+EPS),2,1,  (1-EPS),2,1,  0,2,1,  0,(1+EPS),1
-                                    };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  std::string meshDesc = "0,1,HEX_8,1,2,4,3,14,15,17,16,block_1\n"
+                         "0,2,HEX_8,5,6,7,4,18,19,20,17,block_2\n"
+                         "0,3,HEX_8,4,8,9,10,17,21,22,23,block_3\n"
+                         "0,4,HEX_8,4,11,12,13,17,24,25,26,block_4";
+  std::vector<double> coordinates = {
+    0,0,0, (1-EPS),0,0, 0,(1-EPS),0, 1,1,0, (1+EPS),0,0, 2,0,0, 2,(1-EPS),0, 2,(1+EPS),0,
+    2,2,0, (1+EPS),2,0, (1-EPS),2,0, 0,2,0, 0,(1+EPS),0,
+    0,0,1, (1-EPS),0,1, 0,(1-EPS),1, 1,1,1, (1+EPS),0,1, 2,0,1, 2,(1-EPS),1, 2,(1+EPS),1,
+    2,2,1, (1+EPS),2,1, (1-EPS),2,1, 0,2,1, 0,(1+EPS),1
+  };
+
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -726,17 +752,18 @@ stk::mesh::PartVector setup_mesh_4block_4hex_bowtie_1edge_hinge(stk::mesh::BulkD
 stk::mesh::PartVector setup_mesh_1block_two_by_two_hex_2edge_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_1\n \
-                          0,3,HEX_8,5,6,7,8,15,16,17,18,block_1\n \
-                          0,4,HEX_8,8,12,13,14,18,19,20,21,block_1";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
-                                      0,2,0, 0,2,1, 1,2,1, 1,2,0,
-                                      2,2,0, 2,2,-1, 1,2,-1,
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_1\n"
+                         "0,3,HEX_8,5,6,7,8,15,16,17,18,block_1\n"
+                         "0,4,HEX_8,8,12,13,14,18,19,20,21,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
+    0,2,0, 0,2,1, 1,2,1, 1,2,0,
+    2,2,0, 2,2,-1, 1,2,-1,
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -747,17 +774,18 @@ stk::mesh::PartVector setup_mesh_4block_two_by_two_hex_2edge_hinge(stk::mesh::Bu
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_4", 4);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n \
-                          0,2,HEX_8,4,9,10,11,8,12,13,14,block_2\n \
-                          0,3,HEX_8,5,6,7,8,15,16,17,18,block_3\n \
-                          0,4,HEX_8,8,12,13,14,18,19,20,21,block_4";
-  std::vector<double> coordinates = { 0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
-                                      2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
-                                      0,2,0, 0,2,1, 1,2,1, 1,2,0,
-                                      2,2,0, 2,2,-1, 1,2,-1,
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,4,9,10,11,8,12,13,14,block_2\n"
+                         "0,3,HEX_8,5,6,7,8,15,16,17,18,block_3\n"
+                         "0,4,HEX_8,8,12,13,14,18,19,20,21,block_4";
+  std::vector<double> coordinates = {
+    0,0,0, 0,0,1, 1,0,1, 1,0,0, 0,1,0, 0,1,1, 1,1,1, 1,1,0,
+    2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1,
+    0,2,0, 0,2,1, 1,2,1, 1,2,0,
+    2,2,0, 2,2,-1, 1,2,-1,
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -765,16 +793,17 @@ stk::mesh::PartVector setup_mesh_4block_two_by_two_hex_2edge_hinge(stk::mesh::Bu
 stk::mesh::PartVector setup_mesh_1block_four_hex_one_edge_one_node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,10,11,12,13,block_1\n \
-                          0,2,HEX_8,1,4,5,6,10,13,14,15,block_1\n \
-                          0,3,HEX_8,1,7,8,9,10,16,17,18,block_1\n \
-                          0,4,HEX_8,13,19,20,21,22,23,24,25,block_1";
-  std::vector<double> coordinates = { 0,0,0, 1,EPS,0, 1,1,0, 0,1,0, -1,1,0, -1,0,0, 0,-1,0, 1,-1,0, 1,-EPS,0,
-                                      0,0,1, 1,EPS,1, 1,1,1, 0,1,1, -1,1,1, -1,0,1, 0,-1,1, 1,-1,1, 1,-EPS,1,
-                                      0,2,1, -1,2,1, -1,(1+EPS),1, 0,1,2, 0,2,2, -1,2,2, -1,1,2
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,10,11,12,13,block_1\n"
+                         "0,2,HEX_8,1,4,5,6,10,13,14,15,block_1\n"
+                         "0,3,HEX_8,1,7,8,9,10,16,17,18,block_1\n"
+                         "0,4,HEX_8,13,19,20,21,22,23,24,25,block_1";
+  std::vector<double> coordinates = {
+    0,0,0, 1,EPS,0, 1,1,0, 0,1,0, -1,1,0, -1,0,0, 0,-1,0, 1,-1,0, 1,-EPS,0,
+    0,0,1, 1,EPS,1, 1,1,1, 0,1,1, -1,1,1, -1,0,1, 0,-1,1, 1,-1,1, 1,-EPS,1,
+    0,2,1, -1,2,1, -1,(1+EPS),1, 0,1,2, 0,2,2, -1,2,2, -1,1,2
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -785,16 +814,17 @@ stk::mesh::PartVector setup_mesh_4block_four_hex_one_edge_one_node_hinge(stk::me
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_4", 4);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,10,11,12,13,block_1\n \
-                          0,2,HEX_8,1,4,5,6,10,13,14,15,block_2\n \
-                          0,3,HEX_8,1,7,8,9,10,16,17,18,block_3\n \
-                          0,4,HEX_8,13,19,20,21,22,23,24,25,block_4";
-  std::vector<double> coordinates = { 0,0,0, 1,EPS,0, 1,1,0, 0,1,0, -1,1,0, -1,0,0, 0,-1,0, 1,-1,0, 1,-EPS,0,
-                                      0,0,1, 1,EPS,1, 1,1,1, 0,1,1, -1,1,1, -1,0,1, 0,-1,1, 1,-1,1, 1,-EPS,1,
-                                      0,2,1, -1,2,1, -1,(1+EPS),1, 0,1,2, 0,2,2, -1,2,2, -1,1,2
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,10,11,12,13,block_1\n"
+                         "0,2,HEX_8,1,4,5,6,10,13,14,15,block_2\n"
+                         "0,3,HEX_8,1,7,8,9,10,16,17,18,block_3\n"
+                         "0,4,HEX_8,13,19,20,21,22,23,24,25,block_4";
+  std::vector<double> coordinates = {
+    0,0,0, 1,EPS,0, 1,1,0, 0,1,0, -1,1,0, -1,0,0, 0,-1,0, 1,-1,0, 1,-EPS,0,
+    0,0,1, 1,EPS,1, 1,1,1, 0,1,1, -1,1,1, -1,0,1, 0,-1,1, 1,-1,1, 1,-EPS,1,
+    0,2,1, -1,2,1, -1,(1+EPS),1, 0,1,2, 0,2,2, -1,2,2, -1,1,2
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -802,17 +832,18 @@ stk::mesh::PartVector setup_mesh_4block_four_hex_one_edge_one_node_hinge(stk::me
 stk::mesh::PartVector setup_mesh_1block_four_hex_2node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,7,8,9,10,block_1\n \
-                          0,2,HEX_8,1,4,5,6,7,10,11,12,block_1\n \
-                          0,3,HEX_8,7,13,14,15,16,17,18,19,block_1\n \
-                          0,4,HEX_8,10,20,21,22,23,24,25,26,block_1";
-  std::vector<double> coordinates = { 1,1,0, 2,1,0, 2,2,0, 1,2,0, 0,2,0, 0,1,0,
-                                      1,1,1, 2,1,1, 2,2,1, 1,2,1, 0,2,1, 0,1,1,
-                                      0,(1-EPS),1, 0,0,1, 1,0,1, 1,1,2, 0,1,2, 0,0,2, 1,0,2,
-                                      1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,7,8,9,10,block_1\n"
+                         "0,2,HEX_8,1,4,5,6,7,10,11,12,block_1\n"
+                         "0,3,HEX_8,7,13,14,15,16,17,18,19,block_1\n"
+                         "0,4,HEX_8,10,20,21,22,23,24,25,26,block_1";
+  std::vector<double> coordinates = {
+    1,1,0, 2,1,0, 2,2,0, 1,2,0, 0,2,0, 0,1,0,
+    1,1,1, 2,1,1, 2,2,1, 1,2,1, 0,2,1, 0,1,1,
+    0,(1-EPS),1, 0,0,1, 1,0,1, 1,1,2, 0,1,2, 0,0,2, 1,0,2,
+    1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -823,17 +854,18 @@ stk::mesh::PartVector setup_mesh_4block_four_hex_2node_hinge(stk::mesh::BulkData
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_4", 4);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,7,8,9,10,block_1\n \
-                          0,2,HEX_8,1,4,5,6,7,10,11,12,block_2\n \
-                          0,3,HEX_8,7,13,14,15,16,17,18,19,block_3\n \
-                          0,4,HEX_8,10,20,21,22,23,24,25,26,block_4";
-  std::vector<double> coordinates = { 1,1,0, 2,1,0, 2,2,0, 1,2,0, 0,2,0, 0,1,0,
-                                      1,1,1, 2,1,1, 2,2,1, 1,2,1, 0,2,1, 0,1,1,
-                                      0,(1-EPS),1, 0,0,1, 1,0,1, 1,1,2, 0,1,2, 0,0,2, 1,0,2,
-                                      1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,7,8,9,10,block_1\n"
+                         "0,2,HEX_8,1,4,5,6,7,10,11,12,block_2\n"
+                         "0,3,HEX_8,7,13,14,15,16,17,18,19,block_3\n"
+                         "0,4,HEX_8,10,20,21,22,23,24,25,26,block_4";
+  std::vector<double> coordinates = {
+    1,1,0, 2,1,0, 2,2,0, 1,2,0, 0,2,0, 0,1,0,
+    1,1,1, 2,1,1, 2,2,1, 1,2,1, 0,2,1, 0,1,1,
+    0,(1-EPS),1, 0,0,1, 1,0,1, 1,1,2, 0,1,2, 0,0,2, 1,0,2,
+    1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -841,18 +873,19 @@ stk::mesh::PartVector setup_mesh_4block_four_hex_2node_hinge(stk::mesh::BulkData
 stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge_manual(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "2,1,HEX_8,1,2,3,4,7,8,9,10,block_1\n \
-                          2,2,HEX_8,27,28,5,6,7,10,11,12,block_1\n \
-                          0,3,HEX_8,7,13,14,15,16,17,18,19,block_1\n \
-                          1,4,HEX_8,10,20,21,22,23,24,25,26,block_1";
-  std::vector<double> coordinates = { (1+EPS),1,0, 2,1,0, 2,2,0, (1+EPS),2,0, 0,2,0, 0,1,0,
-                                      1,1,1, 2,1,1, 2,2,1, 1,2,1, 0,2,1, 0,1,1,
-                                      0,(1-EPS),1, 0,0,1, 1,0,1, 1,1,2, 0,1,2, 0,0,2, 1,0,2,
-                                      1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2,
-                                      (1-EPS),1,0, (1-EPS),2,0
-                                    };
+  std::string meshDesc = "2,1,HEX_8,1,2,3,4,7,8,9,10,block_1\n"
+                         "2,2,HEX_8,27,28,5,6,7,10,11,12,block_1\n"
+                         "0,3,HEX_8,7,13,14,15,16,17,18,19,block_1\n"
+                         "1,4,HEX_8,10,20,21,22,23,24,25,26,block_1";
+  std::vector<double> coordinates = {
+    (1+EPS),1,0, 2,1,0, 2,2,0, (1+EPS),2,0, 0,2,0, 0,1,0,
+    1,1,1, 2,1,1, 2,2,1, 1,2,1, 0,2,1, 0,1,1,
+    0,(1-EPS),1, 0,0,1, 1,0,1, 1,1,2, 0,1,2, 0,0,2, 1,0,2,
+    1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2,
+    (1-EPS),1,0, (1-EPS),2,0
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -860,18 +893,19 @@ stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge_manual(stk
 stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_1", 1);
-  std::string meshDesc = "0,1,HEX_8,1,2,3,4,7,8,9,10,block_1\n \
-                          0,2,HEX_8,27,28,5,6,7,10,11,12,block_1\n \
-                          0,3,HEX_8,7,13,14,15,16,17,18,19,block_1\n \
-                          0,4,HEX_8,10,20,21,22,23,24,25,26,block_1";
-  std::vector<double> coordinates = { (1+EPS),1,0, 2,1,0, 2,2,0, (1+EPS),2,0, 0,2,0, 0,1,0,
-                                      1,1,1, 2,1,1, 2,2,1, 1,2,1, 0,2,1, 0,1,1,
-                                      0,(1-EPS),1, 0,0,1, 1,0,1, 1,1,2, 0,1,2, 0,0,2, 1,0,2,
-                                      1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2,
-                                      (1-EPS),1,0, (1-EPS),2,0
-                                    };
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,7,8,9,10,block_1\n"
+                         "0,2,HEX_8,27,28,5,6,7,10,11,12,block_1\n"
+                         "0,3,HEX_8,7,13,14,15,16,17,18,19,block_1\n"
+                         "0,4,HEX_8,10,20,21,22,23,24,25,26,block_1";
+  std::vector<double> coordinates = {
+    (1+EPS),1,0, 2,1,0, 2,2,0, (1+EPS),2,0, 0,2,0, 0,1,0,
+    1,1,1, 2,1,1, 2,2,1, 1,2,1, 0,2,1, 0,1,1,
+    0,(1-EPS),1, 0,0,1, 1,0,1, 1,1,2, 0,1,2, 0,0,2, 1,0,2,
+    1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2,
+    (1-EPS),1,0, (1-EPS),2,0
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -879,22 +913,23 @@ stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge(stk::mesh:
 stk::mesh::PartVector setup_mesh_1block_eight_tri_1node_hinge(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::TRI_3_2D, "block_1", 1);
-  std::string meshDesc = "0,1,TRI_3_2D,1,2,7,block_1\n \
-                          0,2,TRI_3_2D,2,3,7,block_1\n \
-                          0,3,TRI_3_2D,4,7,6,block_1\n \
-                          0,4,TRI_3_2D,5,8,7,block_1\n \
-                          0,5,TRI_3_2D,6,7,9,block_1\n \
-                          0,6,TRI_3_2D,7,8,13,block_1\n \
-                          0,7,TRI_3_2D,7,11,10,block_1\n \
-                          0,8,TRI_3_2D,7,12,11,block_1";
-  std::vector<double> coordinates = { 0,-EPS, 1,0, 2,-EPS,
-                                      0,EPS, 2,EPS, 0,1,
-                                      1,1, 2,1, 0,(2-EPS),
-                                      0,(2+EPS), 1,2, 2,(2+EPS),
-                                      2,(2-EPS)
-                                    };
+  std::string meshDesc = "0,1,TRI_3_2D,1,2,7,block_1\n"
+                         "0,2,TRI_3_2D,2,3,7,block_1\n"
+                         "0,3,TRI_3_2D,4,7,6,block_1\n"
+                         "0,4,TRI_3_2D,5,8,7,block_1\n"
+                         "0,5,TRI_3_2D,6,7,9,block_1\n"
+                         "0,6,TRI_3_2D,7,8,13,block_1\n"
+                         "0,7,TRI_3_2D,7,11,10,block_1\n"
+                         "0,8,TRI_3_2D,7,12,11,block_1";
+  std::vector<double> coordinates = {
+    0,-EPS, 1,0, 2,-EPS,
+    0,EPS, 2,EPS, 0,1,
+    1,1, 2,1, 0,(2-EPS),
+    0,(2+EPS), 1,2, 2,(2+EPS),
+    2,(2-EPS)
+  };
 
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1};
 }
@@ -905,12 +940,15 @@ stk::mesh::PartVector setup_mesh_4block_4quad_bowtie_1hinge(stk::mesh::BulkData&
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
   stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 4);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,5,6,7,4,block_2\n \
-                          0,3,QUAD_4_2D,4,8,9,10,block_3\n \
-                          0,4,QUAD_4_2D,4,11,12,13,block_4";
-  std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, (1+EPS),2, (1-EPS),2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,5,6,7,4,block_2\n"
+                         "0,3,QUAD_4_2D,4,8,9,10,block_3\n"
+                         "0,4,QUAD_4_2D,4,11,12,13,block_4";
+  std::vector<double> coordinates = {
+    0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0,
+    2,0, 2,(1-EPS), 2,(1+EPS), 2,2, (1+EPS),2, (1-EPS),2, 0,2, 0,(1+EPS)
+  };
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -920,17 +958,19 @@ stk::mesh::PartVector setup_mesh_3block_3quad_1hinge(stk::mesh::BulkData& bulk)
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
   stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
   stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n \
-                          0,2,QUAD_4_2D,2,5,6,4,block_2\n \
-                          0,3,QUAD_4_2D,4,7,8,9,block_3";
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
+                         "0,2,QUAD_4_2D,2,5,6,4,block_2\n"
+                         "0,3,QUAD_4_2D,4,7,8,9,block_3";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, 1,2 };
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   return {&block1,&block2,&block3};
 }
 
 
-void print_hinge_info(const stk::mesh::BulkData& bulk, const stk::tools::impl::HingeNodeVector& hingeNodes, const stk::tools::impl::HingeEdgeVector& hingeEdges)
+void print_hinge_info(const stk::mesh::BulkData& bulk,
+                      const stk::tools::impl::HingeNodeVector& hingeNodes,
+                      const stk::tools::impl::HingeEdgeVector& hingeEdges)
 {
   std::ostringstream os;
   if(hingeNodes.size() > 0) {
@@ -945,7 +985,8 @@ void print_hinge_info(const stk::mesh::BulkData& bulk, const stk::tools::impl::H
     os << "PRINTING HINGE EDGES on Proc " << bulk.parallel_rank() << " : " << std::endl;
     for(const stk::tools::impl::HingeEdge& edge : hingeEdges) {
       if(hinge_edge_is_locally_owned(bulk, edge)) {
-        os << "\tHinge edge ids: " << bulk.identifier(edge.first.get_node()) << ", " << bulk.identifier(edge.second.get_node()) << std::endl;
+        os << "\tHinge edge ids: " << bulk.identifier(edge.first.get_node())
+           << ", " << bulk.identifier(edge.second.get_node()) << std::endl;
       }
     }
   }
@@ -2693,3 +2734,5 @@ TEST(SnipHinge, inputFile)
     }
   }
 }
+
+

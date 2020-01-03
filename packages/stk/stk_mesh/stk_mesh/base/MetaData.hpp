@@ -43,6 +43,7 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <map>                          // for map, map<>::value_compare
 #include <stk_util/stk_config.h>
+#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector
@@ -59,6 +60,7 @@
 #include "Shards_CellTopology.hpp"      // for operator<, CellTopology
 #include "Shards_CellTopologyTraits.hpp"  // for getCellTopologyData
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits (ptr only), etc
+#include <stk_mesh/base/Field.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
@@ -75,6 +77,8 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk {
 namespace mesh {
 
+typedef Field<double, stk::mesh::Cartesian> CoordinatesField;
+
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -87,20 +91,6 @@ std::string
 print_entity_key( const MetaData & meta_data, const EntityKey & key );
 
 bool is_topology_root_part(const Part & part);
-
-/** set a cell_topology on a part.  Please call set_topology() instead. */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED void set_cell_topology( Part &part, const shards::CellTopology cell_topology);
-#endif
-
-/** set a cell_topology on a part.  Please call set_topology<>() instead. */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-template<class Topology>
-STK_DEPRECATED inline void set_cell_topology(Part & part)
-{
-  stk::mesh::set_cell_topology(part, shards::CellTopology(shards::getCellTopologyData<Topology>()));
-}
-#endif
 
 /** set a stk::topology on a part */
 void set_topology(Part &part, stk::topology topology);
@@ -528,29 +518,10 @@ public:
                                   const unsigned   arg_first_dimension ,
                                   const void*      arg_init_value = NULL );
 
-  /** \brief This function is used to register new cell topologies and their associated ranks with MetaData.
-   *         Please call register_topology() instead.
-   */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-  STK_DEPRECATED void register_cell_topology(const shards::CellTopology cell_topology, EntityRank in_entity_rank);
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-  STK_DEPRECATED shards::CellTopology register_super_cell_topology(stk::topology t);
-#endif
-
   /** \brief  Register a new topology with MetaData and create the corresponding
    *          root topology part.
    */
   Part& register_topology(stk::topology stkTopo);
-
-  /** \brief Return the root cell topology part associated with the given cell topology.
-   * This Part is created in register_cell_topology.
-   * Please call get_topology_root_part() instead.
-   */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-  STK_DEPRECATED Part &get_cell_topology_root_part(const shards::CellTopology cell_topology) const;
-#endif
 
   /** \brief Return the topology part given a stk::topology.
    */
@@ -558,19 +529,7 @@ public:
 
   bool has_topology_root_part(stk::topology topology) const;
 
-  /** \brief Return the cell topology associated with the given part.
-   * The cell topology is set on a part through part subsetting with the root
-   * cell topology part.
-   */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-  STK_DEPRECATED shards::CellTopology get_cell_topology( const Part & part) const;
-#endif
-
   stk::topology get_topology(const Part & part) const;
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-  STK_DEPRECATED shards::CellTopology get_cell_topology( const std::string & topology_name) const;
-#endif
 
   void dump_all_meta_info(std::ostream& out = std::cout) const;
 

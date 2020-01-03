@@ -22,7 +22,7 @@ protected:
   void initialize_mesh(const std::string& meshDesc)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 };
 
@@ -163,7 +163,7 @@ void test_add_bucket_on_device(stk::mesh::BulkData& bulk)
 {
     ngp::DynamicMesh ngpMesh(bulk);
 
-    unsigned numResults = 2;
+    unsigned numResults = 3;
     IntViewType result = ngp_unit_test_utils::create_dualview<IntViewType>("result",numResults);
 
     unsigned biggestPartOrd = bulk.mesh_meta_data().get_parts().back()->mesh_meta_data_ordinal();
@@ -179,6 +179,7 @@ void test_add_bucket_on_device(stk::mesh::BulkData& bulk)
       result.d_view(0) = ((bktIndex == newBucketIndex) && (bktIndex != -1)) ? 1 : 0;
       unsigned newNumNodeBuckets = ngpMesh.num_buckets(stk::topology::NODE_RANK);
       result.d_view(1) = newNumNodeBuckets == numNodeBuckets+1 ? 1 : 0;
+      result.d_view(2) = ngpMesh.get_bucket(stk::topology::NODE_RANK, bktIndex).is_member(newPartOrd) ? 1 : 0;
     });
 
     result.modify<IntViewType::execution_space>();

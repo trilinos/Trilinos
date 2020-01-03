@@ -42,7 +42,9 @@ namespace stk {
 namespace tools {
 
     void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
+    void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool preserveOrphans = false);
     void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect, int debugLevel = 0);
+    void disconnect_user_blocks_partial(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect, int debugLevel = 0);
     void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamePairsToDisconnect, int debugLevel = 0);
 }
 }

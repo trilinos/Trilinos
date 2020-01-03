@@ -229,7 +229,9 @@ TEST(TestTransientFieldBalance, verifyNumberOfSteps)
         stk::io::fill_mesh_with_auto_decomp(outputMeshName, bulk, broker);
         verify_input_transient_fields(broker, expectedTimeSteps);
 
-        stk::balance::run_stk_rebalance(".", outputMeshName, stk::balance::SD_DEFAULTS, MPI_COMM_WORLD);
+        stk::balance::ParsedOptions options(outputMeshName, ".");
+        options.set_app_type_default(stk::balance::SD_DEFAULTS);
+        stk::balance::run_stk_rebalance(options, MPI_COMM_WORLD);
 
         verify_expected_time_steps_in_parallel_file(outputMeshName, expectedTimeSteps);
 
@@ -410,7 +412,9 @@ TEST(TestTransientFieldBalance, verifyGlobalVariable)
         stk::io::fill_mesh_with_auto_decomp(outputMeshName, bulk, broker);
         verify_input_transient_fields(broker, expectedTimeSteps);
 
-        stk::balance::run_stk_rebalance(".", outputMeshName, stk::balance::SD_DEFAULTS, MPI_COMM_WORLD);
+        stk::balance::ParsedOptions options(outputMeshName, ".");
+        options.set_app_type_default(stk::balance::SD_DEFAULTS);
+        stk::balance::run_stk_rebalance(options, MPI_COMM_WORLD);
 
         verify_expected_global_variable_in_parallel_file(outputMeshName, expectedTimeSteps, globalVariableName);
 

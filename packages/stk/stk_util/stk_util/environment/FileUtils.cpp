@@ -34,16 +34,12 @@
 
 #include <stk_util/stk_config.h>
 
-#ifdef STK_HAVE_BOOSTLIB
-
 #include <stk_util/environment/FileUtils.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for max
 #include <stk_util/environment/EnvData.hpp>  // for EnvData
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <vector>                       // for vector
-#include "boost/program_options/variables_map.hpp"  // for variables_map
-
 
 namespace {
   std::string  get_input_file_basename()
@@ -51,7 +47,7 @@ namespace {
     std::string filename;
     
     std::string input_file_name = "stdin";
-    if (stk::get_variables_map().count("input-deck")) {
+    if (stk::get_parsed_options().count("input-deck")) {
       input_file_name = stk::EnvData::instance().m_inputFile;
     }
 
@@ -122,6 +118,4 @@ namespace stk {
     }
   }
 }
-
-#endif
 
