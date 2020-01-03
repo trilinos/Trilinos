@@ -141,15 +141,19 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         int iteration = optimizationParams.template get<int>("Optimizer Iteration Number");
         int write_interval = analysisParams.get("Write Interval",1);
         Teuchos::RCP<Teuchos::ParameterList> writeParams = Teuchos::rcp(new Teuchos::ParameterList());
-        if (write_interval > 0) {
-          observeFinalSolution = (iteration >= 0 && solving_sensitivities && iteration != current_iteration) ? (iteration%write_interval == 0) : false;
-          if(observeFinalSolution)
-            current_iteration = iteration;
+        if(analysisParams.isSublist("ROL") && analysisParams.sublist("ROL").get("Use Old Reduced Space Interface", false)) {
+          if (write_interval > 0) {
+            observeFinalSolution = (iteration >= 0 && solving_sensitivities && iteration != current_iteration) ? (iteration%write_interval == 0) : false;
+            if(observeFinalSolution)
+              current_iteration = iteration;
+          }
+          else if (write_interval == 0)
+            observeFinalSolution = false;
+          else if (write_interval == -1)
+            observeFinalSolution = true;
         }
-        else if (write_interval == 0)
+        else
           observeFinalSolution = false;
-        else if (write_interval == -1)
-          observeFinalSolution = true;
       }
 
       // Call observer method for each parameter if optimization variables have changed
@@ -233,9 +237,6 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   const RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
   modelInArgs.set_x(finalSolution);
 
-  if (Teuchos::nonnull(this->observer) && (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED || !writeOnlyConvergedSol) && observeFinalSolution) {
-    this->observer->observeSolution(*finalSolution);
-  }
 
   std::string sensitivity_method = appParams->get("Sensitivity Method",
       "Forward");
