@@ -108,7 +108,7 @@ void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::m
 
 unsigned get_local_id(const stk::mesh::impl::LocalIdMapper& localIds, stk::mesh::Entity entity);
 
-bool is_geometric_method(const std::string method);
+bool is_geometric_method(const std::string& method);
 
 stk::mesh::EntityVector get_entities_to_balance(stk::mesh::Selector selector, stk::mesh::EntityRank primaryRank, const stk::mesh::BulkData& bulkData);
 

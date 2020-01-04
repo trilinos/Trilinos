@@ -115,6 +115,10 @@
         const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(mybucket(bulkData, bucket_or_element).topology()).getCellTopologyData();
         CellTopology cell_topo(cell_topo_data);
 
+        if (cell_topo_data->key == shards::Particle::key || 
+            cell_topo_data->key == shards::Beam<2>::key) 
+          return false;
+        
         int cell_dimension = cell_topo.getDimension();
         int meta_dimension = stk::mesh::MetaData::get(bulkData).spatial_dimension();
 

@@ -86,7 +86,7 @@
       if (EXTRA_PRINT) std::cout << "STKSearcher::findElement: nboxes=  " << m_boxes.size()  << std::endl;
 
       IdentProcRelation relation;
-      stk::search::coarse_search(points, m_boxes, stk::search::BOOST_RTREE, bulkData.parallel(), relation);
+      stk::search::coarse_search(points, m_boxes, stk::search::KDTREE, bulkData.parallel(), relation);
 
       if (EXTRA_PRINT) std::cout << "STKSearcher::findElement: found  " << relation.size() << " containing bboxes"  << std::endl;
 

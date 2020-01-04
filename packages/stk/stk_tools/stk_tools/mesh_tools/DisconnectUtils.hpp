@@ -77,6 +77,11 @@ void insert_block_pair(stk::mesh::Part* block1, stk::mesh::Part* block2,
 void populate_blocks_to_reconnect(const stk::mesh::BulkData& bulk, const BlockPairVector& orderedBlockPairsInMesh,
                                   const BlockPairVector& blockPairsToDisconnect,
                                   BlockPairVector& blockPairsToReconnect);
+
+stk::tools::BlockPairVector get_local_reconnect_list(const stk::mesh::BulkData& bulk, const stk::tools::BlockPairVector& disconnectList);
+
+void get_all_blocks_in_mesh(const stk::mesh::BulkData & bulk, stk::mesh::PartVector & blocksInMesh);
+
 }}}
 
 #endif

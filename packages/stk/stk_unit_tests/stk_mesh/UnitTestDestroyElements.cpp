@@ -69,7 +69,7 @@ protected:
         std::string meshDesc =
             "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
              0,2,HEX_8,2,9,10,3,6,11,12,7";
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     }
 
     void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -158,7 +158,7 @@ protected:
             meshDesc =  "0,1,TET_4,1,2,3,4\n\
                          1,2,TET_4,2,5,3,4";
         }
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     }
 };
 
@@ -314,7 +314,7 @@ protected:
         std::string meshDesc =
             "0,1,BEAM_2,1,2\n\
              0,2,BEAM_2,2,3";
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     }
 
     void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -357,7 +357,7 @@ protected:
         std::string meshDesc =
             "0,1,QUAD_4_2D,1,2,3,4\n\
              1,2,QUAD_4_2D,2,5,6,3";
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     }
 
     void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)

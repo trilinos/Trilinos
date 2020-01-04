@@ -55,6 +55,8 @@
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Sacado.hpp"
+#include "Phalanx_DataLayout_DynamicLayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 
 namespace PHX {
 
@@ -102,6 +104,9 @@ namespace PHX {
     typedef typename array_type::device_type device_type;
     typedef typename PHX::Device::size_type size_type;
     typedef typename array_type::execution_space execution_space;
+#ifdef PHX_DEBUG
+    enum { rank_value = Rank }; // for printing in debug mode
+#endif
 
     Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl);
 
@@ -110,6 +115,18 @@ namespace PHX {
     Field(const Teuchos::RCP<const PHX::FieldTag>& t);
 
     Field();
+
+    /// ONLY USE THIS CTOR FOR UNMANAGED FIELDS!!!! It will allocate memory unassociated with the DAG! 
+    template<typename...Extents>
+    Field(const std::string name,const std::string layout_name,Extents... e)
+      : m_field_data(name,e...)
+#ifdef PHX_DEBUG
+      , m_data_set(true)
+#endif
+    {
+      Teuchos::RCP<PHX::Layout> layout = Teuchos::rcp(new PHX::Layout(layout_name,e...));
+      m_tag = Teuchos::rcp(new PHX::Tag<value_type>(name,layout));
+    }
 
     //! For const/non-const compatibility
     template<typename CopyDataT>
@@ -155,6 +172,9 @@ namespace PHX {
 
     KOKKOS_INLINE_FUNCTION
     size_type size() const;
+
+    KOKKOS_INLINE_FUNCTION
+    constexpr size_t span() const {return m_field_data.span();}
 
     void setFieldTag(const PHX::FieldTag& t);
 

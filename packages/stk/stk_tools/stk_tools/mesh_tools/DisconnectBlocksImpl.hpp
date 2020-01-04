@@ -44,11 +44,12 @@
 #include "stk_tools/mesh_tools/DisconnectTypes.hpp"
 #include "stk_tools/mesh_tools/DisconnectUtils.hpp"
 #include "stk_util/parallel/ParallelComm.hpp"
+#include "stk_tools/mesh_tools/ConvexGroup.hpp"
 #include <map>
 #include <utility>
 #include <vector>
 
-//#define PRINT_DEBUG
+// #define PRINT_DEBUG
 
 namespace stk { namespace mesh { class BulkData; } }
 
@@ -72,13 +73,15 @@ struct NodeMapValue
   NodeMapValue()
     : oldNodeId(stk::mesh::InvalidEntityId),
       newNodeId(stk::mesh::InvalidEntityId),
-      reconnectNodeId(stk::mesh::InvalidEntityId)
+      reconnectNodeId(stk::mesh::InvalidEntityId),
+      reconnectGroupId(std::numeric_limits<unsigned>::max())
       {}
   NodeMapValue(const stk::mesh::BulkData& bulk, stk::mesh::Entity node)
     : boundaryNode(node),
       oldNodeId(bulk.identifier(node)),
       newNodeId(stk::mesh::InvalidEntityId),
-      reconnectNodeId(stk::mesh::InvalidEntityId)
+      reconnectNodeId(stk::mesh::InvalidEntityId),
+      reconnectGroupId(std::numeric_limits<unsigned>::max())
   {
     fill_block_membership(bulk, node, oldBlockMembership);
   }
@@ -92,6 +95,8 @@ struct NodeMapValue
 
   std::vector<int> sharingProcs;
   stk::mesh::PartVector oldBlockMembership;
+
+  unsigned reconnectGroupId;
 };
 
 class NodeMapLess {
@@ -112,14 +117,17 @@ using NodeMapType = std::map<NodeMapKey, NodeMapValue, NodeMapLess>;
 using DisconnectGroupVector = std::vector<DisconnectGroup>;
 using PreservedSharingInfo = std::map<stk::mesh::EntityId, std::vector<int>>;
 using NodeMapIterator = NodeMapType::iterator;
+using ReconnectMapKey = std::pair<stk::mesh::EntityId, unsigned>;
 
 struct ReconnectNodeInfo {
   stk::mesh::EntityId reconnectNodeId = stk::mesh::InvalidEntityId;
   std::vector<int> reconnectProcs;
   stk::mesh::EntityVector relatedNodes;
+  stk::mesh::PartVector reconnectParts;
+//  ConvexGroup<BlockPair,BlockPairIdGetter,stk::mesh::PartLess> group;
 };
 
-typedef std::map<stk::mesh::EntityId, ReconnectNodeInfo> ReconnectMap;
+typedef std::map<ReconnectMapKey, ReconnectNodeInfo> ReconnectMap;
 
 class NullStream : public std::ostream {
     class NullBuffer : public std::streambuf {
@@ -176,6 +184,11 @@ void clean_up_aura(stk::mesh::BulkData& bulk, LinkInfo& info);
 void update_node_id(stk::mesh::EntityId newNodeId, int proc,
                     LinkInfo& info, const DisconnectGroup& group);
 
+bool should_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const stk::mesh::Part& blockToReconnect,
+                           const stk::mesh::Part& srcBlock, LinkInfo& info);
+
+bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, LinkInfo& info);
+
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
 stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
@@ -206,9 +219,11 @@ void reconnect_block_pair(stk::mesh::BulkData& bulk, const BlockPair & blockPair
 
 const std::vector<int>& find_preserved_sharing_data(stk::mesh::EntityId oldNodeId, const PreservedSharingInfo& info);
 
-void restore_node_sharing(stk::mesh::BulkData& bulk, stk::mesh::EntityId referenceId, stk::mesh::Entity node, LinkInfo& info);
+void restore_node_sharing(stk::mesh::BulkData& bulk, const NodeMapValue& value, stk::mesh::Entity node, LinkInfo& info);
 
 void sanitize_node_map(NodeMapType& nodeMap, LinkInfo& os);
+
+stk::mesh::EntityVector extract_nodes(const stk::mesh::BulkData& bulk, LinkInfo& info);
 
 void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToDisconnect,
                             LinkInfo& info);

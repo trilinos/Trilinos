@@ -32,35 +32,49 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#cmakedefine HAVE_STK_Trilinos
+#include <gtest/gtest.h>
+#include <stk_util/util/string_utils.hpp>
 
-#cmakedefine STK_SHOW_DEPRECATED_WARNINGS
 
-#cmakedefine STK_DISABLE_MPI_NEIGHBOR_COMM
+TEST( UnitTestStringUtils, makeVectorOfStrings_1shortString)
+{
+  std::string str("12345");
+  std::vector<std::string> expected = { "12345" };
 
-#cmakedefine STK_HAVE_BOOST
-#cmakedefine STK_HAVE_BOOSTLIB
+  std::vector<std::string> vecStrs = stk::make_vector_of_strings(str, ' ', 9);
 
-#cmakedefine STK_HAVE_KOKKOSCORE
+  EXPECT_EQ(expected, vecStrs);
+}
 
-#cmakedefine STK_HAVE_STKMESH
+TEST( UnitTestStringUtils, makeVectorOfStrings_2strings1separator)
+{
+  std::string str("12345 123");
+  std::vector<std::string> expected = { "12345", "123" };
 
-#cmakedefine STK_HAVE_STKIO
+  std::vector<std::string> vecStrs = stk::make_vector_of_strings(str, ' ', 7);
 
-#cmakedefine STK_HAVE_STKNGP_TEST
+  EXPECT_EQ(expected, vecStrs);
+}
 
-#cmakedefine HAVE_MPI
+TEST( UnitTestStringUtils, makeVectorOfStrings_3strings2separators)
+{
+  std::string str("123456789 123456789 1234567890");
+  std::vector<std::string> expected = {
+    "123456789", "123456789", "123456789", "0" };
 
-#cmakedefine HAVE_STK_CUDA
+  std::vector<std::string> vecStrs = stk::make_vector_of_strings(str, ' ', 9);
 
-/* Non-typical "not" macro for optional dependence on SEACASAprepro_lib (See
- * STK #17354) */
-#cmakedefine NOT_HAVE_STK_SEACASAPREPRO_LIB
+  EXPECT_EQ(expected, vecStrs);
+}
 
-#cmakedefine FORTRAN_NO_UNDERSCORE
+TEST( UnitTestStringUtils, makeVectorOfStrings_linebreaks)
+{
+  std::string str("123456789\n\n123\n123\n\n123456789 123456789");
+  std::vector<std::string> expected = {
+    "123456789", "", "123", "123", "", "123456789", "123456789" };
 
-#cmakedefine FORTRAN_ONE_UNDERSCORE
+  std::vector<std::string> vecStrs = stk::make_vector_of_strings(str, ' ', 9);
 
-#cmakedefine FORTRAN_TWO_UNDERSCORES
+  EXPECT_EQ(expected, vecStrs);
+}
 
-#define SIERRA_MIGRATION

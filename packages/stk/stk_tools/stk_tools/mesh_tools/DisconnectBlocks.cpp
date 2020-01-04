@@ -49,10 +49,18 @@ void disconnect_all_blocks(stk::mesh::BulkData & bulk, bool preserveOrphans)
   if(bulk.parallel_rank() == 0) {
     std::cout << "Constructing block pairs for disconnect" << std::endl;
   }
-  std::vector<BlockPair> blockPairsToDisconnect = impl::get_block_pairs_to_disconnect(bulk);
 
   impl::LinkInfo info;
   info.preserveOrphans = preserveOrphans;
+  disconnect_all_blocks(bulk, info, preserveOrphans);
+}
+
+void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool preserveOrphans)
+{
+  if(bulk.parallel_rank() == 0) {
+    std::cout << "Constructing block pairs for disconnect" << std::endl;
+  }
+  std::vector<BlockPair> blockPairsToDisconnect = impl::get_block_pairs_to_disconnect(bulk);
 
   impl::disconnect_block_pairs(bulk, blockPairsToDisconnect, info);
 }
@@ -69,24 +77,65 @@ void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& bl
   info.debugLevel = 0;
 #endif
 
-  stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
+  impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
 
-  stk::tools::BlockPairVector orderedBlockPairsInMesh;
-  stk::tools::impl::fill_ordered_block_pairs(allBlocksInMesh, orderedBlockPairsInMesh);
-  stk::tools::BlockPairVector blockPairsToReconnect;
-  stk::tools::impl::populate_blocks_to_reconnect(bulk, orderedBlockPairsInMesh, blocksToDisconnect, blockPairsToReconnect);
+  BlockPairVector orderedBlockPairsInMesh;
+  impl::fill_ordered_block_pairs(allBlocksInMesh, orderedBlockPairsInMesh);
+  BlockPairVector blockPairsToReconnect;
+  impl::populate_blocks_to_reconnect(bulk, orderedBlockPairsInMesh, blocksToDisconnect, blockPairsToReconnect);
 
   double setupTime = stk::wall_time();
 
-  stk::tools::impl::disconnect_block_pairs(bulk, orderedBlockPairsInMesh, info);
+  impl::disconnect_block_pairs(bulk, orderedBlockPairsInMesh, info);
 
   double disconnectTime = stk::wall_time();
 
-  stk::tools::impl::reconnect_block_pairs(bulk, blockPairsToReconnect, info);
+  impl::reconnect_block_pairs(bulk, blockPairsToReconnect, info);
 
   double reconnectTime = stk::wall_time();
 
-  stk::tools::impl::snip_all_hinges_between_blocks(bulk, info.debugLevel > 0);
+  impl::snip_all_hinges_between_blocks(bulk, info.debugLevel > 0);
+
+  double snipTime = stk::wall_time();
+
+  if (bulk.parallel_rank() == 0) {
+    std::cout << "Setup time = " << (setupTime - startTime) << " s" << std::endl;
+    std::cout << "Disconnect time = " << (disconnectTime - setupTime) << " s" << std::endl;
+    std::cout << "Reconnect time = " << (reconnectTime- disconnectTime) << " s" << std::endl;
+    std::cout << "Hinge snip time = " << (snipTime - reconnectTime) << " s" << std::endl;
+    std::cout << "Overall runtime = " << (snipTime - startTime) << " s" << std::endl;
+  }
+}
+
+void disconnect_user_blocks_partial(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect, int debugLevel)
+{
+  impl::LinkInfo info;
+  info.preserveOrphans = true;
+  info.debugLevel = debugLevel;
+  double startTime = stk::wall_time();
+
+#ifndef PRINT_DEBUG
+  info.debugLevel = 0;
+#endif
+
+  stk::tools::BlockPairVector blockPairsToReconnect;
+  blockPairsToReconnect = impl::get_local_reconnect_list(bulk, blocksToDisconnect);
+
+  double setupTime = stk::wall_time();
+
+  impl::disconnect_block_pairs(bulk, blocksToDisconnect, info);
+
+  double disconnectTime = stk::wall_time();
+
+  impl::reconnect_block_pairs(bulk, blockPairsToReconnect, info);
+
+  double reconnectTime = stk::wall_time();
+
+  // stk::tools::impl::snip_all_hinges_between_blocks(bulk, info.debugLevel > 0);
+
+  stk::mesh::EntityVector affectedNodes = impl::extract_nodes(bulk, info);
+
+  impl::snip_all_hinges_for_input_nodes(bulk, affectedNodes, info.debugLevel > 0);
 
   double snipTime = stk::wall_time();
 
