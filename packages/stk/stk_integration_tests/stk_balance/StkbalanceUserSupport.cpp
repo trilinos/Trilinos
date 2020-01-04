@@ -503,7 +503,9 @@ TEST_F(ToleranceTester, smDefaults)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1)
     {
-        stk::balance::run_stk_rebalance(".", "gapped_plates.g", stk::balance::SM_DEFAULTS, MPI_COMM_WORLD);
+        stk::balance::ParsedOptions options("gapped_plates.g", ".");
+        options.set_app_type_default(stk::balance::SM_DEFAULTS);
+        stk::balance::run_stk_rebalance(options, MPI_COMM_WORLD);
     }
 
     setup_mesh("gapped_plates.g", stk::mesh::BulkData::NO_AUTO_AURA);

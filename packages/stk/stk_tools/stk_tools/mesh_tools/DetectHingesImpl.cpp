@@ -227,10 +227,8 @@ HingeNode convert_to_hinge_node (const stk::mesh::BulkData& bulk, stk::mesh::Ent
   return HingeNode();
 }
 
-HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
+HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& nodes)
 {
-  stk::mesh::EntityVector nodes;
-  bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
   HingeNodeVector hingeNodes;
 
   for(stk::mesh::Entity node : nodes) {
@@ -240,6 +238,15 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
       hingeNodes.push_back(hingeNode);
     }
   }
+  return hingeNodes;
+}
+
+HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
+{
+  stk::mesh::EntityVector nodes;
+  bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+
+  HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
 
   return hingeNodes;
 }
@@ -445,17 +452,12 @@ void populate_group(const PairwiseSideInfo& info, const int elem1Idx, const int 
 
 void insert_into_group(const PairwiseSideInfoVector& infoVec, HingeGroupVector& groupVec)
 {
-//  std::ostringstream os;
   for(const PairwiseSideInfo& info : infoVec) {
     int elem1Idx = find_element_in_groups(groupVec, info.get_element1());
     int elem2Idx = find_element_in_groups(groupVec, info.get_element2());
 
-//    const stk::mesh::BulkData& bulk = info.get_bulk();
-//    os << "P" << bulk.parallel_rank() << ": Elements{" << bulk.identifier(info.get_element1()) << "," << bulk.identifier(info.get_element2()) << "} : Indices{" << elem1Idx << "," << elem2Idx << "}" << std::endl;
-
     populate_group(info, elem1Idx, elem2Idx, groupVec);
   }
-//  std::cout << os.str();
 }
 
 void insert_into_group(const PairwiseSideInfoVector& node1InfoVec, const PairwiseSideInfoVector& node2InfoVec,
@@ -589,9 +591,8 @@ void print_disconnect_group_info(const DisconnectGroup& group, unsigned indentLe
   }
 }
 
-void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug)
+void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, bool debug)
 {
-  HingeNodeVector hingeNodes = get_hinge_nodes(bulk);
   HingeEdgeVector hingeEdges = get_hinge_edges(bulk,hingeNodes);
   HingeGroupVector hingeGroups;
   std::vector<stk::mesh::EntityId> newNodeIdVec;
@@ -670,6 +671,18 @@ void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug)
   }
   info.flush(std::cout);
   bulk.modification_end();
+}
+
+void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes, bool debug)
+{
+  HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
+  snip_all_hinges(bulk, hingeNodes, debug); 
+}
+
+void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug)
+{
+  HingeNodeVector hingeNodes = get_hinge_nodes(bulk);
+  snip_all_hinges(bulk, hingeNodes, debug); 
 }
 
 } } }

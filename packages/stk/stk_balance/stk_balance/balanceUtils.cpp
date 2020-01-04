@@ -46,6 +46,10 @@ bool BalanceSettings::includeSearchResultsInGraph() const
     return false;
 }
 
+void BalanceSettings::setIncludeSearchResultsInGraph(bool doContactSearch) 
+{
+}
+
 double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
                                                   const stk::mesh::FieldBase & coordField,
                                                   const stk::mesh::Entity * faceNodes,
@@ -56,6 +60,11 @@ double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & me
 
 void BalanceSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance)
 {
+}
+
+bool BalanceSettings::isConstantFaceSearchTolerance() const
+{
+    return true;
 }
 
 double BalanceSettings::getToleranceForParticleSearch() const
@@ -296,7 +305,12 @@ BalanceSettings::GraphOption GraphCreationSettings::getGraphOption() const
 
 bool GraphCreationSettings::includeSearchResultsInGraph() const
 {
-    return true;
+    return m_includeSearchResultInGraph;
+}
+
+void GraphCreationSettings::setIncludeSearchResultsInGraph(bool doContactSearch)
+{
+    m_includeSearchResultInGraph = doContactSearch;
 }
 
 double GraphCreationSettings::getToleranceForParticleSearch() const
@@ -308,6 +322,11 @@ void GraphCreationSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<st
 {
     m_faceSearchToleranceFunction = faceSearchTolerance;
     m_UseConstantToleranceForFaceSearch = false;
+}
+
+bool GraphCreationSettings::isConstantFaceSearchTolerance() const
+{
+  return m_UseConstantToleranceForFaceSearch;
 }
 
 double GraphCreationSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
@@ -344,6 +363,7 @@ void GraphCreationSettings::setDecompMethod(const std::string& input_method)
 }
 void GraphCreationSettings::setToleranceForFaceSearch(double tol)
 {
+    m_UseConstantToleranceForFaceSearch = true;
     mToleranceForFaceSearch = tol;
 }
 void GraphCreationSettings::setToleranceForParticleSearch(double tol)

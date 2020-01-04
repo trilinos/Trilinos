@@ -414,8 +414,6 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
           }
       }
 
-      void sweep(const VectorOfCoord& path, const VectorOfCoord& dir);
-
       /// apply a single transformation to all nodes' coordinates
       void transform(Transform& xform)
       {
@@ -535,9 +533,6 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
             m_elems[fromType].clear();
           }
       }
-
-
-      void dumpSTK();
 
       void dump(bool onOff) { m_dump= onOff; }
       void dump()

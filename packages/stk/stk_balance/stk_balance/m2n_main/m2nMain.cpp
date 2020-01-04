@@ -83,9 +83,10 @@ void rebalance_m_to_n(ParsedOptions &parsedOptions, MPI_Comm comm)
     stk::mesh::Field<double> &field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
     stk::mesh::put_field_on_mesh(field, meta.universal_part(), (double*)nullptr);
 
-    stk::io::fill_mesh(parsedOptions.inFile, bulk);
+    stk::io::StkMeshIoBroker ioBroker;
+    stk::io::fill_mesh_preexisting(ioBroker, parsedOptions.inFile, bulk);
 
-    stk::balance::internal::rebalanceMtoN(bulk, field, parsedOptions.targetNumProcs, parsedOptions.inFile);
+    stk::balance::internal::rebalanceMtoN(ioBroker, field, parsedOptions.targetNumProcs, parsedOptions.inFile);
 }
 
 }

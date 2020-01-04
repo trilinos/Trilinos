@@ -117,6 +117,7 @@ void parse_command_line_args(int argc, const char** argv,
     }
 
     insert_option(option, value, parsedOptions);
+    parsedOptions.set_parsed(optionKey);
   }
 
   if (optionsDesc.get_num_positional_options() > 0) {

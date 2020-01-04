@@ -972,14 +972,11 @@ TEST(TestModificationEnd, destroySharedNode_twoSharers_deinducePartMembership)
   stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
                          "1,2,QUAD_4_2D,2,3,6,5,block_2";
-  std::vector<double> coordinates;
-  if (bulk.parallel_rank() == 0) {
-    coordinates = { 0,0, 1,0, 0,1, 1,1 };
-  }
-  else {
-    coordinates = { 1,0, 2,0, 1,1, 2,1 };
-  }
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  std::vector<double> coordinates = {
+    0,0, 1,0, 2,0,
+    0,1, 1,1, 2,1
+  };
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   bulk.modification_begin();
   if (bulk.parallel_rank() == 1) {
@@ -1014,17 +1011,12 @@ TEST(TestModificationEnd, destroySharedNode_threeSharers_deinducePartMembership)
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
                          "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
                          "2,3,QUAD_4_2D,4,5,8,7,block_3";
-  std::vector<double> coordinates;
-  if (bulk.parallel_rank() == 0) {
-    coordinates = { 0,0, 1,0, 0,1, 1,1 };
-  }
-  else if (bulk.parallel_rank() == 1) {
-    coordinates = { 1,0, 2,0, 1,1, 2,1 };
-  }
-  else if (bulk.parallel_rank() == 2) {
-    coordinates = { 0,1, 1,1, 0,2, 1,2 };
-  }
-  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+  std::vector<double> coordinates = {
+    0,0, 1,0, 2,0,
+    0,1, 1,1, 2,1,
+    0,2, 1,2
+  };
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 
   bulk.modification_begin();
   if (bulk.parallel_rank() == 2) {

@@ -99,6 +99,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <cstdlib> // for std::getenv
 
 // Piro solver objects
 #include "Thyra_EpetraModelEvaluator.hpp"
@@ -664,6 +665,15 @@ namespace panzer_stk {
       std::string dot_file_prefix = p.sublist("Options").get("Volume Assembly Graph Prefix","Panzer_AssemblyGraph");
       bool write_fm_files = p.sublist("Options").get("Write Field Manager Files",false);
       std::string fm_file_prefix = p.sublist("Options").get("Field Manager File Prefix","Panzer_AssemblyGraph");
+
+      // Allow users to override inputs via runtime env
+      {
+        auto check_write_dag = std::getenv("PANZER_WRITE_DAG");
+        if (check_write_dag != nullptr) {
+          write_dot_files = true;
+          write_fm_files = true;
+        }
+      }
 
       fmb = buildFieldManagerBuilder(wkstContainer,physicsBlocks,bcs,*eqset_factory,bc_factory,cm_factory,
                                      user_cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params,

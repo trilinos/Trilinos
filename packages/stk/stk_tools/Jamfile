@@ -164,6 +164,7 @@ exe stk_tools_utest
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/block_extractor/*.cpp ]
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/mesh_clone/*.cpp ]
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/mesh_tools/*.cpp ]
+    [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/transfer_utils/*.cpp ]
     stk_tools_lib
     stk_mesh_tools_lib
     /sierra/stk_unit_test_utils//stk_unit_main

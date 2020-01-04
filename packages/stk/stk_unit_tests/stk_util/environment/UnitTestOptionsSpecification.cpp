@@ -41,7 +41,8 @@ TEST(OptionsSpecification, insert_required_option_and_print)
     std::ostringstream os;
     os << optionsSpec;
     std::ostringstream oss;
-    oss<<"--option,-o   this is a required option (required)"<<std::endl<<std::endl;
+    oss<<"--option,-o   this is a required option"<<std::endl;
+    oss<<"               (required)"<<std::endl<<std::endl;
     std::string expected = oss.str();
     EXPECT_EQ(expected, os.str());
 }
@@ -58,7 +59,8 @@ TEST(OptionsSpecification, insert_option_with_default_value_and_print)
     std::ostringstream os;
     os << optionsSpec;
     std::ostringstream oss;
-    oss<<"--option,-o   this is an option default: 99.9"<<std::endl<<std::endl;
+    oss<<"--option,-o   this is an option"<<std::endl;
+    oss<<"               (default: 99.9)"<<std::endl<<std::endl;
     std::string expected = oss.str();
     EXPECT_EQ(expected, os.str());
 }
@@ -75,7 +77,8 @@ TEST(OptionsSpecification, insert_option_with_implicit_value_and_print)
     std::ostringstream os;
     os << optionsSpec;
     std::ostringstream oss;
-    oss<<"--option,-o   this is an option implicit: 99.9"<<std::endl<<std::endl;
+    oss<<"--option,-o   this is an option"<<std::endl;
+    oss<<"               (default: 99.9)"<<std::endl<<std::endl;
     std::string expected = oss.str();
     EXPECT_EQ(expected, os.str());
 }
@@ -94,7 +97,8 @@ TEST(OptionsSpecification, insert_flag_and_option_with_default_value_and_print)
     os << optionsSpec;
     std::ostringstream oss;
     oss<<"--flag,-f     this is a flag"<<std::endl;
-    oss<<"--option,-o   this is an option default: 99.9"<<std::endl<<std::endl;
+    oss<<"--option,-o   this is an option"<<std::endl;
+    oss<<"               (default: 99.9)"<<std::endl<<std::endl;
     std::string expected = oss.str();
     EXPECT_EQ(expected, os.str());
 }
@@ -123,7 +127,8 @@ TEST(OptionsSpecification, print_sub_options)
     std::ostringstream oss;
     oss<<"Main Options\n"<<std::endl;
     oss<<"--flag,-f     this is a flag"<<std::endl;
-    oss<<"--option,-o   this is an option default: 99.9"<<std::endl<<std::endl;
+    oss<<"--option,-o   this is an option"<<std::endl;
+    oss<<"               (default: 99.9)"<<std::endl<<std::endl;
     oss<<"Sub Options\n"<<std::endl;
     oss<<"--input-file,-i   input file"<<std::endl;
     oss<<"--log-file,-l     log file"<<std::endl<<std::endl;
