@@ -259,6 +259,8 @@ for build_name_body in ${ATDM_ARRAY_OF_BUILDS[@]} ; do
   build_name=$(atdm_ctest_s_get_build_name ${build_name_body})
 
   echo
+  date
+  echo
   echo "Running Jenkins driver ${build_name}.sh ..."
 
   # Set up the directory for this build case
@@ -298,6 +300,14 @@ for build_name_body in ${ATDM_ARRAY_OF_BUILDS[@]} ; do
   ${ATDM_TRILINOS_DIR}/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh \
     &> smart-jenkins-driver.out
 
+  echo
+  grep "failed out of" smart-jenkins-driver.out
+
   cd ${BASEDIR}
 
 done
+
+echo
+date
+echo
+echo "Done running all of the builds!"
