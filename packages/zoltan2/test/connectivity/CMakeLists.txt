@@ -9,6 +9,96 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${HEADERS} iceSheetIntegration.cpp
   COMM serial mpi
 )
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_Antarctica_16KM
+  ARGS " ./ ant16km ant16km-basal-friction.ascii ant16km-borders.quad.msh ant16km-s1-answers.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_Antarctica_8KM
+  ARGS " ./ ant8km ant8km-basal-friction.ascii ant8km-borders.quad.msh ant8km-s1-answers.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"  
+)
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_Antarctica_4KM
+  ARGS " ./ ant4km ant4km-basal-friction.ascii ant4km-borders.quad.msh ant4km-s1-answers.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_BigRectangle
+  ARGS " ./ bigrectangle bigrectangle-basal-friction.ascii bigrectangle-borders.quad.msh bigrectangle-s1-answers.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"  
+)
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_ChainedDoubleHinge
+  ARGS " ./ chaineddoublehinge chaineddoublehinge-basal-friction.ascii chaineddoublehinge-borders.quad.msh chaineddoublehinge-answer.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"  
+)
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_SimpleHinge
+  ARGS " ./ test1 test1-basal-friction.ascii test1-borders.quad.msh test1-s1-answers.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"  
+)
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_TicTacToe_KeepTwo
+  ARGS " ./ tictactoe tictactoe-basal-friction-two.ascii tictactoe-borders.quad.msh tictactoe-s1-two-answers.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"  
+)
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_TicTacToe_KeepAll
+  ARGS " ./ tictactoe tictactoe-basal-friction-all.ascii tictactoe-borders.quad.msh tictactoe-s1-all-answers.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"  
+)
+
+TRIBITS_ADD_TEST(
+  iceSheet_int
+  NAME iceSheet_ManyHinges
+  ARGS " ./ worstcase worstcase-basal-friction.ascii worstcase-borders.quad.msh worstcase-s1-answers.txt"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL" 
+)
 #TRIBITS_ADD_TEST(
 #    iceSheet
 #    NAME iceSheet_Antarctica_1K

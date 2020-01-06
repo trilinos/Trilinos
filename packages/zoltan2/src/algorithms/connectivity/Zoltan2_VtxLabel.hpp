@@ -250,12 +250,12 @@ public:
     nVec(1), comm(comm_),g(g_),mapOwned(mapOwned_),
     mapWithCopies(mapWithCopies_)
   {
-
+    std::cout<<me<<": Starting prop constructor\n";
     typedef Tpetra::Import<lno_t, gno_t> import_t;
     Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, mapWithCopies));
-    
+    std::cout<<me<<": created importer\n";
     femv = rcp(new femv_t(mapOwned, importer, nVec, true)); 
-
+    std::cout<<me<<": created femv\n";
     femv->beginFill();
     //set the member variable that stores femv->getData(0);
     femvData = femv->getData(0);
@@ -281,6 +281,7 @@ public:
     //printFEMV("BeforeFill");   
  
     femv->endFill(); 
+    std::cout<<me<<": finished constructing successfully\n";
     //printFEMV("AfterFill");
   }
   void printFEMV(const char *msg){
@@ -307,7 +308,9 @@ public:
   //returns an array of vertices to remove
   int* propagate(void){ 
     //run bfs_prop
+    std::cout<<me<<": starting propagation\n"; 
     bfs_prop();
+    std::cout<<me<<": done with initial propagation\n";
     //check for potentially false articulation points
     while(true){
       femv->switchActiveMultiVector(); 
@@ -338,7 +341,7 @@ public:
           femv->replaceLocalValue(i,0,cleared);
         }
       }
-      //std::cout<<me<<": Running BFS-prop again\n";
+      std::cout<<me<<": Running BFS-prop again\n";
       //re-run bfs_prop until incomplete propagation is fixed
       bfs_prop();     
     }
@@ -353,6 +356,7 @@ public:
       else removed[i] = -1;
     }
     femv->switchActiveMultiVector();
+    std::cout<<me<<": returning answer\n";
     return removed;
   }
 

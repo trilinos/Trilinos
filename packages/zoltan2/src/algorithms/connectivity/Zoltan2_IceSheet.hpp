@@ -163,7 +163,8 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
       ghostCount++;
     }
   }
-  RCP<const map_t > mapWithCopies = rcp(new map_t(dummy, gids, 0, problemComm));
+  Tpetra::global_size_t dummy_2 = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  RCP<const map_t > mapWithCopies = rcp(new map_t(dummy_2, gids, 0, problemComm));
  
   //communicate boundary edges back to owning processors
   //
@@ -331,6 +332,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
       }
     }
   }
+  std::cout<<me<<": done constructing boundary edges\n";
   //we should now have complete local knowledge of the boundary.
 
   //convert adjacency array to use local identifiers instead of global.
@@ -339,13 +341,14 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   for(size_t i = 0; i < nEdge; i++){
     out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
   }
-
+  std::cout<<me<<": done creating out edges, creating csr graph\n";
   graph* g = new graph({nVtx, nEdge, &out_edges_lid[0],out_offsets, 0,0.0});
-
+  std::cout<<me<<": constructing propagation object\n";
   Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
-  
+  std::cout<<me<<": starting propagation\n";  
   int* removed = prop.propagate();
   
+  std::cout<<me<<": done propagating\n";
   delete [] local_boundary_counts;
   delete g;
   delete [] grounding;
