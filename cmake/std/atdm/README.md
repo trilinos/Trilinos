@@ -103,12 +103,14 @@ href="#sems-rhel6-environment">sems-rhel6</a> and <a
 href="#cee-rhel6-environment">cee-rhel6</a> environments are supported.  On
 these CEE LAN RHEL6 machines, when `cee-rhel6` is included in `<build-name>`,
 then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is included in
-the build name or no system name is given, then the `sems-rhel6` env will be
-selected by default on such machines.  Likewise for CEE LAN RHEL7 machines
-with the <a href="#sems-rhel6-environment">sems-rhel7</a> and <a
+the build name (or no system name is listed in the build name), then the
+`sems-rhel6` env will be selected by default on such machines.  The same is
+true for CEE LAN RHEL7 machines with the <a
+href="#sems-rhel6-environment">sems-rhel7</a> and <a
 href="#cee-rhel6-environment">cee-rhel6</a> environments.  And if `spack-rhel`
 is included in `<build-name>`, then the <a
 href="#spack-rhel-environment">spack-rhel</a> will attempted to be loaded.
+(In that case, one must ensure that the ATDM Spack modules have been defined.)
 
 <a name="kokkos_arch"/>
 

@@ -79,7 +79,7 @@ void create_AA_mesh(stk::mesh::BulkData &bulk, ElementOrdering elemOrdering)
                                         0,0,2, 1,0,2, 1,1,2, 0,1,2 };
 
     bulk.initialize_face_adjacent_element_graph();
-    stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+    stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 }
 
 void create_AB_mesh(stk::mesh::BulkData &bulk, ElementOrdering elemOrdering)
@@ -99,7 +99,7 @@ void create_AB_mesh(stk::mesh::BulkData &bulk, ElementOrdering elemOrdering)
                                         0,0,2, 1,0,2, 1,1,2, 0,1,2 };
 
     bulk.initialize_face_adjacent_element_graph();
-    stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+    stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
 }
 
 void populate_elem_sides(SidesetDirection direction,

@@ -6,6 +6,7 @@
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/entityDataToField.hpp>
 
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include "MxNutils.hpp"
@@ -15,12 +16,10 @@ namespace stk {
 namespace balance {
 namespace internal {
 
-void rebalanceMtoN(stk::mesh::BulkData& bulkData, stk::mesh::Field<double> &targetDecompField, int num_target_procs, const std::string& outputFilename, int numSteps, double timeStep)
+void execute_rebalanceMtoN(MtoNRebalancer& m2nRebalancer, const std::string& outputFilename, int numSteps, double timeStep)
 {
-    stk::balance::GraphCreationSettings graphSettings;
-    MtoNRebalancer m2nRebalancer(bulkData, targetDecompField, graphSettings, num_target_procs);
-
-    std::vector<unsigned> targetSubdomainsToProc = stk::balance::internal::assign_target_subdomains_roundrobin_to_procs(bulkData.parallel_size(), num_target_procs);
+    stk::mesh::BulkData& bulkData = m2nRebalancer.get_bulk();
+    std::vector<unsigned> targetSubdomainsToProc = stk::balance::internal::assign_target_subdomains_roundrobin_to_procs(bulkData.parallel_size(), m2nRebalancer.get_num_target_subdomains());
 
     std::vector<size_t> counts;
     stk::mesh::comm_mesh_counts(bulkData, counts);
@@ -39,4 +38,21 @@ void rebalanceMtoN(stk::mesh::BulkData& bulkData, stk::mesh::Field<double> &targ
     }
 }
 
+bool rebalanceMtoN(stk::mesh::BulkData& bulkData, stk::mesh::Field<double> &targetDecompField, int num_target_procs, const std::string& outputFilename, int numSteps, double timeStep)
+{
+    stk::balance::GraphCreationSettings graphSettings;
+    MtoNRebalancer m2nRebalancer(bulkData, targetDecompField, graphSettings, num_target_procs);
+    execute_rebalanceMtoN(m2nRebalancer, outputFilename, numSteps, timeStep);
+
+    return true;
+}
+
+bool rebalanceMtoN(stk::io::StkMeshIoBroker& ioBroker, stk::mesh::Field<double> &targetDecompField, int num_target_procs, const std::string& outputFilename, int numSteps, double timeStep)
+{
+    stk::balance::GraphCreationSettings graphSettings;
+    MtoNRebalancer m2nRebalancer(ioBroker, targetDecompField, graphSettings, num_target_procs);
+    execute_rebalanceMtoN(m2nRebalancer, outputFilename, numSteps, timeStep);
+
+    return true;
+}
 }}}

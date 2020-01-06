@@ -62,7 +62,7 @@ TEST_F(NgpMeshModHowTo, changeEntityParts)
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
         "0,2,HEX_8,1,2,3,4,5,6,7,8\n"
         "0,3,SHELL_QUAD_4,5,6,7,8";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
     test_change_entity_parts(get_bulk(), elem, active.mesh_meta_data_ordinal());

@@ -355,7 +355,8 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
       const std::string & name = entity->name();
 
       const stk::mesh::Part * part = femMetaData->get_part(name);
-      const CellTopologyData * ct = femMetaData->get_cell_topology(*part).getCellTopologyData();
+      shards::CellTopology cellTopo = stk::mesh::get_cell_topology(femMetaData->get_topology(*part));
+      const CellTopologyData * ct = cellTopo.getCellTopologyData();
 
       TEUCHOS_ASSERT(ct!=0);
       mesh.addElementBlock(part->name(),ct);
@@ -383,8 +384,8 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh) const
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
       const stk::mesh::Part * part = *partItr;
       const stk::mesh::PartVector & subsets = part->subsets();
-      // const CellTopologyData * ct = stk::mesh::get_cell_topology(*part).getCellTopologyData();
-      const CellTopologyData * ct = metaData->get_cell_topology(*part).getCellTopologyData();
+      shards::CellTopology cellTopo = stk::mesh::get_cell_topology(metaData->get_topology(*part));
+      const CellTopologyData * ct = cellTopo.getCellTopologyData();
 
       // if a side part ==> this is a sideset: now storage is recursive
       // on part contains all sub parts with consistent topology
@@ -395,8 +396,8 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh) const
 
          // grab cell topology and name of subset part
          const stk::mesh::Part * ss_part = subsets[0];
-         // const CellTopologyData * ss_ct = stk::mesh::get_cell_topology(*ss_part).getCellTopologyData();
-         const CellTopologyData * ss_ct = metaData->get_cell_topology(*ss_part).getCellTopologyData();
+         shards::CellTopology ss_cellTopo = stk::mesh::get_cell_topology(metaData->get_topology(*ss_part));
+         const CellTopologyData * ss_ct = ss_cellTopo.getCellTopologyData();
 
          // only add subset parts that have no topology
          if(ss_ct!=0)
@@ -415,7 +416,8 @@ void STK_ExodusReaderFactory::registerNodesets(STK_Interface & mesh) const
    stk::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
       const stk::mesh::Part * part = *partItr;
-      const CellTopologyData * ct = metaData->get_cell_topology(*part).getCellTopologyData();
+      shards::CellTopology cellTopo = stk::mesh::get_cell_topology(metaData->get_topology(*part));
+      const CellTopologyData * ct = cellTopo.getCellTopologyData();
 
       // if a side part ==> this is a sideset: now storage is recursive
       // on part contains all sub parts with consistent topology

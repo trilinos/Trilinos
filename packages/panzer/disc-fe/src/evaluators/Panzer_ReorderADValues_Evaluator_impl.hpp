@@ -176,6 +176,8 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
     // tell the field manager that we depend on this field
     this->addDependentField(inFields_[eq]);
     this->addEvaluatedField(outFields_[eq]);
+    // Don't share so we can avoid zeroing out off blck Jacobian entries
+    this->addUnsharedField(outFields_[eq].fieldTag().clone());
   }
 
   // build a int-int map that associates fields

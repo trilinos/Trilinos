@@ -52,6 +52,8 @@ class FaceSearchTolerance;
 typedef std::vector<int> ElementDecomposition;
 typedef stk::mesh::Field<double> DoubleFieldType;
 
+constexpr double defaultFaceSearchTolerance = 0.0001;
+
 class DecompositionChangeList
 {
 public:
@@ -94,12 +96,14 @@ public:
 
     // Graph (parmetis) based options only
     virtual bool includeSearchResultsInGraph() const;
+    virtual void setIncludeSearchResultsInGraph(bool doContactSearch);
 
     virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
                                              const stk::mesh::FieldBase & coordField,
                                              const stk::mesh::Entity * faceNodes,
                                              const unsigned numFaceNodes) const;
     virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
+    virtual bool isConstantFaceSearchTolerance() const;
 
     virtual double getToleranceForParticleSearch() const;
     virtual double getAbsoluteToleranceForParticleSearch(stk::mesh::Entity particle) const;
@@ -143,15 +147,16 @@ public:
     virtual bool useLocalIds() const;
 };
 
-class BasicGeomtricSettings : public BalanceSettings
+class BasicGeometricSettings : public BalanceSettings
 {
+public:
     virtual std::string getDecompMethod() const { return "rcb"; }
 };
 
 class GraphCreationSettings : public BalanceSettings
 {
 public:
-    GraphCreationSettings(): GraphCreationSettings(0.0001, 3, 15, "parmetis", 5.0)
+    GraphCreationSettings(): GraphCreationSettings(defaultFaceSearchTolerance, 3, 15, "parmetis", 5.0)
     {}
 
     GraphCreationSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch, const std::string& decompMethod, double multiplierVWSearch)
@@ -162,7 +167,8 @@ public:
                              vertexWeightMultiplierForVertexInSearch(multiplierVWSearch),
                              m_UseConstantToleranceForFaceSearch(true),
                              m_shouldFixSpiders(false),
-                             m_spiderConnectivityCountField(nullptr)
+                             m_spiderConnectivityCountField(nullptr),
+                             m_includeSearchResultInGraph(true)
     {}
 
     virtual ~GraphCreationSettings() = default;
@@ -179,6 +185,7 @@ public:
 
     virtual GraphOption getGraphOption() const override;
     virtual bool includeSearchResultsInGraph() const override;
+    virtual void setIncludeSearchResultsInGraph(bool doContactSearch) override;
     virtual double getToleranceForParticleSearch() const override;
 
     virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
@@ -186,6 +193,7 @@ public:
                                              const stk::mesh::Entity * faceNodes,
                                              const unsigned numFaceNodes) const override;
     virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance) override;
+    virtual bool isConstantFaceSearchTolerance() const override;
 
     virtual bool getEdgesForParticlesUsingSearch() const override;
     virtual double getVertexWeightMultiplierForVertexInSearch() const override;
@@ -214,6 +222,7 @@ protected:
     bool m_shouldFixSpiders;
     mutable const stk::mesh::Field<int> * m_spiderConnectivityCountField;
     std::shared_ptr<stk::balance::FaceSearchTolerance> m_faceSearchToleranceFunction;
+    bool m_includeSearchResultInGraph;
 };
 
 class GraphCreationSettingsWithCustomTolerances : public GraphCreationSettings
@@ -234,17 +243,22 @@ class BasicZoltan2Settings : public GraphCreationSettings
 {
 public:
     BasicZoltan2Settings()
-      : GraphCreationSettings(0.0005, 0.3, 100.0, "rcb", 6.0) {}
-    virtual bool includeSearchResultsInGraph() const { return false; }
+      : GraphCreationSettings(0.0005, 0.3, 100.0, "rcb", 6.0) 
+      {
+        m_includeSearchResultInGraph = false;
+      }
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
 };
 
 class UserSpecifiedVertexWeightsSetting : public GraphCreationSettings
 {
 public:
+    UserSpecifiedVertexWeightsSetting()
+    {
+      m_includeSearchResultInGraph = false;
+    }
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
     virtual bool areVertexWeightsProvidedInAVector() const { return true; }
-    virtual bool includeSearchResultsInGraph() const { return false; }
     void setVertexWeights(const std::vector<double>& weights) { vertex_weights = weights; }
     virtual std::vector<double> getVertexWeightsViaVector() const { return vertex_weights; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
@@ -276,13 +290,15 @@ public:
                               const double defaultWeight = 0.0)
       : m_stkMeshBulkData(stkMeshBulkData),
         m_weightField(weightField),
-        m_defaultWeight(defaultWeight) { }
+        m_defaultWeight(defaultWeight) 
+        { 
+            m_includeSearchResultInGraph = false;
+        }
     virtual ~FieldVertexWeightSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
     virtual bool areVertexWeightsProvidedInAVector() const { return false; }
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
-    virtual bool includeSearchResultsInGraph() const { return false; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.05; }
     virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
@@ -307,30 +323,31 @@ protected:
     std::string method = std::string("parmetis");
 };
 
-class MultipleCriteriaSettings : public stk::balance::GraphCreationSettings
+class MultipleCriteriaSettings : public GraphCreationSettings
 {
 public:
     MultipleCriteriaSettings(const std::vector<const stk::mesh::Field<double>*> critFields,
                              const double default_weight = 0.0)
       : m_critFields(critFields), m_defaultWeight(default_weight)
-    { }
+    { 
+        m_includeSearchResultInGraph = false;
+    }
 
     MultipleCriteriaSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch,
                              const std::string& decompMethod, double multiplierVWSearch,
                              const std::vector<const stk::mesh::Field<double>*> critFields,
                              bool includeSearchResults, const double default_weight = 0.0)
       : GraphCreationSettings(faceSearchTol, particleSearchTol, edgeWeightSearch, decompMethod, multiplierVWSearch),
-        m_critFields(critFields), m_includeSearchResults(includeSearchResults), m_defaultWeight(default_weight)
-    { }
+        m_critFields(critFields), m_defaultWeight(default_weight)
+    { 
+        m_includeSearchResultInGraph = includeSearchResults;
+    }
 
     virtual ~MultipleCriteriaSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology,
       stk::topology element2Topology) const override { return 1.0; }
     virtual bool areVertexWeightsProvidedViaFields() const override { return true; }
-    virtual bool includeSearchResultsInGraph() const override {
-      return m_includeSearchResults;
-    }
     virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
     virtual double getImbalanceTolerance() const override { return 1.05; }
     virtual int getNumCriteria() const override { return m_critFields.size(); }
@@ -357,13 +374,11 @@ protected:
     MultipleCriteriaSettings() = default;
     MultipleCriteriaSettings(const MultipleCriteriaSettings&) = delete;
     MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
-
     const std::vector<const stk::mesh::Field<double>*> m_critFields;
-    bool m_includeSearchResults = false;
     const double m_defaultWeight;
 };
 
-class BasicColoringSettings : public stk::balance::BalanceSettings
+class BasicColoringSettings : public BalanceSettings
 {
 public:
     BasicColoringSettings() {}
@@ -374,7 +389,7 @@ public:
     }
 };
 
-class BasicColoringByTopologySettings : public stk::balance::BalanceSettings
+class BasicColoringByTopologySettings : public BalanceSettings
 {
 public:
     BasicColoringByTopologySettings() {}

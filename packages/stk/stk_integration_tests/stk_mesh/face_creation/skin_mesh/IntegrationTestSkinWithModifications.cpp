@@ -272,24 +272,26 @@ protected:
     }
 
 
-    void create_2_quads_mesh(stk::mesh::Part& block1, stk::mesh::Part& block2)
+    void create_2_quads_with_partial_coincident_quad_mesh(stk::mesh::Part& block1, stk::mesh::Part& block2)
     {
-        std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4\n\
-                                1,2,QUAD_4_2D,4,3,5,6";
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+      std::string meshDesc;
+      if (get_parallel_size() == 1) {
+        meshDesc = "0,1,QUAD_4_2D,1,2,3,4\n"
+                   "0,2,QUAD_4_2D,4,3,5,6\n"
+                   "0,3,QUAD_4_2D,21,22,3,4";
+      }
+      else {
+        meshDesc = "0,1,QUAD_4_2D,1,2,3,4\n"
+                   "1,2,QUAD_4_2D,4,3,5,6\n"
+                   "0,3,QUAD_4_2D,21,22,3,4";
+      }
+      stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
-        get_bulk().modification_begin();
-        put_entity_into_part(get_bulk(), 1, block1);
-        put_entity_into_part(get_bulk(), 2, block2);
-        get_bulk().modification_end();
-    }
-
-    void add_partial_coincident_quad(stk::mesh::Part& block1)
-    {
-        stk::unit_test_util::fill_mesh_using_text_mesh("0,3,QUAD_4_2D,21,22,3,4", get_bulk());
-        get_bulk().modification_begin();
-        put_entity_into_part(get_bulk(), 3, block1);
-        get_bulk().modification_end();
+      get_bulk().modification_begin();
+      put_entity_into_part(get_bulk(), 1, block1);
+      put_entity_into_part(get_bulk(), 2, block2);
+      put_entity_into_part(get_bulk(), 3, block1);
+      get_bulk().modification_end();
     }
 
     void put_entity_into_part(stk::mesh::BulkData &bulkData, stk::mesh::EntityId id, stk::mesh::Part& part)
@@ -359,11 +361,9 @@ TEST_F(SkinAAWithModification, TestPartialCoincident2d)
         stk::mesh::Part& block2 = create_part_with_id(get_meta(), 2, stk::topology::QUAD_4_2D);
         setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
 
-        create_2_quads_mesh(block1, block2);
-
         setup_for_skinning();
 
-        add_partial_coincident_quad(block1);
+        create_2_quads_with_partial_coincident_quad_mesh(block1, block2);
 
         const SideTestUtil::TestCase exteriorCase = {"AA.e", 2, 9, {{1, 0}, {1, 1}, {1, 3},
                                                                      {2, 1}, {2, 2}, {2, 3},
