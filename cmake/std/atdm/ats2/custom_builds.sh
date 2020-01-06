@@ -12,12 +12,14 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.3.1-spmpi-2019.06.24"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.3.1_spmpi-2019.06.24"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.3.1"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]] \
   ; then
   export ATDM_CONFIG_COMPILER=GNU-7.3.1_SPMPI-2019.06.24
 else
   echo
   echo "***"
-  echo "*** ERROR: A supported compiler was not selected for 'ats2' env"
+  echo "*** ERROR: A supported compiler was not selected for 'ats2' env - $ATDM_CONFIG_BUILD_NAME"
   echo "***"
   echo "*** Supported compilers include:"
   echo "***"

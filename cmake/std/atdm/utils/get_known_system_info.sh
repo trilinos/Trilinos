@@ -51,6 +51,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   ride
   mutrino   # Will be repalced by 'ats1'
   waterman
+  vortex    # Will be replaced by 'ats2'
   serrano
   cts1
   tlcc2
@@ -100,6 +101,9 @@ elif [[ $realHostname == "mutrino"* ]] ; then
 elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
+elif [[ $realHostname == "vortex"* ]] ; then
+  hostnameMatch=vortex
+  hostnameMatchSystemName=vortex
 
 # Specifically named cts1 systems (currently maps to 'serrano' env)
 elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
@@ -146,6 +150,12 @@ if [[ $SNLSYSTEM == "cts1" ]] ; then
   systemNameTypeMatchedList+=(cts1)
   systemNameTypeMatchedListHostNames[cts1]=$SNLCLUSTER
 fi
+
+# TODO: vortex doesn't set SNLSYSTEM -- how do we tell if we're on an ats2 system?
+#if [[ $SNLSYSTEM == "ats2" ]] ; then
+#  systemNameTypeMatchedList+=(ats2)
+#  systemNameTypeMatchedListHostNames[ats2]=$SNLCLUSTER
+#fi
 
 # SEMS RHEL6 and RHEL7 systems
 if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
