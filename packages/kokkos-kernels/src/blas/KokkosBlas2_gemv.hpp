@@ -138,8 +138,23 @@ gemv (const char trans[],
     typename KokkosKernels::Impl::GetUnifiedLayout<YViewType>::array_layout,
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
-  typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
-  impl_type::gemv (trans, alpha, A, x, beta, y);
+
+  if ((trans[0] == 'T' || trans[0] == 't') && A.extent(0) == 0
+#ifdef KOKKOS_ENABLE_CUDA
+      && !std::is_same<typename AViewType::device_type::execution_space, Kokkos::Cuda>::value
+#endif
+    )
+  {
+    const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
+    typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
+    fallback_impl_type::gemv (trans, alpha, A, x, beta, y);
+  }
+  else 
+  {
+    typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
+    impl_type::gemv (trans, alpha, A, x, beta, y);
+  }
+
 }
 
 } // namespace KokkosBlas

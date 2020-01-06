@@ -135,12 +135,22 @@ struct GEMV {
     // Prefer int as the index type, but use a larger type if needed.
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numCols < static_cast<size_type> (INT_MAX)) {
-      singleLevelGemv<AViewType, XViewType, YViewType,int>
+      #if 1
+      twoLevelGemv<AViewType, XViewType, YViewType, int>
          (trans, alpha, A, x, beta, y);
+      #else
+      singleLevelGemv<AViewType, XViewType, YViewType, int>
+         (trans, alpha, A, x, beta, y);
+      #endif
     }
     else {
+      #if 1
+      twoLevelGemv<AViewType, XViewType, YViewType, int64_t>
+         (trans, alpha, A, x, beta, y);
+      #else
       singleLevelGemv<AViewType, XViewType, YViewType, int64_t>
          (trans, alpha, A, x, beta, y);
+      #endif
     }
     Kokkos::Profiling::popRegion();
   }

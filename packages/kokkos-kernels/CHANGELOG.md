@@ -1,5 +1,37 @@
 # Change Log
 
+## [3.0.00](https://github.com/kokkos/kokkos-kernels/tree/3.0.00) (2019-12-20)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.9.00...3.0.00)
+
+**Implemented enhancements:**
+
+- Standalone Modern CMake support [\#491](https://github.com/kokkos/kokkos-kernels/pull/491)
+- Cluster GS and SGS: [\#455](https://github.com/kokkos/kokkos-kernels/pull/455)
+- Sparse ILUK: [\#459](https://github.com/kokkos/kokkos-kernels/pull/459)
+- Dot-based GEMM Cuda optimization for C = betaC + alphaA^TB - [\#490]https://github.com/kokkos/kokkos-kernels/pull/490)
+- Sorting utilities [\#461](https://github.com/kokkos/kokkos-kernels/pull/461)
+- SGS: Support multiple rhs in SGS efficiently [\#488](https://github.com/kokkos/kokkos-kernels/issues/488)
+- BLAS trsm support: Need BLAS interface for \<\>trsm [\#513](https://github.com/kokkos/kokkos-kernels/issues/513)
+- BLAS iamax: implement iamax [\#87](https://github.com/kokkos/kokkos-kernels/issues/87)
+- BLAS gesv: [\#449](https://github.com/kokkos/kokkos-kernels/issues/449)
+- sptrsv: Add cusparse tpl support, cudagraphs to fallback [\#555](https://github.com/kokkos/kokkos-kernels/pull/555)
+- KokkosGraph: output colors assigned during graph coloring [\#444](https://github.com/kokkos/kokkos-kernels/issues/444)
+- MatrixReader: Full matrix market support [\#466](https://github.com/kokkos/kokkos-kernels/pull/466)
+
+
+**Fixed bugs:**
+
+- gemm: fix bug for complex types in fallback impl [\#550](https://github.com/kokkos/kokkos-kernels/pull/550)
+- gemv: fix transpose mode with cuda in fallback impl [\#514](https://github.com/kokkos/kokkos-kernels/pull/514)
+- gemv: transpose mode issues with cublas and M == 0 [\#539](https://github.com/kokkos/kokkos-kernels/issues/539)
+- spgemm: cuda build with complex\_double: error\( cudaErrorMisalignedAddress\) with Kokkos develop branch [\#500](https://github.com/kokkos/kokkos-kernels/issues/500)
+- spgemm: Wrong team size heuristic used for SPGEMM when Kokkos deprecated=OFF [\#474](https://github.com/kokkos/kokkos-kernels/issues/474)
+- SpMV Struct: bug with intel\_17\_0\_1 [\#456](https://github.com/kokkos/kokkos-kernels/issues/456)
+- readmtx: invalid read due to loop condition [\#453](https://github.com/kokkos/kokkos-kernels/issues/453)
+- spgemm: (hashmap accumulator) produces crashes and wrong results [\#402](https://github.com/kokkos/kokkos-kernels/issues/402)
+- KokkosGraph: Distance-1 graph coloring segfault [\#275](https://github.com/kokkos/kokkos-kernels/issues/275)
+- UniformMemoryPool: does not re-initialize chunks that are freed [\#530](https://github.com/kokkos/kokkos-kernels/issues/530)
+
 ## [2.9.00](https://github.com/kokkos/kokkos-kernels/tree/2.9.00) (2019-06-24)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.8.00...2.9.00)
 

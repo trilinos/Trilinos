@@ -242,9 +242,9 @@ endif
 
 KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "HostSpace" | wc -l))
 KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_HBWSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "HBWSpace" | wc -l))
-KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDASPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaSpace" | wc -l))
-KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaUVMSpace" | wc -l))
-KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAHOSTPINNEDSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaHostPinnedSpace" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDASPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaS" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaUS" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAHOSTPINNEDSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaHPS" | wc -l))
 
 tmp := $(shell echo "" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "/* ---------------------------------------------" >> KokkosKernels_config.tmp)
@@ -386,74 +386,74 @@ KOKKOSKERNELS_INTERNAL_SRC_SPARSE =
 
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_DOUBLE), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_double*Serial*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_double*Serial*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_dbl*Serial*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_dbl*Serial*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_FLOAT), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_float*Serial*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_float*Serial*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_flt*Serial*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_flt*Serial*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_double*Serial*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_double*Serial*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_cmplx_dbl*Serial*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_cmplx_dbl*Serial*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_float*Serial*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_float*Serial*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_cmplx_flt*Serial*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_cmplx_flt*Serial*.cpp)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_OPENMP), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_DOUBLE), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_double*OpenMP_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_double*OpenMP_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_dbl*OpenMP_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_dbl*OpenMP_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_FLOAT), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_float*OpenMP_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_float*OpenMP_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_flt*OpenMP_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_flt*OpenMP_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_double*OpenMP_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_double*OpenMP_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_cmplx_dbl*OpenMP_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_cmplx_dbl*OpenMP_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_float*OpenMP_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_float*OpenMP_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_cmplx_flt*OpenMP_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_cmplx_flt*OpenMP_*.cpp)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_THREADS), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_DOUBLE), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_double*Threads_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_double*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_dbl*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_dbl*Threads_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_FLOAT), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_float*Threads_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_float*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_flt*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_flt*Threads_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_double*Threads_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_double*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_cmplx_dbl*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_cmplx_dbl*Threads_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_float*Threads_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_float*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_cmplx_flt*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_cmplx_flt*Threads_*.cpp)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_DOUBLE), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_double*Cuda_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_double*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_dbl*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_dbl*Cuda_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_FLOAT), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_float*Cuda_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_float*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_flt*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_flt*Cuda_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_double*Cuda_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_double*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_cmplx_dbl*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_cmplx_dbl*Cuda_*.cpp)
   endif
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_), 1)
-    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_float*Cuda_*.cpp)
-    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_float*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_cmplx_flt*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_cmplx_flt*Cuda_*.cpp)
   endif
 endif
 

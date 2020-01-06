@@ -525,7 +525,7 @@ private:
 #endif
 
         Kokkos::parallel_for("KokkosGraph::CountLowerTriangleTeam",
-            team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
+            team_policy_t((nv + teamSizeMax - 1) / teamSizeMax, teamSizeMax, vector_size),
             clt//, new_num_edge
         );
 
