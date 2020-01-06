@@ -35,6 +35,8 @@ fi
 # Common paths and modules for both intel-1{8,9}
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 module load cmake/3.12.2
+export FC=mpif77
+export F90=mpif90
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
     module load intel/18.0.2.199
@@ -48,6 +50,10 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-2.0.3" ]; then
 
     export PATH=/usr/tce/packages/gcc/gcc-6.1.0/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
+
+    export OMPI_CXX=`which icpc`
+    export OMPI_CC=`which icc`
+    export OMPI_FC=`which ifort`
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
     module load intel/19.0.5.281
     module load mkl/18.0.5.274 # Needed to find libmkl_intel_lp64.so (ATDV-212)
@@ -66,6 +72,40 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5_OPENMPI-4.0.1" ]; then
     export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-4.9.3/lib64:${LD_LIBRARY_PATH}
 
     export F77=mpif77
+
+    export OMPI_CXX=`which icpc`
+    export OMPI_CC=`which icc`
+    export OMPI_FC=`which ifort`
+elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
+  module load cmake/3.12.1 # Vortex does not have 3.12.2
+  module load ninja/1.9.0  # Vortex does not have atdm-ninja_fortran
+    module load gcc/7.3.1 # Make spectrum-mpi available
+#    module load mkl/18.0.5.274 # Needed to find libmkl_intel_lp64.so (ATDV-212)
+    #:module show sparc-dev/gcc-7.3.1_spmpi-2019.06.24:
+    #module load sparc-tools/aerotools; module unload xl; module unload spectrum-mpi
+    #module load cmake/3.14.5
+    #export PATH=/projects/sparc/tools/ats2/clang-8.0.1/bin:$PATH
+    module load spectrum-mpi/2019.06.24
+    #...
+    module load lapack/3.8.0-gcc-4.9.3
+
+    sparc_tpl_ext=ats2-pwr9_gcc-7.3.1
+    sparc_tpl_mpi_ext=ats2-pwr9_gcc-7.3.1_spmpi-2019.06.24
+    # rabartl: ToDo: Above, we need to find a way to extract 'cts1-bdw' out of
+    # this file for this to be general!
+
+    export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3
+    export COMPILER_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
+    export SPARC_HDF5=hdf5-1.10.5
+
+#    export PATH=${COMPILER_ROOT}/bin:${PATH}
+#    export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib64:${LD_LIBRARY_PATH}
+
+    #export CC=mpicc
+    #export CXX=mpicxx
+    export F77=mpifort
+    export FC=mpifort
+    export F90=mpifort
 else
     echo
     echo "***"
@@ -74,9 +114,7 @@ else
     return
 fi
 
-export OMPI_CXX=`which icpc`
-export OMPI_CC=`which icc`
-export OMPI_FC=`which ifort`
+#TODO: don't use intel for this... do we need a new environment_new.sh file?
 export ATDM_CONFIG_LAPACK_LIBS="-mkl"
 export ATDM_CONFIG_BLAS_LIBS="-mkl"
 
@@ -114,11 +152,8 @@ export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=--ntasks
 # Set the default compilers
 export CC=mpicc
 export CXX=mpicxx
-export FC=mpif77
-export F90=mpif90
 
 # Define function atdm_run_script_on_compute_node
 source $ATDM_SCRIPT_DIR/common/define_run_on_slurm_compute_node_func.sh
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
-
