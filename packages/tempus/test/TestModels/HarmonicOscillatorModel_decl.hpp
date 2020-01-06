@@ -56,7 +56,7 @@ class HarmonicOscillatorModel
   public:
 
   // Constructor
-  HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+  HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null, const bool use_accel_IC = false);
 
   // Exact solution
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
