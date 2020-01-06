@@ -125,21 +125,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string prefix;
   if (useKokkos) {
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
-      prefix = "kokkos-complex/";
-    } else {
-      prefix = "kokkos/";
-    }
+    prefix = "kokkos/";
 #else
     std::cout << "No kokkos refactor available." << std::endl;
     return EXIT_FAILURE;
 #endif
   } else {
-    if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
-      prefix = "complex/";
-    } else {
-      prefix = "default/";
-    }
+    prefix = "default/";
   }
   std::string outDir = prefix+"Output/";
 
