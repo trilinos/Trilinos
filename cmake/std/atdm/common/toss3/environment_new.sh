@@ -21,9 +21,8 @@ module purge &> /dev/null
 module purge
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env
-module load atdm-env
-module load atdm-ninja_fortran/1.7.2
-module load sparc-git/2.19.1
+module load sems-ninja_fortran/1.8.2
+module load sems-git/2.10.1
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
