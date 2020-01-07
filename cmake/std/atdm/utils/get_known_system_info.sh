@@ -99,20 +99,6 @@ elif [[ $realHostname == "mutrino"* ]] ; then
 elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
-
-# Specifically named cts1 systems
-elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
-  hostnameMatch=serrano
-  hostnameMatchSystemName=cts1
-elif [[ $realHostname == "eclipse"* ]] || [[ $realHostname =~ ec[0-9]+ ]] ; then
-  hostnameMatch=eclipse
-  hostnameMatchSystemName=cts1
-elif [[ $realHostname == "ghost"* ]] || [[ $realHostname =~ gho[0-9]+ ]] ; then
-  hostnameMatch=ghost
-  hostnameMatchSystemName=cts1
-elif [[ $realHostname == "attaway"* ]] || [[ $realHostname =~ swa[0-9]+ ]] ; then
-  hostnameMatch=attaway
-  hostnameMatchSystemName=cts1
 # End specifically named systems
 fi
 
