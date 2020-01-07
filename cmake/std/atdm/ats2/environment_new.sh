@@ -36,8 +36,7 @@ sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
   module load cmake/3.12.1 # Vortex does not have 3.12.2
-  #module load ninja/1.9.0  # Vortex does not have atdm-ninja_fortran -- TODO: install with spack and point to install..?
-    module load gcc/7.3.1 # Make spectrum-mpi available
+  module load gcc/7.3.1 # Make spectrum-mpi available
 #    module load mkl/18.0.5.274 # Needed to find libmkl_intel_lp64.so (ATDV-212)
     #:module show sparc-dev/gcc-7.3.1_spmpi-2019.06.24:
     #module load sparc-tools/aerotools; module unload xl; module unload spectrum-mpi
@@ -52,12 +51,18 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
     # rabartl: ToDo: Above, we need to find a way to extract 'cts1-bdw' out of
     # this file for this to be general!
 
-    export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3
+    export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3 #
+    export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3 #
     export COMPILER_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
     export SPARC_HDF5=hdf5-1.10.5
 
-#    export PATH=${COMPILER_ROOT}/bin:${PATH}
-#    export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib64:${LD_LIBRARY_PATH}
+    export PATH=${COMPILER_ROOT}/bin:${PATH}
+    export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib64:${LD_LIBRARY_PATH}
+    export BINUTILS_ROOT=${COMPILER_ROOT}
+    export LIBRARY_PATH=${BINUTILS_ROOT}/lib:${LIBRARY_PATH}
+    export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
+    export CPATH=${BINUTILS_ROOT}/include:${CPATH}
+    export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;${BINUTILS_ROOT}/lib/libiberty.a"
 
     #export CC=mpicc
     #export CXX=mpicxx
@@ -83,9 +88,9 @@ export PNETCDF_ROOT=${sparc_tpl_base}/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89
 export NETCDF_ROOT=${sparc_tpl_base}/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/${sparc_tpl_mpi_ext}
 export PARMETIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
 export METIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
-export LIBHIO_ROOT=${sparc_tpl_base}/libhio-1.4.1.2/00000000/${sparc_tpl_mpi_ext}
-export EUCLID_ROOT=${sparc_tpl_base}/euclid-19.30/95b8242ad729449fdb86591b9643c11463b61fa2/${sparc_tpl_mpi_ext}
-export SGM_ROOT=${sparc_tpl_base}/sgm-19.30/00000000/${sparc_tpl_mpi_ext}
+#export LIBHIO_ROOT=${sparc_tpl_base}/libhio-1.4.1.2/00000000/${sparc_tpl_mpi_ext}
+#export EUCLID_ROOT=${sparc_tpl_base}/euclid-19.30/95b8242ad729449fdb86591b9643c11463b61fa2/${sparc_tpl_mpi_ext}
+#export SGM_ROOT=${sparc_tpl_base}/sgm-19.30/00000000/${sparc_tpl_mpi_ext}
 export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/${sparc_tpl_mpi_ext}
 
 export ATDM_CONFIG_USE_HWLOC=OFF
@@ -93,7 +98,6 @@ export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;$
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${NETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
 export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
 export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
-export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 
 # not sure what below does.  It was in the original environment script
 #unset ATTB_ENV
