@@ -662,63 +662,6 @@ Part& MetaData::register_topology(stk::topology stkTopo)
   return *iter->second;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED void MetaData::register_cell_topology(const shards::CellTopology cell_topology, EntityRank entity_rank)
-{
-  ThrowRequireMsg(is_initialized(),"MetaData::register_cell_topology: initialize() must be called before this function");
-
-  stk::topology stkTopo = stk::mesh::get_topology(cell_topology, spatial_dimension());
-  register_topology(stkTopo);
-}
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED shards::CellTopology MetaData::register_super_cell_topology(stk::topology topo)
-{
-  shards::CellTopology cell_topology = get_cell_topology(topo.name());
-  if (!cell_topology.isValid()) {
-    shards::CellTopologyManagedData *cell_topology_data = new shards::CellTopologyManagedData(topo.name());
-    m_created_topologies.push_back(cell_topology_data);
-    cell_topology = shards::CellTopology(cell_topology_data);
-
-    cell_topology_data->base              = cell_topology_data ;
-    cell_topology_data->dimension         = 1 ;
-    cell_topology_data->vertex_count      = topo.num_nodes();
-    cell_topology_data->node_count        = topo.num_nodes();
-    cell_topology_data->edge_count        = 0 ;
-    cell_topology_data->side_count        = 0 ;
-    cell_topology_data->permutation_count = 0 ;
-    cell_topology_data->subcell_count[0]  = topo.num_nodes();
-    cell_topology_data->subcell_count[1]  = 1 ;
-    cell_topology_data->subcell_count[2]  = 0 ;
-    cell_topology_data->subcell_count[3]  = 0 ;
-
-    if (topo.is_superedge())
-        register_cell_topology(cell_topology, stk::topology::EDGE_RANK);
-    else if (topo.is_superface())
-        register_cell_topology(cell_topology, stk::topology::FACE_RANK);
-    else
-        register_cell_topology(cell_topology, stk::topology::ELEMENT_RANK);
-  }
-  return cell_topology;
-}
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED shards::CellTopology
-MetaData::get_cell_topology(
-  const std::string &   topology_name) const
-{
-  std::string part_name = impl::convert_to_internal_name(std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name);
-
-  Part *part = get_part(part_name);
-  if (part)
-    return get_cell_topology(*part);
-  else
-    return shards::CellTopology();
-}
-#endif
-
 Part& MetaData::get_topology_root_part(stk::topology stkTopo) const
 {
     TopologyPartMap::const_iterator iter = m_topologyPartMap.find(stkTopo);
@@ -730,24 +673,6 @@ bool MetaData::has_topology_root_part(stk::topology stkTopo) const
 {
     return (m_topologyPartMap.find(stkTopo) != m_topologyPartMap.end());
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED Part &MetaData::get_cell_topology_root_part(const shards::CellTopology cell_topology) const
-{
-  ThrowRequireMsg(is_initialized(),"MetaData::get_cell_topology_root_part: initialize() must be called before this function");
-  stk::topology stkTopo = stk::mesh::get_topology(cell_topology, spatial_dimension());
-  ThrowRequireMsg(stkTopo != stk::topology::INVALID_TOPOLOGY, "MetaData::get_cell_topology_root_part ERROR, failed to map cell-topology '"<<cell_topology.getName()<<" to stk-topology.");
-
-  return get_topology_root_part(stkTopo);
-}
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED shards::CellTopology MetaData::get_cell_topology( const Part & part) const
-{
-  return stk::mesh::get_cell_topology(get_topology(part));
-}
-#endif
 
 stk::topology MetaData::get_topology(const Part & part) const
 {
@@ -925,16 +850,6 @@ void set_topology(Part & part, stk::topology topo)
 
   meta.declare_part_subset(*root_part, part);
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-STK_DEPRECATED void set_cell_topology( Part& part, shards::CellTopology cell_topology)
-{
-  MetaData& meta = MetaData::get(part);
-
-  stk::topology stkTopo = get_topology(cell_topology, meta.spatial_dimension());
-  set_topology(part, stkTopo);
-}
-#endif
 
 const std::vector<std::string>&
 entity_rank_names()

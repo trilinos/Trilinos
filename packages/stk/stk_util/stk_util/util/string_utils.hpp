@@ -37,6 +37,7 @@
 
 #include <stk_util/stk_config.h>
 #include <string>
+#include <vector>
 
 namespace stk {
 
@@ -50,6 +51,8 @@ std::string get_substring_after_comma(const std::string& s);
 
 std::string tailname(const std::string& filename);
 std::string basename(const std::string& filename);
+
+std::vector<std::string> make_vector_of_strings(const std::string& inputString, char separator, int maxStringLength);
 
 } // namespace stk
 

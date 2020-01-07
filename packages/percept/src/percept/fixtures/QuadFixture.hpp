@@ -69,9 +69,6 @@
 //        typedef Topology QuadOrTriTopo ;
         enum { NodesPerElem = stk::topology_detail::topology_data<Topology>::num_nodes };
 
-        typedef stk::mesh::Field<Scalar, stk::mesh::Cartesian>    CoordFieldType;
-        typedef stk::mesh::Field<Scalar*,stk::mesh::ElementNode>  CoordGatherFieldType;
-
         static std::vector<std::string> get_entity_rank_names(unsigned dim)
         {
           std::vector<std::string> names = stk::mesh::entity_rank_names();
@@ -89,7 +86,7 @@
           : meta_data(2, get_entity_rank_names(2) ),
             bulk_data(  meta_data, pm ),
             quad_part( meta_data.declare_part("block_1", stk::topology::ELEMENT_RANK ) ),
-            coord_field( meta_data.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates") ),
+            coord_field( meta_data.declare_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates") ),
             NX( nx ),
             NY( ny ),
             generate_sidesets(generate_sidesets_in),
@@ -104,7 +101,7 @@
           stk::io::put_io_part_attribute(quad_part);
 
           //put coord-field on all nodes:
-          stk::mesh::FieldTraits<CoordFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+          stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
           put_field_on_mesh(
                     coord_field,
                     meta_data.universal_part(),
@@ -307,7 +304,7 @@
         stk::mesh::MetaData    meta_data ;
         stk::mesh::BulkData    bulk_data ;
         stk::mesh::Part      & quad_part ;
-        CoordFieldType       & coord_field ;
+        CoordinatesFieldType       & coord_field ;
         const unsigned         NX ;
         const unsigned         NY ;
         stk::mesh::Part *side_parts[4];

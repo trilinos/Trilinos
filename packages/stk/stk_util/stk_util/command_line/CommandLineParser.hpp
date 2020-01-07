@@ -62,6 +62,11 @@ public:
         add_flag("version,v", "display version information and exit");
     }
 
+    void add_flag(const CommandLineOption &option)
+    {
+        add_flag(get_option_spec(option), option.description);
+    }
+
     void add_flag(const std::string &option, const std::string &description)
     {
         optionsSpec.add_options()
@@ -109,6 +114,21 @@ public:
           (option, description, stk::DefaultValue<ValueType>(defaultValue), isFlag, isRequired, position);
     }
 
+    template <typename ValueType>
+    void add_optional_implicit(const CommandLineOption &option,
+                               const ValueType &defaultValue)
+    {
+        add_optional_implicit(get_option_spec(option), option.description, defaultValue);
+    }
+
+    template <typename ValueType>
+    void add_optional_implicit(const std::string &option, const std::string &description,
+                               const ValueType &defaultValue)
+    {
+        optionsSpec.add_options()
+          (option, description, stk::ImplicitValue<ValueType>(defaultValue));
+    }
+
     std::string get_usage() const
     {
         std::ostringstream os;
@@ -121,6 +141,11 @@ public:
     bool is_option_provided(const std::string &option) const
     {
         return parsedOptions.count(option) > 0;
+    }
+
+    bool is_option_parsed(const std::string& option) const
+    {
+        return parsedOptions.is_parsed(option);
     }
 
     bool is_empty() const

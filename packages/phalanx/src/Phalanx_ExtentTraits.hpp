@@ -20,17 +20,8 @@ namespace PHX {
 /** \brief  Macro for implementing the body of a simple ArrayDimTag
  *  \param ADT  name of the tag.
  */
-#define PHX_PRINT( ADT ) \
-  namespace PHX { \
-    template<> std::string print<ADT>() {return #ADT;}   \
-  }
-
-/** \brief  Macro for implementing the body of a simple ArrayDimTag
- *  \param ADT  name of the tag.
- */
 #define PHX_EXTENT( ADT ) \
   struct ADT {}; \
-  PHX_IS_EXTENT(ADT) \
-  PHX_PRINT(ADT)
+  PHX_IS_EXTENT(ADT)
 
 #endif

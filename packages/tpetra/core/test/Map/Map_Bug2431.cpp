@@ -228,7 +228,7 @@ int runTest(
     if (uniqueGids.size() != nonOverlapMap->getGlobalNumElements())
       errorFlag = -1;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     outStream << err.what() << "\n";
     errorFlag = -1000;
   };

@@ -60,6 +60,7 @@
 #endif
 
 #include "Xpetra_StridedMapFactory.hpp"
+#include "Xpetra_StridedMap.hpp"
 
 namespace {
   using Teuchos::Array;

@@ -49,7 +49,7 @@
 
 #include "Xpetra_BlockedVector_decl.hpp"
 
-#include "Xpetra_BlockedMultiVector_decl.hpp"
+#include "Xpetra_BlockedMultiVector.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 

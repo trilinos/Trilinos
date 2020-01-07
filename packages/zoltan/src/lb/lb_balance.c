@@ -971,7 +971,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
         }
         pdist[cnt] = num_proc;
       }
-      else { /* num_proc < max_global_parts */
+      else {
         /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS < num_proc. */
         /* Even distribution of processors to parts. */
         zz->LB.Single_Proc_Per_Part = 0;  /* Parts are spread across procs */

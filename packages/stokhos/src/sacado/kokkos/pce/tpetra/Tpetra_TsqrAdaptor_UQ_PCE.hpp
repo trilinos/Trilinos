@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -48,18 +46,18 @@
 
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 
-#  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#  include <Tsqr.hpp> // full (internode + intranode) TSQR
-#  include <Tsqr_DistTsqr.hpp> // internode TSQR
+#  include "Tsqr_NodeTsqrFactory.hpp" // create intranode TSQR object
+#  include "Tsqr.hpp" // full (internode + intranode) TSQR
+#  include "Tsqr_DistTsqr.hpp" // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#  include <Tsqr_TeuchosMessenger.hpp>
-#  include <Tpetra_MultiVector.hpp>
-#  include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#  include "Tsqr_TeuchosMessenger.hpp"
+#  include "Tpetra_MultiVector.hpp"
+#  include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #  include <stdexcept>
 
 // Base TsqrAdator template we will specialize
-#  include <Tpetra_TsqrAdaptor.hpp>
+#  include "Tpetra_TsqrAdaptor.hpp"
 
 namespace Tpetra {
 
@@ -81,16 +79,16 @@ namespace Tpetra {
     typedef typename mp_scalar_type::scalar_type scalar_type;
     typedef typename mp_scalar_type::ordinal_type mp_ordinal_type;
     typedef typename MV::local_ordinal_type ordinal_type;
-    typedef typename MV::node_type node_type;
     typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   private:
-    //typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
-    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
-    typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-    typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
+    using node_tsqr_factory_type =
+      TSQR::NodeTsqrFactory<scalar_type, ordinal_type,
+                            typename MV::device_type>;
+    using node_tsqr_type = TSQR::NodeTsqr<ordinal_type, scalar_type>;
+    using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
+    using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type>;
 
   public:
     /// \brief Constructor (that accepts a parameter list).
@@ -100,7 +98,7 @@ namespace Tpetra {
     ///   implementation.  For details, call \c getValidParameters()
     ///   and examine the documentation embedded therein.
     TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-      nodeTsqr_ (new node_tsqr_type),
+      nodeTsqr_ (node_tsqr_factory_type::getNodeTsqr ()),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
       ready_ (false)
@@ -110,7 +108,7 @@ namespace Tpetra {
 
     //! Constructor (that uses default parameters).
     TsqrAdaptor () :
-      nodeTsqr_ (new node_tsqr_type),
+      nodeTsqr_ (new node_tsqr_factory_type::getNodeTsqr ()),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
       ready_ (false)
@@ -289,18 +287,8 @@ namespace Tpetra {
     {
       if (! ready_) {
         prepareDistTsqr (mv);
-        prepareNodeTsqr (mv);
         ready_ = true;
       }
-    }
-
-    /// \brief Finish intraprocess TSQR initialization.
-    ///
-    /// \note It's OK to call this method more than once; it is idempotent.
-    void
-    prepareNodeTsqr (const MV& mv)
-    {
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_);
     }
 
     /// \brief Finish interprocess TSQR initialization.

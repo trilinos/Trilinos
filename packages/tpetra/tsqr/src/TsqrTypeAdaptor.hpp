@@ -114,8 +114,8 @@ namespace TSQR {
       /// \brief Type representing the whole TSQR method.
       ///
       /// Depends on \c node_tsqr_type and \c dist_tsqr_type.
-      typedef TSQR::Tsqr<LO, S, node_tsqr_type, dist_tsqr_type> tsqr_type;
-      typedef Teuchos::RCP<tsqr_type >                          tsqr_ptr;
+      using tsqr_type = TSQR::Tsqr<LO, S>;
+      typedef Teuchos::RCP<tsqr_type> tsqr_ptr;
 
       /// \typedef factory_type
       ///

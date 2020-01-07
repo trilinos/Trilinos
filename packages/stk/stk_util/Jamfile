@@ -244,7 +244,6 @@ lib stk_util_environment
     /mpi//mpi
     stk_util_util
     stk_util_parallel
-    /tpl/boost-program-options//boost_program_options
   :
     [ ifdevbuild
         # Any parameters within this 'ifdevbuild' block apply to development
@@ -313,8 +312,8 @@ lib stk_util_util
         [ glob $(stk_util-root)/stk_util/util/*.cpp ]
     ]
     /mpi//mpi
-    /tpl/boost-program-options//boost_program_options
     /tpl/trilinos//kokkoscore
+    /tpl/boost//boost_header_only_libs
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

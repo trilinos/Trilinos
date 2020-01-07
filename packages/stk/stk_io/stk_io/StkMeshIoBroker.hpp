@@ -655,6 +655,9 @@ namespace stk {
 
       // Returns 4 or 8 based on several hueristics to determine
       // the integer size required for an output database.
+
+      int check_integer_size_requirements_serial();
+      int check_integer_size_requirements_parallel();
       int check_integer_size_requirements();
       void create_surface_to_block_mapping();
 

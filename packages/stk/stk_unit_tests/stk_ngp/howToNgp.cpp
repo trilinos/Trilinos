@@ -57,7 +57,7 @@ TEST_F(NgpHowTo, loopOverSubsetOfMesh)
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
          0,2,SHELL_QUAD_4,5,6,7,8";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     double fieldVal = 13.0;
     set_field_on_device_and_copy_back(get_bulk(), stk::topology::ELEM_RANK, shellQuadPart, shellQuadField, fieldVal);
@@ -69,6 +69,40 @@ TEST_F(NgpHowTo, loopOverSubsetOfMesh)
             EXPECT_EQ(fieldVal, *stk::mesh::field_data(shellQuadField, elem));
         }
     }
+}
+
+template<typename MeshType>
+void test_mesh_up_to_date(stk::mesh::BulkData& bulk)
+{
+    //BEGINNgpMeshUpToDate
+    MeshType ngpMesh(bulk);
+    EXPECT_TRUE(ngpMesh.is_up_to_date());
+
+    bulk.modification_begin();
+    bulk.modification_end();
+
+    if(std::is_same<MeshType, ngp::StkMeshAdapter>::value) {
+      EXPECT_TRUE(ngpMesh.is_up_to_date());
+    } else {
+      EXPECT_FALSE(ngpMesh.is_up_to_date());
+    }
+    //ENDNgpMeshUpToDate
+}
+
+TEST_F(NgpHowTo, checkIfUpToDate)
+{
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::Part &shellQuadPart = get_meta().get_topology_root_part(stk::topology::SHELL_QUAD_4);
+    auto &shellQuadField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField");
+    double init = 0.0;
+    stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, &init);
+    std::string meshDesc =
+        "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
+         0,2,SHELL_QUAD_4,5,6,7,8";
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+    test_mesh_up_to_date<ngp::StaticMesh>(get_bulk());
+    test_mesh_up_to_date<ngp::StkMeshAdapter>(get_bulk());
 }
 
 template<typename MeshType, typename FieldType>
@@ -112,7 +146,7 @@ TEST_F(NgpHowTo, fieldOnSubsetOfMesh)
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
          0,2,SHELL_QUAD_4,5,6,7,8";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     double fieldVal = 13.0;
     set_field_on_device_and_copy_back(get_bulk(), stk::topology::ELEM_RANK, shellQuadPart, shellQuadField, fieldVal);
@@ -138,7 +172,7 @@ TEST_F(NgpHowTo, loopOverAllMeshNodes)
     double init = 0.0;
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     double fieldVal = 13.0;
     set_field_on_device_and_copy_back(get_bulk(), stk::topology::NODE_RANK, get_meta().universal_part(), field, fieldVal);
@@ -156,7 +190,7 @@ TEST_F(NgpHowTo, loopOverMeshFaces)
     double init = 0.0;
     stk::mesh::put_field_on_mesh(field, facePart, &init);
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_meta().universal_part(), {&facePart});
 
@@ -218,7 +252,7 @@ TEST_F(NgpHowTo, loopOverElemNodes)
     double init = 0.0;
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
 #ifndef KOKKOS_ENABLE_CUDA
     run_connected_node_test<ngp::StkMeshAdapter>(get_bulk());
@@ -267,7 +301,7 @@ NGP_TEST_F(NgpHowTo, checkElemNodeIds)
   }
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-  stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
 #ifndef KOKKOS_ENABLE_CUDA
     run_id_test<ngp::StkMeshAdapter>(get_bulk());
@@ -694,10 +728,16 @@ TEST_F(NgpHowTo, exerciseAura)
     auto &field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK, "myField");
     int init = 1;
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
-    std::string meshDesc =
-        "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
-         1,2,HEX_8,5,6,7,8,9,10,11,12";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    std::string meshDesc;
+    if (get_parallel_size() == 1) {
+        meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
+                   "0,2,HEX_8,5,6,7,8,9,10,11,12";
+    }
+    else {
+        meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
+                   "1,2,HEX_8,5,6,7,8,9,10,11,12";
+    }
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     set_num_elems_in_field_on_device_and_copy_back(get_bulk(), get_meta().universal_part(), field);
 
@@ -1130,7 +1170,7 @@ TEST_F(NgpHowTo, checkPartMembership)
     stk::mesh::Part& testPart = get_meta().declare_part("testPart", stk::topology::NODE_RANK);
 
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     stk::mesh::Entity node1 = get_bulk().get_entity(stk::topology::NODE_RANK, 1u);
     stk::mesh::Entity node2 = get_bulk().get_entity(stk::topology::NODE_RANK, 2u);

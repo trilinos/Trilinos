@@ -341,6 +341,9 @@ public:
              }
              newParts(offset++) = oldPartOrds(i);
          }
+         if (!alreadyAddedNewPart) {
+           newParts(offset) = partOrdToAdd;
+         }
          return newParts;
     }
 

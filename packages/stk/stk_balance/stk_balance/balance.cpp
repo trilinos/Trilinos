@@ -409,20 +409,60 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
     initial_decomp_and_balance(bulk, balanceSettings, exodusFilename, outputFilename, initialDecompMethod);
 }
 
-void run_stk_rebalance(const std::string& outputDirectory, const std::string& inputFile, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
+StkBalanceSettings create_balance_settings(const stk::balance::ParsedOptions & options)
 {
-    StkBalanceSettings balanceSettings;
+  StkBalanceSettings balanceSettings;
+  SearchToleranceType searchToleranceType = ABSOLUTE;
 
-    if (appType == stk::balance::SD_DEFAULTS)
-    {
-        balanceSettings.setShouldFixSpiders(true);
+  if (options.is_option_provided(stk::balance::ParsedOptions::APP_TYPE)) {
+    if (options.appTypeDefaults == stk::balance::SD_DEFAULTS) {
+      balanceSettings.setShouldFixSpiders(true);
     }
-    else if (appType == stk::balance::SM_DEFAULTS)
-    {
-        balanceSettings.setEdgeWeightForSearch(3.0);
-        balanceSettings.setVertexWeightMultiplierForVertexInSearch(10.0);
-        balanceSettings.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+    else if (options.appTypeDefaults == stk::balance::SM_DEFAULTS) {
+      balanceSettings.setEdgeWeightForSearch(3.0);
+      balanceSettings.setVertexWeightMultiplierForVertexInSearch(10.0);
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+      searchToleranceType = RELATIVE;
     }
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::CONTACT_SEARCH)) {
+    balanceSettings.setIncludeSearchResultsInGraph(options.useContactSearch);
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_ABS_TOL)) searchToleranceType = ABSOLUTE;
+  if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_REL_TOL)) searchToleranceType = RELATIVE;
+
+  if (searchToleranceType == ABSOLUTE) {
+    const double tolerance = options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_ABS_TOL) ?
+                             options.faceSearchAbsTol : stk::balance::defaultFaceSearchTolerance;
+    balanceSettings.setToleranceForFaceSearch(tolerance);
+  }
+  else if (searchToleranceType == RELATIVE) {
+    if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_REL_TOL)) {
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(options.faceSearchRelTol));
+    }
+    else {
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+    }
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::DECOMP_METHOD)) {
+    balanceSettings.setDecompMethod(options.decompMethod);
+  }
+
+  return balanceSettings;
+}
+
+void run_stk_rebalance(const stk::balance::ParsedOptions& options,  MPI_Comm comm)
+{
+    const std::string& outputDirectory = options.outputDirectory;
+    const std::string& inputFile = options.m_inFile;
+
+    StkBalanceSettings balanceSettings = create_balance_settings(options);
 
     std::string outputFilename = construct_output_file_name(outputDirectory, inputFile);
     run_stk_balance_with_settings(outputFilename, inputFile, comm, balanceSettings);
