@@ -283,14 +283,14 @@ namespace MueLu {
       } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB );
         if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based" << std::endl;
-      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "forbidden array") {
+      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based bit set") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT );
-        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: forbidden array" << std::endl;
+        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertext based bit set" << std::endl;
       } else if(pL.get<std::string>("aggregation: coloring algorithm") == "edge filtering") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT_EF );
         if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: edge filtering" << std::endl;
       } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 2 coloring algorithm, valid options are: serial, default, matrix squared, vertex based, forbidden array, edge filtering")
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 2 coloring algorithm, valid options are: serial, default, matrix squared, vertex based, vertex based bit set, edge filtering")
       }
 
       //Create device views for graph rowptrs/colinds
