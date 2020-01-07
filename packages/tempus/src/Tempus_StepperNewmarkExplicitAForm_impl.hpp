@@ -65,15 +65,12 @@ StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm()
   this->setUseFSAL(            this->getUseFSALDefault());
   this->setICConsistency(      this->getICConsistencyDefault());
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
-
-  //this->setObserver();
 }
 
 
 template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
@@ -84,8 +81,6 @@ StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
-
-  //this->setObserver(obs);
 
   setGamma(gamma);
 

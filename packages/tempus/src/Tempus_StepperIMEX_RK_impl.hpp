@@ -33,7 +33,7 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK()
   this->setZeroInitialGuess(   false);
 
   this->setTableaus("IMEX RK SSP2");
-  this->setObserver();
+  this->setObserver(Teuchos::rcp(new StepperRKObserver<Scalar>()));
   this->setDefaultSolver();
 }
 
@@ -41,7 +41,7 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK()
 template<class Scalar>
 StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   bool useFSAL,
   std::string ICConsistency,
@@ -346,29 +346,12 @@ void StepperIMEX_RK<Scalar>::setModelPair(
 
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperRKObserver<Scalar> > obs)
 {
-  if (this->stepperObserver_ == Teuchos::null)
-     this->stepperObserver_  =
-        Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+  if (obs != Teuchos::null) stepperRKObserver_ = obs;
 
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
-    return;
-
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
-     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
-
-    // Check that this casts to prevent a runtime error if it doesn't
-  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
-    this->stepperObserver_->addObserver(
-         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
-  } else {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"setObserver");
-    *out << "Tempus::StepperIMEX_RK::setObserver: Warning: An observer has been provided that";
-    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
-    *out << " In the future, this will result in a runtime error!" << std::endl;
-  }
+  if (stepperRKObserver_ == Teuchos::null)
+    stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
 
   this->isInitialized_ = false;
 }
@@ -534,7 +517,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperRKObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -554,7 +537,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
-      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+      stepperRKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j = 0; j < i; ++j) {
         if (AHat(i,j) != Teuchos::ScalarTraits<Scalar>::zero())
@@ -575,7 +558,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
           assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           Thyra::assign(stageX_.ptr(), *xTilde_);
-          this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
+          stepperRKObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
           evalImplicitModelExplicitly(stageX_, ts, dt, i, stageG_[i]);
         }
       } else {
@@ -591,22 +574,22 @@ void StepperIMEX_RK<Scalar>::takeStep(
         auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
           timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
 
-        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+        stepperRKObserver_->observeBeforeSolve(solutionHistory, *this);
 
         const Thyra::SolveStatus<Scalar> sStatus =
           this->solveImplicitODE(stageX_, stageG_[i], ts, p);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
-        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+        stepperRKObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *stageX_, alpha, *xTilde_);
       }
 
-      this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+      stepperRKObserver_->observeBeforeExplicit(solutionHistory, *this);
       evalExplicitModel(stageX_, tHats, dt, i, stageF_[i]);
-      this->stepperObserver_->observeEndStage(solutionHistory, *this);
+      stepperRKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 - dt*Sum{ bHat(i)*f(i) + b(i)*g(i) }
@@ -622,7 +605,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperRKObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -666,7 +649,7 @@ void StepperIMEX_RK<Scalar>::describe(
   numStages = stageG_.size();
   for (int i=0; i<numStages; ++i)
     out << "    stageG_["<<i<<"] = " << stageG_[i] << std::endl;
-  out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
+  out << "  stepperRKObserver_ = " << stepperRKObserver_ << std::endl;
   out << "  order_             = " << order_ << std::endl;
   out << "--------------------------------" << std::endl;
 }
@@ -698,7 +681,7 @@ bool StepperIMEX_RK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
     out << "The wrapper ModelEvaluator is not set!\n";
   }
 
-  if (stepperObserver_ == Teuchos::null) {
+  if (stepperRKObserver_ == Teuchos::null) {
     isValidSetup = false;
     out << "The stepper observer is not set!\n";
   }

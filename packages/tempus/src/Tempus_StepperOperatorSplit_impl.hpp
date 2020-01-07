@@ -29,7 +29,7 @@ StepperOperatorSplit<Scalar>::StepperOperatorSplit()
   this->setOrderMin(1);
   this->setOrderMax(1);
 
-  this->setObserver();
+  this->setObserver(Teuchos::rcp(new StepperOperatorSplitObserver<Scalar>()));
 
   OpSpSolnHistory_ = rcp(new SolutionHistory<Scalar>());
   OpSpSolnHistory_->setStorageLimit(2);
@@ -40,7 +40,7 @@ template<class Scalar>
 StepperOperatorSplit<Scalar>::StepperOperatorSplit(
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
   std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperOperatorSplitObserver<Scalar> >& obs,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
@@ -117,18 +117,12 @@ void StepperOperatorSplit<Scalar>::setSolver(
 
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (stepperOSObserver_ == Teuchos::null) {
-      stepperOSObserver_ =
-        Teuchos::rcp(new StepperOperatorSplitObserver<Scalar>());
-     }
-  } else {
-    stepperOSObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs, true);
-  }
+  if (obs != Teuchos::null) stepperOSObserver_ = obs;
+
+  if (stepperOSObserver_ == Teuchos::null)
+    stepperOSObserver_ = Teuchos::rcp(new StepperOperatorSplitObserver<Scalar>());
 
   this->isInitialized_ = false;
 }

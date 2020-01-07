@@ -1,3 +1,4 @@
+#include "Tempus_StepperRKObserverComposite.hpp"
 // @HEADER
 // ****************************************************************************
 //                Tempus: Copyright (2017) Sandia Corporation
@@ -14,6 +15,7 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 #include "Tempus_StepperRKButcherTableau.hpp"
 

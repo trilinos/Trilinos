@@ -11,7 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
 #include "Tempus_StepperLeapfrogObserver.hpp"
 
 
@@ -88,18 +87,17 @@ public:
   /// Constructor
   StepperLeapfrog(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+    const Teuchos::RCP<StepperLeapfrogObserver<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setObserver(Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
+    virtual Teuchos::RCP<StepperLeapfrogObserver<Scalar> > getObserver() const
+    { return stepperLFObserver_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -142,7 +140,6 @@ public:
 
 protected:
 
-  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
   Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
 
 };

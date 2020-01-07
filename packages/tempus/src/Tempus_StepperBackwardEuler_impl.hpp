@@ -31,7 +31,7 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
-  this->setObserver();
+  this->setObserver(Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>()));
   this->setDefaultSolver();
   this->setPredictor("None");
 }
@@ -40,7 +40,7 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler()
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperBackwardEulerObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
   bool useFSAL,
@@ -110,7 +110,13 @@ template<class Scalar>
 void StepperBackwardEuler<Scalar>::setPredictor(
   Teuchos::RCP<Stepper<Scalar> > predictorStepper)
 {
+
+
+
+
+
   predictorStepper_ = predictorStepper;
+
 
   if (predictorStepper != Teuchos::null &&
       this->wrapperModel_ != Teuchos::null) {
@@ -131,22 +137,12 @@ void StepperBackwardEuler<Scalar>::setPredictor(
 
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperBEObserver_ =
-        Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperBEObserver_,true);
-    }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperBEObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperBackwardEulerObserver<Scalar> >
-        (this->stepperObserver_,true);
-  }
+  if (obs != Teuchos::null) stepperBEObserver_ = obs;
+
+  if (stepperBEObserver_ == Teuchos::null)
+    stepperBEObserver_ = Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());
 
   this->isInitialized_ = false;
 }
@@ -195,7 +191,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperBEObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -236,7 +232,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperBEObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

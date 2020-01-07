@@ -127,8 +127,6 @@ protected:
   Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
-
   // RCP to state or temporary storage if needed.
   Teuchos::RCP<Thyra::VectorBase<Scalar> >           stepperX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >           stepperXDot_;

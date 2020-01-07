@@ -10,6 +10,7 @@
 #define Tempus_StepperNewmarkImplicitAForm_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 
 namespace Tempus {
@@ -85,7 +86,6 @@ public:
   /// Constructor
   StepperNewmarkImplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -100,8 +100,7 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
+    virtual void setObserver(Teuchos::RCP<StepperObserver<Scalar> > /* obs */){}
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }

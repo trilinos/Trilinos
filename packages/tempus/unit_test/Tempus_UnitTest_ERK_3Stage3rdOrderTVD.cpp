@@ -14,6 +14,7 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 #include "Tempus_StepperRKButcherTableau.hpp"
 

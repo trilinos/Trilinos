@@ -31,7 +31,7 @@ StepperBDF2<Scalar>::StepperBDF2()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
-  this->setObserver();
+  this->setObserver(Teuchos::rcp(new StepperBDF2Observer<Scalar>()));
   this->setDefaultSolver();
   this->setStartUpStepper("DIRK 1 Stage Theta Method");
 }
@@ -40,7 +40,7 @@ StepperBDF2<Scalar>::StepperBDF2()
 template<class Scalar>
 StepperBDF2<Scalar>::StepperBDF2(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+  const Teuchos::RCP<StepperBDF2Observer<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
   bool useFSAL,
@@ -123,22 +123,12 @@ void StepperBDF2<Scalar>::setStartUpStepper(
 
 template<class Scalar>
 void StepperBDF2<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
+  Teuchos::RCP<StepperBDF2Observer<Scalar> > obs)
 {
-  if (this->stepperObserver_ == Teuchos::null)
-    this->stepperObserver_  =
-      Teuchos::rcp(new StepperObserverComposite<Scalar>());
+  if (obs != Teuchos::null) stepperBDF2Observer_ = obs;
 
-  if (obs == Teuchos::null) {
-    if (stepperBDF2Observer_ == Teuchos::null)
-      stepperBDF2Observer_ = Teuchos::rcp(new StepperBDF2Observer<Scalar>());
-    if (this->stepperObserver_->getSize() == 0)
-      this->stepperObserver_->addObserver(stepperBDF2Observer_);
-  } else {
-    stepperBDF2Observer_ =
-      Teuchos::rcp_dynamic_cast<StepperBDF2Observer<Scalar> >(obs,true);
-    this->stepperObserver_->addObserver(stepperBDF2Observer_);
-  }
+  if (stepperBDF2Observer_ == Teuchos::null)
+    stepperBDF2Observer_ = Teuchos::rcp(new StepperBDF2Observer<Scalar>());
 
   this->isInitialized_ = false;
 }
@@ -197,7 +187,7 @@ void StepperBDF2<Scalar>::takeStep(
     //IKT, FIXME: add error checking regarding states being consecutive and
     //whether interpolated states are OK to use.
 
-    //this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperBDF2Observer_->observeBeginTakeStep(solutionHistory, *this);
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
@@ -239,7 +229,7 @@ void StepperBDF2<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(getOrder());
     workingState->computeNorms(currentState);
-    //this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperBDF2Observer_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

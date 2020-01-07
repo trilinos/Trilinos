@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperTrapezoidalObserver_hpp
 #define Tempus_StepperTrapezoidalObserver_hpp
 
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 

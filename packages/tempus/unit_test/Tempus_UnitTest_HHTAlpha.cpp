@@ -86,7 +86,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, Construction)
 
   // Full argument list construction.
   stepper = rcp(new Tempus::StepperHHTAlpha<double>(
-    model, Teuchos::null, solver, useFSAL,
+    model, solver, useFSAL,
     ICConsistency, ICConsistencyCheck, zeroInitialGuess,
     schemeName, beta, gamma, alpha_f, alpha_m));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());

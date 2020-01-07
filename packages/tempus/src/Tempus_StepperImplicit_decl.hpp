@@ -148,8 +148,6 @@ protected:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initialGuess_;
   bool zeroInitialGuess_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
-
   // RCP to state or temporary storage if needed.
   Teuchos::RCP<Thyra::VectorBase<Scalar> >            stepperXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >            stepperXDotDot_;

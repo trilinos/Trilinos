@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperBDF2Observer_hpp
 #define Tempus_StepperBDF2Observer_hpp
 
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 

@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperOperatorSplitObserver_hpp
 #define Tempus_StepperOperatorSplitObserver_hpp
 
+#include "Tempus_StepperObserver.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 

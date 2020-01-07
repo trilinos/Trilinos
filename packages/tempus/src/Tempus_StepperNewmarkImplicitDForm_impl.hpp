@@ -187,14 +187,12 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
   this->setZeroInitialGuess(   false);
   this->setSchemeName(         "Average Acceleration");
 
-  this->setObserver();
   this->setDefaultSolver();
 }
 
 template <class Scalar>
 StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   bool useFSAL,
   std::string ICConsistency,
@@ -213,8 +211,6 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
   this->setSchemeName(         schemeName);
   this->setBeta(               beta);
   this->setGamma(              gamma);
-
-  this->setObserver(obs);
   this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
