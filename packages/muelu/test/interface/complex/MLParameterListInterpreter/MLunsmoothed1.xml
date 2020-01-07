@@ -1,3 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="aggregation: damping factor"     type="double"   value="0.0"/>
-</ParameterList>
