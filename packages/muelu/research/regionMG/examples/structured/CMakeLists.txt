@@ -103,7 +103,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_repartitioning_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof_rebalance.xml"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_1dof_rebalance.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
@@ -183,7 +183,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Elasticity3D_repartitioning_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --tol=1.0e-8  --coarseSolverType=amg --coarseAmgXml=amg_3dof_rebalance.xml"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --tol=1.0e-8  --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_3dof_rebalance.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
