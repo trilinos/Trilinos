@@ -63,7 +63,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
     export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
     export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
     export CPATH=${BINUTILS_ROOT}/include:${CPATH}
-    export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;${BINUTILS_ROOT}/lib/libiberty.a"
+    export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib/libiberty.a"
 
     #export CC=mpicc
     #export CXX=mpicxx
@@ -98,9 +98,14 @@ export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${NETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
-export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
-export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
+#export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${NETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+#export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+#export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
+if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
+  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+  export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a;${METIS_ROOT}/lib/libmetis.a"
+fi
 
 # not sure what below does.  It was in the original environment script
 #unset ATTB_ENV
@@ -110,15 +115,16 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_EXEC=srun
-export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
-export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=--ntasks
+#export ATDM_CONFIG_MPI_EXEC=srun
+#export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
+#export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=--ntasks
+export ATDM_CONFIG_MPI_POST_FLAGS="-map-by;socket:PE=4"
 
 # Set the default compilers
 export CC=mpicc
 export CXX=mpicxx
 
 # Define function atdm_run_script_on_compute_node
-source $ATDM_SCRIPT_DIR/common/define_run_on_slurm_compute_node_func.sh
+#source $ATDM_SCRIPT_DIR/common/define_run_on_slurm_compute_node_func.sh
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
