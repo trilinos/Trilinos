@@ -59,11 +59,11 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
     export PATH=${COMPILER_ROOT}/bin:${PATH}
     export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
     export BINUTILS_ROOT=${COMPILER_ROOT}
-    export LIBRARY_PATH=${BINUTILS_ROOT}/lib:${LIBRARY_PATH}
+    export LIBRARY_PATH=${BINUTILS_ROOT}/lib
     export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
     export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
     export CPATH=${BINUTILS_ROOT}/include:${CPATH}
-    export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib/libiberty.a"
+    export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;${BINUTILS_ROOT}/lib/libiberty.a"
 
     #export CC=mpicc
     #export CXX=mpicxx
@@ -81,7 +81,7 @@ fi
 #TODO: don't use intel for this... do we need a new environment_new.sh file?
 #export ATDM_CONFIG_LAPACK_LIBS="-mkl"
 #export ATDM_CONFIG_BLAS_LIBS="-mkl"
-export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
+export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp;-lz" #;-Wl,-verbose
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 
 export BOOST_ROOT=${sparc_tpl_base}/boost-1.65.1/00000000/${sparc_tpl_ext}
