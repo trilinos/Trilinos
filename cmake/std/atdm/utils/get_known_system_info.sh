@@ -51,7 +51,6 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   ride
   mutrino   # Will be repalced by 'ats1'
   waterman
-  serrano
   cts1
   tlcc2
   sems-rhel7
@@ -101,19 +100,19 @@ elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
 
-# Specifically named cts1 systems (currently maps to 'serrano' env)
+# Specifically named cts1 systems
 elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
   hostnameMatch=serrano
-  hostnameMatchSystemName=serrano
+  hostnameMatchSystemName=cts1
 elif [[ $realHostname == "eclipse"* ]] || [[ $realHostname =~ ec[0-9]+ ]] ; then
   hostnameMatch=eclipse
-  hostnameMatchSystemName=serrano
+  hostnameMatchSystemName=cts1
 elif [[ $realHostname == "ghost"* ]] || [[ $realHostname =~ gho[0-9]+ ]] ; then
   hostnameMatch=ghost
-  hostnameMatchSystemName=serrano
+  hostnameMatchSystemName=cts1
 elif [[ $realHostname == "attaway"* ]] || [[ $realHostname =~ swa[0-9]+ ]] ; then
   hostnameMatch=attaway
-  hostnameMatchSystemName=serrano
+  hostnameMatchSystemName=cts1
 # End specifically named systems
 fi
 
