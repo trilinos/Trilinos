@@ -167,3 +167,295 @@ Smoother (level 2) both : MueLu::IfpackSmoother{type = Chebyshev}
 Smoother (level 3) pre  : MueLu::AmesosSmoother{type = <ignored>}
 Smoother (level 3) post : no smoother
 
+Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
+keep smoother data = 0   [default]
+PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+smoother -> 
+ chebyshev: degree = 2
+ chebyshev: ratio eigenvalue = 20   [unused]
+ chebyshev: min eigenvalue = 1
+ chebyshev: zero starting solution = 1
+ chebyshev: eigenvalue max iterations = 10
+
+Level 2
+Build (MueLu::RebalanceTransferFactory)
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
+Build (MueLu::CoalesceDropFactory)
+Build (MueLu::AmalgamationFactory)
+[empty list]
+
+algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
+aggregation: drop tol = 0.02
+aggregation: Dirichlet threshold = 0   [default]
+aggregation: drop scheme = distance laplacian
+lightweight wrap = 1
+
+Lumping dropped entries
+filtered matrix: use lumping = 1
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
+BuildAggregates (Phase - (Dirichlet))
+BuildAggregates (Phase 1 (main))
+BuildAggregates (Phase 2a (secondary))
+BuildAggregates (Phase 2b (expansion))
+BuildAggregates (Phase 3 (cleanup))
+aggregation: max agg size = -1   [default]
+aggregation: min agg size = 2   [default]
+aggregation: max selected neighbors = 0   [default]
+aggregation: ordering = natural   [default]
+aggregation: enable phase 1 = 1   [default]
+aggregation: enable phase 2a = 1   [default]
+aggregation: enable phase 2b = 1   [default]
+aggregation: enable phase 3 = 1   [default]
+aggregation: preserve Dirichlet points = 0   [default]
+aggregation: allow user-specified singletons = 0   [default]
+aggregation: use interface aggregation = 0   [default]
+aggregation: error on nodes with no on-rank neighbors = 0   [default]
+aggregation: phase3 avoid singletons = 0   [default]
+OnePt aggregate map name =    [default]
+OnePt aggregate map factory =    [default]
+Interface aggregate map name =    [default]
+Interface aggregate map factory =    [default]
+
+Nullspace factory (MueLu::NullspaceFactory)
+Fine level nullspace = Nullspace
+
+Build (MueLu::CoarseMapFactory)
+Striding info = {}   [default]
+Strided block id = -1   [default]
+Domain GID offsets = {0}   [default]
+
+tentative: calculate qr = 1   [default]
+tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+Transpose P (MueLu::TransPFactory)
+matrixmatrix: kernel params -> 
+ [empty list]
+
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
+Transferring coordinates
+structured aggregation = 0   [default]
+aggregation coupled = 0   [default]
+Geometric = 0   [default]
+write start = -1   [default]
+write end = -1   [default]
+hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
+
+transpose: use implicit = 0   [default]
+rap: triple product = 0   [default]
+rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
+CheckMainDiagonal = 0   [default]
+RepairMainDiagonal = 0   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+Build (MueLu::RepartitionHeuristicFactory)
+repartition: start level = 1
+repartition: node repartition level = -1   [default]
+repartition: min rows per proc = 2000
+repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
+repartition: max imbalance = 1.327
+
+Build (MueLu::Zoltan2Interface)
+ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+
+repartition: print partition distribution = 0   [default]
+repartition: remap parts = 1
+repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
+
+Using original prolongator
+repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
+transpose: use implicit = 0   [default]
+repartition: use subcommunicators = 1   [default]
+type = Interpolation
+write start = -1   [default]
+write end = -1   [default]
+
+Build (MueLu::RebalanceTransferFactory)
+Using original restrictor
+repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
+transpose: use implicit = 0   [default]
+repartition: use subcommunicators = 1   [default]
+type = Restriction
+write start = -1   [default]
+write end = -1   [default]
+
+Computing Ac (MueLu::RebalanceAcFactory)
+repartition: use subcommunicators = 1   [default]
+
+Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
+keep smoother data = 0   [default]
+PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+smoother -> 
+ chebyshev: degree = 2
+ chebyshev: ratio eigenvalue = 20   [unused]
+ chebyshev: min eigenvalue = 1
+ chebyshev: zero starting solution = 1
+ chebyshev: eigenvalue max iterations = 10
+
+Level 3
+Build (MueLu::RebalanceTransferFactory)
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
+Build (MueLu::CoalesceDropFactory)
+Build (MueLu::AmalgamationFactory)
+[empty list]
+
+algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
+aggregation: drop tol = 0.02
+aggregation: Dirichlet threshold = 0   [default]
+aggregation: drop scheme = distance laplacian
+lightweight wrap = 1
+
+Lumping dropped entries
+filtered matrix: use lumping = 1
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
+BuildAggregates (Phase - (Dirichlet))
+BuildAggregates (Phase 1 (main))
+BuildAggregates (Phase 2a (secondary))
+BuildAggregates (Phase 2b (expansion))
+BuildAggregates (Phase 3 (cleanup))
+aggregation: max agg size = -1   [default]
+aggregation: min agg size = 2   [default]
+aggregation: max selected neighbors = 0   [default]
+aggregation: ordering = natural   [default]
+aggregation: enable phase 1 = 1   [default]
+aggregation: enable phase 2a = 1   [default]
+aggregation: enable phase 2b = 1   [default]
+aggregation: enable phase 3 = 1   [default]
+aggregation: preserve Dirichlet points = 0   [default]
+aggregation: allow user-specified singletons = 0   [default]
+aggregation: use interface aggregation = 0   [default]
+aggregation: error on nodes with no on-rank neighbors = 0   [default]
+aggregation: phase3 avoid singletons = 0   [default]
+OnePt aggregate map name =    [default]
+OnePt aggregate map factory =    [default]
+Interface aggregate map name =    [default]
+Interface aggregate map factory =    [default]
+
+Nullspace factory (MueLu::NullspaceFactory)
+Fine level nullspace = Nullspace
+
+Build (MueLu::CoarseMapFactory)
+Striding info = {}   [default]
+Strided block id = -1   [default]
+Domain GID offsets = {0}   [default]
+
+tentative: calculate qr = 1   [default]
+tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+Transpose P (MueLu::TransPFactory)
+matrixmatrix: kernel params -> 
+ [empty list]
+
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
+Transferring coordinates
+structured aggregation = 0   [default]
+aggregation coupled = 0   [default]
+Geometric = 0   [default]
+write start = -1   [default]
+write end = -1   [default]
+hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
+
+transpose: use implicit = 0   [default]
+rap: triple product = 0   [default]
+rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
+CheckMainDiagonal = 0   [default]
+RepairMainDiagonal = 0   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+Build (MueLu::RepartitionHeuristicFactory)
+repartition: start level = 1
+repartition: node repartition level = -1   [default]
+repartition: min rows per proc = 2000
+repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
+repartition: max imbalance = 1.327
+
+Build (MueLu::Zoltan2Interface)
+ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+
+repartition: print partition distribution = 0   [default]
+repartition: remap parts = 1
+repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
+
+Using original prolongator
+repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
+transpose: use implicit = 0   [default]
+repartition: use subcommunicators = 1   [default]
+type = Interpolation
+write start = -1   [default]
+write end = -1   [default]
+
+Build (MueLu::RebalanceTransferFactory)
+Using original restrictor
+repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
+transpose: use implicit = 0   [default]
+repartition: use subcommunicators = 1   [default]
+type = Restriction
+write start = -1   [default]
+write end = -1   [default]
+
+Computing Ac (MueLu::RebalanceAcFactory)
+repartition: use subcommunicators = 1   [default]
+
+Max coarse size (<= 1000) achieved
+Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
+keep smoother data = 0   [default]
+PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+presmoother -> 
+ [empty list]
+
