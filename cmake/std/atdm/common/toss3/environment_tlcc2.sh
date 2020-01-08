@@ -25,7 +25,7 @@ module purge
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env
 module load atdm-env
-module load atdm-cmake/3.10.1
+module load cmake/3.12.2
 module load atdm-ninja_fortran/1.7.2
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
@@ -142,14 +142,14 @@ function atdm_run_script_on_compute_node {
   else
     account=${account_input}
   fi
-  
+
   if [ -e $output_file ] ; then
     echo "Remove existing file $output_file"
     rm $output_file
   fi
   echo "Create empty file $output_file"
   touch $output_file
-  
+
   echo
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
@@ -157,22 +157,22 @@ function atdm_run_script_on_compute_node {
     -J $ATDM_CONFIG_BUILD_NAME --account=${account} ${script_to_run} &
   SBATCH_PID=$!
   set +x
-  
+
   echo
   echo "Tailing output file $output_file in the background ..."
   set -x
   tail -f $output_file &
   TAIL_BID=$!
   set +x
-  
+
   echo
   echo "Waiting for SBATCH_PID=$SBATCH_PID ..."
   wait $SBATCH_PID
-  
+
   echo
   echo "Kill TAIL_BID=$TAIL_BID"
   kill -s 9 $TAIL_BID
-  
+
   echo
   echo "Finished running ${script_to_run}!"
   echo
@@ -190,5 +190,3 @@ export -f atdm_run_script_on_compute_node
 # with --wait but is backgrouned to allow this to happen.  Then we wait for
 # the 'sbatch' command to complete and then we kill the 'tail -f' command.
 # That might seem overly complex but that gets the job done.
-
-
