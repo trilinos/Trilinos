@@ -19,7 +19,7 @@ function atdm_run_script_on_compute_node {
 #  elif [[ "${ATDM_CONFIG_SBATCH_DEFAULT_TIMEOUT}" != "" ]] ; then
 #    timeout=${ATDM_CONFIG_SBATCH_DEFAULT_TIMEOUT}
 #  else
-    timeout=4:OO
+    timeout=04:00
 #  fi
 
   if [ "${account_input}" != "" ] ; then
@@ -41,7 +41,7 @@ function atdm_run_script_on_compute_node {
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
   #echo "bsub -J ${JOBNAME}-Test1 -W 06:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
-  bsub -J $ATDM_CONFIG_BUILD_NAME -W ${timeout} -Is ./${script_to_run} &> $output_file &
+  bsub -J $ATDM_CONFIG_BUILD_NAME -W ${timeout} -Is ${script_to_run} &> $output_file &
   SBATCH_PID=$!
   set +x
 
