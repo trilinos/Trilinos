@@ -542,7 +542,7 @@ namespace Amesos2 {
                                                       indexBase,
                                                       Op::getMapFromMatrix(mat) //getMap must be the map returned, NOT rowmap or colmap
                                                       );
-        typename Matrix::global_size_t nnz_temp;
+        typename Matrix::global_size_t nnz_temp = 0; // only setting because Cuda gives warning used before unset
         Op::template apply_kokkos_view<KV_S, KV_GO, KV_GS>(mat, nzvals,
           indices, pointers, nnz_temp, Teuchos::ptrInArg(*map), distribution, ordering);
         nnz = Teuchos::as<typename KV_GS::value_type>(nnz_temp);

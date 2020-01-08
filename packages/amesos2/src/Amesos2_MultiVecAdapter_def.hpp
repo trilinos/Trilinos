@@ -306,6 +306,7 @@ namespace Amesos2{
       mv->put1dData (data_tmp (), ldx, distribution_map, distribution);
     }
 
+
     /** \internal
      *
      * \brief Helper class for putting 1-D data arrays into multivectors

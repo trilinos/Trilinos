@@ -41,20 +41,8 @@
 //
 // @HEADER
 
-// This file is used for TachoSolver and TachoHostSolver
-// So include guards exist twice
-#if (defined(AMESOS2_TACHO_BUILD_SOLVER) && !defined(TACHO_BUILT_SOLVER_DEF_HPP)) || \
-    (defined(TACHOHOST_BUILD_SOLVER) && !defined(TACHOHOST_BUILT_SOLVER_DEF_HPP))
-
-#ifdef AMESOS2_TACHO_BUILD_SOLVER
-  #define TACHO_BUILT_SOLVER_DEF_HPP
-  #define TACHO_SOLVER_CHAR_NAME "Tacho"
-#endif
-
-#ifdef TACHOHOST_BUILD_SOLVER
-  #define TACHOHOST_BUILT_SOLVER_DEF_HPP
-  #define TACHO_SOLVER_CHAR_NAME "TachoHost"
-#endif
+#ifndef AMESOS2_TACHO_DEF_HPP
+#define AMESOS2_TACHO_DEF_HPP
 
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -67,23 +55,23 @@
 namespace Amesos2 {
 
 template <class Matrix, class Vector>
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::AMESOS2_TACHO_SOLVER_NAME(
+TachoSolver<Matrix,Vector>::TachoSolver(
   Teuchos::RCP<const Matrix> A,
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
-  : SolverCore<Amesos2::AMESOS2_TACHO_SOLVER_NAME,Matrix,Vector>(A, X, B)
+  : SolverCore<Amesos2::TachoSolver,Matrix,Vector>(A, X, B)
 {
 }
 
 
 template <class Matrix, class Vector>
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::~AMESOS2_TACHO_SOLVER_NAME( )
+TachoSolver<Matrix,Vector>::~TachoSolver( )
 {
 }
 
 template <class Matrix, class Vector>
 std::string
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::description() const
+TachoSolver<Matrix,Vector>::description() const
 {
   std::ostringstream oss;
   oss << "Tacho solver interface";
@@ -92,14 +80,14 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::description() const
 
 template<class Matrix, class Vector>
 int
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::preOrdering_impl()
+TachoSolver<Matrix,Vector>::preOrdering_impl()
 {
   return(0);
 }
 
 template <class Matrix, class Vector>
 int
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::symbolicFactorization_impl()
+TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 {
   int status = 0;
   if ( this->root_ ) {
@@ -120,7 +108,7 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::symbolicFactorization_impl()
 
 template <class Matrix, class Vector>
 int
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::numericFactorization_impl()
+TachoSolver<Matrix,Vector>::numericFactorization_impl()
 {
   int status = 0;
   if ( this->root_ ) {
@@ -134,7 +122,7 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::numericFactorization_impl()
 
 template <class Matrix, class Vector>
 int
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
+TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
@@ -147,13 +135,6 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVec
   // also don't allocate x since we will also use do_get to allocate this if
   // necessary. When a copy is not necessary we'll solve directly to the x
   // values in the MV.
-
-  // MDM-DISCUSS If copying is necessaery this is going to copy x values which we
-  // don't care about. So need to refine this. Also the do_put below should
-  // not be called at all for the case where the x get was just assigned.
-  // I didn't fix this yet because the logic which determines if a copy
-  // is necessary currently happens at a low level in the copy manager. Need
-  // some form of API call at this level to determine what the outcome will be.
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
@@ -163,6 +144,11 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVec
                              device_solve_array_t>::do_get(B, this->bValues_,
                                                as<size_t>(ld_rhs),
                                                ROOTED, this->rowIndexBase_);
+
+    // If it's not a match and we copy instead of ptr assignement, we will
+    // copy the x values here when we just wanted to get uninitialized space.
+    // MDM-DISCUSS Need to decide how to request the underlying API to learn
+    // whether we will need to copy or not.
     Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
                              device_solve_array_t>::do_get(X, this->xValues_,
                                                as<size_t>(ld_rhs),
@@ -215,7 +201,7 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVec
 
 template <class Matrix, class Vector>
 bool
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::matrixShapeOK_impl() const
+TachoSolver<Matrix,Vector>::matrixShapeOK_impl() const
 {
   // Tacho can only apply the solve routines to square matrices
   return( this->matrixA_->getGlobalNumRows() == this->matrixA_->getGlobalNumCols() );
@@ -224,7 +210,7 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::matrixShapeOK_impl() const
 
 template <class Matrix, class Vector>
 void
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
+TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
@@ -236,7 +222,7 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<
 
 template <class Matrix, class Vector>
 Teuchos::RCP<const Teuchos::ParameterList>
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::getValidParameters_impl() const
+TachoSolver<Matrix,Vector>::getValidParameters_impl() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
@@ -255,13 +241,13 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::getValidParameters_impl() const
 
 template <class Matrix, class Vector>
 bool
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::do_optimization() const {
+TachoSolver<Matrix,Vector>::do_optimization() const {
   return (this->root_ && (this->matrixA_->getComm()->getSize() == 1));
 }
 
 template <class Matrix, class Vector>
 bool
-AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::loadA_impl(EPhase current_phase)
+TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
 
   if(current_phase == SOLVE) {
@@ -313,11 +299,11 @@ AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::loadA_impl(EPhase current_phase)
   return true;
 }
 
+
 template<class Matrix, class Vector>
-const char* AMESOS2_TACHO_SOLVER_NAME<Matrix,Vector>::name = TACHO_SOLVER_CHAR_NAME;
+const char* TachoSolver<Matrix,Vector>::name = "Tacho";
+
 
 } // end namespace Amesos2
 
-#undef TACHO_SOLVER_CHAR_NAME
-
-#endif  // AMESOS2_TACHO_DEF_HPP or AMESOS2_TACHOHOST_DEF_HPP
+#endif  // AMESOS2_TACHO_DEF_HPP

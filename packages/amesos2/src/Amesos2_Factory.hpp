@@ -118,10 +118,7 @@
 
 #ifdef HAVE_AMESOS2_TACHO       // Tacho
 #include "Amesos2_Tacho.hpp"
-#ifdef KOKKOS_ENABLE_CUDA
-#include "Amesos2_TachoHost.hpp"
-#endif // KOKKOS_ENABLE_CUDA
-#endif // HAVE_AMESOS2_TACHO
+#endif
 
 #ifdef HAVE_AMESOS2_SUPERLU     // Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
@@ -623,13 +620,6 @@ struct throw_no_matrix_support_exception {
        (solverName == "tacho")){
       return handle_solver_matrix_and_type_support<TachoSolver,Matrix,Vector>::apply(A, X, B);
     }
-
-#ifdef KOKKOS_ENABLE_CUDA // this is a 2nd version which builds tacho on host for testing
-    if((solverName == "amesos2_tachohost") ||
-       (solverName == "tachohost")){
-        return handle_solver_matrix_and_type_support<TachoHostSolver,Matrix,Vector>::apply(A, X, B);
-    }
-#endif
 
 #endif
 

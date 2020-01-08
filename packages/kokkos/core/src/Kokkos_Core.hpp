@@ -76,7 +76,6 @@
 
 #if defined( KOKKOS_ENABLE_CUDA )
 #include <Kokkos_Cuda.hpp>
-#include <Kokkos_CudaUVMOff.hpp>
 #endif
 
 #if defined( KOKKOS_ENABLE_ROCM )

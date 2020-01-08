@@ -53,9 +53,6 @@ public:
 
 #ifdef KOKKOS_ENABLE_CUDA
   typedef KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
-
-  // UVM is always off for this node even if enabled for Trilinos
-  typedef KokkosDeviceWrapperNode<Kokkos::CudaUVMOff> KokkosCudaUVMOffWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP

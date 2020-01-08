@@ -113,10 +113,6 @@ namespace Amesos2 {
     if (solverName == "amesos2_tacho" || solverName == "tacho") {
       return true;
     }
-
-    if (solverName == "amesos2_tachohost" || solverName == "tachohost") {
-      return true;
-    }
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLU

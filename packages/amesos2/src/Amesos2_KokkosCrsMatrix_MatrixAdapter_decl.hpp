@@ -106,12 +106,12 @@ namespace Amesos2 {
     spmtx_vals_t getSparseValues() const;
 
     template<class KV>
-    void  getSparseRowPtr_kokkos_view(KV & view) const {
+    void getSparseRowPtr_kokkos_view(KV & view) const {
       deep_copy_or_assign_view(view, this->mat_->graph.row_map);
     }
 
     template<class KV>
-    void  getSparseColInd_kokkos_view(KV & view) const {
+    void getSparseColInd_kokkos_view(KV & view) const {
       deep_copy_or_assign_view(view, this->mat_->graph.entries);
     }
 

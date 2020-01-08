@@ -56,10 +56,16 @@
 #include "Amesos2_KokkosMultiVecAdapter_decl.hpp"
 #include <KokkosSparse_CrsMatrix.hpp>
 
-#define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(S,LO,EXEC_SPACE)                          \
-  template class Amesos2::AMESOS2_KOKKOS_IMPL_SOLVER_NAME<KokkosSparse::CrsMatrix<S, LO,              \
-    Kokkos::Device<typename EXEC_SPACE::execution_space, typename EXEC_SPACE::memory_space>>, \
-    Kokkos::View<S**, Kokkos::LayoutLeft, EXEC_SPACE> >;
+#define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(S,LO,EXEC_SPACE)                             \
+  template class Amesos2::AMESOS2_KOKKOS_IMPL_SOLVER_NAME<KokkosSparse::CrsMatrix<S, LO,         \
+    typename EXEC_SPACE::device_type>,                                                           \
+    Kokkos::View<S**, Kokkos::LayoutLeft, typename EXEC_SPACE::device_type> >;
+
+#define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(S,LO)                                 \
+  template class Amesos2::AMESOS2_KOKKOS_IMPL_SOLVER_NAME<KokkosSparse::CrsMatrix<S, LO,          \
+    Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>>,                                              \
+    Kokkos::View<S**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>> >;
+
 
 #if defined(KOKKOS_ENABLE_SERIAL)
 #ifdef HAVE_TPETRA_INST_FLOAT
@@ -69,10 +75,10 @@
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Serial)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<float>, int, Kokkos::Serial)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Serial)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-      AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<double>, int, Kokkos::Serial)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Serial)
 #endif
 #endif
 
@@ -85,10 +91,10 @@
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Threads)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<float>, int, Kokkos::Threads)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Threads)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-      AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<double>, int, Kokkos::Threads)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Threads)
 #endif
 #endif // KOKKOS_ENABLE_THREADS
 
@@ -100,29 +106,29 @@
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::OpenMP)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<float>, int, Kokkos::OpenMP)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::OpenMP)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-      AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<double>, int, Kokkos::OpenMP)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::OpenMP)
 #endif
 #endif // KOKKOS_ENABLE_OPENMP
 
 #if defined(KOKKOS_ENABLE_CUDA)
 #ifdef HAVE_TPETRA_INST_FLOAT
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Cuda)
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::CudaUVMOff)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(float, int)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Cuda)
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::CudaUVMOff)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(double, int)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<float>, int, Kokkos::Cuda)
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<float>, int, Kokkos::CudaUVMOff)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Cuda)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(Kokkos::complex<float>, int)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-      AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<double>, int, Kokkos::Cuda)
-      AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(std::complex<double>, int, Kokkos::CudaUVMOff)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Cuda)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(Kokkos::complex<double>, int)
 #endif
 #endif // KOKKOS_ENABLE_CUDA
 

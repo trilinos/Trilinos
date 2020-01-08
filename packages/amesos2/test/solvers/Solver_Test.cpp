@@ -69,7 +69,8 @@
 #include <MatrixMarket_Tpetra.hpp> // For reading matrix-market files
 
 #include "Amesos2.hpp"          // includes everything from Amesos2
-#include "Amesos2_Kokkos_View_Copy_Assign.hpp" // for test src memory selection
+
+#include "KokkosBlas.hpp"
 
 // #ifdef HAVE_TPETRA_INST_INT_INT
 #if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
@@ -496,27 +497,22 @@ struct solution_checker<Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpac
   typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> t_mv;
   bool operator()(RCP<t_mv> true_solution, RCP<t_mv> given_solution)
   {
-    // For Tpetra we just check the norms. MDM-DISCUSS Why is this?
-    // Here we need a Kokkos version so I've done this explicitly for each
-    // point but the method should be synchronized with the above.
-    // The kokkos adapter is really a temporary measure anyways while we
-    // develop UVM off code so this code is probably going away.
-    typename t_mv::HostMirror host_true_solution = Kokkos::create_mirror_view(*true_solution);
-    typename t_mv::HostMirror host_given_solution = Kokkos::create_mirror_view(*given_solution);
-    Kokkos::deep_copy(host_true_solution, *true_solution);
-    Kokkos::deep_copy(host_given_solution, *given_solution);
-    Scalar epsilon = 0.005;
-    for(int i = 0; i < static_cast<int>(host_given_solution.extent(0)); ++i) {
-      for(int j = 0; j < static_cast<int>(host_given_solution.extent(1)); ++j) {
-        Scalar delta = host_given_solution(i,j) - host_true_solution(i,j);
-        if(delta > epsilon || delta < -epsilon) {
-          return false;
-        }
-      }
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType mag_t;
+    size_t num_vecs = true_solution->extent(1);
+    Teuchos::Array<mag_t> ts_norms(num_vecs), gs_norms(num_vecs);
+    for (size_t k = 0; k < num_vecs; ++k) {
+      ts_norms[k] = KokkosBlas::nrm2_squared(
+        Kokkos::subview(*true_solution, Kokkos::ALL, k));
+      gs_norms[k] = KokkosBlas::nrm2_squared(
+        Kokkos::subview(*given_solution, Kokkos::ALL, k));
     }
-    return true;
+
+    return Teuchos::compareFloatingArrays(ts_norms, "true_solution",
+                                          gs_norms, "given_solution",
+                                          Teuchos::as<mag_t> (0.005), *compare_fos);
   }
 };
+
 
 #if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 template <>
@@ -1421,7 +1417,8 @@ bool test_tpetra(const string& mm_file,
 
 template<typename Scalar,
          typename LocalOrdinal,
-         typename Node>
+         typename Node,
+         typename TpetraScalar>
 bool do_kokkos_test_with_types(const string& mm_file,
                                const string& solver_name,
                                ParameterList solve_params)
@@ -1436,14 +1433,12 @@ bool do_kokkos_test_with_types(const string& mm_file,
   using std::endl;
   using std::flush;
 
-  // Some design issues here were drived by Tacho Solver dependence on execution space
-  // If it used Device this could be cleaned up.
   typedef Kokkos::Device<typename Node::execution_space, typename Node::memory_space> device_t;
   typedef KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,device_t> MAT;
-  typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, typename Node::execution_space> view_t;
+  typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, device_t> view_t;
 
   const size_t numVecs = 5;     // arbitrary number
-  const size_t numRHS = 5;        // also arbitrary
+  const size_t numRHS = 5;      // also arbitrary
 
   bool transpose = solve_params.get<bool>("Transpose", false);
 
@@ -1456,15 +1451,14 @@ bool do_kokkos_test_with_types(const string& mm_file,
 
   // not sure about the loading schemes for kokkos - just use Tpetra right now
   // and load it into the Kokkos CrsMatrix
-  // Load Tpetra in host to make sure we can just pass the data ptrs to Kokkos
   typedef Tpetra::Map<>::global_ordinal_type TpetraGO;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,TpetraGO,TpetraNode> tpetra_crsmatrix_t;
+  typedef Tpetra::CrsMatrix<TpetraScalar,LocalOrdinal,TpetraGO,TpetraNode> tpetra_crsmatrix_t;
   RCP<tpetra_crsmatrix_t> tpetraM =
     Tpetra::MatrixMarket::Reader<tpetra_crsmatrix_t>::readSparseFile (path, comm);
 
   Teuchos::ArrayRCP<const size_t> rowPointers;
   Teuchos::ArrayRCP<const LocalOrdinal> columnIndices;
-  Teuchos::ArrayRCP<const Scalar> values;
+  Teuchos::ArrayRCP<const TpetraScalar> values;
   tpetraM->getAllValues(rowPointers, columnIndices, values);
 
   // convert Tpetra size_t row ptrs to kokkos crsmatrix LO type
@@ -1473,11 +1467,18 @@ bool do_kokkos_test_with_types(const string& mm_file,
     kokkosRowPointers[n] = Teuchos::as<LocalOrdinal>(rowPointers[n]);
   }
 
+  // convert Tpetra values to kokkos - for complex this will be converting
+  // std::complex to Kokkos::complex
+  Teuchos::ArrayRCP<Scalar> kokkosValues = Teuchos::arcp(new Scalar[values.size()], 0, values.size());
+  for(int n = 0; n < values.size(); ++n) {
+    kokkosValues[n] = Teuchos::as<Scalar>(values[n]);
+  }
+
   auto num_rows = tpetraM->getNodeNumRows();
   auto num_cols = tpetraM->getNodeNumCols();
 
   // Kokkos CrsMatrix builds with non const ptrs while Tpetra loads into const
-  Teuchos::ArrayRCP<Scalar> non_const_values = Teuchos::arcp_const_cast<Scalar>(values);
+  Teuchos::ArrayRCP<Scalar> non_const_values = Teuchos::arcp_const_cast<Scalar>(kokkosValues);
   Teuchos::ArrayRCP<LocalOrdinal> non_const_kokkosRowPointers = Teuchos::arcp_const_cast<LocalOrdinal>(kokkosRowPointers);
   Teuchos::ArrayRCP<LocalOrdinal> non_const_columnIndices = Teuchos::arcp_const_cast<LocalOrdinal>(columnIndices);
   RCP<MAT> A = rcp(new MAT("Kokkos CrsMatrix",
@@ -1493,7 +1494,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
   }
 
   ETransp trans = transpose ? CONJ_TRANS : NO_TRANS;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,TpetraGO,TpetraNode> MV;
+  typedef Tpetra::MultiVector<TpetraScalar,LocalOrdinal,TpetraGO,TpetraNode> MV;
   RCP<const Tpetra::Map<LocalOrdinal,TpetraGO,TpetraNode> > dmnmap = tpetraM->getDomainMap();
   RCP<const Tpetra::Map<LocalOrdinal,TpetraGO,TpetraNode> > rngmap = tpetraM->getRangeMap();
   Array<RCP<MV> > xMV(numRHS);
@@ -1580,7 +1581,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
     // perturb the values just a bit (element-wise square of first row)
     size_t l_fst_row_nnz = tpetraM2->getNumEntriesInLocalRow(0);
     Array<LocalOrdinal> indices(l_fst_row_nnz);
-    Array<Scalar> values(l_fst_row_nnz);
+    Array<TpetraScalar> values(l_fst_row_nnz);
     tpetraM2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
     for( size_t i = 0; i < l_fst_row_nnz; ++i ){
       values[i] = values[i] * values[i];
@@ -1589,11 +1590,10 @@ bool do_kokkos_test_with_types(const string& mm_file,
     tpetraM2->replaceLocalValues (0, indices, values);
     tpetraM2->fillComplete (tpetraM->getDomainMap (), tpetraM->getRangeMap ());
 
-    // Make a deep copy of the entire CrsMatrix.
-    // originalNode can be null; only needed for type deduction.
+    // Get Tpetra ahain
     Teuchos::ArrayRCP<const size_t> rowPointers2;
     Teuchos::ArrayRCP<const LocalOrdinal> columnIndices2;
-    Teuchos::ArrayRCP<const Scalar> values2;
+    Teuchos::ArrayRCP<const TpetraScalar> values2;
     tpetraM2->getAllValues(rowPointers2, columnIndices2, values2);
 
     Teuchos::ArrayRCP<LocalOrdinal> kokkosRowPointers2 = Teuchos::arcp(new LocalOrdinal[rowPointers2.size()], 0, rowPointers2.size());
@@ -1715,7 +1715,7 @@ bool test_kokkos(const string& mm_file,
 
       bool test_done = false;
 
-#define AMESOS2_SOLVER_KOKKOS_TEST(S,LO,N)                              \
+#define AMESOS2_SOLVER_KOKKOS_TEST(S,LO,N,TpetraScalar)                 \
       test_done = true;                                                 \
       if (verbosity > 1) {                                              \
         *fos << std::endl                                               \
@@ -1726,7 +1726,7 @@ bool test_kokkos(const string& mm_file,
              << std::endl;                                              \
       }                                                                 \
       bool run_success =                                                \
-        do_kokkos_test_with_types<S,LO,N>                               \
+        do_kokkos_test_with_types<S,LO,N,TpetraScalar>                  \
         (mm_file,solver_name, solve_params_copy);                       \
       if (verbosity > 1) {                                              \
         if (!run_success)                                               \
@@ -1736,6 +1736,11 @@ bool test_kokkos(const string& mm_file,
       }                                                                 \
       success &= run_success
 
+      // create an option to test UVM off inputs
+      #ifdef KOKKOS_ENABLE_CUDA
+      typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>  uvm_off_node_t;
+      #endif
+
       if( lo != "int" ) {
         *fos << "Trilinos does not currently support LO=" << lo << std::endl;
       }
@@ -1743,12 +1748,12 @@ bool test_kokkos(const string& mm_file,
         if( scalar == "float" ) {
           #ifdef HAVE_TPETRA_INST_FLOAT// Because of Tpetra maps this is currently needed for Kokkos adapter
           if( node == "default" ) {
-            AMESOS2_SOLVER_KOKKOS_TEST(float,int,DefaultNode);
+            AMESOS2_SOLVER_KOKKOS_TEST(float,int,DefaultNode,float);
           }
           else if( node == "serial" ) {
             #ifdef KOKKOS_ENABLE_SERIAL
             *fos << "KokkosSerialWrapperNode float ";
-            AMESOS2_SOLVER_KOKKOS_TEST(float,int,Kokkos::Compat::KokkosSerialWrapperNode);
+            AMESOS2_SOLVER_KOKKOS_TEST(float,int,Kokkos::Serial,float);
             #else
             *fos << "node=serial was not enabled at configure time" << std::endl;
             #endif
@@ -1756,7 +1761,7 @@ bool test_kokkos(const string& mm_file,
           else if( node == "cuda" ) {
             #ifdef KOKKOS_ENABLE_CUDA
             *fos << "KokkosCudaWrapperNode float ";
-            AMESOS2_SOLVER_KOKKOS_TEST(float,int,Kokkos::Compat::KokkosCudaWrapperNode);
+            AMESOS2_SOLVER_KOKKOS_TEST(float,int,Kokkos::Cuda,float);
             #else
             *fos << "node=cuda was not enabled at configure time" << std::endl;
             #endif
@@ -1764,7 +1769,7 @@ bool test_kokkos(const string& mm_file,
           else if( node == "cudauvmoff" ) {
             #ifdef KOKKOS_ENABLE_CUDA
             *fos << "KokkosCudaUVMOffWrapperNode float ";
-            AMESOS2_SOLVER_KOKKOS_TEST(float,int,Kokkos::Compat::KokkosCudaUVMOffWrapperNode);
+            AMESOS2_SOLVER_KOKKOS_TEST(float,int,uvm_off_node_t,float);
             #else
             *fos << "node=cudauvmoff was not enabled at configure time" << std::endl;
             #endif
@@ -1776,12 +1781,12 @@ bool test_kokkos(const string& mm_file,
         else if( scalar == "double" ) {
           #ifdef HAVE_TPETRA_INST_DOUBLE // Because of Tpetra maps this is currently needed for Kokkos adapter
           if( node == "default" ) {
-            AMESOS2_SOLVER_KOKKOS_TEST(double,int,DefaultNode);
+            AMESOS2_SOLVER_KOKKOS_TEST(double,int,DefaultNode,double);
           }
           else if( node == "serial" ) {
             #ifdef KOKKOS_ENABLE_SERIAL
             *fos << "KokkosSerialWrapperNode double ";
-            AMESOS2_SOLVER_KOKKOS_TEST(double,int,Kokkos::Compat::KokkosSerialWrapperNode);
+            AMESOS2_SOLVER_KOKKOS_TEST(double,int,Kokkos::Serial,double);
             #else
             *fos << "node=serial was not enabled at configure time" << std::endl;
             #endif
@@ -1789,7 +1794,7 @@ bool test_kokkos(const string& mm_file,
           else if( node == "cuda" ) {
             #ifdef KOKKOS_ENABLE_CUDA
             *fos << "KokkosCudaWrapperNode double ";
-            AMESOS2_SOLVER_KOKKOS_TEST(double,int,Kokkos::Compat::KokkosCudaWrapperNode);
+            AMESOS2_SOLVER_KOKKOS_TEST(double,int,Kokkos::Cuda,double);
             #else
             *fos << "node=cuda was not enabled at configure time" << std::endl;
             #endif
@@ -1797,7 +1802,7 @@ bool test_kokkos(const string& mm_file,
           else if( node == "cudauvmoff" ) {
             #ifdef KOKKOS_ENABLE_CUDA
             *fos << "KokkosCudaUVMOffWrapperNode double ";
-            AMESOS2_SOLVER_KOKKOS_TEST(double,int,Kokkos::Compat::KokkosCudaUVMOffWrapperNode);
+            AMESOS2_SOLVER_KOKKOS_TEST(double,int,uvm_off_node_t,double);
             #else
             *fos << "node=cudauvmoff was not enabled at configure time" << std::endl;
             #endif
@@ -1812,9 +1817,105 @@ bool test_kokkos(const string& mm_file,
         else if( scalar == "quad" || scalar == "quad double" ) {
           *fos << "scalar=qd real not implemented yet for kokkos adapter." << std::endl;
         }
-        else if( scalar == "complex" ) {
-          *fos << "scalar=complex not implemented yet for kokkos adapter." << std::endl;
-        }
+        else if( scalar == "complex" ){
+          if( mag == "float" ){
+  #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+            typedef Kokkos::complex<float> cmplx_float;
+            typedef std::complex<float> tpetra_cmplx_float;
+            if( lo == "int" ){
+              if( node == "default" ) {
+                AMESOS2_SOLVER_KOKKOS_TEST(cmplx_float,int,DefaultNode,tpetra_cmplx_float);
+              }
+              else if( node == "serial" ) {
+                #ifdef KOKKOS_ENABLE_SERIAL
+                *fos << "KokkosSerialWrapperNode complex<float> ";
+                AMESOS2_SOLVER_KOKKOS_TEST(cmplx_float,int,Kokkos::Serial,tpetra_cmplx_float);
+                #else
+                *fos << "node=serial was not enabled at configure time" << std::endl;
+                #endif
+              }
+              else if( node == "cuda" ) {
+                #ifdef KOKKOS_ENABLE_CUDA
+                *fos << "KokkosCudaWrapperNode complex<float> ";
+                AMESOS2_SOLVER_KOKKOS_TEST(cmplx_float,int,Kokkos::Cuda,tpetra_cmplx_float);
+                #else
+                *fos << "node=cuda was not enabled at configure time" << std::endl;
+                #endif
+              }
+              else if( node == "cudauvmoff" ) {
+                #ifdef KOKKOS_ENABLE_CUDA
+                *fos << "KokkosCudaUVMOffWrapperNode complex<float> ";
+                AMESOS2_SOLVER_KOKKOS_TEST(cmplx_float,int,uvm_off_node_t,tpetra_cmplx_float);
+                #else
+                *fos << "node=cudauvmoff was not enabled at configure time" << std::endl;
+                #endif
+              }
+            }
+            else if( lo == "long int" ){
+              *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+            }
+            else if( lo == "long long int" ){
+              *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+            }
+  #else // NOT HAVE_TPETRA_INST_COMPLEX_FLOAT
+            *fos << "Scalar=complex<float> was not enabled at configure time"
+                 << std::endl;
+  #endif // HAVE_TPETRA_INST_COMPLEX_FLOAT
+          }
+
+          if( mag == "double" ){
+  #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+            typedef Kokkos::complex<double> cmplx_double;
+            typedef std::complex<double> tpetra_cmplx_double;
+            if( lo == "int" ){
+              if( node == "default" ) {
+                AMESOS2_SOLVER_KOKKOS_TEST(cmplx_double,int,DefaultNode,tpetra_cmplx_double);
+              }
+              else if( node == "serial" ) {
+                #ifdef KOKKOS_ENABLE_SERIAL
+                *fos << "KokkosSerialWrapperNode complex<double> ";
+                AMESOS2_SOLVER_KOKKOS_TEST(cmplx_double,int,Kokkos::Serial,tpetra_cmplx_double);
+                #else
+                *fos << "node=serial was not enabled at configure time" << std::endl;
+                #endif
+              }
+              else if( node == "cuda" ) {
+                #ifdef KOKKOS_ENABLE_CUDA
+                *fos << "KokkosCudaWrapperNode complex<double> ";
+                AMESOS2_SOLVER_KOKKOS_TEST(cmplx_double,int,Kokkos::Cuda,tpetra_cmplx_double);
+                #else
+                *fos << "node=cuda was not enabled at configure time" << std::endl;
+                #endif
+              }
+              else if( node == "cudauvmoff" ) {
+                #ifdef KOKKOS_ENABLE_CUDA
+                *fos << "KokkosCudaUVMOffWrapperNode complex<double> ";
+                AMESOS2_SOLVER_KOKKOS_TEST(cmplx_double,int,uvm_off_node_t,tpetra_cmplx_double);
+                #else
+                *fos << "node=cudauvmoff was not enabled at configure time" << std::endl;
+                #endif
+              }
+            }
+            else if( lo == "long int" ){
+              *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+            }
+            else if( lo == "long long int" ){
+              *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+            }
+  #else // NOT HAVE_TPETRA_INST_COMPLEX_DOUBLE
+            *fos << "Scalar=complex<double> was not enabled at configure time"
+                 << std::endl;
+  #endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
+          } // end mag == "double"
+
+          // mfh 15 Jan 2019: The code used to test
+          // Scalar=std::complex<dd_real> and std::complex<qd_real>
+          // here.  The C++ Standard does not permit portable use of
+          // std::complex<T> for T != float, double, or long double.
+          // Thus, I deleted those cases, which almost certainly were
+          // never tested, even if they ever built.
+
+        } // scalar == "complex"
       }
 
       if( !test_done && verbosity > 1 ){

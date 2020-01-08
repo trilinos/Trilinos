@@ -152,11 +152,6 @@ struct default_tasking_memory_space_for_execution_space<Kokkos::Cuda>
 {
   using type = Kokkos::CudaUVMSpace;
 };
-template <>
-struct default_tasking_memory_space_for_execution_space<Kokkos::CudaUVMOff>
-{
-  using type = Kokkos::CudaUVMSpace; // TODO Why is this UVM fo Kokkos::Cuda even if UVM is built off?
-};
 #endif
 
 template <class ExecSpace>

@@ -52,6 +52,10 @@
 #ifndef AMESOS2_TPETRA_IMPL_HPP
 #define AMESOS2_TPETRA_IMPL_HPP
 
+// MDM-DISCUSS Moved this Tpetra ETI into a dedicated file so we could share it
+// for different solvers. Decide if this is ok. As we add the other solvers we
+// can switch them to this file to avoid the duplication.
+
 #ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_TPETRA_INST_FLOAT
   AMESOS2_SOLVER_TPETRA_INST(AMESOS2_TPETRA_IMPL_SOLVER_NAME,float,int,int);

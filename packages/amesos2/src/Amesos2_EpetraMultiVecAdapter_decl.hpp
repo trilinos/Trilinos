@@ -194,7 +194,6 @@ namespace Amesos2 {
                     EDistribution distribution) const {
       Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Serial> host_new_data;
       get1dCopy_kokkos_view_host(host_new_data, lda, distribution_map, distribution);
-      // will assign or deep copy depending on memory space of the solver
       deep_copy_or_assign_view(A, host_new_data);
     }
 
@@ -254,15 +253,6 @@ namespace Amesos2 {
                       global_ordinal_t,
                       node_t> > source_map,
                     EDistribution distribution ) {
-      // Convert to Host Space
-      // Decide later about any further improvements - we are designating
-      // Epetra low priority right now so just getting clean compile and run right now.
-      // Note we might like this to be HostMirror and avoid the copy on serial
-      // but there are some awkward issues with the templating since, unlike
-      // Tpetra, this class is not templated except for the get and put methods.
-      // Note that we might just put the whole thing in the header and
-      // avoid the secondary put1dData_kokkos_view_host call which is not that
-      // long. But that brings in some headers that would be undesirable.
       Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> host_new_data(
         Kokkos::ViewAllocateWithoutInitializing("host_new_data"),
         new_data.extent(0), new_data.extent(1));

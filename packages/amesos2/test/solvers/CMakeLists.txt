@@ -96,7 +96,7 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyTachoFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    SOURCE_FILES tacho_test.xml tacho_host_test.xml
+    SOURCE_FILES tacho_test.xml
     EXEDEPS Solver_Test
     )
 
@@ -108,23 +108,6 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
     NUM_MPI_PROCS 1 # Need to determine if we want more MPI when not running OpenMP with threads
     COMM serial mpi
     )
-
-IF (Kokkos_ENABLE_Cuda)
-
-  # If Cuda is enabled we run a 2nd test which has TachoSolver built on Host
-  # This is so we can run Tacho on host and Cuda side by side.
-  # But note that when Cuda is disabled, above test is TachoSolver<Host>, when Cuda is enabled, above test is TachoSolver<Cuda>
-  # Perhaps we will eliminate this version.
-  TRIBITS_ADD_TEST(
-    Solver_Test
-    NAME Tacho_Solver_Host_Test
-    ARGS "--xml-params=tacho_host_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-ENDIF() # Kokkos_ENABLE_Cuda
 
 ENDIF()
 

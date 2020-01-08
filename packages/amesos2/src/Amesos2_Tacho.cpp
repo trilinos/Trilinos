@@ -44,9 +44,20 @@
 #include "Amesos2_config.h"
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
-#define AMESOS2_TACHO_BUILD_SOLVER
-#include "Amesos2_Tacho_Impl.hpp"
-#undef AMESOS2_TACHO_BUILD_SOLVER
-#undef AMESOS2_TACHO_SOLVER_NAME
+#include "Amesos2_Tacho_decl.hpp"
+#include "Amesos2_Tacho_def.hpp"
+#include "Amesos2_ExplicitInstantiationHelpers.hpp"
+
+namespace Amesos2 {
+#ifdef HAVE_AMESOS2_EPETRA
+  AMESOS2_SOLVER_EPETRA_INST(TachoSolver);
+#endif
+
+  #define AMESOS2_TPETRA_IMPL_SOLVER_NAME TachoSolver
+  #include "Amesos2_Tpetra_Impl.hpp"
+
+  #define AMESOS2_KOKKOS_IMPL_SOLVER_NAME TachoSolver
+  #include "Amesos2_Kokkos_Impl.hpp"
+}
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
