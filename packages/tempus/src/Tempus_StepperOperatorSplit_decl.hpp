@@ -73,7 +73,7 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
 
-    virtual void setObserver(Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > obs);
+    //virtual void setObserver(Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > obs);
 
     //virtual Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > getObserver() const
     //{ return stepperOSObserver_; }

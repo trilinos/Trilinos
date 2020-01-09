@@ -137,7 +137,9 @@ template<class Scalar>
 void StepperBDF2<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperBDF2Observer_ = obs;
+  if (obs != Teuchos::null)  {
+    stepperBDF2Observer_ = Teuchos::rcp_dynamic_cast<StepperBDF2Observer<Scalar> >(obs,true);
+  }
 
   if (stepperBDF2Observer_ == Teuchos::null)
     stepperBDF2Observer_ = Teuchos::rcp(new StepperBDF2Observer<Scalar>());

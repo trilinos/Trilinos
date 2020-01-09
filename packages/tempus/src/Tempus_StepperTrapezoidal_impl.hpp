@@ -65,9 +65,12 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
 
 template<class Scalar>
 void StepperTrapezoidal<Scalar>::setObserver(
-  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperTrapObserver_ = obs;
+  if (obs != Teuchos::null) { 
+    stepperTrapObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperTrapezoidalObserver<Scalar> > (obs, true);
+  }
 
   if (stepperTrapObserver_ == Teuchos::null)
     stepperTrapObserver_ = Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());

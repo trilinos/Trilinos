@@ -137,9 +137,11 @@ void StepperBackwardEuler<Scalar>::setPredictor(
 
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperBEObserver_ = obs;
+  if (obs != Teuchos::null) {
+    stepperBEObserver_ = Teuchos::rcp_dynamic_cast<StepperBackwardEulerObserver<Scalar> >(obs, true);
+  }
 
   if (stepperBEObserver_ == Teuchos::null)
     stepperBEObserver_ = Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());

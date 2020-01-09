@@ -117,9 +117,12 @@ void StepperOperatorSplit<Scalar>::setSolver(
 
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::setObserver(
-  Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperOSObserver_ = obs;
+  if (obs != Teuchos::null){
+    stepperOSObserver_ = Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs, true);
+  }
+
 
   if (stepperOSObserver_ == Teuchos::null)
     stepperOSObserver_ = Teuchos::rcp(new StepperOperatorSplitObserver<Scalar>());

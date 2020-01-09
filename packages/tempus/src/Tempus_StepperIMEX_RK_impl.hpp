@@ -344,11 +344,25 @@ void StepperIMEX_RK<Scalar>::setModelPair(
 }
 
 
+//template<class Scalar>
+//void StepperIMEX_RK<Scalar>::setObserver(
+  //Teuchos::RCP<StepperRKObserver<Scalar> > obs)
+//{
+  //if (obs != Teuchos::null) stepperRKObserver_ = obs;
+
+  //if (stepperRKObserver_ == Teuchos::null)
+    //stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+  //this->isInitialized_ = false;
+//}
+
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::setObserver(
-  Teuchos::RCP<StepperRKObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperRKObserver_ = obs;
+  if (obs != Teuchos::null){
+    stepperRKObserver_ = Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> >(obs, true);
+  }
 
   if (stepperRKObserver_ == Teuchos::null)
     stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());

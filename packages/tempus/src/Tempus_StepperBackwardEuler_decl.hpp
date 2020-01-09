@@ -62,7 +62,7 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setObserver(Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs);
+    //virtual void setObserver(Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs);
 
     //virtual Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > getObserver() const
     //{ return stepperBEObserver_; }

@@ -96,7 +96,7 @@ public:
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperRKObserver_; }
 
-    virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
+    //virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
 
     //virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
     //{ return stepperRKObserver_; }

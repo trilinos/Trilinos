@@ -52,9 +52,11 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) stepperFEObserver_ = obs;
+  if (obs != Teuchos::null){ 
+    stepperFEObserver_ = Teuchos::rcp_dynamic_cast<StepperForwardEulerObserver<Scalar> >(obs, true);
+  }
 
   if (stepperFEObserver_ == Teuchos::null)
     stepperFEObserver_ = Teuchos::rcp(new StepperForwardEulerObserver<Scalar>());
