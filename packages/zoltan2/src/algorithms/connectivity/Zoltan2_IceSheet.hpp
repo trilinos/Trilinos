@@ -114,9 +114,9 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   
   
   
-  //int me = problemComm->getRank();
+  int me = problemComm->getRank();
 
-  /*std::cout<<me<<": Local vertices:\n";
+  std::cout<<me<<": Local vertices:\n";
   for(int i = 0; i < nVtx; i++){
     std::cout<<"\t"<<vtxIDs[i]<<"\n";
   }
@@ -126,7 +126,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
     for(int j = offsets[i]; j < offsets[i+1]; j++){
       std::cout<<me<<": "<<vtxIDs[i]<<" -- "<<adjs[j]<<"\n";
     }
-  }*/
+  }
   
   //create the Tpetra map for the global indices
   Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -135,17 +135,30 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   //sentinel value to detect unsuccessful searches
   lno_t fail = Teuchos::OrdinalTraits<lno_t>::invalid();
 
+  
+  std::unordered_map<gno_t,lno_t> ghost_map;
+  std::vector<lno_t> ghostGIDs;
   int nGhosts = 0;
   //count how many ghosts are in the edge list, to create the mapWithCopies.
   for(size_t i = 0; i < nEdge; i++){
-    if(map->getLocalElement(adjs[i]) == fail)
-      nGhosts++;
+    if(map->getLocalElement(adjs[i]) == fail){
+      if(ghost_map.count(adjs[i]) == 0){
+        ghost_map[adjs[i]] = nVtx + nGhosts;
+        ghostGIDs.push_back(adjs[i]);
+        nGhosts++;
+      }
+    }
   }
   
   //build nVtx + nGhosts size array of grounding flags
   bool* grounding = new bool[nVtx+nGhosts];
   for(int i = 0; i < nVtx+nGhosts; i++){
-    if(i < nVtx) grounding[i] = grounding_flags[i];
+    if(i < nVtx){
+      grounding[i] = grounding_flags[i];
+      if(grounding[i]){
+        std::cout<<me<<": global vert "<<vtxIDs[i]<<" is initially grounded\n";
+      }
+    }
     else grounding[i] = false;
   }
 
@@ -156,22 +169,21 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   for(size_t i = 0; i < nVtx; i++){
     gids[i] = vtxIDs[i];
   }
-  int ghostCount = 0;
+  for(size_t i = nVtx; i < nVtx+nGhosts; i++){
+    gids[i] = ghostGIDs[i-nVtx];
+  }
+  /*int ghostCount = 0;
   for(size_t i = 0; i < nEdge; i++){
     if(map->getLocalElement(adjs[i]) == fail){
       gids[nVtx+ghostCount] = adjs[i];
       ghostCount++;
     }
-  }
+  }*/
   Tpetra::global_size_t dummy_2 = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   RCP<const map_t > mapWithCopies = rcp(new map_t(dummy_2, gids, 0, problemComm));
  
   //communicate boundary edges back to owning processors
   //
-  //NOTE: as of right now it is necessary to use MPI functions, due to 
-  //if problemComm represents a subcommunicator, this will likely hang on MPI collectives
-  //
-  //Not sure if this is an immediate problem.
   //Teuchos::ArrayView<int> owners;
   //Teuchos::ArrayView<gno_t> boundary(num_boundary_edges*2);
   std::vector<int> owners_vec;
@@ -184,76 +196,48 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   Teuchos::ArrayView<int> owners = Teuchos::arrayViewFromVector(owners_vec);
   mapWithCopies->getRemoteIndexList(boundary,owners);
   
-  int me = problemComm->getRank();
   int nprocs = problemComm->getSize();
+  std::cout<<me<<": nprocs = "<<nprocs<<"\n";
+  int maxOwner = 0;
+  int minOwner = 0;
+  for(int i = 0; i < owners.size(); i++){
+    if(owners[i] == -1) std::cout<<"Vertex "<<boundary[i]<<" does not have an owner\n";
+    //if(owners[i] <minOwner) minOwner = owners[i];
+    //if(owners[i] >maxOwner) maxOwner = owners[i];
+  }
+  std::cout<<me<<": maxOwner = "<<maxOwner<<", minOwner = "<<minOwner<<"\n";
+  
   //send boundary edges to any remote processes that own an endpoint
-  std::vector<int> sendcnts(nprocs,0);
-  for(int i = 0; i < nprocs; i++) sendcnts[i] = 0;
+  //COMMENT THIS BLOCK BACK IN
+  std::vector<int> sendcnts;
+  for(int i = 0; i < nprocs; i++) sendcnts.push_back(0);
   for(int i = 0; i < num_boundary_edges*2; i+= 2){
-    if(owners[i] != me){
+    if(owners[i] != -1){
       sendcnts[owners[i]] +=2;
     }
-    if(owners[i+1] != me && owners[i] != owners[i+1]){
+    if(owners[i+1] != -1 && owners[i] != owners[i+1]){
       sendcnts[owners[i+1]] +=2;
     }
   }
-  std::vector<int> recvcnts(nprocs,0);
-  for(int i = 0; i < nprocs; i++) recvcnts[i]=0;
+  std::vector<int> recvcnts;
+  for(int i = 0; i < nprocs; i++) recvcnts.push_back(0);
   //send the number of vertex IDs to be sent.
-  ArrayView<const int> sendCount = Teuchos::arrayViewFromVector(sendcnts);
-  ArrayView<int> recvCount = Teuchos::arrayViewFromVector(recvcnts);
-  Zoltan2::AlltoAllCount(*problemComm,*env,sendCount, recvCount);
-  /*int status = MPI_Alltoall(sendcnts, 1, MPI_INT, recvcnts, 1, MPI_INT, MPI_COMM_WORLD);
-
-  int* sdispls = new int[nprocs];
-  int* rdispls = new int[nprocs];
-  sdispls[0] = 0;
-  rdispls[0] = 0;
-  for(int i = 1; i < nprocs; i++){
-    sdispls[i] = sdispls[i-1] + sendcnts[i-1];
-    rdispls[i] = rdispls[i-1] + recvcnts[i-1];
-  } 
-
-  int sendsize = 0;
-  int recvsize = 0;
-  int* sentcount = new int[nprocs];
-  for(int i = 0; i < nprocs; i++){
-    sendsize += sendcnts[i];
-    recvsize += recvcnts[i];
-    sentcount[i] = 0;
-  }
-
-  unsigned long long* sendbuf = new unsigned long long[sendsize];
-  unsigned long long* recvbuf = new unsigned long long[recvsize];
-  
-  //build the send buffer, boundary edges represented by GID in an arbitrary order (we'll order the endpoints later)
-  for(int i = 0; i > num_boundary_edges*2; i+=2){
-    if(owners[i] != me){
-      int proc_to_send = owners[i];
-      unsigned long long sendbufidx = sdispls[proc_to_send] + sentcount[proc_to_send];
-      sentcount[proc_to_send] += 2;
-      sendbuf[sendbufidx++] = boundary[i];
-      sendbuf[sendbufidx++] = boundary[i+1];
-    }
-    if(owners[i+1] != me && owners[i] != owners[i+1]){
-      int proc_to_send = owners[i];
-      unsigned long long sendbufidx = sdispls[proc_to_send] + sentcount[proc_to_send];
-      sentcount[proc_to_send] += 2;
-      sendbuf[sendbufidx++] = boundary[i];
-      sendbuf[sendbufidx++] = boundary[i+1];
-    }
-  }
-
-  status = MPI_Alltoallv(sendbuf,sendcnts,sdispls,MPI_UNSIGNED_LONG_LONG,recvbuf,recvcnts,rdispls,MPI_UNSIGNED_LONG_LONG,MPI_COMM_WORLD);*/
+  Teuchos::ArrayView<const int> sendCount = Teuchos::arrayViewFromVector(sendcnts);
+  Teuchos::ArrayView<int> recvCount = Teuchos::arrayViewFromVector(recvcnts);
+  //Zoltan2::AlltoAllCount(*problemComm,*env,sendCount, recvCount);
   
   //create sdispls and sentcount to build sendbuf
-  std::vector<int> sdispls(nprocs,0);
-  sdispls[0] = 0;
+  //COMMENT THIS BACK IN
+  std::vector<int> sdispls;
+  sdispls.push_back(0);
   for(int i = 1; i < nprocs; i++){
-    sdispls[i] = sdispls[i-1] + sendcnts[i-1];
+    sdispls.push_back(sdispls[i-1] + sendcnts[i-1]);
   }
 
-  std::vector<int> sentcount(nprocs,0);
+  std::vector<int> sentcount;
+  for(int i = 0; i < nprocs; i++){
+    sentcount.push_back(0);
+  }
   int sendsize = 0;
   int recvsize = 0;
   for(int i = 0; i < nprocs; i++){
@@ -349,9 +333,9 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   int* removed = prop.propagate();
   
   std::cout<<me<<": done propagating\n";
-  delete [] local_boundary_counts;
-  delete g;
-  delete [] grounding;
+  //delete [] local_boundary_counts;
+  //delete g;
+  //delete [] grounding;
 
   return removed;
 }

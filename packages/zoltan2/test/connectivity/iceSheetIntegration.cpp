@@ -100,7 +100,7 @@ int main(int argc, char** argv)
   int edgecounter = 0;
   for(int i = 0; i < num_global_boundary_edges; i+=2){
     for(int j = 0; j < nlocal; j++){
-      if(boundary_edges_global[i] == vtxIDs[j]+1 || boundary_edges_global[i+1] == vtxIDs[j]+1){
+      if(boundary_edges_global[i] == vtxIDs[j] || boundary_edges_global[i+1] == vtxIDs[j]){
         boundaryEdges[edgecounter] = boundary_edges_global[i];
 	boundaryEdges[edgecounter+1] = boundary_edges_global[i+1];
 	edgecounter+=2;
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
   
   std::cout<<me<<": is calling propagate\n";
   int* removeFlags = prop.getDegenerateFeatureFlags();
-
+  std::cout<<me<<": Finished propagating\n";
   for(int i = 0; i < nlocal; i++){
     if(removeFlags[i] > -2){
       std::cout<<me<<": removed vertex "<<vtxIDs[i]<<"\n";
@@ -151,7 +151,7 @@ int main(int argc, char** argv)
   
   int local_mismatches = 0;
   for(int i = 0; i < nlocal; i++){
-    if(removeFlags[i] > -2 && !ans_removed[vtxIDs[i]] || remove[i] == -2 && ans_removed[vtxIDs[i]]){
+    if(removeFlags[i] > -2 && !ans_removed[vtxIDs[i]] || removeFlags[i] == -2 && ans_removed[vtxIDs[i]]){
       local_mismatches++;
       std::cout<<me<<": Found a mismatch, vertex "<<vtxIDs[i]<<"\n";
     }

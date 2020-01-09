@@ -111,7 +111,7 @@ namespace iceProp{
 	  // += overload
 	  // for communicating copy's labels over processor boundaries.
           vtxLabel& operator+=(const vtxLabel& copy) {
-	    Grounding_Status owned_gs = getGroundingStatus();
+            Grounding_Status owned_gs = getGroundingStatus();
             Grounding_Status copy_gs = copy.getGroundingStatus();
             //The only cases we care about are 
             //owned	copy	
@@ -250,19 +250,18 @@ public:
     nVec(1), comm(comm_),g(g_),mapOwned(mapOwned_),
     mapWithCopies(mapWithCopies_)
   {
-    std::cout<<me<<": Starting prop constructor\n";
     typedef Tpetra::Import<lno_t, gno_t> import_t;
     Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, mapWithCopies));
-    std::cout<<me<<": created importer\n";
     femv = rcp(new femv_t(mapOwned, importer, nVec, true)); 
-    std::cout<<me<<": created femv\n";
     femv->beginFill();
     //set the member variable that stores femv->getData(0);
     femvData = femv->getData(0);
     for(lno_t i = 0; i < nLocalOwned + nLocalCopy; i++){
       gno_t gid = mapWithCopies->getGlobalElement(i);
       iceProp::vtxLabel label(i);
-      if(boundary_flags[i] > 2 && i < nLocalOwned) label.is_art = true;
+      if(boundary_flags[i] > 2 && i < nLocalOwned) {
+	label.is_art = true;
+      }
       if(grounding_flags[i]){
         label.first_label = gid;
         label.first_sender = gid;
@@ -308,9 +307,9 @@ public:
   //returns an array of vertices to remove
   int* propagate(void){ 
     //run bfs_prop
-    std::cout<<me<<": starting propagation\n"; 
+    //std::cout<<me<<": starting propagation\n"; 
     bfs_prop();
-    std::cout<<me<<": done with initial propagation\n";
+    //std::cout<<me<<": done with initial propagation\n";
     //check for potentially false articulation points
     while(true){
       femv->switchActiveMultiVector(); 
@@ -321,7 +320,7 @@ public:
           int* outs = out_vertices(g, curr_node.id);
           for(int j = 0; j < out_degree; j++){
             iceProp::vtxLabel neighbor = femvData[outs[j]];
-            if(neighbor.getGroundingStatus() == iceProp::HALF && neighbor.first_label != curr_node.id && neighbor.first_sender == curr_node.id){
+            if(neighbor.getGroundingStatus() == iceProp::HALF && neighbor.first_label != mapWithCopies->getGlobalElement(curr_node.id) && neighbor.first_sender == mapWithCopies->getGlobalElement(curr_node.id)){
               iceProp::reg.push(curr_node.id);
             }
           }
@@ -341,7 +340,7 @@ public:
           femv->replaceLocalValue(i,0,cleared);
         }
       }
-      std::cout<<me<<": Running BFS-prop again\n";
+      //std::cout<<me<<": Running BFS-prop again\n";
       //re-run bfs_prop until incomplete propagation is fixed
       bfs_prop();     
     }
@@ -356,7 +355,7 @@ public:
       else removed[i] = -1;
     }
     femv->switchActiveMultiVector();
-    std::cout<<me<<": returning answer\n";
+    //std::cout<<me<<": returning answer\n";
     return removed;
   }
 
@@ -407,11 +406,13 @@ public:
       //std::cout<<me<<": art queue front = "<<iceProp::art.front()<<"\n";
       //std::cout<<me<<": art queue size = "<<iceProp::art.size()<<"\n";
       femv->endFill();
+      //printFEMV("Before Communicating");
+      femv->doOwnedToOwnedPlusShared(Tpetra::ADD);
       femv->doOwnedPlusSharedToOwned(Tpetra::ADD);
       //std::cout<<me<<": reg queue front = "<<iceProp::reg.front()<<"\n";
       //std::cout<<me<<": reg queue size = "<<iceProp::reg.size()<<"\n";
       int local_done = iceProp::reg.empty() && iceProp::art.empty();
-      //printFEMV("Propagation Step");
+      //printFEMV("After Communicating");
       //this call makes sure that if any inter-processor communication changed labels
       //we catch the changes and keep propagating them.
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
