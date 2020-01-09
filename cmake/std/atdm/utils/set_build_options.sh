@@ -111,8 +111,6 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-6.1.0"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-6.1.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.3.1"* ]]; then
-  export ATDM_CONFIG_COMPILER=GNU-7.3.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.4.0"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-7.4.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]]; then
@@ -135,10 +133,6 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG-5.0.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"xl-2019.08.20"* ]]; then
-  export ATDM_CONFIG_COMPILER=XL-2019.08.20
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"xl"* ]]; then
-  export ATDM_CONFIG_COMPILER=XL
 else
   echo
   echo "***"

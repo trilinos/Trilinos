@@ -81,14 +81,11 @@ sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 # Common modules for all builds
 module load git/2.20.0
 module load cmake/3.14.5
-module load spectrum-mpi/2019.06.24
 
-if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
+if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24"* ]]; then
   module load gcc/7.3.1
   module load lapack/3.8.0-gcc-4.9.3
 
-  sparc_tpl_ext=ats2-pwr9_gcc-7.3.1
-  sparc_tpl_mpi_ext=ats2-pwr9_gcc-7.3.1_spmpi-2019.06.24
   # rabartl: ToDo: Above, we need to find a way to extract 'ats2-pwr9' out of
   # this file for this to be general!
 
@@ -105,6 +102,22 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
   export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
+
+  if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
+    module load cuda/10.1.243
+    export PATH=/usr/gapps/sparc/tools/nvcc_wrapper:$PATH
+    export OMPI_CXX="nvcc_wrapper"
+    export LLNL_USE_OMPI_VARS="y"
+    export CUDA_LAUNCH_BLOCKING=1
+    export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+    export TMPDIR=/tmp/$(whoami)
+
+    sparc_tpl_ext=ats2-v100_cuda-10.1.243_gcc-7.3.1
+    sparc_tpl_mpi_ext=ats2-v100_cuda-10.1.243_gcc-7.3.1_spmpi-2019.06.24
+  else
+    sparc_tpl_ext=ats2-pwr9_gcc-7.3.1
+    sparc_tpl_mpi_ext=ats2-pwr9_gcc-7.3.1_spmpi-2019.06.24
+  fi
 elif [ "$ATDM_CONFIG_COMPILER" == "XL-2019.08.20_SPMPI-2019.06.24" ]; then
   module load xl/2019.08.20
   module load lapack/3.8.0-xl-2019.08.20
@@ -134,6 +147,9 @@ else
   echo "***"
   return
 fi
+
+# Common module - requires compiler to be loaded first
+module load spectrum-mpi/2019.06.24
 
 # ATDM specific config variables
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp" #;-Wl,-verbose
