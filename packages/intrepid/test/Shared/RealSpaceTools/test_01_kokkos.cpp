@@ -128,7 +128,7 @@ Kokkos::initialize();
     try {
       rst::vectorNorm(a_2_2, NORM_TWO);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -136,7 +136,7 @@ Kokkos::initialize();
     try {
       rst::vectorNorm(a_10_2_2, a_10_2_2, NORM_TWO);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -144,7 +144,7 @@ Kokkos::initialize();
     try {
       rst::vectorNorm(a_10_2_2, a_10_2_2_3, NORM_TWO);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -152,7 +152,7 @@ Kokkos::initialize();
     try {
       rst::vectorNorm(a_10_3, a_10_2_2, NORM_TWO);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -163,7 +163,7 @@ Kokkos::initialize();
     try {
       rst::add(a_10_2_2, a_10_2, a_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -171,7 +171,7 @@ Kokkos::initialize();
     try {
       rst::add(a_10_2_3, a_10_2_2, a_10_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -179,7 +179,7 @@ Kokkos::initialize();
     try {
       rst::add(a_10_2_2, a_10_2_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -187,7 +187,7 @@ Kokkos::initialize();
     try {
       rst::add(a_10_2_3, a_10_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -198,7 +198,7 @@ Kokkos::initialize();
     try {
       rst::subtract(a_10_2_2, a_10_2, a_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -206,7 +206,7 @@ Kokkos::initialize();
     try {
       rst::subtract(a_10_2_3, a_10_2_2, a_10_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -214,7 +214,7 @@ Kokkos::initialize();
     try {
       rst::subtract(a_10_2_2, a_10_2_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -222,7 +222,7 @@ Kokkos::initialize();
     try {
       rst::subtract(a_10_2_3, a_10_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -233,7 +233,7 @@ Kokkos::initialize();
     try {
       rst::dot(a_10_2, a_10_2_2_3, a_10_2_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -241,7 +241,7 @@ Kokkos::initialize();
     try {
       rst::dot(a_10_2, a_10_2_2, a_10_2_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -249,7 +249,7 @@ Kokkos::initialize();
     try {
       rst::dot(a_10_2_2, a_10_2_2_3, a_10_2_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -257,7 +257,7 @@ Kokkos::initialize();
     try {
       rst::dot(a_10_2, a_10_2_2, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -265,7 +265,7 @@ Kokkos::initialize();
     try {
       rst::dot(a_10_3, a_10_2_3, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -276,7 +276,7 @@ Kokkos::initialize();
     try {
       rst::absval(a_10_3, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -284,7 +284,7 @@ Kokkos::initialize();
     try {
       rst::absval(a_10_2_2, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -292,7 +292,7 @@ Kokkos::initialize();
 #endif
 
   }
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -348,7 +348,7 @@ Kokkos::initialize();
     try {
       rst::inverse(a_2_2, a_10_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -356,7 +356,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_10_1_2_3_4, a_10_1_2_3_4);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -364,7 +364,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_10, a_10);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -372,7 +372,7 @@ Kokkos::initialize();
     try {
       rst::inverse(a_10_2_2, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -380,7 +380,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_10_2_3, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -388,7 +388,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_10_15_4_4, a_10_15_4_4);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -396,7 +396,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_1_1, a_1_1);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -404,7 +404,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_2_2, a_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -412,7 +412,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_3_3, a_3_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -422,7 +422,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_2_2, a_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -430,7 +430,7 @@ Kokkos::initialize();
     try {
       rst::inverse(b_3_3, a_3_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -441,7 +441,7 @@ Kokkos::initialize();
     try {
       rst::transpose(a_2_2, a_10_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -449,7 +449,7 @@ Kokkos::initialize();
     try {
       rst::transpose(b_10_1_2_3_4, a_10_1_2_3_4);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -457,7 +457,7 @@ Kokkos::initialize();
     try {
       rst::transpose(b_10, a_10);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -465,7 +465,7 @@ Kokkos::initialize();
     try {
       rst::transpose(a_10_2_2, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -473,7 +473,7 @@ Kokkos::initialize();
     try {
       rst::transpose(b_10_2_3, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -484,7 +484,7 @@ Kokkos::initialize();
     try {
       rst::det(a_2_2, a_10_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -492,7 +492,7 @@ Kokkos::initialize();
     try {
       rst::det(a_10_2_2, a_10_1_2_3_4);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -500,7 +500,7 @@ Kokkos::initialize();
     try {
       rst::det(b_10_14, a_10_15_3_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -508,7 +508,7 @@ Kokkos::initialize();
     try {
       rst::det(a_9, a_10_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -516,7 +516,7 @@ Kokkos::initialize();
     try {
       rst::det(b_10, a_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -524,7 +524,7 @@ Kokkos::initialize();
     try {
       rst::det(b_10_15, a_10_15_4_4);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -532,7 +532,7 @@ Kokkos::initialize();
     try {
       rst::det(a_10_15_4_4);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -540,7 +540,7 @@ Kokkos::initialize();
     try {
       rst::det(a_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -548,7 +548,7 @@ Kokkos::initialize();
     try {
       rst::det(a_4_4);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -559,7 +559,7 @@ Kokkos::initialize();
     try {
       rst::matvec(a_10_2_2, a_10_2_3, b_10_2_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -567,7 +567,7 @@ Kokkos::initialize();
     try {
       rst::matvec(a_2_2, a_2_2, a_10);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -575,7 +575,7 @@ Kokkos::initialize();
     try {
       rst::matvec(a_9, a_10_2_2, a_2_2);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -583,7 +583,7 @@ Kokkos::initialize();
     try {
       rst::matvec(b_10_15_3, a_10_15_3_3, b_10_14_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -591,7 +591,7 @@ Kokkos::initialize();
     try {
       rst::matvec(b_10_14_3, a_10_15_3_3, b_10_15_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -599,7 +599,7 @@ Kokkos::initialize();
     try {
       rst::matvec(b_10_15_3, a_10_15_3_2, b_10_15_3);
     }
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -608,7 +608,7 @@ Kokkos::initialize();
 #endif
 
   }
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -1028,7 +1028,7 @@ Kokkos::initialize();
       *outStream << "\n";
     }
   }
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
