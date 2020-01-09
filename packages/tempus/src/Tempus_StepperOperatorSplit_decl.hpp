@@ -75,8 +75,15 @@ public:
 
     virtual void setObserver(Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > obs);
 
-    virtual Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > getObserver() const
-    { return stepperOSObserver_; }
+    //virtual Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > getObserver() const
+    //{ return stepperOSObserver_; }
+
+// deprecate
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperOSObserver_; }
 
     virtual void setTempState(Teuchos::RCP<Tempus::SolutionState<Scalar>> state)
       { tempState_ = state; }

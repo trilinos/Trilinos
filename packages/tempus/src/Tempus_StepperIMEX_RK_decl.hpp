@@ -280,8 +280,14 @@ public:
 
     virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
 
-    virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
-    { return stepperRKObserver_; }
+    //virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
+    //{ return stepperRKObserver_; }
+
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperRKObserver_; }
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();

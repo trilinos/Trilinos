@@ -90,10 +90,16 @@ public:
 
   /// \name Basic stepper methods
   //@{
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperRKObserver_; }
+
     virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
 
-    virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
-    { return stepperRKObserver_; }
+    //virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
+    //{ return stepperRKObserver_; }
 
     virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
     { return tableau_; }

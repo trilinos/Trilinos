@@ -73,8 +73,14 @@ public:
   //@{
     virtual void setObserver(Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs);
 
-    virtual Teuchos::RCP<StepperForwardEulerObserver<Scalar> > getObserver() const
-    { return stepperFEObserver_; }
+    //virtual Teuchos::RCP<StepperForwardEulerObserver<Scalar> > getObserver() const
+    //{ return stepperFEObserver_; }
+
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperFEObserver_; }
 
     /// Set the initial conditions, make them consistent, and set needed memory.
     virtual void setInitialConditions (

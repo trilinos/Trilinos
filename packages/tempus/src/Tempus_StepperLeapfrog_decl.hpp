@@ -96,8 +96,15 @@ public:
   //@{
     virtual void setObserver(Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs);
 
-    virtual Teuchos::RCP<StepperLeapfrogObserver<Scalar> > getObserver() const
-    { return stepperLFObserver_; }
+    //virtual Teuchos::RCP<StepperLeapfrogObserver<Scalar> > getObserver() const
+    //{ return stepperLFObserver_; }
+
+    // deprecated
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperLFObserver_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
