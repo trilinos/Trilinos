@@ -31,6 +31,12 @@ void StepperImplicit<Scalar>::setModel(
   this->isInitialized_ = false;
 }
 
+template<class Scalar>
+void StepperImplicit<Scalar>::setNonConstModel(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
+{
+  this->setModel(appModel);
+}
 
 template<class Scalar>
 void StepperImplicit<Scalar>::setInitialConditions(

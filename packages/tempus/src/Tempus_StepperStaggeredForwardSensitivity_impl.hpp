@@ -85,6 +85,13 @@ setModel(
   this->isInitialized_ = false;
 }
 
+template<class Scalar>
+void StepperStaggeredForwardSensitivity<Scalar>::
+setNonConstModel(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
+{
+  this->setModel(appModel);
+}
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
