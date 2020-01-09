@@ -51,7 +51,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   ride
   mutrino   # Will be repalced by 'ats1'
   waterman
-  vortex    # Will be replaced by 'ats2'
+  ats2
   serrano
   cts1
   tlcc2
@@ -103,7 +103,7 @@ elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatchSystemName=waterman
 elif [[ $realHostname == "vortex"* ]] ; then
   hostnameMatch=vortex
-  hostnameMatchSystemName=vortex
+  hostnameMatchSystemName=ats2
 
 # Specifically named cts1 systems (currently maps to 'serrano' env)
 elif [[ $realHostname == "serrano"* ]] || [[ $realHostname =~ ser[0-9]+ ]] ; then
