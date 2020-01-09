@@ -152,6 +152,10 @@ TEUCHOS_UNIT_TEST(domain_interface, base)
     e.setExpectedIndices(12,20);
     e.evaluateFields(workset);
 
+    e.setDomain(DomainEvaluator::EXTERNAL);
+    e.setExpectedIndices(8,20);
+    e.evaluateFields(workset);
+
     e.setDomain(DomainEvaluator::ALL);
     e.setExpectedIndices(0,20);
     e.evaluateFields(workset);
@@ -172,6 +176,10 @@ TEUCHOS_UNIT_TEST(domain_interface, base)
 
     e.setDomain(DomainEvaluator::VIRTUAL);
     e.setExpectedIndices(8,14);
+    e.evaluateFields(workset);
+
+    e.setDomain(DomainEvaluator::EXTERNAL);
+    e.setExpectedIndices(4,14);
     e.evaluateFields(workset);
 
     e.setDomain(DomainEvaluator::ALL);

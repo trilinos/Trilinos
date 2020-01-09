@@ -299,7 +299,7 @@ int main(int argc, char *argv[]) {
       *outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
     }
   }
-  catch (std::logic_error err) {    
+  catch (const std::logic_error & err) {    
     *outStream << err.what() << "\n";
     errorFlag = -1;
   };  
