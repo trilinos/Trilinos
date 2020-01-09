@@ -40,8 +40,9 @@ function atdm_run_script_on_compute_node {
   echo
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
+  bhosts | grep ok | grep -v vortex59 | awk -F ' ' '{print $1}' | sort > hostfile
   #echo "bsub -J ${JOBNAME}-Test1 -W 06:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
-  bsub -J $ATDM_CONFIG_BUILD_NAME -W ${timeout} -Is ${script_to_run} &> $output_file &
+  bsub -J $ATDM_CONFIG_BUILD_NAME -W ${timeout} -Is ${script_to_run} -hostfile $PWD/hostfile &> $output_file &
   SBATCH_PID=$!
   set +x
 
