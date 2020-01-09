@@ -17,6 +17,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* || "$ATDM_CONFIG_COMPILER" == "XL"* ]]; 
     export ATDM_CONFIG_KOKKOS_ARCH=Power9
   elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9
+    #TODO: atdm_sys_arch=ats2-pwr9
   else
     echo
     echo "***"
@@ -54,18 +55,6 @@ fi
 
 export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-pwr9
 
-export ATDM_CONFIG_SBATCH_DEFAULT_TIMEOUT=4:00:00
-
-export ATDM_CONFIG_SLURM_DEFAULT_ACCOUNT=fy150090
-
-################################################################################
-#
-# Set up env on ats2 (vortex) for ATMD builds of Trilinos
-#
-# This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
-#
-################################################################################
-
 echo "Using $ATDM_CONFIG_SYSTEM_NAME toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
@@ -79,7 +68,6 @@ export ATDM_CONFIG_BUILD_COUNT=8
 # The second purge will catch any real errors with purging ...
 module purge &> /dev/null
 module purge
-module load git/2.20.0
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
@@ -90,10 +78,13 @@ fi
 
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 
+# Common modules for all builds
+module load git/2.20.0
+module load cmake/3.14.5
+module load spectrum-mpi/2019.06.24
+
 if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
-  module load cmake/3.14.5
   module load gcc/7.3.1
-  module load spectrum-mpi/2019.06.24
   module load lapack/3.8.0-gcc-4.9.3
 
   sparc_tpl_ext=ats2-pwr9_gcc-7.3.1
@@ -114,11 +105,28 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.3.1_SPMPI-2019.06.24" ]; then
   export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
-  export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_ROOT}/lib/libiberty.a"
+elif [ "$ATDM_CONFIG_COMPILER" == "XL-2019.08.20_SPMPI-2019.06.24" ]; then
+  module load xl/2019.08.20
+  module load lapack/3.8.0-xl-2019.08.20
 
-  export F77=mpifort
-  export FC=mpifort
-  export F90=mpifort
+  sparc_tpl_ext=ats2-pwr9_xl-2019.08.20
+  sparc_tpl_mpi_ext=ats2-pwr9_xl-2019.08.20_spmpi-2019.06.24
+  # rabartl: ToDo: Above, we need to find a way to extract 'ats2-pwr9' out of
+  # this file for this to be general!
+
+  export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
+  export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
+  export COMPILER_ROOT=/usr/tce/packages/xl/xl-2019.08.20/bin
+  export SPARC_HDF5=hdf5-1.8.20
+
+  # eharvey: TODO: remove COMPILER_ROOT and other exports below.
+  export PATH=${COMPILER_ROOT}/bin:${PATH}
+  export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
+  export BINUTILS_ROOT=${COMPILER_ROOT}
+  export LIBRARY_PATH=${BINUTILS_ROOT}/lib
+  export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
+  export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
+  export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 else
   echo
   echo "***"
@@ -127,9 +135,12 @@ else
   return
 fi
 
+# ATDM specific config variables
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp" #;-Wl,-verbose
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
+export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_ROOT}/lib/libiberty.a"
 
+# Commont ROOT config variables
 export BOOST_ROOT=${sparc_tpl_base}/boost-1.65.1/00000000/${sparc_tpl_ext}
 export HDF5_ROOT=${sparc_tpl_base}/hdf5-1.10.5/00000000/${sparc_tpl_mpi_ext}
 export CGNS_ROOT=${sparc_tpl_base}/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/${sparc_tpl_mpi_ext}
@@ -148,7 +159,7 @@ if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a;${METIS_ROOT}/lib/libmetis.a"
 fi
 
-# Set MPI wrappers
+# Set common MPI wrappers
 export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
@@ -156,9 +167,12 @@ export MPIF90=`which mpif90`
 # eharvey: TODO: Are these MPI_POST_FLAGS used?
 export ATDM_CONFIG_MPI_POST_FLAGS="-map-by;socket:PE=4"
 
-# Set the default compilers
+# Set common default compilers
 export CC=mpicc
 export CXX=mpicxx
+export F77=mpifort
+export FC=mpifort
+export F90=mpifort
 
 # Define function atdm_run_script_on_compute_node
 source $ATDM_SCRIPT_DIR/common/define_run_on_lsf_compute_node_func.sh
