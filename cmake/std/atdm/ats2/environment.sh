@@ -12,12 +12,12 @@
 
 # Handle KOKKOS_ARCH
 
-if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* || "$ATDM_CONFIG_COMPILER" == "XL"* ]]; then
-  if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
+if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* || \
+  "$ATDM_CONFIG_COMPILER" == "XL"* ]]; then
+  if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" || \
+    "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9
-  elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" ]] ; then
-    export ATDM_CONFIG_KOKKOS_ARCH=Power9
-    #TODO: atdm_sys_arch=ats2-pwr9
+    arch=pwr9
   else
     echo
     echo "***"
@@ -28,12 +28,11 @@ if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* || "$ATDM_CONFIG_COMPILER" == "XL"* ]]; 
     return
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
-  if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
+  if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" || \
+    "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" || \
+    "$ATDM_CONFIG_KOKKOS_ARCH" == "Volta70" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70
-  elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" ]] ; then
-    export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70
-  elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Volta70" ]] ; then
-    export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70
+    arch=v100
   else
     echo
     echo "***"
@@ -52,6 +51,8 @@ else
   echo "***"
   return
 fi
+
+export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-${arch}
 
 echo "Using $ATDM_CONFIG_SYSTEM_NAME toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
@@ -100,34 +101,26 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24"* ]]; then
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
   if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
-    module load cuda/10.1.243
-    export PATH=/usr/gapps/sparc/tools/nvcc_wrapper:$PATH
-    export OMPI_CXX="nvcc_wrapper"
-    export LLNL_USE_OMPI_VARS="y"
-    export CUDA_LAUNCH_BLOCKING=1
-    export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
-    export TMPDIR=/tmp/$(whoami)
-
-    export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-v100
-    sparc_tpl_ext=ats2-v100_cuda-10.1.243_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-v100_cuda-10.1.243_gcc-7.3.1_spmpi-2019.06.24
+    sparc_tpl_ext=ats2-${arch}_cuda-10.1.243_gcc-7.3.1
+    sparc_tpl_mpi_ext=ats2-${arch}_cuda-10.1.243_gcc-7.3.1_spmpi-2019.06.24
   else
-    export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-pwr9
-    sparc_tpl_ext=ats2-pwr9_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-pwr9_gcc-7.3.1_spmpi-2019.06.24
+    sparc_tpl_ext=ats2-${arch}_gcc-7.3.1
+    sparc_tpl_mpi_ext=ats2-${arch}_gcc-7.3.1_spmpi-2019.06.24
   fi
 elif [ "$ATDM_CONFIG_COMPILER" == "XL-2019.08.20_SPMPI-2019.06.24" ]; then
   module load xl/2019.08.20
   module load lapack/3.8.0-xl-2019.08.20
+  module load gmake/4.2.1
 
-  sparc_tpl_ext=ats2-pwr9_xl-2019.08.20
-  sparc_tpl_mpi_ext=ats2-pwr9_xl-2019.08.20_spmpi-2019.06.24
+  # Ninja not available for XL until cmake 3.17.0
+  export ATDM_CONFIG_USE_NINJA=OFF
+
   # rabartl: ToDo: Above, we need to find a way to extract 'ats2-pwr9' out of
   # this file for this to be general!
 
   export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
   export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
-  export COMPILER_ROOT=/usr/tce/packages/xl/xl-2019.08.20/bin
+  export COMPILER_ROOT=/usr/tce/packages/xl/xl-2019.08.20
   export SPARC_HDF5=hdf5-1.8.20
 
   # eharvey: TODO: remove COMPILER_ROOT and other exports below.
@@ -138,12 +131,30 @@ elif [ "$ATDM_CONFIG_COMPILER" == "XL-2019.08.20_SPMPI-2019.06.24" ]; then
   export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
+
+  if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
+    sparc_tpl_ext=ats2-${arch}_cuda-10.1.243_xl-2019.08.20
+    sparc_tpl_mpi_ext=ats2-${arch}_cuda-10.1.243_xl-2019.08.20_spmpi-2019.06.24
+  else
+    sparc_tpl_ext=ats2-${arch}_xl-2019.08.20
+    sparc_tpl_mpi_ext=ats2-${arch}_xl-2019.08.20_spmpi-2019.06.24
+  fi
 else
   echo
   echo "***"
   echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
   echo "***"
   return
+fi
+
+if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
+  module load cuda/10.1.243
+  export PATH=/usr/gapps/sparc/tools/nvcc_wrapper:$PATH
+  export OMPI_CXX="nvcc_wrapper"
+  export LLNL_USE_OMPI_VARS="y"
+  export CUDA_LAUNCH_BLOCKING=1
+  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+  export TMPDIR=/tmp/$(whoami)
 fi
 
 # Common module - requires compiler to be loaded first
