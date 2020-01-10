@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
     }
   } //try 
   
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   };
@@ -479,7 +479,7 @@ int main(int argc, char *argv[]) {
     }
   } //try 
   
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   };
@@ -681,7 +681,7 @@ int main(int argc, char *argv[]) {
     }
   } //try 
   
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   };
@@ -891,7 +891,7 @@ int main(int argc, char *argv[]) {
     }
   } //try 
   
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   };
@@ -1108,7 +1108,7 @@ int main(int argc, char *argv[]) {
     }
   } //try 
   
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   };
@@ -1141,7 +1141,7 @@ int main(int argc, char *argv[]) {
     }
   }// try
     
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
       *outStream << err.what() << "\n";
       errorFlag = -1000;
     };

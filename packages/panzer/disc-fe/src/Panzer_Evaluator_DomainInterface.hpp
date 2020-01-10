@@ -19,7 +19,8 @@ namespace panzer {
         GHOST=1,    /// All Ghosted cells for the workset on the MPI process
         REAL=2,     /// All Owned and Ghosted cells for the workset on the MPI process
         VIRTUAL=3,  /// All virtual cells for the workset on the MPI process
-        ALL=4       /// All OWNED, GHOSTED and VIRTUAL cells for the workset on the MPI process
+        EXTERNAL=4, /// All ghost and virtual cells for the workset on the MPI process
+        ALL=5       /// All OWNED, GHOSTED and VIRTUAL cells for the workset on the MPI process
         };
 
     /**

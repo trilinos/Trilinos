@@ -1,6 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="coarse: type"            type="string" value="Amesos-KLU"/>
-  <Parameter name="coarse: max size"        type="int"    value="2000"/>
-  <Parameter name="coarse: sweeps"          type="int"    value="1"/>
-  <Parameter name="coarse: pre or post"     type="string" value="post"/>
-</ParameterList>

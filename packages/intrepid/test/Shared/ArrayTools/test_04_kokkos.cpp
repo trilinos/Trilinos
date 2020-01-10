@@ -62,7 +62,7 @@ using namespace Intrepid;
   try {                                                                                                             \
     S ;                                                                                                             \
   }                                                                                                                 \
-  catch (std::logic_error err) {                                                                                    \
+  catch (const std::logic_error & err) {                                                                                    \
       *outStream << "Expected Error ----------------------------------------------------------------\n";            \
       *outStream << err.what() << '\n';                                                                             \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";    \
@@ -647,7 +647,7 @@ int main(int argc, char *argv[]) {
    INTREPID_TEST_COMMAND(atools.matmatProductDataData<double>(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P1_D3_D3) );
   }  
 
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -3472,7 +3472,7 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
     *                                      Finish test                                             *
     ************************************************************************************************/
   
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

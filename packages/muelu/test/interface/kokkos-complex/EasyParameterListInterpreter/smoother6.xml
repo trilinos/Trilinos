@@ -1,3 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="smoother: type" type="string" value="ILUT"/>
-</ParameterList>
