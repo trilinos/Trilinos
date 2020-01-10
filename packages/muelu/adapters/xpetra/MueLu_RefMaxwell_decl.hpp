@@ -389,6 +389,8 @@ namespace MueLu {
     //! dump out real-valued multivector
     void dumpCoords(const RealValuedMultiVector& X, std::string name) const;
 
+    Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm=Teuchos::null) const;
+
     //! set parameters
     void setMatvecParams(Matrix& A, RCP<ParameterList> matvecParams) {
       RCP<const Import> xpImporter = A.getCrsGraph()->getImporter();
@@ -428,7 +430,7 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
     Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
-    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_,implicitTranspose_,fuseProlongationAndUpdate_;
+    bool disable_addon_, dump_matrices_, useKokkos_, use_as_preconditioner_, implicitTranspose_, fuseProlongationAndUpdate_, syncTimers_;
     int numItersH_, numIters22_;
     std::string mode_;
     //! Temporary memory
