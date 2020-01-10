@@ -62,7 +62,7 @@ using namespace Intrepid;
   try {                                                                                                                    \
     S ;                                                                                                                    \
   }                                                                                                                        \
-  catch (std::logic_error err) {                                                                                           \
+  catch (const std::logic_error & err) {                                                                                           \
       ++throwCounter;                                                                                                      \
       *outStream << "Expected Error " << nException << " -------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                                                                    \
@@ -188,14 +188,14 @@ int main(int argc, char *argv[]) {
     try {
       PointTools::getLatticeSize( shards::getCellTopologyData< shards::Quadrilateral<4> >() , 3 , 0 );
     }
-    catch (std::invalid_argument err) {
+    catch (const std::invalid_argument & err) {
       *outStream << err.what() << "\n";
     }
 
     try {
       PointTools::getLatticeSize( shards::getCellTopologyData< shards::Hexahedron<8> >() , 3 , 0 );
     }
-    catch (std::invalid_argument err) {
+    catch (const std::invalid_argument & err) {
       *outStream << err.what() << "\n";
     }
   }
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> pts(3,1);
       PointTools::getLatticeSize( shards::getCellTopologyData< shards::Line<2> >() , 5 , 0 );
     }
-    catch (std::invalid_argument err) {
+    catch (const std::invalid_argument & err) {
       *outStream << err.what() << "\n";
     }
     // line: wrong dimension for points
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> pts(6,2);
       PointTools::getLatticeSize( shards::getCellTopologyData< shards::Line<2> >() , 5 , 0 );
     }
-    catch (std::invalid_argument err) {
+    catch (const std::invalid_argument & err) {
       *outStream << err.what() << "\n";
     }
     // triangle: too many points allocated
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> pts(4,2);
       PointTools::getLatticeSize( shards::getCellTopologyData< shards::Triangle<3> >() , 3 , 1 );
     }
-    catch (std::invalid_argument err) {
+    catch (const std::invalid_argument & err) {
       *outStream << err.what() << "\n";
     }
     // triangle: wrong dimension for points
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> pts(6,1);
       PointTools::getLatticeSize( shards::getCellTopologyData< shards::Triangle<3> >() , 3 , 0 );
     }
-    catch (std::invalid_argument err) {
+    catch (const std::invalid_argument & err) {
       *outStream << err.what() << "\n";
     }
     // tetrahedron: not enough points allocated
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> pts(4,2);
       PointTools::getLatticeSize( shards::getCellTopologyData< shards::Tetrahedron<4> >() , 2 , 0 );
     }
-    catch (std::invalid_argument err) {
+    catch (const std::invalid_argument & err) {
       *outStream << err.what() << "\n";
     }
     // tetrahedron: wrong dimension for points
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> pts(4,2);
       PointTools::getLatticeSize( shards::getCellTopologyData< shards::Tetrahedron<4> >() , 1 , 0 );
     }
-    catch (std::invalid_argument err) {
+    catch (const std::invalid_argument & err) {
       *outStream << err.what() << "\n";
     }
 

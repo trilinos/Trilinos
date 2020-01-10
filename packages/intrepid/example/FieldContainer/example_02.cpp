@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     multiIndex[4] = 6;
     myContainer.getEnumeration(multiIndex);
   }
-  catch(std::logic_error err){
+  catch (const std::logic_error & err) {
     cout << err.what() << "\n"; 
   }
   
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     multiIndex[3] = 2;
     myContainer.getEnumeration(multiIndex);
   }
-  catch(std::logic_error err){
+  catch (const std::logic_error & err) {
     cout << err.what() << "\n\n"; 
   }
   
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   try{
     myContainer.setValues(dataTeuchosArray);
   }
-  catch(std::logic_error err){
+  catch (const std::logic_error & err) {
     cout << err.what() << "\n";
   }
   
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   try{
     myContainer.setValues(dataTeuchosArray);
   }
-  catch(std::logic_error err){
+  catch (const std::logic_error & err) {
     cout << err.what() << "\n";
   }
   
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
   try{
     myContainer[1000];
   }
-  catch(std::logic_error err){
+  catch (const std::logic_error & err) {
     cout << err.what() << "\n\n"; 
   }
   
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
     
     FieldContainer<double> myOtherContainer(dimensions, dataTeuchosArray);
   }
-  catch(std::logic_error err){
+  catch (const std::logic_error & err) {
     cout << err.what() << endl;
   }
   

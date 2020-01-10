@@ -173,6 +173,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
+  bool        keepCoarseCoords   = false;               clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
   std::string coarseSolverType   = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,  "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
   std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,      "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
   std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,  "Read parameters for AMG as coarse level solve from this xml file.");
@@ -680,7 +681,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         compositeToRegionLIDs(),
                         coarseSolverData,
                         smootherParams,
-                        hierarchyData);
+                        hierarchyData,
+                        keepCoarseCoords);
 
   hierarchyData->print();
 

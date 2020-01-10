@@ -757,9 +757,42 @@ public:
   ///   ParameterList around.
   static bool setParams_;
 
+protected:
   /// \brief Stacked timer for optional injection of timing from
   ///   TimeMonitor-enabled objects.
   static Teuchos::RCP<Teuchos::StackedTimer> stackedTimer_; 
+};
+
+
+/// \class SyncTimeMonitor
+/// \brief A TimeMonitor that waits at a MPI barrier before destruction.
+class SyncTimeMonitor :
+    public TimeMonitor {
+public:
+
+  /** \name Constructor/Destructor */
+  //@{
+
+  /// \brief Constructor: starts the timer.
+  ///
+  /// \param timer [in/out] Reference to the timer to be wrapped.
+  ///   This constructor starts the timer, and the destructor stops
+  ///   the timer.
+  ///
+  /// \param reset [in] If true, reset the timer before starting it.
+  ///   Default behavior is not to reset the timer.
+  SyncTimeMonitor(Time& timer, Ptr<const Comm<int> > comm, bool reset=false);
+
+  //! Default constructor is deleted, since it would be unsafe.
+  SyncTimeMonitor () = delete;
+
+  //! Destructor: stops the timer.
+  ~SyncTimeMonitor() override;
+  //@}
+
+private:
+  // \brief Communicator on which barrier will be called.
+  Ptr<const Comm<int> > comm_;
 };
 
 
