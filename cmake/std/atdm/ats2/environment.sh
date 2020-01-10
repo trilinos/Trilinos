@@ -53,8 +53,6 @@ else
   return
 fi
 
-export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-pwr9
-
 echo "Using $ATDM_CONFIG_SYSTEM_NAME toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
@@ -75,8 +73,6 @@ if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
 else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 fi
-
-sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 
 # Common modules for all builds
 module load git/2.20.0
@@ -112,9 +108,11 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24"* ]]; then
     export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
     export TMPDIR=/tmp/$(whoami)
 
+    export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-v100
     sparc_tpl_ext=ats2-v100_cuda-10.1.243_gcc-7.3.1
     sparc_tpl_mpi_ext=ats2-v100_cuda-10.1.243_gcc-7.3.1_spmpi-2019.06.24
   else
+    export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-pwr9
     sparc_tpl_ext=ats2-pwr9_gcc-7.3.1
     sparc_tpl_mpi_ext=ats2-pwr9_gcc-7.3.1_spmpi-2019.06.24
   fi
@@ -155,6 +153,8 @@ module load spectrum-mpi/2019.06.24
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp" #;-Wl,-verbose
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_ROOT}/lib/libiberty.a"
+
+sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 
 # Commont ROOT config variables
 export BOOST_ROOT=${sparc_tpl_base}/boost-1.65.1/00000000/${sparc_tpl_ext}
