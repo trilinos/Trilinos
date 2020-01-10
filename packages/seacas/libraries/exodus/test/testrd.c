@@ -151,27 +151,14 @@ int main(int argc, char **argv)
     printf("error in ex_inquire for EX_INQ_TITLE\n");
   }
 
-  /* Verify that ex_get_init_global gives same values for a serial file */
+  /* Verify that ex_get_init_global does not crash.  Since these are serial files, the data
+     won't be on the files, so this verifies that this is ok
+  */
   {
     int nng, neg, nebg, nnsg, nssg;
     error = ex_get_init_global(exoid, &nng, &neg, &nebg, &nnsg, &nssg);
     if (error != EX_NOERR) {
       printf("after ex_get_init_global, error = %3d\n", error);
-    }
-    if (num_nodes != nng) {
-      printf("Error in node match: %d vs %d.\n", num_nodes, nng);
-    }
-    if (num_elem != neg) {
-      printf("Error in element match: %d vs %d.\n", num_elem, neg);
-    }
-    if (num_elem_blk != nebg) {
-      printf("Error in element block match: %d vs %d.\n", num_elem_blk, nebg);
-    }
-    if (num_node_sets != nnsg) {
-      printf("Error in node set match: %d vs %d.\n", num_node_sets, nnsg);
-    }
-    if (num_side_sets != nssg) {
-      printf("Error in side set match: %d vs %d.\n", num_side_sets, nssg);
     }
   }
 
