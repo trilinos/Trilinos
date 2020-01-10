@@ -126,7 +126,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "XL-2019.08.20_SPMPI-2019.06.24" ]; then
   # eharvey: TODO: remove COMPILER_ROOT and other exports below.
   export PATH=${COMPILER_ROOT}/bin:${PATH}
   export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
-  export BINUTILS_ROOT=${COMPILER_ROOT}
+  export BINUTILS_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
   export LIBRARY_PATH=${BINUTILS_ROOT}/lib
   export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
