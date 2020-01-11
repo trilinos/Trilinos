@@ -1,13 +1,16 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
+#include <Tpetra_CrsMatrix.hpp>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include <Teuchos_ParameterList.hpp>
 
 #include <Zoltan2_config.h>
 #include <Zoltan2_IceSheet.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 
 #include<string>
 #include<sstream>
@@ -30,15 +33,61 @@ int main(int argc, char** argv)
   //(will move to  build/zoltan2/test/connectivity/meshData/ once working)
   string path = argv[1];
   string testData = argv[2];
+  typedef double scalar_t;
+  typedef int lno_t;
+  typedef int gno_t;
+  typedef Tpetra::CrsMatrix<scalar_t,lno_t, gno_t> SparseMatrix;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
+  typedef Zoltan2_TestingFramework::tcrsGraph_t CrsGraph;
+  typedef Zoltan2::XpetraCrsGraphAdapter<CrsGraph> GraphAdapter;
+  Teuchos::RCP<UserInputForTests> uinput = rcp(new UserInputForTests(path,testData,comm, true,true));
+  
+  //Teuchos::RCP<CrsGraph> crsgraph = uinput.getUITpetraCrsGraph();
+  
+  //Teuchos::RCP<GraphAdapter> inputGraphAdapter;
 
-  UserInputForTests uinput(path,testData,comm, true,true);
+  Teuchos::RCP<SparseMatrix> Matrix;
+  Matrix = uinput->getUITpetraCrsMatrix();
   
-  Teuchos::RCP<Zoltan2_TestingFramework::tcrsGraph_t> crsgraph = uinput.getUITpetraCrsGraph();
-  
-  Teuchos::RCP<Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t> > inputGraphAdapter;
+  //partition the input matrix, to test noncontiguous vertex ID distributions
+  SparseMatrixAdapter *zadapter;
+  zadapter = new SparseMatrixAdapter(Matrix,1);
+  zadapter->setRowWeightIsNumberOfNonZeros(0);
 
-  inputGraphAdapter = rcp(new Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t>(crsgraph));
+  Teuchos::ParameterList zparams;
+  zparams.set("algorithm","parmetis");
+  zparams.set("imbalance_tolerance",1.05);
+  zparams.set("partitioning_approach","partition");
+  Zoltan2::PartitioningProblem<SparseMatrixAdapter> zproblem(zadapter, &zparams);
+  zproblem.solve();
+   
+  // print partition characteristics before and after
+  typedef Zoltan2::EvaluatePartition<SparseMatrixAdapter> quality_t;
+  quality_t evalbef(zadapter, &zparams, comm, NULL);
+  if(me == 0){
+    std::cout << "BEFORE PREPARTITION: Partition statistics:" <<std::endl;
+    evalbef.printMetrics(std::cout);
+  }
+
+  quality_t evalaft(zadapter, &zparams, comm, &zproblem.getSolution());
+  if(me == 0) {
+    std::cout << "AFTER PREPARTITION: Partition statistics:" << std::endl;
+    evalaft.printMetrics(std::cout);
+  }
+
+  Teuchos::RCP<SparseMatrix> newMatrix;
+  zadapter->applyPartitioningSolution(*Matrix, newMatrix, zproblem.getSolution());
   
+  Matrix = newMatrix;
+  delete zadapter;
+  //Teuchos::RCP<CrsGraph> newGraph;
+  //zadapter->applyPartitioningSolution(*crsgraph,newGraph,zproblem.getSolution());
+  
+  Teuchos::RCP<const CrsGraph> crsgraph = Matrix->getCrsGraph();  
+
+  Teuchos::RCP<GraphAdapter> inputGraphAdapter = rcp(new GraphAdapter(crsgraph));
+  
+
   //need to read in problem specific files here, start out with zeroed out arrays
   int nlocal = (int) inputGraphAdapter->getLocalNumVertices();
   bool* basalFriction = new bool[nlocal];

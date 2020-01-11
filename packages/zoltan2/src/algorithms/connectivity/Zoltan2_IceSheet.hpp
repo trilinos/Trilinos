@@ -321,12 +321,12 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
 
   //convert adjacency array to use local identifiers instead of global.
   
-  Teuchos::Array<int> out_edges_lid(nEdge);
+  int* out_edges_lid = new int[nEdge];
   for(size_t i = 0; i < nEdge; i++){
     out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
   }
   std::cout<<me<<": done creating out edges, creating csr graph\n";
-  graph* g = new graph({nVtx, nEdge, &out_edges_lid[0],out_offsets, 0,0.0});
+  graph* g = new graph({nVtx, nEdge, out_edges_lid,out_offsets, 0,0.0});
   std::cout<<me<<": constructing propagation object\n";
   Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
   std::cout<<me<<": starting propagation\n";  
