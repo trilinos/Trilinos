@@ -335,9 +335,6 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
       quasiRegCoarseCoordinates->replaceMap(regCoordImporter[grpIdx]->getTargetMap());
       compCoarseCoordinates->doExport(*quasiRegCoarseCoordinates, *(regCoordImporter[grpIdx]), Xpetra::INSERT);
     }
-
-    RCP<Teuchos::FancyOStream> fout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    compCoarseCoordinates->describe(*fout, Teuchos::VERB_EXTREME);
   }
 } // MakeCoarseCompositeOperator
 
@@ -454,8 +451,6 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
       const coordinates_type cx = coordinates->getVector(0)->meanValue();
       const coordinates_type cy = coordinates->getVector(1)->meanValue();
       const coordinates_type cz = coordinates->getVector(2)->meanValue();
-
-      *fos << "mesh center: (" << cx << ", " << cy << ", " << cz << ")" << std::endl;
 
       coordinateData[0] = coordinates->getData(0);
       coordinateData[1] = coordinates->getData(1);
