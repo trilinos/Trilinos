@@ -2,7 +2,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_FEMultiVector.hpp"
-#include "Zoltan2_IceSheetGraph.h"
+//#include "Zoltan2_IceSheetGraph.h"
 
 #include <string>
 #include <sstream>
@@ -13,6 +13,40 @@
 #define ZOLTAN2_VTXLABEL_
 
 namespace iceProp{
+        
+        /*
+ *
+struct graph {
+  int n;
+  unsigned m;
+  int* out_array;
+  unsigned* out_degree_list;
+  int max_degree_vert;
+  double avg_out_degree;
+};
+
+#define out_degree(g, n) (g->out_degree_list[n+1] - g->out_degree_list[n])
+#define out_vertices(g, n) (&g->out_array[g->out_degree_list[n]])
+
+ *      */
+        template<typename lno_t>
+	class graph {
+          public:
+            lno_t n;
+            lno_t m;
+            lno_t* out_array;
+            lno_t* out_degree_list;
+            lno_t max_degree_vert;
+            double avg_out_degree;
+            lno_t out_degree(lno_t vert){
+              return (out_degree_list[vert+1] - out_degree_list[vert]);
+            }
+            lno_t* out_vertices(lno_t vert){
+              return (&out_array[out_degree_list[vert]]);
+            }
+        }; 
+        
+        
 	std::queue<int> art;
 	std::queue<int> reg;
 
@@ -244,7 +278,7 @@ public:
  	
   //Constructor assigns vertices to processors and builds maps with and
   //without copies ICE SHEET VERSION
-  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, graph* g_,int* boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
+  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, iceProp::graph<lno_t>* g_,int* boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(localOwned), nLocalCopy(localCopy),
     nVec(1), comm(comm_),g(g_),mapOwned(mapOwned_),
@@ -316,8 +350,8 @@ public:
       for(int i = 0; i < g->n; i++){
 	iceProp::vtxLabel curr_node = femvData[i];
         if(curr_node.is_art && curr_node.getGroundingStatus() == iceProp::FULL){
-          int out_degree = out_degree(g, curr_node.id);
-          int* outs = out_vertices(g, curr_node.id);
+          lno_t out_degree = g->out_degree(curr_node.id);//out_degree(g, curr_node.id);
+          lno_t* outs = g->out_vertices(curr_node.id);//out_vertices(g, curr_node.id);
           for(int j = 0; j < out_degree; j++){
             iceProp::vtxLabel neighbor = femvData[outs[j]];
             if(neighbor.getGroundingStatus() == iceProp::HALF && neighbor.first_label != mapWithCopies->getGlobalElement(curr_node.id) && neighbor.first_sender == mapWithCopies->getGlobalElement(curr_node.id)){
@@ -346,7 +380,7 @@ public:
     }
     //check for nodes that are less than full.
     //return flags for each node, -2 for keep, -1 for remove, <vtxID> for singly grounded nodes.
-    int* removed = new int[g->n];
+    lno_t* removed = new lno_t[g->n];
     for(int i = 0; i < g->n; i++){
       iceProp::vtxLabel curr_node = femvData[i];
       iceProp::Grounding_Status gs = curr_node.getGroundingStatus();
@@ -382,8 +416,8 @@ public:
         //if the current node is a copy, it shouldn't propagate out to its neighbors.
         if(curr_node.id >= nLocalOwned) continue;
 
-        int out_degree = out_degree(g, curr_node.id);
-        int* outs = out_vertices(g, curr_node.id);
+        lno_t out_degree = g->out_degree(curr_node.id);//out_degree(g, curr_node.id);
+        lno_t* outs = g->out_vertices(curr_node.id);//out_vertices(g, curr_node.id);
         for(int i = 0; i < out_degree; i++){
 	  iceProp::vtxLabel neighbor = femvData[outs[i]];
 	  iceProp::Grounding_Status old_gs = neighbor.getGroundingStatus();
@@ -502,8 +536,8 @@ public:
         int ownedVtx = -1, ghostVtx = -1;
         for(int i = 0; i < nLocalOwned; i++){
           if(femvData[i].getGroundingStatus() == iceProp::NONE){
-            int out_degree = out_degree(g, i);
-            int* outs = out_vertices(g, i);
+            lno_t out_degree = g->out_degree(i);//out_degree(g, i);
+            lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
             for(int j = 0; j < out_degree; j++){
               if(outs[j] >= nLocalOwned){
                 //we're dealing with a ghosted vertex
@@ -531,8 +565,8 @@ public:
           //replace local value with self-grounded vertex with new bcc_name
           iceProp::vtxLabel firstNeighbor = femvData[ownedVtx];
           iceProp::vtxLabel secondNeighbor = femvData[ghostVtx];
-          int firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);          
-	  int secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
+          gno_t firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);          
+	  gno_t secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
           firstNeighbor.first_label = firstNeighbor_gid;
           firstNeighbor.first_sender = firstNeighbor_gid;
           firstNeighbor.bcc_name = bcc_count*np + me;
@@ -546,12 +580,12 @@ public:
           iceProp::reg.push(ghostVtx);
         } else if(neighborProc == -1){
           int foundEmptyPair = 0;
-          int vtx1 = -1, vtx2 = -1;
+          lno_t vtx1 = -1, vtx2 = -1;
           //if none are found, find any pair of empty vertices. (similar procedure)
           for(int i = 0; i < nLocalOwned; i++){
             if(femvData[i].getGroundingStatus() == iceProp::NONE){
-              int out_degree = out_degree(g, i);
-              int* outs = out_vertices(g, i);
+              lno_t out_degree =g->out_degree(i);// out_degree(g, i);
+              lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
               for(int j = 0; j < out_degree; j++){
                 if(femvData[outs[j]].getGroundingStatus() == iceProp::NONE){
                   foundEmptyPair = 1;
@@ -581,8 +615,8 @@ public:
             //this processor will ground two random, empty neighbors.
             iceProp::vtxLabel firstNeighbor = femvData[vtx1];
             iceProp::vtxLabel secondNeighbor = femvData[vtx2];
-            int firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);
-            int secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
+            gno_t firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);
+            gno_t secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
             firstNeighbor.first_label = firstNeighbor_gid;
             firstNeighbor.first_sender = firstNeighbor_gid;
             firstNeighbor.bcc_name = bcc_count*np + me;
@@ -603,15 +637,15 @@ public:
         //if this processor knows about articulation points
         if(!art_queue.empty()){
           //look at the front, and ground a neighbor.
-          int art_pt = art_queue.front();
-          int out_degree = out_degree(g, art_pt);
-          int* outs = out_vertices(g, art_pt);
+          lno_t art_pt = art_queue.front();
+          lno_t out_degree = g->out_degree(art_pt);//out_degree(g, art_pt);
+          lno_t* outs = g->out_vertices(art_pt);//out_vertices(g, art_pt);
           for(int i = 0;i < out_degree; i++){
             if(femvData[outs[i]].getGroundingStatus() == iceProp::NONE){
               //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(art_queue.front())<<" and neighbor "<<mapWithCopies->getGlobalElement(outs[i])<<"\n";
               iceProp::vtxLabel neighbor = femvData[outs[i]];
               iceProp::vtxLabel artvtx = femvData[art_pt];
-              int neighbor_gid = mapWithCopies->getGlobalElement(neighbor.id);
+              gno_t neighbor_gid = mapWithCopies->getGlobalElement(neighbor.id);
               neighbor.first_label = neighbor_gid;
               neighbor.first_sender = neighbor_gid;
               neighbor.bcc_name = bcc_count*np+me;
@@ -638,8 +672,8 @@ public:
       //check for OWNED articulation points
       for(int i = 0; i < nLocalOwned; i++){
         if(femvData[i].getGroundingStatus() == iceProp::FULL){
-          int out_degree = out_degree(g, i);
-          int* outs = out_vertices(g, i);
+          lno_t out_degree = g->out_degree(i);//out_degree(g, i);
+          lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
           for(int j = 0; j < out_degree; j++){
             if(femvData[outs[j]].getGroundingStatus() < iceProp::FULL){
               art_queue.push(i);
@@ -668,8 +702,8 @@ public:
         bool pop_art = true;
         while(pop_art && !art_queue.empty()){
           //std::cout<<me<<": Checking artpt "<<art_queue.front()<<"\n";
-          int top_art_degree = out_degree(g,art_queue.front());
-          int* art_outs = out_vertices(g,art_queue.front());
+          lno_t top_art_degree = g->out_degree(art_queue.front());//out_degree(g,art_queue.front());
+          lno_t* art_outs = g->out_vertices(g,art_queue.front());//out_vertices(g,art_queue.front());
         
           for(int i = 0; i < top_art_degree; i++){
             if(femvData[art_outs[i]].getGroundingStatus() < iceProp::FULL){
@@ -701,7 +735,7 @@ private:
   int nVec;	    //number of vectors in multivector
   
   const Teuchos::RCP<const Teuchos::Comm<int> > comm; //MPI communicator
-  graph* g;	    //csr representation of vertices on this processor
+  iceProp::graph<lno_t>* g;	    //csr representation of vertices on this processor
 
   Teuchos::RCP<const MAP> mapOwned;       //Tpetra::Map including only owned
   Teuchos::RCP<const MAP> mapWithCopies;  //Tpetra::Map including owned

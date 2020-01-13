@@ -106,10 +106,10 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   //edge weights are not used either.
 
   gno_t* out_edges = NULL;
-  unsigned* out_offsets = NULL;
+  typename map_t::local_ordinal_type* out_offsets = NULL;
   gno_t* global_ids = NULL;
   TPL_Traits<gno_t, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
-  TPL_Traits<unsigned, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
+  TPL_Traits<typename map_t::local_ordinal_type, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
   TPL_Traits<gno_t, const gno_t>::ASSIGN_ARRAY(&global_ids, vtxIDs);
   
   
@@ -321,12 +321,12 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
 
   //convert adjacency array to use local identifiers instead of global.
   
-  int* out_edges_lid = new int[nEdge];
+  typename map_t::local_ordinal_type* out_edges_lid = new typename map_t::local_ordinal_type[nEdge];
   for(size_t i = 0; i < nEdge; i++){
     out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
   }
   std::cout<<me<<": done creating out edges, creating csr graph\n";
-  graph* g = new graph({nVtx, nEdge, out_edges_lid,out_offsets, 0,0.0});
+  iceProp::graph<typename map_t::local_ordinal_type>* g = new iceProp::graph<typename map_t::local_ordinal_type>({nVtx, nEdge, out_edges_lid,out_offsets, 0,0.0});
   std::cout<<me<<": constructing propagation object\n";
   Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
   std::cout<<me<<": starting propagation\n";  
