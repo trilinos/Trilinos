@@ -13,7 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
-#include "Tempus_StepperIMEX_RKObserver.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
 
 
 namespace Tempus {
@@ -281,6 +281,9 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperObserver_; }
+
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
@@ -306,6 +309,11 @@ public:
 
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getStageX() {return stageX_;};
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageF() {return stageF_;};
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageG() {return stageG_;};
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;};
 
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const
@@ -351,7 +359,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperIMEX_RKObserver<Scalar> >  stepperIMEX_RKObserver_;
+  Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;
 
 };
 

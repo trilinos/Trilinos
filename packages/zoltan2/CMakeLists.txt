@@ -52,7 +52,7 @@ IF (${PROJECT_NAME}_ENABLE_Epetra)
   IF(DEFINED ${PACKAGE_NAME}_ENABLE_Epetra)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
   ELSE()
-   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ON)
   ENDIF ()
 ENDIF ()
 
@@ -71,23 +71,34 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-   ${PACKAGE_NAME}_ENABLE_UseZoltanComm
-   ${PACKAGE_NAME_UC}_USEZOLTANCOMM
-   "For migration in MJ, use Zoltan's comm package instead of Tpetra."
-   OFF)
-
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-   ${PACKAGE_NAME}_ENABLE_Experimental
-   INCLUDE_${PACKAGE_NAME_UC}_EXPERIMENTAL
-   "Enable experimental code."
-   OFF)
+  ${PACKAGE_NAME}_ENABLE_UseZoltanComm
+  ${PACKAGE_NAME_UC}_USEZOLTANCOMM
+  "For migration in MJ, use Zoltan's comm package instead of Tpetra."
+  OFF)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-   ${PACKAGE_NAME}_ENABLE_Experimental_Wolf
-   INCLUDE_${PACKAGE_NAME_UC}_EXPERIMENTAL_WOLF
-   "Enable wolf experimental code."
-   OFF)
+  ${PACKAGE_NAME}_ENABLE_Machine_Dragonfly
+  ${PACKAGE_NAME_UC}_MACHINE_DRAGONFLY
+  "Enable Cray Dragonfly Machine representation for task mapping."
+  OFF) 
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Machine_Torus
+  ${PACKAGE_NAME_UC}_MACHINE_TORUS
+  "Enable Torus Machine representation for task mapping."
+  OFF) 
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  INCLUDE_${PACKAGE_NAME_UC}_EXPERIMENTAL
+  "Enable experimental code."
+  OFF)
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental_Wolf
+  INCLUDE_${PACKAGE_NAME_UC}_EXPERIMENTAL_WOLF
+  "Enable wolf experimental code."
+  OFF)
 
 IF (${PROJECT_NAME}_ENABLE_SCOREC)
  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_PARMA ON)

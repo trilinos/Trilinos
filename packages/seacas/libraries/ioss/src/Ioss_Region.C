@@ -75,8 +75,6 @@ namespace {
   const std::string orig_topo_str() { return std::string("original_topology_type"); }
   const std::string orig_block_order() { return std::string("original_block_order"); }
 
-  std::string uppercase(const std::string &my_name);
-
   template <typename T> size_t get_variable_count(const std::vector<T> &entities)
   {
     Ioss::NameList names;
@@ -1457,7 +1455,7 @@ namespace Ioss {
     }
 
     if (!canon.empty()) {
-      std::string uname = uppercase(alias);
+      std::string uname = Ioss::Utils::uppercase(alias);
       if (uname != alias) {
         aliases_.insert(std::make_pair(uname, canon));
       }
@@ -1487,7 +1485,7 @@ namespace Ioss {
 
   std::string Region::get_alias__(const std::string &alias) const
   {
-    std::string ci_alias = uppercase(alias);
+    std::string ci_alias = Ioss::Utils::uppercase(alias);
     auto        I        = aliases_.find(ci_alias);
     if (I == aliases_.end()) {
       return "";
@@ -2330,12 +2328,3 @@ namespace Ioss {
     }
   }
 } // namespace Ioss
-
-namespace {
-  std::string uppercase(const std::string &my_name)
-  {
-    std::string s(my_name);
-    std::transform(s.begin(), s.end(), s.begin(), toupper);
-    return s;
-  }
-} // namespace

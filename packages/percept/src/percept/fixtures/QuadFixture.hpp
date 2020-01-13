@@ -28,6 +28,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_topology/topology.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
 
@@ -53,7 +54,7 @@
 
       /// Topology can also be Triangle<3>
 
-      template<class Scalar, class Topology=shards::Quadrilateral<4> >
+      template<class Scalar, stk::topology::topology_t Topology=stk::topology::QUAD_4_2D >
       class QuadFixture {
 
           stk::mesh::EntityId exodus_side_id(stk::mesh::EntityId element_id, unsigned which_side_ord)
@@ -65,11 +66,8 @@
       public:
         //  typedef int Scalar ;
         //typedef double Scalar ;
-        typedef Topology QuadOrTriTopo ;
-        enum { NodesPerElem = QuadOrTriTopo::node_count };
-
-        typedef stk::mesh::Field<Scalar, stk::mesh::Cartesian>    CoordFieldType;
-        typedef stk::mesh::Field<Scalar*,stk::mesh::ElementNode>  CoordGatherFieldType;
+//        typedef Topology QuadOrTriTopo ;
+        enum { NodesPerElem = stk::topology_detail::topology_data<Topology>::num_nodes };
 
         static std::vector<std::string> get_entity_rank_names(unsigned dim)
         {
@@ -88,7 +86,7 @@
           : meta_data(2, get_entity_rank_names(2) ),
             bulk_data(  meta_data, pm ),
             quad_part( meta_data.declare_part("block_1", stk::topology::ELEMENT_RANK ) ),
-            coord_field( meta_data.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates") ),
+            coord_field( meta_data.declare_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates") ),
             NX( nx ),
             NY( ny ),
             generate_sidesets(generate_sidesets_in),
@@ -99,12 +97,11 @@
           set_bounding_box(0,(double)NX,0,(double)NY);
 
           // Set topology of the element block part
-          //stk::mesh::set_cell_topology(meta_data, quad_part,  CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
-          stk::mesh::set_cell_topology<QuadOrTriTopo>(quad_part);
+          stk::mesh::set_topology(quad_part, Topology);
           stk::io::put_io_part_attribute(quad_part);
 
           //put coord-field on all nodes:
-          stk::mesh::FieldTraits<CoordFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
+          stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
           put_field_on_mesh(
                     coord_field,
                     meta_data.universal_part(),
@@ -307,7 +304,7 @@
         stk::mesh::MetaData    meta_data ;
         stk::mesh::BulkData    bulk_data ;
         stk::mesh::Part      & quad_part ;
-        CoordFieldType       & coord_field ;
+        CoordinatesFieldType       & coord_field ;
         const unsigned         NX ;
         const unsigned         NY ;
         stk::mesh::Part *side_parts[4];
@@ -353,13 +350,9 @@
               if (!debug_geom_side_sets_as_blocks)
                 {
                   std::string topo_name = NodesPerElem == 4 ? "surface_quad4_edge2_" : "surface_tri3_edge2_" ;
-                  side_parts[i_side] = &meta_data.declare_part(topo_name+boost::lexical_cast<std::string>(i_side+1), stk::topology::EDGE_RANK);
-                  stk::mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), stk::topology::EDGE_RANK);
-                  //void set_cell_topology(MetaData & fem_meta, Part &part, CellTopology cell_topology);
-
-                  //stk::mesh::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
-                  //stk::mesh::set_cell_topology(meta_data, *side_parts[i_side], CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
-                  stk::mesh::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
+                  side_parts[i_side] = &meta_data.declare_part(topo_name+std::to_string(i_side+1), stk::topology::EDGE_RANK);
+                  stk::mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+std::to_string(i_side+1), stk::topology::EDGE_RANK);
+                  stk::mesh::set_topology< stk::topology::LINE_2 >(*side_parts[i_side]);
                   stk::io::put_io_part_attribute(*side_parts[i_side]);
                   stk::io::put_io_part_attribute(side_part);
 
@@ -367,10 +360,7 @@
                 }
               else
                 {
-                  //side_parts[i_side] = &meta_data.declare_part(std::string("block_1000")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
-                  side_parts[i_side] = &meta_data.declare_part_with_topology(std::string("block_1000")+boost::lexical_cast<std::string>(i_side+1), stk::topology::BEAM_2);
-                  //, m_block_beam( m_metaData.declare_part< Beam2 >( "block_2" ) )
-                  //stk::mesh::set_cell_topology< shards::Beam<2> >(*side_parts[i_side]);
+                  side_parts[i_side] = &meta_data.declare_part_with_topology(std::string("block_1000")+std::to_string(i_side+1), stk::topology::BEAM_2);
                   stk::io::put_io_part_attribute(*side_parts[i_side]);
 
                 }

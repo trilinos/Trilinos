@@ -75,8 +75,10 @@ struct ex__obj_stats *exoII_nm  = 0;
 static char  ret_string[10 * (MAX_VAR_NAME_LENGTH + 1)];
 static char *cur_string = &ret_string[0];
 
+#ifndef _MSC_VER
 #if NC_HAS_HDF5
 extern int H5get_libversion(unsigned *, unsigned *, unsigned *);
+#endif
 #endif
 
 #if NC_HAS_PNETCDF
@@ -113,12 +115,14 @@ void ex_print_config(void)
 #if NC_HAS_CDF5
   fprintf(stderr, "\t\tCDF5 enabled\n");
 #endif
+#ifndef _MSC_VER
 #if NC_HAS_HDF5
   {
     unsigned major, minor, release;
     H5get_libversion(&major, &minor, &release);
     fprintf(stderr, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
   }
+#endif
 #endif
 #if NC_HAS_PARALLEL
   fprintf(stderr, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
@@ -2031,7 +2035,7 @@ int ex__populate_header(int exoid, const char *path, int my_mode, int is_paralle
   char  errmsg[MAX_ERR_LENGTH];
   int   int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
 
-  int format;
+  int format = 0;
   int mode;
 
   /* turn off automatic filling of netCDF variables */

@@ -46,7 +46,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   assert(node_blocks.size() == 1);
 
   stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field =
-    meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, stk::io::CoordinateFieldName);
+    meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, meta.coordinate_field_name());
   stk::io::set_field_role(coord_field, Ioss::Field::MESH);
 
   meta.set_coordinate_field(&coord_field);

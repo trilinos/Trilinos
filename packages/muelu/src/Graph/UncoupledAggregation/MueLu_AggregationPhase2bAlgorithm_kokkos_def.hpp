@@ -89,8 +89,6 @@ namespace MueLu {
                         Aggregates_kokkos& aggregates,
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                         LO& numNonAggregatedNodes) const {
-    using memory_space    = typename LWGraph_kokkos::memory_space;
-    using execution_space = typename LWGraph_kokkos::execution_space;
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -141,7 +139,7 @@ namespace MueLu {
                                     // (aggStat[neigh] == AGGREGATED)
                                     if (graph.isLocalNeighborVertex(neigh) &&
                                         aggStat(neigh) == AGGREGATED)
-                                      Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0), 0),
+                                      Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0)),
                                                          connectWeight(neigh));
                                   }
 
@@ -169,7 +167,7 @@ namespace MueLu {
                                     }
                                   }
                                   if (bestScore >= 0) {
-                                    aggStat(i, 0)      = AGGREGATED;
+                                    aggStat(i)         = AGGREGATED;
                                     vertex2AggId(i, 0) = bestAggId;
                                     procWinner(i, 0)   = myRank;
 
@@ -193,8 +191,6 @@ namespace MueLu {
                                Aggregates_kokkos& aggregates,
                                Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                                LO& numNonAggregatedNodes) const {
-    using memory_space    = typename LWGraph_kokkos::memory_space;
-    using execution_space = typename LWGraph_kokkos::execution_space;
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -244,7 +240,7 @@ namespace MueLu {
               // (aggStat[neigh] == AGGREGATED)
               if (graph.isLocalNeighborVertex(neigh) &&
                   aggStat(neigh) == AGGREGATED)
-              Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0), 0),
+              Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0)),
                   connectWeight(neigh));
             }
           });

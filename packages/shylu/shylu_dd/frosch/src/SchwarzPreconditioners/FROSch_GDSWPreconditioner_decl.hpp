@@ -143,12 +143,12 @@ namespace FROSch {
                       const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
         std::string description() const;
-
+        
+        virtual int resetMatrix(ConstXMatrixPtr &k);
 
     protected:
 
-        GDSWCoarseOperatorPtr CoarseLevelOperator_;
-
+        GDSWCoarseOperatorPtr CoarseOperator_;
     };
 
 }

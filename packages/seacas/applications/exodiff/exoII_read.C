@@ -57,23 +57,12 @@ namespace {
 
 template <typename INT>
 ExoII_Read<INT>::ExoII_Read()
-    : file_id(-1), // value of -1 indicates file not open
-      num_nodes(0), dimension(0), num_elmts(0), num_elmt_blocks(0), num_node_sets(0),
-      num_side_sets(0), db_version(0.0), api_version(0.0), io_word_size(0), eblocks(nullptr),
-      nsets(nullptr), ssets(nullptr), nodes(nullptr), node_map(nullptr), elmt_map(nullptr),
-      elmt_order(nullptr), num_times(0), times(nullptr), cur_time(0), results(nullptr),
-      global_vals(nullptr), global_vals2(nullptr)
 {
 }
 
 template <typename INT>
 ExoII_Read<INT>::ExoII_Read(const std::string &fname)
-    : file_name(fname), file_id(-1), // value of -1 indicates file not open
-      num_nodes(0), dimension(0), num_elmts(0), num_elmt_blocks(0), num_node_sets(0),
-      num_side_sets(0), db_version(0.0), api_version(0.0), io_word_size(0), eblocks(nullptr),
-      nsets(nullptr), ssets(nullptr), nodes(nullptr), node_map(nullptr), elmt_map(nullptr),
-      elmt_order(nullptr), num_times(0), times(nullptr), cur_time(0), results(nullptr),
-      global_vals(nullptr), global_vals2(nullptr)
+    : file_name(fname)
 {
 }
 
@@ -908,7 +897,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   num_side_sets   = info.num_side_sets;
   title           = info.title;
 
-  if (err > 0 && !interface.quiet_flag) {
+  if (err > 0 && !interFace.quiet_flag) {
     fmt::print(stderr, "exodiff: WARNING: was issued, number = {}\n", err);
   }
   if (dimension < 1 || dimension > 3) {
@@ -947,7 +936,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   }
 
   coord_names.clear();
-  for (size_t i = 0; i < dimension; ++i) {
+  for (int i = 0; i < dimension; ++i) {
     coord_names.push_back(coords[i]);
   }
   free_name_array(coords, 3);
@@ -984,7 +973,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
       e_count += eblocks[b].Size();
     }
 
-    if (e_count != num_elmts && !interface.quiet_flag) {
+    if (e_count != num_elmts && !interFace.quiet_flag) {
       fmt::print(stderr,
                  "exodiff: WARNING: Total number of elements {:n}"
                  " does not equal the sum of the number of elements "
@@ -1163,7 +1152,7 @@ namespace {
         Error(fmt::format("Failed to get {} variable names!  Aborting...\n", type));
         exit(1);
       }
-      else if (err > 0 && !interface.quiet_flag) {
+      else if (err > 0 && !interFace.quiet_flag) {
         fmt::print(
             stderr,
             "exodiff: WARNING: Exodus issued warning \"{}\" on call to ex_get_var_names()!\n", err);

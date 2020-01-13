@@ -22,15 +22,9 @@
 #include <Kokkos_Macros.hpp>
   namespace percept {
 
-    void NodeRegistry_KOKKOS::init_entity_repo()
-    {
-      for (unsigned i = 0; i < percept::EntityRankEnd; i++) m_entity_repo[i].clear();
-    }
-
     void NodeRegistry_KOKKOS::initialize()
     {
       m_cell_2_data_map.clear();
-      init_entity_repo();
     }
 
     void NodeRegistry_KOKKOS::
@@ -99,15 +93,15 @@
 
 //      for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
 //        {
-//          SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+//          SubDimCellData& nodeId_elementOwnerId = (*iter).second;
       for(unsigned iMapIndx = 0; iMapIndx<m_cell_2_data_map.capacity();iMapIndx++)
       {
           const SubDimCell_SDCEntityType& subDimEntity = m_cell_2_data_map.key_at(iMapIndx);
           unsigned iData = m_cell_2_data_map.find(subDimEntity);
           if(iData == Kokkos::UnorderedMapInvalidIndex)
               continue;
-          SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map.value_at(iData);
-          NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+          SubDimCellData& nodeId_elementOwnerId = m_cell_2_data_map.value_at(iData);
+          NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
           if (debug) std::cout << "tmp SRK nodeIds_onSE.size= " << nodeIds_onSE.size() << std::endl;
           if (nodeIds_onSE.size())
             {
@@ -164,14 +158,14 @@
 
       static SubDimCellData empty_SubDimCellData;
 
-      SubDimCellData* nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
-      SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
-      bool is_empty = nodeId_elementOwnderId_ptr == 0;
-      bool is_not_empty_but_data_cleared = (!is_empty && nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size() == 0);
+      SubDimCellData* nodeId_elementOwnerId_ptr = getFromMapPtr(subDimEntity);
+      SubDimCellData& nodeId_elementOwnerId = (nodeId_elementOwnerId_ptr ? *nodeId_elementOwnerId_ptr : empty_SubDimCellData);
+      bool is_empty = nodeId_elementOwnerId_ptr == 0;
+      bool is_not_empty_but_data_cleared = (!is_empty && std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId).size() == 0);
 
       // if empty or if my id is the smallest, make this element the owner
-      stk::mesh::EntityId db_id = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
-      stk::mesh::EntityRank db_rank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+      stk::mesh::EntityId db_id = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).id();
+      stk::mesh::EntityRank db_rank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).rank();
 
       stk::mesh::EntityId element_id = m_eMesh.identifier(element);
       stk::mesh::EntityId element_rank = m_eMesh.entity_rank(element);
@@ -183,7 +177,7 @@
       unsigned smark=0;
       if (!is_empty)
         {
-          unsigned& mark = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_mark;
+          unsigned& mark = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId).m_mark;
           if (needNodes)
             mark |= NR_MARK;
           else
@@ -204,9 +198,8 @@
             {
               unsigned numNewNodes = needed_entity_rank.second;
 
-              SubDimCellData data( NodeIdsOnSubDimEntityType(numNewNodes, stk::mesh::Entity(), smark),
-                                   stk::mesh::EntityKey(m_eMesh.entity_rank(element), m_eMesh.identifier(element)), needed_entity_rank.first, iSubDimOrd+1 );
-              NodeIdsOnSubDimEntityType& nid_new = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
+              SubDimCellData data = std::forward_as_tuple( NodeIdsOnSubDimEntityType(numNewNodes, stk::mesh::Entity(), smark), stk::mesh::EntityKey(m_eMesh.entity_rank(element), m_eMesh.identifier(element)), (unsigned char)needed_entity_rank.first, (unsigned char)(iSubDimOrd+1), Double2() );
+              NodeIdsOnSubDimEntityType& nid_new = std::get<SDC_DATA_GLOBAL_NODE_IDS>(data);
               if (needNodes)
                 nid_new.m_mark |= NR_MARK;
               else
@@ -219,9 +212,8 @@
             {
               stk::mesh::Entity owning_element = m_eMesh.get_entity(db_rank, db_id);
               VERIFY_OP_ON(m_eMesh.is_valid(owning_element), ==, true, "hmmm");
-              NodeIdsOnSubDimEntityType& nid = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-//              m_cell_2_data_map[subDimEntity] = SubDimCellData(nid, stk::mesh::EntityKey(m_eMesh.entity_rank(element), m_eMesh.identifier(element)), needed_entity_rank.first, iSubDimOrd+1 );
-              SubDimCellData data(nid, stk::mesh::EntityKey(m_eMesh.entity_rank(element), m_eMesh.identifier(element)), needed_entity_rank.first, iSubDimOrd+1 );
+              NodeIdsOnSubDimEntityType& nid = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
+              SubDimCellData data = std::forward_as_tuple(nid, stk::mesh::EntityKey(m_eMesh.entity_rank(element), m_eMesh.identifier(element)), (unsigned char)needed_entity_rank.first, (unsigned char)(iSubDimOrd+1), Double2() );
               putInMap(subDimEntity,data);
             }
           ret_val = true;
@@ -232,7 +224,7 @@
       bool debug = false;
       if (debug && !is_empty)
         {
-      unsigned originalMark = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_mark;
+      unsigned originalMark = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId).m_mark;
           std::cout << m_eMesh.rank() << " registerNeedNewNode element= " << m_eMesh.print_entity_compact(element) << "\n needNodes= " << needNodes << " iSubDimOrd= " << iSubDimOrd
                     << " is_empty= " << is_empty << " is_not_empty_but_data_cleared= " << is_not_empty_but_data_cleared << " should_put_in= " << should_put_in
                     << " originalMark= " << originalMark << " currentMark= " << smark << " NR_MARK= " << NR_MARK
@@ -241,15 +233,15 @@
         }
       if (debug)
         {
-          SubDimCellData* a_nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
-          SubDimCellData& a_nodeId_elementOwnderId = (a_nodeId_elementOwnderId_ptr ? *a_nodeId_elementOwnderId_ptr : empty_SubDimCellData);
-          bool a_is_empty = a_nodeId_elementOwnderId_ptr == 0;
-          unsigned& gotMark = a_nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_mark;
-          unsigned nidSize = a_nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size();
+          SubDimCellData* a_nodeId_elementOwnerId_ptr = getFromMapPtr(subDimEntity);
+          SubDimCellData& a_nodeId_elementOwnerId = (a_nodeId_elementOwnerId_ptr ? *a_nodeId_elementOwnerId_ptr : empty_SubDimCellData);
+          bool a_is_empty = a_nodeId_elementOwnerId_ptr == 0;
+          unsigned& gotMark = std::get<SDC_DATA_GLOBAL_NODE_IDS>(a_nodeId_elementOwnerId).m_mark;
+          unsigned nidSize = std::get<SDC_DATA_GLOBAL_NODE_IDS>(a_nodeId_elementOwnerId).size();
 
           std::ostringstream sout;
           sout << "P[" << m_eMesh.get_rank() << "] registerNeedNewNode:: element= " << m_eMesh.identifier(element) << " nidSize= " << nidSize
-               << " nid= " << (nidSize ? (int)m_eMesh.identifier(nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>()[0]) : -1);
+               << " nid= " << (nidSize ? (int)m_eMesh.identifier(std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId)[0]) : -1);
 
           sout << " smark= " << smark << " gotMark= " << gotMark << " needNodes= " << needNodes << " isG= " << m_eMesh.isGhostElement(element)
                << " is_empty= " << is_empty
@@ -416,13 +408,13 @@
           unsigned iData = m_cell_2_data_map.find(subDimEntity);
           if(iData == Kokkos::UnorderedMapInvalidIndex)
               continue;
-          SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map.value_at(iData);
-          stk::mesh::EntityId owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
+          SubDimCellData& nodeId_elementOwnerId = m_cell_2_data_map.value_at(iData);
+          stk::mesh::EntityId owning_elementId = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).id();
 
-          NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+          NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
           if (nodeIds_onSE.size())
             {
-              stk::mesh::EntityRank erank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+              stk::mesh::EntityRank erank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).rank();
               stk::mesh::Entity owning_element = get_entity_element(*m_eMesh.get_bulk_data(), erank, owning_elementId);
 
               if (!m_eMesh.is_valid(owning_element))
@@ -469,7 +461,7 @@
           m_eMesh.createEntities( stk::topology::NODE_RANK, num_nodes_needed, new_nodes);
 #else
           m_eMesh.initializeIdServer();
-          stk::mesh::Part& nodePart = m_eMesh.get_fem_meta_data()->get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+          stk::mesh::Part& nodePart = m_eMesh.get_fem_meta_data()->get_topology_root_part(stk::topology::NODE);
           stk::mesh::PartVector nodeParts(1, &nodePart);
           m_eMesh.getEntitiesUsingIdServer( m_eMesh.node_rank(), num_nodes_needed, new_nodes, nodeParts);
 #endif
@@ -522,12 +514,12 @@
               (void)iData;
           else{
               SubDimCellData& data = m_cell_2_data_map.value_at(iData);
-              NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
+              NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(data);
               if (!nodeIds_onSE.size())
                   //            continue; //continue doesn't work the same way in pf
                   (void)iData;
               else{
-                  stk::mesh::EntityId owning_elementId = data.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
+                  stk::mesh::EntityId owning_elementId = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(data).id();
 
 #ifndef __CUDACC__
                   if (!owning_elementId)
@@ -536,7 +528,7 @@
                   }
 #endif
 
-                  stk::mesh::EntityRank erank = data.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+                  stk::mesh::EntityRank erank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(data).rank();
                   stk::mesh::Entity owning_element = get_entity_element(*m_eMesh.get_bulk_data(), erank, owning_elementId);
 
                   if (!m_eMesh.is_valid(owning_element))
@@ -656,15 +648,15 @@
 //      for (SubDimCellToDataMap_KOKKOS::iterator iter = map.begin(); iter != map.end(); ++iter)
 //        {
 //          const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
-//          SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+//          SubDimCellData& nodeId_elementOwnerId = (*iter).second;
       for(unsigned iMapIndx = 0; iMapIndx<map.capacity();iMapIndx++)
       {
           const SubDimCell_SDCEntityType& subDimEntity = map.key_at(iMapIndx);
           unsigned iData = map.find(subDimEntity);
           if(iData == Kokkos::UnorderedMapInvalidIndex)
               continue;
-          SubDimCellData& nodeId_elementOwnderId = map.value_at(iData);
-          stk::mesh::EntityRank owning_element_subDim_rank = static_cast<stk::mesh::EntityRank>(nodeId_elementOwnderId.get<SDC_DATA_OWNING_SUBDIM_RANK>());
+          SubDimCellData& nodeId_elementOwnerId = map.value_at(iData);
+          stk::mesh::EntityRank owning_element_subDim_rank = static_cast<stk::mesh::EntityRank>(std::get<SDC_DATA_OWNING_SUBDIM_RANK>(nodeId_elementOwnerId));
 
           static std::vector<int> procs_to_send_to;
 
@@ -681,7 +673,7 @@
           if (!need_to_send)
             continue;
 
-          NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+          NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
 
           if (nodeIds_onSE.size())
             {
@@ -691,11 +683,11 @@
               // only need to send if it's got non-zero mark info
               if (is_marked || is_not_marked)
                 {
-                  buffer_entry.get<CDT_SUBDIM_ENTITY_SIZE>() = subDimEntity.size();
-                  buffer_entry.get<CDT_SUBDIM_ENTITY_RANK>() = owning_element_subDim_rank;
+                  std::get<CDT_SUBDIM_ENTITY_SIZE>(buffer_entry) = subDimEntity.size();
+                  std::get<CDT_SUBDIM_ENTITY_RANK>(buffer_entry) = owning_element_subDim_rank;
 
                   for (unsigned inode=0; inode < subDimEntity.size(); ++inode)
-                    buffer_entry.get<CDT_SUBDIM_ENTITY>()[inode] = m_eMesh.entity_key(subDimEntity[inode]);
+                    std::get<CDT_SUBDIM_ENTITY>(buffer_entry)[inode] = m_eMesh.entity_key(subDimEntity[inode]);
 
                   for (unsigned jprocs = 0; jprocs < procs_to_send_to.size(); ++jprocs)
                     {
@@ -729,28 +721,27 @@
                 recv_buffer.unpack< unsigned > (mark);
 
                 {
-                  //stk::mesh::EntityRank needed_entity_rank = buffer_entry.get<CDT_SUBDIM_ENTITY_RANK>();
-                  unsigned              subDimEntitySize   = buffer_entry.get<CDT_SUBDIM_ENTITY_SIZE>();
+                  unsigned              subDimEntitySize   = std::get<CDT_SUBDIM_ENTITY_SIZE>(buffer_entry);
 
                   SubDimCell_SDCEntityType subDimEntity(&m_eMesh);
                   //getSubDimEntity(subDimEntity, owning_element, needed_entity_rank, iSubDimOrd);
                   for (unsigned inode = 0; inode < subDimEntitySize; ++inode)
                     {
-                      stk::mesh::Entity node = m_eMesh.get_entity(buffer_entry.get<CDT_SUBDIM_ENTITY>()[inode]);
+                      stk::mesh::Entity node = m_eMesh.get_entity(std::get<CDT_SUBDIM_ENTITY>(buffer_entry)[inode]);
                       VERIFY_OP_ON(m_eMesh.is_valid(node), ==, true, "bad node");
                       subDimEntity.insert(node);
                     }
 
                   static SubDimCellData empty_SubDimCellData;
 
-                  SubDimCellData* nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
-                  SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
-                  bool is_empty = nodeId_elementOwnderId_ptr == 0;
+                  SubDimCellData* nodeId_elementOwnerId_ptr = getFromMapPtr(subDimEntity);
+                  SubDimCellData& nodeId_elementOwnerId = (nodeId_elementOwnerId_ptr ? *nodeId_elementOwnerId_ptr : empty_SubDimCellData);
+                  bool is_empty = nodeId_elementOwnerId_ptr == 0;
 
                   //VERIFY_OP_ON(is_empty, !=, true, "hmmm");
                   if (!is_empty)
                     {
-                      NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                      NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
 
                       // accumulation from all other procs
                       nodeIds_onSE.m_mark |= mark;
@@ -792,44 +783,44 @@
                     std::cout << "NodeRegistry_KOKKOS::compare_to_boost_NR  :  key with m_HashCode = " << subDimEntity_KOKKOS.getHash() << " NOT FOUND kokkos map\n";
                 noKeysNotInCommon++;
             }
-            else //compare data fields                   typedef boost::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey, unsigned char, unsigned char, Double2> SubDimCellData;
+            else
             {
-                if ( !( data_KOKKOS.get<0>() == data_BOOST->get<0>() ))
+              if ( !( std::get<0>(data_KOKKOS) == std::get<0>(*data_BOOST) ))
                 {
 //                    bUOmap_contains_kUOmap = false;
                     std::cout << "NodeRegistry_KOKKOS::compare_to_boost_NR  :  NodeIdsOnSubDimEntityType on tuple's do not match between NodeRegistry and KokkosNodeRegistry\n";
-                    std::cout << "  kOUmap NodeIdsOnSubDimEntityType  = "<< data_KOKKOS.get<0>() << " bOUmap NodeIdsOnSubDimEntityType  = " << data_BOOST->get<0>() << "\n";
+                    std::cout << "  kOUmap NodeIdsOnSubDimEntityType  = "<< std::get<0>(data_KOKKOS) << " bOUmap NodeIdsOnSubDimEntityType  = " << std::get<0>(*data_BOOST) << "\n";
                 }
-                if(!( data_KOKKOS.get<1>() == data_BOOST->get<1>() ))
+              if(!( std::get<1>(data_KOKKOS) == std::get<1>(*data_BOOST) ))
                 {
 //                    bUOmap_contains_kUOmap = false;
                     std::cout << "NodeRegistry_KOKKOS::compare_to_boost_NR  :  EntityKey on tuple's do not match between NodeRegistry and KokkosNodeRegistry\n";
-                    std::cout << "  kOUmap EntityKey = "<< data_KOKKOS.get<1>() << " bOUmap EntityKey = " << data_BOOST->get<1>() << "\n";
+                    std::cout << "  kOUmap EntityKey = "<< std::get<1>(data_KOKKOS) << " bOUmap EntityKey = " << std::get<1>(*data_BOOST) << "\n";
                 }
-                if(!( data_KOKKOS.get<2>() == data_BOOST->get<2>() ) )
+                if(!( std::get<2>(data_KOKKOS) == std::get<2>(*data_BOOST) ) )
                 {
 //                    bUOmap_contains_kUOmap = false;
                     std::cout << "NodeRegistry_KOKKOS::compare_to_boost_NR  :  unsigned char on tuple's do not match between NodeRegistry and KokkosNodeRegistry\n";
-                    std::cout << "  kOUmap unsigned char = "<< data_KOKKOS.get<2>() << " bOUmap unsigned char = " << data_BOOST->get<2>() << "\n";
+                    std::cout << "  kOUmap unsigned char = "<< std::get<2>(data_KOKKOS) << " bOUmap unsigned char = " << std::get<2>(*data_BOOST) << "\n";
                 }
-                if(!( data_KOKKOS.get<3>() == data_BOOST->get<3>() ) )
+                if(!( std::get<3>(data_KOKKOS) == std::get<3>(*data_BOOST) ) )
                 {
 //                    bUOmap_contains_kUOmap = false;
                     std::cout << "NodeRegistry_KOKKOS::compare_to_boost_NR  :  unsigned char on tuple's do not match between NodeRegistry and KokkosNodeRegistry\n";
-                    std::cout << "  kOUmap unsigned char = "<< data_KOKKOS.get<3>() << " bOUmap unsigned char = " << data_BOOST->get<3>() << "\n";
+                    std::cout << "  kOUmap unsigned char = "<< std::get<3>(data_KOKKOS) << " bOUmap unsigned char = " << std::get<3>(*data_BOOST) << "\n";
                 }
-                if(!( data_KOKKOS.get<4>() == data_BOOST->get<4>() ) )
+                if(!( std::get<4>(data_KOKKOS) == std::get<4>(*data_BOOST) ) )
                 {
 //                    bUOmap_contains_kUOmap = false;
                     std::cout << "NodeRegistry_KOKKOS::compare_to_boost_NR  :  Double2 on tuple's do not match between NodeRegistry and KokkosNodeRegistry\n";
-                    std::cout << "  kOUmap Double2 = "<< data_KOKKOS.get<4>() << " bOUmap Double2 = " << data_BOOST->get<4>() << "\n";
+                    std::cout << "  kOUmap Double2 = "<< std::get<4>(data_KOKKOS) << " bOUmap Double2 = " << std::get<4>(*data_BOOST) << "\n";
                 }
             }
 
             if(!bUOmap_contains_kUOmap)
                 std::cout << "NodeRegistry_KOKKOS::compare_to_boost_NR  :  key with m_HashCode = " << subDimEntity_KOKKOS.getHash() << " doesn't match anything in kokkos map\n\n";
-            for(unsigned iEnt=0;iEnt<data_KOKKOS.get<0>().m_entity_id_vector.size();iEnt++){
-                unsigned ent_val = data_KOKKOS.get<0>().m_entity_id_vector[iEnt];
+            for(unsigned iEnt=0;iEnt<std::get<0>(data_KOKKOS).m_entity_id_vector.size();iEnt++){
+                unsigned ent_val = std::get<0>(data_KOKKOS).m_entity_id_vector[iEnt];
                 nodesMappedTo.insert(stk::mesh::Entity(ent_val));
             }
         }

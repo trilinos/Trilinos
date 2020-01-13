@@ -80,7 +80,6 @@
           stk::io::put_io_part_attribute(*m_sideset_tri);
           m_metaData.declare_part_subset(*m_sideset_tri, *m_sideset_tri_subset);
         }
-
       stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
       stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
 

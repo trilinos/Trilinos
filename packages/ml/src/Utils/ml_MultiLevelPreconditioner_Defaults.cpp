@@ -66,6 +66,9 @@ int ML_Epetra::SetDefaults(std::string ProblemType, ParameterList & List,
   else if( ProblemType == "DD-LU" ) {
     ML_CHK_ERR( ML_Epetra::SetDefaultsDD_LU(List, options, params, OverWrite ));
   }
+  else if( ProblemType == "Classical-AMG" ) {
+    ML_CHK_ERR( ML_Epetra::SetDefaultsClassicalAMG(List, options, params, OverWrite ));
+  }
   else {
     std::cerr << "ERROR: Wrong input parameter in `SetDefaults' ("
 	 << ProblemType << "). Should be: " << std::endl
@@ -130,6 +133,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
   List.set("coarse: max size",128);
   List.set("coarse: pre or post","post");
   List.set("coarse: sweeps",1);
+  List.set("coarse: split communicator",false);
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -529,6 +533,36 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
   return 0;
 } //ML_Epetra::SetDefaultsDD_3Levels_LU()
 
+
+// ============================================================================
+int ML_Epetra::SetDefaultsClassicalAMG(ParameterList & inList,
+                 Teuchos::RCP<std::vector<int> > &/* options */,
+                 Teuchos::RCP<std::vector<double> > &/* params */,
+                 bool OverWrite)
+{
+  ParameterList List;
+
+  inList.setName("Classical-AMG default values");
+  List.set("default values","Classical-AMG");
+  List.set("max levels",10);
+  List.set("prec type","MGV");
+  List.set("increasing or decreasing","increasing");
+  List.set("smoother: sweeps",2);
+  List.set("smoother: damping factor",1.0);
+  List.set("smoother: pre or post","both");
+  List.set("smoother: type","symmetric Gauss-Seidel");
+
+  List.set("coarse: type","Amesos-KLU");
+  List.set("coarse: max size",128);
+  List.set("coarse: pre or post","post");
+  List.set("coarse: sweeps",1);
+
+  ML_OverwriteDefaults(inList, List, OverWrite);
+  return 0;
+} //ML_Epetra::SetDefaultsClassicalAMG()
+
+
+// ============================================================================
 void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List, bool OverWrite)
 {
   ParameterList *coarseList=0;

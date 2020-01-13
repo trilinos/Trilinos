@@ -310,7 +310,7 @@ namespace Intrepid2 {
           const ordinal_type m = dst.extent(0), n = dst.extent(1);
           for (ordinal_type i=0;i<m;++i) 
             for (ordinal_type j=0;j<n;++j) 
-              dst(i,j) = src(i,j);
+              dst.access(i,j) = src.access(i,j);
         }
       }
 

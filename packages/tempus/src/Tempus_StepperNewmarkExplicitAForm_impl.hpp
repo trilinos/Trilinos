@@ -302,6 +302,7 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
 
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
   }
   return;
 }

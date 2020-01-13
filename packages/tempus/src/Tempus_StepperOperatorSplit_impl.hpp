@@ -134,7 +134,7 @@ void StepperOperatorSplit<Scalar>::setObserver(
      }
   } else {
     stepperOSObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs);
+      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs, true);
   }
 }
 
@@ -300,6 +300,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
     if (pass == true) workingState->setSolutionStatus(Status::PASSED);
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(solutionHistory->getCurrentState());
     OpSpSolnHistory_->clear();
     stepperOSObserver_->observeEndTakeStep(solutionHistory, *this);
   }

@@ -53,7 +53,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include "Xpetra_StridedMap.hpp"
+#include "Xpetra_StridedMap_decl.hpp"
 
 // This factory creates Xpetra::Map. User have to specify the exact class of
 // object that he want to create (ie: a Xpetra::TpetraMap or a Xpetra::EpetraMap).
@@ -77,19 +77,6 @@ class StridedMapFactory
   public:
 
     //! Map constructor with Xpetra-defined contiguous uniform distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    static RCP<StridedMap> 
-    Build(UnderlyingLib                                 lib,
-          global_size_t                                 numGlobalElements,
-          GlobalOrdinal                                 indexBase,
-          std::vector<size_t>&                          stridingInfo,
-          const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-          LocalOrdinal                                  stridedBlockId,
-          GlobalOrdinal                                 offset,
-          LocalGlobal                                   lg,
-          const Teuchos::RCP<Node>&                     /* node */);
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     static RCP<Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node>> 
@@ -104,19 +91,6 @@ class StridedMapFactory
 
 
     //! Map constructor with a user-defined contiguous distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    static RCP<Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node>> 
-    Build(UnderlyingLib                                 lib,
-          global_size_t                                 numGlobalElements,
-          size_t                                        numLocalElements,
-          GlobalOrdinal                                 indexBase,
-          std::vector<size_t>&                          stridingInfo,
-          const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-          LocalOrdinal                                  stridedBlockId,
-          GlobalOrdinal                                 offset,
-          const Teuchos::RCP<Node>&                     /* node */);
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     static RCP<StridedMap> 
@@ -146,19 +120,6 @@ class StridedMapFactory
 
     //! Map constructor with a user-defined contiguous distribution. 
     //! (for experts only. There is no special check whether the generated strided maps are valid)
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    static RCP<StridedMap> 
-    Build(UnderlyingLib                                  lib,
-          global_size_t                                  numGlobalElements,
-          const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
-          GlobalOrdinal                                  indexBase,
-          std::vector<size_t>&                           stridingInfo,
-          const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
-          LocalOrdinal                                   stridedBlockId,      // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
-          GlobalOrdinal                                  offset,
-          const Teuchos::RCP<Node>&                      /* node */);
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     static RCP<StridedMap> 

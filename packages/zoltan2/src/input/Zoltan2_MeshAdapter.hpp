@@ -458,6 +458,23 @@ public:
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
 
+  void getIDsKokkosView(Kokkos::View<const gno_t *,
+    typename node_t::device_type> &ids) const
+  {
+    Kokkos::View<gno_t *, typename node_t::device_type>
+      kokkos_ids("gids", getLocalNumIDs());
+    typename decltype(kokkos_ids)::HostMirror
+      host_kokkos_ids = Kokkos::create_mirror_view(kokkos_ids);
+
+    const gno_t * gnos;
+    getIDsView(gnos);
+    for(size_t n = 0; n < getLocalNumIDs(); ++n) {
+      host_kokkos_ids(n) = gnos[n];
+    }
+    Kokkos::deep_copy(kokkos_ids, host_kokkos_ids);
+    ids = kokkos_ids;
+  }
+
   int getNumWeightsPerID() const {
     return getNumWeightsPerOf(getPrimaryEntityType());
   }
@@ -470,6 +487,27 @@ public:
                           int coordDim) const
   {
     getCoordinatesViewOf(getPrimaryEntityType(), coords, stride, coordDim);
+  }
+
+  inline void getCoordinatesKokkosView(
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const
+  {
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>
+      kokkos_coordinates("pamgen coords", getLocalNumIDs(), getDimension());
+    typename decltype(kokkos_coordinates)::HostMirror
+      host_temp_values = Kokkos::create_mirror_view(kokkos_coordinates);
+    const scalar_t * coords;
+    for(int dim = 0; dim < getDimension(); ++dim) {
+      int stride = -1;
+      getCoordinatesView(coords, stride, dim);
+      for(size_t n = 0; n < getLocalNumIDs(); ++n) {
+        host_temp_values(n, dim) = coords[n*stride];
+      }
+    }
+    Kokkos::deep_copy(kokkos_coordinates, host_temp_values);
+    elements = kokkos_coordinates;
   }
 
   bool useDegreeAsWeight(int idx) const

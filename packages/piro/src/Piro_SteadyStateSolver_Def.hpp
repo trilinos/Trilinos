@@ -112,6 +112,20 @@ Piro::SteadyStateSolver<Scalar>::get_g_space(int j) const
   }
 }
 
+template<typename Scalar>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Piro::SteadyStateSolver<Scalar>::get_x_space() const
+{
+  return model_->get_x_space();
+}
+
+template<typename Scalar>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Piro::SteadyStateSolver<Scalar>::get_f_space() const
+{
+  return model_->get_f_space();
+}
+
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::SteadyStateSolver<Scalar>::createInArgsImpl() const
@@ -119,6 +133,8 @@ Piro::SteadyStateSolver<Scalar>::createInArgsImpl() const
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> result;
   result.setModelEvalDescription(this->description());
   result.set_Np(num_p_);
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model_->createInArgs();
+  result.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_x, modelInArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_x));
   return result;
 }
 
@@ -174,6 +190,14 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::SteadyStateSolver<Scalar>::crea
   result.set_Np_Ng(num_p_, num_g_ + 1);
 
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model_->createOutArgs();
+
+//  if(modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_f))
+//    std::cout << "supports OUT ARG f" << std::endl;
+//  else
+//    std::cout << "does NOT support OUT ARG f" << std::endl;
+
+  result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_f, modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_f));
+  //result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_f, true);
 
   // Sensitivity support (Forward approach only)
   // Jacobian solver required for all sensitivities

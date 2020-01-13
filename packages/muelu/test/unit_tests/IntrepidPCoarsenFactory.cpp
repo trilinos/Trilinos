@@ -674,8 +674,6 @@ namespace MueLuTests {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
 
-    using namespace Kokkos;
-
     using namespace Kokkos::Experimental;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Kokkos::DynRankView<OT,typename Node::device_type> FCO; // FC of ordinals
@@ -742,8 +740,6 @@ namespace MueLuTests {
     typedef typename Node::device_type::execution_space ES;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
-
-    using namespace Kokkos;
 
     using namespace Kokkos::Experimental;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;

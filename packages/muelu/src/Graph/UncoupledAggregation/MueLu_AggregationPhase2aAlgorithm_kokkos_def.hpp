@@ -90,9 +90,6 @@ namespace MueLu {
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                         LO& numNonAggregatedNodes) const
   {
-    using memory_space    = typename LWGraph_kokkos::memory_space;
-    using execution_space = typename LWGraph_kokkos::execution_space;
-
     const int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     const int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
 
@@ -136,14 +133,20 @@ namespace MueLu {
 
                                   // Loop over neighbors to count how many nodes could join
                                   // the new aggregate
+                                  // Note on 2019-11-22, LBV:
+                                  // The rootCandidate is not taken into account and in fact
+                                  // not aggregatesd later on. To change that we want to
+                                  // modify:
+                                  // if(aggSize < maxNodesPerAggregate)
+                                  // to:
+                                  // if(aggSize < maxNodesPerAggregate - 1)
                                   LO numNeighbors = 0;
                                   for(int j = 0; j < neighbors.length; ++j) {
                                     LO neigh = neighbors(j);
                                     if(neigh != rootCandidate) {
                                       if(graph.isLocalNeighborVertex(neigh) &&
-                                         aggStat(neigh) == READY &&
-                                         aggSize < maxNodesPerAggregate) {
-                                        // aggList(aggSize) = neigh;
+                                         (aggStat(neigh) == READY) &&
+                                         (aggSize < maxNodesPerAggregate)) {
                                         ++aggSize;
                                       }
                                       ++numNeighbors;
@@ -152,6 +155,8 @@ namespace MueLu {
 
                                   // If a sufficient number of nodes can join the new aggregate
                                   // then we actually create the aggregate.
+                                  // Note on 2019-11-22, LBV:
+                                  // Same changes as described in the note above could be applied
                                   if(aggSize > minNodesPerAggregate &&
                                      aggSize > factor*numNeighbors) {
 
@@ -159,19 +164,22 @@ namespace MueLu {
                                     LO aggIndex = Kokkos::
                                       atomic_fetch_add(&numLocalAggregates(), 1);
 
-                                    for(int j = 0; j < neighbors.length; ++j) {
-                                      LO neigh = neighbors(j);
+                                    LO numAggregated = 0;
+                                    for(int neighIdx = 0; neighIdx < neighbors.length; ++neighIdx) {
+                                      LO neigh = neighbors(neighIdx);
                                       if(neigh != rootCandidate) {
                                         if(graph.isLocalNeighborVertex(neigh) &&
-                                           aggStat(neigh) == READY &&
-                                           aggSize < maxNodesPerAggregate) {
-                                          aggStat(neigh)   = AGGREGATED;
+                                           (aggStat(neigh) == READY) &&
+                                           (numAggregated < aggSize)) {
+                                          aggStat(neigh)         = AGGREGATED;
                                           vertex2AggId(neigh, 0) = aggIndex;
                                           procWinner(neigh, 0)   = myRank;
+
+                                          ++numAggregated;
+                                          --lNumNonAggregatedNodes;
                                         }
                                       }
                                     }
-                                    lNumNonAggregatedNodes -= aggSize;
                                   }
                                 }
                               }, tmpNumNonAggregatedNodes);
@@ -191,9 +199,6 @@ namespace MueLu {
                                Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                                LO& numNonAggregatedNodes) const
   {
-    using memory_space    = typename LWGraph_kokkos::memory_space;
-    using execution_space = typename LWGraph_kokkos::execution_space;
-
     const int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     const int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
 

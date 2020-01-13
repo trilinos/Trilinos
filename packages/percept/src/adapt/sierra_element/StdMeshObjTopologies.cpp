@@ -26,7 +26,6 @@
  */
 
 #include <stdexcept>
-#include <boost/lexical_cast.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -2760,7 +2759,7 @@
           for (unsigned jc=0; jc < M; jc++)
             {
               bool end = (child[jc] == EUA || jc== M-1);
-              std::cout << (jc==0?"{":"") << (child[jc] == EUA?"EUA":boost::lexical_cast<std::string>(child[jc])) << (end?(ic==(N-1)?"}\n":"},\n"):", ");
+              std::cout << (jc==0?"{":"") << (child[jc] == EUA?"EUA":std::to_string(child[jc])) << (end?(ic==(N-1)?"}\n":"},\n"):", ");
               if (end) break;
             }
         }

@@ -60,17 +60,7 @@ namespace FROSch {
                                                                               ParameterListPtr parameterList,
                                                                               Verbosity verbosity,
                                                                               UN levelID) :
-    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
-    UseVertices_ (false),
-    UseShortEdges_ (false),
-    UseStraightEdges_ (false),
-    UseEdges_ (false),
-    UseFaces_ (false),
-    Vertices_ (),
-    ShortEdges_ (),
-    StraightEdges_ (),
-    Edges_ (),
-    Faces_ ()
+    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID)
     {
         FROSCH_TIMER_START_LEVELID(gDSWInterfacePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::GDSWInterfacePartitionOfUnity");
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
@@ -156,7 +146,9 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
-            this->DDInterface_->divideUnconnectedEntities(matrix);
+            if (matrix.is_null()) {
+                FROSCH_WARNING("FROSch::GDSWInterfacePartitionOfUnity",this->Verbose_,"divideUnconnectedEntities() cannot be performed without the matrix.");
+            } else this->DDInterface_->divideUnconnectedEntities(matrix);
         }
         this->DDInterface_->sortVerticesEdgesFaces(nodeList);
 
@@ -176,6 +168,7 @@ namespace FROSch {
                                             UseStraightEdges_,
                                             UseEdges_,
                                             UseFaces_,
+                                            false,
                                             false);
 
         // Maps
@@ -209,11 +202,11 @@ namespace FROSch {
     ------------------------------------------------------------------------------\n\
      GDSW Interface Partition Of Unity (GDSW IPOU)\n\
     ------------------------------------------------------------------------------\n\
-      vertices                                    --- " << UseVertices_ << "\n\
-      shortEdges                                  --- " << UseShortEdges_ << "\n\
-      straightEdges                               --- " << UseStraightEdges_ << "\n\
-      edges                                       --- " << UseEdges_ << "\n\
-      faces                                       --- " << UseFaces_ << "\n\
+      Vertices                                    --- " << UseVertices_ << "\n\
+      ShortEdges                                  --- " << UseShortEdges_ << "\n\
+      StraightEdges                               --- " << UseStraightEdges_ << "\n\
+      Edges                                       --- " << UseEdges_ << "\n\
+      Faces                                       --- " << UseFaces_ << "\n\
     ------------------------------------------------------------------------------\n" << std::noboolalpha;
         }
 

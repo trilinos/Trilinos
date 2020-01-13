@@ -66,7 +66,7 @@
 #include <Xpetra_ThyraUtils.hpp>
 
 #ifdef HAVE_XPETRA_THYRA
-#include <Thyra_DefaultProductVectorSpace_decl.hpp>
+#include <Thyra_DefaultProductVectorSpace.hpp>
 #endif
 
 #include <set>

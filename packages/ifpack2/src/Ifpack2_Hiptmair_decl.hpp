@@ -48,6 +48,7 @@
 #define IFPACK2_HIPTMAIR_DECL_HPP
 
 #include "Ifpack2_Preconditioner.hpp"
+#include "Tpetra_Map_fwd.hpp"
 #include <type_traits>
 
 namespace Teuchos {

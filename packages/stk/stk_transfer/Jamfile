@@ -8,7 +8,7 @@
 #--------------------------------------------------------------------
 
 #
-# http://www.boost.org/doc/libs/1_47_0/doc/html/bbv2/overview.html#bbv2.overview.targets
+# http://www.b-oost.org/doc/libs/1_47_0/doc/html/bbv2/overview.html#bbv2.overview.targets
 #
 #function-name main-target-name
 #    : sources
@@ -135,7 +135,7 @@ local xml-files =
   ;
 
 # This is currently a header-only library, so it must not use the lib rule.
-# http://www.boost.org/boost-build2/doc/html/bbv2/faq/header-only-libraries.html
+# http://www.b-oost.org/b-oost-build2/doc/html/bbv2/faq/header-only-libraries.html
 # If sources are added to this library change this target to use the lib rule instead.
 alias stk_transfer
   : # No sources defined for header-only libraries.

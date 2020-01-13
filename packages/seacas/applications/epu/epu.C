@@ -97,7 +97,7 @@ using StringVector = std::vector<std::string>;
 
 // The main program templated to permit float/double transfer.
 template <typename T, typename INT>
-int epu(Excn::SystemInterface &interface, int start_part, int part_count, int cycle, T /* dummy */,
+int epu(Excn::SystemInterface &interFace, int start_part, int part_count, int cycle, T /* dummy */,
         INT int_size_dummy);
 
 class mpi
@@ -284,7 +284,7 @@ namespace {
                            const Excn::StringIdVector &variable_list);
 
   void get_put_variable_names(int id, int out, Excn::Variables &vars,
-                              Excn::SystemInterface &interface);
+                              Excn::SystemInterface &interFace);
 
   template <typename INT>
   void build_reverse_element_map(std::vector<std::vector<INT>> &        local_element_to_global,
@@ -326,7 +326,7 @@ namespace {
   void
   get_put_sidesets(int part_count, const std::vector<std::vector<INT>> &local_element_to_global,
                    std::vector<std::vector<Excn::SideSet<INT>>> &sets,
-                   std::vector<Excn::SideSet<INT>> &glob_ssets, Excn::SystemInterface &interface);
+                   std::vector<Excn::SideSet<INT>> &glob_ssets, Excn::SystemInterface &interFace);
 
   template <typename T, typename INT>
   void add_processor_variable(int id_out, int part_count, int start_part, const Excn::Mesh &global,
@@ -363,8 +363,8 @@ int main(int argc, char *argv[])
 #endif
     }
 
-    SystemInterface interface(rank);
-    bool            execute = interface.parse_options(argc, argv);
+    SystemInterface interFace(rank);
+    bool            execute = interFace.parse_options(argc, argv);
 
     if (!execute) {
       return EXIT_SUCCESS;
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
     //  16 -- Sidesets
     //  32 -- Nodesets
     //  64 -- exodus verbose.
-    debug_level = interface.debug();
+    debug_level = interFace.debug();
 
     if ((debug_level & 64) != 0u) {
       ex_opts(EX_VERBOSE | EX_DEBUG);
@@ -387,10 +387,10 @@ int main(int argc, char *argv[])
       ex_opts(0);
     }
 
-    int start_part      = interface.start_part();
-    int processor_count = interface.processor_count();
+    int start_part      = interFace.start_part();
+    int processor_count = interFace.processor_count();
 
-    int part_count = interface.part_count();
+    int part_count = interFace.part_count();
     if (part_count <= 1) {
       fmt::print("INFO: Only one processor or part, no concatenation needed.\n");
       return (EXIT_SUCCESS);
@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
 
     int error = 0;
     if (my_mpi.epu_proc_count > 1) {
-      interface.subcycle(my_mpi.epu_proc_count);
+      interFace.subcycle(my_mpi.epu_proc_count);
 
       int per_proc = processor_count / my_mpi.epu_proc_count;
       int extra    = processor_count % my_mpi.epu_proc_count;
@@ -414,25 +414,25 @@ int main(int argc, char *argv[])
 
       SMART_ASSERT(start_part + part_count <= processor_count);
 
-      if (!ExodusFile::initialize(interface, start_part, part_count, rank, false)) {
+      if (!ExodusFile::initialize(interFace, start_part, part_count, rank, false)) {
         throw std::runtime_error("ERROR: (EPU) Problem initializing input and/or output files.\n");
       }
 
       if (ExodusFile::io_word_size() == 4) { // Reals are floats
-        if (interface.int64()) {
-          error = epu(interface, start_part, part_count, rank, static_cast<float>(0.0),
+        if (interFace.int64()) {
+          error = epu(interFace, start_part, part_count, rank, static_cast<float>(0.0),
                       static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, rank, static_cast<float>(0.0), 0);
+          error = epu(interFace, start_part, part_count, rank, static_cast<float>(0.0), 0);
         }
       }
       else { // Reals are doubles
-        if (interface.int64()) {
-          error = epu(interface, start_part, part_count, rank, 0.0, static_cast<int64_t>(0));
+        if (interFace.int64()) {
+          error = epu(interFace, start_part, part_count, rank, 0.0, static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, rank, 0.0, 0);
+          error = epu(interFace, start_part, part_count, rank, 0.0, 0);
         }
       }
 
@@ -445,12 +445,12 @@ int main(int argc, char *argv[])
       int max_open_file = ExodusFile::get_free_descriptor_count();
 
       // Only used to test the auto subcycle without requiring thousands of files...
-      if (interface.max_open_files() > 0) {
-        max_open_file = interface.max_open_files();
+      if (interFace.max_open_files() > 0) {
+        max_open_file = interFace.max_open_files();
       }
 
-      if (interface.is_auto() && interface.subcycle() < 0 && processor_count > max_open_file &&
-          part_count == processor_count && interface.cycle() == -1) {
+      if (interFace.is_auto() && interFace.subcycle() < 0 && processor_count > max_open_file &&
+          part_count == processor_count && interFace.cycle() == -1) {
         // Rule of thumb -- number of subcycles = cube_root(processor_count);
         // if that value > max_open_file, then use square root.
         // if that is still too large, just do no subcycles... and implement
@@ -461,21 +461,21 @@ int main(int argc, char *argv[])
         }
 
         if (((processor_count + sub_cycle_count - 1) / sub_cycle_count) < max_open_file) {
-          interface.subcycle(sub_cycle_count);
+          interFace.subcycle(sub_cycle_count);
           if (rank == 0) {
             fmt::print("\tAutomatically activating subcyle mode\n\tNumber of processors ({}) "
                        "exceeds open file limit ({}).\n"
                        "\tUsing --subcycle={}\n\n",
                        processor_count, max_open_file, sub_cycle_count);
           }
-          interface.subcycle_join(true);
+          interFace.subcycle_join(true);
         }
       }
 
-      int cycle = interface.cycle();
-      if (interface.subcycle() >= 0) {
+      int cycle = interFace.cycle();
+      if (interFace.subcycle() >= 0) {
         start_part = 0;
-        int cycles = interface.subcycle();
+        int cycles = interFace.subcycle();
         if (cycles > 0) {
           // use the specified number of cycles...
           part_count = (processor_count + cycles - 1) / cycles;
@@ -490,7 +490,7 @@ int main(int argc, char *argv[])
               "ERROR: (EPU) The subcycle specification results in less than 1 part per "
               "cycle which is not allowed.\n");
         }
-        interface.subcycle((processor_count + part_count - 1) / part_count);
+        interFace.subcycle((processor_count + part_count - 1) / part_count);
 
         if (start_part + part_count > processor_count) {
           part_count = processor_count - start_part;
@@ -509,71 +509,71 @@ int main(int argc, char *argv[])
         SMART_ASSERT(part_count > 0);
         SMART_ASSERT(start_part + part_count <= processor_count);
 
-        if (!ExodusFile::initialize(interface, start_part, part_count, cycle, false)) {
+        if (!ExodusFile::initialize(interFace, start_part, part_count, cycle, false)) {
           throw std::runtime_error(
               "ERROR: (EPU) Problem initializing input and/or output files.\n");
         }
 
         if (ExodusFile::io_word_size() == 4) { // Reals are floats
-          if (interface.int64()) {
-            error = epu(interface, start_part, part_count, cycle++, static_cast<float>(0.0),
+          if (interFace.int64()) {
+            error = epu(interFace, start_part, part_count, cycle++, static_cast<float>(0.0),
                         static_cast<int64_t>(0));
           }
           else {
-            error = epu(interface, start_part, part_count, cycle++, static_cast<float>(0.0), 0);
+            error = epu(interFace, start_part, part_count, cycle++, static_cast<float>(0.0), 0);
           }
         }
         else { // Reals are doubles
-          if (interface.int64()) {
-            error = epu(interface, start_part, part_count, cycle++, 0.0, static_cast<int64_t>(0));
+          if (interFace.int64()) {
+            error = epu(interFace, start_part, part_count, cycle++, 0.0, static_cast<int64_t>(0));
           }
           else {
-            error = epu(interface, start_part, part_count, cycle++, 0.0, 0);
+            error = epu(interFace, start_part, part_count, cycle++, 0.0, 0);
           }
         }
 
         start_part += part_count;
         ExodusFile::close_all();
-        if (interface.subcycle() < 0 || (interface.subcycle() > 0 && interface.cycle() >= 0)) {
+        if (interFace.subcycle() < 0 || (interFace.subcycle() > 0 && interFace.cycle() >= 0)) {
           break;
         }
       }
     }
 
-    if (interface.subcycle() > 0 && interface.cycle() < 0 && interface.subcycle_join() &&
+    if (interFace.subcycle() > 0 && interFace.cycle() < 0 && interFace.subcycle_join() &&
         rank == 0) {
       // Now, join the subcycled parts into a single file...
       start_part = 0;
-      part_count = interface.subcycle();
-      interface.subcycle(0);
-      interface.processor_count(part_count);
-      interface.step_min(1);
-      interface.step_max(INT_MAX);
-      interface.step_interval(1);
+      part_count = interFace.subcycle();
+      interFace.subcycle(0);
+      interFace.processor_count(part_count);
+      interFace.step_min(1);
+      interFace.step_max(INT_MAX);
+      interFace.step_interval(1);
 
-      if (!ExodusFile::initialize(interface, start_part, part_count, 0, true)) {
+      if (!ExodusFile::initialize(interFace, start_part, part_count, 0, true)) {
         throw std::runtime_error("ERROR: (EPU) Problem initializing input and/or output files.\n");
       }
 
       if (ExodusFile::io_word_size() == 4) { // Reals are floats
-        if (interface.int64()) {
-          error = epu(interface, start_part, part_count, 0, static_cast<float>(0.0),
+        if (interFace.int64()) {
+          error = epu(interFace, start_part, part_count, 0, static_cast<float>(0.0),
                       static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, 0, static_cast<float>(0.0), 0);
+          error = epu(interFace, start_part, part_count, 0, static_cast<float>(0.0), 0);
         }
       }
       else { // Reals are doubles
-        if (interface.int64()) {
-          error = epu(interface, start_part, part_count, 0, 0.0, static_cast<int64_t>(0));
+        if (interFace.int64()) {
+          error = epu(interFace, start_part, part_count, 0, 0.0, static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, 0, 0.0, 0);
+          error = epu(interFace, start_part, part_count, 0, 0.0, 0);
         }
       }
 
-      if (error == 0 && !interface.keep_temporary()) {
+      if (error == 0 && !interFace.keep_temporary()) {
         ExodusFile::unlink_temporary_files();
       }
     }
@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
 }
 
 template <typename T, typename INT>
-int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T float_or_double,
+int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T float_or_double,
         INT /*unused*/)
 {
   SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
@@ -672,10 +672,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     else {
       SMART_ASSERT(global.dimensionality == local_mesh[p].dimensionality);
       SMART_ASSERT(global.count(EBLK) == local_mesh[p].count(EBLK));
-      if (!interface.omit_nodesets()) {
+      if (!interFace.omit_nodesets()) {
         SMART_ASSERT(global.count(NSET) == local_mesh[p].count(NSET));
       }
-      if (!interface.omit_sidesets()) {
+      if (!interFace.omit_sidesets()) {
         SMART_ASSERT(global.count(SSET) == local_mesh[p].count(SSET));
       }
     }
@@ -695,11 +695,11 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
   delete[] mytitle;
 
-  if (interface.omit_nodesets()) {
+  if (interFace.omit_nodesets()) {
     global.nodesetCount = 0;
   }
 
-  if (interface.omit_sidesets()) {
+  if (interFace.omit_sidesets()) {
     global.sidesetCount = 0;
   }
 
@@ -719,7 +719,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     build_reverse_node_map(local_node_to_global, local_mesh, &global, part_count, global_node_map);
 
     LOG("Finished reading/writing Global Info\n");
-    if (interface.output_shared_nodes()) {
+    if (interFace.output_shared_nodes()) {
       // Get list of all shared nodes...
       std::vector<std::vector<INT>> shared(part_count);
       std::vector<int>              num_shared(global_node_map.size());
@@ -760,13 +760,13 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
     std::vector<INT> global_element_map(global.elementCount);
     build_reverse_element_map(local_element_to_global, local_mesh, blocks, glob_blocks, &global,
-                              part_count, global_element_map, interface.map_element_ids());
+                              part_count, global_element_map, interFace.map_element_ids());
 
     //
     //    NOTE:  Node set/side set information can be different for each processor
     /************************************************************************/
     // Get Side sets
-    if (!interface.omit_sidesets()) {
+    if (!interFace.omit_sidesets()) {
       LOG("\n**** GET SIDE SETS *****\n");
       get_sideset_metadata(part_count, sidesets, glob_ssets);
       if (global.count(SSET) != glob_ssets.size()) {
@@ -777,7 +777,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
     /************************************************************************/
     // Get Node sets
-    if (!interface.omit_nodesets()) {
+    if (!interFace.omit_nodesets()) {
       LOG("\n**** GET NODE SETS *****\n");
       get_nodesets(part_count, global.nodeCount, local_node_to_global, nodesets, glob_nsets,
                    float_or_double);
@@ -793,7 +793,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     LOG("\n**** BEGIN WRITING OUTPUT FILE *****\n");
     CommunicationMetaData comm_data;
 
-    if (!interface.int64()) {
+    if (!interFace.int64()) {
       int64_t twoBill = 1;
       twoBill <<= 31;
       int64_t fourBill = 1;
@@ -804,13 +804,13 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
                                  "rerun epu with the -64 option.\n\n");
       }
 
-      if (!interface.use_netcdf4()) {
+      if (!interFace.use_netcdf4()) {
         // Check size required to store coordinates and connectivity
         if (global.nodeCount * 8 >= fourBill) {
           fmt::print(
               stderr,
               "\nINFO: Output file requires NetCDF-4 format. Setting this automatically.\n\n");
-          interface.set_use_netcdf4();
+          interFace.set_use_netcdf4();
         }
 
         for (auto block : glob_blocks) {
@@ -820,14 +820,14 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
             fmt::print(
                 stderr,
                 "\nINFO: Output file requires NetCDF-4 format. Setting this automatically.\n\n");
-            interface.set_use_netcdf4();
+            interFace.set_use_netcdf4();
             break;
           }
         }
       }
     }
     // Create the output file...
-    ExodusFile::create_output(interface, cycle);
+    ExodusFile::create_output(interFace, cycle);
 
     // EPU assumes IDS are always passed through the API as 64-bit ints.
     SMART_ASSERT(ex_int64_status(ExodusFile::output()) & EX_IDS_INT64_API);
@@ -848,7 +848,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
     Internals<INT> exodus(ExodusFile::output(), ExodusFile::max_name_length());
 
-    if (interface.append()) {
+    if (interFace.append()) {
       bool matches = exodus.check_meta_data(global, glob_blocks, glob_nsets, glob_ssets, comm_data);
       if (!matches) {
         throw std::runtime_error("\n\nERROR: (EPU) Current mesh dimensions do not match "
@@ -890,11 +890,11 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
                          local_element_to_global, float_or_double);
     }
 
-    get_put_sidesets(part_count, local_element_to_global, sidesets, glob_ssets, interface);
+    get_put_sidesets(part_count, local_element_to_global, sidesets, glob_ssets, interFace);
   }
   // ************************************************************************
   // 2. Get Coordinate Info.
-  if (!interface.append()) {
+  if (!interFace.append()) {
     LOG("\n\n**** GET COORDINATE INFO ****\n");
     get_put_coordinates(global, part_count, local_mesh, local_node_to_global, (T)0.0);
     LOG("Wrote coordinate information...\n");
@@ -915,32 +915,32 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   Variables nodeset_vars(NSET);
   Variables sideset_vars(SSET);
 
-  element_vars.addProcessorId = interface.add_processor_id_field();
+  element_vars.addProcessorId = interFace.add_processor_id_field();
 
   {
     ExodusFile id(non_zero_node_count);
 
-    get_variable_params(id, global_vars, interface.global_var_names());
-    get_variable_params(id, nodal_vars, interface.node_var_names());
-    get_variable_params(id, element_vars, interface.elem_var_names());
-    if (!interface.omit_nodesets()) {
-      get_variable_params(id, nodeset_vars, interface.nset_var_names());
+    get_variable_params(id, global_vars, interFace.global_var_names());
+    get_variable_params(id, nodal_vars, interFace.node_var_names());
+    get_variable_params(id, element_vars, interFace.elem_var_names());
+    if (!interFace.omit_nodesets()) {
+      get_variable_params(id, nodeset_vars, interFace.nset_var_names());
     }
-    if (!interface.omit_sidesets()) {
-      get_variable_params(id, sideset_vars, interface.sset_var_names());
+    if (!interFace.omit_sidesets()) {
+      get_variable_params(id, sideset_vars, interFace.sset_var_names());
     }
 
     get_truth_table(global, glob_blocks, local_mesh, element_vars, 4);
-    filter_truth_table(id, global, glob_blocks, element_vars, interface.elem_var_names());
+    filter_truth_table(id, global, glob_blocks, element_vars, interFace.elem_var_names());
 
-    if (!interface.omit_nodesets()) {
+    if (!interFace.omit_nodesets()) {
       get_truth_table(global, glob_nsets, local_mesh, nodeset_vars, 32);
-      filter_truth_table(id, global, glob_nsets, nodeset_vars, interface.nset_var_names());
+      filter_truth_table(id, global, glob_nsets, nodeset_vars, interFace.nset_var_names());
     }
 
-    if (!interface.omit_sidesets()) {
+    if (!interFace.omit_sidesets()) {
       get_truth_table(global, glob_ssets, local_mesh, sideset_vars, 16);
-      filter_truth_table(id, global, glob_ssets, sideset_vars, interface.sset_var_names());
+      filter_truth_table(id, global, glob_ssets, sideset_vars, interFace.sset_var_names());
     }
   }
 
@@ -961,7 +961,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     std::vector<int> elem_truth_table(global.truthTable[EBLK].size());
     create_output_truth_table(global, glob_blocks, element_vars, elem_truth_table);
 
-    if (!interface.append()) {
+    if (!interFace.append()) {
       error = ex_put_all_var_param(
           ExodusFile::output(), global_vars.count(OUT), nodal_vars.count(OUT),
           element_vars.count(OUT), elem_truth_table.data(), nodeset_vars.count(OUT),
@@ -975,17 +975,17 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   // II. read/write the variable names
   {
     ExodusFile id(non_zero_node_count);
-    get_put_variable_names(id, ExodusFile::output(), global_vars, interface);
-    get_put_variable_names(id, ExodusFile::output(), nodal_vars, interface);
-    get_put_variable_names(id, ExodusFile::output(), element_vars, interface);
-    if (!interface.omit_nodesets()) {
-      get_put_variable_names(id, ExodusFile::output(), nodeset_vars, interface);
+    get_put_variable_names(id, ExodusFile::output(), global_vars, interFace);
+    get_put_variable_names(id, ExodusFile::output(), nodal_vars, interFace);
+    get_put_variable_names(id, ExodusFile::output(), element_vars, interFace);
+    if (!interFace.omit_nodesets()) {
+      get_put_variable_names(id, ExodusFile::output(), nodeset_vars, interFace);
     }
-    if (!interface.omit_sidesets()) {
-      get_put_variable_names(id, ExodusFile::output(), sideset_vars, interface);
+    if (!interFace.omit_sidesets()) {
+      get_put_variable_names(id, ExodusFile::output(), sideset_vars, interFace);
     }
   }
-  if (!interface.append()) {
+  if (!interFace.append()) {
     ex_update(ExodusFile::output());
   }
 
@@ -1068,9 +1068,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   }
 
   // Determine if user wants a subset of timesteps transferred to the output file.
-  int ts_min  = interface.step_min();
-  int ts_max  = interface.step_max();
-  int ts_step = interface.step_interval();
+  int ts_min  = interFace.step_min();
+  int ts_max  = interFace.step_max();
+  int ts_step = interFace.step_interval();
 
   if (ts_min == -1 && ts_max == -1) {
     ts_min = num_time_steps;
@@ -1082,7 +1082,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   T   sentinel          = static_cast<T>(-FLT_MAX);
   T   min_time_to_write = sentinel;
 
-  if (interface.append()) {
+  if (interFace.append()) {
     // See how many steps already exist on the output database
     // and the corresponding time.
     int nstep = ex_inquire_int(ExodusFile::output(), EX_INQ_TIME);
@@ -1108,7 +1108,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
   // Determine how many steps will be written...
   int output_steps = (ts_max - ts_min) / ts_step + 1;
-  int subcycles    = interface.subcycle();
+  int subcycles    = interFace.subcycle();
 
   double start_time = seacas_timer();
 
@@ -1201,8 +1201,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
                            "At step {:{}}, Global Variable {:{}}, P{:0{}} = {:15.8g}, P{:0{}} = "
                            "{:15.8g}\n",
                            time_step + 1, ts_max + 1, ig + 1, get_width(global_vars.count(IN)),
-                           start_part, get_width(interface.processor_count()), start_part + p,
-                           get_width(interface.processor_count()), proc_global_values[ig]);
+                           start_part, get_width(interFace.processor_count()), start_part + p,
+                           get_width(interFace.processor_count()), proc_global_values[ig]);
               }
             }
           }
@@ -1219,7 +1219,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     }
     if (debug_level & 2) {
       for (int i = 0; i < nodal_vars.count(OUT); i++) {
-        std::fill(&master_nodal_values[i][0], &master_nodal_values[i][global.nodeCount], 0.0);
+        std::fill(&master_nodal_values[i][0], &master_nodal_values[i][global.nodeCount], T(0.0));
       }
     }
 
@@ -1250,7 +1250,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
             T *local_nodal_values  = values.data();
             T *global_nodal_values = &master_nodal_values[i_out][0];
-            if (interface.sum_shared_nodes()) {
+            if (interFace.sum_shared_nodes()) {
               // sum values into master nodal value information. Note
               // that for non-shared nodes, this will be the same as a
               // copy; for shared nodes, it will be a true sum.
@@ -1310,7 +1310,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
     // ========================================================================
     // Extracting sideset transient variable data
-    if (!interface.omit_sidesets()) {
+    if (!interFace.omit_sidesets()) {
       if (debug_level & 1) {
         if (rank == 0) {
           fmt::print("{}Sideset Variables...\n", time_stamp(tsFormat));
@@ -1330,7 +1330,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       }
     }
 
-    if (!interface.omit_nodesets()) {
+    if (!interFace.omit_nodesets()) {
       // ========================================================================
       // Extracting nodeset transient variable data
       if (debug_level & 1) {
@@ -2182,7 +2182,7 @@ namespace {
     }
   }
 
-  void get_put_variable_names(int id, int out, Variables &vars, Excn::SystemInterface &interface)
+  void get_put_variable_names(int id, int out, Variables &vars, Excn::SystemInterface &interFace)
   {
     if (vars.count(OUT) > 0) {
 
@@ -2233,7 +2233,7 @@ namespace {
         }
       }
       maxlen += 2;
-      int width = interface.screen_width();
+      int width = interFace.screen_width();
       // Assume 8 characters for initial tab...
       int nfield = (width - 8) / maxlen;
       if (nfield < 1) {
@@ -2254,7 +2254,7 @@ namespace {
         fmt::print("\n\n");
       }
 
-      if (!interface.append()) {
+      if (!interFace.append()) {
         error = ex_put_variable_names(out, vars.type(), vars.count(OUT), output_name_list);
         if (error < 0) {
           exodus_error(__LINE__);
@@ -2553,7 +2553,7 @@ namespace {
               ex_get_set_dist_fact(id, EX_NODE_SET, nodesets[p][ns].id, ns_df.data());
             }
             else {
-              std::fill(ns_df.begin(), ns_df.end(), 1.0);
+              std::fill(ns_df.begin(), ns_df.end(), T(1.0));
             }
 
             // The node ids are in local space -- map to global; bring df along (if any).
@@ -2793,17 +2793,17 @@ namespace {
   void get_put_sidesets(int                                     part_count,
                         const std::vector<std::vector<INT>> &   local_element_to_global,
                         std::vector<std::vector<SideSet<INT>>> &sets,
-                        std::vector<SideSet<INT>> &glob_ssets, Excn::SystemInterface &interface)
+                        std::vector<SideSet<INT>> &glob_ssets, Excn::SystemInterface &interFace)
   {
     // TODO(gdsjaar): See what work is really needed if in append mode...
 
     // Get a temporary vector to maintain the current
     // offset into the glob_ssets for storing sides
     Int64Vector offset(glob_ssets.size());
-    std::fill(offset.begin(), offset.end(), 0);
+    std::fill(offset.begin(), offset.end(), int64_t(0));
 
     Int64Vector df_offset(glob_ssets.size());
-    std::fill(df_offset.begin(), df_offset.end(), 0);
+    std::fill(df_offset.begin(), df_offset.end(), int64_t(0));
 
     {
       for (auto &glob_sset : glob_ssets) {
@@ -2859,7 +2859,7 @@ namespace {
       }
     }
 
-    if (!interface.append()) {
+    if (!interFace.append()) {
       // Now write the actual sideset data...
       int exoid = ExodusFile::output(); // output file identifier
       for (auto &glob_sset : glob_ssets) {
@@ -3283,7 +3283,7 @@ namespace {
           int output_truth_table_loc = (b * vars.count(OUT)) + ivar;
           if (global.truthTable[vars.objectType][output_truth_table_loc]) {
             std::fill(&master_values[ivar][b][0],
-                      &master_values[ivar][b][glob_sets[b].entity_count()], 0.0);
+                      &master_values[ivar][b][glob_sets[b].entity_count()], T(0.0));
           }
         }
       }

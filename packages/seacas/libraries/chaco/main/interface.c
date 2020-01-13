@@ -33,6 +33,7 @@
  *
  */
 
+#include "chaco.h"
 #include "defs.h"    // for FALSE, TRUE
 #include "smalloc.h" // for sfree, smalloc_ret
 #include "structs.h"
@@ -47,7 +48,7 @@ extern int submain(struct vtx_data **graph, int nvtxs, int nedges, int using_vwg
 
 int Using_Main = FALSE; /* Is main routine being called? */
 
-int interface(int    nvtxs,                 /* number of vertices in full graph */
+int INTERFACE(int    nvtxs,                 /* number of vertices in full graph */
               int *  start,                 /* start of edge list for each vertex */
               int *  adjacency,             /* edge list data */
               int *  vwgts,                 /* weights for all vertices */
@@ -96,7 +97,7 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
   void              free_graph(), read_params(), strout();
 
   if (DEBUG_TRACE > 0) {
-    printf("<Entering interface>\n");
+    printf("<Entering INTERFACE>\n");
   }
 
   flag   = 0;

@@ -59,43 +59,6 @@
 
 namespace MueLu {
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class Node2>
-Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-MUELU_DEPRECATED
-clone (const Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node1> >& SB,
-       const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& cloneA,
-       const RCP<Node2>& node2)
-{
-#if defined(HAVE_MUELU_IFPACK2)
-  Teuchos::RCP<SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  cloneSB;
-  Teuchos::RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1> > trilSmoother =
-    Teuchos::rcp_dynamic_cast<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1> >(SB);
-  if (trilSmoother != Teuchos::null){
-    cloneSB = trilSmoother->clone (node2, cloneA);
-    return cloneSB;
-  }
-
-  Teuchos::RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1> > ifSmoother =
-    Teuchos::rcp_dynamic_cast<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1> >(SB);
-  if (ifSmoother != Teuchos::null){
-    cloneSB = ifSmoother->clone(node2, cloneA);
-    return cloneSB;
-  }
-
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "MueLu::SmootherClone: "
-        "Invalid smoother type to clone (not TrilinosSmoother or Ifpack2 ) \"");
-  }
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "MueLu::SmootherClone: "
-      "clone() only available with IFPACK2 enabled.");
-#endif
-
-}
-#endif
 } //namespace MueLu
 
 #define MUELU_SMOOTHERBASECLONER_SHORT

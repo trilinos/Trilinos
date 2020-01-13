@@ -49,10 +49,10 @@
 #include "Xpetra_TpetraConfigDefs.hpp"
 
 #include "Xpetra_Vector.hpp"
-#include "Xpetra_MultiVector.hpp"
-#include "Xpetra_TpetraMultiVector.hpp"
+#include "Xpetra_MultiVector_decl.hpp"
+#include "Xpetra_TpetraMultiVector_decl.hpp"
 
-#include "Xpetra_TpetraMap.hpp"      //TMP
+#include "Xpetra_TpetraMap_decl.hpp" 
 #include "Xpetra_Utils.hpp"
 
 #include "Tpetra_Vector.hpp"
@@ -154,14 +154,7 @@ class TpetraVector
     //! Computes dot product of this Vector against input Vector x.
     Scalar dot(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& a) const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    TPETRA_DEPRECATED typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-    normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights) const;
-#endif
-
-
-    //! @name Xpetra specific
+//! @name Xpetra specific
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object

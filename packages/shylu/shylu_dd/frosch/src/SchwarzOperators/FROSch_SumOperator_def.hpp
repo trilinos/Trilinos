@@ -52,20 +52,14 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(CommPtr comm) :
-    SchwarzOperator<SC,LO,GO,NO> (comm),
-    OperatorVector_ (0),
-    XTmp_ (),
-    EnableOperators_ (0)
+    SchwarzOperator<SC,LO,GO,NO> (comm)
     {
         FROSCH_TIMER_START_LEVELID(sumOperatorTime,"SumOperator::SumOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(SchwarzOperatorPtrVecPtr operators) :
-    SchwarzOperator<SC,LO,GO,NO> (operators[0]->getRangeMap()->getComm()),
-    OperatorVector_ (0),
-    XTmp_ (),
-    EnableOperators_ (0)
+    SchwarzOperator<SC,LO,GO,NO> (operators[0]->getRangeMap()->getComm())
     {
         FROSCH_TIMER_START_LEVELID(sumOperatorTime,"SumOperator::SumOperator");
         FROSCH_ASSERT(operators.size()>0,"operators.size()<=0");
@@ -154,7 +148,7 @@ namespace FROSch {
     void SumOperator<SC,LO,GO,NO>::describe(FancyOStream &out,
                                             const EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(false,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has to be implemented properly...");
     }
 
     template <class SC,class LO,class GO,class NO>

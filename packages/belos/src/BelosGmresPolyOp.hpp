@@ -620,11 +620,11 @@ namespace Belos {
     try {
       gmres_iter->iterate();
     }
-    catch (GmresIterationOrthoFailure e) {
+    catch (GmresIterationOrthoFailure& e) {
       // Try to recover the most recent least-squares solution
       gmres_iter->updateLSQR( gmres_iter->getCurSubspaceDim() );
     }
-    catch (std::exception e) {
+    catch (std::exception& e) {
       using std::endl;
       printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration "
         << gmres_iter->getNumIters() << endl << e.what () << endl;

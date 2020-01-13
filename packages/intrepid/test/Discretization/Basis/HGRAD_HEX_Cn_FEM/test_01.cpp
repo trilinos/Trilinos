@@ -61,7 +61,7 @@ using namespace Intrepid;
   try {                                                                                                                    \
     S ;                                                                                                                    \
   }                                                                                                                        \
-  catch (std::logic_error err) {                                                                                           \
+  catch (const std::logic_error & err) {                                                                                           \
       ++throwCounter;                                                                                                      \
       *outStream << "Expected Error " << nException << " -------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                                                                    \
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   }
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  catch (std::logic_error err){
+  catch (const std::logic_error & err){
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
@@ -608,7 +608,7 @@ int main(int argc, char *argv[]) {
     }    
   }
   // Catch unexpected errors
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };

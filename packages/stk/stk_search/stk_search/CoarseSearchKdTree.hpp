@@ -44,6 +44,7 @@
 #include "stk_util/environment/WallTime.hpp"
 #include <stk_search/CommonSearchUtil.hpp>
 #include <stk_search/Sphere.hpp>
+#include <stk_search/IdentProc.hpp>
 
 
 namespace stk {
@@ -144,10 +145,7 @@ namespace stk {
 #endif
 
       if(communicateRangeBoxInfo) {
-        std::vector <std::pair<DomainIdentifier,RangeIdentifier> > tmp;
-        tmp.reserve(searchResults.size());
-        stk::search::communicateVector(comm, searchResults, tmp, communicateRangeBoxInfo);
-        searchResults=tmp;
+        stk::search::communicateVector(comm, searchResults, communicateRangeBoxInfo);
         std::sort(searchResults.begin(), searchResults.end());
       }
     }
@@ -169,17 +167,18 @@ namespace stk {
       MPI_Comm_rank(comm, &proc_id);
       MPI_Comm_size(comm, &num_procs);
 
+#ifdef _OPENMP
+      std::vector<std::vector<std::pair<DomainIdentifier, RangeIdentifier> > >
+        threadLocalSearchResults( omp_get_max_threads() );
+#endif
+
+      {
       std::vector<stk::search::Box<RBoxNumType> > rangeBoxes( local_range.size() );
 
       std::vector<RangeIdentifier> rangeGhostIdentifiers;
 
       stk::search::ComputeRangeWithGhostsForCoarseSearch(local_domain, local_range,
                                             num_procs, rangeBoxes, rangeGhostIdentifiers, comm);
-
-#ifdef _OPENMP
-      std::vector<std::vector<std::pair<DomainIdentifier, RangeIdentifier> > >
-        threadLocalSearchResults( omp_get_max_threads() );
-#endif
 
       if ((local_domain.size() > 0) && (rangeBoxes.size() > 0)) {
 
@@ -209,6 +208,7 @@ namespace stk {
           //
           //  Loop over all boxAs in group1 and search them against those objects in group2
           //
+          interList.reserve((numBoxDomain*3)/2);
 #ifdef _OPENMP
 #pragma omp for
 #endif
@@ -225,16 +225,44 @@ namespace stk {
           }
         }
       }
+      }
 #ifdef _OPENMP
       stk::search::ConcatenateThreadLists(threadLocalSearchResults, searchResults);
 #endif
-
       if(communicateRangeBoxInfo) {
-        std::vector <std::pair<DomainIdentifier,RangeIdentifier> > tmp;
-        tmp.reserve(searchResults.size());
-        stk::search::communicateVector(comm, searchResults, tmp, communicateRangeBoxInfo);
-        searchResults=tmp;
+        stk::search::communicateVector(comm, searchResults, communicateRangeBoxInfo);
         std::sort(searchResults.begin(), searchResults.end());
+      }
+    }
+
+   template <typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeObjType>
+      inline void coarse_search_kdtree_driver(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
+                                std::vector< std::pair<RangeObjType,  RangeIdentifier > > const & local_range,
+                                MPI_Comm comm,
+                                std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
+                                bool communicateRangeBoxInfo=true)
+    {
+      const size_t local_sizes[2] = {local_domain.size(), local_range.size()};
+      size_t global_sizes[2];
+      all_reduce_sum(comm, local_sizes, global_sizes, 2);
+      const bool domain_has_more_boxes = (global_sizes[0] >= global_sizes[1]);
+      if(domain_has_more_boxes)
+      {
+        coarse_search_kdtree(local_domain, local_range, comm, searchResults, communicateRangeBoxInfo);
+      }
+      else
+      {
+        std::vector<std::pair<RangeIdentifier, DomainIdentifier> > tempSearchResults;
+        coarse_search_kdtree(local_range, local_domain, comm, tempSearchResults, communicateRangeBoxInfo);
+        const int p_rank = stk::parallel_machine_rank(comm);
+        searchResults.reserve(tempSearchResults.size());
+        for(size_t i=0; i<tempSearchResults.size(); ++i)
+        {
+          size_t idx = tempSearchResults.size() - i - 1;
+          auto&& pair = tempSearchResults[idx];
+          if (communicateRangeBoxInfo || get_proc<DomainIdentifier>()(pair.second) == p_rank)
+            searchResults.emplace_back(pair.second, pair.first);
+        }
       }
     }
 

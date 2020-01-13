@@ -67,10 +67,13 @@ namespace FROSch {
 
         using XMap                      = Map<LO,GO,NO>;
         using XMapPtr                   = RCP<XMap>;
+        using ConstXMapPtr              = RCP<const XMap>;
         using XMapPtrVecPtr             = ArrayRCP<XMapPtr>;
 
         using XMultiVector              = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVector         = const MultiVector<SC,LO,GO,NO>;
         using XMultiVectorPtr           = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr      = RCP<ConstXMultiVector>;
         using XMultiVectorPtrVecPtr     = ArrayRCP<XMultiVectorPtr>;
         using XMultiVectorPtrVecPtr2D   = ArrayRCP<XMultiVectorPtrVecPtr>;
 
@@ -93,7 +96,7 @@ namespace FROSch {
                                    CommPtr serialComm,
                                    UN dofsPerNode,
                                    ParameterListPtr parameterList,
-                                   XMultiVectorPtr nullSpaceBasis = XMultiVectorPtr(),
+                                   ConstXMultiVectorPtr nullSpaceBasis = XMultiVectorPtr(),
                                    XMultiVectorPtrVecPtr partitionOfUnity = XMultiVectorPtrVecPtr(),
                                    XMapPtrVecPtr partitionOfUnityMaps = XMapPtrVecPtr());
 
@@ -102,7 +105,7 @@ namespace FROSch {
         int addPartitionOfUnity(XMultiVectorPtrVecPtr partitionOfUnity,
                                 XMapPtrVecPtr partitionOfUnityMaps);
 
-        int addGlobalBasis(XMultiVectorPtr nullSpaceBasis);
+        int addGlobalBasis(ConstXMultiVectorPtr nullSpaceBasis);
 
         int buildLocalPartitionOfUnityBasis();
 
@@ -117,14 +120,14 @@ namespace FROSch {
         CommPtr MpiComm_;
         CommPtr SerialComm_;
 
-        UN DofsPerNode_;
+        UN DofsPerNode_ = 1;
 
         ParameterListPtr ParameterList_;
 
         CoarseSpacePtr LocalPartitionOfUnitySpace_;
 
         XMultiVectorPtrVecPtr PartitionOfUnity_;
-        XMultiVectorPtr NullspaceBasis_;
+        ConstXMultiVectorPtr NullspaceBasis_;
 
         XMapPtrVecPtr PartitionOfUnityMaps_;
 

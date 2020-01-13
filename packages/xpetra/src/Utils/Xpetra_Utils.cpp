@@ -71,21 +71,6 @@ namespace Xpetra {
 
   }
 
-  Tpetra::ProfileType toTpetra(Xpetra::ProfileType pt) {
-
-    if (pt == Xpetra::StaticProfile)
-      return Tpetra::StaticProfile;
-    if (pt == Xpetra::DynamicProfile)
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      return Tpetra::DynamicProfile;
-#else
-      return Tpetra::StaticProfile;  // Tpetra supports only StaticProfile
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
-
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType");
-
-  }
-
   Tpetra::OptimizeOption toTpetra(Xpetra::OptimizeOption os) {
 
     if (os == Xpetra::DoOptimizeStorage)
@@ -137,16 +122,6 @@ namespace Xpetra {
       return Xpetra::IDNotPresent;
 
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Epetra returned the following error code: " << ls << ". Xpetra do not know how to interpret this error code.");
-  }
-
-  bool toEpetra(Xpetra::ProfileType pt) {
-
-    if (pt == Xpetra::StaticProfile)
-      return true;
-    if (pt == Xpetra::DynamicProfile)
-      return false;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType");
   }
 
   bool toEpetra(Xpetra::OptimizeOption os) {

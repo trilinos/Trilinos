@@ -73,13 +73,13 @@ void StepperTrapezoidal<Scalar>::setObserver(
         Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
       this->stepperObserver_ =
         Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperTrapObserver_,true);
+          (stepperTrapObserver_, true);
      }
   } else {
     this->stepperObserver_ = obs;
     stepperTrapObserver_ =
       Teuchos::rcp_dynamic_cast<StepperTrapezoidalObserver<Scalar> >
-        (this->stepperObserver_,true);
+        (this->stepperObserver_, true);
   }
 }
 
@@ -171,6 +171,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
 
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;

@@ -69,8 +69,8 @@ typedef Thyra::TpetraOperatorVectorExtraction<
  * find (p_0,p_1) that minimizes
  * g = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2
  * subject to:
- * f_0 = (x_0)^2 - p_0 = 0
- * f_i = x_i^2 - (i+p_1)^2 (for i != 0), for i = 1,2,3,4
+ * f_0 = (x_0)^3 - p_0 = 0
+ * f_i = x_i^3 - (i+3)*(i+p_1)^2 for i != 0
  *
  * solution is p = (1,3).
  */

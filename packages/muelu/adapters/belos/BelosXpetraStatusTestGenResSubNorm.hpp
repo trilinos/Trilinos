@@ -612,7 +612,6 @@ class StatusTestGenResSubNorm<Scalar,Xpetra::MultiVector<Scalar,LocalOrdinal,Glo
     Teuchos::RCP<const MV> input = Teuchos::rcpFromRef(mv);
 
     Teuchos::RCP<const MV> SubVec = mapExtractor_->ExtractVector(input, block);
-    typedef MultiVecTraits<Scalar, MV> MVT;
     MVT::MvNorm(*SubVec,normVec,type);
   }
 

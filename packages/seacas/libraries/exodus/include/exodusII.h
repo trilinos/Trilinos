@@ -68,12 +68,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION "7.24"
+#define EXODUS_VERSION "7.26"
 #define EXODUS_VERSION_MAJOR 7
-#define EXODUS_VERSION_MINOR 24
-#define EXODUS_RELEASE_DATE "August 5, 2019"
+#define EXODUS_VERSION_MINOR 26
+#define EXODUS_RELEASE_DATE "January 9, 2020"
 
-#define EX_API_VERS 7.24f
+#define EX_API_VERS 7.26f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 
 #define EX_VERS EX_API_VERS
@@ -785,7 +785,7 @@ EXODUS_EXPORT int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id 
 /*  Read Edge Face or Element Block Parameters */
 EXODUS_EXPORT int ex_get_block_param(int exoid, ex_block *block);
 
-EXODUS_EXPORT int ex_put_block_param(int exoid, ex_block block);
+EXODUS_EXPORT int ex_put_block_param(int exoid, const ex_block block);
 
 EXODUS_EXPORT int ex_get_block_params(int exoid, size_t block_count, struct ex_block **blocks);
 

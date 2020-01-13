@@ -16,6 +16,8 @@
 #include <cassert>
 #include <chrono>
 #include <climits>
+#include <cstdlib> // for std::getenv
+#include <iostream>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
 namespace Kokkos {
@@ -427,11 +429,17 @@ public:
     * @param [in] start_top_timer Automatically start the top level timer. If set to false, the user will have to start it manually.
     */
   explicit StackedTimer(const char *name, const bool start_base_timer = true)
-    : timer_(0,name,nullptr,false)
+    : timer_(0,name,nullptr,false),
+      enable_verbose_(false),
+      verbose_ostream_(Teuchos::rcpFromRef(std::cout))
   {
     top_ = &timer_;
     if (start_base_timer)
       this->startBaseTimer();
+
+    auto check_verbose = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMERS");
+    if (check_verbose != nullptr)
+      enable_verbose_ = true;
   }
 
   /**
@@ -470,6 +478,8 @@ public:
       ::Kokkos::Profiling::pushRegion(name);
     }
 #endif
+    if (enable_verbose_)
+      *verbose_ostream_ << "STARTING: " << name << std::endl;
   }
 
   /**
@@ -488,6 +498,8 @@ public:
       ::Kokkos::Profiling::popRegion();
     }
 #endif
+    if (enable_verbose_)
+      *verbose_ostream_ << "STOPPING: " << name << std::endl;
   }
 
   /**
@@ -562,20 +574,35 @@ public:
     timer_.report(os);
   }
 
-  /// Struct for controlling output options like histograms
+  /** Struct for controlling output options like histograms
+
+      @param output_fraction Print the timer fractions within a level.
+      @param output_total_updates Print the updates counter.
+      @param output_historgram Print the histogram.
+      @param output_minmax Print the min max and standard deviation across MPI processes.
+      @param num_histogram The number of equally size bickets to use in the histogram.
+      @param max_level The number of levels in the stacked timer to print (default prints all levels).
+      @param print_warnings Print any relevant warnings on stacked timer use.
+      @param align_columns Output will align the columsn of stacked timer data.
+      @param print_names_before_values If set to true, writes the timer names before values.
+      @param drop_time If a timer has a total time less that this value, the timer will not be printed and the total time of that timer will be added to the Remainder. Useful for ignoring negligible timers. Default is -1.0 to force printing of all timers even if they have zero accumulated time.
+   */
   struct OutputOptions {
     OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
-                      output_minmax(false), num_histogram(10), max_levels(INT_MAX),
-                      print_warnings(true), align_columns(false), print_names_before_values(true) {}
+                      output_minmax(false), output_proc_minmax(false), num_histogram(10), max_levels(INT_MAX),
+                      print_warnings(true), align_columns(false), print_names_before_values(true),
+                      drop_time(-1.0) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
     bool output_minmax;
+    bool output_proc_minmax;
     int num_histogram;
     int max_levels;
     bool print_warnings;
     bool align_columns;
     bool print_names_before_values;
+    double drop_time;
   };
 
   /**
@@ -586,6 +613,12 @@ public:
   void report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
 
+  // If set to true, print timer start/stop to verbose ostream.
+  void enableVerbose(const bool enable_verbose);
+
+  // Set the ostream for verbose mode(defaults to std::cout).
+  void setVerboseOstream(const Teuchos::RCP<std::ostream>& os);
+
 protected:
   /// Current level running
   LevelTimer *top_;
@@ -595,6 +628,8 @@ protected:
   Array<std::string> flat_names_;
   Array<double> min_;
   Array<double> max_;
+  Array<int> procmin_;
+  Array<int> procmax_;
   Array<double> sum_;
   Array<double> sum_sq_;
   Array<Array<int>> hist_;
@@ -611,6 +646,8 @@ protected:
     std::string::size_type total_updates_;
     std::string::size_type min_;
     std::string::size_type max_;
+    std::string::size_type procmin_;
+    std::string::size_type procmax_;
     std::string::size_type stddev_;
     std::string::size_type histogram_;
     AlignmentWidths() :
@@ -621,9 +658,16 @@ protected:
       total_updates_(0),
       min_(0),
       max_(0),
+      procmax_(0),
       stddev_(0),
       histogram_(0){}
   } alignments_;
+
+  /// If set to true, prints to the debug ostream. At construction, default value is set from environment variable.
+  bool enable_verbose_;
+
+  /// For debugging, this is the ostream used for printing.
+  Teuchos::RCP<std::ostream> verbose_ostream_;
 
   /**
     * Flatten the timers into a single array

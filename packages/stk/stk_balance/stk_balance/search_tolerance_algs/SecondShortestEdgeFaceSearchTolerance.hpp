@@ -18,8 +18,10 @@ namespace balance {
 class SecondShortestEdgeFaceSearchTolerance : public FaceSearchTolerance
 {
 public:
-    SecondShortestEdgeFaceSearchTolerance()
-      : FaceSearchTolerance() {}
+    SecondShortestEdgeFaceSearchTolerance(double tolerance = 0.15)
+      : FaceSearchTolerance(),
+        m_tolerance(tolerance)
+    {}
     virtual ~SecondShortestEdgeFaceSearchTolerance() {}
 
     virtual double compute(const stk::mesh::BulkData & mesh,
@@ -27,6 +29,8 @@ public:
                            const stk::mesh::Entity * faceNodes,
                            const unsigned numFaceNodes) const override;
 
+private:
+    double m_tolerance;
 };
 
 }

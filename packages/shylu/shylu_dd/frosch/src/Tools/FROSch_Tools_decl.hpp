@@ -58,6 +58,18 @@
 #define FROSCH_TIMER_STOP(A) A.reset();
 #endif
 
+#ifndef FROSCH_WARNING
+#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
+#endif
+
+#ifndef FROSCH_NOTIFICATION
+#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
+#endif
+
+#ifndef FROSCH_TEST_OUTPUT
+#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
+#endif
+
 #include <ShyLU_DDFROSch_config.h>
 
 #include <Tpetra_Distributor.hpp>
@@ -112,6 +124,7 @@ namespace FROSch {
 
         int Merge(const RCP<OverlappingData<LO,GO> > od) const;
 
+        
         GO GID_;
 
         mutable IntVec PIDs_;
@@ -132,7 +145,7 @@ namespace FROSch {
 
         using CommPtr                   = RCP<const Comm<int> >;
 
-        using ConstXMapPtr               = RCP<const Map<LO,GO,NO> >;
+        using ConstXMapPtr              = RCP<const Map<LO,GO,NO> >;
 
         using OverlappingDataPtr        = RCP<OverlappingData<LO,GO> >;
         using OverlappingDataPtrVec     = Array<OverlappingDataPtr>;
@@ -152,6 +165,7 @@ namespace FROSch {
     public:
         LowerPIDTieBreak(CommPtr comm,
                          ConstXMapPtr originalMap,
+                         UN dimension,
                          UN levelID = 1); // This is in order to estimate the length of SendImageIDs_ and ExportEntries_ in advance
 
         virtual bool mayHaveSideEffects() const {
@@ -197,6 +211,18 @@ namespace FROSch {
                                                               ArrayRCP<const RCP<Map<LO,GO,NO> > > subMaps);
 
     template <class SC,class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConstOld(RCP<const Matrix<SC,LO,GO,NO> > matrix);
+
+    template <class SC,class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > BuildRepeatedMapOld(RCP<const Matrix<SC,LO,GO,NO> > matrix);
+
+    template <class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConstOld(RCP<const CrsGraph<LO,GO,NO> > graph);
+
+    template <class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > BuildRepeatedMapOld(RCP<const CrsGraph<LO,GO,NO> > graph);
+
+    template <class SC,class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const Matrix<SC,LO,GO,NO> > matrix);
 
     template <class SC,class LO,class GO,class NO>
@@ -225,10 +251,21 @@ namespace FROSch {
                                 RCP<const Map<LO,GO,NO> > inputMap,
                                 RCP<const CrsGraph<LO,GO,NO> > &outputGraph,
                                 RCP<const Map<LO,GO,NO> > &outputMap);
+    
+    /*! \brief Sort the Xpetra::Map by the global IDs \c x
+     * \param[in] inputMap Unsorted input map
+     */
+    template <class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > SortMapByGlobalIndex(RCP<const Map<LO,GO,NO> > inputMap);
 
     template <class LO,class GO,class NO>
-    RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
+    RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<const Map<LO,GO,NO> > > mapVector,
                                      ArrayRCP<ArrayRCP<LO> > &partMappings);
+    
+    template <class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > AssembleSubdomainMap(unsigned numberOfBlocks,
+                                             ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > > dofsMaps,
+                                             ArrayRCP<unsigned> dofsPerNode);
 
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > MergeMapsNonConst(ArrayRCP<RCP<const Map<LO,GO,NO> > > mapVector);
@@ -263,17 +300,29 @@ namespace FROSch {
                                             unsigned dofOrdering);
 
     template <class LO,class GO,class NO>
+    ArrayRCP<RCP<const Map<LO,GO,NO> > > BuildNodeMapsFromDofMaps(ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > >dofsMapsVecVec,
+                                                            ArrayRCP<unsigned> dofsPerNodeVec,
+                                                            ArrayRCP<DofOrdering> dofOrderingVec);
+
+    template <class LO,class GO,class NO>
     ArrayRCP<RCP<Map<LO,GO,NO> > > BuildSubMaps(RCP<const Map<LO,GO,NO> > &fullMap,
                                                 ArrayRCP<GO> maxSubGIDVec);
-
+    
     template <class SC,class LO,class GO,class NO>
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const Matrix<SC,LO,GO,NO> > matrix,
                                             RCP<const Map<LO,GO,NO> > repeatedMap);
 
+    template <class LO,class GO,class NO>
+    ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const CrsGraph<LO,GO,NO> > graph,
+                                            RCP<const Map<LO,GO,NO> > repeatedMap);
+    
     template <class SC,class LO>
     bool ismultiple(ArrayView<SC> A,
                     ArrayView<SC> B);
 
+    template<class T>
+    inline void sort(T &v);
+    
     template<class T>
     inline void sortunique(T &v);
 

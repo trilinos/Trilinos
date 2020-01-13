@@ -523,7 +523,7 @@ int main(int argc, char *argv[]) {
   stk::mesh::Part* const part = metaData.get_part("block_1");
 
   // get the topology of this part
-  ShardsCellTopology cellType = metaData.get_cell_topology( *part );
+  ShardsCellTopology cellType = stk::mesh::get_cell_topology(metaData.get_topology( *part ));
 
   // Get dimensions
   int numNodesPerElem = cellType.getNodeCount();

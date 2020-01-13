@@ -1,7 +1,7 @@
 
 # This test compares Zoltan with Tpetra and Epetra.  Thus, it should run
 # only Tpetra and Zoltan with LO=GO=int, as Epetra does.
-IF (${PACKAGE_NAME_UC}_HAVE_EPETRA)
+IF (${PACKAGE_NAME_UC}_HAVE_EPETRA AND Xpetra_ENABLE_Epetra)
   IF (Tpetra_INST_INT_INT AND Tpetra_INST_DOUBLE)
     IF (NOT Zoltan_ENABLE_ULONG_IDS AND NOT Zoltan_ENABLE_ULLONG_IDS)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(

@@ -572,11 +572,7 @@ namespace Tpetra {
        "Tpetra::DistObject::" << modeString << ": Transfer object "
        "cannot have permutes in restricted mode.");
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    const bool useTheNewInterface = this->useNewInterface ();
-#else
-    const bool useTheNewInterface = true;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+const bool useTheNewInterface = true;
 
     if (useTheNewInterface) {
       using ::Tpetra::Details::Behavior;
@@ -607,25 +603,6 @@ namespace Tpetra {
                      remoteLIDs, exportLIDs, distor, revOp, commOnHost,restrictedMode);
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (! useTheNewInterface) {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "doTransfer: Use old interface" << endl;
-        std::cerr << os.str ();
-      }
-      const auto permToLIDs = (revOp == DoForward) ?
-        transfer.getPermuteToLIDs () : transfer.getPermuteFromLIDs ();
-      const auto permFromLIDs = (revOp == DoForward) ?
-        transfer.getPermuteFromLIDs () : transfer.getPermuteToLIDs ();
-      const auto exportLIDs = (revOp == DoForward) ?
-        transfer.getExportLIDs () : transfer.getRemoteLIDs ();
-      const auto remoteLIDs = (revOp == DoForward) ?
-        transfer.getRemoteLIDs () : transfer.getExportLIDs ();
-      doTransferOld (src, CM, numSameIDs, permToLIDs, permFromLIDs,
-                     remoteLIDs, exportLIDs, distor, revOp, restrictedMode);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     if (verbose) {
       std::ostringstream os;
@@ -850,13 +827,8 @@ namespace Tpetra {
           os << *prefix << "2. copyAndPermute" << endl;
           std::cerr << os.str ();
         }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        this->copyAndPermuteNew (src, numSameIDs, permuteToLIDs,
-                                 permuteFromLIDs);
-#else // TPETRA_ENABLE_DEPRECATED_CODE
         this->copyAndPermute (src, numSameIDs, permuteToLIDs,
                               permuteFromLIDs);
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
         if (verbose) {
           std::ostringstream os;
           os << *prefix << "After copyAndPermute:" << endl
@@ -936,15 +908,9 @@ namespace Tpetra {
         // answer the above question: packAndPrepare should not
         // take a commOnHost argument, and doTransferNew should sync
         // where needed, if needed.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        this->packAndPrepareNew (src, exportLIDs, this->exports_,
-                                 this->numExportPacketsPerLID_,
-                                 constantNumPackets, distor);
-#else // TPETRA_ENABLE_DEPRECATED_CODE
         this->packAndPrepare (src, exportLIDs, this->exports_,
                               this->numExportPacketsPerLID_,
                               constantNumPackets, distor);
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
         if (commOnHost) {
           if (this->exports_.need_sync_host ()) {
             this->exports_.sync_host ();
@@ -1268,15 +1234,9 @@ namespace Tpetra {
         // FIXME (mfh 26 Apr 2016) Check that all input DualViews
         // were most recently updated in the same memory space, and
         // sync them to the same place (based on commOnHost) if not.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        this->unpackAndCombineNew (remoteLIDs, this->imports_,
-                                   this->numImportPacketsPerLID_,
-                                   constantNumPackets, distor, CM);
-#else // TPETRA_ENABLE_DEPRECATED_CODE
         this->unpackAndCombine (remoteLIDs, this->imports_,
                                 this->numImportPacketsPerLID_,
                                 constantNumPackets, distor, CM);
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1287,543 +1247,11 @@ namespace Tpetra {
     }
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doTransferOld (const SrcDistObject& src,
-                 CombineMode CM,
-                 size_t numSameIDs,
-                 const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                 const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
-                 const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs,
-                 const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                 Distributor& distor,
-                 ReverseOption revOp,
-                 const bool restrictedMode)
-  {
-    using ::Tpetra::Details::getArrayViewFromDualView;
-    using ::Tpetra::Details::ProfilingRegion;
-    using ::Tpetra::Details::reallocDualViewIfNeeded;
-    using std::endl;
-    const char prefixRaw[] = "Tpetra::DistObject::doTransferOld: ";
-
-    ProfilingRegion region_doTransferOld ("Tpetra::DistObject::doTransferOld");
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-    // FIXME (mfh 04 Feb 2019) Remove Teuchos::TimeMonitor and use
-    // Kokkos profiling instead.
-    Teuchos::TimeMonitor doXferMon (*doXferTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
-    std::unique_ptr<std::string> prefix;
-    if (verbose) {
-      auto map = this->getMap ();
-      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
-      const int myRank = comm.is_null () ? -1 : comm->getRank ();
-      std::ostringstream os;
-      os << "Proc " << myRank << ": " << prefixRaw;
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! checkSizes (src), std::invalid_argument,
-      prefixRaw << "checkSizes() indicates that the "
-      "destination object is not a legal target for redistribution from the "
-      "source object.  This probably means that they do not have the same "
-      "dimensions.  For example, MultiVectors must have the same number of "
-      "rows and columns.");
-    KokkosClassic::ReadWriteOption rwo = KokkosClassic::ReadWrite;
-    if (CM == INSERT || CM == REPLACE) {
-      const size_t numIDsToWrite = numSameIDs +
-        static_cast<size_t> (permuteToLIDs.size ()) +
-        static_cast<size_t> (remoteLIDs.size ());
-      if (numIDsToWrite == this->getMap ()->getNodeNumElements ()) {
-        // We're overwriting all of our local data in the destination
-        // object, so a write-only view suffices.
-        //
-        // FIXME (mfh 10 Apr 2012) This doesn't make sense for a
-        // CrsMatrix with a dynamic graph.  INSERT mode could mean
-        // that we're adding new entries to the object, but we don't
-        // want to get rid of the old ones.
-        rwo = KokkosClassic::WriteOnly;
-      }
-    }
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "ReadWriteOption: ";
-      if (rwo == KokkosClassic::ReadWrite) {
-        os << "ReadWrite";
-      }
-      else if (rwo == KokkosClassic::WriteOnly) {
-        os << "ReadWrite";
-      }
-      else {
-        os << "Something else; weird!";
-      }
-      os << endl;
-      std::cerr << os.str ();
-    }
-
-    // Tell the source to create a read-only view of its data.  On a
-    // discrete accelerator such as a GPU, this brings EVERYTHING from
-    // device memory to host memory.
-    //
-    // FIXME (mfh 23 Mar 2012) By passing in the list of GIDs (or
-    // rather, local LIDs to send) and packet counts, createViews()
-    // could create a "sparse view" that only brings in the necessary
-    // data from device to host memory.
-    const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
-    if (srcDistObj != NULL) {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Call srcDistObject->createViews()" << endl;
-        std::cerr << os.str ();
-      }
-      srcDistObj->createViews ();
-    }
-    else {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Source object has a different type than target object"
-           << endl;
-        std::cerr << os.str ();
-      }
-    }
-
-    // Tell the target to create a view of its data.  Depending on
-    // rwo, this could be a write-only view or a read-and-write view.
-    // On a discrete accelerator such as a GPU, a write-only view only
-    // requires a transfer from host to device memory.  A
-    // read-and-write view requires a two-way transfer.  This has the
-    // same problem as createViews(): it transfers EVERYTHING, not
-    // just the necessary data.
-    //
-    // FIXME (mfh 23 Mar 2012) By passing in the list of GIDs (or
-    // rather, local LIDs into which to receive) and packet counts,
-    // createViewsNonConst() could create a "sparse view" that only
-    // transfers the necessary data.
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Call createViewsNonConst" << endl;
-      std::cerr << os.str ();
-    }
-    this->createViewsNonConst (rwo);
-
-    if (!restrictedMode && numSameIDs + permuteToLIDs.size()) {
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-      Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Call copyAndPermute" << endl;
-        std::cerr << os.str ();
-      }
-      // There is at least one GID to copy or permute.
-      copyAndPermute (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
-    }
-    else {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Skipping copyAndPermute" << endl;
-        std::cerr << os.str ();
-      }
-    }
-
-    // The method may return zero even if the implementation actually
-    // does have a constant number of packets per LID.  However, if it
-    // returns nonzero, we may use this information to avoid
-    // (re)allocating num{Ex,Im}portPacketsPerLID_.  packAndPrepare()
-    // will set this to its final value.
-    //
-    // We only need this if CM != ZERO, but it has to be lifted out of
-    // that scope because there are multiple tests for CM != ZERO.
-    size_t constantNumPackets = this->constantNumberOfPackets ();
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "constantNumPackets=" << constantNumPackets << endl;
-      std::cerr << os.str ();
-    }
-
-    // We only need to pack communication buffers if the combine mode
-    // is not ZERO. A "ZERO combine mode" means that the results are
-    // the same as if we had received all zeros, and added them to the
-    // existing values. That means we don't need to communicate.
-    if (CM != ZERO) {
-      if (constantNumPackets == 0) {
-        this->reallocArraysForNumPacketsPerLid (exportLIDs.size (),
-                                                remoteLIDs.size ());
-      }
-
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Preparing for packAndPrepare" << endl;
-        std::cerr << os.str ();
-      }
-      {
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-        // Ask the source to pack data.  Also ask it whether there are a
-        // constant number of packets per element (constantNumPackets is
-        // an output argument).  If there are, constantNumPackets will
-        // come back nonzero.  Otherwise, the source will fill the
-        // numExportPacketsPerLID_ array.
-        numExportPacketsPerLID_.modify_host ();
-        Teuchos::ArrayView<size_t> numExportPacketsPerLID =
-          getArrayViewFromDualView (numExportPacketsPerLID_);
-
-        // FIXME (mfh 26 Apr 2016) For backwards compatibility, use
-        // the old packAndPrepare interface that takes and resizes the
-        // exports buffer as a Teuchos::Array<packet_type>.  Then,
-        // copy out that buffer into the host version of exports_.
-
-        Teuchos::Array<packet_type> exportsOld;
-        if (verbose) {
-          std::ostringstream os;
-          os << *prefix << "Call packAndPrepare" << endl;
-          std::cerr << os.str ();
-        }
-        packAndPrepare (src, exportLIDs, exportsOld, numExportPacketsPerLID,
-                        constantNumPackets, distor);
-        const size_t exportsLen = static_cast<size_t> (exportsOld.size ());
-        reallocDualViewIfNeeded (this->exports_, exportsLen, "exports");
-        Kokkos::View<const packet_type*, Kokkos::HostSpace,
-          Kokkos::MemoryUnmanaged> exportsOldK (exportsOld.getRawPtr (),
-                                                exportsLen);
-        exports_.modify_host ();
-        Kokkos::deep_copy (exports_.view_host (),
-                           exportsOldK);
-      }
-    }
-
-    // We don't need the source's data anymore, so it can let go of
-    // its views.  On an accelerator device with a separate memory
-    // space (like a GPU), this frees host memory, since device memory
-    // has the "master" version of the data.
-    if (srcDistObj != nullptr) {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Call srcDistObj->releaseViews()" << endl;
-        std::cerr << os.str ();
-      }
-      srcDistObj->releaseViews ();
-    }
-    else {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Skipping srcDistObj->releaseViews()" << endl;
-        std::cerr << os.str ();
-      }
-    }
-
-    // We only need to send data if the combine mode is not ZERO.
-    if (CM != ZERO) {
-      if (constantNumPackets != 0) {
-        // There are a constant number of packets per element.  We
-        // already know (from the number of "remote" (incoming)
-        // elements) how many incoming elements we expect, so we can
-        // resize the buffer accordingly.
-        const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-        if (verbose) {
-          std::ostringstream os;
-          os << *prefix << "Const # packets: imports_.extent(0)="
-             << imports_.extent (0) << ", ; calling reallocImportsIfNeeded("
-            "rbufLen=" << rbufLen << ", verbose=true)" << endl;
-          std::cerr << os.str ();
-        }
-        reallocImportsIfNeeded (rbufLen, verbose, prefix.get ());
-      }
-
-      // Do we need to do communication (via doPostsAndWaits)?
-      bool needCommunication = true;
-      if (revOp == DoReverse && ! isDistributed ()) {
-        needCommunication = false;
-      }
-      // FIXME (mfh 30 Jun 2013): Checking whether the source object
-      // is distributed requires a cast to DistObject.  If it's not a
-      // DistObject, then I'm not quite sure what to do.  Perhaps it
-      // would be more appropriate for SrcDistObject to have an
-      // isDistributed() method.  For now, I'll just assume that we
-      // need to do communication unless the cast succeeds and the
-      // source is not distributed.
-      else if (revOp == DoForward && srcDistObj != NULL &&
-               ! srcDistObj->isDistributed ()) {
-        needCommunication = false;
-      }
-
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "needCommunication="
-           << (needCommunication ? "true" : "false")
-           << ", revOp="
-           << (revOp == DoReverse ? "DoReverse" : "DoForward") << endl;
-        std::cerr << os.str ();
-      }
-
-      if (needCommunication) {
-        if (revOp == DoReverse) {
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-          if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            // First communicate the number of packets per LID to receive.
-
-            // Make sure that host has the latest version, since we're
-            // using the version on host.  If host has the latest
-            // version already, syncing to host does nothing.
-            numExportPacketsPerLID_.sync_host ();
-            Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-              getArrayViewFromDualView (numExportPacketsPerLID_);
-
-            // numImportPacketsPerLID_ is the output array here, so
-            // mark it as modified.  It's strictly output, so we don't
-            // have to sync from device.
-            //numImportPacketsPerLID_.sync_host ();
-            numImportPacketsPerLID_.modify_host ();
-            Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-              getArrayViewFromDualView (numImportPacketsPerLID_);
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Call doReversePostsAndWaits (3-arg)" << endl;
-              std::cerr << os.str ();
-            }
-            distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
-                                           numImportPacketsPerLID);
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Compute totalImportPackets" << endl;
-              std::cerr << os.str ();
-            }
-            size_t totalImportPackets = 0;
-            {
-              typedef typename Kokkos::DualView<size_t*,
-                device_type>::t_host::execution_space host_exec_space;
-              typedef Kokkos::RangePolicy<host_exec_space, Array_size_type> range_type;
-              const size_t* const arrayToSum = numImportPacketsPerLID.getRawPtr ();
-              Kokkos::parallel_reduce ("Count import packets",
-                                       range_type (0, numImportPacketsPerLID.size ()),
-                                       [=] (const Array_size_type& i, size_t& lclSum) {
-                                         lclSum += arrayToSum[i];
-                                       }, totalImportPackets);
-            }
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "totalImportPackets=" << totalImportPackets
-                 << "; calling reallocImportsIfNeeded" << endl;
-              std::cerr << os.str ();
-            }
-            reallocImportsIfNeeded (totalImportPackets, verbose, prefix.get ());
-
-            // We don't need to sync imports_, because it is only for
-            // output here.  Similarly, we don't need to mark exports_
-            // as modified, since it is read only here. This legacy
-            // version of doTransfer only uses host arrays.
-            imports_.modify_host ();
-            Teuchos::ArrayView<packet_type> hostImports =
-              getArrayViewFromDualView (imports_);
-            exports_.sync_host ();
-            Teuchos::ArrayView<const packet_type> hostExports =
-              getArrayViewFromDualView (exports_);
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Call doReversePostsAndWaits (4-arg)"
-                 << endl;
-              std::cerr << os.str ();
-            }
-            distor.doReversePostsAndWaits (hostExports,
-                                           numExportPacketsPerLID,
-                                           hostImports,
-                                           numImportPacketsPerLID);
-          }
-          else {
-            // We don't need to sync imports_, because it is only for
-            // output here.  Similarly, we don't need to mark exports_
-            // as modified, since it is read only here. This legacy
-            // version of doTransfer only uses host arrays.
-            imports_.modify_host ();
-            Teuchos::ArrayView<packet_type> hostImports =
-              getArrayViewFromDualView (imports_);
-            exports_.sync_host ();
-            Teuchos::ArrayView<const packet_type> hostExports =
-              getArrayViewFromDualView (exports_);
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Call doReversePostsAndWaits (3-arg)"
-                 << endl;
-              std::cerr << os.str ();
-            }
-            distor.doReversePostsAndWaits (hostExports,
-                                           constantNumPackets,
-                                           hostImports);
-          }
-        }
-        else { // revOp == DoForward
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-          if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            // First communicate the number of packets per LID to receive.
-
-            // Make sure that host has the latest version, since we're
-            // using the version on host.  If host has the latest
-            // version already, syncing to host does nothing.
-            numExportPacketsPerLID_.sync_host ();
-            Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-              getArrayViewFromDualView (numExportPacketsPerLID_);
-
-            // numImportPacketsPerLID_ is the output array here, so
-            // mark it as modified.  It's strictly output, so we don't
-            // have to sync from device.
-            //numImportPacketsPerLID_.sync_host ();
-            numImportPacketsPerLID_.modify_host ();
-            Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-              getArrayViewFromDualView (numImportPacketsPerLID_);
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Call doPostsAndWaits (3-arg)" << endl;
-              std::cerr << os.str ();
-            }
-            distor.doPostsAndWaits (numExportPacketsPerLID, 1,
-                                    numImportPacketsPerLID);
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Compute totalImportPackets" << endl;
-              std::cerr << os.str ();
-            }
-            size_t totalImportPackets = 0;
-            {
-              typedef typename Kokkos::DualView<size_t*,
-                device_type>::t_host::execution_space host_exec_space;
-              typedef Kokkos::RangePolicy<host_exec_space, Array_size_type> range_type;
-              const size_t* const arrayToSum = numImportPacketsPerLID.getRawPtr ();
-              Kokkos::parallel_reduce ("Count import packets",
-                                       range_type (0, numImportPacketsPerLID.size ()),
-                                       [=] (const Array_size_type& i, size_t& lclSum) {
-                                         lclSum += arrayToSum[i];
-                                       }, totalImportPackets);
-            }
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "totalImportPackets=" << totalImportPackets
-                 << "; calling reallocImportsIfNeeded" << endl;
-              std::cerr << os.str ();
-            }
-            reallocImportsIfNeeded (totalImportPackets, verbose, prefix.get ());
-
-            // We don't need to sync imports_, because it is only for
-            // output here.  Similarly, we don't need to mark exports_
-            // as modified, since it is read only here. This legacy
-            // version of doTransfer only uses host arrays.
-            imports_.modify_host ();
-            Teuchos::ArrayView<packet_type> hostImports =
-              getArrayViewFromDualView (imports_);
-            exports_.sync_host ();
-            Teuchos::ArrayView<const packet_type> hostExports =
-              getArrayViewFromDualView (exports_);
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Call doPostsAndWaits (4-arg)" << endl;
-              std::cerr << os.str ();
-            }
-            distor.doPostsAndWaits (hostExports,
-                                    numExportPacketsPerLID,
-                                    hostImports,
-                                    numImportPacketsPerLID);
-          }
-          else {
-            // We don't need to sync imports_, because it is only for
-            // output here.  Similarly, we don't need to mark exports_
-            // as modified, since it is read only here. This legacy
-            // version of doTransfer only uses host arrays.
-            imports_.modify_host ();
-            Teuchos::ArrayView<packet_type> hostImports =
-              getArrayViewFromDualView (imports_);
-            exports_.sync_host ();
-            Teuchos::ArrayView<const packet_type> hostExports =
-              getArrayViewFromDualView (exports_);
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Call doPostsAndWaits (3-arg)" << endl;
-              std::cerr << os.str ();
-            }
-            distor.doPostsAndWaits (hostExports,
-                                    constantNumPackets,
-                                    hostImports);
-          }
-        }
-
-        if (verbose) {
-          std::ostringstream os;
-          os << *prefix << "Preparing for unpackAndCombine" << endl;
-          std::cerr << os.str ();
-        }
-        {
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-          Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-          // We don't need to sync imports_, because it is only for
-          // output here.  This legacy version of doTransfer only uses
-          // host arrays.
-          imports_.modify_host ();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView (imports_);
-          // NOTE (mfh 25 Apr 2016) unpackAndCombine doesn't actually
-          // change its numImportPacketsPerLID argument, so we don't
-          // have to mark it modified here.
-          numImportPacketsPerLID_.sync_host ();
-          // FIXME (mfh 25 Apr 2016) unpackAndCombine doesn't actually
-          // change its numImportPacketsPerLID argument, so we should
-          // be able to use a const Teuchos::ArrayView here.
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView (numImportPacketsPerLID_);
-
-          if (verbose) {
-            std::ostringstream os;
-            os << *prefix << "Call unpackAndCombine" << endl;
-            std::cerr << os.str ();
-          }
-          unpackAndCombine (remoteLIDs, hostImports, numImportPacketsPerLID,
-                            constantNumPackets, distor, CM);
-        }
-      }
-    } // if (CM != ZERO)
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Call releaseViews()" << endl;
-      std::cerr << os.str ();
-    }
-    this->releaseViews ();
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Done!" << endl;
-      std::cerr << os.str ();
-    }
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject&,
    const size_t,
    const Kokkos::DualView<
@@ -1837,11 +1265,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject&,
    const Kokkos::DualView<
      const local_ordinal_type*,
@@ -1859,11 +1283,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const Kokkos::DualView<
      const local_ordinal_type*,
      buffer_device_type>& /* importLIDs */,
@@ -1878,56 +1298,6 @@ namespace Tpetra {
    const CombineMode /* combineMode */)
   {}
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  copyAndPermute (const SrcDistObject& /* source */,
-                  const size_t /* numSameIDs */,
-                  const Teuchos::ArrayView<const local_ordinal_type>& /* permuteToLIDs */,
-                  const Teuchos::ArrayView<const local_ordinal_type>& /* permuteFromLIDs */)
-  {}
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepare (const SrcDistObject& /* source */,
-                  const Teuchos::ArrayView<const local_ordinal_type>& /* exportLIDs */,
-                  Teuchos::Array<packet_type>& /* exports */,
-                  const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
-                  size_t& /* constantNumPackets */,
-                  Distributor& /* distor */)
-  {}
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& /* importLIDs */,
-                    const Teuchos::ArrayView<const packet_type>& /* imports */,
-                    const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
-                    const size_t /* constantNumPackets */,
-                    Distributor& /* distor */,
-                    const CombineMode /* combineMode */)
-  {}
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  createViews () const
-  {}
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  createViewsNonConst (KokkosClassic::ReadWriteOption /*rwo*/)
-  {}
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  releaseViews () const
-  {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

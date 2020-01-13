@@ -227,7 +227,7 @@ getTime() const
 }
 
 template<class Scalar>
-Scalar
+int
 IntegratorAdjointSensitivity<Scalar>::
 getIndex() const
 {
@@ -287,6 +287,14 @@ IntegratorAdjointSensitivity<Scalar>::
 getTimeStepControl() const
 {
   return state_integrator_->getTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getNonConstTimeStepControl()
+{
+  return state_integrator_->getNonConstTimeStepControl();
 }
 
 template<class Scalar>
@@ -511,11 +519,11 @@ buildSolutionHistory(
     }
     RCP<VectorBase<Scalar> > x_dot_dot_b = x_dot_dot;
 
-    RCP<SolutionState<Scalar> > prod_state =
-      rcp(new SolutionState<Scalar>(forward_state->getMetaData()->clone(),
-                                    x_b, x_dot_b, x_dot_dot_b,
-                                    forward_state->getStepperState()->clone(),
-                                    Teuchos::null));
+    RCP<SolutionState<Scalar> > prod_state = forward_state->clone();
+    prod_state->setX(x_b);
+    prod_state->setXDot(x_dot_b);
+    prod_state->setXDotDot(x_dot_dot_b);
+    prod_state->setPhysicsState(Teuchos::null);
     solutionHistory_->addState(prod_state);
   }
 }

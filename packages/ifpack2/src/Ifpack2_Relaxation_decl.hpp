@@ -88,6 +88,7 @@ preconditioner for Belos linear solvers, and for any linear solver
 that treats preconditioners as instances of Tpetra::Operator.
 
 This class implements the following relaxation methods:
+- Richardson
 - Jacobi
 - Gauss-Seidel
 - Symmetric Gauss-Seidel
@@ -106,7 +107,7 @@ pp. 2864-2887.
 
 \section Ifpack_Relaxation_Performance Performance
 
-Jacobi will always use your matrix's native sparse matrix-vector
+Richardson and Jacobi will always use your matrix's native sparse matrix-vector
 multiply kernel.  This should give good performance, since we have
 spent a lot of effort tuning Tpetra's kernels.  Depending on the Node
 type of your Tpetra matrix, it may also exploit threads for additional
@@ -175,6 +176,11 @@ dimensions.  Suppose that \f$x^{(0)}\f$ is the starting vector and
 \f$x^{(k)}\f$ is the approximate solution for \f$x\f$ computed by
 iteration $k+1$ of whatever relaxation method we are using.  Here,
 \f$x^{(k)}_i\f$ is the $i$-th element of vector \f$x^{(k)}\f$.
+
+The Richardson method computes
+\f[
+x^{(k+1)}_i = x_^{(k)}_i + alpha ( b_i - \sum_{j} A_{ij} x^{(k)}_j ).
+\f]
 
 The Jacobi method computes
 \f[
@@ -317,6 +323,7 @@ public:
   /// The "relaxation: type" (string) parameter sets the relaxation /
   /// preconditioner method you want to use.  It currently accepts the
   /// following values (the default is "Jacobi"):
+  /// - "Richardson"
   /// - "Jacobi"
   /// - "Gauss-Seidel"
   /// - "Symmetric Gauss-Seidel"
@@ -626,6 +633,11 @@ private:
   /// that are not in the input list.
   void setParametersImpl (Teuchos::ParameterList& params);
 
+ //! Apply Richardson to X, returning the result in Y.
+  void ApplyInverseRichardson(
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
   //! Apply Jacobi to X, returning the result in Y.
   void ApplyInverseJacobi(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -749,71 +761,73 @@ private:
   Teuchos::RCP<block_multivector_type> yBlockColumnPointMap_;
 
   //! How many times to apply the relaxation per apply() call.
-  int NumSweeps_;
+  int NumSweeps_ = 1;
   //! Which relaxation method to use.
-  Details::RelaxationType PrecType_;
+  Details::RelaxationType PrecType_ = Ifpack2::Details::JACOBI;
   //! Damping factor
-  scalar_type DampingFactor_;
+  scalar_type DampingFactor_ = STS::one();
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.
-  bool ZeroStartingSolution_;
+  bool ZeroStartingSolution_ = true;
   //! If true, do backward-mode Gauss-Seidel.
-  bool DoBackwardGS_;
+  bool DoBackwardGS_ = false;
   //! If true, do the L1 version of Jacobi, Gauss-Seidel, or symmetric Gauss-Seidel.
-  bool DoL1Method_;
+  bool DoL1Method_ = false;
   //! Eta parameter for modified L1 method
-  magnitude_type L1Eta_;
+  magnitude_type L1Eta_ = Teuchos::as<magnitude_type>(1.5);
   //! Minimum diagonal value
-  scalar_type MinDiagonalValue_;
+  scalar_type MinDiagonalValue_ = STS::zero();
   //! Whether to fix up zero or tiny diagonal entries.
-  bool fixTinyDiagEntries_;
+  bool fixTinyDiagEntries_ = false;
   //! Whether to spend extra effort and all-reduces checking diagonal entries.
-  bool checkDiagEntries_;
+  bool checkDiagEntries_ = false;
+  //! For MTSGS, the cluster size (use point coloring if equal to 1)
+  int clusterSize_ = 1;
 
   //!Wheter the provided matrix is structurally symmetric or not.
-  bool is_matrix_structurally_symmetric_;
+  bool is_matrix_structurally_symmetric_ = false;
 
   //!Whether to write the given input file
-  bool ifpack2_dump_matrix_;
+  bool ifpack2_dump_matrix_ = false;
 
 
   //! If \c true, the preconditioner has been initialized successfully.
-  bool isInitialized_;
+  bool isInitialized_ = false;
   //! If \c true, the preconditioner has been computed successfully.
-  bool IsComputed_;
+  bool IsComputed_ = false;
   //! The number of successful calls to initialize().
-  int NumInitialize_;
+  int NumInitialize_ = 0;
   //! the number of successful calls to compute().
-  int NumCompute_;
+  int NumCompute_ = 0;
   //! The number of successful calls to apply().
-  mutable int NumApply_;
+  mutable int NumApply_ = 0;
   //! Total time in seconds for all successful calls to initialize().
-  double InitializeTime_;
+  double InitializeTime_ = 0.0;
   //! Total time in seconds for all successful calls to compute().
-  double ComputeTime_;
+  double ComputeTime_ = 0.0;
   //! Total time in seconds for all successful calls to apply().
-  mutable double ApplyTime_;
+  mutable double ApplyTime_ = 0.0;
   //! The total number of floating-point operations for all successful calls to compute().
-  double ComputeFlops_;
+  double ComputeFlops_ = 0.0;
   //! The total number of floating-point operations for all successful calls to apply().
-  mutable double ApplyFlops_;
+  mutable double ApplyFlops_ = 0.0;
 
   //! Global magnitude of the diagonal entry with the minimum magnitude.
-  magnitude_type globalMinMagDiagEntryMag_;
+  magnitude_type globalMinMagDiagEntryMag_ = STM::zero();
   //! Global magnitude of the diagonal entry with the maximum magnitude.
-  magnitude_type globalMaxMagDiagEntryMag_;
+  magnitude_type globalMaxMagDiagEntryMag_ = STM::zero();
   //! Global number of small (in magnitude) diagonal entries detected by compute().
-  size_t globalNumSmallDiagEntries_;
+  size_t globalNumSmallDiagEntries_ = 0;
   //! Global number of zero diagonal entries detected by compute().
-  size_t globalNumZeroDiagEntries_;
+  size_t globalNumZeroDiagEntries_ = 0;
   //! Global number of negative (real part) diagonal entries detected by compute().
-  size_t globalNumNegDiagEntries_;
+  size_t globalNumNegDiagEntries_ = 0;
   /// \brief Absolute two-norm difference between computed and actual inverse diagonal.
   ///
   /// "Actual inverse diagonal" means the result of 1/diagonal,
   /// without any protection against zero or small diagonal entries.
-  magnitude_type globalDiagNormDiff_;
+  magnitude_type globalDiagNormDiff_ = STM::zero();
 
   /// \brief Precomputed offsets of local diagonal entries of the matrix.
   ///
@@ -827,9 +841,9 @@ private:
   /// We need this flag because it is not enough just to test if
   /// diagOffsets_ has size zero.  It is perfectly legitimate for the
   /// matrix to have zero rows on the calling process.
-  bool savedDiagOffsets_;
+  bool savedDiagOffsets_ = false;
 
-  bool hasBlockCrsMatrix_;
+  bool hasBlockCrsMatrix_ = false;
 
   /// \brief In case of local/reordered smoothing, the unknowns to use
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices_;

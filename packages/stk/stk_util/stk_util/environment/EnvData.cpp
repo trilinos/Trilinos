@@ -55,7 +55,7 @@ namespace stk {
 
   EnvData::EnvData()
     : m_productName("not specified"),
-      m_vm(stk::get_variables_map()),
+      m_parsedOptions(stk::get_parsed_options()),
       m_nullBuf(),
       m_outputNull(&m_nullBuf),
       m_outputP0(&std::cout),

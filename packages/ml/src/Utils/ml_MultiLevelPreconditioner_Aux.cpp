@@ -492,6 +492,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
   double* in_x_coord = 0;
   double* in_y_coord = 0;
   double* in_z_coord = 0;
+  double* in_mat_coord = 0;
+
 
   // Check first for node coordinates, then for edge coordinates
   for (int ii=0; ii<2; ii++)
@@ -503,6 +505,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
       in_x_coord = List_.get("x-coordinates", (double *)0);
       in_y_coord = List_.get("y-coordinates", (double *)0);
       in_z_coord = List_.get("z-coordinates", (double *)0);
+      in_mat_coord = List_.get("material coordinates", (double *)0);
       break;
 
     case 1:
@@ -511,18 +514,20 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
         in_x_coord = List_.get("node: x-coordinates", (double *)0);
         in_y_coord = List_.get("node: y-coordinates", (double *)0);
         in_z_coord = List_.get("node: z-coordinates", (double *)0);
+        in_mat_coord = NULL;
       }
       else {
         in_x_coord = NULL;
         in_y_coord = NULL;
         in_z_coord = NULL;
+        in_mat_coord = NULL;
       }
       break;
     }
 
     NumDimensions  = 0;
 
-    if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
+    if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0 && in_mat_coord == 0))
     {
       ML_Aggregate_Viz_Stats *grid_info =
         (ML_Aggregate_Viz_Stats *) ml_ptr->Grid[LevelID_[0]].Grid;
@@ -594,6 +599,23 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
 
         grid_info->z = z_coord;
       }
+
+      if (in_mat_coord)
+      {
+        double* mat_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+
+        for (int i = 0 ; i < n ; ++i)
+          tmp[i * NumPDEEqns_] = in_mat_coord[i];
+
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
+                         AAA->comm, ML_OVERWRITE,NULL);
+
+        for (int i = 0 ; i < n + Nghost ; ++i)
+          mat_coord[i] = tmp[i * NumPDEEqns_];
+
+        grid_info->material = mat_coord;
+      }
+
 
       grid_info->Ndim = NumDimensions;
     } // if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))

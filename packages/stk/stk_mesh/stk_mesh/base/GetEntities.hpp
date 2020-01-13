@@ -76,7 +76,8 @@ unsigned count_selected_entities( const Selector & selector ,
  */
 void get_selected_entities( const Selector & selector ,
                             const BucketVector & input_buckets ,
-                            std::vector< Entity> & entities );
+                            std::vector< Entity> & entities ,
+                            bool sortByGlobalId = true );
 
 unsigned get_num_entities(const stk::mesh::BulkData &bulk);
 

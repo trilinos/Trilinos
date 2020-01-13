@@ -36,6 +36,9 @@
 #include <iostream>                     // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_io/FillMesh.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <string>                       // for string
 #include <stk_unit_test_utils/BulkDataTester.hpp>
@@ -301,6 +304,58 @@ TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts_WithAura)
 TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts_WithoutAura)
 {
     test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(CEO,moveElem_fieldDataOfNodes)
+{
+    stk::ParallelMachine comm{MPI_COMM_WORLD};
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulk(meta, comm);
+        auto &field1 = meta.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "field1");
+        stk::mesh::put_field_on_entire_mesh(field1);
+        stk::io::fill_mesh("generated:1x1x2", bulk);
+
+        stk::mesh::EntityVector sharedNodes;
+        stk::mesh::get_selected_entities(meta.globally_shared_part(), bulk.buckets(stk::topology::NODE_RANK), sharedNodes);
+        for(stk::mesh::Entity node : sharedNodes)
+        {
+            int *data = stk::mesh::field_data(field1, node);
+            *data = stk::parallel_machine_rank(comm);
+        }
+
+        stk::mesh::EntityProcVec thingsToChange;
+        if(stk::parallel_machine_rank(comm) == 1)
+        {
+            stk::mesh::EntityVector ownedElems;
+            stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), ownedElems);
+
+            ASSERT_EQ(1u, ownedElems.size());
+            stk::mesh::Entity elem{ownedElems[0]};
+            thingsToChange.push_back(stk::mesh::EntityProc(elem, 0));
+        }
+
+        if(stk::parallel_machine_rank(comm) == 0)
+        {
+            for(stk::mesh::Entity node : sharedNodes)
+            {
+                int *data = stk::mesh::field_data(field1, node);
+                EXPECT_EQ(0, *data);
+            }
+        }
+
+        bulk.change_entity_owner(thingsToChange);
+
+        if(stk::parallel_machine_rank(comm) == 0)
+        {
+            for(stk::mesh::Entity node : sharedNodes)
+            {
+                int *data = stk::mesh::field_data(field1, node);
+                EXPECT_EQ(0, *data);
+            }
+        }
+    }
 }
 
 }

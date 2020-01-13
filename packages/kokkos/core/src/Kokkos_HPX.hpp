@@ -506,6 +506,11 @@ public:
   int team_size_max(const FunctorType &, const ParallelForTag &) const {
     return 1;
   }
+  template <class FunctorType, class ReducerType>
+   int team_size_max(const FunctorType &, const ReducerType &,
+                     const ParallelReduceTag &) const {
+     return 1;
+   }
 
   template <class FunctorType>
   int team_size_max(const FunctorType &, const ParallelReduceTag &) const {
@@ -520,6 +525,11 @@ public:
                             const ParallelReduceTag &) const {
     return 1;
   }
+  template <class FunctorType, class ReducerType>
+  int team_size_recommended(const FunctorType &, const ReducerType &,
+                            const ParallelReduceTag &) const {
+    return 1;
+   }
 
 private:
   inline void init(const int league_size_request, const int team_size_request) {

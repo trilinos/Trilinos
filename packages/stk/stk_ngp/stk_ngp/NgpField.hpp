@@ -56,6 +56,7 @@ class FieldBase
 public:
   STK_FUNCTION FieldBase() = default;
   STK_FUNCTION virtual ~FieldBase() {}
+  virtual void sync_to_host() {}
 };
 
 
@@ -108,7 +109,7 @@ public:
         });
     }
 
-    void sync_to_host() { }
+    void sync_to_host() override { }
 
     void sync_to_device() { }
 
@@ -117,6 +118,10 @@ public:
     void modify_on_device() { }
 
     void clear_sync_state() { }
+
+    void swap(ConstStkFieldAdapter<T> &sf) { }
+
+    void swap(StkFieldAdapter<T> &sf) { }
 
     stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
 
@@ -188,9 +193,13 @@ public:
 
     unsigned get_ordinal() const { return stkFieldAdapter.get_ordinal(); }
 
-    void sync_to_host() { }
+    void sync_to_host() override { }
 
     void sync_to_device() { }
+
+    void swap(ConstStkFieldAdapter<T> &sf) { }
+
+    void swap(StkFieldAdapter<T> &sf) { }
 
 #ifdef STK_HIDE_DEPRECATED_CODE
 private:
@@ -204,10 +213,6 @@ private:
     void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
 private:
 #endif
-
-    void swap(ConstStkFieldAdapter<T> &sf) { }
-
-    void swap(StkFieldAdapter<T> &sf) { }
 
     bool need_sync_to_host() const { return false; }
 
@@ -294,7 +299,7 @@ public:
         Kokkos::deep_copy(deviceFieldExistsOnBucket, hostFieldExistsOnBucket);
     }
 
-    void sync_to_host()
+    void sync_to_host() override
     {
         if (need_sync_to_host()) {
             ProfilingBlock prof("copy_to_host for " + hostField->name());
@@ -559,7 +564,7 @@ public:
     STK_FUNCTION
     unsigned get_ordinal() const { return staticField.get_ordinal(); }
 
-    void sync_to_host()
+    void sync_to_host() override
     {
         if (need_sync_to_host()) {
             copy_device_to_host();

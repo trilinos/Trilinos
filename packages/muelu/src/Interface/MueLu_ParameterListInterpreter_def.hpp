@@ -414,6 +414,9 @@ namespace MueLu {
     // Detect if we use implicit transpose
     changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(paramList, "transpose: use implicit", bool, this->implicitTranspose_);
 
+    // Detect if we use fuse prolongation and update
+    MUELU_TEST_AND_SET_VAR(paramList, "fuse prolongation and update", bool, this->fuseProlongationAndUpdate_);
+
     if (paramList.isSublist("matvec params"))
       this->matvecParams_ = Teuchos::parameterList(paramList.sublist("matvec params"));
 
@@ -421,6 +424,7 @@ namespace MueLu {
     // FIXME: should it be here, or higher up
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
+    defaultManager->SetKokkosRefactor(useKokkos_);
 
     // We will ignore keeps0
     std::vector<keep_pair> keeps0;
@@ -965,7 +969,8 @@ namespace MueLu {
       if(useKokkos_) {
         //if not using kokkos refactor Uncoupled, there is no algorithm option (always Serial)
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase 1 algorithm",  std::string, aggParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",  bool, aggParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, aggParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, aggParams);
       }
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 1",            bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
@@ -1472,8 +1477,7 @@ namespace MueLu {
     nullSpaceFactory = nullSpace;
 
     if (paramList.isParameter("restriction: scale nullspace") && paramList.get<bool>("restriction: scale nullspace")) {
-      using SNF = ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-      RCP<SNF> scaledNSfactory = rcp(new SNF());
+      RCP<ScaledNullspaceFactory> scaledNSfactory = rcp(new ScaledNullspaceFactory());
       scaledNSfactory->SetFactory("Nullspace",nullSpaceFactory);
       manager.SetFactory("Scaled Nullspace",scaledNSfactory);
     }
@@ -1876,6 +1880,11 @@ namespace MueLu {
       if (hieraList.isParameter("transpose: use implicit")) {
         this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
         hieraList.remove("transpose: use implicit");
+      }
+
+      if (hieraList.isParameter("fuse prolongation and update")) {
+        this->fuseProlongationAndUpdate_ = hieraList.get<bool>("fuse prolongation and update");
+        hieraList.remove("fuse prolongation and update");
       }
 
       if (hieraList.isSublist("matvec params"))

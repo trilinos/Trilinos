@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "ED_SystemInterface.h" // for SystemInterface, interface
+#include "ED_SystemInterface.h" // for SystemInterface, interFace
 #include "exo_block.h"
 #include "exodusII.h" // for ex_block, etc
 #include "fmt/ostream.h"

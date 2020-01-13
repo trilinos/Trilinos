@@ -32,3 +32,12 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES CrsMatrix_sumIntoLocalValues.cpp
   COMM serial mpi
 )
+
+# This benchmark needs at least 2 MPI processes.
+# It builds fine without MPI, but there's no point
+# in building it for that case.
+TRIBITS_ADD_EXECUTABLE(
+  CrsMatrixDenseRowUnpack
+  SOURCES CrsMatrixDenseRowUnpack.cpp
+  COMM mpi
+)

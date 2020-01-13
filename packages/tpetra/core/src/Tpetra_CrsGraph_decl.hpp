@@ -75,17 +75,6 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   namespace Details {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    // Forward declaration of an implementation detail of CrsGraph::clone.
-    template<class OutputCrsGraphType, class InputCrsGraphType>
-    class CrsGraphCopier {
-    public:
-      static Teuchos::RCP<OutputCrsGraphType>
-      clone (const InputCrsGraphType& graphIn,
-             const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
-             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-    };  // class CrsGraphCopier
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     template<class LO, class GO, class NT>
     void
@@ -184,24 +173,6 @@ namespace Tpetra {
       STORAGE_UB //<! Invalid value; upper bound on enum values
     };
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Mix-in to avoid spurious deprecation warnings due to #2630.
-    ///
-    /// CrsMatrix has methods deprecated by #2630, that need to call
-    /// CrsGraph methods also deprecated by #2630.  This results in
-    /// spurious deprecation warnings.  This mix-in class gives Tpetra
-    /// developers a work-around so that CrsMatrix's and
-    /// BlockCrsMatrix's deprecated methods can call CrsGraph's
-    /// deprecated methods without emitting spurious warnings.
-    class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers {
-    public:
-      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers () = default;
-      virtual bool isLowerTriangularImpl () const = 0;
-      virtual bool isUpperTriangularImpl () const = 0;
-      virtual size_t getGlobalNumDiagsImpl () const = 0;
-      virtual global_size_t getNodeNumDiagsImpl () const = 0;
-    };  // class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   } // namespace Details
 
   /// \class CrsGraph
@@ -272,9 +243,6 @@ namespace Tpetra {
                       GlobalOrdinal,
                       Node>,
     public Teuchos::ParameterListAcceptorDefaultBase
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    , public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
@@ -306,16 +274,6 @@ namespace Tpetra {
     using local_graph_type = Kokkos::StaticCrsGraph<local_ordinal_type,
                                                     Kokkos::LayoutLeft,
                                                     execution_space>;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! DEPRECATED; use local_graph_type (above) instead.
-    typedef local_graph_type LocalStaticCrsGraphType TPETRA_DEPRECATED;
-    //! DEPRECATED; use <tt>local_graph_type::row_map_type</tt> instead.
-    typedef typename local_graph_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;
-    //! DEPRECATED; use <tt>local_graph_type::row_map_type::non_const_type</tt> instead.
-    typedef typename local_graph_type::row_map_type::non_const_type t_RowPtrsNC TPETRA_DEPRECATED;
-    //! DEPRECATED; use <tt>local_graph_type::entries_type::non_const_type</tt> instead.
-    typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D TPETRA_DEPRECATED;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -395,14 +353,6 @@ namespace Tpetra {
 	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! DEPRECATED; use the version that takes an ArrayView instead.
-    TPETRA_DEPRECATED
-    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Constructor specifying column Map and a single upper
     ///   bound for the number of entries in all rows on the calling
@@ -411,6 +361,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param maxNumEntriesPerRow [in] Maximum number of graph
     ///   entries per row.  If pftype==DynamicProfile, this is only a
@@ -436,6 +387,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
     ///   allocate for each row.  If pftype==DynamicProfile, this is
@@ -461,6 +413,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
     ///   allocate for each row.  If pftype==DynamicProfile, this is
@@ -480,22 +433,15 @@ namespace Tpetra {
 	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! DEPRECATED; use the version that takes an ArrayView instead.
-    TPETRA_DEPRECATED
-    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              const Teuchos::RCP<const map_type>& colMap,
-              const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Constructor specifying column Map and arrays containing
-    ///   the graph with sorted local indices.
+    ///   the graph. In almost all cases the indices must be sorted on input,
+    ///   but if they aren't sorted, "sorted" must be set to false in params.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param rowPointers [in] The beginning of each row in the graph,
     ///   as in a CSR "rowptr" array.  The length of this vector should be
@@ -517,11 +463,13 @@ namespace Tpetra {
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
-    ///   the graph with sorted local indices.
+    ///   the graph. In almost all cases the indices must be sorted on input,
+    ///   but if they aren't sorted, "sorted" must be set to false in params.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param rowPointers [in] The beginning of each row in the graph,
     ///   as in a CSR "rowptr" array.  The length of this vector should be
@@ -542,8 +490,10 @@ namespace Tpetra {
               const Teuchos::ArrayRCP<local_ordinal_type>& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying column Map and a local (sorted)
+    /// \brief Constructor specifying column Map and a local
     ///   graph, which the resulting CrsGraph views.
+    ///   In almost all cases the local graph must be sorted on input,
+    ///   but if it isn't sorted, "sorted" must be set to false in params.
     ///
     /// Unlike most other CrsGraph constructors, successful completion
     /// of this constructor will result in a fill-complete graph.
@@ -551,6 +501,7 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
+    ///   See replaceColMap() for the requirements.
     ///
     /// \param lclGraph [in] A locally indexed Kokkos::StaticCrsGraph
     ///   whose local row indices come from the specified row Map, and
@@ -566,7 +517,9 @@ namespace Tpetra {
               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Constructor specifying column, domain and range maps, and a
-    ///   local (sorted) graph, which the resulting CrsGraph views.
+    ///   local graph, which the resulting CrsGraph views.
+    ///   In almost all cases the local graph must be sorted on input,
+    ///   but if it isn't sorted, "sorted" must be set to false in params.
     ///
     /// Unlike most other CrsGraph constructors, successful completion
     /// of this constructor will result in a fill-complete graph.
@@ -597,6 +550,9 @@ namespace Tpetra {
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Create a fill-complete CrsGraph from all the things it needs.
+    /// \param lclGraph [in] The local graph.  In almost all cases the
+    ///   local graph must be sorted on input,
+    ///   but if it isn't sorted, "sorted" must be set to false in params.
     CrsGraph (const local_graph_type& lclGraph,
               const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
@@ -657,19 +613,6 @@ namespace Tpetra {
     ///   parameters from \c params sublist "CrsGraph". The domain map
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >  TPETRA_DEPRECATED
-    clone (const Teuchos::RCP<Node2>& node2,
-           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
-    {
-      typedef CrsGraph<local_ordinal_type, global_ordinal_type, Node2> output_crs_graph_type;
-      typedef CrsGraph<local_ordinal_type, global_ordinal_type, node_type> input_crs_graph_type;
-      typedef ::Tpetra::Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
-      return copier_type::clone (*this, node2, params);
-    }
-#endif
-
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
     ///
     /// \warning THIS METHOD IS FOR TPETRA DEVELOPERS ONLY.  DO NOT
@@ -933,10 +876,6 @@ namespace Tpetra {
     //! Returns the communicator.
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Returns the underlying node.
-    TPETRA_DEPRECATED Teuchos::RCP<node_type> getNode() const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Returns the Map that describes the row distribution in this graph.
     Teuchos::RCP<const map_type> getRowMap () const override;
@@ -1085,100 +1024,6 @@ namespace Tpetra {
     /// CrsMatrix.
     bool hasColMap () const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Number of diagonal entries over all processes in the
-    ///   graph's communicator.
-    ///
-    /// \pre <tt>! this->isFillActive()</tt>
-    ///
-    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
-    ///   go away at any time.
-    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const override;
-
-    /// \brief Number of diagonal entries on the calling process.
-    ///
-    /// \pre <tt>! this->isFillActive()</tt>
-    ///
-    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
-    ///   go away at any time.
-    size_t TPETRA_DEPRECATED getNodeNumDiags () const override;
-
-    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
-    ///
-    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
-    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
-    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
-    ///   SOON PER #2630.
-    ///
-    /// This function exists only to prevent spurious deprecation
-    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
-    /// to see deprecated warnings if <i>they</i> call deprecated
-    /// methods, not if <i>we</i> call them.
-    global_size_t getGlobalNumDiagsImpl () const override;
-
-    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
-    ///
-    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
-    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
-    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
-    ///   SOON PER #2630.
-    ///
-    /// This function exists only to prevent spurious deprecation
-    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
-    /// to see deprecated warnings if <i>they</i> call deprecated
-    /// methods, not if <i>we</i> call them.
-    size_t getNodeNumDiagsImpl () const override;
-
-    /// \brief Whether the graph is locally lower triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre <tt>! isFillActive()</tt>.
-    ///   If fill is active, this method's behavior is undefined.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    bool TPETRA_DEPRECATED isLowerTriangular () const override;
-
-    /// \brief Whether the graph is locally upper triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre <tt>! isFillActive()</tt>.
-    ///   If fill is active, this method's behavior is undefined.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    bool TPETRA_DEPRECATED isUpperTriangular () const override;
-
-    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
-    ///
-    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
-    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
-    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
-    ///   SOON PER #2630.
-    ///
-    /// This function exists only to prevent spurious deprecation
-    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
-    /// to see deprecated warnings if <i>they</i> call deprecated
-    /// methods, not if <i>we</i> call them.
-    bool isLowerTriangularImpl () const override;
-
-    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
-    ///
-    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
-    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
-    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
-    ///   SOON PER #2630.
-    ///
-    /// This function exists only to prevent spurious deprecation
-    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
-    /// to see deprecated warnings if <i>they</i> call deprecated
-    /// methods, not if <i>we</i> call them.
-    bool isUpperTriangularImpl () const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Whether the graph's column indices are stored as local indices.
     ///
@@ -1309,11 +1154,7 @@ namespace Tpetra {
     checkSizes (const SrcDistObject& source) override;
 
     virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
     copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     (const SrcDistObject& source,
      const size_t numSameIDs,
      const Kokkos::DualView<const local_ordinal_type*,
@@ -1347,11 +1188,7 @@ namespace Tpetra {
                                      const bool padAll) const;
 
     virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
     packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     (const SrcDistObject& source,
      const Kokkos::DualView<const local_ordinal_type*,
        buffer_device_type>& exportLIDs,
@@ -1387,11 +1224,7 @@ namespace Tpetra {
                        Distributor& distor) const;
 
     virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
     unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     (const Kokkos::DualView<const local_ordinal_type*,
        buffer_device_type>& importLIDs,
      Kokkos::DualView<packet_type*,
@@ -1492,6 +1325,7 @@ namespace Tpetra {
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
+    /// \pre columnIndices are sorted within rows
     /// \pre <tt>hasColMap() == true</tt>
     /// \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
     /// \pre No insert routines have been called.
@@ -1504,6 +1338,7 @@ namespace Tpetra {
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
+    /// \pre columnIndices are sorted within rows
     /// \pre <tt>hasColMap() == true</tt>
     /// \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
     /// \pre No insert routines have been called.
@@ -1538,6 +1373,14 @@ namespace Tpetra {
     /// does their order change, as a result of calling this method.
     ///
     /// \param newColMap [in] New column Map.  Must be nonnull.
+    ///   Within Tpetra, there are no particular restrictions on the column map.
+    ///   However, if this graph will be used in Xpetra, Ifpack2, or MueLu,
+    ///   the column map's list of global indices must follow "Aztec ordering":
+    ///   locally owned GIDs (same order as in domain map), followed by remote GIDs
+    ///   (in order of owning proc, and sorted within each proc).
+    ///
+    ///   It is strongly recommended to use \c Tpetra::Details::makeColMap()
+    ///   to create the column map. makeColMap() follows Aztec ordering by default.
     void replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
     /// \brief Reindex the column indices in place, and replace the
@@ -2836,408 +2679,6 @@ namespace Tpetra {
     return destGraph;
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  namespace Details {
-    template<class LocalOrdinal,
-             class GlobalOrdinal,
-             class OutputNodeType,
-             class InputNodeType>
-    class CrsGraphCopier<CrsGraph<LocalOrdinal, GlobalOrdinal, OutputNodeType>,
-                         CrsGraph<LocalOrdinal, GlobalOrdinal, InputNodeType> > {
-    public:
-      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, InputNodeType> input_crs_graph_type;
-      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, OutputNodeType> output_crs_graph_type;
-
-      static Teuchos::RCP<output_crs_graph_type> TPETRA_DEPRECATED
-      clone (const input_crs_graph_type& graphIn,
-             const Teuchos::RCP<OutputNodeType> &nodeOut,
-             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
-      {
-        using Teuchos::arcp;
-        using Teuchos::Array;
-        using Teuchos::ArrayRCP;
-        using Teuchos::ArrayView;
-        using Teuchos::null;
-        using Teuchos::outArg;
-        using Teuchos::ParameterList;
-        using Teuchos::parameterList;
-        using Teuchos::RCP;
-        using Teuchos::rcp;
-        using Teuchos::REDUCE_MIN;
-        using Teuchos::reduceAll;
-        using Teuchos::sublist;
-        using std::cerr;
-        using std::endl;
-        typedef LocalOrdinal LO;
-        typedef GlobalOrdinal GO;
-        typedef typename ArrayView<const GO>::size_type size_type;
-        typedef ::Tpetra::Map<LO, GO, InputNodeType> input_map_type;
-        typedef ::Tpetra::Map<LO, GO, OutputNodeType> output_map_type;
-        const char prefix[] = "Tpetra::Details::CrsGraphCopier::clone: ";
-
-        // Set parameters' default values.
-        bool debug = false;
-        bool fillCompleteClone = true;
-        bool useLocalIndices = graphIn.hasColMap ();
-        ProfileType pftype = StaticProfile;
-        // If the user provided a ParameterList, get values from there.
-        if (! params.is_null ()) {
-          fillCompleteClone = params->get ("fillComplete clone", fillCompleteClone);
-          useLocalIndices = params->get ("Locally indexed clone", useLocalIndices);
-          if (params->get ("Static profile clone", true) == false) {
-            pftype = ProfileType(StaticProfile+1); // DynamicProfile (Tpetra_ConfigDefs.h)
-          }
-          debug = params->get ("Debug", debug);
-        }
-
-        const Teuchos::Comm<int>& comm = * (graphIn.getRowMap ()->getComm ());
-        const int myRank = comm.getRank ();
-
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (! graphIn.hasColMap () && useLocalIndices, std::runtime_error,
-           prefix << "You asked clone() to use local indices (by setting the "
-           "\"Locally indexed clone\" parameter to true), but the source graph "
-           "does not yet have a column Map, so this is impossible.");
-
-        if (debug) {
-          std::ostringstream os;
-          os << "Process " << myRank << ": Cloning row Map" << endl;
-          cerr << os.str ();
-        }
-
-        RCP<const output_map_type> clonedRowMap =
-          graphIn.getRowMap ()->template clone<OutputNodeType> (nodeOut);
-
-        // Invoke the output graph's constructor, using the input graph's
-        // upper bounds on the number of entries in each local row.
-        RCP<output_crs_graph_type> clonedGraph; // returned by this function
-        {
-          ArrayRCP<const size_t> numEntriesPerRow;
-          size_t numEntriesForAll = 0;
-          bool boundSameForAllLocalRows = true;
-
-          if (debug) {
-            std::ostringstream os;
-            os << "Process " << myRank << ": Getting per-row bounds" << endl;
-            cerr << os.str ();
-          }
-          graphIn.getNumEntriesPerLocalRowUpperBound (numEntriesPerRow,
-                                                      numEntriesForAll,
-                                                      boundSameForAllLocalRows);
-          if (debug) {
-            std::ostringstream os;
-            os << "Process " << myRank << ": numEntriesForAll = "
-               << numEntriesForAll << endl;
-            cerr << os.str ();
-          }
-
-          if (debug) {
-            std::ostringstream os;
-            os << "Process " << myRank << ": graphIn.getNodeMaxNumRowEntries() = "
-               << graphIn.getNodeMaxNumRowEntries () << endl;
-            cerr << os.str ();
-          }
-
-          RCP<ParameterList> graphparams;
-          if (params.is_null ()) {
-            graphparams = parameterList ("CrsGraph");
-          } else {
-            graphparams = sublist (params, "CrsGraph");
-          }
-          if (useLocalIndices) {
-            RCP<const output_map_type> clonedColMap =
-              graphIn.getColMap ()->template clone<OutputNodeType> (nodeOut);
-            if (boundSameForAllLocalRows) {
-              clonedGraph = rcp (new output_crs_graph_type (clonedRowMap, clonedColMap,
-                                                            numEntriesForAll, pftype,
-                                                            graphparams));
-            } else {
-              clonedGraph = rcp (new output_crs_graph_type (clonedRowMap, clonedColMap,
-                                                            numEntriesPerRow (), pftype,
-                                                            graphparams));
-            }
-          } else {
-            if (boundSameForAllLocalRows) {
-              clonedGraph = rcp (new output_crs_graph_type (clonedRowMap,
-                                                            numEntriesForAll, pftype,
-                                                            graphparams));
-            } else {
-              clonedGraph = rcp (new output_crs_graph_type (clonedRowMap,
-                                                            numEntriesPerRow (),
-                                                            pftype, graphparams));
-            }
-          }
-
-          if (debug) {
-            std::ostringstream os;
-            os << "Process " << myRank << ": Invoked output graph's constructor" << endl;
-            cerr << os.str ();
-          }
-
-          // done with these
-          numEntriesPerRow = null;
-          numEntriesForAll = 0;
-        }
-
-        const input_map_type& inputRowMap = * (graphIn.getRowMap ());
-        const size_type numRows =
-          static_cast<size_type> (inputRowMap.getNodeNumElements ());
-
-        bool failed = false;
-
-        if (useLocalIndices) {
-          const LO localMinLID = inputRowMap.getMinLocalIndex ();
-          const LO localMaxLID = inputRowMap.getMaxLocalIndex ();
-
-          if (graphIn.isLocallyIndexed ()) {
-            if (numRows != 0) {
-              try {
-                ArrayView<const LO> linds;
-                for (LO lrow = localMinLID; lrow <= localMaxLID; ++lrow) {
-                  graphIn.getLocalRowView (lrow, linds);
-                  if (linds.size () != 0) {
-                    clonedGraph->insertLocalIndices (lrow, linds);
-                  }
-                }
-              }
-              catch (std::exception& e) {
-                std::ostringstream os;
-                os << "Process " << myRank << ": copying (reading local by view, "
-                  "writing local) indices into the output graph threw an "
-                  "exception: " << e.what () << endl;
-                cerr << os.str ();
-                failed = true;
-              }
-            }
-          }
-          else { // graphIn.isGloballyIndexed()
-            TEUCHOS_TEST_FOR_EXCEPTION(
-                                       ! graphIn.hasColMap () && useLocalIndices, std::invalid_argument,
-                                       prefix << "You asked clone() to use local indices (by setting the "
-                                       "\"Locally indexed clone\" parameter to true), but the source graph "
-                                       "does not yet have a column Map, so this is impossible.");
-
-            // The input graph has a column Map, but is globally indexed.
-            // That's a bit weird, but we'll run with it.  In this case,
-            // getLocalRowView won't work, but getLocalRowCopy should
-            // still work; it will just have to convert from global to
-            // local indices internally.
-
-            try {
-              // Make space for getLocalRowCopy to put column indices.
-              //
-              // This is only a hint; we may have to resize in the loop
-              // below.  getNodeMaxNumRowEntries() may return nonsense if
-              // fill is active.  The key bool in CrsGraph is
-              // haveLocalConstants_.
-              size_t myMaxNumRowEntries =
-                graphIn.isFillActive () ? static_cast<size_t> (0) :
-                graphIn.getNodeMaxNumRowEntries ();
-
-              Array<LO> linds (myMaxNumRowEntries);
-
-              // Copy each row into the new graph, using local indices.
-              for (LO lrow = localMinLID; lrow <= localMaxLID; ++lrow) {
-                size_t theNumEntries = graphIn.getNumEntriesInLocalRow (lrow);
-                if (theNumEntries > myMaxNumRowEntries) {
-                  myMaxNumRowEntries = theNumEntries;
-                  linds.resize (myMaxNumRowEntries);
-                }
-                graphIn.getLocalRowCopy (lrow, linds (), theNumEntries);
-                if (theNumEntries != 0) {
-                  clonedGraph->insertLocalIndices (lrow, linds (0, theNumEntries));
-                }
-              }
-            }
-            catch (std::exception& e) {
-              std::ostringstream os;
-              os << "Process " << myRank << ": copying (reading local by copy, "
-                "writing local) indices into the output graph threw an exception: "
-                 << e.what () << endl;
-              cerr << os.str ();
-              failed = true;
-            }
-          }
-        }
-        else { /* useGlobalIndices */
-          if (numRows != 0) {
-            const GlobalOrdinal localMinGID = inputRowMap.getMinGlobalIndex ();
-            const GlobalOrdinal localMaxGID = inputRowMap.getMaxGlobalIndex ();
-            const bool inputRowMapIsContiguous = inputRowMap.isContiguous ();
-
-            if (graphIn.isGloballyIndexed ()) {
-              ArrayView<const GlobalOrdinal> ginds;
-
-              if (inputRowMapIsContiguous) {
-                try {
-                  for (GO grow = localMinGID; grow <= localMaxGID; ++grow) {
-                    graphIn.getGlobalRowView (grow, ginds);
-                    if (ginds.size () != 0) {
-                      clonedGraph->insertGlobalIndices (grow, ginds);
-                    }
-                  }
-                }
-                catch (std::exception& e) {
-                  std::ostringstream os;
-                  os << "Process " << myRank << ": copying (reading global by view, "
-                    "writing global) indices into the output graph threw an "
-                    "exception: " << e.what () << endl;
-                  cerr << os.str ();
-                  failed = true;
-                }
-              }
-              else { // input row Map is not contiguous
-                try {
-                  ArrayView<const GO> inputRowMapGIDs = inputRowMap.getNodeElementList ();
-                  for (size_type k = 0; k < numRows; ++k) {
-                    const GO grow = inputRowMapGIDs[k];
-                    graphIn.getGlobalRowView (grow, ginds);
-                    if (ginds.size () != 0) {
-                      clonedGraph->insertGlobalIndices (grow, ginds);
-                    }
-                  }
-                }
-                catch (std::exception& e) {
-                  std::ostringstream os;
-                  os << "Process " << myRank << ": copying (reading global by view, "
-                    "writing global) indices into the output graph threw an "
-                    "exception: " << e.what () << endl;
-                  cerr << os.str ();
-                  failed = true;
-                }
-              }
-            }
-            else { // graphIn.isLocallyIndexed()
-              // Make space for getGlobalRowCopy to put column indices.
-              //
-              // This is only a hint; we may have to resize in the loop
-              // below.  getNodeMaxNumRowEntries() may return nonsense if
-              // fill is active.  The key bool in CrsGraph is
-              // haveLocalConstants_.
-              size_t myMaxNumRowEntries =
-                graphIn.isFillActive () ? static_cast<size_t> (0) :
-                graphIn.getNodeMaxNumRowEntries ();
-
-              Array<GO> ginds (myMaxNumRowEntries);
-
-              if (inputRowMapIsContiguous) {
-                try {
-                  for (GO grow = localMinGID; grow <= localMaxGID; ++grow) {
-                    size_t theNumEntries = graphIn.getNumEntriesInGlobalRow (grow);
-                    if (theNumEntries > myMaxNumRowEntries) {
-                      myMaxNumRowEntries = theNumEntries;
-                      ginds.resize (myMaxNumRowEntries);
-                    }
-                    graphIn.getGlobalRowCopy (grow, ginds (), theNumEntries);
-                    if (theNumEntries != 0) {
-                      clonedGraph->insertGlobalIndices (grow, ginds (0, theNumEntries));
-                    }
-                  }
-                }
-                catch (std::exception& e) {
-                  std::ostringstream os;
-                  os << "Process " << myRank << ": copying (reading global by copy, "
-                    "writing global) indices into the output graph threw an "
-                    "exception: " << e.what () << endl;
-                  cerr << os.str ();
-                  failed = true;
-                }
-              }
-              else { // input row Map is not contiguous
-                try {
-                  ArrayView<const GO> inputRowMapGIDs = inputRowMap.getNodeElementList ();
-                  for (size_type k = 0; k < numRows; ++k) {
-                    const GO grow = inputRowMapGIDs[k];
-
-                    size_t theNumEntries = graphIn.getNumEntriesInGlobalRow (grow);
-                    if (theNumEntries > myMaxNumRowEntries) {
-                      myMaxNumRowEntries = theNumEntries;
-                      ginds.resize (myMaxNumRowEntries);
-                    }
-                    graphIn.getGlobalRowCopy (grow, ginds (), theNumEntries);
-                    if (theNumEntries != 0) {
-                      clonedGraph->insertGlobalIndices (grow, ginds (0, theNumEntries));
-                    }
-                  }
-                }
-                catch (std::exception& e) {
-                  std::ostringstream os;
-                  os << "Process " << myRank << ": copying (reading global by copy, "
-                    "writing global) indices into the output graph threw an "
-                    "exception: " << e.what () << endl;
-                  cerr << os.str ();
-                  failed = true;
-                }
-              }
-            }
-          } // numRows != 0
-        }
-
-        if (debug) {
-          std::ostringstream os;
-          os << "Process " << myRank << ": copied entries" << endl;
-          cerr << os.str ();
-        }
-
-        if (fillCompleteClone) {
-          RCP<ParameterList> fillparams = params.is_null () ?
-            parameterList ("fillComplete") :
-            sublist (params, "fillComplete");
-          try {
-            RCP<const output_map_type> clonedRangeMap;
-            RCP<const output_map_type> clonedDomainMap;
-            if (! graphIn.getRangeMap ().is_null () &&
-                graphIn.getRangeMap () != graphIn.getRowMap ()) {
-              clonedRangeMap =
-                graphIn.getRangeMap ()->template clone<OutputNodeType> (nodeOut);
-            }
-            else {
-              clonedRangeMap = clonedRowMap;
-            }
-            if (! graphIn.getDomainMap ().is_null ()
-                && graphIn.getDomainMap () != graphIn.getRowMap ()) {
-              clonedDomainMap =
-                graphIn.getDomainMap ()->template clone<OutputNodeType> (nodeOut);
-            }
-            else {
-              clonedDomainMap = clonedRowMap;
-            }
-
-            if (debug) {
-              std::ostringstream os;
-              os << "Process " << myRank << ": About to call fillComplete on "
-                "cloned graph" << endl;
-              cerr << os.str ();
-            }
-            clonedGraph->fillComplete (clonedDomainMap, clonedRangeMap, fillparams);
-          }
-          catch (std::exception &e) {
-            failed = true;
-            std::ostringstream os;
-            os << prefix << "Process " << myRank << ": Caught the following "
-              "exception while calling fillComplete() on clone of type"
-               << endl << Teuchos::typeName (*clonedGraph) << endl;
-            cerr << os.str ();
-          }
-        }
-
-        int lclSuccess = failed ? 0 : 1;
-        int gblSuccess = 1;
-        reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (gblSuccess != 1, std::logic_error,
-           prefix << "Clone failed on at least one process.");
-
-        if (debug) {
-          std::ostringstream os;
-          os << "Process " << myRank << ": Done with CrsGraph::clone" << endl;
-          cerr << os.str ();
-        }
-        return clonedGraph;
-      }
-    };  // class CrsGraphCopier
-  } // namespace Details
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 } // namespace Tpetra
 

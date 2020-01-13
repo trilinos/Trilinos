@@ -22,10 +22,10 @@ IF( DEFINED ${PROJECT_NAME}_ENABLE_Tpetra AND ${${PACKAGE_NAME}_ENABLE_Tpetra} )
   TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 ELSE()
   MESSAGE( STATUS "Xpetra: Skipping ETI check because Tpetra is not enabled." )
-  SET( HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION OFF BOOL "Set to OFF by CMake because Tpetra isn't enabled" )
+  SET( HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION OFF )
 ENDIF()
 
-# Deperecation stuff
+# Deprecation stuff
 SET (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE_DEFAULT ON)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
@@ -49,15 +49,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   NO)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
-GLOBAL_SET(HAVE_XPETRA_TPETRA ${${PACKAGE_NAME}_ENABLE_Tpetra})
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)
-GLOBAL_SET(HAVE_XPETRA_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
-
-GLOBAL_SET(HAVE_XPETRA_EPETRAEXT ${${PACKAGE_NAME}_ENABLE_EpetraExt})
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thyra)
-GLOBAL_SET(HAVE_XPETRA_THYRA ${${PACKAGE_NAME}_ENABLE_Thyra})
+
+IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "Neither Tpetra nor Epetra support is enabled in Xpetra."
+    " Set Xpetra_ENABLE_Tpetra and/or Xpetra_ENABLE_Epetra to ON,"
+    " or just disable Xpetra.")
+ENDIF()
 
 # If Epetra is enabled, does it provide 64-bit global indices?
 IF(${PACKAGE_NAME}_ENABLE_Epetra)
@@ -89,7 +88,16 @@ ELSE()
   SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES_DEFAULT ON)
   SET(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT ON)
 
+  # Make sure EpetraExt is turned off
+  DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_EpetraExt OFF)
 ENDIF()
+
+#
+# Decide whether it makes sense to enable LocalOrdinal = int and
+# GlobalOrdinal = long long.  This requires support for long long in
+# Teuchos, and at least one of Epetra or Tpetra must also support
+# LocalOrdinal = int and GlobalOrdinal = long long.
+#
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES
   ${PACKAGE_NAME_UC}_EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -109,12 +117,36 @@ IF(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT AND (NOT ${PACKAGE_NAM
   MESSAGE(FATAL_ERROR "There are no 64 bit Epetra classes available possibly because they are disabled or long long support is not present in Tpetra but user requested Xpetra use them by setting ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES OFF.")
 ENDIF()
 
-#
-# Decide whether it makes sense to enable LocalOrdinal = int and
-# GlobalOrdinal = long long.  This requires support for long long in
-# Teuchos, and at least one of Epetra or Tpetra must also support
-# LocalOrdinal = int and GlobalOrdinal = long long.
-#
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
+    MESSAGE("-- Xpetra support for 32 bit Epetra enabled.")
+    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
+
+    # Tpetra and Epetra need to match GO types
+    IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+      IF(NOT Tpetra_INST_INT_INT)
+        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_INT")
+      ENDIF()
+    ENDIF()
+  ENDIF()
+  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
+    MESSAGE("-- Xpetra support for 64 bit Epetra enabled.")
+    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
+
+    # Tpetra and Epetra need to match GO types
+    IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+      IF(NOT Tpetra_INST_INT_LONG_LONG)
+        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 64-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_LONG_LONG")
+      ENDIF()
+    ENDIF()
+
+  ENDIF()
+ENDIF()
+
+GLOBAL_SET(HAVE_XPETRA_TPETRA ${${PACKAGE_NAME}_ENABLE_Tpetra})
+GLOBAL_SET(HAVE_XPETRA_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
+GLOBAL_SET(HAVE_XPETRA_EPETRAEXT ${${PACKAGE_NAME}_ENABLE_EpetraExt})
+GLOBAL_SET(HAVE_XPETRA_THYRA ${${PACKAGE_NAME}_ENABLE_Thyra})
 
 # Check whether Epetra or Tpetra support long long.
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -134,33 +166,6 @@ ELSE () # Tpetra NOT enabled
     GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
   ENDIF ()
 ENDIF ()
-
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
-    MESSAGE("-- Xpetra support for 32 bit Epetra enabled.")
-    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
-    
-    # Tpetra and Epetra need to match GO types
-    IF(${PACKAGE_NAME}_ENABLE_Tpetra)
-      IF(NOT Tpetra_INST_INT_INT)
-        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_INT")
-      ENDIF()
-    ENDIF()
-
-  ENDIF()
-  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
-    MESSAGE("-- Xpetra support for 64 bit Epetra enabled.")
-    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
-
-    # Tpetra and Epetra need to match GO types
-    IF(${PACKAGE_NAME}_ENABLE_Tpetra)
-      IF(NOT Tpetra_INST_INT_LONG_LONG)
-        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 64-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_LONG_LONG")
-      ENDIF()
-    ENDIF()
-
-  ENDIF()
-ENDIF()
 
 ##################################
 

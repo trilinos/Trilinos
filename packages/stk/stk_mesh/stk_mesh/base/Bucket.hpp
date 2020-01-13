@@ -143,7 +143,6 @@ private:
 
   // Entity data
   std::vector<Entity>    m_entities;    // Array of entity handles; will be removed soon
-  std::vector<int>       m_owner_ranks;
 
   impl::Partition    *m_partition;
 
@@ -191,6 +190,8 @@ public:
 
   /** \brief  Number of entities associated with this bucket */
   size_type size() const { return m_size ; }
+
+  size_t memory_size_in_bytes() const;
 
   /** \brief  Capacity of this bucket */
   size_t capacity() const { return m_capacity ; }
@@ -265,10 +266,7 @@ public:
   /// Entity member functions are moved here:
   ///
 
-  int parallel_owner_rank(size_type ordinal) const
-  {
-    return m_owner_ranks[ordinal];
-  }
+  int parallel_owner_rank(size_type ordinal) const;
 
   void check_size_invariant() const;
 

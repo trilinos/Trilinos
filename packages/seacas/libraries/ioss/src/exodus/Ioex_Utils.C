@@ -34,6 +34,7 @@
 #include <Ioss_Region.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
+#include <Ioss_Version.h>
 #include <algorithm>
 #include <cstring>
 #include <exodus/Ioex_Utils.h>
@@ -115,7 +116,7 @@ namespace {
 } // namespace
 
 namespace Ioex {
-  const char *Version() { return "2016/05/25"; }
+  const char *Version() { return Ioss::Version(); }
 
   void update_last_time_attribute(int exodusFilePtr, double value)
   {

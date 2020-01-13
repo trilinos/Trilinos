@@ -676,7 +676,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
           " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
         # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
       ELSEIF (NOT LIB_IN_SE_PKG AND TARGET ${PREFIXED_LIB} ) # PARSE_TESTONLY=TRUE/FALSE
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
+        MESSAGE(WARNING "WARNING: '${LIB}' in DEPLIBS is not"
           " a lib in this SE package but is a library defined in the current"
           " cmake project!  Such usage is  deprecated (and"
           " will result in a configure error soon).  If this is a library in"
@@ -687,7 +687,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
           " this SE package's dependencies file"
           " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
       ELSEIF (NOT LIB_IN_SE_PKG AND NOT TARGET ${PREFIXED_LIB} )
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
+        MESSAGE(WARNING "WARNING: '${LIB}' in DEPLIBS is not"
           " a lib defined in the current cmake project!  Such usage is deprecated (and"
           " will result in a configure error soon).  If this is an external"
           " lib you are trying to link in, it should likely be handled as a TriBITS"
@@ -939,7 +939,9 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARY_DIRS)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARIES)
 
-      GLOBAL_SET(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES TRUE)
+      IF (INSTALL_LIB)
+        GLOBAL_SET(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL TRUE)
+      ENDIF()
 
     ELSE()
 
