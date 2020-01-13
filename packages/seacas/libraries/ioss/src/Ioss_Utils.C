@@ -442,6 +442,9 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
     else if (type == "bar3" || type == "rod3" || type == "truss3") {
       type = "rod2d3";
     }
+    else if (type == "bar4" || type == "rod4" || type == "truss4") {
+      type = "rod2d4";
+    }
   }
 
   if (Ioss::Utils::substr_equal("super", type)) {
