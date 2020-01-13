@@ -151,6 +151,17 @@ int main(int argc, char **argv)
     printf("error in ex_inquire for EX_INQ_TITLE\n");
   }
 
+  /* Verify that ex_get_init_global does not crash.  Since these are serial files, the data
+     won't be on the files, so this verifies that this is ok
+  */
+  {
+    int nng, neg, nebg, nnsg, nssg;
+    error = ex_get_init_global(exoid, &nng, &neg, &nebg, &nnsg, &nssg);
+    if (error != EX_NOERR) {
+      printf("after ex_get_init_global, error = %3d\n", error);
+    }
+  }
+
   /* read nodal coordinates values and names from database */
 
   x = (float *)calloc(num_nodes, sizeof(float));
