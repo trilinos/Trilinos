@@ -12,7 +12,7 @@
 #ifndef ZOLTAN2_VTXLABEL_
 #define ZOLTAN2_VTXLABEL_
 
-namespace iceProp{
+namespace Zoltan2{
         
         /*
  *
@@ -30,7 +30,7 @@ struct graph {
 
  *      */
         template<typename lno_t>
-	class graph {
+	class icePropGraph {
           public:
             lno_t n;
             lno_t m;
@@ -47,15 +47,15 @@ struct graph {
         }; 
         
         
-	std::queue<int> art;
-	std::queue<int> reg;
+	std::queue<int> icePropArtQueue;
+	std::queue<int> icePropRegQueue;
 
 
-	enum Grounding_Status {FULL=2, HALF=1, NONE = 0};
+	enum IcePropGrounding_Status {ICEPROPGS_FULL=2, ICEPROPGS_HALF=1, ICEPROPGS_NONE = 0};
 	// Struct representing a vertex label.
 	// We define our own "addition" for these labels.
 	// Later, we'll create a Tpetra::FEMultiVector of these labels.
-	class vtxLabel {
+	class IcePropVtxLabel {
 	public:
 	  //int gid;
           int id;
@@ -66,7 +66,7 @@ struct graph {
           int bcc_name;
 	  bool is_art;
 	  // Constructors
-	  vtxLabel(int idx_, int first_ = -1, int first_sender_ = -1, int second_ = -1, int second_sender_ = -1,bool art_ = false, int bcc_name_ = -1) { 
+	  IcePropVtxLabel(int idx_, int first_ = -1, int first_sender_ = -1, int second_ = -1, int second_sender_ = -1,bool art_ = false, int bcc_name_ = -1) { 
 	    id = idx_;
             //gid = idx;
 	    if(id == -1){
@@ -79,7 +79,7 @@ struct graph {
 	    is_art = art_;
             bcc_name = bcc_name_;
 	  }
-	  vtxLabel() {
+	  IcePropVtxLabel() {
 	    id = -1;
 	    first_label = -1;
 	    first_sender = -1;
@@ -89,7 +89,7 @@ struct graph {
             bcc_name = -1;
 	  }
 
-	  vtxLabel(volatile const vtxLabel& other){
+	  IcePropVtxLabel(volatile const IcePropVtxLabel& other){
 	    id = other.id;
             //gid = other.gid;
 	    first_label = other.first_label;
@@ -99,7 +99,7 @@ struct graph {
 	    is_art = other.is_art;
             bcc_name = other.bcc_name;
 	  }
-	  vtxLabel(const vtxLabel& other){
+	  IcePropVtxLabel(const IcePropVtxLabel& other){
 	    id = other.id;
             //gid = other.gid;
 	    first_label = other.first_label;
@@ -109,8 +109,8 @@ struct graph {
 	    is_art = other.is_art;
             bcc_name = other.bcc_name;
 	  }
-	  // vtxLabel assignment
-          volatile vtxLabel operator=(const vtxLabel& other) volatile{
+	  // IcePropVtxLabel assignment
+          volatile IcePropVtxLabel operator=(const IcePropVtxLabel& other) volatile{
 	    id = other.id;
             //gid = other.gid;
 	    first_label = other.first_label;
@@ -122,7 +122,7 @@ struct graph {
 	    return *this; 
 	  }
 
-          vtxLabel& operator=(const vtxLabel& other) {
+          IcePropVtxLabel& operator=(const IcePropVtxLabel& other) {
 	    id = other.id;
             //gid = other.gid;
 	    first_label = other.first_label;
@@ -135,7 +135,7 @@ struct graph {
 	  } 
 
 	  // int assignment
-	  vtxLabel& operator=(const int& other) { 
+	  IcePropVtxLabel& operator=(const int& other) { 
 	    first_label = other;
 	    first_sender = other;
 	    second_label = -1;
@@ -144,9 +144,9 @@ struct graph {
 	  }
 	  // += overload
 	  // for communicating copy's labels over processor boundaries.
-          vtxLabel& operator+=(const vtxLabel& copy) {
-            Grounding_Status owned_gs = getGroundingStatus();
-            Grounding_Status copy_gs = copy.getGroundingStatus();
+          IcePropVtxLabel& operator+=(const IcePropVtxLabel& copy) {
+            IcePropGrounding_Status owned_gs = getGroundingStatus();
+            IcePropGrounding_Status copy_gs = copy.getGroundingStatus();
             //The only cases we care about are 
             //owned	copy	
             //NONE  <   HALF
@@ -162,7 +162,7 @@ struct graph {
               second_sender = copy.second_sender;
               bcc_name = copy.bcc_name;
             //handles HALF == HALF
-            } else if(owned_gs == copy_gs && owned_gs == HALF){
+            } else if(owned_gs == copy_gs && owned_gs == ICEPROPGS_HALF){
               if(copy.first_label != first_label){
                 second_label = copy.first_label;
                 second_sender = copy.first_sender;
@@ -170,35 +170,35 @@ struct graph {
             }
             
             if(getGroundingStatus() != owned_gs){
-              if(!is_art) iceProp::reg.push(id);
-              else iceProp::art.push(id);
+              if(!is_art) icePropRegQueue.push(id);
+              else icePropArtQueue.push(id);
             }
             
 	    return *this;
 	  }
 	  
-	  // vtxLabel equality overload
-	  friend bool operator==(const vtxLabel& lhs, const vtxLabel& rhs) {
+	  // IcePropVtxLabel equality overload
+	  friend bool operator==(const IcePropVtxLabel& lhs, const IcePropVtxLabel& rhs) {
 	    return ((lhs.first_label == rhs.first_label)&&(lhs.first_sender == rhs.first_sender)&&(lhs.second_label == rhs.second_label)&&(lhs.second_sender == rhs.second_sender));
 	  }
 	  // int equality overload
-	  friend bool operator==(const vtxLabel& lhs, const int& rhs) {
+	  friend bool operator==(const IcePropVtxLabel& lhs, const int& rhs) {
 	    return ((lhs.first_label == rhs)&&(lhs.first_sender == rhs));
 	  }
 	  // output stream overload
-	  friend std::ostream& operator<<(std::ostream& os, const vtxLabel& a) {
+	  friend std::ostream& operator<<(std::ostream& os, const IcePropVtxLabel& a) {
 	    os<<a.id<<": "<< a.first_label<<", "<<a.first_sender<<"; "<<a.second_label<<", "<<a.second_sender;
 	    return os;
 	  }
-	  Grounding_Status getGroundingStatus() const {
-	    return (Grounding_Status)((first_label != -1) + (second_label != -1));
+	  IcePropGrounding_Status getGroundingStatus() const {
+	    return (IcePropGrounding_Status)((first_label != -1) + (second_label != -1));
 	  }
 	};
 
 }//end namespace iceProp
         
 /////////////////////////////////////////////////////////////////////////
-// ArithTraits -- arithmetic traits needed for struct vtxLabel
+// ArithTraits -- arithmetic traits needed for struct IcePropVtxLabel
 // Needed so that Tpetra compiles.
 // Not all functions were needed; this is a subset of ArithTraits' traits.
 // Modified from kokkos-kernels/src/Kokkos_ArithTraits.hpp's 
@@ -207,9 +207,9 @@ namespace Kokkos {
   namespace Details {
 
     template<>
-    class ArithTraits<iceProp::vtxLabel> {  // specialized for vtxLabel struct
+    class ArithTraits<Zoltan2::IcePropVtxLabel> {  // specialized for IcePropVtxLabel struct
     public:
-      typedef iceProp::vtxLabel val_type;
+      typedef Zoltan2::IcePropVtxLabel val_type;
       typedef int mag_type;
     
       static const bool is_specialized = true;
@@ -247,7 +247,7 @@ namespace Kokkos {
       static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf(const val_type &) {
 	return false;
       }
-      static std::string name() { return "iceProp::vtxLabel"; }
+      static std::string name() { return "Zoltan2::IcePropVtxLabel"; }
     };
   }
 }
@@ -258,8 +258,8 @@ namespace Kokkos {
 // provided serialization of vtxLabel into char*.
 namespace Teuchos{
 template<typename Ordinal>
-struct SerializationTraits<Ordinal, iceProp::vtxLabel> :
-       public Teuchos::DirectSerializationTraits<Ordinal, iceProp::vtxLabel>
+struct SerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel> :
+       public Teuchos::DirectSerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel>
 {};
 }//end namespace Teuchos
 
@@ -271,14 +271,14 @@ public:
   //typedef Tpetra::Map<> map_t;
   typedef typename MAP::local_ordinal_type lno_t;
   typedef typename MAP::global_ordinal_type gno_t;
-  typedef iceProp::vtxLabel scalar_t;
+  typedef IcePropVtxLabel scalar_t;
   typedef Tpetra::FEMultiVector<scalar_t,lno_t, gno_t> femv_t;	
   
   
  	
   //Constructor assigns vertices to processors and builds maps with and
   //without copies ICE SHEET VERSION
-  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, iceProp::graph<lno_t>* g_,int* boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
+  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, icePropGraph<lno_t>* g_,int* boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(localOwned), nLocalCopy(localCopy),
     nVec(1), comm(comm_),g(g_),mapOwned(mapOwned_),
@@ -292,22 +292,22 @@ public:
     femvData = femv->getData(0);
     for(lno_t i = 0; i < nLocalOwned + nLocalCopy; i++){
       gno_t gid = mapWithCopies->getGlobalElement(i);
-      iceProp::vtxLabel label(i);
+      IcePropVtxLabel label(i);
       if(boundary_flags[i] > 2 && i < nLocalOwned) {
 	label.is_art = true;
       }
       if(grounding_flags[i]){
         label.first_label = gid;
         label.first_sender = gid;
-        iceProp::reg.push(label.id);
-        //if(label.is_art) iceProp::art.push(label.id);
-        //else iceProp::reg.push(label.id);
+        icePropRegQueue.push(label.id);
+        //if(label.is_art) icePropArtQueue.push(label.id);
+        //else icePropRegQueue.push(label.id);
       }
       femv->replaceLocalValue(i,0,label);
       //femv->replaceGlobalValue(gid,1,me);
     }
-    //iceProp::vtxLabel label1 = femv->getData(0)[0];
-    //iceProp::vtxLabel label2 = femv->getData(0)[1];
+    //IcePropVtxLabel label1 = femv->getData(0)[0];
+    //IcePropVtxLabel label2 = femv->getData(0)[1];
     //label1 += label2;
 
     //femv->replaceGlobalValue(0,0,label1);
@@ -348,28 +348,28 @@ public:
     while(true){
       femv->switchActiveMultiVector(); 
       for(int i = 0; i < g->n; i++){
-	iceProp::vtxLabel curr_node = femvData[i];
-        if(curr_node.is_art && curr_node.getGroundingStatus() == iceProp::FULL){
+	IcePropVtxLabel curr_node = femvData[i];
+        if(curr_node.is_art && curr_node.getGroundingStatus() == ICEPROPGS_FULL){
           lno_t out_degree = g->out_degree(curr_node.id);//out_degree(g, curr_node.id);
           lno_t* outs = g->out_vertices(curr_node.id);//out_vertices(g, curr_node.id);
           for(int j = 0; j < out_degree; j++){
-            iceProp::vtxLabel neighbor = femvData[outs[j]];
-            if(neighbor.getGroundingStatus() == iceProp::HALF && neighbor.first_label != mapWithCopies->getGlobalElement(curr_node.id) && neighbor.first_sender == mapWithCopies->getGlobalElement(curr_node.id)){
-              iceProp::reg.push(curr_node.id);
+            IcePropVtxLabel neighbor = femvData[outs[j]];
+            if(neighbor.getGroundingStatus() == ICEPROPGS_HALF && neighbor.first_label != mapWithCopies->getGlobalElement(curr_node.id) && neighbor.first_sender == mapWithCopies->getGlobalElement(curr_node.id)){
+              icePropRegQueue.push(curr_node.id);
             }
           }
         }
       }
-      int local_done = iceProp::reg.empty();
+      int local_done = icePropRegQueue.empty();
       int done = 0;
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
       
       if(done) break;
 
       for(int i = 0; i < g->n; i++){
-	iceProp::vtxLabel curr_node = femvData[i];
-        if(curr_node.getGroundingStatus() == iceProp::HALF){
-	  iceProp::vtxLabel cleared(curr_node.id);
+	IcePropVtxLabel curr_node = femvData[i];
+        if(curr_node.getGroundingStatus() == ICEPROPGS_HALF){
+	  IcePropVtxLabel cleared(curr_node.id);
           cleared.is_art = curr_node.is_art;
           femv->replaceLocalValue(i,0,cleared);
         }
@@ -382,10 +382,10 @@ public:
     //return flags for each node, -2 for keep, -1 for remove, <vtxID> for singly grounded nodes.
     lno_t* removed = new lno_t[g->n];
     for(int i = 0; i < g->n; i++){
-      iceProp::vtxLabel curr_node = femvData[i];
-      iceProp::Grounding_Status gs = curr_node.getGroundingStatus();
-      if(gs == iceProp::FULL) removed[i] = -2;
-      else if(gs == iceProp::HALF) removed[i] = curr_node.first_label;
+      IcePropVtxLabel curr_node = femvData[i];
+      IcePropGrounding_Status gs = curr_node.getGroundingStatus();
+      if(gs == ICEPROPGS_FULL) removed[i] = -2;
+      else if(gs == ICEPROPGS_HALF) removed[i] = curr_node.first_label;
       else removed[i] = -1;
     }
     femv->switchActiveMultiVector();
@@ -407,10 +407,10 @@ public:
       femv->beginFill();
       //visit every node that changed
       std::queue<int>* curr;
-      if(iceProp::reg.empty()) curr = &iceProp::art;
-      else curr = &iceProp::reg;
+      if(icePropRegQueue.empty()) curr = &icePropArtQueue;
+      else curr = &icePropRegQueue;
       while(!curr->empty()){
-	iceProp::vtxLabel curr_node = femvData[curr->front()];
+	IcePropVtxLabel curr_node = femvData[curr->front()];
         curr->pop();
         
         //if the current node is a copy, it shouldn't propagate out to its neighbors.
@@ -419,33 +419,33 @@ public:
         lno_t out_degree = g->out_degree(curr_node.id);//out_degree(g, curr_node.id);
         lno_t* outs = g->out_vertices(curr_node.id);//out_vertices(g, curr_node.id);
         for(int i = 0; i < out_degree; i++){
-	  iceProp::vtxLabel neighbor = femvData[outs[i]];
-	  iceProp::Grounding_Status old_gs = neighbor.getGroundingStatus();
+	  IcePropVtxLabel neighbor = femvData[outs[i]];
+	  IcePropGrounding_Status old_gs = neighbor.getGroundingStatus();
           
           //give curr_node's neighbor some more labels
           giveLabels(curr_node, neighbor);
           
           if(old_gs != neighbor.getGroundingStatus()){
             femv->replaceLocalValue(outs[i],0,neighbor);
-            if(neighbor.is_art) iceProp::art.push(neighbor.id);
-            else iceProp::reg.push(neighbor.id);
+            if(neighbor.is_art) icePropArtQueue.push(neighbor.id);
+            else icePropRegQueue.push(neighbor.id);
           }
         }
         if(curr->empty()){
-          if(curr == &iceProp::reg) curr = &iceProp::art;
-          else curr = &iceProp::reg;
+          if(curr == &icePropRegQueue) curr = &icePropArtQueue;
+          else curr = &icePropRegQueue;
         }
         
       }
-      //std::cout<<me<<": art queue front = "<<iceProp::art.front()<<"\n";
-      //std::cout<<me<<": art queue size = "<<iceProp::art.size()<<"\n";
+      //std::cout<<me<<": art queue front = "<<icePropArtQueue.front()<<"\n";
+      //std::cout<<me<<": art queue size = "<<icePropArtQueue.size()<<"\n";
       femv->endFill();
       //printFEMV("Before Communicating");
       femv->doOwnedToOwnedPlusShared(Tpetra::ADD);
       femv->doOwnedPlusSharedToOwned(Tpetra::ADD);
-      //std::cout<<me<<": reg queue front = "<<iceProp::reg.front()<<"\n";
-      //std::cout<<me<<": reg queue size = "<<iceProp::reg.size()<<"\n";
-      int local_done = iceProp::reg.empty() && iceProp::art.empty();
+      //std::cout<<me<<": reg queue front = "<<icePropRegQueue.front()<<"\n";
+      //std::cout<<me<<": reg queue size = "<<icePropRegQueue.size()<<"\n";
+      int local_done = icePropRegQueue.empty() && icePropArtQueue.empty();
       //printFEMV("After Communicating");
       //this call makes sure that if any inter-processor communication changed labels
       //we catch the changes and keep propagating them.
@@ -457,31 +457,31 @@ public:
   
   //function that exchanges labels between two nodes
   //curr_node gives its labels to neighbor.
-  void giveLabels(iceProp::vtxLabel& curr_node, iceProp::vtxLabel& neighbor){
-    iceProp::Grounding_Status curr_gs = curr_node.getGroundingStatus();
-    iceProp::Grounding_Status nbor_gs = neighbor.getGroundingStatus();
+  void giveLabels(IcePropVtxLabel& curr_node, IcePropVtxLabel& neighbor){
+    IcePropGrounding_Status curr_gs = curr_node.getGroundingStatus();
+    IcePropGrounding_Status nbor_gs = neighbor.getGroundingStatus();
     int curr_node_gid = mapWithCopies->getGlobalElement(curr_node.id);
     //if the neighbor is full, we don't need to pass labels
-    if(nbor_gs == iceProp::FULL) return;
+    if(nbor_gs == ICEPROPGS_FULL) return;
     //if the current nod is empty (shouldn't happen) we can't pass any labels
-    if(curr_gs == iceProp::NONE) return;
+    if(curr_gs == ICEPROPGS_NONE) return;
     //if the current node is full (and not an articulation point), pass both labels on
-    if(curr_gs == iceProp::FULL && !curr_node.is_art){
+    if(curr_gs == ICEPROPGS_FULL && !curr_node.is_art){
       neighbor.first_label = curr_node.first_label;
       neighbor.first_sender = curr_node_gid;
       neighbor.second_label = curr_node.second_label;
       neighbor.second_sender = curr_node_gid;
       neighbor.bcc_name = curr_node.bcc_name;
       return;
-    } else if (curr_gs == iceProp::FULL) {
+    } else if (curr_gs == ICEPROPGS_FULL) {
       //if it is an articulation point, and it hasn't sent to this neighbor
       if(neighbor.first_sender != curr_node_gid){
         //send itself as a label
-        if(nbor_gs == iceProp::NONE){
+        if(nbor_gs == ICEPROPGS_NONE){
           neighbor.first_label = curr_node_gid;
           neighbor.first_sender = curr_node_gid;
           neighbor.bcc_name = curr_node.bcc_name;
-        } else if(nbor_gs == iceProp::HALF){
+        } else if(nbor_gs == ICEPROPGS_HALF){
           if(neighbor.first_label != curr_node_gid){
             neighbor.second_label = curr_node_gid;
             neighbor.second_sender = curr_node_gid;
@@ -491,13 +491,13 @@ public:
       return;
     }
     //if the current node has only one label
-    if(curr_gs == iceProp::HALF){
+    if(curr_gs == ICEPROPGS_HALF){
       //pass that on appropriately
-      if(nbor_gs == iceProp::NONE){
+      if(nbor_gs == ICEPROPGS_NONE){
         neighbor.first_label = curr_node.first_label;
         neighbor.first_sender = curr_node_gid;
         neighbor.bcc_name = curr_node.bcc_name;
-      } else if(nbor_gs == iceProp::HALF){
+      } else if(nbor_gs == ICEPROPGS_HALF){
         //make sure you aren't giving a duplicate label, and that
         //you haven't sent a label to this neighbor before.
         if(neighbor.first_label != curr_node.first_label && neighbor.first_sender != curr_node_gid){
@@ -508,8 +508,8 @@ public:
     }
     
     if(nbor_gs != neighbor.getGroundingStatus()){
-      if(neighbor.is_art) iceProp::art.push(neighbor.id);
-      else iceProp::reg.push(neighbor.id);
+      if(neighbor.is_art) icePropArtQueue.push(neighbor.id);
+      else icePropRegQueue.push(neighbor.id);
     } 
   }
   
@@ -535,13 +535,13 @@ public:
         int foundGhostPair = 0;
         int ownedVtx = -1, ghostVtx = -1;
         for(int i = 0; i < nLocalOwned; i++){
-          if(femvData[i].getGroundingStatus() == iceProp::NONE){
+          if(femvData[i].getGroundingStatus() == ICEPROPGS_NONE){
             lno_t out_degree = g->out_degree(i);//out_degree(g, i);
             lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
             for(int j = 0; j < out_degree; j++){
               if(outs[j] >= nLocalOwned){
                 //we're dealing with a ghosted vertex
-                if(femvData[outs[j]].getGroundingStatus() == iceProp::NONE){
+                if(femvData[outs[j]].getGroundingStatus() == ICEPROPGS_NONE){
                   ownedVtx = i;
                   ghostVtx = outs[j];
                   foundGhostPair = 1;
@@ -563,8 +563,8 @@ public:
         if(neighborProc == me){
           //std::cout<<me<<": Grounding empty neighbors,"<<mapWithCopies->getGlobalElement(ownedVtx)<<" and "<<mapWithCopies->getGlobalElement(ghostVtx)<<"\n";
           //replace local value with self-grounded vertex with new bcc_name
-          iceProp::vtxLabel firstNeighbor = femvData[ownedVtx];
-          iceProp::vtxLabel secondNeighbor = femvData[ghostVtx];
+          IcePropVtxLabel firstNeighbor = femvData[ownedVtx];
+          IcePropVtxLabel secondNeighbor = femvData[ghostVtx];
           gno_t firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);          
 	  gno_t secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
           firstNeighbor.first_label = firstNeighbor_gid;
@@ -576,18 +576,18 @@ public:
           femv->replaceLocalValue(ownedVtx,0, firstNeighbor);
           femv->replaceLocalValue(ghostVtx,0, secondNeighbor);
           //push the neighbors on the reg queue
-          iceProp::reg.push(ownedVtx);
-          iceProp::reg.push(ghostVtx);
+          icePropRegQueue.push(ownedVtx);
+          icePropRegQueue.push(ghostVtx);
         } else if(neighborProc == -1){
           int foundEmptyPair = 0;
           lno_t vtx1 = -1, vtx2 = -1;
           //if none are found, find any pair of empty vertices. (similar procedure)
           for(int i = 0; i < nLocalOwned; i++){
-            if(femvData[i].getGroundingStatus() == iceProp::NONE){
+            if(femvData[i].getGroundingStatus() == ICEPROPGS_NONE){
               lno_t out_degree =g->out_degree(i);// out_degree(g, i);
               lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
               for(int j = 0; j < out_degree; j++){
-                if(femvData[outs[j]].getGroundingStatus() == iceProp::NONE){
+                if(femvData[outs[j]].getGroundingStatus() == ICEPROPGS_NONE){
                   foundEmptyPair = 1;
                   vtx1 = i;
                   vtx2 = outs[j];
@@ -613,8 +613,8 @@ public:
           else if(emptyProc == me){
             //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(vtx1)<<" and neighbor "<<mapWithCopies->getGlobalElement(vtx2)<<"\n";
             //this processor will ground two random, empty neighbors.
-            iceProp::vtxLabel firstNeighbor = femvData[vtx1];
-            iceProp::vtxLabel secondNeighbor = femvData[vtx2];
+            IcePropVtxLabel firstNeighbor = femvData[vtx1];
+            IcePropVtxLabel secondNeighbor = femvData[vtx2];
             gno_t firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);
             gno_t secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
             firstNeighbor.first_label = firstNeighbor_gid;
@@ -626,8 +626,8 @@ public:
             femv->replaceLocalValue(vtx1, 0, firstNeighbor);
             femv->replaceLocalValue(vtx2, 0, secondNeighbor);
             //put the neighbors on the regular queue
-            iceProp::reg.push(vtx1);
-            iceProp::reg.push(vtx2);
+            icePropRegQueue.push(vtx1);
+            icePropRegQueue.push(vtx2);
           }
         }
         femv->endFill();
@@ -641,10 +641,10 @@ public:
           lno_t out_degree = g->out_degree(art_pt);//out_degree(g, art_pt);
           lno_t* outs = g->out_vertices(art_pt);//out_vertices(g, art_pt);
           for(int i = 0;i < out_degree; i++){
-            if(femvData[outs[i]].getGroundingStatus() == iceProp::NONE){
+            if(femvData[outs[i]].getGroundingStatus() == ICEPROPGS_NONE){
               //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(art_queue.front())<<" and neighbor "<<mapWithCopies->getGlobalElement(outs[i])<<"\n";
-              iceProp::vtxLabel neighbor = femvData[outs[i]];
-              iceProp::vtxLabel artvtx = femvData[art_pt];
+              IcePropVtxLabel neighbor = femvData[outs[i]];
+              IcePropVtxLabel artvtx = femvData[art_pt];
               gno_t neighbor_gid = mapWithCopies->getGlobalElement(neighbor.id);
               neighbor.first_label = neighbor_gid;
               neighbor.first_sender = neighbor_gid;
@@ -652,8 +652,8 @@ public:
               artvtx.bcc_name = bcc_count*np+me;
               femv->replaceLocalValue(art_pt,0,artvtx);
               femv->replaceLocalValue(outs[i],0, neighbor);
-              iceProp::reg.push(art_pt);
-              iceProp::reg.push(outs[i]);
+              icePropRegQueue.push(art_pt);
+              icePropRegQueue.push(outs[i]);
               break;
             }
           }
@@ -671,11 +671,11 @@ public:
       //std::cout<<me<<": Checking for articulation points\n";
       //check for OWNED articulation points
       for(int i = 0; i < nLocalOwned; i++){
-        if(femvData[i].getGroundingStatus() == iceProp::FULL){
+        if(femvData[i].getGroundingStatus() == ICEPROPGS_FULL){
           lno_t out_degree = g->out_degree(i);//out_degree(g, i);
           lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
           for(int j = 0; j < out_degree; j++){
-            if(femvData[outs[j]].getGroundingStatus() < iceProp::FULL){
+            if(femvData[outs[j]].getGroundingStatus() < ICEPROPGS_FULL){
               art_queue.push(i);
               articulation_point_flags[i] = 1;
               break;
@@ -686,8 +686,8 @@ public:
       //std::cout<<me<<": Clearing half labels\n";
       //clear half labels
       for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
-        iceProp::vtxLabel label = femvData[i];
-        if(label.getGroundingStatus() == iceProp::HALF){
+        IcePropVtxLabel label = femvData[i];
+        if(label.getGroundingStatus() == ICEPROPGS_HALF){
           label.first_label = -1;
           label.first_sender = -1;
           label.bcc_name = -1;
@@ -706,7 +706,7 @@ public:
           lno_t* art_outs = g->out_vertices(g,art_queue.front());//out_vertices(g,art_queue.front());
         
           for(int i = 0; i < top_art_degree; i++){
-            if(femvData[art_outs[i]].getGroundingStatus() < iceProp::FULL){
+            if(femvData[art_outs[i]].getGroundingStatus() < ICEPROPGS_FULL){
               pop_art = false;
             }
           }
@@ -718,7 +718,7 @@ public:
     //std::cout<<me<<": found "<<bcc_count<<" biconnected components\n";
     for(int i = 0; i < nLocalOwned; i++){
       if(!articulation_point_flags[i]){
-        iceProp::vtxLabel label = femvData[i];
+        IcePropVtxLabel label = femvData[i];
         label.is_art = false;
         femv->replaceLocalValue(i,0,label);
       }
@@ -735,7 +735,7 @@ private:
   int nVec;	    //number of vectors in multivector
   
   const Teuchos::RCP<const Teuchos::Comm<int> > comm; //MPI communicator
-  iceProp::graph<lno_t>* g;	    //csr representation of vertices on this processor
+  icePropGraph<lno_t>* g;	    //csr representation of vertices on this processor
 
   Teuchos::RCP<const MAP> mapOwned;       //Tpetra::Map including only owned
   Teuchos::RCP<const MAP> mapWithCopies;  //Tpetra::Map including owned

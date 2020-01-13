@@ -326,7 +326,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
     out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
   }
   std::cout<<me<<": done creating out edges, creating csr graph\n";
-  iceProp::graph<typename map_t::local_ordinal_type>* g = new iceProp::graph<typename map_t::local_ordinal_type>({nVtx, nEdge, out_edges_lid,out_offsets, 0,0.0});
+  icePropGraph<typename map_t::local_ordinal_type>* g = new icePropGraph<typename map_t::local_ordinal_type>({nVtx, nEdge, out_edges_lid,out_offsets, 0,0.0});
   std::cout<<me<<": constructing propagation object\n";
   Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
   std::cout<<me<<": starting propagation\n";  
