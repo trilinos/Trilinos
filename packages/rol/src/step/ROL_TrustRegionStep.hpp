@@ -457,7 +457,7 @@ public:
       if ( bnd.isActivated() ) {
         bnd.project(*xcp);
       }
-      obj.update(*xcp);
+      obj.update(*xcp,false);
       Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
       algo_state.nfval++;
       // Perform cubic interpolation to determine initial trust region radius
@@ -490,6 +490,7 @@ public:
       if (step_state->searchSize <= ROL_EPSILON<Real>()*algo_state.gnorm && autoRad) {
         step_state->searchSize = one;
       }
+      obj.update(x,true,algo_state.iter);
     }
     // Build trust-region model
     if (bnd.isActivated()) { 

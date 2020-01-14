@@ -302,8 +302,8 @@ public:
     // Project x onto the feasible set
     if ( bnd.isActivated() ) {
       bnd.project(x);
+      bnd.update(x,true,algo_state.iter);
     }
-    bnd.update(x,true,algo_state.iter);
     // Update objective and constraint.
     augLag.update(x,true,algo_state.iter);
     if (useDefaultScaling_) {
