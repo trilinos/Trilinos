@@ -1079,9 +1079,7 @@ namespace internal {
   template <typename T>
   int format_float(T value, int precision, float_specs specs, buffer<char> &buf)
   {
-#if !(defined(__INTEL_COMPILER) && __INTEL_COMPILER < 1800)
-    static_assert(!std::is_same<T, float>(), "");
-#endif
+    static_assert(!std::is_same<T, float>::value, "T is a float");
     FMT_ASSERT(value >= 0, "value is negative");
 
     const bool fixed = specs.format == float_format::fixed;
@@ -1156,9 +1154,7 @@ namespace internal {
   {
     // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
     FMT_ASSERT(buf.capacity() > buf.size(), "empty buffer");
-#if !(defined(__INTEL_COMPILER) && __INTEL_COMPILER < 1800)
-    static_assert(!std::is_same<T, float>(), "");
-#endif
+    static_assert(!std::is_same<T, float>::value, "T is a float");
 
     // Subtract 1 to account for the difference in precision since we use %e for
     // both general and exponent format.
