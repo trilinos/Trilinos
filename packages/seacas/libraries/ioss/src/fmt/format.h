@@ -220,7 +220,7 @@ namespace internal {
 
   inline bool is_big_endian()
   {
-    auto u = 1u;
+    const auto u = 1u;
     struct bytes
     {
       char data[sizeof(u)];
