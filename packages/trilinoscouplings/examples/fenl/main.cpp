@@ -19,7 +19,6 @@ template< class Device >
 bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           const CMD & cmd )
 {
-  typedef typename Kokkos::Compat::KokkosDeviceWrapperNode<Device> NodeType;
   bool success = true;
   try {
 
