@@ -227,7 +227,8 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  this->checkInitialized();
+  // TODO: deprecated
+  //this->checkInitialized();
 
   using Teuchos::RCP;
 
