@@ -1458,11 +1458,9 @@ namespace internal {
   inline format_arg_store<buffer_context<Char>, remove_reference_t<Args>...>
   make_args_checked(const S &format_str, const remove_reference_t<Args> &... args)
   {
-#if !(defined(__INTEL_COMPILER) && __INTEL_COMPILER < 1800)
-    static_assert(all_true<(!std::is_base_of<view, remove_reference_t<Args>>() ||
-                            !std::is_reference<Args>())...>::value,
+   static_assert(all_true<(!std::is_base_of<view, remove_reference_t<Args>>::value ||
+                            !std::is_reference<Args>::value)...>::value,
                   "passing views as lvalues is disallowed");
-#endif
     check_format_string<remove_const_t<remove_reference_t<Args>>...>(format_str);
     return {args...};
   }
