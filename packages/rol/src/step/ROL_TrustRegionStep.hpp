@@ -457,7 +457,7 @@ public:
       if ( bnd.isActivated() ) {
         bnd.project(*xcp);
       }
-      obj.update(*xcp,false);
+      obj.update(*xcp);
       Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
       algo_state.nfval++;
       // Perform cubic interpolation to determine initial trust region radius

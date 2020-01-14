@@ -178,7 +178,7 @@ public:
     if (bnd.isActivated()) {
       bnd.project(*prim_);
     }
-    obj.update(*prim_,false);
+    obj.update(*prim_);
     fnew = obj.value(*prim_,ftol);
 
     nfval = 1;
@@ -328,7 +328,7 @@ public:
         prim_->axpy(-alpha/alpha_init_,dual_->dual());
         bnd.project(*prim_);
         // Compute new objective value
-        obj.update(*prim_,false);
+        obj.update(*prim_);
         Real ftmp = obj.value(*prim_,tol); // MUST DO SOMETHING HERE WITH TOL
         nfval++;
         // Perform smoothing
@@ -338,7 +338,7 @@ public:
           prim_->set(*xtmp_);
           prim_->axpy(-alpha/alpha_init_,dual_->dual());
           bnd.project(*prim_);
-          obj.update(*prim_,false);
+          obj.update(*prim_);
           ftmp = obj.value(*prim_,tol); // MUST DO SOMETHING HERE WITH TOL
           nfval++;
           if ( cnt >= max_fval_ ) {
