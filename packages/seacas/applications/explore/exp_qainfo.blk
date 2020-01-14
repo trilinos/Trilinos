@@ -35,8 +35,8 @@ C
       QAINFO(2) = '        '
       QAINFO(3) = '        '
 
-      QAINFO(2)(:8) = '20190829'
-      QAINFO(3)(:8) = '    3.04'
+      QAINFO(2)(:8) = '20200113'
+      QAINFO(3)(:8) = '    3.06'
 C
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors
@@ -100,4 +100,3 @@ c..Fix invcon output with mapped element ids
 c..Change name to `explore`
 c..Fix minmax to work more than once
 c..Work with experimental exodus (transient data only)
-c..thousands-separated output of initial data
