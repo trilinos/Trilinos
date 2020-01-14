@@ -614,26 +614,48 @@ namespace TSQR {
       }
       else { // A_view_top is NOT contiguous
         // Packed device version of R.
-        Impl::device_mat_view_type<kokkos_value_type> R_copy;
+        Impl::device_mat_view_type<kokkos_value_type> R_contig_d;
         try {
           using Impl::get_contiguous_device_mat_view;
-          R_copy = get_contiguous_device_mat_view (matrixStorage_,
-                                                   ncols, ncols);
+          R_contig_d = get_contiguous_device_mat_view (matrixStorage_,
+                                                       ncols, ncols);
         }
-        TSQR_IMPL_CATCH( "R_copy = get_contiguous_device_mat_view threw: " );
+        TSQR_IMPL_CATCH( "R_contig_d = get_contiguous_device_mat_view threw: " );
 
-        TEUCHOS_ASSERT( size_t (R_copy.extent (0)) == size_t (ncols) );
-        TEUCHOS_ASSERT( size_t (R_copy.extent (1)) == size_t (ncols) );
-        TEUCHOS_ASSERT( size_t (R_copy.stride (1)) == size_t (ncols) );
+        TEUCHOS_ASSERT( size_t (R_contig_d.extent (0)) == size_t (ncols) );
+        TEUCHOS_ASSERT( size_t (R_contig_d.extent (1)) == size_t (ncols) );
+        TEUCHOS_ASSERT( size_t (R_contig_d.stride (1)) == size_t (ncols) );
 
         try {
-          Kokkos::deep_copy (R_copy, A_view_top);
+          Kokkos::deep_copy (R_contig_d, A_view_top);
         }
-        TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_copy, A_view_top) threw: ");
-        try {
-          Kokkos::deep_copy (R_view, R_copy);
+        TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_contig_d, A_view_top) threw: ");
+
+        if (R_view.extent (0) < R_view.stride (1)) {
+          // R_view is not contiguous, so we can't deep_copy directly
+          // from R_contig_d (device View) to R_view (host View).  We
+          // need an intermediate contiguous host View, R_contig_h.
+          auto R_contig_h =
+            Impl::get_contiguous_host_mat_view (hostMatrixStorage_,
+                                                ncols, ncols);
+          TEUCHOS_ASSERT( size_t (R_contig_h.extent (0)) == size_t (ncols) );
+          TEUCHOS_ASSERT( size_t (R_contig_h.extent (1)) == size_t (ncols) );
+          TEUCHOS_ASSERT( size_t (R_contig_h.stride (1)) == size_t (ncols) );
+          try {
+            Kokkos::deep_copy (R_contig_h, R_contig_d);
+          }
+          TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_contig_h, R_contig_d) threw: ");
+          try {
+            Kokkos::deep_copy (R_view, R_contig_h);
+          }
+          TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_view, R_contig_h) threw: ");
         }
-        TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_view, R_copy) threw: ");
+        else { // R_view is contiguous, so we can deep_copy directly
+          try {
+            Kokkos::deep_copy (R_view, R_contig_d);
+          }
+          TSQR_IMPL_CATCH( "Kokkos::deep_copy(R_view, R_contig_d) threw: ");
+        }
       }
 
       try {
