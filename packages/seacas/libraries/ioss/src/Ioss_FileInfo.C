@@ -398,7 +398,9 @@ namespace Ioss {
       errmsg << "ERROR: Could not create path '" << filename << "'.\n";
     }
 
-    MPI_Bcast(&error_found, 1, MPI_INT, 0, communicator);
+    if (util.parallel_size() > 1) {
+      MPI_Bcast(&error_found, 1, MPI_INT, 0, communicator);
+    }
 
     if (error_found) {
       IOSS_ERROR(errmsg);
