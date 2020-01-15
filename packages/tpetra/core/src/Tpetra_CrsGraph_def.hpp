@@ -2035,12 +2035,24 @@ namespace Tpetra {
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
     auto numInserted = Details::insertCrsIndices(myRow, k_rowPtrs_,
       this->k_lclInds1D_, numEntries, inputInds, fun);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numInserted == Teuchos::OrdinalTraits<size_t>::invalid(),
-        std::runtime_error,
-        "There is not enough capacity to insert indices in to row " << myRow <<
-        ". The upper bound on the number of entries in this row must be increased to "
-        "accommodate one or more of the new indices.");
+
+    const bool insertFailed =
+      numInserted == Teuchos::OrdinalTraits<size_t>::invalid();
+    if(insertFailed) {
+      constexpr size_t ONE (1);
+      const size_t numInputInds(indices.size());
+      const int myRank = this->getComm()->getRank();
+      std::ostringstream os;
+      os << "On MPI Process " << myRank << ": Not enough capacity to "
+        "insert " << numInputInds
+         << " ind" << (numInputInds != ONE ? "ices" : "ex")
+         << " into local row " << myRow << ", which currently has "
+         << rowInfo.numEntries
+         << " entr" << (rowInfo.numEntries != ONE ? "ies" : "y")
+         << " and total allocation size " << rowInfo.allocSize << ".";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, os.str());
+    }
     numNewInds = numInserted;
     newNumEntries = rowInfo.numEntries + numNewInds;
 
