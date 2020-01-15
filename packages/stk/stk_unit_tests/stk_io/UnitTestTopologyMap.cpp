@@ -85,7 +85,8 @@ int testElement(const std::string &name, unsigned spatialDim)
       element->name() == "tetra16"   || element->name() == "tetra40" ||
       element->name() == "tri13"     || element->name() == "wedge24" ||
       element->name() == "wedge52"   || element->name() == "quad6"   ||
-      element->name() == "wedge16") {
+      element->name() == "wedge16"   || element->name() == "bar4"   ||
+      element->name() == "edge4"     || element->name() == "tri9") {
     std::cerr << "\tERROR (EXPECTED): No support for '" << element->name() << "'\n";
     return 0;
   }
