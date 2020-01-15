@@ -1987,16 +1987,24 @@ namespace Tpetra {
     inp_view_type inputInds(inputGblColInds, numInputInds);
     size_t numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
       this->k_gblInds1D_, numEntries, inputInds, fun);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numInserted == Teuchos::OrdinalTraits<size_t>::invalid(),
-        std::runtime_error,
-        "There is not enough capacity to insert " << inputInds.size()  << " " <<
-        "indices in to row " << lclRow <<
-        " on rank " << this->getComm()->getRank() << "." <<
-        "The current size of the indices array is " << this->k_gblInds1D_.size() << ".  " <<
-        "The current size of the row pointers array is " << this->k_rowPtrs_.size() << ".  " <<
-        "The upper bound on the number of entries in this row must be increased to "
-        "accommodate one or more of the new indices.");
+
+    const bool insertFailed =
+      numInserted == Teuchos::OrdinalTraits<size_t>::invalid();
+    if(insertFailed) {
+      constexpr size_t ONE (1);
+      const int myRank = this->getComm()->getRank();
+      std::ostringstream os;
+      os << "On MPI Process " << myRank << ": Not enough capacity to "
+        "insert " << numInputInds
+         << " ind" << (numInputInds != ONE ? "ices" : "ex")
+         << " into local row " << lclRow << ", which currently has "
+         << rowInfo.numEntries
+         << " entr" << (rowInfo.numEntries != ONE ? "ies" : "y")
+         << " and total allocation size " << rowInfo.allocSize << ".";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, os.str());
+    }
+
     this->k_numRowEntries_(lclRow) += numInserted;
     this->setLocallyModified();
     return numInserted;
