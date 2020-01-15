@@ -211,14 +211,17 @@ public:
   void randomize( const Real l = 0.0, const Real u = 1.0 ) {
     Real a = (u-l);
     Real b = l;
-    Real x(0);
-    size_type dim = std_vec_->size();
-    for (size_type i=0; i<dim; ++i) {
-      x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
-      (*std_vec_)[i] = a*x + b;
-    }
-//    auto get_rand = []( Real ) { return static_cast<Real>(rand())/static_cast<Real>(RAND_MAX); };
-//    std::for_each( std_vec_->begin(), std_vec_->end(), get_rand );
+//    Real x(0);
+//    size_type dim = std_vec_->size();
+//    for (size_type i=0; i<dim; ++i) {
+//      x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+//      (*std_vec_)[i] = a*x + b;
+//    }
+    auto get_rand = [a,b]( Real& e ) { 
+      auto x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX); 
+      e = a*x+b;
+    };
+    std::for_each( std_vec_->begin(), std_vec_->end(), get_rand );
   }
 
   virtual void print( std::ostream &outStream ) const {
