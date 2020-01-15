@@ -233,10 +233,15 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+<<<<<<< HEAD
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->checkInitialized();
 #endif
+=======
+  // TODO: deprecated
+  //this->checkInitialized();
+>>>>>>> 60dfe49c31164e75d589e8c9f32b25f7c6bedec8
 
   using Teuchos::RCP;
 
