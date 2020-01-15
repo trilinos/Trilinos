@@ -315,7 +315,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ImportToStaticMatrixLocal, SC, LO, 
 }
 
 #define UNIT_TEST_GROUP( SC, LO, GO, NT ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrix, ImportToStaticMatrix, SC, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrix, ImportToStaticMatrix, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrix, ImportToStaticMatrixLocal, SC, LO, GO, NT)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
