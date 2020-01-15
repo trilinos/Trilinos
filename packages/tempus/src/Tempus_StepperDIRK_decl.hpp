@@ -90,16 +90,19 @@ public:
 
   /// \name Basic stepper methods
   //@{
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE 
+   
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
+    
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperRKObserver_; }
+#else
+    virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
 
-    //virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
-
-    //virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
-    //{ return stepperRKObserver_; }
+    virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
+    { return stepperRKObserver_; }
+#endif
 
     virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
     { return tableau_; }

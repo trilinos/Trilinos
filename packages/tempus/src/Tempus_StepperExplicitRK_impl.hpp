@@ -148,22 +148,13 @@ void StepperExplicitRK<Scalar>::getValidParametersBasicERK(
 }
 
 
-//template<class Scalar>
-//void StepperExplicitRK<Scalar>::setObserver(
-  //Teuchos::RCP<StepperRKObserver<Scalar> > obs)
-//{
-  //if (obs != Teuchos::null) stepperRKObserver_ = obs;
-
-  //if (stepperRKObserver_ == Teuchos::null)
-    //stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
-
-  //this->isInitialized_ = false;
-//}
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
+
   if (obs != Teuchos::null){
     stepperRKObserver_ = Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> >(obs, true);
   }
@@ -174,6 +165,21 @@ void StepperExplicitRK<Scalar>::setObserver(
   this->isInitialized_ = false;
 }
 
+#else
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setObserver(
+  Teuchos::RCP<StepperRKObserver<Scalar> > obs)
+{
+  if (obs != Teuchos::null) stepperRKObserver_ = obs;
+
+  if (stepperRKObserver_ == Teuchos::null)
+    stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+  this->isInitialized_ = false;
+}
+
+#endif
 
 
 template<class Scalar>
@@ -227,7 +233,10 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->checkInitialized();
+#endif
 
   using Teuchos::RCP;
 

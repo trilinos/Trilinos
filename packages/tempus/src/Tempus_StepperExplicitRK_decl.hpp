@@ -95,21 +95,22 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    //virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
-
-    //virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
-    //{ return stepperRKObserver_; }
 
     virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
     { return tableau_; }
-
-    // deprecated
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE 
+   
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    // deprecated
+    
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperRKObserver_; }
+#else
+    virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
+
+    virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
+    { return stepperRKObserver_; }
+#endif
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();

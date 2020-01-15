@@ -24,13 +24,14 @@ void StepperExplicit<Scalar>::setModel(
   outArgs_ = appModel_->createOutArgs();
 }
 
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE 
 template<class Scalar>
 void StepperExplicit<Scalar>::setNonConstModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
 {
   setModel(appModel);
 }
+#endif
 
 template<class Scalar>
 void StepperExplicit<Scalar>::setInitialConditions(

@@ -82,23 +82,14 @@ void StepperDIRK<Scalar>::getValidParametersBasicDIRK(
 }
 
 
-//template<class Scalar>
-//void StepperDIRK<Scalar>::setObserver(
-  //Teuchos::RCP<StepperRKObserver<Scalar> > obs)
-//{
-  //if (obs != Teuchos::null) stepperRKObserver_ = obs;
-
-  //if (stepperRKObserver_ == Teuchos::null)
-    //stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
-
-  //this->isInitialized_ = false;
-//}
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 
 template<class Scalar>
 void StepperDIRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs != Teuchos::null) {
+
+  if (obs != Teuchos::null){
     stepperRKObserver_ = Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> >(obs, true);
   }
 
@@ -107,6 +98,23 @@ void StepperDIRK<Scalar>::setObserver(
 
   this->isInitialized_ = false;
 }
+
+#else
+
+template<class Scalar>
+void StepperDIRK<Scalar>::setObserver(
+  Teuchos::RCP<StepperRKObserver<Scalar> > obs)
+{
+  if (obs != Teuchos::null) stepperRKObserver_ = obs;
+
+  if (stepperRKObserver_ == Teuchos::null)
+    stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
+
+  this->isInitialized_ = false;
+}
+
+#endif
+
 
 
 template<class Scalar>

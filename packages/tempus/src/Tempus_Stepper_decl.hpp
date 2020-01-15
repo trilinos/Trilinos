@@ -21,7 +21,9 @@
 #include "Tempus_SolutionHistory.hpp"
 
 // deprecated code
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 #include "Tempus_StepperObserver.hpp"  
+#endif
 
 
 namespace Tempus {
@@ -73,8 +75,10 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
+#endif
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
 
     /// Set solver.
@@ -85,6 +89,7 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
       getSolver() const = 0;
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     /// deprecated
     /// set Observer
     virtual void setObserver(
@@ -92,8 +97,9 @@ public:
 
     /// deprecated
     /// set Observer
-    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const = 0;
 
+    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const = 0;
+#endif
     /// Initialize after construction and changing input parameters.
     virtual void initialize();
 
