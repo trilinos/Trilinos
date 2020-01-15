@@ -234,9 +234,9 @@ void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
 
-//#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+#ifdef TEMPUS_HIDE_DEPRECATED_CODE
   this->checkInitialized();
-//#endif
+#endif
 
   using Teuchos::RCP;
 
