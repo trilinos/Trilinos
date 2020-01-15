@@ -822,7 +822,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef typename Kokkos::Compat::KokkosDeviceWrapperNode<Device> NodeType;
   bool success = true;
   try {
 
