@@ -228,7 +228,12 @@ namespace Ioss {
     if (!is_input()) {
       // Create full path to the output file at this point if it doesn't
       // exist...
-      Ioss::FileInfo::create_path(DBFilename, util().communicator());
+      if (isParallel) {
+	Ioss::FileInfo::create_path(DBFilename, util().communicator());
+      }
+      else {
+	Ioss::FileInfo::create_path(DBFilename);
+      }
     }
   }
 
