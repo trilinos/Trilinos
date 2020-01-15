@@ -65,8 +65,8 @@ namespace Skinner {
 
     std::string inputFile_;
     std::string outputFile_;
-    std::string inFiletype_;
-    std::string outFiletype_;
+    std::string inFiletype_{"unknown"};
+    std::string outFiletype_{"unknown"};
 
   public:
     std::string decomp_method;

@@ -28,11 +28,11 @@ namespace internal {
 
     kind part_kind;
     union value {
-      unsigned                arg_index;
+      int                     arg_index;
       basic_string_view<Char> str;
       replacement             repl;
 
-      FMT_CONSTEXPR value(unsigned index = 0) : arg_index(index) {}
+      FMT_CONSTEXPR value(int index = 0) : arg_index(index) {}
       FMT_CONSTEXPR value(basic_string_view<Char> s) : str(s) {}
       FMT_CONSTEXPR value(replacement r) : repl(r) {}
     } val;
@@ -41,7 +41,7 @@ namespace internal {
 
     FMT_CONSTEXPR format_part(kind k = kind::arg_index, value v = {}) : part_kind(k), val(v) {}
 
-    static FMT_CONSTEXPR format_part make_arg_index(unsigned index)
+    static FMT_CONSTEXPR format_part make_arg_index(int index)
     {
       return format_part(kind::arg_index, index);
     }
@@ -70,7 +70,7 @@ namespace internal {
     }
 
     FMT_CONSTEXPR void on_arg_id() { ++num_parts; }
-    FMT_CONSTEXPR void on_arg_id(unsigned) { ++num_parts; }
+    FMT_CONSTEXPR void on_arg_id(int) { ++num_parts; }
     FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) { ++num_parts; }
 
     FMT_CONSTEXPR void on_replacement_field(const Char *) {}
@@ -108,10 +108,10 @@ namespace internal {
   private:
     using part = format_part<Char>;
 
-    PartHandler               handler_;
-    part                      part_;
-    basic_string_view<Char>   format_str_;
-    basic_parse_context<Char> parse_context_;
+    PartHandler                      handler_;
+    part                             part_;
+    basic_string_view<Char>          format_str_;
+    basic_format_parse_context<Char> parse_context_;
 
   public:
     FMT_CONSTEXPR format_string_compiler(basic_string_view<Char> format_str, PartHandler handler)
@@ -127,7 +127,7 @@ namespace internal {
 
     FMT_CONSTEXPR void on_arg_id() { part_ = part::make_arg_index(parse_context_.next_arg_id()); }
 
-    FMT_CONSTEXPR void on_arg_id(unsigned id)
+    FMT_CONSTEXPR void on_arg_id(int id)
     {
       parse_context_.check_arg_id(id);
       part_ = part::make_arg_index(id);
@@ -143,9 +143,9 @@ namespace internal {
 
     FMT_CONSTEXPR const Char *on_format_specs(const Char *begin, const Char *end)
     {
-      auto                                             repl = typename part::replacement();
-      dynamic_specs_handler<basic_parse_context<Char>> handler(repl.specs, parse_context_);
-      auto                                             it = parse_format_specs(begin, end, handler);
+      auto                                                    repl = typename part::replacement();
+      dynamic_specs_handler<basic_format_parse_context<Char>> handler(repl.specs, parse_context_);
+      auto it = parse_format_specs(begin, end, handler);
       if (*it != '}')
         on_error("missing '}' in format string");
       repl.arg_id = part_.part_kind == part::kind::arg_index ? arg_ref<Char>(part_.val.arg_index)
@@ -166,7 +166,7 @@ namespace internal {
   }
 
   template <typename Range, typename Context, typename Id>
-  void format_arg(basic_parse_context<typename Range::value_type> &parse_ctx, Context &ctx,
+  void format_arg(basic_format_parse_context<typename Range::value_type> &parse_ctx, Context &ctx,
                   Id arg_id)
   {
     ctx.advance_to(visit_format_arg(arg_formatter<Range>(ctx, &parse_ctx), ctx.arg(arg_id)));
@@ -179,8 +179,8 @@ namespace internal {
         typename Context::iterator
     {
       using char_type = typename Context::char_type;
-      basic_parse_context<char_type> parse_ctx(to_string_view(cf.format_str_));
-      Context                        ctx(out.begin(), args);
+      basic_format_parse_context<char_type> parse_ctx(to_string_view(cf.format_str_));
+      Context                               ctx(out.begin(), args);
 
       const auto &parts = cf.parts();
       for (auto part_it = std::begin(parts); part_it != std::end(parts); ++part_it) {
@@ -390,6 +390,13 @@ namespace internal {
     return std::copy(fi.data(), fi.data() + fi.size(), out);
   }
 
+  template <typename Char, typename OutputIt> OutputIt format_default(OutputIt out, double value)
+  {
+    writer w(out);
+    w.write(value);
+    return w.out();
+  }
+
   template <typename Char, typename OutputIt> OutputIt format_default(OutputIt out, Char value)
   {
     *out++ = value;
@@ -533,8 +540,6 @@ template <typename CompiledFormat, typename... Args,
 std::basic_string<Char> format(const CompiledFormat &cf, const Args &... args)
 {
   basic_memory_buffer<Char> buffer;
-  using range   = buffer_range<Char>;
-  using context = buffer_context<Char>;
   cf.format(std::back_inserter(buffer), args...);
   return to_string(buffer);
 }

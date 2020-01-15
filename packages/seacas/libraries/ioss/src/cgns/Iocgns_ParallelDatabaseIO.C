@@ -1438,6 +1438,14 @@ namespace Iocgns {
         // The element_node index varies fastet
         int order = eb->get_property("original_block_order").get_int();
         decomp->get_block_connectivity(get_file_pointer(), data, order);
+        if (field.get_type() == Ioss::Field::INT32) {
+          auto *idata = reinterpret_cast<int *>(data);
+          Utils::map_cgns_connectivity(eb->topology(), num_to_get, idata);
+        }
+        else {
+          auto *idata = reinterpret_cast<int64_t *>(data);
+          Utils::map_cgns_connectivity(eb->topology(), num_to_get, idata);
+        }
       }
       else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
         // Map the local ids in this node block
@@ -2026,6 +2034,7 @@ namespace Iocgns {
             }
           }
 
+          Utils::unmap_cgns_connectivity(eb->topology(), num_to_get, connect.data());
           CGCHECKM(cgp_elements_write_data(get_file_pointer(), base, zone, sect, start + 1,
                                            start + num_to_get, connect.data()));
 

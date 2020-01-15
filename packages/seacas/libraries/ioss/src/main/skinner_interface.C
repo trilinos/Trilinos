@@ -31,6 +31,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Utils.h"
 #include "skinner_interface.h"
@@ -39,6 +40,24 @@
 #include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for char_traits, string
+
+namespace {
+  std::string get_type_from_file(const std::string &filename)
+  {
+    Ioss::FileInfo file(filename);
+    auto           extension = file.extension();
+    if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
+      return "exodus";
+    }
+    else if (extension == "cgns") {
+      return "cgns";
+    }
+    else {
+      // "exodus" is default...
+      return "exodus";
+    }
+  }
+} // namespace
 
 Skinner::Interface::Interface() { enroll_options(); }
 
@@ -54,11 +73,32 @@ void Skinner::Interface::enroll_options()
 
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "True if using 64-bit integers", nullptr);
   options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database type for input file: pamgen|generated|exodus. exodus is the default.",
-                  "exodus");
+                  "Database type for input file: generated"
+#if defined(SEACAS_HAVE_PAMGEN)
+                  "|pamgen"
+#endif
+#if defined(SEACAS_HAVE_EXODUS)
+                  "|exodus"
+#endif
+#if defined(SEACAS_HAVE_CGNS)
+                  "|cgns"
+#endif
+#if defined(SEACAS_HAVE_DATAWAREHOUSE)
+                  "|data_warehouse"
+#endif
+                  ".\n\t\tIf not specified, guess from extension or exodus is the default.",
+                  "unknown");
 
   options_.enroll("out_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database type for output file: exodus. exodus is the default.", "exodus");
+                  "Database type for output file:"
+#if defined(SEACAS_HAVE_EXODUS)
+                  " exodus"
+#endif
+#if defined(SEACAS_HAVE_CGNS)
+                  " cgns"
+#endif
+                  ".\n\t\tIf not specified, guess from extension or exodus is the default.",
+                  "unknown");
 
   options_.enroll("no_output", Ioss::GetLongOption::NoValue,
                   "Do not produce output file, just generate the faces", nullptr);
@@ -119,20 +159,21 @@ void Skinner::Interface::enroll_options()
                   nullptr);
 
   options_.enroll("linear", Ioss::GetLongOption::NoValue,
-                  "Use the linear method to decompose the input mesh in a parallel run. "
-                  "elements in order first n/p to proc 0, next to proc 1.",
+                  "Use the linear method to decompose the input mesh in a parallel run.\n"
+                  "\t\telements in order first n/p to proc 0, next to proc 1.",
                   nullptr);
 
   options_.enroll("cyclic", Ioss::GetLongOption::NoValue,
-                  "Use the cyclic method to decompose the input mesh in a parallel run. "
-                  "elements handed out to id % proc_count",
+                  "Use the cyclic method to decompose the input mesh in a parallel run.\n"
+                  "\t\telements handed out to id % proc_count",
                   nullptr);
 
-  options_.enroll("random", Ioss::GetLongOption::NoValue,
-                  "Use the random method to decompose the input mesh in a parallel run."
-                  "elements assigned randomly to processors in a way that preserves balance (do "
-                  "not use for a real run)",
-                  nullptr);
+  options_.enroll(
+      "random", Ioss::GetLongOption::NoValue,
+      "Use the random method to decompose the input mesh in a parallel run.\n"
+      "\t\telements assigned randomly to processors in a way that preserves balance (do "
+      "not use for a real run)",
+      nullptr);
 
   options_.enroll("external", Ioss::GetLongOption::NoValue,
                   "Files are decomposed externally into a file-per-processor in a parallel run.",
@@ -177,14 +218,14 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
     exit(0);
   }
 
-  ints64Bit_     = options_.retrieve("64-bit") != nullptr;
-  netcdf4_       = options_.retrieve("netcdf4") != nullptr;
-  shuffle        = options_.retrieve("shuffle") != nullptr;
-  noOutput_      = options_.retrieve("no_output") != nullptr;
-  useFaceHashIds_= options_.retrieve("ignore_face_hash_ids") == nullptr;
-  debug          = options_.retrieve("debug") != nullptr;
-  statistics     = options_.retrieve("statistics") != nullptr;
-  blocks_        = options_.retrieve("blocks") != nullptr;
+  ints64Bit_      = options_.retrieve("64-bit") != nullptr;
+  netcdf4_        = options_.retrieve("netcdf4") != nullptr;
+  shuffle         = options_.retrieve("shuffle") != nullptr;
+  noOutput_       = options_.retrieve("no_output") != nullptr;
+  useFaceHashIds_ = options_.retrieve("ignore_face_hash_ids") == nullptr;
+  debug           = options_.retrieve("debug") != nullptr;
+  statistics      = options_.retrieve("statistics") != nullptr;
+  blocks_         = options_.retrieve("blocks") != nullptr;
 
   {
     const char *temp = options_.retrieve("compress");
@@ -297,6 +338,14 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
   if (inputFile_.empty() || (!noOutput_ && outputFile_.empty())) {
     fmt::print(stderr, "\nERROR: input and output filename not specified\n\n");
     return false;
+  }
+
+  // If inFileType and/or outFileType not specified, see if can infer from file suffix type...
+  if (inFiletype_ == "unknown") {
+    inFiletype_ = get_type_from_file(inputFile_);
+  }
+  if (!noOutput_ && outFiletype_ == "unknown") {
+    outFiletype_ = get_type_from_file(outputFile_);
   }
   return true;
 }

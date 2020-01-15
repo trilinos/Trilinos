@@ -151,8 +151,8 @@ int main(int argc, char **argv)
     printf("error in ex_inquire for EX_INQ_TITLE\n");
   }
 
-  /* Verify that ex_get_init_global does not crash.  Since these are serial files, the data
-     won't be on the files, so this verifies that this is ok
+  /* Verify that `ex_get_init_global` does not crash on a serial file which does not have the
+     dimensions being queried.
   */
   {
     int nng, neg, nebg, nnsg, nssg;
