@@ -255,7 +255,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ImportToStaticMatrixLocal, SC, LO, 
   // Import; if only the target Map were one-to-one, we would have to
   // use an Export.  We do not allow redistribution using Import or
   // Export if neither source nor target Map is one-to-one.
-  RCP<matrix_type> B;
   {
     using export_type = Tpetra::Export<LO,GO,NT>;
     export_type exporter(proc_zero_map, proc_zero_map);
@@ -263,18 +262,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ImportToStaticMatrixLocal, SC, LO, 
 
     Tpetra::Details::Behavior::enable_verbose_behavior();
     // Make a new sparse matrix whose row map is the global Map.
-    out << prefix << "Creating empty matrix from global map.\n";
-    B = rcp(new matrix_type(proc_zero_map, 0, Tpetra::StaticProfile));
-    out << prefix << "Empty matrix from proc_zero map created.\n";
+    out << prefix << "Creating empty matrix from proc 0 map.\n";
+    auto B = matrix_type(proc_zero_map, 0, Tpetra::StaticProfile);
+    out << prefix << "Empty matrix from proc 0 map created.\n";
 
-    // Redistribute the data, NOT in place, from matrix A (which lives
-    // entirely on Proc 0) to matrix B (which is distributed evenly over
-    // the processes).
+    // Redistribute the data from matrix A (which lives
+    // entirely on Proc 0) to matrix B which also lives on processor 0
     out << prefix << "Performing export operation\n";
-    B->doExport(*A, exporter, Tpetra::INSERT);
+    B.doExport(*A, exporter, Tpetra::INSERT);
     out << prefix << "Export operation done.\n";
+    B.fillComplete();
   }
-  B->fillComplete();
+
+  {
+    auto global_map = rcp(new map_type(num_gbl_inds, idx_base, comm, Tpetra::GloballyDistributed));
+    using export_type = Tpetra::Export<LO,GO,NT>;
+    export_type exporter1(proc_zero_map, global_map);
+    comm->barrier();
+    out << prefix << "Creating empty matrix from global map.\n";
+    auto B = matrix_type(global_map, 0, Tpetra::StaticProfile);
+    B.doExport(*A, exporter1, Tpetra::INSERT);
+    B.fillComplete();
+
+    using export_type = Tpetra::Export<LO,GO,NT>;
+    export_type exporter2(global_map, global_map);
+    comm->barrier();
+    out << prefix << "Creating another empty matrix from global map.\n";
+    auto C = matrix_type(global_map, 0, Tpetra::StaticProfile);
+    out << prefix << "Exporting between global map matrices\n";
+    C.doExport(B, exporter2, Tpetra::INSERT);
+    C.fillComplete();
+  }
 
   auto loc_num_errs = 0;
 

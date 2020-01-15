@@ -252,7 +252,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, ImportToStaticGraphLocal, LO, GO, NT
   // Import; if only the target Map were one-to-one, we would have to
   // use an Export.  We do not allow redistribution using Import or
   // Export if neither source nor target Map is one-to-one.
-  RCP<graph_type> B;
   {
     using export_type = Tpetra::Export<LO,GO,NT>;
     export_type exporter(proc_zero_map, proc_zero_map);
@@ -260,18 +259,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, ImportToStaticGraphLocal, LO, GO, NT
 
     Tpetra::Details::Behavior::enable_verbose_behavior();
     // Make a new sparse graph whose row map is the global Map.
-    out << prefix << "Creating empty graph from global map.\n";
-    B = rcp(new graph_type(proc_zero_map, 0, Tpetra::StaticProfile));
-    out << prefix << "Empty graph from proc_zero_map map created.\n";
+    out << prefix << "Creating empty graph from proc 0 map.\n";
+    auto B = graph_type(proc_zero_map, 0, Tpetra::StaticProfile);
+    out << prefix << "Empty graph from proc 0 map created.\n";
 
     // Redistribute the data, NOT in place, from graph A (which lives
     // entirely on Proc 0) to graph B (which is distributed evenly over
     // the processes).
     out << prefix << "Performing export operation\n";
-    B->doExport(*A, exporter, Tpetra::INSERT);
+    B.doExport(*A, exporter, Tpetra::INSERT);
     out << prefix << "Export operation done.\n";
+    B.fillComplete();
   }
-  B->fillComplete();
+
+  {
+    auto global_map = rcp(new map_type(num_gbl_inds, idx_base, comm, Tpetra::GloballyDistributed));
+    using export_type = Tpetra::Export<LO,GO,NT>;
+    export_type exporter1(proc_zero_map, global_map);
+    comm->barrier();
+    auto B = graph_type(global_map, 0, Tpetra::StaticProfile);
+    B.doExport(*A, exporter1, Tpetra::INSERT);
+    B.fillComplete();
+
+    export_type exporter2(global_map, global_map);
+    auto C = graph_type(global_map, 0, Tpetra::StaticProfile);
+    C.doExport(B, exporter2, Tpetra::INSERT);
+    C.fillComplete();
+  }
 
   auto loc_num_errs = 0;
 
