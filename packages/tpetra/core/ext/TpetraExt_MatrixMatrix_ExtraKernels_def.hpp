@@ -316,7 +316,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse LTGCore")));
+  Teuchos::TimeMonitor MM (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse LTGCore")));
 #endif
 
   using Teuchos::Array;
@@ -466,7 +466,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix LTGCore")));
+  Teuchos::TimeMonitor MM (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix LTGCore")));
 #endif
 
   using Teuchos::Array;
@@ -684,7 +684,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM.~TimeMonitor();
-  Teuchos::TimeMonitor MMsort (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPSort")));
+  Teuchos::TimeMonitor MMsort (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPSort")));
 #endif
     // Sort & set values
     if (params.is_null() || params->get("sort entries",true))
@@ -714,7 +714,7 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse LTGCore")));
+  Teuchos::TimeMonitor MM (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse LTGCore")));
 #endif
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -978,8 +978,8 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK")));
-  Teuchos::TimeMonitor MMmult (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Multiply")));
+  Teuchos::TimeMonitor MM (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK")));
+  Teuchos::TimeMonitor MMmult (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Multiply")));
 #endif
   typedef  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix_t;
 
@@ -991,7 +991,7 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MMmult.~TimeMonitor();
-  Teuchos::TimeMonitor MMscale (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Scale")));
+  Teuchos::TimeMonitor MMscale (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Scale")));
 #endif
 
   // 2) Scale A by Dinv
@@ -999,7 +999,7 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MMscale.~TimeMonitor();
-  Teuchos::TimeMonitor MMadd (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Add")));
+  Teuchos::TimeMonitor MMadd (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Add")));
 #endif
 
   // 3) Add [-omega Dinv A] + B
@@ -1034,7 +1034,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         using Tpetra::MatrixMatrix::UnmanagedView;
   #ifdef HAVE_TPETRA_MMM_TIMINGS
         std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-        Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix LTGCore")));
+        Teuchos::TimeMonitor MM (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix LTGCore")));
   #endif
 
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
@@ -1239,14 +1239,14 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         });
   #ifdef HAVE_TPETRA_MMM_TIMINGS
         MM.~TimeMonitor();
-        Teuchos::TimeMonitor MMcopy (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix copy from thread local")));
+        Teuchos::TimeMonitor MMcopy (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix copy from thread local")));
   #endif
 
         copy_out_from_thread_memory(thread_total_nnz,tl_colind, tl_values, m, thread_chunk, rowmapAc, entriesAc, valuesAc);
 
   #ifdef HAVE_TPETRA_MMM_TIMINGS
         MMcopy.~TimeMonitor();
-        Teuchos::TimeMonitor MMsort (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort")));
+        Teuchos::TimeMonitor MMsort (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort")));
   #endif
 
         // Final sort & set of CRS arrays
@@ -1256,7 +1256,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
   #ifdef HAVE_TPETRA_MMM_TIMINGS
         MMsort.~TimeMonitor();
-        Teuchos::TimeMonitor MMfill (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC")));
+        Teuchos::TimeMonitor MMfill (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC")));
   #endif
 
         // Final FillComplete
@@ -1298,7 +1298,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         using Tpetra::MatrixMatrix::UnmanagedView;
   #ifdef HAVE_TPETRA_MMM_TIMINGS
         std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-        Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse LTGCore")));
+        Teuchos::TimeMonitor MM (*Teuchos::TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse LTGCore")));
   #endif
 
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
