@@ -256,6 +256,7 @@ private:
       }
       SolverInput<SC> input_gmres = input;
       input_gmres.maxNumIters = input.resCycle;
+      input_gmres.maxNumIters = std::min(input.resCycle, input.maxNumIters);
       input_gmres.computeRitzValues = true;
 
       Tpetra::deep_copy (R, B);
