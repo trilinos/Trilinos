@@ -701,6 +701,8 @@ mult_test_results multiply_reuse_test(
   RCP<Matrix_t> diffMatrix = 
     Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(),
                                          computedC2->getGlobalMaxNumRowEntries());
+
+  Kokkos::fence();
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
