@@ -227,7 +227,9 @@ private:
     vec_type R (B.getMap ());
     vec_type Y (B.getMap ());
     vec_type MP (B.getMap ());
-    MV  Q (B.getMap (), restart+1);
+
+    bool zeroOut = false; // Kokkos::View:init can take a long time on GPU?
+    MV  Q (B.getMap (), restart+1, zeroOut);
     vec_type P = * (Q.getVectorNonConst (0));
 
     // Compute initial residual (making sure R = B - Ax)
