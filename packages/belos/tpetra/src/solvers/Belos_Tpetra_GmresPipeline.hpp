@@ -60,6 +60,9 @@ private:
     const mag_type tolOrtho = mag_type (10.0) * STM::squareroot (eps);
     const bool computeRitzValues = input.computeRitzValues;
 
+    // timers
+    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("GmresPipeline::matrix-apply");
+
     // initialize output parameters
     SolverOutput<SC> output {};
     output.converged = false;
@@ -86,7 +89,10 @@ private:
     vec_type MZ (B.getMap ());
 
     // initial residual (making sure R = B - Ax)
-    A.apply (X, R);
+    {
+      Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+      A.apply (X, R);
+    }
     R.update (one, B, -one);
     // TODO: this should be idot?
     b0_norm = STM::squareroot (STS::real (R.dot (R))); // initial residual norm, no preconditioned
@@ -161,14 +167,21 @@ private:
           vec_type Z = * (V.getVectorNonConst (iter));
           vec_type W = * (V.getVectorNonConst (iter+1));
           if (input.precoSide == "none") {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
             A.apply (Z, W);
           }
           else if (input.precoSide == "right") {
             M.apply (Z, MZ);
-            A.apply (MZ, W);
+            {
+              Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+              A.apply (MZ, W);
+            }
           }
           else {
-            A.apply (Z, MZ);
+            {
+              Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+              A.apply (Z, MZ);
+            }
             M.apply (MZ, W);
           }
           // Shift for Newton basis, explicitly for the first iter
@@ -310,7 +323,10 @@ private:
         y.resize (restart+1);
       }
       // Compute real residual
-      A.apply (X, R);
+      {
+        Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+        A.apply (X, R);
+      }
       R.update (one, B, -one);
       // TODO: compute residual norm with all-reduce, should be idot?
       r_norm = R.norm2 ();

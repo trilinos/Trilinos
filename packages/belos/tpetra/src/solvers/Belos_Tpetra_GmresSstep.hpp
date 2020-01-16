@@ -4,9 +4,6 @@
 #include "Belos_Tpetra_Gmres.hpp"
 #include "Belos_Tpetra_UpdateNewton.hpp"
 
-// #include "wrapTpetraQR.hpp"
-// #include "wrapTpetraCholQR.hpp"
-
 namespace BelosTpetra {
 namespace Impl {
 
@@ -185,6 +182,9 @@ private:
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
 
+    // timers
+    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSstep::matrix-apply");
+
     // initialize output parameters
     SolverOutput<SC> output {};
     output.converged = false;
@@ -222,7 +222,10 @@ private:
     vec_type P = * (Q.getVectorNonConst (0));
 
     // Compute initial residual (making sure R = B - Ax)
-    A.apply (X, R);
+    {
+      Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+      A.apply (X, R);
+    }
     R.update (one, B, -one);
     b0_norm = R.norm2 (); // initial residual norm, not preconditioned
     if (input.precoSide == "left") {
@@ -313,14 +316,21 @@ private:
           vec_type P  = * (Q.getVectorNonConst (iter+step));
           vec_type AP = * (Q.getVectorNonConst (iter+step+1));
           if (input.precoSide == "none") {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
             A.apply (P, AP);
           }
           else if (input.precoSide == "right") {
             M.apply (P, MP);
-            A.apply (MP, AP);
+            {
+              Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+              A.apply (MP, AP);
+            }
           }
           else {
-            A.apply (P, MP);
+            {
+              Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+              A.apply (P, MP);
+            }
             M.apply (MP, AP);
           }
           // Shift for Newton basis
@@ -395,20 +405,20 @@ private:
                  T.values(), T.stride(), y.values(), y.stride());
       Teuchos::Range1D cols(0, iter-1);
       Teuchos::RCP<const MV> Qj = Q.subView(cols);
+      dense_vector_type y_iter (Teuchos::View, y.values (), iter);
       if (input.precoSide == "right") {
-        dense_vector_type y_iter (Teuchos::View, y.values (), iter);
-
         MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
         M.apply (R, MP);
         X.update (one, MP, one);
       }
       else {
-        dense_vector_type y_iter (Teuchos::View, y.values (), iter);
-
         MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);
       }
       // Compute real residual (not-preconditioned)
-      A.apply (X, R);
+      {
+        Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+        A.apply (X, R);
+      }
       R.update (one, B, -one);
       r_norm = R.norm2 (); // residual norm
       output.absResid = r_norm;
@@ -474,7 +484,10 @@ protected:
     const SC one  = STS::one ();
     const SC zero = STS::zero ();
 
-    // copy: H(j:n-1, j:n-1) = R(j:n-1, j:n-1), i.e., H = R*B
+    // 1) multiply H with R(1:n+s+1, 1:n+s+1) from left
+    //    where R(1:n, 1:n) = I and 
+    //          H(n+1:n+s+1, n+1:n+s) = 0, except h(n+j+1,n+j)=1 for j=1,..,s
+    // 1.1) copy: H(j:n-1, j:n-1) = R(j:n-1, j:n-1), i.e., H = R*B
     for (int j = 0; j < s; j++ ) {
       for (int i = 0; i <= n+j+1; i++) {
         H(i, n+j) = R(i, j+1);
@@ -493,14 +506,23 @@ protected:
     dense_matrix_type h_diag (Teuchos::View, H, s+1, s,   n, n);
     Teuchos::BLAS<LO, SC> blas;
 
-    // H = H*R^{-1}
     if (n == 0) { // >> first matrix-power iteration <<
+      // 2) multiply H with R(1:s, 1:s)^{-1} from right
       // diagonal block
       blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, s+1, s, one,
                  r_diag.values(), r_diag.stride(),
                  h_diag.values(), h_diag.stride());
     } else  { // >> rest of iterations <<
+      // 1.2) update the starting vector
+      for (int i = 0; i < n; i++ ) {
+        H(i, n-1) += H(n, n-1) * R(i, 0);
+      }
+      H(n, n-1) *= R(n, 0);
+
+      // 2) multiply H with R(1:n+s, 1:n+s)^{-1} from right,
+      //    where R(1:n, 1:n) = I
+      // 2.1) diagonal block
       for (int j = 1; j < s; j++ ) {
         H(n, n+j) -= H(n, n-1) * R(n-1, j);
       }
@@ -511,10 +533,9 @@ protected:
                  h_diag.values(), h_diag.stride());
       H(n+s, n+s-1) /= R(n+s-1, s-1);
 
-      // upper off-diagonal block: H(0:j-1, j:j+n-2)
+      // 2.2) upper off-diagonal block: H(0:j-1, j:j+n-2)
       dense_matrix_type r_off (Teuchos::View, R, n, s, 0, 0);
       dense_matrix_type h_off (Teuchos::View, H, n, s, 0, n);
-
       blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
                 n, s, n,
                -one, H.values(),      H.stride(),
