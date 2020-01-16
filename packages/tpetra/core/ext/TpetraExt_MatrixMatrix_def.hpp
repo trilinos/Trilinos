@@ -1526,9 +1526,9 @@ template<class CrsMatrixType>
 size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
-  if (A.getNodeNumEntries() > 0)
-    Aest = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 100;
-  if (B.getNodeNumEntries() > 0)
+  if (A.getNodeNumEntries() >= A.getNodeNumRows())
+    Aest = (A.getNodeNumRows() > 0) ? A.getNodeNumEntries()/A.getNodeNumRows() : 100;
+  if (B.getNodeNumEntries() >= B.getNodeNumRows())
     Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
