@@ -91,7 +91,7 @@ void Init()
 
   char * str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
   int i = 0, j = 0;
-  char buf[80];
+  char buf[160];
   char go = ' ';
   char hostname[80];
   if (str != NULL) i++;

@@ -46,4 +46,6 @@
     </ParameterList>
     <!-- end of default values -->
 
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
+
 </ParameterList>

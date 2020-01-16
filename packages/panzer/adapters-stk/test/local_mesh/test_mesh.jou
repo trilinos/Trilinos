@@ -1,0 +1,43 @@
+reset
+
+brick x 1 y 1 z 1
+brick x 1 y 1 z 1
+
+move Volume 1 x 0.5 include_merged
+move Volume 2 x -0.5 include_merged
+
+merge all
+
+volume 1 2 size 0.5
+mesh volume 1 2
+
+block 1 add volume 1
+block 1 name "right_block"
+
+block 2 add volume 2
+block 2 name "left_block"
+
+sideset 1 add surface 10
+sideset 1 name "left_wall"
+
+sideset 2 add surface 4
+sideset 2 name "center_wall"
+
+sideset 3 add surface 6
+sideset 3 name "right_wall"
+
+sideset 4 add surface 5 11
+sideset 4 name "top"
+
+sideset 5 add surface 3 9
+sideset 5 name "bottom"
+
+sideset 6 add surface 2 8
+sideset 6 name "front"
+
+sideset 7 add surface 1 7
+sideset 7 name "back"
+
+export mesh "test_mesh.exo"  overwrite 
+
+

@@ -388,7 +388,7 @@ namespace {
           parse_error = false;
           //std::cout << "tmp srk parseReturn = " << parseReturn << std::endl;
         }
-        catch (std::exception exc)
+        catch (const std::exception & exc)
         {
           parse_error = true;
           out << "RunEnvironment::processCLP error, exc= " << exc.what() << std::endl;
