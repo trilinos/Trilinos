@@ -365,13 +365,17 @@ public:
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
       
       if(done) break;
-
+      
+      //add all articulation points to the icePropRegQueue
       for(int i = 0; i < g->n; i++){
 	IcePropVtxLabel curr_node = femvData[i];
         if(curr_node.getGroundingStatus() == ICEPROPGS_HALF){
 	  IcePropVtxLabel cleared(curr_node.id);
           cleared.is_art = curr_node.is_art;
           femv->replaceLocalValue(i,0,cleared);
+        }
+        if(curr_node.getGroundingStatus() == ICEPROPGS_FULL && curr_node.is_art){
+          icePropRegQueue.push(curr_node.id);
         }
       }
       //std::cout<<me<<": Running BFS-prop again\n";
