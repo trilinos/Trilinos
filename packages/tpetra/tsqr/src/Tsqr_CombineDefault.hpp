@@ -92,8 +92,6 @@ namespace TSQR {
                const ordinal_type num_cols_Q,
                const ordinal_type num_cols_C) const override
     {
-      using STS = Teuchos::ScalarTraits<Scalar>;
-
       const int ncols = num_cols_Q < num_cols_C ?
         num_cols_C : num_cols_Q;
       const int nrows = num_rows_Q + ncols;
