@@ -30,15 +30,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_EntityType.h> // for EntityType, etc
+#include <generated/Iogn_GeneratedMesh.h>
+
 #include <Ioss_Hex8.h>
 #include <Ioss_Shell4.h>
+#include <Ioss_Tet4.h>
+#include <Ioss_TriShell3.h>
 #include <algorithm>
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
 #include <cstdlib> // for nullptr, exit, etc
 #include <fmt/ostream.h>
-#include <generated/Iogn_GeneratedMesh.h>
 #include <iostream>
 #include <numeric>
 #include <string>
@@ -610,9 +612,9 @@ namespace Iogn {
 
     if (createTets) {
       if (block_number == 1) {
-        return std::make_pair(std::string("tet4"), 4);
+        return std::make_pair(std::string(Ioss::Tet4::name), 4);
       }
-      return std::make_pair(std::string("tri3"), 3);
+      return std::make_pair(std::string(Ioss::TriShell3::name), 3);
     }
 
     if (block_number == 1) {
@@ -1428,6 +1430,8 @@ namespace Iogn {
       break;
     }
   }
+
+  std::string GeneratedMesh::get_sideset_topology() const { return createTets ? "tri3" : "quad4"; }
 
   void GeneratedMesh::sideset_elem_sides(int64_t id, Ioss::Int64Vector &elem_sides) const
   {

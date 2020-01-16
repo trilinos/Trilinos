@@ -31,7 +31,6 @@ For bug reports, documentation errors, and enhancement suggestions, contact:
 - EMAIL: gdsjaar@sandia.gov
 - EMAIL: gsjaardema@gmail.com
 - PHONE: (505) 844-2701 (office)
-- PHONE: (505) 999-8991 (cell)
 
 \section license License
 The EXODUS library is licensed under the BSD open source license.

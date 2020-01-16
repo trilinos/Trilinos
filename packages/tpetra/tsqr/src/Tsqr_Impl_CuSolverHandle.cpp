@@ -3,21 +3,25 @@
 #ifdef HAVE_TPETRATSQR_CUSOLVER
 #include "Kokkos_Core.hpp"
 #include "Teuchos_Assert.hpp"
-#include <cusolverDn.h>
 
 namespace TSQR {
 namespace Impl {
 
 cusolverDnHandle_t cuSolverRawHandle_ = nullptr;
 
-CuSolverHandle::CuSolverHandle (void* handle) :
+CuSolverHandle::CuSolverHandle (cusolverDnHandle_t handle) :
   handle_ (handle)
 {}
 
-CuSolverHandle CuSolverHandle::getSingleton ()
+cusolverDnHandle_t
+CuSolverHandle::getHandle () const {
+  return handle_;
+}
+
+std::shared_ptr<CuSolverHandle> getCuSolverHandleSingleton ()
 {
-  static int called_before = 0;
-  if (called_before == 0) {
+  static std::shared_ptr<CuSolverHandle> singleton_;
+  if (singleton_.get () == nullptr) {
     auto finalizer = [] () {
       if (cuSolverRawHandle_ != nullptr) {
         (void) cusolverDnDestroy (cuSolverRawHandle_);
@@ -27,10 +31,13 @@ CuSolverHandle CuSolverHandle::getSingleton ()
     Kokkos::push_finalize_hook (finalizer);
     auto status = cusolverDnCreate (&cuSolverRawHandle_);
     TEUCHOS_ASSERT( status == CUSOLVER_STATUS_SUCCESS );
-    called_before = 1;
+
+    singleton_ = std::shared_ptr<CuSolverHandle>
+      (new CuSolverHandle (cuSolverRawHandle_));
   }
   TEUCHOS_ASSERT( cuSolverRawHandle_ != nullptr );
-  return CuSolverHandle (cuSolverRawHandle_);
+  TEUCHOS_ASSERT( singleton_.get () != nullptr );
+  return singleton_;
 }
 
 } // namespace Impl

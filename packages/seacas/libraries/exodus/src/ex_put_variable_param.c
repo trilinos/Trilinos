@@ -232,33 +232,9 @@ int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars)
   }
 
   else if (obj_type == EX_NODAL) {
-    /*
-     * There are two ways to store the nodal variables. The old way *
-     * was a blob (#times,#vars,#nodes), but that was exceeding the
-     * netcdf maximum dataset size for large models. The new way is
-     * to store #vars separate datasets each of size (#times,#nodes)
-     *
-     * We want this routine to be capable of storing both formats
-     * based on some external flag.  Since the storage format of the
-     * coordinates have also been changed, we key off of their
-     * storage type to decide which method to use for nodal
-     * variables. If the variable 'coord' is defined, then store old
-     * way; otherwise store new.
-     */
-    if ((status = nc_def_dim(exoid, DIM_NUM_NOD_VAR, num_vars, &dimid)) != NC_NOERR) {
-      if (status == NC_ENAMEINUSE) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: nodal variable name parameters are already "
-                 "defined in file id %d",
-                 exoid);
-        ex_err_fn(exoid, __func__, errmsg, status);
-      }
-      else {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to define number of nodal variables in file id %d", exoid);
-        ex_err_fn(exoid, __func__, errmsg, status);
-      }
-      goto error_ret; /* exit define mode and return */
+    if ((status = ex_prepare_result_var(exoid, num_vars, "nodal", DIM_NUM_NOD_VAR,
+                                        VAR_NAME_NOD_VAR)) != EX_NOERR) {
+      goto error_ret;
     }
 
     int i;
@@ -273,23 +249,6 @@ int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars)
         goto error_ret; /* exit define mode and return */
       }
       ex__compress_variable(exoid, varid, 2);
-    }
-
-    /* Now define nodal variable name variable */
-    dims[0] = dimid;
-    dims[1] = dim_str_name;
-    if ((status = nc_def_var(exoid, VAR_NAME_NOD_VAR, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
-      if (status == NC_ENAMEINUSE) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: nodal variable names are already defined in file id %d", exoid);
-        ex_err_fn(exoid, __func__, errmsg, status);
-      }
-      else {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to define nodal variable names in file id %d", exoid);
-        ex_err_fn(exoid, __func__, errmsg, status);
-      }
-      goto error_ret; /* exit define mode and return */
     }
   }
 

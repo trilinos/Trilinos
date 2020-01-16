@@ -3,21 +3,25 @@
 #ifdef HAVE_TPETRATSQR_CUBLAS
 #include "Kokkos_Core.hpp"
 #include "Teuchos_Assert.hpp"
-#include <cublas_v2.h>
 
 namespace TSQR {
 namespace Impl {
 
 cublasHandle_t cuBlasRawHandle_ = nullptr;
 
-CuBlasHandle::CuBlasHandle (void* handle) :
+CuBlasHandle::CuBlasHandle (cublasHandle_t handle) :
   handle_ (handle)
 {}
 
-CuBlasHandle CuBlasHandle::getSingleton ()
+cublasHandle_t
+CuBlasHandle::getHandle () const {
+  return handle_;
+}
+
+std::shared_ptr<CuBlasHandle> getCuBlasHandleSingleton ()
 {
-  static int called_before = 0;
-  if (called_before == 0) {
+  static std::shared_ptr<CuBlasHandle> singleton_;
+  if (singleton_.get () == nullptr) {
     auto finalizer = [] () {
       if (cuBlasRawHandle_ != nullptr) {
         (void) cublasDestroy (cuBlasRawHandle_);
@@ -27,10 +31,13 @@ CuBlasHandle CuBlasHandle::getSingleton ()
     Kokkos::push_finalize_hook (finalizer);
     auto status = cublasCreate (&cuBlasRawHandle_);
     TEUCHOS_ASSERT( status == CUBLAS_STATUS_SUCCESS );
-    called_before = 1;
+
+    singleton_ = std::shared_ptr<CuBlasHandle>
+      (new CuBlasHandle (cuBlasRawHandle_));
   }
   TEUCHOS_ASSERT( cuBlasRawHandle_ != nullptr );
-  return CuBlasHandle (cuBlasRawHandle_);
+  TEUCHOS_ASSERT( singleton_.get () != nullptr );
+  return singleton_;
 }
 
 } // namespace Impl
