@@ -1008,7 +1008,9 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
   }
   Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   Tpetra::MatrixMatrix::add(one,false,*Bview.origMatrix,Scalar(-omega),false,*AB,C,AB->getDomainMap(),AB->getRangeMap(),Teuchos::rcp(&jparams,false));
+#ifdef HAVE_TPETRA_MMM_TIMINGS
   MM2=Teuchos::null;
+#endif
  }// jacobi_A_B_newmatrix_MultiplyScaleAddKernel
 
 
