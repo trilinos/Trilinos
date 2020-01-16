@@ -187,7 +187,7 @@ public:
   int testCounter;
 
   InstanceData()
-    :clp(false),
+    :clp(false,false),
      showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
 #if defined(HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS)
      globallyReduceUnitTestResult(true),
