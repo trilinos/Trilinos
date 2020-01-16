@@ -45,6 +45,9 @@ public:
   FactorOutput
   factor (MV& A, dense_matrix_type& R)
   {
+    Teuchos::RCP< Teuchos::Time > factorTimer = Teuchos::TimeMonitor::getNewCounter ("CholQR::factor");
+    Teuchos::TimeMonitor LocalTimer (*factorTimer);
+
     blas_type blas;
     lapack_type lapack;
 
@@ -119,7 +122,8 @@ public:
   GmresSstep () :
     base_type::Gmres (),
     stepSize_ (5),
-    tsqr_ (Teuchos::null)
+    useCholQR2_ (false),
+    cholqr_ (Teuchos::null)
   {
     this->input_.computeRitzValues = true;
     this->input_.computeRitzValuesOnFly = false;
@@ -128,7 +132,7 @@ public:
   GmresSstep (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A),
     stepSize_ (5),
-    tsqr_ (Teuchos::null)
+    cholqr_ (Teuchos::null)
   {
     this->input_.computeRitzValues = true;
     this->input_.computeRitzValuesOnFly = false;
@@ -159,10 +163,13 @@ public:
     constexpr bool useCholQR_default = true;
     bool useCholQR = params.get<bool> ("CholeskyQR", useCholQR_default);
 
-    if (!useCholQR && !tsqr_.is_null ()) {
-      tsqr_ = Teuchos::null;
-    } else if (useCholQR && tsqr_.is_null ()) {
-      tsqr_ = Teuchos::rcp (new CholQR<SC, MV, OP> ());
+    bool useCholQR2 = params.get<bool> ("CholeskyQR2", useCholQR2_);
+    useCholQR2_ = useCholQR2;
+
+    if ((!useCholQR && !useCholQR2) && !cholqr_.is_null ()) {
+      cholqr_ = Teuchos::null;
+    } else if ((useCholQR || useCholQR2) && cholqr_.is_null ()) {
+      cholqr_ = Teuchos::rcp (new CholQR<SC, MV, OP> ());
     }
   }
 
@@ -184,6 +191,8 @@ private:
 
     // timers
     Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSstep::matrix-apply");
+    Teuchos::RCP< Teuchos::Time > bortTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSstep::BOrtho");
+    Teuchos::RCP< Teuchos::Time > tsqrTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSstep::TSQR");
 
     // initialize output parameters
     SolverOutput<SC> output {};
@@ -344,8 +353,26 @@ private:
         }
 
         // Orthogonalization
-        this->projectBelosOrthoManager (iter, step, Q, G);
-        const int rank = normalizeCholQR (iter, step, Q, G);
+        {
+          Teuchos::TimeMonitor LocalTimer (*bortTimer);
+          this->projectBelosOrthoManager (iter, step, Q, G);
+        }
+        int rank = 0;
+        {
+          Teuchos::TimeMonitor LocalTimer (*tsqrTimer);
+          rank = normalizeCholQR (iter, step, Q, G);
+          if (useCholQR2_) {
+            rank = normalizeCholQR (iter, step, Q, G2);
+            // merge R 
+            dense_matrix_type Rfix (Teuchos::View, G2, step+1, step+1, iter, 0);
+            dense_matrix_type Rold (Teuchos::View, G,  step+1, step+1, iter, 0);
+            blas.TRMM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
+                       Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
+                       step+1, step+1,
+                       one, Rfix.values(), Rfix.stride(),
+                            Rold.values(), Rold.stride());
+          }
+        }
         updateHessenburg (iter, step, output.ritzValues, H, G);
 
         // Check negative norm
@@ -564,8 +591,8 @@ protected:
     dense_matrix_type r_new (Teuchos::View, R, s+1, s+1, n, 0);
 
     int rank = 0;
-    if (tsqr_ != Teuchos::null) {
-      rank = tsqr_->factor (Qnew, r_new);
+    if (cholqr_ != Teuchos::null) {
+      rank = cholqr_->factor (Qnew, r_new);
     }
     else {
       rank = this->normalizeBelosOrthoManager (Qnew, r_new);
@@ -575,7 +602,8 @@ protected:
 
 private:
   int stepSize_;
-  Teuchos::RCP<CholQR<SC, MV, OP> > tsqr_;
+  bool useCholQR2_;
+  Teuchos::RCP<CholQR<SC, MV, OP> > cholqr_;
 };
 
 template<class SC, class MV, class OP,
