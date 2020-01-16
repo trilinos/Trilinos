@@ -205,7 +205,9 @@ private:
         if (k >= 0) {
           if (k > 0) {
             req->wait (); // wait for idot
-            Kokkos::deep_copy (vals_h, vals);
+            Kokkos::View<dot_type*, device_type> v_iter (vals.data (),   iter+1);
+            Kokkos::View<dot_type*, device_type> h_iter (vals_h.data (), iter+1);
+            Kokkos::deep_copy (h_iter, v_iter);
 
             for (int i = 0; i <= iter; i++) {
               G(i, k) = vals_h[i];
@@ -218,7 +220,7 @@ private:
             if (computeRitzValues) {
               //H(k-1, k-1) += output.getRitzValue((k-1)%ell);
               const complex_type theta = output.ritzValues[(k-1)%ell];
-              UpdateNewton<SC, MV>::updateNewtonH(k-1, H, theta);
+              UpdateNewton<SC, MV>::updateNewtonH (k-1, H, theta);
             }
 
             // Fix H
@@ -235,8 +237,8 @@ private:
           if (k > 0) {
             // Orthogonalize V(:, k), k = iter+1-ell
             vec_type AP = * (Q.getVectorNonConst (k));
-            Teuchos::Range1D index_prev(0, k-1);
-            const MV Qprev = * (Q.subView(index_prev));
+            Teuchos::Range1D index_prev (0, k-1);
+            const MV Qprev = * (Q.subView (index_prev));
             dense_matrix_type g_prev (Teuchos::View, G, k, 1, 0, k);
 
             MVT::MvTimesMatAddMv (-one, Qprev, g_prev, one, AP);
@@ -248,8 +250,8 @@ private:
           // Apply change-of-basis to W
           vec_type W = * (V.getVectorNonConst (iter+1));
           if (k > 0) {
-            Teuchos::Range1D index_prev(ell, iter);
-            const MV Zprev = * (V.subView(index_prev));
+            Teuchos::Range1D index_prev (ell, iter);
+            const MV Zprev = * (V.subView (index_prev));
 
             dense_matrix_type h_prev (Teuchos::View, H, k, 1, 0, k-1);
             MVT::MvTimesMatAddMv (-one, Zprev, h_prev, one, W);
@@ -289,8 +291,9 @@ private:
           Teuchos::Range1D index_prev(0, iter+1);
           const MV Qprev  = * (Q.subView(index_prev));
 
+          Kokkos::View<dot_type*, device_type> v_iter (vals.data (), iter+2);
           vec_type W = * (V.getVectorNonConst (iter+1));
-          req = Tpetra::idot (vals, Qprev, W);
+          req = Tpetra::idot (v_iter, Qprev, W);
         }
       } // End of restart cycle
 
