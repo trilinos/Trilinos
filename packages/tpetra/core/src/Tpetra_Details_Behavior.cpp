@@ -7,6 +7,8 @@
 #include <map>
 #include <vector>
 #include <functional>
+#include "Teuchos_TestForException.hpp"
+#include <stdexcept>
 
 namespace Tpetra {
 namespace Details {
@@ -87,7 +89,7 @@ namespace { // (anonymous)
     valsMap[environmentVariableName] = map<string,bool>{{"DEFAULT", defaultValue}};
 
     const char* varVal = getenv (environmentVariableName);
-    if (varVal == NULL) {
+    if (varVal == nullptr) {
       // Environment variable is not set, use the default value for any named
       // variants
       return;
@@ -125,12 +127,47 @@ namespace { // (anonymous)
     const char* varVal = std::getenv (environmentVariableName);
 
     bool retVal = defaultValue;
-    if (varVal != NULL) {
+    if (varVal != nullptr) {
       auto state = environmentVariableState(std::string(varVal));
       if (state == EnvironmentVariableIsSet_ON) retVal = true;
       else if (state == EnvironmentVariableIsSet_OFF) retVal = false;
     }
     return retVal;
+  }
+
+  size_t
+  getEnvironmentVariableAsSize(const char environmentVariableName[],
+                               const size_t defaultValue)
+  {
+    const char prefix[] = "Tpetra::Details::Behavior: ";
+
+    const char* varVal = std::getenv(environmentVariableName);
+    if (varVal == nullptr) {
+      return defaultValue;
+    }
+    else {
+      // This could throw invalid_argument or out_of_range.
+      // Go ahead and let it do so.
+      const long long val = std::stoll(stringToUpper(varVal));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (val < static_cast<long long>(0), std::out_of_range,
+         prefix << "Environment variable \""
+         << environmentVariableName << "\" is supposed to be a size, "
+         "but it has a negative integer value " << val << ".");
+      if (sizeof(long long) > sizeof(size_t)) {
+        // It's hard to test this code, but I want to try writing it
+        // at least, in case we ever have to run on 32-bit machines or
+        // machines with sizeof(long long)=16 and sizeof(size_t)=8.
+        constexpr long long maxSizeT =
+          static_cast<long long>(std::numeric_limits<size_t>::max());
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (val > maxSizeT, std::out_of_range, prefix << "Environment "
+           "variable \"" << environmentVariableName << "\" has a "
+           "value " << val << " larger than the largest size_t value "
+           << maxSizeT << ".");
+      }
+      return static_cast<size_t>(val);
+    }
   }
 
   bool
@@ -167,6 +204,21 @@ namespace { // (anonymous)
     return thisEnvironmentVariableMap["DEFAULT"];
   }
 
+  size_t
+  idempotentlyGetEnvironmentVariableAsSize
+    (size_t& value,
+     bool& initialized,
+     const char environmentVariableName[],
+     const size_t defaultValue)
+  {
+    if (! initialized) {
+      value = getEnvironmentVariableAsSize(environmentVariableName,
+                                           defaultValue);
+      initialized = true;
+    }
+    return value;
+  }
+
   constexpr bool debugDefault () {
 #ifdef HAVE_TPETRA_DEBUG
     return true;
@@ -185,7 +237,7 @@ namespace { // (anonymous)
 #else
     return false;
 #endif // TPETRA_ASSUME_CUDA_AWARE_MPI
-  }   
+  }
 
 } // namespace (anonymous)
 
@@ -230,32 +282,29 @@ bool Behavior::assumeMpiIsCudaAware ()
                                                    defaultValue);
 }
 
-int Behavior::TAFC_OptimizationCoreCount () 
+int Behavior::TAFC_OptimizationCoreCount ()
 {
     // only call getenv once, save the value.
     static int savedval=-1;
     if(savedval!=-1) return savedval;
     const char* varVal = std::getenv ("MM_TAFC_OptimizationCoreCount");
     if (varVal == nullptr) {
-        savedval = 3000; 
-        return savedval; 
+        savedval = 3000;
+        return savedval;
     }
     savedval = std::stoi(std::string(varVal));
     return savedval;
 }
 
-size_t Behavior::verbosePrintCountThreshold () 
+size_t Behavior::verbosePrintCountThreshold ()
 {
-    // only call getenv once, save the value.
-    static int savedval=-1;
-    if(savedval!=-1) return static_cast<size_t>(savedval);
-    const char* varVal = std::getenv ("TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD");
-    if (varVal == nullptr) {
-        savedval = 200; 
-        return static_cast<size_t>(savedval); 
-    }
-    savedval = std::stoi(std::string(varVal));
-    return static_cast<size_t>(savedval);
+  constexpr char envVarName[] = "TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD";
+  constexpr size_t defaultValue (200);
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
 }
 
 bool Behavior::debug (const char name[])
