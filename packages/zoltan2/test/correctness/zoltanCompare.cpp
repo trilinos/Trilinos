@@ -121,7 +121,7 @@ typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
 typedef Zoltan2::EvaluatePartition<matrixAdapter_t> quality_t;
 
 // Number of ZOLTAN_ID in a zgno_t (for NUM_GID_ENTRIES)
-static constexpr int nGidEnt = sizeof(zgno_t) / sizeof(ZOLTAN_ID_TYPE);
+static constexpr int znGidEnt = sizeof(zgno_t) / sizeof(ZOLTAN_ID_TYPE);
 #define SET_ZID(n,a,b)                                            \
    {int ZOLTAN_ID_LOOP;                                                 \
     for (ZOLTAN_ID_LOOP = 0; ZOLTAN_ID_LOOP < (n); ZOLTAN_ID_LOOP++)    \
@@ -150,7 +150,7 @@ static void zobjlist(void *data, int ngid, int nlid,
   for (size_t i = 0; i < n; i++) {
     zgno_t vgid = vec->getMap()->getGlobalElement(i);
     ZOLTAN_ID_PTR vgidptr = (ZOLTAN_ID_PTR) &vgid;
-    SET_ZID(nGidEnt, &(gids[i*nGidEnt]), vgidptr);
+    SET_ZID(znGidEnt, &(gids[i*znGidEnt]), vgidptr);
     lids[i] = i;
   }
 
@@ -204,7 +204,7 @@ static void zhg(void *data, int ngid, int nLists, int nPins, int format,
 
     zgno_t tmp = graph->getRowMap()->getGlobalElement(i);
     ZOLTAN_ID_PTR ztmp = (ZOLTAN_ID_PTR) &tmp;
-    SET_ZID(nGidEnt, &(listGids[i*nGidEnt]), ztmp);
+    SET_ZID(znGidEnt, &(listGids[i*znGidEnt]), ztmp);
 
     size_t nEntries = graph->getNumEntriesInLocalRow(i);
     offsets[i+1] = offsets[i] + nEntries;
@@ -215,7 +215,7 @@ static void zhg(void *data, int ngid, int nLists, int nPins, int format,
     for (size_t j = 0; j < nEntries; j++) {
       tmp = graph->getColMap()->getGlobalElement(colind[j]);
       ztmp = (ZOLTAN_ID_PTR) &tmp;
-      SET_ZID(nGidEnt, &(pinGids[(offsets[i]+j)*nGidEnt]), ztmp);
+      SET_ZID(znGidEnt, &(pinGids[(offsets[i]+j)*znGidEnt]), ztmp);
     }
   }
 
@@ -327,7 +327,7 @@ int run(
   char tmp[56];
   zz.Set_Param("LB_METHOD", thisTest[TESTMETHODOFFSET]);
   
-  sprintf(tmp, "%d", nGidEnt);
+  sprintf(tmp, "%d", znGidEnt);
   zz.Set_Param("NUM_GID_ENTRIES", tmp);
   sprintf(tmp, "%d", numGlobalParts);
   zz.Set_Param("NUM_GLOBAL_PARTS", tmp);
