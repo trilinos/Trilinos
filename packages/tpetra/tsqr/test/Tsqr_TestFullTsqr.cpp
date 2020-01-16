@@ -38,7 +38,7 @@
 //@HEADER
 
 #include "Tsqr_FullTsqrTest.hpp"
-#include "Tsqr_Test_MpiAndKokkosScope.cpp"
+#include "Tsqr_Test_MpiAndKokkosScope.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 

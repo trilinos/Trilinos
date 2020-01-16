@@ -1281,8 +1281,7 @@ namespace Tpetra {
     // elements which it needs to send.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     prefix2 = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
-    MM.release();
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2)));
+    MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2)));
 #endif
 
     // NOTE (mfh 03 Mar 2014) This is now a candidate for a

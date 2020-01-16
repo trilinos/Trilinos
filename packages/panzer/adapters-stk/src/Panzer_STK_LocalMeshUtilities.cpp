@@ -534,7 +534,7 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
   // Note: Throws exception if element block or sideset doesn't exist
   try{
 
-    mesh.getMySides(sideset_name, element_block_name, side_entities);
+    mesh.getAllSides(sideset_name, element_block_name, side_entities);
 
   } catch(STK_Interface::SidesetException & e) {
      std::stringstream ss;

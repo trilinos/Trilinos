@@ -17,22 +17,12 @@ namespace Test {
 #ifdef HAVE_MPI
 MpiScope::MpiScope(int* argc, char*** argv) {
   (void) MPI_Init(argc, argv);
-
-  int rawSize = 0;
-  (void) MPI_Comm_size(MPI_COMM_WORLD, &rawSize);
-
-  std::ostringstream os;
-  os << "MpiScope: Result of MPI_Comm_size on MPI_COMM_WORLD: "
-     << rawSize << std::endl;
-  std::cerr << os.str();
 }
 MpiScope::~MpiScope() {
   (void) MPI_Finalize();
 }
 #else
-MpiScope::MpiScope(int*, char***) {
-  std::cerr << "MpiScope: HAVE_MPI is NOT defined" << std::endl;
-}
+MpiScope::MpiScope(int*, char***) {}
 MpiScope::~MpiScope() {}
 #endif // HAVE_MPI
 

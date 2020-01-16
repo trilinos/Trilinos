@@ -249,7 +249,7 @@ void Multiply(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   } //stop MM_importExtract here
   //stop the setup timer, and start the multiply timer
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
 #endif
 
   // Call the appropriate method to perform the actual multiplication.

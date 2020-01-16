@@ -616,6 +616,8 @@ struct ex__file_item
   int     maximum_name_length;
   int     time_varid; /* Store to avoid lookup each timestep */
   unsigned int
+      compression_algorithm : 2; /**< GZIP/ZLIB, SZIP, more may be supported by NetCDF soon */
+  unsigned int
                compression_level : 4; /**< 0 (disabled) to 9 (maximum) compression level; NetCDF-4 only */
   unsigned int user_compute_wordsize : 1; /**< 0 for 4 byte or 1 for 8 byte reals */
   unsigned int shuffle : 1;               /**< 1 true, 0 false */

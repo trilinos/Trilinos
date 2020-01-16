@@ -194,7 +194,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements());
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaCore"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaCore"))));
 #endif
 
   // Do the multiply on whatever we've got
@@ -220,7 +220,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   kh.destroy_spgemm_handle();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaSort"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaSort"))));
 #endif
 
   // Sort & set values
@@ -229,7 +229,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   C.setAllValues(row_mapC,entriesC,valuesC);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaESFC"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaESFC"))));
 #endif
 
   // Final Fillcomplete
@@ -311,7 +311,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore - Compare"))));
+  MM2 = Teuchos::null; MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore - Compare"))));
 #endif
 
   // Classic csr assembly (low memory edition)
@@ -423,7 +423,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix CudaESFC"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix CudaESFC"))));
 #endif
 
   // Final Fillcomplete
@@ -516,7 +516,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse CudaCore - Compare"))));
+  MM2 = Teuchos::null; MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse CudaCore - Compare"))));
 #endif
 
   // The status array will contain the index into colind where this entry was last deposited.
@@ -596,7 +596,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM2= Teuchos::null;
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
 #endif
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());

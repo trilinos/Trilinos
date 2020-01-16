@@ -528,11 +528,26 @@ namespace {
             }
           }
           if (diff >= 0) {
+            // If `elmt_map` is not null, then need to unmap the set1 ids to get the local id that
+            // appears in the file.  If don't do this, error message is very confusing for the
+            // user...
+            auto set1_id = set1->Side_Id(diff).first;
+            if (elmt_map != nullptr) {
+              // Iterate map to find an entry equal to `set1_id`.  Its position is then the file1 id
+              // of the element.
+              for (size_t i = 0; i < file1.Num_Elmts(); i++) {
+                if (elmt_map[i] == set1_id - 1) {
+                  set1_id = i + 1;
+                  break;
+                }
+              }
+            }
+
             Error(fmt::format(
                 ".. The sidelists for sideset id {} are not the same in the two files.\n"
                 "\t\tThe first difference is at position {}: Side {}.{} .vs. Side {}.{}.\n",
-                set1->Id(), set1->Side_Index(diff) + 1, set1->Side_Id(diff).first,
-                set1->Side_Id(diff).second, set2->Side_Id(diff).first, set2->Side_Id(diff).second));
+                set1->Id(), set1->Side_Index(diff) + 1, set1_id, set1->Side_Id(diff).second,
+                set2->Side_Id(diff).first, set2->Side_Id(diff).second));
             if (interFace.map_flag != PARTIAL) {
               is_same = false;
             }
