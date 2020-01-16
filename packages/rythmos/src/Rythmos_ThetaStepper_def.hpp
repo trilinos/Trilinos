@@ -566,8 +566,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   {
 
-    typedef typename ST::magnitudeType ScalarMag;
-    typedef ScalarTraits<ScalarMag> SMT;
+    using SMT = ScalarTraits<ScalarMag>;
 
     Teuchos::OSTab tab(out);
 

@@ -234,6 +234,7 @@ int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
   new_file->int64_status          = int64_status;
   new_file->maximum_name_length   = ex__default_max_name_length;
   new_file->time_varid            = -1;
+  new_file->compression_algorithm = EX_COMPRESS_GZIP;
   new_file->compression_level     = 0;
   new_file->shuffle               = 0;
   new_file->file_type             = filetype - 1;
@@ -422,7 +423,7 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
 
   switch (option) {
   case EX_OPT_MAX_NAME_LENGTH: file->maximum_name_length = option_value; break;
-  case EX_OPT_COMPRESSION_TYPE: /* Currently not used. GZip by default */ break;
+  case EX_OPT_COMPRESSION_TYPE: file->compression_algorithm = option_value; break;
   case EX_OPT_COMPRESSION_LEVEL: /* 0 (disabled/fastest) ... 9 (best/slowest) */
     /* Check whether file type supports compression... */
     if (file->is_hdf5) {

@@ -318,7 +318,7 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
                                                         quasiRegCoordMapData(),
                                                         quasiRegRowMap[regionIdx]->getIndexBase(),
                                                         quasiRegRowMap[regionIdx]->getComm());
-        regCoordImporter[regionIdx] = ImportFactory::Build(compCoordMap, quasiRegRowMap[regionIdx]);
+        regCoordImporter[regionIdx] = ImportFactory::Build(compCoordMap, quasiRegCoordMap[regionIdx]);
       }
     }
     compCoarseCoordinates = MultiVectorFactory::Build(compCoordMap, regCoarseCoordinates[0]->getNumVectors());
@@ -479,6 +479,16 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
         nullspaceData[5][3*nodeIdx + 2] = -(coordinateData[0][nodeIdx] - cx);
       }
     }
+
+    // Equalize norms of all vectors to that of the first one
+    // We do not normalize them as a vector of ones seems nice
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms2(nullspace->getNumVectors());
+    nullspace->norm2(norms2);
+    Teuchos::Array<Scalar> norms2scalar(nullspace->getNumVectors());
+    for (size_t vectorIdx = 0; vectorIdx < nullspace->getNumVectors(); ++vectorIdx) {
+      norms2scalar[vectorIdx] = norms2[0] / norms2[vectorIdx];
+    }
+    nullspace->scale(norms2scalar);
 
     // Insert into parameter list
     userParamList.set("Nullspace", nullspace);

@@ -92,10 +92,13 @@ namespace internal {
     } while (size != 0);
   }
 
-  template <typename Char, typename T> void format_value(buffer<Char> &buf, const T &value)
+  template <typename Char, typename T>
+  void format_value(buffer<Char> &buf, const T &value, locale_ref loc = locale_ref())
   {
     formatbuf<Char>          format_buf(buf);
     std::basic_ostream<Char> output(&format_buf);
+    if (loc)
+      output.imbue(loc.get<std::locale>());
     output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
     output << value;
     buf.resize(buf.size());
@@ -109,7 +112,7 @@ namespace internal {
     template <typename Context> auto format(const T &value, Context &ctx) -> decltype(ctx.out())
     {
       basic_memory_buffer<Char> buffer;
-      format_value(buffer, value);
+      format_value(buffer, value, ctx.locale());
       basic_string_view<Char> str(buffer.data(), buffer.size());
       return formatter<basic_string_view<Char>, Char>::format(str, ctx);
     }

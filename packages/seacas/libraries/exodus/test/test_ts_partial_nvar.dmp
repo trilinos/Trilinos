@@ -11,11 +11,11 @@ variables:
 	float coordy(num_nodes) ;
 	float coordz(num_nodes) ;
 	char coor_names(num_dim, len_name) ;
+	char name_nod_var(num_nod_var, len_name) ;
 	float vals_nod_var1(time_step, num_nodes) ;
 	float vals_nod_var2(time_step, num_nodes) ;
 	float vals_nod_var3(time_step, num_nodes) ;
 	float vals_nod_var4(time_step, num_nodes) ;
-	char name_nod_var(num_nod_var, len_name) ;
 
 // global attributes:
 		:floating_point_word_size = 4 ;
@@ -52,6 +52,12 @@ data:
   "",
   "" ;
 
+ name_nod_var =
+  "NodalVar1",
+  "NodalVar2",
+  "NodalVar3",
+  "NodalVar4" ;
+
  vals_nod_var1 =
   1, 1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1, 1.11, 1.12, 
     1.13, 1.14, 1.15, 1.16, 1.17, 1.18, 1.19, 1.2, 1.21, 1.22, 1.23, 1.24, 
@@ -83,10 +89,4 @@ data:
     4.37, 4.38, 4.39, 4.4, 4.41, 4.42, 4.43, 4.44, 4.45, 4.46, 4.47, 4.48, 
     4.49, 4.5, 4.51, 4.52, 4.53, 4.54, 4.55, 4.56, 4.57, 4.58, 4.59, 4.6, 
     4.61, 4.62, 4.63 ;
-
- name_nod_var =
-  "NodalVar1",
-  "NodalVar2",
-  "NodalVar3",
-  "NodalVar4" ;
 }

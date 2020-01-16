@@ -37,8 +37,6 @@
 // ************************************************************************
 //@HEADER
 
-#include "Tsqr_Impl_CuBlasHandle.hpp"
-#include "Tsqr_Impl_CuSolverHandle.hpp"
 #include "Tsqr_Impl_CuBlas.hpp"
 #include "Tsqr_Impl_CuSolver.hpp"
 #include "Tsqr_Impl_CuTypes.hpp"
@@ -56,11 +54,12 @@ verifyReal (std::ostream& out, bool& success)
 {
   using TSQR::Impl::CuSolver;
   using TSQR::Impl::CuSolverHandle;
+  using TSQR::Impl::getCuSolverHandleSingleton;
   using TSQR::Impl::CudaValue;
   using std::endl;
 
-  CuSolverHandle s = CuSolverHandle::getSingleton ();
-  TEST_ASSERT( s.getHandle () != nullptr );
+  std::shared_ptr<CuSolverHandle> s = getCuSolverHandleSingleton ();
+  TEST_ASSERT( s.get () != nullptr );
 
   Kokkos::View<int, Kokkos::CudaSpace> info ("info");
   CuSolver<RealType> solver (s, info.data ());
@@ -72,12 +71,43 @@ verifyReal (std::ostream& out, bool& success)
   out << "Original x: " << x << ": Converted x: "
       << CudaValue<RealType>::makeValue (x) << endl;
 
-  using TSQR::Impl::CuBlas;
   using TSQR::Impl::CuBlasHandle;
-  CuBlasHandle b = CuBlasHandle::getSingleton ();
-  TEST_ASSERT( b.getHandle () != nullptr );
+  using TSQR::Impl::getCuBlasHandleSingleton;
+  std::shared_ptr<CuBlasHandle> b = getCuBlasHandleSingleton ();
+  TEST_ASSERT( b.get () != nullptr );
 
-  CuBlas<RealType> blas (b);
+  using TSQR::Impl::CuBlas;
+  CuBlas<RealType> blas1 (b);
+  CuBlas<RealType> blas2;
+
+  // Trivial test with 1x1 matrices, just to make sure that cuBLAS
+  // actually works.
+  using matrix_type =
+    Kokkos::View<RealType**, Kokkos::LayoutLeft, Kokkos::CudaSpace>;
+  matrix_type A ("A", 1, 1);
+  matrix_type B ("B", 1, 1);
+  matrix_type C ("C", 1, 1);
+  const RealType alpha (1.0);
+  const RealType beta (1.0);
+
+  Kokkos::deep_copy (A, RealType (3.0));
+  Kokkos::deep_copy (B, RealType (4.0));
+  Kokkos::deep_copy (C, RealType (-5.0));
+  const RealType C_expected_1 (7.0);
+  blas1.gemm ('N', 'N', 1, 1, 1, alpha, A.data (), A.stride (1),
+              B.data (), B.stride (1), beta, C.data (), C.stride (1));
+  auto C_h = Kokkos::create_mirror_view (Kokkos::HostSpace (), C);
+  Kokkos::deep_copy (C_h, C);
+  TEST_EQUALITY_CONST( C_h(0,0), C_expected_1 );
+
+  Kokkos::deep_copy (A, RealType (6.0));
+  Kokkos::deep_copy (B, RealType (6.0));
+  Kokkos::deep_copy (C, RealType (-5.0));
+  const RealType C_expected_2 (31.0);
+  blas2.gemm ('N', 'N', 1, 1, 1, alpha, A.data (), A.stride (1),
+              B.data (), B.stride (1), beta, C.data (), C.stride (1));
+  Kokkos::deep_copy (C_h, C);
+  TEST_EQUALITY_CONST( C_h(0,0), C_expected_2 );
 }
 
 #ifdef HAVE_TPETRATSQR_COMPLEX
@@ -87,11 +117,12 @@ verifyComplex (std::ostream& out, bool& success)
 {
   using TSQR::Impl::CuSolver;
   using TSQR::Impl::CuSolverHandle;
+  using TSQR::Impl::getCuSolverHandleSingleton;
   using TSQR::Impl::CudaValue;
   using std::endl;
 
-  CuSolverHandle s = CuSolverHandle::getSingleton ();
-  TEST_ASSERT( s.getHandle () != nullptr );
+  std::shared_ptr<CuSolverHandle> s = getCuSolverHandleSingleton ();
+  TEST_ASSERT( s.get () != nullptr );
 
   Kokkos::View<int, Kokkos::CudaSpace> info ("info");
   CuSolver<ComplexType> solver (s, info.data ());
@@ -115,8 +146,9 @@ verifyComplex (std::ostream& out, bool& success)
 
   using TSQR::Impl::CuBlas;
   using TSQR::Impl::CuBlasHandle;
-  CuBlasHandle b = CuBlasHandle::getSingleton ();
-  TEST_ASSERT( b.getHandle () != nullptr );
+  using TSQR::Impl::getCuBlasHandleSingleton;
+  std::shared_ptr<CuBlasHandle> b = getCuBlasHandleSingleton ();
+  TEST_ASSERT( b.get () != nullptr );
 
   CuBlas<ComplexType> blas (b);
 }

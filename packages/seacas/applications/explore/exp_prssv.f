@@ -88,8 +88,8 @@ C ... See if need to read the data
             ID   = idess(iess)
             DO 10 IVAR = 1, LISVAR(0)
                IF (ISVOK (LISVAR(IVAR),IESS) .NE. 0) THEN
-                  call exgssv(ndb, nstep, ivar, id, neess(iess),
-     $                 vars(is,ivar), ierr)
+                  call exgssv(ndb, nstep, lisvar(ivar), id, neess(iess),
+     $                 vars(is,lisvar(ivar)), ierr)
                end if
  10         continue
  20      continue
@@ -205,4 +205,3 @@ C ... See if need to read the data
 10030 FORMAT (/,1X, 'Set', I12, 1X, A, ':',
      &     I12, ' elements', 1X, A, ' name = "',A,'"')
       END
-

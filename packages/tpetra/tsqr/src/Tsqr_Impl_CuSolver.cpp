@@ -421,7 +421,14 @@ public:
 #endif // defined(HAVE_TPETRATSQR_COMPLEX)
 
 template<class Scalar>
-CuSolver<Scalar>::CuSolver (CuSolverHandle handle, int* const info) :
+CuSolver<Scalar>::CuSolver (int* const info) :
+  handle_ (getCuSolverHandleSingleton ()), info_ (info)
+{}
+
+template<class Scalar>
+CuSolver<Scalar>::
+CuSolver (const std::shared_ptr<CuSolverHandle>& handle,
+          int* const info) :
   handle_ (handle), info_ (info)
 {}
 
@@ -433,8 +440,7 @@ compute_QR_lwork (const int nrows,
                   Scalar A[],
                   const int lda) const
 {
-  auto rawHandle =
-    reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
+  cusolverDnHandle_t rawHandle = handle_->getHandle ();
   int lwork = 0;
 
   using IST = typename CudaValue<Scalar>::type;
@@ -459,8 +465,7 @@ compute_QR (const int nrows,
             Scalar work[],
             const int lwork) const
 {
-  auto rawHandle =
-    reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
+  cusolverDnHandle_t rawHandle = handle_->getHandle ();
 
   using IST = typename CudaValue<Scalar>::type;
   IST* A_raw = reinterpret_cast<IST*> (A);
@@ -488,8 +493,7 @@ apply_Q_factor_lwork (const char side,
                       Scalar C[],
                       const int ldc) const
 {
-  auto rawHandle =
-    reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
+  cusolverDnHandle_t rawHandle = handle_->getHandle ();
   const cublasSideMode_t cuSide = cuBlasSide (side);
   const cublasOperation_t cuTrans = cuBlasTrans (trans);
   int lwork = 0;
@@ -525,8 +529,7 @@ apply_Q_factor (const char side,
                 Scalar work[],
                 const int lwork) const
 {
-  auto rawHandle =
-    reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
+  cusolverDnHandle_t rawHandle = handle_->getHandle ();
   const cublasSideMode_t cuSide = cuBlasSide (side);
   const cublasOperation_t cuTrans = cuBlasTrans (trans);
 
@@ -552,8 +555,7 @@ compute_explicit_Q_lwork(const int m, const int n, const int k,
                          Scalar A[], const int lda,
                          const Scalar tau[]) const
 {
-  auto rawHandle =
-    reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
+  cusolverDnHandle_t rawHandle = handle_->getHandle ();
   int lwork = 0;
 
   using IST = typename CudaValue<Scalar>::type;
@@ -576,8 +578,7 @@ compute_explicit_Q(const int m, const int n, const int k,
                    const Scalar tau[],
                    Scalar work[], const int lwork) const
 {
-  auto rawHandle =
-    reinterpret_cast<cusolverDnHandle_t> (handle_.getHandle ());
+  cusolverDnHandle_t rawHandle = handle_->getHandle ();
   using IST = typename CudaValue<Scalar>::type;
   IST* A_raw = reinterpret_cast<IST*> (A);
   const IST* tau_raw = reinterpret_cast<const IST*> (tau);
