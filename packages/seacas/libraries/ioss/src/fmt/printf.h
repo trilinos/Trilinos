@@ -1,4 +1,4 @@
-// Formatting library for C++ - legacy printf implementation
+// Formatting library for C++
 //
 // Copyright (c) 2012 - 2016, Victor Zverovich
 // All rights reserved.
@@ -8,7 +8,7 @@
 #ifndef FMT_PRINTF_H_
 #define FMT_PRINTF_H_
 
-#include <algorithm> // std::max
+#include <algorithm> // std::fill_n
 #include <limits>    // std::numeric_limits
 
 #include "ostream.h"
@@ -361,16 +361,16 @@ private:
 
   OutputIt                                out_;
   basic_format_args<basic_printf_context> args_;
-  basic_format_parse_context<Char>        parse_ctx_;
+  basic_parse_context<Char>               parse_ctx_;
 
   static void parse_flags(format_specs &specs, const Char *&it, const Char *end);
 
-  // Returns the argument with specified index or, if arg_index is -1, the next
-  // argument.
-  format_arg get_arg(int arg_index = -1);
+  // Returns the argument with specified index or, if arg_index is equal
+  // to the maximum unsigned value, the next argument.
+  format_arg get_arg(unsigned arg_index = internal::max_value<unsigned>());
 
   // Parses argument index, flags and width and returns the argument index.
-  int parse_header(const Char *&it, const Char *end, format_specs &specs);
+  unsigned parse_header(const Char *&it, const Char *end, format_specs &specs);
 
 public:
   /**
@@ -389,9 +389,9 @@ public:
   OutputIt out() { return out_; }
   void     advance_to(OutputIt it) { out_ = it; }
 
-  format_arg arg(int id) const { return args_.get(id); }
+  format_arg arg(unsigned id) const { return args_.get(id); }
 
-  basic_format_parse_context<Char> &parse_context() { return parse_ctx_; }
+  basic_parse_context<Char> &parse_context() { return parse_ctx_; }
 
   FMT_CONSTEXPR void on_error(const char *message) { parse_ctx_.on_error(message); }
 
@@ -417,9 +417,9 @@ void basic_printf_context<OutputIt, Char>::parse_flags(format_specs &specs, cons
 
 template <typename OutputIt, typename Char>
 typename basic_printf_context<OutputIt, Char>::format_arg
-basic_printf_context<OutputIt, Char>::get_arg(int arg_index)
+basic_printf_context<OutputIt, Char>::get_arg(unsigned arg_index)
 {
-  if (arg_index < 0)
+  if (arg_index == internal::max_value<unsigned>())
     arg_index = parse_ctx_.next_arg_id();
   else
     parse_ctx_.check_arg_id(--arg_index);
@@ -427,16 +427,16 @@ basic_printf_context<OutputIt, Char>::get_arg(int arg_index)
 }
 
 template <typename OutputIt, typename Char>
-int basic_printf_context<OutputIt, Char>::parse_header(const Char *&it, const Char *end,
-                                                       format_specs &specs)
+unsigned basic_printf_context<OutputIt, Char>::parse_header(const Char *&it, const Char *end,
+                                                            format_specs &specs)
 {
-  int       arg_index = -1;
+  unsigned  arg_index = internal::max_value<unsigned>();
   char_type c         = *it;
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
     internal::error_handler eh;
-    int                     value = parse_nonnegative_int(it, end, eh);
+    unsigned                value = parse_nonnegative_int(it, end, eh);
     if (it != end && *it == '$') { // value is an argument index
       ++it;
       arg_index = value;
@@ -461,8 +461,7 @@ int basic_printf_context<OutputIt, Char>::parse_header(const Char *&it, const Ch
     }
     else if (*it == '*') {
       ++it;
-      specs.width = static_cast<int>(
-          visit_format_arg(internal::printf_width_handler<char_type>(specs), get_arg()));
+      specs.width = visit_format_arg(internal::printf_width_handler<char_type>(specs), get_arg());
     }
   }
   return arg_index;
@@ -491,7 +490,7 @@ OutputIt basic_printf_context<OutputIt, Char>::format()
     specs.align = align::right;
 
     // Parse argument index, flags and width.
-    int arg_index = parse_header(it, end, specs);
+    unsigned arg_index = parse_header(it, end, specs);
     if (arg_index == 0)
       on_error("argument index out of range");
 
@@ -501,12 +500,11 @@ OutputIt basic_printf_context<OutputIt, Char>::format()
       c = it != end ? *it : 0;
       if ('0' <= c && c <= '9') {
         internal::error_handler eh;
-        specs.precision = parse_nonnegative_int(it, end, eh);
+        specs.precision = static_cast<int>(parse_nonnegative_int(it, end, eh));
       }
       else if (c == '*') {
         ++it;
-        specs.precision =
-            static_cast<int>(visit_format_arg(internal::printf_precision_handler(), get_arg()));
+        specs.precision = visit_format_arg(internal::printf_precision_handler(), get_arg());
       }
       else {
         specs.precision = 0;
