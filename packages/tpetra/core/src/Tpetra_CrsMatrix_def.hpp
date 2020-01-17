@@ -1468,9 +1468,8 @@ namespace Tpetra {
       // Free the old, unpacked, unoptimized allocations.
       // Change the graph from dynamic to static allocation profile
 
-      // Free graph data structures that are only needed for 2-D or
+      // Free graph data structures that are only needed for
       // unpacked 1-D storage.
-      myGraph_->lclInds2D_ = null; // legacy KokkosClassic 2-D storage
       myGraph_->k_numRowEntries_ = row_entries_type ();
 
       // Free the matrix's 2-D storage.
@@ -1517,7 +1516,6 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef LocalOrdinal LO;
     typedef typename Graph::local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_matrix_type::values_type values_type;
@@ -1537,7 +1535,6 @@ namespace Tpetra {
     // fill both the graph and the matrix at the same time).
 
     // get data from staticGraph_
-    ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
     size_t nodeNumEntries   = staticGraph_->getNodeNumEntries ();
     size_t nodeNumAllocated = staticGraph_->getNodeAllocationSize ();
     row_map_type k_rowPtrs_ = staticGraph_->lclGraph_.row_map;
