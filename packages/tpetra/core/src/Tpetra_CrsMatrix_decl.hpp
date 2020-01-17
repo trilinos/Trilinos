@@ -683,7 +683,9 @@ namespace Tpetra {
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
-    ///   the matrix in sorted local indices.
+    ///   the matrix in local indices.  In almost all cases the indices
+    ///   must be sorted on input, but if they aren't sorted,
+    ///   "sorted" must be set to false in params.
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
@@ -714,7 +716,9 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
-    ///   the matrix in sorted, local ids.
+    ///   the local matrix.  In almost all cases the local matrix
+    ///   must be sorted on input, but if it isn't sorted,
+    ///   "sorted" must be set to false in params.
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
@@ -772,6 +776,9 @@ namespace Tpetra {
 
     /// \brief Constructor specifying column, domain and range Maps,
     ///   and a local matrix, which the resulting CrsMatrix views.
+    ///   In almost all cases the local matrix
+    ///   must be sorted on input, but if it isn't sorted,
+    ///   "sorted" must be set to false in params.
     ///
     /// Unlike most other CrsMatrix constructors, successful
     /// completion of this constructor will result in a fill-complete
@@ -805,6 +812,9 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Create a fill-complete CrsMatrix from all the things it needs.
+    ///   \param lclMatrix [in] In almost all cases the local matrix
+    ///     must be sorted on input, but if it isn't sorted,
+    ///     "sorted" must be set to false in params.
     CrsMatrix (const local_matrix_type& lclMatrix,
                const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,

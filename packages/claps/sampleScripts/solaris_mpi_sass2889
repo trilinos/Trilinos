@@ -1,9 +1,0 @@
-../configure --with-mpi-compilers=/usr/local/mpi/mpi-1.2.4/bin \
---disable-tests --disable-examples \
---disable-default-packages \
---with-cxxflags=-pto \
---enable-claps --enable-claps-sclop \
---with-incdirs="-I/home/crdohrm/Salinas/util -I/home/crdohrm/Salinas/solvers" \
---disable-libcheck \
-CFLAGS=-g CXXFLAGS=-g FFLAGS=-g \
---prefix=/home/crdohrm/Trilinos/SUN_INSTALL

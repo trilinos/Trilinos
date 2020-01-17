@@ -64,7 +64,7 @@ void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
   using std::endl;
 
   char hostname[80];
-  char buf[80];
+  char buf[160];
   if (Comm.MyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
   for (int i = 0; i <Comm.NumProc() ; i++) {
     if (i == Comm.MyPID() ) {
@@ -995,7 +995,7 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
   int MyPID;
   int NumProc;
   char FileName[1024];
-  char title[1024];
+  char title[1020];
 
   const Epetra_Comm& Comm = A.Comm();
 

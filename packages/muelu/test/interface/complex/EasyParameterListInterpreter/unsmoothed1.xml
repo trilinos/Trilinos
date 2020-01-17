@@ -1,3 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="multigrid algorithm"     type="string"   value="unsmoothed"/>
-</ParameterList>

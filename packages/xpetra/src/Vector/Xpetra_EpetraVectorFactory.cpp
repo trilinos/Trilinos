@@ -44,7 +44,8 @@
 //
 // @HEADER
 #include "Xpetra_VectorFactory.hpp"
-
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_BlockedVector.hpp"
 
 namespace Xpetra {
 

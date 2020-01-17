@@ -57,9 +57,7 @@
 #include <stk_mesh/base/Field.hpp>                   // for Field
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#if defined(STK_HAVE_BOOSTLIB)
 #include <stk_util/environment/FileUtils.hpp>
-#endif
 #include <stk_util/util/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
 #include <utility>                                   // for pair, make_pair
 #include "Ioss_CodeTypes.h"                          // for NameList
@@ -498,9 +496,7 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
     }
 
     std::string out_filename = filename;
-#if defined(STK_HAVE_BOOSTLIB)
     stk::util::filename_substitution(out_filename);
-#endif
     Ioss::Region *input_region = nullptr;
     if (is_index_valid(m_inputFiles, m_activeMeshIndex)) {
         input_region = get_input_io_region().get();
@@ -1160,16 +1156,14 @@ size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, Heartb
                                              const Ioss::PropertyManager &properties, bool openFileImmediately)
 {
     std::string out_filename = filename;
-#if defined(STK_HAVE_BOOSTLIB)
     stk::util::filename_substitution(out_filename);
-#endif
     auto heartbeat = Teuchos::rcp(new impl::Heartbeat(out_filename, hb_type,
                                                       properties, m_communicator, openFileImmediately));
     m_heartbeat.push_back(heartbeat);
     return m_heartbeat.size()-1;
 }
 
-int StkMeshIoBroker::check_integer_size_requirements()
+int StkMeshIoBroker::check_integer_size_requirements_serial()
 {
     // 1. If the INTEGER_SIZE_DB or _API property exists, then use its value no matter what...
     if (m_propertyManager.exists("INTEGER_SIZE_DB")) {
@@ -1198,6 +1192,12 @@ int StkMeshIoBroker::check_integer_size_requirements()
         return 8;
     }
 
+    // 5. Default to 4-byte integers...
+    return 4;
+}
+
+int StkMeshIoBroker::check_integer_size_requirements_parallel()
+{
     // 3. If any entity count exceeds INT_MAX, then use 64-bit integers.
     if ( !Teuchos::is_null(m_bulkData) ) {
         std::vector<size_t> entityCounts;
@@ -1234,6 +1234,14 @@ int StkMeshIoBroker::check_integer_size_requirements()
 
     // 5. Default to 4-byte integers...
     return 4;
+}
+
+int StkMeshIoBroker::check_integer_size_requirements()
+{
+    int serialSizeRequirement = check_integer_size_requirements_serial();
+    int parallelSizeRequirement = check_integer_size_requirements_parallel();
+
+    return std::max(serialSizeRequirement, parallelSizeRequirement);
 }
 
 void StkMeshIoBroker::set_name_and_version_for_qa_record(size_t outputFileIndex, const std::string &codeName, const std::string &codeVersion)

@@ -188,7 +188,7 @@ namespace MueLu {
     const LO numRows = graph->GetNodeNumVertices();
 
     // construct aggStat information
-    Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space> aggStat("aggregation status",
+    Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space> aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"),
                                                                            numRows);
     Kokkos::deep_copy(aggStat, READY);
 
@@ -270,20 +270,27 @@ namespace MueLu {
       //     COLORING_D2_VB_BIT_EF      - Add experimental edge-filtering to VB_BIT
       if(pL.get<bool>("aggregation: deterministic") == true) {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
+        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: serial" << std::endl;
       } else if(pL.get<std::string>("aggregation: coloring algorithm") == "serial") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
+        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: serial" << std::endl;
       } else if(pL.get<std::string>("aggregation: coloring algorithm") == "default") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_DEFAULT );
+        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: default" << std::endl;
       } else if(pL.get<std::string>("aggregation: coloring algorithm") == "matrix squared") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_MATRIX_SQUARED );
+        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: matrix squared" << std::endl;
       } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB );
-      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "forbidden array") {
+        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based" << std::endl;
+      } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based bit set") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT );
+        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertext based bit set" << std::endl;
       } else if(pL.get<std::string>("aggregation: coloring algorithm") == "edge filtering") {
         coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT_EF );
+        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: edge filtering" << std::endl;
       } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 2 coloring algorithm, valid options are: serial, default, matrix squared, vertex based, forbidden array, edge filtering")
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 2 coloring algorithm, valid options are: serial, default, matrix squared, vertex based, vertex based bit set, edge filtering")
       }
 
       //Create device views for graph rowptrs/colinds

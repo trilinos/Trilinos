@@ -61,7 +61,6 @@ by %Piro include:
 <li>LOCA: Continuation and Bifurcation Analysis Solver
 <li>Rythmos: Transient DAE solver
 <li>Stokhos: Embedded UQ solver for Stochastic-Galerkin over random variables
-<li>MOOCHO: Emebedded Optimization algorithms with rSQP algorithms
 <li>LIME: Algorithms for multi-physics coupling (under development)
 </ul>
 
@@ -80,8 +79,6 @@ As a ResponseOnlyModelEvaluator, any %Piro solver will
 satisfy the interface for non-intrusive optimization
 and UQ algorithms. In Trilinos, these include:
 <ul>
-<li>OptiPack: Distributed memory optimization algorithms with line searches
-<li>MOOCHO: Distributed memory SQP methods with constraints
 <li>Dakota via %TriKota: The entire Dakota framework
 (developed at Sandia independently from Trilinos) is available
 through the adapters and build system of the %TriKota package.
@@ -129,8 +126,8 @@ and not just two.
 
 %Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey,
 Roger Pawlowski, and Eric Phipps. Much of the code is adapted from
-tests and examples for NOX, LOCA, Rythmos, Stokhos, MOOCHO,
-OptiPack, and %TriKota, and was developed and matured in the Albany
+tests and examples for NOX, LOCA, Rythmos, Stokhos
+and TriKota, and was developed and matured in the Albany
 application code before being library-ized into %Piro.
 
 */

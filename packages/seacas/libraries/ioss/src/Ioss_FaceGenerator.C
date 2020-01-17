@@ -74,7 +74,7 @@ namespace {
   }
 
 #if defined(USE_MURMUR)
-  uint64_t MurmurHash64A(const void *key, int len, uint64_t seed);
+  uint64_t MurmurHash64A(const size_t key);
 #endif
 
   size_t id_hash(size_t id)
@@ -84,7 +84,7 @@ namespace {
     rng.seed(id);
     return rng();
 #elif defined(USE_MURMUR)
-    return MurmurHash64A(&id, sizeof(size_t), 24713);
+    return MurmurHash64A(id);
 #else
     return id;
 #endif
@@ -120,10 +120,10 @@ namespace {
     int num_face_per_elem = topo->number_faces();
     assert(num_face_per_elem <= 6);
     std::array<Ioss::IntVector, 6> face_conn;
-    std::array<int, 6>             face_count{};
+    std::array<int, 6>             face_node_count{};
     for (int face = 0; face < num_face_per_elem; face++) {
       face_conn[face]  = topo->face_connectivity(face + 1);
-      face_count[face] = topo->face_type(face + 1)->number_corner_nodes();
+      face_node_count[face] = topo->face_type(face + 1)->number_corner_nodes();
     }
 
     int    num_node_per_elem = topo->number_nodes();
@@ -132,9 +132,9 @@ namespace {
     for (size_t elem = 0, offset = 0; elem < num_elem; elem++, offset += num_node_per_elem) {
       for (int face = 0; face < num_face_per_elem; face++) {
         size_t id = 0;
-        assert(face_count[face] <= 4);
+        assert(face_node_count[face] <= 4);
         std::array<size_t, 4> conn = {{0, 0, 0, 0}};
-        for (int j = 0; j < face_count[face]; j++) {
+        for (int j = 0; j < face_node_count[face]; j++) {
           size_t fnode = offset + face_conn[face][j];
           size_t gnode = connectivity[fnode];
           conn[j]      = ids[gnode - 1];
@@ -389,23 +389,23 @@ namespace Ioss {
     auto endp  = std::chrono::high_resolution_clock::now();
     auto diffh = endh - starth;
     auto difff = endf - endh;
-    fmt::print("Node ID hash time:   \t{} ms\t{} nodes/second\n"
-               "Face generation time:\t{} ms\t{} faces/second.\n",
+    fmt::print("Node ID hash time:   \t{:.6n} ms\t{:12n} nodes/second\n"
+               "Face generation time:\t{:.6n} ms\t{:12n} faces/second\n",
                std::chrono::duration<double, std::milli>(diffh).count(),
-               hash_ids.size() / std::chrono::duration<double>(diffh).count(),
+               INT(hash_ids.size() / std::chrono::duration<double>(diffh).count()),
                std::chrono::duration<double, std::milli>(difff).count(),
-               face_count / std::chrono::duration<double>(difff).count());
+               INT(face_count / std::chrono::duration<double>(difff).count()));
 #ifdef SEACAS_HAVE_MPI
     auto   diffp      = endp - endf;
     size_t proc_count = region_.get_database()->util().parallel_size();
 
     if (proc_count > 1) {
-      fmt::print("Parallel time:       \t{} ms\t{} faces/second.\n",
+      fmt::print("Parallel time:       \t{:.6n} ms\t{:12n} faces/second.\n",
                  std::chrono::duration<double, std::milli>(diffp).count(),
-                 face_count / std::chrono::duration<double>(diffp).count());
+                 INT(face_count / std::chrono::duration<double>(diffp).count()));
     }
 #endif
-    fmt::print("Total time:          \t{} ms\n\n",
+    fmt::print("Total time:          \t{:.6n} ms\n\n",
                std::chrono::duration<double, std::milli>(endp - starth).count());
 #endif
   }
@@ -496,41 +496,27 @@ namespace {
 
 // 64-bit hash for 64-bit platforms
 #define BIG_CONSTANT(x) (x##LLU)
-  uint64_t MurmurHash64A(const void *key, int len, uint64_t seed)
+  uint64_t MurmurHash64A(const size_t key)
   {
-    const uint64_t m = BIG_CONSTANT(0xc6a4a7935bd1e995);
-    const int      r = 47;
+    // NOTE: Not general purpose -- optimized for single 'size_t key'
+    const uint64_t m    = BIG_CONSTANT(0xc6a4a7935bd1e995) * 8;
+    const int      r    = 47;
+    const int      seed = 24713;
 
-    uint64_t h = seed ^ (len * m);
+    uint64_t h = seed ^ (m);
 
-    const uint64_t *data = reinterpret_cast<const uint64_t *>(key);
-    const uint64_t *end  = data + (len / 8);
+    uint64_t k = key;
 
-    while (data != end) {
-      uint64_t k = *data++;
+    k *= m;
+    k ^= k >> r;
+    k *= m;
 
-      k *= m;
-      k ^= k >> r;
-      k *= m;
+    h ^= k;
 
-      h ^= k;
-      h *= m;
-    }
-
-    const unsigned char *data2 = reinterpret_cast<const unsigned char *>(data);
-
-    switch (len & 7) {
-    case 7: h ^= uint64_t(data2[6]) << 48; FALL_THROUGH;
-    case 6: h ^= uint64_t(data2[5]) << 40; FALL_THROUGH;
-    case 5: h ^= uint64_t(data2[4]) << 32; FALL_THROUGH;
-    case 4: h ^= uint64_t(data2[3]) << 24; FALL_THROUGH;
-    case 3: h ^= uint64_t(data2[2]) << 16; FALL_THROUGH;
-    case 2: h ^= uint64_t(data2[1]) << 8; FALL_THROUGH;
-    case 1: h ^= uint64_t(data2[0]); h *= m;
-    };
-
+    h *= m;
     h ^= h >> r;
     h *= m;
+
     h ^= h >> r;
 
     return h;

@@ -314,10 +314,10 @@ namespace {
             case_compare(global_sets[i].name_, sets[p][loc_pos].name_) != 0 ||
             sets[p][loc_pos].position_ != i) {
           problem = true;
-          fmt::print(
-              stderr,
-              "\nMismatch for global {0} at position {1} and local {0} in part {2} position {3}\n",
-              type, i, p + 1, loc_pos);
+          fmt::print(stderr,
+                     "\nERROR: Mismatch for global {0} at position {1} and local {0} in part {2} "
+                     "position {3}\n",
+                     type, i, p + 1, loc_pos);
           global_sets[i].dump();
           sets[p][loc_pos].dump();
         }
@@ -441,7 +441,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   int error = 0;
 
   if (debug_level & 1) {
-    fmt::print(stderr, "{}", time_stamp(tsFormat));
+    fmt::print("{}", time_stamp(tsFormat));
   }
 
   std::string title0;
@@ -530,7 +530,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
         }
       }
       local_mesh[p - 1].timestepCount = i;
-      t_min = t_min < times[0] ? t_min : times[0];
+      t_min                           = t_min < times[0] ? t_min : times[0];
 
       if (!used) {
         std::string part = "Part " + std::to_string(p) + ": ";
@@ -574,7 +574,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     }
 
     if (debug_level & 1) {
-      fmt::print(stderr, "{}", time_stamp(tsFormat));
+      fmt::print("{}", time_stamp(tsFormat));
     }
 
     // ****************************************************************************
@@ -592,7 +592,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // 7. Get Side sets
     if (!interFace.omit_sidesets()) {
       if (debug_level & 1) {
-        fmt::print(stderr, "{}", time_stamp(tsFormat));
+        fmt::print("{}", time_stamp(tsFormat));
       }
       get_sideset_metadata(local_mesh, sidesets, glob_ssets);
       if (global.count(Excn::SSET) != glob_ssets.size()) {
@@ -604,7 +604,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // 6. Get Node sets
     if (!interFace.omit_nodesets()) {
       if (debug_level & 1) {
-        fmt::print(stderr, "{}", time_stamp(tsFormat));
+        fmt::print("{}", time_stamp(tsFormat));
       }
       get_nodesets(global.count(Excn::NODE), local_mesh, nodesets, glob_nsets);
       if (global.count(Excn::NSET) != glob_nsets.size()) {
@@ -616,7 +616,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // Start writing the output file...
 
     if (debug_level & 1) {
-      fmt::print(stderr, "{}", time_stamp(tsFormat));
+      fmt::print("{}", time_stamp(tsFormat));
     }
     Excn::CommunicationMetaData comm_data;
 
@@ -636,13 +636,13 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
 
     // c.2.  Write Global Node Number Map
     if (debug_level & 1) {
-      fmt::print(stderr, "{}", time_stamp(tsFormat));
+      fmt::print("{}", time_stamp(tsFormat));
     }
 
     error = ex_put_id_map(Excn::ExodusFile::output(), EX_NODE_MAP, global_node_map.data());
 
     if (debug_level & 1) {
-      fmt::print(stderr, "{}", time_stamp(tsFormat));
+      fmt::print("{}", time_stamp(tsFormat));
     }
     if (!global_element_map.empty()) {
       std::vector<INT> global_map(global.count(Excn::ELEM));
@@ -660,22 +660,22 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   // 2. Get Coordinate Info.
   {
     if (debug_level & 1) {
-      fmt::print(stderr, "{}", time_stamp(tsFormat));
+      fmt::print("{}", time_stamp(tsFormat));
     }
 
     error += get_put_coordinates(global, part_count, local_mesh, (T)0);
 
     if (debug_level & 1) {
-      fmt::print(stderr, "{}", time_stamp(tsFormat));
+      fmt::print("{}", time_stamp(tsFormat));
     }
-    fmt::print(stderr, "Wrote coordinate information...\n");
+    fmt::print("Wrote coordinate information...\n");
   }
   // ####################TRANSIENT DATA SECTION###########################
   // ***********************************************************************
   // 9. Get Variable Information and names
 
   if (debug_level & 1) {
-    fmt::print(stderr, "{}", time_stamp(tsFormat));
+    fmt::print("{}", time_stamp(tsFormat));
   }
 
   //  I. read number of variables for each type. Note that exodusII does not
@@ -758,7 +758,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   size_t num_time_steps = global.count(Excn::TIME);
 
   if (debug_level & 1) {
-    fmt::print(stderr, "{}", time_stamp(tsFormat));
+    fmt::print("{}", time_stamp(tsFormat));
   }
 
   std::vector<T> global_values(global_vars.count(Excn::IN_));
@@ -813,7 +813,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
 
     if (global_vars.count(Excn::OUT_) > 0) {
       if (debug_level & 1) {
-        fmt::print(stderr, "{}Global Variables...\n", time_stamp(tsFormat));
+        fmt::print("{}Global Variables...\n", time_stamp(tsFormat));
       }
       error += ex_get_var(id, global_times[time_step].localStepNumber + 1, EX_GLOBAL, 0, 0,
                           global_vars.count(), (void *)global_values.data());
@@ -831,7 +831,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // ========================================================================
     // Nodal Values...
     if (debug_level & 1) {
-      fmt::print(stderr, "{}Nodal Variables...\n", time_stamp(tsFormat));
+      fmt::print("{}Nodal Variables...\n", time_stamp(tsFormat));
     }
 
     if (nodal_vars.count(Excn::OUT_) > 0) {
@@ -881,7 +881,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // ========================================================================
     // Extracting element transient variable data
     if (debug_level & 1) {
-      fmt::print(stderr, "{}Element Variables...\n", time_stamp(tsFormat));
+      fmt::print("{}Element Variables...\n", time_stamp(tsFormat));
     }
     if (element_vars.count(Excn::IN_) > 0) {
       read_write_master_values(element_vars, global, glob_blocks, local_mesh, blocks, values, p, id,
@@ -900,7 +900,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // ========================================================================
     // Extracting sideset transient variable data
     if (debug_level & 1) {
-      fmt::print(stderr, "{}Sideset Variables...\n", time_stamp(tsFormat));
+      fmt::print("{}Sideset Variables...\n", time_stamp(tsFormat));
     }
     if (sideset_vars.count(Excn::IN_) > 0) {
       read_write_master_values(sideset_vars, global, glob_ssets, local_mesh, sidesets, values, p,
@@ -910,7 +910,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // ========================================================================
     // Extracting nodeset transient variable data
     if (debug_level & 1) {
-      fmt::print(stderr, "{}Nodeset Variables...\n", time_stamp(tsFormat));
+      fmt::print("{}Nodeset Variables...\n", time_stamp(tsFormat));
     }
     if (nodeset_vars.count(Excn::IN_) > 0) {
       read_write_master_values(nodeset_vars, global, glob_nsets, local_mesh, nodesets, values, p,
@@ -921,11 +921,10 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     ex_update(Excn::ExodusFile::output());
 
     if (debug_level & 1) {
-      fmt::print(stderr, "{}", time_stamp(tsFormat));
+      fmt::print("{}", time_stamp(tsFormat));
     }
 
     fmt::print(
-        stderr,
         "Step {:{}n}/{:n},  time {:.4e}  (Part {:{}}/{},  step {:{}n})   Active Elem: {:{}n}",
         time_step + 1, step_width, num_time_steps, time_val, p + 1, part_width, part_count,
         global_times[time_step].localStepNumber + 1, loc_step_width,
@@ -937,19 +936,19 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     double percentage_done     = (time_step_out * 100.0) / global.count(Excn::TIME);
     double estimated_remaining = time_per_step * (global.count(Excn::TIME) - time_step_out);
 
-    fmt::print(stderr, "  [{:{}.{}f}%, Elapsed={}, ETA={}]\n", percentage_done, field_width,
-               percent_width, format_time(elapsed), format_time(estimated_remaining));
+    fmt::print("  [{:{}.{}f}%, Elapsed={}, ETA={}]\n", percentage_done, field_width, percent_width,
+               format_time(elapsed), format_time(estimated_remaining));
     if (debug_level & 1) {
-      fmt::print(stderr, "\n");
+      fmt::print("\n");
     }
   }
 
   /*************************************************************************/
   // EXIT program
   if (debug_level & 1) {
-    fmt::print(stderr, "{}", time_stamp(tsFormat));
+    fmt::print("{}", time_stamp(tsFormat));
   }
-  fmt::print(stderr, "******* END *******\n");
+  fmt::print("******* END *******\n");
   return (error);
 }
 
@@ -1076,7 +1075,7 @@ namespace {
 
     error += ex_get_coord_names(in, coordinate_names);
     error += ex_put_coord_names(out, coordinate_names);
-    fmt::print(stderr, "Wrote coordinate names...\n");
+    fmt::print("Wrote coordinate names...\n");
 
     free_name_array(coordinate_names, dimensionality);
     return error;
@@ -1247,7 +1246,7 @@ namespace {
     // Convert block_offset from elements/block/part to true offset
     for (size_t p = 0; p < part_count; p++) {
       if (debug_level & 4) {
-        fmt::print(stderr, "\nElement block info for part {}...\n", p);
+        fmt::print("\nElement block info for part {}...\n", p);
       }
       // Number of elements per block in local block order...
       std::vector<size_t> local_order_entity_count(global.count(Excn::EBLK));
@@ -1266,8 +1265,7 @@ namespace {
         blocks[p][b].offset_ = local_order_entity_count[local_order];
 
         if (debug_level & 4) {
-          fmt::print(stderr,
-                     "\tBlock {}, Id = {}, Name = '{}', Elements = {:12n}, Nodes/element = {}, "
+          fmt::print("\tBlock {}, Id = {}, Name = '{}', Elements = {:12n}, Nodes/element = {}, "
                      "Attributes = {}, Position = {}, Offset = {}\n",
                      b, glob_blocks[b].id, blocks[p][b].name_, blocks[p][b].entity_count(),
                      blocks[p][b].nodesPerElement, blocks[p][b].attributeCount,
@@ -1286,15 +1284,14 @@ namespace {
     int global_num_blocks = glob_blocks.size();
 
     if (debug_level & 1) {
-      fmt::print(stderr, "{}", time_stamp(tsFormat));
+      fmt::print("{}", time_stamp(tsFormat));
     }
-    fmt::print(stderr, "\nReading and Writing element connectivity & attributes\n");
+    fmt::print("\nReading and Writing element connectivity & attributes\n");
 
     for (int b = 0; b < global_num_blocks; b++) {
 
       if (debug_level & 4) {
-        fmt::print(stderr,
-                   "\nOutput element block info for...\n"
+        fmt::print("\nOutput element block info for...\n"
                    "Block {}, Id = {}, Name = '{}', Elements = {:12n}, Nodes/element = {}, "
                    "Attributes = {}\n",
                    b, glob_blocks[b].id, glob_blocks[b].name_, glob_blocks[b].entity_count(),
@@ -1302,7 +1299,7 @@ namespace {
       }
 
       if (debug_level & 4) {
-        fmt::print(stderr, "B{}:\t", b);
+        fmt::print("B{}:\t", b);
       }
 
       size_t max_nodes = glob_blocks[b].entity_count();
@@ -1323,7 +1320,7 @@ namespace {
         if (blocks[p][b].entity_count() > 0) { // non-zero length block
 
           if (debug_level & 4) {
-            fmt::print(stderr, "#");
+            fmt::print("#");
           }
           size_t maximum_nodes = blocks[p][b].entity_count();
           maximum_nodes *= blocks[p][b].nodesPerElement;
@@ -1382,7 +1379,7 @@ namespace {
           }
         } // end if blocks[p][b].entity_count() (non-zero length block)
         else if (debug_level & 4) {
-          fmt::print(stderr, ".");
+          fmt::print(".");
         }
       } // end for p=0..part_count-1
 
@@ -1404,10 +1401,10 @@ namespace {
         error += ex_put_attr(id_out, EX_ELEM_BLOCK, glob_blocks[b].id, attributes.data());
       } // end for b=0..global_num_blocks-1
       if (debug_level & 4) {
-        fmt::print(stderr, "\n");
+        fmt::print("\n");
       }
     }
-    fmt::print(stderr, "\n");
+    fmt::print("\n");
   }
 
   template <typename INT>
@@ -1536,7 +1533,7 @@ namespace {
 
     size_t max_id        = global_element_map[global->elementCount - 1].first;
     bool   is_contiguous = max_id == global_element_map.size();
-    // fmt::print(stderr, "Element id map {}.\n", (is_contiguous ? "is" : "is not"));
+    // fmt::print("Element id map {}.\n", (is_contiguous ? "is" : "is not"));
 
     // The global_element_map may or may not be globally sorted; however, each
     // block is sorted, so if we do the iteration by blocks, we can
@@ -1608,7 +1605,7 @@ namespace {
         }
         if (repeat_found > 0) {
           fmt::print(stderr,
-                     "{} duplicate element ids were found. Their ids have been "
+                     "WARNING: {} duplicate element ids were found. Their ids have been "
                      "renumbered to remove duplicates.\n",
                      repeat_found);
         }
@@ -1663,7 +1660,7 @@ namespace {
     // at global_node_map.size() == global_node_map.size();
     INT  max_id        = global_node_map[global->nodeCount - 1].id;
     bool is_contiguous = (int64_t)max_id == static_cast<int64_t>(global_node_map.size());
-    fmt::print(stderr, "Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
+    fmt::print("Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
 
     // Create the map that maps from a local part node to the
     // global map. This combines the mapping local part node to
@@ -1692,8 +1689,8 @@ namespace {
             if (iter == global_node_map.end()) {
               NodeInfo n = global_node;
               fmt::print(stderr,
-                         "Bad Node in build_reverse_node_map: {}\tat location: {}\t{}\t{}\n", n.id,
-                         n.x, n.y, n.z);
+                         "ERROR: Bad Node in build_reverse_node_map: {}\tat location: {}\t{}\t{}\n",
+                         n.id, n.x, n.y, n.z);
               exit(EXIT_FAILURE);
             }
             cur_pos = iter;
@@ -1722,10 +1719,11 @@ namespace {
         }
       }
       if (repeat_found) {
-        fmt::print(stderr,
-                   "Duplicate node ids were found. Their ids have been renumbered to remove "
-                   "duplicates. If the part meshes should be identical, maybe use the "
-                   "--ignore_coordinate option.\n");
+        fmt::print(
+            stderr,
+            "WARNING: Duplicate node ids were found. Their ids have been renumbered to remove "
+            "duplicates. If the part meshes should be identical, maybe use the "
+            "--ignore_coordinate option.\n");
       }
     }
   }
@@ -1769,7 +1767,7 @@ namespace {
     // at global_node_map.size() == global_node_map.size();
     INT  max_id        = global_node_map[global->nodeCount - 1];
     bool is_contiguous = (int64_t)max_id == static_cast<int64_t>(global_node_map.size());
-    fmt::print(stderr, "Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
+    fmt::print("Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
 
     // Create the map that maps from a local part node to the
     // global map. This combines the mapping local part node to
@@ -1797,7 +1795,7 @@ namespace {
                 std::lower_bound(global_node_map.begin(), global_node_map.end(), global_node);
             if (iter == global_node_map.end()) {
               INT n = global_node;
-              fmt::print(stderr, "Bad Node in build_reverse_node_map: {}\n", n);
+              fmt::print(stderr, "ERROR: Bad Node in build_reverse_node_map: {}\n", n);
               exit(EXIT_FAILURE);
             }
             cur_pos = iter;
@@ -1885,18 +1883,18 @@ namespace {
         nfield = 1;
       }
 
-      fmt::print(stderr, "Found {} {} variables.\n\t", vars.count(Excn::OUT_), vars.label());
+      fmt::print("Found {} {} variables.\n\t", vars.count(Excn::OUT_), vars.label());
       {
         int i    = 0;
         int ifld = 1;
         while (i < vars.count(Excn::OUT_)) {
-          fmt::print(stderr, "{:<{}}", output_name_list[i++], maxlen);
+          fmt::print("{:<{}}", output_name_list[i++], maxlen);
           if (++ifld > nfield && i < vars.count(Excn::OUT_)) {
-            fmt::print(stderr, "\n\t");
+            fmt::print("\n\t");
             ifld = 1;
           }
         }
-        fmt::print(stderr, "\n\n");
+        fmt::print("\n\n");
       }
 
       ex_put_variable_names(out, vars.type(), vars.count(Excn::OUT_), output_name_list);
@@ -2137,7 +2135,7 @@ namespace {
           }
 
           if (debug_level & 32) {
-            fmt::print(stderr, "Part {} ", p + 1);
+            fmt::print("Part {} ", p + 1);
             nodesets[p][i].dump();
           }
         }
@@ -2233,7 +2231,7 @@ namespace {
     int exoid = Excn::ExodusFile::output();
 
     if (debug_level & 32) {
-      fmt::print(stderr, "\nOutput NodeSets:\n");
+      fmt::print("\nOutput NodeSets:\n");
     }
     for (auto &glob_set : glob_sets) {
       ex_put_set(exoid, EX_NODE_SET, glob_set.id, glob_set.nodeSetNodes.data(), nullptr);
@@ -2436,7 +2434,7 @@ namespace {
           sum += sets[p][b].entity_count();
 
           if (debug_level & 16) {
-            fmt::print(stderr, "Part {} ", p + 1);
+            fmt::print("Part {} ", p + 1);
             sets[p][b].dump();
           }
         }
@@ -2683,13 +2681,13 @@ namespace {
       }
 
       if (debug_level & debug) {
-        fmt::print(stderr, "Truth table for {}\t{} variables\t{} sets\n", vars.label(),
+        fmt::print("Truth table for {}\t{} variables\t{} sets\n", vars.label(),
                    vars.count(Excn::OUT_), global.count(object_type));
         for (size_t b = 0; b < global.count(object_type); b++) {
           for (int j = 0; j < vars.count(Excn::OUT_); j++) {
-            fmt::print(stderr, "{}", glob_blocks[b].truthTable[j]);
+            fmt::print("{}", glob_blocks[b].truthTable[j]);
           }
-          fmt::print(stderr, "\n");
+          fmt::print("\n");
         }
       }
     }

@@ -41,6 +41,7 @@
       <Parameter name="prolongatorGraph"                    type="string" value="myAggregationFact"/>
       <Parameter name="coarseCoordinatesFineMap"            type="string" value="myAggregationFact"/>
       <Parameter name="coarseCoordinatesMap"                type="string" value="myAggregationFact"/>
+      <Parameter name="keep coarse coords"                  type="bool"   value="true"/>
     </ParameterList>
 
     <ParameterList name="myCoordTransferFact">
@@ -120,7 +121,7 @@
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="A"                                   type="string"   value="myRAPFact"/>
       <!-- <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/> -->
-      <Parameter name="CoarseSolver"                        type="string"   value="myILU"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="NoSmoother"/>
       <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
       <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
       <Parameter name="numDimensions"                       type="string"   value="myCoordTransferFact"/>

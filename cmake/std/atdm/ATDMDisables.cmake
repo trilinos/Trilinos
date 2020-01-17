@@ -27,14 +27,11 @@ ATDM_SET_CACHE(TPL_ENABLE_yaml-cpp OFF CACHE BOOL)
 SET(ATDM_SE_PACKAGE_DISABLES
   TrilinosFrameworkTests
   MiniTensor
-  GlobiPack
-  OptiPack
   Isorropia
   KokkosExample
   Domi
   Pliris
   Komplex
-  Trios
   FEI
   TriKota
   STKClassic

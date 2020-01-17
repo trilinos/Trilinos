@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
 	}
     } // end for rule
   }
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1;
   };

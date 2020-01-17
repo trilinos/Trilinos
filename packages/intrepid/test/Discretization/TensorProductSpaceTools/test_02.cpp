@@ -64,7 +64,7 @@ using namespace Intrepid;
   try {                                                                                                             \
     S ;                                                                                                             \
   }                                                                                                                 \
-  catch (std::logic_error err) {                                                                                    \
+  catch (const std::logic_error & err) {                                                                                    \
       *outStream << "Expected Error ----------------------------------------------------------------\n";            \
       *outStream << err.what() << '\n';                                                                             \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";    \
@@ -112,8 +112,6 @@ int main(int argc, char *argv[]) {
   int endThrowNumber = beginThrowNumber + numTotalExceptions;
 #endif
 
-  typedef TensorProductSpaceTools tpst; 
-
   *outStream \
   << "\n"
   << "===============================================================================\n"\
@@ -122,6 +120,8 @@ int main(int argc, char *argv[]) {
 
   try{
 #ifdef HAVE_INTREPID_DEBUG
+    typedef TensorProductSpaceTools tpst;
+
     FieldContainer<double> a_2_2(2,2);
     FieldContainer<double> a_2(2);
     FieldContainer<double> a_4(4);
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
 #endif
   }
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

@@ -97,8 +97,7 @@ DirichletResidual_EdgeBasis(
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
-  constJac_ = pointValues.jac;
-  this->addDependentField(constJac_);
+  this->addDependentField(pointValues.jac);
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);

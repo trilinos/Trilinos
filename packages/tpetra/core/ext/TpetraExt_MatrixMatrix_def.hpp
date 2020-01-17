@@ -249,7 +249,7 @@ void Multiply(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   } //stop MM_importExtract here
   //stop the setup timer, and start the multiply timer
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
 #endif
 
   // Call the appropriate method to perform the actual multiplication.
@@ -569,9 +569,7 @@ add (const Scalar& alpha,
   if(transposeB)
   {
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(Brcp);
-    RCP<ParameterList> transposeParams(new ParameterList);
-    transposeParams->set ("sort", false);
-    Brcp = transposer.createTranspose(transposeParams);
+    Brcp = transposer.createTranspose();
   }
   //Check that A,B are fillComplete before getting B's column map
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -684,14 +682,11 @@ add (const Scalar& alpha,
 #endif // HAVE_TPETRA_DEBUG
 
   using Teuchos::ParameterList;
-  RCP<ParameterList> transposeParams (new ParameterList);
-  transposeParams->set ("sort", false);
-
   // Form the explicit transpose of A if necessary.
   RCP<const crs_matrix_type> Aprime = rcpFromRef(A);
   if (transposeA) {
     transposer_type transposer (Aprime);
-    Aprime = transposer.createTranspose (transposeParams);
+    Aprime = transposer.createTranspose ();
   }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -711,7 +706,7 @@ add (const Scalar& alpha,
       std::cerr << os.str ();
     }
     transposer_type transposer (Bprime);
-    Bprime = transposer.createTranspose (transposeParams);
+    Bprime = transposer.createTranspose ();
   }
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
@@ -1531,9 +1526,9 @@ template<class CrsMatrixType>
 size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
-  if (A.getNodeNumEntries() > 0)
-    Aest = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 100;
-  if (B.getNodeNumEntries() > 0)
+  if (A.getNodeNumEntries() >= A.getNodeNumRows())
+    Aest = (A.getNodeNumRows() > 0) ? A.getNodeNumEntries()/A.getNodeNumRows() : 100;
+  if (B.getNodeNumEntries() >= B.getNodeNumRows())
     Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);

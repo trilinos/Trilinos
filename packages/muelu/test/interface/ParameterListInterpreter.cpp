@@ -47,6 +47,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <algorithm>
+#include <cstdio>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -124,21 +125,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string prefix;
   if (useKokkos) {
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
-      prefix = "kokkos-complex/";
-    } else {
-      prefix = "kokkos/";
-    }
+    prefix = "kokkos/";
 #else
     std::cout << "No kokkos refactor available." << std::endl;
     return EXIT_FAILURE;
 #endif
   } else {
-    if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
-      prefix = "complex/";
-    } else {
-      prefix = "default/";
-    }
+    prefix = "default/";
   }
   std::string outDir = prefix+"Output/";
 
@@ -210,7 +203,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         continue;
 #endif
       }
-      std::cout << "Testing: "<< xmlFile << std::endl;
+      if (myRank == 0)
+        std::cout << "Testing: "<< xmlFile << std::endl;
 
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
@@ -315,8 +309,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       std::cout.rdbuf(oldbuffer);
 #ifdef HAVE_MPI
       std::string logStr = buffer.str();
+      if (myRank == 0)
+        remove((baseFile + ".out").c_str());
       RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm)->getRawMpiComm();
       MPI_File logfile;
+      comm->barrier();
       MPI_File_open((*mpiComm)(), (baseFile + ".out").c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &logfile);
       MPI_File_set_atomicity(logfile, true);
       const char* msg = logStr.c_str();

@@ -34,6 +34,7 @@
 
 #include <stk_util/util/string_utils.hpp>
 #include <string>
+#include <iostream>
 
 namespace stk {
 
@@ -93,6 +94,45 @@ std::string basename(const std::string &filename)
     return tail.substr(0,ind);
   }
   return tail;
+}
+
+std::vector<std::string> make_vector_of_strings(const std::string& inputString, char separator, int maxStringLength)
+{
+  std::vector<std::string> vecStr;
+  int processedLen = 0;
+  int descrSize = inputString.size();
+  while(processedLen < descrSize) {
+    size_t nextLineBreak = inputString.find('\n', processedLen);
+    if (nextLineBreak != std::string::npos && static_cast<int>(nextLineBreak) <= processedLen+maxStringLength) {
+      vecStr.push_back(inputString.substr(processedLen, nextLineBreak-processedLen));
+      processedLen = nextLineBreak+1;
+      continue;
+    }
+
+    int remaining = inputString.size() - processedLen;
+    if (remaining <= maxStringLength) {
+//std::cerr<<"remaining: "<<remaining<<", maxStringLength: "<<maxStringLength<<std::endl;
+      vecStr.push_back(inputString.substr(processedLen));
+      processedLen += remaining;
+    }
+    else {
+      size_t pos = inputString.rfind(separator, processedLen + maxStringLength);
+      if (pos == std::string::npos || pos < static_cast<unsigned>(processedLen)) {
+        pos = processedLen + maxStringLength;
+      }
+      int numChars = pos - processedLen;
+//std::cerr<<"pos: "<<pos<<", processedLen: "<<processedLen<<", substr: '"<<inputString.substr(processedLen, numChars)<<"'"<<std::endl;
+      vecStr.push_back(inputString.substr(processedLen, numChars));
+      if (inputString[pos] == separator) {
+        pos = inputString.find_first_not_of(separator, pos);
+        if (pos == std::string::npos) {
+          break;
+        }
+      }
+      processedLen = pos;
+    }
+  }
+  return vecStr;
 }
 
 } // namespace stk

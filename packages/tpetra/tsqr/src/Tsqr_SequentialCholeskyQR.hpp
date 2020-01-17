@@ -147,7 +147,7 @@ namespace TSQR {
                    Scalar (1), A_cur.data (), A_cur.stride (1), A_cur.data (),
                    A_cur.stride (1), Scalar (0), ATA.data (), ATA.stride (1));
         // Process the remaining cache blocks in order.
-        while (! A_rest.empty ()) {
+        while (! empty (A_rest)) {
           A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
           // ATA := ATA + A_cur^T * A_cur
           //
@@ -178,7 +178,7 @@ namespace TSQR {
       {
         mat_view_type R_out (ncols, ncols, R, ldr);
         deep_copy (R_out, Scalar {});
-        copy_upper_triangle (ncols, ncols, R, ldr, ATA.data(), ATA.stride(1));
+        copy_upper_triangle (R, ATA);
       }
 
       // Compute A := A * R^{-1}.  We do this in place in A, using
@@ -202,7 +202,7 @@ namespace TSQR {
                    A_cur.data (), A_cur.stride (1));
 
         // Process the remaining cache blocks in order.
-        while (! A_rest.empty ()) {
+        while (! empty (A_rest)) {
           A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
           blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
                      A_cur.extent (0), ncols,
@@ -225,25 +225,25 @@ namespace TSQR {
                 const LocalOrdinal ncols_C,
                 Scalar C[],
                 const LocalOrdinal ldc,
-                const bool contiguous_cache_blocks = false)
+                const bool contiguousCacheBlocks = false)
     {
       if (ncols_Q != ncols_C)
         throw std::logic_error("SequentialCholeskyQR::explicit_Q() "
                                "does not work if ncols_C != ncols_Q");
       const LocalOrdinal ncols = ncols_Q;
 
-      if (contiguous_cache_blocks) {
+      if (contiguousCacheBlocks) {
         CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols,
                                                     strategy_);
         mat_view_type C_rest (nrows, ncols, C, ldc);
         const_mat_view_type Q_rest (nrows, ncols, Q, ldq);
 
         mat_view_type C_cur =
-          blocker.split_top_block (C_rest, contiguous_cache_blocks);
+          blocker.split_top_block (C_rest, contiguousCacheBlocks);
         const_mat_view_type Q_cur =
-          blocker.split_top_block (Q_rest, contiguous_cache_blocks);
+          blocker.split_top_block (Q_rest, contiguousCacheBlocks);
 
-        while (! C_rest.empty ()) {
+        while (! empty (C_rest)) {
           deep_copy (Q_cur, C_cur);
         }
       }
@@ -253,7 +253,6 @@ namespace TSQR {
       }
     }
 
-
     /// Cache-block the given A_in matrix, writing the results to A_out.
     void
     cache_block (const LocalOrdinal nrows,
@@ -262,10 +261,9 @@ namespace TSQR {
                  const Scalar A_in[],
                  const LocalOrdinal lda_in) const
     {
-      CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
+      CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
       blocker.cache_block (nrows, ncols, A_out, A_in, lda_in);
     }
-
 
     /// "Un"-cache-block the given A_in matrix, writing the results to A_out.
     void

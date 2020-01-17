@@ -1,6 +1,6 @@
 # Can make Epetra & EpetraExt Optional in the future
 SET(LIB_REQUIRED_DEP_PACKAGES   Teuchos Stratimikos ThyraCore)
-SET(LIB_OPTIONAL_DEP_PACKAGES   NOX Rythmos MOOCHO Tempus Stokhos OptiPack
+SET(LIB_OPTIONAL_DEP_PACKAGES   NOX Rythmos Tempus Stokhos
     TriKota ROL Ifpack2 MueLu ThyraEpetraAdapters ThyraEpetraExtAdapters Epetra EpetraExt Tpetra)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)

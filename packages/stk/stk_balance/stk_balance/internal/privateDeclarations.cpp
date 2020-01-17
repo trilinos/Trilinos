@@ -687,11 +687,6 @@ void fill_zoltan2_graph(const BalanceSettings& balanceSettings,
     logMessage(stkMeshBulkData.parallel(), "Finished filling in graph data");
 }
 
-bool is_geometric_method(const std::string method)
-{
-    return (method=="rcb" || method=="rib" || method=="multijagged");
-}
-
 
 //#define WRITE_OUT_DEBUGGING_INFO
 //#define WRITE_OUT_DECOMP_METRICS#include "StkGeometricMethodViaZoltan.hpp"
@@ -1061,19 +1056,39 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
     #endif
 }
 
-void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
+bool is_geometric_method(const std::string& method)
+{
+  return (method=="rcb" ||
+          method=="rib" ||
+          method=="multijagged");
+}
+
+bool is_graph_based_method(const std::string& method)
+{
+  return (method == "parmetis");
+}
+
+void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings,
+                                              const int numSubdomainsToCreate,
+                                              stk::mesh::EntityProcVec &decomp,
+                                              stk::mesh::BulkData& stkMeshBulkData,
+                                              const std::vector<stk::mesh::Selector>& selectors)
 {
     ThrowRequireWithSierraHelpMsg(numSubdomainsToCreate > 0);
-    ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) || balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan");
+    ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) ||
+                                  is_graph_based_method(balanceSettings.getDecompMethod()));
 
-    if(is_geometric_method(balanceSettings.getDecompMethod()))
+    if (is_geometric_method(balanceSettings.getDecompMethod()))
     {
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
-        fill_decomp_using_geometric_method(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);
+        fill_decomp_using_geometric_method(balanceSettings, numSubdomainsToCreate,
+                                           decomp, stkMeshBulkData, selectors, localIds);
     }
-    else if (balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan")
+    else if (is_graph_based_method(balanceSettings.getDecompMethod()))
     {
-        stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().globally_shared_part(), "customAura");
+        stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData,
+                                                                          stkMeshBulkData.mesh_meta_data().globally_shared_part(),
+                                                                          "customAura");
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
         internal::fill_connectivity_count_field(stkMeshBulkData, balanceSettings);
         fill_decomp_using_parmetis(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);

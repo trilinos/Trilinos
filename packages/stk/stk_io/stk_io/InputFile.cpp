@@ -48,9 +48,7 @@
 #include <stk_mesh/base/FieldBase.hpp>             // for FieldBase, etc
 #include <stk_mesh/base/FindRestriction.hpp>       // for find_restriction
 #include <stk_mesh/base/MetaData.hpp>              // for MetaData
-#if defined(STK_HAVE_BOOSTLIB)
 #include <stk_util/environment/FileUtils.hpp>
-#endif
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include <utility>                                 // for pair
 #include "Ioss_DBUsage.h"                          // for DatabaseUsage, etc
@@ -137,9 +135,7 @@ namespace stk {
       if (m_db_purpose == stk::io::READ_RESTART)
         db_usage = Ioss::READ_RESTART;
 
-#if defined(STK_HAVE_BOOSTLIB)
       stk::util::filename_substitution(mesh_filename);
-#endif
       m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
 							db_usage, communicator,
 							properties));

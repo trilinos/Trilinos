@@ -45,27 +45,32 @@ std::string get_parallel_filename(int subdomainIndex, int numSubdomains, const s
 void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
                     unsigned numNodes,
                     const stk::mesh::Entity* nodes,
-                    const stk::mesh::FieldBase* coord,
+                    const stk::mesh::FieldBase* coordField,
                     const double eps,
                     stk::mesh::EntityId elementId,
                     stk::balance::internal::SearchBoxIdentProcs& faceBoxes)
 {
     unsigned dim = stkMeshBulkData.mesh_meta_data().spatial_dimension();
-    std::vector<double> coords(dim * numNodes, 0);
-    for(unsigned j = 0; j < numNodes; j++)
-    {
-        double* xyz = static_cast<double*>(stk::mesh::field_data(*coord, nodes[j]));
-        for(unsigned k = 0; k < dim; k++)
-        {
-            coords[numNodes * k + j] = xyz[k];
-        }
+
+    std::vector<double> x(numNodes, 0);
+    std::vector<double> y(numNodes, 0);
+    std::vector<double> z(numNodes, 0);
+
+    for (unsigned nodeIndex = 0; nodeIndex < numNodes; nodeIndex++) {
+        double* xyz = static_cast<double*>(stk::mesh::field_data(*coordField, nodes[nodeIndex]));
+        x[nodeIndex] = xyz[0];
+        y[nodeIndex] = xyz[1];
+        if (dim == 3) z[nodeIndex] = xyz[2];
     }
-    double maxX = *std::max_element(&coords[0], &coords[numNodes]);
-    double maxY = *std::max_element(&coords[numNodes], &coords[2 * numNodes]);
-    double maxZ = *std::max_element(&coords[2 * numNodes], &coords[3 * numNodes]);
-    double minX = *std::min_element(&coords[0], &coords[numNodes]);
-    double minY = *std::min_element(&coords[numNodes], &coords[2 * numNodes]);
-    double minZ = *std::min_element(&coords[2 * numNodes], &coords[3 * numNodes]);
+
+    double maxX = *std::max_element(x.begin(), x.end());
+    double maxY = *std::max_element(y.begin(), y.end());
+    double maxZ = *std::max_element(z.begin(), z.end());
+
+    double minX = *std::min_element(x.begin(), x.end());
+    double minY = *std::min_element(y.begin(), y.end());
+    double minZ = *std::min_element(z.begin(), z.end());
+
     stk::balance::internal::StkBox faceBox(minX - eps, minY - eps, minZ - eps, maxX + eps, maxY + eps, maxZ + eps);
     stk::balance::internal::SearchIdentProc id(elementId, stkMeshBulkData.parallel_rank());
     faceBoxes.emplace_back(faceBox, id);

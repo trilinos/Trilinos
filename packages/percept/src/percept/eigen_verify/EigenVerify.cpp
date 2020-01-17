@@ -18,6 +18,7 @@
 #include <percept/function/FieldFunction.hpp>
 #include <percept/norm/Norm.hpp>
 #include <percept/FieldBLAS.hpp>
+#include <percept/PerceptMesh.hpp>
 
 namespace percept
 {
@@ -82,12 +83,12 @@ void EigenVerify::create_fields(const int num_time_steps)
     // allocate data for the eigenvectors (receiving)
     xferFieldAll[m] = & (mesh_data[m]->meta_data().declare_field<stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, xfer_field_name_all));
 
-    stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
+    stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np2 = nullptr; // gcc 4.8 hack
     stk::mesh::put_field_on_mesh( *xferFieldAll[m],
 			  mesh_data[m]->meta_data().universal_part(),
 			  mesh_data[m]->meta_data().spatial_dimension(),
 			  num_time_steps,
-			  init_np);
+			  init_np2);
 
     // get eigenvector field
     inputField[m] = mesh_data[m]->meta_data().get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, field_name);
@@ -309,7 +310,9 @@ void EigenVerify::run(int argc, char** argv)
     FieldFunction errorFunc("error", errorField, &(mesh_data[1]->bulk_data()),
 			    Dimensions(3), Dimensions(3));
 
-    Norm<2> norm(mesh_data[1]->bulk_data(), &mesh_data[1]->meta_data().universal_part());
+    stk::mesh::Selector element_selector = PerceptMesh::get_selector_of_rank(mesh_data[1]->meta_data(), stk::topology::ELEMENT_RANK);
+
+    Norm<2> norm(mesh_data[1]->bulk_data(), &element_selector);
     ConstantFunction result(0.0, "result");
 
     // TODO add as global var to Exo output

@@ -51,7 +51,7 @@
 
 #include "Xpetra_Exceptions.hpp"
 #include "Xpetra_ImportFactory.hpp"
-#include "Xpetra_MapFactory_decl.hpp"
+#include "Xpetra_MapFactory.hpp"
 
 
 

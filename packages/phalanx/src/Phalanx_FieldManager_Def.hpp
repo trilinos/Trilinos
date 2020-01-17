@@ -159,9 +159,10 @@ template<typename Traits>
 template<typename EvalT, typename DataT, typename...Props>
 inline
 void PHX::FieldManager<Traits>::
-setUnmanagedField(PHX::MDField<DataT,Props...>& f)
+setUnmanagedField(PHX::MDField<DataT,Props...>& f, const bool cleanup_output)
 {
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),f.get_static_view_as_any());
+  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),f.get_static_view_as_any(),
+                                                                     cleanup_output);
 }
 
 // **************************************************************
@@ -169,10 +170,11 @@ template<typename Traits>
 template<typename EvalT, typename DataT, int Rank, typename Layout>
 inline
 void PHX::FieldManager<Traits>::
-setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f)
+setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f, const bool cleanup_output)
 {
   PHX::any any_f(f.get_static_view());
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),any_f);
+  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),any_f,
+                                                                     cleanup_output);
 }
 
 // **************************************************************
@@ -180,7 +182,8 @@ template<typename Traits>
 template<typename EvalT, typename DataT, typename Layout>
 inline
 void PHX::FieldManager<Traits>::
-setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f)
+setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f,
+                  const bool cleanup_output)
 {
   // Make sure field data type is not const. We always store static
   // non-const views so that we know how to cast back from an any
@@ -190,7 +193,7 @@ setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device
   static_assert(std::is_same<value_type,non_const_value_type>::value, "FieldManager::setUnmanagedField(FieldTag, View) - DataT must be non-const!");
 
   PHX::any any_f(f);
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(ft,any_f);
+  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(ft,any_f,cleanup_output);
 }
 
 // **************************************************************

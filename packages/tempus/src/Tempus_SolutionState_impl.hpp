@@ -89,16 +89,10 @@ SolutionState<Scalar>::SolutionState(
 
   using Teuchos::rcp_const_cast;
   if (stepperState_ == Teuchos::null) {
-    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
-    stepperState_    = stepperState_nc_;
-  } else {
-    stepperState_nc_ = rcp_const_cast<StepperState<Scalar> >(stepperState_);
+    stepperState_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
   }
   if (physicsState_ == Teuchos::null) {
-    physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
-    physicsState_    = physicsState_nc_;
-  } else {
-    physicsState_nc_ = rcp_const_cast<PhysicsState<Scalar> >(physicsState_);
+    physicsState_ = Teuchos::rcp(new PhysicsState<Scalar> ());
   }
 }
 
@@ -156,12 +150,10 @@ SolutionState<Scalar>::SolutionState(
     physicsState_nc_(Teuchos::null)
 {
   if (stepperState_ == Teuchos::null) {
-    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
-    stepperState_    = stepperState_nc_;
+    stepperState_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
   }
   if (physicsState_ == Teuchos::null) {
-    physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
-    physicsState_    = physicsState_nc_;
+    physicsState_ = Teuchos::rcp(new PhysicsState<Scalar> ());
   }
 }
 
@@ -207,7 +199,7 @@ SolutionState<Scalar>::SolutionState(
     xdotdot_    = xdotdot_nc_;
   }
 
-  if (stepperState_ == Teuchos::null) {
+  if (stepperState == Teuchos::null) {
     stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar> ()); // Use default
     stepperState_    = stepperState_nc_;
   } else {
@@ -215,7 +207,7 @@ SolutionState<Scalar>::SolutionState(
     stepperState_    = stepperState;
   }
 
-  if (physicsState_ == Teuchos::null) {
+  if (physicsState == Teuchos::null) {
     physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ()); // Use default
     physicsState_    = physicsState_nc_;
   } else {
@@ -315,8 +307,25 @@ copySolutionData(const Teuchos::RCP<const SolutionState<Scalar> >& ss)
   }
   xdotdot_ = xdotdot_nc_;
 
-  stepperState_nc_->copy(ss->stepperState_);
-  physicsState_nc_->copy(ss->physicsState_);
+  if (ss->stepperState_ == Teuchos::null)
+    stepperState_nc_ = Teuchos::null;
+  else {
+    if (stepperState_nc_ == Teuchos::null)
+      stepperState_nc_ = ss->stepperState_->clone();
+    else
+      stepperState_nc_->copy(ss->stepperState_);
+  }
+  stepperState_ = stepperState_nc_;
+
+  if (ss->physicsState_ == Teuchos::null)
+    physicsState_nc_ = Teuchos::null;
+  else {
+    if (physicsState_nc_ == Teuchos::null)
+      physicsState_nc_ = ss->physicsState_->clone();
+    else
+      physicsState_nc_->copy(ss->physicsState_);
+  }
+  physicsState_ = physicsState_nc_;
 }
 
 template<class Scalar>
@@ -410,7 +419,7 @@ void SolutionState<Scalar>::describe(
       stepperState_->describe(out,verbLevel);
     }
     if (physicsState_ != Teuchos::null) {
-      out << "stepperState = " << std::endl;
+      out << "physicsState = " << std::endl;
       physicsState_->describe(out,verbLevel);
     }
   }
