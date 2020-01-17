@@ -38,6 +38,11 @@ public:
   ///   queried by calling cache_size_hint().
   CholQR () = default;
 
+
+  void initialize(MV& A, size_t nrows) {
+    W = makeStaticLocalMultiVector (A, nrows, nrows);
+  }
+
   /// \brief Compute the QR factorization of the matrix A.
   ///
   /// Compute the QR factorization of the nrows by ncols matrix A,
@@ -57,9 +62,23 @@ public:
     const SC one  = STS::one ();
 
     // Compute R := A^T * A, using a single BLAS call.
-    LO ncols = A.getNumVectors ();
+    size_t ncols = A.getNumVectors ();
     #if 1
-    MV R_mv = makeStaticLocalMultiVector (A, ncols, ncols);
+    MV R_mv;
+    if (ncols >= W.getNumVectors ()) {
+      if (ncols > W.getNumVectors ()) {
+        // reinitialize (initiall W is 0x0)
+        initialize(A, ncols);
+      }
+      R_mv = W;
+    } else {
+      // create subview
+      auto lclMap = makeLocalMap (*(A.getMap ()), ncols);
+      Teuchos::Range1D cols(0, ncols-1);
+
+      R_mv = MV (W, lclMap);
+      R_mv = * (R_mv.subView (cols));
+    }
     R_mv.putScalar (zero);
     R_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, one, A, A, zero);
     #else
@@ -85,8 +104,8 @@ public:
     Tpetra::deep_copy (R, R_mv);
     // TODO: replace with a routine to zero out lower-triangular
     //     : not needed, but done for testing
-    for (int i=0; i<ncols; i++) {
-      for (int j=0; j<i; j++) {
+    for (size_t i=0; i<ncols; i++) {
+      for (size_t j=0; j<i; j++) {
         R(i, j) = zero;
       }
     }
@@ -100,8 +119,8 @@ public:
     }
     // TODO: replace with a routine to zero out lower-triangular
     //     : not needed, but done for testing
-    for (int i=0; i<ncols; i++) {
-      for (int j=0; j<i; j++) {
+    for (size_t i=0; i<ncols; i++) {
+      for (size_t j=0; j<i; j++) {
         R(i, j) = zero;
       }
     }
@@ -131,7 +150,7 @@ public:
       SC* const A_lcl_raw = reinterpret_cast<SC*> (A_lcl.data ());
       const LO LDA = LO (A.getStride ());
 
-      LO nrows = A.getLocalLength ();
+      size_t nrows = A.getLocalLength ();
       blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI,
                  Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
                  nrows, ncols, one, R.values(), R.stride(),
@@ -142,7 +161,11 @@ public:
 
     return (info > 0 ? info : ncols);
   }
+
+private:
+  MV W;
 };
+
 
 template<class SC = Tpetra::Operator<>::scalar_type,
          class MV = Tpetra::MultiVector<SC>,
@@ -651,6 +674,7 @@ private:
   bool useCholQR2_;
   Teuchos::RCP<CholQR<SC, MV, OP> > cholqr_;
 };
+
 
 template<class SC, class MV, class OP,
          template<class, class, class> class KrylovSubclassType>
