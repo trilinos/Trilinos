@@ -4453,22 +4453,11 @@ namespace Tpetra {
     //! The local sparse matrix, wrapped in a multiply operator.
     std::shared_ptr<local_multiply_op_type> lclMatrix_;
 
-    /// \name Sparse matrix values.
+    /// \brief Sparse matrix values, as part of compressed sparse row
+    ///   ("1-D") storage.
     ///
-    /// k_values1D_ represents the values assuming "1-D" compressed
-    /// sparse row storage.  values2D_ represents the values as an
-    /// array of arrays, one (inner) array per row of the sparse
-    /// matrix.
-    ///
-    /// Before allocation, both arrays are null.  After allocation,
-    /// one is null.  If static allocation, then values2D_ is null.
-    /// If dynamic allocation, then k_values1D_ is null.  The
-    /// allocation always matches that of graph_, as the graph does
-    /// the allocation for the matrix.
-    //@{
+    /// Before allocation, this array is empty.
     typename local_matrix_type::values_type k_values1D_;
-    Teuchos::ArrayRCP<Teuchos::Array<impl_scalar_type> > values2D_;
-    //@}
 
     /// \brief Status of the matrix's storage, when not in a
     ///   fill-complete state.
@@ -4477,7 +4466,7 @@ namespace Tpetra {
     /// When the matrix is fill complete, it <i>always</i> uses 1-D
     /// "packed" storage.  However, if the "Optimize Storage"
     /// parameter to fillComplete was false, the matrix may keep
-    /// unpacked 1-D or 2-D storage around and resume it on the next
+    /// unpacked 1-D storage around and resume it on the next
     /// resumeFill call.
     ::Tpetra::Details::EStorageStatus storageStatus_;
 

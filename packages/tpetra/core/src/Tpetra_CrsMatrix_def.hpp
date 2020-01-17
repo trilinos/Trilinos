@@ -798,7 +798,6 @@ namespace Tpetra {
     std::swap(crs_matrix.myGraph_,       this->myGraph_);         // Teuchos::RCP<      CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.lclMatrix_,     this->lclMatrix_);       // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>
     std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>::values_type
-    std::swap(crs_matrix.values2D_,      this->values2D_);        // Teuchos::ArrayRCP<Teuchos::Array<Kokkos::Details::ArithTraits<Scalar>::val_type>>
     std::swap(crs_matrix.storageStatus_, this->storageStatus_);   // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
     std::swap(crs_matrix.fillComplete_,  this->fillComplete_);    // bool
     std::swap(crs_matrix.nonlocals_,     this->nonlocals_);       // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
@@ -1472,9 +1471,6 @@ namespace Tpetra {
       // unpacked 1-D storage.
       myGraph_->k_numRowEntries_ = row_entries_type ();
 
-      // Free the matrix's 2-D storage.
-      this->values2D_ = null;
-
       // Keep the new 1-D packed allocations.
       myGraph_->k_rowPtrs_ = k_ptrs_const;
       myGraph_->k_lclInds1D_ = k_inds;
@@ -1622,8 +1618,7 @@ namespace Tpetra {
     // May we ditch the old allocations for the packed one?
     if (requestOptimizedStorage) {
       // The user requested optimized storage, so we can dump the
-      // unpacked 2-D and 1-D storage, and keep the packed storage.
-      values2D_ = null;
+      // unpacked 1-D storage, and keep the packed storage.
       k_values1D_ = k_vals;
       this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
     }
@@ -2900,8 +2895,8 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
     using Teuchos::ArrayView;
-    typedef impl_scalar_type ST;
-    typedef std::pair<size_t, size_t> range_type;
+    using ST = impl_scalar_type;
+    using range_type = std::pair<size_t, size_t>;
 
     if (k_values1D_.extent (0) != 0 && rowinfo.allocSize > 0) {
 #ifdef HAVE_TPETRA_DEBUG
@@ -2921,11 +2916,8 @@ namespace Tpetra {
       // Instead, we create a temporary unmanaged view, then create
       // the subview from that.
       subview_type sv = Kokkos::subview (subview_type (k_values1D_), range);
-      const ST* const sv_raw = (rowinfo.allocSize == 0) ? NULL : sv.data ();
+      const ST* const sv_raw = (rowinfo.allocSize == 0) ? nullptr : sv.data ();
       return ArrayView<const ST> (sv_raw, rowinfo.allocSize);
-    }
-    else if (values2D_ != Teuchos::null) {
-      return values2D_[rowinfo.localRow] ();
     }
     else {
       return ArrayView<impl_scalar_type> ();
@@ -2940,33 +2932,25 @@ namespace Tpetra {
                    LocalOrdinal& numEnt,
                    const RowInfo& rowinfo) const
   {
-    if (k_values1D_.extent (0) != 0 && rowinfo.allocSize > 0) {
 #ifdef HAVE_TPETRA_DEBUG
-      if (rowinfo.offset1D + rowinfo.allocSize > k_values1D_.extent (0)) {
-        vals = NULL;
-        numEnt = 0;
-        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
-      }
+    constexpr bool debug = true;
+#else
+    constexpr bool debug = false;
 #endif // HAVE_TPETRA_DEBUG
+
+    if (k_values1D_.extent (0) != 0 && rowinfo.allocSize > 0) {
+      if (debug) {
+        if (rowinfo.offset1D + rowinfo.allocSize > k_values1D_.extent (0)) {
+          vals = nullptr;
+          numEnt = 0;
+          return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+        }
+      }
       vals = k_values1D_.data () + rowinfo.offset1D;
       numEnt = rowinfo.allocSize;
     }
-    else if (! values2D_.is_null ()) {
-#ifdef HAVE_TPETRA_DEBUG
-      if (rowinfo.localRow >= static_cast<size_t> (values2D_.size ())) {
-        vals = NULL;
-        numEnt = 0;
-        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
-      }
-#endif // HAVE_TPETRA_DEBUG
-      // Use const reference so that we don't update ArrayRCP's
-      // reference count, which is not thread safe.
-      const auto& curRow = values2D_[rowinfo.localRow];
-      vals = curRow.getRawPtr ();
-      numEnt = curRow.size ();
-    }
     else {
-      vals = NULL;
+      vals = nullptr;
       numEnt = 0;
     }
 
@@ -3018,13 +3002,6 @@ namespace Tpetra {
       // the subview from that.
       return Kokkos::subview (subview_type (this->k_values1D_), range);
     }
-    else if (this->values2D_ != Teuchos::null) {
-      // Use a reference, so that I don't touch the Teuchos::ArrayView
-      // reference count in a debug build.  (It has no reference count
-      // in a release build.)  This ensures thread safety.
-      auto& rowView = this->values2D_[rowInfo.localRow];
-      return subview_type (rowView.getRawPtr (), rowView.size ());
-    }
     else {
       return subview_type ();
     }
@@ -3061,13 +3038,6 @@ namespace Tpetra {
       // Instead, we create a temporary unmanaged view, then create
       // the subview from that.
       return Kokkos::subview (subview_type (this->k_values1D_), range);
-    }
-    else if (this->values2D_ != Teuchos::null) {
-      // Use a reference, so that I don't touch the Teuchos::ArrayView
-      // reference count in a debug build.  (It has no reference count
-      // in a release build.)  This ensures thread safety.
-      auto& rowView = this->values2D_[rowInfo.localRow];
-      return subview_type (rowView.getRawPtr (), rowView.size ());
     }
     else {
       return subview_type ();
@@ -5839,53 +5809,36 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   checkInternalState () const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "checkInternalState: ";
-    const char err[] = "Internal state is not consistent.  "
-      "Please report this bug to the Tpetra developers.";
+    const bool debug = ::Tpetra::Details::Behavior::debug ("CrsGraph");
+    if (debug) {
+      const char tfecfFuncName[] = "checkInternalState: ";
+      const char err[] = "Internal state is not consistent.  "
+        "Please report this bug to the Tpetra developers.";
 
-    // This version of the graph (RCP<const crs_graph_type>) must
-    // always be nonnull.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      staticGraph_.is_null (),
-      std::logic_error, err);
-    // myGraph == null means that the matrix has a const ("static")
-    // graph.  Otherwise, the matrix has a dynamic graph (it owns its
-    // graph).
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! myGraph_.is_null () && myGraph_ != staticGraph_,
-      std::logic_error, err);
-    // if matrix is fill complete, then graph must be fill complete
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillComplete () && ! staticGraph_->isFillComplete (),
-      std::logic_error, err << "  Specifically, the matrix is fill complete, "
-      "but its graph is NOT fill complete.");
-    // if matrix is storage optimized, it should have a 1D allocation
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized () && ! values2D_.is_null (),
-      std::logic_error, err);
-    // if matrix/graph are static profile, then 2D allocation should not be present
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      values2D_ != Teuchos::null,
-      std::logic_error, err);
-    // if matrix/graph are dynamic profile, then 1D allocation should not be present
-    // if values are allocated and they are non-zero in number, then
-    // one of the allocations should be present
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      staticGraph_->indicesAreAllocated () &&
-      staticGraph_->getNodeAllocationSize() > 0 &&
-      staticGraph_->getNodeNumRows() > 0
-      && values2D_.is_null () &&
-      k_values1D_.extent (0) == 0,
-      std::logic_error, err);
-    // we cannot have both a 1D and 2D allocation
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      k_values1D_.extent (0) > 0 && values2D_ != Teuchos::null,
-      std::logic_error, err << "  Specifically, k_values1D_ is allocated (has "
-      "size " << k_values1D_.extent (0) << " > 0) and values2D_ is also "
-      "allocated.  CrsMatrix is not suppose to have both a 1-D and a 2-D "
-      "allocation at the same time.");
-#endif
+      // This version of the graph (RCP<const crs_graph_type>) must
+      // always be nonnull.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (staticGraph_.is_null (), std::logic_error, err);
+      // myGraph == null means that the matrix has a const ("static")
+      // graph.  Otherwise, the matrix has a dynamic graph (it owns its
+      // graph).
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! myGraph_.is_null () && myGraph_ != staticGraph_,
+         std::logic_error, err);
+      // if matrix is fill complete, then graph must be fill complete
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (isFillComplete () && ! staticGraph_->isFillComplete (),
+         std::logic_error, err << "  Specifically, the matrix is fill complete, "
+         "but its graph is NOT fill complete.");
+      // if values are allocated and they are non-zero in number, then
+      // one of the allocations should be present
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (staticGraph_->indicesAreAllocated () &&
+         staticGraph_->getNodeAllocationSize() > 0 &&
+         staticGraph_->getNodeNumRows() > 0 &&
+         k_values1D_.extent (0) == 0,
+         std::logic_error, err);
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
