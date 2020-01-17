@@ -81,12 +81,14 @@ private:
     dense_vector_type  h (restart+1, true);
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
-    MV  Q (B.getMap (), restart+1);
-    MV  V (B.getMap (), restart+1);
+
+    bool zeroOut = false; // Kokkos::View:init can take a long time on GPU?
+    MV  Q (B.getMap (), restart+1, zeroOut);
+    MV  V (B.getMap (), restart+1, zeroOut);
+    vec_type R (B.getMap (), zeroOut);
+    vec_type Y (B.getMap (), zeroOut);
+    vec_type MZ (B.getMap (), zeroOut);
     vec_type Z = * (V.getVectorNonConst (0));
-    vec_type R (B.getMap ());
-    vec_type Y (B.getMap ());
-    vec_type MZ (B.getMap ());
 
     // initial residual (making sure R = B - Ax)
     {

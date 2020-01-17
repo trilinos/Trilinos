@@ -490,10 +490,12 @@ protected:
     mag_type b0_norm; // initial residual norm, not left preconditioned
     mag_type r_norm;
     mag_type r_norm_imp;
-    vec_type R (B.getMap ());
-    vec_type Y (B.getMap ());
-    vec_type MP (B.getMap ());
-    MV Q (B.getMap (), restart+1);
+
+    bool zeroOut = false; // Kokkos::View:init can take a long time on GPU?
+    vec_type R (B.getMap (), zeroOut);
+    vec_type Y (B.getMap (), zeroOut);
+    vec_type MP (B.getMap (), zeroOut);
+    MV Q (B.getMap (), restart+1, zeroOut);
     vec_type P = * (Q.getVectorNonConst (0));
 
     // initial residual (making sure R = B - Ax)
