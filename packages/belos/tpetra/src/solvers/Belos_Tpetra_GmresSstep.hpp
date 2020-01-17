@@ -4,6 +4,8 @@
 #include "Belos_Tpetra_Gmres.hpp"
 #include "Belos_Tpetra_UpdateNewton.hpp"
 
+#include "KokkosBlas3_trsm.hpp"
+
 namespace BelosTpetra {
 namespace Impl {
 
@@ -54,17 +56,43 @@ public:
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
 
-    LO ncols = A.getNumVectors ();
-    LO nrows = A.getLocalLength ();
-
     // Compute R := A^T * A, using a single BLAS call.
+    LO ncols = A.getNumVectors ();
+    #if 1
+    MV R_mv = makeStaticLocalMultiVector (A, ncols, ncols);
+    R_mv.putScalar (zero);
+    R_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, one, A, A, zero);
+    #else
     MVT::MvTransMv(one, A, A, R);
+    #endif
 
     // Compute the Cholesky factorization of R in place, so that
     // A^T * A = R^T * R, where R is ncols by ncols upper
     // triangular.
     int info = 0;
-    lapack.POTRF ('U', ncols, R.values (), R.stride(), &info);
+    #define BELOS_CHOLQR_USE_KOKKOSKERNEL
+    #if defined(BELOS_CHOLQR_USE_KOKKOSKERNEL)
+    R_mv.modify_host ();
+    {
+      auto R_h = R_mv.getLocalViewHost ();
+      lapack.POTRF ('U', ncols, R_h.data (), R_h.extent (0), &info);
+      if (info < 0) {
+        ncols = -info;
+        // FIXME (mfh 17 Sep 2018) Don't throw; report an error code.
+        throw std::runtime_error("Cholesky factorization failed");
+      }
+    }
+    Tpetra::deep_copy (R, R_mv);
+    // TODO: replace with a routine to zero out lower-triangular
+    //     : not needed, but done for testing
+    for (int i=0; i<ncols; i++) {
+      for (int j=0; j<i; j++) {
+        R(i, j) = zero;
+      }
+    }
+    #else
+    Tpetra::deep_copy (R, R_mv);
+    lapack.POTRF ('U', ncols, R.values (), R.stride (), &info);
     if (info < 0) {
       ncols = -info;
       // FIXME (mfh 17 Sep 2018) Don't throw; report an error code.
@@ -77,24 +105,40 @@ public:
         R(i, j) = zero;
       }
     }
+    #endif
 
     // Compute A := A * R^{-1}.  We do this in place in A, using
     // BLAS' TRSM with the R factor (form POTRF) stored in the upper
     // triangle of R.
 
     // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
+    #if defined(BELOS_CHOLQR_USE_KOKKOSKERNEL)
+    A.sync_device ();
+    A.modify_device ();
+    {
+      auto A_d = A.getLocalViewDevice ();
+      auto R_d = R_mv.getLocalViewDevice ();
+
+      KokkosBlas::trsm ("R", "U", "N", "N",
+                        one, R_d, A_d);
+    }
+    #else
     A.sync_host ();
     A.modify_host ();
-    auto A_lcl = A.getLocalViewHost ();
+    {
+      auto A_lcl = A.getLocalViewHost ();
 
-    SC* const A_lcl_raw = reinterpret_cast<SC*> (A_lcl.data ());
-    const LO LDA = LO (A.getStride ());
+      SC* const A_lcl_raw = reinterpret_cast<SC*> (A_lcl.data ());
+      const LO LDA = LO (A.getStride ());
 
-    blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI,
-               Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
-               nrows, ncols, one, R.values(), R.stride(),
-               A_lcl_raw, LDA);
+      LO nrows = A.getLocalLength ();
+      blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI,
+                 Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
+                 nrows, ncols, one, R.values(), R.stride(),
+                 A_lcl_raw, LDA);
+    }
     A.template sync<typename MV::device_type::memory_space> ();
+    #endif
 
     return (info > 0 ? info : ncols);
   }
