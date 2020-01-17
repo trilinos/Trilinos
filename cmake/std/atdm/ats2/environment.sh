@@ -31,7 +31,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Volta70" ]] ; then
-    export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70
+    export ATDM_CONFIG_KOKKOS_ARCH=Volta70
+    #eharvey, TODO: Is export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70 valid?
     arch=v100
   else
     echo
@@ -63,11 +64,6 @@ export ATDM_CONFIG_BUILD_COUNT=8
 # NOTE: Above, currently setting CMAKE_JOB_POOL_LINK results in a build
 # failures with Ninja.  See https://gitlab.kitware.com/snl/project-1/issues/60
 
-# We do this twice since sems modules are wacked and we get errors to the screen on a purge
-# The second purge will catch any real errors with purging ...
-module purge &> /dev/null
-module purge
-
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
   export OMP_NUM_THREADS=2
@@ -76,6 +72,7 @@ else
 fi
 
 # Common modules for all builds
+module purge
 module load git/2.20.0
 module load cmake/3.14.5
 
@@ -91,7 +88,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24"* ]]; then
   export COMPILER_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
   export SPARC_HDF5=hdf5-1.10.5
 
-  # eharvey: TODO: remove COMPILER_ROOT and other exports below.
+  # eharvey: TODO: remove COMPILER_ROOT and other unused exports below.
   export PATH=${COMPILER_ROOT}/bin:${PATH}
   export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
   export BINUTILS_ROOT=${COMPILER_ROOT}
@@ -107,7 +104,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24"* ]]; then
     sparc_tpl_ext=ats2-${arch}_gcc-7.3.1
     sparc_tpl_mpi_ext=ats2-${arch}_gcc-7.3.1_spmpi-2019.06.24
   fi
-elif [ "$ATDM_CONFIG_COMPILER" == "XL-2019.08.20_SPMPI-2019.06.24" ]; then
+elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-2019.06.24_DISABLED"* ]]; then
   module load xl/2019.08.20
   module load lapack/3.8.0-xl-2019.08.20
   module load gmake/4.2.1
@@ -133,6 +130,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "XL-2019.08.20_SPMPI-2019.06.24" ]; then
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
   if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
+    export LD_LIBRARY_PATH=${BINUTILS_ROOT}/rh/lib/gcc/ppc64le-redhat-linux/7:${LD_LIBRARY_PATH}
     sparc_tpl_ext=ats2-${arch}_cuda-10.1.243_xl-2019.08.20
     sparc_tpl_mpi_ext=ats2-${arch}_cuda-10.1.243_xl-2019.08.20_spmpi-2019.06.24
   else
@@ -149,12 +147,40 @@ fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
   module load cuda/10.1.243
-  export PATH=/usr/gapps/sparc/tools/nvcc_wrapper:$PATH
-  export OMPI_CXX="nvcc_wrapper"
+
+  # OpenMPI Settings
+  export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
+  if [ ! -x "$OMPI_CXX" ]; then
+      echo "No nvcc_wrapper found"
+      return
+  fi
+  export OMPI_CC=`which gcc`
+  export OMPI_FC=`which gfortran`
   export LLNL_USE_OMPI_VARS="y"
+
+  # CUDA Settings
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   export TMPDIR=/tmp/$(whoami)
+
+  # ATDM Settings
+  export ATDM_CONFIG_USE_CUDA=ON
+  #export ATDM_CONFIG_Kokkos_ENABLE_Cuda_UVM=ON, handled by above export
+  export ATDM_CONFIG_USE_OPENMP=OFF
+  export ATDM_CONFIG_USE_PTHREADS=OFF
+  export ATDM_CONFIG_CUDA_RDC=OFF
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
+
+  # Kokkos Settings
+  export ATDM_CONFIG_Kokkos_ENABLE_Serial=ON
+  export ATDM_CONFIG_Kokkos_ENABLE_Cuda=ON
+  export ATDM_CONFIG_Kokkos_ENABLE_Cuda_Lambda=ON
+  export ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code=OFF
+  export KOKKOS_NUM_DEVICES=2
+
+# eharvey, TODO: are these flags needed?
+#-D Trilinos_CXX11_FLAGS="-std=c++11 --expt-extended-lambda" \
+#-D Trilinos_EXTRA_LINK_FLAGS:STRING="-lmpi_ibm -ldl" \
 fi
 
 # Common module - requires compiler to be loaded first
