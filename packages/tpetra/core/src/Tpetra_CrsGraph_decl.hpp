@@ -2307,19 +2307,6 @@ namespace Tpetra {
     /// bound the number of entries per row.
     //@{
 
-    /// \brief Global column indices for all rows.
-    ///
-    /// This is only allocated if
-    ///
-    ///   - The calling process has a nonzero number of entries
-    ///   - The graph has DynamicProfile (2-D storage)
-    ///   - The graph is globally indexed
-    ///
-    /// In that case, if i_gbl is the global index of a globally owned
-    /// row, then gblInds2D_[i_gbl] stores the global column indices
-    /// for that row.
-    Teuchos::ArrayRCP<Teuchos::Array<global_ordinal_type> > gblInds2D_;
-
     /// \brief The type of k_numRowEntries_ (see below).
     ///
     /// This View gets used only on host.  However, making this
