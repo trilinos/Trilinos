@@ -6,6 +6,9 @@
 ATDM_SET_ENABLE(PanzerAdaptersIOSS_tIOSSConnManager2_MPI_2_DISABLE ON)
 ATDM_SET_ENABLE(PanzerAdaptersIOSS_tIOSSConnManager3_MPI_3_DISABLE ON)
 
+# Disable randomly timing out test in all 'waterman' builds (#6463)
+ATDM_SET_ENABLE(Teko_testdriver_tpetra_MPI_4_DISABLE ON)
+
 IF (Trilinos_ENABLE_DEBUG)
 
   # STEQR() test fails on IBM Power systems with current TPL setup (#2410, #6166)
