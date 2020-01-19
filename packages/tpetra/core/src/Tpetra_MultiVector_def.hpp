@@ -3395,7 +3395,7 @@ namespace Tpetra {
     // be exactly what we need, so we won't have to resize them later.
     {
       const size_t newSize = X.imports_.extent (0) / numCols;
-      const size_t offset = j*newSize;
+      const size_t offset = jj*newSize;
       auto newImports = X.imports_;
       newImports.d_view = subview (X.imports_.d_view,
                                    range_type (offset, offset+newSize));
@@ -3405,7 +3405,7 @@ namespace Tpetra {
     }
     {
       const size_t newSize = X.exports_.extent (0) / numCols;
-      const size_t offset = j*newSize;
+      const size_t offset = jj*newSize;
       auto newExports = X.exports_;
       newExports.d_view = subview (X.exports_.d_view,
                                    range_type (offset, offset+newSize));
