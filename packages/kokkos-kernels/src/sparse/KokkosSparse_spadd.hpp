@@ -113,12 +113,12 @@ namespace Experimental {
         Crowcounts(nrows) = 0;
       }
     }
+    ordinal_type nrows;
     const typename ARowPtrsT::const_type Arowptrs;
     const AColIndsT Acolinds;
     const typename BRowPtrsT::const_type Browptrs;
     const BColIndsT Bcolinds;
     CRowPtrsT Crowcounts;
-    ordinal_type nrows;
   };
 
   //get upper bound for C entries per row (assumes worst case, that entries in A and B on each row are disjoint)
@@ -382,6 +382,7 @@ namespace Experimental {
       if(i == nrows - 1)
         Crowcounts(nrows) = 0;
     }
+    ordinal_type nrows;
     const ArowptrsT Arowptrs;
     const BrowptrsT Browptrs;
     const CrowptrsT Crowptrs;
@@ -390,7 +391,6 @@ namespace Experimental {
     const CcolindsT ABperm;
     CcolindsT Apos;
     CcolindsT Bpos;
-    ordinal_type nrows;
   };
 
   //Symbolic: count entries in each row in C to produce rowmap
