@@ -217,8 +217,7 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-# eharvey: TODO: Are these MPI_POST_FLAGS used?
-export ATDM_CONFIG_MPI_POST_FLAGS="-map-by;socket:PE=4"
+export ATDM_CONFIG_MPI_POST_FLAGS="-disable_gpu_hooks;-map-by;socket:PE=4"
 
 # Set common default compilers
 export CC=mpicc
@@ -228,7 +227,8 @@ export FC=mpifort
 export F90=mpifort
 
 # Define function atdm_run_script_on_compute_node
-source $ATDM_SCRIPT_DIR/common/define_run_on_lsf_compute_node_func.sh
+unset atdm_run_script_on_compute_node
+source $ATDM_SCRIPT_DIR/common/define_atdm_run_script_on_local_node.sh
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 
