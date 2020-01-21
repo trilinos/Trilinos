@@ -23,22 +23,8 @@ module load sems-netcdf/4.4.1/exo_parallel
 module load sems-parmetis/4.0.3/parallel
 module load sems-scotch/6.0.3/nopthread_64bit_parallel
 module load sems-superlu/4.3/base
-
-# Load the SEMS CMake Module
-# - One of the SEMS modules will load CMake 3.4.x also,
-#   so this will pull in the SEMS cmake 3.10.3 version
-#   for Trilinos compatibility.
-module load sems-cmake/3.10.3
-
-# Using CMake and Ninja modules from the ATDM project space.
-# SEMS does not yet supply a recent enough version of CMake
-# for the single configure/build/test capability. We are also
-# using a custom version of Ninja (with Fortran support not
-# available in main-line Ninja) to significantly speed up
-# compile and link times.
-module load atdm-env
-module load atdm-cmake/3.11.1
-module load atdm-ninja_fortran/1.7.2
+module load sems-cmake/3.12.2
+module load sems-ninja_fortran/1.8.2
 
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2
