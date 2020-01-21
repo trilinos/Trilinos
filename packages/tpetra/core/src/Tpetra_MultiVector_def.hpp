@@ -1917,7 +1917,7 @@ namespace Tpetra {
 
     // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
     if (this->need_sync_device ()) {
-      const_cast<MV*>(this)->sync_device ();
+      const_cast<MV&>(*this).sync_device ();
     }
     if (A.need_sync_device ()) {
       const_cast<MV&>(A).sync_device ();
@@ -2889,7 +2889,7 @@ namespace Tpetra {
     // viewBuffer or viewBufferNonConst methods always implied a
     // device->host synchronization.  Thus, we synchronize here as
     // well.
-    const_cast<MV*> (this)->sync_host ();
+    const_cast<MV&> (*this).sync_host ();
 
     auto hostView = getLocalViewHost ();
     const size_t col = isConstantStride () ? j : whichVectors_[j];
