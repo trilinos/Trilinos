@@ -4,7 +4,7 @@
 # A) Define the package
 #
 
-TRIBITS_PACKAGE(Pliris)
+TRIBITS_PACKAGE(Adelus)
 
 #
 # B) Set up package-specific options

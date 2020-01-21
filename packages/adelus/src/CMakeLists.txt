@@ -34,7 +34,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #
 
 #APPEND_SET(HEADERS
-#  Pliris_ConfigDefs.h
+#  Adelus_ConfigDefs.h
 #  )
 
 #
@@ -42,11 +42,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #
 
 #APPEND_SET(HEADERS
-#  PlirisVersion.h
+#  AdelusVersion.h
 #  )
 
 #APPEND_SET(SOURCES
-#  PlirisVersion.cpp
+#  AdelusVersion.cpp
 #  )
 
 IF (TPL_ENABLE_MPI)
@@ -63,7 +63,7 @@ IF (TPL_ENABLE_MPI)
     solve.hpp
     vars.hpp
     xlu_solve.hpp
-    Pliris.hpp
+    Adelus.hpp
     BlasWrapper_copy_spec.hpp
     BlasWrapper_copy.hpp
     BlasWrapper_iamax_spec.hpp
@@ -94,90 +94,90 @@ ENDIF()
 # Using options to allow the compilation of all the possible libraries
 # this is not what is done in the makefile.am, but what is done there
 # is not really viable for cmake since all the libraries would be put on
-# the link line for any package that depends on Pliris. That would cause
-# pretty much every Pliris symbol to be multiply defined 4 times which
+# the link line for any package that depends on Adelus. That would cause
+# pretty much every Adelus symbol to be multiply defined 4 times which
 # isn't allowable. This seems like a reasonable comprimise
 
-IF(Pliris_ENABLE_ZCPLX)
+IF(Adelus_ENABLE_ZCPLX)
   MESSAGE("     Building the Z Complex library")
   ADD_DEFINITIONS(-DZCPLX)
-  IF(Pliris_ENABLE_TIMING)
+  IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
     ADD_DEFINITIONS(-DGET_TIMING)
   ENDIF()
-  IF(Pliris_ENABLE_CUDAHOSTPINNED)
+  IF(Adelus_ENABLE_CUDAHOSTPINNED)
     MESSAGE("     ... use Cuda Host Pinned memory for MPI")
     ADD_DEFINITIONS(-DCUDA_HOST_PINNED_MPI)
   ENDIF()
-  IF(Pliris_ENABLE_USEDEEPCOPY)
+  IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
     ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
-    zpliris
+    zadelus
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     )
 
-ELSEIF(Pliris_ENABLE_SCPLX)
+ELSEIF(Adelus_ENABLE_SCPLX)
   MESSAGE("     Building the S Complex library")
   ADD_DEFINITIONS(-DSCPLX)
-  IF(Pliris_ENABLE_TIMING)
+  IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
     ADD_DEFINITIONS(-DGET_TIMING)
   ENDIF()
-  IF(Pliris_ENABLE_CUDAHOSTPINNED)
+  IF(Adelus_ENABLE_CUDAHOSTPINNED)
     MESSAGE("     ... use Cuda Host Pinned memory for MPI")
     ADD_DEFINITIONS(-DCUDA_HOST_PINNED_MPI)
   ENDIF()
-  IF(Pliris_ENABLE_USEDEEPCOPY)
+  IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
     ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
-    cpliris
+    cadelus
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     )
 
-ELSEIF(Pliris_ENABLE_SREAL)
+ELSEIF(Adelus_ENABLE_SREAL)
   MESSAGE("     Building the single precision library")
   ADD_DEFINITIONS(-DSREAL)
-  IF(Pliris_ENABLE_TIMING)
+  IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
     ADD_DEFINITIONS(-DGET_TIMING)
   ENDIF()
-  IF(Pliris_ENABLE_CUDAHOSTPINNED)
+  IF(Adelus_ENABLE_CUDAHOSTPINNED)
     MESSAGE("     ... use Cuda Host Pinned memory for MPI")
     ADD_DEFINITIONS(-DCUDA_HOST_PINNED_MPI)
   ENDIF()
-  IF(Pliris_ENABLE_USEDEEPCOPY)
+  IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
     ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
-    spliris
+    sadelus
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     )
 
-ELSEIF(Pliris_ENABLE_DREAL)
+ELSEIF(Adelus_ENABLE_DREAL)
   MESSAGE("     Building the double precision(default) library")
   ADD_DEFINITIONS(-DDREAL)
-  IF(Pliris_ENABLE_TIMING)
+  IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
     ADD_DEFINITIONS(-DGET_TIMING)
   ENDIF()
-  IF(Pliris_ENABLE_CUDAHOSTPINNED)
+  IF(Adelus_ENABLE_CUDAHOSTPINNED)
     MESSAGE("     ... use Cuda Host Pinned memory for MPI")
     ADD_DEFINITIONS(-DCUDA_HOST_PINNED_MPI)
   ENDIF()
-  IF(Pliris_ENABLE_USEDEEPCOPY)
+  IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
     ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
-    dpliris
+    dadelus
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     )

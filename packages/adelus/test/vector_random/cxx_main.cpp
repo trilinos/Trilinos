@@ -53,7 +53,7 @@
 #include <KokkosBlas1_axpby.hpp>
 #include <KokkosBlas1_nrm2.hpp>
 #include <KokkosBlas2_gemv.hpp>
-#include <Pliris.hpp>
+#include <Adelus.hpp>
 //#include "flops.h"
 
 #ifdef DREAL
@@ -169,12 +169,12 @@ int main(int argc, char *argv[])
   numrhs = 1;
 
   if( rank == 0) {
-    std::cout << " ---- Building Pliris solver ----" << std::endl;
+    std::cout << " ---- Building Adelus solver ----" << std::endl;
   }
 
   // Get Info to build the matrix on a processor
 
-  Pliris::GetDistribution( &nprocs_per_row,
+  Adelus::GetDistribution( &nprocs_per_row,
                            &matrix_size,
                            &numrhs,
                            &myrows,
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
        << "    num procs row   " << nprocs_per_row << std::endl
        << "    my_col  " << my_col << std::endl;
 
-  // Pliris example using the Kokkos Views
+  // Adelus example using the Kokkos Views
   Kokkos::initialize( argc, argv );
   {
   //  Local size -- myrows  * (mycols + myrhs)
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve   ****" << std::endl;
 
-  Pliris::FactorSolve (A, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::FactorSolve (A, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
 
   if( rank == 0) {
     std::cout << " ----  Solution time  ----   " << secs << "  in secs. " << std::endl;
