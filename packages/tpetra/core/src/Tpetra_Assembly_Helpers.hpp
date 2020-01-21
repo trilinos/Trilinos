@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -51,28 +49,28 @@ namespace Impl {
 template <typename... Args>
 inline void foreach_pack(Args &&... args) {}
 } // namespace Impl
- 
+
 template <typename... Args>
 void beginFill(Args &&... args)
 {
   // use the comma operator to transform a potentially void function call
   // into a argument to allow proper parameter expansion for c++11
   Impl::foreach_pack( (args.beginFill(),1)... );
- 
+
   // using c++17 the code would be
   // (args.beginFill()...);
 }
- 
+
 template <typename... Args>
 void endFill(Args &&... args)
 {
   // use the comma operator to transform a potentially void function call
   // into a argument to allow proper parameter expansion for c++11
   Impl::foreach_pack( (args.endFill(),1)... );
- 
+
   // using c++17 the code would be
   // (args.endFill()...);
- 
+
 }
 
 }// namespace Tpetra
