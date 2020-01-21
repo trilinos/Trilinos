@@ -138,13 +138,17 @@ namespace
           
           for (int i=0; i<=polyOrder; i++)
           {
-            if (! approximatelyEqual(secondPathIntegratedJacobiView_dt_host(i), integratedJacobiView_dt_host(i), tol) )
+            bool valuesAreBothSmall = valuesAreSmall(secondPathIntegratedJacobiView_dt_host(i), integratedJacobiView_dt_host(i), tol);
+            if (!valuesAreBothSmall)
             {
-              out << "for polyOrder " << i << ", alpha = " << alpha << ", x = " << x << ", t = " << t << ": ";
-              out << secondPathIntegratedJacobiView_dt_host(i) << " != " << integratedJacobiView_dt_host(i);
-              out << " (diff = " << abs(secondPathIntegratedJacobiView_dt_host(i) - integratedJacobiView_dt_host(i));
-              out << "; tol = " << tol << ")\n";
-              success = false;
+              if (! approximatelyEqual(secondPathIntegratedJacobiView_dt_host(i), integratedJacobiView_dt_host(i), tol) )
+              {
+                out << "for polyOrder " << i << ", alpha = " << alpha << ", x = " << x << ", t = " << t << ": ";
+                out << secondPathIntegratedJacobiView_dt_host(i) << " != " << integratedJacobiView_dt_host(i);
+                out << " (diff = " << abs(secondPathIntegratedJacobiView_dt_host(i) - integratedJacobiView_dt_host(i));
+                out << "; tol = " << tol << ")\n";
+                success = false;
+              }
             }
           }
         }
