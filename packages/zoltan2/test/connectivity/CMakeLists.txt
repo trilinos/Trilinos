@@ -204,25 +204,6 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"  
 )
 
-TRIBITS_ADD_TEST(
-  iceSheet_int
-  NAME icesheet_Three_OneProcessGetsNone_ParMETIS
-  ARGS "./ three three-basal-friction.ascii three-borders.quad.msh three-answers.txt prepartition"
-  NUM_MPI_PROCS 4
-  COMM mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
-
-TRIBITS_ADD_TEST(
-  iceSheet_int
-  NAME icesheet_FourVtxNoEdges_ParMETIS
-  ARGS "./ noedges noedges-basal-friction.ascii noedges-borders.quad.msh noedges-answers.txt prepartition"
-  NUM_MPI_PROCS 4
-  COMM mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
 
 TRIBITS_ADD_TEST(
   iceSheet_int
