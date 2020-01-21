@@ -25,7 +25,6 @@ namespace Zoltan2{
       typedef typename Adapter::user_t user_t;
       typedef typename Adapter::userCoord_t userCoord_t;
       typedef Tpetra::Map<lno_t, gno_t> map_t;
-      //typedef map_t::global_ordinal_type mgno_t;
       
       //Arguments: problemComm is the communicator we will use for the propagation
       //           adapter is the graph adapter that represents the ice mesh's bottom layer
@@ -39,21 +38,16 @@ namespace Zoltan2{
          adapter(adapter__), grounding_flags(basalFriction), boundary_edges(boundary_edges__),
          num_boundary_edges(num_boundary_edges__), problemComm(problemComm__)
       {
-	int me = problemComm->getRank();
 
-	std::cout<<me<<": Creating new Environment\n";
 	env = rcp(new Environment(problemComm));
-	std::cout<<me<<": Created new Environment\n";
         modelFlag_t flags;
 	flags.reset();
 
-	std::cout<<me<<": Building the Model\n";
 	///build the graph model from the GraphAdapter.	 
 	buildModel(flags);
-	std::cout<<me<<": Built the Model\n";
       }
-      //This should probably return an RCP, but for now it's an int*
-      //This will return a number of flags consistent with the 
+   
+      //This function returns a number of flags consistent with the 
       //number of locally owned vertices.
       int* getDegenerateFeatureFlags();
     private:
@@ -71,7 +65,6 @@ namespace Zoltan2{
 template <typename Adapter>
 void IceProp<Adapter>::buildModel(modelFlag_t &flags){
   flags.set(REMOVE_SELF_EDGES);
-  //flags.set(GENERATE_CONSECUTIVE_IDS);
   
   this->env->debug(DETAILED_STATUS, "	building graph model");
   this->model = rcp(new GraphModel<base_adapter_t>(this->adapter, this->env,
@@ -84,13 +77,9 @@ template <typename Adapter>
 int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   //using the GraphModel, construct 
   //mapOwned and mapWithCopies, as well as a 
-  //csr graph, could just use the graph.h from 
-  //the test directory. Should be a simple conversion.
+  //csr graph.
   //Run the propagation, and return the flags.
   
-  //get the number of local vertices and edges.
-  //const size_t modelVerts = model->getLocalNumVertices();
-  //const size_t modelEdges = model->getLocalNumEdges();
 
   //Get vertex GIDs, in a locally indexed array
   ArrayView<const gno_t> vtxIDs;
@@ -104,7 +93,8 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
   size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);
   //edge weights are not used either.
-
+  
+  //copy data over to regular arrays
   gno_t* out_edges = NULL;
   typename map_t::local_ordinal_type* out_offsets = NULL;
   gno_t* global_ids = NULL;
@@ -112,21 +102,8 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   TPL_Traits<typename map_t::local_ordinal_type, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
   TPL_Traits<gno_t, const gno_t>::ASSIGN_ARRAY(&global_ids, vtxIDs);
   
-  
-  
+  //get the rank of the current process
   int me = problemComm->getRank();
-
-  std::cout<<me<<": Local vertices:\n";
-  for(int i = 0; i < nVtx; i++){
-    std::cout<<"\t"<<vtxIDs[i]<<"\n";
-  }
-  std::cout<<me<<": Local edges:\n";
-  for(int i = 0; i < nVtx; i++){
-    int outDegree = offsets[i+1] - offsets[i];
-    for(int j = offsets[i]; j < offsets[i+1]; j++){
-      std::cout<<me<<": "<<vtxIDs[i]<<" -- "<<adjs[j]<<"\n";
-    }
-  }
   
   //create the Tpetra map for the global indices
   Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -135,8 +112,9 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   //sentinel value to detect unsuccessful searches
   lno_t fail = Teuchos::OrdinalTraits<lno_t>::invalid();
 
-  
+  //map to make sure ghosted vertices aren't duplicated in the Tpetra Maps
   std::unordered_map<gno_t,lno_t> ghost_map;
+  //The new local IDs for each ghosted vertex
   std::vector<lno_t> ghostGIDs;
   int nGhosts = 0;
   //count how many ghosts are in the edge list, to create the mapWithCopies.
@@ -152,17 +130,13 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   
   //build nVtx + nGhosts size array of grounding flags
   bool* grounding = new bool[nVtx+nGhosts];
-  for(int i = 0; i < nVtx+nGhosts; i++){
+  for(size_t i = 0; i < nVtx+nGhosts; i++){
     if(i < nVtx){
       grounding[i] = grounding_flags[i];
-      if(grounding[i]){
-        std::cout<<me<<": global vert "<<vtxIDs[i]<<" is initially grounded\n";
-      }
     }
     else grounding[i] = false;
   }
 
-  //std::cout<<me<<": number of ghosts = "<<nGhosts<<"\n";
   
   //use the count of ghosts + owned to make mapWithCopies, need to create a Teuchos array first.
   Teuchos::Array<gno_t> gids(nVtx+nGhosts);
@@ -172,20 +146,13 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   for(size_t i = nVtx; i < nVtx+nGhosts; i++){
     gids[i] = ghostGIDs[i-nVtx];
   }
-  /*int ghostCount = 0;
-  for(size_t i = 0; i < nEdge; i++){
-    if(map->getLocalElement(adjs[i]) == fail){
-      gids[nVtx+ghostCount] = adjs[i];
-      ghostCount++;
-    }
-  }*/
+  
+  //create the Tpetra map with copies
   Tpetra::global_size_t dummy_2 = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   RCP<const map_t > mapWithCopies = rcp(new map_t(dummy_2, gids, 0, problemComm));
  
   //communicate boundary edges back to owning processors
-  //
-  //Teuchos::ArrayView<int> owners;
-  //Teuchos::ArrayView<gno_t> boundary(num_boundary_edges*2);
+  
   std::vector<int> owners_vec;
   std::vector<gno_t> boundary_vec;
   for(int i = 0; i < num_boundary_edges*2; i++){
@@ -194,21 +161,13 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   }
   Teuchos::ArrayView<gno_t> boundary = Teuchos::arrayViewFromVector(boundary_vec);
   Teuchos::ArrayView<int> owners = Teuchos::arrayViewFromVector(owners_vec);
-  mapWithCopies->getRemoteIndexList(boundary,owners);
   
+  //get the owning process for each vertex in the boundary list
+  mapWithCopies->getRemoteIndexList(boundary,owners);
+  //store the number of processes for future use
   int nprocs = problemComm->getSize();
-  std::cout<<me<<": nprocs = "<<nprocs<<"\n";
-  int maxOwner = 0;
-  int minOwner = 0;
-  for(int i = 0; i < owners.size(); i++){
-    if(owners[i] == -1) std::cout<<"Vertex "<<boundary[i]<<" does not have an owner\n";
-    //if(owners[i] <minOwner) minOwner = owners[i];
-    //if(owners[i] >maxOwner) maxOwner = owners[i];
-  }
-  std::cout<<me<<": maxOwner = "<<maxOwner<<", minOwner = "<<minOwner<<"\n";
   
   //send boundary edges to any remote processes that own an endpoint
-  //COMMENT THIS BLOCK BACK IN
   std::vector<int> sendcnts;
   for(int i = 0; i < nprocs; i++) sendcnts.push_back(0);
   for(int i = 0; i < num_boundary_edges*2; i+= 2){
@@ -224,10 +183,8 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   //send the number of vertex IDs to be sent.
   Teuchos::ArrayView<const int> sendCount = Teuchos::arrayViewFromVector(sendcnts);
   Teuchos::ArrayView<int> recvCount = Teuchos::arrayViewFromVector(recvcnts);
-  //Zoltan2::AlltoAllCount(*problemComm,*env,sendCount, recvCount);
   
   //create sdispls and sentcount to build sendbuf
-  //COMMENT THIS BACK IN
   std::vector<int> sdispls;
   sdispls.push_back(0);
   for(int i = 1; i < nprocs; i++){
@@ -262,19 +219,22 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
       sendbuf[sendbufidx++] = boundary[i+1];
     }
   }
-  
+ 
+  //Do the final communication back to each remote process 
   Teuchos::ArrayRCP<gno_t> recvbuf;
   Teuchos::ArrayView<const gno_t> sendBuf = Teuchos::arrayViewFromVector(sendbuf);
   Zoltan2::AlltoAllv(*problemComm,*env,sendBuf,sendCount,recvbuf,recvCount);
 
-  //create the set to see if we've counted this boundary edge before
+  //hash for the boundary-edge set
   struct pair_hash {
     inline std::size_t operator()(const std::pair<gno_t,gno_t>& v) const {
       return v.first * 10 + v.second;
     }
   };
 
+  //create the set to see if we've counted this boundary edge before
   std::unordered_set<std::pair<gno_t,gno_t>,pair_hash> edge_set;
+
   int* local_boundary_counts = new int[nVtx];
   for(size_t i = 0; i < nVtx; i++){
     local_boundary_counts[i] = 0;
@@ -316,7 +276,6 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
       }
     }
   }
-  std::cout<<me<<": done constructing boundary edges\n";
   //we should now have complete local knowledge of the boundary.
 
   //convert adjacency array to use local identifiers instead of global.
@@ -325,17 +284,14 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   for(size_t i = 0; i < nEdge; i++){
     out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
   }
-  std::cout<<me<<": done creating out edges, creating csr graph\n";
   icePropGraph<typename map_t::local_ordinal_type>* g = new icePropGraph<typename map_t::local_ordinal_type>({nVtx, nEdge, out_edges_lid,out_offsets, 0,0.0});
-  std::cout<<me<<": constructing propagation object\n";
   Zoltan2::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
-  std::cout<<me<<": starting propagation\n";  
   int* removed = prop.propagate();
   
-  std::cout<<me<<": done propagating\n";
-  //delete [] local_boundary_counts;
-  //delete g;
-  //delete [] grounding;
+  delete [] local_boundary_counts;
+  delete g;
+  delete [] grounding;
+  delete out_edges_lid;
 
   return removed;
 }

@@ -2,7 +2,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_FEMultiVector.hpp"
-//#include "Zoltan2_IceSheetGraph.h"
 
 #include <string>
 #include <sstream>
@@ -14,26 +13,13 @@
 
 namespace Zoltan2{
         
-        /*
- *
-struct graph {
-  int n;
-  unsigned m;
-  int* out_array;
-  unsigned* out_degree_list;
-  int max_degree_vert;
-  double avg_out_degree;
-};
-
-#define out_degree(g, n) (g->out_degree_list[n+1] - g->out_degree_list[n])
-#define out_vertices(g, n) (&g->out_array[g->out_degree_list[n]])
-
- *      */
+	//Graph datastructure that represents the local
+	//graph in ice sheet propagation problems
         template<typename lno_t>
 	class icePropGraph {
           public:
-            lno_t n;
-            lno_t m;
+            size_t n;
+            size_t m;
             lno_t* out_array;
             lno_t* out_degree_list;
             lno_t max_degree_vert;
@@ -46,18 +32,18 @@ struct graph {
             }
         }; 
         
-        
+        //global queues to allow easy propagation from the
+	//+= operator of IcePropVtxLabel.
 	std::queue<int> icePropArtQueue;
 	std::queue<int> icePropRegQueue;
 
-
+        //Enum that denotes
 	enum IcePropGrounding_Status {ICEPROPGS_FULL=2, ICEPROPGS_HALF=1, ICEPROPGS_NONE = 0};
 	// Struct representing a vertex label.
 	// We define our own "addition" for these labels.
 	// Later, we'll create a Tpetra::FEMultiVector of these labels.
 	class IcePropVtxLabel {
-	public:
-	  //int gid;
+	public: 
           int id;
 	  int first_label;
 	  int first_sender;
@@ -65,10 +51,10 @@ struct graph {
 	  int second_sender;
           int bcc_name;
 	  bool is_art;
+
 	  // Constructors
 	  IcePropVtxLabel(int idx_, int first_ = -1, int first_sender_ = -1, int second_ = -1, int second_sender_ = -1,bool art_ = false, int bcc_name_ = -1) { 
 	    id = idx_;
-            //gid = idx;
 	    if(id == -1){
 		std::cout<<"A label's ID is -1\n";
 	    }
@@ -267,8 +253,8 @@ namespace Zoltan2{
 template<typename MAP>
 class iceSheetPropagation {
 public:
+
   //typedefs for the FEMultiVector
-  //typedef Tpetra::Map<> map_t;
   typedef typename MAP::local_ordinal_type lno_t;
   typedef typename MAP::global_ordinal_type gno_t;
   typedef IcePropVtxLabel scalar_t;
@@ -276,8 +262,9 @@ public:
   
   
  	
-  //Constructor assigns vertices to processors and builds maps with and
-  //without copies ICE SHEET VERSION
+  //Constructor creates FEMultiVector of IcePropVertexLabels,
+  //and initializes the labels according to the input grounding information.
+  //It also sets the is_art flag on each label if the vertex is a potential articulation point.
   iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, icePropGraph<lno_t>* g_,int* boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(localOwned), nLocalCopy(localCopy),
@@ -300,23 +287,13 @@ public:
         label.first_label = gid;
         label.first_sender = gid;
         icePropRegQueue.push(label.id);
-        //if(label.is_art) icePropArtQueue.push(label.id);
-        //else icePropRegQueue.push(label.id);
       }
       femv->replaceLocalValue(i,0,label);
-      //femv->replaceGlobalValue(gid,1,me);
     }
-    //IcePropVtxLabel label1 = femv->getData(0)[0];
-    //IcePropVtxLabel label2 = femv->getData(0)[1];
-    //label1 += label2;
-
-    //femv->replaceGlobalValue(0,0,label1);
-    //printFEMV("BeforeFill");   
  
     femv->endFill(); 
-    std::cout<<me<<": finished constructing successfully\n";
-    //printFEMV("AfterFill");
   }
+
   void printFEMV(const char *msg){
     for (int v = 0; v < 1; v++){
       std::cout << me << " OWNED " << msg << " FEMV[" << v << "] Owned: ";
@@ -338,16 +315,17 @@ public:
 
   }
   //propagation functions
-  //returns an array of vertices to remove
+  //returns a flag for each vertex:
+  // -2 means keep the vertex
+  // -1 means the vertex is completely floating
+  // any flag > -1 means the vertex is a part of a hinge, and the flag is the ID of the top-level hinge vertex
   int* propagate(void){ 
     //run bfs_prop
-    //std::cout<<me<<": starting propagation\n"; 
     bfs_prop();
-    //std::cout<<me<<": done with initial propagation\n";
     //check for potentially false articulation points
     while(true){
       femv->switchActiveMultiVector(); 
-      for(int i = 0; i < g->n; i++){
+      for(size_t i = 0; i < g->n; i++){
 	IcePropVtxLabel curr_node = femvData[i];
         if(curr_node.is_art && curr_node.getGroundingStatus() == ICEPROPGS_FULL){
           lno_t out_degree = g->out_degree(curr_node.id);//out_degree(g, curr_node.id);
@@ -367,7 +345,7 @@ public:
       if(done) break;
       
       //add all articulation points to the icePropRegQueue
-      for(int i = 0; i < g->n; i++){
+      for(size_t i = 0; i < g->n; i++){
 	IcePropVtxLabel curr_node = femvData[i];
         if(curr_node.getGroundingStatus() == ICEPROPGS_HALF){
 	  IcePropVtxLabel cleared(curr_node.id);
@@ -378,14 +356,13 @@ public:
           icePropRegQueue.push(curr_node.id);
         }
       }
-      //std::cout<<me<<": Running BFS-prop again\n";
       //re-run bfs_prop until incomplete propagation is fixed
       bfs_prop();     
     }
     //check for nodes that are less than full.
     //return flags for each node, -2 for keep, -1 for remove, <vtxID> for singly grounded nodes.
     lno_t* removed = new lno_t[g->n];
-    for(int i = 0; i < g->n; i++){
+    for(size_t i = 0; i < g->n; i++){
       IcePropVtxLabel curr_node = femvData[i];
       IcePropGrounding_Status gs = curr_node.getGroundingStatus();
       if(gs == ICEPROPGS_FULL) removed[i] = -2;
@@ -393,7 +370,6 @@ public:
       else removed[i] = -1;
     }
     femv->switchActiveMultiVector();
-    //std::cout<<me<<": returning answer\n";
     return removed;
   }
 
@@ -407,7 +383,6 @@ public:
     //while(!done);
     int done = 0;
     while(!done){
-      //std::cout<<me<<": Propagating...\n";
       femv->beginFill();
       //visit every node that changed
       std::queue<int>* curr;
@@ -420,8 +395,8 @@ public:
         //if the current node is a copy, it shouldn't propagate out to its neighbors.
         if(curr_node.id >= nLocalOwned) continue;
 
-        lno_t out_degree = g->out_degree(curr_node.id);//out_degree(g, curr_node.id);
-        lno_t* outs = g->out_vertices(curr_node.id);//out_vertices(g, curr_node.id);
+        lno_t out_degree = g->out_degree(curr_node.id);
+        lno_t* outs = g->out_vertices(curr_node.id);
         for(int i = 0; i < out_degree; i++){
 	  IcePropVtxLabel neighbor = femvData[outs[i]];
 	  IcePropGrounding_Status old_gs = neighbor.getGroundingStatus();
@@ -441,16 +416,10 @@ public:
         }
         
       }
-      //std::cout<<me<<": art queue front = "<<icePropArtQueue.front()<<"\n";
-      //std::cout<<me<<": art queue size = "<<icePropArtQueue.size()<<"\n";
       femv->endFill();
-      //printFEMV("Before Communicating");
       femv->doOwnedToOwnedPlusShared(Tpetra::ADD);
       femv->doOwnedPlusSharedToOwned(Tpetra::ADD);
-      //std::cout<<me<<": reg queue front = "<<icePropRegQueue.front()<<"\n";
-      //std::cout<<me<<": reg queue size = "<<icePropRegQueue.size()<<"\n";
       int local_done = icePropRegQueue.empty() && icePropArtQueue.empty();
-      //printFEMV("After Communicating");
       //this call makes sure that if any inter-processor communication changed labels
       //we catch the changes and keep propagating them.
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
@@ -517,6 +486,7 @@ public:
     } 
   }
   
+  //propagation rules to find biconnected components 
   Teuchos::ArrayRCP<const scalar_t> bccPropagate(){
     int done = 0;
     std::queue<int> art_queue;
@@ -540,8 +510,8 @@ public:
         int ownedVtx = -1, ghostVtx = -1;
         for(int i = 0; i < nLocalOwned; i++){
           if(femvData[i].getGroundingStatus() == ICEPROPGS_NONE){
-            lno_t out_degree = g->out_degree(i);//out_degree(g, i);
-            lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
+            lno_t out_degree = g->out_degree(i);
+            lno_t* outs = g->out_vertices(i);
             for(int j = 0; j < out_degree; j++){
               if(outs[j] >= nLocalOwned){
                 //we're dealing with a ghosted vertex
@@ -565,7 +535,6 @@ public:
         
         //if neighborProc is me, I have to ground the neighbors.
         if(neighborProc == me){
-          //std::cout<<me<<": Grounding empty neighbors,"<<mapWithCopies->getGlobalElement(ownedVtx)<<" and "<<mapWithCopies->getGlobalElement(ghostVtx)<<"\n";
           //replace local value with self-grounded vertex with new bcc_name
           IcePropVtxLabel firstNeighbor = femvData[ownedVtx];
           IcePropVtxLabel secondNeighbor = femvData[ghostVtx];
@@ -588,8 +557,8 @@ public:
           //if none are found, find any pair of empty vertices. (similar procedure)
           for(int i = 0; i < nLocalOwned; i++){
             if(femvData[i].getGroundingStatus() == ICEPROPGS_NONE){
-              lno_t out_degree =g->out_degree(i);// out_degree(g, i);
-              lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
+              lno_t out_degree =g->out_degree(i);
+              lno_t* outs = g->out_vertices(i);
               for(int j = 0; j < out_degree; j++){
                 if(femvData[outs[j]].getGroundingStatus() == ICEPROPGS_NONE){
                   foundEmptyPair = 1;
@@ -610,12 +579,10 @@ public:
           //if emptyProc is -1, no processor has a pair of empty neighboring vertices, so we can't do anything
           
           if(emptyProc == -1){
-            //std::cout<<me<<": Couldn't find two empty neighbors\n";
             femv->endFill();
             break;
           }
           else if(emptyProc == me){
-            //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(vtx1)<<" and neighbor "<<mapWithCopies->getGlobalElement(vtx2)<<"\n";
             //this processor will ground two random, empty neighbors.
             IcePropVtxLabel firstNeighbor = femvData[vtx1];
             IcePropVtxLabel secondNeighbor = femvData[vtx2];
@@ -642,11 +609,10 @@ public:
         if(!art_queue.empty()){
           //look at the front, and ground a neighbor.
           lno_t art_pt = art_queue.front();
-          lno_t out_degree = g->out_degree(art_pt);//out_degree(g, art_pt);
-          lno_t* outs = g->out_vertices(art_pt);//out_vertices(g, art_pt);
+          lno_t out_degree = g->out_degree(art_pt);
+          lno_t* outs = g->out_vertices(art_pt);
           for(int i = 0;i < out_degree; i++){
             if(femvData[outs[i]].getGroundingStatus() == ICEPROPGS_NONE){
-              //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(art_queue.front())<<" and neighbor "<<mapWithCopies->getGlobalElement(outs[i])<<"\n";
               IcePropVtxLabel neighbor = femvData[outs[i]];
               IcePropVtxLabel artvtx = femvData[art_pt];
               gno_t neighbor_gid = mapWithCopies->getGlobalElement(neighbor.id);
@@ -667,17 +633,14 @@ public:
       }
       
       //call this->propagate, which, per-processor, finds one bcc at a time.
-      //std::cout<<me<<": Calling propagate\n";
       int* t = propagate();
-      //printFEMV("AfterPropagation");
       bcc_count++;
       delete [] t;
-      //std::cout<<me<<": Checking for articulation points\n";
       //check for OWNED articulation points
       for(int i = 0; i < nLocalOwned; i++){
         if(femvData[i].getGroundingStatus() == ICEPROPGS_FULL){
-          lno_t out_degree = g->out_degree(i);//out_degree(g, i);
-          lno_t* outs = g->out_vertices(i);//out_vertices(g, i);
+          lno_t out_degree = g->out_degree(i);
+          lno_t* outs = g->out_vertices(i);
           for(int j = 0; j < out_degree; j++){
             if(femvData[outs[j]].getGroundingStatus() < ICEPROPGS_FULL){
               art_queue.push(i);
@@ -687,7 +650,6 @@ public:
           }
         }
       }
-      //std::cout<<me<<": Clearing half labels\n";
       //clear half labels
       for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
         IcePropVtxLabel label = femvData[i];
@@ -701,13 +663,11 @@ public:
         }
       }
       //pop articulation points off of the art_queue if necessary.
-      //std::cout<<me<<": Removing fully explored articulation points\n";
       if(!art_queue.empty()){
         bool pop_art = true;
         while(pop_art && !art_queue.empty()){
-          //std::cout<<me<<": Checking artpt "<<art_queue.front()<<"\n";
-          lno_t top_art_degree = g->out_degree(art_queue.front());//out_degree(g,art_queue.front());
-          lno_t* art_outs = g->out_vertices(g,art_queue.front());//out_vertices(g,art_queue.front());
+          lno_t top_art_degree = g->out_degree(art_queue.front());
+          lno_t* art_outs = g->out_vertices(g,art_queue.front());
         
           for(int i = 0; i < top_art_degree; i++){
             if(femvData[art_outs[i]].getGroundingStatus() < ICEPROPGS_FULL){
@@ -717,9 +677,7 @@ public:
           if(pop_art) art_queue.pop();
         }
       }
-      //std::cout<<me<<": Starting over\n";
     }
-    //std::cout<<me<<": found "<<bcc_count<<" biconnected components\n";
     for(int i = 0; i < nLocalOwned; i++){
       if(!articulation_point_flags[i]){
         IcePropVtxLabel label = femvData[i];
@@ -729,7 +687,6 @@ public:
     }
     return femv->getData(0);
   }
-  //int vtxLabelUnitTest();
 
 private:
   int me; 	    //my processor rank
@@ -751,399 +708,6 @@ private:
 };
 }//end namespace iceProp
 
-//  Unit test for the vtxLabel struct
-//  Make sure vtxLabel's overloaded operators compile and work as expected.
-//
-//  Tests for coverage of += operator	done
-//  	empty non-art += empty non-art    x
-//  	empty non-art += half non-art     x
-//  	empty non-art += full non-art	  x
-//  	empty non-art += empty art	  x
-//  	empty non-art += half art         x
-//  	empty non-art += full art         x
-//  	half non-art += empty non-art     x
-//  	half non-art += half non-art   	  x
-//	half non-art += full non-art      x
-//	half non-art += empty art	  x
-//	half non-art += half art	  x
-//	half non-art += full art	  x
-//	full non-art += empty non-art     x
-//	full non-art += half non-art      x
-//	full non-art += full non-art	  x
-//	full non-art += empty art 	  x
-//	full non-art += half art          x
-//	full non-art += full art          x
-//  
-//  Note: suspected articulation points (SAPs?) receive labels in the 
-//  same way that regular vertices do, so the only cases we need to test
-//  for exercising the articulation point logic are the cases where
-//  suspected articulation points are on the right hand side of the +=.
-//
-/*template<typename MAP>
-int  iceProp::iceSheetPropagation<MAP>::vtxLabelUnitTest()
-{
-  int ierr = 0;
-  iceProp::vtxLabel a(0);
-  iceProp::vtxLabel a_same(0,-1,-1,-1,-1,false);
-  
-  //equality test 
-  if(!(a == a_same)){
-    std::cout<<"UnitTest Error: default constructor arguments not as expected "<<a<<" != "<<a_same<<"\n";
-    ierr++;
-  }
-
-//  	empty non-art += empty non-art
-  iceProp::vtxLabel ena1(0);
-  iceProp::vtxLabel ena2(2);
-  iceProp::vtxLabel result(0);
-  giveLabels(ena2,ena1);
-  
-  if(!(ena1==result)){
-    std::cout<<"UnitTest Error: empty non-art += empty non-art not as expected: "<<ena1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//  	empty non-art += half non-art 
-  iceProp::vtxLabel hna1(0,1,1,-1,-1,false);
-  ena1 = iceProp::vtxLabel(2);
-  
-  if(!iceProp::reg.empty()){
-    std::cout<<"UnitTest Error: regular queue is not empty, but it should be\n";
-    ierr++;
-  }
-
-  giveLabels(hna1,ena1);
-  result = iceProp::vtxLabel(2,1,0,-1,-1,false);
-  
-  if(!(ena1 == result)){
-    std::cout<<"UnitTest Error: empty non-art += half non-art not as expected "<<ena1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-  if(iceProp::reg.front() != 2){
-    std::cout<<"UnitTest Error: += did not update the regular queue: size is "<<iceProp::reg.size()<<", front is "<<iceProp::reg.front()<<"\n";
-    ierr++;
-  }
-  
-//  	empty non-art += full non-art
-  ena1 = iceProp::vtxLabel(2);
-  iceProp::vtxLabel fna1(10,3,5,7,9,false);
-  result = iceProp::vtxLabel(2,3,10,7,10,false);
-
-  //ena1 += fna1;
-  giveLabels(fna1,ena1);
-  if(!(ena1 == result)){
-    std::cout<<"UnitTest Error: empty non-art += full non-art not as expected: "<<ena1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//  	empty non-art += empty art
-  ena1 = iceProp::vtxLabel(2);
-  iceProp::vtxLabel ea1(10,-1,-1,-1,-1,true);
-  result = iceProp::vtxLabel(2);
-
-  //ena1 += ea1;
-  giveLabels(ea1,ena1);
-  if(!(result == ena1)){
-    std::cout<<"UnitTest Error: empty non-art += empty art not as expected: "<<ena1<<" != "<<result<<"\n";
-    ierr++;
-  }
-  
-//  	empty non-art += half art
-  ena1 = iceProp::vtxLabel(2);
-  iceProp::vtxLabel ha1(10,3,4,-1,-1,true);
-  result = iceProp::vtxLabel(2,3,10,-1,-1,false);
-
-  //ena1 += ha1;
-  giveLabels(ha1,ena1);
-  
-  if(!(ena1 == result)){
-    std::cout<<"UnitTest Error: empty non-art += half art not as expected: "<<ena1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//  	empty non-art += full art
-  ena1 = iceProp::vtxLabel(2);
-  iceProp::vtxLabel fa1(10,3,4,7,8,true);
-  result = iceProp::vtxLabel(2,10,10,-1,-1,false);
- 
-  //ena1 += fa1;
-  giveLabels(fa1,ena1);
-  
-  if(!(ena1 == result)){
-    std::cout<<"UnitTest Error: empty non-art += full art not as expected: "<<ena1<<" != "<<result<<"\n";
-    ierr++;
-  }
-  
-//  	half non-art += empty non-art
-  hna1 = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  ena1 = iceProp::vtxLabel(10);
-  result = iceProp::vtxLabel(2,3,5,-1,-1,false);
-
-  //hna1 += ena1;
-  giveLabels(ena1,hna1);
-  
-  if(!(hna1 == result)){
-    std::cout<<"UnitTest Error: half non-art += empty non-art not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//  	half non-art += half non-art   	  
-  //same labels (senders don't matter in this case)
-  hna1 = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  iceProp::vtxLabel hna2(4,3,9,-1,-1,false);
-  result = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  
-  //hna1+=hna2;
-  giveLabels(hna2, hna1);
-
-  if(!(hna1 == result)){
-    std::cout<<"UnitTest Error: half non-art += half non-art with same labels not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-  //hna2 has already sent to hna1
-  hna1 = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  hna2 = iceProp::vtxLabel(5,3,9,-1,-1,false);
-  result = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  
-  //hna1 += hna2;
-  giveLabels(hna2,hna1);
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += half non-art where rhs already sent to lhs not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-  
-  //different labels
-  hna1 = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  hna2 = iceProp::vtxLabel(4,7,9,-1,-1,false);
-  result = iceProp::vtxLabel(2,3,5,7,4,false);
-
-  //hna1 += hna2;
-  giveLabels(hna2,hna1);
-
-  if(!(hna1 == result)){
-    std::cout<<"UnitTest Error: half non-art += half non-art with different labels not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-    
-//	half non-art += full non-art
-  //different labels, different senders
-  hna1 = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  fna1 = iceProp::vtxLabel(6,4,9,1,0,false);
-  result = iceProp::vtxLabel(2,4,6,1,6,false);
-
-  //hna1 += fna1;
-  giveLabels(fna1,hna1);
-  
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += full non-art with different labels not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-  //full sent the half's only label
-  hna1 = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  fna1 = iceProp::vtxLabel(5,3,3,6,0,false);
-  result = iceProp::vtxLabel(2,3,5,6,5,false);
-  
-  //hna1 += fna1;
-  giveLabels(fna1,hna1);  
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += full non-art where full already sent half one label not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  } 
-  //full and half have one label in common
-  hna1 = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  fna1 = iceProp::vtxLabel(1,3,6,8,0,false);
-  result = iceProp::vtxLabel(2,3,1,8,1,false);
-  
-  //hna1 += fna1;
-  giveLabels(fna1,hna1);  
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += full non-art where full & half share one label not as expected: "<<hna1 <<" !=  " <<result<<"\n";
-    ierr++;
-  }
-  
-//	half non-art += empty art
-  hna1 = iceProp::vtxLabel(2,3,5,-1,-1,false);
-  ea1 = iceProp::vtxLabel(29,-1,-1,-1,-1,false);
-  result = hna1;
-  
-  //hna1 += ea1;
-  giveLabels(ea1,hna1);
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += empty art not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//	half non-art += half art
-  //same label
-  hna1 = iceProp::vtxLabel(2,4,5,-1,-1,false);
-  ha1 = iceProp::vtxLabel(10,4,3,-1,-1,true);
-  result = hna1;
-
-  //hna1 += ha1;
-  giveLabels(ha1,hna1);
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += half art same labels not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-  //ha1 sent hna1 its only label
-  hna1 = iceProp::vtxLabel(2,4,5,-1,-1,false);
-  ha1 = iceProp::vtxLabel(5,4,3,-1,-1,true);
-  result = hna1;
-
-  //hna1 += ha1;
-  giveLabels(ha1,hna1);  
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += half art where art sent to non-art already not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-  //different labels
-  hna1 = iceProp::vtxLabel(2,3,4,-1,-1,false);
-  ha1 = iceProp::vtxLabel(5,6,7,-1,-1,true);
-  result = iceProp::vtxLabel(2,3,4,6,5,false);
-
-  //hna1 += ha1;
-  giveLabels(ha1,hna1);  
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += half art with different labels not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//	half non-art += full art
-  //sharing a label
-  hna1 = iceProp::vtxLabel(2,4,5,-1,-1,false);
-  fa1 = iceProp::vtxLabel(6,4,3,9,0,true);
-  result = iceProp::vtxLabel(2,4,5,6,6,false);
-
-  //hna1 += fa1;
-  giveLabels(fa1,hna1); 
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error: half non-art += full art sharing a label not as expected: "<<hna1<<" != "<< result<<"\n";
-    ierr++;
-  }
-
-  //full sent a label to half
-  hna1 = iceProp::vtxLabel(2,4,5,-1,-1,false);
-  fa1 = iceProp::vtxLabel(5,4,3,6,7,true);
-  result = hna1;
-
-  //hna1 += fa1;
-  giveLabels(fa1, hna1);
-
-  if(!(hna1 == result)){
-    std::cout<<"UnitTest Error: half non-art += full art full already sent a label not as expected: "<<hna1 <<" != "<<result<<"\n";
-    ierr++;
-  }
-
-  //different labels
-  hna1 = iceProp::vtxLabel(2,3,4,-1,-1,false);
-  fa1 = iceProp::vtxLabel(1,5,6,7,8,true);
-  result = iceProp::vtxLabel(2,3,4,1,1,false);
-
-  //hna1 += fa1;
-  giveLabels(fa1,hna1);
-
-  if(!(result == hna1)){
-    std::cout<<"UnitTest Error half non-art += full art different labels not as expected: "<<hna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//	full non-art += empty non-art
-  fna1 = iceProp::vtxLabel(2,3,4,5,6,false);
-  ena1 = iceProp::vtxLabel(7);
-  result = fna1;
-
-  //fna1 += ena1;
-  giveLabels(ena1, fna1);
-
-  if(!(result == fna1)){
-    std::cout<<"UnitTest Error full non-art += empty non-art not as expected: "<<fna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-  
-//	full non-art += half non-art
-  fna1 = iceProp::vtxLabel(2,3,4,5,6,false);
-  hna1 = iceProp::vtxLabel(9,1,3,-1,-1,false);
-  result = fna1;
-  
-  //fna1 += hna1;
-  giveLabels(hna1, fna1);  
-
-  if(!(result == fna1)){
-    std::cout<<"UnitTest Error full non-art += half non-art not as expected: "<<fna1<<" != "<<result<<"\n";
-    ierr++;
-  } 
-
-
-//	full non-art += full non-art
-  fna1 = iceProp::vtxLabel(2,3,4,5,6,false);
-  iceProp::vtxLabel fna2(6,7,8,9,10,false);
-  result = fna1;
-
-  //fna1 += fna2;
-  giveLabels(fna2, fna1);
-
-  if(!(result == fna1)){
-    std::cout<<"UnitTest Error full non-art += full non-art not as expected: "<<fna1<<" != "<<result<<"\n";
-    ierr++;
-  }
- 
-//	full non-art += empty art
-  fna1 = iceProp::vtxLabel(2,4,5,6,7,false);
-  ea1 = iceProp::vtxLabel(1,-1,-1,-1,-1,true);
-  result = fna1;
-  
-  //fna1 += ea1;
-  giveLabels(ea1, fna1);
-
-  if(!(result == fna1)){
-    std::cout<<"UnitTest Error full non-art += empty art not as expected: "<<fna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//	full non-art += half art
-  fna1 = iceProp::vtxLabel(2,3,4,5,6,false);
-  ha1 = iceProp::vtxLabel(1,10,11,-1,-1,true);
-  result = fna1;
-
-  //fna1 += ha1;
-  giveLabels(ha1, fna1);
-
-  if(!(result == fna1)){
-    std::cout<<"UnitTest Error full non-art += half art not as expected: "<<fna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-
-//	full non-art += full art
-  fna1 = iceProp::vtxLabel(2,3,4,5,6,false);
-  fa1 = iceProp::vtxLabel(10,11,12,13,14,true);
-  result = fna1;
-  
-  //fna1 += fa1;
-  giveLabels(fa1,fna1);  
-
-  if(!(result == fna1)) {
-    std::cout<<"UnitTest Error full non-art += full art not as expected: "<<fna1<<" != "<<result<<"\n";
-    ierr++;
-  }
-  while(!iceProp::reg.empty())iceProp::reg.pop();
-  if(ierr == 0 ){
-    std::cout<<"iceSheetPropagation::giveLabels OK\n";
-  }
-  return ierr;
-}*/
 
 
 #endif

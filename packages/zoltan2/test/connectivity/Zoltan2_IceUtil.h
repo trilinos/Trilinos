@@ -21,7 +21,8 @@ void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts,
   line = line.substr(line.find(" "));
   int y = atoi(line.c_str());
   line = line.substr(line.find(" ", line.find_first_not_of(" ")));
-  int z = atoi(line.c_str());
+  //There is a third variable that is not used
+  //int z = atoi(line.c_str());
 
   //initialize
   n = x;
@@ -41,7 +42,7 @@ void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts,
   for(int i = 0; i < n; i++){
     final_ground_flags[i] = 0;
   }
-  int edge_index = 0;
+  unsigned edge_index = 0;
   //for the next y lines
   //read in the first 4 ints
   //create 8 edges from thos ints, subtracting one from all values for 0-indexing
@@ -96,7 +97,8 @@ void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts,
   return;
 }
 
-void read_boundary_file(char *filename, int& num_edges, int *& boundary_flags){
+template<typename gno_t>
+void read_boundary_file(char *filename, int& num_edges, gno_t *& boundary_flags){
   std::ifstream fin(filename);
   if(!fin){
     std::cout<<"Unable to open file "<<filename<<"\n";
@@ -112,12 +114,12 @@ void read_boundary_file(char *filename, int& num_edges, int *& boundary_flags){
   for(int i = 0; i < skip2; i++){
     std::getline(fin,throwaway);
   }
-  boundary_flags = new int[2*arrlength];
+  boundary_flags = new gno_t[2*arrlength];
   for(int i = 0; i < 2*arrlength; i++){
     boundary_flags[i] = 0;
   }
   num_edges = 2*arrlength;
-  int a, b;
+  gno_t a, b;
   //get the list of boundary edges instead of flags representing articulation points,
   //the integration code takes a list of boundary edges.
   int count = 0;
