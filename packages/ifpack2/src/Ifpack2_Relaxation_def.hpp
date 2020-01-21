@@ -1543,7 +1543,7 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
   const crs_matrix_type* crsMat =
     dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
   if (blockCrsMat != nullptr)  {
-    const_cast<this_type*> (this)->ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
+    const_cast<this_type&> (*this).ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
   }
   else if (crsMat != nullptr) {
     ApplyInverseGS_CrsMatrix (*crsMat, X, Y);
@@ -2241,7 +2241,7 @@ ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
   const crs_matrix_type* crsMat =
     dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
   if (blockCrsMat != nullptr)  {
-    const_cast<this_type*> (this)->ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
+    const_cast<this_type&> (*this).ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
   }
   else if (crsMat != nullptr) {
     ApplyInverseSGS_CrsMatrix (*crsMat, X, Y);
