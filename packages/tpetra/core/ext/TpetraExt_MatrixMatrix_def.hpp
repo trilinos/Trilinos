@@ -392,7 +392,7 @@ void Jacobi(Scalar omega,
 
   //Now import any needed remote rows and populate the Aview struct.
   RCP<const import_type> dummyImporter;
-  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, false, label,importParams1);
+  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label,importParams1);
 
   // We will also need local access to all rows of B that correspond to the
   // column-map of op(A).
