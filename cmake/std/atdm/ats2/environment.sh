@@ -32,7 +32,6 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Volta70" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Volta70
-    #eharvey, TODO: Is export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70 valid?
     arch=v100
   else
     echo
@@ -72,7 +71,7 @@ else
 fi
 
 # Common modules for all builds
-module purge
+module purge # Purge needed to load spmpi modules
 module load git/2.20.0
 module load cmake/3.14.5
 
@@ -177,18 +176,16 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
   export ATDM_CONFIG_Kokkos_ENABLE_Cuda_Lambda=ON
   export ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code=OFF
   export KOKKOS_NUM_DEVICES=2
-
-# eharvey, TODO: are these flags needed?
-#-D Trilinos_CXX11_FLAGS="-std=c++11 --expt-extended-lambda" \
-#-D Trilinos_EXTRA_LINK_FLAGS:STRING="-lmpi_ibm -ldl" \
 fi
 
 # Common module - requires compiler to be loaded first
 module load spectrum-mpi/2019.06.24
 
 # ATDM specific config variables
-export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp" #;-Wl,-verbose
+export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
+
+# NOTE: Invalid libbfd.so requires below for Trilinos to compile
 export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_ROOT}/lib/libiberty.a"
 
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
