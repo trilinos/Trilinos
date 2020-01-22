@@ -107,7 +107,6 @@ namespace { // (anonymous)
     constexpr double flagValue = -1.0;
     X.putScalar (flagValue);
     Y.putScalar (666.0);
-    Kokkos::fence();
 
     out << "transform on default execution space: -1 -> (666+1=667)" << endl;
     transform ("-1 -> (666+1=667)", Y, X,
@@ -139,7 +138,6 @@ namespace { // (anonymous)
     }
 
     Y.putScalar (418.0);
-    Kokkos::fence();
 
     out << "transform on default host execution space: 418 -> 419" << endl;
 
@@ -273,7 +271,6 @@ namespace { // (anonymous)
     constexpr double flagValue = -1.0;
     X.putScalar (flagValue);
     Y.putScalar (666.0);
-    Kokkos::fence();
 
     out << "transform on default execution space: -1 -> (666+1=667)" << endl;
     transform ("-1 -> (666+1=667)", Y, X,
@@ -302,7 +299,6 @@ namespace { // (anonymous)
     }
 
     Y.putScalar (418.0);
-    Kokkos::fence();
 
     out << "transform on default host execution space: 418 -> 419" << endl;
 

@@ -323,6 +323,12 @@ namespace Tpetra {
              const LO lclNumRows = static_cast<LO> (input_lcl.extent (0));
              using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
              range_type range (execSpace, 0, lclNumRows);
+
+             // MDM-TODO
+             // Need to resolve this fencine for the transform tests.
+             // Also may need host or device fence depending on user choice.
+             Kokkos::fence();
+
              Kokkos::parallel_for (kernelLabel, range, g);
            },
            readOnly (input).on (memSpace),
@@ -357,6 +363,12 @@ namespace Tpetra {
             const LO lclNumRows = static_cast<LO> (input_lcl.extent (0));
             using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
             range_type range (execSpace, 0, lclNumRows);
+
+            // MDM-TODO
+            // Need to resolve this fencine for the transform tests.
+            // Also may need host or device fence depending on user choice.
+            Kokkos::fence();
+
             Kokkos::parallel_for (kernelLabel, range, g);
           },
           readOnly (input).on (memSpace),
