@@ -134,7 +134,6 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   char *options = getenv("CONJOIN_OPTIONS");
   if (options != nullptr) {
     fmt::print(
-        stderr,
         "\nThe following options were specified via the CONJOIN_OPTIONS environment variable:\n"
         "\t{}\n\n",
         options);
@@ -143,8 +142,8 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
-    fmt::print(stderr, "\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
-                       "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
+    fmt::print("\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
+               "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -169,7 +168,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         fmt::print(stderr,
-                   "\nInvalid value specified for node and element status."
+                   "\nERROR: Invalid value specified for node and element status."
                    "\nValid values are '1' or '0'.  Found '{}'\n",
                    value);
         exit(EXIT_FAILURE);

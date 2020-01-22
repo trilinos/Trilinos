@@ -68,6 +68,34 @@ namespace {
   template <typename INT> void skinner(Skinner::Interface &interFace, INT /*dummy*/);
   std::string                  codename;
   std::string                  version = "0.99";
+
+  void output_table(const Ioss::ElementBlockContainer &             ebs,
+                    std::map<std::string, std::vector<Ioss::Face>> &boundary_faces)
+  {
+    // Get maximum name and face_count length...
+    size_t max_name = std::string("Block Name").length();
+    size_t max_face = std::string("Face Count").length();
+    for (auto eb : ebs) {
+      const std::string &name = eb->name();
+      if (name.length() > max_name) {
+        max_name = name.length();
+      }
+      size_t face_width = Ioss::Utils::number_width(boundary_faces[name].size());
+      max_face          = face_width > max_face ? face_width : max_face;
+    }
+    max_name += 4; // Padding
+    max_face += 4;
+
+    fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
+    fmt::print("\t|{2:^{0}}|{3:^{1}}|\n", max_name, max_face, "Block Name", "Face Count");
+    fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
+    for (auto eb : ebs) {
+      const std::string &name = eb->name();
+      fmt::print("\t|{2:^{0}}|{3:{1}n}  |\n", max_name, max_face - 2, name,
+                 boundary_faces[name].size());
+    }
+    fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
+  }
 } // namespace
 
 int main(int argc, char *argv[])
@@ -117,7 +145,7 @@ int main(int argc, char *argv[])
   double end = Ioss::Utils::timer();
 
   if (my_rank == 0) {
-    fmt::print("\n\tTotal Execution time = {} seconds\n", end - begin);
+    fmt::print("\n\tTotal Execution time = {:.4} seconds\n", end - begin);
     fmt::print("\n{} execution successful.\n\n", codename);
   }
   return EXIT_SUCCESS;
@@ -159,11 +187,8 @@ namespace {
     Ioss::FaceGenerator face_generator(region);
     face_generator.generate_faces((INT)0, true);
 
-    if (interFace.no_output()) {
-      return;
-    }
-
     // Get vector of all boundary faces which will be output as the skin...
+
     std::map<std::string, std::vector<Ioss::Face>> boundary_faces;
     const Ioss::ElementBlockContainer &            ebs = region.get_element_blocks();
     for (auto eb : ebs) {
@@ -175,6 +200,11 @@ namespace {
           boundary.push_back(face);
         }
       }
+    }
+    output_table(ebs, boundary_faces);
+
+    if (interFace.no_output()) {
+      return;
     }
 
     // Iterate the boundary faces and determine which nodes are referenced...

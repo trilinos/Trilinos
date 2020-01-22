@@ -104,7 +104,7 @@ Ioss::Hex16::~Hex16() = default;
 
 int Ioss::Hex16::parametric_dimension() const { return 3; }
 int Ioss::Hex16::spatial_dimension() const { return 3; }
-int Ioss::Hex16::order() const { return 1; }
+int Ioss::Hex16::order() const { return 2; }
 
 int Ioss::Hex16::number_corner_nodes() const { return 8; }
 int Ioss::Hex16::number_nodes() const { return Constants::nnode; }

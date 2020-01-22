@@ -143,17 +143,17 @@ namespace Excn {
 
     void dump() const
     {
-      fmt::print(stderr, "NodeSet {}, Name: '{}', {:n} nodes, {:n} df,\torder = {}\n", id, name_,
-                 nodeCount, dfCount, position_);
+      fmt::print("NodeSet {}, Name: '{}', {:n} nodes, {:n} df,\torder = {}\n", id, name_, nodeCount,
+                 dfCount, position_);
     }
 
     void dump_order() const
     {
       dump();
       for (size_t i = 0; i < nodeCount; i++) {
-        fmt::print(stderr, "{}, ", nodeOrderMap[i]);
+        fmt::print("{}, ", nodeOrderMap[i]);
       }
-      fmt::print(stderr, "\n");
+      fmt::print("\n");
     }
   };
 
@@ -182,8 +182,8 @@ namespace Excn {
 
     void dump() const
     {
-      fmt::print(stderr, "SideSet {}, Name: '{}', {:n} sides, {:n} df\toffset = {}, order = {}\n",
-                 id, name_, sideCount, dfCount, offset_, position_);
+      fmt::print("SideSet {}, Name: '{}', {:n} sides, {:n} df\toffset = {}, order = {}\n", id,
+                 name_, sideCount, dfCount, offset_, position_);
     }
   };
 

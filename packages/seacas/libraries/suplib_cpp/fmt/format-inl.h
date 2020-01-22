@@ -347,6 +347,7 @@ namespace internal {
   class fp
   {
   private:
+
     // All sizes are in bits.
     // Subtract 1 to account for an implicit most significant bit in the
     // normalized form.

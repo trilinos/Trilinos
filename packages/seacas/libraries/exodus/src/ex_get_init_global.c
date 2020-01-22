@@ -66,7 +66,7 @@ static int ex_get_dim_value(int exoid, const char *name, const char *dimension_n
   char errmsg[MAX_ERR_LENGTH];
   int  status;
 
-  if ((status = nc_inq_dimid(exoid, dimension_name, &dimension)) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dimension_name, &dimension) != NC_NOERR) {
     /* optional and default to zero. */
     *value = 0;
   }
