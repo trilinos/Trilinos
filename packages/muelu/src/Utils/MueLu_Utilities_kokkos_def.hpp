@@ -138,6 +138,7 @@ namespace MueLu {
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
+    Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("Utilities_kokkos::GetMatrixDiagonalInverse");
     // Some useful type definitions
     using local_matrix_type = typename Matrix::local_matrix_type;
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
@@ -154,14 +155,13 @@ namespace MueLu {
 
     // Get/Create distributed objects
     RCP<const Map> rowMap = A.getRowMap();
-    RCP<Vector> diag      = VectorFactory::Build(rowMap);
+    RCP<Vector> diag      = VectorFactory::Build(rowMap,false);
 
     // Now generate local objects
     local_matrix_type localMatrix = A.getLocalMatrix();
-    local_graph_type  localGraph  = localMatrix.graph;
     auto diagVals = diag->template getLocalView<memory_space>();
 
-    ordinal_type numRows = localGraph.numRows();
+    ordinal_type numRows = localMatrix.graph.numRows();
 
     // Note: 2019-11-21, LBV
     // This could be implemented with a TeamPolicy over the rows
@@ -180,6 +180,7 @@ namespace MueLu {
                                } else {
                                  diagVals(rowIdx, 0) = KAT::zero();
                                }
+                               break;
                              }
                            }
 
