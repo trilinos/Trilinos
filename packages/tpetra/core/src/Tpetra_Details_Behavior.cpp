@@ -1,3 +1,43 @@
+/*
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ************************************************************************
+// @HEADER
+*/
 #include "Tpetra_Details_Behavior.hpp"
 #include "TpetraCore_config.h"
 #include <algorithm> // std::transform
@@ -7,6 +47,8 @@
 #include <map>
 #include <vector>
 #include <functional>
+#include "Teuchos_TestForException.hpp"
+#include <stdexcept>
 
 namespace Tpetra {
 namespace Details {
@@ -87,7 +129,7 @@ namespace { // (anonymous)
     valsMap[environmentVariableName] = map<string,bool>{{"DEFAULT", defaultValue}};
 
     const char* varVal = getenv (environmentVariableName);
-    if (varVal == NULL) {
+    if (varVal == nullptr) {
       // Environment variable is not set, use the default value for any named
       // variants
       return;
@@ -125,12 +167,47 @@ namespace { // (anonymous)
     const char* varVal = std::getenv (environmentVariableName);
 
     bool retVal = defaultValue;
-    if (varVal != NULL) {
+    if (varVal != nullptr) {
       auto state = environmentVariableState(std::string(varVal));
       if (state == EnvironmentVariableIsSet_ON) retVal = true;
       else if (state == EnvironmentVariableIsSet_OFF) retVal = false;
     }
     return retVal;
+  }
+
+  size_t
+  getEnvironmentVariableAsSize(const char environmentVariableName[],
+                               const size_t defaultValue)
+  {
+    const char prefix[] = "Tpetra::Details::Behavior: ";
+
+    const char* varVal = std::getenv(environmentVariableName);
+    if (varVal == nullptr) {
+      return defaultValue;
+    }
+    else {
+      // This could throw invalid_argument or out_of_range.
+      // Go ahead and let it do so.
+      const long long val = std::stoll(stringToUpper(varVal));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (val < static_cast<long long>(0), std::out_of_range,
+         prefix << "Environment variable \""
+         << environmentVariableName << "\" is supposed to be a size, "
+         "but it has a negative integer value " << val << ".");
+      if (sizeof(long long) > sizeof(size_t)) {
+        // It's hard to test this code, but I want to try writing it
+        // at least, in case we ever have to run on 32-bit machines or
+        // machines with sizeof(long long)=16 and sizeof(size_t)=8.
+        constexpr long long maxSizeT =
+          static_cast<long long>(std::numeric_limits<size_t>::max());
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (val > maxSizeT, std::out_of_range, prefix << "Environment "
+           "variable \"" << environmentVariableName << "\" has a "
+           "value " << val << " larger than the largest size_t value "
+           << maxSizeT << ".");
+      }
+      return static_cast<size_t>(val);
+    }
   }
 
   bool
@@ -167,6 +244,21 @@ namespace { // (anonymous)
     return thisEnvironmentVariableMap["DEFAULT"];
   }
 
+  size_t
+  idempotentlyGetEnvironmentVariableAsSize
+    (size_t& value,
+     bool& initialized,
+     const char environmentVariableName[],
+     const size_t defaultValue)
+  {
+    if (! initialized) {
+      value = getEnvironmentVariableAsSize(environmentVariableName,
+                                           defaultValue);
+      initialized = true;
+    }
+    return value;
+  }
+
   constexpr bool debugDefault () {
 #ifdef HAVE_TPETRA_DEBUG
     return true;
@@ -185,7 +277,7 @@ namespace { // (anonymous)
 #else
     return false;
 #endif // TPETRA_ASSUME_CUDA_AWARE_MPI
-  }   
+  }
 
 } // namespace (anonymous)
 
@@ -230,32 +322,40 @@ bool Behavior::assumeMpiIsCudaAware ()
                                                    defaultValue);
 }
 
-int Behavior::TAFC_OptimizationCoreCount () 
+int Behavior::TAFC_OptimizationCoreCount ()
 {
     // only call getenv once, save the value.
     static int savedval=-1;
     if(savedval!=-1) return savedval;
     const char* varVal = std::getenv ("MM_TAFC_OptimizationCoreCount");
     if (varVal == nullptr) {
-        savedval = 3000; 
-        return savedval; 
+        savedval = 3000;
+        return savedval;
     }
     savedval = std::stoi(std::string(varVal));
     return savedval;
 }
 
-size_t Behavior::verbosePrintCountThreshold () 
+size_t Behavior::verbosePrintCountThreshold ()
 {
-    // only call getenv once, save the value.
-    static int savedval=-1;
-    if(savedval!=-1) return static_cast<size_t>(savedval);
-    const char* varVal = std::getenv ("TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD");
-    if (varVal == nullptr) {
-        savedval = 200; 
-        return static_cast<size_t>(savedval); 
-    }
-    savedval = std::stoi(std::string(varVal));
-    return static_cast<size_t>(savedval);
+  constexpr char envVarName[] = "TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD";
+  constexpr size_t defaultValue (200);
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+size_t Behavior::longRowMinNumEntries ()
+{
+  constexpr char envVarName[] = "TPETRA_LONG_ROW_MIN_NUM_ENTRIES";
+  constexpr size_t defaultValue (256);
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
 }
 
 bool Behavior::debug (const char name[])

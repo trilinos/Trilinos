@@ -107,9 +107,9 @@ namespace
         auto jacobiValueHost = getHostCopy(jacobiValue);
         
         expectedValue = scaleFactor * jacobiValueHost(0);
-//        bool valuesAreBothSmall = valuesAreSmall(expectedValue, legendreDerivativesHost(i), tol);
-//        if (! valuesAreBothSmall)
-//        {
+        bool valuesAreBothSmall = valuesAreSmall(expectedValue, legendreDerivativesHost(i), tol);
+        if (! valuesAreBothSmall)
+        {
           if (! approximatelyEqual(expectedValue, legendreDerivativesHost(i), tol) )
           {
             double diff = abs(expectedValue - legendreDerivativesHost(i));
@@ -118,7 +118,7 @@ namespace
             out << "; actual was " << legendreDerivativesHost(i) << " (diff: " << diff << ") for derivative " << derivativeOrder << " of i = " << i;
             out << " at x = " << x << std::endl;
           }
-//        }
+        }
       }
     }
   }
