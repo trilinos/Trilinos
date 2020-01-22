@@ -227,14 +227,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     ant16km-borders.quad.msh
     ant16km-basal-friction.ascii
     ant16km-s1-answers.txt
-    ant8km.mtx
-    ant8km-borders.quad.msh
-    ant8km-basal-friction.ascii
-    ant8km-s1-answers.txt
-    ant4km.mtx
-    ant4km-borders.quad.msh
-    ant4km-basal-friction.ascii
-    ant4km-s1-answers.txt
     bigrectangle.mtx
     bigrectangle-borders.quad.msh
     bigrectangle-basal-friction.ascii
