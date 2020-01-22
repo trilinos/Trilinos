@@ -20,25 +20,6 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
-TRIBITS_ADD_TEST(
-  iceSheet_int
-  NAME iceSheet_Antarctica_8KM
-  ARGS " ./ ant8km ant8km-basal-friction.ascii ant8km-borders.quad.msh ant8km-s1-answers.txt"
-  NUM_MPI_PROCS 4
-  COMM mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"  
-)
-
-TRIBITS_ADD_TEST(
-  iceSheet_int
-  NAME iceSheet_Antarctica_4KM
-  ARGS " ./ ant4km ant4km-basal-friction.ascii ant4km-borders.quad.msh ant4km-s1-answers.txt"
-  NUM_MPI_PROCS 4
-  COMM mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
 
 TRIBITS_ADD_TEST(
   iceSheet_int
@@ -133,25 +114,6 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
-TRIBITS_ADD_TEST(
-  iceSheet_int
-  NAME iceSheet_Antarctica_8KM_ParMETIS
-  ARGS " ./ ant8km ant8km-basal-friction.ascii ant8km-borders.quad.msh ant8km-s1-answers.txt prepartition"
-  NUM_MPI_PROCS 4
-  COMM mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"  
-)
-
-TRIBITS_ADD_TEST(
-  iceSheet_int
-  NAME iceSheet_Antarctica_4KM_ParMETIS
-  ARGS " ./ ant4km ant4km-basal-friction.ascii ant4km-borders.quad.msh ant4km-s1-answers.txt prepartition"
-  NUM_MPI_PROCS 4
-  COMM mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
 
 TRIBITS_ADD_TEST(
   iceSheet_int
