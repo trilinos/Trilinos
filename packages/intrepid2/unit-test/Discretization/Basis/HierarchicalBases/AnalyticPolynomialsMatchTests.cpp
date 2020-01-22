@@ -558,7 +558,11 @@ namespace
           OutputScalar derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal);
           
           bool valuesMatch = true;
-          TEUCHOS_TEST_FLOATING_EQUALITY(standardValue, derivedValue, tol, out, valuesMatch);
+          bool valuesAreBothSmall = valuesAreSmall(standardValue, derivedValue, tol);
+          if (!valuesAreBothSmall)
+          {
+            TEUCHOS_TEST_FLOATING_EQUALITY(standardValue, derivedValue, tol, out, valuesMatch);
+          }
           
           if (!valuesMatch)
           {
@@ -597,7 +601,11 @@ namespace
             OutputScalar standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal,d);
             OutputScalar derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal,d);
             
-            TEUCHOS_TEST_FLOATING_EQUALITY(standardValue, derivedValue, tol, out, valuesMatch);
+            bool valuesAreBothSmall = valuesAreSmall(standardValue, derivedValue, tol);
+            if (!valuesAreBothSmall)
+            {
+              TEUCHOS_TEST_FLOATING_EQUALITY(standardValue, derivedValue, tol, out, valuesMatch);
+            }
           }
           
           if (!valuesMatch)
