@@ -34,7 +34,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # Always assume the PWD is the root directory
   SET(CTEST_DASHBOARD_ROOT PWD)
 
-  # Must set the Jenkins JOB_NAME which will be the CDash build name
+  # Must set the Jenkins JOB_NAME which will be the CDash build name 
   SET(CTEST_BUILD_NAME "$ENV{JOB_NAME}")
 
   # Add this script and the shiller env script to the notes
@@ -44,10 +44,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "${THIS_FILE_LIST_DIR}/$ENV{ATDM_CONFIG_SYSTEM_NAME}/drivers/$ENV{JOB_NAME}.sh"
     "${CMAKE_CURRENT_LIST_FILE}"
     )
-
+  
   SET(CTEST_PARALLEL_LEVEL "$ENV{ATDM_CONFIG_CTEST_PARALLEL_LEVEL}")
-
-  IF ("$ENV{${ATDM_CONFIG_USE_NINJA}}" STREQUAL "ON")
+  
+  IF ($ENV{ATDM_CONFIG_USE_NINJA})
     SET(CTEST_CMAKE_GENERATOR Ninja)
     IF ("$ENV{ATDM_CONFIG_BUILD_COUNT}" GREATER "0")
       SET(CTEST_BUILD_FLAGS "-j$ENV{ATDM_CONFIG_BUILD_COUNT} ")
@@ -62,7 +62,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   ATDM_SET_CACHE(CTEST_BUILD_FLAGS "${CTEST_BUILD_FLAGS}" CACHE STRING)
   # NOTE: Above, we need to set this as a cache var because this var is also
   # set as a cache var in ATDMDevEnvSettings.cmake that gets included below.
-
+  
   SET(EXTRA_CONFIGURE_OPTIONS)
 
   # See if to enable all of the packages
@@ -139,7 +139,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # basis.
   SET_DEFAULT_AND_FROM_ENV(CTEST_TEST_TYPE Nightly)
   SET_DEFAULT(Trilinos_TRACK Specialized)
-
+  
   IF (CTEST_TEST_TYPE STREQUAL "Experimental")
     # For "Experimental" builds, set the CDash site name to the real hostname.
     # This is done so that using queryTests.php will not pick up tests from

@@ -9,10 +9,8 @@ echo
 echo "cmake in path:"
 which cmake
 echo
-if [[ "$ATDM_CONFIG_USE_NINJA" == "ON" ]]; then
-  echo "ninja in path:"
-  which ninja
-fi
+echo "ninja in path:"
+which ninja
 echo
 echo "ATDM config env vars:"
 set | grep ATDM_CONFIG_
