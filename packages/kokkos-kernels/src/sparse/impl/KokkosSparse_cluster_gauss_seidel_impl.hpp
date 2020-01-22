@@ -780,10 +780,6 @@ namespace KokkosSparse{
           raw_sym_xadj = raw_rowmap_t(sym_xadj.data(), sym_xadj.extent(0));
           raw_sym_adj = raw_colinds_t(sym_adj.data(), sym_adj.extent(0));
         }
-        bool onCuda = false;
-#ifdef KOKKOS_ENABLE_CUDA
-        onCuda = std::is_same<MyExecSpace, Kokkos::Cuda>::value;
-#endif
         nnz_view_t vertClusters;
         auto clusterAlgo = gsHandle->get_clustering_algo();
         if(clusterAlgo == CLUSTER_DEFAULT)
