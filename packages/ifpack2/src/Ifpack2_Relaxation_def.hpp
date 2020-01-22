@@ -686,9 +686,6 @@ void Relaxation<MatrixType>::initialize ()
       }
       local_matrix_type kcsr = crsMat->getLocalMatrix ();
 
-      bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
-      is_symmetric = is_symmetric || is_matrix_structurally_symmetric_;
-
       using KokkosSparse::Experimental::gauss_seidel_symbolic;
       gauss_seidel_symbolic<mt_kernel_handle_type,
                             lno_row_view_t,
@@ -697,7 +694,7 @@ void Relaxation<MatrixType>::initialize ()
                                                  A_->getNodeNumCols (),
                                                  kcsr.graph.row_map,
                                                  kcsr.graph.entries,
-                                                 is_symmetric);
+                                                 is_matrix_structurally_symmetric_);
     }
   } // timing of initialize stops here
 
@@ -1300,7 +1297,6 @@ void Relaxation<MatrixType>::compute ()
          "when the input matrix is a Tpetra::CrsMatrix.");
       local_matrix_type kcsr = crsMat->getLocalMatrix ();
 
-      const bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
       auto diagView_2d = Diagonal_->getLocalViewDevice ();
       auto diagView_1d = Kokkos::subview (diagView_2d, Kokkos::ALL (), 0);
       using KokkosSparse::Experimental::gauss_seidel_numeric;
@@ -1314,7 +1310,7 @@ void Relaxation<MatrixType>::compute ()
                                                    kcsr.graph.entries,
                                                    kcsr.values,
                                                    diagView_1d,
-                                                   is_symmetric);
+                                                   is_matrix_structurally_symmetric_);
     }
   } // end TimeMonitor scope
 
@@ -1543,7 +1539,7 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
   const crs_matrix_type* crsMat =
     dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
   if (blockCrsMat != nullptr)  {
-    const_cast<this_type*> (this)->ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
+    const_cast<this_type&> (*this).ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
   }
   else if (crsMat != nullptr) {
     ApplyInverseGS_CrsMatrix (*crsMat, X, Y);
@@ -2241,7 +2237,7 @@ ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
   const crs_matrix_type* crsMat =
     dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
   if (blockCrsMat != nullptr)  {
-    const_cast<this_type*> (this)->ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
+    const_cast<this_type&> (*this).ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
   }
   else if (crsMat != nullptr) {
     ApplyInverseSGS_CrsMatrix (*crsMat, X, Y);

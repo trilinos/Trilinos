@@ -89,13 +89,17 @@ namespace
         
         for (int i=0; i<=polyOrder; i++)
         {
-          if (! approximatelyEqual(integrated_legendre_values_second_path_host(i), integrated_legendre_values_host(i), tol) )
+          bool valuesAreBothSmall = valuesAreSmall(integrated_legendre_values_second_path_host(i), integrated_legendre_values_host(i), tol);
+          if (! valuesAreBothSmall)
           {
-            out << "for polyOrder " << i << ", x = " << x << ", t = " << t << ": ";
-            out << integrated_legendre_values_second_path_host(i) << " != " << integrated_legendre_values_host(i);
-            out << " (diff = " << abs(integrated_legendre_values_second_path_host(i) - integrated_legendre_values_host(i));
-            out << "; tol = " << tol << ")\n";
-            success = false;
+            if (! approximatelyEqual(integrated_legendre_values_second_path_host(i), integrated_legendre_values_host(i), tol) )
+            {
+              out << "for polyOrder " << i << ", x = " << x << ", t = " << t << ": ";
+              out << integrated_legendre_values_second_path_host(i) << " != " << integrated_legendre_values_host(i);
+              out << " (diff = " << abs(integrated_legendre_values_second_path_host(i) - integrated_legendre_values_host(i));
+              out << "; tol = " << tol << ")\n";
+              success = false;
+            }
           }
         }
       }
