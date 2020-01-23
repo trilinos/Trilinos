@@ -693,7 +693,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Solve with V-cycle")));
 
   {
-    std::cout << myRank << " | Running V-cycle ..." << std::endl;
+//    std::cout << myRank << " | Running V-cycle ..." << std::endl;
 
     // Extract the number of levels from the prolongator data structure
     int numLevels = regProlong.size();
@@ -797,8 +797,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
     int cycle = 0;
+
+    Array<Teuchos::RCP<Vector> > regCorrect(maxRegPerProc);
+    for (int j = 0; j < maxRegPerProc; j++) {
+      regCorrect[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
+    }
     for (cycle = 0; cycle < maxIts; ++cycle)
     {
+      const Scalar SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+      regCorrect[0]->putScalar(SC_ZERO);
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
@@ -836,10 +843,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         /////////////////////////////////////////////////////////////////////////
 
         //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
+
+        bool zeroInitGuess = true;
+        scaleInterfaceDOFs(regRes, regInterfaceScalings[0], false);
         vCycle(0, numLevels,
-               regX, regB, regMatrices,
+               regCorrect, regRes, regMatrices,
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-               regInterfaceScalings, smootherParams, coarseSolverData, hierarchyData);
+               regInterfaceScalings, smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
+
+        regX[0]->update(one, *regCorrect[0], one);
     }
     if (myRank == 0)
       std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;
