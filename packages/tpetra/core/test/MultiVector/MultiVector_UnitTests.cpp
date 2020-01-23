@@ -43,8 +43,10 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <iterator>
 
 // FINISH: add test for MultiVector with a node containing zero local entries
@@ -327,10 +329,13 @@ namespace {
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
 
-    out << "Test: MultiVector, NonContigView" << endl;
+    out << "Test: MultiVector, NonContigView: Scalar="
+        << Teuchos::TypeNameTraits<Scalar>::name() << endl;
     Teuchos::OSTab tab0 (out);
 
     const Mag tol = errorTolSlack * errorTolSlack * testingTol<Scalar>();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
+    out << "tol: " << tol << endl;
+
     const Mag M0  = ScalarTraits<Mag>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -371,7 +376,25 @@ namespace {
       }
       // create the views, compute and test
       RCP<      MV> mvView1 = mvOrig1.subViewNonConst(inView1);
+      TEST_ASSERT( ! mvView1.is_null() );
+      if (! mvView1.is_null() ) {
+        auto mvView1_d = mvView1->getLocalViewDevice();
+        auto mvOrig1_d = mvOrig1.getLocalViewDevice();
+        TEST_ASSERT( mvView1_d.data() == mvOrig1_d.data() );
+        auto mvView1_h = mvView1->getLocalViewHost();
+        auto mvOrig1_h = mvOrig1.getLocalViewHost();
+        TEST_ASSERT( mvView1_h.data() == mvOrig1_h.data() );
+      }
       RCP<const MV> mvView2 = mvOrig2.subView(inView2);
+      TEST_ASSERT( ! mvView2.is_null() );
+      if (! mvView2.is_null() ) {
+        auto mvView2_lcl = mvView2->getLocalViewDevice();
+        auto mvOrig2_lcl = mvOrig2.getLocalViewDevice();
+        TEST_ASSERT( mvView2_lcl.data() == mvOrig2_lcl.data() );
+        auto mvView2_h = mvView2->getLocalViewHost();
+        auto mvOrig2_h = mvOrig2.getLocalViewHost();
+        TEST_ASSERT( mvView2_h.data() == mvOrig2_h.data() );
+      }
       Array<Mag> nView2(numView), nView1(numView), nViewI(numView);
       Array<Scalar> meansView(numView), dotsView(numView);
       mvView1->norm1(nView1());
@@ -379,13 +402,34 @@ namespace {
       mvView1->normInf(nViewI());
       mvView1->meanValue(meansView());
       mvView1->dot( *mvView2, dotsView() );
+
       for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(nOrig1[inView1[j]],  nView1[j],  tol);
+      }
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(nOrig2[inView1[j]],  nView2[j],  tol);
+      }
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(nOrigI[inView1[j]],  nViewI[j],  tol);
+      }
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(meansOrig[inView1[j]], meansView[j], tol);
+      }
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(dotsOrig[j], dotsView[j], tol);
       }
+
+      int lclSuccess = success ? 1 : 0;
+      int gblSuccess = 0;
+      using Teuchos::outArg;
+      using Teuchos::reduceAll;
+      using Teuchos::REDUCE_MIN;
+      reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+      TEST_EQUALITY_CONST( gblSuccess, 1 );
+      if (! success) {
+        return;
+      }
+
       // randomize the view, compute view one-norms, test difference
       mvView2 = Teuchos::null;
       mvView1->randomize();
