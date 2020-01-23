@@ -33,15 +33,3 @@ The current test driver cannot filter the grounding in this manner, so all answe
 files being used are sensitivity 1, meaning the initial grounding information is untouched.
 Any answer file of the form *-answers.txt is sensitivity 1, and equivalent to *-s1-answers.txt.
 
-NOTE:  Currently, these files are zero-based; it would be better for them to 
-match the mesh files (one-based) so that we could more easily hand-check them.
-
-***NOTE***:  
-Ian is not sure he is checking case where answer file says something
-should be removed by distributed does not flag it
-Need to check removing same and keeping same.  (See below.)
-
-***NOTE***:  
-tictactoe answers need to be checked (particularly for s1-all -- we expected
-everything to be kept in this case)
-
