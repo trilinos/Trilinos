@@ -121,6 +121,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
+
     FactoryMonitor m(*this, "Build", currentLevel);
 
     typedef Teuchos::ScalarTraits<SC> STS;
@@ -689,6 +690,31 @@ namespace MueLu {
               coordData.push_back(tmpData);
             }
           }
+
+          std::string drop_tol_mode("MONTE_CARLO");
+
+          if (getenv("MUELU_DROP_TOLERANCE_MODE")) {
+            drop_tol_mode = std::string(getenv("MUELU_DROP_TOLERANCE_MODE"));
+          }
+
+          printf("DJS: Drop Tolerance Mode: %s\n", drop_tol_mode.c_str());
+
+          int drop_tol_value = 0;
+          if (getenv("MUELU_DROP_TOLERANCE_VALUE")) {
+            drop_tol_value = atoi(getenv("MUELU_DROP_TOLERANCE_VALUE"));
+            printf("DJS: Tolerance Value: %d\n", drop_tol_value);
+          }
+
+          double drop_tol_threshold = 0.0;
+          if (getenv("MUELU_DROP_TOLERANCE_THRESHOLD")) {
+            auto tmp = atoi(getenv("MUELU_DROP_TOLERANCE_THRESHOLD"));
+            drop_tol_threshold = 1e-4*tmp;
+            printf("DJS: Threshold: %f\n", drop_tol_threshold);
+          }
+
+          // DJS: Create RNG before entering row loop
+          static auto gen = std::mt19937(drop_tol_value);
+
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
@@ -718,17 +744,15 @@ namespace MueLu {
             numTotal += indices.size();
 
             LO nnz = indices.size(), rownnz = 0;
-            if (threshold != STS::zero()) {
 
-              auto getenv_uppercase = [](const char * env) { 
-                std::string s((getenv(env) ? getenv(env) : ""));
-                std::transform(s.begin(), s.end(), s.begin(), ::toupper); 
-                return s; 
-              };
+            // if (threshold != STS::zero()) {
+            if ( true ) {
 
-              const std::string drop_tol_mode = getenv_uppercase("MUELU_DROP_TOLERANCE_MODE");
-
-              if (drop_tol_mode != "MONTE_CARLO" && drop_tol_mode != "SCALED" ) {
+              // default
+              if (  drop_tol_mode != std::string("MONTE_CARLO")
+                 && drop_tol_mode != std::string("SCALED")
+                 && drop_tol_mode != std::string("KEEP")
+                 ) {
                 for (LO colID = 0; colID < nnz; colID++) {
 
                   LO col = indices[colID];
@@ -740,7 +764,7 @@ namespace MueLu {
                   }
 
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
-                  typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  typename STS::magnitudeType aiiajj = STS::magnitude(drop_tol_threshold*drop_tol_threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                   typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 
                   if (aij > aiiajj) {
@@ -752,7 +776,7 @@ namespace MueLu {
                 }
               } else {
                 // DJS: Let's pre compute aij - aiiajj for all entries in the column,
-                // and store in vector of std::pairs<colID,aij-aiijj> and then 
+                // and store in vector of std::pairs<colID,aij-aiijj> and then
                 // sort them on aij-aiijj, which will give us the split points.  Grab a random number,
                 // pick the split from that and then drop all of the stuff which is past the split.
                 // NOTE: We want to drop all values below the split and keep all values above it.
@@ -765,17 +789,17 @@ namespace MueLu {
                   DropTol()               = default;
                   DropTol(DropTol const&) = default;
                   DropTol(DropTol &&)     = default;
-                  
+
                   DropTol& operator=(DropTol const&) = default;
                   DropTol& operator=(DropTol &&)     = default;
 
                   DropTol(double m, int c, bool d)
-                    : mag{m}, col{c}, drop{d} 
+                    : mag{m}, col{c}, drop{d}
                   {}
 
-                  double mag  {0.0}; 
-                  int    col  {0};
-                  bool   drop {false};
+                  double mag  {0.0};
+                  int    col  {INT_MAX};
+                  bool   drop {true};
                 };
 
                 std::vector<DropTol> drop_vec;
@@ -787,52 +811,51 @@ namespace MueLu {
                   LO col = indices[colID];
 
                   if (row == col) {
-                    drop_vec.emplace_back( 0.0, static_cast<int>(colID), false); 
+                    drop_vec.emplace_back( 0.0, static_cast<int>(colID), false);
                     continue;
                   }
 
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
-                  typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  typename STS::magnitudeType aiiajj = STS::magnitude(drop_tol_threshold*drop_tol_threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  //typename STS::magnitudeType aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                   typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 
-                  drop_vec.emplace_back(static_cast<double>(aij - aiiajj), static_cast<int>(colID), false); 
+                  //drop_vec.emplace_back(static_cast<double>(aij - aiiajj), static_cast<int>(colID), false);
+                  if (aij > aiiajj) {
+                    drop_vec.emplace_back(double(aij-aiiajj), int(colID), false);
+                  } else {
+                    drop_vec.emplace_back(double(aij-aiiajj), int(colID), true);
+                  }
                 }
 
-                // sort in reverse order
+                const int n = int(drop_vec.size());
                 std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) { return a.mag > b.mag; });
-                  
-                const int n = static_cast<int>(drop_vec.size());
 
-                const char * drop_tol_value = getenv("MUELU_DROP_TOLERANCE_VALUE");
-                
                 // use monte carlo
-                if (drop_tol_mode == "MONTE_CARLO") {
-                  printf("Monto Carlo Threshold\n");
+                if (drop_tol_mode == std::string("MONTE_CARLO")) {
 
-                  auto get_random_number_generator = [&]() {
-                    int seed = drop_tol_value ? atoi(drop_tol_value) : 0;
-                    if (seed == -1) {
-                      std::random_device rd;
-                      seed = rd();
-                    }
-                    std::mt19937 gen(seed);
-                    return gen;
-                  };
+                  int s = 1;
+                  for (; s<n && !drop_vec[s].drop; ++s);
 
-                  static auto gen = get_random_number_generator();
 
-                  std::uniform_int_distribution<> dis(0, n);
+                  std::uniform_int_distribution<> dis(1, s);
 
-                  for (int i=dis(gen); i<n; ++i) {
+                  const int k = dis(gen);
+
+                  if (getenv("MUELU_DROP_TOLERANCE_VERBOSE")) {
+                    printf( "DJS:  row(%d), n(%d), s(%d), k(%d)\n"
+                          , int(row), n, s, k);
+                  }
+
+                  for (int i=k; i<n; ++i) {
                     drop_vec[i].drop = true;
                   }
-                } else { // drop_tol_mode == "SCALED"
-                  printf("Scaled Threshold\n");
+                } else if (drop_tol_mode == std::string("SCALED")) {
 
-                  double my_threshold = atof(drop_tol_value); 
+                  double scale_value = 1e-3*drop_tol_value;
 
-                  if (my_threshold == 0.0) my_threshold = 10.0;
-                  if (my_threshold < 1.0) my_threshold = 1.0;
+                  if (scale_value < 1.0) scale_value = 1.0;
+
 
                   constexpr double esplion = 1e-15;
 
@@ -841,13 +864,17 @@ namespace MueLu {
                   }
 
                   for (int i=1; i<n; ++i) {
-                    if (  drop_vec[i-1].drop 
-                       || drop_vec[i].mag < esplion 
-                       || drop_vec[i-1].mag/drop_vec[i].mag > my_threshold
-                       ) 
+                    if (  drop_vec[i-1].drop
+                       || drop_vec[i].mag < esplion
+                       || drop_vec[i-1].mag/drop_vec[i].mag > scale_value
+                       )
                     {
                       drop_vec[i].drop = true;
                     }
+                  }
+                } else { // KEEP
+                  for (int i=drop_tol_value; i<n; ++i) {
+                    drop_vec[i].drop = true;
                   }
                 }
 
