@@ -102,18 +102,16 @@ int main(int argc, char** argv)
   
 
   //need to read in problem specific files here, start out with zeroed out arrays
-  int nlocal = (int) inputGraphAdapter->getLocalNumVertices();
+  size_t nlocal =  inputGraphAdapter->getLocalNumVertices();
   bool* basalFriction = new bool[nlocal];
-  const gno_t* vtxIDs = new gno_t[nlocal];
-  inputGraphAdapter->getVertexIDsView(vtxIDs);
 
   std::cout<<me<<": num local vtxIDs = "<<nlocal<<"\n";
 
   int* grounded_flags_global;
   gno_t* boundary_edges_global;
 
-  int nglobal = 0;
-  int num_global_boundary_edges = 0;
+  size_t nglobal = 0;
+  size_t num_global_boundary_edges = 0;
   if(me == 0){
     read_grounded_file(argv[3],nglobal,grounded_flags_global);
     read_boundary_file<gno_t>(argv[4],num_global_boundary_edges,boundary_edges_global);
@@ -121,8 +119,8 @@ int main(int argc, char** argv)
   }
   
   //broadcast global array counts
-  Teuchos::broadcast<int,int>(*comm, 0,1,&nglobal);
-  Teuchos::broadcast<int,int>(*comm, 0,1,&num_global_boundary_edges);
+  Teuchos::broadcast<int,size_t>(*comm, 0,1,&nglobal);
+  Teuchos::broadcast<int,size_t>(*comm, 0,1,&num_global_boundary_edges);
   
   if(me != 0){
     grounded_flags_global = new int[nglobal];
@@ -133,41 +131,33 @@ int main(int argc, char** argv)
   Teuchos::broadcast<int,int>(*comm,0,nglobal,grounded_flags_global);
   Teuchos::broadcast<int,gno_t>(*comm,0,num_global_boundary_edges, boundary_edges_global);
  
+  Teuchos::RCP<const CrsGraph::map_type> rowMap = crsgraph->getRowMap();
   int numLocalBoundaryEdges = 0;
-  for(int i = 0; i < num_global_boundary_edges; i+=2){
-    for(int j = 0; j < nlocal; j++){
-      if(boundary_edges_global[i] == vtxIDs[j] || boundary_edges_global[i+1] == vtxIDs[j]){
-        numLocalBoundaryEdges++;
-	break;
-      } 
+  for(size_t i = 0; i < num_global_boundary_edges; i+=2){
+    if(rowMap->getLocalElement(boundary_edges_global[i])   != Teuchos::OrdinalTraits<lno_t>::invalid() ||
+       rowMap->getLocalElement(boundary_edges_global[i+1]) != Teuchos::OrdinalTraits<lno_t>::invalid()) {
+       
+       numLocalBoundaryEdges++;
     }
   }
   std::cout<<me<<": global_boundary_edges = "<<num_global_boundary_edges<<" localBoundaryEdges = "<<2*numLocalBoundaryEdges<<"\n";
   gno_t* boundaryEdges = new gno_t[2*numLocalBoundaryEdges];
   
-  for(int i = 0; i < 2*numLocalBoundaryEdges; i++){
-    boundaryEdges[i] = 0;
-  }
-
-  for(int i = 0; i < nlocal; i++){
-    basalFriction[i] = false;
-  }
   std::cout<<me<<": is done initializing local arrays\n";
   int edgecounter = 0;
-  for(int i = 0; i < num_global_boundary_edges; i+=2){
-    for(int j = 0; j < nlocal; j++){
-      if(boundary_edges_global[i] == vtxIDs[j] || boundary_edges_global[i+1] == vtxIDs[j]){
-        boundaryEdges[edgecounter] = boundary_edges_global[i];
-	boundaryEdges[edgecounter+1] = boundary_edges_global[i+1];
-	edgecounter+=2;
-	break;
-      }
+  for(size_t i = 0; i < num_global_boundary_edges; i+=2){
+    if(rowMap->getLocalElement(boundary_edges_global[i])  != Teuchos::OrdinalTraits<lno_t>::invalid() ||
+       rowMap->getLocalElement(boundary_edges_global[i+1])!= Teuchos::OrdinalTraits<lno_t>::invalid()) {
+
+      boundaryEdges[edgecounter] = boundary_edges_global[i];
+      boundaryEdges[edgecounter+1] = boundary_edges_global[i+1];
+      edgecounter +=2;
     }
   }
   if(edgecounter > 2*numLocalBoundaryEdges) std::cout<<"Writing out of bounds on the boundary edges, by "<< edgecounter-2*numLocalBoundaryEdges<<" indices\n";
   std::cout<<me<<": is done building boundary edges\n";
-  for(int i = 0; i < nlocal; i++){
-    basalFriction[i] = grounded_flags_global[vtxIDs[i]];
+  for(size_t i = 0; i < nlocal; i++){
+    basalFriction[i] = grounded_flags_global[rowMap->getGlobalElement(i)];
   }
   delete [] boundary_edges_global;
   delete [] grounded_flags_global;
@@ -179,9 +169,9 @@ int main(int argc, char** argv)
   int* removeFlags = prop.getDegenerateFeatureFlags();
   std::cout<<me<<": Finished propagating\n";
   std::cout<<me<<": removeFlags array: ";
-  for(int i = 0; i < nlocal; i++){
+  for(size_t i = 0; i < nlocal; i++){
     if(removeFlags[i] > -2){
-      std::cout<<me<<": removed vertex "<<vtxIDs[i]<<"\n";
+      std::cout<<me<<": removed vertex "<<rowMap->getGlobalElement(i)<<"\n";
     }
   }
   
@@ -189,7 +179,7 @@ int main(int argc, char** argv)
   
   int* ans_removed = new int[nglobal];
   if(me == 0){
-    for(int i = 0; i < nglobal;i++) ans_removed[i] = 0;
+    for(size_t i = 0; i < nglobal;i++) ans_removed[i] = 0;
     std::ifstream fin(argv[5]);
     if(!fin){
       std::cout<<"Unable to open "<<argv[5]<<"\n";
@@ -199,17 +189,17 @@ int main(int argc, char** argv)
 
     while(fin>>vertex){
       std::cout<<"vertex "<<vertex<<" should be removed\n";
-      ans_removed[vertex]=1;
+      ans_removed[vertex-1]=1;
     }
   }  
   
   Teuchos::broadcast<int,int>(*comm,0,nglobal,ans_removed);
   
   int local_mismatches = 0;
-  for(int i = 0; i < nlocal; i++){
-    if((removeFlags[i] > -2 && !ans_removed[vtxIDs[i]]) || (removeFlags[i] == -2 && ans_removed[vtxIDs[i]])){
+  for(size_t i = 0; i < nlocal; i++){
+    if((removeFlags[i] > -2 && !ans_removed[rowMap->getGlobalElement(i)]) || (removeFlags[i] == -2 && ans_removed[rowMap->getGlobalElement(i)])){
       local_mismatches++;
-      std::cout<<me<<": Found a mismatch, vertex "<<vtxIDs[i]<<"\n";
+      std::cout<<me<<": Found a mismatch, vertex "<<rowMap->getGlobalElement(i)+1<<"\n";
     }
   }
   

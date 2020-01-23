@@ -1,17 +1,18 @@
-Status:  8/8/18
+Status:  1/22/20
 
 File formats:
 
-*.quad.msh -- mesh files with quad elements
-line 1:  two meaningless words
-line 2:  #meshvertices #elements #floatingBorderEdges (<== always zero)
-lines 3-#meshvertices+2:  mesh vertex numbers (one based)
-remaining lines:  mesh vertices contained within each element
-          four vertices and meaningless flag (<== always zero)
+*.mtx
+MatrixMarket files that represent the input ice sheet mesh as
+a matrix. We read these files with UserInputForTests and convert them
+to CrsGraphs.
 
 *-basal-friction.ascii
 line 1:  #meshvertices
-remaining lines:  1 if vertex is grounded; 0 otherwise
+For real test cases:
+  remaining lines: nonzero floating point number if vertex is grounded, 0 otherwise
+For manually created test cases:
+  remaining lines:  1 if vertex is grounded; 0 otherwise
 
 *-borders.quad.msh
 line 1:  two meaningless words
@@ -27,6 +28,10 @@ file of mesh vertex IDs for vertices that should be removed by the algorithm
    Given sensitivy s, 
    for each vertex v flagged as grounded in *-basal-friction.ascii, 
    if any element incident to v has at least s grounded vertices, v is grounded.
+
+The current test driver cannot filter the grounding in this manner, so all answer
+files being used are sensitivity 1, meaning the initial grounding information is untouched.
+Any answer file of the form *-answers.txt is sensitivity 1, and equivalent to *-s1-answers.txt.
 
 NOTE:  Currently, these files are zero-based; it would be better for them to 
 match the mesh files (one-based) so that we could more easily hand-check them.

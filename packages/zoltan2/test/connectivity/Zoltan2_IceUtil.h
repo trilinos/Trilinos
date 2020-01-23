@@ -6,7 +6,6 @@
 #include<sstream>
 #include<string>
 
-#include "graph.h"
 
 void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts, int*& grounded_flags, int ground_sensitivity){
   std::ifstream infile;
@@ -98,7 +97,7 @@ void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int*& dsts,
 }
 
 template<typename gno_t>
-void read_boundary_file(char *filename, int& num_edges, gno_t *& boundary_flags){
+void read_boundary_file(char *filename, size_t& num_edges, gno_t *& boundary_flags){
   std::ifstream fin(filename);
   if(!fin){
     std::cout<<"Unable to open file "<<filename<<"\n";
@@ -129,7 +128,7 @@ void read_boundary_file(char *filename, int& num_edges, gno_t *& boundary_flags)
   }
 }
 
-void read_grounded_file(char* filename, int& n, int*& grounded_flags){
+void read_grounded_file(char* filename, size_t& n, int*& grounded_flags){
   std::ifstream fin(filename);
   if(!fin){
     std::cout<<"Unable to open "<<filename<<"\n";
@@ -139,7 +138,7 @@ void read_grounded_file(char* filename, int& n, int*& grounded_flags){
   fin>>n;
   grounded_flags = new int[n];
   //the rest of the numbers are basal friction data
-  for(int i = 0; i < n; i++){
+  for(size_t i = 0; i < n; i++){
     grounded_flags[i] = 0;
     float gnd;
     fin>>gnd;
