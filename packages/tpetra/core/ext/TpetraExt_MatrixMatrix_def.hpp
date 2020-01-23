@@ -769,7 +769,7 @@ add (const Scalar& alpha,
     //Handle this case now
     //(without interfering with collective operations, since it's possible for
     //some ranks to have 0 local rows and others not).
-    rowptrs = row_ptrs_array("C rowptrs", 1);
+    rowptrs = row_ptrs_array("C rowptrs", 0);
   }
   auto Acolmap = Aprime->getColMap();
   auto Bcolmap = Bprime->getColMap();
@@ -783,7 +783,7 @@ add (const Scalar& alpha,
     //use kernel that converts col indices in both A and B to common domain map before adding
     auto AlocalColmap = Acolmap->getLocalMap();
     auto BlocalColmap = Bcolmap->getLocalMap();
-    global_col_inds_array globalColinds("", 0);
+    global_col_inds_array globalColinds;
     if (debug) {
       std::ostringstream os;
       os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
