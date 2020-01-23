@@ -12,6 +12,13 @@
 #include<Zoltan2_VtxLabel.hpp>
 #include<Zoltan2_AlltoAll.hpp>
 
+/*! \file Zoltan2_IceSheet.hpp
+ * \brief The user interface for ice-sheet connectivity functionality.
+ *
+ * This file contains the entry point for the ice sheet connectivity
+ * label propagation algorithm. 
+*/
+
 namespace Zoltan2{
   template <typename Adapter>
   class IceProp : public Algorithm<Adapter> {
@@ -26,12 +33,17 @@ namespace Zoltan2{
       typedef typename Adapter::userCoord_t userCoord_t;
       typedef Tpetra::Map<lno_t, gno_t> map_t;
       
-      //Arguments: problemComm is the communicator we will use for the propagation
-      //           adapter is the graph adapter that represents the ice mesh's bottom layer
-      //           basalFriction is the array of basalFriction values. Nonzero indicates grounded
-      //           boundary_edges is the array of edges on the current processor that are on the
-      //                          boundary, using global identifiers
-      //           num_boundary_edges is the number of boundary edges there are
+      
+      /*! The constructor for the IceProp class
+       *  
+       *  \param problemComm A Teuchos::RCP<const Teuchos::Comm<int>> representing the communicator for the problem.
+       *  \param adapter A Teuchos::RCP<const GraphAdapter<>> representing the structure of the ice sheet mesh's bottom layer.
+       *  \param basalFriction A boolean pointer to an array of flags for each local vertex with true representing a grounded vertex and false representing a floating vertex.
+       *  \param boundary_edges An array of global vertex identifiers representing all of the edges that the current process knows about which are on the boundary between the ice and the water. 
+       *                        The IDs must be present in the overlap map of the current process if the ID is not owned by this process. Edges should not be specified more than once.
+       *  \param num_boundary_edges An integer representing the number of boundary edges on the current process. 2*num_boundary_edges is the length of the boundary_edges array.
+       *
+       **/
       IceProp(const RCP<const Comm<int> > &problemComm__,
 	      const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__, 
 	      bool* basalFriction, gno_t* boundary_edges__, int num_boundary_edges__):
@@ -47,8 +59,13 @@ namespace Zoltan2{
 	buildModel(flags);
       }
    
-      //This function returns a number of flags consistent with the 
-      //number of locally owned vertices.
+     /*! This function performs the connectivity check.
+      *
+      *  \return An array of flags for each local vertex. Values are be interpreted as:
+      *          -2 for a vertex that should be kept (these vertices are sufficiently connected to the ground)
+      *          -1 for a vertex that has no connection to the ground (e.g. an iceberg).
+      *          <vtxID> for a vertex that is in a floating hinge, where vtxID is the hinge vertex.
+      */
       int* getDegenerateFeatureFlags();
     private:
       const RCP<const base_adapter_t> adapter;
