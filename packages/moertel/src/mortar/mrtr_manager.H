@@ -614,19 +614,19 @@ public:
   {
       std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
       // Create a map from Lagrange multiplier dofs to the primal dofs on the same node
-      std::vector<MOERTEL::Node*> nodes(0);
+      std::vector<MOERTEL::Node*> nodes;
       std::map<int,int> lm_to_dof;
       for (curr=interface_.begin(); curr!=interface_.end(); ++curr)
       {
       Teuchos::RCP<MOERTEL::Interface> inter = curr->second;
         inter->GetNodeView(nodes);
-        for (std::size_t i=0; i<(std::size_t)nodes.size(); ++i)
+        for (auto&& node : nodes)
         {
-          if (!nodes[i]->Nlmdof())
+          if (! node->Nlmdof())
             continue;
-          const int* dof = nodes[i]->Dof();
-          const int* lmdof = nodes[i]->LMDof();
-          for (std::size_t j=0; j<nodes[i]->Nlmdof(); ++j)
+          const int* dof = node->Dof();
+          const int* lmdof = node->LMDof();
+          for (std::size_t j=0; j<node->Nlmdof(); ++j)
             lm_to_dof[lmdof[j]] = dof[j];
         }
       }
