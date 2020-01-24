@@ -82,8 +82,6 @@ namespace { // (anonymous)
     using Tpetra::Details::GetMasterLocalObject;
     using Tpetra::Details::GetNonowningLocalObject;
     using Tpetra::Details::LocalAccess;
-    using Tpetra::Details::Access;
-    using Tpetra::Details::EAccess;
     using Teuchos::TypeNameTraits;
     using dev_mem_space =
       typename multivec_type::dual_view_type::t_dev::memory_space;
@@ -115,7 +113,9 @@ namespace { // (anonymous)
 
       {
         using local_access_type =
-          LocalAccess<multivec_type, dev_mem_space, Access<EAccess::ReadOnly> >;
+          LocalAccess<multivec_type, dev_mem_space,
+                      Tpetra::Details::read_only>;
+
         using mv_mlo = GetMasterLocalObject<local_access_type>::
           master_local_object_type;
         static_assert (Kokkos::is_view<mv_mlo::element_type>::value,
@@ -291,7 +291,7 @@ namespace { // (anonymous)
 
       using local_access_type = decltype (lclAccess);
       static_assert(std::is_same<local_access_type::access_mode,
-        Access<EAccess::WriteOnly> >::value, "Incorrect AccessMode");
+        Tpetra::Details::write_only>::value, "Incorrect AccessMode");
       static_assert
         (std::is_same<local_access_type::global_object_type, vec_type>::value,
          "Incorrect global_object_type");
