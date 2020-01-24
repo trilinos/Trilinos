@@ -403,12 +403,7 @@ bool MOERTEL::Overlap<IFace>::build_sxim()
       double mag_projection = fabs(MOERTEL::dot(node_norm,master_normal,3));
 
       if(mag_projection <= Projection_Length_Epsilon)
-      {
-        std::cout << "sxim mag_projection: " << mag_projection << std::endl;
-        std::cout << master_normal[0] << " " << master_normal[1] << " " << master_normal[2] << std::endl;
-        std::cout << node_norm[0] << " " << node_norm[1] << " " << node_norm[2] << std::endl;
         return false;
-      }
     }
     // project node i onto sseg
     bool OK = projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
@@ -1493,12 +1488,7 @@ bool MOERTEL::Overlap<IFace>::Triangulation()
 
         double mag_projection = fabs(MOERTEL::dot(node_norm,master_normal,3));
         if(mag_projection <= Projection_Length_Epsilon)
-        {
-          std::cout << "mag_projection: " << mag_projection << std::endl;
-          std::cout << master_normal[0] << " " << master_normal[1] << " " << master_normal[2] << std::endl;
-          std::cout << node_norm[0] << " " << node_norm[1] << " " << node_norm[2] << std::endl;
           return false;
-        }
       }
       //-----------------
 
