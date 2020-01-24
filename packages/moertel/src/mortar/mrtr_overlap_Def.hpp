@@ -381,8 +381,37 @@ bool MOERTEL::Overlap<IFace>::build_sxim()
   double gap;
   for (int i=0; i<nsnode; ++i)
   {
+
+    {
+      const double * node_norm = snode[i]->Normal();
+
+      double master_normal[3];
+      MOERTEL::Node** nodes = mseg_.Nodes();
+      for (std::size_t i=0; i < mseg_.Nnode(); ++i)
+      {
+        const double * node_norm_tmp = nodes[i]->Normal();
+        master_normal[0] += node_norm_tmp[0];
+        master_normal[1] += node_norm_tmp[1];
+        master_normal[2] += node_norm_tmp[2];
+      }
+
+      double norm1 = sqrt(MOERTEL::dot(master_normal,master_normal,3));
+      master_normal[0] /= norm1;
+      master_normal[1] /= norm1;
+      master_normal[2] /= norm1;
+
+      double mag_projection = fabs(MOERTEL::dot(node_norm,master_normal,3));
+
+      if(mag_projection <= Projection_Length_Epsilon)
+      {
+        std::cout << "sxim mag_projection: " << mag_projection << std::endl;
+        std::cout << master_normal[0] << " " << master_normal[1] << " " << master_normal[2] << std::endl;
+        std::cout << node_norm[0] << " " << node_norm[1] << " " << node_norm[2] << std::endl;
+        return false;
+      }
+    }
     // project node i onto sseg
-    projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
+    bool OK = projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
 #if 0
     // check whether i is inside sseg
     if (sxim_[i][0]<=1. && sxim_[i][1]<=abs(1.-sxim_[i][0]) && sxim_[i][0]>=0. && sxim_[i][1]>=0.)
@@ -540,6 +569,8 @@ bool MOERTEL::Overlap<IFace>::ComputeOverlap() {
   //  ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
 
   havesxim_ = build_sxim();
+  if (!havesxim_)
+	  return false;
 
   // build outward normal of edges of sseg (in local coords)
   build_normal();
@@ -1438,26 +1469,42 @@ bool MOERTEL::Overlap<IFace>::Triangulation()
       // Moertel occasionally trys to project a slave segment on a master segment which can be perpendicular. 
       // Compute the dot product of the normal of both segments and do not do the projection if its absolute value 
       //  is below a tolerance.
-      // FIXME: The below is valid only for planar segments!
 
       {
-
         double xi[2]; 
         xi[0] = xi[1] = 0.;
 
         const double * node_norm = node->Normal();
-        const double * seg_norm = mseg_.BuildNormal(xi);
 
-        double mag_projection = fabs(MOERTEL::dot(node_norm,seg_norm,3));
+        double master_normal[3];
+        MOERTEL::Node** nodes = mseg_.Nodes();
+        for (std::size_t i=0; i < mseg_.Nnode(); ++i)
+        {
+          const double * node_norm_tmp = nodes[i]->Normal();
+          master_normal[0] += node_norm_tmp[0];
+          master_normal[1] += node_norm_tmp[1];
+          master_normal[2] += node_norm_tmp[2];
+        }
 
+        double norm1 = sqrt(MOERTEL::dot(master_normal,master_normal,3));
+        master_normal[0] /= norm1;
+        master_normal[1] /= norm1;
+        master_normal[2] /= norm1;
+
+        double mag_projection = fabs(MOERTEL::dot(node_norm,master_normal,3));
         if(mag_projection <= Projection_Length_Epsilon)
-
+        {
+          std::cout << "mag_projection: " << mag_projection << std::endl;
+          std::cout << master_normal[0] << " " << master_normal[1] << " " << master_normal[2] << std::endl;
+          std::cout << node_norm[0] << " " << node_norm[1] << " " << node_norm[2] << std::endl;
           return false;
-
+        }
       }
       //-----------------
 
-      projector.ProjectNodetoSegment_NodalNormal(*node,mseg_,mxi,gap);
+      bool ok = projector.ProjectNodetoSegment_NodalNormal(*node,mseg_,mxi,gap);
+      if (!ok)
+	      return false;
       // create a projected node and set it in node
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*node,mxi,&mseg_);
       node->SetProjectedNode(pnode);
