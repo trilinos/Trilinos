@@ -82,7 +82,13 @@ namespace Tacho {
       void operator()(member_type &member, value_type &r_val) {
         auto& sched = member.scheduler();  
         const auto &_s = _info.supernodes(_sid);
-        if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+          const bool recursive_function_work_on_exec_space = true;          
+#else
+          const bool recursive_function_work_on_exec_space = false;          
+#endif
+        if (recursive_function_work_on_exec_space && 
+          _info.serial_thres_size > _s.max_decendant_supernode_size) {
           r_val = solve_internal(member, _s.max_decendant_schur_size, true);
           Kokkos::single(Kokkos::PerTeam(member), [&]() {
               if (r_val) 
