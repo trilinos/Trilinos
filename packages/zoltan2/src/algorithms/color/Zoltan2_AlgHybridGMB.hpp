@@ -715,6 +715,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
             }
           }
         });
+        Kokkos::fence();
         /*for(int j = 0; j < nVtx; j++){
           if(femv_colors(j) == 0){
             printf("--Rank %d: global vtx %u's color was reset to zero\n",comm->getRank(),reorderGIDs[j]+1);
@@ -829,6 +830,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
                 }
               }
             });
+
+            Kokkos::fence();
             for(int j = 0; j < nVtx; j++){
               if(femv_colors(j) == 0){
                 //printf("--Rank %d: global vtx %u's color was reset to zero\n",comm->getRank(),reorderGIDs[j]+1);

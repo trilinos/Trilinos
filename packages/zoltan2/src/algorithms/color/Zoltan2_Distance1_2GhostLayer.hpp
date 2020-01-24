@@ -614,6 +614,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Kokkos::parallel_for(n_total, KOKKOS_LAMBDA(const int& i){
         conflictQueue(i) = -1;
       });
+      Kokkos::fence();
       Kokkos::View<lno_t*,device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > conflictQueue_atomic = conflictQueue; 
       Kokkos::View<int[1], device_type> conflictSize("Number of conflicts");
       conflictSize(0) = 0; 
@@ -676,6 +677,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
           }
         }
       });
+      Kokkos::fence();
       //all conflicts detected!
       /*Kokkos::parallel_for(ghost_offsets.size()-1, KOKKOS_LAMBDA (const int& i){
         lno_t localIdx = i + n_local;
@@ -846,7 +848,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
             }
           }
         });
-        
+        Kokkos::fence(); 
         /*Kokkos::parallel_for(n_local, KOKKOS_LAMBDA (const int & i){
           for(offset_t j = host_offsets(i); j < host_offsets(i+1); j++){
             int currColor = femv_colors(i);
