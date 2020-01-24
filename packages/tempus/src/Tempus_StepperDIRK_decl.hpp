@@ -73,7 +73,7 @@ namespace Tempus {
  *           x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}\f$
  *       - Define \f$\dot{X}_i \leftarrow
  *                              \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
- *       - Solve \f$f(\dot{x} =
+ *       - Solve \f$\mathcal{F}_i(\dot{x} =
  *           \dot{X}_i,X_i,t_{n-1}+c_{i}\Delta t)=0\f$ for \f$X_i\f$
  *       - \f$\dot{X}_i \leftarrow \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
  *   - end for
@@ -82,6 +82,34 @@ namespace Tempus {
  *  The First-Step-As-Last (FSAL) principle is not needed with DIRK, but
  *  maybe useful if the first stage is explicit (i.e, EDIRK).
  *  The default is to set useFSAL=false.
+ *
+ *  <b> Iteration Matrix, \f$W\f$.</b>
+ *  Recalling that the definition of the iteration matrix, \f$W\f$, is
+ *  \f[
+ *    W = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
+ *      + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n},
+ *  \f]
+ *  where \f$ \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n}, \f$
+ *  and \f$ \beta \equiv \frac{\partial x_n}{\partial x_n} = 1\f$. For the stage
+ *  solutions, we have
+ *  \f[
+ *    \mathcal{F}_i = \dot{X}_{i} - \bar{f}(X_{i},t_{n-1}+c_{i}\Delta t) =0.
+ *  \f]
+ *  where \f$\mathcal{F}_n \rightarrow \mathcal{F}_i\f$,
+ *  \f$x_n \rightarrow X_{i}\f$, and
+ *  \f$\dot{x}_n(x_n) \rightarrow \dot{X}_{i}(X_{i})\f$.
+ *  The time derivative for the DIRK stages is
+ *  \f[
+ *    \dot{X}_{i}(X_{i}) = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t},
+ *  \f]
+ *  and we can determine that
+ *  \f$ \alpha = \frac{1}{a_{ii} \Delta t} \f$
+ *  and \f$ \beta = 1 \f$, and therefore write
+ *  \f[
+ *    W = \frac{1}{a_{ii} \Delta t}
+ *        \frac{\partial \mathcal{F}_i}{\partial \dot{X}_i}
+ *      + \frac{\partial \mathcal{F}_i}{\partial X_i}.
+ *  \f]
  */
 template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
