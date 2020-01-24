@@ -81,7 +81,7 @@ struct DotFunctor
   KOKKOS_FORCEINLINE_FUNCTION void
   operator() (const size_type &i, value_type& sum) const
   {
-    sum += IPT::dot (m_x(i), m_y(i));  // m_x(i) * m_y(i)
+    Kokkos::Details::updateDot(sum, m_x(i), m_y(i)); // sum += m_x(i) * m_y(i)
   }
 
   KOKKOS_INLINE_FUNCTION void
