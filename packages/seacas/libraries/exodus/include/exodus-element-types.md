@@ -13,20 +13,27 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       |     |      |       |           |    |
  |beam   |  2  |  X   |    X  |    X      |  X |
  |       |  3  |  X   |    X  |    X      |  X |
+ |       |  4  |  X   |    X  |           |    |
  |       |     |      |       |           |    |
  quad    |  4  |  X   |    X  |    X      |  X |
  |       |  5  |  X   |       |           |    |
  |       |  9  |  X   |    X  |    X      |  X |
+ |       | 12  |  X   |    X  |           |    |
+ |       | 16  |  X   |    X  |           |    |
  |       |     |      |       |           |    |
  tri (2D)|  3  |  X   |    X  |    X      |  X |
  |       |  4  |  X   |    X  |    X      |  X |
  |       |  6  |  X   |    X  |    X      |  X |
  |       |  7  |  X   |    X  |    X      |  X |
+ |       |  9  |  X   |    X  |           |    |
+ |       | 13  |  X   |    X  |           |    |
  |       |     |      |       |           |    |
  tri (3D)|  3  |  X   |    X  |    X      |  X |
  |       |  4  |  X   |    X  |    X      |  X |
  |       |  6  |  X   |    X  |    X      |  X |
  |       |  7  |  X   |    X  |    X      |  X |
+ |       |  9  |  X   |    X  |           |    |
+ |       | 13  |  X   |    X  |           |    |
  |       |     |      |       |           |    |
  shell   |  2  |  X   |    X  |    X      |  X |
  |       |  3  |      |    X  |    X      |  X |
@@ -42,6 +49,8 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       | 11  |  X   |    X  |           |    |
  |       | 14  |  X   |    X  |    X      |  X |
  |       | 15  |  X   |    X  |    X      |  X |
+ |       | 16  |  X   |    X  |           |    |
+ |       | 40  |  X   |    X  |           |    |
  |       |     |      |       |           |    |
  pyramid |  5  |  X   |    X  |    X      |  X |
  |       | 13  |  X   |    X  |    X      |  X |
@@ -56,12 +65,16 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       | 18  |  X   |    X  |           |    |
  |       | 20  |  X   |    X  |    X      |  X |
  |       | 21  |  X   |    X  |    X      |  X |
+ |       | 24  |  X   |    X  |           |    |
+ |       | 52  |  X   |    X  |           |    |
  |       |     |      |       |           |    |
  hex     | 8   |  X   |    X  |    X      |  X |
  |       | 9   |  X   |       |           |    |
  |       | 16  |  X   |    X  |    X      |  X |
  |       | 20  |  X   |    X  |    X      |  X |
  |       | 27  |  X   |    X  |    X      |  X |
+ |       | 32  |  X   |    X  |           |    |
+ |       | 64  |  X   |    X  |           |    |
 
 Only the base topology name is required for the element type. For example, all
 elements of a `hex` toplogy can be referred to by the name `hex` no
@@ -108,6 +121,7 @@ the "bar" or "truss", the boundaries are the end nodes.
 
 ![Bar2](../topology/bar2.png)
 ![Bar3](../topology/bar3.png)
+![Bar4](../topology/bar4.png)
 
 -------------------------
 \section tri Triangular
@@ -117,6 +131,8 @@ These are usable in 2D or 3D meshes.  In a 3D mesh, they would represent triangu
 ![Tri4](../topology/tri4.png)
 ![Tri6](../topology/tri6.png)
 ![Tri7](../topology/tri7.png)
+![Tri9](../topology/tri9.png)
+![Tri13](../topology/tri13.png)
 
 The side numbering for a tri element is shown below.  For a triangular shell, there are five sides. Side 1 is the "top" of the triangle given by nodes 1-2-3 and side 2 is the "bottom" of the triangle given by nodes 3-2-1.  Sides 3,4,5 correspond to sides 1,2,3 of the 2D triangle.
 
@@ -144,6 +160,8 @@ These are usable in 2D or 3D meshes.  In a 3D mesh, they represent a quadrilater
 ![Quad5](../topology/quad5.png)
 ![Quad8](../topology/quad8.png)
 ![Quad9](../topology/quad9.png)
+![Quad12](../topology/quad12.png)
+![Quad16](../topology/quad16.png)
 
 The side numbering for a 2D quadrilateral element and a 3D quadrilateral shell element are shown below.
 
@@ -175,6 +193,8 @@ The side numbering for a 2D quadrilateral element and a 3D quadrilateral shell e
 ![Tet11](../topology/tet11.png)
 ![Tet14](../topology/tet14.png)
 ![Tet15](../topology/tet15.png)
+![Tet16](../topology/tet16.png)
+![Tet40](../topology/tet40.png)
 
 The side numbering for a tetrahedral element type is shown below.
 
@@ -213,6 +233,8 @@ PYRAMID| 1 | 1, 2, 5 |
 ![Wedge16](../topology/wedge16.png)
 ![Wedge20](../topology/wedge20.png)
 ![Wedge21](../topology/wedge21.png)
+![Wedge24](../topology/wedge24.png)
+![Wedge52](../topology/wedge52.png)
 
 The side numbering for a wedge element type is shown below. Note that
 the face mapping for this element does not match the MSC/Patran face
@@ -238,6 +260,8 @@ WEDGE         | 1     | 1, 2, 5, 4 | 3           |
 ![Hex16](../topology/hex16.png)
 ![Hex20](../topology/hex20.png)
 ![Hex27](../topology/hex27.png)
+![Hex32](../topology/hex32.png)
+![Hex64](../topology/hex64.png)
 
 The side numbering for a hexahedral element type is shown below.
 

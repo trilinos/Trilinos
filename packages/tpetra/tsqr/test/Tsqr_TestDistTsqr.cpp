@@ -44,7 +44,7 @@
 #include "Tsqr_GlobalVerify.hpp"
 #include "Tsqr_printGlobalMatrix.hpp"
 
-#include "Tsqr_Test_MpiAndKokkosScope.cpp"
+#include "Tsqr_Test_MpiAndKokkosScope.hpp"
 #include "Tsqr_TeuchosMessenger.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Time.hpp"

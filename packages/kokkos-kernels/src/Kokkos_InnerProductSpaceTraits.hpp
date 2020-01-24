@@ -160,8 +160,8 @@ public:
   /// complex.  In that case, see the partial specialization for
   /// Kokkos::complex below to see our convention for which input gets
   /// conjugated.
-  static KOKKOS_FORCEINLINE_FUNCTION dot_type
-  dot (const val_type& x, const val_type& y) {
+  static KOKKOS_FORCEINLINE_FUNCTION
+  dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
@@ -196,8 +196,8 @@ public:
   mag_type norm (const val_type& x) {
     return ArithTraits<val_type>::abs (x);
   }
-  static KOKKOS_FORCEINLINE_FUNCTION dot_type
-  dot (const val_type& x, const val_type& y) {
+  static KOKKOS_FORCEINLINE_FUNCTION
+  dot_type dot (const val_type& x, const val_type& y) {
     return Kokkos::conj (x) * y;
   }
 };
@@ -290,6 +290,66 @@ struct InnerProductSpaceTraits<qd_real>
   }
 };
 #endif // HAVE_KOKKOS_QD
+
+template<class ResultType, class InputType1, class InputType2>
+KOKKOS_INLINE_FUNCTION void
+updateDot(ResultType& sum, const InputType1& x, const InputType2& y)
+{
+  // FIXME (mfh 22 Jan 2020) We should actually pick the type with the
+  // greater precision.
+  sum += InnerProductSpaceTraits<InputType1>::dot(x, y);
+}
+
+KOKKOS_INLINE_FUNCTION void
+updateDot(double& sum, const double x, const double y)
+{
+  sum += x * y;
+}
+
+KOKKOS_INLINE_FUNCTION void
+updateDot(double& sum, const float x, const float y)
+{
+  sum += x * y;
+}
+
+// This exists because complex<float> += complex<double> is not defined.
+KOKKOS_INLINE_FUNCTION void
+updateDot(Kokkos::complex<double>& sum,
+          const Kokkos::complex<float> x,
+          const Kokkos::complex<float> y)
+{
+  const auto tmp = Kokkos::conj(x) * y;
+  sum += Kokkos::complex<double>(tmp.real(), tmp.imag());
+}
+
+// This exists in case people call the overload of KokkosBlas::dot
+// that takes an output View, and the output View has element type
+// Kokkos::complex<float>.
+KOKKOS_INLINE_FUNCTION void
+updateDot(Kokkos::complex<float>& sum,
+          const Kokkos::complex<float> x,
+          const Kokkos::complex<float> y)
+{
+  sum += Kokkos::conj(x) * y;
+}
+
+// This exists because Kokkos::complex<double> =
+// Kokkos::complex<float> is not defined.
+template<class Out, class In>
+struct CastPossiblyComplex {
+  static Out cast(const In& x) {
+    return x;
+  }
+};
+
+template<class OutReal, class InReal>
+struct CastPossiblyComplex<Kokkos::complex<OutReal>, Kokkos::complex<InReal>>
+{
+  static Kokkos::complex<OutReal>
+  cast (const Kokkos::complex<InReal>& x) {
+    return {x.real(), x.imag()};
+  }
+};
 
 } // namespace Details
 } // namespace Kokkos

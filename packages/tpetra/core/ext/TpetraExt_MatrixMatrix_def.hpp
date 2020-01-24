@@ -249,7 +249,7 @@ void Multiply(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   } //stop MM_importExtract here
   //stop the setup timer, and start the multiply timer
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
 #endif
 
   // Call the appropriate method to perform the actual multiplication.
@@ -392,7 +392,7 @@ void Jacobi(Scalar omega,
 
   //Now import any needed remote rows and populate the Aview struct.
   RCP<const import_type> dummyImporter;
-  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, false, label,importParams1);
+  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label,importParams1);
 
   // We will also need local access to all rows of B that correspond to the
   // column-map of op(A).
@@ -769,7 +769,7 @@ add (const Scalar& alpha,
     //Handle this case now
     //(without interfering with collective operations, since it's possible for
     //some ranks to have 0 local rows and others not).
-    rowptrs = row_ptrs_array("C rowptrs", 1);
+    rowptrs = row_ptrs_array("C rowptrs", 0);
   }
   auto Acolmap = Aprime->getColMap();
   auto Bcolmap = Bprime->getColMap();
@@ -783,7 +783,7 @@ add (const Scalar& alpha,
     //use kernel that converts col indices in both A and B to common domain map before adding
     auto AlocalColmap = Acolmap->getLocalMap();
     auto BlocalColmap = Bcolmap->getLocalMap();
-    global_col_inds_array globalColinds("", 0);
+    global_col_inds_array globalColinds;
     if (debug) {
       std::ostringstream os;
       os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
@@ -1526,9 +1526,9 @@ template<class CrsMatrixType>
 size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
-  if (A.getNodeNumEntries() > 0)
-    Aest = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 100;
-  if (B.getNodeNumEntries() > 0)
+  if (A.getNodeNumEntries() >= A.getNodeNumRows())
+    Aest = (A.getNodeNumRows() > 0) ? A.getNodeNumEntries()/A.getNodeNumRows() : 100;
+  if (B.getNodeNumEntries() >= B.getNodeNumRows())
     Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
@@ -2889,9 +2889,11 @@ void import_and_extract_views(
   Aview.colMap       = A.getColMap();
   Aview.domainMap    = A.getDomainMap();
   Aview.importColMap = null;
+  RCP<const map_type> rowMap = A.getRowMap();
+  const int numProcs = rowMap->getComm()->getSize();
 
-  // Short circuit if the user swears there are no remotes
-  if (userAssertsThereAreNoRemotes)
+  // Short circuit if the user swears there are no remotes (or if we're in serial)
+  if (userAssertsThereAreNoRemotes || numProcs < 2)
     return;
 
   RCP<const import_type> importer;
@@ -2906,13 +2908,16 @@ void import_and_extract_views(
 
     // Mark each row in targetMap as local or remote, and go ahead and get a view
     // for the local rows
-    RCP<const map_type> rowMap = A.getRowMap(), remoteRowMap;
+    RCP<const map_type> remoteRowMap;
     size_t numRemote = 0;
     int mode = 0;
     if (!prototypeImporter.is_null() &&
         prototypeImporter->getSourceMap()->isSameAs(*rowMap)     &&
         prototypeImporter->getTargetMap()->isSameAs(*targetMap)) {
       // We have a valid prototype importer --- ask it for the remotes
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      TimeMonitor MM2 = *TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap-Mode1"));
+#endif
       ArrayView<const LO> remoteLIDs = prototypeImporter->getRemoteLIDs();
       numRemote = prototypeImporter->getNumRemoteIDs();
 
@@ -2926,6 +2931,9 @@ void import_and_extract_views(
 
     } else if (prototypeImporter.is_null()) {
       // No prototype importer --- count the remotes the hard way
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      TimeMonitor MM2 = *TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap-Mode2"));
+#endif
       ArrayView<const GO> rows    = targetMap->getNodeElementList();
       size_t              numRows = targetMap->getNodeNumElements();
 
@@ -2945,8 +2953,6 @@ void import_and_extract_views(
       // PrototypeImporter is bad.  But if we're in serial that's OK.
       mode = 3;
     }
-
-    const int numProcs = rowMap->getComm()->getSize();
 
     if (numProcs < 2) {
       TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,

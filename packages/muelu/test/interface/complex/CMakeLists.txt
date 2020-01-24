@@ -1,7 +1,0 @@
-ADD_SUBDIRECTORY(EasyParameterListInterpreter)
-ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
-ADD_SUBDIRECTORY(FactoryParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(MLParameterListInterpreter)
-ADD_SUBDIRECTORY(MLParameterListInterpreter2)
-ADD_SUBDIRECTORY(Output)

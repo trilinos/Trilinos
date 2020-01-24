@@ -3,8 +3,7 @@
 
 #include "TpetraTSQR_config.h"
 #if defined(HAVE_TPETRATSQR_CUBLAS) && defined(HAVE_TPETRATSQR_CUSOLVER)
-#include "Tsqr_Impl_CuBlasHandle.hpp"
-#include "Tsqr_Impl_CuSolverHandle.hpp"
+#include "Tsqr_Impl_CuSolverHandle_fwd.hpp"
 #if defined(HAVE_TPETRATSQR_COMPLEX)
 #  include <complex>
 #endif // HAVE_TPETRATSQR_COMPLEX
@@ -16,7 +15,10 @@ namespace Impl {
 template<class Scalar>
 class CuSolver : public RawQR<Scalar> {
 public:
-  CuSolver(CuSolverHandle handle, int* const info);
+  CuSolver(int* const info); // use default cuSOLVER handle
+
+  CuSolver(const std::shared_ptr<CuSolverHandle>& handle,
+           int* const info);
 
   virtual bool wants_device_memory () const { return true; }
 
@@ -73,7 +75,7 @@ public:
                      Scalar work[], const int lwork) const override;
 
 private:
-  CuSolverHandle handle_;
+  std::shared_ptr<CuSolverHandle> handle_;
   int* info_; // DEVICE MEMORY
 };
 

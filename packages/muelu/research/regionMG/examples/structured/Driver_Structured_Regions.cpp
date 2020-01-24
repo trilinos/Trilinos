@@ -173,6 +173,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
+  bool        keepCoarseCoords   = false;               clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
   std::string coarseSolverType   = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,  "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
   std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,      "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
   std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,  "Read parameters for AMG as coarse level solve from this xml file.");
@@ -680,7 +681,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         compositeToRegionLIDs(),
                         coarseSolverData,
                         smootherParams,
-                        hierarchyData);
+                        hierarchyData,
+                        keepCoarseCoords);
 
   hierarchyData->print();
 
@@ -691,7 +693,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Solve with V-cycle")));
 
   {
-    std::cout << myRank << " | Running V-cycle ..." << std::endl;
+//    std::cout << myRank << " | Running V-cycle ..." << std::endl;
 
     // Extract the number of levels from the prolongator data structure
     int numLevels = regProlong.size();
@@ -795,8 +797,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
     int cycle = 0;
+
+    Array<Teuchos::RCP<Vector> > regCorrect(maxRegPerProc);
+    for (int j = 0; j < maxRegPerProc; j++) {
+      regCorrect[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
+    }
     for (cycle = 0; cycle < maxIts; ++cycle)
     {
+      const Scalar SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+      regCorrect[0]->putScalar(SC_ZERO);
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
@@ -834,10 +843,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         /////////////////////////////////////////////////////////////////////////
 
         //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
+
+        bool zeroInitGuess = true;
+        scaleInterfaceDOFs(regRes, regInterfaceScalings[0], false);
         vCycle(0, numLevels,
-               regX, regB, regMatrices,
+               regCorrect, regRes, regMatrices,
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-               regInterfaceScalings, smootherParams, coarseSolverData, hierarchyData);
+               regInterfaceScalings, smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
+
+        regX[0]->update(one, *regCorrect[0], one);
     }
     if (myRank == 0)
       std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;

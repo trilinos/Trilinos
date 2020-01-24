@@ -1648,7 +1648,6 @@ size_t ex_header_size(int exoid) { return 0; }
 void ex__compress_variable(int exoid, int varid, int type)
 {
 #if NC_HAS_HDF5
-
   struct ex__file_item *file = ex__find_file_item(exoid);
 
   if (!file) {
@@ -1658,19 +1657,41 @@ void ex__compress_variable(int exoid, int varid, int type)
     ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
   }
   else {
-    int deflate_level = file->compression_level;
-    int compress      = 1;
-    int shuffle       = file->shuffle;
-    if (deflate_level > 0 && file->is_hdf5) {
-      if (type != 3) { /* Do not try to compress character data */
-        nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
+    /* Compression only supported on HDF5 (NetCDF-4) files; Do not try to compress character data */
+    if (type != 3 && file->is_hdf5) {
+      if (file->compression_algorithm == EX_COMPRESS_GZIP) {
+        int deflate_level = file->compression_level;
+        int compress      = 1;
+        int shuffle       = file->shuffle;
+        if (deflate_level > 0) {
+          nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
+        }
       }
-    }
-#if defined(PARALLEL_AWARE_EXODUS)
-    if (type != 3 && file->is_parallel && file->is_hdf5) {
-      nc_var_par_access(exoid, varid, NC_COLLECTIVE);
-    }
+      else if (file->compression_algorithm == EX_COMPRESS_SZIP) {
+#if NC_HAS_SZIP__DISABLED
+        /* See: https://support.hdfgroup.org/doc_resource/SZIP/ and
+                https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSzip
+           for details on SZIP library and parameters.
+        */
+
+        /* const int NC_SZIP_EC = 4; */       /* Selects entropy coding method for szip. */
+        const int NC_SZIP_NN            = 32; /* Selects nearest neighbor coding method for szip. */
+        const int SZIP_PIXELS_PER_BLOCK = 16; /* Even and <= 32; typical values are 8, 10, 16, 32 */
+        nc_def_var_szip(exoid, varid, NC_SZIP_NN, SZIP_PIXELS_PER_BLOCK);
+#else
+        char errmsg[MAX_ERR_LENGTH];
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: Compression algorithm SZIP is not supported yet (EXPERIMENTAL).");
+        ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
 #endif
+      }
+
+#if defined(PARALLEL_AWARE_EXODUS)
+      if (file->is_parallel && file->is_hdf5) {
+        nc_var_par_access(exoid, varid, NC_COLLECTIVE);
+      }
+#endif
+    }
   }
 #endif
 }

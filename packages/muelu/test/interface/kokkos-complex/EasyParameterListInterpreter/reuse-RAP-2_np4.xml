@@ -1,6 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="reuse: type"                     type="string"   value="RAP"/>
-  <Parameter name="transpose: use implicit"         type="bool"     value="true"/>
-  <Parameter name="repartition: enable"             type="bool"     value="true"/>
-  <Parameter name="repartition: rebalance P and R"  type="bool"     value="false"/>
-</ParameterList>

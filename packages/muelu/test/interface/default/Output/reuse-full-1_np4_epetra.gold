@@ -325,3 +325,10 @@ Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 Smoother (level 2) pre  : MueLu::AmesosSmoother{type = <ignored>}
 Smoother (level 2) post : no smoother
 
+Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
+keep smoother data = 1
+PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+presmoother -> 
+ [empty list]
+
