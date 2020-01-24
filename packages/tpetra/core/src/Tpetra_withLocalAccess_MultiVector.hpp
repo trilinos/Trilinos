@@ -59,17 +59,22 @@ namespace Tpetra {
     //! Specialization of GetMasterLocalObject for Tpetra::MultiVector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
-             const AccessMode am>
+             class AccessMode>
     struct GetMasterLocalObject<
       LocalAccess<
-        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> >
+        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, AccessMode> >
     {
-    public:
-      using local_access_type =
-        LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;
     private:
+      static_assert(is_access_mode<AccessMode>::value,
+        "The AccessMode template parameter must be an instance of "
+        "Tpetra::Details::Access.");
       using global_object_type = Tpetra::MultiVector<SC, LO, GO, NT>;
 
+    public:
+      using local_access_type =
+        LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace,
+                    AccessMode>;
+    private:
       // FIXME (mfh 22 Oct 2018, 25 Apr 2019) Need to make sure that
       // the execution space matches.  If not, we would need to
       // allocate a new View, and then we should actually make the
@@ -116,11 +121,9 @@ namespace Tpetra {
       get (local_access_type LA)
       {
         if (LA.isValid ()) {
-          // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
-          // get build errors of the form "error: a built-in binary
-          // operator applied to a scoped enumeration requires two
-          // operands of the same type."
-          if (static_cast<AccessMode> (am) == AccessMode::WriteOnly) {
+          constexpr bool is_write_only =
+            std::is_same<AccessMode, Access<EAccess::WriteOnly> >::value;
+          if (is_write_only) {
             LA.G_.clear_sync_state ();
           }
 
@@ -146,7 +149,9 @@ namespace Tpetra {
           // get build errors of the form "error: a built-in binary
           // operator applied to a scoped enumeration requires two
           // operands of the same type."
-          if (static_cast<AccessMode> (am) != AccessMode::ReadOnly) {
+          constexpr bool is_read_only =
+            std::is_same<AccessMode, Access<EAccess::ReadOnly> >::value;
+          if (! is_read_only) {
             LA.G_.template modify<space> ();
           }
 
@@ -167,17 +172,17 @@ namespace Tpetra {
     //! Specialization of GetMasterLocalObject for Tpetra::Vector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
-             const Details::AccessMode am>
+             class AccessMode>
     struct GetMasterLocalObject<
       LocalAccess<
-        Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> >
+        Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, AccessMode> >
     {
     private:
       using global_object_type = Tpetra::Vector<SC, LO, GO, NT>;
       using parent_global_object_type =
         Tpetra::MultiVector<SC, LO, GO, NT>;
       using parent_local_access_type =
-        LocalAccess<parent_global_object_type, MemorySpace, am>;
+        LocalAccess<parent_global_object_type, MemorySpace, AccessMode>;
       using mv_gmlo = GetMasterLocalObject<parent_local_access_type>;
       using parent_master_local_view_type =
         typename mv_gmlo::master_local_view_type;
@@ -189,7 +194,7 @@ namespace Tpetra {
 
     public:
       using local_access_type =
-        LocalAccess<global_object_type, MemorySpace, am>;
+        LocalAccess<global_object_type, MemorySpace, AccessMode>;
 
     public:
       // This alias is for the Vector specialization of
@@ -212,11 +217,9 @@ namespace Tpetra {
       get (local_access_type LA)
       {
         if (LA.isValid ()) {
-          // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
-          // get build errors of the form "error: a built-in binary
-          // operator applied to a scoped enumeration requires two
-          // operands of the same type."
-          if (static_cast<AccessMode> (am) == AccessMode::WriteOnly) {
+          constexpr bool is_write_only =
+            std::is_same<AccessMode, Access<EAccess::WriteOnly> >::value;
+          if (is_write_only) {
             LA.G_.clear_sync_state ();
           }
 
@@ -238,11 +241,9 @@ namespace Tpetra {
           if (LA.G_.template need_sync<space> ()) {
             LA.G_.template sync<space> ();
           }
-          // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
-          // get build errors of the form "error: a built-in binary
-          // operator applied to a scoped enumeration requires two
-          // operands of the same type."
-          if (static_cast<AccessMode> (am) != AccessMode::ReadOnly) {
+          constexpr bool is_read_only =
+            std::is_same<AccessMode, Access<EAccess::ReadOnly> >::value;
+          if (! is_read_only) {
             LA.G_.template modify<space> ();
           }
 
@@ -265,14 +266,14 @@ namespace Tpetra {
     ///   Tpetra::MultiVector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
-             const AccessMode am>
+             class AccessMode>
     struct GetNonowningLocalObject<
       LocalAccess<
-        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> >
+        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, AccessMode> >
     {
     public:
       using local_access_type = LocalAccess<
-        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;
+        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, AccessMode>;
 
     private:
       using input_view_type =
@@ -286,7 +287,7 @@ namespace Tpetra {
       // applied to a scoped enumeration requires two operands of the
       // same type."
       using output_data_type = typename std::conditional<
-        static_cast<AccessMode> (am) == AccessMode::ReadOnly,
+        std::is_same<AccessMode, Access<EAccess::ReadOnly> >::value,
         typename input_view_type::const_data_type,
         typename input_view_type::non_const_data_type>::type;
       using output_view_type =
@@ -314,14 +315,14 @@ namespace Tpetra {
     ///   Tpetra::Vector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
-             const AccessMode am>
+             class AccessMode>
     struct GetNonowningLocalObject<
       LocalAccess<
-        ::Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> >
+        ::Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, AccessMode> >
     {
     public:
       using local_access_type = LocalAccess<
-        Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am>;
+        Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, AccessMode>;
 
     private:
       using input_view_type =
@@ -334,7 +335,7 @@ namespace Tpetra {
       // applied to a scoped enumeration requires two operands of the
       // same type."
       using output_data_type = typename std::conditional<
-        static_cast<AccessMode> (am) == AccessMode::ReadOnly,
+        std::is_same<AccessMode, Access<EAccess::ReadOnly> >::value,
         typename input_view_type::const_data_type,
         typename input_view_type::non_const_data_type>::type;
       using output_view_type =

@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -92,11 +90,11 @@ namespace Details {
 
 template<class MemorySpace>
 struct GetMasterLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadOnly> >
+  LocalAccess<StubGlobalObject, MemorySpace, Access<EAccess::ReadOnly>> >
 {
 private:
   using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadOnly>;
+    LocalAccess<StubGlobalObject, MemorySpace, Access<EAccess::ReadOnly>>;
 
 public:
   // In practice, prefer things that behave like std::unique_ptr,
@@ -113,11 +111,11 @@ public:
 
 template<class MemorySpace>
 struct GetNonowningLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadOnly> >
+  LocalAccess<StubGlobalObject, MemorySpace, Access<EAccess::ReadOnly>> >
 {
 private:
   using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadOnly>;
+    LocalAccess<StubGlobalObject, MemorySpace, Access<EAccess::ReadOnly>>;
   using master_local_object_type =
     typename GetMasterLocalObject<local_access_type>::master_local_object_type;
 
@@ -135,11 +133,11 @@ public:
 // Example of the "copy-back" model.
 template<class MemorySpace>
 struct GetMasterLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::WriteOnly> >
+  LocalAccess<StubGlobalObject, MemorySpace, Access<EAccess::WriteOnly>> >
 {
 private:
   using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::WriteOnly>;
+    LocalAccess<StubGlobalObject, MemorySpace, Access<EAccess::WriteOnly>>;
 
   struct Deleter {
     // Capturing the std::shared_ptr means that we increment the
@@ -175,13 +173,16 @@ public:
 
 template<class MemorySpace>
 struct GetNonowningLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::WriteOnly> >
+  LocalAccess<StubGlobalObject, MemorySpace,
+    Access<EAccess::WriteOnly> > >
 {
 private:
   using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::WriteOnly>;
+    LocalAccess<StubGlobalObject, MemorySpace,
+      Access<EAccess::WriteOnly> >;
   using master_local_object_type =
-    typename GetMasterLocalObject<local_access_type>::master_local_object_type;
+    typename GetMasterLocalObject<local_access_type>::
+      master_local_object_type;
 
 public:
   using nonowning_local_object_type = int*;
@@ -196,11 +197,13 @@ public:
 
 template<class MemorySpace>
 struct GetMasterLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadWrite> >
+  LocalAccess<StubGlobalObject, MemorySpace,
+    Access<EAccess::ReadWrite> > >
 {
 private:
   using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadWrite>;
+    LocalAccess<StubGlobalObject, MemorySpace,
+      Access<EAccess::ReadWrite> >;
 
 public:
   // In practice, prefer things that behave like std::unique_ptr,
@@ -216,11 +219,12 @@ public:
 
 template<class MemorySpace>
 struct GetNonowningLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadWrite> >
+  LocalAccess<StubGlobalObject, MemorySpace,
+    Access<EAccess::ReadWrite> > >
 {
 private:
   using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadWrite>;
+    LocalAccess<StubGlobalObject, MemorySpace, Access<EAccess::ReadWrite> >;
   using master_local_object_type =
     typename GetMasterLocalObject<local_access_type>::master_local_object_type;
 

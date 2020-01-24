@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -59,12 +57,35 @@ namespace Tpetra {
   ////////////////////////////////////////////////////////////
 
   namespace Details {
-    //! Access intent.
-    enum class AccessMode {
+    /// \brief Enum for declaring access intent.
+    ///
+    /// This is not for users; it's an implementation detail of
+    /// functions readOnly, writeOnly, and readWrite (see below).
+    enum class EAccess {
       ReadOnly,
       WriteOnly,
       ReadWrite
     };
+
+    /// \brief Tag class for declaring access intent.
+    ///
+    /// This is a class, not an enum, so that LocalAccess (see below)
+    /// can have a parameter pack.  You can't mix class types and
+    /// constexpr values in a parameter pack.  Compare to
+    /// Kokkos::MemoryTraits or Kokkos::Schedule.
+    template<const EAccess accessMode>
+    class Access {
+      /// \brief Type alias to help identifying the tag class.
+      ///
+      /// We follow Kokkos in identifying a tag class by checking
+      /// whether a type alias inside it has the same type as the tag
+      /// class itself.
+      using access_mode = Access<accessMode>;
+    };
+
+    template<class T> struct is_access_mode : public std::false_type {};
+    template<EAccess am>
+    struct is_access_mode<Access<am>> : public std::true_type {};
 
     /// \brief Given a global object, get its default memory space
     ///   (both the type and the default instance thereof).
@@ -88,7 +109,7 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     template<class GlobalObjectType,
              class MemorySpace,
-             const AccessMode am>
+             class AccessMode>
     class LocalAccess; // forward declaration
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -215,7 +236,7 @@ namespace Tpetra {
   Details::LocalAccess<
     GlobalObjectType,
     typename Details::DefaultMemorySpace<GlobalObjectType>::type,
-    Details::AccessMode::ReadOnly>
+    Details::Access<Details::EAccess::ReadOnly>>
   readOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -225,7 +246,7 @@ namespace Tpetra {
   Details::LocalAccess<
     GlobalObjectType,
     typename Details::DefaultMemorySpace<GlobalObjectType>::type,
-    Details::AccessMode::ReadOnly>
+    Details::Access<Details::EAccess::ReadOnly>>
   readOnly (const GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -235,7 +256,7 @@ namespace Tpetra {
   Details::LocalAccess<
     GlobalObjectType,
     typename Details::DefaultMemorySpace<GlobalObjectType>::type,
-    Details::AccessMode::WriteOnly>
+    Details::Access<Details::EAccess::WriteOnly>>
   writeOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -245,7 +266,7 @@ namespace Tpetra {
   Details::LocalAccess<
     GlobalObjectType,
     typename Details::DefaultMemorySpace<GlobalObjectType>::type,
-    Details::AccessMode::ReadWrite>
+    Details::Access<Details::EAccess::ReadWrite>>
   readWrite (GlobalObjectType&);
 
   ////////////////////////////////////////////////////////////
@@ -261,12 +282,15 @@ namespace Tpetra {
     /// LocalAccess instance.
     template<class GlobalObjectType,
              class MemorySpace,
-             const AccessMode am>
+             class AccessMode>
     class LocalAccess {
     public:
       using global_object_type = GlobalObjectType;
       using memory_space = typename MemorySpace::memory_space;
-      static constexpr AccessMode access_mode = am;
+      static_assert(is_access_mode<AccessMode>::value,
+        "The AccessMode template parameter must be an instance of "
+        "Tpetra::Details::Access.");
+      using access_mode = AccessMode;
 
     private:
       using canonical_this_type = LocalAccess<global_object_type,
@@ -315,7 +339,7 @@ namespace Tpetra {
       /// on allocating temporary space, copying from device to host,
       /// etc.  This implies that implementations must be able to
       /// construct "null" / empty master local objects.
-      LocalAccess<GlobalObjectType, MemorySpace, am>
+      LocalAccess<GlobalObjectType, MemorySpace, access_mode>
       valid (const bool thisIsValid) const {
         return {this->G_, this->space_, thisIsValid};
       }
@@ -323,7 +347,7 @@ namespace Tpetra {
       /// \brief Declare intent to access this object's local data in
       ///   a specific (Kokkos) memory space (instance).
       template<class NewMemorySpace>
-      LocalAccess<GlobalObjectType, NewMemorySpace, am>
+      LocalAccess<GlobalObjectType, NewMemorySpace, access_mode>
       on (NewMemorySpace space) const {
         return {this->G_, space, this->valid_};
       }
@@ -362,7 +386,7 @@ namespace Tpetra {
   Details::LocalAccess<
     GOT,
     typename Details::DefaultMemorySpace<GOT>::type,
-    Details::AccessMode::ReadOnly>
+    Details::Access<Details::EAccess::ReadOnly>>
   readOnly (GOT& G)
   {
     return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
@@ -372,7 +396,7 @@ namespace Tpetra {
   Details::LocalAccess<
     GOT,
     typename Details::DefaultMemorySpace<GOT>::type,
-    Details::AccessMode::ReadOnly>
+    Details::Access<Details::EAccess::ReadOnly>>
   readOnly (const GOT& G)
   {
     GOT& G_nc = const_cast<GOT&> (G);
@@ -383,7 +407,7 @@ namespace Tpetra {
   Details::LocalAccess<
     GOT,
     typename Details::DefaultMemorySpace<GOT>::type,
-    Details::AccessMode::WriteOnly>
+    Details::Access<Details::EAccess::WriteOnly>>
   writeOnly (GOT& G)
   {
     return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
@@ -393,7 +417,7 @@ namespace Tpetra {
   Details::LocalAccess<
     GOT,
     typename Details::DefaultMemorySpace<GOT>::type,
-    Details::AccessMode::ReadWrite>
+    Details::Access<Details::EAccess::ReadWrite>>
   readWrite (GOT& G)
   {
     return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
