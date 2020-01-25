@@ -324,17 +324,14 @@ namespace Tpetra {
              using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
              range_type range (execSpace, 0, lclNumRows);
 
-             // MDM-TODO
-             // Need to resolve this fencing for the transform tests.
-             // If data is on device and the transform calls for execSpace host
-             // we'll need a fence. However the transform to host call currently
-             // leaves need_sync_host() true which i need to discuss and verify
-             // if it's an error. Perhaps that should be resolved first.
-             // Also may need host or device fence. This default fence is on device
-             // which happens to work for the current test setup. I think we'll
-             // want to make a flipped version of the test to force the error here.
-             // Note PR 6617 discusses these current issues.
-             Kokkos::fence();
+             // Note that the Transform.cpp test will not currently pass
+             // with CUDA_LAUNCH_BLOCKING=0. This is because execSpace is not
+             // considered by withLocalAccess so after requesting the transform
+             // with Host we don't get a sync and need_sync_host() is still true.
+             // That issue is regardless of whether CUDA_LAUNCH_BLOCKING is set.
+             // When withLocalAccess is fixed we should then have the proper fencing
+             // and the test will run correctly with CUDA_LAUNCH_BLOCKING=0 or =1.
+             // PR 6617 discusses these current issues.
 
              Kokkos::parallel_for (kernelLabel, range, g);
            },
@@ -371,8 +368,8 @@ namespace Tpetra {
             using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
             range_type range (execSpace, 0, lclNumRows);
 
-            // MDM-TODO - see similar note above for transform_vec_notSameObject
-            Kokkos::fence();
+            // See note above for explanation why a pending fix to withLocalAccess
+            // will fix Transform.cpp test to pass with CUDA_LAUNCH_BLOCKING=0.
 
             Kokkos::parallel_for (kernelLabel, range, g);
           },

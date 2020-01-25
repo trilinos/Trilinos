@@ -138,7 +138,6 @@ namespace { // (anonymous)
     }
 
     Y.putScalar (418.0);
-
     out << "transform on default host execution space: 418 -> 419" << endl;
 
     transform ("418 -> 419", Kokkos::DefaultHostExecutionSpace (), Y, X,
@@ -299,7 +298,6 @@ namespace { // (anonymous)
     }
 
     Y.putScalar (418.0);
-
     out << "transform on default host execution space: 418 -> 419" << endl;
 
     transform ("418 -> 419", Kokkos::DefaultHostExecutionSpace (), Y, X,
