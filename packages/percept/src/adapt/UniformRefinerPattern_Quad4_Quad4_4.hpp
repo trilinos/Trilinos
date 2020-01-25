@@ -50,7 +50,7 @@
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> quad_tuple_type;
+        typedef std::array<stk::mesh::EntityId, 4> quad_tuple_type;
         static vector<quad_tuple_type> elems(4);
 
         CellTopology cell_topo(cell_topo_data);
@@ -86,10 +86,10 @@
 // new_sub_entity_nodes[i][j]
 #define CENTROID_N NN(m_primaryEntityRank,0)
 
-        elems[0] = quad_tuple_type(VERT_N(0), EDGE_N(0), CENTROID_N, EDGE_N(3));
-        elems[1] = quad_tuple_type(VERT_N(1), EDGE_N(1), CENTROID_N, EDGE_N(0));
-        elems[2] = quad_tuple_type(VERT_N(2), EDGE_N(2), CENTROID_N, EDGE_N(1));
-        elems[3] = quad_tuple_type(VERT_N(3), EDGE_N(3), CENTROID_N, EDGE_N(2));
+        elems[0] = {VERT_N(0), EDGE_N(0), CENTROID_N, EDGE_N(3)};
+        elems[1] = {VERT_N(1), EDGE_N(1), CENTROID_N, EDGE_N(0)};
+        elems[2] = {VERT_N(2), EDGE_N(2), CENTROID_N, EDGE_N(1)};
+        elems[3] = {VERT_N(3), EDGE_N(3), CENTROID_N, EDGE_N(2)};
 
 #undef CENTROID_N
 
@@ -107,10 +107,10 @@
               newElement = *element_pool;
 
             stk::mesh::Entity nodes[4] = {
-              eMesh.createOrGetNode(elems[ielem].get<0>()),
-              eMesh.createOrGetNode(elems[ielem].get<1>()),
-              eMesh.createOrGetNode(elems[ielem].get<2>()),
-              eMesh.createOrGetNode(elems[ielem].get<3>()) };
+              eMesh.createOrGetNode(elems[ielem][0]),
+              eMesh.createOrGetNode(elems[ielem][1]),
+              eMesh.createOrGetNode(elems[ielem][2]),
+              eMesh.createOrGetNode(elems[ielem][3]) };
 
             create_side_element(eMesh, use_declare_element_side, nodes, 4, newElement);
 

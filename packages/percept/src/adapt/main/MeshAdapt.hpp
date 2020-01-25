@@ -50,8 +50,6 @@
 
 #include <adapt/UniformRefiner.hpp>
 #include <adapt/UniformRefinerPattern.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/static_assert.hpp>
 #include <Ioss_Utils.h>
 #include <Ioss_SerializeIO.h>
 

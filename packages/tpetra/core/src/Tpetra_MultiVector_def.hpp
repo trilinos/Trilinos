@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -946,11 +944,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& sourceObj,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
@@ -1258,11 +1252,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& sourceObj,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
    Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
@@ -1507,11 +1497,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
   unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
    Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
@@ -1526,8 +1512,9 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
     using IST = impl_scalar_type;
+    const char longFuncName[] = "Tpetra::MultiVector::unpackAndCombine";
     const char tfecfFuncName[] = "unpackAndCombine: ";
-    ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombine");
+    ProfilingRegion regionUAC (longFuncName);
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1544,7 +1531,7 @@ namespace Tpetra {
       auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": MV::packAndPrepare: ";
+      os << "Proc " << myRank << ": " << longFuncName << ": ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
       os << "Start" << endl;
       std::cerr << os.str ();
@@ -1930,7 +1917,7 @@ namespace Tpetra {
 
     // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
     if (this->need_sync_device ()) {
-      const_cast<MV*>(this)->sync_device ();
+      const_cast<MV&>(*this).sync_device ();
     }
     if (A.need_sync_device ()) {
       const_cast<MV&>(A).sync_device ();
@@ -2076,100 +2063,6 @@ namespace Tpetra {
     this->norm2 (norms_av);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TPETRA_DEPRECATED
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights,
-                const Teuchos::ArrayView<mag_type> &norms) const
-  {
-    using Kokkos::ALL;
-    using Kokkos::subview;
-    using Teuchos::Comm;
-    using Teuchos::null;
-    using Teuchos::RCP;
-    using Teuchos::reduceAll;
-    using Teuchos::REDUCE_SUM;
-    typedef Kokkos::ArithTraits<impl_scalar_type> ATS;
-    typedef Kokkos::ArithTraits<mag_type> ATM;
-    typedef Kokkos::View<mag_type*, Kokkos::HostSpace> norms_view_type;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    const char tfecfFuncName[] = "normWeighted: ";
-
-    const size_t numVecs = this->getNumVectors ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (norms.size ()) != numVecs, std::runtime_error,
-      "norms.size() = " << norms.size () << " != this->getNumVectors() = "
-      << numVecs << ".");
-
-    const bool OneW = (weights.getNumVectors () == 1);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! OneW && weights.getNumVectors () != numVecs, std::runtime_error,
-      "The input MultiVector of weights must contain either one column, "
-      "or must have the same number of columns as *this.  "
-      "weights.getNumVectors() = " << weights.getNumVectors ()
-      << " and this->getNumVectors() = " << numVecs << ".");
-
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
-
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! this->getMap ()->isCompatible (*weights.getMap ()), std::runtime_error,
-         "MultiVectors do not have compatible Maps:" << std::endl
-         << "this->getMap(): " << std::endl << *this->getMap()
-         << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
-    }
-    else {
-      const size_t lclNumRows = this->getLocalLength ();
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (lclNumRows != weights.getLocalLength (), std::runtime_error,
-         "MultiVectors do not have the same local length.");
-    }
-
-    norms_view_type lclNrms ("Tpetra::MV::lclNrms", numVecs);
-
-    // FIXME (mfh 18 May 2016) Yes, I know "const" is a lie.
-    const_cast<MV*> (this)->sync_device ();
-    const_cast<MV&> (weights).sync_device ();
-
-    auto X_lcl = this->getLocalViewDevice ();
-    auto W_lcl = weights.getLocalViewDevice ();
-
-    if (isConstantStride () && ! OneW) {
-      KokkosBlas::nrm2w_squared (lclNrms, X_lcl, W_lcl);
-    }
-    else {
-      for (size_t j = 0; j < numVecs; ++j) {
-        const size_t X_col = this->isConstantStride () ? j :
-          this->whichVectors_[j];
-        const size_t W_col = OneW ? static_cast<size_t> (0) :
-          (weights.isConstantStride () ? j : weights.whichVectors_[j]);
-        KokkosBlas::nrm2w_squared (subview (lclNrms, j),
-                                   subview (X_lcl, ALL (), X_col),
-                                   subview (W_lcl, ALL (), W_col));
-      }
-    }
-
-    const mag_type OneOverN =
-      ATM::one () / static_cast<mag_type> (this->getGlobalLength ());
-    RCP<const Comm<int> > comm = this->getMap ().is_null () ?
-      Teuchos::null : this->getMap ()->getComm ();
-
-    if (! comm.is_null () && this->isDistributed ()) {
-      // Assume that MPI can access device memory.
-      reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                                lclNrms.data (), norms.getRawPtr ());
-      for (size_t k = 0; k < numVecs; ++k) {
-        norms[k] = ATM::sqrt (norms[k] * OneOverN);
-      }
-    }
-    else {
-      for (size_t k = 0; k < numVecs; ++k) {
-        norms[k] = ATM::sqrt (ATS::magnitude (lclNrms(k)) * OneOverN);
-      }
-    }
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2996,7 +2889,7 @@ namespace Tpetra {
     // viewBuffer or viewBufferNonConst methods always implied a
     // device->host synchronization.  Thus, we synchronize here as
     // well.
-    const_cast<MV*> (this)->sync_host ();
+    const_cast<MV&> (*this).sync_host ();
 
     auto hostView = getLocalViewHost ();
     const size_t col = isConstantStride () ? j : whichVectors_[j];
@@ -3502,15 +3395,23 @@ namespace Tpetra {
     // be exactly what we need, so we won't have to resize them later.
     {
       const size_t newSize = X.imports_.extent (0) / numCols;
+      const size_t offset = jj*newSize;
       auto newImports = X.imports_;
-      newImports.d_view = subview (X.imports_.d_view, range_type (0, newSize));
-      newImports.h_view = subview (X.imports_.h_view, range_type (0, newSize));
+      newImports.d_view = subview (X.imports_.d_view,
+                                   range_type (offset, offset+newSize));
+      newImports.h_view = subview (X.imports_.h_view,
+                                   range_type (offset, offset+newSize));
+      this->imports_ = newImports;
     }
     {
       const size_t newSize = X.exports_.extent (0) / numCols;
+      const size_t offset = jj*newSize;
       auto newExports = X.exports_;
-      newExports.d_view = subview (X.exports_.d_view, range_type (0, newSize));
-      newExports.h_view = subview (X.exports_.h_view, range_type (0, newSize));
+      newExports.d_view = subview (X.exports_.d_view,
+                                   range_type (offset, offset+newSize));
+      newExports.h_view = subview (X.exports_.h_view,
+                                   range_type (offset, offset+newSize));
+      this->exports_ = newExports;
     }
     // These two DualViews already either have the right number of
     // entries, or zero entries.  This means that we don't need to
@@ -4255,15 +4156,6 @@ namespace Tpetra {
     return Kokkos::Compat::persistingView (X_col.d_view);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type
-  TPETRA_DEPRECATED
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getDualView () const {
-    return view_;
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4604,11 +4496,10 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& vec) const
+  {
     using ::Tpetra::Details::PackTraits;
     using ST = impl_scalar_type;
-    using HES =
-      typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
 
     const size_t l1 = this->getLocalLength();
     const size_t l2 = vec.getLocalLength();
@@ -4621,8 +4512,8 @@ namespace Tpetra {
 
     auto v1 = this->getLocalViewHost ();
     auto v2 = vec.getLocalViewHost ();
-    if (PackTraits<ST, HES>::packValueCount (v1(0,0)) !=
-        PackTraits<ST, HES>::packValueCount (v2(0,0))) {
+    if (PackTraits<ST>::packValueCount (v1(0,0)) !=
+        PackTraits<ST>::packValueCount (v2(0,0))) {
       return false;
     }
 

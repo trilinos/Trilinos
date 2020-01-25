@@ -62,9 +62,7 @@ namespace FROSch {
                                                                     UN levelID,
                                                                     DDInterfacePtr ddInterface) :
     PartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
-    DDInterface_ (ddInterface),
-    UseVolumes_ (false),
-    Volumes_ ()
+    DDInterface_ (ddInterface)
     {
         FROSCH_TIMER_START_LEVELID(constantPartitionOfUnityTime,"ConstantPartitionOfUnity::ConstantPartitionOfUnity");
         

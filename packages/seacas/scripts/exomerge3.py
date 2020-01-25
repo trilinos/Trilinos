@@ -1,22 +1,37 @@
 """
 Exomerge is a lightweight Python interface for manipulating ExodusII files.
 
-Copyright 2018 National Technology and Engineering Solutions of Sandia.  Under
-the terms of Contract DE-NA-0003525, there is a non-exclusive license for use
-of this work by or on behalf of the U.S. Government.  Export of this program
-may require a license from the United States Government.
+Copyright (c) 2012-2019, National Technology & Engineering Solutions
+of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+NTESS, the U.S. Government retains certain rights in this software.
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation, either version 3 of the License, or (at your option) any later
-version.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+* Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
 
-You should have received a copy of the GNU General Public License along with
-this program.  If not, see <http://www.gnu.org/licenses/>.
+* Redistributions in binary form must reproduce the above
+  copyright notice, this list of conditions and the following
+  disclaimer in the documentation and/or other materials provided
+  with the distribution.
+
+* Neither the name of NTESS nor the names of its
+  contributors may be used to endorse or promote products derived
+  from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Author: Tim Kostka (tdkostk@sandia.gov)
 Created: May 3, 2012
@@ -69,7 +84,7 @@ except:
     import exodus3 as exodus
 
 # informal version number of this module
-__version__ = 8.5
+__version__ = "8.6.1"
 VERSION = __version__
 
 # contact person for issues
@@ -413,7 +428,7 @@ class ExodusModel(object):
             trial = name + 's'
             if trial in names:
                 return getattr(self, trial)
-        # if the name appears to be plural, seach for the singular version
+        # if the name appears to be plural, search for the singular version
         if name.endswith('s'):
             trial = name[:-1]
             if not trial.endswith('s') and trial in names:
@@ -706,9 +721,9 @@ class ExodusModel(object):
         element_block_ids = self._format_element_block_id_list(
             element_block_ids)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         if new_element_block_id is not None:
             if self.element_block_exists(new_element_block_id):
                 self._exists_error(new_element_block_id, 'element block')
@@ -1469,7 +1484,7 @@ class ExodusModel(object):
         self._create_averaged_nodes(new_nodes, [])
         # create the new element block
         self.create_element_block(new_element_block_id,
-                                  ['tri3', len(connectivity) / 3, 3, 0],
+                                  ['tri3', len(connectivity) // 3, 3, 0],
                                   connectivity)
 
     @staticmethod
@@ -1502,13 +1517,13 @@ class ExodusModel(object):
         [element_block_id] = self._format_element_block_id_list(
             [element_block_id], single=True)
         [node_field_name] = self._format_id_list([node_field_name],
-                                               self.get_node_field_names(),
-                                               'node field',
-                                               single=True)
+                                                 self.get_node_field_names(),
+                                                 'node field',
+                                                 single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         # verify block is actually a tri3 block
         if self._get_element_type(element_block_id) != 'tri3':
             self._error(
@@ -1612,7 +1627,7 @@ class ExodusModel(object):
                                        len(triangles))
         self.create_element_block(
             new_element_block_id,
-            ['tri3', len(new_connectivity) / 3, 3, 0], new_connectivity)
+            ['tri3', len(new_connectivity) // 3, 3, 0], new_connectivity)
         self.create_element_field('interval', new_element_block_id, 0.0)
         fields = self._get_element_block_fields(new_element_block_id)
         field = fields['interval']
@@ -1665,13 +1680,13 @@ class ExodusModel(object):
         element_block_ids = self._format_element_block_id_list(
             element_block_ids)
         [node_field_name] = self._format_id_list([node_field_name],
-                                               self.get_node_field_names(),
-                                               'node field',
-                                               single=True)
+                                                 self.get_node_field_names(),
+                                                 'node field',
+                                                 single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         timestep_index = self.timesteps.index(timestep)
         if displacement_timestep == 'auto':
             if self.displacement_field_exists():
@@ -1859,9 +1874,9 @@ class ExodusModel(object):
         # create the STL file
         connectivity = self.get_connectivity(triangle_element_block_id)
         with open(filename, 'wb') as output:
-            output.write(' ' * 80)
-            output.write(struct.pack('<l', len(connectivity) / 3))
-            for element_index in range(len(connectivity) / 3):
+            output.write(b' ' * 80)
+            output.write(struct.pack('<l', len(connectivity) // 3))
+            for element_index in range(len(connectivity) // 3):
                 tri = connectivity[element_index * 3:(element_index + 1) * 3]
                 normal = (c[tri[1]][1] * c[tri[2]][2] -
                           c[tri[2]][1] * c[tri[1]][2],
@@ -1912,7 +1927,7 @@ class ExodusModel(object):
         exporters[extension](filename, *args, **kwargs)
 
     def _error_evaluating_expression(self, expression, var):
-        """Throw an error saying we could not evalute the given expression."""
+        """Throw an error saying we could not evaluate the given expression."""
         self._error(
             'Invalid expression',
             'An error occurred while trying to evaluate the given '
@@ -2633,7 +2648,7 @@ class ExodusModel(object):
             new_nodes_per_element = self.NODES_PER_ELEMENT[new_element_type]
             self.create_element_block(temporary_element_block_id, [
                 new_element_type,
-                len(new_connectivity) / new_nodes_per_element,
+                len(new_connectivity) // new_nodes_per_element,
                 new_nodes_per_element, 0
             ], new_connectivity)
             temporary_fields = self._get_element_block_fields(
@@ -2859,7 +2874,7 @@ class ExodusModel(object):
         temporary_element_block_id = self._new_element_block_id()
         self.create_element_block(temporary_element_block_id, [
             new_element_type,
-            len(new_connectivity) / new_nodes_per_element,
+            len(new_connectivity) // new_nodes_per_element,
             new_nodes_per_element, 0
         ], new_connectivity)
         temporary_element_fields = self._get_element_block_fields(
@@ -3099,9 +3114,9 @@ class ExodusModel(object):
         [element_block_id] = self._format_element_block_id_list(
             [element_block_id], single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         timestep_index = self._get_internal_timestep_index(timestep)
         if not self.element_field_exists(element_field_name, element_block_id):
             self._missing_on_entity_error(element_field_name, 'element field',
@@ -3114,7 +3129,7 @@ class ExodusModel(object):
                                   side_set_id='auto',
                                   timestep='last'):
         """
-        Return the list of side set field vlaues.
+        Return the list of side set field values.
 
         The actual list of values is returned, so any modifications to it will
         be stored in the model.
@@ -3134,9 +3149,9 @@ class ExodusModel(object):
             'side set field',
             single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         timestep_index = self._get_internal_timestep_index(timestep)
         if not self.side_set_field_exists(side_set_field_name, side_set_id):
             self._missing_on_entity_error(side_set_field_name,
@@ -3170,9 +3185,9 @@ class ExodusModel(object):
             'node set field',
             single=True)
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         timestep_index = self._get_internal_timestep_index(timestep)
         if not self.node_set_field_exists(node_set_field_name, node_set_id):
             self._missing_on_entity_error(node_set_field_name,
@@ -3342,9 +3357,9 @@ class ExodusModel(object):
     def _get_internal_timestep_index(self, timestep):
         """Return the local timestep index."""
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         return self.timesteps.index(timestep)
 
     def _create_element_field_truth_table(self, element_block_ids,
@@ -3897,9 +3912,9 @@ class ExodusModel(object):
                        entity_name_list_function, entity_objects):
         """Rename an entity."""
         [entity_name] = self._format_id_list([entity_name],
-                                           entity_name_list_function(),
-                                           entity_type,
-                                           single=True)
+                                             entity_name_list_function(),
+                                             entity_type,
+                                             single=True)
         if new_entity_name == entity_name:
             return
         if new_entity_name in entity_name_list_function():
@@ -4162,7 +4177,7 @@ class ExodusModel(object):
         side set field on a particular field, pass in 'side_set_ids'.
 
         To set the value of the field, pass in 'value'.  By default this is
-        0 for displacement fiels and NaN for all other fields.
+        0 for displacement fields and NaN for all other fields.
 
         Example:
         >>> model.create_side_set_field('temperature', 13, 298.15)
@@ -4312,7 +4327,7 @@ class ExodusModel(object):
         transforms.append(('<', '((R) - (L)) - abs((R) - (L))'))
         transforms.append(('==', 'abs((L) - (R))'))
         transforms.append(('=', 'abs((L) - (R))'))
-        # replace occurances of each transform
+        # replace occurrences of each transform
         for separator, transform in transforms:
             while separator in expression:
                 # ensure parenthesis count is identical
@@ -4851,9 +4866,9 @@ class ExodusModel(object):
 
         """
         [node_field_name] = self._format_id_list([node_field_name],
-                                               self.get_node_field_names(),
-                                               'node field',
-                                               single=True)
+                                                 self.get_node_field_names(),
+                                                 'node field',
+                                                 single=True)
         timestep_index = self._get_internal_timestep_index(timestep)
         return self.node_fields[node_field_name][timestep_index]
 
@@ -5228,7 +5243,7 @@ class ExodusModel(object):
         # create the actual element block
         self.create_element_block(new_element_block_id, [
             formula[0],
-            len(connectivity) / nodes_per_element, nodes_per_element, 0
+            len(connectivity) // nodes_per_element, nodes_per_element, 0
         ], connectivity)
 
     def create_averaged_element_field(self,
@@ -5263,7 +5278,7 @@ class ExodusModel(object):
                 self._warning(
                     'Fields not defined.',
                     'Not all of the requested element fields are '
-                    'defined on element block %s.  The everaged '
+                    'defined on element block %s.  The averaged '
                     'field will not be created.' % element_block_id)
                 continue
             # create the field if it doesn't exist
@@ -5323,7 +5338,7 @@ class ExodusModel(object):
         default_value = self._get_default_field_value(node_field_name)
         # process each timestep
         for timestep_index in range(len(self.timesteps)):
-            # initialze node field
+            # initialize node field
             node_field_values = [0.0] * len(self.nodes)
             node_field_elements = [0] * len(self.nodes)
             # for each element block
@@ -5374,9 +5389,9 @@ class ExodusModel(object):
 
         """
         [node_field_name] = self._format_id_list([node_field_name],
-                                               self.get_node_field_names(),
-                                               'node field',
-                                               single=True)
+                                                 self.get_node_field_names(),
+                                                 'node field',
+                                                 single=True)
         element_block_ids = self._format_element_block_id_list(
             element_block_ids)
         # format the arguments
@@ -5399,7 +5414,7 @@ class ExodusModel(object):
                 element_field_values = [0.0] * element_count
                 # for each node within each element
                 for connectivity_index, node_index in enumerate(connectivity):
-                    element_index = connectivity_index / nodes_per_element
+                    element_index = connectivity_index // nodes_per_element
                     element_field_values[element_index] += node_field[
                         timestep_index][node_index]
                 # average each value
@@ -5679,12 +5694,12 @@ class ExodusModel(object):
         Return the total number of elements in the given element blocks.
 
         Example:
-        >>> print object.get_element_count()
+        >>> print((' %d elements' % (object.get_element_count())))
 
         """
         element_block_ids = self._format_element_block_id_list(
             element_block_ids)
-        return sum(self.element_blocks[x][1][1] for x in element_block_ids)
+        return int(sum(self.element_blocks[x][1][1] for x in element_block_ids))
 
     def process_element_fields(self, element_block_ids='all'):
         """
@@ -6468,9 +6483,9 @@ class ExodusModel(object):
 
         """
         [timestep] = self._format_id_list([timestep],
-                                        self.get_timesteps(),
-                                        'timestep',
-                                        single=True)
+                                          self.get_timesteps(),
+                                          'timestep',
+                                          single=True)
         if self.timestep_exists(new_timestep):
             self._exists_warning(new_timestep, 'timestep')
             return
@@ -6807,7 +6822,9 @@ class ExodusModel(object):
                 if node[d] > bounds[d][1]:
                     bounds[d][1] = node[d]
         relative = max([bound[1] - bound[0] for bound in bounds])
-        absolute = max([abs(x) for x in bound for bound in bounds])
+        abs0 = max([abs(bound[0]) for bound in bounds])
+        abs1 = max([abs(bound[1]) for bound in bounds])
+        absolute = max([abs0, abs1])
         return max(relative, absolute)
 
     @staticmethod
@@ -7712,9 +7729,11 @@ class ExodusModel(object):
                     global_variable_name, timestep_index[0])
                 model_values[timestep_index[1]] = file_value
         # add info records
-        self.info_records += exodus_file.get_info_records()
+        if (exodus_file.num_info_records() > 0):
+            self.info_records += exodus_file.get_info_records()
         # add qa records
-        self.qa_records += exodus_file.get_qa_records()
+        if (exodus_file.num_qa_records() > 0):
+            self.qa_records += exodus_file.get_qa_records()
         # add title if one does not already exist
         # else add it to an info record
         if not self.title:
@@ -7987,6 +8006,9 @@ class ExodusModel(object):
 
     def _get_thickness_from_volume_and_area(self, volume, area):
         """Return the thickness of a disk given the volume and area."""
+        if volume == 0.0:
+            return 0
+
         # max phi (for a sphere) is 6^(-1/3) * pi^(-1/6)
         phi = math.pow(volume, 1 / 3.0) / math.pow(area, 1 / 2.0)
         # find a solution, if possible
@@ -8108,7 +8130,7 @@ class ExodusModel(object):
             nodes_per_element = self.NODES_PER_ELEMENT[element_type]
             info = [
                 element_type,
-                len(connectivity) / nodes_per_element, nodes_per_element, 0
+                len(connectivity) // nodes_per_element, nodes_per_element, 0
             ]
             self.create_element_block(new_id, info, connectivity)
             new_block_ids.append(new_id)
@@ -8401,7 +8423,7 @@ class ExodusModel(object):
         for element_block_id in element_block_ids:
             _, _, connectivity, _ = self.element_blocks[element_block_id]
             nodes_per_element = self.get_nodes_per_element(element_block_id)
-            element_count = len(connectivity) / nodes_per_element
+            element_count = len(connectivity) // nodes_per_element
             for element_index in range(element_count):
                 local_node = connectivity[element_index *
                                           nodes_per_element:(element_index +

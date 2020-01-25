@@ -305,6 +305,11 @@ namespace Iogn {
     virtual int64_t nodeset_node_count_proc(int64_t id) const;
 
     /**
+     * Return string (quad4 or tri3) giving face topology of sidesets in model
+     */
+    virtual std::string get_sideset_topology() const;
+
+    /**
      * Return number of sidesets in the entire model.
      */
     virtual int64_t sideset_count() const;

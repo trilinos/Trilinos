@@ -8,6 +8,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers/BlockedSmoot
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Smoothers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../research/mmayr/composite_to_regions/src)
 
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
@@ -17,6 +18,9 @@ SET(SOURCES "")
 SET(SOURCES_INTREPID2 "")
 SET(SOURCES_BLOCKED "")
 SET(SOURCES_CREATEPRECONDITIONER "")
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  SET(SOURCES_REGION "")
+ENDIF()
 
 APPEND_SET(SOURCES
   Aggregates.cpp
@@ -64,6 +68,13 @@ APPEND_SET(SOURCES_BLOCKED
   MueLu_UnitTests.cpp
   MueLu_TestHelpers.cpp
 )
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  APPEND_SET(SOURCES_REGION
+    MueLu_UnitTests.cpp
+    MueLu_TestHelpers.cpp
+  )
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsUserData_cp
   SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/UserData
@@ -183,6 +194,10 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   )
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  APPEND_SET(SOURCES_REGION RegionMatrix.cpp RegionVector.cpp)
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   APPEND_SET(SOURCES Galeri.cpp)
   APPEND_SET(SOURCES_INTREPID2 Galeri.cpp)
@@ -272,7 +287,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
         )
     ENDIF()
 
-  ENDIF()
+  ENDIF() # Epetra / EpetraExt
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
@@ -350,7 +365,35 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
         )
     ENDIF()
 
-  ENDIF()
+    IF (${PACKAGE_NAME}_ENABLE_Experimental)
+      APPEND_SET(SOURCES_REGION Galeri.cpp)
+
+      TRIBITS_ADD_EXECUTABLE(
+        UnitTests_Region
+        SOURCES ${SOURCES_REGION}
+        COMM serial mpi
+      )
+
+      TRIBITS_ADD_TEST(
+        UnitTests_Region
+        NAME "UnitTestsRegion"
+        ARGS "--linAlgebra=Tpetra"
+        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+        NUM_MPI_PROCS 1
+        COMM serial mpi
+        )
+
+      TRIBITS_ADD_TEST(
+        UnitTests_Region
+        NAME "UnitTestsRegion"
+        ARGS "--linAlgebra=Tpetra"
+        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+    ENDIF()
+
+  ENDIF() # Tpetra
 
 ENDIF() # Galeri TMP
 

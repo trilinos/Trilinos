@@ -222,6 +222,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     ContainerFactory
     TriDiContainer
     Details::Chebyshev
+    Details::ChebyshevKernel
     Details::DenseSolver
     Details::Factory
     Details::LinearSolver
@@ -234,9 +235,6 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
       Details::Amesos2Wrapper
       )
-  ENDIF()
-  IF(Ifpack2_ENABLE_DEPRECATED_CODE)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Krylov)
   ENDIF()
   IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockTriDiContainer)

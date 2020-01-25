@@ -34,28 +34,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_generateStack_hpp
 #define __TSQR_Test_generateStack_hpp
 
-#include <Tsqr_Matrix.hpp>
-#include <Tsqr_Util.hpp>
-#include <Tsqr_Random_MatrixGenerator.hpp>
-#include <Tsqr_RMessenger.hpp>
+#include "Tsqr_Matrix.hpp"
+#include "Tsqr_Util.hpp"
+#include "Tsqr_Random_MatrixGenerator.hpp"
+#include "Tsqr_RMessenger.hpp"
 
 #include <algorithm>
 #include <functional>
 #include <sstream>
 #include <stdexcept>
 
-
 namespace TSQR {
   namespace Test {
-
     /// \brief Generate a random "R stack" test problem on one MPI process.
     ///
     /// Generate a (pseudo)random test problem consisting of numProcs
@@ -83,19 +79,18 @@ namespace TSQR {
                    const int numProcs,
                    const Ordinal numCols)
     {
-      typedef MatView<Ordinal, Scalar> mat_view_type;
+      using mat_view_type = MatView<Ordinal, Scalar>;
 
       TSQR::Random::MatrixGenerator<Ordinal, Scalar, Generator> matGen (generator);
       const Ordinal numRows = numProcs * numCols;
       A_global.reshape (numRows, numCols);
-      A_global.fill (Scalar(0));
+      deep_copy (A_global, Scalar {});
 
-      for (int p = 0; p < numProcs; ++p)
-        {
-          Scalar* const curptr = A_global.get() + p*numCols;
-          mat_view_type R_cur (numCols, numCols, curptr, numRows);
-          matGen.fill_random_R (numCols, R_cur.get(), numRows, singularValues);
-        }
+      for (int p = 0; p < numProcs; ++p) {
+        auto* const curptr = A_global.data() + p*numCols;
+        mat_view_type R_cur (numCols, numCols, curptr, numRows);
+        matGen.fill_random_R (numCols, R_cur.data(), numRows, singularValues);
+      }
     }
 
     /// \brief Generate a random test problem for the distributed-memory part of TSQR.

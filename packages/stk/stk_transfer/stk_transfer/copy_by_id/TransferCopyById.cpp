@@ -41,7 +41,9 @@ namespace stk {
 namespace transfer {
 
 
-void TransferCopyById::do_transfer(const KeyToTargetProcessor & key_to_target_processor, const TransferCopyByIdMeshAdapter & mesha, TransferCopyByIdMeshAdapter & meshb)
+void TransferCopyById::do_transfer(const KeyToTargetProcessor & key_to_target_processor,
+                                   const TransferCopyByIdMeshAdapter & mesha,
+                                   TransferCopyByIdMeshAdapter & meshb)
 {
   const unsigned numValsb = meshb.num_fields();
   const ParallelMachine comm = mesha.comm();

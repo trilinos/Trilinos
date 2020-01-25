@@ -1,5 +1,0 @@
-<ParameterList name="MueLu">
-  <ParameterList name="smoother: params">
-    <Parameter name="relaxation: sweeps" type="int" value="3"/>
-  </ParameterList>
-</ParameterList>

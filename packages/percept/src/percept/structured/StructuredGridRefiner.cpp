@@ -35,11 +35,11 @@ namespace percept {
 
   unsigned StructuredGridRefiner::do_refine_structured()
   {
+    unsigned num_refined_cells = 0;
+
 #if HAVE_CGNS
     m_output->m_sblocks.resize(0);
     const int my_rank = stk::parallel_machine_rank(m_output->m_comm);
-
-    unsigned num_refined_cells = 0;
 
     double runTime = 0;
     for (unsigned iblock=0; iblock < m_input->m_sblocks.size(); ++iblock)
@@ -47,9 +47,9 @@ namespace percept {
         std::shared_ptr<StructuredBlock> sgi = m_input->m_sblocks[iblock];
 
         std::array<unsigned, 9> nijk{{0,0,0,0,0,0,0,0,0}};
-        std::array<unsigned, 3> node_size_global{{sgi->m_sizes.node_size_global[0], 
+        std::array<unsigned, 3> node_size_global{{sgi->m_sizes.node_size_global[0],
                 sgi->m_sizes.node_size_global[1], sgi->m_sizes.node_size_global[2]}};
-        
+
         std::shared_ptr<StructuredBlock> sgiNew ( new StructuredBlock(sgi->m_comm, iblock, nijk, node_size_global, sgi->m_name+"_refined", sgi->m_base, sgi->m_zone, m_output.get()) );
         m_output->m_sblocks.push_back(sgiNew);
 
@@ -82,7 +82,7 @@ namespace percept {
 
         if (debug && my_rank == 0)
           std::cout << "StructuredGridRefiner: start block " << sgi->m_name << " refine..." << std::endl;
-        
+
         struct timeval begin, end;
         gettimeofday(&begin,NULL);
         {
@@ -95,16 +95,16 @@ namespace percept {
         gettimeofday(&end,NULL);
         runTime += 1.0*(end.tv_sec-begin.tv_sec) +
           1.0e-6*(end.tv_usec-begin.tv_usec);
-        
+
         // deal with zone connectivity
         {
           int nconn = sgi->m_zoneConnectivity.size();
           for (int i = 0; i < nconn; i++) {
             Ioss::ZoneConnectivity& zc = sgi->m_zoneConnectivity[i];
-            
+
             std::string connectname = zc.m_connectionName;
             std::string donorname = zc.m_donorName;
-            
+
             std::array<cgsize_t, 3> range_beg = zc.m_ownerRangeBeg;
             std::array<cgsize_t, 3> range_end = zc.m_ownerRangeEnd;
             std::array<cgsize_t, 3> donor_beg = zc.m_donorRangeBeg;
@@ -123,26 +123,24 @@ namespace percept {
             int owner_zone = zc.m_ownerZone;
             (void) owner_zone;
             int donor_zone = zc.m_donorZone;
-            
-            bool owns_nodes = sgi->m_zone < donor_zone || donor_zone == -1;
+
             sgiNew->m_zoneConnectivity.emplace_back(connectname, sgi->m_zone, donorname, donor_zone, transform,
-                                                    range_beg, range_end, donor_beg, donor_end,
-                                                    owns_nodes);
+                                                    range_beg, range_end, donor_beg, donor_end);
           }
         }
-        
+
         // deal with boundary conditions
         {
           int nbc = sgi->m_boundaryConditions.size();
           for (int i = 0; i < nbc; i++) {
             Ioss::BoundaryCondition& bc = sgi->m_boundaryConditions[i];
-            
+
             std::string bcname = bc.m_bcName;
             //std::string donorname = zc.m_donorName;
             // FIXME
             CG_BCType_t bctype = CGNS_ENUMV( BCTypeNull );
             (void)bctype;
-            
+
             Ioss::IJK_t range_beg = bc.m_rangeBeg;
             Ioss::IJK_t range_end = bc.m_rangeEnd;
             for (unsigned j=0; j < 3; ++j)
@@ -151,7 +149,7 @@ namespace percept {
 
                     range_end[j] = 2*(range_end[j] - m_index_base) + m_index_base;
               }
-            
+
             sgiNew->m_boundaryConditions.emplace_back(bcname, range_beg, range_end);
           }
         }
@@ -163,11 +161,9 @@ namespace percept {
         std::cout << "Total number of cells after refinement = " << num_refined_cells << std::endl;
         std::cout << "Runtime (seconds) over " <<  m_input->m_sblocks.size() << " blocks was " << runTime << std::endl;
     }
+#endif
 
     return num_refined_cells;
-#else
-    return 0;
-#endif
   }
 
   unsigned StructuredGridRefiner::do_refine()
@@ -293,5 +289,3 @@ namespace percept {
 
 
 }
-
-

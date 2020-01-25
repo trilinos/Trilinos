@@ -209,63 +209,6 @@ namespace MueLu {
   }
 
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-
-  /*!
-    @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
-    @ingroup MueLuAdapters
-    Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
-    @param[in] inA Matrix
-    @param[in] inParamList Parameter list
-    @param[in] inCoords  Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
-    @param[in] inNullspace Near nullspace of the matrix.
-  */
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MUELU_DEPRECATED
-  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
-                             const Teuchos::ParameterList& inParamList,
-                             Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coords,
-                             Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) {
-
-    Teuchos::ParameterList userParamList = inParamList.sublist("user data");
-    if (Teuchos::nonnull(coords)) {
-      userParamList.set<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates", coords);
-    }
-    if(Teuchos::nonnull(nullspace)) {
-      userParamList.set<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace", nullspace);
-    }
-
-    return CreateXpetraPreconditioner(op, inParamList);
-
-  }
-
-  /*!
-    @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
-    @ingroup MueLuAdapters
-    Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
-    @param[in] inA Matrix
-    @param[in] inParamList Parameter list
-    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
-  */
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MUELU_DEPRECATED
-  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
-                             const Teuchos::ParameterList& inParamList,
-                             Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coords) {
-
-    Teuchos::ParameterList mueluParams = inParamList;
-    Teuchos::ParameterList& userParamList = mueluParams.sublist("user data");
-    if (Teuchos::nonnull(coords)) {
-      userParamList.set<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates", coords);
-    }
-    return CreateXpetraPreconditioner(op, mueluParams);
-  }
-
-#endif // HAVE_MUELU_DEPRECATED_CODE
 
 } //namespace
 

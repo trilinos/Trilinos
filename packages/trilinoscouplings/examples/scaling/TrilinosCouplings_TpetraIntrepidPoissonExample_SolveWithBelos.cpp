@@ -77,7 +77,6 @@ cloneAndSolveWithBelos (
   const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
   const int maxNumIters,
   const int num_steps,
-  const Teuchos::RCP<CloneNode>& clone_node,
   const Teuchos::RCP<multivector_type>& X,
   const Teuchos::RCP<const sparse_matrix_type>& A,
   const Teuchos::RCP<const multivector_type>& B,
@@ -116,12 +115,12 @@ cloneAndSolveWithBelos (
     if (M_left != Teuchos::null && prec_type == "MueLu") {
       RCP< const MueLu::TpetraOperator<ST,LO,GO,Node> > M_muelu =
         rcp_dynamic_cast<const MueLu::TpetraOperator<ST,LO,GO,Node> >(M_left);
-      M_left_clone = M_muelu->clone<CloneNode> (clone_node);
+      M_left_clone = rcp(new clone_operator_type(M_muelu));
     }
     if (M_right != Teuchos::null && prec_type == "MueLu") {
       RCP< const MueLu::TpetraOperator<ST,LO,GO,Node> > M_muelu =
         rcp_dynamic_cast<const MueLu::TpetraOperator<ST,LO,GO,Node> >(M_right);
-      M_right_clone = M_muelu->clone<CloneNode> (clone_node);
+      M_right_clone = rcp(new clone_operator_type(M_muelu));
     }
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(

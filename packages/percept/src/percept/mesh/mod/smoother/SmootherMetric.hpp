@@ -16,7 +16,6 @@
 #include <percept/MeshType.hpp>
 #include <percept/mesh/mod/smoother/JacobianUtil.hpp>
 #include <percept/math/DenseMatrix.hpp>
-#include <percept/math/Math.hpp>
 #include <percept/structured/BlockStructuredGrid.hpp>
 #include "SGridJacobianUtil.hpp"
 #include <percept/mesh/mod/smoother/sgrid_metric_helpers.hpp>

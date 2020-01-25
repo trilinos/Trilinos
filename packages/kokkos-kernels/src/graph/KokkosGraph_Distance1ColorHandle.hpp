@@ -521,13 +521,7 @@ private:
             vector_size,
             nv, ne);
 
-        team_policy_t tmp_policy(nv, Kokkos::AUTO, vector_size);
-        int max_allowed_team_size = tmp_policy.team_size_max( clt, Kokkos::ParallelForTag() );
-
-        KokkosKernels::Impl::get_suggested_team_size<HandleExecSpace>(
-            max_allowed_team_size,
-            vector_size,
-            teamSizeMax);
+        teamSizeMax = KokkosKernels::Impl::get_suggested_team_size<team_policy_t>(clt, vector_size);
 #endif
 
         Kokkos::parallel_for("KokkosGraph::CountLowerTriangleTeam",

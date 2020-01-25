@@ -44,7 +44,7 @@
 #ifndef TPETRA_DETAILS_COPYCONVERT_HPP
 #define TPETRA_DETAILS_COPYCONVERT_HPP
 
-/// \file Tpetra_Details_convert.hpp
+/// \file Tpetra_Details_copyConvert.hpp
 /// \brief Declare and define Tpetra::Details::copyConvert, an
 ///   implementation detail of Tpetra (in particular, of
 ///   FixedHashTable, CrsGraph, and CrsMatrix).

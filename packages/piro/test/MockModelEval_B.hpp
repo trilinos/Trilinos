@@ -63,7 +63,7 @@ typedef int MPI_Comm;
 /** \brief Epetra-based Model Evaluator subclass for Charon!
  *
  * This class will support a wide number of different types of abstract
- * problem types that will allow NOX, LOCA, Rythmos, Aristos, and MOOCHO to
+ * problem types that will allow NOX, LOCA, Rythmos, Aristos to
  * solve different types of problems with Charon.
  */
 

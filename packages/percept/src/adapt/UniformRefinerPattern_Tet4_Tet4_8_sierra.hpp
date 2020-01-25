@@ -15,8 +15,6 @@
 #include <adapt/sierra_element/StdMeshObjTopologies.hpp>
 
 #include <adapt/Percept_MOAB_SimplexTemplateRefiner.hpp>
-#include <boost/tuple/tuple_io.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #define USE_FACE_BREAKER_T4_T4_8 1
 #if USE_FACE_BREAKER_T4_T4_8
@@ -90,8 +88,8 @@
       virtual unsigned getNumNewElemPerElem() { return 8; }
 
 #if USE_PERCEPT_MOAB_TET_REFINE
-      typedef boost::tuple<unsigned, unsigned, unsigned, unsigned> TetTupleTypeLocal;
-      typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> TetTupleType;
+      typedef std::array<unsigned, 4> TetTupleTypeLocal;
+      typedef std::array<stk::mesh::EntityId, 4> TetTupleType;
 
 #define TET_VERT_N(i) (i)
 #define TET_EDGE_N(i) ((i)+4)
@@ -150,10 +148,10 @@
         tets.resize(new_tets.size());
         for (unsigned i = 0; i < new_tets.size(); i++)
           {
-            tets[i] = TetTupleTypeLocal((unsigned)new_tets[i].get<0>(),
-                                        (unsigned)new_tets[i].get<1>(),
-                                        (unsigned)new_tets[i].get<2>(),
-                                        (unsigned)new_tets[i].get<3>() );
+            tets[i] = {(unsigned)new_tets[i][0],
+                       (unsigned)new_tets[i][1],
+                       (unsigned)new_tets[i][2],
+                       (unsigned)new_tets[i][3]};
             if (0)
               std::cout << "tmp RefPatt::createNewElements new tet= " << tets[i] << std::endl;
 
@@ -197,10 +195,10 @@
         elems.resize(num_new_elems);
         for (unsigned ielem=0; ielem < num_new_elems; ielem++)
           {
-            elems[ielem] = TetTupleType( TET_CV_EV(elems_local[ielem].get<0>() ),
-                                         TET_CV_EV(elems_local[ielem].get<1>() ),
-                                         TET_CV_EV(elems_local[ielem].get<2>() ),
-                                         TET_CV_EV(elems_local[ielem].get<3>() ) );
+            elems[ielem] = { TET_CV_EV(elems_local[ielem][0] ),
+                             TET_CV_EV(elems_local[ielem][1] ),
+                             TET_CV_EV(elems_local[ielem][2] ),
+                             TET_CV_EV(elems_local[ielem][3] ) };
             if (0)
               std::cout << "tmp RefPatt::createNewElements new tet= " << elems[ielem] << std::endl;
 
@@ -224,19 +222,11 @@
             //eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
             change_entity_parts(eMesh, element, newElement);
 
-            {
-              if (!elems[ielem].get<0>())
-                {
-                  std::cout << "P[" << eMesh.get_rank() << "] nid = 0 << " << std::endl;
-                  //exit(1);
-                }
-            }
-
             // 4 nodes of the new tets
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
-            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
+            eMesh.get_bulk_data()->declare_relation(newElement, {eMesh.createOrGetNode(elems[ielem][0]),
+                                                                 eMesh.createOrGetNode(elems[ielem][1]),
+                                                                 eMesh.createOrGetNode(elems[ielem][2]),
+                                                                 eMesh.createOrGetNode(elems[ielem][3])});
 
             set_parent_child_relations(eMesh, element, newElement, *ft_element_pool, ielem);
 

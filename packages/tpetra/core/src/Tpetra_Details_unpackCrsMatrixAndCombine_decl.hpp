@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -120,8 +118,6 @@ namespace Details {
 ///
 /// \param combineMode [in] the mode to use for combining values
 ///
-/// \param atomic [in] whether or not do atomic adds/replaces in to the matrix
-///
 /// \warning The allowed \c combineMode are:
 ///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
 ///
@@ -138,8 +134,7 @@ unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                            const Teuchos::ArrayView<const LO>& importLIDs,
                            size_t constantNumPackets,
                            Distributor & distor,
-                           CombineMode combineMode,
-                           const bool atomic);
+                           CombineMode combineMode);
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
@@ -152,8 +147,7 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                                 typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
                               const size_t constantNumPackets,
                               Distributor & distor,
-                              const CombineMode combineMode,
-                              const bool atomic);
+                              const CombineMode combineMode);
 
 /// \brief Special version of Tpetra::Details::unpackCrsMatrixAndCombine
 ///   that also unpacks owning process ranks.

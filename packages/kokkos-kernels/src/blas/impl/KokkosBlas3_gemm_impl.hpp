@@ -48,7 +48,7 @@
 
 #ifdef KOKKOS_ENABLE_CXX14
 #ifdef KOKKOS_COMPILER_GNU
-#if KOKKOS_COMPILER_GNU<=720
+#if KOKKOS_COMPILER_GNU<=740
 #define KOKKOS_IMPL_BATCHED_GEMM_GCC_CXX14_WORKAROUND
 #endif
 #endif
@@ -273,7 +273,7 @@ struct impl_deep_copy_matrix_block<TeamHandle,ViewTypeScratch,ViewType,Kokkos::L
           const int idx_i = offset_i+i;
 #endif
           const int idx_j = offset_j+j;
-          A_scr(i,j) = A(idx_j,idx_i);
+          A_scr(i,j) = ATV::conj(A(idx_j,idx_i));
         });
       });
     } else {

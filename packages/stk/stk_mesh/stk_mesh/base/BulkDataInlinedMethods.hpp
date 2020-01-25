@@ -669,20 +669,19 @@ struct StoreEntityProcInSet
 
 ////////////////
 
-inline void BulkData::copy_entity_fields( Entity src, Entity dst)
+inline void BulkData::copy_entity_fields(Entity src, Entity dst)
 {
+  if (src == dst) return;
+
   //TODO fix const correctness for src
   MeshIndex & src_mesh_idx = mesh_index(src);
   MeshIndex & dst_mesh_idx = mesh_index(dst);
 
-  //// Pre-upgrade stk_mesh did not have this restriction, and it was easy enough to remove.
-  //    ThrowAssert(src_mesh_idx.bucket->entity_rank() == dst_mesh_idx.bucket->entity_rank());
-
   copy_entity_fields_callback(dst_mesh_idx.bucket->entity_rank(),
-                       dst_mesh_idx.bucket->bucket_id(),
-                       dst_mesh_idx.bucket_ordinal,
-                       src_mesh_idx.bucket->bucket_id(),
-                       src_mesh_idx.bucket_ordinal);
+                              dst_mesh_idx.bucket->bucket_id(),
+                              dst_mesh_idx.bucket_ordinal,
+                              src_mesh_idx.bucket->bucket_id(),
+                              src_mesh_idx.bucket_ordinal);
 }
 
 inline bool BulkData::relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id )

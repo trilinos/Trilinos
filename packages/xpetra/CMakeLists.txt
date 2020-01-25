@@ -22,7 +22,7 @@ IF( DEFINED ${PROJECT_NAME}_ENABLE_Tpetra AND ${${PACKAGE_NAME}_ENABLE_Tpetra} )
   TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 ELSE()
   MESSAGE( STATUS "Xpetra: Skipping ETI check because Tpetra is not enabled." )
-  SET( HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION OFF BOOL "Set to OFF by CMake because Tpetra isn't enabled" )
+  SET( HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION OFF )
 ENDIF()
 
 # Deprecation stuff
@@ -51,6 +51,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thyra)
+
+IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "Neither Tpetra nor Epetra support is enabled in Xpetra."
+    " Set Xpetra_ENABLE_Tpetra and/or Xpetra_ENABLE_Epetra to ON,"
+    " or just disable Xpetra.")
+ENDIF()
 
 # If Epetra is enabled, does it provide 64-bit global indices?
 IF(${PACKAGE_NAME}_ENABLE_Epetra)
@@ -82,6 +88,8 @@ ELSE()
   SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES_DEFAULT ON)
   SET(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT ON)
 
+  # Make sure EpetraExt is turned off
+  DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_EpetraExt OFF)
 ENDIF()
 
 #
@@ -111,33 +119,15 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   IF(NOT ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
+    MESSAGE("-- Xpetra support for 32 bit Epetra enabled.")
+    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
+
     # Tpetra and Epetra need to match GO types
     IF(${PACKAGE_NAME}_ENABLE_Tpetra)
       IF(NOT Tpetra_INST_INT_INT)
-        SET(EXPLICIT_PACKAGE_LIST ${${PROJECT_NAME}_ENABLED_PACKAGES_LIST})
-        IF(Epetra IN_LIST EXPLICIT_PACKAGE_LIST)
-          # Epetra was explicitly enabled by the user, so error out
-          MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_INT")
-        ELSE()
-          # Epetra was enabled but only implicitly; give a warning but turn off Xpetra's Epetra support
-          MESSAGE(WARNING "32-bit global indices are enabled in Epetra but not Tpetra. Since Epetra was not enabled explicitly by user, **DISABLING EPETRA SUPPORT** in Xpetra,"
-            " and downstream packages that use Epetra through Xpetra. Packages using Epetra directly will not be affected"
-            " To make this warning go away, set -DTpetra_INST_INT_INT=ON to enable 32-bit global indices and Epetra support, OR set -DXpetra_ENABLE_Epetra=OFF if you don't need Epetra.")
-          DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_Epetra OFF)
-          DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_EpetraExt OFF)
-          DUAL_SCOPE_SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES ON)
-          GLOBAL_SET(${PACKAGE_NAME_UC}_EPETRA_NO_32BIT_GLOBAL_INDICES ON)
-          IF(${PROJECT_NAME}_ENABLE_MueLu)
-            MESSAGE(STATUS "Setting MueLu_ENABLE_Epetra=OFF because Xpetra_ENABLE_Epetra=OFF.")
-            SET(MueLu_ENABLE_Epetra OFF PARENT_SCOPE)
-          ENDIF()
-        ENDIF()
+        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_INT")
       ENDIF()
     ENDIF()
-  ENDIF()
-  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
-    MESSAGE("-- Xpetra support for 32 bit Epetra enabled.")
-    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
   ENDIF()
   IF(NOT ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
     MESSAGE("-- Xpetra support for 64 bit Epetra enabled.")

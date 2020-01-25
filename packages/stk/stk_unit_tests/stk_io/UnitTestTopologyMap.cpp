@@ -80,7 +80,13 @@ int testElement(const std::string &name, unsigned spatialDim)
       element->name() == "pyramid18" || element->name() == "pyramid19" ||
       element->name() == "wedge20"   || element->name() == "wedge21" ||
       element->name() == "wedge12"   || element->name() == "hex16" ||
-      element->name() == "quad6"     || element->name() == "wedge16") {
+      element->name() == "hex32"     || element->name() == "hex64" ||
+      element->name() == "quad12"    || element->name() == "quad16" ||
+      element->name() == "tetra16"   || element->name() == "tetra40" ||
+      element->name() == "tri13"     || element->name() == "wedge24" ||
+      element->name() == "wedge52"   || element->name() == "quad6"   ||
+      element->name() == "wedge16"   || element->name() == "bar4"   ||
+      element->name() == "edge4"     || element->name() == "tri9") {
     std::cerr << "\tERROR (EXPECTED): No support for '" << element->name() << "'\n";
     return 0;
   }
@@ -154,6 +160,7 @@ TEST(UnitTestTopology, testUnit)
     if (elements[i] != "node"    &&
         elements[i] != "bar2"    &&
         elements[i] != "bar3"    &&
+        elements[i] != "bar4"    &&
         elements[i] != "spring2" &&
         elements[i] != "spring3") {
       errors += current_error;

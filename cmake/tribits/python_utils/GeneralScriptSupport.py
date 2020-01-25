@@ -439,13 +439,14 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
 
 
 def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir="",
-  extraEnv=None \
+  extraEnv=None, echoCmndForDebugging=False \
   ):
   """Run system command and optionally throw on failure"""
   sys.stdout.flush()
   sys.stderr.flush()
   try:
     outFileHandle = None
+    if echoCmndForDebugging: print("Running: "+cmnd)
     rtnCode = runSysCmndInterface(cmnd, outFile=outFile, extraEnv=extraEnv,
       workingDir=workingDir)
   except OSError as e:

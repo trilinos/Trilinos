@@ -283,7 +283,7 @@
           //family_tree = parent_to_family_tree_relations[FAMILY_TREE_LEVEL_1].entity();
 
           // EXPLANATION:  stk_mesh inserts back-relations in front of existing relations (it uses the std::vector<Relation>::insert method)
-          // FIXME - need a unit test to check if this ever breaks in the future (i.e. going to boost::mesh)
+          // FIXME - need a unit test to check if this ever breaks in the future
           //family_tree = parent_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity();
 
           unsigned parent_elem_ft_level_1 = eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, parent_elem);
@@ -568,27 +568,69 @@
     void UniformRefinerPatternBase::updateSurfaceBlockMap(percept::PerceptMesh& eMesh, stk::mesh::Part* part,
                                                           stk::mesh::Part* part_to)
     {
-      std::vector<const stk::mesh::Part *> surfaces =
-        eMesh.get_fem_meta_data()->get_surfaces_in_surface_to_block_map();
+      std::vector<const stk::mesh::Part *> surfaces = eMesh.get_fem_meta_data()->get_surfaces_in_surface_to_block_map();
 
       // case 1: part/part_to are blocks
       if (      part->primary_entity_rank() == stk::topology::ELEMENT_RANK
           && part_to->primary_entity_rank() == stk::topology::ELEMENT_RANK)
+      {
+        // Add the refined block to all of the mappings that already contain the parent block
+        for (auto iter = surfaces.begin(); iter != surfaces.end(); ++iter)
         {
-          for (auto iter = surfaces.begin(); iter != surfaces.end(); ++iter)
+          const stk::mesh::Part * surface = *iter;
+          std::vector<const stk::mesh::Part*> blocks = eMesh.get_fem_meta_data()->get_blocks_touching_surface(surface);
+          const bool parentBlockInMapping = (find(blocks.begin(), blocks.end(), part) != blocks.end());
+          if (parentBlockInMapping)
+          {
+            const bool blockNotAlreadyInMapping = (find(blocks.begin(), blocks.end(), part_to) == blocks.end());
+            if (blockNotAlreadyInMapping)
             {
-              const stk::mesh::Part * surface = *iter;
-              std::vector<const stk::mesh::Part*> blocks =
-                eMesh.get_fem_meta_data()->get_blocks_touching_surface(surface);
-              if (find(blocks.begin(), blocks.end(), part) != blocks.end())
-                {
-                  std::vector<const stk::mesh::Part*> new_blocks = blocks;
-                  if (find(new_blocks.begin(), new_blocks.end(), part_to) == new_blocks.end())
-                    new_blocks.push_back(part_to);
-                  eMesh.get_fem_meta_data()->set_surface_to_block_mapping(surface, new_blocks);
-                }
+              std::vector<const stk::mesh::Part*> new_blocks = blocks;
+              new_blocks.push_back(part_to);
+              eMesh.get_fem_meta_data()->set_surface_to_block_mapping(surface, new_blocks);
             }
+          }
         }
+
+        if (part->topology() != part_to->topology()) {
+          // If the element topology changes upon refinement, also map the refined block to all
+          // surface parts of the appropriate topology that are also subsets of surfaces
+          // that are mapped to the "parent" block.  We have to cascade the surface/block
+          // mappings down through all topology changes while respecting the original
+          // surface/block mapping.
+
+          std::set<stk::topology> faceTopologies;
+          for (unsigned i = 0; i < part_to->topology().num_faces(); ++i)
+          {
+            faceTopologies.insert(part_to->topology().face_topology(i));
+          }
+
+          for (const stk::mesh::Part * surface : surfaces)
+          {
+            std::vector<const stk::mesh::Part*> blocks = eMesh.get_fem_meta_data()->get_blocks_touching_surface(surface);
+            const bool parentBlockInMapping = find(blocks.begin(), blocks.end(), part) != blocks.end();
+            if (parentBlockInMapping)
+            {
+              for (const stk::mesh::Part * subsetSurface : surfaces)
+              {
+                const stk::mesh::PartVector supersetSurfaces = subsetSurface->supersets();
+                const bool isSubsetOfAParentBlockSurface = (std::find(supersetSurfaces.begin(), supersetSurfaces.end(), surface) != supersetSurfaces.end());
+                const bool subsetSurfaceTopologyMatchesBlock = (std::find(faceTopologies.begin(), faceTopologies.end(), subsetSurface->topology()) != faceTopologies.end());
+                if (isSubsetOfAParentBlockSurface && subsetSurfaceTopologyMatchesBlock)
+                {
+                  std::vector<const stk::mesh::Part*> subsetSurfaceBlocks = eMesh.get_fem_meta_data()->get_blocks_touching_surface(subsetSurface);
+                  const bool blockNotAlreadyInMapping = (find(subsetSurfaceBlocks.begin(), subsetSurfaceBlocks.end(), part_to) == subsetSurfaceBlocks.end());
+                  if (blockNotAlreadyInMapping)
+                  {
+                    subsetSurfaceBlocks.push_back(part_to);
+                    eMesh.get_fem_meta_data()->set_surface_to_block_mapping(subsetSurface, subsetSurfaceBlocks);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
 
       // case 2: part/part_to are surfaces
       if (part->primary_entity_rank() == eMesh.get_fem_meta_data()->side_rank() &&
@@ -618,106 +660,114 @@
 
     void UniformRefinerPatternBase::setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology, bool skipConvertedParts)
     {
-    	EXCEPTWATCH;
+      EXCEPTWATCH;
 
-    	if (DEBUG_SET_NEEDED_PARTS)
-    		std::cout << "\n\n ============= setNeededParts start \n\n " << PerceptMesh::demangle(typeid(*this).name()) << std::endl;
+      if (DEBUG_SET_NEEDED_PARTS)
+        std::cout << "\n\n ============= setNeededParts start \n\n " << PerceptMesh::demangle(typeid(*this).name()) << std::endl;
 
-    	addRefineNewNodesPart(eMesh);
+      addRefineNewNodesPart(eMesh);
 
-    	addActiveParentParts(eMesh);
+      addActiveParentParts(eMesh);
 
-    	if (block_names_ranks.size() == 0)
-    	{
-    		block_names_ranks.resize(percept::EntityRankEnd);
-    	}
+      if (block_names_ranks.size() == 0)
+      {
+        block_names_ranks.resize(percept::EntityRankEnd);
+      }
 
-    	m_fromParts.resize(0);
-    	m_toParts.resize(0);
+      m_fromParts.resize(0);
+      m_toParts.resize(0);
 
-    	setNeededParts_debug1(eMesh);
+      setNeededParts_debug1(eMesh);
 
-    	std::vector<std::string>& block_names_include = block_names_ranks[m_primaryEntityRank];
+      std::vector<std::string>& block_names_include = block_names_ranks[m_primaryEntityRank];
 
-    	stk::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
+      stk::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
 
-    	bool found_include_only_block = foundIncludeOnlyBlock(eMesh, block_names_include);
+      bool found_include_only_block = foundIncludeOnlyBlock(eMesh, block_names_include);
 
-    	for (stk::mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
-    	{
-    		stk::mesh::Part *  part = *i_part ;
+      for (stk::mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+      {
+        stk::mesh::Part *  part = *i_part ;
 
-    		if ( stk::mesh::is_auto_declared_part(*part) )
-    			continue;
-    		bool is_auto_part = part->attribute<AutoPart>() != 0;
-    		if (is_auto_part)
-    			continue;
+        if ( stk::mesh::is_auto_declared_part(*part) )
+          continue;
+        bool is_auto_part = part->attribute<AutoPart>() != 0;
+        if (is_auto_part)
+          continue;
 
-    		bool doThisPart = shouldDoThisPart(eMesh, block_names_ranks,
-    				found_include_only_block, block_names_include, part);
+        bool doThisPart = shouldDoThisPart(eMesh, block_names_ranks,
+            found_include_only_block, block_names_include, part);
 
-    		if (!doThisPart) continue;
+        if (!doThisPart) continue;
 
-    		stk::mesh::EntityRank switch_part_primary_entity_rank  =  part->primary_entity_rank() ;
+        stk::mesh::EntityRank switch_part_primary_entity_rank  =  part->primary_entity_rank() ;
 
-    		if (switch_part_primary_entity_rank == eMesh.edge_rank() ||
-    				switch_part_primary_entity_rank == stk::topology::ELEMENT_RANK ||
-					switch_part_primary_entity_rank == eMesh.face_rank())
-    		{
-    			stk::mesh::Part *  block_to=0;
-    			if (sameTopology)
-    			{
-    				block_to = part;
-    			}
-    			else
-    			{
-    				std::string toTopoPartName = getToTopoPartName();
-    				if (REMOVE_UNDERSCORE_FROM_TOPO_NAME) Util::replace(toTopoPartName,"_","");
-    				std::string newPartName = part->name() + getConvertSeparatorString() + toTopoPartName + getConvertSeparatorString() + getAppendConvertString();
-    				block_to = &eMesh.get_fem_meta_data()->declare_part(newPartName, part->primary_entity_rank());
-    				if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part name= " << newPartName
-    						<< " with topo= " << getToTopoPartName() << std::endl;
-    				stk::mesh::set_cell_topology(*block_to, shards::CellTopology(getToTopology()));
+        if (switch_part_primary_entity_rank == eMesh.edge_rank() ||
+            switch_part_primary_entity_rank == stk::topology::ELEMENT_RANK ||
+            switch_part_primary_entity_rank == eMesh.face_rank())
+        {
+          stk::mesh::Part *  block_to=0;
+          if (sameTopology)
+          {
+            block_to = part;
+          }
+          else
+          {
+            std::string toTopoPartName = getToTopoPartName();
+            if (REMOVE_UNDERSCORE_FROM_TOPO_NAME) Util::replace(toTopoPartName,"_","");
+            std::string newPartName = part->name() + getConvertSeparatorString() + toTopoPartName + getConvertSeparatorString() + getAppendConvertString();
+            block_to = &eMesh.get_fem_meta_data()->declare_part(newPartName, part->primary_entity_rank());
+            if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part name= " << newPartName
+                << " with topo= " << getToTopoPartName() << std::endl;
+            stk::mesh::set_topology(*block_to, stk::mesh::get_topology(shards::CellTopology(getToTopology()), eMesh.get_fem_meta_data()->spatial_dimension()));
 
-    				if (block_to->attribute<Ioss::GroupingEntity>() == 0) {
-    					stk::io::put_io_part_attribute(*block_to);
-    				}
+            if (block_to->attribute<Ioss::GroupingEntity>() == 0) {
+              stk::io::put_io_part_attribute(*block_to);
+            }
 
-                    addDistributionFactorToNewPart(*eMesh.get_fem_meta_data(), part, block_to);
+            addDistributionFactorToNewPart(*eMesh.get_fem_meta_data(), part, block_to);
 
-    				updateSurfaceBlockMap(eMesh, part, block_to);
+            updateSurfaceBlockMap(eMesh, part, block_to);
 
-    				stk::mesh::PartVector *pv  = const_cast<stk::mesh::PartVector *>(part->attribute<stk::mesh::PartVector>());
-    				if (pv == 0)
-    				{
-    					pv = new stk::mesh::PartVector;
-    					eMesh.get_fem_meta_data()->declare_attribute_with_delete(*part, pv);
-    				}
-    				pv->push_back(block_to);
-    				if (DEBUG_SET_NEEDED_PARTS)
-    				{
-    					for (unsigned ii=0; ii < pv->size(); ii++)
-    					{
-    						std::cout << "tmp srk part.attr = " << part->name() << " block_to= " << (*pv)[ii]->name() << std::endl;
-    					}
-    				}
-    			}
+            if (switch_part_primary_entity_rank == stk::topology::ELEMENT_RANK) {
+              // Add the new surface parts needed by topology change upon refinement and make
+              // another pass at updating the surface to block mapping for these new parts
+              fixSubsets(eMesh);
+              addExtraSurfaceParts(eMesh);
+              updateSurfaceBlockMap(eMesh, part, block_to);
+            }
 
-    			if (!((part->name()).find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos))
-    			{
-    				if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: fromPart = " << part->name() << " toPart = " << block_to->name() << std::endl;
-    				m_fromParts.push_back(part);
-    				m_toParts.push_back(block_to);
-    			}
-    		}
-    	}
+            stk::mesh::PartVector *pv  = const_cast<stk::mesh::PartVector *>(part->attribute<stk::mesh::PartVector>());
+            if (pv == 0)
+            {
+              pv = new stk::mesh::PartVector;
+              eMesh.get_fem_meta_data()->declare_attribute_with_delete(*part, pv);
+            }
+            pv->push_back(block_to);
+            if (DEBUG_SET_NEEDED_PARTS)
+            {
+              for (unsigned ii=0; ii < pv->size(); ii++)
+              {
+                std::cout << "tmp srk part.attr = " << part->name() << " block_to= " << (*pv)[ii]->name() << std::endl;
+              }
+            }
+          }
 
-        if (!sameTopology) fixSubsets(eMesh);
-    	addExtraSurfaceParts(eMesh);
+          if (!((part->name()).find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos))
+          {
+            if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: fromPart = " << part->name() << " toPart = " << block_to->name() << std::endl;
+            m_fromParts.push_back(part);
+            m_toParts.push_back(block_to);
+          }
+        }
+      }
 
-    	addOldPart(eMesh);
+      if (!sameTopology) fixSubsets(eMesh);
+      addExtraSurfaceParts(eMesh);
 
-    	setNeededParts_debug2();
+      addOldPart(eMesh);
+
+      setNeededParts_debug2();
     }
 
 #define DEBUG_fixSubSets 0
@@ -1612,7 +1662,7 @@
                 }
               if (!ctopo)
                 {
-                  stk::mesh::Part& root_part = eMesh.get_fem_meta_data()->get_cell_topology_root_part(getToTopology());
+                  stk::mesh::Part& root_part = eMesh.get_fem_meta_data()->get_topology_root_part(stk::mesh::get_topology(getToTopology(), eMesh.get_fem_meta_data()->spatial_dimension()));
                   add_parts.push_back( &root_part);
                 }
               eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );

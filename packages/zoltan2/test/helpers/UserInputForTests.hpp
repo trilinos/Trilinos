@@ -2756,7 +2756,6 @@ void UserInputForTests::setPamgenCoordinateMV()
   }
 
   // make a Tpetra map
-  typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
   RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp;
   //   mp = rcp(new map_t(numGlobalElements, numelements, 0, this->tcomm_)); // constructo 1
 
@@ -2796,7 +2795,6 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   // Define Types
 //  typedef zlno_t lno_t;
 //  typedef zgno_t gno_t;
-  typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
 
   // get info for setting up map
   size_t local_nodes = (size_t)this->pamgen_mesh->num_nodes;

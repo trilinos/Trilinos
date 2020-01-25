@@ -25,12 +25,12 @@ ADD_SUBDIRECTORIES(
   MatrixMatrix
   Merge
   MultiVector
-  MultiVectorFiller
   Node
   PerformanceCGSolve
   Sort
   Utils
   RowMatrixTransposer
+  Tsqr
   TypeStack
   )
 

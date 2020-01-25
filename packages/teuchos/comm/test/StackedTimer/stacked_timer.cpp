@@ -364,6 +364,118 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
   timer->report(out, comm, options);
 }
 
+TEUCHOS_UNIT_TEST(StackedTimer, drop_time)
+{
+
+  Teuchos::StackedTimer timer("L0");
+  timer.start("L1a");
+  timer.start("L2a");
+  timer.stop("L2a");
+  timer.start("L2b");
+  timer.stop("L2b");
+  timer.stop("L1a");
+  timer.start("L1b");
+  timer.start("L2c");
+  timer.stop("L2c");
+  timer.start("L2d");
+  timer.stop("L2d");
+  timer.stop("L1b");
+  timer.stopBaseTimer();
+
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(5.0);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1a"))->setAccumulatedTime(3.0);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1a@L2a"))->setAccumulatedTime(0.4);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1a@L2b"))->setAccumulatedTime(1.01);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1b"))->setAccumulatedTime(0.1);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1b@L2c"))->setAccumulatedTime(0.05);
+  const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@L1b@L2d"))->setAccumulatedTime(0.04);
+
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  const int myRank = Teuchos::rank(*comm);
+  Teuchos::StackedTimer::OutputOptions options;
+  options.drop_time = 1.0;
+
+  out << "\n### Printing default report ###" << std::endl;
+  options.output_histogram=true;
+  options.num_histogram=3;
+  options.output_fraction=true;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("L2a") == std::string::npos); // should be dropped
+      TEST_ASSERT(os.str().find("L2b") != std::string::npos); // should be printed
+      TEST_ASSERT(os.str().find("L1b") == std::string::npos); // should be dropped
+    }
+  }
+
+  out << "\n### Printing aligned_column with timers names on left ###" << std::endl;
+  options.align_columns = true;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("L2a") == std::string::npos); // should be dropped
+      TEST_ASSERT(os.str().find("L2b") != std::string::npos); // should be printed
+      TEST_ASSERT(os.str().find("L1b") == std::string::npos); // should be dropped
+    }
+  }
+
+  out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
+  options.align_columns = false;
+  options.print_names_before_values = false;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("L2a") == std::string::npos); // should be dropped
+      TEST_ASSERT(os.str().find("L2b") != std::string::npos); // should be printed
+      TEST_ASSERT(os.str().find("L1b") == std::string::npos); // should be dropped
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST(StackedTimer, proc_minmax)
+{
+
+  Teuchos::StackedTimer timer("L0");
+  timer.stopBaseTimer();
+
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  if (comm->getSize() < 2)
+    return;
+  const int myRank = Teuchos::rank(*comm);
+
+  if (myRank == 0)
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(1.0);
+  else if (myRank == 1)
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(5.0);
+  else
+    const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"))->setAccumulatedTime(2.0);
+
+  Teuchos::StackedTimer::OutputOptions options;
+
+  out << "\n### Printing default report ###" << std::endl;
+  options.output_minmax=true;
+  options.output_proc_minmax=true;
+  options.output_histogram=true;
+  options.num_histogram=3;
+  options.output_fraction=true;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("proc min=0") != std::string::npos);
+      TEST_ASSERT(os.str().find("proc max=1") != std::string::npos);
+    }
+  }
+}
+
+
 // Overlapping timers are not allowed in a StackedTimer, but are in
 // TimeMonitor. Since StackedTimer is automatically used in
 // TimeMonitor by default, we have seen this error - a throw from the

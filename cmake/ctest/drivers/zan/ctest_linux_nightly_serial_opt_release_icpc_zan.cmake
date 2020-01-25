@@ -69,7 +69,7 @@ SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-#SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos)
+#SET(Trilinos_PACKAGES Teuchos RTOp Thyra Stratimikos Phalanx Rythmos)
 SET(EXTRA_EXCLUDE_PACKAGES Didasko Sundance Piro Rythmos TrilinosCouplings NOX STK Pamgen Thyra Tpetra Zoltan Stokhos FEApp Panzer)
 
 SET( EXTRA_CONFIGURE_OPTIONS

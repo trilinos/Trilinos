@@ -9,6 +9,8 @@
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/environment/FileUtils.hpp>
+#include <stk_util/util/string_utils.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <string>
 #include <iostream>
@@ -26,7 +28,9 @@ int main(int argc, const char**argv)
         stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
     }
 
-    std::string execName = stk::util::tailname(argv[0]);
+    Kokkos::initialize(argc, const_cast<char**>(argv));
+
+    std::string execName = stk::tailname(argv[0]);
     stk::balance::CommandLineOptions cmdLineOptions;
     std::string quickExample = stk::balance::get_quick_example(execName, cmdLineOptions.infile.name, cmdLineOptions.outputDirectory.name, comm);
     stk::balance::ParsedOptions balanceOptions;
@@ -43,16 +47,18 @@ int main(int argc, const char**argv)
         stk::parallel::print_and_exit(errorMessage, comm);
     }
 
-    stk::parallel::require_file_exists(balanceOptions.inFile, execName, quickExample, comm);
+    stk::parallel::require_file_exists(balanceOptions.m_inFile, execName, quickExample, comm);
 
     stk::balance::print_running_msg(execName, balanceOptions, comm);
     try {
-        stk::balance::run_stk_rebalance(balanceOptions.outputDirectory, balanceOptions.inFile, balanceOptions.appTypeDefaults, comm);
+        stk::balance::run_stk_rebalance(balanceOptions, comm);
     }
     catch(std::exception& e)
     {
         std::cerr<<e.what()<<std::endl;
     }
+
+    Kokkos::finalize_all();
 
     MPI_Finalize();
     return 0;

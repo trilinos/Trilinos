@@ -454,9 +454,6 @@ public:
   //@}
 
 private:
-  //! This hash table's label.
-  std::string objectLabel_;
-
   /// \brief Array of keys; only valid if keepKeys = true on construction.
   ///
   /// If you want the reverse mapping from values to keys, you need

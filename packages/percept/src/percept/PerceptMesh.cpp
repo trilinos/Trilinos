@@ -13,9 +13,8 @@
 #include <sstream>
 #include <algorithm>
 #include <map>
+#include <unordered_map>
 #include <stdio.h>
-
-#include <boost/unordered_set.hpp>
 
 #include <percept/Percept.hpp>
 
@@ -510,8 +509,7 @@
           for (unsigned ipart=0; ipart < nparts; ipart++)
             {
               stk::mesh::Part& part = *parts[ipart];
-              //const CellTopologyData *const topology = PerceptMesh::get_cell_topology(part);
-              const CellTopologyData *const topology = metaData.get_cell_topology(part).getCellTopologyData();
+              const stk::topology topology = metaData.get_topology(part);
               std::string subsets = "{";
               const stk::mesh::PartVector &part_subsets = part.subsets();
               if (part_subsets.size() > 0) {
@@ -523,7 +521,7 @@
               }
               subsets += "}";
               stream << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name()
-                     << " topology = " << (topology?shards::CellTopology(topology).getName():"null")
+                     << " topology = " << topology.name()
                      << " primary_entity_rank = " << static_cast<unsigned int>(part.primary_entity_rank())
                      << " is io_part= " << stk::io::is_part_io_part(part)
                      << " subsets = " << subsets
@@ -1099,91 +1097,6 @@
     //   return perm;
     // }
 
-
-
-    std::vector<stk::mesh::EntityId> PerceptMesh::nodes_in_mesh(const std::vector<stk::mesh::EntityId>& listOfNodes, std::vector<SubDimInfoType>& results, bool sorted)
-    {
-      std::vector<stk::mesh::EntityId> resId;
-      std::vector<stk::mesh::EntityId> subDim(1);
-      results.resize(0);
-      int numInMesh = 0;
-      for (unsigned ii=0; ii < listOfNodes.size(); ++ii)
-        {
-          std::vector<SubDimInfoType> tmp;
-          subDim[0] = listOfNodes[ii];
-          int inM = in_mesh(subDim, tmp, sorted);
-          if (inM)
-            {
-              resId.push_back(listOfNodes[ii]);
-              numInMesh++;
-            }
-          results.insert(results.end(), tmp.begin(), tmp.end());
-        }
-      return resId;
-    }
-
-    /// return info about elements that contain the given collection of entities, false if none
-    int PerceptMesh::in_mesh(const std::vector<stk::mesh::EntityId>& subDim0, std::vector<SubDimInfoType>& results, bool sorted)
-    {
-      results.resize(0);
-
-      std::vector<stk::mesh::EntityId> subDim = subDim0;
-      std::sort(subDim.begin(), subDim.end());
-      const stk::mesh::BucketVector & element_buckets = get_bulk_data()->buckets( element_rank() );
-
-      for ( stk::mesh::BucketVector::const_iterator k = element_buckets.begin() ; k != element_buckets.end() ; ++k )
-        {
-          stk::mesh::Bucket & bucket = **k ;
-          const CellTopologyData * const element_topo_data = PerceptMesh::get_cell_topology(bucket);
-          shards::CellTopology cell_topo(element_topo_data);
-
-          const unsigned num_elements_in_bucket = bucket.size();
-          for (unsigned iElem = 0; iElem < num_elements_in_bucket; iElem++)
-            {
-              stk::mesh::Entity element = bucket[iElem];
-              for (stk::mesh::EntityRank subDimRank = element_rank(); subDimRank >= stk::topology::NODE_RANK; --subDimRank)
-                {
-                  unsigned num_subdims = 1;
-                  if (element_topo_data)
-                    {
-                      if (subDimRank == face_rank()) num_subdims = element_topo_data->side_count;
-                      if (subDimRank == edge_rank()) num_subdims = element_topo_data->edge_count;
-                      if (subDimRank == node_rank()) num_subdims = element_topo_data->vertex_count;
-                    }
-                  for (unsigned isubdim = 0; isubdim <  num_subdims; isubdim++)
-                    {
-                      std::vector<stk::mesh::EntityId> list, sorted_list;
-                      if (!element_topo_data)
-                        {
-                          if (subDimRank == element_rank())
-                            {
-                              const MyPairIterRelation elem_nodes(*get_bulk_data(), element, stk::topology::NODE_RANK );
-                              for (unsigned ii=0; ii < elem_nodes.size(); ++ii)
-                                {
-                                  list.push_back(identifier(elem_nodes[ii].entity()));
-                                }
-                            }
-                          else
-                            {
-                              continue;
-                            }
-                        }
-                      else
-                        {
-                          get_subdim_entity(list, element, subDimRank, isubdim, sorted);
-                        }
-                      sorted_list = list;
-                      std::sort(sorted_list.begin(), sorted_list.end());
-                      if (sorted_list == subDim)
-                        results.push_back(SubDimInfoType(element, subDimRank, isubdim, list));
-                      //std::cout << results.front() << std::endl;
-                    }
-                }
-            }
-        }
-      return results.size();
-    }
-
     std::string PerceptMesh::print_entity_compact_field_name(const stk::mesh::Entity entity, const std::string& fieldName,  int prec)
     {
       stk::mesh::FieldBase *field = get_fem_meta_data()->get_field(node_rank(), fieldName);
@@ -1633,7 +1546,7 @@
               min_max_ave.val[2] = 0.0;
               min_max_ave.count = 0.0;
 
-              boost::unordered_map<stk::mesh::EntityId, NormalVector> node_normals;
+              std::unordered_map<stk::mesh::EntityId, NormalVector> node_normals;
               stk::mesh::Selector this_part(part);
               const stk::mesh::BucketVector & buckets = get_bulk_data()->buckets( side_rank() );
 
@@ -2271,18 +2184,22 @@
       auto & bulk = *get_bulk_data();
       requested_entities.clear();
       requested_entities.reserve(count);
+      std::vector<stk::mesh::EntityId> ids;
+      if (entityRank != get_fem_meta_data()->side_rank()) {
+        ids.reserve(count);
+      }
 
       for(int ii = 0; ii < count; ++ii)
       {
-        stk::mesh::Entity elem;
         if (entityRank == get_fem_meta_data()->side_rank()) {
-          elem = bulk.declare_solo_side(parts);
+          requested_entities.push_back(bulk.declare_solo_side(parts));
         }
         else {
-          stk::mesh::EntityId id = getNextId(entityRank);
-          elem = bulk.declare_entity(entityRank, id, parts);
+          ids.push_back(getNextId(entityRank));
         }
-        requested_entities.push_back(elem);
+      }
+      if (entityRank != get_fem_meta_data()->side_rank()) {
+        bulk.declare_entities(entityRank, ids, parts, requested_entities);
       }
       return true;
     }
@@ -2772,55 +2689,6 @@
 
     //========================================================================================================================
 
-    /// transform mesh by a given 3x3 matrix
-#if !STK_PERCEPT_LITE
-    void PerceptMesh::transform_mesh(MDArray& matrix)
-    {
-      if (matrix.rank() != 2) throw std::runtime_error("pass in a 3x3 matrix");
-      if (matrix.dimension(0) != 3 || matrix.dimension(1) != 3) throw std::runtime_error("pass in a 3x3 matrix");
-      Math::Matrix mat;
-      for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
-          {
-            mat(i,j) = matrix(i,j);
-          }
-      transform_mesh(mat);
-    }
-#endif
-
-    class MeshTransformer : public GenericFunction
-    {
-      Math::Matrix m_rotMat;
-    public:
-
-      MeshTransformer(){}
-      MeshTransformer(Math::Matrix& m) : m_rotMat(m) {}
-      virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
-      {
-        double x = domain(0);
-        double y = domain(1);
-        double z = (domain.dimension(0) == 2 ?  0 : domain(2));
-        Math::Vector v;
-        v(0)=x;
-        v(1)=y;
-        v(2)=z;
-        v = m_rotMat * v;
-        codomain(0)=v(0);
-        codomain(1)=v(1);
-        if (codomain.dimension(0) == 3 ) codomain(2)= v(2);
-      }
-
-    };
-    /// transform mesh by a given 3x3 matrix
-    void PerceptMesh::transform_mesh(Math::Matrix& matrix)
-    {
-#if defined(STK_PERCEPT_LITE) &&  STK_PERCEPT_LITE == 1
-      VERIFY_MSG("not available in PerceptMeshLite");
-#else
-      MeshTransformer xform(matrix);
-      nodalOpLoop(*get_bulk_data(), xform, get_coordinates_field());
-#endif
-    }
 
     void PerceptMesh::checkForPartsToAvoidWriting()
     {
@@ -3837,8 +3705,8 @@
             {
               stk::mesh::Part& part_1 = *parts_1[ipart];
               stk::mesh::Part& part_2 = *parts_2[ipart];
-              const CellTopologyData *const topology_1 = metaData_1.get_cell_topology(part_1).getCellTopologyData();
-              const CellTopologyData *const topology_2 = metaData_2.get_cell_topology(part_2).getCellTopologyData();
+              const stk::topology topology_1 = metaData_1.get_topology(part_1);
+              const stk::topology topology_2 = metaData_2.get_topology(part_2);
               if (part_1.subsets().size() != part_2.subsets().size())
                 {
                   msg += std::string("| parts subsets size diff ")+part_1.name()+" "+part_2.name()+" | ";
@@ -3846,14 +3714,9 @@
                 }
 
               if (part_1.name() != part_2.name()) { msg += "|part names diff "+part_1.name()+" "+part_2.name()+" | "; diff = true; }
-              if ((topology_1 != topology_2) ||
-                  ((std::string(topology_1?shards::CellTopology(topology_1).getName():"null") !=
-                    std::string(topology_2?shards::CellTopology(topology_2).getName():"null") ))
-                  )
+              if (topology_1 != topology_2)
                 {
-                  msg += "| part topology diff "+
-                    std::string(topology_1?shards::CellTopology(topology_1).getName():"null")+" "+
-                    std::string(topology_2?shards::CellTopology(topology_2).getName():"null");
+                  msg += "| part topology diff "+ topology_1.name() + " " + topology_2.name();
                   diff = true;
                 }
 
@@ -5699,7 +5562,7 @@
               block = block & owned;
               get_selected_entities( block,
                                      get_bulk_data()->buckets(element_rank()),
-                                     owned_elements);
+                                     owned_elements, false/*don't sort*/);
               //Part * skin_part = 0;
               stk::mesh::EntityVector elements_closure;
 
@@ -5853,7 +5716,7 @@
                   if (end_bit == "mag")
                     index = -1;
                   else
-                    index = boost::lexical_cast<int>(end_bit);
+                    index = std::stoi(end_bit);
                   fname = fname.substr(0,pos-1);
                 }
               field_stats(iter->second.m_data, fname, index);
@@ -7112,7 +6975,7 @@
       {
         eMesh.get_bulk_data()->modification_begin();
         std::vector<stk::mesh::Entity> vecNodes;
-        stk::mesh::get_selected_entities(sel & stk::mesh::selectUnion(parts) , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.node_rank()), vecNodes);
+        stk::mesh::get_selected_entities(sel & stk::mesh::selectUnion(parts) , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.node_rank()), vecNodes, false/*don't sort*/);
         stk::mesh::Part& nodePart = eMesh.get_fem_meta_data()->get_topology_root_part(stk::topology::NODE);
 
         for (size_t ii = 0; ii < vecNodes.size(); ++ii)
@@ -7121,7 +6984,7 @@
             eMesh.get_bulk_data()->set_local_id(node, ii);
           }
 
-        stk::mesh::get_selected_entities(sel & stk::mesh::selectUnion(parts) , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.node_rank()), vecNodes);
+        stk::mesh::get_selected_entities(sel & stk::mesh::selectUnion(parts) , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.node_rank()), vecNodes, false/*don't sort*/);
         for (size_t ii = 0; ii < vecNodes.size(); ++ii)
           {
             stk::mesh::Entity oldNode = vecNodes[ii];
@@ -7186,8 +7049,8 @@
           VERIFY_OP_ON(newPart, !=, 0, "hmm "+ partsAll[iPart]->name());
 
           std::vector<stk::mesh::Entity> vecFaces, vecShells;
-          stk::mesh::get_selected_entities(sel1 , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.side_rank()), vecFaces);
-          stk::mesh::get_selected_entities(sel1 , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.element_rank()), vecShells);
+          stk::mesh::get_selected_entities(sel1 , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.side_rank()), vecFaces, false/*don't sort*/);
+          stk::mesh::get_selected_entities(sel1 , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.element_rank()), vecShells, false/*don't sort*/);
           //if (1) std::cout << "P[" << thisPerceptMesh.get_rank() << "] vecFaces.size= " << vecFaces.size() << " vecShells.size= " << vecShells.size() << std::endl;
           vecFaces.insert(vecFaces.end(), vecShells.begin(), vecShells.end());
           for (unsigned ii=0; ii < vecFaces.size(); ++ii)
@@ -7236,7 +7099,7 @@
             }
         }
       std::vector<stk::mesh::Entity> vecNodes;
-      stk::mesh::get_selected_entities(sel & stk::mesh::selectUnion(partsAll) , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.node_rank()), vecNodes);
+      stk::mesh::get_selected_entities(sel & stk::mesh::selectUnion(partsAll) , thisPerceptMesh.get_bulk_data()->buckets(thisPerceptMesh.node_rank()), vecNodes, false/*don't sort*/);
 
       for (unsigned ii = 0; ii < vecNodes.size(); ++ii)
         {
@@ -7314,11 +7177,11 @@
 
                               double uv[2] = {U,V};
                               TriQuadSurfaceMesh3D::Point p = {{0, 0, 0}};
-                              evaluator.evaluateGregoryPatch(uv, element, p.c_array());
+                              evaluator.evaluateGregoryPatch(uv, element, p.data());
                               if (debug)
                                 {
                                   std::cout << "crm: face= " << iMesh.id(element) << " uv= " << Math::print_2d(uv)
-                                            << " xyz= " << Math::print_3d(p.c_array()) << " idStart= " << idStart << std::endl;
+                                            << " xyz= " << Math::print_3d(p.data()) << " idStart= " << idStart << std::endl;
                                 }
                               coords.push_back(p);
                               nodeIdMap.push_back(idStart + kk);
@@ -7353,11 +7216,11 @@
                               double U = double(iU)/double(n);
                               double uv[2] = {U,V};
                               TriQuadSurfaceMesh3D::Point p = {{0, 0, 0}};
-                              evaluator.evaluateGregoryPatch(uv, element, p.c_array());
+                              evaluator.evaluateGregoryPatch(uv, element, p.data());
                               if (debug)
                                 {
                                   std::cout << "crm: face= " << iMesh.id(element) << " uv= " << Math::print_2d(uv)
-                                            << " xyz= " << Math::print_3d(p.c_array()) << std::endl;
+                                            << " xyz= " << Math::print_3d(p.data()) << std::endl;
                                 }
                               coords.push_back(p);
                               nodeIdMap.push_back(idStart + kk);

@@ -524,11 +524,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("report_error_norms", "noreport_error_norms", &report_error_norms,   "Report L2 norms for the solution");
 
     std::ostringstream galeriStream;
-    std::string rhsFile,coordFile,nullFile; //unused
+    std::string rhsFile,coordFile,nullFile, materialFile; //unused
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
     RCP<RealValuedMultiVector> coordinates;
-    RCP<MultiVector> nullspace, x, b;
+    RCP<MultiVector> nullspace, material, x, b;
     RCP<Matrix> A;
     RCP<const Map> map;
 
@@ -543,7 +543,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"The Kokkos-Kernels matvec kernel cannot be run with more than one rank.");
 
     // Load the matrix off disk (or generate it via Galeri), assuming only one right hand side is loaded.
-    MatrixLoad<SC,LO,GO,NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, nullFile, map, A, coordinates, nullspace, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
+    MatrixLoad<SC,LO,GO,NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, nullFile, materialFile, map, A, coordinates, nullspace, material, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
 
     #ifndef HAVE_MUELU_MKL
     if (do_mkl) {

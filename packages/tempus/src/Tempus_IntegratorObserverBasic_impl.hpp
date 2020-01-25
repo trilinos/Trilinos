@@ -63,12 +63,11 @@ void IntegratorObserverBasic<Scalar>::
 observeEndTimeStep(const Integrator<Scalar>& integrator){
 
   using Teuchos::RCP;
-  RCP<SolutionStateMetaData<Scalar> > csmd =
-    integrator.getSolutionHistory()->getCurrentState()->getMetaData();
+  auto cs = integrator.getSolutionHistory()->getCurrentState();
 
-  if ((csmd->getOutputScreen() == true) or
-      (csmd->getOutput() == true) or
-      (csmd->getTime() == integrator.getTimeStepControl()->getFinalTime())) {
+  if ((cs->getOutputScreen() == true) or
+      (cs->getOutput() == true) or
+      (cs->getTime() == integrator.getTimeStepControl()->getFinalTime())) {
 
      const Scalar steppertime = integrator.getStepperTimer()->totalElapsedTime();
      // reset the stepper timer
@@ -77,13 +76,13 @@ observeEndTimeStep(const Integrator<Scalar>& integrator){
      const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
      Teuchos::OSTab ostab(out,0,"ScreenOutput");
      *out<<std::scientific
-        <<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
-        <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
-        <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
-        <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
-        <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
-        <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<csmd->getOrder()
-        <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
+        <<std::setw( 6)<<std::setprecision(3)<<cs->getIndex()
+        <<std::setw(11)<<std::setprecision(3)<<cs->getTime()
+        <<std::setw(11)<<std::setprecision(3)<<cs->getTimeStep()
+        <<std::setw(11)<<std::setprecision(3)<<cs->getErrorAbs()
+        <<std::setw(11)<<std::setprecision(3)<<cs->getErrorRel()
+        <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<cs->getOrder()
+        <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<cs->getNFailures()
         <<std::setw(11)<<std::setprecision(3)<<steppertime
         <<std::endl;
   }

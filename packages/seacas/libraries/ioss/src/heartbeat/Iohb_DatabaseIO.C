@@ -126,10 +126,10 @@ namespace {
       // 'logger' class which handles sharing and destruction...
       std::ofstream *tmp = nullptr;
       if (append_file) {
-        tmp = new std::ofstream(filename.c_str(), std::ios::out | std::ios::app);
+        tmp = new std::ofstream(filename, std::ios::out | std::ios::app);
       }
       else {
-        tmp = new std::ofstream(filename.c_str());
+        tmp = new std::ofstream(filename);
       }
       if (!tmp->is_open()) {
         delete tmp;
@@ -190,19 +190,19 @@ namespace Iohb {
 
       if (properties.exists("FILE_FORMAT")) {
         std::string format = properties.get("FILE_FORMAT").get_string();
-        if (Ioss::Utils::case_strcmp(format, "spyhis") == 0) {
+        if (Ioss::Utils::str_equal(format, "spyhis")) {
           new_this->fileFormat = SPYHIS;
         }
-        else if (Ioss::Utils::case_strcmp(format, "csv") == 0) {
+        else if (Ioss::Utils::str_equal(format, "csv")) {
           new_this->fileFormat = CSV;
         }
-        else if (Ioss::Utils::case_strcmp(format, "ts_csv") == 0) {
+        else if (Ioss::Utils::str_equal(format, "ts_csv")) {
           new_this->fileFormat = TS_CSV;
         }
-        else if (Ioss::Utils::case_strcmp(format, "text") == 0) {
+        else if (Ioss::Utils::str_equal(format, "text")) {
           new_this->fileFormat = TEXT;
         }
-        else if (Ioss::Utils::case_strcmp(format, "ts_text") == 0) {
+        else if (Ioss::Utils::str_equal(format, "ts_text")) {
           new_this->fileFormat = TS_TEXT;
         }
       }

@@ -18,21 +18,14 @@ Files
   - Contains the main() function for the application.
 
 ### Finite Element Mesh Assembly Example Sources
-- `fem_assembly_InsertGlobalIndices_DP.hpp`  (Type-1)
-  - Constructs the crsGraph by looping over the _owned_ elements and inserting the representations of the
-    connectivity of each element into the graph using their global ids and lets Tpetra handle the exchanges.
-  - DynamicProfile
-- `fem_assembly_LocalElementLoop_DP.hpp`  (Type-2)
-  - This method distinguishes owned from overlapping nodes.
-    - Owned nodes are those that _only_ touch elements owned by the same process.
-    - Overlapping nodes are nodes that touch elements owned by a different process.
-  - DynamicProfile
-- `fem_assembly_TotalElementLoop_DP.hpp`  (Type-3)
+
+- `fem_assembly_TotalElementLoop.hpp`
   - Each process contains information from both its owned elements and its ghost elements so mesh construction
     is possible without requiring communication.
-  - DynamicProfile
-- `fem_assembly_TotalElementLoop_SP.hpp`  (Type-3)
-  - StaticProfile version of the Total Element Loop example.
+- `fem_assembly_InsertGlobalIndices_FE.hpp`
+  - Constructs an FECrsGraph by looping over the _owned_ elements and inserting the representations of the
+    connectivity of each element into the graph using their global ids. Uses a Kokkos kernel locally
+    and lets Tpetra handle the communication.
 
 
 Running The Example
@@ -44,10 +37,6 @@ Running The Example
 - `--num-elements-y` Number of elements to generate in the y-axis of the 2D grid.
 - `--verbose` Print out extra information to STDOUT.
 - `--timing`  Print out timing information at the end of execution.
-- `--with-insert-global-indices-dp` Execute the "Insert Global Indices" example using DynamicProfile.
-- `--with-local-element-loop-dp` Execute the "Local Element Loop" example using DynamicProfile.
-- `--with-total-element-loop-dp` Execute the "Total Element Loop" example using DynamicProfile.
-- `--with-total-element-loop-sp` Execute the "Total Element Loop" example using StaticProfile.
-
-
+- `--with-insert-global-indices-fe` Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.
+- `--with-total-element-loop`  Execute the Total Element Loop FEM Assembly kernel.
 

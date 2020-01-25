@@ -80,7 +80,7 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
 
         // Resolve modification or deletion of ghost entities
         // by destroying ghost entities that have been touched.
-        m_bulkData.internal_resolve_ghosted_modify_delete();
+        m_bulkData.internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
         m_bulkData.update_comm_list_based_on_changes_in_comm_map();
 
         // Resolve creation of entities: discover sharing and set unique ownership.

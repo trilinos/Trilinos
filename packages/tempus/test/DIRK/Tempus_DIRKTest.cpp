@@ -307,6 +307,10 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethods.push_back("SDIRK 2(1) Pair");
   RKMethods.push_back("RK Trapezoidal Rule");
   RKMethods.push_back("RK Crank-Nicolson");
+  RKMethods.push_back("SSPDIRK22");
+  RKMethods.push_back("SSPDIRK32");
+  RKMethods.push_back("SSPDIRK23");
+  RKMethods.push_back("SSPDIRK33");
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(2.52738e-05);
@@ -325,6 +329,12 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethodErrors.push_back(0.0001041);
   RKMethodErrors.push_back(5.20785e-05);
   RKMethodErrors.push_back(5.20785e-05);
+  RKMethodErrors.push_back(1.30205e-05);
+  RKMethodErrors.push_back(5.7869767e-06);
+  RKMethodErrors.push_back(1.00713e-07);
+  RKMethodErrors.push_back(3.94916e-08);
+  
+  TEUCHOS_ASSERT( RKMethods.size() == RKMethodErrors.size() ); 
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 

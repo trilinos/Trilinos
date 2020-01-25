@@ -1348,7 +1348,7 @@ namespace stk {
 	}
       }
     }
-      
+
     void get_input_entity_list(Ioss::GroupingEntity *io_entity,
                          stk::mesh::EntityRank part_type,
                          const stk::mesh::BulkData &bulk,
@@ -1757,7 +1757,7 @@ namespace stk {
 
       delete_selector_property(ns);
       mesh::Selector *select = new mesh::Selector(all_selector);
-      ns->property_add(Ioss::Property(s_internal_selector_name, static_cast<void*>(select)));
+      ns->property_add(Ioss::Property(s_internal_selector_name, select));
       ns->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
 
       if(!isDerivedNodeset) {
@@ -1836,7 +1836,7 @@ namespace stk {
         selector &= bulk.mesh_meta_data().locally_owned_part();
         delete_selector_property(side_block);
         mesh::Selector *select = new mesh::Selector(selector);
-        side_block->property_add(Ioss::Property(s_internal_selector_name, static_cast<void*>(select)));
+        side_block->property_add(Ioss::Property(s_internal_selector_name, select));
         side_block->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
 
         // Add the attribute fields.
@@ -2012,7 +2012,7 @@ namespace stk {
 
         delete_selector_property(eb);
         mesh::Selector *select = new mesh::Selector(selector);
-        eb->property_add(Ioss::Property(s_internal_selector_name, static_cast<void*>(select)));
+        eb->property_add(Ioss::Property(s_internal_selector_name, select));
         eb->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
 
         // Add the attribute fields.
@@ -2063,7 +2063,7 @@ namespace stk {
 
           delete_selector_property(io_cs);
           mesh::Selector *select = new mesh::Selector(selector);
-          io_cs->property_add(Ioss::Property(s_internal_selector_name, static_cast<void*>(select)));
+          io_cs->property_add(Ioss::Property(s_internal_selector_name, select));
 
           // Update global node and element count...
           std::vector<size_t> entityCounts;
@@ -2760,7 +2760,7 @@ namespace stk {
         if (*check != *my_role) {
           std::ostringstream msg ;
           msg << " FAILED in IossBridge -- set_field_role:"
-              << " The role type for field name= " << f.name() 
+              << " The role type for field name= " << f.name()
               << " was already set to " << *check
               << ", so it is not possible to change it to " << *my_role;
           delete my_role;
@@ -2907,13 +2907,14 @@ namespace stk {
         }
     }
 
-    void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
+    void put_field_data(stk::mesh::BulkData &bulk, 
+                        stk::io::OutputParams& params,
+                        stk::mesh::Part &part,
                         stk::mesh::EntityRank part_type,
                         Ioss::GroupingEntity *io_entity,
                         Ioss::Field::RoleType filter_role)
     {
       std::vector<stk::mesh::Entity> entities;
-      stk::io::OutputParams params(bulk);
       stk::io::get_output_entity_list(io_entity, part_type, params, entities);
 
       stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
@@ -2928,16 +2929,26 @@ namespace stk {
       }
     }
 
+    void put_field_data(stk::mesh::BulkData &bulk,
+                        stk::mesh::Part &part,
+                        stk::mesh::EntityRank part_type,
+                        Ioss::GroupingEntity *io_entity,
+                        Ioss::Field::RoleType filter_role)
+    {
+      stk::io::OutputParams params(bulk);
+      put_field_data(bulk, params, part, part_type, io_entity, filter_role);
+    }
+
     struct DefineOutputFunctor
     {
-      void operator()(stk::mesh::BulkData &bulk, stk::mesh::Part &part, stk::mesh::EntityRank rank, Ioss::GroupingEntity *ge, Ioss::Field::RoleType role)
+      void operator()(stk::mesh::BulkData &bulk, stk::io::OutputParams& params, stk::mesh::Part &part, stk::mesh::EntityRank rank, Ioss::GroupingEntity *ge, Ioss::Field::RoleType role)
       {  stk::io::ioss_add_fields(part, rank, ge, role); }
     };
 
     struct ProcessOutputFunctor
     {
-      void operator()(stk::mesh::BulkData &bulk, stk::mesh::Part &part, stk::mesh::EntityRank rank, Ioss::GroupingEntity *ge, Ioss::Field::RoleType role)
-      {  put_field_data(bulk, part, rank, ge, role); }
+      void operator()(stk::mesh::BulkData &bulk, stk::io::OutputParams& params, stk::mesh::Part &part, stk::mesh::EntityRank rank, Ioss::GroupingEntity *ge, Ioss::Field::RoleType role)
+      {  put_field_data(bulk, params, part, rank, ge, role); }
     };
 
     template <typename T>
@@ -2945,9 +2956,10 @@ namespace stk {
                             stk::mesh::BulkData &bulk, T& callable)
     {
         stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+        stk::io::OutputParams params(region, bulk);
 
         Ioss::NodeBlock *nb = region.get_node_blocks()[0];
-        callable(bulk, meta.universal_part(), stk::topology::NODE_RANK,
+        callable(bulk, params, meta.universal_part(), stk::topology::NODE_RANK,
                  dynamic_cast<Ioss::GroupingEntity *>(nb), Ioss::Field::TRANSIENT);
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -2966,12 +2978,12 @@ namespace stk {
 
               for (int i=0; i < block_count; i++) {
                 Ioss::SideBlock *fb = sset->get_block(i);
-                callable(bulk, *part,
+                callable(bulk, params, *part,
                          stk::mesh::EntityRank( part->primary_entity_rank() ),
                          dynamic_cast<Ioss::GroupingEntity *>(fb), Ioss::Field::TRANSIENT);
               }
             } else {
-              callable(bulk, *part,
+              callable(bulk, params, *part,
                        stk::mesh::EntityRank( part->primary_entity_rank() ),
                        entity, Ioss::Field::TRANSIENT);
             }
@@ -3001,9 +3013,9 @@ namespace stk {
             counter += 2;
         }
         size_t size_field = entity_proc.size()*(sizeof(INT));
-        io_cs->put_field_data("entity_processor", entity_proc.data(), size_field);      
+        io_cs->put_field_data("entity_processor", entity_proc.data(), size_field);
     }
-    
+
     void write_node_sharing_info(Ioss::DatabaseIO *dbo, const EntitySharingInfo &nodeSharingInfo)
     {
         bool ints64bit =  db_api_int_size(dbo->get_region()) == 8;
@@ -3022,12 +3034,46 @@ namespace stk {
                                                     int index_subdomain,
                                                     int num_subdomains)
     {
-        std::string parallelFilename{construct_parallel_filename(baseFilename, num_subdomains, index_subdomain)};
+        std::string parallelFilename{construct_filename_for_serial_or_parallel(baseFilename, num_subdomains, index_subdomain)};
 
         std::string dbtype("exodusII");
         Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, parallelFilename, Ioss::WRITE_RESULTS, MPI_COMM_SELF);
 
         return dbo;
+    }
+
+    void write_mesh_data_for_subdomain(Ioss::Region& out_region, stk::mesh::BulkData& bulkData, const EntitySharingInfo& nodeSharingInfo)
+    {
+      stk::io::OutputParams params(out_region, bulkData);
+      out_region.begin_mode(Ioss::STATE_DEFINE_MODEL);
+      stk::io::define_output_db_within_state_define(params, {});
+      Ioss::CommSet *commset = new Ioss::CommSet(out_region.get_database(), "commset_node", "node", nodeSharingInfo.size());
+      commset->property_add(Ioss::Property("id", 1));
+      out_region.add(commset);
+      out_region.end_mode(Ioss::STATE_DEFINE_MODEL);
+
+      out_region.begin_mode(Ioss::STATE_MODEL);
+      stk::io::write_output_db_node_block(params);
+      write_node_sharing_info(out_region.get_database(), nodeSharingInfo);
+      stk::io::write_output_db_rest_of_mesh(params);
+      out_region.end_mode(Ioss::STATE_MODEL);
+    }
+
+    int write_transient_data_for_subdomain(Ioss::Region &out_region, stk::mesh::BulkData& bulkData, double timeStep)
+    {
+      if(!out_region.transient_defined()) {
+        out_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        DefineOutputFunctor functor;
+        process_field_loop(out_region, bulkData, functor);
+        out_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+      }
+
+      out_region.begin_mode(Ioss::STATE_TRANSIENT);
+      int out_step = out_region.add_state(timeStep);
+      process_output_request(out_region, bulkData, out_step);
+      out_region.end_mode(Ioss::STATE_TRANSIENT);
+
+      return out_step;
     }
 
     void write_file_for_subdomain(Ioss::Region &out_region,
@@ -3039,42 +3085,11 @@ namespace stk {
         Ioss::DatabaseIO *dbo = out_region.get_database();
         ThrowRequire(nullptr != dbo);
 
-        //////////////////////////
+        write_mesh_data_for_subdomain(out_region, bulkData, nodeSharingInfo);
 
-        stk::io::OutputParams params(out_region, bulkData);
-        out_region.begin_mode(Ioss::STATE_DEFINE_MODEL);
-        stk::io::define_output_db_within_state_define(params, {});
-        Ioss::CommSet *commset = new Ioss::CommSet(dbo, "commset_node", "node", nodeSharingInfo.size());
-        commset->property_add(Ioss::Property("id", 1));
-        dbo->get_region()->add(commset);
-        out_region.end_mode(Ioss::STATE_DEFINE_MODEL);
-
-        //////////////////////////
-
-        out_region.begin_mode(Ioss::STATE_MODEL);
-        stk::io::write_output_db_node_block(params);
-        write_node_sharing_info(dbo, nodeSharingInfo);
-        stk::io::write_output_db_rest_of_mesh(params);
-        out_region.end_mode(Ioss::STATE_MODEL);
-
-        //////////////////////////
-
-        if(numSteps > 0)
-        {
-          out_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-          DefineOutputFunctor functor;
-          process_field_loop(out_region, bulkData, functor);
-          out_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
-
-          //////////////////////////
-
-          out_region.begin_mode(Ioss::STATE_TRANSIENT);
-          int out_step = out_region.add_state(timeStep);
-          process_output_request(out_region, bulkData, out_step);
-          out_region.end_mode(Ioss::STATE_TRANSIENT);
+        if(numSteps > 0) {
+          write_transient_data_for_subdomain(out_region, bulkData, timeStep);
         }
-
-        stk::io::delete_selector_property(out_region);
     }
 
     void add_properties_for_subdomain(stk::mesh::BulkData& bulkData,
@@ -3115,6 +3130,8 @@ namespace stk {
         add_properties_for_subdomain(bulkData, out_region, index_subdomain, num_subdomains, global_num_nodes, global_num_elems);
 
         write_file_for_subdomain(out_region, bulkData, nodeSharingInfo, numSteps, timeStep);
+
+        stk::io::delete_selector_property(out_region);
     }
 
 
@@ -3303,4 +3320,3 @@ namespace stk {
 
   }//namespace io
 }//namespace stk
-

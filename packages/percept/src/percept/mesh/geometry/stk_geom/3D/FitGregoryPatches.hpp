@@ -173,7 +173,7 @@ protected:
    *   angle criterion; also adds edges to the QA mesh for debugging
    *   and Q/A purposes.
    */
-  typedef boost::array<double,3> Point;
+  typedef std::array<double,3> Point;
 
   double
   edgeAngle(stk::mesh::Entity node, const Edge& e0, const Edge& e1);

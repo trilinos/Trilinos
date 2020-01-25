@@ -350,19 +350,7 @@ namespace Xpetra {
     this->getTpetra_MultiVector()->replaceMap(toTpetra(map));
   }
   
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template<class Node2>
-  RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  XPETRA_DEPRECATED 
-  TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
-  clone(const RCP<Node2> &node2) const {
-    XPETRA_MONITOR("TpetraMultiVector::clone");
-    return RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(vec_->clone(node2)));
-  }
-#endif
-
-
-  //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector objecT
+//! TpetraMultiVector constructor to wrap a Tpetra::MultiVector objecT
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
   TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : vec_(vec) { } //TODO removed const
@@ -664,11 +652,7 @@ namespace Xpetra {
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) { }
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
-#endif
-    //@}
+//@}
 
     //! @name Xpetra specific
     //@{
@@ -939,11 +923,7 @@ namespace Xpetra {
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) { }
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
-#endif
-    //@}
+//@}
 
     //! @name Xpetra specific
     //@{
@@ -1022,14 +1002,22 @@ namespace Xpetra {
 
 } // Xpetra namespace
 
-// Following header file inculsion is needed for the dynamic_cast to TpetraVector in elementWiseMultiply (because we cannot dynamic_cast if target is not a complete type)
+// Following header file inculsion is needed for the dynamic_cast to TpetraVector in 
+// elementWiseMultiply (because we cannot dynamic_cast if target is not a complete type)
 // It is included here to avoid circular dependency between Vector and MultiVector
 // TODO: there is certainly a more elegant solution...
 #include "Xpetra_TpetraVector.hpp"
 
 namespace Xpetra {
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) {
+  void 
+  TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  elementWiseMultiply(Scalar scalarAB, 
+                      const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
+                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, 
+                      Scalar scalarThis) 
+  {
     XPETRA_MONITOR("TpetraMultiVector::elementWiseMultiply");
 
     // XPETRA_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>

@@ -404,37 +404,6 @@ namespace {
     TEST_EQUALITY( gblSuccess, 1 );
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Map, NodeConversion, N2 )
-  {
-    typedef Tpetra::Map<>::local_ordinal_type LO;
-    typedef Tpetra::Map<>::global_ordinal_type GO;
-    typedef Tpetra::Map<>::node_type N1; // default Node type
-    typedef Tpetra::Map<LO, GO, N1> Map1;
-    typedef Tpetra::Map<LO, GO, N2> Map2;
-
-    out << "Test: Map, NodeConversion" << std::endl;
-    Teuchos::OSTab tab0 (out);
-
-    // create a comm
-    auto comm = Tpetra::getDefaultComm();
-    const int numImages = comm->getSize();
-    //const int myImageID = comm->getRank();
-    const size_t        numLocal  = 10;
-    const GST numGlobal = numImages*numLocal;
-
-    RCP<N1> n1 (new N1);
-    RCP<N2> n2 (new N2);
-
-    // create a contiguous uniform distributed map with numLocal entries per node
-    RCP<const Map1> map1 = createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm);
-    RCP<const Map2> map2 = map1->clone (n2);
-    RCP<const Map1> map1b = map2->clone (n1);
-    TEST_ASSERT( map1->isCompatible (*map1b) );
-    TEST_ASSERT( map1->isSameAs (*map1b) );
-  }
-#endif
-
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ZeroLocalElements, LO, GO )
   {
     typedef Tpetra::Map<LO,GO> M;
@@ -519,18 +488,9 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ZeroLocalElements, LO, GO )
 #endif // HAVE_TPETRA_DEBUG
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-#define NC_TESTS(NT) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, NodeConversion, NT )
-#endif
-
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP)
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_INSTANTIATE_N(NC_TESTS)
-#endif
 
 }
 

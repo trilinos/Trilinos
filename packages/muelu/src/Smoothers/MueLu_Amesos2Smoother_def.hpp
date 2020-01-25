@@ -165,7 +165,7 @@ namespace MueLu {
 
       // Create new map
       RCP<Map>       map     = MapFactory::Build(rowMap->lib(), rowMap->getGlobalNumElements(), 0, rowMap->getComm());
-      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(map, map, 0, Xpetra::StaticProfile));
+      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(map, map, 0));
       RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
 
       using Teuchos::arcp_const_cast;
@@ -262,7 +262,7 @@ namespace MueLu {
         }
       }
 
-      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(rowMap, colMap, 0, Xpetra::StaticProfile));
+      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(rowMap, colMap, 0));
       RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
 
       using Teuchos::arcp_const_cast;
