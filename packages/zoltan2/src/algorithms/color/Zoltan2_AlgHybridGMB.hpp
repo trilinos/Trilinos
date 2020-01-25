@@ -29,121 +29,6 @@
 //! \brief A hybrid version of the framework proposed by Gebremedhin, Manne, 
 //!        and Boman
 
-namespace Zoltan2{
-
-//new class, colorLabel?
-class VtxColor {
-  public:
-    unsigned long long rand;
-    unsigned long long color;
-    std::vector<VtxColor*> nbors;
-    //constructors
-    VtxColor(unsigned long long r, unsigned long long c):rand(r),color(c){}
-    VtxColor(){
-      rand = 0;
-      color = 0;
-    }
-    //constructors for FEMultiVector's health
-    VtxColor(const unsigned long long l){
-      rand = l;
-      color = 0;
-    }
-    VtxColor(volatile const VtxColor& other){
-      rand = other.rand;
-      color = other.color;
-      //nbors = other.nbors;
-    }
-    VtxColor(const VtxColor& other){
-      rand = other.rand;
-      color = other.color;
-      //nbors = other.nbors;
-    }
-    volatile VtxColor operator=(const VtxColor& other) volatile {
-      rand = other.rand;
-      color = other.color;
-      //nbors = other.nbors;
-      return *this;
-    }
-    VtxColor& operator=(const VtxColor& other){
-      rand = other.rand;
-      color = other.color;
-      //nbors = other.nbors;
-      return *this;
-    }
-    VtxColor& operator+=(const VtxColor& copy){
-      //conflict detection is here.
-      color = copy.color;
-      return *this;
-    }
-    friend bool operator==(const VtxColor& lhs, const VtxColor& rhs){
-      return (lhs.rand == rhs.rand) && (lhs.color == rhs.color) &&
-             (lhs.nbors == rhs.nbors);
-    }
-    friend std::ostream& operator<<(std::ostream& os, const VtxColor& a){
-      os<<"color: "<<a.color<<", rand: "<<a.rand;
-      return os;
-    }
-   
-};
-
-}//end namespace Zoltan2
-
-namespace Kokkos{
-  namespace Details {
-    template<>
-    class ArithTraits<Zoltan2::VtxColor>{
-    public:
-      typedef Zoltan2::VtxColor val_type;
-      typedef unsigned long long mag_type;
-      
-      static const bool is_specialized = true;
-      static const bool is_signed = false;
-      static const bool is_integer = true;
-      static const bool is_exact = true;
-      static const bool is_complex = false;
-
-      static KOKKOS_FORCEINLINE_FUNCTION bool isInf(const val_type&){
-        return false;
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION bool isNan(const val_type &){
-        return false;
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs(const val_type &x){
-        return x.rand;
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type zero() {return 0;}
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type one() {return 1;}
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type min() {return LONG_MIN;}
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type max() {return LONG_MAX;}
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type nan() {
-        return (unsigned long long)-1;
-      }
-      
-      //Backwards compatibility with Teuchos::ScalarTraits
-      typedef mag_type magnitudeType;
-      static const bool isComplex = false;
-      static const bool isOrdinal = true;
-      static const bool isComparable = true;
-      static const bool hasMachineParameters = false;
-      static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude(
-        const val_type &x){
-        return abs(x);
-      }
-      static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf(const val_type&){
-        return false;
-      }
-      static std::string name() {return "Zoltan2::VtxColor";}
-    };
-  }//end namespace Details
-}//end namespace Kokkos
-
-namespace Teuchos {
-template<typename Ordinal>
-struct SerializationTraits<Ordinal, Zoltan2::VtxColor> :
-       public Teuchos::DirectSerializationTraits<Ordinal, Zoltan2::VtxColor>
-{};
-}//end namespace Teuchos
-
 namespace Zoltan2 {
 
 template <typename Adapter>
@@ -162,113 +47,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
     
   private:
 
-    void buildModel(modelFlag_t &flags);
-    std::vector<gno_t> reorderGraph(
-                                 ArrayView<const gno_t> ownedGIDs,
-                                 ArrayView<const gno_t> globalAdjs, 
-                                 ArrayView<const offset_t> offsets, 
-                                 std::vector<lno_t>& reorderAdjs, 
-                                 std::vector<offset_t>&reorderOffsets,
-                                 std::vector<lno_t>& reorderToLocal,
-                                 lno_t& nInterior) {
-      std::unordered_map<gno_t, lno_t> globalToLocal; 
-      
-      //printf("--Rank %d: setting up map\n", comm->getRank()); 
-      //map globally owned ids to local ids. O(n)
-      for( uint64_t i = 0; i < ownedGIDs.size(); i++){
-        globalToLocal[ownedGIDs[i]] = i;
-      }
-      
-      //map ghosts to local ids. O(m)
-      lno_t ghostCount = 0;
-      std::vector<gno_t> finalLocalToGlobal(ownedGIDs.size());
-      for(uint64_t i = 0; i < globalAdjs.size(); i++){
-        if(globalToLocal.count(globalAdjs[i])==0){
-          //this is a ghost GID, put it in the map, assign it a local ID
-          globalToLocal[globalAdjs[i]] = ownedGIDs.size() + ghostCount;
-          ghostCount++;
-          //also put it in the correct spot in the final vector.
-          finalLocalToGlobal.push_back(globalAdjs[i]);
-          //printf("--Rank %d: put %u at index %u in reorderGIDs\n",
-          //      comm->getRank(), globalAdjs[i], finalLocalToGlobal.size());
-        }
-      }
-      
-      //printf("--Rank %d: deterimining interior and boundary\n",comm->getRank());
-      //determine interior vs. boundary vertices. O(m)
-      bool* interiorFlags = new bool[ownedGIDs.size()];
-      nInterior = 0;
-      for(uint64_t i = 0; i < ownedGIDs.size(); i++){
-        bool interior = true;
-        for(size_t j = offsets[i]; j < offsets[i+1]; j++){
-          if(globalToLocal[globalAdjs[j]] >= ownedGIDs.size()){
-            //not interior
-            interior = false;
-          }
-        }
-        //can rewrite this for readability.
-        nInterior += (interiorFlags[i] = interior);
-      }
-
-      //printf("--Rank %d: changing to reordered LIDs\n", comm->getRank());
-      //change the map to use reordered LIDs, and set up other necessary
-      //structures for reorderOffsets. O(n)
-      lno_t interiorCount = 0;
-      lno_t boundaryCount = nInterior;
-      offset_t* reorderDegrees = new offset_t[ownedGIDs.size()];
-      for(uint64_t i = 0; i < ownedGIDs.size(); i++){
-        if(interiorFlags[i]){
-          //interiorCount is the reordered LID
-          finalLocalToGlobal[interiorCount] = ownedGIDs[i];
-          globalToLocal[ownedGIDs[i]] = interiorCount;
-          reorderDegrees[interiorCount++] = offsets[i+1] - offsets[i]; 
-          //printf("--Rank %d: put %u at index %d of reorderGIDs\n",
-          //       comm->getRank(), ownedGIDs[i], interiorCount-1);
-        } else {
-          //boundaryCount is the reordered LID
-          finalLocalToGlobal[boundaryCount] = ownedGIDs[i];
-          globalToLocal[ownedGIDs[i]] = boundaryCount;
-          reorderDegrees[boundaryCount++] = offsets[i+1] - offsets[i];
-          //printf("--Rank %d: put %u at index %d of reorderGIDs\n",
-          //       comm->getRank(), ownedGIDs[i], boundaryCount-1);
-        }
-      }
-      
-      //printf("--Rank %d: computing reordered offsets\n",comm->getRank());
-      //compute reorderOffsets. O(n)
-      reorderOffsets[0] = 0;
-      for(uint64_t i = 0; i < ownedGIDs.size(); i++){
-        reorderOffsets[i+1] = reorderOffsets[i] + reorderDegrees[i];
-      }
- 
-      //printf("--Rank %d: computing reordered adjacencies\n",comm->getRank());
-      if(reorderAdjs.size() != globalAdjs.size()){
-        //printf("--Rank %d: size mismatch between original and reordered adjs\n"
-        //      , comm->getRank());
-      }
-      //compute reorderAdjs. O(m)
-      for(uint64_t i = 0; i < ownedGIDs.size(); i++){
-        for(uint64_t j = 0; j < offsets[i+1]-offsets[i]; j++){
-          reorderAdjs.at(reorderOffsets[globalToLocal[ownedGIDs[i]]]+j) = 
-            globalToLocal[globalAdjs[offsets[i]+j]];
-        }
-      }
-      
-      reorderToLocal.resize(ownedGIDs.size());
-      for(uint64_t i = 0; i < ownedGIDs.size(); i++){
-        //printf("--Rank %d: reordered ID %d is local ID %d\n",comm->getRank(),globalToLocal[ownedGIDs[i]],i);
-        reorderToLocal[globalToLocal[ownedGIDs[i]]] = i;
-      }
-      
-      //printf("--Rank %d: done reordering graph\n", comm->getRank());
-      return finalLocalToGlobal;
-    } 
+    void buildModel(modelFlag_t &flags); 
     
-    
-    
-    //This function is templated twice to avoid explicitly coding all possible
-    //Execution space situations. We can just template the function call and 
-    //have the compiler do that work.
     template <class ExecutionSpace, typename TempMemorySpace, 
               typename MemorySpace>
     void colorInterior(const size_t nVtx, 
@@ -305,34 +85,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
       kh.set_dynamic_scheduling(use_dynamic_scheduling);
       kh.set_verbose(verbose);
     
-      /*switch(algorithm) {
-        case 1:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
-          break;
-        case 2:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_SERIAL);
-          break;
-        case 3:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_VB);
-          break;
-        case 4:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
-          break;
-        case 5:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBCS);
-          break;
-        case 6:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_EB);
-          break;
-        case 7:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBD);
-          break;
-        case 8:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBDBIT);
-          break;
-        default:
-          kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
-      }*/
       if(recolor){
         kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
       } else {
@@ -349,16 +101,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                                       offset_view, adjs_view);
       
       Kokkos::fence();
-      //std::cout << std::endl << 
-      //    "Time: " << 
-      //    kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-      //    "Num colors: " << 
-      //    kh.get_graph_coloring_handle()->get_num_colors() << " "
-      //    "Num Phases: " << 
-      //    kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-      //std::cout << "\t"; 
-      //KokkosKernels::Impl::print_1Dview(
-      //                     kh.get_graph_coloring_handle()->get_vertex_colors());
       
       numColors = kh.get_graph_coloring_handle()->get_num_colors();
     }
@@ -419,7 +161,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
 
       lno_t nInterior = 0;
       std::vector<lno_t> reorderToLocal;
-      for(int i = 0;  i< nVtx; i++) reorderToLocal.push_back(i);
+      for(size_t i = 0;  i< nVtx; i++) reorderToLocal.push_back(i);
       
       volatile int debug = 0;
 //      if(rank == 0){
@@ -429,75 +171,43 @@ class AlgHybridGMB : public Algorithm<Adapter>
 //        }
 //      }
       //printf("Starting to create local graph\n");
-      std::string kokkos_only_interior = pl->get<std::string>("Kokkos_only_interior","false");
-      if(comm->getSize() == 1 || kokkos_only_interior=="false") {
-        //Set up a typical local mapping here. Need to use the first step of reordering, I think
-        std::unordered_map<gno_t,lno_t> globalToLocal;
-        std::vector<gno_t> ownedPlusGhosts;
-        for (int i = 0; i < vtxIDs.size(); i++){
-          globalToLocal[vtxIDs[i]] = i;
-          ownedPlusGhosts.push_back(vtxIDs[i]);
-        }
-        int nghosts = 0;
-        for (int i = 0; i < adjs.size(); i++){
-          if(globalToLocal.count(adjs[i]) == 0){
-            //new unique ghost found
-            ownedPlusGhosts.push_back(adjs[i]);
-            globalToLocal[adjs[i]] = vtxIDs.size() + nghosts;
-            nghosts++;
-            
-          }
-        }
-        
-        finalAdjs_vec.resize(adjs.size()); 
-        for(int i = 0; i < finalAdjs_vec.size();i++){
-          //printf("finalAdjs index %d is local vtx %d\n",i,globalToLocal[adjs[i]]);
-          finalAdjs_vec[i] = globalToLocal[adjs[i]];
-        }
-        //finalAdjs = Teuchos::arrayViewFromVector(finalAdjs_vec);
-        for(int i = 0; i < offsets.size(); i++) finalOffset_vec.push_back(offsets[i]);
-        //finalOffsets = offsets;
-        finalGIDs = ownedPlusGhosts;
-
-        Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
-                                             <Tpetra::global_size_t>::invalid();
-        mapOwned = rcp(new map_t(dummy, vtxIDs, 0, comm));
-
-        dummy = Teuchos::OrdinalTraits <Tpetra::global_size_t>::invalid();
-        mapWithCopies = rcp(new map_t(dummy, 
-                                  Teuchos::arrayViewFromVector(ownedPlusGhosts),
-                                  0, comm)); 
-                                      
-      } else {
-        //printf("Doing the reordering\n");
-        //reorder the graph so that boundary vertices are in the
-        //end of the offset array.
-        finalAdjs_vec.resize(adjs.size());
-        finalOffset_vec.resize(offsets.size());
-        std::vector<gno_t> reorderGIDs = reorderGraph(vtxIDs,
-                                                        adjs,
-                                                        offsets,
-                                                        finalAdjs_vec,
-                                                        finalOffset_vec,
-                                                        reorderToLocal,
-                                                        nInterior); 
-        finalGIDs = reorderGIDs;
-        //set up necessary data structures to build the FEMultiVector
-        std::vector<gno_t> ownedReorderGIDs;
-        for(int i = 0; i < nVtx; i++){
-          ownedReorderGIDs.push_back(reorderGIDs[i]);
-        }
-         
-        Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
-                                               <Tpetra::global_size_t>::invalid();
-        mapOwned = rcp(new map_t(dummy, Teuchos::arrayViewFromVector(ownedReorderGIDs),
-                                             0, comm));
-
-        dummy = Teuchos::OrdinalTraits <Tpetra::global_size_t>::invalid();
-        mapWithCopies = rcp(new map_t(dummy, 
-                                        Teuchos::arrayViewFromVector(reorderGIDs),
-                                        0, comm));
+      //Set up a typical local mapping here.
+      std::unordered_map<gno_t,lno_t> globalToLocal;
+      std::vector<gno_t> ownedPlusGhosts;
+      for (int i = 0; i < vtxIDs.size(); i++){
+        globalToLocal[vtxIDs[i]] = i;
+        ownedPlusGhosts.push_back(vtxIDs[i]);
       }
+      int nghosts = 0;
+      for (int i = 0; i < adjs.size(); i++){
+        if(globalToLocal.count(adjs[i]) == 0){
+          //new unique ghost found
+          ownedPlusGhosts.push_back(adjs[i]);
+          globalToLocal[adjs[i]] = vtxIDs.size() + nghosts;
+          nghosts++;
+            
+        }
+      }
+        
+      finalAdjs_vec.resize(adjs.size()); 
+      for(size_t i = 0; i < finalAdjs_vec.size();i++){
+        //printf("finalAdjs index %d is local vtx %d\n",i,globalToLocal[adjs[i]]);
+        finalAdjs_vec[i] = globalToLocal[adjs[i]];
+      }
+      //finalAdjs = Teuchos::arrayViewFromVector(finalAdjs_vec);
+      for(int i = 0; i < offsets.size(); i++) finalOffset_vec.push_back(offsets[i]);
+      //finalOffsets = offsets;
+      finalGIDs = ownedPlusGhosts;
+
+      Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
+                                             <Tpetra::global_size_t>::invalid();
+      mapOwned = rcp(new map_t(dummy, vtxIDs, 0, comm));
+
+      dummy = Teuchos::OrdinalTraits <Tpetra::global_size_t>::invalid();
+      mapWithCopies = rcp(new map_t(dummy, 
+                                Teuchos::arrayViewFromVector(ownedPlusGhosts),
+                                0, comm)); 
+                                      
       //create the FEMultiVector for the distributed communication.
       //We also use the views from this datastructure as arguments to
       //KokkosKernels coloring functions.
@@ -519,7 +229,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //which vertex gets recolored in the event of a conflict.
       //taken directly from the Zoltan coloring implementation 
       std::vector<int> rand(finalGIDs.size());
-      for(int i = 0; i < finalGIDs.size(); i++){
+      for(size_t i = 0; i < finalGIDs.size(); i++){
         Zoltan_Srand((unsigned int) finalGIDs[i], NULL);
         rand[i] = (int) (((double) Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000);
       }
@@ -536,13 +246,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
         colors[reorderToLocal[i]] = femv->getData(0)[i];
       }
      
-      //test validation on simple
-      /*if(comm->getRank() == 0){
-        colors[reorderToLocal[12]] = 3;
-      }
-      if(comm->getRank() == 1){
-        colors[reorderToLocal[11]] = 3;
-      }*/
       Teuchos::TimeMonitor::summarize();
       Teuchos::TimeMonitor::zeroOutTimers();
       comm->barrier();
@@ -588,20 +291,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
       int batch_size = pl->get<int>("Hybrid_batch_size",100);
       
       if(batch_size < 0) batch_size = nVtx;
-      //color boundary vertices using FEMultiVector
-      //create a queue of vertices to color
-      //std::queue<lno_t> recoloringQueue;
-      //std::queue<lno_t> conflictQueue;
       typedef Tpetra::Map<>::device_type device_type;
       typedef Tpetra::Map<>::execution_space execution_space;
       typedef Tpetra::Map<>::memory_space memory_space;
-      /*printf("Rank %d: owned graph\n", comm->getRank());
-      for(int i = 0; i < offsets.size()-1; i++){
-        printf("\tGlobal Vertex %u is adjacent to:\n",reorderGIDs[i]);
-        for(int j = offsets[i]; j < offsets[i+1]; j++){
-          printf("\t\t%u\n",reorderGIDs[adjs[j]]);
-        }
-      }*/
      
       Kokkos::View<offset_t*, Tpetra::Map<>::device_type> dist_degrees("Owned+Ghost degree view",rand.size());
       for(int i = 0; i < adjs.size(); i++){
@@ -610,37 +302,26 @@ class AlgHybridGMB : public Algorithm<Adapter>
       for(int i = 0; i < offsets.size()-1; i++){
         dist_degrees(i) = offsets[i+1] - offsets[i];
       }
-      /*for(int i = 0; i < rand.size(); i++){
-        printf("Rank %d: Global vert %u has degree %u\n",comm->getRank(),reorderGIDs[i],dist_degrees(i));
-      } */     
       Kokkos::View<offset_t*, Tpetra::Map<>::device_type> dist_offsets("Owned+Ghost Offset view", rand.size()+1);
       dist_offsets(0) = 0;
       int total_adjs = adjs.size();
-      //for(int i = 0; i < offsets.size(); i++) dist_offsets(i) = offsets[i];
-      for(int i = 1; i < rand.size()+1; i++){
+      for(size_t i = 1; i < rand.size()+1; i++){
         dist_offsets(i) = dist_degrees(i-1) + dist_offsets(i-1);
         total_adjs+= dist_degrees(i-1);
       }
       Kokkos::View<lno_t*, Tpetra::Map<>::device_type> dist_adjs("Owned+Ghost adjacency view", total_adjs);
-      for(int i = 0; i < rand.size(); i++){
+      for(size_t i = 0; i < rand.size(); i++){
         dist_degrees(i) = 0;
       }
       for(int i = 0; i < adjs.size(); i++) dist_adjs(i) = adjs[i];
-      for(int i = 0; i < nVtx; i++){
-        for(int j = offsets[i]; j < offsets[i+1]; j++){
-          if( adjs[j] >= nVtx){
+      for(size_t i = 0; i < nVtx; i++){
+        for(size_t j = offsets[i]; j < offsets[i+1]; j++){
+          if( (size_t)adjs[j] >= nVtx){
             dist_adjs(dist_offsets(adjs[j]) + dist_degrees(adjs[j])) = i;
             dist_degrees(adjs[j])++;
           }
         }
       }
-      /*printf("Rank %d: owned+ghost graph\n", comm->getRank());
-      for(int i = 0; i < rand.size(); i++){
-        printf("\tGlobal Vertex %u is adjacent to:\n",reorderGIDs[i]);
-        for(int j = dist_offsets(i); j < dist_offsets(i+1); j++){
-          printf("\t\t%u\n",reorderGIDs[dist_adjs(j)]);
-        }
-      }*/
       //This is the Kokkos version of two queues. These will attempt to be used in parallel.
       Kokkos::View<lno_t*, device_type> recoloringQueue("recoloringQueue",nVtx);
       Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA(const int& i){
@@ -649,22 +330,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
       Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > recoloringQueue_atomic=recoloringQueue;
       Kokkos::View<int[1], device_type> recoloringSize("Recoloring Queue Size");
       recoloringSize(0) = 0;
-      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > recoloringSize_atomic = recoloringSize;
-      Kokkos::View<lno_t*, device_type> conflictQueue("conflictQueue",nVtx);
-      Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA(const int& i){
-        conflictQueue(i) = -1;
-      });
-      Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > conflictQueue_atomic = conflictQueue;
-      Kokkos::View<int[1], device_type> conflictSize("Conflict Queue Size");
-      conflictSize(0) = 0;
-      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > conflictSize_atomic = conflictSize;
-      
+      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > recoloringSize_atomic = recoloringSize; 
       Kokkos::View<int*,device_type> host_rand("randVec",rand.size());
-      for(int i = 0; i < rand.size(); i++){
+      for(size_t i = 0; i < rand.size(); i++){
         host_rand(i) = rand[i];
       }
       
-      Kokkos::View<int[1], device_type> host_maxDegree("max degree");
       
       //bootstrap distributed coloring, add conflicting vertices to the recoloring queue.
       if(comm->getSize() > 1){
@@ -679,201 +350,97 @@ class AlgHybridGMB : public Algorithm<Adapter>
         //get a subview of the colors:
         Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
         Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
-        //printf("Adding conflicts to the recoloring queue\n");
-        /*for(int i = 0; i < nVtx; i++){
-          for(int j = offsets[i]; j < offsets[i+1];j++){
-            //printf("getting color for vertex %d\n",i);
-            int currColor = femv->getData(0)[i];
-            //printf("getting color for vertex %d, at index %d\n",adjs[j],j);
-            int nborColor = femv->getData(0)[adjs[j]];
-            if(currColor == nborColor && rand[i] > rand[adjs[j]]){
-              recoloringQueue.push(i);
-              break;
-            } 
-          }
-        }*/
-        /*for(int i = 0; i < femv->getData(0).size(); i++){
-          printf("--Rank %d: local vtx %u is color %d\n",comm->getRank(),i,femv->getData(0)[i]);
-        }*/
+        
+        //detect conflicts from the initial coloring
         Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA (const int& i){
           for(offset_t j = host_offsets(i); j < host_offsets(i+1); j++){
             int currColor = femv_colors(i);
             int nborColor = femv_colors(host_adjs(j));
-            if(currColor == nborColor ){//&& host_rand(i) > host_rand(host_adjs(j))){
+            if(currColor == nborColor ){
               if(host_rand(i) > host_rand(host_adjs(j))){
                 femv_colors(i) = 0;
                 recoloringSize_atomic(0)++;
-                //recoloringQueue_atomic(recoloringSize_atomic(0)++) = i;
-                //conflictQueue_atomic(conflictSize_atomic(0)++) = i;
                 break;
               }
               if(host_rand(host_adjs(j)) > host_rand(i)){
                 femv_colors(host_adjs(j)) = 0;
                 recoloringSize_atomic(0)++;
-                //break;
               }
             }
           }
         });
+        //ensure the parallel_for has completed before continuing.
         Kokkos::fence();
-        /*for(int j = 0; j < nVtx; j++){
-          if(femv_colors(j) == 0){
-            printf("--Rank %d: global vtx %u's color was reset to zero\n",comm->getRank(),reorderGIDs[j]+1);
-          }
-        }*/
-        //printf("Finished adding conflicts to the recoloring queue\n");
       }
       
-      int maxDegree = 0;
-      for(int i = 0; i< nVtx; i++){
-        if( offsets[i+1]-offsets[i] > maxDegree){
-          maxDegree = offsets[i+1] - offsets[i];
-        }
-      }
-      int globalMaxDegree = 0;
-      Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX, 1, &maxDegree, &globalMaxDegree);
-      host_maxDegree(0) = globalMaxDegree;
-      /*Teuchos::ArrayRCP<bool> forbiddenColors;
-      forbiddenColors.resize(numColors);
-      Kokkos::View<bool*, device_type> forbidden("Forbidden colors",globalMaxDegree);
-      Kokkos::parallel_for(globalMaxDegree, KOKKOS_LAMBDA(const int& i){
-        forbidden(i) = false;
-      });
       
-      for(int i = 0; i < numColors; i++) forbiddenColors[i] = false;*/
-      //printf("--Rank %d: batch size: %d\n",comm->getRank(),batch_size);
       int vertsPerRound[100];
       bool done = false; //We're only done when all processors are done
       if(comm->getSize() == 1) done = true;
       int distributedRounds = 0; //this is the same across all processors
-      //  while the queue is not empty
-          while(recoloringSize(0) > 0 || !done){
-      //    color everything in the recoloring queue, put everything on conflict queue
-            if(distributedRounds < 100) vertsPerRound[distributedRounds] = recoloringSize(0);
-                                //(nVtx, host_adjs, host_offsets, colors, femv);
-            //get a subview of the colors:
-            Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-            Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
-            //kh->create_graph_handle(KokkosGraph::COLORING_VB);
-            /*typename KokkosGraph::Impl::GraphColor_VB<typename KernelHandle::GraphColoringHandleType,
-                                             Kokkos::View<offset_t*,device_type>,
-                                             Kokkos::View<lno_t*, device_type> >
-                       ::functorGreedyColor gc(nVtx,host_offsets,host_adjs,femv_colors,
-                                                     recoloringQueue,recoloringSize(0),0);
-            Kokkos::parallel_for("Recoloring",recoloringSize(0),gc);*/
-            //need to provide means of expanding forbidden array.
-            /*printf("Rank %d: BEFORE RECOLORING\n", comm->getRank()); 
-            for(int i = 0; i < femv->getData(0).size(); i++){
-              printf("--Rank %d: global vtx %u is color %d\n",comm->getRank(),reorderGIDs[i],femv->getData(0)[i]);
-            }*/
-
-            //KernelHandle kh;
-            this->colorInterior<Tpetra::Map<>::execution_space,
-                                Tpetra::Map<>::memory_space,
-                                Tpetra::Map<>::memory_space>
-                                (femv_colors.size(),dist_adjs,dist_offsets,colors,femv,true);
-            /*printf("Rank %d: AFTER RECOLORING\n", comm->getRank()); 
-            for(int i = 0; i < femv->getData(0).size(); i++){
-              printf("--Rank %d: global vtx %u is color %d\n",comm->getRank(),reorderGIDs[i],femv->getData(0)[i]);
-            }*/
-            /*typedef Kokkos::TeamPolicy<execution_space>::member_type member_type;
-            Kokkos::parallel_for(Kokkos::TeamPolicy<>(recoloringSize(0),1).set_scratch_size(0,Kokkos::PerTeam(0),Kokkos::PerThread(2*host_maxDegree(0)*sizeof(bool))),
-                    KOKKOS_LAMBDA (const member_type& team_member){
-              bool* dev_forbidden = (bool*) team_member.team_shmem().get_shmem(host_maxDegree(0)*sizeof(bool));
-              for(int j=0; j < host_maxDegree(0); j++) dev_forbidden[j] = false;
-              lno_t currVtx = recoloringQueue(team_member.league_rank());
-              conflictQueue_atomic(conflictSize_atomic(0)++) = currVtx;
-              for(offset_t nborIdx = host_offsets(currVtx); nborIdx < host_offsets(currVtx+1); nborIdx++){
-                int nborColor = femv_colors(host_adjs(nborIdx));
-                if(nborColor > 0) dev_forbidden[nborColor-1] = true;
-              }
-              for( int j = 0; j < 2*host_maxDegree(0); j++){
-                if(!dev_forbidden[j]){
-                  femv_colors(currVtx)=j+1;
-                  break;
-                }
-              }
-            });*/
-            /*for(int j = 0; j < nVtx; j++){
-              printf("--Rank %d: global vtx %u is color %d\n",comm->getRank(),reorderGIDs[j]+1,femv_colors(j));
-            }*/
+      //while the queue is not empty
+      while(recoloringSize(0) > 0 || !done){
+        //color everything in the recoloring queue, put everything on conflict queue
+        if(distributedRounds < 100) vertsPerRound[distributedRounds] = recoloringSize(0);
+        //get a subview of the colors:
+        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
+        Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
+        
+        //use KokkosKernels to recolor the conflicting vertices.  
+        this->colorInterior<Tpetra::Map<>::execution_space,
+                            Tpetra::Map<>::memory_space,
+                            Tpetra::Map<>::memory_space>
+                            (femv_colors.size(),dist_adjs,dist_offsets,colors,femv,true);
             
-            recoloringSize(0) = 0;
-            timeBoundaryComp->stop();
-            timeBoundaryComm->start();
-      //    communicate
-            //printf("--Rank %d: communicating\n",comm->getRank());
-            femv->switchActiveMultiVector();
-            femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
-            femv->switchActiveMultiVector();
+        recoloringSize(0) = 0;
+        timeBoundaryComp->stop();
+        timeBoundaryComm->start();
+        //communicate
+        femv->switchActiveMultiVector();
+        femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
+        femv->switchActiveMultiVector();
             
-            timeBoundaryComm->stop();
-            timeBoundaryComp->start();
-
-            Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA (const int& i){
-              for(offset_t j = host_offsets(i); j < host_offsets(i+1); j++){
-                int currColor = femv_colors(i);
-                int nborColor = femv_colors(host_adjs(j));
-                if(currColor == nborColor ){//&& host_rand(i) > host_rand(host_adjs(j))){
-                  if(host_rand(i) > host_rand(host_adjs(j))){
-                    femv_colors(i) = 0;
-                    recoloringSize_atomic(0)++;
-                    //recoloringQueue_atomic(recoloringSize_atomic(0)++) = i;
-                    //conflictQueue_atomic(conflictSize_atomic(0)++) = i;
-                    break;
-                  }
-                  if(host_rand(host_adjs(j)) > host_rand(i)){
-                    femv_colors(host_adjs(j)) = 0;
-                    recoloringSize_atomic(0)++;
-                    //break;
-                  }
-                }
+        timeBoundaryComm->stop();
+        timeBoundaryComp->start();
+        
+        //detect conflicts in parallel. For a detected conflict,
+        //reset the vertex-to-be-recolored's color to 0, in order to
+        //allow KokkosKernels to recolor correctly.
+        Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA (const int& i){
+          for(offset_t j = host_offsets(i); j < host_offsets(i+1); j++){
+            int currColor = femv_colors(i);
+            int nborColor = femv_colors(host_adjs(j));
+            if(currColor == nborColor ){
+              if(host_rand(i) > host_rand(host_adjs(j))){
+                femv_colors(i) = 0;
+                recoloringSize_atomic(0)++;
+                break;
               }
-            });
-
-            Kokkos::fence();
-            for(int j = 0; j < nVtx; j++){
-              if(femv_colors(j) == 0){
-                //printf("--Rank %d: global vtx %u's color was reset to zero\n",comm->getRank(),reorderGIDs[j]+1);
+              if(host_rand(host_adjs(j)) > host_rand(i)){
+                femv_colors(host_adjs(j)) = 0;
+                recoloringSize_atomic(0)++;
               }
             }
-            /*Kokkos::parallel_for(conflictSize(0),KOKKOS_LAMBDA(const int& i){
-              lno_t currVtx = conflictQueue(i);
-              bool conflict = false;
-              int currColor = femv_colors(currVtx);
-              for(offset_t nborIdx = host_offsets(currVtx); nborIdx < host_offsets(currVtx+1); nborIdx++){
-                int nborColor = femv_colors(host_adjs(nborIdx));
-                if(nborColor == currColor && host_rand(currVtx) > host_rand(host_adjs(nborIdx))){
-                  femv_colors(currVtx) = 0;
-                }
-              }
-              if(conflict) recoloringQueue_atomic(recoloringSize_atomic(0)++) = currVtx;
-            });
-            conflictSize(0) = 0;*/
-            //do a reduction to determine if we're done
-            int globalDone = 0;
-            int localDone = recoloringSize(0);
-            //if(kokkos_only_interior=="true") localDone= recoloringSize(0) + (nVtx > i);
-            //else localDone = recoloringSize(0);
-            Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_SUM,1, &localDone, &globalDone);
-            //We're only allowed to stop once everyone has no work to do.
-            //collectives will hang if one process exits. 
-            printf("globalDone = %d\n",globalDone);
-            distributedRounds++;
-            done = !globalDone;
           }
+        });
+        //For Cuda, this fence is necessary to ensure the Kokkos::parallel_for is finished
+        //before continuing with the coloring. 
+        Kokkos::fence();
+        
+        //do a reduction to determine if we're done
+        int globalDone = 0;
+        int localDone = recoloringSize(0);
+        Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_SUM,1, &localDone, &globalDone);
+        //We're only allowed to stop once everyone has no work to do.
+        //collectives will hang if one process exits. 
+        printf("globalDone = %d\n",globalDone);
+        distributedRounds++;
+        done = !globalDone;
+      }
         
       timeBoundaryComp->stop();
       timeBoundary->stop();
-      //color interior vertices if not colored yet. 
-      //(must alter Kokkos-Kernels to allow partial colorings)
-      //As long as the initial coloring is untouched, we can pass the whole 
-      //graph to the kokkos-kernels coloring.
       
-      //print the coloring
-      //for(int i = 0; i < femv->getData(0).size(); i++){
-      //  printf("--Rank %d: local vtx %u is color %d\n",comm->getRank(),i,femv->getData(0)[i]);
-      //}
       
       //print how many rounds of speculating/correcting happened (this should be the same for all ranks):
       if(comm->getRank()==0) printf("did %d rounds of distributed coloring\n", distributedRounds);

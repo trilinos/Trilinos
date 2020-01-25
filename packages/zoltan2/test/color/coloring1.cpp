@@ -135,7 +135,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
   auto colorData = C.getData();
   for (size_t i=0; i<n; i++) {
     A->getLocalRowView(i, indices, values);
-    for (size_t j = 0; j < indices.size(); j++) {
+    for (Teuchos_Ordinal j = 0; j < indices.size(); j++) {
       if ((indices[j] != i) && (color[i] == colorData[indices[j]])){
         nconflicts++;
 //        std::cout << "Debug: Rank "<< rank <<" found conflict ("
