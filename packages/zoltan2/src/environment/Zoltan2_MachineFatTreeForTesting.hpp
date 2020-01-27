@@ -48,7 +48,7 @@ public:
 //    comm.barrier();
     
     if (this->myRank == 0)
-        std::cout << "\nEnter no PL fattree\n" << std::endl;
+        std::cout << "\nCreating FatTree Machine!. Entered no PL FatTree\n" << std::endl;
 
 //    actual_machine_extent = new int[actual_networkDim];
     getActualMachineExtent(actual_machine_extent);
@@ -61,39 +61,19 @@ public:
           actual_machine_extent[2]};
 
 
-//    transformed_machine_extent[0] = 
-//        nborhoods_per_row * actual_machine_extent[0];
-//    transformed_machine_extent[1] = 
-//        actual_machine_extent[1] / nborhoods_per_row;
-//    transformed_machine_extent[2] = 
-//        actual_machine_extent[2];
 
     // Number of parts in each FatTree network neighborhood
     // a neighborhood is defined as links connected by the L1 switch 
     // (below director level switches) 
     // (i.e. Row * nborhoods_per_row + 
     // ( Col / (num_cols / nborhoods_per_row))  == Grp g)
-//    group_count = new part_t[transformed_machine_extent[0]];
 
-    group_count.resize(transformed_machine_extent[0]);
 
-//    memset(group_count, 0, sizeof(part_t) * transformed_machine_extent[0]);
-   
-//    num_unique_subgroups = new part_t[transformed_machine_extent[0]];
-
-    num_unique_subgroups.resize(transformed_machine_extent[0]);
-
-//    subgroup_counts = new part_t * [transformed_machine_extent[0]];
-
-    subgroup_counts.resize(transformed_machine_extent[0]);
+    group_count.resize(actual_machine_extent[0]);
+    subgroup_counts.resize(actual_machine_extent[0]);
 
     for (size_t i = 0; i < subgroup_counts.size(); ++i) {
-
-      subgroup_counts[i].resize(transformed_machine_extent[1]);
-      
-//      subgroup_counts[i] = new part_t[transformed_machine_extent[1]];
-//      memset(subgroup_counts[i], 0, 
-//             sizeof(part_t) * transformed_machine_extent[1]);
+      subgroup_counts[i].resize(actual_machine_extent[1]);
     }
 
     // Allocate memory for processor coords, Use arrays for speed
@@ -122,6 +102,11 @@ public:
       actual_procCoords[i][this->myRank] = xyz[i];
 //    delete [] xyz;
 
+
+    group_count[int(xyz[0])] = 1;
+    subgroup_counts[int(xyz[0])][int(xyz[1])] = 1;
+
+    calc_groups(comm);
 
     // reduceAll the coordinates of each processor.
     gatherMachineCoordinates(actual_procCoords,
@@ -157,7 +142,7 @@ public:
     pl(&pl_) { 
 
     if (this->myRank == 0)
-      std::cout << "\nEnter PL fattree\n" << std::endl;
+      std::cout << "\nCreating FatTree Machine!. Entered  PL FatTree for transformation\n" << std::endl;
     
 //    actual_machine_extent = new int[actual_networkDim];
     getActualMachineExtent(actual_machine_extent);
@@ -167,23 +152,6 @@ public:
        actual_machine_extent[1] / nborhoods_per_row,
        actual_machine_extent[2]};
        
-
-
-    // Number of parts in each FatTree network neighborhood
-    // a neighborhood is defined as links connected by the L1 switch 
-    // (below director level switches) 
-    // (i.e. Row * nborhoods_per_row + 
-    // ( Col / (num_cols / nborhoods_per_row))  == Grp g)
-
-    group_count.resize(transformed_machine_extent[0]);
-//    num_unique_subgroups.resize(transformed_machine_extent[0]);
-
-    subgroup_counts.resize(transformed_machine_extent[0]);
-
-    for (int i = 0; i < transformed_machine_extent[0]; ++i) {
-      subgroup_counts[i].resize(transformed_machine_extent[1]);      
-    }
-
     // Allocate memory for processor coords
     actual_procCoords = new pcoord_t *[actual_networkDim];
 
@@ -192,8 +160,8 @@ public:
 
     getMyActualMachineCoordinate(xyz);
 
-    if (this->myRank == 0) 
-      std::cout << "\nTransforming Coordinates" << std::endl;
+//    if (this->myRank == 0) 
+//      std::cout << "\nTransforming Coordinates" << std::endl;
     
     const Teuchos::ParameterEntry *pe2 = 
       this->pl->getEntryPtr("Machine_Optimization_Level");
@@ -218,7 +186,19 @@ public:
           memset(transformed_procCoords[i], 0,
                  sizeof(pcoord_t) * this->numRanks);
         }
-        
+        // Number of parts in each FatTree network neighborhood
+        // a neighborhood is defined as links connected by the L1 switch 
+        // (below director level switches) 
+        // (i.e. Row_idx * nborhoods_per_row + 
+        // ( Col_idx / (num_cols / nborhoods_per_row))  == Grp g)
+        group_count.resize(transformed_machine_extent[0]);
+        subgroup_counts.resize(transformed_machine_extent[0]);
+
+        for (int i = 0; i < transformed_machine_extent[0]; ++i) {
+          subgroup_counts[i].resize(transformed_machine_extent[1]);      
+        }
+
+
         int transformed_group = 
             nborhoods_per_row * xyz[0] +
             int(xyz[1] / transformed_machine_extent[1]);
@@ -236,101 +216,9 @@ public:
         // Group Count calculations
 
         group_count[transformed_group] = 1;
-
         subgroup_counts[transformed_group][transformed_subgroup] = 1;
 
-        // Gather number of ranks in each FatTree network group 
-        // from across all ranks
-        std::vector<part_t> tmp_vec(group_count.size());
-
-        Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
-                                        transformed_machine_extent[0], 
-                                        group_count.data(), 
-                                        tmp_vec.data());
-        
-        std::vector<int>::iterator nonzeros_iter = 
-            std::remove_if( tmp_vec.begin() , tmp_vec.end() , [](part_t x) {return x == 0;});
-            
-        tmp_vec.resize( nonzeros_iter -  tmp_vec.begin() );
-
-        // remove zero entries from reduced vector
-        num_unique_groups = tmp_vec.size(); 
-        
-        group_count = tmp_vec; 
-  
-//        num_unique_subgroups.resize(num_unique_groups);
-        
-        if (this->myRank == 0) {
-          std::cout << "GroupCount: " << std::endl;
-          for (int i = 0; i < num_unique_groups; ++i) {
-            std::cout << i << ": " << group_count[i] << std::endl;
-          }
-        }
-
-        if (this->myRank == 0)
-          std::cout << "\nGetting subgroup Coordinates" << std::endl;
-
-        // Gather number of ranks in each FatTree network subgroup
-        // from across all ranks
-        std::vector<part_t> tmp_subgrp(transformed_machine_extent[1]);
-
-        int row_idx = 0;
-
-        // Trim subgroup_counts 2d array
-        for (size_t i = 0; i < subgroup_counts.size(); ++i) {
-          Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
-                                          transformed_machine_extent[1], 
-                                          subgroup_counts[i].data(), 
-                                          tmp_subgrp.data());
-          
-          int num_nonzeros_subgrp = 
-            std::count_if(tmp_subgrp.begin(), tmp_subgrp.end(), [](part_t x){ return x > 0; });
-    
-          
-          
-
-          if (num_nonzeros_subgrp > 0) {        
-            num_unique_subgroups.push_back(num_nonzeros_subgrp);
-
-            int pos_j = 0;
-            for (size_t j = 0; j < tmp_subgrp.size(); ++j) {
-              if (tmp_subgrp[j] != 0) {
-
-                tmp_subgrp[pos_j] = tmp_subgrp[j];
-                tmp_subgrp[j] = 0;
-                pos_j++;
-                
-              }
-            }
-
-            subgroup_counts[row_idx] = tmp_subgrp;
-
-            row_idx++;
-          }
-        }
-
-        subgroup_counts.resize(num_unique_groups);
-
-        if (this->myRank == 0) {
-          std::cout << "\nSubgroup_Counts: " << std::endl;
-          for (int i = 0; i < num_unique_groups; ++i) {
-            std::cout << "\nGroup " << i << ":  ";
-            for (int j = 0; j < transformed_machine_extent[1]; ++j) {
-              std::cout << " " << subgroup_counts[i][j];
-            }
-          }
-        }
-        std::cout << std::endl;
-
-
-
-
-
-
-
-
-
-
+        calc_groups(comm);
 
         // reduceAll the transformed coordinates of each processor.
         gatherMachineCoordinates(transformed_procCoords, 
@@ -355,6 +243,23 @@ public:
 
       for (int i = 0; i < actual_networkDim; ++i)
         actual_procCoords[i][this->myRank] = xyz[i];
+ 
+      // Number of parts in each FatTree network neighborhood
+      // a neighborhood is defined as links connected by the L1 switch 
+      // (below director level switches) 
+      // (i.e. Row * nborhoods_per_row + 
+      // ( Col / (num_cols / nborhoods_per_row))  == Grp g)
+      group_count.resize(actual_machine_extent[0]);
+      subgroup_counts.resize(actual_machine_extent[0]);
+      
+      for (int i = 0; i < actual_machine_extent[0]; ++i) {
+        subgroup_counts[i].resize(actual_machine_extent[1]);      
+      }
+
+      group_count[int(xyz[0])] = 1;
+      subgroup_counts[int(xyz[0])][int(xyz[1])] = 1;
+
+      calc_groups(comm);
 
       // reduceAll the actual coordinates of each processor
       gatherMachineCoordinates(actual_procCoords,
@@ -386,8 +291,6 @@ public:
     
     delete [] actual_procCoords;
     delete [] transformed_procCoords;  
-
-    std::cout << "Done Delete Machine " << this->myRank << "\n" << std::endl;
   }
 
   bool hasMachineCoordinates() const { return true; }
@@ -497,9 +400,6 @@ public:
   bool getNumUniqueSubgroups(part_t *num_unique_subgrps) const override {
  
     if (num_unique_subgroups.size() > 0) {
-//      for (int i = 0; i < this->num_unique_groups; ++i) {
-//        num_unique_subgrps[i] = this->num_unique_subgroups[i];
-//      }
     
       std::copy(num_unique_subgroups.begin(), num_unique_subgroups.end(), num_unique_subgrps);
 
@@ -548,11 +448,14 @@ public:
   // Print allocation coords and extents on rank 0, transformed or actual
   void printAllocation() {
     if (this->myRank == 0) {
+  
+      std::cout << "\nPrinting Allocation:\n" << std::endl;
+
       // Print transformed coordinates and extents
       if (is_transformed) {
-        std::cout << std::endl << "Transformed Machine Coordinates:";
+        std::cout << "Transformed Machine Coordinates:\n";
         for (int i = 0; i < this->numRanks; ++i) { 
-          std::cout << "\nRank: " << i << "  ";
+          std::cout << "Rank: " << i << "  ";
             for (int j = 0; j < transformed_networkDim; ++j) {
               std::cout << " " << transformed_procCoords[j][i]; 
             }
@@ -563,13 +466,13 @@ public:
         for (int i = 0; i < transformed_networkDim; ++i) {
           std::cout << " " << transformed_machine_extent[i];
         }
-        std::cout << std::endl;
+        std::cout << std::endl << std::endl;
       }
       // Print actual coordinates and extents
       else {
-        std::cout << std::endl << "Actual Machine Coordinates:";
+        std::cout << "Actual Machine Coordinates:\n";
         for (int i = 0; i < this->numRanks; ++i) { 
-          std::cout << "\nRank: " << i;
+          std::cout << "Rank: " << i;
             for (int j = 0; j < actual_networkDim; ++j) {
               std::cout << " " << actual_procCoords[j][i]; 
             }
@@ -580,7 +483,7 @@ public:
         for (int i = 0; i < actual_networkDim; ++i) {
           std::cout << " " << actual_machine_extent[i];
         }
-        std::cout << std::endl;
+        std::cout << std::endl << std::endl;
       }
     }
   }
@@ -666,10 +569,10 @@ public:
 //      std::cout << "\nRank: " << this->myRank << " Hostname: " << hostname << std::endl;
     convertHostnameToCoordinate(hostname, xyz);
 
-    std::cout << "\nRank: " << this->myRank 
-      << " X: " << xyz[0] 
-      << " Y: " << xyz[1] 
-      << " Z: " << xyz[2] << std::endl; 
+//    std::cout << "\nRank: " << this->myRank 
+//      << " X: " << xyz[0] 
+//      << " Y: " << xyz[1] 
+//      << " Z: " << xyz[2] << std::endl; 
 
     //xyz[0] = x; 
     //xyz[1] = y; 
@@ -679,21 +582,7 @@ public:
 //    xyz[0] = this->myRank;
 //    xyz[1] = this->numRanks;
 //    xyz[2] = this->numRanks + 1;
-/*
-    size_t grp = nborhoods_per_row * xyz[0] + 
-        int(xyz[1] / (transformed_machine_extent[1]));
-    size_t subgrp = int(xyz[1]) % transformed_machine_extent[1];
-
-    if (grp < 0 || grp >= group_count.size())
-        std::cout << "\nError in group_count access" << std::endl;
-    if (grp < 0 || grp >= subgroup_counts.size())
-        std::cout << "\nError in subgroup_count group access" << std::endl;
-    if (subgrp < 0 || subgrp >= subgroup_counts[0].size())
-        std::cout << "\nError in subgroup_count subgroup access" << std::endl;
-
-    group_count[grp]++;
-    subgroup_counts[grp][subgrp]++;
-    */
+    
     return true; 
   }
 
@@ -733,27 +622,8 @@ public:
     return true;   
   }
 
-  bool convertHostnameToCoordinate(const char *nodename, std::vector<pcoord_t> &xyz) {
-   
-    // [A-H] 
-    int x = nodename[0] - 'A';
-    
-    // [0-35]
-    int y10 = nodename[1] - '0';
-    int y1 = nodename[2] - '0';
-    int y = y10 * 10 + y1 - 1;
-
-    // [0-17]
-    int z10 = nodename[4] - '0';
-    int z1 = nodename[5] - '0';
-    int z = z10 * 10 + z1 - 1;
-
-
-    xyz[0] = x;
-    xyz[1] = y;
-    xyz[2] = z;
-    
-    return true;
+  bool getMachineCoordinate(const char *nodename, pcoord_t *xyz) {
+    return false; // cannot yet return from nodename
   }
 
  // Return view of all machine coords, transformed or actual 
@@ -891,6 +761,140 @@ private:
 
     delete [] tmpVect;
   }
+
+  // Calculate group and subgroup member values.
+  // Requires that group_count and subgroup_counts have been incremented for the current rank
+  void calc_groups(const Teuchos::Comm<int> &comm) {
+
+    std::vector<int> extents;
+
+    if (is_transformed) 
+      extents = transformed_machine_extent;
+    else
+      extents = actual_machine_extent;
+
+    // Gather number of ranks in each FatTree network group 
+    // from across all ranks
+    std::vector<part_t> tmp_vec(group_count.size());
+
+    Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
+                                    extents[0], 
+                                    group_count.data(), 
+                                    tmp_vec.data());
+   
+    // Remote zeros from tmp group vector  
+    std::vector<int>::iterator nonzeros_iter = 
+        std::remove_if(tmp_vec.begin(), 
+                       tmp_vec.end(), 
+                       [](part_t x) { return x == 0; });
+        
+    tmp_vec.resize( nonzeros_iter -  tmp_vec.begin() );
+
+    // remove zero entries from reduced vector
+    num_unique_groups = tmp_vec.size(); 
+    
+    group_count = tmp_vec; 
+    
+    // Gather number of ranks in each FatTree network subgroup
+    // from across all ranks
+    std::vector<part_t> tmp_subgrp(extents[1]);
+
+    int row_idx = 0;
+
+    // Trim subgroup_counts 2d array
+    for (size_t i = 0; i < subgroup_counts.size(); ++i) {
+
+      // Find global subgroup counts for the current group
+      Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
+                                      extents[1], 
+                                      subgroup_counts[i].data(), 
+                                      tmp_subgrp.data());
+      
+      int num_nonzeros_subgrp = 
+          std::count_if(tmp_subgrp.begin(), 
+                        tmp_subgrp.end(), 
+                        [](part_t x){ return x > 0; });
+
+      // Shift nonzeros to the right and trim empty rows
+      if (num_nonzeros_subgrp > 0) {        
+        num_unique_subgroups.push_back(num_nonzeros_subgrp);
+
+        size_t pos_j = 0;
+        for (size_t j = 0; j < tmp_subgrp.size(); ++j) {
+          if (tmp_subgrp[j] != 0) {
+
+            tmp_subgrp[pos_j] = tmp_subgrp[j];
+            
+            if (pos_j != j)
+              tmp_subgrp[j] = 0;
+            pos_j++;
+            
+          }
+        }
+
+        subgroup_counts[row_idx] = tmp_subgrp;
+
+        row_idx++;
+      }
+    }
+
+    subgroup_counts.resize(num_unique_groups);
+
+    if (this->myRank == 0) {
+
+      std::cout << "\nTransformed: " << is_transformed << std::endl;
+      std::cout << "Num_Uniques_Groups: " << num_unique_groups << std::endl;
+  
+      std::cout << "GroupCount: ";
+      for (int i = 0; i < num_unique_groups; ++i) {
+        std::cout << " " << group_count[i];
+      }
+      std::cout << std::endl;
+    
+      std::cout << "Num_Unique_Subgroups: ";
+      for (size_t i = 0; i < num_unique_subgroups.size(); ++i) {
+        std::cout << " " << num_unique_subgroups[i];
+      }
+      std::cout << std::endl;
+   
+      std::cout << "\nSubgroup_Counts: " << std::endl;
+      for (int i = 0; i < num_unique_groups; ++i) {
+        std::cout << "\nGroup " << i << ":  ";
+        for (int j = 0; j < extents[1]; ++j) {
+          std::cout << " " << subgroup_counts[i][j];
+        }
+      }
+      std::cout << std::endl;
+    }
+
+  }
+
+  // Convert hostname to coordinate
+  bool convertHostnameToCoordinate(const char *nodename, std::vector<pcoord_t> &xyz) {
+   
+    // [A-H] 
+    int x = nodename[0] - 'A';
+    
+    // [0-35]
+    int y10 = nodename[1] - '0';
+    int y1 = nodename[2] - '0';
+    int y = y10 * 10 + y1 - 1;
+
+    // [0-17]
+    int z10 = nodename[4] - '0';
+    int z1 = nodename[5] - '0';
+    int z = z10 * 10 + z1 - 1;
+
+
+    xyz[0] = x;
+    xyz[1] = y;
+    xyz[2] = z;
+    
+    return true;
+  }
+
+
+
 
 };
 
