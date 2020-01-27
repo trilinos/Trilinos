@@ -71,7 +71,6 @@ else
 fi
 
 # Common modules for all builds
-module purge # Purge needed to load spmpi modules
 module load git/2.20.0
 module load cmake/3.14.5
 
