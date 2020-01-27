@@ -47,14 +47,14 @@
 #define XPETRA_TPETRAMULTIVECTOR_DECL_HPP
 
 #include "Xpetra_TpetraConfigDefs.hpp"
-#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_MultiVector_decl.hpp"
 
-#include "Xpetra_TpetraMap.hpp" //TMP
-#include "Xpetra_Utils.hpp"
-#include "Xpetra_TpetraImport.hpp"
-#include "Xpetra_TpetraExport.hpp"
+#include "Xpetra_TpetraMap_decl.hpp"
+#include "Xpetra_TpetraImport_decl.hpp"
+#include "Xpetra_TpetraExport_decl.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Xpetra_Utils.hpp"
 
 namespace Xpetra {
 
@@ -80,10 +80,10 @@ namespace Xpetra {
 
 
 
-  template <class Scalar = MultiVector<>::scalar_type,
-            class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class TpetraMultiVector
     : public virtual MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {
@@ -263,11 +263,7 @@ namespace Xpetra {
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class Node2>
-    RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const;
-#endif
-    //@}
+//@}
 
 
     //! @name Xpetra specific

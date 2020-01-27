@@ -75,6 +75,10 @@ class SteadyStateSolver
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
   //@}
 
   /** \name Overridden from Thyra::ResponseOnlyModelEvaluatorBase . */
@@ -85,11 +89,12 @@ class SteadyStateSolver
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
+
   //@}
 
-  protected:
-  /** \name Service methods for subclasses. */
+  /** \name Getters for subclasses. */
   //@{
+
   /** \brief . */
   const Thyra::ModelEvaluator<Scalar> &getModel() const;
 
@@ -97,6 +102,12 @@ class SteadyStateSolver
   int num_p() const;
   /** \brief . */
   int num_g() const;
+
+  //@}
+
+  protected:
+  /** \name Service methods for subclasses. */
+  //@{
 
   /** \brief . */
   void evalConvergedModel(

@@ -46,100 +46,114 @@
 
 
 namespace FROSch {
-    
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
+
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class HarmonicCoarseOperator : public CoarseOperator<SC,LO,GO,NO> {
-        
-    public:
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
 
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr CoarseSpacePtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr CoarseSpacePtrVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVec UNVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr UNVecPtr;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecView GOVecView;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D GOVec2D;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
-        
-        HarmonicCoarseOperator(CrsMatrixPtr k,
-                               ParameterListPtr parameterList);
-        
-        virtual int initialize() = 0;
-        
-        MapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
-        
     protected:
+
+        using XMapPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr            = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using XMapPtrVecPtr2D         = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr2D;
+        using ConstXMapPtrVecPtr2D    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr2D;
+
+        using XMatrixPtr              = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
+
+        using XMultiVectorPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtrVecPtr   = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+
+        using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
+
+        using CoarseSpacePtr          = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr;
+        using CoarseSpacePtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr;
+
+        using EntitySetPtr            = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetConstPtr       = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetConstPtr;
+
+        using SubdomainSolverPtr      = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+
+        using UN                      = typename SchwarzOperator<SC,LO,GO,NO>::UN;
+        using UNVec                   = typename SchwarzOperator<SC,LO,GO,NO>::UNVec;
+        using UNVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;
+        using ConstUNVecView          = typename SchwarzOperator<SC,LO,GO,NO>::ConstUNVecView;
+
+        using LOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
+        using LOVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr;
+        using LOVecPtr2D              = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
+
+        using GOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
+        using GOVecView               = typename SchwarzOperator<SC,LO,GO,NO>::GOVecView;
+        using GOVec2D                 = typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D;
         
-        MapPtr assembleCoarseMap();
+        using SCVec                   = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
+        using SCVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+        using ConstSCVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
+
+    public:
+
+        HarmonicCoarseOperator(ConstXMatrixPtr k,
+                               ParameterListPtr parameterList);
+
+        virtual int initialize() = 0;
+
+        XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
+
+    protected:
+
+        int intializeCoarseMap();
         
-        MapPtr assembleSubdomainMap();
-        
-        int addZeroCoarseSpaceBlock(MapPtr dofsMap);
-        
+        int assembleInterfaceCoarseSpace();
+
+        int addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap);
+
         int computeVolumeFunctions(UN blockId,
                                    UN dimension,
-                                   MapPtr nodesMap,
-                                   MultiVectorPtr nodeList,
-                                   EntitySetPtr interior);
-        
-        virtual MultiVectorPtrVecPtr computeTranslations(UN blockId,
-                                                         EntitySetPtr entitySet);
-        
-        virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
-                                                      UN dimension,
-                                                      MultiVectorPtr nodeList,
-                                                      EntitySetPtr entitySet);
+                                   ConstXMapPtr nodesMap,
+                                   ConstXMultiVectorPtr nodeList,
+                                   EntitySetConstPtr interior);
 
-        virtual MultiVectorPtr computeExtensions(ConstMapPtr localMap,
-                                                 ConstMapPtr coarseMap,
-                                                 GOVecView indicesGammaDofsAll,
-                                                 GOVecView indicesIDofsAll,
-                                                 CrsMatrixPtr kII,
-                                                 CrsMatrixPtr kIGamma);
+        virtual XMultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                          EntitySetConstPtr entitySet);
 
-        
+        virtual XMultiVectorPtrVecPtr computeRotations(UN blockId,
+                                                       UN dimension,
+                                                       ConstXMultiVectorPtr nodeList,
+                                                       EntitySetConstPtr entitySet,
+                                                       UN discardRotations = 0);
+
+        virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
+                                                  ConstXMapPtr coarseMap,
+                                                  GOVecView indicesGammaDofsAll,
+                                                  GOVecView indicesIDofsAll,
+                                                  XMatrixPtr kII,
+                                                  XMatrixPtr kIGamma);
+
+
         SubdomainSolverPtr ExtensionSolver_;
 
-        CoarseSpacePtrVecPtr InterfaceCoarseSpaces_;
-        
-        UNVecPtr Dimensions_;
-        UNVecPtr DofsPerNode_;
+        CoarseSpacePtrVecPtr InterfaceCoarseSpaces_ = CoarseSpacePtrVecPtr(0);
+        CoarseSpacePtr AssembledInterfaceCoarseSpace_;
 
-        LOVecPtr2D GammaDofs_;
-        LOVecPtr2D IDofs_;
+        UNVecPtr Dimensions_ = UNVecPtr(0);
+        UNVecPtr DofsPerNode_ = UNVecPtr(0);
 
-        MapPtrVecPtr2D DofsMaps_; // notwendig??
+        LOVecPtr2D GammaDofs_ = GammaDofs_(0);
+        LOVecPtr2D IDofs_ = IDofs_(0);
 
-        UN NumberOfBlocks_;
-        
+        ConstXMapPtrVecPtr2D DofsMaps_ = DofsMaps_(0); // notwendig??
+
+        UN NumberOfBlocks_ = 0;
     };
-    
+
 }
 
 #endif

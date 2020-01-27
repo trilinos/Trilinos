@@ -233,18 +233,13 @@ class AggregateGenerator {
     gimmeHybridAggregates(const RCP<Matrix>&A, RCP<AmalgamationInfo> & amalgInfo,
                           const std::string regionType,
                           Array<GO> gNodesPerDir, Array<LO> lNodesPerDir,
-                          const LO numDimensions, const std::string meshLayout,
-                          const Array<GO> meshData)
+                          const LO numDimensions)
     {
       Level level;
       TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
       level.Set("A", A);
       level.Set("numDimensions", numDimensions);
-      level.Set("gNodesPerDim", gNodesPerDir);
       level.Set("lNodesPerDim", lNodesPerDir);
-      level.Set("aggregation: mesh data", meshData);
-
-      const std::string coupling = "uncoupled";
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
       amalgFact->SetDefaultVerbLevel(MueLu::None);
@@ -255,8 +250,6 @@ class AggregateGenerator {
       RCP<HybridAggregationFactory> aggFact = rcp(new HybridAggregationFactory());
       aggFact->SetFactory("Graph", dropFact);
       // Structured
-      aggFact->SetParameter("aggregation: mode",                         Teuchos::ParameterEntry(coupling));
-      aggFact->SetParameter("aggregation: mesh layout",                  Teuchos::ParameterEntry(meshLayout));
       aggFact->SetParameter("aggregation: coarsening order",             Teuchos::ParameterEntry(0));
       aggFact->SetParameter("aggregation: coarsening rate",              Teuchos::ParameterEntry(std::string("{3}")));
       // Uncoupled
@@ -592,6 +585,11 @@ class AggregateGenerator {
     for (LO i = 0; i < numAggs; ++i)
       aggSizes[i] = aggStart[i+1] - aggStart[i];
 
+    // LBV on 09/27/19: the aggregate size of 2 is only
+    // expected because the problem is 1D and the nodes
+    // are treated in a lexicographic order. Using a
+    // different ordering will almost always result in
+    // at least on aggregate of size 3 and one of size 1.
     bool foundAggNotSize2=false;
     for (int i=0; i<aggSizes.size(); ++i)
       if (aggSizes[i] != 2) {
@@ -838,8 +836,7 @@ class AggregateGenerator {
     RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::
       gimmeHybridAggregates(A, amalgInfo, regionType,
                             gNodesPerDir, lNodesPerDir,
-                            numDimensions, meshLayout,
-                            meshData);
+                            numDimensions);
 
 
     TEST_EQUALITY(aggregates != Teuchos::null, true);

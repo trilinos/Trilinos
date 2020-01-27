@@ -57,10 +57,11 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_AugmentedLagrangianStep.hpp"
+#include "ROL_CompositeConstraint_SimOpt.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_CompositeConstraint_SimOpt.hpp"
 
 #include "../../TOOLS/pdeconstraint.hpp"
 #include "../../TOOLS/pdeobjective.hpp"
@@ -335,7 +336,11 @@ int main(int argc, char *argv[]) {
       *outStream << "\n";
     }
 
-    ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::AugmentedLagrangianStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     Teuchos::Time algoTimer("Algorithm Time", true);
     algo.run(*zp,*c2p,augLag,*vcon,*bnd,true,*outStream);
     algoTimer.stop();
@@ -356,7 +361,7 @@ int main(int argc, char *argv[]) {
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

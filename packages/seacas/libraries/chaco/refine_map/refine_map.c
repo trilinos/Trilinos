@@ -38,7 +38,7 @@
 #include "structs.h"
 #include <stdio.h> // for NULL
 
-/* Given a partition, refine the mapping in a locally greedy fasion. */
+/* Given a partition, refine the mapping in a locally greedy fashion. */
 
 void refine_map(struct vtx_data **graph,        /* graph data structure */
                 int               nvtxs,        /* number of vertices in graph */

@@ -121,6 +121,10 @@ namespace ROL {
     ROL::Ptr<Teuchos::Time> AssembleQOIHessVec31        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec31");
     ROL::Ptr<Teuchos::Time> AssembleQOIHessVec32        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec32");
     ROL::Ptr<Teuchos::Time> AssembleQOIHessVec33        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec33");
+    ROL::Ptr<Teuchos::Time> AssembleQOIHessian11        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Hessian11");
+    ROL::Ptr<Teuchos::Time> AssembleQOIHessian12        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Hessian12");
+    ROL::Ptr<Teuchos::Time> AssembleQOIHessian21        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Hessian21");
+    ROL::Ptr<Teuchos::Time> AssembleQOIHessian22        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Hessian22");
   }
 }
 #endif
@@ -166,8 +170,8 @@ private:
 
   // Set in SetParallelStructure.
   int numCells_;
-  Teuchos::Array<int> myCellIds_;
-  Teuchos::Array<int> cellOffsets_;
+  Teuchos::Array<GO> myCellIds_;
+  Teuchos::Array<GO> cellOffsets_;
   ROL::Ptr<const Tpetra::Map<>> myOverlapStateMap_;
   ROL::Ptr<const Tpetra::Map<>> myUniqueStateMap_;
   ROL::Ptr<const Tpetra::Map<>> myOverlapControlMap_;
@@ -588,6 +592,26 @@ public:
                             const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                             const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
                             const ROL::Ptr<const std::vector<Real>> &z_param = ROL::nullPtr);
+  void assembleQoIHessian11(ROL::Ptr<Tpetra::CrsMatrix<>> &H11,
+                            const ROL::Ptr<QoI<Real>> &qoi,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assembleQoIHessian12(ROL::Ptr<Tpetra::CrsMatrix<>> &H12,
+                            const ROL::Ptr<QoI<Real>> &qoi,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assembleQoIHessian21(ROL::Ptr<Tpetra::CrsMatrix<>> &H21,
+                            const ROL::Ptr<QoI<Real>> &qoi,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assembleQoIHessian22(ROL::Ptr<Tpetra::CrsMatrix<>> &H22,
+                            const ROL::Ptr<QoI<Real>> &qoi,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
   /***************************************************************************/
   /* End QoI assembly routines                                               */
   /***************************************************************************/
@@ -663,7 +687,7 @@ public:
   /* Accessor routines.                                                      */
   /***************************************************************************/
   const ROL::Ptr<DofManager<Real>> getDofManager(void) const;
-  Teuchos::Array<int> getCellIds(void) const;
+  Teuchos::Array<GO> getCellIds(void) const;
   /***************************************************************************/
   /* End of accessor routines.                                               */
   /***************************************************************************/

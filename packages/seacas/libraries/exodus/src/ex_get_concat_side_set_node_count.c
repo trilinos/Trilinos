@@ -50,14 +50,6 @@
 
 #include "exodusII.h"     // for ex_err, EX_MSG, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
-#include <assert.h>       // for assert
-#include <ctype.h>        // for toupper
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for malloc, NULL, free
-#include <string.h>    // for strncmp, strlen
-#include <sys/types.h> // for int64_t
 
 /*! \endcond */
 
@@ -77,12 +69,12 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
   int          int_size, ids_size;
   int          status;
 
-  struct elem_blk_parm *elem_blk_parms = NULL;
+  struct ex__elem_blk_parm *elem_blk_parms = NULL;
 
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex__check_valid_file_id(exoid, __func__);
 
   /* first check if any side sets are specified */
   /* inquire how many side sets have been stored */
@@ -150,7 +142,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
   }
 
   /* Allocate space for the element block params */
-  if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct elem_blk_parm)))) {
+  if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct ex__elem_blk_parm)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate space for element block params "
              "for file id %d",
@@ -169,7 +161,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
       id = ((int *)elem_blk_ids)[i];
     }
 
-    if (ex_int_get_block_param(exoid, id, ndim, &elem_blk_parms[i]) != EX_NOERR) {
+    if (ex__get_block_param(exoid, id, ndim, &elem_blk_parms[i]) != EX_NOERR) {
       goto error_ret;
     }
 
@@ -272,7 +264,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
       for (i = 0; i < tot_num_ss_elem; i++) {
         elems[i] = i; /* init index array to current position */
       }
-      ex_iqsort64(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
+      ex__iqsort64(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
     }
     else {
       /* Sort side set element list into index array  - non-destructive */
@@ -280,7 +272,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
       for (i = 0; i < tot_num_ss_elem; i++) {
         elems[i] = i; /* init index array to current position */
       }
-      ex_iqsort(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
+      ex__iqsort(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
     }
 
     j = 0; /* The current element block... */

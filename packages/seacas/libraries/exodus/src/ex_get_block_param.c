@@ -55,10 +55,6 @@
 
 #include "exodusII.h"     // for ex_block, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_NAME_ELB, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <string.h> // for strcpy
 
 /*
  * reads the parameters used to describe an edge, face, or element block
@@ -78,11 +74,11 @@ int ex_get_block_param(int exoid, ex_block *block)
   const char *ablknam = NULL;
   const char *vblkcon = NULL;
 
-  struct ex_file_item *file = NULL;
+  struct ex__file_item *file = NULL;
 
   EX_FUNC_ENTER();
 
-  file = ex_find_file_item(exoid);
+  file = ex__find_file_item(exoid);
   if (!file) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d in ex_get_block_param().", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
@@ -90,13 +86,13 @@ int ex_get_block_param(int exoid, ex_block *block)
   }
 
   /* First, locate index of element block id in VAR_ID_EL_BLK array */
-  blk_id_ndx = ex_id_lkup(exoid, block->type, block->id);
+  blk_id_ndx = ex__id_lkup(exoid, block->type, block->id);
   if (blk_id_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {
-      strcpy(block->topology, "NULL"); /* NULL element type name */
-      block->num_entry           = 0;  /* no elements            */
-      block->num_nodes_per_entry = 0;  /* no nodes               */
+      ex_copy_string(block->topology, "NULL", MAX_STR_LENGTH + 1); /* NULL element type name */
+      block->num_entry           = 0;                              /* no elements            */
+      block->num_nodes_per_entry = 0;                              /* no nodes               */
       block->num_edges_per_entry = 0;
       block->num_faces_per_entry = 0;
       block->num_attribute       = 0; /* no attributes          */
@@ -287,7 +283,7 @@ int ex_get_block_param(int exoid, ex_block *block)
     }
 
     /* get rid of trailing blanks */
-    ex_trim_internal(block->topology);
+    ex__trim(block->topology);
   }
   EX_FUNC_LEAVE(EX_NOERR);
 }

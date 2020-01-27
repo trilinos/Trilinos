@@ -49,7 +49,7 @@
 #include "Epetra_MultiVector.h"
 
 namespace panzer {
-   template <typename LO,typename GO> class UniqueGlobalIndexer;
+  class GlobalIndexer;
 }
 
 namespace panzer_stk { 
@@ -64,10 +64,8 @@ namespace panzer_stk {
   */
 void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> & data,const std::string & fieldName);
 
-template <typename GlobalOrdinal>
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefx="",const std::string & postfix="");
-template <typename GlobalOrdinal>
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix="",const std::string & postfix="");
+void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefx="",const std::string & postfix="");
+void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix="",const std::string & postfix="");
 
 /** Using a container, compute the sorted permutation vector
   * do not modifiy the original container.

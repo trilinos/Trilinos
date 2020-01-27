@@ -148,7 +148,9 @@ namespace panzer {
        TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
-       fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
+       auto required_fields = evaluator->evaluatedFields();
+       for (const auto& f : required_fields)
+         fm.requireField<panzer::Traits::Residual>(*f);
     }
 
     {
@@ -158,7 +160,9 @@ namespace panzer {
        TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
-       fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
+       auto required_fields = evaluator->evaluatedFields();
+       for (const auto& f : required_fields)
+         fm.requireField<panzer::Traits::Residual>(*f);
     }
 
     {
@@ -381,8 +385,8 @@ namespace panzer {
     const RCP<panzer::ConnManager>
       conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
-        = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManager> dof_manager
+        = rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
 
     // build an intrepid basis and a related field pattern for seeding the DOFManager
     {
@@ -546,8 +550,8 @@ namespace panzer {
     const RCP<panzer::ConnManager>
       conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
-        = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManager> dof_manager
+        = rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
 
     // build an intrepid basis and a related field pattern for seeding the DOFManager
     {

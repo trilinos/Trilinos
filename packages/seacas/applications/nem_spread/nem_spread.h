@@ -42,7 +42,7 @@
 #include "rf_io_const.h"
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR "6.17 (2019/03/11)"
+#define VER_STR "7.00 (2019/04/23)"
 
 extern void   check_exodus_error(int, const char *);
 extern double second(void);
@@ -133,14 +133,14 @@ public:
    *----------------------------------------------------------------------------*/
 
   INT *Node_Set_Ids;           /* Vector of node set ids             *
-                                * (ptr to vector of length, 	     *
-                                *  Num_Node_Set)    		     */
-  INT *Side_Set_Ids;           /* Side set ids  		     *
-                                * (ptr to vector of length, 	     *
-                                *  Num_Side_Set)      		     */
+                                * (ptr to vector of length,          *
+                                *  Num_Node_Set)                     */
+  INT *Side_Set_Ids;           /* Side set ids                       *
+                                * (ptr to vector of length,          *
+                                *  Num_Side_Set)                     */
   INT *Num_Elem_In_Blk;        /* Number of elements in each element *
                                 * block (ptr to vector of length,    *
-                                *        Num_Elem_Blk)     	     */
+                                *        Num_Elem_Blk)               */
   INT *Num_Nodes_Per_Elem;     /* Number of nodes per element in each*
                                 * elem block (ptr to vector of       *
                                 * length, Num_Elem_Blk)              */
@@ -169,7 +169,7 @@ public:
   char ***Elem_Blk_Attr_Names; /* Element block attribute names for each
                                 * attribute in each element block
                                 * ragged array (size varies for each
-                                * element block          	     */
+                                * element block                      */
 
   int *GM_Elem_Types; /* This is a list of the element      *
                        * in the entire global mesh. It is   *

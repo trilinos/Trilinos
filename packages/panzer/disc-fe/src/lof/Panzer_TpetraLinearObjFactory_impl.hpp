@@ -47,7 +47,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.                 
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 // Thyra
 #include "Thyra_TpetraVectorSpace.hpp"
@@ -69,7 +69,7 @@ using Teuchos::RCP;
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                       const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & gidProvider)
+                       const Teuchos::RCP<const GlobalIndexer> & gidProvider)
    : comm_(comm), gidProvider_(gidProvider)
 { 
    hasColProvider_ = colGidProvider_!=Teuchos::null;
@@ -82,8 +82,8 @@ TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                       const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & gidProvider,
-                       const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & colGidProvider)
+                       const Teuchos::RCP<const GlobalIndexer> & gidProvider,
+                       const Teuchos::RCP<const GlobalIndexer> & colGidProvider)
    : comm_(comm), gidProvider_(gidProvider), colGidProvider_(colGidProvider)
 { 
    hasColProvider_ = colGidProvider_!=Teuchos::null;
@@ -664,18 +664,58 @@ buildGhostedGraph() const
    // build the map and allocate the space for the graph
    Teuchos::RCP<MapType> rMap = getGhostedMap();
    Teuchos::RCP<MapType> cMap = getGhostedColMap();
-   Teuchos::RCP<CrsGraphType> graph = Teuchos::rcp(new CrsGraphType(rMap,cMap,0));
 
    std::vector<std::string> elementBlockIds;   
    gidProvider_->getElementBlockIds(elementBlockIds);
 
-   const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> >
+   const Teuchos::RCP<const GlobalIndexer>
      colGidProvider = hasColProvider_ ? colGidProvider_ : gidProvider_;
    const Teuchos::RCP<const ConnManager> conn_mgr = colGidProvider->getConnManager();
    const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
 
    // graph information about the mesh
+   // Count number of entries per graph row; needed for graph constructor
+   std::vector<size_t> nEntriesPerRow(rMap->getNodeNumElements(), 0);
+
    std::vector<std::string>::const_iterator blockItr;
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+
+      // grab elements for this block
+      const std::vector<LocalOrdinalT> & elements = gidProvider_->getElementBlock(blockId);
+
+      // get information about number of indicies
+      std::vector<GlobalOrdinalT> gids;
+      std::vector<GlobalOrdinalT> col_gids;
+
+      // loop over the elemnts
+      for(std::size_t i=0;i<elements.size();i++) {
+         gidProvider_->getElementGIDs(elements[i],gids);
+
+         colGidProvider->getElementGIDs(elements[i],col_gids);
+         if (han) {
+           const std::vector<LocalOrdinalT>& aes = conn_mgr->getAssociatedNeighbors(elements[i]);
+           for (typename std::vector<LocalOrdinalT>::const_iterator eit = aes.begin();
+                eit != aes.end(); ++eit) {
+             std::vector<GlobalOrdinalT> other_col_gids;
+             colGidProvider->getElementGIDs(*eit, other_col_gids);
+             col_gids.insert(col_gids.end(), other_col_gids.begin(), other_col_gids.end());
+           }
+         }
+
+         for(std::size_t j=0;j<gids.size();j++){ 
+            LocalOrdinalT lid = rMap->getLocalElement(gids[j]);
+            nEntriesPerRow[lid] += col_gids.size();
+         }
+      }
+   }
+
+   Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
+   Teuchos::RCP<CrsGraphType> graph = Teuchos::rcp(new CrsGraphType(rMap,cMap,
+                                                          nEntriesPerRowView,
+                                                          Tpetra::StaticProfile));
+
+   // Now insert entries into the graph
    for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;
 

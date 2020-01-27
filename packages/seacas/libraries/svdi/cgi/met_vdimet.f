@@ -1114,27 +1114,29 @@ C KTERM = STRING TERMINATOR CHARACTER (\).
 
 C
 C LOOP THROUGH EACH CHARACTER IN EACH WORD OF NSTR.
-      DO 10 I=1,N
-      DO 10 J=1,KCPW
-      CALL CDR1CH(J,NSTR(I),ITEMP)
+      DO I=1,N
+         DO J=1,KCPW
+            CALL CDR1CH(J,NSTR(I),ITEMP)
 C
-C CONVERT CHARACTER.
-      CALL CDRCVT(ITEMP,ITEMP1)
-C
-C CHECK FOR END-OF-STRING CHARACTER.
-      IF (ITEMP1.EQ.KTERM) GO TO 20
-C
-C SEND PAIRS OF CHARACTERS TO THE OUTPUT FILE.
-      IF(MOD(J,2).EQ.1) THEN
-         ITEMP2=ITEMP1
-      ELSE
-         ITEMP=256*ITEMP2+ITEMP1
-         CALL WMET13S(ITEMP)
-      ENDIF
-   10 CONTINUE
-C
+C     CONVERT CHARACTER.
+            CALL CDRCVT(ITEMP,ITEMP1)
+C     
+C     CHECK FOR END-OF-STRING CHARACTER.
+            IF (ITEMP1.EQ.KTERM) GO TO 20
+C     
+C     SEND PAIRS OF CHARACTERS TO THE OUTPUT FILE.
+            IF(MOD(J,2).EQ.1) THEN
+               ITEMP2=ITEMP1
+            ELSE
+               ITEMP=256*ITEMP2+ITEMP1
+               CALL WMET13S(ITEMP)
+            ENDIF
+         END DO
+      END DO
+C     
 C PAD WITH A BLANK IF NECESSARY TO MAKE NUMBER OF CHARS EVEN.
-   20 IF(MOD(J,2).EQ.0) THEN
+ 20   CONTINUE
+      IF(MOD(J,2).EQ.0) THEN
          ITEMP=256*ITEMP2+32
          CALL WMET13S(ITEMP)
       ENDIF
@@ -1447,7 +1449,7 @@ C
 C
 C          check for valid indexes.
 C
-      DO 100 I=1,NUM
+      DO I=1,NUM
          INDEXN=INDEX(I)
          IF(INDEXN.LT.0.OR.INDEXN.GT.255) THEN
             CALL WMETER(724,5)
@@ -1463,7 +1465,8 @@ C
            ELSE
              CALL WMET06(RGB,255,CLRARY(1,I))
            ENDIF
-  100 CONTINUE
+ 100       continue
+        end do
   999 RETURN
       END
       SUBROUTINE WMETCP(X,Y)
@@ -2394,7 +2397,7 @@ C                   only to text primitives.
 C                   All devices must support at least a single device
 C                   dependent value that is the default.  If an
 C                   unsupported value is specified, set to the largest
-C                   suported character size that does not exceed the
+C                   supported character size that does not exceed the
 C                   specified size.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
@@ -2587,7 +2590,7 @@ C                   attribute values, the color table, and current
 C                   position are set to appropriate defaults for the
 C                   device.  All necessary input device initialization
 C                   is done.  The screen is cleared or paper advanced
-C                   if necessary to guarentee a blank view surface for
+C                   if necessary to guarantee a blank view surface for
 C                   drawing on.
 C
 C                   ASPECT specifies the ratio of the X dimension to the
@@ -2670,7 +2673,8 @@ C
       DATA ISECUR/33282,1,0/
 C
 C
-      ZERO = 0
+      RZERO= 0
+      ZERO(1) = 0
       XPAD = 0
       YPAD = 0
 c

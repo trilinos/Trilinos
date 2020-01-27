@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -79,7 +80,13 @@ int testElement(const std::string &name, unsigned spatialDim)
       element->name() == "pyramid18" || element->name() == "pyramid19" ||
       element->name() == "wedge20"   || element->name() == "wedge21" ||
       element->name() == "wedge12"   || element->name() == "hex16" ||
-      element->name() == "quad6"     || element->name() == "wedge16") {
+      element->name() == "hex32"     || element->name() == "hex64" ||
+      element->name() == "quad12"    || element->name() == "quad16" ||
+      element->name() == "tetra16"   || element->name() == "tetra40" ||
+      element->name() == "tri13"     || element->name() == "wedge24" ||
+      element->name() == "wedge52"   || element->name() == "quad6"   ||
+      element->name() == "wedge16"   || element->name() == "bar4"   ||
+      element->name() == "edge4"     || element->name() == "tri9") {
     std::cerr << "\tERROR (EXPECTED): No support for '" << element->name() << "'\n";
     return 0;
   }
@@ -112,7 +119,7 @@ int testElement(const std::string &name, unsigned spatialDim)
                       element->number_corner_nodes(),
                       "vertex count");
 
-  // NOTE: CellTopology and Ioss disagree on parametric dimension.
+  // NOTE: stk::topology and Ioss disagree on parametric dimension.
   int add_to = element->spatial_dimension() != element->parametric_dimension() && element->is_element() ? 1 : 0;
   errors += my_assert(static_cast<int>(cell.dimension()),
                       element->parametric_dimension()+add_to,
@@ -153,6 +160,7 @@ TEST(UnitTestTopology, testUnit)
     if (elements[i] != "node"    &&
         elements[i] != "bar2"    &&
         elements[i] != "bar3"    &&
+        elements[i] != "bar4"    &&
         elements[i] != "spring2" &&
         elements[i] != "spring3") {
       errors += current_error;

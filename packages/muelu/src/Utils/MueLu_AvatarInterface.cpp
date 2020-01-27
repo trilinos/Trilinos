@@ -111,8 +111,14 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   // Files from which to read Avatar trees
   validParamList->set<Teuchos::Array<std::string> >("avatar: decision tree files",ar_dummy,"Names of Avatar decision tree files");
 
+  // Strings from which to read Avatar trees
+  validParamList->set<Teuchos::Array<std::string> >("avatar: decision tree strings",ar_dummy,"Avatar decision tree strings");
+
   // Files from which to read Avatar names
   validParamList->set<Teuchos::Array<std::string> >("avatar: names files",ar_dummy,"Names of Avatar decision names files");
+
+  // Strings from which to read Avatar names
+  validParamList->set<Teuchos::Array<std::string> >("avatar: names strings",ar_dummy,"Avatar decision names strings");
 
   // Filestem arg for Avatar
   validParamList->set<Teuchos::Array<std::string> >("avatar: filestem",ar_dummy,"Filestem for the files Avatar requires");
@@ -167,8 +173,16 @@ void AvatarInterface::Setup() {
   if(comm_.is_null()) throw std::runtime_error("MueLu::AvatarInterface::Setup(): Communicator cannot be null");
 
   // Get the avatar strings (NOTE: Only exist on proc 0)
-  avatarStrings_ = ReadFromFiles("avatar: decision tree files");
-  namesStrings_  = ReadFromFiles("avatar: names files");
+  if(params_.isParameter("avatar: decision tree strings"))
+    avatarStrings_ = Teuchos::arcpFromArray(params_.get<Teuchos::Array<std::string> >("avatar: decision tree strings"));
+  else
+    avatarStrings_ = ReadFromFiles("avatar: decision tree files");
+
+  if(params_.isParameter("avatar: names strings"))
+    namesStrings_ = Teuchos::arcpFromArray(params_.get<Teuchos::Array<std::string> >("avatar: names strings"));
+  else
+    namesStrings_ = ReadFromFiles("avatar: names files");
+
   if(params_.isParameter("avatar: bounds file"))
     boundsString_ = ReadFromFiles("avatar: bounds file");
 
@@ -334,8 +348,9 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
     // views as acceptable
     // FIXME: Find alternative to hard coding malloc size (input deck?)
-    int* predictions = (int*)malloc(8 * sizeof(int));
-    float* probabilities = (float*)malloc(3 * 8 * sizeof(float));
+    int num_classes = avatar_num_classes(avatarHandle_);
+    std::vector<int> predictions(num_combos, 0);
+    std::vector<float> probabilities(num_classes * num_combos, 0);
 
       std::string testString;
       for(int i=0; i<num_combos; i++) {
@@ -353,7 +368,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       // FIXME: Only send in first tree's string
       //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
       const int test_data_is_a_string = 1;
-      avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string,predictions,probabilities);
+      avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string,predictions.data(),probabilities.data());
 
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
@@ -378,10 +393,10 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       else {
 	switch (heuristicToUse_){
 	  case 1: 
-		chosen_option_id = hybrid(probabilities, acceptableCombos);
+		chosen_option_id = hybrid(probabilities.data(), acceptableCombos);
 		break;
 	  case 2: 
-		chosen_option_id = highProb(probabilities, acceptableCombos);
+		chosen_option_id = highProb(probabilities.data(), acceptableCombos);
 		break;
 	  case 3: 
 		// Choose the first option in the list of acceptable
@@ -390,10 +405,10 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 		chosen_option_id = acceptableCombos[0];
 		break;
 	  case 4: 
-		chosen_option_id = lowCrash(probabilities, acceptableCombos);
+		chosen_option_id = lowCrash(probabilities.data(), acceptableCombos);
 		break;
 	  case 5:
-		chosen_option_id = weighted(probabilities, acceptableCombos);
+		chosen_option_id = weighted(probabilities.data(), acceptableCombos);
 		break;
         }
 
@@ -408,10 +423,6 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     } else {
       GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
     }
-
-    // Cleanup 
-    free(predictions);
-    free(probabilities); 
   } 
 
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);

@@ -83,15 +83,18 @@ namespace MueLu {
     Only nodes with state READY are changed to AGGREGATED. Nodes with other states are not touched.
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AggregationPhase1Algorithm_kokkos :
     public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    using execution_space = typename LWGraph_kokkos::execution_space;
+    using memory_space    = typename LWGraph_kokkos::memory_space;
+
     //! @name Constructors/Destructors.
     //@{
 
@@ -109,42 +112,26 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    void BuildAggregates(const Teuchos::ParameterList& params,
+                         const LWGraph_kokkos& graph,
+                         Aggregates_kokkos& aggregates,
+                         Kokkos::View<unsigned*, memory_space>& aggStat,
+                         LO& numNonAggregatedNodes) const;
 
-    void BuildAggregatesSerial(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-      std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
-      LO minNodesPerAggregate, LO maxNodesPerAggregate,
-      LO maxNeighAlreadySelected, std::string& orderingStr) const;
+    void BuildAggregatesRandom(const LO maxAggSize,
+                               const LWGraph_kokkos& graph,
+                               Aggregates_kokkos& aggregates,
+                               Kokkos::View<unsigned*, memory_space>& aggStat,
+                               LO& numNonAggregatedNodes) const;
 
-    void BuildAggregatesDistance2(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-        std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes, LO maxAggSize) const;
+    void BuildAggregatesDeterministic(const LO maxAggSize,
+                                      const LWGraph_kokkos& graph,
+                                      Aggregates_kokkos& aggregates,
+                                      Kokkos::View<unsigned*, memory_space>& aggStat,
+                                      LO& numNonAggregatedNodes) const;
     //@}
 
     std::string description() const { return "Phase 1 (main)"; }
-
-    enum struct Algorithm
-    {
-      Serial,
-      Distance2 
-    };
-
-    static Algorithm algorithmFromName(const std::string& name)
-    {
-      if(name == "Distance2")
-        return Algorithm::Distance2;
-      return Algorithm::Serial;
-    }
-
-  private:
-
-    /*! @brief Utility to take a list of integers and reorder them randomly (by using a local permutation).
-      @param list On input, a bunch of integers. On output, the same integers in a different order
-      that is determined randomly.
-    */
-    void RandomReorder(ArrayRCP<LO> list) const;
-
-    /*! @brief Generate a random number in the range [min, max] */
-    int RandomOrdinal(int min, int max) const;
 
   };
 

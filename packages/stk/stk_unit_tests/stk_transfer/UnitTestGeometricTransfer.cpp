@@ -27,7 +27,7 @@ namespace stk {
 namespace transfer {
 
 
-using EntityKey = unsigned;
+using EntityKey = uint64_t;
 
 class MockMeshA_Common
 {
@@ -670,12 +670,10 @@ TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
 //Note, these test segfault with the stk::search::SearchMethod::MORTON_LINEARIZED_BVH
 //I'm not sure who uses that search method or it is supposed to be production ready
 INSTANTIATE_TEST_CASE_P(GeometricTransferTest, GeometricTransferTest,
-    ::testing::Values(stk::search::SearchMethod::BOOST_RTREE,
-        stk::search::SearchMethod::KDTREE),);
+    ::testing::Values(stk::search::SearchMethod::KDTREE),);
 
 INSTANTIATE_TEST_CASE_P(ReducedDependencyGeometricTransferTest, ReducedDependencyGeometricTransferTest,
-    ::testing::Values(stk::search::SearchMethod::BOOST_RTREE,
-        stk::search::SearchMethod::KDTREE),);
+    ::testing::Values(stk::search::SearchMethod::KDTREE),);
 
 }
 }

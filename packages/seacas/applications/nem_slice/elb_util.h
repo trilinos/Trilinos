@@ -40,6 +40,16 @@
 #include <sys/types.h> // for ssize_t
 #include <vector>
 
+#if defined(_MSC_VER)
+#define strcasecmp stricmp
+#define strncasecmp strnicmp
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t long
+#endif
+#endif
+
 /* Function prototypes */
 extern int token_compare(char *      token, /* The input character string */
                          const char *key    /* The key to compare with token */
@@ -64,7 +74,49 @@ template <typename INT> void qsort4(INT *v1, INT *v2, INT *v3, INT *v4, size_t N
 
 template <typename INT> void qsort2(INT *v1, INT *v2, size_t N);
 
-template <typename INT> void sort2(ssize_t count, INT ra[], INT rb[]);
+template <typename INT> inline void SWAP(INT &r, INT &s)
+{
+  INT t = r;
+  r     = s;
+  s     = t;
+}
+
+template <typename INT> void siftDown(INT *a, INT *b, size_t start, size_t end)
+{
+  size_t root = start;
+
+  while (root * 2 + 1 < end) {
+    size_t child = 2 * root + 1;
+    if ((child + 1 < end) && (a[child] < a[child + 1])) {
+      child += 1;
+    }
+    if (a[root] < a[child]) {
+      SWAP(a[child], a[root]);
+      SWAP(b[child], b[root]);
+      root = child;
+    }
+    else {
+      return;
+    }
+  }
+}
+
+template <typename INT> void sort2(ssize_t count, INT ra[], INT rb[])
+{
+  if (count <= 1) {
+    return;
+  }
+  /* heapify */
+  for (ssize_t start = (count - 2) / 2; start >= 0; start--) {
+    siftDown(ra, rb, start, count);
+  }
+
+  for (size_t end = count - 1; end > 0; end--) {
+    SWAP(ra[end], ra[0]);
+    SWAP(rb[end], rb[0]);
+    siftDown(ra, rb, 0, end);
+  }
+}
 
 template <typename INT> void sort3(ssize_t count, INT ra[], INT rb[], INT rc[]);
 

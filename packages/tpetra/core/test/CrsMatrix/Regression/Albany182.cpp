@@ -666,24 +666,20 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap = buildOverlappingRowMap<map_type> (out, success, verbose, comm);
 
     RCP<CrsMatrixType> A;
-    if (! staticGraph) {
-      A = rcp (new CrsMatrixType (rowMap, 0));
-      insertIntoOverlappingCrsMatrix (*A);
-    }
-    else {
+    {
       using Teuchos::rcp_const_cast;
       typedef typename CrsMatrixType::crs_graph_type crs_graph_type;
-      RCP<crs_graph_type> G (new crs_graph_type (rowMap, 0));
+      RCP<crs_graph_type> G (new crs_graph_type (rowMap, 5));
       insertIntoOverlappingCrsGraph (*G);
       G->fillComplete (domainMap, rangeMap);
       // typedef typename CrsMatrixType::device_type::execution_space execution_space;
-      // execution_space::fence ();
+      // execution_space().fence ();
       A = rcp (new CrsMatrixType (rcp_const_cast<const crs_graph_type> (G)));
       fillIntoOverlappingCrsMatrix (*A);
     }
     A->fillComplete (domainMap, rangeMap);
     // typedef typename CrsMatrixType::device_type::execution_space execution_space;
-    // execution_space::fence ();
+    // execution_space().fence ();
     testEntriesOfOverlappingCrsMatrix (out, success, verbose, *A);
 
     return A;
@@ -972,7 +968,7 @@ namespace { // (anonymous)
 
       out << "Call fillComplete on the target matrix" << endl;
       A_nonoverlapping->fillComplete (domMap, ranMap);
-      //execution_space::fence ();
+      //execution_space().fence ();
 
       out << "Test target matrix's column Map" << endl;
       const map_type* colMapPtr = A_nonoverlapping->getColMap ().getRawPtr ();
@@ -1002,18 +998,9 @@ namespace { // (anonymous)
       out << "Target matrix is correct!" << endl;
     }
 
-    using Tpetra::ProfileType;
-    using Tpetra::DynamicProfile;
-    using Tpetra::StaticProfile;
-    for (ProfileType profileType : {DynamicProfile, StaticProfile}) {
-      out << ">>> Target matrix is {";
-      if (profileType == Tpetra::DynamicProfile) {
-        out << "DynamicProfile";
-      }
-      else {
-        out << "StaticProfile";
-      }
-      out << ", locally indexed}" << endl;
+    const Tpetra::ProfileType pftypes[1] = {Tpetra::StaticProfile};
+    for (Tpetra::ProfileType profileType : pftypes) {
+      out << ">>> Target matrix is {StaticProfile, locally indexed}" << endl;
       Teuchos::OSTab tab2 (out);
 
       const size_t maxNumEntPerRow = 10; // needs to be an upper bound
@@ -1023,7 +1010,7 @@ namespace { // (anonymous)
       export_type exp (A_overlapping.getRowMap (), rowMap_nonoverlapping);
       A_nonoverlapping->doExport (A_overlapping, exp, Tpetra::ADD);
       A_nonoverlapping->fillComplete (domMap, ranMap);
-      //execution_space::fence ();
+      //execution_space().fence ();
       const map_type* colMapPtr = A_nonoverlapping->getColMap ().getRawPtr ();
       const bool colMapsSame =
         testNonoverlappingColumnMapIsAsExpected (out, success, colMapPtr,
@@ -1072,7 +1059,7 @@ namespace { // (anonymous)
         G_nonoverlapping->insertGlobalIndices (gblRow, numEnt,
                                                gblColInds.data ());
       }
-      //execution_space::fence ();
+      //execution_space().fence ();
       G_nonoverlapping->fillComplete (domMap, ranMap);
       const map_type* colMapPtr_G = G_nonoverlapping->getColMap ().getRawPtr ();
       const bool gotGraphColMapRight =
@@ -1088,7 +1075,7 @@ namespace { // (anonymous)
       A_nonoverlapping->doExport (A_overlapping, exp, Tpetra::ADD);
       A_nonoverlapping->fillComplete (domMap, ranMap);
       A_nonoverlapping->resumeFill ();
-      //execution_space::fence ();
+      //execution_space().fence ();
       const map_type* colMapPtr = A_nonoverlapping->getColMap ().getRawPtr ();
       const bool colMapsSame =
         testNonoverlappingColumnMapIsAsExpected (out, success, colMapPtr,
@@ -1134,7 +1121,8 @@ namespace { // (anonymous)
     out << "testCrsMatrixExport" << endl;
     Teuchos::OSTab tab1 (out);
 
-    for (bool staticGraph : {true, false}) {
+    for (bool staticGraph : {true})
+    {
       out << "Source matrix: staticGraph=" << (staticGraph ? "true" : "false")
           << endl;
       RCP<crs_matrix_type> A_overlapping =
@@ -1219,5 +1207,3 @@ namespace { // (anonymous)
 #endif // HAVE_TPETRA_INST_INT_LONG_LONG
 
 } // namespace (anonymous)
-
-

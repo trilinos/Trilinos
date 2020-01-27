@@ -97,6 +97,8 @@ namespace Ioss {
     int      parallel_size() const;
     int      parallel_rank() const;
 
+    void barrier() const;
+
     /*!
      * Global OR of attribute strings, the processors which have no
      * knowledge of the value should initialize to '0' and the
@@ -271,6 +273,8 @@ namespace Ioss {
   template <typename T>
   void ParallelUtils::global_array_minmax(std::vector<T> &local_minmax, MinMax which) const
   {
+    PAR_UNUSED(local_minmax);
+    PAR_UNUSED(which);
 #ifdef SEACAS_HAVE_MPI
     if (parallel_size() > 1 && !local_minmax.empty()) {
       if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {

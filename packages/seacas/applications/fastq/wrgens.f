@@ -37,7 +37,7 @@ C Revision 1.9  1998/03/23 05:17:54  gdsjaar
 C Fixed data statement ordering
 C
 C Revision 1.8  1997/09/02 18:51:45  caforsy
-C Increase inital value of NIN in rdfsq.f and IGUESS in wrgens.f
+C Increase initial value of NIN in rdfsq.f and IGUESS in wrgens.f
 C
 C Revision 1.7  1992/11/17 15:06:39  gdsjaar
 C Fixed problem with version number output.
@@ -298,7 +298,7 @@ C
       WRITE (IUNIT)XNAME, YNAME
       IF (NUMMAT.LE.IGUESS)WRITE (IUNIT) (ENAME (I), I = 1, NUMMAT)
 C
-C  SUCCESSFULL WRITE COMPLETED
+C  SUCCESSFUL WRITE COMPLETED
 C
       CALL MESAGE (' ')
       CALL MESAGE (' ')

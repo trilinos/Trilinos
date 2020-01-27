@@ -8,20 +8,25 @@
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
+    <ParameterList name="myAmalgamationFact">
+      <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
+    </ParameterList>
+
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
       <Parameter name="aggregation: drop tol"               type="double" value="0.00"/>
+      <Parameter name="UnAmalgamationInfo"                  type="string" value="myAmalgamationFact"/>
     </ParameterList>
 
     <ParameterList name="myAggregationFact">
-      <Parameter name="factory"                                   type="string" value="StructuredAggregationFactory"/>
-      <Parameter name="aggregation: coupling"                     type="string" value="uncoupled"/>
-      <Parameter name="aggregation: output type"                  type="string" value="CrsGraph"/>
-      <Parameter name="aggregation: coarsening order"             type="int"    value="0"/>
-      <Parameter name="aggregation: coarsening rate"              type="string" value="{3}"/>
-      <Parameter name="Graph"                                     type="string" value="myCoalesceDropFact"/>
-      <Parameter name="DofsPerNode"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="factory"                             type="string" value="StructuredAggregationFactory"/>
+      <Parameter name="aggregation: coupling"               type="string" value="uncoupled"/>
+      <Parameter name="aggregation: output type"            type="string" value="CrsGraph"/>
+      <Parameter name="aggregation: coarsening order"       type="int"    value="1"/>
+      <Parameter name="aggregation: coarsening rate"        type="string" value="{2}"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
     </ParameterList>
 
     <ParameterList name="myCoarseMapFact">
@@ -32,8 +37,8 @@
     <!-- Note that ParameterLists must be defined prior to being used -->
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                             type="string" value="GeometricInterpolationPFactory"/>
-      <Parameter name="interp: build coarse coordinates"       type="bool"   value="true"/>
-      <Parameter name="interp: interpolation order"            type="int"    value="0"/>
+      <Parameter name="interp: build coarse coordinates"    type="bool"   value="true"/>
+      <Parameter name="interp: interpolation order"         type="int"    value="1"/>
       <Parameter name="prolongatorGraph"                    type="string" value="myAggregationFact"/>
       <Parameter name="coarseCoordinatesFineMap"            type="string" value="myAggregationFact"/>
       <Parameter name="coarseCoordinatesMap"                type="string" value="myAggregationFact"/>
@@ -104,8 +109,8 @@
       <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
         <Parameter name="relaxation: type"             type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps"           type="int"    value="2"/>
-        <Parameter name="relaxation: damping factor"   type="double" value="1"/>
+        <Parameter name="relaxation: sweeps"           type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor"   type="double" value="0.8"/>
       </ParameterList>
     </ParameterList>
 
@@ -116,9 +121,15 @@
   <ParameterList name="Hierarchy">
 
     <Parameter name="max levels"                            type="int"      value="6"/> <!-- Max number of levels -->
-    <Parameter name="cycle type"                            type="string"   value="W"/>
-    <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="cycle type"                            type="string"   value="V"/>
+    <Parameter name="coarse: max size"                      type="int"      value="100"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
+
+    <ParameterList name="DataToWrite">
+       <!-- <Parameter name="Matrices"          type="string"   value="{0,1}"/> -->
+       <Parameter name="Prolongators"      type="string"   value="{1,2}"/>
+       <!-- <Parameter name="Restrictors"       type="string"   value="{1,2}"/> -->
+    </ParameterList>
 
     <ParameterList name="All">
       <Parameter name="PreSmoother"                         type="string"   value="mySGS"/>

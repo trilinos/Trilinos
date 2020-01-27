@@ -31,13 +31,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "ED_SystemInterface.h" // for ERROR, SystemInterface, etc
+#include "ED_SystemInterface.h" // for SystemInterface, etc
 #include "exodusII.h"           // for ex_set, etc
-#include "iqsort.h"             // for index_qsort
+#include "fmt/format.h"
+#include "iqsort.h" // for index_qsort
 #include "node_set.h"
 #include "smart_assert.h" // for SMART_ASSERT
 #include <cstdlib>        // for exit
-#include <iostream>       // for operator<<, ostream, etc
 #include <vector>         // for vector
 
 template <typename INT>
@@ -137,7 +137,7 @@ template <typename INT> void Node_Set<INT>::load_nodes(const INT *node_map) cons
     for (size_t i = 0; i < numEntity; i++) {
       nodeIndex[i] = i;
     }
-    if (interface.nsmap_flag) {
+    if (interFace.nsmap_flag) {
       index_qsort(nodes, nodeIndex, numEntity);
     }
   }
@@ -159,15 +159,6 @@ template <typename INT> void Node_Set<INT>::Free_Distribution_Factors() const
     delete[] dist_factors;
     dist_factors = nullptr;
   }
-}
-
-template <typename INT> void Node_Set<INT>::Display(std::ostream &s)
-{
-  Check_State();
-  s << "Node_Set<INT>::Display_Stats()  Exodus node set ID = " << id_ << '\n'
-    << "                              number of nodes = " << numEntity << '\n'
-    << "               number of distribution factors = " << num_dist_factors << '\n'
-    << "                          number of variables = " << var_count() << '\n';
 }
 
 template <typename INT> int Node_Set<INT>::Check_State() const
@@ -193,7 +184,7 @@ template <typename INT> void Node_Set<INT>::entity_load_params()
   int err = ex_get_sets(fileId, 1, &sets[0]);
 
   if (err < 0) {
-    ERROR("Failed to get nodeset parameters for nodeset " << id_ << ". !  Aborting...\n");
+    Error(fmt::format("Failed to get nodeset parameters for nodeset {}. !  Aborting...\n", id_));
     exit(1);
   }
 

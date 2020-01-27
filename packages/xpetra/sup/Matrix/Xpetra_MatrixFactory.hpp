@@ -60,13 +60,7 @@
 
 namespace Xpetra {
 
-  /*template <class Scalar = Matrix<>::scalar_type,
-            class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>*/
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -217,12 +211,10 @@ namespace Xpetra {
 #define XPETRA_MATRIXFACTORY2_SHORT
 
 
-  template <class Scalar = Matrix<>::scalar_type,
-            class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class MatrixFactory {
 #undef XPETRA_MATRIXFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -232,20 +224,25 @@ namespace Xpetra {
     MatrixFactory() {}
 
   public:
+    /// Constructor for an empty, DynamicProfile matrix.
+    /// Supports Epetra only, as DynamicProfile no longer exists in Tpetra.
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap) {
+      return rcp(new CrsMatrixWrap(rowMap));
+    }
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Matrix> Build(const RCP<const Map>& rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
-      return rcp(new CrsMatrixWrap(rowMap, maxNumEntriesPerRow, pftype));
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap, size_t maxNumEntriesPerRow) {
+      return rcp(new CrsMatrixWrap(rowMap, maxNumEntriesPerRow));
     }
 
     //! Constructor specifying the max number of non-zeros per row and providing column map
-    static RCP<Matrix> Build(const RCP<const Map>& rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
-      return rcp(new CrsMatrixWrap(rowMap, colMap, maxNumEntriesPerRow, pftype));
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow) {
+      return rcp(new CrsMatrixWrap(rowMap, colMap, maxNumEntriesPerRow));
     }
 
     //! Constructor specifying the (possibly different) number of entries per row and providing column map
-    static RCP<Matrix> Build(const RCP<const Map>& rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
-      return rcp(new CrsMatrixWrap(rowMap, colMap, NumEntriesPerRowToAlloc, pftype));
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc) {
+      return rcp(new CrsMatrixWrap(rowMap, colMap, NumEntriesPerRowToAlloc));
     }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
@@ -272,8 +269,8 @@ namespace Xpetra {
 #endif
 
     //! Constructor specifying (possibly different) number of entries in each row.
-    static RCP<Matrix> Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile) {
-      return rcp( new CrsMatrixWrap(rowMap, NumEntriesPerRowToAlloc, pftype) );
+    static RCP<Matrix> Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc) {
+      return rcp( new CrsMatrixWrap(rowMap, NumEntriesPerRowToAlloc) );
     }
 
     //! Constructor specifying graph
@@ -287,7 +284,7 @@ namespace Xpetra {
       LocalOrdinal                            NumMyElements    = diagonal->getMap()->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = diagonal->getMap()->getNodeElementList();
 
-      Teuchos::RCP<CrsMatrixWrap> mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1, Xpetra::StaticProfile));
+      Teuchos::RCP<CrsMatrixWrap> mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1));
 
       for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
           mtx->insertGlobalValues(MyGlobalElements[i],

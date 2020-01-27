@@ -125,7 +125,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /*
 
   if(MaxLevels > 0) {
     /* Build the Nullspace */
-    Epetra_MultiVector *nullspace=BuildNullspace();
+    Epetra_MultiVector *nullspace=ML_Epetra::Build_Edge_Nullspace(*D0_Clean_Matrix_,BCedges_,List_,verbose_);
+    dim = nullspace->NumVectors();
+
     if(!nullspace) ML_CHK_ERR(-1);
     if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("nullspace.dat",*nullspace,0,0,false);
 
@@ -145,6 +147,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /*
     /* Setup Preconditioner on Coarse Matrix */
     ListCoarse=List_.get("edge matrix free: coarse",dummy);
     CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,ListCoarse);
+
     if(!CoarsePC) ML_CHK_ERR(-2);
 
     /* Clean Up */
@@ -170,120 +173,25 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
 }/*end SetupSmoother */
 
 
-
-// ================================================ ====== ==== ==== == =
-// Build the edge nullspace
-Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
-{
-  Epetra_MultiVector *nullspace;
-  double ** d_coords;
-
-  /* Check the List - Do we have a nullspace pre-provided? */
-  std::string nulltype=List_.get("null space: type","default vectors");
-  double* nullvecs=List_.get("null space: vectors",(double*)0);
-  int nulldim=List_.get("null space: dimension",0);
-  if (nulltype=="pre-computed" && nullvecs && (nulldim==2 || nulldim==3)){
-    /* Build a multivector out of it */
-    if(verbose_ && !Comm_->MyPID()) printf("Using pre-computed nullspace\n");
-    int Ne=EdgeDomainMap_->NumMyElements();
-    dim=nulldim;
-    d_coords=new double*[dim];
-    d_coords[0]=nullvecs;
-    d_coords[1]=&nullvecs[Ne];
-    if(dim==3) d_coords[2]=&nullvecs[2*Ne];
-    nullspace=new Epetra_MultiVector(View,*EdgeDomainMap_,d_coords,dim);
-  }
-  else{
-    if(verbose_ && !Comm_->MyPID()) printf("Building nullspace from scratch\n");
-    /* Pull the (nodal) coordinates from Teuchos */
-    double * xcoord=List_.get("x-coordinates",(double*)0);
-    double * ycoord=List_.get("y-coordinates",(double*)0);
-    double * zcoord=List_.get("z-coordinates",(double*)0);
-    dim=(xcoord!=0) + (ycoord!=0) + (zcoord!=0);
-
-    /* Sanity Checks */
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      dim == 0 || ((!xcoord && (ycoord || zcoord)) || (xcoord && !ycoord && zcoord)),
-      "Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n"
-      );
-
-    /* Normalize */
-    double d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), xcoord, xcoord, ml_comm_));
-    for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) xcoord[i] /= d1;
-    d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), ycoord, ycoord, ml_comm_));
-    for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) ycoord[i] /= d1;
-    if (dim==3) {
-      d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), zcoord, zcoord, ml_comm_));
-      for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) zcoord[i] /= d1;
-    }
-
-    /* Build the MultiVector */
-    d_coords=new double* [dim];
-    d_coords[0]=xcoord; d_coords[1]=ycoord;
-    if(dim==3) d_coords[2]=zcoord;
-    Epetra_MultiVector n_coords(View,*NodeDomainMap_,d_coords,dim);
-    if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",n_coords,0,0,false);
-
-    /* Build the Nullspace */
-    nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,true);
-    D0_Clean_Matrix_->Multiply(false,n_coords,*nullspace);
-  }
-
-  /* Nuke the BC edges */
-  for(int j=0;j<dim;j++)
-    for(int i=0;i<BCedges_.size();i++)
-      (*nullspace)[j][BCedges_[i]]=0;
-
-  /* Cleanup */
-  delete [] d_coords ;
-  return nullspace;
-}/*end BuildNullspace*/
-
-
 // ================================================ ====== ==== ==== == =
 //! Build the edge-to-vector-node prolongator described in Bochev, Hu, Siefert and Tuminaro (2006).
 int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_MultiVector & nullspace)
 {
-
   /* Pull the (nodal) coordinates from Teuchos */
   double * xcoord=List_.get("x-coordinates",(double*)0);
   double * ycoord=List_.get("y-coordinates",(double*)0);
   double * zcoord=List_.get("z-coordinates",(double*)0);
+  double * mcoord=List_.get("material coordinates",(double*)0);
   bool build_coarse_coords=true;
-  if(dim!=(xcoord!=0) + (ycoord!=0) + (zcoord!=0)) build_coarse_coords=false;
-
-
+  if(!mcoord && dim!=(xcoord!=0) + (ycoord!=0) + (zcoord!=0) ) build_coarse_coords=false;
+  
   /* Do the aggregation */
-  ML_Aggregate_Struct * MLAggr;
+  ML_Aggregate_Struct * MLAggr=0;
   ML_Operator *P;
   int NumAggregates;
   int rv=ML_Epetra::RefMaxwell_Aggregate_Nodes(*TMT_Matrix_,List_,ml_comm_,std::string("EMFP (level 0) :"),
-					       MLAggr,P,NumAggregates);
+					       MLAggr,P,NumAggregates,CoarseCoord_);
   if(rv!=0) ML_CHK_ERR(-2);
-
-
-  if(build_coarse_coords) { 
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Coarsening coordinates\n");
-
-    /* Use the nodal prolongator to generate coarse coordinates at the aggregated nodes */
-    CoarseXcoord_.resize(P->invec_leng);
-    CoarseYcoord_.resize(P->invec_leng);
-    if(dim==3) CoarseZcoord_.resize(P->invec_leng);
-
-    /* Matvec with the *transpose* of P */
-    // Note: sCSR_trans_matvec can never return anything other than true (in the current implementation)
-    // Note: The in/out lengths for sCSR_trans_matvec represent the vector lengths, not the in/out lengths for the (untransposed) matrix.
-    //       So they're basically reversed
-    rv=CSR_trans_matvec(P,P->outvec_leng,xcoord,P->invec_leng,CoarseXcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-20);
-    rv=CSR_trans_matvec(P,P->outvec_leng,ycoord,P->invec_leng,CoarseYcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-21);
-    if(dim==3){rv=CSR_trans_matvec(P,P->outvec_leng,zcoord,P->invec_leng,CoarseZcoord_.getRawPtr());  if(rv!=1) ML_CHK_ERR(-22);}
-
-    /* Set coordinates on ListCoarse */
-    Teuchos::ParameterList & ListCoarse=List_.sublist("edge matrix free: coarse");
-    ListCoarse.set("x-coordinates",CoarseXcoord_.getRawPtr());
-    ListCoarse.set("y-coordinates",CoarseYcoord_.getRawPtr());
-    if(dim==3) ListCoarse.set("z-coordinates",CoarseZcoord_.getRawPtr());
-  }
 
   print_hierarchy= List_.get("print hierarchy",false);
   if (print_hierarchy) {
@@ -363,8 +271,19 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   Prolongator_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Prolongator_,ProlongatorColMapTrans_,"Prolongator",(verbose_&&!Comm_->MyPID())));
 #endif
 
+  /* Build the Coarse Coordinates according to the colum map*/
+  if(build_coarse_coords) { 
+    /* Set coordinates on ListCoarse */
+    Teuchos::ParameterList & ListCoarse=List_.sublist("edge matrix free: coarse");
+    if(xcoord) ListCoarse.set("x-coordinates",CoarseCoord_.x.getRawPtr());
+    if(ycoord) ListCoarse.set("y-coordinates",CoarseCoord_.y.getRawPtr());
+    if(zcoord) ListCoarse.set("z-coordinates",CoarseCoord_.z.getRawPtr());
+    if(mcoord) ListCoarse.set("material coordinates",CoarseCoord_.material.getRawPtr());
+  }
+
+
   /* Cleanup */
-  ML_Aggregate_Destroy(&MLAggr);
+  if(MLAggr) ML_Aggregate_Destroy(&MLAggr);
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&AbsD0_ML);
   ML_Operator_Destroy(&AbsD0P);
@@ -429,11 +348,12 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
 #endif
 
+
   /* Wrap to Epetra-land */
   //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix);
   int nnz=100;
   double time;
-  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,verbose_);
+  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,very_verbose_);
   // NTS: This is a hack to get around the sticking ones on the diagonal issue;
 
   /* Cleanup */

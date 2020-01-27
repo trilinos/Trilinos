@@ -93,6 +93,11 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
     </ParameterList>
 
+    <ParameterList name="myAmalgFact2">
+      <Parameter name="factory" type="string" value="AmalgamationFactory"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+    </ParameterList>
+
     <ParameterList name="myCoarseMap2">
       <Parameter name="factory" type="string" value="CoarseMapFactory"/>
       <Parameter name="Striding info" type="string" value="{ 2,1 }"/>
@@ -104,6 +109,7 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/> <!-- use old aggregates! -->
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+      <Parameter name="UnAmalgamationInfo" type="string" value="myAmalgFact2"/>
     </ParameterList>
 
     <ParameterList name="myTransPFact2">

@@ -135,6 +135,38 @@ namespace {
     map_type pointMap = BMV::makePointMap (meshMap, blockSize);
     TEST_ASSERT( pointMap.isSameAs (X.getPointMap ()) );
 
+    // Test BlockMultiVector's two-argument "copy constructor" that
+    // can make either a deep or a shallow copy.
+    {
+      BMV X2 (X, Teuchos::Copy);
+      auto X2_map = X2.getMap ();
+      const bool maps_ok = ! X2_map.is_null () &&
+        ! X.getMap ().is_null () &
+        X2_map->isSameAs (* (X.getMap ()));
+      TEST_ASSERT( maps_ok );
+
+      auto X_mv_h = X.getMultiVectorView ().getLocalViewHost ();
+      auto X2_mv_h = X2.getMultiVectorView ().getLocalViewHost ();
+      TEST_ASSERT( X_mv_h.extent (0) == X2_mv_h.extent (0) &&
+                   X_mv_h.extent (1) == X2_mv_h.extent (1) &&
+                   X_mv_h.data () != X2_mv_h.data () );
+    }
+
+    {
+      BMV X2 (X, Teuchos::View);
+      auto X2_map = X2.getMap ();
+      const bool maps_ok = ! X2_map.is_null () &&
+        ! X.getMap ().is_null () &
+        X2_map->isSameAs (* (X.getMap ()));
+      TEST_ASSERT( maps_ok );
+
+      auto X_mv_h = X.getMultiVectorView ().getLocalViewHost ();
+      auto X2_mv_h = X2.getMultiVectorView ().getLocalViewHost ();
+      TEST_ASSERT( X_mv_h.extent (0) == X2_mv_h.extent (0) &&
+                   X_mv_h.extent (1) == X2_mv_h.extent (1) &&
+                   X_mv_h.data () == X2_mv_h.data () );
+    }
+
     // Exercise the four-argument constructor (that uses an existing
     // point Map).
     BMV Y (meshMap, pointMap, blockSize, numVecs);
@@ -173,6 +205,38 @@ namespace {
                    V2.getLocalViewHost ().data () );
     TEST_EQUALITY( V1->getLocalViewDevice ().data (),
                    V2.getLocalViewDevice ().data () );
+
+    // Test BlockVector's two-argument "copy constructor" that can
+    // make either a deep or a shallow copy.
+    {
+      BV V_a (V, Teuchos::Copy);
+      auto V_a_map = V_a.getMap ();
+      const bool maps_ok = ! V_a_map.is_null () &&
+        ! V.getMap ().is_null () &
+        V_a_map->isSameAs (* (V.getMap ()));
+      TEST_ASSERT( maps_ok );
+
+      auto V_v_h = V.getVectorView ().getLocalViewHost ();
+      auto V_a_v_h = V_a.getVectorView ().getLocalViewHost ();
+      TEST_ASSERT( V_v_h.extent (0) == V_a_v_h.extent (0) &&
+                   V_v_h.extent (1) == V_a_v_h.extent (1) &&
+                   V_v_h.data () != V_a_v_h.data () );
+    }
+
+    {
+      BV V_a (V, Teuchos::View);
+      auto V_a_map = V_a.getMap ();
+      const bool maps_ok = ! V_a_map.is_null () &&
+        ! V.getMap ().is_null () &
+        V_a_map->isSameAs (* (V.getMap ()));
+      TEST_ASSERT( maps_ok );
+
+      auto V_v_h = V.getVectorView ().getLocalViewHost ();
+      auto V_a_v_h = V_a.getVectorView ().getLocalViewHost ();
+      TEST_ASSERT( V_v_h.extent (0) == V_a_v_h.extent (0) &&
+                   V_v_h.extent (1) == V_a_v_h.extent (1) &&
+                   V_v_h.data () == V_a_v_h.data () );
+    }
   }
 
   // Test BlockMultiVector::getMultiVectorView.  It must return a
@@ -387,8 +451,12 @@ namespace {
       X_overlap(i) = static_cast<Scalar> (i+1);
     }
 
-    import_type import (rcpFromRef (meshMap), rcpFromRef (overlappingMeshMap));
-    Y.doImport (X, import, Tpetra::REPLACE);
+    { // BlockMultiVector relies on the point multivector infrastructure
+      const auto pointMehsMap = BMV::makePointMap(meshMap, blockSize);
+      const auto pointOverlappingMeshMap = BMV::makePointMap(overlappingMeshMap, blockSize);
+      import_type pointImport (rcpFromRef (pointMehsMap), rcpFromRef (pointOverlappingMeshMap));
+      Y.getMultiVectorView().doImport (X.getMultiVectorView(), pointImport, Tpetra::REPLACE);
+    }
 
     little_vec_type Y_overlap = Y.getLocalBlock (overlappingMeshMap.getLocalElement (overlappingMeshMap.getMinGlobalIndex ()), colToModify);
 

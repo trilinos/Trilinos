@@ -55,8 +55,8 @@
 #include <Ifpack2_Version.hpp>
 
 #include <Tpetra_RowMatrix.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
+#include <Tpetra_BlockMultiVector.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_BlockRelaxation.hpp>
@@ -92,6 +92,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test0, Scalar, LocalOr
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap =
     tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS> crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+
   Ifpack2::BlockRelaxation<ROW> prec(crsmatrix);
 
   Teuchos::ParameterList params;
@@ -216,17 +217,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LO, GO)
   MV x = *xrcp;
 
   TEST_INEQUALITY(&x, &y);                                               // vector x and y are different
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  x.template sync<Kokkos::HostSpace> ();
-  y.template sync<Kokkos::HostSpace> ();
-  auto x_lcl_host = x.template getLocalView<Kokkos::HostSpace> ();
-  auto y_lcl_host = x.template getLocalView<Kokkos::HostSpace> ();
-#else
+
   x.sync_host ();
   y.sync_host ();
   auto x_lcl_host = x.getLocalViewHost ();
   auto y_lcl_host = x.getLocalViewHost ();
-#endif
+
   TEST_EQUALITY( x_lcl_host.data (), y_lcl_host.data () ); // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
 
   prec.apply(x, y);
@@ -625,8 +621,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using std::endl;
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
   typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -720,6 +716,444 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainers, Scalar, LO, GO)
+{
+  // Create a block tridiagonal matrix (compatible with all 4 container types)
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::endl;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Ifpack2::BlockRelaxation<row_matrix_type> prec_type;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+  std::ostringstream errStrm; // for error collection
+
+  out << "Ifpack2::BlockRelaxation tridiagonal block matrix test" << endl;
+
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
+
+  const int num_rows_per_proc = 8;
+  const int blockSize = 3;
+
+  //the (block) graph should be diagonal
+  auto crsgraph = tif_utest::create_banded_graph<LO,GO,Node>(num_rows_per_proc, 2);
+
+  auto bcrsmatrix = Teuchos::rcp(new
+      Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>(*crsgraph, blockSize));
+  
+  //Fill in values of the the matrix
+  for(LO l_row = 0; (size_t) l_row < bcrsmatrix->getNodeNumRows(); ++l_row)
+  {
+    const LO * inds;
+    Scalar * vals;
+    LO numInd;
+    bcrsmatrix->getLocalRowView(l_row, inds, vals, numInd);
+    for(int k = 0; k < blockSize * blockSize * numInd; k++)
+      vals[k] = 0;
+    for (LO j = 0; j < numInd; ++j)
+    {
+      const LO lcl_col = inds[j];
+      for(int bc = 0; bc < blockSize; bc++)
+      {
+        for(int br = 0; br < blockSize; br++)
+        {
+          //copy the same tridiagonal stencil onto every block,
+          //but for off-diagonal blocks scale it down by 0.4
+          if(std::abs(bc - br) > 1)
+            continue;
+          Scalar val = (bc == br) ? 4 : -1;
+          if(lcl_col != l_row)
+            val *= pow(2, -2.0 - std::abs(lcl_col - l_row));
+          vals[j * blockSize * blockSize + bc * blockSize + br] = val;
+        }
+      }
+    }
+  }
+
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType Magnitude;
+  Teuchos::Array<typename STS::magnitudeType> resNorms(2);
+
+  std::vector<const char*> containerTypes = {"Dense", "TriDi", "Banded"};
+  //Record the residual norm ||Ax-b|| to make sure the three container types agree
+  std::vector<Magnitude> containerNorms;
+
+  for(auto contType : containerTypes)
+  {
+    RCP<prec_type> prec;
+    try {
+      prec = rcp (new prec_type (bcrsmatrix));
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": Preconditioner constructor threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "Preconditioner constructor" );
+
+    Teuchos::ParameterList params;
+    params.set ("relaxation: type", "Jacobi");
+    params.set ("partitioner: local parts", (LO)bcrsmatrix->getNodeNumRows());
+    params.set ("relaxation: sweeps", 10);
+    params.set ("relaxation: container", contType);
+
+    try {
+      prec->setParameters (params);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->setParameters() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->setParameters()" );
+
+    try {
+      prec->initialize ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->initialize() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->initialize()" );
+
+    try {
+      prec->compute ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->compute() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->compute()" );
+
+    BMV xBlock (*crsgraph->getRowMap (), blockSize, 2);
+    BMV yBlock (*crsgraph->getRowMap (), blockSize, 2);
+    MV x = xBlock.getMultiVectorView ();
+    MV y = yBlock.getMultiVectorView ();
+    {
+      for(int v = 0; v < 2; v++)
+      {
+        auto xdata = x.getDataNonConst(v);
+        for(size_t i = 0; i < (size_t) xdata.size(); i++)
+          xdata[i] = (Scalar) i;
+      }
+    }
+    
+    TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+    TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+
+    try {
+      prec->apply (x, y);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->apply(x, y) threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->apply(x, y)" );
+
+    bcrsmatrix->apply(x, y, Teuchos::NO_TRANS, 1.0, -1.0);
+    y.norm2(resNorms());
+    containerNorms.push_back(resNorms[0]);
+    containerNorms.push_back(resNorms[1]);
+  }
+  for(size_t i = 1; i < containerNorms.size(); i++)
+  {
+    TEST_FLOATING_EQUALITY(containerNorms[0], containerNorms[i], 1e-7);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainersDecoupled, Scalar, LO, GO)
+{
+  // Create a block tridiagonal matrix (compatible with all 4 container types)
+  // The values in each block are different (not just a repeated stencil - decoupled blocks must be nonsingular)
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::endl;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Ifpack2::BlockRelaxation<row_matrix_type> prec_type;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+  std::ostringstream errStrm; // for error collection
+
+  out << "Ifpack2::BlockRelaxation decoupled block matrix test" << endl;
+
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
+
+  const int num_rows_per_proc = 8;
+  const int blockSize = 3;
+
+  //the (block) graph should be diagonal
+  auto crsgraph = tif_utest::create_banded_graph<LO,GO,Node>(num_rows_per_proc, 1);
+
+  auto bcrsmatrix = Teuchos::rcp(new
+      Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>(*crsgraph, blockSize));
+  
+  //Fill in values of the the matrix
+  for(LO l_row = 0; (size_t) l_row < bcrsmatrix->getNodeNumRows(); ++l_row)
+  {
+    const LO * inds;
+    Scalar * vals;
+    LO numInd;
+    bcrsmatrix->getLocalRowView(l_row, inds, vals, numInd);
+    for (LO j = 0; j < numInd; ++j)
+    {
+      const LO lcl_col = inds[j];
+      for(int bc = 0; bc < blockSize; bc++)
+      {
+        for(int br = 0; br < blockSize; br++)
+        {
+          Scalar val = 10 / pow(2, std::abs(l_row - lcl_col) + std::abs(bc - br));
+          vals[j * blockSize * blockSize + bc * blockSize + br] = val;
+        }
+      }
+    }
+  }
+
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType Magnitude;
+  Teuchos::Array<typename STS::magnitudeType> resNorms(2);
+
+  std::vector<const char*> containerTypes = {"Dense", "TriDi", "Banded"};
+  //Record the residual norm ||Ax-b|| to make sure the three container types agree
+  std::vector<Magnitude> containerNorms;
+
+  for(auto contType : containerTypes)
+  {
+    RCP<prec_type> prec;
+    try {
+      prec = rcp (new prec_type (bcrsmatrix));
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": Preconditioner constructor threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "Preconditioner constructor" );
+
+    Teuchos::ParameterList params;
+    params.set ("relaxation: type", "Jacobi");
+    params.set ("partitioner: local parts", (LO)bcrsmatrix->getNodeNumRows() / 2);
+    params.set ("relaxation: sweeps", 10);
+    params.set ("relaxation: container", contType);
+    params.set ("block relaxation: decouple dofs", true);
+
+    try {
+      prec->setParameters (params);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->setParameters() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->setParameters()" );
+
+    try {
+      prec->initialize ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->initialize() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->initialize()" );
+
+    try {
+      prec->compute ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->compute() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->compute()" );
+
+    BMV xBlock (*crsgraph->getRowMap (), blockSize, 2);
+    BMV yBlock (*crsgraph->getRowMap (), blockSize, 2);
+    MV x = xBlock.getMultiVectorView ();
+    MV y = yBlock.getMultiVectorView ();
+    {
+      for(int v = 0; v < 2; v++)
+      {
+        auto xdata = x.getDataNonConst(v);
+        for(size_t i = 0; i < (size_t) xdata.size(); i++)
+          xdata[i] = (Scalar) i;
+      }
+    }
+    
+    TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+    TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+    try {
+      prec->apply (x, y);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->apply(x, y) threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->apply(x, y)" );
+    bcrsmatrix->apply(x, y, Teuchos::NO_TRANS, 1.0, -1.0);
+    y.norm2(resNorms());
+    containerNorms.push_back(resNorms[0]);
+    containerNorms.push_back(resNorms[1]);
+  }
+  for(size_t i = 1; i < containerNorms.size(); i++)
+  {
+    TEST_FLOATING_EQUALITY(containerNorms[0], containerNorms[i], 1e-7);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestContainersDofsDecoupled, Scalar, LO, GO)
+{
+  // Create a regular CrsMatrix that is (entrywise) identical to the matrix used in the BlockContainersDecoupled test
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::endl;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Ifpack2::BlockRelaxation<row_matrix_type> prec_type;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+  std::ostringstream errStrm; // for error collection
+
+  out << "Ifpack2::BlockRelaxation decoupled block matrix test" << endl;
+
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
+
+  const int nodesPerProc = 8;
+  const int dofsPerNode = 3;
+  const int rowsPerProc = nodesPerProc * dofsPerNode;
+
+  auto INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+  auto rowmap = Teuchos::rcp(new Tpetra::Map<LO, GO, Node>(INVALID, rowsPerProc, 0, comm));  //0 is indexBase
+
+  const size_t maxNumEntPerRow = dofsPerNode * 3;     //Node graph is tridiagonal, but graph within nodes is complete
+
+  auto matrix = Teuchos::rcp(new crs_matrix_type(rowmap, maxNumEntPerRow));
+
+  //Fill in the matrix one row at a time (on each process)
+  Teuchos::Array<GO> colInds;
+  Teuchos::Array<Scalar> values;
+
+  for(LO lclRowInd = 0; lclRowInd < rowsPerProc; lclRowInd++)
+  {
+    colInds.clear();
+    values.clear();
+    GO gblRowInd = rowmap->getGlobalElement(lclRowInd);
+    for (LO blk = 0; blk < 3; blk++)  //3 is degree of each node (tridiagonal graph)
+    {
+      GO gblBlockCol = (gblRowInd / dofsPerNode + blk - 1);
+      if(gblBlockCol < 0 || gblBlockCol >= nodesPerProc * comm->getSize())
+        continue;
+      for(LO col = 0; col < dofsPerNode; col++)
+      {
+        GO gblCol = gblBlockCol * dofsPerNode + col;
+        LO blockDiff = std::abs(blk - 1);
+        LO rowDiff = std::abs(gblRowInd % dofsPerNode - gblCol % dofsPerNode);
+        values.push_back(10 / pow(2, blockDiff + rowDiff));
+        colInds.push_back(gblCol);
+      }
+    }
+    matrix->insertGlobalValues(gblRowInd, colInds(), values());
+  }
+  matrix->fillComplete ();
+
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType Magnitude;
+  Teuchos::Array<typename STS::magnitudeType> resNorms(2);
+
+  std::vector<const char*> containerTypes = {"Dense", "TriDi", "Banded"};
+  //Record the residual norm ||Ax-b|| to make sure the three container types agree
+  std::vector<Magnitude> containerNorms;
+
+  for(auto contType : containerTypes)
+  {
+    RCP<prec_type> prec;
+    try {
+      prec = rcp (new prec_type (matrix));
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": Preconditioner constructor threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "Preconditioner constructor" );
+
+    Teuchos::ParameterList params;
+    params.set ("relaxation: type", "Jacobi");
+    params.set ("partitioner: local parts", (LO) matrix->getNodeNumRows() / 2 / dofsPerNode);
+    params.set ("relaxation: sweeps", 10);
+    params.set ("relaxation: container", contType);
+    params.set ("block relaxation: decouple dofs", true);
+    params.set ("partitioner: PDE equations", dofsPerNode);
+
+    try {
+      prec->setParameters (params);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->setParameters() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->setParameters()" );
+
+    try {
+      prec->initialize ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->initialize() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->initialize()" );
+
+    try {
+      prec->compute ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->compute() threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->compute()" );
+
+    MV x(matrix->getRowMap(), 2);
+    MV y(matrix->getRowMap(), 2);
+    for(int v = 0; v < 2; v++)
+    {
+      auto xdata = x.getDataNonConst(v);
+      for(size_t i = 0; i < (size_t) xdata.size(); i++)
+        xdata[i] = (Scalar) i;
+    }
+    TEST_EQUALITY(x.getMap()->getNodeNumElements(), rowsPerProc);
+    TEST_EQUALITY(y.getMap()->getNodeNumElements(), rowsPerProc);
+    try {
+      prec->apply (x, y);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": prec->apply(x, y) threw exception: "
+              << e.what () << endl;
+    }
+    IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "prec->apply(x, y)" );
+    matrix->apply(x, y, Teuchos::NO_TRANS, 1.0, -1.0);
+    y.norm2(resNorms());
+    containerNorms.push_back(resNorms[0]);
+    containerNorms.push_back(resNorms[1]);
+  }
+  for(size_t i = 1; i < containerNorms.size(); i++)
+  {
+    TEST_FLOATING_EQUALITY(containerNorms[0], containerNorms[i], 1e-7);
+  }
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LO, GO)
 {
   // Create a block lower triangular matrix
@@ -731,10 +1165,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using std::endl;
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
   typedef Ifpack2::BlockRelaxation<row_matrix_type> prec_type;
   int lclSuccess = 1;
@@ -768,9 +1202,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
             << e.what () << endl;
   }
   IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "create_triangular_matrix" );
-
-//  Teuchos::RCP<Teuchos::FancyOStream> wrappedStream = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-//  bcrsmatrix->describe (*wrappedStream, Teuchos::VERB_EXTREME);
 
   RCP<prec_type> prec;
   try {
@@ -853,9 +1284,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   // Matrix is [2*I_5 3*I_5 I_5; 0 2*I_5 3*I_5; 0 0 2*I_5]
   // Solve the linear system A x = ones(15,1)
   // Solution is [0.625*ones(5,1); -0.25*ones(5,1); 0.5*ones(5,1)]
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
   out << "Ifpack2::Version(): " << Ifpack2::Version () << std::endl;
@@ -878,7 +1309,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   Teuchos::ParameterList params;
   params.set("relaxation: container", "Dense");
   params.set("relaxation: type", "Symmetric Gauss-Seidel");
-  params.set ("partitioner: local parts", (LocalOrdinal)bcrsmatrix->getNodeNumRows());
+  params.set("partitioner: local parts", (LocalOrdinal)bcrsmatrix->getNodeNumRows());
   prec.setParameters(params);
 
   prec.initialize();
@@ -920,6 +1351,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, BandedContainer,                   Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, BlockedBandedContainer,            Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TestDiagonalBlockCrsMatrix,        Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TestBlockContainers,               Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TestBlockContainersDecoupled,      Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TestContainersDofsDecoupled,       Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal)
 

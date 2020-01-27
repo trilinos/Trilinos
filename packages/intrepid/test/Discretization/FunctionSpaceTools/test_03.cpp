@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
 
       *outStream << "\n";
   }// try Basis_HDIV_HEX_I1
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";

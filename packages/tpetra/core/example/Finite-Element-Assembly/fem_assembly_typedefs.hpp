@@ -41,43 +41,49 @@
 #ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 #define TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 
-#include <Kokkos_View.hpp>
-#include <Tpetra_Export.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_FECrsGraph.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_FECrsMatrix.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_FEMultiVector.hpp>
+#include "Kokkos_View.hpp"
+#include "Tpetra_Export.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_FECrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_FEMultiVector.hpp"
 
 namespace TpetraExamples {
 
+using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
+using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
+using execution_space = Tpetra::Map<>::device_type::execution_space;
 
-// Get LocalOrdinal & GlobalOrdinal from Map defaults.
-typedef Tpetra::Map<>::local_ordinal_type  local_ordinal_t;
-typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
-typedef Tpetra::Map<>::node_type           node_t;
+using map_type = Tpetra::Map<>;
+using crs_graph_type = Tpetra::CrsGraph<>;
+using fe_graph_type = Tpetra::FECrsGraph<>;
+using Scalar = Tpetra::CrsMatrix<>::scalar_type;
+using crs_matrix_type = Tpetra::CrsMatrix<Scalar>;
+using fe_matrix_type = Tpetra::FECrsMatrix<Scalar>;
 
-typedef Kokkos::DefaultExecutionSpace execution_space_t;
+using import_type = Tpetra::Import<>;
+using export_type = Tpetra::Export<>;
+using multivector_type = Tpetra::MultiVector<Scalar>;
+using fe_multivector_type = Tpetra::FEMultiVector<Scalar>;
 
-typedef Kokkos::View<global_ordinal_t*, execution_space_t> global_ordinal_view_t;
 
-typedef Tpetra::Map<>             map_t;
-typedef Tpetra::CrsGraph<>        graph_t;
-typedef Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>      fe_graph_t;
-typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
-typedef Tpetra::CrsMatrix<Scalar>   matrix_t;
-typedef Tpetra::FECrsMatrix<Scalar> fe_matrix_t;
-
-typedef Tpetra::Export<>          export_t;
-typedef Tpetra::MultiVector<Scalar> multivector_t;
-typedef Tpetra::FEMultiVector<Scalar> fe_multivector_t;
+using global_ordinal_view_type =
+  Kokkos::View<global_ordinal_type*, execution_space>;
+using local_ordinal_view_type =
+  Kokkos::View<local_ordinal_type*, execution_space>;
+using scalar_1d_array_type = Kokkos::View<Scalar*, execution_space>;
+using bool_1d_array_type = Kokkos::View<bool*, execution_space>;
 
 // NOTE: Arrays are hardwired for QUAD4
-typedef Kokkos::View<local_ordinal_t*[4], execution_space_t>  local_ordinal_2d_array_t;
-typedef Kokkos::View<global_ordinal_t*[4], execution_space_t> global_ordinal_2d_array_t;
-typedef Kokkos::View<Scalar*[4], execution_space_t>           scalar_2d_array_t;
+using local_ordinal_2d_array_type =
+  Kokkos::View<local_ordinal_type*[4], execution_space>;
+using global_ordinal_2d_array_type =
+  Kokkos::View<global_ordinal_type*[4], execution_space>;
+using scalar_2d_array_type = Kokkos::View<Scalar*[4], execution_space>;
+
 
 }
 

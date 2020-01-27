@@ -11,6 +11,8 @@
         
 \cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
         
+\cbb{fuse prolongation and update}{bool}{false}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
+        
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
         
 \cbb{xml parameter file}{string}{""}{An XML file from which to read additional
@@ -21,6 +23,8 @@
 \cbb{parameterlist: syntax}{string}{muelu}{Syntax of ParameterList to use.  This should either be "muelu" or "ml." }
         
 \cbb{hierarchy label}{string}{""}{Label for the hierarchy. Is applied to timer labels.}
+        
+\cba{matvec params}{\parameterlist}{Pass parameters to the underlying linear algebra}
         
 \cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
         
@@ -74,7 +78,9 @@
         
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
         
-\cbb{aggregation: phase 1 algorithm}{string}{Serial}{Choice of algorithm for aggregation phase 1.}
+\cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
+        
+\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.}
         
 \cbb{aggregation: enable phase 1}{bool}{true}{Turn on/off phase 1 of aggregation}
         
@@ -147,6 +153,8 @@
         
 \cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
         
+\cbb{restriction: scale nullspace}{bool}{false}{Block-diagonally scale (based on number of PDEs) the nullspace for the restriction only.}
+        
 \cbb{use kokkos refactor}{bool}{false}{Switch on the new \kokkos based version for on-node parallelism.}
         
 \cbb{synchronize factory timers}{bool}{false}{Add barriers before and after Factory Build() calls.}
@@ -206,6 +214,8 @@
 \cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
         
 \cbb{tentative: calculate qr}{bool}{true}{If false, skip local QR decomposition phase of smoothed aggregation.}
+        
+\cbb{tentative: constant column sums}{bool}{false}{If true, scale the column sums to one (before applying nullspace).}
         
 \cbb{tentative: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         
@@ -281,7 +291,7 @@ optimized neighbor discovery for Importer construction.}
         
 \cbb{debug: graph level}{int}{-1}{Output dependency graph.}
         
-\cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212"}
+\cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
         
 \cbb{refmaxwell: disable addon}{bool}{true}{Specifing whether the addon should be built for stabilization}
         

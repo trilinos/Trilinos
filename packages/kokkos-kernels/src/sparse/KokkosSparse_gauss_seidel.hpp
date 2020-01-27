@@ -116,10 +116,14 @@ namespace KokkosSparse{
                                      typename KernelHandle::const_nnz_lno_t block_size,
                                      lno_row_view_t_ row_map,
                                      lno_nnz_view_t_ entries,
-                                     bool is_graph_symmetric = true){
-
-
-      handle->get_gs_handle()->set_block_size(block_size);
+                                     bool is_graph_symmetric = true)
+    {
+      auto gsHandle = handle->get_point_gs_handle();
+      if(gsHandle->get_algorithm_type() == GS_CLUSTER)
+      {
+        throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
+      }
+      gsHandle->set_block_size(block_size);
 
       gauss_seidel_symbolic(handle,
                             num_rows, num_cols,
@@ -277,7 +281,12 @@ namespace KokkosSparse{
                                     scalar_nnz_view_t_ values,
                                     bool is_graph_symmetric = true
                                     ){
-      handle->get_gs_handle()->set_block_size(block_size);
+      auto gsHandle = handle->get_point_gs_handle();
+      if(gsHandle->get_algorithm_type() == GS_CLUSTER)
+      {
+        throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
+      }
+      gsHandle->set_block_size(block_size);
 
       gauss_seidel_numeric(handle,
                            num_rows,num_cols,
@@ -300,10 +309,10 @@ namespace KokkosSparse{
                                       scalar_nnz_view_t_ values,
                                       x_scalar_view_t x_lhs_output_vec,
                                       y_scalar_view_t y_rhs_input_vec,
-                                      bool init_zero_x_vector = false,
-                                      bool update_y_vector = true,
-                                      typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                      int numIter = 1){
+                                      bool init_zero_x_vector,
+                                      bool update_y_vector,
+                                      typename KernelHandle::nnz_scalar_t omega,
+                                      int numIter){
 
       static_assert (std::is_same<typename KernelHandle::const_size_type,
                      typename lno_row_view_t_::const_value_type>::value,
@@ -325,8 +334,21 @@ namespace KokkosSparse{
                      typename x_scalar_view_t::value_type>::value,
                      "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the x-vector should be same as kernelHandle non-const scalar_t.");
 
+      static_assert (!std::is_same<typename lno_row_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::symmetric_gauss_seidel_apply: row_map must have a contiguous layout (Left or Right, not Stride)");
+      static_assert (!std::is_same<typename lno_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::symmetric_gauss_seidel_apply: entries must have a contiguous layout (Left or Right, not Stride)");
+      static_assert (!std::is_same<typename scalar_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::symmetric_gauss_seidel_apply: values must have a contiguous layout (Left or Right, not Stride)");
 
-
+      // Check compatibility of #vectors
+      if(x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1))
+      {
+        std::ostringstream os;
+        os << "KokkosSparse::symmetric_gauss_seidel_apply: " <<
+          "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+        Kokkos::Impl::throw_runtime_exception (os.str ());
+      }
 
       typedef typename KernelHandle::const_size_type c_size_t;
       typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
@@ -337,7 +359,6 @@ namespace KokkosSparse{
       typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
 
       typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
-      //const_handle_type tmp_handle = *handle;
       const_handle_type tmp_handle (*handle);
 
       typedef Kokkos::View<
@@ -358,47 +379,37 @@ namespace KokkosSparse{
         typename scalar_nnz_view_t_::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_ascalar_nnz_view_t_;
 
-
       typedef Kokkos::View<
-        typename y_scalar_view_t::const_value_type*,
+        typename y_scalar_view_t::const_value_type**,
         typename KokkosKernels::Impl::GetUnifiedLayout<y_scalar_view_t>::array_layout,
         typename y_scalar_view_t::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_yscalar_nnz_view_t_;
 
       typedef Kokkos::View<
-        typename x_scalar_view_t::non_const_value_type*,
+        typename x_scalar_view_t::non_const_value_type**,
         typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
         typename x_scalar_view_t::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
-
-      /*
-
-        Internal_alno_row_view_t_ const_a_r  = row_map;
-        Internal_alno_nnz_view_t_ const_a_l  = entries;
-        Internal_ascalar_nnz_view_t_ const_a_v  = values;
-        Internal_xscalar_nnz_view_t_ nonconst_x_v = x_lhs_output_vec;
-        Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
-      */
 
       Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
       Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
       Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-      Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
-      Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
+      Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec.extent(1));
+      Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
 
       using namespace KokkosSparse::Impl;
 
       GAUSS_SEIDEL_APPLY<const_handle_type,
                          Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
                          Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_>::gauss_seidel_apply (
-                                                                                                          &tmp_handle, num_rows, num_cols,
-                                                                                                          const_a_r, const_a_l, const_a_v,
-                                                                                                          nonconst_x_v, const_y_v,
-                                                                                                          init_zero_x_vector,
-                                                                                                          update_y_vector,
-                                                                                                          omega,
-                                                                                                          numIter, true, true);
+                             &tmp_handle, num_rows, num_cols,
+                             const_a_r, const_a_l, const_a_v,
+                             nonconst_x_v, const_y_v,
+                             init_zero_x_vector,
+                             update_y_vector,
+                             omega,
+                             numIter, true, true);
 
 
     }
@@ -419,11 +430,26 @@ namespace KokkosSparse{
                                             scalar_nnz_view_t_ values,
                                             x_scalar_view_t x_lhs_output_vec,
                                             y_scalar_view_t y_rhs_input_vec,
-                                            bool init_zero_x_vector = false,
-                                            bool update_y_vector = true,
-                                            typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                            int numIter = 1){
-      handle->get_gs_handle()->set_block_size(block_size);
+                                            bool init_zero_x_vector,
+                                            bool update_y_vector,
+                                            typename KernelHandle::nnz_scalar_t omega,
+                                            int numIter)
+    {
+      // Check compatibility of dimensions at run time.
+      if(x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1))
+      {
+        std::ostringstream os;
+        os << "KokkosSparse::symmetric_block_gauss_seidel_apply: Dimensions of X and Y do not match: " <<
+          "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+        Kokkos::Impl::throw_runtime_exception (os.str ());
+      }
+      auto gsHandle = handle->get_point_gs_handle();
+      if(gsHandle->get_algorithm_type() == GS_CLUSTER)
+      {
+        throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
+      }
+
+      gsHandle->set_block_size(block_size);
       symmetric_gauss_seidel_apply(handle,num_rows,num_cols,
                                    row_map,
                                    entries,
@@ -449,33 +475,46 @@ namespace KokkosSparse{
                                           scalar_nnz_view_t_ values,
                                           x_scalar_view_t x_lhs_output_vec,
                                           y_scalar_view_t y_rhs_input_vec,
-                                          bool init_zero_x_vector = false,
-                                          bool update_y_vector = true,
-                                          typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                          int numIter = 1){
-
+                                          bool init_zero_x_vector,
+                                          bool update_y_vector,
+                                          typename KernelHandle::nnz_scalar_t omega,
+                                          int numIter)
+    {
       static_assert (std::is_same<typename KernelHandle::const_size_type,
                      typename lno_row_view_t_::const_value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: Size type of the matrix should be same as kernelHandle sizetype.");
+                     "KokkosSparse::forward_sweep_gauss_seidel_apply: Size type of the matrix should be same as kernelHandle sizetype.");
 
       static_assert (std::is_same<typename KernelHandle::const_nnz_lno_t,
                      typename lno_nnz_view_t_::const_value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: lno type of the matrix should be same as kernelHandle lno_t.");
+                     "KokkosSparse::forward_sweep_gauss_seidel_apply: lno type of the matrix should be same as kernelHandle lno_t.");
 
       static_assert (std::is_same<typename KernelHandle::const_nnz_scalar_t,
                      typename scalar_nnz_view_t_::const_value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the matrix should be same as kernelHandle scalar_t.");
+                     "KokkosSparse::forward_sweep_gauss_seidel_apply: scalar type of the matrix should be same as kernelHandle scalar_t.");
 
       static_assert (std::is_same<typename KernelHandle::const_nnz_scalar_t,
                      typename y_scalar_view_t::const_value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the y-vector should be same as kernelHandle scalar_t.");
+                     "KokkosSparse::forward_sweep_gauss_seidel_apply: scalar type of the y-vector should be same as kernelHandle scalar_t.");
 
       static_assert (std::is_same<typename KernelHandle::nnz_scalar_t,
                      typename x_scalar_view_t::value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the x-vector should be same as kernelHandle non-const scalar_t.");
+                     "KokkosSparse::forward_sweep_gauss_seidel_apply: scalar type of the x-vector should be same as kernelHandle non-const scalar_t.");
 
+      static_assert (!std::is_same<typename lno_row_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::forward_sweep_gauss_seidel_apply: row_map must have a contiguous layout (Left or Right, not Stride)");
+      static_assert (!std::is_same<typename lno_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::forward_sweep_gauss_seidel_apply: entries must have a contiguous layout (Left or Right, not Stride)");
+      static_assert (!std::is_same<typename scalar_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::forward_sweep_gauss_seidel_apply: values must have a contiguous layout (Left or Right, not Stride)");
 
-
+      // Check compatibility of dimensions at run time.
+      if(x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1))
+      {
+        std::ostringstream os;
+        os << "KokkosSparse::forward_sweep_gauss_seidel_apply: Dimensions of X and Y do not match: " <<
+          "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+        Kokkos::Impl::throw_runtime_exception (os.str ());
+      }
 
       typedef typename KernelHandle::const_size_type c_size_t;
       typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
@@ -507,50 +546,37 @@ namespace KokkosSparse{
         typename scalar_nnz_view_t_::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_ascalar_nnz_view_t_;
 
-
       typedef Kokkos::View<
-        typename y_scalar_view_t::const_value_type*,
+        typename y_scalar_view_t::const_value_type**,
         typename KokkosKernels::Impl::GetUnifiedLayout<y_scalar_view_t>::array_layout,
         typename y_scalar_view_t::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_yscalar_nnz_view_t_;
 
       typedef Kokkos::View<
-        typename x_scalar_view_t::non_const_value_type*,
+        typename x_scalar_view_t::non_const_value_type**,
         typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
         typename x_scalar_view_t::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
-
-      /*
-        Internal_alno_row_view_t_ const_a_r  = row_map;
-        Internal_alno_nnz_view_t_ const_a_l  = entries;
-        Internal_ascalar_nnz_view_t_ const_a_v  = values;
-        Internal_xscalar_nnz_view_t_ nonconst_x_v = x_lhs_output_vec;
-        Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
-      */
 
       Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
       Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
       Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-      Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
-      Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
-
-
+      Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec.extent(1));
+      Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
 
       using namespace KokkosSparse::Impl;
 
       GAUSS_SEIDEL_APPLY<const_handle_type,
                          Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
-                         Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_>::gauss_seidel_apply(
-                                                                                                         &tmp_handle, num_rows, num_cols,
-                                                                                                         const_a_r, const_a_l, const_a_v,
-                                                                                                         nonconst_x_v, const_y_v,
-                                                                                                         init_zero_x_vector,
-                                                                                                         update_y_vector,
-                                                                                                         omega,
-                                                                                                         numIter, true, false);
-
-
+                         Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_>::gauss_seidel_apply (
+                             &tmp_handle, num_rows, num_cols,
+                             const_a_r, const_a_l, const_a_v,
+                             nonconst_x_v, const_y_v,
+                             init_zero_x_vector,
+                             update_y_vector,
+                             omega,
+                             numIter, true, false);
     }
 
 
@@ -570,11 +596,26 @@ namespace KokkosSparse{
                                                 scalar_nnz_view_t_ values,
                                                 x_scalar_view_t x_lhs_output_vec,
                                                 y_scalar_view_t y_rhs_input_vec,
-                                                bool init_zero_x_vector = false,
-                                                bool update_y_vector = true,
-                                                typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                                int numIter = 1){
-      handle->get_gs_handle()->set_block_size(block_size);
+                                                bool init_zero_x_vector,
+                                                bool update_y_vector,
+                                                typename KernelHandle::nnz_scalar_t omega,
+                                                int numIter)
+    {
+      // Check compatibility of dimensions at run time.
+      if(x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1))
+      {
+        std::ostringstream os;
+        os << "KokkosSparse::forward_sweep_block_gauss_seidel_apply: Dimensions of X and Y do not match: " <<
+          "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+        Kokkos::Impl::throw_runtime_exception (os.str ());
+      }
+
+      auto gsHandle = handle->get_point_gs_handle();
+      if(gsHandle->get_algorithm_type() == GS_CLUSTER)
+      {
+        throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
+      }
+      gsHandle->set_block_size(block_size);
       forward_sweep_gauss_seidel_apply(handle,num_rows,num_cols,
                                        row_map,
                                        entries,
@@ -600,33 +641,46 @@ namespace KokkosSparse{
                                            scalar_nnz_view_t_ values,
                                            x_scalar_view_t x_lhs_output_vec,
                                            y_scalar_view_t y_rhs_input_vec,
-                                           bool init_zero_x_vector = false,
-                                           bool update_y_vector = true,
-                                           typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                           int numIter = 1){
+                                           bool init_zero_x_vector,
+                                           bool update_y_vector,
+                                           typename KernelHandle::nnz_scalar_t omega,
+                                           int numIter){
 
       static_assert (std::is_same<typename KernelHandle::const_size_type,
                      typename lno_row_view_t_::const_value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: Size type of the matrix should be same as kernelHandle sizetype.");
+                     "KokkosSparse::backward_sweep_gauss_seidel_apply: Size type of the matrix should be same as kernelHandle sizetype.");
 
       static_assert (std::is_same<typename KernelHandle::const_nnz_lno_t,
                      typename lno_nnz_view_t_::const_value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: lno type of the matrix should be same as kernelHandle lno_t.");
+                     "KokkosSparse::backward_sweep_gauss_seidel_apply: lno type of the matrix should be same as kernelHandle lno_t.");
 
       static_assert (std::is_same<typename KernelHandle::const_nnz_scalar_t,
                      typename scalar_nnz_view_t_::const_value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the matrix should be same as kernelHandle scalar_t.");
+                     "KokkosSparse::backward_sweep_gauss_seidel_apply: scalar type of the matrix should be same as kernelHandle scalar_t.");
 
       static_assert (std::is_same<typename KernelHandle::const_nnz_scalar_t,
                      typename y_scalar_view_t::const_value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the y-vector should be same as kernelHandle scalar_t.");
+                     "KokkosSparse::backward_sweep_gauss_seidel_apply: scalar type of the y-vector should be same as kernelHandle scalar_t.");
 
       static_assert (std::is_same<typename KernelHandle::nnz_scalar_t,
                      typename x_scalar_view_t::value_type>::value,
-                     "KokkosSparse::symmetric_gauss_seidel_apply: scalar type of the x-vector should be same as kernelHandle non-const scalar_t.");
+                     "KokkosSparse::backward_sweep_gauss_seidel_apply: scalar type of the x-vector should be same as kernelHandle non-const scalar_t.");
 
+      static_assert (!std::is_same<typename lno_row_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::backward_sweep_gauss_seidel_apply: row_map must have a contiguous layout (Left or Right, not Stride)");
+      static_assert (!std::is_same<typename lno_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::backward_sweep_gauss_seidel_apply: entries must have a contiguous layout (Left or Right, not Stride)");
+      static_assert (!std::is_same<typename scalar_nnz_view_t_::array_layout, Kokkos::LayoutStride>::value,
+                     "KokkosSparse::backward_sweep_gauss_seidel_apply: values must have a contiguous layout (Left or Right, not Stride)");
 
-
+      // Check compatibility of dimensions at run time.
+      if(x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1))
+      {
+        std::ostringstream os;
+        os << "KokkosSparse::backward_sweep_gauss_seidel_apply: Dimensions of X and Y do not match: " <<
+          "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+        Kokkos::Impl::throw_runtime_exception (os.str ());
+      }
 
       typedef typename KernelHandle::const_size_type c_size_t;
       typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
@@ -658,46 +712,37 @@ namespace KokkosSparse{
         typename scalar_nnz_view_t_::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_ascalar_nnz_view_t_;
 
-
       typedef Kokkos::View<
-        typename y_scalar_view_t::const_value_type*,
+        typename y_scalar_view_t::const_value_type**,
         typename KokkosKernels::Impl::GetUnifiedLayout<y_scalar_view_t>::array_layout,
         typename y_scalar_view_t::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_yscalar_nnz_view_t_;
 
       typedef Kokkos::View<
-        typename x_scalar_view_t::non_const_value_type*,
+        typename x_scalar_view_t::non_const_value_type**,
         typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
         typename x_scalar_view_t::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
 
-      /*
-        Internal_alno_row_view_t_ const_a_r  = row_map;
-        Internal_alno_nnz_view_t_ const_a_l  = entries;
-        Internal_ascalar_nnz_view_t_ const_a_v  = values;
-        Internal_xscalar_nnz_view_t_ nonconst_x_v = x_lhs_output_vec;
-        Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
-      */
       Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
       Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
       Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-      Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
-      Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
-
+      Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec.extent(1));
+      Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
 
       using namespace KokkosSparse::Impl;
 
       GAUSS_SEIDEL_APPLY<const_handle_type,
                          Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
                          Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_>::gauss_seidel_apply (
-                                                                                                          &tmp_handle, num_rows, num_cols,
-                                                                                                          const_a_r, const_a_l, const_a_v,
-                                                                                                          nonconst_x_v, const_y_v,
-                                                                                                          init_zero_x_vector,
-                                                                                                          update_y_vector,
-                                                                                                          omega,
-                                                                                                          numIter, false, true);
+                             &tmp_handle, num_rows, num_cols,
+                             const_a_r, const_a_l, const_a_v,
+                             nonconst_x_v, const_y_v,
+                             init_zero_x_vector,
+                             update_y_vector,
+                             omega,
+                             numIter, false, true);
 
 
     }
@@ -718,11 +763,25 @@ namespace KokkosSparse{
                                                  scalar_nnz_view_t_ values,
                                                  x_scalar_view_t x_lhs_output_vec,
                                                  y_scalar_view_t y_rhs_input_vec,
-                                                 bool init_zero_x_vector = false,
-                                                 bool update_y_vector = true,
-                                                 typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                                 int numIter = 1){
-      handle->get_gs_handle()->set_block_size(block_size);
+                                                 bool init_zero_x_vector,
+                                                 bool update_y_vector,
+                                                 typename KernelHandle::nnz_scalar_t omega,
+                                                 int numIter)
+    {
+      // Check compatibility of dimensions at run time.
+      if(x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1))
+      {
+        std::ostringstream os;
+        os << "KokkosSparse::backward_sweep_block_gauss_seidel_apply: Dimensions of X and Y do not match: " <<
+          "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+        Kokkos::Impl::throw_runtime_exception (os.str ());
+      }
+      auto gsHandle = handle->get_point_gs_handle();
+      if(gsHandle->get_algorithm_type() == GS_CLUSTER)
+      {
+        throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
+      }
+      gsHandle->set_block_size(block_size);
       backward_sweep_gauss_seidel_apply(handle,num_rows,num_cols,
                                         row_map,
                                         entries,

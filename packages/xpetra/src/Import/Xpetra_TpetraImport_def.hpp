@@ -53,6 +53,7 @@
 
 #include "Xpetra_TpetraMap.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Distributor.hpp"
 
 namespace Xpetra {
 
@@ -91,6 +92,10 @@ ArrayView< const LocalOrdinal > TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::g
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::getNumRemoteIDs() const
 { XPETRA_MONITOR("TpetraImport::getNumRemoteIDs"); return import_->getNumRemoteIDs(); }
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const
+{ XPETRA_MONITOR("TpetraImport::setDistributorParameters"); import_->getDistributor().setParameterList(params); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 ArrayView< const LocalOrdinal > TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::getRemoteLIDs() const
@@ -206,6 +211,9 @@ RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > TpetraImport<Lo
     //! The Target Map used to construct this Import object.
     Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { return Teuchos::null; }
 
+    //! Set parameters on the underlying object
+    void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const { }
+
     //@}
 
     //! @name I/O Methods
@@ -305,6 +313,9 @@ RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > TpetraImport<Lo
 
     //! The Target Map used to construct this Import object.
     Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { return Teuchos::null; }
+
+    //! Set parameters on the underlying object
+    void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const { }
 
     //@}
 

@@ -52,7 +52,7 @@ namespace ROL {
 template<class Real, class Ordinal>
 class SingletonTeuchosBatchManager : public TeuchosBatchManager<Real,Ordinal> {
 public:
-  SingletonTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
+  SingletonTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
     : TeuchosBatchManager<Real,Ordinal>(comm) {}
 
   using TeuchosBatchManager<Real,Ordinal>::sumAll;

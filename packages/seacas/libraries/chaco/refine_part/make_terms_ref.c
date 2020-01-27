@@ -34,6 +34,7 @@
  */
 
 #include "structs.h" // for vtx_data
+#include <stdlib.h>
 
 /* Compute the terminal constraints for next partition. */
 void make_terms_ref(struct vtx_data **graph,       /* data structure for graph */
@@ -55,7 +56,6 @@ void make_terms_ref(struct vtx_data **graph,       /* data structure for graph *
   int    neighbor;             /* neighboring vertex number */
   int    x;                    /* bitwise difference between sets */
   int    i, j;                 /* loop counters */
-  int    abs();
 
   /* NOTE: CURRENTLY ONLY WORKING FOR BISECTION. */
 

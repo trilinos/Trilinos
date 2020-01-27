@@ -190,7 +190,7 @@ TEUCHOS_UNIT_TEST(Reducer, test_Reducer_test1)
     factory = fei::create_fei_Factory(comm, "Trilinos");
   }
   catch(...) {
-    FEI_COUT << "\ncouldn't create Trilinos factory."<<FEI_ENDL;
+    out << "\ncouldn't create Trilinos factory."<<FEI_ENDL;
     return;
   }
 

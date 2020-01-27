@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -118,16 +119,14 @@ public:
 
   void add_entity_with_part_memberships(const Entity entity,
                                         const EntityRank arg_entity_rank,
-                                        const OrdinalVector &parts,
-                                        std::vector<unsigned>& scratchSpace);
+                                        const OrdinalVector &parts);
 
-  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts,
-                                     std::vector<unsigned>& scratchSpace);
+  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts);
 
   void remove_entity(const MeshIndex &meshIndex);
 
   Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
-                                     const OrdinalVector &parts, std::vector<unsigned>& scratchSpace);
+                                     const OrdinalVector &parts);
 
   // For use by BulkData::internal_modification_end().
   void internal_modification_end();

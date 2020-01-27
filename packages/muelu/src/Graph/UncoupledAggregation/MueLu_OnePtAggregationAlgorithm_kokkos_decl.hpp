@@ -77,15 +77,16 @@ namespace MueLu {
 
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class OnePtAggregationAlgorithm_kokkos :
     public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    using memory_space = typename LWGraph_kokkos::memory_space;
     //! @name Constructors/Destructors.
     //@{
 
@@ -103,7 +104,11 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(Teuchos::ParameterList const & params, LWGraph_kokkos const & graph, Aggregates_kokkos & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    void BuildAggregates(Teuchos::ParameterList const & params,
+                         LWGraph_kokkos const & graph,
+                         Aggregates_kokkos & aggregates,
+                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                         LO& numNonAggregatedNodes) const;
     //@}
 
 

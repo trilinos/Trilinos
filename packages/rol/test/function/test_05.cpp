@@ -51,6 +51,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_NonlinearLeastSquaresObjective.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -78,10 +79,10 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    ROL::Ptr<ROL::Objective<RealT> > obj;
-    ROL::Ptr<ROL::Constraint<RealT> > constr;
-    ROL::Ptr<ROL::Vector<RealT> > x;
-    ROL::Ptr<ROL::Vector<RealT> > sol;
+    ROL::Ptr<ROL::Objective<RealT>> obj;
+    ROL::Ptr<ROL::Constraint<RealT>> constr;
+    ROL::Ptr<ROL::Vector<RealT>> x;
+    ROL::Ptr<ROL::Vector<RealT>> sol;
 
     // Retrieve objective, constraint, iteration vector, solution vector.
     ROL::ZOO::getSimpleEqConstrained<RealT> SEC;
@@ -94,12 +95,12 @@ int main(int argc, char *argv[]) {
     int dim = 5;
     int nc = 3;
     RealT left = -1e0, right = 1e0;
-    ROL::Ptr<std::vector<RealT> > xtest_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
-    ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
-    ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
-    ROL::Ptr<std::vector<RealT> > v_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
-    ROL::Ptr<std::vector<RealT> > vc_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
-    ROL::Ptr<std::vector<RealT> > vl_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
+    ROL::Ptr<std::vector<RealT>> xtest_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT>> g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT>> d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT>> v_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT>> vc_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
+    ROL::Ptr<std::vector<RealT>> vl_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
     ROL::StdVector<RealT> xtest(xtest_ptr);
     ROL::StdVector<RealT> g(g_ptr);
     ROL::StdVector<RealT> d(d_ptr);
@@ -134,13 +135,14 @@ int main(int argc, char *argv[]) {
     
     // Define algorithm.
     ROL::ParameterList parlist;
-    std::string stepname = "Trust Region";
-    parlist.sublist("Step").sublist(stepname).set("Subproblem Solver","Truncated CG");
+    parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-10);
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-10);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-18);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    ROL::Algorithm<RealT> algo(stepname, parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status = ROL::makePtr<ROL::StatusTest<RealT>>(parlist);
+    ROL::Ptr<ROL::Step<RealT>> step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Run Algorithm
     *outStream << "\nSOLVE USING FULL HESSIAN\n";
@@ -151,7 +153,7 @@ int main(int argc, char *argv[]) {
     x->set(xtest);
     algo.run(*x, gnnlls, true, *outStream);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

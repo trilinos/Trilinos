@@ -195,7 +195,7 @@ namespace panzer {
 			      const Teuchos::ParameterList& user_data);
 
     void setKokkosExtendedDataTypeDimensions(const std::string & eblock, 
-                                             const panzer::UniqueGlobalIndexerBase & globalIndexer,
+                                             const panzer::GlobalIndexer & globalIndexer,
                                              const Teuchos::ParameterList& user_data,
                                              PHX::FieldManager<panzer::Traits> & fm) const;
 

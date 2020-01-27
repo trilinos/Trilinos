@@ -146,10 +146,14 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Build Algorithm pointer.
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::Algorithm<RealT>>  algo;
+    ROL::Ptr<ROL::Step<RealT>>       step;
+    ROL::Ptr<ROL::StatusTest<RealT>> status;
 
     // Solve using trust regions.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     z.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(z,robj,true,*outStream);
@@ -159,7 +163,9 @@ int main(int argc, char *argv[]) {
     zTR->set(z);
 
     // Solve using a composite step method.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
+    step   = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     x.zero();
     ROL::Elementwise::Fill<RealT> setFunc(0.25);
     x.applyUnary(setFunc);
@@ -198,7 +204,7 @@ int main(int argc, char *argv[]) {
 //    } 
 //    state.close();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -131,13 +131,8 @@ assignMultiVecImpl(const MultiVectorBase<Scalar>& mv)
     tpetraMultiVector_.getNonconstObj()->assign(*tmv);
   } else {
     // This version will require/modify the host view of this vector.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    tpetraMultiVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-    tpetraMultiVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
-#else
     tpetraMultiVector_.getNonconstObj()->sync_host ();
     tpetraMultiVector_.getNonconstObj()->modify_host ();
-#endif
     MultiVectorDefaultBase<Scalar>::assignMultiVecImpl(mv);
   }
 }
@@ -158,7 +153,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateImpl(
   )
 {
   auto tmv = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(mv));
- 
+
   // If the cast succeeded, call Tpetra directly.
   // Otherwise, fall back to the RTOp implementation.
   if (nonnull(tmv)) {
@@ -166,13 +161,8 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateImpl(
     tpetraMultiVector_.getNonconstObj()->update(alpha, *tmv, ST::one());
   } else {
     // This version will require/modify the host view of this vector.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    tpetraMultiVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-    tpetraMultiVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
-#else
     tpetraMultiVector_.getNonconstObj()->sync_host ();
     tpetraMultiVector_.getNonconstObj()->modify_host ();
-#endif
     MultiVectorDefaultBase<Scalar>::updateImpl(alpha, mv);
   }
 }
@@ -250,13 +240,8 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinatio
     }
   } else {
     // This version will require/modify the host view of this vector.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    tpetraMultiVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-    tpetraMultiVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
-#else
     tpetraMultiVector_.getNonconstObj()->sync_host ();
     tpetraMultiVector_.getNonconstObj()->modify_host ();
-#endif
     MultiVectorDefaultBase<Scalar>::linearCombinationImpl(alpha, mv, beta);
   }
 }
@@ -276,13 +261,8 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dotsImpl(
     tpetraMultiVector_.getConstObj()->dot(*tmv, prods);
   } else {
     // This version will require/modify the host view of this vector.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    tpetraMultiVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-    tpetraMultiVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
-#else
     tpetraMultiVector_.getNonconstObj()->sync_host ();
     tpetraMultiVector_.getNonconstObj()->modify_host ();
-#endif
     MultiVectorDefaultBase<Scalar>::dotsImpl(mv, prods);
   }
 }
@@ -485,13 +465,8 @@ mvMultiReductApplyOpImpl(
   for (auto itr = multi_vecs.begin(); itr != multi_vecs.end(); ++itr) {
     Ptr<const TMV> tmv = Teuchos::ptr_dynamic_cast<const TMV>(*itr);
     if (nonnull(tmv)) {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(
-      tmv->getConstTpetraMultiVector())-> template sync<Kokkos::HostSpace>();
-#else
       Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(
       tmv->getConstTpetraMultiVector())-> sync_host ();
-#endif
     }
   }
 
@@ -499,13 +474,8 @@ mvMultiReductApplyOpImpl(
   for (auto itr = targ_multi_vecs.begin(); itr != targ_multi_vecs.end(); ++itr) {
     Ptr<TMV> tmv = Teuchos::ptr_dynamic_cast<TMV>(*itr);
     if (nonnull(tmv)) {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      tmv->getTpetraMultiVector()->template sync<Kokkos::HostSpace>();
-      tmv->getTpetraMultiVector()->template modify<Kokkos::HostSpace>();
-#else
       tmv->getTpetraMultiVector()->sync_host ();
       tmv->getTpetraMultiVector()->modify_host ();
-#endif
     }
   }
 
@@ -524,13 +494,8 @@ acquireDetachedMultiVectorViewImpl(
 {
   // Only viewing data, so just sync dual view to host space
   typedef typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  Teuchos::rcp_const_cast<TMV>(
-    tpetraMultiVector_.getConstObj())->template sync<Kokkos::HostSpace>();
-#else
   Teuchos::rcp_const_cast<TMV>(
     tpetraMultiVector_.getConstObj())->sync_host ();
-#endif
 
   SpmdMultiVectorDefaultBase<Scalar>::
     acquireDetachedMultiVectorViewImpl(rowRng, colRng, sub_mv);
@@ -546,13 +511,8 @@ acquireNonconstDetachedMultiVectorViewImpl(
   )
 {
   // Sync to host and mark as modified
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  tpetraMultiVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-  tpetraMultiVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
-#else
   tpetraMultiVector_.getNonconstObj()->sync_host ();
   tpetraMultiVector_.getNonconstObj()->modify_host ();
-#endif
 
   SpmdMultiVectorDefaultBase<Scalar>::
     acquireNonconstDetachedMultiVectorViewImpl(rowRng, colRng, sub_mv);
@@ -698,13 +658,8 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
     Y_tpetra->template modify<execution_space>();
     Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraMultiVector_.getConstObj(), *X_tpetra, beta);
   } else {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    Teuchos::rcp_const_cast<TMV>(
-      tpetraMultiVector_.getConstObj())->template sync<Kokkos::HostSpace>();
-#else
     Teuchos::rcp_const_cast<TMV>(
       tpetraMultiVector_.getConstObj())->sync_host ();
-#endif
     SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(M_trans, X, Y, alpha, beta);
   }
 

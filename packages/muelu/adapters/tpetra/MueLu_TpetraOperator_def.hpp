@@ -144,20 +144,6 @@ TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetOperator() const {
   return Operator_;
 }
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-template <class NewNode>
-Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
-MUELU_DEPRECATED
-TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<NewNode>& new_node) const {
-  if(!Hierarchy_.is_null()) 
-    return Teuchos::rcp (new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node))); 
-  else
-    return Teuchos::null;
-}
-#endif
-
-
 } // namespace
 #endif //ifdef HAVE_MUELU_TPETRA
 

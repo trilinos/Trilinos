@@ -88,7 +88,7 @@ public:
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual const panzer::Ordinal64 * getConnectivity(LocalOrdinal localElmtId) const
+   virtual const panzer::GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const
    { return &connectivity_[elmtLidToConn_[localElmtId]]; }
 
    /** Get ID connectivity for a particular element
@@ -98,7 +98,7 @@ public:
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual panzer::Ordinal64 * getConnectivity(LocalOrdinal localElmtId)
+   virtual panzer::GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId)
    { return &connectivity_[elmtLidToConn_[localElmtId]]; }
 
    /** How many mesh IDs are associated with this element?

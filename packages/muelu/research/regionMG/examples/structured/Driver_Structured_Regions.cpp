@@ -46,8 +46,10 @@
 #include <cstdio>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <unistd.h>
 
+// Teuchos
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -122,6 +124,9 @@
 #endif
 
 // Region MG headers
+#include "SetupRegionUtilities.hpp"
+#include "SetupRegionVector_def.hpp"
+#include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionHierarchy_def.hpp"
 
 
@@ -138,16 +143,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // MPI initialization using Teuchos
   // =========================================================================
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
+  // const int numRanks = comm->getSize();
+  const int myRank   = comm->getRank();
 
   // =========================================================================
   // Convenient definitions
   // =========================================================================
   using STS = Teuchos::ScalarTraits<SC>;
   SC zero = STS::zero(), one = STS::one();
+  using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using real_type = typename STS::coordinateType;
   using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-  const real_type realOne = Teuchos::ScalarTraits<real_type>::one();
 
   // =========================================================================
   // Parameters initialization
@@ -156,22 +162,29 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName       = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
-  std::string yamlFileName      = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
-  int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-  int         smootherIts       =  20;               clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
-  double      smootherDamp      = 0.67;              clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
-  double      tol               = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
-  bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+  std::string xmlFileName        = "";                  clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
+  std::string yamlFileName       = "";                  clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
+  std::string convergenceLog     = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,    "file in which the convergence history of the linear solver is stored");
+  int         maxIts             = 200;                 clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
+  std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
+  int         smootherIts        = 2;                   clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
+  double      smootherDamp       = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
+  double      smootherEigRatio   = 2.0;                 clp.setOption("smootherEigRatio",      &smootherEigRatio,  "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
+  double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+  bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
+  bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
+  bool        keepCoarseCoords   = false;               clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
+  std::string coarseSolverType   = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,  "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
+  std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,      "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
+  std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,  "Read parameters for AMG as coarse level solve from this xml file.");
 #ifdef HAVE_MUELU_TPETRA
-  std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
+  std::string equilibrate = "no" ;                      clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
 #ifdef HAVE_MUELU_CUDA
-  bool profileSetup = false;                         clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
-  bool profileSolve = false;                         clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+  bool profileSetup = false;                            clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
+  bool profileSolve = false;                            clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
-  int  cacheSize = 0;                                clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
+  int  cacheSize = 0;                                   clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -202,6 +215,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   }
 
+  Array<RCP<Teuchos::ParameterList> > smootherParams(1);
+  smootherParams[0] = rcp(new Teuchos::ParameterList());
+  smootherParams[0]->set("smoother: type",    smootherType);
+  smootherParams[0]->set("smoother: sweeps",  smootherIts);
+  smootherParams[0]->set("smoother: damping", smootherDamp);
+  smootherParams[0]->set("smoother: eigRatio", smootherEigRatio);
+
+  bool useUnstructured = false;
+  Array<LO> unstructuredRanks = Teuchos::fromStringToArray<LO>(unstructured);
+  for(int idx = 0; idx < unstructuredRanks.size(); ++idx) {
+    if(unstructuredRanks[idx] == myRank) {useUnstructured = true;}
+  }
 
   // Retrieve matrix parameters (they may have been changed on the command line)
   // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
@@ -224,10 +249,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Build Composite Matrix")));
 
 
-  RCP<Matrix>      A;
-  RCP<Xpetra::Map<LO,GO,NO> > nodeMap, dofMap;
-  RCP<RealValuedMultiVector> coordinates;
+  RCP<Matrix> A;
+  RCP<Map>    nodeMap, dofMap;
   RCP<Vector> X, B;
+  RCP<MultiVector>           nullspace;
+  RCP<RealValuedMultiVector> coordinates;
 
   galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
@@ -242,7 +268,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // If you don't want Galeri to do this, specify mx or my on the galeriList.
   std::string matrixType = galeriParameters.GetMatrixType();
   int numDimensions  = 0;
-  int numDofsPerNode = 1;
+  int numDofsPerNode = 0;
   Teuchos::Array<GO> procsPerDim(3);
   Teuchos::Array<GO> gNodesPerDim(3);
   Teuchos::Array<LO> lNodesPerDim(3);
@@ -269,12 +295,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Expand map to do multiple DOF per node for block problems
   if (matrixType == "Elasticity2D") {
-    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 2);
+    numDofsPerNode = 2;
   } else if (matrixType == "Elasticity3D") {
-    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 3);
+    numDofsPerNode = 3;
   } else {
-    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 1);
+    numDofsPerNode = 1;
   }
+  dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
 
   galeriStream << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
                << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
@@ -294,20 +321,34 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
   A = Pr->BuildMatrix();
 
-  if(matrixType == "Elasticity2D") {
-    numDofsPerNode = 2;
-  } else if(matrixType == "Elasticity3D") {
-    numDofsPerNode = 3;
-  }
-
   A->SetFixedBlockSize(numDofsPerNode);
+
+  nullspace = Pr->BuildNullspace();
 
   X = VectorFactory::Build(dofMap);
   B = VectorFactory::Build(dofMap);
 
-  // we set seed for reproducibility
-  Utilities::SetRandomSeed(*comm);
-  X->randomize();
+  if(serialRandom) {
+    //Build the seed on rank zero and broadcast it.
+    size_t localNumElements = 0;
+    if(comm->getRank() == 0) {
+      localNumElements = static_cast<size_t>(dofMap->getGlobalNumElements());
+    }
+    RCP<Map> serialMap = MapFactory::Build(dofMap->lib(),
+                                           dofMap->getGlobalNumElements(),
+                                           localNumElements,
+                                           0,
+                                           comm);
+    RCP<Vector> Xserial = VectorFactory::Build(serialMap);
+    Xserial->setSeed(251743369);
+    Xserial->randomize();
+    RCP<Import> randomnessImporter = ImportFactory::Build(serialMap, dofMap);
+    X->doImport(*Xserial, *randomnessImporter, Xpetra::INSERT);
+  } else {
+    // we set seed for reproducibility
+    Utilities::SetRandomSeed(*comm);
+    X->randomize();
+  }
   A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
   Teuchos::Array<typename STS::magnitudeType> norms(1);
@@ -315,12 +356,28 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   B->scale(one/norms[0]);
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
+#ifdef MATLAB_COMPARE
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("Ax.mm",*B);
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("A.mm",*A);
+  B->putScalar(zero);
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("rhs.mm",*B);
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("x.mm",*X);
+#endif
   out << galeriStream.str();
 
   comm->barrier();
   tm = Teuchos::null;
 
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - Compute region data")));
+
+  // Set aggregation type for each region
+  Array<std::string> aggregationRegionType(1);
+  RCP<ParameterList> interfaceParams = rcp(new ParameterList());
+  if(useUnstructured) {
+    aggregationRegionType[0] = "uncoupled";
+  } else {
+    aggregationRegionType[0] = "structured";
+  }
 
   // Loading geometric info from galeri
   if(numDimensions == 1) {
@@ -361,630 +418,32 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     procsPerDim[2] = galeriList.get<GO>("mz");
   }
 
-  Teuchos::Array<GO> startIndices(3);
-  Teuchos::Array<GO> endIndices(3);
-  const GO startGID = dofMap->getMinGlobalIndex();
-  startIndices[2] = startGID / (gNodesPerDim[1]*gNodesPerDim[0]);
-  const GO rem    = startGID % (gNodesPerDim[1]*gNodesPerDim[0]);
-  startIndices[1] = rem / gNodesPerDim[0];
-  startIndices[0] = rem % gNodesPerDim[0];
-  endIndices[0] = startIndices[0] + lNodesPerDim[0] - 1;
-  endIndices[1] = startIndices[1] + lNodesPerDim[1] - 1;
-  endIndices[2] = startIndices[2] + lNodesPerDim[2] - 1;
-
   const LO numLocalCompositeNodes = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
-
-  int leftBC = 0, rightBC = 0, frontBC = 0, backBC = 0, bottomBC = 0, topBC = 0;
-  if(startIndices[0] == 0) {leftBC = 1;}
-  if(startIndices[1] == 0) {frontBC = 1;}
-  if(startIndices[2] == 0) {bottomBC = 1;}
-
-  if(endIndices[0] == gNodesPerDim[0] - 1) {rightBC = 1;}
-  if(endIndices[1] == gNodesPerDim[1] - 1) {backBC = 1;}
-  if(endIndices[2] == gNodesPerDim[2] - 1) {topBC = 1;}
-
-  // std::cout << "p=" << myRank << " | startGID= " << startGID
-  //           << ", startIndices: " << startIndices
-  //           << ", endIndices: " << endIndices
-  //           << ", gNodesPerDim: " << gNodesPerDim
-  //           << ", BCs={" << leftBC << ", " << rightBC << ", "
-  //           << frontBC << ", " << backBC << ", "
-  //           << bottomBC << ", " << topBC << "}" << std::endl;
 
   // Rule for boundary duplication
   // For any two ranks that share an interface:
-  // the lowest ranks owns the interface and the highest rank gets extra nodes
+  // the lowest rank owns the interface and the highest rank gets extra nodes
 
   // First we count how many nodes the region needs to send and receive
   // and allocate arrays accordingly
-  const int maxRegPerProc = 1;
+  Array<int> boundaryConditions;
   int maxRegPerGID = 0;
-  LO numReceive = 0, numSend = 0;
-  Teuchos::Array<GO>  receiveGIDs;
-  Teuchos::Array<int> receivePIDs;
-  Teuchos::Array<LO>  receiveLIDs;
-  Teuchos::Array<GO>  sendGIDs;
-  Teuchos::Array<int> sendPIDs;
-  Teuchos::Array<LO>  sendLIDs;
-  if(numDimensions == 1) {
-    maxRegPerGID = 2;
-    if(leftBC == 0) {
-      numReceive = 1;
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
+  int numInterfaces = 0;
+  LO numLocalRegionNodes = 0;
+  Array<GO>  sendGIDs;
+  Array<int> sendPIDs;
+  Array<LO>  rNodesPerDim(3);
+  Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
+  Array<GO>  quasiRegionGIDs;
+  Array<GO>  quasiRegionCoordGIDs;
 
-      receiveGIDs[0] = startIndices[0] - 1;
-      receivePIDs[0] = myRank - 1;
-    }
-    if(rightBC == 0) {
-      numSend = 1;
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
+  createRegionData(numDimensions, useUnstructured, numDofsPerNode,
+                   gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
+                   maxRegPerGID, numLocalRegionNodes, boundaryConditions,
+                   sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
+                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs);
 
-      sendGIDs[0] = endIndices[0];
-      sendGIDs[0] = myRank + 1;
-      sendLIDs[0] = lNodesPerDim[0] - 1;
-    }
-  } else if(numDimensions == 2) {
-    maxRegPerGID = 4;
-    // Received nodes
-    if(frontBC == 0 && leftBC == 0) {
-      numReceive = lNodesPerDim[0] + lNodesPerDim[1] + 1;
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front-left corner node
-      receiveGIDs[countIDs] = startGID - gNodesPerDim[0] - 1;
-      receivePIDs[countIDs] = myRank - procsPerDim[0] - 1;
-      ++countIDs;
-      // Receive front edge nodes
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i;
-        receivePIDs[countIDs] = myRank - procsPerDim[0];
-        ++countIDs;
-      }
-      // Receive left edge nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        receiveGIDs[countIDs] = startGID - 1 + j*gNodesPerDim[0];
-        receivePIDs[countIDs] = myRank - 1;
-        ++countIDs;
-      }
-    } else if(frontBC == 0) {
-      numReceive = lNodesPerDim[0];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front edge nodes
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i;
-        receivePIDs[countIDs] = myRank - procsPerDim[0];
-        ++countIDs;
-      }
-    } else if(leftBC == 0) {
-      numReceive = lNodesPerDim[1];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive left edge nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        receiveGIDs[countIDs] = startGID - 1 + j*gNodesPerDim[0];
-        receivePIDs[countIDs] = myRank - 1;
-        ++countIDs;
-      }
-    }
-
-    // Sent nodes
-    if(rightBC == 0 && backBC == 0) {
-      numSend = lNodesPerDim[0] + lNodesPerDim[1] + 1;
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right edge
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        sendGIDs[countIDs] = j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + 1;
-        sendLIDs[countIDs] = (j + 1)*lNodesPerDim[0] - 1;
-        ++countIDs;
-      }
-      // Send nodes of back edge
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        sendGIDs[countIDs] = i + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[0];
-        sendLIDs[countIDs] = (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
-        ++countIDs;
-      }
-      // Send node of back-right corner
-      sendGIDs[countIDs] = startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-      sendPIDs[countIDs] = myRank + procsPerDim[1] + 1;
-      sendLIDs[countIDs] = lNodesPerDim[1]*lNodesPerDim[0] - 1;
-      ++countIDs;
-    } else if(backBC == 0) {
-      numSend = lNodesPerDim[0];
-
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of back edge
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        sendGIDs[countIDs] = i + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[0];
-        sendLIDs[countIDs] = (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
-        ++countIDs;
-      }
-    } else if(rightBC == 0) {
-      numSend = lNodesPerDim[1];
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right edge
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        sendGIDs[countIDs] = j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + 1;
-        sendLIDs[countIDs] = (j + 1)*lNodesPerDim[0] - 1;
-        ++countIDs;
-      }
-    }
-  } else if(numDimensions == 3) {
-    maxRegPerGID = 8;
-    // Received nodes
-    if( (bottomBC == 0) && (frontBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + (lNodesPerDim[0] + 1)*lNodesPerDim[2]        // front face
-        + (lNodesPerDim[1] + 1)*(lNodesPerDim[2] + 1); // left face
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front-left-bottom corner node
-      receiveGIDs[countIDs] = startGID - gNodesPerDim[0] - 1
-          - gNodesPerDim[1]*gNodesPerDim[0];
-      receivePIDs[countIDs] = myRank - procsPerDim[0] - 1
-          - procsPerDim[1]*procsPerDim[0];
-      ++countIDs;
-
-      // Receive front-bottom edge nodes
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              - gNodesPerDim[0] + i;
-        receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1] - procsPerDim[0];
-        ++countIDs;
-      }
-
-      // Recieve left-bottom edge nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              - 1 + j*gNodesPerDim[0];
-        receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1] - 1;
-        ++countIDs;
-        // Recieve bottom face nodes
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              + i
-              + j*gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1];
-          ++countIDs;
-        }
-      }
-
-      // Receive front-left edge nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0]
-              - 1 + k*gNodesPerDim[0]*gNodesPerDim[1];
-        receivePIDs[countIDs] = myRank - procsPerDim[0] - 1;
-        ++countIDs;
-        // Receive front face nodes
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i
-              + k*(gNodesPerDim[1]*gNodesPerDim[0]);
-          receivePIDs[countIDs] = myRank - procsPerDim[0];
-          ++countIDs;
-        }
-        // Receive left face nodes
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          receiveGIDs[countIDs] = startGID - 1
-              + j*gNodesPerDim[0]
-              + k*(gNodesPerDim[1]*gNodesPerDim[0]);
-          receivePIDs[countIDs] = myRank - 1;
-          ++countIDs;
-        }
-      }
-
-    // Two faces received
-    } else if( (bottomBC == 0) && (frontBC == 0) ) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + lNodesPerDim[0]*(lNodesPerDim[2] + 1);       // front face;
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front-bottom edge nodes
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              - gNodesPerDim[0] + i;
-        receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1] - procsPerDim[0];
-        ++countIDs;
-      }
-      // Receive bottom face nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
-              + i
-              + j*gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1];
-          ++countIDs;
-        }
-      }
-      // Receive front face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i
-              + k*(gNodesPerDim[1]*gNodesPerDim[0]);
-          receivePIDs[countIDs] = myRank - procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if( (bottomBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[1]*(lNodesPerDim[0] + lNodesPerDim[2] + 1);
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive left-bottom edge nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        receiveGIDs[countIDs] =  j*gNodesPerDim[0]
-          + startGID - gNodesPerDim[1]*gNodesPerDim[0] - 1;
-        receivePIDs[countIDs] =  myRank - procsPerDim[1]*procsPerDim[0] - 1;
-        ++countIDs;
-        // Receive bottom face nodes
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID - gNodesPerDim[1]*gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Receive left face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
-            + startGID - 1;
-          receivePIDs[countIDs] = myRank - 1;
-          ++countIDs;
-        }
-      }
-
-    } else if( (frontBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[2]*(lNodesPerDim[1] + lNodesPerDim[0] + 1);
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front-left edge nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        receiveGIDs[countIDs] =  k*gNodesPerDim[1]*gNodesPerDim[0]
-          + startGID - gNodesPerDim[0] - 1;
-        receivePIDs[countIDs] =  myRank - procsPerDim[0] - 1;
-        ++countIDs;
-        // Receive front face nodes
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
-            + startGID - gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[0];
-          ++countIDs;
-        }
-        // Receive left face nodes
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
-            + startGID - 1;
-          receivePIDs[countIDs] = myRank - 1;
-          ++countIDs;
-        }
-      }
-
-    // Single face received
-    } else if(bottomBC == 0) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[1];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive bottom face nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID - gNodesPerDim[1]*gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if(frontBC == 0) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[2];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Receive front face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
-            + startGID - gNodesPerDim[0];
-          receivePIDs[countIDs] = myRank - procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if(leftBC == 0) {
-      numReceive = lNodesPerDim[1]*lNodesPerDim[2];
-      receiveGIDs.resize(numReceive);
-      receivePIDs.resize(numReceive);
-      receiveLIDs.resize(numReceive);
-
-      LO countIDs = 0;
-      // Recive left face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
-            + j*gNodesPerDim[0] + startGID - 1;
-          receivePIDs[countIDs] = myRank - 1;
-          ++countIDs;
-        }
-      }
-
-    }
-
-    // Sent nodes
-    if( (topBC == 0) && (backBC == 0) && (rightBC == 0) ) {
-      numSend = (lNodesPerDim[0])*(lNodesPerDim[1])
-        + (lNodesPerDim[0])*(lNodesPerDim[2])
-        + (lNodesPerDim[1])*(lNodesPerDim[2])
-        + lNodesPerDim[0]
-        + lNodesPerDim[1]
-        + lNodesPerDim[2]
-        + 1;
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
-            + j*gNodesPerDim[0]
-            + startGID + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + 1;
-          ++countIDs;
-        }
-      }
-      // Send nodes of back face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0]) + i
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of right-back edge
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
-          + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
-        ++countIDs;
-      }
-      // Send nodes of top face
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of top-right edge
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        sendGIDs[countIDs] = j*gNodesPerDim[0]
-          + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + 1;
-        ++countIDs;
-      }
-      // Send nodes of top-back edge
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        sendGIDs[countIDs] = i
-          + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-          + (lNodesPerDim[0] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1];
-        ++countIDs;
-      }
-      // Send node of top-back-right corner
-      sendGIDs[countIDs] = startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-        + (lNodesPerDim[0] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-      sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1] + 1;
-      ++countIDs;
-
-    } else if( (topBC == 0) && (backBC == 0) ) {
-      numSend = (lNodesPerDim[0]*lNodesPerDim[2]) // back face
-              + (lNodesPerDim[0]*lNodesPerDim[1]) // Top face
-              + (lNodesPerDim[0]); // top-back edge
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of back face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0]) + i
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of top face
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of top-back edge
-      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-        sendGIDs[countIDs] = i
-          + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-          + (lNodesPerDim[0] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1];
-        ++countIDs;
-      }
-
-    } else if( (topBC == 0) && (rightBC == 0) ) {
-      numSend = (lNodesPerDim[1]*lNodesPerDim[2]) // right face
-              + (lNodesPerDim[0]*lNodesPerDim[1]) // Top face
-              + (lNodesPerDim[1]); // top-right edge
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          sendGIDs[countIDs] = k*(gNodesPerDim[1]*gNodesPerDim[0])
-            + j*gNodesPerDim[0]
-            + startGID + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + 1;
-          ++countIDs;
-        }
-      }
-      // Send nodes of top face
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of top-right edge
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        sendGIDs[countIDs] = j*gNodesPerDim[0]
-          + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + 1;
-        ++countIDs;
-      }
-
-    } else if( (backBC == 0) && (rightBC == 0) ) {
-      numSend = lNodesPerDim[2]*(lNodesPerDim[0] + lNodesPerDim[1] + 1);
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
-            + startGID + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + 1;
-          ++countIDs;
-        }
-      }
-      // Send nodes of back face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[0];
-          ++countIDs;
-        }
-      }
-      // Send nodes of back-right edge
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
-          ++countIDs;
-      }
-
-    } else if(topBC == 0) {
-      numSend = lNodesPerDim[0]*lNodesPerDim[1];
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of top face
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if(backBC == 0) {
-      numSend = lNodesPerDim[0]*lNodesPerDim[2];
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of back face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-          sendPIDs[countIDs] = myRank + procsPerDim[0];
-          ++countIDs;
-        }
-      }
-
-    } else if(rightBC == 0) {
-      numSend = lNodesPerDim[1]*lNodesPerDim[2];
-      sendGIDs.resize(numSend);
-      sendPIDs.resize(numSend);
-      sendLIDs.resize(numSend);
-
-      LO countIDs = 0;
-      // Send nodes of right face
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
-        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
-          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
-            + j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
-          sendPIDs[countIDs] = myRank + 1;
-          ++countIDs;
-        }
-      }
-
-    }
-  }
-
-  // Second we actually fill the send and receive arrays with appropriate data
-  // which will allow us to compute the region and composite maps.
+  const LO numSend = static_cast<LO>(sendGIDs.size());
 
   // std::cout << "p=" << myRank << " | numReceive=" << numReceive
   //           << ", numSend=" << numSend << std::endl;
@@ -993,62 +452,32 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
   // std::cout << "p=" << myRank << " | sendPIDs: " << sendPIDs << std::endl;
 
+  // Second we actually fill the send and receive arrays with appropriate data
+  // which will allow us to compute the region and composite maps.
   // Now we can construct a list of GIDs that corresponds to rowMapPerGrp
-  const LO numLocalRegionNodes = numLocalCompositeNodes + numReceive;
-  Array<LO> rNodesPerDim(3);
-  Array<GO> quasiRegionGIDs(numLocalRegionNodes*numDofsPerNode);
-  Array<GO> regionGIDs(numLocalRegionNodes*numDofsPerNode);
+  Array<LO>  interfacesDimensions, interfacesLIDs;
+  if(useUnstructured) {
+    findInterface(numDimensions, rNodesPerDim, boundaryConditions,
+                  interfacesDimensions, interfacesLIDs);
+  }
 
-  rNodesPerDim[0] = lNodesPerDim[0];
-  rNodesPerDim[1] = lNodesPerDim[1];
-  rNodesPerDim[2] = lNodesPerDim[2];
-  if(leftBC   == 0) {rNodesPerDim[0] += 1;}
-  if(frontBC  == 0) {rNodesPerDim[1] += 1;}
-  if(bottomBC == 0) {rNodesPerDim[2] += 1;}
+  interfaceParams->set<int>       ("interfaces: number",               numInterfaces);
+  interfaceParams->set<Array<LO> >("interfaces: nodes per dimensions", interfacesDimensions); // nodesPerDimensions);
+  interfaceParams->set<Array<LO> >("interfaces: interface nodes",      interfacesLIDs); // interfaceLIDs);
 
   // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
   //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
-
-  Array<LO> compositeToRegionLIDs(nodeMap->getNodeNumElements());
-
-  // Using receiveGIDs, rNodesPerDim and numLocalRegionNodes, build quasi-region row map
-  // This will potentially be done by the application or in a MueLu interface but for now
-  // doing it in the driver seem to avoid design hassle...
-  LO interfaceCount = 0, compositeIdx = 0;
-  Array<LO> regionIJK(3);
-  for(LO nodeRegionIdx = 0; nodeRegionIdx < numLocalRegionNodes; ++nodeRegionIdx) {
-    regionIJK[2] = nodeRegionIdx / (rNodesPerDim[1]*rNodesPerDim[0]);
-    LO tmp       = nodeRegionIdx % (rNodesPerDim[1]*rNodesPerDim[0]);
-    regionIJK[1] = tmp / rNodesPerDim[0];
-    regionIJK[0] = tmp % rNodesPerDim[0];
-
-    // std::cout << "p=" << myRank << " | regionIJK=" << regionIJK << std::endl;
-
-    if( (regionIJK[0] == 0 && leftBC   == 0) ||
-        (regionIJK[1] == 0 && frontBC  == 0) ||
-        (regionIJK[2] == 0 && bottomBC == 0) ) {
-      for(int dof = 0; dof < numDofsPerNode; ++dof) {
-        quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof] =
-          receiveGIDs[interfaceCount]*numDofsPerNode + dof;
-      }
-      receiveLIDs[interfaceCount] = nodeRegionIdx;
-      ++interfaceCount;
-    } else {
-      compositeIdx = (regionIJK[2] + bottomBC - 1)*lNodesPerDim[1]*lNodesPerDim[0]
-        + (regionIJK[1] + frontBC  - 1)*lNodesPerDim[0]
-        + (regionIJK[0] + leftBC - 1);
-      for(int dof = 0; dof < numDofsPerNode; ++dof) {
-        quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof]
-          = dofMap->getGlobalElement(compositeIdx*numDofsPerNode + dof);
-      }
-      compositeToRegionLIDs[compositeIdx] = nodeRegionIdx;
-    }
-  }
+  // std::cout << "p=" << myRank << " | boundaryConditions: " << boundaryConditions << std::endl
+  //           << "p=" << myRank << " | rNodesPerDim: " << rNodesPerDim << std::endl
+  //           << "p=" << myRank << " | interfacesDimensions: " << interfacesDimensions << std::endl
+  //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
 
   // std::cout << "p=" << myRank << " | receiveLIDs: " << receiveLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | sendLIDs: " << sendLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
+  // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
   // In our very particular case we know that a node is at most shared by 4 regions.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
@@ -1086,14 +515,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
   } // end of regionsPerGIDView's scope
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "regionsPerGID:" << std::endl;
   // regionsPerGID->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
   comm->barrier();
   tm = Teuchos::null;
 
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - Build Region Matrix")));
 
+  RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.1 - Build Region Maps")));
+
+  const int maxRegPerProc = 1;
   std::vector<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
   std::vector<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
   rowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
@@ -1104,43 +538,65 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   colMapPerGrp[0] = rowMapPerGrp[0];
   revisedRowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
                                                                  Teuchos::OrdinalTraits<GO>::invalid(),
-                                                                 numLocalRegionNodes,
+                                                                 numLocalRegionNodes*numDofsPerNode,
                                                                  dofMap->getIndexBase(),
                                                                  dofMap->getComm());
   revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
+
+  // Build objects needed to construct the region coordinates
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > quasiRegCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          quasiRegionCoordGIDs(),
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > regCoordMap = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          numLocalRegionNodes,
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+
+  comm->barrier();
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.2 - Build Region Importers")));
 
   // Setup importers
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
   rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
+  RCP<Import> coordImporter = ImportFactory::Build(nodeMap, quasiRegCoordMap);
+
+  comm->barrier();
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.3 - Import ghost GIDs")));
 
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts
-    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(A->getColMap(), maxRegPerGID, false);
+    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(rowMapPerGrp[0], maxRegPerGID, false);
   RCP<Import> regionsPerGIDImport = ImportFactory::Build(A->getRowMap(), A->getColMap());
-  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *regionsPerGIDImport, Xpetra::INSERT);
+  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *rowImportPerGrp[0], Xpetra::INSERT);
 
-  // if(myRank == 0) std::cout << "regionsPerGIDWithGhosts:" << std::endl;
-  // regionsPerGIDWithGhosts->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  comm->barrier();
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.4 - Build QuasiRegion Matrix")));
 
   std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > quasiRegionGrpMats(1);
   MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), maxRegPerProc,
                           regionsPerGIDWithGhosts, rowMapPerGrp, colMapPerGrp, rowImportPerGrp,
                           quasiRegionGrpMats);
 
+  comm->barrier();
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Build Region Matrix")));
+
   std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats(1);
   MakeRegionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), A->getRowMap(), rowMapPerGrp,
                      revisedRowMapPerGrp, revisedColMapPerGrp,
                      rowImportPerGrp, maxRegPerProc, quasiRegionGrpMats, regionGrpMats);
 
-  // if(myRank == 0) std::cout << "composite A:" << std::endl;
-  // A->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-
-  // if(myRank == 0) std::cout << "quasi-region A:" << std::endl;
-  // quasiRegionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-
-  // if(myRank == 0) std::cout << "region A:" << std::endl;
-  // regionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  comm->barrier();
+  tmLocal = Teuchos::null;
 
   comm->barrier();
   tm = Teuchos::null;
@@ -1150,25 +606,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Setting up parameters before hierarchy construction
   // These need to stay in the driver as they would be provide by an app
   Array<Array<int> > regionNodesPerDim(maxRegPerProc);
-  Array<std::string> aggregationRegionType(maxRegPerProc);
-  Array<RCP<MultiVector> > nullspace(maxRegPerProc);
+  Array<RCP<MultiVector> > regionNullspace(maxRegPerProc);
   Array<RCP<RealValuedMultiVector> > regionCoordinates(maxRegPerProc);
 
   // Set mesh structure data
   regionNodesPerDim[0] = rNodesPerDim;
 
-  // Set aggregation type for each region
-  aggregationRegionType[0] = "structured";
-
   // create nullspace vector
-  nullspace[0] = MultiVectorFactory::Build(revisedRowMapPerGrp[0], 1);
-  nullspace[0]->putScalar(one);
+  regionNullspace[0] = MultiVectorFactory::Build(rowMapPerGrp[0], nullspace->getNumVectors());
+  regionNullspace[0]->doImport(*nullspace, *rowImportPerGrp[0], Xpetra::INSERT);
+  regionNullspace[0]->replaceMap(revisedRowMapPerGrp[0]);
 
   // create region coordinates vector
-  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(rowMapPerGrp[0],
-                                                                               numDimensions);
-  regionCoordinates[0]->doImport(*coordinates, *rowImportPerGrp[0], Xpetra::INSERT);
-  regionCoordinates[0]->replaceMap(revisedRowMapPerGrp[0]);
+  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap,
+                                                                               coordinates->getNumVectors());
+  regionCoordinates[0]->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
+  regionCoordinates[0]->replaceMap(regCoordMap);
 
   using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -1191,9 +644,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<std::vector<RCP<Matrix> > > regMatrices; // regional matrices on each level
   Array<std::vector<RCP<Matrix> > > regProlong; // regional prolongators on each level
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
-  Array<std::vector<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
-  Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
-  RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > coarseCompositeDirectSolver = Teuchos::null;
+  Array<Array<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
+  RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
+  coarseSolverData->set<std::string>("coarse solver type", coarseSolverType);
+  coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
+  RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 
 
   // Create multigrid hierarchy
@@ -1201,8 +656,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         numDimensions,
                         regionNodesPerDim,
                         aggregationRegionType,
+                        interfaceParams,
                         xmlFileName,
-                        nullspace,
+                        regionNullspace,
                         regionCoordinates,
                         regionGrpMats,
                         dofMap,
@@ -1221,10 +677,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         regProlong,
                         regRowImporters,
                         regInterfaceScalings,
-                        coarseCompOp,
                         maxRegPerGID,
                         compositeToRegionLIDs(),
-                        coarseCompositeDirectSolver);
+                        coarseSolverData,
+                        smootherParams,
+                        hierarchyData,
+                        keepCoarseCoords);
+
+  hierarchyData->print();
 
 
   comm->barrier();
@@ -1233,7 +693,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Solve with V-cycle")));
 
   {
-    std::cout << myRank << " | Running V-cycle ..." << std::endl;
+//    std::cout << myRank << " | Running V-cycle ..." << std::endl;
 
     // Extract the number of levels from the prolongator data structure
     int numLevels = regProlong.size();
@@ -1256,19 +716,54 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // transform composite vectors to regional layout
-    std::vector<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
-    std::vector<Teuchos::RCP<Vector> > regX(maxRegPerProc);
-    compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+    Array<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
+    Array<Teuchos::RCP<Vector> > regX(maxRegPerProc);
+    compositeToRegional(X, quasiRegX, regX,
                         revisedRowMapPerGrp, rowImportPerGrp);
 
-    std::vector<RCP<Vector> > quasiRegB(maxRegPerProc);
-    std::vector<RCP<Vector> > regB(maxRegPerProc);
-    compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
+    Array<RCP<Vector> > quasiRegB(maxRegPerProc);
+    Array<RCP<Vector> > regB(maxRegPerProc);
+    compositeToRegional(B, quasiRegB, regB,
                         revisedRowMapPerGrp, rowImportPerGrp);
+#ifdef DUMP_LOCALX_AND_A
+    FILE *fp;
+    char str[80];
+    sprintf(str,"theMatrix.%d",myRank);
+    fp = fopen(str,"w");
+    fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+    LO numNzs = 0;
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) {
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(kkk, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      numNzs += AAvals.size();
+    }
+    fprintf(fp, "%d %d %d\n",regionGrpMats[0]->getNodeNumRows(),regionGrpMats[0]->getNodeNumRows(),numNzs);
+
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) {
+      ArrayView<const LO> AAcols;
+      ArrayView<const SC> AAvals;
+      regionGrpMats[0]->getLocalRowView(kkk, AAcols, AAvals);
+      const int *Acols    = AAcols.getRawPtr();
+      const SC  *Avals = AAvals.getRawPtr();
+      LO RowLeng = AAvals.size();
+      for (LO kk = 0; kk < RowLeng; kk++) {
+          fprintf(fp, "%d %d %22.16e\n",kkk+1,Acols[kk]+1,Avals[kk]);
+      }
+    }
+    fclose(fp);
+    sprintf(str,"theX.%d",myRank);
+    fp = fopen(str,"w");
+    ArrayRCP<SC> lX= regX[0]->getDataNonConst(0);
+    for (size_t kkk = 0; kkk < regionGrpMats[0]->getNodeNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
+    fclose(fp);
+#endif
 
     //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 
-    std::vector<RCP<Vector> > regRes(maxRegPerProc);
+    Array<RCP<Vector> > regRes(maxRegPerProc);
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
       regRes[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
     }
@@ -1277,61 +772,92 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
     /////////////////////////////////////////////////////////////////////////
 
-    // define max iteration counts
-    const int maxFineIter = 20;
-    const int maxCoarseIter = 100;
-
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
     if (myRank == 0)
-      {
-        std::string s = "residual_norm.txt";
-        log = rcp(new std::ofstream(s.c_str()));
-        (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
-               << "# iteration | res-norm\n"
-               << "#\n";
-      }
+    {
+      log = rcp(new std::ofstream(convergenceLog.c_str()));
+      (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
+             << "# iteration | res-norm (scaled=" << scaleResidualHist << ")\n"
+             << "#\n";
+      *log << std::setprecision(16) << std::scientific;
+    }
+
+    // Print type of residual norm to the screen
+    if (myRank == 0)
+    {
+      if (scaleResidualHist)
+        std::cout << "Using scaled residual norm." << std::endl;
+      else
+        std::cout << "Using unscaled residual norm." << std::endl;
+    }
 
     // Richardson iterations
-    for (int cycle = 0; cycle < maxIts; ++cycle) {
+    magnitude_type normResIni = Teuchos::ScalarTraits<magnitude_type>::zero();
+    const int old_precision = std::cout.precision();
+    std::cout << std::setprecision(8) << std::scientific;
+    int cycle = 0;
+
+    Array<Teuchos::RCP<Vector> > regCorrect(maxRegPerProc);
+    for (int j = 0; j < maxRegPerProc; j++) {
+      regCorrect[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
+    }
+    for (cycle = 0; cycle < maxIts; ++cycle)
+    {
+      const Scalar SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+      regCorrect[0]->putScalar(SC_ZERO);
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
         {
-          computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
-              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+          computeResidual(regRes, regX, regB, regionGrpMats,
+              revisedRowMapPerGrp, rowImportPerGrp);
 
           scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
         }
 
         compRes = VectorFactory::Build(dofMap, true);
-        regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
-                            rowImportPerGrp, Xpetra::ADD);
+        regionalToComposite(regRes, compRes, rowImportPerGrp);
+
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
+        if(cycle == 0) { normResIni = normRes; }
+
+        if (scaleResidualHist)
+          normRes /= normResIni;
 
         // Output current residual norm to screen (on proc 0 only)
         if (myRank == 0)
-          {
-            std::cout << cycle << "\t" << normRes << std::endl;
-            (*log) << cycle << "\t" << normRes << "\n";
-          }
+        {
+          std::cout << cycle << "\t" << normRes << std::endl;
+          (*log) << cycle << "\t" << normRes << "\n";
+        }
 
         if (normRes < tol)
           break;
-      }
+        }
 
-      /////////////////////////////////////////////////////////////////////////
-      // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
-      /////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////
+        // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
+        /////////////////////////////////////////////////////////////////////////
 
-      //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, smootherIts, maxCoarseIter, smootherDamp, maxRegPerProc,
-             regX, regB, regMatrices,
-             regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, coarseCompOp, coarseCompositeDirectSolver);
+        //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
+
+        bool zeroInitGuess = true;
+        scaleInterfaceDOFs(regRes, regInterfaceScalings[0], false);
+        vCycle(0, numLevels,
+               regCorrect, regRes, regMatrices,
+               regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
+               regInterfaceScalings, smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
+
+        regX[0]->update(one, *regCorrect[0], one);
     }
+    if (myRank == 0)
+      std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;
+
+    std::cout << std::setprecision(old_precision);
+    std::cout.unsetf(std::ios::fixed | std::ios::scientific);
   }
 
   comm->barrier();

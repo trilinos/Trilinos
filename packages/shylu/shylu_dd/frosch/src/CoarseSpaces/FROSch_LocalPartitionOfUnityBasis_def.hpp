@@ -44,61 +44,65 @@
 
 #include <FROSch_LocalPartitionOfUnityBasis_decl.hpp>
 
+
 namespace FROSch {
     
+    using namespace Teuchos;
+    using namespace Xpetra;
+
     template<class SC,class LO,class GO,class NO>
     LocalPartitionOfUnityBasis<SC,LO,GO,NO>::LocalPartitionOfUnityBasis(CommPtr mpiComm,
                                                                         CommPtr serialComm,
                                                                         UN dofsPerNode,
                                                                         ParameterListPtr parameterList,
-                                                                        MultiVectorPtr nullSpaceBasis,
-                                                                        MultiVectorPtrVecPtr partitionOfUnity,
-                                                                        MapPtrVecPtr partitionOfUnityMaps) :
+                                                                        ConstXMultiVectorPtr nullSpaceBasis,
+                                                                        XMultiVectorPtrVecPtr partitionOfUnity,
+                                                                        XMapPtrVecPtr partitionOfUnityMaps) :
     MpiComm_ (mpiComm),
     SerialComm_ (serialComm),
     DofsPerNode_ (dofsPerNode),
     ParameterList_ (parameterList),
-    LocalPartitionOfUnitySpace_ (),
     PartitionOfUnity_ (partitionOfUnity),
     NullspaceBasis_ (nullSpaceBasis),
     PartitionOfUnityMaps_ (partitionOfUnityMaps)
     {
-        
+
     }
-    
+
     template<class SC,class LO,class GO,class NO>
-    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addPartitionOfUnity(MultiVectorPtrVecPtr partitionOfUnity,
-                                                                     MapPtrVecPtr partitionOfUnityMaps)
+    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addPartitionOfUnity(XMultiVectorPtrVecPtr partitionOfUnity,
+                                                                     XMapPtrVecPtr partitionOfUnityMaps)
     {
         PartitionOfUnity_ = partitionOfUnity;
         PartitionOfUnityMaps_ = partitionOfUnityMaps;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
-    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addGlobalBasis(MultiVectorPtr nullSpaceBasis)
+    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addGlobalBasis(ConstXMultiVectorPtr nullSpaceBasis)
     {
         NullspaceBasis_ = nullSpaceBasis;
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::buildLocalPartitionOfUnityBasis()
     {
         FROSCH_ASSERT(!NullspaceBasis_.is_null(),"Nullspace Basis is not set.");
         FROSCH_ASSERT(!PartitionOfUnity_.is_null(),"Partition Of Unity is not set.");
         FROSCH_ASSERT(!PartitionOfUnityMaps_.is_null(),"Partition Of Unity Map is not set.");
-        
-        LocalPartitionOfUnitySpace_ = CoarseSpacePtr(new CoarseSpace<SC,LO,GO,NO>());
-        
-        MultiVectorPtrVecPtr2D tmpBasis(PartitionOfUnity_.size());
+
+        LocalPartitionOfUnitySpace_ = CoarseSpacePtr(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
+
+        XMultiVectorPtrVecPtr2D tmpBasis(PartitionOfUnity_.size());
+        ConstXMapPtr nullspaceBasisMap = NullspaceBasis_->getMap();
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnity_[i].is_null()) {
                 FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getNodeNumElements()>0,"PartitionOfUnityMaps_[i]->getNodeNumElements()==0");
-                tmpBasis[i] = MultiVectorPtrVecPtr(PartitionOfUnity_[i]->getNumVectors());
+                tmpBasis[i] = XMultiVectorPtrVecPtr(PartitionOfUnity_[i]->getNumVectors());
                 for (UN j=0; j<PartitionOfUnity_[i]->getNumVectors(); j++) {
-                    MultiVectorPtr tmpBasisJ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(NullspaceBasis_->getMap(),NullspaceBasis_->getNumVectors());
-                    tmpBasisJ->elementWiseMultiply(1.0,*PartitionOfUnity_[i]->getVector(j),*NullspaceBasis_,1.0);
+                    XMultiVectorPtr tmpBasisJ = MultiVectorFactory<SC,LO,GO,NO>::Build(nullspaceBasisMap,NullspaceBasis_->getNumVectors());
+                    tmpBasisJ->elementWiseMultiply(ScalarTraits<SC>::one(),*PartitionOfUnity_[i]->getVector(j),*NullspaceBasis_,ScalarTraits<SC>::one());
                     if (ParameterList_->get("Orthogonalize",true)) {
                         tmpBasis[i][j] = ModifiedGramSchmidt(tmpBasisJ.getConst());
                     } else {
@@ -109,7 +113,7 @@ namespace FROSch {
                 FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getNodeNumElements()==0,"PartitionOfUnityMaps_[i]->getNodeNumElements()!=0");
             }
         }
-        
+
         // Determine Number of Basisfunctions per Entity
         UNVecPtr maxNV(PartitionOfUnity_.size());
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
@@ -120,61 +124,65 @@ namespace FROSch {
                         maxNVLocal = std::max(maxNVLocal,(UN) tmpBasis[i][j]->getNumVectors());
                     }
                 }
-                reduceAll(*MpiComm_,Teuchos::REDUCE_MAX,maxNVLocal,Teuchos::ptr(&maxNV[i]));
+                reduceAll(*MpiComm_,REDUCE_MAX,maxNVLocal,ptr(&maxNV[i]));
             }
         }
-        
+
         if (!ParameterList_->get("Number of Basisfunctions per Entity","MaxAll").compare("MaxAll")) {
             UNVecPtr::iterator max = std::max_element(maxNV.begin(),maxNV.end());
             for (UN i=0; i<maxNV.size(); i++) {
                 maxNV[i] = *max;
             }
         } else if (!ParameterList_->get("Number of Basisfunctions per Entity","MaxAll").compare("MaxEntityType")) {
-            
+
         } else {
             FROSCH_ASSERT(false,"Number of Basisfunctions per Entity type is unknown.");
         } // Testen!!!!!!!!!!!!!!!!!!!!!!!! AUSGABE IMPLEMENTIEREN!!!!!!
-        
+
         // Kann man das schöner machen?
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnityMaps_[i].is_null()) {
                 if (!PartitionOfUnity_[i].is_null()) {
+                    ConstXMapPtr partitionOfUnityMap_i = PartitionOfUnity_[i]->getMap();
                     for (UN j=0; j<maxNV[i]; j++) {
-                        //MultiVectorPtrVecPtr tmpBasis2(PartitionOfUnity_[i]->getNumVectors());
-                        MultiVectorPtr entityBasis = Xpetra::MultiVectorFactory<SC,LO,GO,NO >::Build(PartitionOfUnity_[i]->getMap(),PartitionOfUnity_[i]->getNumVectors());
-                        entityBasis->scale(0.0);
+                        XMultiVectorPtr entityBasis = MultiVectorFactory<SC,LO,GO,NO >::Build(partitionOfUnityMap_i,PartitionOfUnity_[i]->getNumVectors());
+                        entityBasis->scale(ScalarTraits<SC>::zero());
                         for (UN k=0; k<PartitionOfUnity_[i]->getNumVectors(); k++) {
                             if (j<tmpBasis[i][k]->getNumVectors()) {
                                 entityBasis->getDataNonConst(k).deepCopy(tmpBasis[i][k]->getData(j)()); // Here, we copy data. Do we need to do this?
                             }
                         }
-                        LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i],entityBasis);
+                        LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i],null,entityBasis);
                     }
                 } else {
-                    LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i]);
+                    for (UN j=0; j<maxNV[i]; j++) {
+                        LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i]);
+                    }
                 }
+            } else {
+                FROSCH_WARNING("FROSch::LocalPartitionOfUnityBasis",this->MpiComm_->getRank()==0,"PartitionOfUnityMaps_[i].is_null()");
             }
         }
-        
+
         LocalPartitionOfUnitySpace_->assembleCoarseSpace();
-        
+
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
-    typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::MultiVectorPtrVecPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getPartitionOfUnity() const
+    typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::XMultiVectorPtrVecPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getPartitionOfUnity() const
     {
         FROSCH_ASSERT(!PartitionOfUnity_.is_null(),"Partition Of Unity is not set.");
         return PartitionOfUnity_;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
-    typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::MultiVectorPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getNullspaceBasis() const
+    typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::XMultiVectorPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getNullspaceBasis() const
     {
         FROSCH_ASSERT(!NullspaceBasis_.is_null(),"Nullspace Basis is not set.");
         return NullspaceBasis_;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::CoarseSpacePtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getLocalPartitionOfUnitySpace() const
     {

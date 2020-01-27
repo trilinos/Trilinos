@@ -37,10 +37,10 @@
 #include "elb_err.h"  // for error_report, Gen_Error
 #include "elb_util.h" // for in_list
 #include <cstddef>    // for size_t
-#include <cstdio>     // for sprintf
 #include <cstdlib>    // for exit
 #include <cstring>    // for strncasecmp
-#include <vector>     // for vector
+#include <fmt/ostream.h>
+#include <vector> // for vector
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -290,8 +290,8 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes, const int num_d
   }
 
   if (answer == NULL_EL) {
-    char errstr[80];
-    sprintf(errstr, "fatal: unknown element type '%s' read", elem_name);
+    std::string errstr;
+    errstr = fmt::format("fatal: unknown element type '{}' read", elem_name);
     Gen_Error(0, errstr);
     error_report();
     exit(1);
@@ -941,8 +941,6 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
     }
   }
 
-  /* printf("%s::%d num = %d and nsnodes = %d\n",__FILE__,__LINE__,num,nsnodes); */
-
   /* I commented out the conditional statement causing the
      error if 2 hexes only share 3 out of 4 nodes.  I replaced
      this with what is seen below.  It works, but only for
@@ -1405,9 +1403,9 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
   case SPHERE: break;
 
   default: {
-    char err_buff[300];
-    sprintf(err_buff, "fatal: unknown element type %d in function %s", static_cast<int>(etype),
-            __func__);
+    std::string err_buff;
+    err_buff = fmt::format("fatal: unknown element type {} in function {}", static_cast<int>(etype),
+                           __func__);
     Gen_Error(0, err_buff);
     error_report();
     exit(1);
@@ -1525,9 +1523,9 @@ int get_side_id_hex_tet(const E_Type etype,     /* The element type */
   } break;
 
   default: {
-    char err_buff[300];
-    sprintf(err_buff, "fatal: unknown element type %d in function %s", static_cast<int>(etype),
-            __func__);
+    std::string err_buff;
+    err_buff = fmt::format("fatal: unknown element type {} in function {}", static_cast<int>(etype),
+                           __func__);
     Gen_Error(0, err_buff);
     error_report();
     exit(1);

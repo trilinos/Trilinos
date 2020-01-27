@@ -444,7 +444,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK_UserOrdering, Sc
     tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
   RCP<const crs_matrix_type> crsmatrix =
     tif_utest::create_test_matrix<Scalar,LO,GO,Node>(rowmap);
-  size_t N = rowmap->getNodeNumElements();
 
   out << "Creating AdditiveSchwarz instance" << endl;
 
@@ -454,6 +453,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK_UserOrdering, Sc
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  size_t N = rowmap->getNodeNumElements();
   params.set ("schwarz: use reordering", true);
 
   // Now let's do some user ordering.  Reverse ordering, because, why not?

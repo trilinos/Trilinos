@@ -1214,13 +1214,28 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   }
 
   if (nonnull(userConvStatusTest_) ) {
-    // Override the overall convergence test with the users convergence test
-    convTest_ = Teuchos::rcp(
-      new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
-    // brief output style not compatible with more general combinations
-    //outputStyle_ = Belos::General;
-    // NOTE: Above, you have to run the other convergence tests also because
-    // the logic in this class depends on it.  This is very unfortunate.
+    // Check if this is a combination of several StatusTestResNorm objects
+    Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(userConvStatusTest_);
+    if (tmpComboTest != Teuchos::null) {
+      std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
+      comboType_ = tmpComboTest->getComboType();
+      const int numResTests = static_cast<int>(tmpVec.size());
+      auto newConvTest = Teuchos::rcp(new StatusTestCombo_t(comboType_));
+      newConvTest->addStatusTest(convTest_);
+      for (int j = 0; j < numResTests; ++j) {
+        newConvTest->addStatusTest(tmpVec[j]);
+      }
+      convTest_ = newConvTest;
+    }
+    else{
+      // Override the overall convergence test with the users convergence test
+      convTest_ = Teuchos::rcp(
+        new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
+      // brief output style not compatible with more general combinations
+      //outputStyle_ = Belos::General;
+      // NOTE: Above, you have to run the other convergence tests also because
+      // the logic in this class depends on it.  This is very unfortunate.
+    }
   }
 
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );

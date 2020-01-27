@@ -582,10 +582,10 @@ namespace panzer_stk {
     const Teuchos::RCP<panzer::ConnManager> conn_manager
            = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int> > indexerFactory
-          = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
-    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
-          = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
+    Teuchos::RCP<const panzer::GlobalIndexerFactory > indexerFactory
+          = Teuchos::rcp(new panzer::DOFManagerFactory);
+    const Teuchos::RCP<panzer::GlobalIndexer> dofManager
+          = indexerFactory->buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof

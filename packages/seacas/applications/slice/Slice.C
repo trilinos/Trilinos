@@ -42,6 +42,7 @@
 #include <Ioss_Utils.h>
 #include <cassert>
 #include <exo_fpp/Iofx_DatabaseIO.h>
+#include <fmt/ostream.h>
 #include <init/Ionit_Initializer.h>
 
 #include <exodusII.h>
@@ -52,8 +53,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <locale>
 #include <map>
 #include <numeric>
@@ -73,8 +72,6 @@ using idx_t = int;
 #ifdef SEACAS_HAVE_MPI
 #include <mpi.h>
 #endif
-
-#define OUTPUT std::cerr
 
 // ========================================================================
 // TODO(gdsjaar):
@@ -99,19 +96,19 @@ namespace {
     if ((debug_level & 1) != 0) {
       auto                          now  = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> diff = now - start;
-      std::cerr << " [" << std::fixed << std::setprecision(2) << diff.count() << " - "
-                << Ioss::Utils::get_memory_info() << "]\t" << output << "\n";
+      fmt::print(stderr, " [{:.2f} - {:n}]\t{}\n", diff.count(), Ioss::Utils::get_memory_info(),
+                 output);
     }
   }
 
   void proc_progress(int p, int proc_count)
   {
-    if (((debug_level & 4) != 0) && ((p + 1) % (proc_count / 20) == 0)) {
+    if (((debug_level & 5) != 0) && ((proc_count <= 20) || ((p + 1) % (proc_count / 20) == 0))) {
       progress("\t\tProcessor " + std::to_string(p + 1));
     }
   }
 
-  void filename_substitution(std::string &filename, const SystemInterface &interface);
+  void filename_substitution(std::string &filename, const SystemInterface &interFace);
 
   template <typename T> struct remove_pointer
   {
@@ -123,7 +120,7 @@ namespace {
   };
 
   template <typename INT>
-  void slice(Ioss::Region &region, const std::string &nemfile, SystemInterface &interface,
+  void slice(Ioss::Region &region, const std::string &nemfile, SystemInterface &interFace,
              INT /*dummy*/);
 
   int get_free_descriptor_count();
@@ -171,17 +168,10 @@ namespace {
     }
 
     common_nodes = std::max(1, common_nodes);
-    OUTPUT << "Setting common_nodes to " << common_nodes << "\n";
+    fmt::print(stderr, "Setting common_nodes to {}\n", common_nodes);
     return common_nodes;
   }
 #endif
-
-  struct my_numpunct : std::numpunct<char>
-  {
-  protected:
-    char        do_thousands_sep() const override { return ','; }
-    std::string do_grouping() const override { return "\3"; }
-  };
 } // namespace
 // ========================================================================
 
@@ -191,37 +181,35 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  std::cout.imbue(std::locale(std::locale(), new my_numpunct));
-  std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
-
   double begin = seacas_timer();
 
   Ioss::Init::Initializer io;
   SystemInterface::show_version();
 
-  SystemInterface interface;
-  bool            ok = interface.parse_options(argc, argv);
+  SystemInterface interFace;
+  bool            ok = interFace.parse_options(argc, argv);
   if (!ok) {
-    OUTPUT << "\nERROR: Problem parsing command line options.\n\n";
+    fmt::print(stderr, "\nERROR: Problem parsing command line options.\n\n");
     exit(EXIT_FAILURE);
   }
 
-  std::string nem_file = interface.nemesisFile_;
-  std::string path     = interface.output_path();
+  std::string nem_file = interFace.nemesisFile_;
+  std::string path     = interFace.output_path();
   if (!path.empty()) {
-    filename_substitution(path, interface);
+    filename_substitution(path, interFace);
 
     // See if specified path exists.
     Ioss::FileInfo output_path(path);
     if (!output_path.exists()) {
       // Try to create the directory...
       if (mkdir(path.c_str(), 0777) == -1) {
-        OUTPUT << "ERROR: Could not create path '" << path << "' for output of decomposed files.\n";
+        fmt::print(stderr, "ERROR: Could not create path '{}' for output of decomposed files.\n",
+                   path);
         exit(EXIT_FAILURE);
       }
     }
     else if (!output_path.is_dir()) {
-      OUTPUT << "ERROR: Path '" << path << "' is not a directory.\n";
+      fmt::print(stderr, "ERROR: Path '{}' is not a directory.\n", path);
       exit(EXIT_FAILURE);
     }
 
@@ -235,22 +223,21 @@ int main(int argc, char *argv[])
     nem_file = path + sep + nemesis.tailname();
   }
 
-  OUTPUT << "Input:    '" << interface.inputFile_ << '\n';
-  OUTPUT << "Output:   '" << nem_file << '\n';
-  OUTPUT << '\n';
+  fmt::print(stderr, "\nInput:    '{}'\n", interFace.inputFile_);
+  fmt::print(stderr, "Output:   '{}'\n\n", nem_file);
 
   // Check whether processor count is larger than maximum number of open files...
   size_t max_files    = get_free_descriptor_count();
-  minimize_open_files = (interface.processor_count() + 1 > max_files);
+  minimize_open_files = (interFace.processor_count() + 1 > max_files);
 
-  debug_level   = interface.debug();
-  partial_count = interface.partial();
+  debug_level   = interFace.debug();
+  partial_count = interFace.partial();
 
   //========================================================================
   // INPUT ...
   // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
   //========================================================================
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(interface.inputFormat_, interface.inputFile_,
+  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(interFace.inputFormat_, interFace.inputFile_,
                                                   Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_WORLD);
   if (dbi == nullptr || !dbi->ok(true)) {
     std::exit(EXIT_FAILURE);
@@ -265,18 +252,18 @@ int main(int argc, char *argv[])
 
   if (dbi->int_byte_size_api() == 4) {
     progress("4-byte slice");
-    slice(region, nem_file, interface, 1);
+    slice(region, nem_file, interFace, 1);
   }
   else {
     progress("8-byte slice");
-    slice(region, nem_file, interface, static_cast<int64_t>(1));
+    slice(region, nem_file, interFace, static_cast<int64_t>(1));
   }
 
 #ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
-  OUTPUT << "Total execution time = " << seacas_timer() - begin << "\n";
-  OUTPUT << "\nSlice execution successful.\n";
+  fmt::print(stderr, "Total execution time = {}\n", seacas_timer() - begin);
+  fmt::print(stderr, "\nSlice execution successful.\n");
   return EXIT_SUCCESS;
 }
 
@@ -301,7 +288,7 @@ namespace {
 
     pointer.reserve(count + 1);
     adjacency.reserve(sum);
-    OUTPUT << "\tAdjacency Size = " << sum << " for " << count << " elements.\n";
+    fmt::print(stderr, "\tAdjacency Size = {:n} for {:n} elements.\n", sum, count);
 
     // Now, iterate the blocks again, get connectivity and build adjacency structure.
     std::vector<INT> connectivity;
@@ -324,24 +311,24 @@ namespace {
     assert(adjacency.size() == sum);
   }
 
-  void decompose_elements(const Ioss::Region &region, SystemInterface &interface,
+  void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
                           std::vector<int> &elem_to_proc)
   {
     progress(__func__);
     // Populate the 'elem_to_proc' vector with a mapping from element to processor.
 
     size_t element_count = region.get_property("element_count").get_int();
-    size_t elem_per_proc = element_count / interface.processor_count();
-    size_t extra         = element_count % interface.processor_count();
+    size_t elem_per_proc = element_count / interFace.processor_count();
+    size_t extra         = element_count % interFace.processor_count();
 
     elem_to_proc.reserve(element_count);
 
-    OUTPUT << "Decomposing " << element_count << " elements across " << interface.processor_count()
-           << " processors using method '" << interface.decomposition_method() << "'.\n\n";
+    fmt::print(stderr, "Decomposing {:n} elements across {:n} processors using method '{}'.\n\n",
+               element_count, interFace.processor_count(), interFace.decomposition_method());
 
-    if (interface.decomposition_method() == "linear") {
+    if (interFace.decomposition_method() == "linear") {
       size_t elem_beg = 0;
-      for (size_t proc = 0; proc < interface.processor_count(); proc++) {
+      for (size_t proc = 0; proc < interFace.processor_count(); proc++) {
         size_t add      = (proc < extra) ? 1 : 0;
         size_t elem_end = elem_beg + elem_per_proc + add;
 
@@ -351,38 +338,38 @@ namespace {
         elem_beg = elem_end;
       }
     }
-    else if (interface.decomposition_method() == "scattered") {
+    else if (interFace.decomposition_method() == "scattered") {
       // Scattered...
       size_t proc = 0;
       for (size_t elem = 0; elem < element_count; elem++) {
         elem_to_proc.push_back(proc++);
-        if (proc >= interface.processor_count()) {
+        if (proc >= interFace.processor_count()) {
           proc = 0;
         }
       }
     }
 
-    else if (interface.decomposition_method() == "rb" ||
-             interface.decomposition_method() == "kway") {
+    else if (interFace.decomposition_method() == "rb" ||
+             interFace.decomposition_method() == "kway") {
 #if USE_METIS
       std::vector<idx_t> pointer;
       std::vector<idx_t> adjacency;
 
       double start = seacas_timer();
-      create_adjacency_list(region, interface, pointer, adjacency, dummy);
+      create_adjacency_list(region, interFace, pointer, adjacency, dummy);
       double end = seacas_timer();
-      OUTPUT << "\tCreate Adjacency List = " << end - start << "\n";
+      fmt::print(stderr, "\tCreate Adjacency List = {}\n", end - start);
 
       // Call Metis to get the partition...
       {
         start                         = seacas_timer();
         idx_t              elem_count = element_count;
         idx_t              common     = get_common_node_count(region);
-        idx_t              proc_count = interface.processor_count();
+        idx_t              proc_count = interFace.processor_count();
         idx_t              obj_val    = 0;
         std::vector<idx_t> options(METIS_NOPTIONS);
         METIS_SetDefaultOptions(&options[0]);
-        if (interface.decomposition_method() == "kway") {
+        if (interFace.decomposition_method() == "kway") {
           options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY;
         }
         else {
@@ -390,7 +377,7 @@ namespace {
         }
 
         options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
-        if (interface.contiguous_decomposition()) {
+        if (interFace.contiguous_decomposition()) {
           options[METIS_OPTION_CONTIG] = 1;
         }
         options[METIS_OPTION_DBGLVL]  = 2;
@@ -400,7 +387,7 @@ namespace {
         std::vector<idx_t> node_partition(node_count);
         std::vector<idx_t> elem_partition(element_count);
 
-        OUTPUT << "\tCalling METIS Decomposition routine.\n";
+        fmt::print(stderr, "\tCalling METIS Decomposition routine.\n");
 
         METIS_PartMeshDual(&elem_count, &node_count, &pointer[0], &adjacency[0], nullptr, nullptr,
                            &common, &proc_count, nullptr, &options[0], &obj_val, &elem_partition[0],
@@ -411,24 +398,24 @@ namespace {
         std::copy(elem_partition.begin(), elem_partition.end(), std::back_inserter(elem_to_proc));
 
         end = seacas_timer();
-        OUTPUT << "\tMETIS Partition = " << end - start << "\n";
-        OUTPUT << "Objective value = " << obj_val << "\n";
+        fmt::print(stderr, "\tMETIS Partition = {}\n", end - start);
+        fmt::print(stderr, "Objective value = {}\n", obj_val);
 
         // TODO Check Error...
       }
 #else
-      OUTPUT << "ERROR: Metis library not enabled in this version of slice.\n"
-             << "       The 'rb' and 'kway' methods are not available.\n\n";
+      fmt::print(stderr, "ERROR: Metis library not enabled in this version of slice.\n"
+                         "       The 'rb' and 'kway' methods are not available.\n\n");
       std::exit(1);
 #endif
     }
 
-    else if (interface.decomposition_method() == "random") {
+    else if (interFace.decomposition_method() == "random") {
       // Random...  Use linear method and then random_shuffle() the vector.
       // Ensures that each processor has correct number of elements, but
       // they are randomly distributed.
       size_t elem_beg = 0;
-      for (size_t proc = 0; proc < interface.processor_count(); proc++) {
+      for (size_t proc = 0; proc < interFace.processor_count(); proc++) {
         size_t add      = (proc < extra) ? 1 : 0;
         size_t elem_end = elem_beg + elem_per_proc + add;
 
@@ -442,7 +429,7 @@ namespace {
       std::shuffle(elem_to_proc.begin(), elem_to_proc.end(), g);
     }
 
-    else if (interface.decomposition_method() == "file") {
+    else if (interFace.decomposition_method() == "file") {
       // Read the element decomposition mapping from a file.  The
       // syntax of the file is an optional element count followed by
       // the processor for this range.  If the element range is
@@ -461,16 +448,18 @@ namespace {
       // 2 elements (1, 102) on processor 0 and 100 elements (2..101)
       // on processor 1.
 
-      const std::string &filename = interface.decomposition_file();
+      const std::string &filename = interFace.decomposition_file();
       if (filename.empty()) {
-        OUTPUT << "\nERROR: No element decomposition file specified.\n";
+        fmt::print(stderr, "\nERROR: No element decomposition file specified.\n");
         exit(EXIT_FAILURE);
       }
 
       std::ifstream decomp_file(filename, std::ios::in);
       if (!decomp_file.good()) {
-        OUTPUT << "\nERROR: Element decomposition file '" << filename
-               << "' does not exist or could not be opened.\n";
+        fmt::print(
+            stderr,
+            "\nERROR: Element decomposition file '{}' does not exist or could not be opened.\n",
+            filename);
         exit(EXIT_FAILURE);
       }
 
@@ -496,20 +485,23 @@ namespace {
           count = std::stoi(tokens[0]);
           proc  = std::stoi(tokens[1]);
         }
-        if (proc > interface.processor_count()) {
-          OUTPUT << "\nERROR: Invalid processor " << proc << " specified on line " << line_num
-                 << " of decomposition file.\n"
-                 << "\tValid range is 0.." << interface.processor_count() - 1 << "\n";
+        if (proc > interFace.processor_count()) {
+          fmt::print(
+              stderr,
+              "\nERROR: Invalid processor {:n} specified on line {:n} of decomposition file.\n"
+              "\tValid range is 0..{:n}\n",
+              proc, line_num, interFace.processor_count() - 1);
           exit(EXIT_FAILURE);
         }
 
         if (elem_to_proc.size() + count > element_count) {
-          OUTPUT << "\nERROR: The processor specification on line " << line_num
-                 << " of the decomposition file results in too many elements being specified.\n"
-                 << "\tThe total number of elements in the model is " << element_count << "\n"
-                 << "\tPrior to this line, " << elem_to_proc.size() << " elements were specified.\n"
-                 << "\tIncluding this line, " << elem_to_proc.size() + count
-                 << " elements will be specified.\n";
+          fmt::print(stderr,
+                     "\nERROR: The processor specification on line {:n}"
+                     " of the decomposition file results in too many elements being specified.\n"
+                     "\tThe total number of elements in the model is {:n}\n"
+                     "\tPrior to this line, {:n} elements were specified.\n"
+                     "\tIncluding this line, {:n} elements will be specified.\n",
+                     line_num, element_count, elem_to_proc.size(), elem_to_proc.size() + count);
           exit(EXIT_FAILURE);
         }
 
@@ -640,7 +632,7 @@ namespace {
       }
     }
     if (set_count > 0) {
-      OUTPUT << "WARNING: Sideset distribution factors not yet handled correctly.\n";
+      fmt::print(stderr, "WARNING: Sideset distribution factors not yet handled correctly.\n");
     }
   }
 
@@ -745,8 +737,8 @@ namespace {
       commset->property_add(Ioss::Property("id", 1));
       region->add(commset);
       if (debug_level & 2) {
-        OUTPUT << "Commset for processor " << p << " has " << border_node_proc_map[p].size() / 2
-               << " entries.\n";
+        fmt::print(stderr, "Commset for processor {} has {} entries.\n", p,
+                   border_node_proc_map[p].size() / 2);
       }
     }
   }
@@ -783,17 +775,17 @@ namespace {
 
       auto &name = ns[s]->name();
       if (debug_level & 2) {
-        OUTPUT << "\tNodeset " << name << "-- ";
+        fmt::print(stderr, "\tNodeset {}--", name);
       }
       for (size_t p = 0; p < proc_count; p++) {
         auto *node_set = new Ioss::NodeSet(proc_region[p]->get_database(), name, pns[p]);
         proc_region[p]->add(node_set);
         if (debug_level & 2) {
-          OUTPUT << p << ":" << pns[p] << ", ";
+          fmt::print(stderr, "{}:{}, ", p, pns[p]);
         }
       }
       if (debug_level & 2) {
-        OUTPUT << "\n";
+        fmt::print(stderr, "\n");
       }
     }
   }
@@ -906,7 +898,7 @@ namespace {
     // Check whether the map is sequential (X maps to X);
     bool sequential = is_sequential(ids);
     if (!sequential) {
-      OUTPUT << "Node map is not sequential...\n";
+      fmt::print(stderr, "Node map is not sequential...\n");
     }
 
     size_t node_count = region.get_property("node_count").get_int();
@@ -970,7 +962,7 @@ namespace {
       for (size_t j = 0; j < element_count; j++) {
         size_t p = elem_to_proc[offset + j];
 #if 0
-	map[p].push_back(ids[j]);
+        map[p].push_back(ids[j]);
 #else
         map[p].push_back(offset + j + 1);
 #endif
@@ -1203,7 +1195,7 @@ namespace {
       }
       proc_elem_block_cnt[block_count][i] = sum;
       if (debug_level & 2) {
-        OUTPUT << "\tProcessor " << i << " has " << sum << " elements.\n";
+        fmt::print(stderr, "\tProcessor {:n} has {:n} elements.\n", i, sum);
       }
     }
   }
@@ -1260,7 +1252,7 @@ namespace {
           new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1", on_proc_count, 3);
       proc_region[p]->add(nb);
       if (debug_level & 2) {
-        OUTPUT << "\tProcessor " << p << " has " << on_proc_count << " nodes.\n";
+        fmt::print(stderr, "\tProcessor {:n} has {:n} nodes.\n", p, on_proc_count);
       }
       sum_on_proc_count += on_proc_count;
     }
@@ -1276,7 +1268,7 @@ namespace {
     for (size_t i = 0; i < node_count; i++) {
       size_t num_procs = proc_node[i].size();
       if (num_procs == 0) {
-        OUTPUT << "WARNING: Node " << i + 1 << " is not connected to any elements.\n";
+        fmt::print(stderr, "WARNING: Node {:n} is not connected to any elements.\n", i + 1);
       }
       else if (num_procs < proc_histo.size()) {
         proc_histo[num_procs]++;
@@ -1289,18 +1281,19 @@ namespace {
       node_to_proc_pointer_size += num_procs;
     }
     // Output histogram..
-    OUTPUT << "Processor count per node histogram:\n";
+    fmt::print(stderr, "Processor count per node histogram:\n");
     for (size_t i = 0; i < proc_histo.size(); i++) {
       if (proc_histo[i] > 0) {
-        OUTPUT << "\tNodes on " << i << " processors = " << proc_histo[i] << "\t("
-               << (proc_histo[i] * 100 + node_count / 2) / node_count << ")%\n";
+        fmt::print(stderr, "\tNodes on {:2n} processors = {:12n}\t({:2})%\n", i, proc_histo[i],
+                   (proc_histo[i] * 100 + node_count / 2) / node_count);
       }
     }
     if (proc_histo[0] > 0) {
-      OUTPUT << "\tNodes on " << proc_histo.size() << " or more processors = " << proc_histo[0]
-             << "\t(" << (proc_histo[0] * 100 + node_count / 2) / node_count << ")%\n";
+      fmt::print(stderr, "\tNodes on {:n} or more processors = {:n}\t({:.2f})%\n",
+                 proc_histo.size(), proc_histo[0],
+                 (proc_histo[0] * 100 + node_count / 2) / node_count);
     }
-    OUTPUT << "\n";
+    fmt::print(stderr, "\n");
 
     node_to_proc_pointer.push_back(node_to_proc_pointer_size);
     node_to_proc.reserve(node_to_proc_pointer_size);
@@ -1318,15 +1311,15 @@ namespace {
   }
 
   template <typename INT>
-  void slice(Ioss::Region &region, const std::string &nemfile, SystemInterface &interface,
+  void slice(Ioss::Region &region, const std::string &nemfile, SystemInterface &interFace,
              INT /*dummy*/)
   {
     progress(__func__);
-    std::vector<Ioss::Region *> proc_region(interface.processor_count());
+    std::vector<Ioss::Region *> proc_region(interFace.processor_count());
     bool                        ints64 = (sizeof(INT) == 8);
 
-    for (size_t i = 0; i < interface.processor_count(); i++) {
-      std::string outfile = Ioss::Utils::decode_filename(nemfile, i, interface.processor_count());
+    for (size_t i = 0; i < interFace.processor_count(); i++) {
+      std::string outfile = Ioss::Utils::decode_filename(nemfile, i, interFace.processor_count());
       Ioss::DatabaseIO *dbo =
           Ioss::IOFactory::create("exodus", outfile, Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_WORLD);
       if (ints64) {
@@ -1339,9 +1332,9 @@ namespace {
 
     double           start = seacas_timer();
     std::vector<int> elem_to_proc;
-    decompose_elements(region, interface, elem_to_proc);
+    decompose_elements(region, interFace, elem_to_proc);
     double end = seacas_timer();
-    OUTPUT << "Decompose elements = " << end - start << "\n";
+    fmt::print(stderr, "Decompose elements = {}\n", end - start);
 
     start = seacas_timer();
     // Build the proc_elem_block_cnt[i][j] vector.
@@ -1349,15 +1342,16 @@ namespace {
     size_t block_count = region.get_property("element_block_count").get_int();
     std::vector<std::vector<INT>> proc_elem_block_cnt(block_count + 1);
     for (auto &pebc : proc_elem_block_cnt) {
-      pebc.resize(interface.processor_count());
+      pebc.resize(interFace.processor_count());
     }
     get_proc_elem_block_count(region, elem_to_proc, proc_elem_block_cnt);
     end = seacas_timer();
 
-    OUTPUT << "Calculate elements per element block on each processor = " << end - start << "\n";
+    fmt::print(stderr, "Calculate elements per element block on each processor = {}\n",
+               end - start);
 
     // Create element blocks for each processor...
-    for (size_t p = 0; p < interface.processor_count(); p++) {
+    for (size_t p = 0; p < interFace.processor_count(); p++) {
       auto & ebs = region.get_element_blocks();
       size_t bc  = ebs.size();
       for (size_t b = 0; b < bc; b++) {
@@ -1374,8 +1368,8 @@ namespace {
     // preallocate.  The 'get_proc_elem_block_count()' function also
     // gives us the number of elements in each block on each
     // processor, so it is useful for more just give a preallocation size...
-    std::vector<std::vector<INT>> proc_to_elem(interface.processor_count());
-    for (size_t i = 0; i < interface.processor_count(); i++) {
+    std::vector<std::vector<INT>> proc_to_elem(interFace.processor_count());
+    for (size_t i = 0; i < interFace.processor_count(); i++) {
       proc_to_elem[i].reserve(
           proc_elem_block_cnt[block_count][i]); // Reserve, not resize so doesn't initialize
     }
@@ -1386,18 +1380,18 @@ namespace {
       proc_to_elem[processor].push_back(i);
     }
 
-    for (size_t i = 0; i < interface.processor_count(); i++) {
+    for (size_t i = 0; i < interFace.processor_count(); i++) {
       assert(proc_to_elem[i].size() == (size_t)proc_elem_block_cnt[block_count][i]);
     }
 
     // Read connectivity and partition to each processor/block.
     // connectvity[p][b] = connectivity for block b on processor p
-    std::vector<std::vector<std::vector<INT>>> connectivity(interface.processor_count());
+    std::vector<std::vector<std::vector<INT>>> connectivity(interFace.processor_count());
     get_connectivity(region, proc_region, elem_to_proc, connectivity);
     end = seacas_timer();
 
-    OUTPUT << "Get connectivity lists for each element block on each processor = " << end - start
-           << "\n";
+    fmt::print(stderr, "Get connectivity lists for each element block on each processor = {}\n",
+               end - start);
 
     // Now that we have the elements on each processor and the element
     // blocks those elements are in, can generate the node to proc list...
@@ -1407,31 +1401,31 @@ namespace {
     std::vector<INT> node_to_proc_pointer;
     get_node_to_proc(region, proc_region, connectivity, node_to_proc, node_to_proc_pointer);
     end = seacas_timer();
-    OUTPUT << "Node Categorization Time = " << end - start << "\n";
+    fmt::print(stderr, "Node Categorization Time = {}\n", end - start);
 
     // Communication map data -- interior/border nodes
     start = seacas_timer();
-    std::vector<std::vector<INT>> border_node_proc_map(interface.processor_count());
+    std::vector<std::vector<INT>> border_node_proc_map(interFace.processor_count());
     define_communication_data(region, proc_region, node_to_proc, node_to_proc_pointer,
                               border_node_proc_map);
     end = seacas_timer();
-    OUTPUT << "Communication Data Definitions = " << end - start << "\n";
+    fmt::print(stderr, "Communication Data Definitions = {}\n", end - start);
 
     // Determine nodeset distribution to processor regions.
     start = seacas_timer();
     get_nodesets(region, proc_region, node_to_proc, node_to_proc_pointer);
     end = seacas_timer();
-    OUTPUT << "Get nodeset data = " << end - start << "\n";
+    fmt::print(stderr, "Get nodeset data = {}\n", end - start);
 
     start = seacas_timer();
     get_sidesets(region, proc_region, elem_to_proc, (INT)0);
     end = seacas_timer();
-    OUTPUT << "Get sideset data = " << end - start << "\n";
+    fmt::print(stderr, "Get sideset data = {}\n", end - start);
 
     start             = seacas_timer();
     double start_comb = start;
-    OUTPUT << "Begin writing  output files\n";
-    size_t proc_count = interface.processor_count();
+    fmt::print(stderr, "Begin writing  output files\n");
+    size_t proc_count = interFace.processor_count();
     for (size_t p = 0; p < proc_count; p++) {
       proc_region[p]->synchronize_id_and_name(&region);
       proc_region[p]->end_mode(Ioss::STATE_DEFINE_MODEL);
@@ -1442,35 +1436,35 @@ namespace {
       proc_progress(p, proc_count);
     }
     end = seacas_timer();
-    OUTPUT << "\tDefine output databases = " << end - start << "\n";
+    fmt::print(stderr, "\tDefine output databases = {}\n", end - start);
 
 // Generate and output node map...
 #if 1
     start = seacas_timer();
     output_node_map(region, proc_region, node_to_proc, node_to_proc_pointer);
     end = seacas_timer();
-    OUTPUT << "\tNode Map Output = " << end - start << "\n";
+    fmt::print(stderr, "\tNode Map Output = {}\n", end - start);
 #else
     start = seacas_timer();
     output_global_node_map(region, proc_region, node_to_proc, node_to_proc_pointer);
     end = seacas_timer();
-    OUTPUT << "\tGlobal Node Map Output = " << end - start << "\n";
+    fmt::print(stderr, "\tGlobal Node Map Output = {}\n", end - start);
 #endif
 
     start = seacas_timer();
     output_element_map(region, proc_region, elem_to_proc, (INT)1);
     end = seacas_timer();
-    OUTPUT << "\tElement Map Output = " << end - start << "\n";
+    fmt::print(stderr, "\tElement Map Output = {}\n", end - start);
 
     start = seacas_timer();
     output_communication_map(proc_region, border_node_proc_map);
     end = seacas_timer();
-    OUTPUT << "\tCommunication map Output = " << end - start << "\n";
+    fmt::print(stderr, "\tCommunication map Output = {}\n", end - start);
 
     start = seacas_timer();
     output_connectivity(proc_region, connectivity);
     end = seacas_timer();
-    OUTPUT << "\tConnectivity Output = " << end - start << "\n";
+    fmt::print(stderr, "\tConnectivity Output = {}\n", end - start);
 
     // Free up connectivity space...
     free_connectivity_storage(connectivity);
@@ -1478,28 +1472,28 @@ namespace {
     start = seacas_timer();
     output_coordinates(region, proc_region, node_to_proc, node_to_proc_pointer);
     end = seacas_timer();
-    OUTPUT << "\tCoordinates Output = " << end - start << "\n";
+    fmt::print(stderr, "\tCoordinates Output = {}\n", end - start);
 
     start = seacas_timer();
     output_nodesets(region, proc_region, node_to_proc, node_to_proc_pointer);
     end = seacas_timer();
-    OUTPUT << "\tNodeset Output = " << end - start << "\n";
+    fmt::print(stderr, "\tNodeset Output = {}\n", end - start);
 
     start = seacas_timer();
     output_sidesets(region, proc_region, elem_to_proc, (INT)0);
     end = seacas_timer();
-    OUTPUT << "\tSideset Output = " << end - start << "\n";
+    fmt::print(stderr, "\tSideset Output = {}\n", end - start);
 
     // Close all files...
     start = seacas_timer();
-    for (size_t p = 0; p < interface.processor_count(); p++) {
+    for (size_t p = 0; p < interFace.processor_count(); p++) {
       proc_region[p]->end_mode(Ioss::STATE_MODEL);
       delete proc_region[p];
     }
     end = seacas_timer();
-    OUTPUT << "\tClose and finalize all output databases = " << end - start << "\n";
-    OUTPUT << "Total time to write output files = " << end - start_comb << " ("
-           << (end - start_comb) / interface.processor_count() << " per file)\n";
+    fmt::print(stderr, "\tClose and finalize all output databases = {}\n", end - start);
+    fmt::print(stderr, "\nTotal time to write output files = {} ({} per file)\n", end - start_comb,
+               (end - start_comb) / interFace.processor_count());
   }
 #if defined(__PUMAGON__)
 #include <stdio.h>
@@ -1512,14 +1506,14 @@ namespace {
   {
 // Returns maximum number of files that one process can have open
 // at one time. (POSIX)
-#if defined(__PUMAGON__)
-    int fdmax = FOPEN_MAX;
-#else
+#ifndef _MSC_VER
     int fdmax = sysconf(_SC_OPEN_MAX);
     if (fdmax == -1) {
-      // POSIX indication that there is no limit on open files...
+      /* POSIX indication that there is no limit on open files... */
       fdmax = INT_MAX;
     }
+#else
+    int fdmax = _getmaxstdio();
 #endif
     // File descriptors are assigned in order (0,1,2,3,...) on a per-process
     // basis.
@@ -1539,7 +1533,7 @@ namespace {
     //
   }
 
-  void filename_substitution(std::string &filename, const SystemInterface &interface)
+  void filename_substitution(std::string &filename, const SystemInterface &interFace)
   {
     // See if filename contains "%P" which is replaced by the number of processors...
     // Assumes that %P only occurs once...
@@ -1547,7 +1541,7 @@ namespace {
     size_t pos = filename.find("%P");
     if (pos != std::string::npos) {
       // Found the characters...  Replace with the processor count...
-      size_t      num_proc = interface.processor_count();
+      size_t      num_proc = interFace.processor_count();
       std::string tmp(filename, 0, pos);
       tmp += std::to_string(num_proc);
       tmp += filename.substr(pos + 2);
@@ -1558,7 +1552,7 @@ namespace {
     pos = filename.find("%M");
     if (pos != std::string::npos) {
       // Found the characters...  Replace with the input file basename...
-      const std::string &method_name = interface.decomposition_method();
+      const std::string &method_name = interFace.decomposition_method();
       std::string        tmp(filename, 0, pos);
       tmp += method_name;
       tmp += filename.substr(pos + 2);

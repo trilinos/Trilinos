@@ -42,7 +42,7 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Teuchos_BLAS.hpp"
 #include <vector>
 
@@ -56,7 +56,7 @@ namespace {
             bool& success,
             const LO maxBlkSize)
   {
-    using Tpetra::Experimental::GEMV;
+    using Tpetra::GEMV;
     typedef Kokkos::View<IST**, LayoutType, Kokkos::HostSpace,
                          Kokkos::MemoryUnmanaged> blk_type;
     typedef Kokkos::View<IST*, LayoutType, Kokkos::HostSpace,

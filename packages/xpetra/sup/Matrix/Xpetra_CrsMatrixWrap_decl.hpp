@@ -54,7 +54,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
 
-#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_MultiVector_decl.hpp"
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
@@ -76,12 +76,10 @@ namespace Xpetra {
   @class CrsMatrixWrap
   @brief Concrete implementation of Xpetra::Matrix.
 */
-template <class Scalar = Matrix<>::scalar_type,
-          class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
-          class GlobalOrdinal =
-            typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-          class Node =
-            typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class CrsMatrixWrap :
   public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 {
@@ -93,7 +91,7 @@ class CrsMatrixWrap :
   typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
 #endif
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
-  typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+  typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
@@ -104,21 +102,22 @@ public:
   //! @name Constructor/Destructor Methods
   //@{
 
+  //! Constructor for a dynamic profile matrix (Epetra only)
+  CrsMatrixWrap (const RCP<const Map>& rowMap);
+
   //! Constructor specifying fixed number of entries for each row.
   CrsMatrixWrap (const RCP<const Map>& rowMap,
-                 size_t maxNumEntriesPerRow,
-                 Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
+                 size_t maxNumEntriesPerRow);
 
   //! Constructor specifying (possibly different) number of entries in each row.
   CrsMatrixWrap (const RCP<const Map>& rowMap,
-                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-                 ProfileType pftype = Xpetra::DynamicProfile);
+                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc);
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
@@ -265,6 +264,10 @@ public:
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
+
+  //! Returns the current number of entries in the specified global row.
+  /*! Returns OrdinalTraits<size_t>::invalid() if the row is not owned by this process. */
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   /** Undefined if isFillActive().
@@ -466,12 +469,14 @@ public:
 
   RCP<CrsMatrix> getCrsMatrix() const;
 
-  //@}
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-  template<class Node2>
-  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const;
-#endif
 
+  //! Compute a residual R = B - (*this) * X
+  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
+  
+
+  //@}
 private:
 
   // Default view is created after fillComplete()

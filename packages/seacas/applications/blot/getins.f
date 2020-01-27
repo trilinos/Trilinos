@@ -48,7 +48,7 @@ c DATE:                 December 20, 1988
 c
 c TYPE OF SUBPROGRAM:   subroutine
 c
-c USEAGE:               call getins (id, maxfld, nfield,
+c USAGE:               call getins (id, maxfld, nfield,
 c                                    kvalue, cvalue, ivalue, rvalue,
 c                                    line, iostat, prompt,
 c                                    lprom, *)

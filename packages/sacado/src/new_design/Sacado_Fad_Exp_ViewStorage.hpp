@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_VIEWSTORAGE_HPP
 
 #include <type_traits>
+#include <utility>
 #include <memory>
 
 #include "Sacado_DynamicArrayTraits.hpp"
@@ -63,6 +64,7 @@ namespace Sacado {
       typedef typename std::remove_cv<T>::type value_type;
       static constexpr bool is_statically_sized = (static_length > 0);
       static constexpr int static_size = static_length;
+      static constexpr bool is_view = true;
       typedef U base_fad_type;
 
       //! Turn ViewStorage into a meta-function class usable with mpl::apply
@@ -82,16 +84,6 @@ namespace Sacado {
       ViewStorage() :
         sz_(0), stride_(0), val_(0), dx_(0) {}
 
-      //! Constructor with value (needed to satisfy interface)
-      KOKKOS_INLINE_FUNCTION
-      ViewStorage(const T & x) :
-        sz_(0), stride_(0), val_(0), dx_(0) {}
-
-      //! Constructor with size \c sz (needed to satisfy interface)
-      KOKKOS_INLINE_FUNCTION
-      ViewStorage(const int sz, const T & x, const DerivInit zero_out) :
-        sz_(0), stride_(0), val_(0), dx_(0) {}
-
       //! Constructor
       KOKKOS_INLINE_FUNCTION
       ViewStorage(T* v, const int arg_size = 0, const int arg_stride = 0) :
@@ -108,6 +100,10 @@ namespace Sacado {
       ViewStorage(const ViewStorage& x) :
         sz_(x.sz_), stride_(x.stride_), val_(x.val_), dx_(x.dx_) {}
 
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move constructor so compiler will
+      // always fall-back to copy
+
       //! Destructor
       KOKKOS_INLINE_FUNCTION
       ~ViewStorage() {}
@@ -115,7 +111,11 @@ namespace Sacado {
       //! Assignment
       KOKKOS_INLINE_FUNCTION
       ViewStorage& operator=(const ViewStorage& x) {
-        if (this != std::addressof(x)) {
+        // Can't use std::addressof() on the GPU, so this is equivalent
+        // according to cppreference.com
+        if (this != reinterpret_cast<ViewStorage*>(
+              &const_cast<char&>(
+                reinterpret_cast<const volatile char&>(x)))) {
           *val_ = *x.val_;
           if (stride_one)
             for (int i=0; i<sz_.value; ++i)
@@ -126,6 +126,10 @@ namespace Sacado {
         }
         return *this;
       }
+
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move assignment so compiler will
+      // always fall-back to copy
 
       //! Returns number of derivative components
       KOKKOS_INLINE_FUNCTION

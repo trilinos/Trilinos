@@ -18,13 +18,14 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -35,6 +36,13 @@ aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
 
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -68,6 +76,14 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -84,6 +100,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -152,13 +169,14 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -169,6 +187,13 @@ aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
 
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -202,6 +227,14 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -218,6 +251,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -274,7 +308,9 @@ keep smoother data = 0   [default]
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 presmoother -> 
- [empty list]
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------
@@ -317,9 +353,34 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
+Build (MueLu::CoalesceDropFactory)
+Build (MueLu::AmalgamationFactory)
+[empty list]
+
+algorithm = "classical": threshold = 0, blocksize = 1
+aggregation: drop tol = 0   [default]
+aggregation: Dirichlet threshold = 0   [default]
+aggregation: drop scheme = classical   [default]
+lightweight wrap = 1
+
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Reusing previous AP data
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
 Using original prolongator
 repartition: rebalance P and R = 0
 repartition: rebalance Nullspace = 1   [default]
@@ -357,6 +418,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -387,13 +449,14 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -404,6 +467,13 @@ aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
 
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -437,6 +507,14 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -453,6 +531,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -508,7 +587,9 @@ keep smoother data = 0   [default]
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 presmoother -> 
- [empty list]
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------

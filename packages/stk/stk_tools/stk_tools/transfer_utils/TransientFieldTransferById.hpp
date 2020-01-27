@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -43,6 +44,8 @@
 #include "stk_transfer/copy_by_id/SearchByIdGeometric.hpp"
 
 #include <stk_io/StkMeshIoBroker.hpp>
+
+namespace Ioss { class Region; }
 
 namespace stk {
 namespace transfer_utils {
@@ -89,6 +92,10 @@ public:
 
     ~TransientFieldTransferById();
 
+    void writeFields(size_t aOutFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);
+    void get_field_names(size_t aOutputFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);
+
+    size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshName,  stk::mesh::Selector & aselector);
     size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshName);
 
     stk::io::StkMeshIoBroker &get_brokerA() { return mBrokerA; }
@@ -107,6 +114,52 @@ private:
     size_t setup_output_transient_fields(const std::string &parallelOutputMeshName);
 
     void initialize(const std::vector<stk::mesh::EntityRank>& entityRanks);
+};
+
+struct SubDomainInfo {
+    stk::mesh::BulkData* bulk = nullptr;
+    std::string filename;
+    stk::io::EntitySharingInfo nodeSharingInfo;
+    int globalNumNodes = 0;
+    int globalNumElems = 0;
+    Ioss::Region* outRegion = nullptr;
+    bool meshWritten = false;
+    std::vector<TransientTransferByIdForRank*> transferVec;
+};
+
+class MtoNTransientFieldTransferById
+{
+public:
+    MtoNTransientFieldTransferById(stk::io::StkMeshIoBroker &inputBroker, unsigned numSubDomain);
+
+    MtoNTransientFieldTransferById(stk::io::StkMeshIoBroker &inputBroker, unsigned numSubDomain, 
+                                   const std::vector<stk::mesh::EntityRank> &entityRanks);
+
+    ~MtoNTransientFieldTransferById();
+
+    void setup_subdomain(stk::mesh::BulkData& bulk, const std::string &filename, 
+                         unsigned subdomain, const stk::io::EntitySharingInfo& nodeSharingInfo,
+                         int global_num_nodes, int global_num_elems);
+
+    void write_mesh_data(unsigned subdomain);
+    void write_transient_data(unsigned subdomain, double timeStep);
+    void transfer_transient_data(unsigned subdomain);
+    void transfer_and_write_transient_data(unsigned subdomain);
+
+private:
+    MtoNTransientFieldTransferById();
+
+    void validate_subdomain(unsigned subdomain);
+    void initialize_transfer(unsigned subdomain);
+    void add_qa_records(unsigned subdomain);
+    void add_info_records(unsigned subdomain);
+    void add_global_variables(unsigned subdomain);
+    void write_global_variables(unsigned subdomain, int step);
+
+    stk::io::StkMeshIoBroker &m_inputBroker;
+    unsigned m_numSubDomain;
+    std::vector<SubDomainInfo> m_subDomainInfoVec;
+    std::vector<stk::mesh::EntityRank> m_entityRanks;
 };
 
 }

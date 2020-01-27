@@ -79,17 +79,15 @@
 
 #include "info_interface.h"
 
-#define OUTPUT std::cout
-
 namespace Ioss {
 
   // internal to io_info
-  void io_info_file_info(const Info::Interface &interface);
-  void io_info_group_info(Info::Interface &interface);
+  void io_info_file_info(const Info::Interface &interFace);
+  void io_info_group_info(Info::Interface &interFace);
 
   // for external calls
-  void io_info_set_db_properties(const Info::Interface &interface, Ioss::DatabaseIO *dbi);
-  void io_info_file_info(const Info::Interface &interface, Ioss::Region &region);
+  void io_info_set_db_properties(const Info::Interface &interFace, Ioss::DatabaseIO *dbi);
+  void io_info_file_info(const Info::Interface &interFace, Ioss::Region &region);
 } // namespace Ioss
 
 #endif

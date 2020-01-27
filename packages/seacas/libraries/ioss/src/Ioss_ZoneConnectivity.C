@@ -32,8 +32,9 @@
 
 #include <Ioss_ZoneConnectivity.h>
 #include <cstddef> // for size_t
-#include <string>  // for string
-#include <vector>  // for vector
+#include <fmt/ostream.h>
+#include <string> // for string
+#include <vector> // for vector
 
 namespace {
   int sign(int value) { return value < 0 ? -1 : 1; }
@@ -68,26 +69,44 @@ namespace Ioss {
     transform += "] ";
 #endif
 
-    os << "\t\t" << zgc.m_donorName << "[P" << zgc.m_donorProcessor << "]:\tDZ " << zgc.m_donorZone
-       << "\tName '" << zgc.m_connectionName << "' shares " << zgc.get_shared_node_count()
-       << " nodes.\n\t\t\t\t      Range: [" << zgc.m_ownerRangeBeg[0] << ".."
-       << zgc.m_ownerRangeEnd[0] << ", " << zgc.m_ownerRangeBeg[1] << ".." << zgc.m_ownerRangeEnd[1]
-       << ", " << zgc.m_ownerRangeBeg[2] << ".." << zgc.m_ownerRangeEnd[2]
-       << "]\t      Donor Range: [" << zgc.m_donorRangeBeg[0] << ".." << zgc.m_donorRangeEnd[0]
-       << ", " << zgc.m_donorRangeBeg[1] << ".." << zgc.m_donorRangeEnd[1] << ", "
-       << zgc.m_donorRangeBeg[2] << ".." << zgc.m_donorRangeEnd[2] << "]"
-       << "\n\t\t\t\tLocal Range: [" << zgc.m_ownerRangeBeg[0] - zgc.m_ownerOffset[0] << ".."
-       << zgc.m_ownerRangeEnd[0] - zgc.m_ownerOffset[0] << ", "
-       << zgc.m_ownerRangeBeg[1] - zgc.m_ownerOffset[1] << ".."
-       << zgc.m_ownerRangeEnd[1] - zgc.m_ownerOffset[1] << ", "
-       << zgc.m_ownerRangeBeg[2] - zgc.m_ownerOffset[2] << ".."
-       << zgc.m_ownerRangeEnd[2] - zgc.m_ownerOffset[2] << "]\tDonor Local Range: ["
-       << zgc.m_donorRangeBeg[0] - zgc.m_donorOffset[0] << ".."
-       << zgc.m_donorRangeEnd[0] - zgc.m_donorOffset[0] << ", "
-       << zgc.m_donorRangeBeg[1] - zgc.m_donorOffset[1] << ".."
-       << zgc.m_donorRangeEnd[1] - zgc.m_donorOffset[1] << ", "
-       << zgc.m_donorRangeBeg[2] - zgc.m_donorOffset[2] << ".."
-       << zgc.m_donorRangeEnd[2] - zgc.m_donorOffset[2] << "]";
+#if 1
+    fmt::print(os,
+               "\t\t{}[P{}]:\tDZ {}\tName '{}' shares {:n} nodes."
+               "\n\t\t\t\t      Range: [{}..{}, {}..{}, {}..{}]\t      Donor Range: [{}..{}, "
+               "{}..{}, {}..{}]"
+               "\n\t\t\t\tLocal Range: [{}..{}, {}..{}, {}..{}]\tDonor Local Range: [{}..{}, "
+               "{}..{}, {}..{}]",
+               zgc.m_donorName, zgc.m_donorProcessor, zgc.m_donorZone, zgc.m_connectionName,
+               zgc.get_shared_node_count(), zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeEnd[0],
+               zgc.m_ownerRangeBeg[1], zgc.m_ownerRangeEnd[1], zgc.m_ownerRangeBeg[2],
+               zgc.m_ownerRangeEnd[2], zgc.m_donorRangeBeg[0], zgc.m_donorRangeEnd[0],
+               zgc.m_donorRangeBeg[1], zgc.m_donorRangeEnd[1], zgc.m_donorRangeBeg[2],
+               zgc.m_donorRangeEnd[2], zgc.m_ownerRangeBeg[0] - zgc.m_ownerOffset[0],
+               zgc.m_ownerRangeEnd[0] - zgc.m_ownerOffset[0],
+               zgc.m_ownerRangeBeg[1] - zgc.m_ownerOffset[1],
+               zgc.m_ownerRangeEnd[1] - zgc.m_ownerOffset[1],
+               zgc.m_ownerRangeBeg[2] - zgc.m_ownerOffset[2],
+               zgc.m_ownerRangeEnd[2] - zgc.m_ownerOffset[2],
+               zgc.m_donorRangeBeg[0] - zgc.m_donorOffset[0],
+               zgc.m_donorRangeEnd[0] - zgc.m_donorOffset[0],
+               zgc.m_donorRangeBeg[1] - zgc.m_donorOffset[1],
+               zgc.m_donorRangeEnd[1] - zgc.m_donorOffset[1],
+               zgc.m_donorRangeBeg[2] - zgc.m_donorOffset[2],
+               zgc.m_donorRangeEnd[2] - zgc.m_donorOffset[2]);
+#else
+    // Formats similar to what is needed for Utst_structured_decomp test
+    fmt::print(os,
+               "zones.back()->m_zoneConnectivity.emplace_back(\n"
+               "\"{0}\", zones.back()->m_zone, \"zone{1}\", {1}, "
+               "Ioss::IJK_t{{{2}, {3}, {4}}}, Ioss::IJK_t{{{5}, {6}, {7}}},  Ioss::IJK_t{{{8}, "
+               "{9}, {10}}}, Ioss::IJK_t{{{11}, {12}, {13}}}, Ioss::IJK_t{{{14}, {15}, {16}}});",
+               zgc.m_connectionName, zgc.m_donorZone, zgc.m_transform[0], zgc.m_transform[1],
+               zgc.m_transform[2], zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeBeg[1],
+               zgc.m_ownerRangeBeg[2], zgc.m_ownerRangeEnd[0], zgc.m_ownerRangeEnd[1],
+               zgc.m_ownerRangeEnd[2], zgc.m_donorRangeBeg[0], zgc.m_donorRangeBeg[1],
+               zgc.m_donorRangeBeg[2], zgc.m_donorRangeEnd[0], zgc.m_donorRangeEnd[1],
+               zgc.m_donorRangeEnd[2]);
+#endif
     return os;
   }
 

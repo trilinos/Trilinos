@@ -161,6 +161,7 @@ void rpc_test_additive_newconstructor(Epetra_ActiveComm &Comm,
   NewList.set("D0",rcp(&D0,false));
   NewList.set("Ms",rcp((const Epetra_CrsMatrix*)Ms,false));
 
+  std::cout<<NewList<<std::endl;
   RefMaxwellPreconditioner PrecRF(SM,NewList);
   Epetra_Vector x0_(x0);
 
@@ -304,8 +305,13 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   Epetra_MultiVector *coords=0;
   MatlabFileToMultiVector("coord_node.dat",NodeMap,dim,coords);
   coords->ExtractView(&coord_ptr,&N);
+  //  coords->Print(std::cout);
 
-  coords->Print(std::cout);
+  /* Fake the nodal materials */
+  double * material_ptr = 0;
+  Epetra_Vector * material = new Epetra_Vector(coords->Map());
+  material->PutScalar(1.0);
+  material->ExtractView(&material_ptr);  
 
   /* Build the edge coordinates */
   Epetra_MultiVector n_coords_ghost(D0->ColMap(),dim);  
@@ -341,10 +347,49 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   if(dim >= 1) List_LineSGS.set("x-coordinates",&e_coords[0][0]);
   if(dim >= 2) List_LineSGS.set("y-coordinates",&e_coords[1][0]);
   if(dim == 3) List_LineSGS.set("z-coordinates",&e_coords[2][0]);
+ 
+  Teuchos::ParameterList List_SA    = Build_Teuchos_List(N,coord_ptr,"smoother: type","symmetric Gauss-Seidel",0,1);
+  List_SA.set("refmaxwell: 11solver","sa");
+
+  Teuchos::ParameterList List_Rowsum    = Build_Teuchos_List(N,coord_ptr,"smoother: type","symmetric Gauss-Seidel",0,1);
+  List_Rowsum.set("refmaxwell: rowsum threshold",0.9);
+  List_Rowsum.sublist("refmaxwell: 11list").set("aggregation: rowsum threshold",0.9);
+
+  Teuchos::ParameterList List_Material    = Build_Teuchos_List(N,coord_ptr,"smoother: type","Chebyshev",0,1);
+                                                               
+  List_Material.sublist("refmaxwell: 11list").set("aggregation: material: threshold",2.0);
+  List_Material.sublist("refmaxwell: 11list").set("aggregation: material: enable",true);
+  List_Material.sublist("refmaxwell: 11list").set("material coordinates",material_ptr);
+
+  Teuchos::ParameterList List_SmoothSP = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
+  List_SmoothSP.sublist("refmaxwell: 11list").set("eigen-analysis: type","power-method");
+  List_SmoothSP.sublist("refmaxwell: 11list").set("aggregation: threshold",1e-2);
+  List_SmoothSP.sublist("refmaxwell: 11list").set("aggregation: damping factor",1.333);
+
+  Teuchos::ParameterList List_AMG = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
+  List_AMG.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("default values","Classical-AMG");
+
+  Teuchos::ParameterList List_AMG_sp = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
+  List_AMG_sp.sublist("refmaxwell: 11list").set("default values","Classical-AMG");
+
+  Teuchos::ParameterList List_AMG_sprs = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
+  List_AMG_sprs.sublist("refmaxwell: 11list").set("default values","Classical-AMG");
+  List_AMG_sprs.sublist("refmaxwell: 11list").set("aggregation: rowsum threshold",0.9);
+
+  Teuchos::ParameterList List_Material_And_Aux    = Build_Teuchos_List(N,coord_ptr,"smoother: type","Chebyshev",0,1,
+                                                                       "aggregation: aux: threshold",0.01, "aggregation: aux: enable",true);
+  List_Material_And_Aux.sublist("refmaxwell: 11list").set("aggregation: material: threshold",2.0);
+  List_Material_And_Aux.sublist("refmaxwell: 11list").set("aggregation: material: enable",true);
+  List_Material_And_Aux.sublist("refmaxwell: 11list").set("material coordinates",material_ptr);
+  List_Material_And_Aux.sublist("refmaxwell: 22list").set("aggregation: material: threshold",2.0);
+  List_Material_And_Aux.sublist("refmaxwell: 22list").set("aggregation: material: enable",true);
+  List_Material_And_Aux.sublist("refmaxwell: 22list").set("material coordinates",material_ptr);
 
 
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
+  int status1, status2 = 0;
+
   if(!Comm.MyPID()) printf("*** Test 1 ***\n");
   rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
@@ -368,7 +413,6 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   }
 
   /* Check RNG control */
-  int status1, status2 = 0;
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 7 ***\n");
   status1 = rpc_test_additive_repeat(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
@@ -393,10 +437,47 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   if(!Comm.MyPID()) printf("*** Test 13 ***\n");
   rpc_test_additive_newconstructor(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
+  /* Test w/ edge SA */
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 14 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_SA,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ rowsum */
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 15 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_Rowsum,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ material */
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 16 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_Material,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ smooth special prolongator */
+  if(!Comm.MyPID()) printf("*** Test 17 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_SmoothSP,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ classical */
+  if(!Comm.MyPID()) printf("*** Test 18 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_AMG,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ classical special prolongator */
+  if(!Comm.MyPID()) printf("*** Test 19 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_AMG_sp,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ classical special prolongator and rowsum */
+  if(!Comm.MyPID()) printf("*** Test 20 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_AMG_sprs,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ material and aux*/
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 21 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_Material_And_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
   delete M0; delete M1e;
   delete D0e;delete Se;
   delete SM;
   delete coords;
+  delete material;
 
   return (status1||status2);
 }

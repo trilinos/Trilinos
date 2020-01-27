@@ -159,7 +159,6 @@ C
  2090   GOTO 2080
 
  2100   CONTINUE
- 100    CONTINUE
         IF (ICH .GT. 32) THEN
           XSIZE(ICH,ic) = (XMAX + CHSP)/POINT
         ELSE

@@ -32,11 +32,20 @@ protected:
     HexShellHexMesh()
     {
         setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        std::string meshDesc =
+        std::string meshDesc;
+        if (get_parallel_size() == 1) {
+          meshDesc =
+            "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
+             0,2,HEX_8,5,6,7,8,9,10,11,12\n\
+             0,3,SHELL_QUAD_4,5,6,7,8";
+        }
+        else {
+          meshDesc =
             "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
              1,2,HEX_8,5,6,7,8,9,10,11,12\n\
              0,3,SHELL_QUAD_4,5,6,7,8";
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        }
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     }
 };
 
@@ -53,11 +62,20 @@ protected:
     HexHexShellMesh()
     {
         setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        std::string meshDesc =
+        std::string meshDesc;
+        if (get_parallel_size() == 1) {
+          meshDesc =
+            "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
+             0,2,HEX_8,5,6,7,8,9,10,11,12\n\
+             0,3,SHELL_QUAD_4,9,10,11,12";
+        }
+        else {
+          meshDesc =
             "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
              1,2,HEX_8,5,6,7,8,9,10,11,12\n\
              0,3,SHELL_QUAD_4,9,10,11,12";
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        }
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     }
 };
 
@@ -79,11 +97,20 @@ protected:
     HexWedgeHexMesh()
     {
         setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        std::string meshDesc =
+        std::string meshDesc;
+        if (get_parallel_size() == 1) {
+          meshDesc =
+            "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
+             0,2,WEDGE_6,5,9,8,6,10,7\n\
+             0,3,HEX_8,11,12,13,14,5,9,10,6";
+        }
+        else {
+          meshDesc =
             "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
              1,2,WEDGE_6,5,9,8,6,10,7\n\
              1,3,HEX_8,11,12,13,14,5,9,10,6";
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        }
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     }
 };
 

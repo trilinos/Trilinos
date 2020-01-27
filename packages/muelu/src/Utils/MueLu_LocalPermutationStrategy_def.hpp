@@ -201,8 +201,8 @@ namespace MueLu {
     // build matrices
 
     // create new empty Matrix
-    Teuchos::RCP<CrsMatrixWrap> permPTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1,Xpetra::StaticProfile));
-    Teuchos::RCP<CrsMatrixWrap> permQTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1,Xpetra::StaticProfile));
+    Teuchos::RCP<CrsMatrixWrap> permPTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1));
+    Teuchos::RCP<CrsMatrixWrap> permQTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1));
 
     for(size_t row=0; row<A->getNodeNumRows(); row++) {
       Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(PpermData[row]))); // column idx for Perm^T
@@ -261,7 +261,7 @@ namespace MueLu {
     GetOStream(Statistics0) << "MueLu::LocalPermutationStrategy: found " << gCntZeroDiagonals << " zeros on diagonal" << std::endl;
 #endif
 
-    Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1,Xpetra::StaticProfile));
+    Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1));
 
     for(size_t row=0; row<A->getNodeNumRows(); row++) {
       Teuchos::ArrayRCP<GlobalOrdinal> indout(1,permPApermQt->getRowMap()->getGlobalElement(row)); // column idx for Perm^T

@@ -46,6 +46,7 @@ import datetime
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
 import CDashQueryAnalyzeReport as CDQAR
+import cdash_build_testing_date as CBTD
 from gitdist import addOptionParserChoiceOption
 
 #
@@ -77,12 +78,16 @@ ToDo: Finish documentation!
 
 def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
 
-  yesterday = (datetime.date.today()+datetime.timedelta(days=-1)).isoformat()
+  clp.add_option(
+    "--date", dest="date", type="string", default='yesterday',
+    help="Date for the testing day <YYYY-MM-DD> or special values 'today'"+\
+      " or 'yesterday'. [default 'yesterday']" )
 
   clp.add_option(
-    "--date", dest="date", type="string", default=yesterday,
-    help="Date for the testing day <YYYY-MM-DD>."+\
-      " [default yesterday '"+yesterday+"']" )
+    "--cdash-project-testing-day-start-time", dest="cdashProjectTestingDayStartTime",
+    type="string", default="00:00",
+    help="The CDash project testing day build star time in UTC in format '<hh>:<mm>'."+\
+      " [default = '00:00'" )
 
   clp.add_option(
     "--cdash-project-name", dest="cdashProjectName", type="string", default="",
@@ -208,13 +213,17 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
     help="Send email to 'address1, address2, ...'.  [default '']" )
 
 
-def validateCmndLineOptions(inOptions):
+def validateAndConvertCmndLineOptions(inOptions):
   
   if inOptions.date == "":
-    print "Error, can't have empty --date, must pass in --date=YYYY-MM-DD!"
+    print("Error, can't have empty --date, must pass in --date=YYYY-MM-DD"+\
+      " or special values --date=today or --date=yesterday!")
     sys.exit(1)
   else:
-    CDQAR.validateAndConvertYYYYMMDD(inOptions.date)
+    dateTimeObj = CDQAR.convertInputDateArgToYYYYMMDD(
+      inOptions.cdashProjectTestingDayStartTime,
+      inOptions.date)
+    inOptions.date = CBTD.getDateStrFromDateTime(dateTimeObj)
 
   # ToDo: Assert more of the options to make sure they are correct!
 
@@ -241,7 +250,7 @@ def getCmndLineOptions():
   clp = OptionParser(usage=usageHelp)
   injectCmndLineOptionsInParser(clp)
   (options, args) = clp.parse_args()
-  validateCmndLineOptions(options)
+  validateAndConvertCmndLineOptions(options)
   setExtraCmndLineOptionsAfterParse(options)
   return options
 
@@ -249,6 +258,7 @@ def getCmndLineOptions():
 def fwdCmndLineOptions(inOptions, lt=""):
   cmndLineOpts = \
     "  --date='"+inOptions.date+"'"+lt+\
+    "  --cdash-project-testing-day-start-time='"+inOptions.cdashProjectTestingDayStartTime+"'"+lt+\
     "  --cdash-project-name='"+inOptions.cdashProjectName+"'"+lt+\
     "  --build-set-name='"+inOptions.buildSetName+"'"+lt+\
     "  --cdash-site-url='"+inOptions.cdashSiteUrl+"'"+lt+\
@@ -259,7 +269,7 @@ def fwdCmndLineOptions(inOptions, lt=""):
     "  --cdash-queries-cache-dir='"+inOptions.cdashQueriesCacheDir+"'"+lt+\
     "  --cdash-base-cache-files-prefix='"+inOptions.cdashBaseCacheFilesPrefix+"'"+lt+\
     "  --use-cached-cdash-data='"+inOptions.useCachedCDashDataStr+"'"+lt+\
-    "  --limit-test-history-days='"+str(inOptions.expectedBuildsFile)+"'"+lt+\
+    "  --limit-test-history-days='"+str(inOptions.testHistoryDays)+"'"+lt+\
     "  --limit-table-rows='"+str(inOptions.limitTableRows)+"'"+lt+\
     "  --print-details='"+inOptions.printDetailsStr+"'"+lt+\
     "  --write-failing-tests-without-issue-trackers-to-file='"+inOptions.writeFailingTestsWithoutIssueTrackersToFile+"'"+lt+\
@@ -356,11 +366,12 @@ class TestSetGetDataAnayzeReporter(object):
         CDQAR.foreachTransform(
           testSetSortedLimitedLOD,
           CDQAR.AddTestHistoryToTestDictFunctor(
-            self.inOptions.cdashSiteUrl,
-            self.inOptions.cdashProjectName,
-            self.inOptions.date,
-            self.inOptions.testHistoryDays,
-            self.testHistoryCacheDir,
+            cdashUrl=self.inOptions.cdashSiteUrl,
+            projectName=self.inOptions.cdashProjectName,
+            date=self.inOptions.date,
+            testingDayStartTimeUtc=self.inOptions.cdashProjectTestingDayStartTime,
+            daysOfHistory=self.inOptions.testHistoryDays,
+            testCacheDir=self.testHistoryCacheDir,
             useCachedCDashData=self.inOptions.useCachedCDashData,
             alwaysUseCacheFileIfExists=True,
             verbose=True,
@@ -820,6 +831,7 @@ if __name__ == '__main__':
           inOptions.cdashSiteUrl,
           inOptions.cdashProjectName,
           inOptions.date,
+          inOptions.cdashProjectTestingDayStartTime,
           inOptions.testHistoryDays,
           testHistoryCacheDir,
           useCachedCDashData=inOptions.useCachedCDashData,

@@ -104,7 +104,10 @@ namespace MueLu {
   | NumZLayers | NoFactory | Number of z layers after coarsening. Necessary input for LineDetectionFactory. Useful input for TogglePFactory.
 
 */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class SemiCoarsenPFactory : public PFactory {
 #undef MUELU_SEMICOARSENPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

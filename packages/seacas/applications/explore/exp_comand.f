@@ -126,7 +126,7 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
       DIMENSION A(*)
       INTEGER IA(*)
       LOGICAL EXODUS, FFMATC, DO_CHECK
-      LOGICAL DOMAPN, DOMAPE, MAPTMP, DOBLK, DOELE
+      LOGICAL DOMAPN, DOMAPE, DOBLK, DOELE
       CHARACTER*(*) DBNAME
       CHARACTER*(MXSTLN) QAREC(4,*)
       CHARACTER*(MXLNLN) INFO(*)
@@ -893,7 +893,7 @@ C ... Coordinate Frames
           CALL SHOCMD ('LIST/PRINT Options:', LISTBL)
         END IF
 
-C *** Miscellaneous Commmands ***
+C *** Miscellaneous Commands ***
 
       ELSE IF (VERB .EQ. 'LIMITS') THEN
         call limits(ndim, numnp, cord)
@@ -968,7 +968,7 @@ C     didn't, need to rewrite frefld to return mixed case.
      &      TIME, VARGL, VARNP, VAREL)
         END IF
 
-C *** Miscellaneous Commmands ***
+C *** Miscellaneous Commands ***
 
       ELSE IF (VERB .EQ. 'HELP') THEN
         ISON = HELP ('EXPLORE', 'COMMANDS', CFIELD(IFLD))
@@ -1016,5 +1016,4 @@ C *** Miscellaneous Commmands ***
 
  280  CONTINUE
       RETURN
-10000 FORMAT (1X, 5A)
       END

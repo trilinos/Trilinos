@@ -88,6 +88,7 @@ local installed-end-user-files =
   blot_xcps
   blot_cps
   blot_met
+  cgns_decomp
   fastq_x11
   fastq_pst
   fastq_xcps
@@ -1690,6 +1691,15 @@ exe io_shell
     <tag>@sierra-exec-tag
   ;
 
+exe cgns_decomp
+  :
+    $(seacas-root)/libraries/ioss/src/main/cgns_decomp.C
+    ioinit
+    /mpi//mpi
+  :
+    <tag>@sierra-exec-tag
+  ;
+
 exe io_info
   :
     $(seacas-root)/libraries/ioss/src/main/io_info_main.C
@@ -1754,7 +1764,7 @@ exe Utst_structured_decomp
     $(seacas-root)/libraries/ioss/src/utest/Utst_structured_decomp.C
     iocgns
     /mpi//mpi
-  : <tag>@sierra-exec-tag
+  : <optimization>off <tag>@sierra-exec-tag
   ;
 
 exe Utst_superelement

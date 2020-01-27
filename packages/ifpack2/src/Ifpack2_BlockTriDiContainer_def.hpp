@@ -154,8 +154,8 @@ namespace Ifpack2 {
   ::BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                        const Teuchos::RCP<const import_type>& importer,
-                       int OverlapLevel, scalar_type DampingFactor)
-    : Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor)
+                       bool pointIndexed)
+    : Container<MatrixType>(matrix, partitions, pointIndexed)
   {
     const bool useSeqMethod = false;
     const bool overlapCommAndComp = false;
@@ -167,8 +167,7 @@ namespace Ifpack2 {
   ::BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                        const bool overlapCommAndComp, const bool useSeqMethod)
-    : Container<MatrixType>(matrix, partitions, Teuchos::null, 0,
-                            Kokkos::ArithTraits<magnitude_type>::one())
+    : Container<MatrixType>(matrix, partitions, false)
   {
     initInternal(matrix, partitions, Teuchos::null, overlapCommAndComp, useSeqMethod);
   }
@@ -177,22 +176,6 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::~BlockTriDiContainer ()
   {
-  }
-
-  template <typename MatrixType>
-  bool 
-  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::isInitialized () const
-  {
-    return IsInitialized_;
-  }
-
-  template <typename MatrixType>
-  bool 
-  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::isComputed () const
-  {
-    return IsComputed_;
   }
 
   template <typename MatrixType>
@@ -208,10 +191,10 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::initialize ()
   {
-    IsInitialized_ = true;
+    this->IsInitialized_ = true;
     // We assume that if you called this method, you intend to recompute
     // everything.
-    IsComputed_ = false;
+    this->IsComputed_ = false;
     TEUCHOS_ASSERT(!impl_->A.is_null()); // when initInternal is called, A_ must be set
     {
       BlockTriDiContainerDetails::performSymbolicPhase<MatrixType>
@@ -227,7 +210,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::compute ()
   {
-    IsComputed_ = false;
+    this->IsComputed_ = false;
     if (!this->isInitialized())
       this->initialize();
     {
@@ -236,7 +219,7 @@ namespace Ifpack2 {
          impl_->part_interface, impl_->block_tridiags, 
          Kokkos::ArithTraits<magnitude_type>::zero());
     }
-    IsComputed_ = true;
+    this->IsComputed_ = true;
   }
 
   template <typename MatrixType>
@@ -245,15 +228,16 @@ namespace Ifpack2 {
   ::clearBlocks ()
   {
     clearInternal();
-    IsInitialized_ = false;
-    IsComputed_ = false;
+    this->IsInitialized_ = false;
+    this->IsComputed_ = false;
+    Container<MatrixType>::clearBlocks();
   }
 
   template <typename MatrixType>
   void 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::applyInverseJacobi (const mv_type& X, mv_type& Y, bool zeroStartingSolution,
-                        int numSweeps) const
+  ::applyInverseJacobi (const mv_type& X, mv_type& Y, scalar_type dampingFactor,
+                        bool zeroStartingSolution, int numSweeps) const
   {
     const magnitude_type tol = Kokkos::ArithTraits<magnitude_type>::zero();
     const int check_tol_every = 1;
@@ -267,7 +251,7 @@ namespace Ifpack2 {
        impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
        impl_->work,
        impl_->norm_manager,
-       this->DampingFactor_,
+       dampingFactor,
        zeroStartingSolution,
        numSweeps,
        tol,
@@ -287,7 +271,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::compute (const ComputeParameters& in)
   {
-    IsComputed_ = false;
+    this->IsComputed_ = false;
     if (!this->isInitialized())
       this->initialize();
     {
@@ -296,7 +280,7 @@ namespace Ifpack2 {
          impl_->part_interface, impl_->block_tridiags, 
          in.addRadiallyToDiagonal);
     }
-    IsComputed_ = true;
+    this->IsComputed_ = true;
   }
 
   template <typename MatrixType>
@@ -305,7 +289,7 @@ namespace Ifpack2 {
   ::createDefaultApplyParameters () const
   {
     ApplyParameters in;
-    in.dampingFactor = this->DampingFactor_;
+    in.dampingFactor = Teuchos::ScalarTraits<scalar_type>::one();
     return in;
   }
 
@@ -352,7 +336,7 @@ namespace Ifpack2 {
   template <typename MatrixType>
   void 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::apply (HostView& /* X */, HostView& /* Y */, int /* blockIndex */, int /* stride */, Teuchos::ETransp /* mode */,
+  ::apply (HostView /* X */, HostView /* Y */, int /* blockIndex */, Teuchos::ETransp /* mode */,
            scalar_type /* alpha */, scalar_type /* beta */) const
   {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::apply is not implemented. You may have reached this message "
@@ -363,7 +347,7 @@ namespace Ifpack2 {
   template <typename MatrixType>
   void 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::weightedApply (HostView& /* X */, HostView& /* Y */, HostView& /* D */, int /* blockIndex */, int /* stride */,
+  ::weightedApply (HostView /* X */, HostView /* Y */, HostView /* D */, int /* blockIndex */,
                    Teuchos::ETransp /* mode */, scalar_type /* alpha */, scalar_type /* beta */) const
   {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::weightedApply is not implemented.");
@@ -387,8 +371,8 @@ namespace Ifpack2 {
   {
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
-    if (isInitialized()) {
-      if (isComputed()) {
+    if (this->isInitialized()) {
+      if (this->isComputed()) {
         oss << "{status = initialized, computed";
       }
       else {
@@ -414,8 +398,8 @@ namespace Ifpack2 {
     os << "================================================================================" << endl
        << "Ifpack2::BlockTriDiContainer" << endl
        << "Number of blocks        = " << this->numBlocks_ << endl
-       << "isInitialized()         = " << IsInitialized_ << endl
-       << "isComputed()            = " << IsComputed_ << endl
+       << "isInitialized()         = " << this->IsInitialized_ << endl
+       << "isComputed()            = " << this->IsComputed_ << endl
        << "================================================================================" << endl
        << endl;
   }

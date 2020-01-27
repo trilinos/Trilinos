@@ -104,9 +104,15 @@ namespace Iocgns {
     // Assume the "work" or computational effort required for a
     // block is proportional to the number of cells.
     size_t work() const { return (size_t)m_ordinal[0] * m_ordinal[1] * m_ordinal[2]; }
+    size_t cell_count() const { return (size_t)m_ordinal[0] * m_ordinal[1] * m_ordinal[2]; }
+
+    size_t node_count() const
+    {
+      return (size_t)(m_ordinal[0] + 1) * (m_ordinal[1] + 1) * (m_ordinal[2] + 1);
+    }
 
     std::pair<StructuredZoneData *, StructuredZoneData *> split(int zone_id, double avg_work,
-                                                                double balance, int rank);
+                                                                int rank, bool verbose);
     void resolve_zgc_split_donor(std::vector<Iocgns::StructuredZoneData *> &zones);
     void update_zgc_processor(std::vector<Iocgns::StructuredZoneData *> &zones);
   };

@@ -58,16 +58,20 @@ namespace SEAMS {
       {"atan", do_atan, "atan(x)", "Inverse tangent of x, returns radians."},
       {"atand", do_atand, "atand(x)", "Inverse tangent of x, returns degrees."},
       {"atanh", do_atanh, "atanh(x)", "Inverse hyperbolic tangent of x."},
+      {"cbrt", do_cbrt, "cbrt(x)", "Cube root of x. "},
       {"ceil", do_ceil, "ceil(x)", "Smallest integer not less than x."},
       {"cos", do_cos, "cos(x)", "Cosine of x, with x in radians"},
       {"cosd", do_cosd, "cosd(x)", "Cosine of x, with x in degrees"},
       {"cosh", do_cosh, "cosh(x)", "Hyperbolic cosine of x."},
       {"d2r", do_d2r, "d2r(x)", "Degrees to radians."},
+      {"erf", do_erf, "erf(x)", "Error Function of x"},
+      {"erf", do_erfc, "erfc(x)", "Complementary Error Function of x"},
       {"exp", do_exp, "exp(x)", "Exponential: e^x"},
       {"expm1", do_expm1, "expm1(x)", "Exponential: Accurate version of e^x - 1.0 for small x"},
       {"floor", do_floor, "floor(x)", "Largest integer not greater than x."},
       {"int", do_int, "int(x), [x]", "Integer part of x truncated toward 0."},
       {"lgamma", do_lgamma, "lgamma(x)", "log(Gamma(x))."},
+      {"tgamma", do_tgamma, "tgamma(x)", "Gamma(x)."},
       {"ln", do_log, "ln(x)", "Natural (base e) logarithm of x."},
       {"log", do_log, "log(x)", "Natural (base e) logarithm of x."},
       {"log10", do_log10, "log10(x)", "Base 10 logarithm of x. "},
@@ -100,6 +104,7 @@ namespace SEAMS {
       {"min", do_min, "min(x,y)", "Minimum of x and y. "},
       {"polarX", do_polarX, "polarX(r,a)", "r * cos(a), a is in degrees "},
       {"polarY", do_polarY, "polarY(r,a)", "r * sin(a), a is in degrees "},
+      {"pow", do_pow, "pow(x,y)", "x^y "},
       {"rand", do_rand, "rand(xl,xh)", "Random value between xl and xh; uniformly distributed. "},
       {"rand_normal", do_rand_normal, "rand_normal(m,s)",
        "Random value normally distributed with mean m and stddev s."},
@@ -357,8 +362,8 @@ namespace SEAMS {
       {"PHI",   1.61803398874989484820},  /* golden ratio               */
       {"TAU",   6.28318530717958623200},  /* 2*PI see Tau Manifesto, http://tauday.com */
       {"PI",    3.14159265358979323846},  /* pi                         */
-      {"PI_2",  1.57079632679489661923},  /* pi / 2			 */
-      {"SQRT2", 1.41421356237309504880},  /* square root of 2		 */
+      {"PI_2",  1.57079632679489661923},  /* pi / 2                      */
+      {"SQRT2", 1.41421356237309504880},  /* square root of 2            */
       {"TRUE",  1},
       {"FALSE", 0},
       {nullptr, 0}
@@ -368,8 +373,8 @@ namespace SEAMS {
   svar_init svariables[] = {{"_FORMAT", "%.10g"}, /* Default output format */
                             {nullptr, nullptr}};
   /* NOTE: The current comment is stored in "_C_"
-   *	 Since it can be changed by user on command line, we
-   *	 initialize is differently than the other string variables.
+   *     Since it can be changed by user on command line, we
+   *     initialize is differently than the other string variables.
    */
 
 #define internal_init_table(functions, func_type, sym_type)                                        \

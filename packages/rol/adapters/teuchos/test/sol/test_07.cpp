@@ -41,24 +41,22 @@
 // ************************************************************************
 // @HEADER
 
-#include "ROL_ParameterList.hpp"
-
-#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
+#include "ROL_ParameterList.hpp"
+#include "ROL_Stream.hpp"
+
 #include "ROL_StdVector.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_Algorithm.hpp"
 
-#include "ROL_Objective.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 
 typedef double RealT;
 
@@ -117,8 +115,9 @@ void setUpAndSolve(ROL::ParameterList &list,
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
   opt.check(outStream);
   // Run ROL algorithm
-  ROL::Algorithm<RealT> algo("Trust Region",list,false);
-  algo.run(opt,true,outStream);
+  list.sublist("Step").set("Type","Trust Region");
+  ROL::OptimizationSolver<RealT> solver(opt,list);
+  solver.solve(outStream);
 }
 
 template<class Real>
@@ -222,7 +221,7 @@ int main(int argc, char* argv[]) {
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
     printSolution(*x_ptr,*outStream);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

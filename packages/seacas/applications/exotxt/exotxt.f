@@ -69,9 +69,6 @@ C     Output string for number of time steps processed
       CHARACTER*8 STR8
 C     Input filename
       CHARACTER*2048 FILNAM, SCRATCH
-C     LDAT - length of date information
-C     LREV - length of revision information to actual revision number
-      INTEGER LDAT, LREV
 
 C     A(1) dynamic memory base array for numeric data
 C     C(1) dynamic memory base array for character data
@@ -292,7 +289,7 @@ C     IXDNPS - array containing indices into the FACNPS array which
 C              are the location of the 1st dist factor for each set
 C     LTNNPS - Returned array containing the nodes for all node sets
 C              Internal node IDs
-C     FACNPS - Returned array containing the distribtion factors
+C     FACNPS - Returned array containing the distribution factors
 C              for all node sets
          CALL MDRSRV ('IDNPS',   KIDNS, NUMNPS)
          CALL MDRSRV ('NNNPS',   KNNNS, NUMNPS)
@@ -345,7 +342,7 @@ C              distribution factor for each set.
 C     LTEESS - Returned array containing the elements for all side
 C              sets. Internal element IDS are used in this list
 C     LTSESS - Returned array containing the sides for all side sets
-C     FACESS - Returned aray containing dist factors for all side sets
+C     FACESS - Returned array containing dist factors for all side sets
 C     NNESS  - the number of nodes for each side set
 C     IXNESS - index into LTNESS - the 1st node for each side set
 C     LTNESS - array of nodes for all side sets

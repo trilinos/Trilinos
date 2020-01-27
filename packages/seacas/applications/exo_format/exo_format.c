@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   int   c1, c2, c3, c4;
   FILE *fid;
 
-  int j, k;
+  size_t j, k;
 
   int   exoid;
   int   CPU_word_size, IO_word_size;
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
   else {
     fprintf(stderr, "\t\tFloating point data are stored as 64-bit doubles\n");
   }
-  max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  max_name_length = (int)ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   fprintf(stderr, "\n\t\tMaximum name length is %d\n\n", max_name_length);
 
   if (file_size == 0) {
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
     printf("ex_close failed");
   }
 
-  version = version + 0.00005;
+  version += 0.00005f;
   sprintf(cversion, "%4.2f", version);
 
   k = strlen(cversion);

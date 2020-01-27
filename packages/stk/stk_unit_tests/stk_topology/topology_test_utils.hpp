@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +37,6 @@
 #include <stk_topology/topology.hpp>
 #include "stk_util/util/ReportHandler.hpp"
 #include <limits>
-#include "stk_mesh/base/Entity.hpp"
 #define INVALID UINT_MAX
 
 inline void check_side_node_ordinals(stk::topology topology, std::vector<std::vector<unsigned>> & gold_side_node_ordinals)
@@ -251,7 +251,7 @@ void check_equivalent_ngp(stk::topology topology, unsigned gold_permutation_node
 
 inline void check_side_nodes(stk::topology topology, std::vector<std::vector<unsigned>> & gold_side_node_ordinals)
 {
-  std::vector<stk::mesh::Entity> allElemNodes(topology.num_nodes());
+  std::vector<unsigned> allElemNodes(topology.num_nodes());
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
@@ -259,36 +259,36 @@ inline void check_side_nodes(stk::topology topology, std::vector<std::vector<uns
   for (unsigned side = 0; side < topology.num_sides(); ++side) {
     stk::topology sideTopo = topology.side_topology(side);
     unsigned numSideNodes = (sideTopo.num_nodes() > 0) ? sideTopo.num_nodes() : 1;
-    std::vector<stk::mesh::Entity> sideNodes(numSideNodes);
+    std::vector<unsigned> sideNodes(numSideNodes);
 
     topology.side_nodes(allElemNodes.data(), side, sideNodes.data());
     for (unsigned sideNodeOrdinal = 0; sideNodeOrdinal < numSideNodes; ++sideNodeOrdinal) {
-      EXPECT_EQ(gold_side_node_ordinals[side][sideNodeOrdinal] + 100, sideNodes[sideNodeOrdinal].local_offset());
+      EXPECT_EQ(gold_side_node_ordinals[side][sideNodeOrdinal] + 100, sideNodes[sideNodeOrdinal]);
     }
   }
 }
 
 inline void check_edge_nodes(stk::topology topology, std::vector<std::vector<unsigned>> & gold_edge_node_ordinals)
 {
-  std::vector<stk::mesh::Entity> allElemNodes(topology.num_nodes());
+  std::vector<unsigned> allElemNodes(topology.num_nodes());
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
 
   stk::topology edgeTopo = topology.edge_topology();
   unsigned numEdgeNodes = edgeTopo.num_nodes();
-  std::vector<stk::mesh::Entity> edgeNodes(numEdgeNodes);
+  std::vector<unsigned> edgeNodes(numEdgeNodes);
   for (unsigned edge = 0; edge < topology.num_edges(); ++edge) {
     topology.edge_nodes(allElemNodes.data(), edge, edgeNodes.data());
     for (unsigned edgeNodeOrdinal = 0; edgeNodeOrdinal < numEdgeNodes; ++edgeNodeOrdinal) {
-      EXPECT_EQ(gold_edge_node_ordinals[edge][edgeNodeOrdinal] + 100, edgeNodes[edgeNodeOrdinal].local_offset());
+      EXPECT_EQ(gold_edge_node_ordinals[edge][edgeNodeOrdinal] + 100, edgeNodes[edgeNodeOrdinal]);
     }
   }
 }
 
 inline void check_face_nodes(stk::topology topology, std::vector<std::vector<unsigned>> & gold_face_node_ordinals)
 {
-  std::vector<stk::mesh::Entity> allElemNodes(topology.num_nodes());
+  std::vector<unsigned> allElemNodes(topology.num_nodes());
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
@@ -296,28 +296,28 @@ inline void check_face_nodes(stk::topology topology, std::vector<std::vector<uns
   for (unsigned face = 0; face < topology.num_faces(); ++face) {
     stk::topology faceTopo = topology.face_topology(face);
     unsigned numFaceNodes = faceTopo.num_nodes();
-    std::vector<stk::mesh::Entity> faceNodes(numFaceNodes);
+    std::vector<unsigned> faceNodes(numFaceNodes);
 
     topology.face_nodes(allElemNodes.data(), face, faceNodes.data());
     for (unsigned faceNodeOrdinal = 0; faceNodeOrdinal < numFaceNodes; ++faceNodeOrdinal) {
-      EXPECT_EQ(gold_face_node_ordinals[face][faceNodeOrdinal] + 100, faceNodes[faceNodeOrdinal].local_offset());
+      EXPECT_EQ(gold_face_node_ordinals[face][faceNodeOrdinal] + 100, faceNodes[faceNodeOrdinal]);
     }
   }
 }
 
 inline void check_permutation_nodes(stk::topology topology, std::vector<std::vector<unsigned>> & gold_permutation_node_ordinals)
 {
-  std::vector<stk::mesh::Entity> allNodes(topology.num_nodes());
+  std::vector<unsigned> allNodes(topology.num_nodes());
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
 
   const unsigned numPermutations = topology.num_permutations();
   for (unsigned permutationOrdinal = 0; permutationOrdinal < numPermutations; ++permutationOrdinal) {
-    std::vector<stk::mesh::Entity> permutationNodes(topology.num_nodes());
+    std::vector<unsigned> permutationNodes(topology.num_nodes());
     topology.permutation_nodes(allNodes.data(), permutationOrdinal, permutationNodes.data());
     for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
-      EXPECT_EQ(gold_permutation_node_ordinals[permutationOrdinal][nodeOrdinal] + 100, permutationNodes[nodeOrdinal].local_offset());
+      EXPECT_EQ(gold_permutation_node_ordinals[permutationOrdinal][nodeOrdinal] + 100, permutationNodes[nodeOrdinal]);
     }
   }
 }
@@ -328,7 +328,7 @@ template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_side_nodes_ngp(stk::topology topology, unsigned gold_side_node_ordinals[][MAX_NODES])
 {
-  stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  unsigned allElemNodes[MAX_NODES_PER_ELEM];
   NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
 
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
@@ -338,11 +338,11 @@ void check_side_nodes_ngp(stk::topology topology, unsigned gold_side_node_ordina
   for (unsigned side = 0; side < topology.num_sides(); ++side) {
     stk::topology sideTopo = topology.side_topology(side);
     unsigned numSideNodes = (sideTopo.num_nodes() > 0) ? sideTopo.num_nodes() : 1;
-    stk::mesh::Entity sideNodes[MAX_NODES];
+    unsigned sideNodes[MAX_NODES];
 
     topology.side_nodes(allElemNodes, side, sideNodes);
     for (unsigned sideNodeOrdinal = 0; sideNodeOrdinal < numSideNodes; ++sideNodeOrdinal) {
-      NGP_EXPECT_EQ(gold_side_node_ordinals[side][sideNodeOrdinal] + 100, sideNodes[sideNodeOrdinal].local_offset());
+      NGP_EXPECT_EQ(gold_side_node_ordinals[side][sideNodeOrdinal] + 100, sideNodes[sideNodeOrdinal]);
     }
   }
 }
@@ -351,7 +351,7 @@ template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_edge_nodes_ngp(stk::topology topology, unsigned gold_edge_node_ordinals[][MAX_NODES])
 {
-  stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  unsigned allElemNodes[MAX_NODES_PER_ELEM];
   NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
 
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
@@ -360,11 +360,11 @@ void check_edge_nodes_ngp(stk::topology topology, unsigned gold_edge_node_ordina
 
   stk::topology edgeTopo = topology.edge_topology();
   unsigned numEdgeNodes = edgeTopo.num_nodes();
-  stk::mesh::Entity edgeNodes[MAX_NODES];
+  unsigned edgeNodes[MAX_NODES];
   for (unsigned edge = 0; edge < topology.num_edges(); ++edge) {
     topology.edge_nodes(allElemNodes, edge, edgeNodes);
     for (unsigned edgeNodeOrdinal = 0; edgeNodeOrdinal < numEdgeNodes; ++edgeNodeOrdinal) {
-      NGP_EXPECT_EQ(gold_edge_node_ordinals[edge][edgeNodeOrdinal] + 100, edgeNodes[edgeNodeOrdinal].local_offset());
+      NGP_EXPECT_EQ(gold_edge_node_ordinals[edge][edgeNodeOrdinal] + 100, edgeNodes[edgeNodeOrdinal]);
     }
   }
 }
@@ -373,7 +373,7 @@ template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_face_nodes_ngp(stk::topology topology, unsigned gold_face_node_ordinals[][MAX_NODES])
 {
-  stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  unsigned allElemNodes[MAX_NODES_PER_ELEM];
   NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
 
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
@@ -383,11 +383,11 @@ void check_face_nodes_ngp(stk::topology topology, unsigned gold_face_node_ordina
   for (unsigned face = 0; face < topology.num_faces(); ++face) {
     stk::topology faceTopo = topology.face_topology(face);
     unsigned numFaceNodes = faceTopo.num_nodes();
-    stk::mesh::Entity faceNodes[MAX_NODES];
+    unsigned faceNodes[MAX_NODES];
 
     topology.face_nodes(allElemNodes, face, faceNodes);
     for (unsigned faceNodeOrdinal = 0; faceNodeOrdinal < numFaceNodes; ++faceNodeOrdinal) {
-      NGP_EXPECT_EQ(gold_face_node_ordinals[face][faceNodeOrdinal] + 100, faceNodes[faceNodeOrdinal].local_offset());
+      NGP_EXPECT_EQ(gold_face_node_ordinals[face][faceNodeOrdinal] + 100, faceNodes[faceNodeOrdinal]);
     }
   }
 }
@@ -396,17 +396,17 @@ template <unsigned NUM_NODES>
 STK_INLINE_FUNCTION
 void check_permutation_nodes_ngp(stk::topology topology, unsigned gold_permutation_node_ordinals[][NUM_NODES])
 {
-  stk::mesh::Entity allNodes[NUM_NODES];
+  unsigned allNodes[NUM_NODES];
   for (unsigned nodeOrdinal = 0; nodeOrdinal < NUM_NODES; ++nodeOrdinal) {
     allNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
 
   const unsigned numPermutations = topology.num_permutations();
   for (unsigned permutationOrdinal = 0; permutationOrdinal < numPermutations; ++permutationOrdinal) {
-    stk::mesh::Entity permutationNodes[NUM_NODES];
+    unsigned permutationNodes[NUM_NODES];
     topology.permutation_nodes(allNodes, permutationOrdinal, permutationNodes);
     for (unsigned nodeOrdinal = 0; nodeOrdinal < NUM_NODES; ++nodeOrdinal) {
-      NGP_EXPECT_EQ(gold_permutation_node_ordinals[permutationOrdinal][nodeOrdinal] + 100, permutationNodes[nodeOrdinal].local_offset());
+      NGP_EXPECT_EQ(gold_permutation_node_ordinals[permutationOrdinal][nodeOrdinal] + 100, permutationNodes[nodeOrdinal]);
     }
   }
 }

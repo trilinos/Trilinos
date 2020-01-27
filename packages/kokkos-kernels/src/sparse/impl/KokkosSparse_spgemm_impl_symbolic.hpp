@@ -1689,7 +1689,7 @@ void KokkosSPGEMM
 	}
 	Kokkos::Impl::Timer timer1;
 	pool_memory_space m_space(num_chunks, chunksize, pool_init_val,  my_pool_type);
-	MyExecSpace::fence();
+	MyExecSpace().fence();
 
 	if (KOKKOSKERNELS_VERBOSE){
 		std::cout << "\tPool Alloc Time:" << timer1.seconds() << std::endl;
@@ -1758,7 +1758,7 @@ void KokkosSPGEMM
 			}
 		}
 	}
-	MyExecSpace::fence();
+	MyExecSpace().fence();
 	if (KOKKOSKERNELS_VERBOSE){
 		std::cout << "\tStructureC Kernel time:" << timer1.seconds() << std::endl<< std::endl;
 	}
@@ -1767,7 +1767,7 @@ void KokkosSPGEMM
 		Kokkos::Impl::Timer timer1_;
 		size_type c_max_nnz = 0;
 		KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
-		MyExecSpace::fence();
+		MyExecSpace().fence();
 		this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 
 		if (KOKKOSKERNELS_VERBOSE){
@@ -1776,7 +1776,7 @@ void KokkosSPGEMM
 	}
 
 	KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<c_row_view_t, MyExecSpace>(m+1, rowmapC);
-	MyExecSpace::fence();
+	MyExecSpace().fence();
 	auto d_c_nnz_size = Kokkos::subview(rowmapC, m);
 	auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
 	Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
@@ -2017,7 +2017,7 @@ void KokkosSPGEMM
   }
   Kokkos::Impl::Timer timer1;
   pool_memory_space m_space(num_chunks, chunksize, pool_init_val,  my_pool_type);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tPool Alloc Time:" << timer1.seconds() << std::endl;
@@ -2085,7 +2085,7 @@ void KokkosSPGEMM
 		  }
 	  }
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tStructureC Kernel time:" << timer1.seconds() << std::endl<< std::endl;
@@ -2123,7 +2123,7 @@ void KokkosSPGEMM
 	  typename c_row_view_t::HostMirror h_rowmapC = Kokkos::create_mirror_view (rowmapC);
 	  Kokkos::deep_copy(h_rowmapC, rowmapC);
 
-	  MyExecSpace::fence();
+	  MyExecSpace().fence();
 
 
 	  std::unordered_map <size_t, nnz_lno_t> flop_to_row_count;
@@ -2270,7 +2270,7 @@ void KokkosSPGEMM
     Kokkos::Impl::Timer timer1_;
     size_type c_max_nnz = 0;
     KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 
     if (KOKKOSKERNELS_VERBOSE){
@@ -2279,7 +2279,7 @@ void KokkosSPGEMM
   }
 
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<c_row_view_t, MyExecSpace>(m+1, rowmapC);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   auto d_c_nnz_size = Kokkos::subview(rowmapC, m);
   auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
   Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
@@ -2324,7 +2324,7 @@ size_t KokkosSPGEMM
 
 	typename b_oldrow_view_t::non_const_value_type rough_size = 0;
 	Kokkos::parallel_reduce( "KokkosSparse::PredicMaxRowNNZ::STATIC", team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
-	MyExecSpace::fence();
+	MyExecSpace().fence();
 
 	return rough_size;
 	}
@@ -2448,7 +2448,7 @@ size_t KokkosSPGEMM
 
   size_type rough_size = 0;
   Kokkos::parallel_reduce("KokkosSparse::PredicMaxRowNNZ_P::STATIC",  team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   return rough_size;
 }
 
@@ -2490,7 +2490,7 @@ size_t KokkosSPGEMM
 
   nnz_lno_t rough_size = 0;
   Kokkos::parallel_reduce( "KokkosSparse::PredicMaxRowNNZIntersection::STATIC", team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   return rough_size;
     }
 

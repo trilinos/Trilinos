@@ -65,7 +65,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -209,7 +209,7 @@ namespace Intrepid2 {
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -270,7 +270,7 @@ namespace Intrepid2 {
                        << myTag(3) << "} ) = " << myBfOrd << "\n";
           }
         }
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       }
@@ -477,7 +477,7 @@ namespace Intrepid2 {
         }
         }
         // Catch unexpected errors
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       }
@@ -546,10 +546,39 @@ namespace Intrepid2 {
               *outStream << ss.str();
             }
           }
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       };
+      
+      *outStream
+      << "\n"
+      << "===============================================================================\n"
+      << "| TEST 5: Function Space is Correct                                           |\n"
+      << "===============================================================================\n";
+      
+      try {
+        const EFunctionSpace fs = hexBasis.getFunctionSpace();
+        
+        if (fs != FUNCTION_SPACE_HCURL)
+        {
+          *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
+          
+          // Output the multi-index of the value where the error is:
+          *outStream << " Expected a function space of FUNCTION_SPACE_HCURL (enum value " << FUNCTION_SPACE_HCURL << "),";
+          *outStream << " but got " << fs << "\n";
+          if (fs == FUNCTION_SPACE_MAX)
+          {
+            *outStream << "Note that this matches the default value defined by superclass, FUNCTION_SPACE_MAX.  Likely the subclass has failed to set the superclass functionSpace_ field.\n";
+          }
+          errorFlag++;
+        }
+      } catch (std::logic_error &err){
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+        *outStream << err.what() << '\n';
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+        errorFlag = -1000;
+      }
       
       if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";

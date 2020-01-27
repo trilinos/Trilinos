@@ -41,7 +41,7 @@
 // @HEADER
 */
 
-/// \file Tpetra_Details_gatherPrint.hpp
+/// \file Tpetra_Details_gathervPrint.hpp
 /// \brief Declaration of a function that prints strings from each process.
 ///
 /// \warning This is an implementation detail of Tpetra.  Users may

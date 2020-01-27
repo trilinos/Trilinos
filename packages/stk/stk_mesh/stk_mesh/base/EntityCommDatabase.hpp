@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -65,12 +66,10 @@ public:
 };
 
 // Struct containing things the system must know about an entity to
-// handle communication. The Entity object itself won't necessarily be
-// available, so there's some duplication here (owner_rank).
+// handle communication.
 struct EntityComm
 {
   EntityCommInfoVector comm_map;
-  int                  owner_rank;
 };
 
 class EntityCommDatabase
@@ -89,14 +88,12 @@ public:
   PairIterEntityComm shared_comm_info( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key, const Ghosting & sub ) const;
-  int owner_rank( const EntityKey & key ) const;
 
-  bool insert( const EntityKey & key, const EntityCommInfo & val, int owner );
+  std::pair<EntityComm*,bool> insert( const EntityKey & key, const EntityCommInfo & val, int owner );
   bool erase( const EntityKey & key, const EntityCommInfo & val );
   bool erase( const EntityKey & key, const Ghosting & ghost );
   bool comm_clear_ghosting(const EntityKey & key );
   bool comm_clear(const EntityKey & key );
-  bool change_owner_rank(const EntityKey& key, int owner);
 
   const EntityComm* entity_comm(const EntityKey& key) const;
         EntityComm* entity_comm(const EntityKey& key);
@@ -106,7 +103,7 @@ public:
 
 private:
   bool cached_find(const EntityKey& key) const;
-  void insert(const EntityKey& key);
+  const EntityComm* insert(const EntityKey& key);
 
   map_type m_comm_map;
   mutable map_type::iterator m_last_lookup;
@@ -117,14 +114,13 @@ private:
 inline
 PairIterEntityComm shared_comm_info_range(const EntityCommInfoVector& comm_info_vector) {
     EntityCommInfoVector::const_iterator i = comm_info_vector.begin();
-    EntityCommInfoVector::const_iterator e = comm_info_vector.end();
+    EntityCommInfoVector::const_iterator end = comm_info_vector.end();
+    EntityCommInfoVector::const_iterator e = i;
 
-    // EntityCommInfo(1,0) is the smallest entry in the table that is not shared,
-    // and we want everything before this, i.e. the shared stuff.
-    e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
-                                                 0 ) ); // proc
+    while(e != end && e->ghost_id < 1) {
+      ++e;
+    }
 
-    // Contains everything up to the first aura comm (IE, only contains shared comms)
     return PairIterEntityComm( i , e );
 }
 
@@ -137,6 +133,10 @@ void unpack_entity_info(
   int            & owner ,
   PartVector     & parts ,
   std::vector<Relation> & relations );
+
+void pack_sideset_info(BulkData& mesh, CommBuffer & buf, const Entity entity);
+
+void unpack_sideset_info(CommBuffer & buf, BulkData & mesh, const Entity entity);
 
 /** \brief  Pack an entity's field values into a buffer */
 void pack_field_values(const BulkData& mesh, CommBuffer & , Entity );

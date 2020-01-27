@@ -99,10 +99,11 @@ c
 C
       CALL EXGQA (NTP2EX,QALINE,IERR)
       IF (NQAREC .EQ. MAXQA)THEN
-        DO 50 IQ = 1,4
-        DO 50 NQ = 2,MAXQA
-          QALINE(IQ,NQ) = QALINE(IQ,NQ-1)
-   50   CONTINUE
+        DO IQ = 1,4
+           DO NQ = 2,MAXQA
+              QALINE(IQ,NQ) = QALINE(IQ,NQ-1)
+           end do
+        end do
       ELSE
         NQAREC = NQAREC + 1
       END IF
@@ -130,9 +131,9 @@ C
 C
 C     Convert to upper case
 C
-         DO 20 I = 1, NVARGP
+         DO I = 1, NVARGP
             CALL EXUPCS(NAMVAR(I))
- 20      CONTINUE
+         end do
 C
          CALL EXPVP (NTP4EX,"G",NVARGP,IERR)
          CALL EXPVAN (NTP4EX,"G",NVARGP,NAMVAR,IERR)
@@ -151,9 +152,9 @@ C
 C
 C     Convert to upper case
 C
-         DO 30 I = 1, NVAREL
+         DO I = 1, NVAREL
             CALL EXUPCS(NAMVAR(NVARGP+I))
- 30      CONTINUE
+         end do
 C
          CALL EXPVP (NTP4EX,"E",NVAREL,IERR)
          CALL EXPVAN (NTP4EX,"E",NVAREL,NAMVAR(NVARGP+1),IERR)
@@ -172,9 +173,9 @@ C
 C
 C     Convert to upper case
 C
-         DO 40 I = 1, NVARNP
+         DO I = 1, NVARNP
             CALL EXUPCS(NAMVAR(NVARGP+NVAREL+I))
- 40      CONTINUE
+         end do
 C
          CALL EXPVP (NTP4EX,"N",NVARNP,IERR)
          CALL EXPVAN (NTP4EX,"N",NVARNP,NAMVAR(NVARGP+NVAREL+1),IERR)
@@ -185,7 +186,7 @@ c
       LC3 = 2
       IF (NDIMA .EQ. 3) LC3 = LENSTR (NAMECO(3))
       ISTART = 1+NVARGP+NVAREL
-      DO 70 I = ISTART, NUMNAM
+      DO I = ISTART, NUMNAM
         LN = LENSTR (NAMVAR(I))
         IF (NAMVAR(I)(1:1) .EQ. 'D')THEN
           IF(NAMVAR(I)(LN:LN) .EQ. NAMECO(1)(LC1:LC1))
@@ -197,7 +198,7 @@ c
      &                               IZDIS=I-ISTART+1
           END IF
         END IF
-   70 CONTINUE
+      end do
 C
       IF (IDEF .NE. 0 .AND. IXDIS .NE. 0 .AND. IYDIS .NE. 0)THEN
 C
@@ -208,11 +209,11 @@ C
         IF (NDIMA .GE. 3) THEN
           CALL EXGNV (NTP2EX,ISTEP,IZDIS,NODESA,DISZA,IERR)
         END IF
-        DO 80 I = 1, NODESA
+        DO I = 1, NODESA
           XA(I) = XA(I) + DISXA(I)
           YA(I) = YA(I) + DISYA(I)
           IF (NDIMA .GE. 3) ZA(I) = ZA(I) + DISZA(I)
-   80   CONTINUE
+       end do
       ELSE
 C
 C No displacements in Mesh-A data, can't do deformed processing

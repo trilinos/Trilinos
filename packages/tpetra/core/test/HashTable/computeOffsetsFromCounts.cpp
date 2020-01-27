@@ -533,19 +533,19 @@ namespace { // (anonymous)
     }
 
 #ifdef KOKKOS_ENABLE_CUDA
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    if (Kokkos::Cuda::is_initialized ()) {
-  #else
-    if (Kokkos::Cuda::impl_is_initialized ()) {
-  #endif
+    {
       // Make sure that we test both without and with UVM.
       // We only have to test once for each case.
-      if (! std::is_same<typename device_type::memory_space, Kokkos::CudaSpace>::value) {
-        typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cur_device_type;
+      using Kokkos::Cuda;
+      using Kokkos::CudaSpace;
+      using Kokkos::CudaUVMSpace;
+      using mem_space = typename device_type::memory_space;
+      if (! std::is_same<mem_space, CudaSpace>::value) {
+        using cur_device_type = Kokkos::Device<Cuda, CudaSpace>;
         testComputeOffsets<cur_device_type> (success, out, debug);
       }
-      if (! std::is_same<typename device_type::memory_space, Kokkos::CudaUVMSpace>::value) {
-        typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cur_device_type;
+      if (! std::is_same<mem_space, CudaUVMSpace>::value) {
+        using cur_device_type = Kokkos::Device<Cuda, CudaUVMSpace>;
         testComputeOffsets<cur_device_type> (success, out, debug);
       }
     }
@@ -574,14 +574,17 @@ main (int argc, char* argv[])
               << "End Result: TEST FAILED" << endl;
   }
 
-  Kokkos::initialize (argc, argv);
-
-  Teuchos::RCP<Teuchos::FancyOStream> outPtr =
-    Teuchos::getFancyOStream (Teuchos::rcpFromRef (debug ? std::cerr : std::cout));
   bool success = true;
-  runTests (success, *outPtr, debug);
-
-  Kokkos::finalize ();
+  {
+    Kokkos::ScopeGuard kokkosScope (argc, argv);
+    using Teuchos::FancyOStream;
+    using Teuchos::getFancyOStream;
+    using Teuchos::RCP;
+    using Teuchos::rcpFromRef;
+    RCP<FancyOStream> outPtr =
+      getFancyOStream (rcpFromRef (debug ? std::cerr : std::cout));
+    runTests (success, *outPtr, debug);
+  }
 
   // The Teuchos unit test framework needs to see this to figure out
   // whether the test passed.

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -98,7 +99,7 @@ public :
                                    boost::shared_ptr<MeshB> &meshb,
                                    const std::string &name,
                                    const double expansion_factor = 1.5,
-                                   const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE)
+                                   const stk::search::SearchMethod search_method = stk::search::KDTREE)
   : m_mesha(to_be_deprecated::make_shared_ptr(mesha)),
   m_meshb(to_be_deprecated::make_shared_ptr(meshb)),
   m_name (name),
@@ -114,7 +115,7 @@ public :
                     const std::string &name,
                     stk::ParallelMachine pm,
                     const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE)
+                    const stk::search::SearchMethod search_method = stk::search::KDTREE)
   : m_mesha(mesha),
   m_meshb(meshb),
   m_name (name),
@@ -129,7 +130,7 @@ public :
                     std::shared_ptr<MeshB> &meshb,
                     const std::string &name,
                     const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE)
+                    const stk::search::SearchMethod search_method = stk::search::KDTREE)
   : m_mesha(mesha),
   m_meshb(meshb),
   m_name (name),
@@ -160,8 +161,6 @@ protected :
 
   void copy_domain_to_range_processors();
   void localize_entity_key_map();
-
-private :
 
   const std::string     m_name;
   bool m_has_parallel_machine;

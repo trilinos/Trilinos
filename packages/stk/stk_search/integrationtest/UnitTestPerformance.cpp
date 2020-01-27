@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -51,20 +52,6 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBo
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
 void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
                 stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
-
-TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  stk::search::SearchMethod searchMethod = stk::search::KDTREE;
-  testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
-}
-
-TEST(Performance, ofAxisAlignedBoundingBoxesUsingBoostRtree)
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  stk::search::SearchMethod searchMethod = stk::search::BOOST_RTREE;
-  testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
-}
 
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingKdtree)
 {
@@ -144,19 +131,9 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
 
 ////////////////////////////////////////////////////////////
 
-TEST(Performance, stkSearchUsingBoostUsingStkAABoxes)
-{
-    runStkSearchTestUsingStkAABoxes(stk::search::BOOST_RTREE);
-}
-
 TEST(Performance, stkSearchUsingKdtreeUsingStkAABoxes)
 {
     runStkSearchTestUsingStkAABoxes(stk::search::KDTREE);
-}
-
-TEST(Performance, stkSearchUsingBoostUsingFloatAABoxes)
-{
-    runStkSearchTestUsingFloatAABoxes(stk::search::BOOST_RTREE);
 }
 
 TEST(Performance, stkSearchUsingKdtreeUsingFloatAABoxes)

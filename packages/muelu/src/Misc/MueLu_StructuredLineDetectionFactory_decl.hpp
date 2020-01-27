@@ -59,7 +59,10 @@ namespace MueLu {
     @brief Factory building line detection information on structured meshes
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class StructuredLineDetectionFactory : public SingleLevelFactoryBase {
 #undef MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

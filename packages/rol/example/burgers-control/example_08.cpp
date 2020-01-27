@@ -50,10 +50,10 @@
 
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_ParameterList.hpp"
-
 #include "ROL_Stream.hpp"
+
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -252,9 +252,10 @@ int main(int argc, char *argv[]) {
     auto parlist = ROL::getParametersFromXmlFile( filename );
     
     // RUN OPTIMIZATION
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+    parlist->sublist("Step").set("Type","Trust Region");
+    ROL::OptimizationSolver<RealT> solver(optProb,*parlist);
     zp->zero();
-    algo.run(optProb,print0,*outStream0);
+    solver.solve(*outStream0);
     /*************************************************************************/
     /************* PRINT CONTROL AND STATE TO SCREEN *************************/
     /*************************************************************************/
@@ -271,7 +272,7 @@ int main(int argc, char *argv[]) {
     }
     *outStream0 << "Scalar Parameter: " << optProb.getSolutionStatistic() << "\n\n";
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

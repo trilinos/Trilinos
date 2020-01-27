@@ -150,9 +150,9 @@ namespace Ifpack2 {
     /// entirely different template parameters (e.g., \c scalar_type)
     /// than \c InverseType.
     typedef MatrixType matrix_type;
-
+      
     //! The type of entries in the input (global) matrix.
-    typedef typename Container<MatrixType>::scalar_type scalar_type;
+    typedef typename MatrixType::scalar_type scalar_type;
     //! The magnitude of entries in the input (global) matrix.
     typedef typename Kokkos::ArithTraits<scalar_type>::magnitudeType magnitude_type;
     //! The type of local indices in the input (global) matrix.
@@ -165,7 +165,6 @@ namespace Ifpack2 {
     typedef typename Container<MatrixType>::mv_type mv_type;
     typedef typename Container<MatrixType>::map_type map_type;
     typedef typename Container<MatrixType>::vector_type vector_type;
-    typedef typename Container<MatrixType>::partitioner_type partitioner_type;
     typedef typename Container<MatrixType>::import_type import_type;
 
     typedef typename Container<MatrixType>::HostView host_view_type;
@@ -173,7 +172,7 @@ namespace Ifpack2 {
     //typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
     //typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
 
-    typedef Tpetra::Experimental::BlockCrsMatrix
+    typedef Tpetra::BlockCrsMatrix
     <scalar_type,local_ordinal_type,global_ordinal_type,node_type> block_crs_matrix_type;
 
     /// \brief The (base class) type of the input matrix.
@@ -209,8 +208,7 @@ namespace Ifpack2 {
     BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                          const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                          const Teuchos::RCP<const import_type>& importer,
-                         int OverlapLevel,
-                         scalar_type DampingFactor);
+                         bool pointIndexed);
 
     /// \brief Constructor for bare construction.
     ///
@@ -277,12 +275,6 @@ namespace Ifpack2 {
     //! \name Get and set methods
     //@{
 
-    //! Whether the container has been successfully initialized.
-    bool isInitialized() const override;
-
-    //! Whether the container has been successfully computed.
-    bool isComputed() const override;
-
     //! Set all necessary parameters.
     void setParameters(const Teuchos::ParameterList& List) override;
 
@@ -300,6 +292,7 @@ namespace Ifpack2 {
 
     // \brief Compute <tt>Y := D^{-1} (X - R*Y)</tt>.
     void applyInverseJacobi (const mv_type& X, mv_type& Y,
+                             scalar_type dampingFactor,
                              bool zeroStartingSolution = false,
                              int numSweeps = 1) const override;
 
@@ -343,10 +336,9 @@ namespace Ifpack2 {
     //! Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>. Not supported. Call
     //! <tt>applyInverseJacobi</tt> instead.
     void
-    apply (host_view_type& X,
-           host_view_type& Y,
+    apply (host_view_type X,
+           host_view_type Y,
            int blockIndex,
-           int stride,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
            scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override;
@@ -354,11 +346,10 @@ namespace Ifpack2 {
     //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>. Not
     //! supported.
     void
-    weightedApply (host_view_type& X,
-                   host_view_type& Y,
-                   host_view_type& W,
+    weightedApply (host_view_type X,
+                   host_view_type Y,
+                   host_view_type W,
                    int blockIndex,
-                   int stride,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
                    scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override;
@@ -394,12 +385,6 @@ namespace Ifpack2 {
     //! Copy constructor: Declared but not implemented, to forbid copy construction.
     BlockTriDiContainer (const BlockTriDiContainer<MatrixType>& rhs);
 
-    //! If \c true, the container has been successfully initialized.
-    bool IsInitialized_;
-
-    //! If \c true, the container has been successfully computed.
-    bool IsComputed_;
-
     // hide details of impl using ImplObj; finally I understand why AMB did that way.
     Teuchos::RCP<BlockTriDiContainerDetails::ImplObject<MatrixType> > impl_;
     
@@ -424,13 +409,12 @@ namespace Ifpack2 {
   class BlockTriDiContainer<MatrixType,BlockTriDiContainerDetails::ImplNotAvailTag> 
     : public Container<MatrixType> {
   private:
-    typedef typename Container<MatrixType>::scalar_type scalar_type;
+    typedef typename MatrixType::scalar_type scalar_type;
     typedef typename Kokkos::ArithTraits<scalar_type>::magnitudeType magnitude_type;
     typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
     typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
 
     typedef typename Container<MatrixType>::mv_type mv_type;
-    typedef typename Container<MatrixType>::partitioner_type partitioner_type;
     typedef typename Container<MatrixType>::import_type import_type;
 
     typedef typename Container<MatrixType>::HostView host_view_type;
@@ -443,38 +427,34 @@ namespace Ifpack2 {
     BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                          const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                          const Teuchos::RCP<const import_type>& importer,
-                         int OverlapLevel,
-                         scalar_type DampingFactor)
-      : Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor) {
+                         bool pointIndexed)
+      : Container<MatrixType>(matrix, partitions, pointIndexed) {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: BlockTriDiContainer is not available for this scalar_type");
     }
 
-    bool isInitialized() const override { return 0; }
-    bool isComputed() const override { return 0; }
     void setParameters(const Teuchos::ParameterList& List) override {}
     void clearBlocks() override {}
 
     void initialize () override {}
     void compute () override {}
     void applyInverseJacobi (const mv_type& X, mv_type& Y,
+                             scalar_type dampingFactor,
                              bool zeroStartingSolution = false,
                              int numSweeps = 1) const override {}
     
     void
-    apply (host_view_type& X,
-           host_view_type& Y,
+    apply (host_view_type X,
+           host_view_type Y,
            int blockIndex,
-           int stride,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
            scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override {}
 
     void
-    weightedApply (host_view_type& X,
-                   host_view_type& Y,
-                   host_view_type& W,
+    weightedApply (host_view_type X,
+                   host_view_type Y,
+                   host_view_type W,
                    int blockIndex,
-                   int stride,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
                    scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override {}

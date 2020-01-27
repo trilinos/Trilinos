@@ -58,6 +58,7 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_makeColMap.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include <cmath>
 
@@ -144,7 +145,7 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   typedef Tpetra::CrsMatrix<SC, LO, GO, NT> Matrix_t;
 
   Teuchos::OSTab tab0 (out);
-  out << "getIdentityMatrix" << endl;
+  out << "getIdentityMatrixWithMap" << endl;
   Teuchos::OSTab tab1 (out);
 
   out << "Create CrsMatrix" << endl;
@@ -206,7 +207,9 @@ add_test_results regular_add_test(
   toReturn.correctNorm = C->getFrobeniusNorm ();
 
   RCP<const Map_t > rowmap = AT ? A->getDomainMap() : A->getRowMap();
-  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, 1));
+  size_t estSize = A->getGlobalMaxNumRowEntries() + B->getGlobalMaxNumRowEntries();
+         // estSize is upper bound for A, B; estimate only for AT, BT.
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, estSize));
 
   SC one = Teuchos::ScalarTraits<SC>::one();
   Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
@@ -361,7 +364,8 @@ mult_test_results multiply_test_manualfc(
   typedef Import<LO,GO,NT> Import_t;
   RCP<const Map_t> map = C->getRowMap();
 
-  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
+  size_t maxNumEntriesPerRow = C->getGlobalMaxNumRowEntries();
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, maxNumEntriesPerRow));
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
@@ -374,7 +378,8 @@ mult_test_results multiply_test_manualfc(
 #endif
   SC one = Teuchos::ScalarTraits<SC>::one();
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(),
+                                                                  maxNumEntriesPerRow);
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -452,7 +457,8 @@ mult_test_results multiply_test_autofc(
 #endif
 
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix =
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(), C->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -544,7 +550,9 @@ mult_test_results multiply_RAP_test_autofc(
 #endif
 
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap());
+  RCP<Matrix_t> diffMatrix =
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap(),
+                                         Ac->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedAc, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
 
@@ -593,7 +601,7 @@ mult_test_results multiply_RAP_reuse_test(
   SC one = Teuchos::ScalarTraits<SC>::one();
 
   // First cut
-  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC1);  
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC1);
 
   if(!Ac->getDomainMap()->isSameAs(*computedC1->getDomainMap())) throw std::runtime_error("Domain map mismatch");
   if(!Ac->getRangeMap()->isSameAs(*computedC1->getRangeMap())) throw std::runtime_error("Range map mismatch");
@@ -602,10 +610,11 @@ mult_test_results multiply_RAP_reuse_test(
   RCP<Matrix_t> computedC2 = rcp( new Matrix_t(computedC1->getCrsGraph()) );
   computedC2->fillComplete(computedC2->getDomainMap(), computedC2->getRangeMap());
   computedC2->resumeFill();
-  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2);  
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2);
 
   // Only check the second "reuse" matrix
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(map,0);
+  RCP<Matrix_t> diffMatrix =
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(map, Ac->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
 
@@ -614,7 +623,7 @@ mult_test_results multiply_RAP_reuse_test(
   results.compNorm = diffMatrix->getFrobeniusNorm ();
   results.epsilon  = results.compNorm/results.cNorm;
 
-  if(results.epsilon > 1e-3) {    
+  if(results.epsilon > 1e-3) {
     if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
   }
 
@@ -659,13 +668,6 @@ mult_test_results multiply_reuse_test(
   rightScaling->norm2(norms);
   rightScaling->scale(1.0/norms[0]);
 
-  // computedC1 = leftScaling * (op(A)*op(B)) * rightScaling
-  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, 1));
-  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC1, false/*call_FillCompleteOnResult*/);
-  computedC1->fillComplete(C->getDomainMap(), C->getRangeMap());
-  computedC1->leftScale (*leftScaling);
-  computedC1->rightScale(*rightScaling);
-
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
   //   A*leftScaling,   if AT=true
@@ -687,9 +689,18 @@ mult_test_results multiply_reuse_test(
   computedC2->resumeFill();
   Tpetra::MatrixMatrix::Multiply(*As, AT, *Bs, BT, *computedC2, true/*call_FillCompleteOnResult*/);
 
+  // computedC1 = leftScaling * (op(A)*op(B)) * rightScaling
+  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, computedC2->getGlobalMaxNumRowEntries()));
+  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC1, false/*call_FillCompleteOnResult*/);
+  computedC1->fillComplete(C->getDomainMap(), C->getRangeMap());
+  computedC1->leftScale (*leftScaling);
+  computedC1->rightScale(*rightScaling);
+
   // diffMatrix = computedC2 - computedC1
   SC one = Teuchos::ScalarTraits<SC>::one();
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix =
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(),
+                                         computedC2->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -733,12 +744,13 @@ mult_test_results jacobi_test(
   Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
-  RCP<Matrix_t> C2 = rcp(new Matrix_t(B->getRowMap(),0));
+  RCP<Matrix_t> C2;
   bool done=false;
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
       Teuchos::ParameterList p;
       p.set("openmp: jacobi algorithm","MSAK");
+      C2 = rcp(new Matrix_t(B->getRowMap(),0));
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -747,6 +759,7 @@ mult_test_results jacobi_test(
     if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
       Teuchos::ParameterList p;
       p.set("cuda: jacobi algorithm","MSAK");
+      C2 = rcp(new Matrix_t(B->getRowMap(),0));
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -758,12 +771,14 @@ mult_test_results jacobi_test(
 
       Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
       AB->leftScale(Dinv);
+      C2 = rcp(new Matrix_t(B->getRowMap(),
+                            B->getGlobalMaxNumRowEntries() + AB->getGlobalMaxNumRowEntries())); // upper bound
       Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C2);
       if(!C2->isFillComplete()) C2->fillComplete(C->getDomainMap(),C->getRangeMap());
     }
 
   // Check the difference
-  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(),0));
+  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(), C->getGlobalMaxNumRowEntries()));
   Tpetra::MatrixMatrix::Add(*C, false, -one, *C2, false,one,C_check);
   C_check->fillComplete(B->getDomainMap(),B->getRangeMap());
 
@@ -822,7 +837,9 @@ mult_test_results jacobi_reuse_test(
 
   // diffMatrix = computedC2 - computedC1
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(computedC1->getRowMap());
+  RCP<Matrix_t> diffMatrix =
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(computedC1->getRowMap(),
+                                         computedC1->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(computedC1->getDomainMap(), computedC1->getRangeMap());
 
@@ -914,42 +931,62 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     RCP<Matrix_t> A, B, C, D;
 
     if (A_file != ""){
-      if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "")
+      if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "") {
+        out << "Attempt to read sparse matrix file \"" << A_file
+            << "\"" << endl;
         A = Reader<Matrix_t>::readSparseFile (A_file, comm);
+      }
       else {
         RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (A_domainmap_file, comm);
         RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (A_rangemap_file, comm);
         RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (A_rowmap_file, comm);
         RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (A_colmap_file, comm);
+        out << "Attempt to read sparse matrix file \""
+            << A_file << "\"" << endl;
         A = Reader<Matrix_t>::readSparseFile (A_file, rowmap, colmap, domainmap, rangemap);
       }
     }
-    if (B_domainmap_file == "" || B_rangemap_file == "" || B_rowmap_file == "" || B_colmap_file == "")
+    if (B_domainmap_file == "" || B_rangemap_file == "" || B_rowmap_file == "" || B_colmap_file == "") {
+      out << "Attempt to read sparse matrix file \"" << B_file
+          << "\"" << endl;
       B = Reader<Matrix_t>::readSparseFile (B_file, comm);
+    }
     else {
       RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (B_domainmap_file, comm);
       RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (B_rangemap_file, comm);
       RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (B_rowmap_file, comm);
       RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (B_colmap_file, comm);
+      out << "Attempt to read sparse matrix file \"" << B_file
+          << "\"" << endl;
       B = Reader<Matrix_t>::readSparseFile (B_file, rowmap, colmap, domainmap, rangemap);
     }
-    if (C_domainmap_file == "" || C_rangemap_file == "" || C_rowmap_file == "" || C_colmap_file == "")
+    if (C_domainmap_file == "" || C_rangemap_file == "" || C_rowmap_file == "" || C_colmap_file == "") {
+      out << "Attempt to read sparse matrix file \"" << C_file
+          << "\"" << endl;
       C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    }
     else {
       RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (C_domainmap_file, comm);
       RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (C_rangemap_file, comm);
       RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (C_rowmap_file, comm);
       RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (C_colmap_file, comm);
+      out << "Attempt to read sparse matrix file \"" << C_file
+          << "\"" << endl;
       C = Reader<Matrix_t>::readSparseFile (C_file, rowmap, colmap, domainmap, rangemap);
     }
     if (D_file != "") {
-      if (D_domainmap_file == "" || D_rangemap_file == "" || D_rowmap_file == "" || D_colmap_file == "")
+      if (D_domainmap_file == "" || D_rangemap_file == "" || D_rowmap_file == "" || D_colmap_file == "") {
+        out << "Attempt to read sparse matrix file \"" << D_file
+            << "\"" << endl;
         D = Reader<Matrix_t>::readSparseFile (D_file, comm);
+      }
       else {
         RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (D_domainmap_file, comm);
         RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (D_rangemap_file, comm);
         RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (D_rowmap_file, comm);
         RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (D_colmap_file, comm);
+        out << "Attempt to read sparse matrix file \"" << D_file
+            << "\"" << endl;
         D = Reader<Matrix_t>::readSparseFile (D_file, rowmap, colmap, domainmap, rangemap);
       }
     }
@@ -1229,6 +1266,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     }
   }
 
+
   newOut << "Call fillComplete on bMatrix" << endl;
   bMatrix->fillComplete(bDomainMap, bRangeMap);
 
@@ -1242,6 +1280,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     bMatrix,
     comm,
     out);
+
   if(verbose){
     newOut << "Results:" << endl;
     newOut << "\tEpsilon: " << results.epsilon << endl;
@@ -1258,8 +1297,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<const Map_t > bTransRowMap =
     Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2,comm);
 
-  newOut << "Create and fill bTrans" << endl;
-  RCP<Matrix_t> bTrans = Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
   Array<GO> bTransRangeElements;
   if(rank == 0){
     bTransRangeElements = tuple<GO>(
@@ -1278,15 +1315,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<const Map_t > bTransDomainMap =
     Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows, comm);
 
-  newOut << "Compute identity * transpose(bTrans)" << endl;
-  Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
-
-  newOut << "Call fillComplete on bTrans" << endl;
-  bTrans->fillComplete(bTransDomainMap, bTransRangeMap);
-
   newOut << "Create and fill bTransTest" << endl;
   RCP<Matrix_t > bTransTest =
-    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 2);
 
   {
     Teuchos::ArrayView<const GO> gblRows = bRowMap->getNodeElementList ();
@@ -1300,13 +1331,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   newOut << "Call fillComplete on bTransTest" << endl;
   bTransTest->fillComplete(bTransDomainMap, bTransRangeMap);
 
+  newOut << "Create and fill bTrans" << endl;
+  RCP<Matrix_t> bTrans =
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap,
+                                         bTransTest->getGlobalMaxNumRowEntries());
+
+  newOut << "Compute identity * transpose(bTrans)" << endl;
+  Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
+
+  newOut << "Call fillComplete on bTrans" << endl;
+  bTrans->fillComplete(bTransDomainMap, bTransRangeMap);
+
   // FIXME (mfh 03 May 2016) I didn't write this output message.  I
   // don't know what it means, but I'm leaving it here in case it's
   // meaningful to someone.
   newOut << "Regular I*P^T" << endl;
 
   RCP<Matrix_t > bTransDiff =
-    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, bTransTest->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add<SC,LO,GO,NT>(*bTransTest, false, -1.0, *bTrans, false, 1.0,bTransDiff);
 
   newOut << "Call fillComplete on bTransDiff" << endl;
@@ -1465,12 +1507,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   //First, make two local, random, sorted Kokkos sparse matrices
   size_t nrows = 1000;
   size_t nnzPerRow = 20;
-  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
-  typedef typename crs_matrix_type::local_matrix_type KCRS;
-  typedef typename crs_matrix_type::impl_scalar_type ISC;
-  typedef typename KCRS::values_type::non_const_type ValuesType;
-  typedef typename KCRS::row_map_type::non_const_type RowptrsType;
-  typedef typename KCRS::index_type::non_const_type ColindsType;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using KCRS = typename crs_matrix_type::local_matrix_type;
+  using ISC = typename crs_matrix_type::impl_scalar_type;
+  using ValuesType = typename KCRS::values_type::non_const_type;
+  using RowptrsType = typename KCRS::row_map_type::non_const_type;
+  using ColindsType = typename KCRS::index_type::non_const_type;
+  using Device = typename KCRS::device_type;
+  using ExecSpace = typename Device::execution_space;
   //The 3 views are for A, B and C
   ValuesType valsCRS[3];
   RowptrsType rowptrsCRS[3];
@@ -1537,10 +1581,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  //the above function is an unfenced kernel launch, and the verification below relies on UVM, so fence here.
+  ExecSpace().fence();
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
-      "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
+  TEST_ASSERT(rowptrsCRS[0].extent(0) == rowptrsCRS[2].extent(0));
   for(size_t i = 0; i < nrows; i++)
   {
     //also compute what C's row should be (as dense values)
@@ -1563,14 +1608,41 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
     }
     size_t Crowstart = rowptrsCRS[2](i);
     size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
-    TEUCHOS_TEST_FOR_EXCEPTION(Crowlen != actualNNZ, std::logic_error,
-        std::string("Threaded addition of sorted Kokkos::CrsMatrix produced row ") + std::to_string(i) + " with the wrong number of entries.");
+    TEST_ASSERT(Crowlen == actualNNZ);
     for(size_t j = 0; j < Crowlen; j++)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Crowstart + j) != correctVals[colindsCRS[2](Crowstart + j)], std::logic_error,
-          "Threaded addition of sorted Kokkos::CrsMatrix produced an incorrect value.");
+      size_t Coffset = Crowstart + j;
+      if(j > 0)
+      {
+        //Check entries are sorted
+        TEST_ASSERT(colindsCRS[2](Coffset - 1) <= colindsCRS[2](Coffset));
+      }
+      TEST_FLOATING_EQUALITY(valsCRS[2](Coffset), correctVals[colindsCRS[2](Coffset)], 1e-12);
     }
   }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  using Teuchos::RCP;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  size_t nrows = 0;
+  RCP<const map_type> emptyMap = rcp(new map_type(nrows, 0, comm));
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(emptyMap, 0));
+  A->fillComplete(emptyMap, emptyMap);
+  RCP<crs_matrix_type> B = rcp(new crs_matrix_type(emptyMap, 0));
+  B->fillComplete(emptyMap, emptyMap);
+  RCP<crs_matrix_type> C1 = rcp(new crs_matrix_type(emptyMap, 0));
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B, *C1);
+  RCP<crs_matrix_type> C2 = Tpetra::MatrixMatrix::add
+    (one, false, *A, one, false, *B);
+  MT magZero = Teuchos::ScalarTraits<MT>::zero();
+  TEST_EQUALITY(C1->getFrobeniusNorm(), magZero);
+  TEST_EQUALITY(C2->getFrobeniusNorm(), magZero);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
@@ -1651,10 +1723,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
-      "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
+  TEST_ASSERT(rowptrsCRS[0].extent(0) == rowptrsCRS[2].extent(0));
   for(size_t i = 0; i < nrows; i++)
   {
     //also compute what C's row should be (as dense values)
@@ -1677,14 +1748,378 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
     }
     size_t Crowstart = rowptrsCRS[2](i);
     size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
-    TEUCHOS_TEST_FOR_EXCEPTION(Crowlen != actualNNZ, std::logic_error,
-        std::string("Threaded addition of unsorted Kokkos::CrsMatrix produced row ") + std::to_string(i) + " with the wrong number of entries (is " + std::to_string(Crowlen) + ", should be " + std::to_string(actualNNZ) + ")");
+    TEST_ASSERT(Crowlen == actualNNZ);
     for(size_t j = 0; j < Crowlen; j++)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Crowstart + j) != correctVals[colindsCRS[2](Crowstart + j)], std::logic_error,
-          "Threaded addition of unsorted Kokkos::CrsMatrix produced an incorrect value.");
+      size_t Coffset = Crowstart + j;
+      if(j > 0)
+      {
+        //Check entries are sorted
+        TEST_ASSERT(colindsCRS[2](Coffset - 1) <= colindsCRS[2](Coffset));
+      }
+      TEST_FLOATING_EQUALITY(valsCRS[2](Coffset), correctVals[colindsCRS[2](Coffset)], 1e-12);
     }
   }
+}
+
+namespace AddTestUtils
+{
+
+//Local matrices of fill-complete matrices should always be sorted.
+//Return true if sorted, false otherwise.
+template<typename CrsMat>
+bool checkLocallySorted(const CrsMat& A)
+{
+  using LO = typename CrsMat::local_ordinal_type;
+  using Teuchos::reduceAll;
+  using Teuchos::outArg;
+  auto graph = A.getLocalMatrix().graph;
+  LO numLocalRows = A.getNodeNumRows();
+  int allSorted = 1;
+  for(int i = 0; i < numLocalRows; i++)
+  {
+    for(size_t j = graph.row_map(i) + 1; j < graph.row_map(i+1); j++)
+    {
+      if(graph.entries(j - 1) > graph.entries(j))
+      {
+        allSorted = 0;
+      }
+    }
+    if(!allSorted)
+      break;
+  }
+  int globalAllSorted = 1;
+  auto comm = A.getComm();
+  reduceAll<int, int>(*comm, Teuchos::REDUCE_AND, allSorted, outArg(globalAllSorted));
+  return globalAllSorted;
+}
+
+//Check that A+B=C, assuming all 3 have the smae row map
+template<typename CrsMat>
+bool verifySum(const CrsMat& A, const CrsMat& B, const CrsMat& C)
+{
+  using SC = typename CrsMat::scalar_type;
+  using LO = typename CrsMat::local_ordinal_type;
+  using GO = typename CrsMat::global_ordinal_type;
+  using KAT = Kokkos::Details::ArithTraits<SC>;
+  using Teuchos::Array;
+  auto rowMap = A.getRowMap();
+  LO numLocalRows = rowMap->getNodeNumElements();
+  GO Amax = A.getGlobalMaxNumRowEntries();
+  GO Bmax = B.getGlobalMaxNumRowEntries();
+  GO Cmax = C.getGlobalMaxNumRowEntries();
+  Array<GO> Ainds(Amax);
+  Array<SC> Avals(Amax);
+  Array<GO> Binds(Bmax);
+  Array<SC> Bvals(Bmax);
+  Array<GO> Cinds(Cmax);
+  Array<SC> Cvals(Cmax);
+  for(LO i = 0; i < numLocalRows; i++)
+  {
+    GO gid = rowMap->getGlobalElement(i);
+    size_t Aentries;
+    size_t Bentries;
+    size_t Centries;
+    A.getGlobalRowCopy(gid, Ainds(), Avals(), Aentries);
+    B.getGlobalRowCopy(gid, Binds(), Bvals(), Bentries);
+    C.getGlobalRowCopy(gid, Cinds(), Cvals(), Centries);
+    Tpetra::sort2(Ainds.begin(), Ainds.begin() + Aentries, Avals.begin());
+    Tpetra::sort2(Binds.begin(), Binds.begin() + Bentries, Bvals.begin());
+    Tpetra::sort2(Cinds.begin(), Cinds.begin() + Centries, Cvals.begin());
+    //Now, scan through the row to make sure C's entries match
+    size_t Ait = 0;
+    size_t Bit = 0;
+    for(size_t Cit = 0; Cit < Centries; Cit++)
+    {
+      GO col = Cinds[Cit];
+      SC val = Cvals[Cit];
+      SC goldVal = 0;
+      if(Ait < Aentries && Ainds[Ait] == col)
+        goldVal += Avals[Ait++];
+      if(Bit < Bentries && Binds[Bit] == col)
+        goldVal += Bvals[Bit++];
+      //Any scalar magnitude should implicitly convert to double
+      double err = KAT::abs(val - goldVal);
+      if(err > 1e-13)
+      {
+        std::cerr << "On rank " << rowMap->getComm()->getRank() << ": global row " << gid << ", global col " << col << " has wrong value!" << std::endl;
+        return false;
+      }
+    }
+    //In looping over Centries, should have consumed all A and B entries too
+    if(Ait != Aentries || Bit != Bentries)
+    {
+      std::cerr << "On rank " << rowMap->getComm()->getRank() << ": global row " << gid << " has too few entries!" << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+template<typename LO, typename GO, typename NT>
+RCP<const Tpetra::Map<LO, GO, NT>> buildRandomColMap(
+    RCP<const Tpetra::Map<LO, GO, NT>> domainMap,
+    GO indexBase, GO minCol, GO maxCol, int seed, double proportion)
+{
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  using MemSpace = typename NT::memory_space;
+  srand(seed * 21);
+  std::vector<GO> present;
+  for(GO i = minCol; i < maxCol; i++)
+  {
+    if(rand() < proportion * RAND_MAX)
+      present.push_back(i);
+  }
+  Kokkos::View<GO*, Kokkos::HostSpace> globalIndsHost("Col GIDs", present.size());
+  for(size_t i = 0; i < present.size(); i++)
+    globalIndsHost(i) = present[i];
+  Kokkos::View<GO*, MemSpace> globalInds = Kokkos::create_mirror_view_and_copy(MemSpace(), globalIndsHost);
+  RCP<const map_type> zeroBased;
+  Tpetra::Details::makeColMap(zeroBased, domainMap, globalInds);
+  if(indexBase == 0)
+    return zeroBased;
+  //zeroBased always has 0 index base - build the real map with given indexBase
+  auto indices = zeroBased->getMyGlobalIndices();
+  return rcp(new map_type(zeroBased->getGlobalNumElements(), indices, indexBase, zeroBased->getComm()));
+}
+
+template<typename SC, typename LO, typename GO, typename NT>
+RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(
+    RCP<const Tpetra::Map<LO, GO, NT>> rowRangeMap,
+    RCP<const Tpetra::Map<LO, GO, NT>> domainMap,
+    RCP<const Tpetra::Map<LO, GO, NT>> colMap,
+    int seed)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  const LO maxNnzPerRow = colMap->getNodeNumElements();
+  auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(rowRangeMap, colMap, maxNnzPerRow));
+  //get consistent results between runs on a given machine
+  srand(seed);
+  LO numLocalRows = mat->getNodeNumRows();
+  for(LO i = 0; i < numLocalRows; i++)
+  {
+    int n = rand() % maxNnzPerRow;
+    Teuchos::Array<SC> vals(n);
+    Teuchos::Array<LO> inds(n);
+    for(int j = 0; j < n; j++)
+    {
+      vals[j] = 10.0 * rand() / RAND_MAX;
+      inds[j] = rand() % colMap->getNodeNumElements();
+    }
+    mat->insertLocalValues(i, inds(), vals());
+  }
+  mat->fillComplete(domainMap, rowRangeMap);
+  return mat;
+}
+
+template<typename SC, typename LO, typename GO, typename NT>
+RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getUnsortedTestMatrix(
+    RCP<const Tpetra::Map<LO, GO, NT>> rowRangeMap,
+    RCP<const Tpetra::Map<LO, GO, NT>> domainMap,
+    RCP<const Tpetra::Map<LO, GO, NT>> colMap,
+    int seed)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using KCRS = typename crs_matrix_type::local_matrix_type;
+  using size_type = typename KCRS::row_map_type::non_const_value_type;
+  using lno_t =     typename KCRS::index_type::non_const_value_type;
+  using kk_scalar_t =  typename KCRS::values_type::non_const_value_type;
+  //Get consistent results between runs on a given machine
+  srand(seed);
+  lno_t numLocalRows = rowRangeMap->getNodeNumElements();
+  lno_t numLocalCols = colMap->getNodeNumElements();
+  Array<int> entriesPerRow(numLocalRows, 0);
+  for(LO i = 0; i < numLocalRows; i++)
+    entriesPerRow[i] = rand() % numLocalCols;
+  size_type numEntries = 0;
+  for(LO i = 0; i < numLocalRows; i++)
+    numEntries += entriesPerRow[i];
+  Array<lno_t> rowptrs(numLocalRows + 1);
+  Array<lno_t> colinds(numEntries);
+  Array<kk_scalar_t> values(numEntries);
+  size_type accum = 0;
+  for(lno_t i = 0; i <= numLocalRows; i++)
+  {
+    rowptrs[i] = accum;
+    if(i == numLocalRows)
+      break;
+    accum += entriesPerRow[i];
+  }
+  for(lno_t i = 0; i < numLocalRows; i++)
+  {
+    Array<lno_t> unused(numLocalCols);
+    for(lno_t j = 0; j < numLocalCols; j++)
+      unused[j] = j;
+    for(lno_t j = 0; j < entriesPerRow[i]; j++)
+    {
+      //Select a random column from the columns not used yet
+      size_t index = rand() % unused.size();
+      colinds[rowptrs[i] + j] = unused[index];
+      values[rowptrs[i] + j] = 10.0 * rand() / RAND_MAX;
+      //efficiently remove index element from unused, don't care about order
+      unused[index] = unused.back();
+      unused.pop_back();
+    }
+  }
+  //Construct the local matrix
+  KCRS lclMatrix(std::string("UnsortedLcl"), numLocalRows, numLocalCols, numEntries, values.data(), rowptrs.data(), colinds.data());
+  auto matParams = rcp(new ParameterList);
+  matParams->set("sorted", false);
+  auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(rowRangeMap, colMap, lclMatrix, matParams));
+  //mat will be returned as fill-complete
+  TEUCHOS_TEST_FOR_EXCEPTION(!mat->isFillComplete(), std::logic_error,
+      "Test matrix must be fill-complete");
+  TEUCHOS_TEST_FOR_EXCEPTION(mat->getCrsGraph()->isSorted(), std::logic_error,
+      "This test matrix isn't supposed to be locally sorted.");
+  return mat;
+}
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT)
+{
+  using namespace AddTestUtils;
+  using exec_space = typename NT::execution_space;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  int rank = comm->getRank();
+  GO numGlobalRows = 1000;
+  GO numGlobalCols = 1000;
+  RCP<const map_type> rowDomainMap = rcp(new map_type(numGlobalRows, 0, comm));
+  RCP<const map_type> colMap = buildRandomColMap<LO, GO, NT>(rowDomainMap, 0, 0, numGlobalCols, 234 + rank, 0.03);
+  //Generate the first matrix without a given column map
+  RCP<crs_matrix_type> A = getTestMatrix<SC, LO, GO, NT>(rowDomainMap, rowDomainMap, colMap, rank + 42);
+  //Generate the second matrix using the first one's column map
+  RCP<crs_matrix_type> B = getTestMatrix<SC, LO, GO, NT>(rowDomainMap, rowDomainMap, colMap, rank + 43);
+  auto one = Teuchos::ScalarTraits<SC>::one();
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B);
+  //Verify fillComplete and that local matrices are sorted
+  exec_space().fence();
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  TEST_ASSERT(verifySum(*A, *B, *C));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT)
+{
+  using namespace AddTestUtils;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
+  GO numGlobalRows = 1000;
+  GO numGlobalCols = 1000;
+  GO numLocalCols = 1000 / nprocs;
+  //globally square; use same map for row/range/domain
+  RCP<const map_type> rowDomainMap = rcp(new map_type(numGlobalRows, 0, comm));
+  //Generate A/B column maps each covering a different uniform random subset (30 out of 1000) of all global cols
+  GO colStart = numLocalCols * (rank - 1);
+  if(colStart < 0)
+    colStart = 0;
+  GO colEnd = numLocalCols * (rank + 2);
+  if(colEnd > numGlobalCols)
+    colEnd = numGlobalCols;
+  auto Acolmap = buildRandomColMap<LO, GO, NT>(rowDomainMap, 0, colStart, colEnd, 234 + rank, 0.03);
+  auto Bcolmap = buildRandomColMap<LO, GO, NT>(rowDomainMap, 0, colStart, colEnd, 236 + rank, 0.03);
+  auto A = getTestMatrix<SC, LO, GO, NT>(rowDomainMap, rowDomainMap, Acolmap, 123);
+  auto B = getTestMatrix<SC, LO, GO, NT>(rowDomainMap, rowDomainMap, Bcolmap, 321);
+  auto one = Teuchos::ScalarTraits<SC>::one();
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B);
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  TEST_ASSERT(verifySum(*A, *B, *C));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT)
+{
+  using namespace AddTestUtils;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
+  GO numGlobalRows = 333;
+  GO numGlobalCols = 500;
+  GO AindexBase = 100;
+  GO numLocalCols = numGlobalCols / nprocs;
+  RCP<const map_type> rowMap = rcp(new map_type(numGlobalRows, 0, comm));
+  RCP<const map_type> domainMap = rcp(new map_type(numGlobalCols, 0, comm));
+  //Generate A/B column maps each covering a different uniform random subset (30 out of 1000) of all global cols,
+  //except A's column map has index base 100.
+  GO AminCol = numLocalCols * (rank - 1);
+  if(AminCol < AindexBase)
+    AminCol = AindexBase;
+  GO ABmaxCol = numLocalCols * (rank + 2);
+  if(ABmaxCol > numGlobalCols)
+    ABmaxCol = numGlobalCols;
+  GO BminCol = numLocalCols * (rank - 1);
+  if(BminCol < 0)
+    BminCol = 0;
+  auto Acolmap = buildRandomColMap<LO, GO, NT>(domainMap, AindexBase, AminCol, ABmaxCol, 234 + rank, 0.7);
+  auto Bcolmap = buildRandomColMap<LO, GO, NT>(domainMap, 0, BminCol, ABmaxCol, 236 + rank, 0.7);
+  auto A = getTestMatrix<SC, LO, GO, NT>(rowMap, domainMap, Acolmap, 123);
+  auto B = getTestMatrix<SC, LO, GO, NT>(rowMap, domainMap, Bcolmap, 321);
+  auto one = Teuchos::ScalarTraits<SC>::one();
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B);
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  TEST_ASSERT(verifySum(*A, *B, *C));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT)
+{
+  using namespace AddTestUtils;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
+  //To compute A + B^T, domain map of A must match range map of B and vice versa.
+  GO numGlobalRows = 400;
+  GO numGlobalCols = 400;
+  GO numLocalCols = numGlobalCols / nprocs;
+  //This is the row, domain and range map for both A and B
+  RCP<const map_type> map = rcp(new map_type(numGlobalRows, 0, comm));
+  auto colmap = buildRandomColMap<LO, GO, NT>(map, 0, numLocalCols * rank, numLocalCols * (rank + 1), 234 + rank, 1.0);
+  auto A = getTestMatrix<SC, LO, GO, NT>(map, map, colmap, 123);
+  auto B = getTestMatrix<SC, LO, GO, NT>(map, map, colmap, 321);
+  auto one = Teuchos::ScalarTraits<SC>::one();
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, true, *B);
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  auto Btrans = Tpetra::RowMatrixTransposer<SC, LO, GO, NT>(B).createTranspose(Teuchos::null);
+  TEST_ASSERT(verifySum(*A, *Btrans, *C));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT)
+{
+  using namespace AddTestUtils;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
+  //To compute A + B^T, domain map of A must match range map of B and vice versa.
+  GO numGlobalRows = 120;
+  GO numGlobalCols = 120;
+  GO numLocalCols = numGlobalCols / nprocs;
+  //This is the row, domain and range map for both A and B
+  RCP<const map_type> map = rcp(new map_type(numGlobalRows, 0, comm));
+  auto colmap = buildRandomColMap<LO, GO, NT>(map, 0, numLocalCols * rank, numLocalCols * (rank + 1), 234 + rank, 1.0);
+  //A and B must have the same column maps
+  auto A = getTestMatrix<SC, LO, GO, NT>(map, map, colmap, 123);
+  auto B = getUnsortedTestMatrix<SC, LO, GO, NT>(map, map, colmap, 321);
+  auto one = Teuchos::ScalarTraits<SC>::one();
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B);
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  TEST_ASSERT(verifySum(*A, *B, *C));
 }
 
 /*
@@ -1734,7 +2169,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

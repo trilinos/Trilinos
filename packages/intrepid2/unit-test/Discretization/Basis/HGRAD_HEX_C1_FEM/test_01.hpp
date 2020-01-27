@@ -64,7 +64,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -119,8 +119,8 @@ namespace Intrepid2 {
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
       Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> hexBasis;
-      //typedef typename decltype(hexBasis)::outputViewType outputViewType;
-      //typedef typename decltype(hexBasis)::pointViewType  pointViewType;
+      //typedef typename decltype(hexBasis)::OutputViewType OutputViewType;
+      //typedef typename decltype(hexBasis)::PointViewType  PointViewType;
 
       *outStream
         << "\n"
@@ -229,7 +229,7 @@ namespace Intrepid2 {
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
 
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -290,7 +290,7 @@ namespace Intrepid2 {
                        << myTag(3) << "} ) = " << myBfOrd << "\n";
           }
         }
-      } catch (std::logic_error err){
+      } catch (std::logic_error &err){
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -657,7 +657,7 @@ namespace Intrepid2 {
                   }
           }
         }
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -724,13 +724,42 @@ namespace Intrepid2 {
           }
         }
 
-      } catch (std::logic_error err){
+      } catch (std::logic_error &err){
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       };
 
+      *outStream
+      << "\n"
+      << "===============================================================================\n"
+      << "| TEST 5: Function Space is Correct                                           |\n"
+      << "===============================================================================\n";
+      
+      try {
+        const EFunctionSpace fs = hexBasis.getFunctionSpace();
+        
+        if (fs != FUNCTION_SPACE_HGRAD)
+        {
+          *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
+          
+          // Output the multi-index of the value where the error is:
+          *outStream << " Expected a function space of FUNCTION_SPACE_HGRAD (enum value " << FUNCTION_SPACE_HGRAD << "),";
+          *outStream << " but got " << fs << "\n";
+          if (fs == FUNCTION_SPACE_MAX)
+          {
+            *outStream << "Note that this matches the default value defined by superclass, FUNCTION_SPACE_MAX.  Likely the subclass has failed to set the superclass functionSpace_ field.\n";
+          }
+          errorFlag++;
+        }
+      } catch (std::logic_error &err){
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+        *outStream << err.what() << '\n';
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+        errorFlag = -1000;
+      }
+      
       if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";
       else

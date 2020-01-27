@@ -3,14 +3,15 @@
 #include "balance.hpp"
 #include "balanceUtils.hpp"               // for BalanceSettings, etc
 #include "fixSplitCoincidentElements.hpp"
+#include "internal/DetectAndFixMechanisms.hpp"
 #include "internal/LastStepFieldWriter.hpp"
 #include "internal/balanceCoincidentElements.hpp"
+#include "internal/balanceCommandLine.hpp"
 #include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
-#include "stk_balance/internal/DetectAndFixMechanisms.hpp"
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Comm.hpp"
+#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
@@ -376,10 +377,11 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
 void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
                                 stk::balance::BalanceSettings& graphOptions,
                                 const std::string& exodusFilename,
-                                const std::string& outputFilename)
+                                const std::string& outputFilename,
+                                const std::string & initialDecompMethod)
 {
     stk::io::StkMeshIoBroker stkInput;
-    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
+    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", initialDecompMethod));
 
     internal::logMessage(bulk.parallel(), "Reading mesh and performing initial decomposition");
     read_mesh_with_auto_decomp(stkInput, exodusFilename, bulk, graphOptions);
@@ -388,7 +390,7 @@ void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
     run_static_stk_balance_with_settings(stkInput, bulk, outputFilename, bulk.parallel(), graphOptions);
 }
 
-void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
+void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& balanceSettings)
 {
     const std::string trimmedInputName = (exodusFilename.substr(0,2) == "./") ? exodusFilename.substr(2) : exodusFilename;
     const std::string trimmedOutputName = (outputFilename.substr(0,2) == "./") ? outputFilename.substr(2) : outputFilename;
@@ -399,28 +401,71 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
                      <<") == output-file, doing nothing. Specify outputDirectory if you "
                      <<"wish to copy the input-file to an output-file of the same name.");
 
+    const std::string initialDecompMethod = "RIB";
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
-    initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename);
+    meta.set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
+
+    initial_decomp_and_balance(bulk, balanceSettings, exodusFilename, outputFilename, initialDecompMethod);
 }
 
-void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
+StkBalanceSettings create_balance_settings(const stk::balance::ParsedOptions & options)
 {
-    stk::balance::GraphCreationSettings graphOptions;
+  StkBalanceSettings balanceSettings;
+  SearchToleranceType searchToleranceType = ABSOLUTE;
 
-    if (appType == stk::balance::SD_DEFAULTS)
-    {
-        graphOptions.setShouldFixSpiders(true);
+  if (options.is_option_provided(stk::balance::ParsedOptions::APP_TYPE)) {
+    if (options.appTypeDefaults == stk::balance::SD_DEFAULTS) {
+      balanceSettings.setShouldFixSpiders(true);
     }
-    else if (appType == stk::balance::SM_DEFAULTS)
-    {
-        graphOptions.setEdgeWeightForSearch(3.0);
-        graphOptions.setVertexWeightMultiplierForVertexInSearch(10.0);
-        graphOptions.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+    else if (options.appTypeDefaults == stk::balance::SM_DEFAULTS) {
+      balanceSettings.setEdgeWeightForSearch(3.0);
+      balanceSettings.setVertexWeightMultiplierForVertexInSearch(10.0);
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+      searchToleranceType = RELATIVE;
     }
+  }
 
-    std::string outputFilename = outputDirectory + "/" + exodusFilename;
-    run_stk_balance_with_settings(outputFilename, exodusFilename, comm, graphOptions);
+  if (options.is_option_provided(stk::balance::ParsedOptions::CONTACT_SEARCH)) {
+    balanceSettings.setIncludeSearchResultsInGraph(options.useContactSearch);
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_ABS_TOL)) searchToleranceType = ABSOLUTE;
+  if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_REL_TOL)) searchToleranceType = RELATIVE;
+
+  if (searchToleranceType == ABSOLUTE) {
+    const double tolerance = options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_ABS_TOL) ?
+                             options.faceSearchAbsTol : stk::balance::defaultFaceSearchTolerance;
+    balanceSettings.setToleranceForFaceSearch(tolerance);
+  }
+  else if (searchToleranceType == RELATIVE) {
+    if (options.is_option_provided(stk::balance::ParsedOptions::FACE_SEARCH_REL_TOL)) {
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(options.faceSearchRelTol));
+    }
+    else {
+      balanceSettings.setToleranceFunctionForFaceSearch(
+            std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+    }
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::DECOMP_METHOD)) {
+    balanceSettings.setDecompMethod(options.decompMethod);
+  }
+
+  return balanceSettings;
+}
+
+void run_stk_rebalance(const stk::balance::ParsedOptions& options,  MPI_Comm comm)
+{
+    const std::string& outputDirectory = options.outputDirectory;
+    const std::string& inputFile = options.m_inFile;
+
+    StkBalanceSettings balanceSettings = create_balance_settings(options);
+
+    std::string outputFilename = construct_output_file_name(outputDirectory, inputFile);
+    run_stk_balance_with_settings(outputFilename, inputFile, comm, balanceSettings);
 }
 
 }

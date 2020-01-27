@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ***********************************************************************
 // @HEADER
 
@@ -140,7 +138,7 @@ class SerialSymDenseMatrix : public CompObject, public BLAS<OrdinalType,ScalarTy
     Note: By default the active part of the matrix is assumed to be the lower triangular part.
     To set the upper part as active, call SetUpper(). See Detailed Description section for further discussion.
    */
-  SerialSymDenseMatrix();
+  SerialSymDenseMatrix() = default;
 
   //! Basic constructor; defines a matrix of \c numRowsCols size and (optionally) initializes it.
   /*!
@@ -402,7 +400,11 @@ class SerialSymDenseMatrix : public CompObject, public BLAS<OrdinalType,ScalarTy
   //! @name I/O methods.
   //@{
   //! Print method.  Defines the behavior of the std::ostream << operator
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
   virtual void print(std::ostream& os) const;
+#else
+  virtual std::ostream& print(std::ostream& os) const;
+#endif
 
   //@}
 
@@ -423,14 +425,24 @@ class SerialSymDenseMatrix : public CompObject, public BLAS<OrdinalType,ScalarTy
 
   void deleteArrays();
   void checkIndex( OrdinalType rowIndex, OrdinalType colIndex = 0 ) const;
-  OrdinalType numRowCols_;
-  OrdinalType stride_;
-  bool valuesCopied_;
-  ScalarType* values_;
-  bool upper_;
-  char UPLO_;
 
+  static ScalarType*
+  allocateValues(const OrdinalType numRows,
+                 const OrdinalType numCols)
+  {
+    const size_t size = size_t(numRows) * size_t(numCols);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvla"
+    return new ScalarType[size];
+#pragma GCC diagnostic pop
+  }
 
+  OrdinalType numRowCols_ = 0;
+  OrdinalType stride_ = 0;
+  bool valuesCopied_ = false;
+  ScalarType* values_ = nullptr;
+  bool upper_ = false;
+  char UPLO_ {'L'};
 };
 
 //----------------------------------------------------------------------------------------------------
@@ -438,28 +450,22 @@ class SerialSymDenseMatrix : public CompObject, public BLAS<OrdinalType,ScalarTy
 //----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
-SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix()
-  : CompObject(), BLAS<OrdinalType,ScalarType>(), 
-    numRowCols_(0), stride_(0), valuesCopied_(false), values_(0), upper_(false), UPLO_('L')
-{}
-
-template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(OrdinalType numRowCols_in, bool zeroOut)
-  : CompObject(), BLAS<OrdinalType,ScalarType>(),
-    numRowCols_(numRowCols_in), stride_(numRowCols_in), valuesCopied_(false), upper_(false), UPLO_('L')
+  : numRowCols_(numRowCols_in), stride_(numRowCols_in), valuesCopied_(false), upper_(false), UPLO_('L')
 {
-  values_ = new ScalarType[stride_*numRowCols_];
+  values_ = allocateValues(stride_, numRowCols_);
   valuesCopied_ = true;
-  if (zeroOut == true)
-    putScalar( Teuchos::ScalarTraits<ScalarType>::zero(), true );
+  if (zeroOut) {
+    const ScalarType ZERO = Teuchos::ScalarTraits<ScalarType>::zero();
+    putScalar(ZERO, true);
+  }
 }
 
 template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
   DataAccess CV, bool upper_in, ScalarType* values_in, OrdinalType stride_in, OrdinalType numRowCols_in
   )
-  : CompObject(), BLAS<OrdinalType,ScalarType>(), 
-    numRowCols_(numRowCols_in), stride_(stride_in), valuesCopied_(false),
+  : numRowCols_(numRowCols_in), stride_(stride_in), valuesCopied_(false),
     values_(values_in), upper_(upper_in)
 {
   if (upper_)
@@ -470,16 +476,15 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
   if(CV == Copy)
   {
     stride_ = numRowCols_;
-    values_ = new ScalarType[stride_*numRowCols_];
+    values_ = allocateValues(stride_, numRowCols_);
     copyMat(upper_in, values_in, stride_in, numRowCols_, upper_, values_, stride_, 0);
     valuesCopied_ = true;
   }
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const SerialSymDenseMatrix<OrdinalType, ScalarType> &Source) 
-  : CompObject(), BLAS<OrdinalType,ScalarType>(), 
-    numRowCols_(Source.numRowCols_), stride_(0), valuesCopied_(true), 
+SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const SerialSymDenseMatrix<OrdinalType, ScalarType> &Source)
+  : numRowCols_(Source.numRowCols_), stride_(0), valuesCopied_(true),
     values_(0), upper_(Source.upper_), UPLO_(Source.UPLO_)
 {
   if (!Source.valuesCopied_)
@@ -491,13 +496,13 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const Serial
   else
   {
     stride_ = numRowCols_;
-    const OrdinalType newsize = stride_ * numRowCols_;
-    if(newsize > 0) {
-      values_ = new ScalarType[newsize];
+    if(stride_ > 0 && numRowCols_ > 0) {
+      values_ = allocateValues(stride_, numRowCols_);
       copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_, upper_, values_, stride_, 0);
     }
     else {
-      numRowCols_ = 0; stride_ = 0;
+      numRowCols_ = 0;
+      stride_ = 0;
       valuesCopied_ = false;
     }
   }
@@ -513,7 +518,7 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
   if(CV == Copy)
   {
     stride_ = numRowCols_in;
-    values_ = new ScalarType[stride_ * numRowCols_in];
+    values_ = allocateValues(stride_, numRowCols_in);
     copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_in, upper_, values_, stride_, startRowCol);
     valuesCopied_ = true;
   }
@@ -539,7 +544,7 @@ int SerialSymDenseMatrix<OrdinalType, ScalarType>::shape( OrdinalType numRowCols
   deleteArrays(); // Get rid of anything that might be already allocated
   numRowCols_ = numRowCols_in;
   stride_ = numRowCols_;
-  values_ = new ScalarType[stride_*numRowCols_];
+  values_ = allocateValues(stride_, numRowCols_);
   putScalar( Teuchos::ScalarTraits<ScalarType>::zero(), true );
   valuesCopied_ = true;
   return(0);
@@ -551,7 +556,7 @@ int SerialSymDenseMatrix<OrdinalType, ScalarType>::shapeUninitialized( OrdinalTy
   deleteArrays(); // Get rid of anything that might be already allocated
   numRowCols_ = numRowCols_in;
   stride_ = numRowCols_;
-  values_ = new ScalarType[stride_*numRowCols_];
+  values_ = allocateValues(stride_, numRowCols_);
   valuesCopied_ = true;
   return(0);
 }
@@ -560,8 +565,8 @@ template<typename OrdinalType, typename ScalarType>
 int SerialSymDenseMatrix<OrdinalType, ScalarType>::reshape( OrdinalType numRowCols_in )
 {
   // Allocate space for new matrix
-  ScalarType* values_tmp = new ScalarType[numRowCols_in * numRowCols_in];
-  ScalarType zero = ScalarTraits<ScalarType>::zero();
+  ScalarType* values_tmp = allocateValues(numRowCols_in, numRowCols_in);
+  const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
   for(OrdinalType k = 0; k < numRowCols_in * numRowCols_in; k++)
   {
     values_tmp[k] = zero;
@@ -713,9 +718,8 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::operator=( const SerialSymDenseMa
       stride_ = Source.numRowCols_;
       upper_ = Source.upper_;
       UPLO_ = Source.UPLO_;
-      const OrdinalType newsize = stride_ * numRowCols_;
-      if(newsize > 0) {
-        values_ = new ScalarType[newsize];
+      if(stride_ > 0 && numRowCols_ > 0) {
+        values_ = allocateValues(stride_, numRowCols_);
         valuesCopied_ = true;
       }
       else {
@@ -735,9 +739,8 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::operator=( const SerialSymDenseMa
         stride_ = Source.numRowCols_;
         upper_ = Source.upper_;
         UPLO_ = Source.UPLO_;
-        const OrdinalType newsize = stride_ * numRowCols_;
-        if(newsize > 0) {
-          values_ = new ScalarType[newsize];
+        if(stride_ > 0 && numRowCols_ > 0) {
+          values_ = allocateValues(stride_, numRowCols_);
           valuesCopied_ = true;
         }
       }
@@ -1010,7 +1013,11 @@ int SerialSymDenseMatrix<OrdinalType, ScalarType>::scale( const SerialSymDenseMa
 */
 
 template<typename OrdinalType, typename ScalarType>
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
 void SerialSymDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
+#else
+std::ostream& SerialSymDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
+#endif
 {
   os << std::endl;
   if(valuesCopied_)
@@ -1033,6 +1040,9 @@ void SerialSymDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) cons
       os << std::endl;
     }
   }
+#ifdef TEUCHOS_HIDE_DEPRECATED_CODE
+  return os;
+#endif
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -1184,6 +1194,35 @@ std::ostream& operator<< (std::ostream& os, const Teuchos::SerialSymDenseMatrix<
   return os;
 }
 #endif
+
+/// \brief Ostream manipulator for SerialSymDenseMatrix
+template<typename OrdinalType, typename ScalarType>
+struct SerialSymDenseMatrixPrinter {
+public:
+  const SerialSymDenseMatrix<OrdinalType,ScalarType> &obj;
+  SerialSymDenseMatrixPrinter(
+        const SerialSymDenseMatrix<OrdinalType,ScalarType> &obj_in)
+      : obj(obj_in) {}
+};
+
+/// \brief Output SerialSymDenseMatrix object through its stream manipulator.
+template<typename OrdinalType, typename ScalarType>
+std::ostream&
+operator<<(std::ostream &out,
+           const SerialSymDenseMatrixPrinter<OrdinalType,ScalarType> printer)
+{
+  printer.obj.print(out);
+  return out;
+}
+
+/// \brief Return SerialSymDenseMatrix ostream manipulator Use as:
+template<typename OrdinalType, typename ScalarType>
+SerialSymDenseMatrixPrinter<OrdinalType,ScalarType>
+printMat(const SerialSymDenseMatrix<OrdinalType,ScalarType> &obj)
+{
+  return SerialSymDenseMatrixPrinter<OrdinalType,ScalarType>(obj);
+}
+
 
 } // namespace Teuchos
 

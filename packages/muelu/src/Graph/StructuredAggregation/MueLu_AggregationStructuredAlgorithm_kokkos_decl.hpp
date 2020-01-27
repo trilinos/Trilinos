@@ -70,9 +70,9 @@ namespace MueLu {
     All the parameters needed are passed to this class by the StructuredAggregationFactory class.
   */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class AggregationStructuredAlgorithm_kokkos :
     public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_KOKKOS_SHORT
@@ -80,16 +80,16 @@ namespace MueLu {
 
   public:
 
-    typedef typename LWGraph_kokkos::local_graph_type local_graph_type;
-    typedef typename local_graph_type::row_map_type::non_const_type non_const_row_map_type;
-    typedef typename local_graph_type::size_type size_type;
-    typedef typename local_graph_type::entries_type entries_type;
-    typedef typename local_graph_type::device_type::execution_space execution_space;
-    typedef typename local_graph_type::device_type::memory_space memory_space;
+    using local_graph_type       = typename LWGraph_kokkos::local_graph_type;
+    using non_const_row_map_type = typename local_graph_type::row_map_type::non_const_type;
+    using size_type              = typename local_graph_type::size_type;
+    using entries_type           = typename local_graph_type::entries_type;
+    using execution_space        = typename local_graph_type::device_type::execution_space;
+    using memory_space           = typename local_graph_type::device_type::memory_space;
 
-    typedef decltype(std::declval<LOVector>().template getLocalView<memory_space>()) LOVectorView;
-    typedef typename Kokkos::View<const int[3], memory_space> constIntTupleView;
-    typedef typename Kokkos::View<const LO[3],  memory_space> constLOTupleView;
+    using LOVectorView      = decltype(std::declval<LOVector>().template getLocalView<memory_space>());
+    using constIntTupleView = typename Kokkos::View<const int[3], memory_space>;
+    using constLOTupleView  = typename Kokkos::View<const LO[3],  memory_space>;
 
     //! @name Constructors/Destructors.
     //@{
@@ -106,22 +106,20 @@ namespace MueLu {
     //! @name Aggregation methods.
     //@{
 
-    /*! @brief Local aggregation. */
+    /*! @brief Build aggregates object. */
 
-    void BuildAggregates(const Teuchos::ParameterList& /* params */, const LWGraph_kokkos& /* graph */,
-                         Aggregates_kokkos& /* aggregates */,
-                         std::vector<unsigned>& /* aggStat */,
-                         LO& /* numNonAggregatedNodes */) const {};
-
-    void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph,
+    void BuildAggregates(const Teuchos::ParameterList& params,
+                         const LWGraph_kokkos& graph,
                          Aggregates_kokkos& aggregates,
                          Kokkos::View<unsigned*, memory_space>& aggStat,
                          LO& numNonAggregatedNodes) const;
 
-    /*! @brief Local aggregation. */
+    /*! @brief Build a CrsGraph instead of aggregates. */
 
-    void BuildGraph(const LWGraph_kokkos& graph, RCP<IndexManager_kokkos>& geoData,
-                    const LO dofsPerNode, RCP<CrsGraph>& myGraph) const;
+    void BuildGraph(const LWGraph_kokkos& graph,
+                    RCP<IndexManager_kokkos>& geoData,
+                    const LO dofsPerNode,
+                    RCP<CrsGraph>& myGraph) const;
     //@}
 
     std::string description() const { return "Aggretation: structured algorithm"; }

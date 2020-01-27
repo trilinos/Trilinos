@@ -41,7 +41,7 @@
  * Written By: Gary L. Hennigan (SNL, 1421)
  *****************************************************************************
  * Functions contained in this file:
- *	main() - Entry point and main calling program.
+ *      main() - Entry point and main calling program.
  */
 /*****************************************************************************/
 /*****************************************************************************/
@@ -506,7 +506,7 @@ int ne_test_piinf(int fileid)
 {
   char ftype[3];
 
-  strcpy(ftype, "s");
+  ex_copy_string(ftype, "s", 3);
 
   return (ne_put_init_info(fileid, NPROC, NPROCF, ftype));
 }

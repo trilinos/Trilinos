@@ -13,10 +13,10 @@ using namespace Tacho;
 
 TEST( TaskFunctor, MemoryPool ) {
   TEST_BEGIN;
-  typedef Kokkos::TaskScheduler<HostSpaceType> sched_type;
+  typedef Kokkos::TaskScheduler<HostSpaceType> scheduler_type;
   typedef Kokkos::MemoryPool<HostSpaceType> memory_pool_type;
   
-  typedef typename sched_type::memory_space memory_space;
+  typedef typename scheduler_type::memory_space memory_space;
 
   typedef TaskFunctor_MemoryPool_Allocate<HostSpaceType> functor_allocate;
   typedef TaskFunctor_MemoryPool_Deallocate<HostSpaceType> functor_deallocate;
@@ -29,7 +29,7 @@ TEST( TaskFunctor, MemoryPool ) {
   enum { MaxBlockSize   = 1024 };
   enum { SuperBlockSize = 1u << 12 };
   
-  sched_type sched( memory_space()
+  scheduler_type sched( memory_space()
                     , MemoryCapacity
                     , MinBlockSize
                     , MaxBlockSize

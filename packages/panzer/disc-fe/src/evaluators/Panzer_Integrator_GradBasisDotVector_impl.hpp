@@ -196,7 +196,7 @@ namespace panzer
     // Get the Kokkos::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
-    Device::fence();
+    Device().fence();
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);

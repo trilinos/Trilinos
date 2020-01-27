@@ -106,13 +106,13 @@ struct GetEntryOnHost<ViewType, IndexType, false> {
 #ifdef KOKKOS_ENABLE_CUDA
     typedef typename device_type::memory_space dev_memory_space;
     if (std::is_same<dev_memory_space, Kokkos::CudaUVMSpace>::value) {
-      dev_exec_space::fence (); // for UVM's sake.
+      dev_exec_space().fence (); // for UVM's sake.
     }
 #endif // KOKKOS_ENABLE_CUDA
     Kokkos::deep_copy (view_h, view_d);
 #ifdef KOKKOS_ENABLE_CUDA
     if (std::is_same<dev_memory_space, Kokkos::CudaUVMSpace>::value) {
-      dev_exec_space::fence (); // for UVM's sake.
+      dev_exec_space().fence (); // for UVM's sake.
     }
 #endif // KOKKOS_ENABLE_CUDA
     return val;

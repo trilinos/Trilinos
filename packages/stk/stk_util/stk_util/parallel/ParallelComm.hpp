@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,6 +37,7 @@
 
 #include <cstddef>                      // for size_t, ptrdiff_t
 #include <vector>
+#include <map>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/ReportHandler.hpp> // for ThrowAssertMsg
 
@@ -68,6 +70,11 @@ public:
   /** Pack a value to be sent:  buf.pack<type>( value ) */
   template<typename T> CommBuffer &pack( const T & value );
 
+  CommBuffer &pack( const std::string & value );
+
+  template<typename K, typename V>
+  CommBuffer &pack( const std::map<K,V> & value );
+
 private:
   /** Do not try to pack a pointer for global communication */
   template<typename T> CommBuffer &pack( const T* value ) {
@@ -83,6 +90,11 @@ public:
   /** Unpack a received value:  buf.unpack<type>( value ) */
   template<typename T> CommBuffer &unpack( T & value );
 
+  CommBuffer &unpack( std::string& value );
+
+  template<typename K, typename V>
+  CommBuffer &unpack( std::map<K,V> & value );
+
   /** Unpack an array of received values:  buf.unpack<type>( ptr , num ) */
   template<typename T> CommBuffer &unpack( T * value , size_t number );
 
@@ -91,6 +103,11 @@ public:
 
   /** Peek at an array of received values: buf.peek<type>( ptr , num ) */
   template<typename T> CommBuffer &peek( T * value , size_t number );
+
+  CommBuffer &peek( std::string& value );
+
+  template<typename K, typename V>
+  CommBuffer &peek( std::map<K,V> & value );
 
   /** Skip buffer ahead by a number of values. */
   template<typename T> CommBuffer &skip( size_t number );
@@ -214,6 +231,31 @@ CommBuffer &CommBuffer::pack( const T & value )
   return *this;
 }
 
+inline
+CommBuffer &CommBuffer::pack( const std::string & value )
+{
+  size_t length = value.length();
+  pack(length);
+  pack(value.c_str(), length);
+  return *this;
+}
+
+template<typename K, typename V>
+inline
+CommBuffer &CommBuffer::pack( const std::map<K,V> & value )
+{
+  size_t ns = value.size();
+  pack(ns);
+
+  for (auto && s : value)
+  {
+    pack(s.first);
+    pack(s.second);
+  }
+
+  return *this;
+}
+
 template<typename T>
 inline
 CommBuffer &CommBuffer::pack( const T * value , size_t number )
@@ -256,6 +298,39 @@ CommBuffer &CommBuffer::unpack( T & value )
   return *this;
 }
 
+inline
+CommBuffer &CommBuffer::unpack( std::string & value )
+{
+  size_t length;
+  unpack(length);
+  std::vector<char> chars(length);
+  unpack(chars.data(), length);
+  value.assign(chars.data(), length);
+  return *this;
+}
+
+template<typename K, typename V>
+inline
+CommBuffer &CommBuffer::unpack( std::map<K,V> & value )
+{
+  value.clear();
+
+  size_t ns;
+  unpack(ns);
+
+  for (size_t i = 0; i < ns; ++i)
+  {
+    K key;
+    unpack(key);
+
+    V val;
+    unpack(val);
+
+    value[key] = val;
+  }
+  return *this;
+}
+
 template<typename T>
 inline
 CommBuffer &CommBuffer::unpack( T * value , size_t number )
@@ -287,6 +362,28 @@ CommBuffer &CommBuffer::peek( T & value )
   value = *tmp ;
   if ( m_end < reinterpret_cast<ucharp>(++tmp) ) { unpack_overflow(); }
   return *this;
+}
+
+inline
+CommBuffer &CommBuffer::peek( std::string& value )
+{
+  size_t length;
+  peek(length);
+
+  size_t offset = sizeof(size_t);
+  std::vector<char> chars(offset+length);
+  peek(chars.data(), chars.size());
+
+  value.assign(&chars[offset], length);
+
+  return *this;
+}
+
+template<typename K, typename V>
+inline
+CommBuffer &CommBuffer::peek( std::map<K,V> & value )
+{
+  throw std::runtime_error("Peek not implemented for std::map");
 }
 
 template<typename T>
@@ -334,6 +431,7 @@ template<typename T>
 void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
                               std::vector< std::vector<T> > &recv_lists,
                               MPI_Comm &mpi_communicator ) {
+#ifdef STK_HAS_MPI
   //
   //  Determine the number of processors involved in this communication
   //
@@ -379,6 +477,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
       MPI_Wait( &recv_handles[iproc], &status );
     }
   }
+#endif
 }
 
 //

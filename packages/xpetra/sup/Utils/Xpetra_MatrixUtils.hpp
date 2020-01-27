@@ -64,7 +64,10 @@
 #include "Xpetra_IO.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
+#include "Xpetra_TpetraMultiVector.hpp"
 #include <Tpetra_RowMatrixTransposer.hpp>
+#include <Tpetra_Details_extractBlockDiagonal.hpp>
+#include <Tpetra_Details_scaleBlockDiagonal.hpp>
 #endif
 
 namespace Xpetra {
@@ -90,9 +93,6 @@ public:
 
   static Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpetraGidNumbering2ThyraGidNumbering(
       const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& input) {
-    typedef Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>  MapUtils;
-    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  MultiVector;
-    typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>  MultiVectorFactory;
     RCP<const Map> map = MapUtils::shrinkMapGIDs(*(input.getMap()),*(input.getMap()));
     RCP<MultiVector> ret = MultiVectorFactory::Build(map, input.getNumVectors(), true);
     for (size_t c = 0; c < input.getNumVectors(); c++) {
@@ -199,10 +199,6 @@ public:
                        Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domainMapExtractor,
                        Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > columnMapExtractor = Teuchos::null,
                        bool bThyraMode = false) {
-    typedef Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>  MapUtils;
-    typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
-    typedef Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorFactory;
-    typedef Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>  MatrixUtils;
 
     size_t numRows  = rangeMapExtractor->NumMaps();
     size_t numCols  = domainMapExtractor->NumMaps();
@@ -597,6 +593,46 @@ public:
     A = newA;
     A->fillComplete();
   }
+
+
+  // Extracting the block diagonal of a matrix
+  static void extractBlockDiagonal(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A,
+                                   Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & diagonal) {
+    const UnderlyingLib lib = A.getRowMap()->lib();
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::extractBlockDiagonal not available for Epetra."));
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & At = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+        Tpetra::MultiVector<SC,LO,GO,NO> &     Dt = Xpetra::toTpetra(diagonal);
+        Tpetra::Details::extractBlockDiagonal(At,Dt);
+#endif // HAVE_XPETRA_TPETRA
+      }
+  }
+
+  // Inverse scaling by a block-diagonal matrix
+  static void inverseScaleBlockDiagonal(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & blockDiagonal,
+					bool doTranspose,
+					Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & toBeScaled) {
+                            
+    const UnderlyingLib lib = blockDiagonal.getMap()->lib();
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::inverseScaleBlockDiagonal not available for Epetra."));
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        const Tpetra::MultiVector<SC,LO,GO,NO> & Dt = Xpetra::toTpetra(blockDiagonal);
+        Tpetra::MultiVector<SC,LO,GO,NO> &       St = Xpetra::toTpetra(toBeScaled);
+        Tpetra::Details::inverseScaleBlockDiagonal(Dt,doTranspose,St);
+#endif // HAVE_XPETRA_TPETRA
+      }
+  }
+
 
 };
 

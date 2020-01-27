@@ -54,13 +54,17 @@
 
 namespace { // (anonymous)
 
-// We can't assume C++14 yet, so we can't have templated constants.
+// helper for detecting views that have Cuda memory
+// Technically, UVM should not be here, but it seems we
+// treat UVM as CudaSpace, so I have left it. With Cuda >= 8 on Linux
+// UVM is handled by page faults in the Kernel, so it should always
+// be addressable.
 template<class ViewType>
-struct view_is_cuda_uvm {
+struct view_uses_cuda_spaces {
   static constexpr bool value =
 #ifdef KOKKOS_ENABLE_CUDA
-    std::is_same<typename ViewType::memory_space,
-                 Kokkos::CudaUVMSpace>::value;
+      std::is_same<typename ViewType::memory_space, Kokkos::CudaSpace>::value
+   || std::is_same<typename ViewType::memory_space, Kokkos::CudaUVMSpace>::value;
 #else
     false;
 #endif // KOKKOS_ENABLE_CUDA
@@ -182,17 +186,29 @@ allReduceView (const OutputViewType& output,
     return;
   }
 
-  // We've had some experience that some MPI implementations do not
-  // perform well with UVM allocations.
-  const bool assumeMpiCanAccessBuffers =
-    ! view_is_cuda_uvm<OutputViewType>::value &&
-    ! view_is_cuda_uvm<InputViewType>::value &&
-    ::Tpetra::Details::Behavior::assumeMpiIsCudaAware ();
+  // we must esnure MPI can handle the pointers we pass it
+  // if CudaAware, we are done
+  // otherwise, if the views use Cuda, then we should copy them
+  const bool mpiCannotAccessBuffers =
+    // if assumeMpiIsCudaAware, then we can access cuda buffers
+    ! ::Tpetra::Details::Behavior::assumeMpiIsCudaAware ()
+    && (
+         view_uses_cuda_spaces<OutputViewType>::value
+         ||
+         view_uses_cuda_spaces<InputViewType>::value 
+        );
 
   const bool needContiguousTemporaryBuffers =
-    ! assumeMpiCanAccessBuffers ||
-    ::Tpetra::Details::isInterComm (comm) ||
-    output.span_is_contiguous () || input.span_is_contiguous ();
+    // we must alloc/copy if MPI cannot access the buffers
+    mpiCannotAccessBuffers                ||
+    // If the comm is Inter and the views alias we must alloc/copy
+    (::Tpetra::Details::isInterComm (comm)
+     &&
+     viewsAlias)                          ||
+    // if either view is not contiguous then we must alloc/copy
+    ! output.span_is_contiguous ()        ||
+    ! input.span_is_contiguous ();
+
   if (needContiguousTemporaryBuffers) {
     auto output_tmp = makeContiguousBuffer (output);
     auto input_tmp = makeContiguousBuffer (input);

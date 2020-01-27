@@ -1331,7 +1331,7 @@ namespace Teuchos
     std::vector<std::complex<float> > w (n);
     std::complex<float>* w_rawPtr = (n == 0) ? NULL : &w[0];
     GEEV (JOBVL, JOBVR, n, A, lda, w_rawPtr, VL, ldvl, VR, ldvr, WORK, lwork, RWORK, info);
-    if (info == 0) {
+    if (*info == 0) {
       // The eigenvalues are only valid on output if INFO is zero.
       // Otherwise, we shouldn't even write to WR or WI.
       for (int k = 0; k < n; ++k) {
@@ -1362,7 +1362,7 @@ namespace Teuchos
     std::vector<std::complex<float> > w (n);
     std::complex<float>* w_rawPtr = (n == 0) ? NULL : &w[0];
     GGEVX(BALANC, JOBVL, JOBVR, SENSE, n, A, lda, B, ldb, w_rawPtr, BETA, VL, ldvl, VR, ldvr, ilo, ihi, lscale, rscale, abnrm, bbnrm, RCONDE, RCONDV, WORK, lwork, RWORK, IWORK, BWORK, info);
-    if (info == 0) {
+    if (*info == 0) {
       // The eigenvalues are only valid on output if INFO is zero.
       // Otherwise, we shouldn't even write to WR or WI.
       for (int k = 0; k < n; ++k) {
@@ -1781,7 +1781,7 @@ namespace Teuchos
     std::vector<std::complex<double> > w (n);
     std::complex<double>* w_rawPtr = (n == 0) ? NULL : &w[0];
     GEEV (JOBVL, JOBVR, n, A, lda, w_rawPtr, VL, ldvl, VR, ldvr, WORK, lwork, RWORK, info);
-    if (info == 0) {
+    if (*info == 0) {
       // The eigenvalues are only valid on output if INFO is zero.
       // Otherwise, we shouldn't even write to WR or WI.
       for (int k = 0; k < n; ++k) {
@@ -1811,7 +1811,7 @@ namespace Teuchos
     std::vector<std::complex<double> > w (n);
     std::complex<double>* w_rawPtr = (n == 0) ? NULL : &w[0];
     GGEVX(BALANC, JOBVL, JOBVR, SENSE, n, A, lda, B, ldb, w_rawPtr, BETA, VL, ldvl, VR, ldvr, ilo, ihi, lscale, rscale, abnrm, bbnrm, RCONDE, RCONDV, WORK, lwork, RWORK, IWORK, BWORK, info);
-    if (info == 0) {
+    if (*info == 0) {
       // The eigenvalues are only valid on output if INFO is zero.
       // Otherwise, we shouldn't even write to WR or WI.
       for (int k = 0; k < n; ++k) {

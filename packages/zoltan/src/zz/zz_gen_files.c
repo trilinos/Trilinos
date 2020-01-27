@@ -326,6 +326,25 @@ int gen_geom, int gen_graph, int gen_hg)
   fflush(fp);
   fclose(fp);
 
+  sprintf(full_fname, "%s.gids", fname);
+  if (zz->Proc == 0)
+    fp = fopen(full_fname, "w");
+  else
+    fp = fopen(full_fname, "a");
+  if (fp==NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Could not open file for writing.\n");
+    error = ZOLTAN_FATAL;
+    goto End;
+  }
+  for (i=0; i<num_obj; i++) {
+    int j;
+    for (j = 0; j < lenGID; j++)
+      fprintf(fp, ZOLTAN_ID_SPEC" ", global_ids[i*lenGID+j]);
+    fprintf(fp, "\n");
+  }
+  fflush(fp);
+  fclose(fp);
+
   /* Write geometry to file, if applicable. */
   if (gen_geom){
     sprintf(full_fname, "%s.coords", fname);

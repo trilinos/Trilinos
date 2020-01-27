@@ -15,6 +15,7 @@
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/environment/FileUtils.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <stk_util/util/string_utils.hpp>
 
 #include <string>
 #include <iostream>
@@ -64,7 +65,7 @@ std::string get_examples(const std::string &executableName)
 
 ParsedOptions parse_m2n_command_line(int argc, const char**argv, stk::CommandLineParserParallel &commandLine, MPI_Comm comm)
 {
-    std::string execName = stk::util::tailname(argv[0]);
+    std::string execName = stk::tailname(argv[0]);
     stk::parse_command_line(argc, argv, get_quick_example(execName, comm), get_examples(execName), commandLine, comm);
 
     std::string inFile = commandLine.get_option_value<std::string>(m2nOptions.infile.name);
@@ -82,9 +83,10 @@ void rebalance_m_to_n(ParsedOptions &parsedOptions, MPI_Comm comm)
     stk::mesh::Field<double> &field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
     stk::mesh::put_field_on_mesh(field, meta.universal_part(), (double*)nullptr);
 
-    stk::io::fill_mesh(parsedOptions.inFile, bulk);
+    stk::io::StkMeshIoBroker ioBroker;
+    stk::io::fill_mesh_preexisting(ioBroker, parsedOptions.inFile, bulk);
 
-    stk::balance::internal::rebalanceMtoN(bulk, field, parsedOptions.targetNumProcs, parsedOptions.inFile);
+    stk::balance::internal::rebalanceMtoN(ioBroker, field, parsedOptions.targetNumProcs, parsedOptions.inFile);
 }
 
 }

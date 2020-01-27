@@ -42,90 +42,119 @@
 #ifndef _FROSCH_COARSESPACE_DECL_HPP
 #define _FROSCH_COARSESPACE_DECL_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
 //#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
 #include <FROSch_Tools_def.hpp>
 
+
 namespace FROSch {
     
-    template <class SC = Xpetra::Operator<>::scalar_type,
-    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    template <class SC = double,
+              class LO = int,
+              class GO = DefaultGlobalOrdinal,
+              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
     class CoarseSpace {
+
+    protected:
+
+        using CommPtr                   = RCP<const Comm<int> >;
         
+        using XMap                      = Map<LO,GO,NO>;
+        using XMapPtr                   = RCP<XMap>;
+        using ConstXMapPtr              = RCP<const XMap>;
+        using XMapPtrVec                = Array<XMapPtr>;
+        using ConstXMapPtrVec           = Array<ConstXMapPtr>;
+
+        using XMatrix                   = Matrix<SC,LO,GO,NO>;
+        using XMatrixPtr                = RCP<XMatrix>;
+
+        using XMultiVector              = MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr           = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr      = RCP<const XMultiVector>;
+        using ConstXMultiVectorPtrVec   = Array<ConstXMultiVectorPtr>;
+        
+        using ParameterListPtr          = RCP<ParameterList>;
+
+        using UN                        = unsigned;
+        using UNVec                     = Array<UN>;
+        using ConstUNVecView            = ArrayView<const UN>;
+
+        using LOVec                     = Array<LO>;
+        using LOVecPtr                  = ArrayRCP<LO>;
+        using LOVecPtr2D                = ArrayRCP<LOVecPtr>;
+        
+        using GOVec                     = Array<GO>;
+
+        using SCVec                     = Array<SC>;
+        using ConstSCVecPtr             = ArrayRCP<const SC>;
+
     public:
-        
-        typedef Xpetra::Map<LO,GO,NO> Map;
-        typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::RCP<const Map> ConstMapPtr;
-        typedef Teuchos::Array<MapPtr> MapPtrVec;
-        
-        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
-        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
-        
-        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
-        typedef Teuchos::Array<MultiVectorPtr> MultiVectorPtrVec;
-        
-        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
-        
-        typedef unsigned UN;
-        
-        typedef Teuchos::Array<LO> LOVec;
-        typedef Teuchos::Array<GO> GOVec;        
-        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
-        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
-        
-        typedef Teuchos::Array<SC> SCVec;
-        
-        
-        CoarseSpace();
-        
-        int addSubspace(MapPtr subspaceBasisMap,
-                        MultiVectorPtr subspaceBasis = Teuchos::null);
-        
+
+        CoarseSpace(CommPtr mpiComm,
+                    CommPtr serialComm);
+
+        int addSubspace(ConstXMapPtr subspaceBasisMap,
+                        ConstXMapPtr subspaceBasisMapUnique = null,
+                        ConstXMultiVectorPtr subspaceBasis = null,
+                        UN offset = 0);
+
         int assembleCoarseSpace();
-        
-        int buildGlobalBasisMatrix(ConstMapPtr rowMap,
-                                   ConstMapPtr repeatedMap,
+
+        int buildGlobalBasisMatrix(ConstXMapPtr rowMap,
+                                   ConstXMapPtr rangeMap,
+                                   ConstXMapPtr repeatedMap,
                                    SC treshold);
-        
+
         int clearCoarseSpace();
-        
+
         int checkForLinearDependencies();
+
+        bool hasUnassembledMaps() const;
         
         bool hasBasisMap() const;
+
+        ConstXMapPtr getBasisMap() const;
         
-        MapPtr getBasisMap() const;
-        
+        bool hasBasisMapUnique() const;
+
+        ConstXMapPtr getBasisMapUnique() const;
+
         bool hasAssembledBasis() const;
-        
-        MultiVectorPtr getAssembledBasis() const;
-        
+
+        ConstXMultiVectorPtr getAssembledBasis() const;
+
+        ConstUNVecView getLocalSubspaceSizes() const;
+
         bool hasGlobalBasisMatrix() const;
+
+        XMatrixPtr getGlobalBasisMatrix() const;
+
+    protected:        
+
+        CommPtr MpiComm_;
+        CommPtr SerialComm_;
         
-        CrsMatrixPtr getGlobalBasisMatrix() const;
+        ConstXMapPtrVec UnassembledBasesMaps_ = ConstXMapPtrVec(0);
+        ConstXMapPtrVec UnassembledBasesMapsUnique_ = ConstXMapPtrVec(0);
+
+        ConstXMultiVectorPtrVec UnassembledSubspaceBases_ = ConstXMultiVectorPtrVec(0);
         
-    protected:
+        LOVec Offsets_ = LOVec(0);
         
-        ConstMapPtr SerialRowMap_;
+        ConstXMapPtr AssembledBasisMap_;
+        ConstXMapPtr AssembledBasisMapUnique_;
+
+        XMultiVectorPtr AssembledBasis_;
+
+        UNVec LocalSubspacesSizes_ = UNVec(0);
         
-        MapPtrVec UnassembledBasesMaps_;
-        
-        MultiVectorPtrVec UnassembledSubspaceBases_;
-        
-        MapPtr AssembledBasisMap_;
-        
-        MultiVectorPtr AssembledBasis_;
-        
-        CrsMatrixPtr GlobalBasisMatrix_;
-        
+        XMatrixPtr GlobalBasisMatrix_;
     };
-    
+
 }
 
 #endif

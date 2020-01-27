@@ -18,6 +18,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -25,7 +26,7 @@ Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -40,16 +41,17 @@ lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesRandom (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
+BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
 aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
+aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = serial   [default]
 aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -153,6 +155,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -160,7 +163,7 @@ Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -175,16 +178,17 @@ lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesRandom (Phase 1 (main))
+BuildAggregatesRandom (Phase 2a (secondary))
+BuildAggregatesRandom (Phase 2b (expansion))
+BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 2   [default]
 aggregation: max selected neighbors = 0   [default]
 aggregation: ordering = natural   [default]
+aggregation: deterministic = 0   [default]
+aggregation: coloring algorithm = serial   [default]
 aggregation: enable phase 1 = 1   [default]
-aggregation: phase 1 algorithm = Serial   [default]
 aggregation: enable phase 2a = 1   [default]
 aggregation: enable phase 2b = 1   [default]
 aggregation: enable phase 3 = 1   [default]
@@ -276,25 +280,25 @@ repartition: use subcommunicators = 1   [default]
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.45
-Smoother complexity = 1.78
+Operator complexity = <ignored>
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  4  
-  1  3335  10015  3.00     3.00         4  
-  2  1112  3340   3.00     3.00         1  
+  <ignored>  
+  <ignored>  
+  <ignored>  
 
-Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>}
 
-Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>}
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 
 Clearing old data (if any)
 Level 0
-Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995})
+Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>})
 keep smoother data = 1
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -312,12 +316,13 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -381,7 +386,7 @@ matrixmatrix: kernel params ->
 
 repartition: use subcommunicators = 1   [default]
 
-Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015})
+Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>})
 keep smoother data = 1
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -399,12 +404,13 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
+Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
 
 algorithm = "classical": threshold = 0, blocksize = 1
@@ -474,19 +480,92 @@ repartition: use subcommunicators = 1   [default]
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.45
-Smoother complexity = 1.78
+Operator complexity = <ignored>
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  4  
-  1  3335  10015  3.00     3.00         4  
-  2  1112  3340   3.00     3.00         1  
+  <ignored>  
+  <ignored>  
+  <ignored>  
 
-Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>}
 
-Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: <ignored>, Global nnz: <ignored>}
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
+
+Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
+keep smoother data = 1
+PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+presmoother -> 
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
+
+Build (MueLu::RebalanceTransferFactory)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+Using original prolongator
+repartition: rebalance P and R = 0
+repartition: rebalance Nullspace = 1   [default]
+transpose: use implicit = 0   [default]
+repartition: use subcommunicators = 1   [default]
+type = Interpolation
+write start = -1   [default]
+write end = -1   [default]
+
+Build (MueLu::RebalanceTransferFactory)
+Transpose P (MueLu::TransPFactory)
+matrixmatrix: kernel params -> 
+ [empty list]
+
+Using original restrictor
+repartition: rebalance P and R = 0
+repartition: rebalance Nullspace = 1   [default]
+transpose: use implicit = 0   [default]
+repartition: use subcommunicators = 1   [default]
+type = Restriction
+write start = -1   [default]
+write end = -1   [default]
+
+Computing Ac (MueLu::RebalanceAcFactory)
+Computing Ac (MueLu::RAPFactory)
+Reusing previous AP data
+Reusing previous RAP data
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
+Build (MueLu::CoordinatesTransferFactory_kokkos)
+Transferring coordinates
+Reusing coordinates
+write start = -1   [default]
+write end = -1   [default]
+structured aggregation = 0   [default]
+
+transpose: use implicit = 0   [default]
+rap: triple product = 0   [default]
+rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
+CheckMainDiagonal = 0   [default]
+RepairMainDiagonal = 0   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+Replacing maps with a subcommunicator
+repartition: use subcommunicators = 1   [default]
+
+Setup Smoother (<Direct> solver interface)
+keep smoother data = 1
+PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+presmoother -> 
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 

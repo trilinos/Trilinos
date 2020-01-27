@@ -78,5 +78,9 @@
 /* Define if Stratimikos is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
 
-/* Define if Avatar is enabled in TrilinosCouplings */
+/* Special logic for avatar */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_AVATART
 #cmakedefine HAVE_TRILINOSCOUPLINGS_AVATAR
+#if defined(HAVE_TRILINOSCOUPLINGS_AVATART)
+ #define HAVE_TRILINOSCOUPLINGS_AVATAR
+#endif

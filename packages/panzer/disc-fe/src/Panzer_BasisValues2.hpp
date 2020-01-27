@@ -62,15 +62,15 @@ namespace panzer {
   template <typename Scalar>
   class BasisValues2 { 
   public:
-    typedef typename ArrayTraits<Scalar,PHX::MDField<Scalar,void,void,void,void,void,void,void,void> >::size_type size_type;
+    typedef typename ArrayTraits<Scalar,PHX::MDField<Scalar> >::size_type size_type;
 
     typedef PHX::MDField<Scalar> ArrayDynamic;
-    typedef PHX::MDField<Scalar,BASIS,IP,void,void,void,void,void,void> Array_BasisIP;
-    typedef PHX::MDField<Scalar,Cell,BASIS,IP,void,void,void,void,void> Array_CellBasisIP;
-    typedef PHX::MDField<Scalar,BASIS,IP,Dim,void,void,void,void,void> Array_BasisIPDim;
-    typedef PHX::MDField<Scalar,Cell,BASIS,IP,Dim,void,void,void,void> Array_CellBasisIPDim;
-    typedef PHX::MDField<Scalar,BASIS,Dim,void,void,void,void,void,void> Array_BasisDim;
-    typedef PHX::MDField<Scalar,Cell,BASIS,Dim,void,void,void,void,void> Array_CellBasisDim;
+    typedef PHX::MDField<Scalar,BASIS,IP> Array_BasisIP;
+    typedef PHX::MDField<Scalar,Cell,BASIS,IP> Array_CellBasisIP;
+    typedef PHX::MDField<Scalar,BASIS,IP,Dim> Array_BasisIPDim;
+    typedef PHX::MDField<Scalar,Cell,BASIS,IP,Dim> Array_CellBasisIPDim;
+    typedef PHX::MDField<Scalar,BASIS,Dim> Array_BasisDim;
+    typedef PHX::MDField<Scalar,Cell,BASIS,Dim> Array_CellBasisDim;
 
     BasisValues2(const std::string & pre="",bool allocArrays=false,bool buildWeighted=false) 
         : build_weighted(buildWeighted), alloc_arrays(allocArrays), prefix(pre)
@@ -80,30 +80,40 @@ namespace panzer {
     void setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& basis,
                      bool computeDerivatives=true);
 
-    void evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> & cub_points,
-                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-                        const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+    void evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
+                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                        const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                         const int in_num_cells = -1);
 
-    void evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> & cub_points,
-                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-                        const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+    void evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
+                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                        const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                         const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                         const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
                         bool use_vertex_coordinates=true,
                         const int in_num_cells = -1);
 
-    void evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cell_cub_points,
-                          const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-                          const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                          const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv);
+    void evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
+                          const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                          const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                          const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv);
 
-    void evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-                        const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+
+    void evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
+                          const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                          const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                          const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
+                          const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                          bool use_vertex_coordinates=true,
+                          const int in_num_cells = -1);
+
+
+    void evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                        const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                         const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                         const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
                         bool use_vertex_coordinates=true,
@@ -175,32 +185,32 @@ namespace panzer {
   protected:
 
 
-    void evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+    void evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                               const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                               const int in_num_cells);
 
-    void evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                             const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                             const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+    void evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                             const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                             const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                              const int in_num_cells);
 
-    void evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+    void evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                               const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                               const int in_num_cells);
 
-    void evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-                              const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+    void evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                              const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                               const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                               const int in_num_cells);
 
-    void evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-                             const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-                             const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+    void evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
+                             const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                             const PHX::MDField<Scalar,Cell,IP> & jac_det,
                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                              const int in_num_cells);
  

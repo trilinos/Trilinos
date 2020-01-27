@@ -34,6 +34,7 @@
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Utils.h>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <map>
 #include <ostream>
 #include <string>
@@ -90,7 +91,7 @@ Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) cons
   auto iter = m_properties.find(property_name);
   if (iter == m_properties.end()) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: Could not find property '" << property_name << "'\n";
+    fmt::print(errmsg, "ERROR: Could not find property '{}'\n", property_name);
     IOSS_ERROR(errmsg);
   }
   return (*iter).second;

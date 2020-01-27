@@ -48,7 +48,6 @@
 
 namespace { // (anonymous)
   using Tpetra::TestingUtilities::getDefaultComm;
-  using Tpetra::DynamicProfile;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Teuchos::arcp;
@@ -135,12 +134,6 @@ namespace { // (anonymous)
       // create static-profile graph, fill-complete without inserting
       // (and therefore, without allocating)
       GRAPH graph(map,1,StaticProfile);
-      graph.fillComplete();
-    }
-    {
-      // create dynamic-profile graph, fill-complete without inserting
-      // (and therefore, without allocating)
-      GRAPH graph(map,1,DynamicProfile);
       graph.fillComplete();
     }
 
@@ -439,71 +432,6 @@ namespace { // (anonymous)
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ActiveFill, LO, GO , Node )
-  {
-    using Teuchos::Comm;
-    using Teuchos::outArg;
-    using Teuchos::RCP;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
-    typedef Tpetra::CrsGraph<LO, GO, Node> GRAPH;
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    // create Map
-    RCP<const map_type> map = rcp (new map_type (INVALID, 1, 0, comm));
-    RCP<ParameterList> params = parameterList();
-    {
-      GRAPH graph(map,map,0,DynamicProfile);
-      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
-      graph.insertLocalIndices( 0, tuple<LO>(0) );
-      //
-      params->set("Optimize Storage",false);
-      graph.fillComplete(params);
-      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
-      TEST_THROW( graph.insertLocalIndices( 0, tuple<LO>(0) ), std::runtime_error );
-      TEST_THROW( graph.removeLocalIndices( 0 ),               std::runtime_error );
-      TEST_THROW( graph.globalAssemble(),                      std::runtime_error );
-      TEST_THROW( graph.fillComplete(),                        std::runtime_error );
-    }
-    {
-      GRAPH graph(map,map,0,DynamicProfile);
-      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
-      graph.insertLocalIndices( 0, tuple<LO>(0) );
-      //
-      params->set("Optimize Storage",false);
-      graph.fillComplete(params);
-      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
-      //
-      graph.resumeFill();
-      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
-      TEST_NOTHROW( graph.insertLocalIndices( 0, tuple<LO>(0) ) );
-      //
-      TEST_NOTHROW( graph.fillComplete()                        );
-      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
-      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
-    }
-
-    int lclSuccess = success ? 1 : 0;
-    int gblSuccess = 1;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-
-    if (gblSuccess == 1) {
-      out << "Succeeded on all processes!" << endl;
-    } else {
-      out << "FAILED on at least one process!" << endl;
-    }
-    TEST_EQUALITY_CONST(gblSuccess, 1);
-  }
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, Typedefs, LO, GO , Node )
   {
     using Teuchos::Comm;
@@ -670,7 +598,6 @@ namespace { // (anonymous)
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs,          LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K,      LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill,        LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests,      LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC,     LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices,     LO, GO, NODE ) \
@@ -681,4 +608,3 @@ namespace { // (anonymous)
     TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_AND_RELEASE )
 
 } // namespace (anonymous)
-

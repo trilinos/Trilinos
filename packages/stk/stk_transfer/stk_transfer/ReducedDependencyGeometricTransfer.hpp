@@ -15,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -97,12 +97,12 @@ public :
 
   enum {Dimension = 3};
 
-  ReducedDependencyGeometricTransfer(std::shared_ptr<MeshA> &mesha,
-                    std::shared_ptr<MeshB> &meshb,
+  ReducedDependencyGeometricTransfer(std::shared_ptr<MeshA> mesha,
+                    std::shared_ptr<MeshB> meshb,
                     const std::string &name,
                     stk::ParallelMachine pm,
                     const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE);
+                    const stk::search::SearchMethod search_method = stk::search::KDTREE);
   virtual ~ReducedDependencyGeometricTransfer(){};
   void coarse_search() override;
   void communication() override;
@@ -209,7 +209,6 @@ void construct_comm_data(const typename MeshA::EntityProcVec & entity_key_proc_f
 
   comm.offset_and_num_keys_from_mesh.resize(comm.numFromMeshCommunications);
   impl::create_offset_and_num_key(comm.uniqueFromProcVec, entity_key_proc_from, comm.offset_and_num_keys_from_mesh );
-
 }
 
 //Send data from mesh b to mesh a
@@ -294,14 +293,18 @@ void do_communication(const ReducedDependencyCommData & comm_data, const MeshAVe
 
 
 template <class INTERPOLATE> ReducedDependencyGeometricTransfer<INTERPOLATE>::ReducedDependencyGeometricTransfer
-(std::shared_ptr<MeshA> &mesha,
- std::shared_ptr<MeshB> &meshb,
+(std::shared_ptr<MeshA> mesha,
+ std::shared_ptr<MeshB> meshb,
  const std::string        &name,
  stk::ParallelMachine pm,
  const double              expansion_factor,
  const stk::search::SearchMethod search_method) :
       m_mesha(mesha), m_meshb(meshb), m_name(name), m_expansion_factor(expansion_factor), m_search_method(search_method)
   {
+    //In an mpmd program, there's no guarantee that the types specified for the entity keys are honored by each program,
+    //so for now, enforce that the types are 64bit for consistency during mpi comms
+    static_assert(8 == sizeof(typename InterpolateClass::EntityKeyA), "Size of EntityKeyA needs to be 64 bit");
+    static_assert(8 == sizeof(typename InterpolateClass::EntityKeyB), "Size of EntityKeyB needs to be 64 bit");
     m_comm_data.m_shared_comm = pm;
     ThrowRequire(mesha || meshb);
   }

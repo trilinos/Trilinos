@@ -34,23 +34,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
 #ifndef TPETRA_BLOCKCRSMATRIX_FWD_HPP
 #define TPETRA_BLOCKCRSMATRIX_FWD_HPP
 
+#include "Tpetra_Details_DefaultTypes.hpp"
+
 /// \file Tpetra_BlockCrsMatrix_fwd.hpp
-/// \brief Forward declaration of Tpetra::BlockCrsMatrix
+/// \brief Forward declaration of Tpetra::BlockCrsMatrix.
 
-#include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
-
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-
-using Experimental::BlockCrsMatrix;
-
+template<class SC = ::Tpetra::Details::DefaultTypes::scalar_type,
+         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+         class NT = ::Tpetra::Details::DefaultTypes::node_type>
+class BlockCrsMatrix;
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_BLOCKCRSMATRIX_FWD_HPP

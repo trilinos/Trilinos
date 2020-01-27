@@ -2,6 +2,9 @@
 #define ROL_DIODECIRCUIT_HPP
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

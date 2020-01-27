@@ -97,9 +97,22 @@ The following parameters are used in the point relaxation methods:
      and communication) to count diagonal entries that are zero, have negative
      real part, or are small in magnitude. This information can be later shown
      in the description.}
+\ccc{relaxation: mtgs cluster size}
+    {int}
+    {1}
+    {Only has an effect if {\tt "relaxation: type"} is {\tt "MT Gauss-Seidel"}
+     or {\tt "MT Symmetric Gauss-Seidel"}. If equal to 1 (default), point
+     coloring parallel Gauss-Seidel is used. This has a faster \texttt{compute()}
+     but may cause the preconditioned solver
+     to converge more slowly. If set to $k > 1$, then multicolor block Gauss-Seidel
+     is used with blocks of size $k$ (see \cite{Saad1999}).
+     In the \texttt{apply()} there is significantly less
+     error due to parallel updates of the LHS vector.}
 \ccc{relaxation: local smoothing indices}
     {Teuchos::ArrayRCP<local\_ordinal>}
     {empty}
+    {}
+
 %Teuchos::ArrayRCP MatrixType::local_ordinal_type}{\texttt{Teuchos::null}}
     {A given method will only relax on the local indices listed in the
      \texttt{ArrayRCP}, in the order that they are listed. This can be used to
@@ -191,6 +204,17 @@ The following parameters are used in the block relaxation methods:
     {See~\ref{s:relaxation}.}
 \cccc{relaxation: backward mode}
     {See~\ref{s:relaxation}. Currently has no effect. }
+\ccc{block relaxation: decouple dofs}
+    {bool}
+    {false}
+    {Whether to separate blocks according to the different degrees of
+     freedom (PDEs) at each node. This assumes that dofs/node is constant
+     throughout the matrix. Each block will have the same sparsity
+     pattern as the mesh graph's corresponding diagonal block.
+     For example, when using a line partitioner this
+     enables the use of the tridiagonal container even if the matrix's
+     bandwidth is greater than 3.
+     Decoupling matches the behavior of line smoothing in ML.}
 \ccc{partitioner: type}
     {string}
     {``linear''}
@@ -230,7 +254,8 @@ The following parameters are used in the block relaxation methods:
 \ccc{partitioner: PDE equations}
     {int}
     {1}
-    {Number of equations per node. Only valid for ``line'' partition type.}
+    {Number of equations per node. Only used for ``line'' partitioning, and
+     decoupled BlockRelaxation.}
 \ccc{partitioner: coordinates}
     {Teuchos::RCP<multi\_vector>}
     {null}

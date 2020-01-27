@@ -301,24 +301,6 @@ namespace Intrepid2 {
     */
     static void setSubcellParametrization();
 
-    /** \brief  Returns array with the coefficients of the parametrization maps for the edges or faces
-        of a reference cell topology.
-
-        See Intrepid2::CellTools::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map
-        more information about parametrization maps.
-
-        \param  subcellParam      [out] - coefficients of the parameterization map for all subcells of
-                                          the specified dimension
-        \param  subcellDim        [in]  - dimension of subcells whose parametrization map is returned
-        \param  parentCell        [in]  - topology of the reference cell owning the subcells
-
-    */
-    static void
-    getSubcellParametrization(  subcellParamViewType &subcellParam,
-                               const ordinal_type          subcellDim,
-                               const shards::CellTopology  parentCell );
-
-
     /** \brief  Sets orientation-preserving parametrizations of reference edges and faces of cell
         topologies with reference cells. Used to populate Intrepid2::CellTools::SubcellParamData.
 
@@ -1078,6 +1060,27 @@ namespace Intrepid2 {
                          basis);
     }
 
+
+
+
+    /** \brief  Returns array with the coefficients of the parametrization maps for the edges or faces
+        of a reference cell topology.
+
+        See Intrepid2::CellTools::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map
+        more information about parametrization maps.
+
+        \param  subcellParam      [out] - coefficients of the parameterization map for all subcells of
+                                          the specified dimension
+        \param  subcellDim        [in]  - dimension of subcells whose parametrization map is returned
+        \param  parentCell        [in]  - topology of the reference cell owning the subcells
+
+    */
+    static void
+    getSubcellParametrization(  subcellParamViewType &subcellParam,
+                               const ordinal_type          subcellDim,
+                               const shards::CellTopology  parentCell );
+
+
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
 
         Applies \f$\hat{\Phi}_i\f$, the parametrization map of a subcell \f$\hat{\mathcal{S}}_i\f$
@@ -1506,11 +1509,11 @@ namespace Intrepid2 {
       \param  cellTopo          [in]  - cell topology with a reference cell required
   */
   template<typename jacobianViewType,
-           typename pointViewType,
+           typename PointViewType,
            typename worksetCellViewType>
   static void
   CellTools_setJacobianArgs( const jacobianViewType     jacobian,
-                             const pointViewType        points,
+                             const PointViewType        points,
                              const worksetCellViewType  worksetCell,
                              const shards::CellTopology cellTopo );
 

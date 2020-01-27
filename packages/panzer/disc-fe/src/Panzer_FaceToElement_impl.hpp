@@ -144,7 +144,7 @@ initialize(panzer::ConnManager & conn)
       const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
       for (size_t i=0; i<block_elems.size(); ++i) {
         int n_conn = conn.getConnectivitySize(block_elems[i]);
-        const panzer::Ordinal64 * connectivity = conn.getConnectivity(block_elems[i]);
+        const panzer::GlobalOrdinal * connectivity = conn.getConnectivity(block_elems[i]);
         for (int iface=0; iface<n_conn; ++iface)
           set_of_face_GIDS.insert(connectivity[iface]);
       }
@@ -189,7 +189,7 @@ initialize(panzer::ConnManager & conn)
     const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
     for (size_t i=0; i<block_elems.size(); ++i) {
       int n_conn = conn.getConnectivitySize(block_elems[i]);
-      const panzer::Ordinal64 * connectivity = conn.getConnectivity(block_elems[i]);
+      const panzer::GlobalOrdinal * connectivity = conn.getConnectivity(block_elems[i]);
       for (int iface=0; iface<n_conn; ++iface) {
         LocalOrdinal f = face_map->getLocalElement(connectivity[iface]);
 

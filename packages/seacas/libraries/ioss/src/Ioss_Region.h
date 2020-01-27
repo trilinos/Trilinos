@@ -221,7 +221,7 @@ namespace Ioss {
     /// Get a map containing all aliases defined for the entity with basename 'name'
     int get_aliases(const std::string &my_name, std::vector<std::string> &aliases) const;
 
-    // This routine transfers all relavant aliases from the 'this'
+    // This routine transfers all relevant aliases from the 'this'
     // region and applies them to the 'to' file.
     void transfer_mesh_aliases(Region *to) const;
 

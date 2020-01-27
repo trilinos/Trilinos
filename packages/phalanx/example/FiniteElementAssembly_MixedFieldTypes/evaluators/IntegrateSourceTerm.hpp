@@ -53,7 +53,8 @@ class IntegrateSourceTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
                             public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   using ScalarT = typename EvalT::ScalarT;
-  PHX::View<const ScalarT**> source;
+  // Non-optimal layout to test user maually picking layout (see README.txt for this example)
+  Kokkos::View<const ScalarT**,Kokkos::LayoutLeft,PHX::Device> source;
 #ifdef PHX_ENABLE_KOKKOS_AMT
   // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
   Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual;

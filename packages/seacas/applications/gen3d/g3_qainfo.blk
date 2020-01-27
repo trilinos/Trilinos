@@ -30,14 +30,6 @@ C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-      CHARACTER*32 CVSREV, CVSDAT
-
-C     The CVS* variables are updated by the CVS/RCS program every time
-C     this routine is commited to the repository.  Therefore, whenever
-C     there are any changes to any routines, this routine should also
-C     be committed.  The assignment to QAINFO(I) strips off the 'Revision'
-C     and 'Date' strings from the CVS variables.  Kludgey but it might work.
-
       QAINFO(1) = 'Gen3D                           '
       QAINFO(2) = '                                '
       QAINFO(3) = '                                '

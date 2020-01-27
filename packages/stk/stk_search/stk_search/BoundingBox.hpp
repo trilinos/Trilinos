@@ -1,8 +1,9 @@
 
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -15,10 +16,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -206,18 +207,26 @@ template <typename T1, typename T2>
 inline bool intersects(Sphere<T1> const& a, Box<T2> const& b)
 {
   Point<T1> const& ac   = a.center();
-  Point<T2> const& bmin = b.min_corner();
-  Point<T2> const& bmax = b.max_corner();
+  const T1         ar   = a.radius(); 
+  T1 distToBoxSquared = 0.0;
+  for(unsigned idir=0; idir<3; ++idir) {
+      const T2 boxMin = b.min_corner()[idir];
+      const T2 boxMax = b.max_corner()[idir];
+      const T1 sphereCenter = ac[idir];
 
-  const T1 r2 = a.radius() * a.radius();
-
-  // check that the nearest point in the bounding box is within the sphere
-  T1 dmin = 0;
-  for( int i = 0; i < 3; ++i ) {
-    if( ac[i] < bmin[i] ) dmin += (ac[i]-bmin[i])*(ac[i]-bmin[i]);
-    else if( ac[i] > bmax[i] ) dmin += (ac[i]-bmax[i])*(ac[i]-bmax[i]);
+      if(       sphereCenter + ar < boxMin) {
+          return false;
+      } else if(sphereCenter - ar > boxMax) {
+          return false;
+      } else if(sphereCenter      < boxMin) {
+          T1 dist = boxMin-sphereCenter;
+          distToBoxSquared += dist*dist;
+      } else if(sphereCenter      > boxMax) {
+          T1 dist = sphereCenter-boxMax;
+          distToBoxSquared += dist*dist;
+      }
   }
-  return dmin <= r2;
+   return (distToBoxSquared <= ar*ar);
 }
 
 // intersects: Box,Sphere
@@ -243,19 +252,24 @@ inline bool intersects(Box<T1> const& a, Box<T2> const& b)
 }
 
 template <typename T, typename U>
-inline void scale_by(Sphere<T> &s, U const& c)
+inline void scale_by(Point<T> &p, U const& mult_fact, U const& add_fact = 0)
 {
-  s.set_radius(s.radius()*c);
 }
 
 template <typename T, typename U>
-inline void scale_by(Box<T> &b, U const& c)
+inline void scale_by(Sphere<T> &s, U const& mult_fact, U const& add_fact = 0)
+{
+  s.set_radius(s.radius()*mult_fact + add_fact);
+}
+
+template <typename T, typename U>
+inline void scale_by(Box<T> &b, U const& mult_fact, U const& add_fact = 0)
 {
   Point<T> & min_corner = b.min_corner();
   Point<T> & max_corner = b.max_corner();
-  const U factor = (c-1)/2;
+  const U factor = (mult_fact-1)/2;
   for (int i=0; i<3; ++i) {
-    const T d = factor*(max_corner[i] - min_corner[i]);
+    const T d = factor*(max_corner[i] - min_corner[i]) + add_fact;
     min_corner[i] -= d;
     max_corner[i] += d;
   }

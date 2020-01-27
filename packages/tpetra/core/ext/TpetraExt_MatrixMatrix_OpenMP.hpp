@@ -116,7 +116,7 @@ struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosO
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal, class LocalOrdinalViewType>
-struct KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType> {  
+struct KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType> {
   static inline void mult_R_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Rview,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
@@ -141,7 +141,7 @@ static inline void mult_R_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, Local
                                                          const std::string& label = std::string(),
                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void mult_PT_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,                                                        
+  static inline void mult_PT_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
                                                          const LocalOrdinalViewType & Acol2Prow,
                                                          const LocalOrdinalViewType & Acol2PIrow,
@@ -152,7 +152,7 @@ static inline void mult_R_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, Local
                                                          const std::string& label = std::string(),
                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void mult_PT_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,                                                        
+  static inline void mult_PT_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
                                                          const LocalOrdinalViewType & Acol2Prow,
                                                          const LocalOrdinalViewType & Acol2PIrow,
@@ -239,7 +239,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements());
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPCore"))));
+    MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPCore"))));
 #endif
 
     // Do the multiply on whatever we've got
@@ -269,7 +269,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     kh.destroy_spgemm_handle();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort"))));
+    MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort"))));
 #endif
     // Sort & set values
     if (params.is_null() || params->get("sort entries",true))
@@ -279,7 +279,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   }// end OMP KokkosKernels loop
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPESFC"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPESFC"))));
 #endif
 
   // Final Fillcomplete
@@ -358,7 +358,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse OpenMPESFC"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse OpenMPESFC"))));
 #endif
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 }
@@ -413,7 +413,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPESFC"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPESFC"))));
 #endif
 
   // Final Fillcomplete
@@ -477,7 +477,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse OpenMPESFC"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse OpenMPESFC"))));
 #endif
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 
@@ -538,7 +538,7 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
                                                                                                                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Rview,
                                                                                                                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
                                                                                                                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
-                                                                                                                                                      
+
                                                                                                const LocalOrdinalViewType & Acol2Prow,
                                                                                                const LocalOrdinalViewType & Acol2Irow,
                                                                                                const LocalOrdinalViewType & Pcol2Ccol,
@@ -573,7 +573,7 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse OpenMPESFC"))));
+  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse OpenMPESFC"))));
 #endif
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 
@@ -587,7 +587,7 @@ template<class Scalar,
          class GlobalOrdinal,
          class LocalOrdinalViewType>
 void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType>::mult_PT_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                                                                                                                         
+
                                                                                                                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
                                                                                                                                                          const LocalOrdinalViewType & Acol2Prow,
                                                                                                                                                          const LocalOrdinalViewType & Acol2PIrow,
@@ -603,7 +603,7 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
     std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
     using Teuchos::TimeMonitor;
     Teuchos::RCP<TimeMonitor> MM;
-#endif    
+#endif
 
   // Node-specific code
   std::string nodename("OpenMP");
@@ -617,21 +617,36 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   }
 
   if(myalg == "LTG") {
- #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
-  #endif
-        // We don't need a kernel-level PTAP, we just transpose here
-        typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>  transposer_type;
-        transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
-        Teuchos::RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
-        if (!params.is_null())
-          transposeParams->set("compute global constants",
-                               params->get("compute global constants: temporaries",
-                                           false));
-        Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> > Ptrans = transposer.createTransposeLocal(transposeParams);
-        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> Rview;
-        Rview.origMatrix = Ptrans;       
-        ::Tpetra::MatrixMatrix::ExtraKernels::mult_R_A_P_newmatrix_LowThreadGustavsonKernel(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
+#endif
+
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using SC = Scalar;
+
+    // We don't need a kernel-level PTAP, we just transpose here
+    using transposer_type =
+      RowMatrixTransposer<SC, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode>;
+    transposer_type transposer (Pview.origMatrix, label + "XP: ");
+    RCP<ParameterList> transposeParams (new ParameterList);
+    if (! params.is_null ()) {
+      transposeParams->set ("compute global constants",
+                            params->get ("compute global constants: temporaries",
+                                         false));
+    }
+    transposeParams->set ("sort", false);
+    RCP<CrsMatrix<SC, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode> > Ptrans =
+      transposer.createTransposeLocal (transposeParams);
+    CrsMatrixStruct<SC, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode> Rview;
+    Rview.origMatrix = Ptrans;
+
+    using ::Tpetra::MatrixMatrix::ExtraKernels::mult_R_A_P_newmatrix_LowThreadGustavsonKernel;
+    mult_R_A_P_newmatrix_LowThreadGustavsonKernel
+      (Rview, Aview, Pview, Acol2Prow, Acol2PIrow, Pcol2Accol,
+       PIcol2Accol, Ac, Acimport, label, params);
   }
   else {
     throw std::runtime_error("Tpetra::MatrixMatrix::PT_A_P newmatrix unknown kernel");
@@ -644,7 +659,7 @@ template<class Scalar,
          class GlobalOrdinal,
          class LocalOrdinalViewType>
 void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType>::mult_PT_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                                                                                                                         
+
                                                                                                                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
                                                                                                                                                          const LocalOrdinalViewType & Acol2Prow,
                                                                                                                                                          const LocalOrdinalViewType & Acol2PIrow,
@@ -660,7 +675,7 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
     std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
     using Teuchos::TimeMonitor;
     Teuchos::RCP<TimeMonitor> MM;
-#endif    
+#endif
 
   // Node-specific code
   std::string nodename("OpenMP");
@@ -674,21 +689,36 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   }
 
   if(myalg == "LTG") {
- #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
-  #endif
-        // We don't need a kernel-level PTAP, we just transpose here
-        typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>  transposer_type;
-        transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
-        Teuchos::RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
-        if (!params.is_null())
-          transposeParams->set("compute global constants",
-                               params->get("compute global constants: temporaries",
-                                           false));
-        Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> > Ptrans = transposer.createTransposeLocal(transposeParams);
-        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> Rview;
-        Rview.origMatrix = Ptrans;       
-        ::Tpetra::MatrixMatrix::ExtraKernels::mult_R_A_P_reuse_LowThreadGustavsonKernel(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+   MM = Teuchos::null;  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
+#endif
+
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using SC = Scalar;
+
+    // We don't need a kernel-level PTAP, we just transpose here
+    using transposer_type =
+      RowMatrixTransposer<SC, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode>;
+    transposer_type transposer (Pview.origMatrix, label + "XP: ");
+    RCP<ParameterList> transposeParams (new ParameterList);
+    if (! params.is_null ()) {
+      transposeParams->set ("compute global constants",
+                            params->get ("compute global constants: temporaries",
+                                         false));
+    }
+    transposeParams->set ("sort", false);
+    RCP<CrsMatrix<SC, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode> > Ptrans =
+      transposer.createTransposeLocal (transposeParams);
+    CrsMatrixStruct<SC, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode> Rview;
+    Rview.origMatrix = Ptrans;
+
+    using ::Tpetra::MatrixMatrix::ExtraKernels::mult_R_A_P_reuse_LowThreadGustavsonKernel;
+    mult_R_A_P_reuse_LowThreadGustavsonKernel
+      (Rview, Aview, Pview, Acol2Prow, Acol2PIrow, Pcol2Accol,
+       PIcol2Accol, Ac, Acimport, label, params);
   }
   else {
     throw std::runtime_error("Tpetra::MatrixMatrix::PT_A_P reuse unknown kernel");

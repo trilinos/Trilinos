@@ -55,6 +55,7 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_State.h"
 #include "Ioss_Utils.h"
 #include "vector3d.h"
@@ -93,13 +94,14 @@ namespace {
 
 namespace {
   std::string codename;
-  std::string version = "$Revision$";
+  std::string version = "0.9";
 } // namespace
 
 int main(int argc, char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+  ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
   std::string in_type  = "exodusII";
@@ -119,7 +121,7 @@ int main(int argc, char *argv[])
 
   // Check the program name to see if of the form 'exosaf' or 'safexo'
   // and if it is, set the in_type and out_type accordingly...
-  if (std::strncmp(codename.c_str(), "shell_to_hex", 12) == 0) {
+  if (Ioss::Utils::str_equal(codename, "shell_to_hex")) {
     codename           = "shell_to_hex";
     in_type            = "exodusII";
     out_type           = "exodusII";
@@ -187,7 +189,7 @@ int main(int argc, char *argv[])
     std::string input_file =
         Ioss::Utils::local_filename(argv[i++], "text", globals.working_directory);
 
-    std::ifstream input(input_file.c_str());
+    std::ifstream input(input_file);
     if (!input) {
       std::cerr << "Error opening file '" << input_file << "'.\n";
       show_usage(codename);
@@ -222,9 +224,6 @@ int main(int argc, char *argv[])
   file_copy(in_file, in_type, out_file, out_type, globals);
 
   std::cerr << "\n" << codename << " execution successful.\n";
-#ifdef SEACAS_HAVE_MPI
-  MPI_Finalize();
-#endif
   return EXIT_SUCCESS;
 }
 

@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -131,14 +129,8 @@ namespace Tpetra {
     StaticProfile
   };
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED const ProfileType DynamicProfile = ProfileType(StaticProfile+1);
-#define TPETRA_DEFAULT_PROFILE_TYPE DynamicProfile
-#else
-#define TPETRA_DEFAULT_PROFILE_TYPE StaticProfile
-#endif
-
-  /*! Optimize storage option */
+#define TPETRA_DEFAULT_PROFILE_TYPE Tpetra::StaticProfile
+/*! Optimize storage option */
   enum OptimizeOption {
     DoOptimizeStorage,   /*!< Indicates that storage should be optimized */
     DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
@@ -216,12 +208,6 @@ namespace Tpetra {
 
 //! Namespace for %Tpetra example classes and methods
 namespace TpetraExamples {
-}
-
-namespace Tpetra {
-  //! Namespace for %Tpetra Reduction/Tranformation Interface
-  namespace RTI {
-  }
 }
 
 namespace Tpetra {

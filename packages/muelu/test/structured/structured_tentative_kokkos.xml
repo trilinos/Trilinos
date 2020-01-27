@@ -8,10 +8,15 @@
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
+    <ParameterList name="myAmalgamationFact">
+      <Parameter name="factory"                             type="string" value="AmalgamationFactory_kokkos"/>
+    </ParameterList>
+
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory_kokkos"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
       <Parameter name="aggregation: drop tol"               type="double" value="0.00"/>
+      <Parameter name="UnAmalgamationInfo"                  type="string" value="myAmalgamationFact"/>
     </ParameterList>
 
     <ParameterList name="myAggregationFact">
@@ -34,6 +39,7 @@
       <Parameter name="factory" type="string"               value="TentativePFactory_kokkos"/>
       <Parameter name="CoarseMap"                           type="string" value="myCoarseMapFact"/>
       <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/>
+      <Parameter name="UnAmalgamationInfo"                  type="string" value="myAmalgamationFact"/>
     </ParameterList>
 
     <ParameterList name="myCoordTransferFact">

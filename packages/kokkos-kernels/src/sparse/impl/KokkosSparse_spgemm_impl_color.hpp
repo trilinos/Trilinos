@@ -429,7 +429,7 @@ void
         break;
       }
     }
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
 
   if (KOKKOSKERNELS_VERBOSE){
@@ -493,7 +493,7 @@ void
       team_row_chunk_size,
       use_dynamic_schedule);
 
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\tTranspose Time:" << timer1.seconds() << std::endl;
@@ -501,28 +501,29 @@ void
 
 
   {
-
     timer1.reset();
 
-
-  this->handle->create_graph_coloring_handle();
+    this->handle->create_graph_coloring_handle();
 
     typename HandleType::GraphColoringHandleType::color_view_t vertex_color_view;
 
-    if (this->handle->get_spgemm_handle()->coloring_input_file == ""){
-      handle->get_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_SERIAL2);
-      //for now only sequential one exists.
-      //find distance-2 graph coloring
-      KokkosGraph::Experimental::graph_compute_distance2_color_serial
-    <HandleType,
-    c_row_view_t, c_nnz_view_t,
-    row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
-      (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
+    if (this->handle->get_spgemm_handle()->coloring_input_file == "")
+    {
+        //for now only sequential one exists.
+        //find distance-2 graph coloring
 
-      original_num_colors = handle->get_graph_coloring_handle()->get_num_colors();
+        handle->get_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_SERIAL2);
 
-        if (KOKKOSKERNELS_VERBOSE){
-        std::cout << "\t\tNum colors:" << handle->get_graph_coloring_handle()->get_num_colors() <<  " coloring time:" << timer1.seconds()  << std::endl;
+        KokkosGraph::Experimental::graph_compute_distance2_color_serial 
+            <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
+            (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
+
+        original_num_colors = handle->get_graph_coloring_handle()->get_num_colors();
+
+        if (KOKKOSKERNELS_VERBOSE)
+        {
+          std::cout << "\t\tNum colors:" << handle->get_graph_coloring_handle()->get_num_colors() 
+                    <<  " coloring time:" << timer1.seconds()  << std::endl;
         }
         vertex_color_view = handle->get_graph_coloring_handle()->get_vertex_colors();
 
@@ -530,19 +531,18 @@ void
           KokkosKernels::Impl::kk_write_1Dview_to_file(vertex_color_view, this->handle->get_spgemm_handle()->coloring_output_file.c_str());
         }
     }
-    else {
+    else 
+    {
         vertex_color_view = typename HandleType::GraphColoringHandleType::color_view_t("vertex colors from file", a_row_cnt);
-      KokkosKernels::Impl::kk_read_1Dview_from_file(vertex_color_view, this->handle->get_spgemm_handle()->coloring_input_file.c_str());
-      KokkosKernels::Impl::view_reduce_max<typename HandleType::GraphColoringHandleType::color_view_t, MyExecSpace>
+        KokkosKernels::Impl::kk_read_1Dview_from_file(vertex_color_view, this->handle->get_spgemm_handle()->coloring_input_file.c_str());
+        KokkosKernels::Impl::view_reduce_max<typename HandleType::GraphColoringHandleType::color_view_t, MyExecSpace>
               (a_row_cnt, vertex_color_view, original_num_colors);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
         //KokkosKernels::Impl::kk_print_1Dview(vertex_color_view);
-
     }
-  num_multi_color_steps =  original_num_colors;
-  num_colors_in_one_step = 1;
-
+    num_multi_color_steps =  original_num_colors;
+    num_colors_in_one_step = 1;
 
 
     vertex_colors_to_store = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("persistent_color_view"), a_row_cnt);
@@ -551,7 +551,7 @@ void
     if (KOKKOSKERNELS_VERBOSE){
       //create histogram and print it.
       nnz_lno_temp_work_view_t histogram ("histogram", original_num_colors + 1);
-      MyExecSpace::fence();
+      MyExecSpace().fence();
       timer1.reset();
       KokkosKernels::Impl::kk_get_histogram
       <typename HandleType::GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t, MyExecSpace>(a_row_cnt, vertex_color_view, histogram);
@@ -630,14 +630,14 @@ void
         <typename HandleType::GraphColoringHandleType::color_view_t //nnz_lno_temp_work_view_t
         ,nnz_lno_persistent_work_view_t, MyExecSpace>
             (a_row_cnt, num_multi_color_steps, tmp_color_view, color_xadj, color_adj);
-      MyExecSpace::fence();
+      MyExecSpace().fence();
 
       if (KOKKOSKERNELS_VERBOSE){
         std::cout << "\t\tReverse Map Create Time:" << timer1.seconds() << std::endl;
       }
       h_color_xadj = Kokkos::create_mirror_view (color_xadj);
       Kokkos::deep_copy (h_color_xadj, color_xadj);
-      MyExecSpace::fence();
+      MyExecSpace().fence();
     }
     this->handle->destroy_graph_coloring_handle();
   }

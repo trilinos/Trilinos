@@ -688,10 +688,10 @@ C *** Display options ***
 
          WRITE (*, *)
          IF (BLKCOL(0) .EQ. -1) THEN
-            WRITE (*, 10150) 'User specfied block colors will not be',
+            WRITE (*, 10150) 'User specified block colors will not be',
      &         ' used on plots.'
          ELSE
-            WRITE (*, 10150) 'User specfied block colors will be',
+            WRITE (*, 10150) 'User specified block colors will be',
      &         ' used on plots.'
          ENDIF
          WRITE (*, *)

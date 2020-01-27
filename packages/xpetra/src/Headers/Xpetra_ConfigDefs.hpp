@@ -86,6 +86,10 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
 
+#if defined(HAVE_XPETRA_TPETRA)
+    #include <Tpetra_ConfigDefs.hpp>
+#endif
+
 //! %Xpetra namespace
 namespace Xpetra {
   // Used in all Xpetra code that explicitly must a type (like a loop index)
@@ -179,12 +183,6 @@ namespace Xpetra {
   enum LookupStatus {
     AllIDsPresent, /*!< Indicates that all queried IDs were present in the Map */
     IDNotPresent   /*!< Indicates that at least one of the specified IDs was not present in the Map */
-  };
-
-  /*! Allocation profile for matrix/graph entries */
-  enum ProfileType {
-    StaticProfile,  /*!< Indicates a single, static allocation (strict and more efficient) */
-    DynamicProfile  /*!< Indicates multiple, dynamic allocations (flexibile, but less efficient) */
   };
 
   /*! Optimize storage option */

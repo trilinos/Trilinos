@@ -53,7 +53,7 @@
 #include "Panzer_ResponseScatterEvaluator_Functional.hpp"
 #include "Panzer_Response_Functional.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 namespace panzer {
 
@@ -104,11 +104,11 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
         TEUCHOS_ASSERT(linearObjFactory_->getDomainGlobalIndexer()!=Teuchos::null);
 
-        auto ugi = Teuchos::rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(linearObjFactory_->getDomainGlobalIndexer());
-        auto bugi = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LO,GO> >(linearObjFactory_->getDomainGlobalIndexer());
+        auto ugi = Teuchos::rcp_dynamic_cast<const GlobalIndexer>(linearObjFactory_->getDomainGlobalIndexer());
+        auto bugi = Teuchos::rcp_dynamic_cast<const BlockedDOFManager>(linearObjFactory_->getDomainGlobalIndexer());
 
         if(ugi!=Teuchos::null) {
-          std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > ugis; 
+          std::vector<Teuchos::RCP<const GlobalIndexer> > ugis; 
           ugis.push_back(ugi);
 
           scatterObj = Teuchos::rcp(new FunctionalScatter<LO,GO>(ugis));
@@ -138,16 +138,16 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 typeSupported() const
 {
-  if(   PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Residual>() ||
-        PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Tangent>()
+  if(   PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>() ||
+        PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>()
     )
     return true;
 
-  if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Jacobian>())
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>())
     return linearObjFactory_!=Teuchos::null;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-  if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Hessian>()) {
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Hessian>()) {
     return linearObjFactory_!=Teuchos::null;
   }
 #endif

@@ -93,8 +93,8 @@ namespace panzer {
     const RCP<panzer::ConnManager>
       conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
-        = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManager> dof_manager
+        = rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
 
     // build an intrepid basis and a related field pattern for seeding the DOFManager
     RCP<IntrepidBasis> hdiv_intrepid_basis, hcurl_intrepid_basis;
@@ -234,8 +234,8 @@ namespace panzer {
     const RCP<panzer::ConnManager>
       conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
-        = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManager> dof_manager
+        = rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
 
     // build an intrepid basis and a related field pattern for seeding the DOFManager
     RCP<IntrepidBasis> hdiv_intrepid_basis, hcurl_intrepid_basis;
@@ -320,7 +320,7 @@ namespace panzer {
     out << "BASIS VECTOR\n" << std::endl;
     for(size_t c=0;c<2;c++) {
       out << "cell " << c << " = ";
-      std::vector<panzer::Ordinal64> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       dof_manager->getElementGIDs(c,gids);
 
       out << "  gids = ";
@@ -349,7 +349,7 @@ namespace panzer {
     out << "WEIGHTED BASIS VECTOR\n" << std::endl;
     for(size_t c=0;c<2;c++) {
       out << "cell " << c << " = ";
-      std::vector<panzer::Ordinal64> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       dof_manager->getElementGIDs(c,gids);
 
       out << "  gids = ";

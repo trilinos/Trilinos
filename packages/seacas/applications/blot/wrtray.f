@@ -109,6 +109,7 @@ C   --   Uses IS3DIM of /D3NUMS/
 
 C ... Open the output file.
       filnam = basenam(:lenstr(basenam)) // '.ray'
+      lnam = lenstr(filnam)
       NFIL = NFIL + 1
       IF (NFIL .GT. 1) then
         call intstr (1, -1, NFIL, STRING, LSTR)

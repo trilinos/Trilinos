@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -54,9 +55,13 @@ std::vector<int> get_neighbor_procs(int numAllProcs, int localProc, int numNeigh
 
 TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
 {
-#if (defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 2 ))
-//this test doesn't pass with open-mpi 1.10 but does pass
-//with intel-mpi and (presumably) newer open-mpi versions.
+#ifdef OMPI_MAJOR_VERSION
+#if OMPI_MAJOR_VERSION < 2
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+#endif
+
+#if !defined(STK_MPI_SUPPORTS_NEIGHBOR_COMM)
   return;
 #else
 
@@ -75,6 +80,7 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
   int localProc = 0;
   MPI_Comm_rank(comm, &localProc);
   int otherProc = 1 - localProc;
+  std::vector<int> neighbors = {otherProc};
   std::vector<int> sendProcs = {otherProc};
   std::vector<int> recvProcs = {otherProc};
   if (localProc==0) {
@@ -89,21 +95,21 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
   int reorder = 0;
   const int* weights = (int*)MPI_UNWEIGHTED;
 
-  //cppreference.com says vector::data() may be nullptr if vector is empty but not guaranteed
-  const int* sendProcsPtr = sendProcs.size() > 0 ? sendProcs.data() : nullptr;
-  const int* recvProcsPtr = recvProcs.size() > 0 ? recvProcs.data() : nullptr;
-
   MPI_Comm neighborComm;
   MPI_Dist_graph_create_adjacent(comm,
-              recvProcs.size(), recvProcsPtr, weights,
-              sendProcs.size(), sendProcsPtr, weights,
+              neighbors.size(), neighbors.data(), weights,
+              neighbors.size(), neighbors.data(), weights,
               info, reorder, &neighborComm);
   MPI_Info_free(&info);
 
   int numItems = 5;
-  std::vector<double> sendBuf(sendProcs.size()*numItems, 0), recvBuf;
-  std::vector<int> sendCounts(sendProcs.size(), numItems), recvCounts(recvProcs.size());
-  std::vector<int> sendDispls(sendProcs.size(), 0), recvDispls(recvProcs.size());
+  std::vector<double> sendBuf(numItems, 0), recvBuf;
+  std::vector<int> sendCounts(neighbors.size(), 0), recvCounts(neighbors.size());
+  std::vector<int> sendDispls(neighbors.size(), 0), recvDispls(neighbors.size());
+
+  for(size_t i=0; i<sendProcs.size(); ++i) {
+    sendCounts[i] = numItems;
+  }
 
   if (localProc == 0) {
     for(int i=0; i<numItems; ++i) {
@@ -111,11 +117,8 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
     }
   }
 
-  const int* sendCountsPtr = sendCounts.size() > 0 ? sendCounts.data() : nullptr;
-  const int* recvCountsPtr = recvCounts.size() > 0 ? recvCounts.data() : nullptr;
-
-  MPI_Neighbor_alltoall((void*)sendCountsPtr, 1, MPI_INT,
-                        (void*)recvCountsPtr, 1, MPI_INT, neighborComm);
+  MPI_Neighbor_alltoall((void*)sendCounts.data(), 1, MPI_INT,
+                        (void*)recvCounts.data(), 1, MPI_INT, neighborComm);
 
   int totalRecv = 0;
   recvDispls.resize(recvCounts.size());
@@ -125,14 +128,9 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
   }
   recvBuf.resize(totalRecv);
 
-  const double* sendBufPtr = sendBuf.size() > 0 ? sendBuf.data() : nullptr;
-  const double* recvBufPtr = recvBuf.size() > 0 ? recvBuf.data() : nullptr;
-  const int* sendDisplsPtr = sendDispls.size() > 0 ? sendDispls.data() : nullptr;
-  const int* recvDisplsPtr = recvDispls.size() > 0 ? recvDispls.data() : nullptr;
-
   MPI_Neighbor_alltoallv(
-      (void*)sendBufPtr, sendCountsPtr, sendDisplsPtr, MPI_DOUBLE,
-      (void*)recvBufPtr, recvCountsPtr, recvDisplsPtr, MPI_DOUBLE, neighborComm);
+      (void*)sendBuf.data(), sendCounts.data(), sendDispls.data(), MPI_DOUBLE,
+      (void*)recvBuf.data(), recvCounts.data(), recvDispls.data(), MPI_DOUBLE, neighborComm);
 
   for(unsigned i=0; i<recvProcs.size(); ++i) {
       EXPECT_EQ(1, localProc);//should only recv on proc 1
@@ -233,6 +231,41 @@ TEST(Parallel, CommNeighbors)
           double expected = proc+1+i;
           EXPECT_EQ(expected, val);
       }
+  }
+}
+
+TEST(Parallel, CommNeighborsResetBuffers) {
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  std::vector<int> send, recv;
+  int numProcs = stk::parallel_machine_size(comm);
+  int rank= stk::parallel_machine_rank(comm);
+  if (numProcs == 1) {
+    return;
+  }
+  if(rank == 0) {
+    for(int p = 1; p < numProcs; ++p) {
+      send.push_back(p);
+    }
+  } else {
+    recv.push_back(0);
+  }
+
+  stk::CommNeighbors commNeighbors(comm, send, recv);
+
+  for(int i = 0; i < 3; ++i) {
+    commNeighbors.reset_buffers();
+    for(int p : commNeighbors.send_procs()) {
+      commNeighbors.send_buffer(p).pack<int>(i);
+    }
+
+    commNeighbors.communicate();
+
+    for(int p : commNeighbors.recv_procs()) {
+      int val = 0;
+      commNeighbors.recv_buffer(p).unpack<int>(val);
+      EXPECT_EQ(i, val);
+      EXPECT_EQ(0u, commNeighbors.recv_buffer(p).size_in_bytes());
+    }
   }
 }
 

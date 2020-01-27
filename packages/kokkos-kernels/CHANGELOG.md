@@ -1,5 +1,22 @@
 # Change Log
 
+## [2.9.00](https://github.com/kokkos/kokkos-kernels/tree/2.9.00) (2019-06-24)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.8.00...2.9.00)
+
+**Implemented enhancements:**
+
+- KokkosBatched: Add specialization for float2, float4 and double4 [\#427](https://github.com/kokkos/kokkos-kernels/pull/427)
+- KokkosBatched: Reduce VectorLength (16 to 8) [\#432](https://github.com/kokkos/kokkos-kernels/pull/432)
+- KokkosBatched: Remove experimental name space for batched blas [\#371](https://github.com/kokkos/kokkos-kernels/issues/371)
+- Capability: Initial sparse triangular solve capability [\#435](https://github.com/kokkos/kokkos-kernels/pull/435)
+- Capability: Add support for MAGMA GESV TPL [\#409](https://github.com/kokkos/kokkos-kernels/pull/409)
+- cuBLAS: Add CudaUVMSpace specializations for GEMM [\#397](https://github.com/kokkos/kokkos-kernels/issues/397)
+
+**Fixed bugs:**
+
+- Deprecated Code Fixes [\#411](https://github.com/kokkos/kokkos-kernels/issues/411)
+- BuildSystem: Compilation error on rzansel [\#401](https://github.com/kokkos/kokkos-kernels/issues/401)
+
 ## [2.8.00](https://github.com/kokkos/kokkos-kernels/tree/2.8.00) (2019-02-05)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.7.24...2.8.00)
 

@@ -43,7 +43,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_BlockMultiVector.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -202,14 +202,14 @@ namespace {
       }
     }
 
-    Tpetra::Experimental::GETF2 (prototypeBlock, ipiv, info);
+    Tpetra::GETF2 (prototypeBlock, ipiv, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       myOut << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
-    Tpetra::Experimental::GETRI (prototypeBlock, ipiv, work, info);
+    Tpetra::GETRI (prototypeBlock, ipiv, work, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       myOut << "Our GETF2 returned info = " << info << " != 0.  "
@@ -267,8 +267,8 @@ namespace {
     IST curScalingFactor = one;
     for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
       auto D_cur = subview (D_host, whichBlk, ALL (), ALL ());
-      Tpetra::Experimental::COPY (prototypeBlock, D_cur); // copy into D_cur
-      Tpetra::Experimental::SCAL (curScalingFactor, D_cur);
+      Tpetra::COPY (prototypeBlock, D_cur); // copy into D_cur
+      Tpetra::SCAL (curScalingFactor, D_cur);
       curScalingFactor += one;
     }
     Kokkos::deep_copy (D, D_host);
@@ -291,7 +291,7 @@ namespace {
           // This doesn't actually assume UVM, since we're modifying
           // the current block of X on the host.  The sync below will
           // sync back to device memory.
-          Tpetra::Experimental::SCAL (one / curScalingFactor, X_cur);
+          Tpetra::SCAL (one / curScalingFactor, X_cur);
         }
         curScalingFactor += one;
       }
@@ -463,7 +463,7 @@ namespace {
 
     Kokkos::View<int*, host_device_type> ipiv ("ipiv", blockSize);
     int info = 0;
-    Tpetra::Experimental::GETF2 (prototypeBlock, ipiv, info);
+    Tpetra::GETF2 (prototypeBlock, ipiv, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       myOut << "Our GETF2 returned info = " << info << " != 0.  "
@@ -471,7 +471,7 @@ namespace {
       return;
     }
     Kokkos::View<IST*, host_device_type> work ("work", blockSize);
-    Tpetra::Experimental::GETRI (prototypeBlock, ipiv, work, info);
+    Tpetra::GETRI (prototypeBlock, ipiv, work, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       myOut << "Our GETF2 returned info = " << info << " != 0.  "
@@ -494,8 +494,8 @@ namespace {
     IST curScalingFactor = one;
     for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
       auto D_cur = subview (D_host, whichBlk, ALL (), ALL ());
-      Tpetra::Experimental::COPY (prototypeBlock, D_cur); // copy into D_cur
-      Tpetra::Experimental::SCAL (curScalingFactor, D_cur);
+      Tpetra::COPY (prototypeBlock, D_cur); // copy into D_cur
+      Tpetra::SCAL (curScalingFactor, D_cur);
       curScalingFactor += one;
     }
     Kokkos::deep_copy (D, D_host);
@@ -518,7 +518,7 @@ namespace {
           // This doesn't actually assume UVM, since we're modifying
           // the current block of X on the host.  The sync below will
           // sync back to device memory.
-          Tpetra::Experimental::SCAL (one / curScalingFactor, X_cur);
+          Tpetra::SCAL (one / curScalingFactor, X_cur);
         }
         curScalingFactor += one;
       }

@@ -75,7 +75,10 @@ namespace MueLu {
     @brief Factory for piping in input data from the finest level into the MueLu data dependency system
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class FineLevelInputDataFactory : public SingleLevelFactoryBase {
     friend class MueLuTests::FineLevelInputDataFactoryTester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #undef MUELU_FINELEVELINPUTDATAFACTORY_SHORT

@@ -574,17 +574,15 @@ void getSubcellEntities(const panzer_stk::STK_Interface & mesh,
 
     for(int i=0; i<static_cast<int>(master_rank); i++) {
       stk::mesh::EntityRank const to_rank = static_cast<stk::mesh::EntityRank>(i);
-      if (bulkData.connectivity_map().valid(master_rank, to_rank)) {
-        const size_t num_rels = bulkData.num_connectivity(entity, to_rank);
-        stk::mesh::Entity const* relations = bulkData.begin(entity, to_rank);
+      const size_t num_rels = bulkData.num_connectivity(entity, to_rank);
+      stk::mesh::Entity const* relations = bulkData.begin(entity, to_rank);
 
-        // for each relation insert the appropriate entity (into the set
-        // which gurantees uniqueness
-        for(std::size_t e=0; e<num_rels; ++e) {
-          stk::mesh::Entity subcell = relations[e];
+      // for each relation insert the appropriate entity (into the set
+      // which gurantees uniqueness
+      for(std::size_t e=0; e<num_rels; ++e) {
+        stk::mesh::Entity subcell = relations[e];
 
-          subcells_set[i].insert(subcell);
-        }
+        subcells_set[i].insert(subcell);
       }
     }
   }

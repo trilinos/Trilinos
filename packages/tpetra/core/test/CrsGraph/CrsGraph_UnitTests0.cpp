@@ -64,7 +64,6 @@ namespace {
     return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
   }
 
-  using Tpetra::DynamicProfile;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Teuchos::arcp;
@@ -288,41 +287,6 @@ namespace {
       TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
     }
 
-    // Test (GitHub Issue) #2565 fix, while we're at it.
-    //
-    // clts == 0: Don't set "compute local triangular constants"
-    // clts == 1: Set "compute local triangular constants" to false
-    // clts == 2: Set "compute local triangular constants" to true
-    for (int clts : {0, 1, 2}) {
-      // send in a parameterlist, check the defaults
-      RCP<ParameterList> params = parameterList();
-      if (clts == 1) {
-        params->set ("compute local triangular constants", false);
-      }
-      else if (clts == 2) {
-        params->set ("compute local triangular constants", true);
-      }
-
-      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph (map, 3, DynamicProfile);
-      for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
-        graph.insertGlobalIndices (i, tuple<GO> (i));
-      }
-      params->set("Optimize Storage",false);
-      graph.fillComplete(params);
-      TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
-      TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
-      //
-      graph.resumeFill();
-      for (int i=0; i < numLocal; ++i) graph.removeLocalIndices(i);
-      params->set("Optimize Storage",true);
-      graph.fillComplete(params);
-      TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
-      TEST_EQUALITY(graph.getNodeNumEntries(), 0);
-      TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
-      TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
-    }
-
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -443,7 +407,8 @@ namespace {
       }
 
       for (int T=0; T<4; ++T) {
-        ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
+        if ( (T & 1) != 1 ) continue;
+        ProfileType pftype = StaticProfile;
         params->set("Optimize Storage",((T & 2) == 2));
         GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
         Array<GO> GCopy(4); Array<LO> LCopy(4);
@@ -573,8 +538,8 @@ namespace {
 
         RCP<row_graph_type> test_row;
         {
-          // allocate with no space
-          RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 0));
+          // allocate 
+          RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
           // invalid, because none are allocated yet
           TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
           if (myRank != 1) {
@@ -837,7 +802,8 @@ namespace {
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
 
     for (int T=0; T<4; ++T) {
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
+      if ( (T & 1) != 1 ) continue;
+      ProfileType pftype = StaticProfile;
       RCP<ParameterList> params = parameterList ();
       params->set("Optimize Storage",((T & 2) == 2));
 
@@ -937,10 +903,8 @@ namespace {
       }
       Teuchos::OSTab tab1 (out);
 
-      for (ProfileType pftype : {StaticProfile, DynamicProfile}) {
-        out << "ProfileType: "
-            << (pftype == StaticProfile ? "StaticProfile" : "DynamicProfile")
-            << endl;
+      const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
+      for (ProfileType pftype : profileTypes) {
         Teuchos::OSTab tab2 (out);
         for (bool optimizeStorage : {false, true}) {
           out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
@@ -1042,8 +1006,6 @@ namespace {
             // entry on parallel runs, three on serial runs
             ArrayView<const GO> myrow_gbl;
             ngraph.getGlobalRowView (myrowind, myrow_gbl);
-            TEST_EQUALITY_CONST( myrow_gbl.size(),
-                                ( numProcs == 1 && pftype == DynamicProfile ? 3 : 1 ));
 
             // after globalAssemble(), storage should be maxed out
             out << "Calling globalAssemble()" << endl;

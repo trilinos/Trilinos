@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -73,10 +74,12 @@ inline unsigned get_index(const int second_dim, const int third_dim, const int f
 
 void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData,  const stk::mesh::FieldBase* coord, stk::mesh::Entity entityOfConcern, double *elementCentroid);
 
-void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, BoxVectorWithStkId &faceBoxes, const stk::mesh::FieldBase* coord);
+void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, SearchBoxIdentProcs &faceBoxes, const stk::mesh::FieldBase* coord);
 
-void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings,
-                                   std::vector<GraphEdge>& graphEdges, const stk::mesh::Selector& searchSelector);
+void addGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData,
+                                const BalanceSettings &balanceSettings,
+                                std::vector<GraphEdge>& graphEdges,
+                                const stk::mesh::Selector& searchSelector);
 
 void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings, const int num_procs_decomp, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
 
@@ -105,10 +108,7 @@ void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::m
 
 unsigned get_local_id(const stk::mesh::impl::LocalIdMapper& localIds, stk::mesh::Entity entity);
 
-bool is_geometric_method(const std::string method);
-
-const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& meta_data,
-                                                  const std::string& coordinateFieldName);
+bool is_geometric_method(const std::string& method);
 
 stk::mesh::EntityVector get_entities_to_balance(stk::mesh::Selector selector, stk::mesh::EntityRank primaryRank, const stk::mesh::BulkData& bulkData);
 

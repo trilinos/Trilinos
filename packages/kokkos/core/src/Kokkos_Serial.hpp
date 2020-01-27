@@ -118,10 +118,16 @@ public:
   /// return asynchronously, before the functor completes.  This
   /// method does not return until all dispatched functors on this
   /// device have completed.
+  static void impl_static_fence() {}
+
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   static void fence() {}
+  #else
+  void fence() const {}
+  #endif
 
   /** \brief  Return the maximum amount of concurrency.  */
-  static int concurrency() {return 1;};
+  static int concurrency() {return 1;}
 
   //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & , const bool /* detail */ = false ) {}
@@ -261,6 +267,20 @@ public:
     return *this;
   }
 
+  template<class ExecSpace, class ... OtherProperties >
+  friend class TeamPolicyInternal;
+
+  template< class ... OtherProperties >
+  TeamPolicyInternal(const TeamPolicyInternal<Kokkos::Serial,OtherProperties...>& p) {
+    m_league_size = p.m_league_size;
+    m_team_scratch_size[0] = p.m_team_scratch_size[0];
+    m_thread_scratch_size[0] = p.m_thread_scratch_size[0];
+    m_team_scratch_size[1] = p.m_team_scratch_size[1];
+    m_thread_scratch_size[1] = p.m_thread_scratch_size[1];
+    m_chunk_size = p.m_chunk_size;
+  }
+
+
   //----------------------------------------
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   template< class FunctorType >
@@ -280,10 +300,21 @@ public:
   int team_size_max( const FunctorType&, const ParallelForTag& ) const { return 1 ; }
   template<class FunctorType>
   int team_size_max( const FunctorType&, const ParallelReduceTag& ) const { return 1 ; }
+  template <class FunctorType, class ReducerType>
+   int team_size_max(const FunctorType&, const ReducerType&,
+                     const ParallelReduceTag&) const {
+     return 1;
+   }
+
   template<class FunctorType>
   int team_size_recommended( const FunctorType&, const ParallelForTag& ) const { return 1 ; }
   template<class FunctorType>
   int team_size_recommended( const FunctorType&, const ParallelReduceTag& ) const { return 1 ; }
+  template <class FunctorType, class ReducerType>
+    int team_size_recommended(const FunctorType&, const ReducerType&,
+                             const ParallelReduceTag&) const {
+    return 1;
+   }
 
   //----------------------------------------
 
@@ -302,7 +333,7 @@ public:
         20*1024*1024);
   }
   /** \brief  Specify league size, request team size */
-  TeamPolicyInternal( execution_space &
+  TeamPolicyInternal( const execution_space &
             , int league_size_request
 #ifndef KOKKOS_ENABLE_DEPRECATED_CODE
             , int team_size_request
@@ -320,7 +351,7 @@ public:
       #endif
     }
 
-  TeamPolicyInternal( execution_space &
+  TeamPolicyInternal( const execution_space &
             , int league_size_request
             , const Kokkos::AUTO_t & /* team_size_request */
             , int /* vector_length_request */ = 1 )

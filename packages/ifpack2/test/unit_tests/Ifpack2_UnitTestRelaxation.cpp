@@ -57,7 +57,7 @@ HEADER
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_Relaxation.hpp>
 #include <Tpetra_RowMatrix.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
+#include <Tpetra_BlockMultiVector.hpp>
 
 namespace { // (anonmous)
 
@@ -194,13 +194,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
 
   TEST_INEQUALITY(&x, &y); // vector x and y are different
   // Vectors x and y point to the same data.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  TEST_EQUALITY(x.template getLocalView<Kokkos::HostSpace> ().data (),
-                y.template getLocalView<Kokkos::HostSpace> ().data ());
-#else
   TEST_EQUALITY(x.getLocalViewHost ().data (),
                 y.getLocalViewHost ().data ());
-#endif
 
   prec.apply(x, y);
 
@@ -265,6 +260,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test4, Scalar, LocalOrdinal
   Teuchos::ParameterList params;
   params.set("relaxation: type", "Jacobi");
   params.set("relaxation: use l1",true);
+  prec.setParameters(params);
+
+  prec.initialize();
+  prec.compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
+
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), 5);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), 5);
+  TEST_NOTHROW(prec.apply(x, y));
+}
+
+  // Test apply() to make sure the Richardson methods work
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Richardson, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
+  out << "Ifpack2::Version(): " << Ifpack2::Version () << std::endl;
+
+  GST num_rows_per_proc = 5;
+
+  RCP<const map_type > rowmap =
+    tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (rowmap);
+  Ifpack2::Relaxation<row_matrix_type> prec (crsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Richardson");
   prec.setParameters(params);
 
   prec.initialize();
@@ -796,8 +823,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using std::endl;
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
   typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -895,10 +922,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using std::endl;
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
   typedef Ifpack2::Relaxation<row_matrix_type> prec_type;
   int lclSuccess = 1;
@@ -1007,9 +1034,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
   out << "Ifpack2::Version(): " << Ifpack2::Version () << std::endl;
@@ -1056,6 +1083,96 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, MTSGS, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+  using crs_matrix_type = Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using row_matrix_type = Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using MV = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+  using prec_type = Ifpack2::Relaxation<row_matrix_type>;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using STM = typename STS::magnitudeType;
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+  //Generate banded test matrix
+  RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LocalOrdinal, GlobalOrdinal, Node>(100);
+  RCP<const crs_matrix_type> A = tif_utest::create_banded_matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowmap, 8);
+  RCP<prec_type> prec = rcp(new prec_type(A));
+  ParameterList params;
+  params.set("relaxation: type", "MT Symmetric Gauss-Seidel");
+  params.set("relaxation: sweeps", 3);
+  prec->setParameters (params);
+  prec->initialize();
+  prec->compute();
+  //Set up linear problem
+  const int numVecs = 10;
+  MV x(A->getDomainMap(), numVecs, true);
+  MV b(rowmap, numVecs, false);
+  b.randomize();
+  Kokkos::View<STM*, Kokkos::HostSpace> initNorms("Initial norms", numVecs);
+  //Residual norms for starting solution of zero
+  b.norm2(initNorms);
+  prec->apply(b, x);
+  //Compute residual vector = b - Ax
+  MV residual(b, Teuchos::Copy);
+  A->apply(x, residual, Teuchos::NO_TRANS, -STS::one(), STS::one());
+  Kokkos::View<STM*, Kokkos::HostSpace> resNorms("Residual norms", numVecs);
+  residual.norm2(resNorms);
+  //Make sure all residual norms are significantly smaller than initial
+  for(int i = 0; i < numVecs; i++)
+  {
+    TEST_COMPARE(resNorms(i), <, 0.5 * initNorms(i));
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, ClusterMTSGS, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+  using crs_matrix_type = Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using row_matrix_type = Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using MV = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+  using prec_type = Ifpack2::Relaxation<row_matrix_type>;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using STM = typename STS::magnitudeType;
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+  //Generate banded test matrix
+  RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LocalOrdinal, GlobalOrdinal, Node>(100);
+  RCP<const crs_matrix_type> A = tif_utest::create_banded_matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowmap, 8);
+  RCP<prec_type> prec = rcp(new prec_type(A));
+  ParameterList params;
+  params.set("relaxation: type", "MT Symmetric Gauss-Seidel");
+  params.set("relaxation: sweeps", 3);
+  params.set("relaxation: mtgs cluster size", 4);
+  prec->setParameters (params);
+  prec->initialize();
+  prec->compute();
+  //Set up linear problem
+  const int numVecs = 10;
+  MV x(A->getDomainMap(), numVecs, true);
+  MV b(rowmap, numVecs, false);
+  b.randomize();
+  Kokkos::View<STM*, Kokkos::HostSpace> initNorms("Initial norms", numVecs);
+  //Residual norms for starting solution of zero
+  b.norm2(initNorms);
+  prec->apply(b, x);
+  //Compute residual vector = b - Ax
+  MV residual(b, Teuchos::Copy);
+  A->apply(x, residual, Teuchos::NO_TRANS, -STS::one(), STS::one());
+  Kokkos::View<STM*, Kokkos::HostSpace> resNorms("Residual norms", numVecs);
+  residual.norm2(resNorms);
+  //Make sure all residual norms are smaller than initial
+  for(int i = 0; i < numVecs; i++)
+  {
+    TEST_COMPARE(resNorms(i), <, 0.5 * initNorms(i));
+  }
+}
 
 #define UNIT_TEST_GROUP_SC_LO_GO( Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test0, Scalar, LO, GO ) \
@@ -1063,12 +1180,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test2, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test4, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Richardson, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, NotCrsMatrix, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestDiagonalBlockCrsMatrix, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, MTSGS, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, ClusterMTSGS, Scalar, LO, GO )
 
   //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SGS_mult_sweeps, Scalar, LO, GO )
 #include "Ifpack2_ETIHelperMacros.h"

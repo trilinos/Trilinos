@@ -65,10 +65,13 @@ namespace Xpetra {
   // TODO: move that elsewhere
   template<class GlobalOrdinal, class Node>
   const Epetra_Map & toEpetra(const Map<int,GlobalOrdinal, Node> &);
+
   template<class GlobalOrdinal, class Node>
   const Epetra_Map & toEpetra(const RCP< const Map<int, GlobalOrdinal, Node> > &);
+
   //template<class GlobalOrdinal>
   //const RCP< const Map<int, GlobalOrdinal> > toXpetra(const RCP< const Epetra_Map > &);
+
   template<class GlobalOrdinal, class Node>
   const RCP< const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &);
 
@@ -88,16 +91,6 @@ namespace Xpetra {
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg,
-               const Teuchos::RCP< Node > &/*node*/) 
-      : EpetraMapT(numGlobalElements, indexBase, comm, lg)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
@@ -108,28 +101,12 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) 
-      : EpetraMapT(numGlobalElements, numLocalElements, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements,
-        const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
-        GlobalOrdinal indexBase,
-        const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-        const Teuchos::RCP< Node > &node) 
-     :  EpetraMapT(numGlobalElements, elementList, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements,
         const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
         GlobalOrdinal indexBase,
@@ -214,13 +191,6 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return Teuchos::null; }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Get this Map's Node object.
-    Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return Teuchos::rcp (new Node);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -310,16 +280,6 @@ namespace Xpetra {
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg,
-               const Teuchos::RCP< Node > &/* node */)
-      : EpetraMapT(numGlobalElements, indexBase, comm, lg)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
@@ -375,12 +335,6 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &/* node */) 
-      : EpetraMapT(numGlobalElements, numLocalElements, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
       // This test come from Tpetra
@@ -481,16 +435,6 @@ namespace Xpetra {
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements,
-               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &/* node */)
-      : EpetraMapT(numGlobalElements, elementList, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements,
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
@@ -538,11 +482,25 @@ namespace Xpetra {
     //! The local index corresponding to the given global index.
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("EpetraMapT::getLocalElement"); return map_->LID(globalIndex); }
 
+
     //! Return the process ranks and corresponding local indices for the given global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(static_cast<int>(GIDList.size()), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, 
+                                    const Teuchos::ArrayView< int > &nodeIDList, 
+                                    const Teuchos::ArrayView< LocalOrdinal > &LIDList) const 
+    { 
+        XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); 
+        return toXpetra(map_->RemoteIDList(static_cast<int>(GIDList.size()), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); 
+    }
+
 
     //! Return the process ranks for the given global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(static_cast<int>(GIDList.size()), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, 
+                                    const Teuchos::ArrayView< int > &nodeIDList) const 
+    { 
+        XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); 
+        return toXpetra(map_->RemoteIDList(static_cast<int>(GIDList.size()), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); 
+    }
+
 
     //! Return a view of the global indices owned by this process.
     Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements());  }
@@ -575,15 +533,12 @@ namespace Xpetra {
     //@{
 
     //! Get this Map's Comm object.
-    Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMapT::getComm"); return toXpetra(map_->Comm()); }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Get this Map's Node object.
-    Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return Teuchos::rcp (new Node);
+    Teuchos::RCP< const Teuchos::Comm< int > > getComm() const
+    {
+        XPETRA_MONITOR("EpetraMapT::getComm");
+        return toXpetra(map_->Comm());
     }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
 
     //@}
 
@@ -780,16 +735,6 @@ namespace Xpetra {
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg,
-               const Teuchos::RCP< Node > &/* node */)
-      : EpetraMapT(numGlobalElements, indexBase, comm, lg)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
@@ -845,12 +790,6 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &/* node */) 
-      : EpetraMapT(numGlobalElements, numLocalElements, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       // This test come from Tpetra
       using Teuchos::outArg;
@@ -950,16 +889,6 @@ namespace Xpetra {
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    EpetraMapT(global_size_t numGlobalElements,
-               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &/* node */)
-      :  EpetraMapT(numGlobalElements, elementList, indexBase, comm)
-    {}
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     EpetraMapT(global_size_t numGlobalElements,
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
@@ -1046,13 +975,6 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMapT::getComm"); return toXpetra(map_->Comm()); }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Get this Map's Node object.
-    Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return Teuchos::rcp (new Node);
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 

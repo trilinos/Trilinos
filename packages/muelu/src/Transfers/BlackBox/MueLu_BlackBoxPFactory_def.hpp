@@ -187,7 +187,7 @@ namespace MueLu {
       Teuchos::Array<LO> crates;
       try {
         crates = Teuchos::fromStringToArray<LO>(coarsenRate);
-      } catch(const Teuchos::InvalidArrayStringRepresentation e) {
+      } catch(const Teuchos::InvalidArrayStringRepresentation& e) {
         GetOStream(Errors,-1) << " *** Coarsen must be a string convertible into an array! *** "
                               << std::endl;
         throw e;
@@ -459,7 +459,7 @@ namespace MueLu {
 
     // Create the matrix itself using the above maps
     RCP<Matrix> P;
-    P = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0, Xpetra::StaticProfile));
+    P = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0));
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
     ArrayRCP<size_t>  iaP;

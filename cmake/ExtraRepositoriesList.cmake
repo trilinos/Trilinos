@@ -80,6 +80,7 @@ TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   ForTrilinos_repo  packages/ForTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}ForTrilinos  NOPACKAGES  EX
   Optika_repo  packages/optika  GIT  ${Trilinos_REPOS_URL_BASE}optika  NOPACKAGES  Nightly
   Mesquite_repo  packages/mesquite  GIT  ${Trilinos_REPOS_URL_BASE}mesquite  NOPACKAGES  Nightly
+  Avatar_repo packages/avatar GIT gitlab.sandia.gov/mhoemme/avatar.git NOPACKAGES EX 
   preCopyrightTrilinos  ""  GIT  software.sandia.gov:/space/git/preCopyrightTrilinos  ""  Continuous
   TerminalApplication  ""  GIT  software.sandia.gov:/space/git/TerminalApplication  ""   EX 
   )

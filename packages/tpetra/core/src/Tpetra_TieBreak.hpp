@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -47,6 +45,8 @@
 
 #include "Tpetra_TieBreak_fwd.hpp"
 #include "Teuchos_RCP.hpp"
+#include <utility>
+#include <vector>
 
 namespace Tpetra {
 namespace Details {
@@ -100,7 +100,7 @@ namespace Details {
     }
 
     //! Virtual destructor (for memory safety of derived classes).
-    virtual ~TieBreak () {}
+    virtual ~TieBreak () = default;
 
     /// \brief Break any ties in ownership of the given global index GID.
     ///

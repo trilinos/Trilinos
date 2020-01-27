@@ -50,12 +50,12 @@ namespace Ioss {
     enum BasicType { INVALID = -1, REAL, INTEGER, POINTER, STRING };
 
     Property();
-    Property(std::string name, BasicType type, void *data, bool is_it_implicit = false);
-    Property(std::string name, int64_t value, bool is_it_implicit = false);
-    Property(std::string name, int value, bool is_it_implicit = false);
-    Property(std::string name, double value, bool is_it_implicit = false);
-    Property(std::string name, const std::string &value, bool is_it_implicit = false);
-    Property(std::string name, void *value, bool is_it_implicit);
+    Property(std::string name, int64_t value);
+    Property(std::string name, int value);
+    Property(std::string name, double value);
+    Property(std::string name, const std::string &value);
+    Property(std::string name, const char *value);
+    Property(std::string name, void *value);
 
     // To set implicit property
     Property(const GroupingEntity *ge, std::string name, BasicType type);
@@ -116,12 +116,12 @@ namespace Ioss {
     bool get_value(std::string *value) const;
     bool get_value(void *&value) const;
 
-    // True if property is calculated rather than stored.
-    // False if property is stored in 'data_'
-    bool isImplicit_;
+    /// True if property is calculated rather than stored.
+    /// False if property is stored in 'data_'
+    bool isImplicit_{false};
 
-    // The actual value of the property.  Use 'type_' and 'storage_' to
-    // discriminate the actual type of the property.
+    /// The actual value of the property.  Use 'type_' and 'storage_' to
+    /// discriminate the actual type of the property.
     union Data {
       std::string *         sval;
       void *                pval;

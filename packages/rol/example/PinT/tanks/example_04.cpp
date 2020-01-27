@@ -66,8 +66,8 @@ int main( int argc, char* argv[] ) {
   try {     // *** Example body.
     // Parse input parameter list
     ROL::Ptr<ROL::ParameterList> pl_ptr  = ROL::getParametersFromXmlFile("parameters_ex04.xml");
-    RealT height    = pl_ptr->get("Height of Tank",       10.0);
-    RealT Qin00     = pl_ptr->get("Corner Inflow",       100.0);
+//    RealT height    = pl_ptr->get("Height of Tank",       10.0);  // Unused
+//    RealT Qin00     = pl_ptr->get("Corner Inflow",       100.0);  // Unused
     RealT h_init    = pl_ptr->get("Initial Fluid Level",   2.0);
     RealT T         = pl_ptr->get("Total Time",           20.0);
     size_type Nt    = static_cast<size_type>(pl_ptr->get("Number of Time Stamps",100));
@@ -141,7 +141,7 @@ int main( int argc, char* argv[] ) {
     ROL::OptimizationSolver<RealT> solver(problem,*rol_ptr);
     solver.solve(*outStream);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

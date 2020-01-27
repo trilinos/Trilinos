@@ -8,10 +8,16 @@ sys.dont_write_bytecode = True
 import os
 sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
 
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import unittest
-import mock
+try:
+    import mock
+except ImportError:
+    import unittest.mock as mock
 
 from argparse import Namespace
 from datetime import datetime
@@ -28,8 +34,12 @@ class TestRun(unittest.TestCase):
         setattr(test_args, 'force_clean', False)
         with mock.patch.object(Cleaner, 'parse_args', return_value=test_args):
             cleanerInst = Cleaner()
-            with self.assertRaisesRegexp(SystemExit, "No directory passed - exiting!"):
-                cleanerInst.run()
+            if sys.version_info.major is not 3:
+                with self.assertRaisesRegexp(SystemExit, "No directory passed - exiting!"):
+                    cleanerInst.run()
+            else:
+                with self.assertRaisesRegex(SystemExit, "No directory passed - exiting!"):
+                    cleanerInst.run()
 
 
     def test_force_calls_clean(self):
@@ -42,7 +52,7 @@ class TestRun(unittest.TestCase):
             with mock.patch.object(Cleaner, 'force_clean_space') as force_clean, \
                  mock.patch('clean_workspace.print') as m_print:
                 cleanerInst.run()
-            force_clean.assert_called_once()
+            force_clean.assert_called_once_with()
             m_print.assert_called_once_with("Cleaning directory /dev/null/force_cleaned "
                                             "due to command line option")
 
@@ -55,15 +65,19 @@ class TestRun(unittest.TestCase):
             cleanerInst = Cleaner()
             with mock.patch.object(Cleaner, 'clean_space_by_date') as force_clean:
                 cleanerInst.run()
-            force_clean.assert_called_once()
+            force_clean.assert_called_once_with()
 
 
 class TestParseArgs(unittest.TestCase):
 
     def test_no_args_gives_help_and_exits(self):
         """Test that the function does the right thing when given no arguments"""
-        usage_message = ('usage: programName [-h] [--force-clean] dir\n'
-                         'programName: error: too few arguments\n')
+        if sys.version_info.major is not 3:
+            usage_message = ('usage: programName [-h] [--force-clean] dir\n'
+                             'programName: error: too few arguments\n')
+        else:
+            usage_message = ('usage: programName [-h] [--force-clean] dir\n'
+                             'programName: error: the following arguments are required: dir\n')
         with self.assertRaises(SystemExit), \
              mock.patch.object(sys, 'argv', ['programName']), \
              mock.patch('sys.stderr', new_callable=StringIO) as cleanOut:
@@ -100,20 +114,15 @@ class TestParseArgs(unittest.TestCase):
 class TestForceCleanSpace(unittest.TestCase):
 
     def test_calls(self):
-        """This function does the final cleanup  so its just module loads and a subprocess call"""
+        """This function does the final cleanup  so its just os.unlink"""
         test_args = Namespace()
         setattr(test_args, 'dir', os.path.join(os.path.sep, 'dev', 'null'))
         setattr(test_args, 'force_clean', True)
         cleanerInst = Cleaner()
         cleanerInst.args = test_args
-        with mock.patch('clean_workspace.module') as mod, \
-             mock.patch('os.chdir') as m_chdir, \
-             mock.patch('clean_workspace.subprocess.check_call') as check_call:
+        with mock.patch('shutil.rmtree') as m_unlink:
             cleanerInst.force_clean_space()
-        mod.assert_has_calls([mock.call('load', 'sems-env'),
-                              mock.call('load', 'sems-ninja_fortran/1.8.2')])
-        m_chdir.assert_called_once_with(test_args.dir)
-        check_call.assert_called_once_with(['make', 'clean'])
+        m_unlink.assert_called_once_with(test_args.dir)
 
 
 class TestCleanSpaceByDate(unittest.TestCase):
@@ -124,7 +133,8 @@ class TestCleanSpaceByDate(unittest.TestCase):
         with mock.patch.dict('os.environ',
                              {'WORKSPACE': '/scratch/Trilinos/foo/bar'}):
             with mock.patch('clean_workspace.Cleaner.force_clean_space') as force_clean, \
-                 mock.patch('clean_workspace.update_last_clean_date') as update:
+                 mock.patch('clean_workspace.update_last_clean_date') as update, \
+                 mock.patch("clean_sentinel.open", side_effect=IOError):
                 cleanerInst.clean_space_by_date()
             force_clean.assert_not_called()
             update.assert_not_called()
@@ -144,8 +154,8 @@ class TestCleanSpaceByDate(unittest.TestCase):
                      mock.patch('clean_workspace.update_last_clean_date') as update, \
                      mock.patch('clean_workspace.print') as m_print:
                     cleanerInst.clean_space_by_date()
-                force_clean.assert_called_once()
-                update.assert_called_once()
+                force_clean.assert_called_once_with()
+                update.assert_called_once_with()
                 m_print.assert_called_once_with("Cleaning directory /dev/null/fake_directory "
                                                 "due to newer reference date")
 
@@ -160,10 +170,11 @@ class TestCleanSpaceByDate(unittest.TestCase):
             cleanerInst.args = test_args
             with mock.patch('clean_workspace.Cleaner.force_clean_space') as force_clean, \
                  mock.patch('clean_workspace.update_last_clean_date') as update, \
-                 mock.patch('clean_workspace.print') as m_print:
+                 mock.patch('clean_workspace.print') as m_print, \
+                 mock.patch("clean_sentinel.open", side_effect=IOError):
                 cleanerInst.clean_space_by_date()
-            force_clean.assert_called_once()
-            update.assert_called_once()
+            force_clean.assert_called_once_with()
+            update.assert_called_once_with()
             m_print.assert_called_once_with("Cleaning directory /dev/null/will_clean "
                                             "due to newer reference date")
 

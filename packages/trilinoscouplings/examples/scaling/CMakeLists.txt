@@ -399,7 +399,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
 # Tpetra has a required dependency on Teuchos and Kokkos,
 # so we don't have to name those packages explicitly here.
 # This test uses the default Kokkos Node type.
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra AND TPETRA_INST_INT_INT)
   TRIBITS_ADD_EXECUTABLE(
     epetraTpetraImportBenchmark
     SOURCES epetraTpetraImportBenchmark.cpp

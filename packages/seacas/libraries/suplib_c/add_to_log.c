@@ -34,16 +34,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <sys/utsname.h>
-#include <time.h>
-#include <unistd.h>
-
-#if defined(__LIBCATAMOUNT__)
-#include <sys/resource.h>
-#include <sys/time.h>
-#else
 #include <sys/times.h>
 #endif
+#include <time.h>
+#include <unistd.h>
 
 #ifndef __USE_XOPEN
 #define __USE_XOPEN
@@ -52,6 +48,7 @@
 
 void add_to_log(const char *my_name, double elapsed)
 {
+#ifndef _MSC_VER
 #define LEN 512
   char time_string[LEN];
   char log_string[LEN];
@@ -103,25 +100,12 @@ void add_to_log(const char *my_name, double elapsed)
         }
 
         {
-#if defined(__LIBCATAMOUNT__)
-          struct rusage rusage;
-
-          getrusage(RUSAGE_SELF, &rusage);
-          /*pp
-           * NOTE: Catamount seems to return the same values for user and system.
-           *       To avoid double-counting cpu time, I only use the user time.
-           *       and set the system time to 0.
-           */
-          u_time = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec / 1.e6;
-          s_time = 0.0;
-#else
           int        ticks_per_second;
           struct tms time_buf;
           times(&time_buf);
           ticks_per_second = sysconf(_SC_CLK_TCK);
           u_time           = (double)(time_buf.tms_utime + time_buf.tms_cutime) / ticks_per_second;
           s_time           = (double)(time_buf.tms_stime + time_buf.tms_cstime) / ticks_per_second;
-#endif
         }
 
         uname(&sys_info);
@@ -131,11 +115,14 @@ void add_to_log(const char *my_name, double elapsed)
 
         snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",
                  codename, username, time_string, u_time, s_time, minutes, seconds,
-                 sys_info.nodename);
+                 sys_info.nodename) < 0
+            ? abort()
+            : (void)0;
 
         fprintf(audit, "%s", log_string);
         fclose(audit);
       }
     }
   }
+  #endif
 }

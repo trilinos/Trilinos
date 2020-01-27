@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -50,11 +51,12 @@ namespace stk { namespace balance { class BalanceSettings; } }
 
 namespace stk { namespace balance { namespace internal {
 
-typedef stk::search::Box<float> StkBox;
-typedef stk::search::IdentProc<stk::mesh::EntityId, int> StkMeshIdent;
-typedef std::pair<StkBox, StkMeshIdent> BoxWithStkId;
-typedef std::vector< BoxWithStkId > BoxVectorWithStkId;
-typedef std::vector<std::pair<StkMeshIdent, StkMeshIdent> > StkSearchResults;
+using StkBox              = stk::search::Box<float>;
+using SearchIdentProc     = stk::search::IdentProc<stk::mesh::EntityId, int>;
+using SearchBoxIdentProc  = std::pair<StkBox, SearchIdentProc>;
+using SearchBoxIdentProcs = std::vector<SearchBoxIdentProc>;
+using SearchElemPair      = std::pair<SearchIdentProc, SearchIdentProc>;
+using SearchElemPairs     = std::vector<SearchElemPair>;
 
 std::string get_parallel_filename(int subdomainIndex, int numSubdomains, const std::string& baseFilename);
 
@@ -62,7 +64,9 @@ int getNumSharedNodesBetweenElements(const ::stk::mesh::BulkData& stkMeshBulkDat
                                      const ::stk::mesh::Entity element1,
                                      const ::stk::mesh::Entity element2);
 
-StkSearchResults getSearchResultsForFacesParticles(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings, const stk::mesh::Selector& searchSelector);
+SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMeshBulkData,
+                                                    const BalanceSettings &balanceSettings,
+                                                    const stk::mesh::Selector& searchSelector);
 
 void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
                     unsigned numNodes,
@@ -70,12 +74,13 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
                     const stk::mesh::FieldBase* coord,
                     const double eps,
                     stk::mesh::EntityId elementId,
-                    BoxVectorWithStkId& faceBoxes);
+                    SearchBoxIdentProcs& faceBoxes);
 
-
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector);
-
-const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& meta_data, const std::string& coordinateFieldName);
+void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,
+                          const BalanceSettings & balanceSettings,
+                          const stk::mesh::FieldBase* coord,
+                          SearchBoxIdentProcs &faceBoxes,
+                          const stk::mesh::Selector& searchSelector);
 
 }}}
 

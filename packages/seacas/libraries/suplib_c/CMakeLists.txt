@@ -11,12 +11,18 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
   )
 
+
 SET(SOURCES
   add_to_log.c
   getline.c
   adler.c
   copy_string.c
+  term_width.c
   )
+
+IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+   APPEND_GLOB(SOURCES XGetopt.c)   
+ENDIF()
 
 TRIBITS_ADD_LIBRARY(
   suplib_c

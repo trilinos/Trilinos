@@ -40,9 +40,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  COMM serial mpi
 #  )
 
+IF(PANZER_HAVE_EPETRA)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tUniqueGlobalIndexerUtilities
-  SOURCES tUniqueGlobalIndexerUtilities.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+  SOURCES tGlobalIndexerUtilities.cpp UnitTest_GlobalIndexer.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 2
   COMM mpi
   )
@@ -53,6 +54,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   COMM mpi
   )
+ENDIF()
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tBlockedDOFManager_fei

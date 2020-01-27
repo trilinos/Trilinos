@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-/** \brief A special namespace for the io_shell demonstration program interface.
+/** \brief A special namespace for the io_shell demonstration program interFace.
  */
 namespace IOShell {
   class Interface
@@ -105,8 +105,11 @@ namespace IOShell {
     bool delete_timesteps{false};
     bool minimize_open_files{false};
     bool disable_field_recognition{false};
-    bool file_per_state{
-        false}; // Put transient data for each timestep in separate file (EXPERMENTAL)
+    // Put transient data for each timestep in separate file (EXPERIMENTAL)
+    bool file_per_state{false};
+    // Testing CGNS - defines zones in reverse order from input file.
+    bool reverse{false};
+    bool add_processor_id_field{false};
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell

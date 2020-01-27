@@ -30,8 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "generated/Iogn_GeneratedMesh.h" // for MapVector, IntVector, etc
-#include <algorithm>                      // for copy
+#include <algorithm> // for copy
 #include <generated/Iogn_DashSurfaceMesh.h>
 #include <vector> // for vector
 
@@ -129,6 +128,8 @@ namespace Iogn {
     }
   }
 
+  std::string DashSurfaceMesh::get_sideset_topology() const { return "quad4"; }
+
   std::pair<std::string, int> DashSurfaceMesh::topology_type(int64_t /*block_number*/) const
   {
     const int numNodesPerElement = 4;
@@ -165,7 +166,7 @@ namespace Iogn {
       return;
     }
 
-    for (unsigned int i = 0; i < mDashSurfaceData.sharedNodes.size(); i++) {
+    for (size_t i = 0; i < mDashSurfaceData.sharedNodes.size(); i++) {
       map[i]  = mDashSurfaceData.sharedNodes[i].nodeId;
       proc[i] = mDashSurfaceData.sharedNodes[i].procId;
     }
@@ -308,7 +309,10 @@ namespace Iogn {
 
   int64_t ExodusMesh::nodeset_node_count_proc(int64_t /*id*/) const { return 0; }
 
-  int64_t ExodusMesh::sideset_side_count_proc(int64_t /*id*/) const { return 0; }
+  int64_t ExodusMesh::sideset_side_count_proc(int64_t id) const
+  {
+    return mExodusData.sidesetConnectivity[id - 1].size();
+  }
 
   int64_t ExodusMesh::communication_node_count_proc() const
   {
@@ -347,11 +351,16 @@ namespace Iogn {
     return std::make_pair(getTopologyName(topology), static_cast<int>(topology));
   }
 
+  std::string ExodusMesh::get_sideset_topology() const { return "quad4"; }
+
   void ExodusMesh::sideset_elem_sides(int64_t setId, Ioss::Int64Vector &elem_sides) const
   {
-    elem_sides.resize(mExodusData.sidesetConnectivity[setId - 1].size());
-    elem_sides.insert(elem_sides.begin(), mExodusData.sidesetConnectivity[setId - 1].begin(),
-                      mExodusData.sidesetConnectivity[setId - 1].end());
+    elem_sides.clear();
+    const std::vector<int> &curSideData = mExodusData.sidesetConnectivity[setId - 1];
+    for (size_t i = 0; i < curSideData.size(); ++i) {
+      elem_sides.push_back(curSideData[i] / 10);
+      elem_sides.push_back(curSideData[i] % 10);
+    }
   }
 
   std::vector<std::string> ExodusMesh::sideset_touching_blocks(int64_t setId) const
@@ -363,7 +372,7 @@ namespace Iogn {
 
   void ExodusMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
   {
-    for (unsigned int i = 0; i < mExodusData.sharedNodes.size(); i++) {
+    for (size_t i = 0; i < mExodusData.sharedNodes.size(); i++) {
       map[i]  = mExodusData.sharedNodes[i].nodeId;
       proc[i] = mExodusData.sharedNodes[i].procId;
     }

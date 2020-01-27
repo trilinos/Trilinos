@@ -53,30 +53,3 @@ std::vector<std::string> SLIB::tokenize(const std::string &str, const std::strin
   }
   return tokens;
 }
-
-#if 0
-#include <iostream>
-
-typedef std::vector<std::string> TokenList;
-
-int main()
-{
-  char s[128];
-  while(!std::cin.eof()) {
-    std::cout << "Enter a string: ";
-    std::cin.getline(s,128);
-    std::string input_line(s);
-    if (input_line != "quit") {
-      std::vector<std::string> tokens = tokenize(input_line, ": \t\r\v\n");
-      cout << "There were " << tokens.size() << " tokens in the line\n";
-      TokenList::const_iterator I = tokens.begin();
-      while (I != tokens.end()) {
-	std::cout << "'" << *I++ << "'\t";
-      }
-      std::cout << '\n';
-    } else {
-      exit(0);
-    }
-  }
-}
-#endif

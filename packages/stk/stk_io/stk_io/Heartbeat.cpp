@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -132,35 +133,23 @@ impl::Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
             }
         }
         else if (hb_type == CSV) {
-            if (!properties.exists("SHOW_TIME_STAMP")) {
-                properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
-            }
-            if (!properties.exists("FIELD_SEPARATOR")) {
-                properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
+            if (!properties.exists("FILE_FORMAT")) {
+                properties.add(Ioss::Property("FILE_FORMAT", "csv"));
             }
         }
         else if (hb_type == TS_CSV) {
-            if (!properties.exists("SHOW_TIME_STAMP")) {
-                properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
-            }
-            if (!properties.exists("FIELD_SEPARATOR")) {
-                properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
+            if (!properties.exists("FILE_FORMAT")) {
+                properties.add(Ioss::Property("FILE_FORMAT", "ts_csv"));
             }
         }
         else if (hb_type == TEXT) {
-            if (!properties.exists("SHOW_TIME_STAMP")) {
-                properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
-            }
-            if (!properties.exists("FIELD_SEPARATOR")) {
-                properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+            if (!properties.exists("FILE_FORMAT")) {
+                properties.add(Ioss::Property("FILE_FORMAT", "text"));
             }
         }
         else if (hb_type == TS_TEXT) {
-            if (!properties.exists("SHOW_TIME_STAMP")) {
-                properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
-            }
-            if (!properties.exists("FIELD_SEPARATOR")) {
-                properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+            if (!properties.exists("FILE_FORMAT")) {
+                properties.add(Ioss::Property("FILE_FORMAT", "ts_text"));
             }
         }
     }

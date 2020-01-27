@@ -62,7 +62,7 @@
 #include <Tpetra_Operator.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_CrsMatrixMultiplyOp.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp>
+#include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_Utilities.hpp>
 #include <Xpetra_TpetraVector.hpp>
@@ -136,7 +136,7 @@ namespace MueLuExamples {
     using Teuchos::rcp;
     typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Operator;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
-    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_BlockCrsMatrix;
+    typedef Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_BlockCrsMatrix;
     typedef Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Xpetra_TpetraBlockCrsMatrix;
     typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
@@ -174,7 +174,7 @@ namespace MueLuExamples {
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2_Preconditioner;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
     typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_RowMatrix;
-    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_BlockCrsMatrix;
+    typedef Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_BlockCrsMatrix;
     typedef Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Xpetra_TpetraBlockCrsMatrix;
     typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
@@ -294,7 +294,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Tpetra_CrsMatrix;
     typedef Tpetra::Operator<SC,LO,GO,NO> Tpetra_Operator;
-    typedef Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> Tpetra_BlockCrsMatrix;
+    typedef Tpetra::BlockCrsMatrix<SC,LO,GO,NO> Tpetra_BlockCrsMatrix;
     typedef Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> Xpetra_TpetraBlockCrsMatrix;
     typedef Xpetra::CrsMatrix<SC,LO,GO,NO> Xpetra_CrsMatrix;
     typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO> Xpetra_CrsMatrixWrap;
@@ -321,7 +321,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       Acrs = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Axp);
     }
     // Block this bad boy
-    Ablock = Tpetra::Experimental::convertToBlockCrsMatrix<SC,LO,GO,NO>(*Acrs,blocksize);
+    Ablock = Tpetra::convertToBlockCrsMatrix<SC,LO,GO,NO>(*Acrs,blocksize);
 
     // Now wrap BlockCrs to Xpetra::Matrix
     RCP<Xpetra_CrsMatrix> Axt = rcp(new Xpetra_TpetraBlockCrsMatrix(Ablock));

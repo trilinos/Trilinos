@@ -31,8 +31,8 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
         ASSERT_EQ(goldSet.size(), sset.size());
         for(size_t j=0;j<goldSet.size();++j)
         {
-            EXPECT_EQ(goldSet[j].second, static_cast<int>(sset[j].side));
-            EXPECT_EQ(goldSet[j].first, bulkData.identifier(sset[j].element));
+            stk::mesh::Entity goldEntity = bulkData.get_entity(stk::topology::ELEMENT_RANK, goldSet[j].first);
+            EXPECT_TRUE(sset.contains(goldEntity, goldSet[j].second));
         }
     }
 }

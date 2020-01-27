@@ -104,10 +104,10 @@ namespace MueLu {
   };
 
 
-  template <class Scalar        = Xpetra::Matrix<>::scalar_type,
-            class LocalOrdinal  = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar        = MueLu::DefaultScalar,
+            class LocalOrdinal  = MueLu::DefaultLocalOrdinal,
+            class GlobalOrdinal = MueLu::DefaultGlobalOrdinal,
+            class Node          = MueLu::DefaultNode>
   class Q2Q1uPFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
     typedef MyCptList_<LocalOrdinal> MyCptList;
@@ -1709,7 +1709,7 @@ namespace MueLu {
     const Array<LO>& Cptlist = myCpts.getCList();
     RCP<const Map> coarseMap = MapFactory::Build(rowMap->lib(), Cptlist.size(), rowMap->getIndexBase() + offset, rowMap->getComm());
 
-    P = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0, Xpetra::StaticProfile));
+    P = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
     RCP<CrsMatrix> Pcrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
     ArrayRCP<size_t>  iaP;

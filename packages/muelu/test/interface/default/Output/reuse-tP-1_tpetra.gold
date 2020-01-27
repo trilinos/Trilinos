@@ -18,6 +18,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -75,6 +76,8 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -97,6 +100,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -165,6 +169,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -222,6 +227,8 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
+Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -244,6 +251,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -300,7 +308,9 @@ keep smoother data = 1
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 presmoother -> 
- [empty list]
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------
@@ -343,6 +353,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -407,6 +418,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -437,6 +449,7 @@ smoother ->
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
+ relaxation: mtgs cluster size = 1   [default]
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -501,6 +514,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -518,7 +532,9 @@ keep smoother data = 1
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 presmoother -> 
- [empty list]
+ A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Nullspace = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ fix nullspace = 0   [default]
 
 
 --------------------------------------------------------------------------------

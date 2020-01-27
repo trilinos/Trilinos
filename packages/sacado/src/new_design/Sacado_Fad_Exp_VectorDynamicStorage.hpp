@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_VECTORDYNAMICSTORAGE_HPP
 
 #include <type_traits>
+#include <utility>
 
 #include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
@@ -49,6 +50,7 @@ namespace Sacado {
       typedef typename std::remove_cv<T>::type value_type;
       static constexpr bool is_statically_sized = false;
       static constexpr int static_size = 0;
+      static constexpr bool is_view = false;
 
       //! Turn DynamicStorage into a meta-function class usable with mpl::apply
       template <typename TT, typename UU = TT>
@@ -65,13 +67,15 @@ namespace Sacado {
       //! Default constructor
       KOKKOS_INLINE_FUNCTION
       VectorDynamicStorage() :
-        v_(), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_), dx_(NULL)
+        v_(), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_),
+        dx_(nullptr)
       {}
 
       //! Constructor with value
       KOKKOS_INLINE_FUNCTION
       VectorDynamicStorage(const T & x) :
-        v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_), dx_(NULL)
+        v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_),
+        dx_(nullptr)
       {}
 
       //! Constructor with size \c sz
@@ -79,12 +83,25 @@ namespace Sacado {
        * Initializes derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      VectorDynamicStorage(const int sz, const T & x, const DerivInit zero_out) :
+      VectorDynamicStorage(const int sz, const T & x,
+                           const DerivInit zero_out = InitDerivArray) :
         v_(x), owns_mem(true), sz_(sz), len_(sz), stride_(1), val_(&v_) {
         if (zero_out == InitDerivArray)
           dx_ = ds_array<U>::get_and_fill(sz_);
         else
           dx_ = ds_array<U>::get(sz_);
+      }
+
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      KOKKOS_INLINE_FUNCTION
+      VectorDynamicStorage(const int sz, const int i, const value_type & x) :
+        VectorDynamicStorage(sz, x, InitDerivArray) {
+        dx_[i]=1.;
       }
 
       //! Constructor with supplied memory
@@ -104,6 +121,10 @@ namespace Sacado {
         stride_(1), val_(&v_)  {
         dx_ = ds_array<U>::strided_get_and_fill(x.dx_, x.stride_, sz_);
       }
+
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move constructor so compiler will
+      // always fall-back to copy
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -139,6 +160,10 @@ namespace Sacado {
         }
         return *this;
       }
+
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move assignment so compiler will
+      // always fall-back to copy
 
       //! Returns number of derivative components
       KOKKOS_INLINE_FUNCTION

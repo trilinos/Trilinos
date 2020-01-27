@@ -49,8 +49,6 @@
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrixUtils.hpp"
 
-#include "Xpetra_IO.hpp"
-
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -88,6 +86,7 @@ namespace MueLu {
                                                  "Number of spacial dimensions in the problem.");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null,
                                                  "Number of nodes per spatial dimension on the coarse grid.");
+    validParamList->set<bool>                   ("keep coarse coords", false, "Flag to keep coordinates for special coarse grid solve");
 
     return validParamList;
   }
@@ -161,6 +160,10 @@ namespace MueLu {
       coarseCoordinates->replaceMap(coarseCoordsMap);
 
       Set(coarseLevel, "Coordinates", coarseCoordinates);
+
+      if(pL.get<bool>("keep coarse coords")) {
+        coarseLevel.Set<RCP<realvaluedmultivector_type> >("Coordinates2", coarseCoordinates, NoFactory::get());
+      }
     }
 
     *out << "Fine and coarse coordinates have been loaded from the fine level and set on the coarse level." << std::endl;
@@ -172,11 +175,35 @@ namespace MueLu {
     } else if(interpolationOrder == 1) {
       // Compute the prolongator using piece-wise linear interpolation
       // First get all the required coordinates to compute the local part of P
+      RCP<const Map> prolongatorColMap = prolongatorGraph->getColMap();
+
+      const size_t dofsPerNode = static_cast<size_t>(A->GetFixedBlockSize());
+      const size_t numColIndices = prolongatorColMap->getNodeNumElements();
+      TEUCHOS_TEST_FOR_EXCEPTION((numColIndices % dofsPerNode) != 0,
+                                 Exceptions::RuntimeError,
+                                 "Something went wrong, the number of columns in the prolongator is not a multiple of dofsPerNode!");
+      const size_t numGhostCoords = numColIndices / dofsPerNode;
+      const GO indexBase = prolongatorColMap->getIndexBase();
+      const GO coordIndexBase = fineCoordinates->getMap()->getIndexBase();
+
+      ArrayView<const GO> prolongatorColIndices = prolongatorColMap->getNodeElementList();
+      Array<GO> ghostCoordIndices(numGhostCoords);
+      for(size_t ghostCoordIdx = 0; ghostCoordIdx < numGhostCoords; ++ghostCoordIdx) {
+        ghostCoordIndices[ghostCoordIdx]
+          = (prolongatorColIndices[ghostCoordIdx*dofsPerNode] - indexBase) / dofsPerNode
+          + coordIndexBase;
+      }
+      RCP<Map> ghostCoordMap = MapFactory::Build(fineCoordinates->getMap()->lib(),
+                                                 prolongatorColMap->getGlobalNumElements() / dofsPerNode,
+                                                 ghostCoordIndices(),
+                                                 coordIndexBase,
+                                                 fineCoordinates->getMap()->getComm());
+
       RCP<realvaluedmultivector_type> ghostCoordinates
-        = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(prolongatorGraph->getColMap(),
+        = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(ghostCoordMap,
                                                                 fineCoordinates->getNumVectors());
       RCP<const Import> ghostImporter = ImportFactory::Build(coarseCoordinates->getMap(),
-                                                             prolongatorGraph->getColMap());
+                                                             ghostCoordMap);
       ghostCoordinates->doImport(*coarseCoordinates, *ghostImporter, Xpetra::INSERT);
 
       SubFactoryMonitor sfm(*this, "BuildLinearP", coarseLevel);

@@ -521,13 +521,7 @@ private:
             vector_size,
             nv, ne);
 
-        team_policy_t tmp_policy(nv, Kokkos::AUTO, vector_size);
-        int max_allowed_team_size = tmp_policy.team_size_max( clt, Kokkos::ParallelForTag() );
-
-        KokkosKernels::Impl::get_suggested_team_size<HandleExecSpace>(
-            max_allowed_team_size,
-            vector_size,
-            teamSizeMax);
+        teamSizeMax = KokkosKernels::Impl::get_suggested_team_size<team_policy_t>(clt, vector_size);
 #endif
 
         Kokkos::parallel_for("KokkosGraph::CountLowerTriangleTeam",
@@ -538,7 +532,7 @@ private:
         KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, HandleExecSpace>
         (nv+1, lower_count);
         //Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
-        HandleExecSpace::fence();
+        HandleExecSpace().fence();
         auto lower_total_count = Kokkos::subview(lower_count, nv);
         auto hlower = Kokkos::create_mirror_view (lower_total_count);
         Kokkos::deep_copy (hlower, lower_total_count);

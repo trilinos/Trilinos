@@ -222,7 +222,7 @@ int main(int argc, char*argv[])
   cmdp.setOption("refactor","no-refactor", &refactor, "Recompute L and U using a numerically different matrix at some point");
   try{
     cmdp.parse(argc,argv);
-  } catch (Teuchos::CommandLineProcessor::HelpPrinted hp) {
+  } catch (const Teuchos::CommandLineProcessor::HelpPrinted& hp) {
     return EXIT_SUCCESS;        // help was printed, exit gracefully.
   }
 

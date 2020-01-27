@@ -631,8 +631,10 @@ RealType real (const complex<RealType>& x) {
 template<class RealType>
 KOKKOS_INLINE_FUNCTION
 RealType abs (const complex<RealType>& x) {
-  // FIXME (mfh 31 Oct 2014) Scale to avoid unwarranted overflow.
-  return std::sqrt (real (x) * real (x) + imag (x) * imag (x));
+#ifndef __CUDA_ARCH__
+  using std::hypot;
+#endif
+  return hypot(x.real(),x.imag());
 }
 
 //! Power of a complex number
@@ -810,11 +812,11 @@ std::ostream& operator << (std::ostream& os, const complex<RealType>& x) {
 }
 
 template<class RealType>
-std::ostream& operator >> (std::ostream& os, complex<RealType>& x) {
+std::istream& operator >> (std::istream& is, complex<RealType>& x) {
   std::complex<RealType> x_std;
-  os >> x_std;
+  is >> x_std;
   x = x_std; // only assigns on success of above
-  return os;
+  return is;
 }
 
 

@@ -39,6 +39,14 @@
 #include <string>
 #include <vector>
 
+#if defined(_MSC_VER)
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t long
+#endif
+#endif
+
 namespace Ioss {
   using IntVector   = std::vector<int>;
   using Int64Vector = std::vector<int64_t>;
@@ -76,7 +84,13 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 
 #if defined(SEACAS_HAVE_MPI)
 #include <mpi.h>
+#define PAR_UNUSED(x)
 #else
+#define PAR_UNUSED(x)                                                                              \
+  do {                                                                                             \
+    (void)(x);                                                                                     \
+  } while (0)
+
 #ifndef MPI_COMM_WORLD
 #define MPI_COMM_WORLD 0
 using MPI_Comm       = int;
@@ -112,10 +126,11 @@ using Kokkos_Complex = Kokkos::complex<double>;
 #if defined IOSS_TRACE
 #include <Ioss_Tracer.h>
 #define IOSS_FUNC_ENTER(m) Ioss::Tracer m(__func__)
-
 #else
 #define IOSS_FUNC_ENTER(m)
 #endif
 #endif
 
+#ifndef IOSS_DEBUG_OUTPUT
 #define IOSS_DEBUG_OUTPUT 0
+#endif

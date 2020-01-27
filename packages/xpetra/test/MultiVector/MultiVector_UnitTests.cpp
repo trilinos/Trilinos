@@ -465,6 +465,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, NonMemberConstructorsEpetra, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
+#ifdef HAVE_XPETRA_EPETRA
     // typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -476,7 +477,6 @@ namespace {
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
         Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm);
     //Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Xpetra::UseEpetra, INVALID, numLocal, 0, comm);
-#ifdef HAVE_XPETRA_EPETRA
     if(mylib==Xpetra::UseEpetra) {
       RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > emap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       RCP<Epetra_MultiVector> mvec = Teuchos::rcp(new Epetra_MultiVector(emap->getEpetra_Map(),numVecs));
@@ -538,18 +538,22 @@ namespace {
     TEST_EQUALITY( mvec.getGlobalLength(), numRanks*numLocal );
 
     // Norms are not computed by Epetra_IntMultiVector so far
-    if(!is_same<typename MV::node_type, Xpetra::EpetraNode>::value &&
-       !(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value)) {
-      std::cout << "Running the norm tests!" << std::endl;
-      // we zeroed it out in the constructor; all norms should be zero
-      Array<Magnitude> norms(numVecs), zeros(numVecs);
-      std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
-      mvec.norm2(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-      mvec.norm1(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-      mvec.normInf(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    #ifdef HAVE_XPETRA_EPETRA
+    if(!is_same<typename MV::node_type, Xpetra::EpetraNode>::value)
+    #endif
+    {
+      if(!(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value)) {
+        std::cout << "Running the norm tests!" << std::endl;
+        // we zeroed it out in the constructor; all norms should be zero
+        Array<Magnitude> norms(numVecs), zeros(numVecs);
+        std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
+        mvec.norm2(norms);
+        TEST_COMPARE_ARRAYS(norms,zeros);
+        mvec.norm1(norms);
+        TEST_COMPARE_ARRAYS(norms,zeros);
+        mvec.normInf(norms);
+        TEST_COMPARE_ARRAYS(norms,zeros);
+      }
     }
 
     Scalar testValue = 2, sumValue = 3;

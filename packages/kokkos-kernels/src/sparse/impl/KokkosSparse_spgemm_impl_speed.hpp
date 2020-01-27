@@ -531,7 +531,7 @@ void
         KOKKOSKERNELS_VERBOSE);
 
     Kokkos::Impl::Timer timer1;
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tGPU vector_size:" << suggested_vector_size
@@ -549,7 +549,7 @@ void
             suggested_team_size ,
             suggested_vector_size),
             sc);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tNumeric TIME:" << timer1.seconds() << std::endl;
@@ -569,7 +569,7 @@ void
     Kokkos::Impl::Timer timer1;
     pool_memory_space m_space
     (num_chunks, this->b_col_cnt + (this->b_col_cnt) / sizeof(scalar_t) + 1, 0,  my_pool_type);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tPool Alloc Time:" << timer1.seconds() << std::endl;
@@ -602,7 +602,7 @@ void
         my_exec_space_,
         team_row_chunk_size);
 
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tCPU vector_size:" << suggested_vector_size
           <<  " team_size:" << suggested_team_size
@@ -618,7 +618,7 @@ void
       Kokkos::parallel_for( "KokkosSparse::NumericCMEM_CPU::DENSE::STATIC", multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
 
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tNumeric TIME:" << timer1.seconds() << std::endl;

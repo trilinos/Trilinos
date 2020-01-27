@@ -12,16 +12,14 @@ namespace Tacho {
   
     template<typename ArgSide, typename ArgUplo, typename ArgTransA>
     struct Trsm<ArgSide,ArgUplo,ArgTransA,Algo::Internal> {      
-      template<typename PolicyType,
-               typename MemberType,
+      template<typename MemberType,
                typename DiagType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(PolicyType &policy,
-             MemberType &member,
+      invoke(MemberType &member,
              const DiagType diagA,
              const ScalarType alpha,
              const ViewTypeA &A,

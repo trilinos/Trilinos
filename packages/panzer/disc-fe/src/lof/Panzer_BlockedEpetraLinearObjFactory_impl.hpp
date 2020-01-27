@@ -59,9 +59,9 @@
 #include "Panzer_BlockedVector_Write_GlobalEvaluationData.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"
-#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_GlobalIndexer.hpp"
 #include "Panzer_HashUtils.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 // Thyra
 #include "Thyra_DefaultBlockedLinearOp.hpp"
@@ -84,7 +84,7 @@ namespace panzer {
 template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const Teuchos::RCP<const UniqueGlobalIndexerBase> & gidProvider,
+                              const Teuchos::RCP<const GlobalIndexer> & gidProvider,
                               bool useDiscreteAdjoint)
    : useColGidProviders_(false), eComm_(Teuchos::null)
    , rawMpiComm_(comm->getRawMpiComm())
@@ -107,8 +107,8 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
 template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const Teuchos::RCP<const UniqueGlobalIndexerBase> & gidProvider,
-                              const Teuchos::RCP<const UniqueGlobalIndexerBase> & colGidProvider,
+                              const Teuchos::RCP<const GlobalIndexer> & gidProvider,
+                              const Teuchos::RCP<const GlobalIndexer> & colGidProvider,
                               bool useDiscreteAdjoint)
    : eComm_(Teuchos::null)
    , rawMpiComm_(comm->getRawMpiComm())
@@ -728,14 +728,14 @@ addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs)
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+Teuchos::RCP<const GlobalIndexer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGlobalIndexer(int i) const
 {
    return rowDOFManagerContainer_->getFieldDOFManagers()[i];
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+Teuchos::RCP<const GlobalIndexer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getColGlobalIndexer(int i) const
 {
    return colDOFManagerContainer_->getFieldDOFManagers()[i];
@@ -1478,7 +1478,7 @@ buildMap(int i) const
    std::vector<int> indices;
 
    // get the global indices
-   getGlobalIndexer(i)->getOwnedIndices(indices);
+   getGlobalIndexer(i)->getOwnedIndicesAsInt(indices);
 
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
@@ -1493,7 +1493,7 @@ buildColMap(int i) const
    std::vector<int> indices;
 
    // get the global indices
-   getColGlobalIndexer(i)->getOwnedIndices(indices);
+   getColGlobalIndexer(i)->getOwnedIndicesAsInt(indices);
 
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
@@ -1512,7 +1512,7 @@ buildGhostedMap(
   using std::vector;
   using Teuchos::rcp;
   vector<int> indices;
-  getGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
+  getGlobalIndexer(i)->getOwnedAndGhostedIndicesAsInt(indices);
   return rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0, *eComm_));
 } // end of buildGhostedMap()
 
@@ -1530,7 +1530,7 @@ buildGhostedMap2(
   using std::vector;
   using Teuchos::rcp;
   vector<int> indices;
-  getGlobalIndexer(i)->getGhostedIndices(indices);
+  getGlobalIndexer(i)->getGhostedIndicesAsInt(indices);
   return rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0, *eComm_));
 } // end of buildGhostedMap2()
 
@@ -1550,7 +1550,7 @@ buildColGhostedMap(
   if (not useColGidProviders_)
     return buildGhostedMap(i);
   vector<int> indices;
-  getColGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
+  getColGlobalIndexer(i)->getOwnedAndGhostedIndicesAsInt(indices);
   return rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0, *eComm_));
 } // end of buildColGhostedMap()
 
@@ -1570,7 +1570,7 @@ buildColGhostedMap2(
   if (not useColGidProviders_)
     return buildGhostedMap2(i);
   vector<int> indices;
-  getColGlobalIndexer(i)->getGhostedIndices(indices);
+  getColGlobalIndexer(i)->getGhostedIndicesAsInt(indices);
   return rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0, *eComm_));
 } // end of buildColGhostedMap2()
 
@@ -1616,7 +1616,7 @@ buildGhostedGraph(int i,int j,bool optimizeStorage) const
 
    std::vector<std::string> elementBlockIds;
    
-   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > rowProvider, colProvider;
+   Teuchos::RCP<const GlobalIndexer> rowProvider, colProvider;
  
    rowProvider = getGlobalIndexer(i);
    colProvider = getColGlobalIndexer(j);
@@ -1642,15 +1642,15 @@ buildGhostedGraph(int i,int j,bool optimizeStorage) const
 
       // loop over the elemnts
       for(std::size_t elmt=0;elmt<elements.size();elmt++) {
-         rowProvider->getElementGIDs(elements[elmt],row_gids);
-         colProvider->getElementGIDs(elements[elmt],col_gids);
+         rowProvider->getElementGIDsAsInt(elements[elmt],row_gids);
+         colProvider->getElementGIDsAsInt(elements[elmt],col_gids);
 
          if (han) {
            const std::vector<LocalOrdinalT>& aes = conn_mgr->getAssociatedNeighbors(elements[elmt]);
            for (typename std::vector<LocalOrdinalT>::const_iterator eit = aes.begin();
                 eit != aes.end(); ++eit) {
              std::vector<int> other_col_gids;
-             colProvider->getElementGIDs(*eit, other_col_gids);
+             colProvider->getElementGIDsAsInt(*eit, other_col_gids);
              col_gids.insert(col_gids.end(), other_col_gids.begin(), other_col_gids.end());
            }
          }
@@ -1678,8 +1678,8 @@ buildFilteredGhostedGraph(int i,int j) const
    using Teuchos::rcp_dynamic_cast;
 
    // figure out if the domain is filtered
-   RCP<const Filtered_UniqueGlobalIndexer<LocalOrdinalT,int> > filtered_ugi 
-       = rcp_dynamic_cast<const Filtered_UniqueGlobalIndexer<LocalOrdinalT,int> >(getColGlobalIndexer(j));
+   RCP<const Filtered_GlobalIndexer> filtered_ugi 
+       = rcp_dynamic_cast<const Filtered_GlobalIndexer>(getColGlobalIndexer(j));
 
    // domain is unfiltered, a filtered graph is just the original ghosted graph
    if(filtered_ugi==Teuchos::null)

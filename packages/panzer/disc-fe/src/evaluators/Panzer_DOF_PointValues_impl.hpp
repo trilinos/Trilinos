@@ -95,20 +95,16 @@ DOF_PointValues(const Teuchos::ParameterList & p)
                 evalName,
      	        pointRule->dl_scalar);
      this->addEvaluatedField(dof_ip_scalar);
-     constBasisRefScalar_ = basisValues->basis_ref_scalar;
-     constBasisScalar_    = basisValues->basis_scalar;
-     this->addDependentField(constBasisRefScalar_);
-     this->addDependentField(constBasisScalar_);
+     this->addDependentField(basisValues->basis_ref_scalar);
+     this->addDependentField(basisValues->basis_scalar);
   }
   else if(basis->isVectorBasis()) {
      dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
                 evalName,
      	        pointRule->dl_vector);
      this->addEvaluatedField(dof_ip_vector);
-     constBasisRefVector_ = basisValues->basis_ref_vector;
-     constBasisVector_    = basisValues->basis_vector;
-     this->addDependentField(constBasisRefVector_);
-     this->addDependentField(constBasisVector_);
+     this->addDependentField(basisValues->basis_ref_vector);
+     this->addDependentField(basisValues->basis_vector);
   }
   else
   { TEUCHOS_ASSERT(false); }
@@ -124,8 +120,8 @@ postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   if(!is_vector_basis) {
-    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);      
-    this->utils.setFieldData(basisValues->basis_scalar,fm);           
+    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);
+    this->utils.setFieldData(basisValues->basis_scalar,fm);
   }
   else {
     this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
@@ -208,20 +204,16 @@ DOF_PointValues(const Teuchos::ParameterList & p)
                 evalName,
      	        pointRule->dl_scalar);
      this->addEvaluatedField(dof_ip_scalar);
-     constBasisRefScalar_ = basisValues->basis_ref_scalar;
-     constBasisScalar_    = basisValues->basis_scalar;
-     this->addDependentField(constBasisRefScalar_); 
-     this->addDependentField(constBasisScalar_); 
+     this->addDependentField(basisValues->basis_ref_scalar);
+     this->addDependentField(basisValues->basis_scalar);
   }
   else if(basis->isVectorBasis()) {
      dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
                 evalName,
      	        pointRule->dl_vector);
      this->addEvaluatedField(dof_ip_vector);
-     constBasisRefVector_ = basisValues->basis_ref_vector;
-     constBasisVector_    = basisValues->basis_vector;
-     this->addDependentField(constBasisRefVector_); 
-     this->addDependentField(constBasisVector_); 
+     this->addDependentField(basisValues->basis_ref_vector);
+     this->addDependentField(basisValues->basis_vector);
   }
   else
   { TEUCHOS_ASSERT(false); }

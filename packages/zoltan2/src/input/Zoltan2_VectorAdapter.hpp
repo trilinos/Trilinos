@@ -130,16 +130,54 @@ public:
   virtual int getNumEntriesPerID() const = 0;
 
   /*! \brief Provide a pointer to the elements of the specified vector.
-
       \param elements will on return point to the vector values
         corresponding to the global Ids.
       \param stride the k'th element is located at elements[stride*k]
       \param idx ranges from zero to one less than getNumEntriesPerID(), and
          represents the vector for which data is being requested.
    */
+  virtual void getEntriesView(const scalar_t *&elements,
+    int &stride, int idx = 0) const {
+    // If adapter does not define getEntriesView, getEntriesKokkosView is called.
+    // If adapter does not define getEntriesKokkosView, getEntriesView is called.
+    // Allows forward and backwards compatibility.
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+      typename node_t::device_type> kokkosEntries;
+    getEntriesKokkosView(kokkosEntries);
+    elements = kokkosEntries.data();
+    stride = 1;
+  }
 
-  virtual void getEntriesView(const scalar_t *&elements, int &stride,
-                              int idx = 0) const = 0;
+  /*! \brief Provide a Kokkos view to the elements of the specified vector.
+      \param elements will on return point to the vector values
+        corresponding to the global Ids.
+   */
+  virtual void getEntriesKokkosView(
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+      typename node_t::device_type> & elements) const {
+    // If adapter does not define getEntriesKokkosView, getEntriesView is called.
+    // If adapter does not define getEntriesView, getEntriesKokkosView is called.
+    // Allows forward and backwards compatibility.
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    typedef Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+      typename node_t::device_type> kokkos_entries_view_t;
+    elements = kokkos_entries_view_t("entries", this->getLocalNumIDs(),
+      this->getNumEntriesPerID());
+    typename kokkos_entries_view_t::HostMirror host_elements =
+      Kokkos::create_mirror_view(elements);
+    for(int j = 0; j < this->getNumEntriesPerID(); ++j) {
+      const scalar_t * ptr_elements;
+      int stride;
+      getEntriesView(ptr_elements, stride, j);
+      size_t i = 0;
+      for(size_t n = 0; n < this->getLocalNumIDs() * stride; n += stride) {
+        host_elements(i++,j) = ptr_elements[n];
+      }
+    }
+    Kokkos::deep_copy(elements, host_elements);
+  }
 
   /*! \brief Write files that can be used as input to Zoltan or Zoltan2 driver
    *  Creates chaco-formatted input files for coordinates and weights that
@@ -172,6 +210,13 @@ public:
                                  int idx = 0) const
   {
     getEntriesView(elements, stride, idx);
+  }
+
+  inline void getCoordinatesKokkosView(
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const
+  {
+    getEntriesKokkosView(elements);
   }
 
 private:

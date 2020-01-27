@@ -165,12 +165,7 @@ namespace Ioex {
 
   struct FaceBlock
   {
-    FaceBlock()
-        : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), attributeCount(0),
-          procOffset(0)
-    {
-      Ioss::Utils::copy_string(elType, "");
-    }
+    FaceBlock() { Ioss::Utils::copy_string(elType, ""); }
 
     FaceBlock(const FaceBlock &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
@@ -190,25 +185,20 @@ namespace Ioex {
     bool operator!=(const FaceBlock &other) const { return !(*this == other); }
 
     char        elType[MAX_STR_LENGTH + 1]{};
-    std::string name;
-    entity_id   id;
-    int64_t     entityCount;
-    int64_t     nodesPerEntity;
-    int64_t     edgesPerEntity;
-    int64_t     attributeCount;
-    int64_t     procOffset;
+    std::string name{};
+    entity_id   id{0};
+    int64_t     entityCount{0};
+    int64_t     nodesPerEntity{0};
+    int64_t     edgesPerEntity{0};
+    int64_t     attributeCount{0};
+    int64_t     procOffset{0};
 
   private:
   };
 
   struct ElemBlock
   {
-    ElemBlock()
-        : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), facesPerEntity(0),
-          attributeCount(0), offset_(-1), procOffset(0)
-    {
-      Ioss::Utils::copy_string(elType, "");
-    }
+    ElemBlock() { Ioss::Utils::copy_string(elType, ""); }
 
     ElemBlock(const ElemBlock &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
@@ -229,15 +219,15 @@ namespace Ioex {
     bool operator!=(const ElemBlock &other) const { return !(*this == other); }
 
     char        elType[MAX_STR_LENGTH + 1]{};
-    std::string name;
-    entity_id   id;
-    int64_t     entityCount;
-    int64_t     nodesPerEntity;
-    int64_t     edgesPerEntity;
-    int64_t     facesPerEntity;
-    int64_t     attributeCount;
-    int64_t     offset_;
-    int64_t     procOffset;
+    std::string name{};
+    entity_id   id{0};
+    int64_t     entityCount{0};
+    int64_t     nodesPerEntity{0};
+    int64_t     edgesPerEntity{0};
+    int64_t     facesPerEntity{0};
+    int64_t     attributeCount{0};
+    int64_t     offset_{-1};
+    int64_t     procOffset{0};
   };
 
   struct NodeSet
@@ -337,29 +327,23 @@ namespace Ioex {
 
   struct CommunicationMetaData
   {
-    CommunicationMetaData()
-        : processorId(0), processorCount(0), globalNodes(0), globalElements(0),
-          globalElementBlocks(0), globalNodeSets(0), globalSideSets(0), nodesInternal(0),
-          nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0),
-          outputNemesis(false)
-    {
-    }
+    CommunicationMetaData() = default;
 
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
-    int                           processorId;
-    int                           processorCount;
-    int64_t                       globalNodes;
-    int64_t                       globalElements;
-    int64_t                       globalElementBlocks;
-    int64_t                       globalNodeSets;
-    int64_t                       globalSideSets;
-    int64_t                       nodesInternal;
-    int64_t                       nodesBorder;
-    int64_t                       nodesExternal;
-    int64_t                       elementsInternal;
-    int64_t                       elementsBorder;
-    bool                          outputNemesis;
+    int                           processorId{0};
+    int                           processorCount{0};
+    int64_t                       globalNodes{0};
+    int64_t                       globalElements{0};
+    int64_t                       globalElementBlocks{0};
+    int64_t                       globalNodeSets{0};
+    int64_t                       globalSideSets{0};
+    int64_t                       nodesInternal{0};
+    int64_t                       nodesBorder{0};
+    int64_t                       nodesExternal{0};
+    int64_t                       elementsInternal{0};
+    int64_t                       elementsBorder{0};
+    bool                          outputNemesis{false};
 
   private:
     CommunicationMetaData(const CommunicationMetaData &);
@@ -380,7 +364,7 @@ namespace Ioex {
   class Mesh
   {
   public:
-    Mesh() : title(), dimensionality(0), file_per_processor(true) {}
+    Mesh() = default;
 
     Mesh(int dim, char *the_title, bool file_pp) : dimensionality(dim), file_per_processor(file_pp)
     {
@@ -390,8 +374,8 @@ namespace Ioex {
     void populate(Ioss::Region *region);
 
     char title[MAX_LINE_LENGTH + 1]{};
-    int  dimensionality;
-    bool file_per_processor;
+    int  dimensionality{};
+    bool file_per_processor{true};
 
     std::vector<NodeBlock> nodeblocks;
     std::vector<EdgeBlock> edgeblocks;

@@ -24,6 +24,7 @@ build locally as described below.
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#disabling-failing-tests">Disabling failing tests</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
+* <a href="#custom-systems-and-configurations">Custom systems and configurations</a>
 
 
 ## Quick-start
@@ -47,7 +48,7 @@ $ cmake \
 
 $ make NP=16  # Uses ninja -j16
 
-$ ctest -j16  # Might need to be run with srun or some other command, see below
+$ ctest -j4  # Might need to be run with srun or some other command, see below
 ```
 
 The command:
@@ -74,7 +75,7 @@ Using white/ride compiler stack GNU to build DEBUG code with Kokkos node type OP
 
 **[build-name-keywords]** The `<build-name>` argument is a single string of
 the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
-`XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
+`XXX_<keyword0>_<keyword1>_..._YYY`, either separator is supported) .  The
 typical order and format of this string is:
 
     <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
@@ -93,16 +94,23 @@ Each of these keywords [`<system_name>`](#system_name),
 <a name="system_name"/>
 
 **`<system_name>`**: Typically, the system name is determined automatically by
-examining the `hostname` or other files on the system and matching to known
-hosts.  Therefore, it is typically not necessary to specify `<system_name>` in
-the `<build-name>` keys string.  But there are some cases where more then one
-`<system_name>` env are supported on the same machine.  For example, on CEE
-LAN RHEL6 machines, both the <a href="#sems-rhel6-environment">SEMS RHEL6
-env</a> and <a href="#cee-rhel6-environment">CEE RHEL6 env</a> are supported.
-On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in
-`<build-name>`, then the `cee-rhel6` env will be selected.  But if
-`sems-rhel6` is included in the build name or no system name is given, then
-the `sems-rhel6` env will be selected by default on such machines.
+examining the `hostname`, standard system env vars, or other files on the
+machine and matching to a known supported system.  Therefore, it is typically
+not necessary to specify `<system_name>` in the `<build-name>` keys string.
+But there are some cases where more then one `<system_name>` env are supported
+on the same machine.  For example, on CEE LAN RHEL6 machines, both the <a
+href="#sems-rhel6-environment">sems-rhel6</a> and <a
+href="#cee-rhel6-environment">cee-rhel6</a> environments are supported.  On
+these CEE LAN RHEL6 machines, when `cee-rhel6` is included in `<build-name>`,
+then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is included in
+the build name (or no system name is listed in the build name), then the
+`sems-rhel6` env will be selected by default on such machines.  The same is
+true for CEE LAN RHEL7 machines with the <a
+href="#sems-rhel6-environment">sems-rhel7</a> and <a
+href="#cee-rhel6-environment">cee-rhel6</a> environments.  And if `spack-rhel`
+is included in `<build-name>`, then the <a
+href="#spack-rhel-environment">spack-rhel</a> will attempted to be loaded.
+(In that case, one must ensure that the ATDM Spack modules have been defined.)
 
 <a name="kokkos_arch"/>
 
@@ -166,7 +174,6 @@ Kokkos threading / backend model variable `<NODE_TYPE>` (default is
 `<NODE_TYPE>=SERIAL` unless `<COMPILER>=CUDA`):
 
 * `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
-* `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
 * `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
 
 If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
@@ -217,9 +224,10 @@ impacts if shared or stack TPL libs are linked to on some system):
 <a name="release_debug"/>
 
 **`<release_debug>`:** The following `<build-name>` keywords specify debug or
-optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
+optimized build and the `<BUILD_TYPE>` variable (used to set the CMake cache
 var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
-checking (e.g. array bounds checking, pointer checking etc.)):
+checking `Trilinos_ENABLE_DEBUG=ON`, e.g. array bounds checking, pointer
+checking etc.):
 
 * `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE-DEBUG`)
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
@@ -300,10 +308,11 @@ application customers and Trilinos developers just needing to enable a subset
 of packages.  But if package X does get enabled, then it will always have the
 same configuration options independent of any other packages that are enabled.
 
-When `ATDMDevEnv.cmake` is being processed, if there is a "tweaks" file
-defined for a build, then it will be picked up in the CMake cache var <a
-href="#ATDM_TWEAKS_FILES">ATDM_TWEAKS_FILES</a> and that file will be read in
-using `INCLUDE()` to process the extra options contained within it.
+When `ATDMDevEnv.cmake` (or `ATDMDevEnvSettings.cmake`) is being processed, if
+there are "tweaks" files defined for a build, then they will be picked up in
+the CMake cache var <a href="#ATDM_TWEAKS_FILES">ATDM_TWEAKS_FILES</a> and
+those files will be read in using `INCLUDE()` to process the extra options
+contained within it.
 
 
 ## Installation and usage
@@ -386,7 +395,7 @@ selects the parallel build and test jobs by setting the env vars:
 
 * `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`: Number passed to `ctest -j ${ATDM_CONFIG_CTEST_PARALLEL_LEVEL}`
 
-These values can be overridden by setting the following env vars before runnning
+These values can be overridden by setting the following env vars before running
 `source cmake/std/atdm/load-env.sh <build-name>`:
 
 * `ATDM_CONFIG_BUILD_COUNT_OVERRIDE`
@@ -493,9 +502,10 @@ the `checkin-test-atdm.sh` script is run and will set these as the defaults
 ## ctest-s-local-test-driver.sh
 
 When one wants to run local builds to test a branch and submit results to
-CDash so that they are archived and for others to see, then a simple way to
-that is to use the provided `ctest-s-local-test-driver.sh` script.  This
-script uses the CTest -S Jenkins driver system in the directory
+CDash (so that they are archived and for others to see), then a simple way to
+that is to use the provided
+[`ctest-s-local-test-driver.sh`](https://github.com/trilinos/Trilinos/blob/develop/cmake/std/atdm/ctest-s-local-test-driver.sh)
+script.  This script uses the CTest -S Jenkins driver system in the directory
 `Trilinos/cmake/ctest/drivers/atdm/` and the specific Jenkins driver files in
 the directory
 
@@ -512,22 +522,40 @@ $ cd <some_base_build_dir>/
 $ ln -s <some_base_dir>/Trilinos/cmake/std/atdm/ctest-s-local-test-driver.sh .
 ````
 
-Then run any of the build names (e.g. `gnu-opt-debug`) listed in the variable
-`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` in the file
-`cmake/std/atdm/<system_name>/all_supported_builds.sh` (or `all` for all of
-the defined builds) for the system as:
+Then one can run any of the builds with defined driver files listed under:
+
+```
+    Trilinos/cmake/ctest/drivers/atdm/<system_name>/drivers/
+      <full-build-name-1>.sh
+      <full-build-name-2>.sh
+      ...
+```
+
+using:
 
 ```
 $ env \
     Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+    ATDM_CTEST_S_USE_FULL_BUILD_NAME=1 \
   ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
 ```
 
-That will submit results to the Trilinos CDash project to the "Experimental"
-CDash Group (the CDash group can not be changed).  This will automatically
-allocate nodes and run just like it was running as a Jenkins job so the
-details of how this is done are completely taken care of by the existing setup
-for the current system.
+(Or leave out `Trilinos_PACKAGES` to test all of the ATDM packages.)  That
+will submit results to the Trilinos CDash project to the "Experimental" Group
+(the CDash group cannot be changed).  This will automatically allocate nodes
+and run just like it was running as a Jenkins job so the details of how this
+is done are completely taken care of by the existing setup for the current
+system.
+
+To run all of the supported builds listed in the variable
+`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` in the file
+`cmake/std/atdm/<system_name>/all_supported_builds.sh`, use:
+
+```
+$ env \
+    Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+  ./ctest-s-local-test-driver.sh all
+```
 
 One can examine the progress of the builds and tests locally by looking at the
 generated files:
@@ -536,9 +564,8 @@ generated files:
   <some_base_build_dir>/<full_build_name>/smart-jenkins-driver.out
 ```
 
-(e.g. `<full_build_name>` = `Trilinos-atdm-<system_name>-gnu-opt-debug`) and
-also examine the generated `*.xml` configure, build, and test files created
-under:
+and also examine the generated `*.xml` configure, build, and test files
+created under:
 
 ```
   <some_base_build_dir>/<full_build_name>/SRC_AND_BUILD/BUILD/Testing/
@@ -555,21 +582,40 @@ $ env \
   ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
 ```
 
-See
+One can also do run local installs using:
+
+```
+$ env \
+    Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+    ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=install \
+    CTEST_DO_INSTALL=ON \
+  ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
+```
+
+That will install the enabled Trilinos packages under:
+
+```
+  <full-build-name>/SRC_AND_BUILD/BUILD/install/
+```
+
+For more details, see the help documentation in the scirpt itself
+[`ctest-s-local-test-driver.sh`](https://github.com/trilinos/Trilinos/blob/develop/cmake/std/atdm/ctest-s-local-test-driver.sh). Also,
+see
 [TRIBITS_CTEST_DRIVER()](https://tribits.org/doc/TribitsDevelopersGuide.html#determining-what-testing-related-actions-are-performed-tribits-ctest-driver)
 for a description of all of the options that can be set as env vars to, for
-example, skip configure, skip the build, skip running tests, etc.
+example, skip the configure, skip the build, skip running tests, etc.
 
 
 ## Specific instructions for each system
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
-* <a href="#chamaserrano">chama/serrano/eclipse/ghost</a>
+* <a href="#tlcc-2-and-cts-1">TLCC-2 and CTS-1</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
-* <a href="#cee-rhel6-environment">CEE RHEL6 Environment</a>
+* <a href="#spack-rhel-environment">Spack RHEL Environment</a>
+* <a href="#cee-rhel6-environment">CEE RHEL6 and RHEL7 Environment</a>
 * <a href="#waterman">waterman</a>
 
 
@@ -596,7 +642,7 @@ $ cmake \
 
 $ make NP=16
 
-$ bsub -x -Is -q rhel7F -n 16 ctest -j16
+$ bsub -x -Is -q rhel7F -n 16 ctest -j4
 ```
 
 The ATDM configuration of Trilinos is set up to run on the Firestone nodes
@@ -608,7 +654,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'white' and 'ride'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -644,7 +690,7 @@ $ cmake \
 
 $ make NP=16
 
-$ srun ctest -j16
+$ srun ctest -j4
 ```
 
 **NOTE:** While the above example shows loading the environment, configuring
@@ -652,7 +698,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'hansen' and 'shiller'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -664,15 +710,15 @@ $ srun ./checkin-test-atdm.sh intel-opt-openmp \
 ```
 
 
-### chama/serrano
+### TLCC-2 and CTS-1
 
-Once logged on to the TLCC-2 machine 'chama' or the CTS-1 'serrano', 'eclipse'
-or 'ghost' machines, one can directly configure and build on the login node
-(being careful not to overload the node) using the `chama` and `serrano` envs,
-respectively.  But to run the tests, one must run on the compute nodes using
-the `srun` command.  For example, to configure, build and run the tests for
-say `MueLu` on 'serrano', (after cloning Trilinos on the `develop` branch) one
-would do:
+Once logged on to any TLCC2 machine (e.g. 'chama', 'skybridge') or the CTS-1
+machine 'serrano', 'eclipse' or 'ghost' machines, one can directly configure
+and build on the login node (being careful not to overload the node) using the
+`chama` and `serrano` envs, respectively.  But to run the tests, one must run
+on the compute nodes using the `srun` command.  For example, to configure,
+build and run the tests for say `MueLu` on 'serrano', (after cloning Trilinos
+on the `develop` branch) one would do:
 
 
 ```
@@ -688,7 +734,7 @@ $ cmake \
 
 $ make NP=16
 
-$ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j16
+$ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j4
 ```
 
 To get information on <YOUR_WCID> used above, there is a WC tool tab on
@@ -696,8 +742,9 @@ computing.sandia.gov
 
 **NOTE:** Unlike some of the other machines, one must load the environment,
 configure and build on the login node and then run the test suite on a compute
-node on this system.  This is what the CTest -S driver on 'chama' and
-'serrano' does in order to drive jobs and submit to CDash.
+node on this system.  This is what the CTest -S driver does on TLCC-2 and
+CTS-1 systems like 'chama' and 'serrano' in order to drive jobs and submit to
+CDash.
 
 To use the checkin-test-atdm.sh script, you must split running the tests from
 the configure and build as with:
@@ -776,7 +823,7 @@ NOTE: Above including `sems-rhel6` in the build name
 CEE LAN RHEL6 machine to be explicit that the SEMS env is being used and not
 the <a href="#cee-rhel6-environment">CEE RHEL6 env</a>.
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -818,7 +865,7 @@ $ make NP=16
 $ ctest -j8
 ```
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -835,7 +882,7 @@ this can be overridden by setting the env var
 `ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` running `source
 cmake/std/atdm/load-env.sh <build_name>`.
 
-NOTE: The default Intel compiler license server can be overridded by setting
+NOTE: The default Intel compiler license server can be overridden by setting
 the env var:
 
 ```
@@ -843,11 +890,62 @@ $ export ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE=<some-url>
 ```
 
 
-### CEE RHEL6 Environment
+### Spack RHEL Environment
 
-Once logged into any CEE LAN RHEL6 SRN machine, one can configure, build, and
-run tests for any ATDM Trilinos package using the `cee-rhel6` env.  For
-example, to configure, build and run the tests for the
+The env 'spack-rhel' should work on any RedHad Enterprise Linux (RHEL) (and
+perhaps many other Linux systems) that have the SNL ATDM Spack modules
+installed on them.  See the [installation
+documentation](https://gitlab.sandia.gov/atdm/atdm-spack-scripts/blob/master/README.md).
+**WARNING:** This Spack env is still under development and may change in the
+future.
+
+Once logged onto a Linux machine with the SNL ATDM Spack modules installed,
+one can directly configure, build, and run tests using the `spack-rhel` env.
+For example, to configure, build and run the tests for `MueLu` one would clone
+Trilinos on the `develop` branch and then do the following:
+
+
+```
+$ cd <some_build_dir>/
+
+$ source <spack-install-base-dir>/setup-env.sh
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh spack-rhel-gnu-openmp-opt
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make NP=16
+
+$ ctest -j8
+```
+
+One can also run the same build and tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ env ATDM_CHT_DEFAULT_ENV=spack-rhel-default \
+  ./checkin-test-atdm.sh spack-rhel-gnu-openmp-opt \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=spack-rhel-default` in the env
+when passing in `all` in order for it to select the correct set of supported
+builds for the `spack-rhel` env and also to load the correct env to find
+Python, etc.
+
+
+### CEE RHEL6 and RHEL7 Environment
+
+Once logged into any CEE LAN RHEL6 or RHEL7 SRN machine, one can configure,
+build, and run tests for any ATDM Trilinos package using the `cee-rhel6` env.
+For example, to configure, build and run the tests for the
 `cee-rhel6-clang-opt-openmp` build for say `MueLu` on a CEE LAN machine,
 (after cloning Trilinos on the `develop` branch) one would do:
 
@@ -872,7 +970,7 @@ NOTE: Above one must include `cee-rhel6` in the build name
 LAN RHEL6 machine or the <a href="#sems-rhel6-environment">sems-rhel6</a> env
 will be used by default.
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -917,7 +1015,7 @@ $ cmake \
 
 $ make NP=20
 
-$ bsub -x -Is -n 20 ctest -j20
+$ bsub -x -Is -n 20 ctest -j4
 ```
 
 **NOTE:** While the above example shows loading the environment, configuring
@@ -925,7 +1023,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'waterman'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -938,86 +1036,10 @@ $ bsub -x -Is -n 20 \
 
 ## Building and installing Trilinos for ATDM Applications
 
-The sections below describe how to configure, build, and install Trilinos for
-usage by the ATDM applications:
+See the following internal SNL wiki page for instructions on building and
+testing that ATDM APPs (e.g. SPARC and EMPIRE) against ATDM Trilinos builds:
 
-* <a href="#building-and-installing-trilinos-for-empire">Building and installing Trilinos for EMPIRE</a>
-* <a href="#building-and-installing-trilinos-for-sparc">Building and installing Trilinos for SPARC</a>
-
-
-### Building and installing Trilinos for EMPIRE
-
-Configuring, building and installing Trilinos for EMPIRE and then building and testing EMPIRE against that Trilinos installation is an easy process.  To build the ATDM Trilinos configuration on any supported system just do:
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <build-name>
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/empire/EMPIRETrilinosPackagesEnables.cmake \
-  -DCMAKE_INSTALL_PREFIX=<trilinos-install-dir> \
-  $TRILINOS_DIR
-
-$ make NP=16  # Uses ninja -j16
-
-$ make NP=16 install
-```
-
-Once the Trilinos installation is complete, one can configure, build, and test EMPIRE with:
-
-```
-$ cd <empire-build-dir>/
-
-$ source <trilinos-install-dir>/load_matching_env.sh
-
-$ rm -r CMake*
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_INSTALL_DIR=${ATDM_TRILINOS_INSTALL_PREFIX} \
-  [other options] \
-  <empire-src-dir>
-
-$ ninja -j20
-
-$ ctest -j8
-```
-
-The EMPIRE configuration gets everything it needs from the sourced and loaded environment and from the Trilinos installation directory.  Easy as pie!
-
-Details on where to get the EMPIRE source repos and the exact CMake options to use when configuring EMPIRE are given at:
-
-* [Building and Testing EMPIRE against Local Trilinos Installation](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Building+ATDM+APPs+Against+Local+Installs+of+Trilinos#BuildingATDMAPPsAgainstLocalInstallsofTrilinos-BuildingandTestingEMPIREagainstLocalTrilinosInstallation)
-
-
-### Building and installing Trilinos for SPARC
-
-
-To configure, build, and install Trilinos for usage by SPARC, one must use a very specific name for the installation directory or the CMake configure of SPARC will not pick it up.  Specific instructions and some helper scripts for building and installing Trilinos and then building and testing SPARC against Trilinos installation are given at:
-
-* [Building and Testing SPARC against Local Trilinos Installation](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Building+ATDM+APPs+Against+Local+Installs+of+Trilinos#BuildingATDMAPPsAgainstLocalInstallsofTrilinos-BuildingandTestingSPARCagainstLocalTrilinosInstallation)
-
-But for a specific build example on a CEE RHEL6 machine, one wouild configure, build, and install Triilnos for SPARC using:
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cee-rhel6-gnu-7.2.0-openmpi-1.10.2-serial-static-dbg
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake \
-  -DCMAKE_INSTALL_PREFIX=<base-dir>/cee-cpu_gcc-7.2.0_openmpi-1.10.2_serial_static_dbg
-  $TRILINOS_DIR
-
-$ make NP=16  # Uses ninja -j16
-
-$ make NP=16 install
-```
-
-In addition, configuring and building SPARC requires special CMake configure scripts be used.  Again, consult the above web page and helper scripts.
+* [Building ATDM APPs against Trilinos](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Building+ATDM+APPs+against+Trilinos)
 
 
 ## Troubleshooting configuration problems
@@ -1068,7 +1090,8 @@ contains the following files:
   arbitrary sets of packages.
 
 * **ATDMDisables.cmake**: Disables a bunch of Trilinos packages and
-  subpackages not used by ATDM application customers.  This file gets included
+  subpackages not used by ATDM application customers, disables of test suites
+  and individual tests across various builds, etc..  This file gets included
   automatically in `ATDMDevEnv.cmake` (so you don't need to list it in local
   configures of Trilinos).  But this file is also included in the outer `ctest
   -S` driver script code for ATDM builds of Trilinos which is needed for
@@ -1093,11 +1116,12 @@ contents:
   <system-name>/
     environment.sh  # Load env for the given system based on $ATDM_CONFIG_BUILD_NAME keys
     all_supported_builds.sh  # [Optional] List of all supported builds
-    custom_bulds.sh  # [Optional] Special logic for compiler keywords, etc.
+    custom_builds.sh  # [Optional] Special logic for compiler keywords, etc.
     tweaks/
        <COMPILER0>_<BUILD_TYPE0>_<NODE_TYPE0>_<KOKKOS_ARCH0>.cmake  # [Optional]
        <COMPILER1>_<BUILD_TYPE1>_<NODE_TYPE1>_<KOKKOS_ARCH0>.cmake  # [Optional]
        ...
+       Tweaks.cmake # [Optional]
 ```
 
 The optional file `<system-name>/all_supported_builds.sh` contains a list of
@@ -1125,16 +1149,16 @@ builds that submit to CDash.
 
 The optional file `<system-name>/custom_builds.sh` contains specialized logic
 for compiler versions and other specialized keywords and versions.  (For an
-example, see `atdm/cee-rhel6/cutome-builds.sh` and
+example, see `atdm/cee-rhel6/custom-builds.sh` and
 `atdm/cee-rhel6/environment.sh`.)
 
 <a name="ATDM_TWEAKS_FILES"/>
 
 The **ATDM TWEAKS FILES** in the `cmake/std/atdm/<system-name>/tweaks/`
 directory contain special settings for specific builds for a specific system.
-Typically, this file contains (temporary) disables for tests for that given
-build.  When a configure is performed, the internal CMake variable
-`ATDM_BUILD_NAME_KEYS_STR` set to
+Typically, these files contains (temporary) disables for tests and test
+exectuables for that given build.  When a configure is performed, the internal
+CMake variable `ATDM_BUILD_NAME_KEYS_STR` set to
 `<COMPILER>_<BUILD_TYPE>_<NODE_TYPE>_<KOKKOS_ARCH>` (printed to STDOUT) is
 used to define a default file name:
 
@@ -1144,15 +1168,28 @@ used to define a default file name:
 
 If that file exists, then it is set as the default for the cmake cache
 variable `ATDM_TWEAKS_FILES` (prints to STDOUT) and that file is included and
-its options are read.  For example, this is what the output looks like on
-'waterman':
+its options are set as CMake cache varaibles.  For example, this is what the
+output looks like for a build on 'waterman':
 
 ```
 -- Reading in configuration options from cmake/std/atdm/ATDMDevEnv.cmake ...
--- ATDM_BUILD_NAME_KEYS_STR='GNU_RELEASE_OPENMP_POWER9'
--- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake'
--- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake ...
+-- ATDM_BUILD_NAME_KEYS_STR='CUDA-9.2_RELEASE-DEBUG_CUDA_POWER9_VOLTA70'
+-- ATDM_TWEAKS_FILES='<...>/cmake/std/atdm/waterman/tweaks/CUDA-9.2_RELEASE-DEBUG_CUDA_POWER9_VOLTA70.cmake'
+-- Including ATDM build tweaks file <...>/cmake/std/atdm/waterman/tweaks/CUDA-9.2_RELEASE-DEBUG_CUDA_POWER9_VOLTA70.cmake ...
 ```
+
+In addition, if the file:
+
+```
+  Trilinos/cmake/std/atdm/<system-name>/tweaks/Tweaks.cmake
+```
+
+exists, then it will be included after the above
+`tweaks/${ATDM_BUILD_NAME_KEYS_STR}.cmake` file for the matching build.
+Disables for all builds on a system or for many related builds on a system can
+go into the `Tweaks.cmake` file to avoid having to duplicate disables across
+multiple `${ATDM_BUILD_NAME_KEYS_STR}.cmake` files.  Details are in the next
+section.
 
 
 ## Disabling failing tests
@@ -1162,8 +1199,8 @@ platforms for certain builds or based on other criteria (see sub-process
 [Temporarily disable the failing code or
 test](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Triaging+and+addressing+ATDM+Trilinos+Failures#TriagingandaddressingATDMTrilinosFailures-5.Makesuretheissueisaddressedinatimelyway:)).
 There are various ways to disable tests with the Trilinos TriBITS/CMake-based
-build and test system.  Tests can be disabled in the `CMakeLists.txt` files
-that define the tests themselves using various logic.  But the way to
+build and test system.  First, tests can be disabled in the `CMakeLists.txt`
+files that define the tests themselves using various logic.  But the way to
 selectively disable tests for the ATDM Trilinos builds that will be described
 here will be to only modify files under the `Trilinos/cmake/std/atdm/`
 directory.  This will be done by setting the CMake cache variable
@@ -1221,7 +1258,7 @@ file](#ATDM_TWEAKS_FILES) for that build and platform:
 
 ```
   Trilinos/cmake/std/atdm/<system-name>/tweaks/<ATDM_BUILD_NAME_KEYS_STR>.cmake
-  ```
+```
 
 The tweak file being looked for is printed out in the CMake configure output
 as the line:
@@ -1242,7 +1279,7 @@ For example, Trilinos commit
 shows the disable of the test:
 
 ```
-# Disable test that times out for some unkown reason (#2925)
+# Disable test that times out for some unknown reason (#2925)
 ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
 ```
 
@@ -1262,52 +1299,64 @@ described below.
 ### Disable a test for several or all builds on a specific platform
 
 It is often the case that a test needs to be disabled for several (or all)
-builds for a given platform.  An efficient way to do this is to create a new
-`*.cmake` file that contains the `ATDM_SET_ENABLE()` statements and then
-include that new file in all of the tweaks files on that system where the
-tests should be disabled.
-
-For example, the Trilinos commit
-[3450efd421](https://github.com/trilinos/Trilinos/commit/3450efd421f1ce2b47700853aa4c5801f667202a)
-shows how a set of tests were disabled for all of the CUDA builds on the
-system `ride` through the creation of the file:
+builds for a given platform.  The best way to do this is to disable these in
+the file:
 
 ```
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_COMMON_TWEAKS.cmake
+cmake/std/atdm/<system_name>/tweaks/Tweaks.cmake
 ```
 
-and then the inclusion of that file in the specific tweak files for each CUDA
-build:
+If that file exists, it will get included after the
+`<ATDM_BUILD_NAME_KEYS_STR>.cmake` file as described above.
+
+Typical logic in a `Tweaks.cmake` file may look like:
 
 ```
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_DEBUG_CUDA.cmake
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_RELEASE_CUDA.cmake
+# Disable tests for all builds for this system
+ATDM_SET_ENABLE(<full_test_name_1>_DISABLE ON)
+ATDM_SET_ENABLE(<full_test_name_2>_DISABLE ON)
+...
+
+IF (Trilinos_ENABLE_DEBUG)
+  # Disable tests for all debug builds on this system
+  ...
+ENDIF()
+
+IF (ATDM_COMPILER STREQUAL "GNU-7.2.0")  # See <system_name>/enviornment.sh
+  # Disables for all non-CUDA GNU 7.2.0 builds
+  ...
+ENDIF()
+
+IF (ATDM_NODE_TYPE STREQUAL "SERIAL")
+  # Disable tests for all SERIAL builds for this system
+  ...
+ELSEIF (ATDM_NODE_TYPE STREQUAL "OPENMP")
+  # Disable tests for all OpenMP builds for this system
+  ...
+ELEIF (ATDM_NODE_TYPE STREQUAL "CUDA")
+  # Disable tests for all CUDA builds for this system
+  ...
+  IF (Trilinos_ENABLE_DEBUG)
+    # Disable tests for all CUDA debug builds for this system
+    ...
+  ENDIF()
+  IF (ATDM_CUDA_RDC and Trilinos_ENABLE_DEBUG)
+    # Disable tests for all CUDA, RDC, debug builds for this system
+    ...
+  ENDIF()
+ENDIF()
 ```
 
-(before `-POWER8-KEPLER37` was added to the names) using the inserted CMake
-statement:
-
-```
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/CUDA_COMMON_TWEAKS.cmake")
-```
-
-An example of using a `*.cmake` file to disable the same set of tests in all
-of the builds for a given system is shown in Trilinos commit
-[33a933b004](https://github.com/trilinos/Trilinos/commit/33a933b004f88710274906fad612380049e1e82e).
-This example shows the creation of the file:
-
-```
-  Trilinos/cmake/std/atdm/ride/tweaks/ALL_COMMON_TWEAKS.cmake
-```
-
-and then the inclusion of that file in all of the specific tweaks files on
-'ride' with the statement:
-
-```
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ALL_COMMON_TWEAKS.cmake")
-```
-
-in each of those files.
+Any CMake variable that has been set in the `ATDMDevEnvSettings.cmake` file
+before these tweak files are included can be used in if-logic but the
+recommended variables are `ATDM_COMPILER` (uppercase),
+`ATDM_KOKKOS_ARCH_JOB_NAME_KEYS` (uppercase seprated by `_`), `ATDM_NODE_TYPE`
+(values `CUDA`, `OPENMP`, `SERIAL`), `ATDM_CUDA_RDC` (`ON`/`OFF`), `ATDM_FPIC`
+(`ON`/`OFF`), `ATDM_COMPLEX` (`ON`/`OFF`), `ATDM_SHARED_LIBS` (`ON`/`OFF`),
+`ATDM_CMAKE_BUILD_TYPE` (values `DEBUG`, `RELEASE`, and `RELEASE-DEBUG`),
+`Trilinos_ENABLE_DEBUG` (`ON`/`OFF`), and `ATDM_PT_PACKAGES` (`ON`/`OFF`).  No
+other variables should be used in if-logic in these files as other variables
+may change in the future.
 
 
 ### Disable a test for builds on all platforms
@@ -1320,19 +1369,19 @@ one can accomplish this by adding a (conditional) `ATDM_SET_ENABLE()`
 statement for each test disable directly to the file:
 
 ```
-  Trilinos/cmake/std/atdm/ATDMDevEnvSettings.cmake
+  Trilinos/cmake/std/atdm/ATDMDisables.cmake
 ```
 
 For example, Trilinos commit [5e52db03ff](https://github.com/trilinos/Trilinos/commit/5e52db03ff33acb5b9a0be7ba7507a8bb0de6e30) added the CMake code:
 
 ```
 # Disable test that fails for all openmp builds (#3035)
-IF (ATDM_USE_OPENMP)
+IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
   ATDM_SET_ENABLE(MueLu_UnitTestsTpetra_MPI_4_DISABLE ON)
 ENDIF()
 ```
 
-to the file `ATDMDevEnvSettings.cmake` to disable the test
+to the file `ATDMDisables.cmake` to disable the test
 `MueLu_UnitTestsTpetra_MPI_4` for all OpenMP builds across all platforms.
 (Note that that disable was later removed in Trilinos commit
 [62fa6663a6](https://github.com/trilinos/Trilinos/commit/62fa6663a6d5a757d786ac87752c3e2074d28414)
@@ -1346,8 +1395,6 @@ they support are:
 
 * `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
 
-* `chama/`: Supports SNL HPC TLCC-2 machine 'chama'.
-
 * `mutrino/`: Supports SNL HPC machine 'mutrino'.
 
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine 'ride' and the
@@ -1357,10 +1404,84 @@ they support are:
 
 * `sems-rhel7/`: SNL COE RHEL7 systems with the SEMS NFS environment
 
+* `spack-rhel/`: RHEL (and likely other Linux) systems with the SNL ATDM Spack modules installed.
+
 * `serrano/`: Supports SNL HPC CTS-1 machines 'serrano', 'eclipse', and
   'ghost'.
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   'shiller' and the mirror SON machine 'hansen'.
 
+* `tlcc2/`: Supports SNL HPC TLCC-2 machines 'chama', 'skybridge', etc..
+
 * `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.
+
+
+## Custom systems and configurations
+
+In addition to officially defined system configurations described
+[above](#specific-instructions-for-each-system), one can also define a custom
+system configuration and use that.  To do so, create a new directory with the
+contents:
+
+```
+<some-base-dir>/<custom-system-name>/
+  environment.sh           # Required
+  custom_builds.sh         # Optional
+  all_supported_builds.sh  # Optional
+```
+
+(only the `environment.sh` script is required).
+
+Then one can explicitly use that custom system setup using:
+
+```
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <build-name> \
+  <some-base-dir>/<custom-system-name>
+```
+
+The name of the new custom system name is taken from the last directory name
+`<custom-system-name>` and the files in that directory are read and treated
+like any of the offically defined system configurations.  Also, if the name of
+an officially supported system is present in `<build-name>`, it will be
+ignored.
+
+A second approach is to register a custom system configuration as:
+
+```
+export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=<some-base-dir>/<custom-system-name>
+```
+
+and then that configuration can be selected by adding the keyword
+`<custom-system-name>` to the `<build-name>` passed in as:
+
+```
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh \
+  <custom-system-name>-<other-keywords>
+```
+
+In this case, if `<custom-system-name>` is found in the input `<build-name>`
+argument, then the custom configuration will be used even if one of the
+officially defined configurations would otherwise match.  But if
+`<custom-system-name>` is not included in the build name, then the registered
+custom system configuration will not be selected.
+
+When a custom configuration is selected, when Trilinos is installed, the
+directory `<some-base-dir>/<custom-system-name>` is copied to the install tree
+and the installed [`load-matching-env.sh`](#installation-and-usage) script
+will automatically load that custom env according to the custom build
+configuration script.
+
+A simple example can be seen in:
+
+* [cmake/std/atdm/examples/my-sems-rhel6-config/environment.sh](examples/my-sems-rhel6-config/environment.sh)
+
+which works on any SEMS RHEL6 machine similarly to the offically defined <a
+href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
+
+To see how things can be specified look at examples of other `environment.sh`
+scripts in the offically defined configurations under:
+
+* [cmake/std/atdm/<system_name>/](.)
+
+where `<system_name>` is `ride`, `waterman`, `tlcc2`, etc.

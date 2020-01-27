@@ -53,7 +53,7 @@
 #include <unordered_set>
 
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_GlobalIndexer.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
@@ -102,7 +102,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    int numProc = tComm->getSize();   
 
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
-   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
+   RCP<DOFManager> dofManager = rcp(new DOFManager); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
@@ -116,13 +116,13 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 
    dofManager->buildGlobalUnknowns();
 
-   std::vector<int> filtered;
-   Filtered_UniqueGlobalIndexer<int,int> filtered_ugi;
+   std::vector<panzer::GlobalOrdinal> filtered;
+   Filtered_GlobalIndexer filtered_ugi;
    filtered_ugi.initialize(dofManager,filtered);
 
    // check the GIDs
    {
-     std::vector<int> gids,gids_f;
+     std::vector<panzer::GlobalOrdinal> gids,gids_f;
 
      dofManager->getElementGIDs(0,gids);
      filtered_ugi.getElementGIDs(0,gids_f);
@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    
    // check owned and ghosted
    {
-     std::vector<int> indices, indices_f;
+     std::vector<panzer::GlobalOrdinal> indices, indices_f;
 
      dofManager->getOwnedAndGhostedIndices(indices);
      filtered_ugi.getOwnedAndGhostedIndices(indices_f);
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 
    // check owned 
    {
-     std::vector<int> indices, indices_f;
+     std::vector<panzer::GlobalOrdinal> indices, indices_f;
 
      dofManager->getOwnedIndices(indices);
      filtered_ugi.getOwnedIndices(indices_f);
@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 
   // check ghosted
   {
-    std::vector<int> indices, indices_f;
+    std::vector<panzer::GlobalOrdinal> indices, indices_f;
     dofManager->getGhostedIndices(indices);
     filtered_ugi.getGhostedIndices(indices_f);
     TEST_EQUALITY(indices.size(), indices_f.size());
@@ -197,7 +197,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    int numProc = tComm->getSize(); 
 
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
-   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
+   RCP<DOFManager> dofManager = rcp(new DOFManager); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
@@ -211,12 +211,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
    dofManager->buildGlobalUnknowns();
 
-   std::vector<int> my_filtered;
+   std::vector<panzer::GlobalOrdinal> my_filtered;
    dofManager->getElementGIDs(1,my_filtered);
 
    // now we will compute all the filtered indices in this UGI
    // here we will print some things out for a sanity check
-   std::vector<int> all_filtered;
+   std::vector<panzer::GlobalOrdinal> all_filtered;
    {
      int mySize = Teuchos::as<int>(my_filtered.size());
      std::vector<int> neighborSizes(numProc,0);
@@ -244,12 +244,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      out << std::endl;
    }
 
-   Filtered_UniqueGlobalIndexer<int,int> filtered_ugi;
+   Filtered_GlobalIndexer filtered_ugi;
    filtered_ugi.initialize(dofManager,my_filtered);
 
    out << "check the GIDs" << std::endl;
    {
-     std::vector<int> gids,gids_f;
+     std::vector<panzer::GlobalOrdinal> gids,gids_f;
 
      dofManager->getElementGIDs(0,gids);
      filtered_ugi.getElementGIDs(0,gids_f);
@@ -273,11 +273,11 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
     using std::size_t;
     using std::unordered_set;
     using std::vector;
-    vector<int> indices, filteredIndices;
+    vector<panzer::GlobalOrdinal> indices, filteredIndices;
     dofManager->getOwnedAndGhostedIndices(indices);
     filtered_ugi.getOwnedAndGhostedIndices(filteredIndices);
     TEST_EQUALITY(indices.size(), filteredIndices.size());
-    unordered_set<int> indicesSet;
+    unordered_set<panzer::GlobalOrdinal> indicesSet;
     for (size_t i(0); i < indices.size(); ++i)
       indicesSet.insert(indices[i]);
     for (size_t i(0); i < filteredIndices.size(); ++i)
@@ -286,7 +286,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
    out << "check owned" << std::endl;
    {
-     std::vector<int> indices, indices_f,diff;
+     std::vector<panzer::GlobalOrdinal> indices, indices_f,diff;
 
      dofManager->getOwnedIndices(indices);
      filtered_ugi.getOwnedIndices(indices_f);
@@ -301,8 +301,8 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      // crop the difference indices
      std::sort(indices.begin(),indices.end());
      std::sort(indices_f.begin(),indices_f.end());
-     std::vector<int>::iterator it = std::set_difference(indices.begin(),indices.end(),
-                                                         indices_f.begin(),indices_f.end(),diff.begin());
+     std::vector<panzer::GlobalOrdinal>::iterator it = 
+       std::set_difference(indices.begin(),indices.end(),indices_f.begin(),indices_f.end(),diff.begin());
      diff.resize(it-diff.begin());
 
      // look at the difference, and make sure they are all in the
@@ -325,7 +325,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
     using std::size_t;
     using std::sort;
     using std::vector;
-    vector<int> indices, filteredIndices, diff;
+    vector<panzer::GlobalOrdinal> indices, filteredIndices, diff;
     dofManager->getGhostedIndices(indices);
     filtered_ugi.getGhostedIndices(filteredIndices);
 
@@ -337,7 +337,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
     diff.resize(filteredIndices.size()); 
     sort(indices.begin(), indices.end());
     sort(filteredIndices.begin(), filteredIndices.end());
-    vector<int>::iterator it = set_difference(filteredIndices.begin(),
+    vector<panzer::GlobalOrdinal>::iterator it = set_difference(filteredIndices.begin(),
       filteredIndices.end(), indices.begin(), indices.end(), diff.begin());
     diff.resize(it - diff.begin());
 
@@ -354,7 +354,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      std::vector<int> indicator;
      filtered_ugi.getOwnedAndGhostedNotFilteredIndicator(indicator);
 
-     std::vector<int> indices;
+     std::vector<panzer::GlobalOrdinal> indices;
      filtered_ugi.getOwnedAndGhostedIndices(indices);
 
      TEST_EQUALITY(indices.size(),indicator.size());
@@ -379,10 +379,10 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
    out << "testing getFilteredOwnedAndGhostedIndices" << std::endl;
    {
-     std::vector<int> indices_f;
+     std::vector<panzer::GlobalOrdinal> indices_f;
      filtered_ugi.getFilteredOwnedAndGhostedIndices(indices_f);
 
-     std::vector<int> indices;
+     std::vector<panzer::GlobalOrdinal> indices;
      filtered_ugi.getOwnedAndGhostedIndices(indices);
 
      // check that the size didn't grow
@@ -390,12 +390,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
      // sort each set of owned indices, then do a set difference and 
      // crop the difference indices
-     std::vector<int> diff;
+     std::vector<panzer::GlobalOrdinal> diff;
      diff.resize(indices.size()); 
      std::sort(indices.begin(),indices.end());
      std::sort(indices_f.begin(),indices_f.end());
-     std::vector<int>::iterator it = std::set_difference(indices.begin(),indices.end(),
-                                                         indices_f.begin(),indices_f.end(),diff.begin());
+     std::vector<panzer::GlobalOrdinal>::iterator it =
+       std::set_difference(indices.begin(),indices.end(),indices_f.begin(),indices_f.end(),diff.begin());
      diff.resize(it-diff.begin());
 
      // look at the difference, and make sure they are all in the

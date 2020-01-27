@@ -443,6 +443,65 @@ C   --Process commands
      &     A(KVARGL), A(KVARNP), A(KVAREL), A(KVARNS), A(KVARSS),
      &     A(KLISNP), A(KNLISE), A(KLISEL), A(KLISNS), A(KLISSS),
      &     A(KLISGV), A(KLISNV), A(KLISEV), A(KLISMV), A(KLISSV))
+
+      CALL MDSTAT (NERR, MEM)
+      IF (NERR .GT. 0) GOTO 100
+
+      CALL MDDEL ('CORD')
+      CALL MCDEL ('NAMECO')
+      CALL MDDEL ('MAPEL')
+      CALL MDDEL ('MAPNO')
+      CALL MDDEL ('IDELB')
+      CALL MDDEL ('NUMELB')
+      CALL MDDEL ('NUMLNK')
+      CALL MDDEL ('NUMATR')
+      CALL MDDEL ('LENE')
+      CALL MCDEL ('EBTYPE')
+      CALL MCDEL ('EBNAME')
+      CALL MDDEL ('IDNPS')
+      CALL MDDEL ('NNNPS')
+      CALL MDDEL ('NDNPS')
+      CALL MDDEL ('IXNNPS')
+      CALL MDDEL ('IXDNPS')
+      CALL MDDEL ('LTNNPS')
+      CALL MDDEL ('FACNPS')
+      CALL MCDEL ('NSNAME')
+      CALL MDDEL ('LISNP')
+      CALL MDDEL ('NLISEL')
+      CALL MDDEL ('LISEL')
+      CALL MDDEL ('LISBEL')
+      CALL MDDEL ('LISNPS')
+      CALL MDDEL ('LISESS')
+      CALL MDDEL ('LINK')
+      CALL MDDEL ('ATRIB')
+      call mcdel ('ATRNM')
+      if (exodus) then
+        call mddel('LISGV')
+        call mddel('LISNV')
+        call mddel('LISEV')
+        call mddel('LISMV')
+        call mddel('LISSV')
+        call mddel('VARGL')
+        call mddel('VARNP')
+        call mddel('VAREL')
+        call mddel('VARNS')
+        call mddel('VARSS')
+        call mddel('TIMES')
+        call mcdel('VNAMEI')
+        call mcdel('VNAMEO')
+        CALL MDDEL('ISEVOK')
+        CALL MDDEL('ISNSVOK')
+        CALL MDDEL('ISSSVOK')
+      endif
+      if (.not. mapnd) then
+        call MDDEL('DBMAPNO')
+      end if
+      if (.not. mapel) then
+        call MDDEL('DBMAPEL')
+      end if
+      call mcdel('QAREC')
+      call mcdel('INFREC')
+
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
 

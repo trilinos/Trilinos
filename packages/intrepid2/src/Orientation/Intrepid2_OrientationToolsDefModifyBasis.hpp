@@ -112,7 +112,7 @@ namespace Intrepid2 {
     // small meta data modification and it uses shards; let's do this on host
     typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
     auto elemOrtsHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemOrts);
-    auto elemNodesHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemNodes);
+    auto elemNodesHost = Kokkos::create_mirror_view_and_copy(typename host_space_type::memory_space(), elemNodes);
 
     const ordinal_type numCells = elemNodes.extent(0);
     for (auto cell=0;cell<numCells;++cell) {
@@ -124,14 +124,14 @@ namespace Intrepid2 {
   }
 
   template<typename ortViewType,
-           typename outputViewType,
+           typename OutputViewType,
            typename inputViewType,
            typename o2tViewType,
            typename t2oViewType,
            typename dataViewType>
   struct F_modifyBasisByOrientation {
     ortViewType orts;
-    outputViewType output;
+    OutputViewType output;
     inputViewType input;
     o2tViewType ordinalToTag;
     t2oViewType tagToOrdinal;
@@ -140,7 +140,7 @@ namespace Intrepid2 {
     const ordinal_type cellDim, numVerts, numEdges, numFaces, numPoints, dimBasis;
 
     F_modifyBasisByOrientation(ortViewType orts_,
-                               outputViewType output_,
+                               OutputViewType output_,
                                inputViewType input_,
                                o2tViewType ordinalToTag_,
                                t2oViewType tagToOrdinal_,
@@ -170,7 +170,9 @@ namespace Intrepid2 {
       typedef typename inputViewType::non_const_value_type input_value_type;
 
       auto out = Kokkos::subview(output, cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-      auto in  = Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      auto in  = (input.rank() == output.rank()) ?
+                 Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL())
+               : Kokkos::subview(input,        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
       // vertex copy (no orientation)
       for (ordinal_type vertId=0;vertId<numVerts;++vertId) {
@@ -276,17 +278,28 @@ namespace Intrepid2 {
                            const BasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( input.rank() != output.rank(), std::invalid_argument,
-                                    ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output rank are not 3.");
-      for (size_type i=0;i<input.rank();++i)
-        INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
-                                      ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimension does not match.");
+      if (input.rank() == output.rank())
+      {
+        for (size_type i=0;i<input.rank();++i)
+          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
+                                        ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimension does not match.");
+      }
+      else if (input.rank() == output.rank() - 1)
+      {
+        for (size_type i=0;i<input.rank();++i)
+          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i+1), std::invalid_argument,
+                                       ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input dimensions must match output dimensions exactly, or else match all but the first dimension (in the case that input does not have a 'cell' dimension).");
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): input and output ranks must either match, or input rank must be one less than that of output.")
+      }
 
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.extent(1)) != basis->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(output.extent(1)) != basis->getCardinality(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
     }
 #endif
-    typedef typename decltype(input)::non_const_value_type input_value_type;
 
     if (basis->requireOrientation()) {
       auto ordinalToTag = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofTags());

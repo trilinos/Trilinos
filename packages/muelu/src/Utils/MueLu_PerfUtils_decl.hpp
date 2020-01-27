@@ -66,9 +66,9 @@ namespace MueLu {
     Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
   template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
   class PerfUtils {
 #undef MUELU_PERFUTILS_SHORT
 #include "MueLu_UseShortNames.hpp"

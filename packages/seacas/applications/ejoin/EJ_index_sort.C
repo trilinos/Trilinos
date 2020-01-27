@@ -43,8 +43,8 @@
  * in code that verifies that the array is sorted.
  */
 
+#include <EJ_CodeTypes.h>
 #include <cstdint>
-#include <iostream>
 #include <unistd.h>
 
 #include "EJ_index_sort.h"
@@ -140,7 +140,7 @@ namespace {
     }
   }
 
-  template <typename T, typename INT> void ex_iqsort(T *v, INT iv[], size_t N)
+  template <typename T, typename INT> void ex__iqsort(T *v, INT iv[], size_t N)
   {
     if (N <= 1) {
       return;
@@ -168,7 +168,7 @@ void index_coord_sort(const std::vector<double> &xyz, std::vector<INT> &index, i
   for (size_t i = axis; i < xyz.size(); i += 3) {
     comp[j++] = xyz[i];
   }
-  ex_iqsort(&comp[0], &index[0], index.size());
+  ex__iqsort(&comp[0], &index[0], index.size());
 }
 
 template <typename INT> void index_sort(const std::vector<INT> &ids, std::vector<INT> &index)
@@ -178,7 +178,7 @@ template <typename INT> void index_sort(const std::vector<INT> &ids, std::vector
     index[i] = i;
   }
 
-  ex_iqsort(&ids[0], &index[0], index.size());
+  ex__iqsort(&ids[0], &index[0], index.size());
 }
 
 template void index_coord_sort(const std::vector<double> &xyz, std::vector<int> &index, int axis);

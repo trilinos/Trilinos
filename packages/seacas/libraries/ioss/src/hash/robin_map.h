@@ -39,21 +39,19 @@ namespace tsl {
    * backward shift deletion.
    *
    * For operations modifying the hash map (insert, erase, rehash, ...), the strong exception
-   * guarantee is only guaranteed when the expression
-   * `std::is_nothrow_swappable<std::pair<Key,T>>\:\:value &&
-   * std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value`
-   * is true, otherwise if an
-   * exception is thrown during the swap or the move, the hash map may end up in a undefined state.
-   * Per the standard a `Key` or `T` with a noexcept copy constructor and no move constructor also
-   * satisfies the `std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value` criterion (and
-   * will thus guarantee the strong exception for the map).
+   * guarantee is only guaranteed when the expression `std::is_nothrow_swappable<std::pair<Key,
+   * T>>\:\:value && std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value` is true,
+   * otherwise if an exception is thrown during the swap or the move, the hash map may end up in a
+   * undefined state. Per the standard a `Key` or `T` with a noexcept copy constructor and no move
+   * constructor also satisfies the `std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value`
+   * criterion (and will thus guarantee the strong exception for the map).
    *
    * When `StoreHash` is true, 32 bits of the hash are stored alongside the values. It can improve
    * the performance during lookups if the `KeyEqual` function takes time (if it engenders a
    * cache-miss for example) as we then compare the stored hashes before comparing the keys. When
    * `tsl::rh::power_of_two_growth_policy` is used as `GrowthPolicy`, it may also speed-up the
    * rehash process as we can avoid to recalculate the hash. When it is detected that storing the
-   * hash will not incur any memory penality due to alignement (i.e.
+   * hash will not incur any memory penalty due to alignment (i.e.
    * `sizeof(tsl::detail_robin_hash::bucket_entry<ValueType, true>) ==
    * sizeof(tsl::detail_robin_hash::bucket_entry<ValueType, false>)`) and
    * `tsl::rh::power_of_two_growth_policy` is used, the hash will be stored even if `StoreHash` is
@@ -65,6 +63,10 @@ namespace tsl {
    * number of buckets to a power of two and uses a mask to map the hash to a bucket instead of the
    * slow modulo. Other growth policies are available and you may define your own growth policy,
    * check `tsl::rh::power_of_two_growth_policy` for the interface.
+   *
+   * `std::pair<Key, T>` must be swappable.
+   *
+   * `Key` and `T` must be copy and/or move constructible.
    *
    * If the destructor of `Key` or `T` throws an exception, the behaviour of the class is undefined.
    *
@@ -135,7 +137,7 @@ namespace tsl {
 
     explicit robin_map(size_type bucket_count, const Hash &hash = Hash(),
                        const KeyEqual &equal = KeyEqual(), const Allocator &alloc = Allocator())
-        : m_ht(bucket_count, hash, equal, alloc, ht::DEFAULT_MAX_LOAD_FACTOR)
+        : m_ht(bucket_count, hash, equal, alloc)
     {
     }
 
@@ -240,7 +242,7 @@ namespace tsl {
 
     iterator insert(const_iterator hint, const value_type &value)
     {
-      return m_ht.insert(hint, value);
+      return m_ht.insert_hint(hint, value);
     }
 
     template <class P, typename std::enable_if<std::is_constructible<value_type, P &&>::value>::type
@@ -252,7 +254,7 @@ namespace tsl {
 
     iterator insert(const_iterator hint, value_type &&value)
     {
-      return m_ht.insert(hint, std::move(value));
+      return m_ht.insert_hint(hint, std::move(value));
     }
 
     template <class InputIt> void insert(InputIt first, InputIt last) { m_ht.insert(first, last); }
@@ -318,13 +320,13 @@ namespace tsl {
     template <class... Args>
     iterator try_emplace(const_iterator hint, const key_type &k, Args &&... args)
     {
-      return m_ht.try_emplace(hint, k, std::forward<Args>(args)...);
+      return m_ht.try_emplace_hint(hint, k, std::forward<Args>(args)...);
     }
 
     template <class... Args>
     iterator try_emplace(const_iterator hint, key_type &&k, Args &&... args)
     {
-      return m_ht.try_emplace(hint, std::move(k), std::forward<Args>(args)...);
+      return m_ht.try_emplace_hint(hint, std::move(k), std::forward<Args>(args)...);
     }
 
     iterator  erase(iterator pos) { return m_ht.erase(pos); }
@@ -334,7 +336,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup to the value if you already
+     * the same as hash_function()(key). Useful to speed-up the lookup to the value if you already
      * have the hash.
      */
     size_type erase(const key_type &key, std::size_t precalculated_hash)
@@ -357,7 +359,7 @@ namespace tsl {
      * @copydoc erase(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup to the value if you already
+     * the same as hash_function()(key). Useful to speed-up the lookup to the value if you already
      * have the hash.
      */
     template <class K, class KE = KeyEqual,
@@ -376,7 +378,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     T &at(const Key &key, std::size_t precalculated_hash)
@@ -409,7 +411,7 @@ namespace tsl {
      * @copydoc at(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -446,7 +448,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     size_type count(const Key &key, std::size_t precalculated_hash) const
@@ -469,7 +471,7 @@ namespace tsl {
      * @copydoc count(const K& key) const
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -483,7 +485,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     iterator find(const Key &key, std::size_t precalculated_hash)
@@ -516,7 +518,7 @@ namespace tsl {
      * @copydoc find(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -540,7 +542,7 @@ namespace tsl {
      * @copydoc find(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -554,7 +556,7 @@ namespace tsl {
 
     /**
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     std::pair<iterator, iterator> equal_range(const Key &key, std::size_t precalculated_hash)
@@ -591,7 +593,7 @@ namespace tsl {
      * @copydoc equal_range(const K& key)
      *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The hash value should be
-     * the same as hash_function()(key). Usefull to speed-up the lookup if you already have the
+     * the same as hash_function()(key). Useful to speed-up the lookup if you already have the
      * hash.
      */
     template <class K, class KE = KeyEqual,
@@ -632,11 +634,23 @@ namespace tsl {
      *  Hash policy
      */
     float load_factor() const { return m_ht.load_factor(); }
-    float max_load_factor() const { return m_ht.max_load_factor(); }
-    void  max_load_factor(float ml) { m_ht.max_load_factor(ml); }
 
-    void rehash(size_type count_) { m_ht.rehash(count_); }
-    void reserve(size_type count_) { m_ht.reserve(count_); }
+    float min_load_factor() const { return m_ht.min_load_factor(); }
+    float max_load_factor() const { return m_ht.max_load_factor(); }
+
+    /**
+     * Set the `min_load_factor` to `ml`. When the `load_factor` of the map goes
+     * below `min_load_factor` after some erase operations, the map will be
+     * shrunk when an insertion occurs. The erase method itself never shrinks
+     * the map.
+     *
+     * The default value of `min_load_factor` is 0.0f, the map never shrinks by default.
+     */
+    void min_load_factor(float ml) { m_ht.min_load_factor(ml); }
+    void max_load_factor(float ml) { m_ht.max_load_factor(ml); }
+
+    void rehash(size_type my_count) { m_ht.rehash(my_count); }
+    void reserve(size_type my_count) { m_ht.reserve(my_count); }
 
     /*
      * Observers

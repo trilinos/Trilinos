@@ -48,12 +48,12 @@
 
 /*
  * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
- * SGI CONVEX		  : C routines must have underscores
+ * SGI CONVEX             : C routines must have underscores
  *
  * VAX HP IBM/aix         : C routines do not have underscores
  *
  * CRAY/UNICOS            : C routines must be capitalized,
- *			      and no underscores
+ *                            and no underscores
  */
 
 #if defined(CRAY)

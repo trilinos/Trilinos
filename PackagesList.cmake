@@ -76,9 +76,9 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SCORECmds             SCOREC/mds                        ST
   SCORECparma           SCOREC/parma                      ST
   SCORECspr             SCOREC/spr                        ST
+  AvatarT               packages/avatart                  EX
   Zoltan                packages/zoltan                   PT
   Shards                packages/shards                   PT
-  GlobiPack             packages/globipack                PT
   Triutils              packages/triutils                 PT
   EpetraExt             packages/epetraext                PT	
   Tpetra                packages/tpetra                   PT
@@ -86,10 +86,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Domi                  packages/domi                     PT
   Thyra                 packages/thyra                    PT
   Xpetra                packages/xpetra                   PT
-  OptiPack              packages/optipack                 PT
   Isorropia             packages/isorropia                PT
   Pliris                packages/pliris                   ST
-  Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PT
   Galeri                packages/galeri                   PT
   Amesos                packages/amesos                   PT
@@ -101,7 +99,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   ShyLU_Node            packages/shylu/shylu_node         PT
   Amesos2               packages/amesos2                  PT
   SEACAS                packages/seacas                   PT # Depends on netcdf, optionally hdf5, xdmf, pamgen
-  Trios                 packages/trios                    EX #temporary
   Komplex               packages/komplex                  ST
   Anasazi               packages/anasazi                  PT
   Ifpack2               packages/ifpack2                  PT
@@ -112,6 +109,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Intrepid              packages/intrepid                 PT
   Intrepid2             packages/intrepid2                PT
   STK                   packages/stk                      PT # Depends on boost
+  Percept               packages/percept                  PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
   SCORECapf_stk         SCOREC/stk                        ST
   SCORECma              SCOREC/ma                         ST
@@ -136,14 +134,13 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
-  Mesquite              packages/mesquite                 ST
   TrilinosCouplings     packages/trilinoscouplings        PT
   Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST
   )
 
 # Allow builds even if some packages are missing
-
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(AvatarT)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREC)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREClion)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECgmi)
@@ -158,6 +155,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_stk)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_zoltan)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpumi)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Avatar)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MOOCHO)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Sundance)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)
@@ -189,6 +187,4 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Anasazi Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Mesquite AIX)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Trios Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Panzer Windows)

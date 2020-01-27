@@ -50,9 +50,29 @@ import json
 import datetime
 import copy
 import pprint
+import csv
 
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
+
+import cdash_build_testing_date as CBTD
+
+
+# Accept the --date input option with values 'today', 'yesterday', or some
+# 'YYYY-MM-DD' value.
+#
+def convertInputDateArgToYYYYMMDD(cdashProjectTestingDayStartTime, dateText,
+  currentDateTimeStr=None,  # Used for unit testing only
+  ):
+  if dateText == "yesterday" or dateText == "today":
+    if dateText == "yesterday": dayIncr = -1
+    else: dayIncr = 0
+    dateTime = CBTD.getRelativeCDashBuildStartTimeFromCmndLineArgs(
+      currentDateTimeStr, cdashProjectTestingDayStartTime, dayIncr)
+    rtnDate = CBTD.getDateOnlyFromDateTime(dateTime)
+  else:
+    rtnDate = validateAndConvertYYYYMMDD(dateText)
+  return rtnDate
 
 
 # Validate a date YYYY-MM-DD string and return a date object for the
@@ -79,7 +99,7 @@ def getFileNameStrFromText(inputStr):
   return fileNameStr
 
 
-# Check if the key/value pairs for two dicts are the same and if return an
+# Check if the key/value pairs for two dicts are the same and if so, return an
 # error message explaining how they are different.
 #
 # Returns tuple (hasSameKeyValuePairs, errMsg).  If
@@ -244,10 +264,10 @@ def writeCsvFileStructureToStr(csvFileStruct):
     csvFileStr += ", ".join(rowFieldsList)+"\n"
   return csvFileStr
 
+
 #
 # CDash Specific stuff
 #
-
 
 def cdashColorPassed(): return 'green'
 def cdashColorFailed(): return 'red'
@@ -291,82 +311,129 @@ def extractCDashApiQueryData(cdashApiQueryUrl):
 #    { 'col_0':'val_10', 'col_1':'val_11', 'col_2':'val_12' }, 
 #    ]
 #
-# and the expected list of column headers would be:
+# This function can also allow the user to assert that the included columns
+# match a set of required and optional headers.  For example, that above CSV
+# file would match:
 #
-#   expectedColumnHeadersList = [ 'col_0', 'col_1', 'col_2' ]
+#   requiredColumnHeadersList = [ 'col_0', 'col_1', 'col_2' ]
 #
-# But the expectedColumnHeadersList argument is optional.
+# or:
 #
-def readCsvFileIntoListOfDicts(csvFileName, expectedColumnHeadersList=None):
+#   requiredColumnHeadersList = [ 'col_0', 'col_1' ]
+#   optionalColumnHeadersList = [ 'col_2', 'col_3', ]
+#
+# The requiredColumnHeadersList and optionalColumnHeadersList argument lists
+# are optional.
+#
+# Also, the columns can be appear in any order as long as they match all of
+# the required headers and don't contain any headers not in the list of
+# expected headers.
+#
+def readCsvFileIntoListOfDicts(csvFileName, requiredColumnHeadersList=[],
+  optionalColumnHeadersList=[],
+  ):
   listOfDicts = []
   with open(csvFileName, 'r') as csvFile:
-    # Get the list of column headers
-    columnHeadersLineStr = csvFile.readline().strip()
-    columnHeadersRawStrList = columnHeadersLineStr.split(',')
-    columnHeadersList = []
-    for headerRawStr in columnHeadersRawStrList:
-      columnHeadersList.append(headerRawStr.strip())
-    if expectedColumnHeadersList:
-      if len(columnHeadersList) != len(expectedColumnHeadersList):
-        raise Exception(
-          "Error, for CSV file '"+csvFileName+"' the"+\
-          " column headers '"+str(columnHeadersList)+"' has"+\
-          " "+str(len(columnHeadersList))+" items but the expected"+\
-          " set of column headers '"+str(expectedColumnHeadersList)+"'"+\
-          " has "+str(len(expectedColumnHeadersList))+" items!")
-      for i in range(len(columnHeadersList)):
-        if columnHeadersList[i] != expectedColumnHeadersList[i]:
-          raise Exception(
-            "Error, column header "+str(i)+" '"+columnHeadersList[i]+"' does"+\
-            " not match expected column header '"+expectedColumnHeadersList[i]+"'!")
+    csvReader = csv.reader(csvFile)
+    columnHeadersList = getColumnHeadersFromCsvFileReader(csvFileName, csvReader)
+    assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersList,
+      optionalColumnHeadersList, columnHeadersList)
     # Read the rows of the CSV file into dicts
     dataRow = 0
-    line = csvFile.readline().strip()
-    while line:
-      #print("\ndataRow = "+str(dataRow))
-      lineList = line.split(',')
-      #print(lineList)
-      # Assert that the row has the right number of entries
-      if len(lineList) != len(columnHeadersList):
-        raise Exception(
-          "Error, data row "+str(dataRow)+" '"+line+"' has"+\
-          " "+str(len(lineList))+" entries which does not macth"+\
-          " the number of column headers "+str(len(columnHeadersList))+"!")
+    for lineList in csvReader:
+      if not lineList: continue # Ingore blank line
+      stripWhiltespaceFromStrList(lineList)
+      assertExpectedNumRowsFromCsvFile(csvFileName, dataRow, lineList,
+        columnHeadersList)
       # Read the row entries into a new dict
       rowDict = {}
       for j in range(len(columnHeadersList)):
-        rowDict.update( { columnHeadersList[j] : lineList[j].strip() } )
-      #print(rowDict)
+        rowDict.update( { columnHeadersList[j] : lineList[j] } )
       listOfDicts.append(rowDict)
       # Update for next row
-      line = csvFile.readline().strip()
       dataRow += 1
   # Return the constructed object
   return listOfDicts
 
 
-# Get list of expected builds from CSV file
+def getColumnHeadersFromCsvFileReader(csvFileName, csvReader):
+  try:
+    columnHeadersList = csvReader.next()
+    stripWhiltespaceFromStrList(columnHeadersList)
+    return columnHeadersList
+  except StopIteration:
+    raise Exception(
+      "Error, CSV file '"+csvFileName+"' is empty which is not allowed!"
+      )
+
+
+def assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersList,
+  optionalColumnHeadersList, columnHeadersList,
+  ):
+
+  if not requiredColumnHeadersList and not optionalColumnHeadersList:
+    return  # No expected column headers to assert against!
+
+  requiredAndOptionalHeadersSet = set(requiredColumnHeadersList)
+  requiredAndOptionalHeadersSet.update(optionalColumnHeadersList)
+  columnHeadersSet = set(columnHeadersList)
+
+  # Assert that each column header is expected
+  for colHeader in columnHeadersList:
+    if not colHeader in requiredAndOptionalHeadersSet:
+      raise Exception(
+        "Error, for CSV file '"+csvFileName+"' the"+\
+        " column header '"+str(colHeader)+"' is not in the set"+\
+        " of required column headers '"+str(requiredColumnHeadersList)+"'"+\
+        " or optional column headers '"+str(optionalColumnHeadersList)+"'!"+\
+        ""
+        )
+
+  # Assert that all of the required headers are present
+  for requiredHeader in requiredColumnHeadersList:
+    if not requiredHeader in columnHeadersSet:
+      raise Exception(
+        "Error, for CSV file '"+csvFileName+"' the"+\
+        " required header '"+str(requiredHeader)+"' is missing from the"+\
+        " set of included column headers '"+str(columnHeadersList)+"'!"+\
+        ""
+        )
+
+
+def assertExpectedNumRowsFromCsvFile(csvFileName, dataRow, lineList,
+  columnHeadersList,
+  ):
+  if len(lineList) != len(columnHeadersList):
+    raise Exception(
+      "Error, for CSV file '"+csvFileName+"' the data row"+\
+      " "+str(dataRow)+" "+str(lineList)+" has"+\
+      " "+str(len(lineList))+" entries which does not macth"+\
+      " the number of column headers "+str(len(columnHeadersList))+"!")
+
+
+def stripWhiltespaceFromStrList(strListInOut):
+  for i in range(len(strListInOut)): strListInOut[i] = strListInOut[i].strip()
+
+
 def getExpectedBuildsListfromCsvFile(expectedBuildsFileName):
   return readCsvFileIntoListOfDicts(expectedBuildsFileName,
     ['group', 'site', 'buildname'])
 
 
-# Headers for basic CSV file
-g_testsWithIssueTrackersCsvFileHeaders = \
+g_testsWithIssueTrackersCsvFileHeadersRequired = \
   ('site', 'buildName', 'testname', 'issue_tracker_url', 'issue_tracker')
 
 
-# Get list of tests from CSV file
 def getTestsWtihIssueTrackersListFromCsvFile(testsWithIssueTrackersFile):
   return readCsvFileIntoListOfDicts(testsWithIssueTrackersFile,
-    g_testsWithIssueTrackersCsvFileHeaders)
+    g_testsWithIssueTrackersCsvFileHeadersRequired)
 
 
 # Write list of tests from a Tests LOD to a CSV file structure meant to match
 # tests with issue trackers CSV file.
 #
 def writeTestsLODToCsvFileStructure(testsLOD):
-  csvFileHeadersList = copy.deepcopy(g_testsWithIssueTrackersCsvFileHeaders)
+  csvFileHeadersList = copy.deepcopy(g_testsWithIssueTrackersCsvFileHeadersRequired)
   csvFileRowsList = []
   for testDict in testsLOD:
     csvFileRow = (
@@ -1054,20 +1121,28 @@ def dateFromBuildStartTime(buildStartTime):
 #
 # Inputs:
 #
-#   testHistoryLOD [in]: List of test dicts for the same test.  This list nore
-#   its elements are modified in this call. (The base list object is shallow
-#   copied before it is sorted.)
+#   testHistoryLOD [in]: List of test dicts for the same test.  Neither this
+#   list nor its elements are modified in this call.  The base list object is
+#   shallow copied before it is sorted and returned.
 #
-#   currentTestDate [in]: The current testing day (as a string YYYY-MM-DD).
+#   currentTestDate [in]: The current testing day (as a string "YYYY-MM-DD").
 #   This is needed to define a frame of reference for interpeting if the test
 #   is currently 'Passed', 'Failed', 'Not Run', or is 'Missing' (i.e. does not
 #   have any test results for curent testing date).
+#
+#   testingDayStartTimeUtc [in]: The CDash project testing day start time
+#   "<hh>:<mm>" in UTC.  For example, if the CDash project testing day start
+#   time is 6 PM MDT (18:00 MDT), then the testing day start time is "02:00"
+#   (UTC) (which is the next calendar day).
 #
 #   daysOfHistory [in]: Number of days of history that were requested.
 #
 # Note that len(testHistoryLOD) may be less than daysOfHistory which is
 # allowed and handled in function.  Any days in that range missing contribute
 # to testHistoryStats['missing_last_x_days'].
+#
+# Also note that this function will remove any duplicate tests (which seem to
+# occur sometimes due to a defect in CDash).
 #
 # Returns:
 #
@@ -1076,8 +1151,10 @@ def dateFromBuildStartTime(buildStartTime):
 # where:
 #
 #   sortedTestHistoryLOD: The sorted list of test dicts with most recent dict
-#   at the top.  (New list object with references to the same test dict
-#   elements.)
+#   at the top. New list object with references to the same test dict
+#   elements.  Therefore, if the list elements themselves are modified after
+#   the function returns, then the elements in the orignal list testHistoryLOD
+#   will be modifed as well.
 #
 #   testHistoryStats: Dict that gives statistics for the test with fields:
 #     - 'pass_last_x_days': Number of times test 'Passed'
@@ -1086,7 +1163,7 @@ def dateFromBuildStartTime(buildStartTime):
 #     - 'consec_pass_days': Number of times the test consecutively passed
 #     - 'consec_nopass_days': Number of times the test consecutively did not pass
 #     - 'consec_missing_days': Number of days test is missing
-#     - 'previous_nopass_date': Before current date, the previous nopass date
+#     - 'previous_nopass_date': Before current date, the previous nopass date in UTC
 #
 #   testStatus: The status of the test for the current testing day with values:
 #     - 'Passed': Most recent test 'Passed' had date matching curentTestDate
@@ -1094,12 +1171,17 @@ def dateFromBuildStartTime(buildStartTime):
 #     - 'Not Run': Most recent test 'Not Run' had date matching curentTestDate
 #     - 'Missing': Most recent test has date before matching curentTestDate
 #
-def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory):
+def sortTestHistoryGetStatistics(testHistoryLOD,
+  currentTestDate, testingDayStartTimeUtc,
+  daysOfHistory,
+  ):
 
+  # Helper functions
   def incr(testDict, key): testDict[key] = testDict[key] + 1
   def decr(testDict, key): testDict[key] = testDict[key] - 1
 
-  # Initialize outputs assuming no history (i.e. missing)
+  # Initialize outputs assuming no history (i.e. test is missing for
+  # alldaysOfHistory of history)
   sortedTestHistoryLOD = []
   testHistoryStats = {
     'pass_last_x_days': 0,
@@ -1121,15 +1203,29 @@ def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory)
   sortedTestHistoryLOD = copy.copy(testHistoryLOD)
   sortedTestHistoryLOD.sort(reverse=True, key=DictSortFunctor(['buildstarttime']))
 
+  # Remove duplicate tests from list of dicts
+  sortedTestHistoryLOD = getUniqueSortedTestsHistoryLOD(sortedTestHistoryLOD)
+ 
+  # Get testing day/time helper object
+  testingDayTimeObj = CBTD.CDashProjectTestingDay(currentTestDate, testingDayStartTimeUtc)
+  currentTestDateDT = testingDayTimeObj.getCurrentTestingDayDateDT()
+  #print("currentTestDateDT = "+str(currentTestDateDT))
+
   # Top (most recent) test history data
   topTestDict = sortedTestHistoryLOD[0]
+  #print("topTestDict['buildstarttime'] = "+topTestDict['buildstarttime'])
+
+  # Get the CDash testing date of the most recent test
+  topTestDictTestingDayDT = testingDayTimeObj.getTestingDayDateFromBuildStartTimeDT(
+    topTestDict['buildstarttime'] )
+  #print("topTestDictTestingDayDT ="+str(topTestDictTestingDayDT))
 
   # testStatus (for this test based on history)
-  topTestBuildStartDate = dateFromBuildStartTime(topTestDict['buildstarttime'])
-  if topTestBuildStartDate == currentTestDate:
+  if topTestDictTestingDayDT == currentTestDateDT:
     testStatus = topTestDict['status']
   else:
     testStatus = "Missing"
+  #print("testStatus = "+testStatus)
 
   # testHistoryStats
 
@@ -1137,9 +1233,8 @@ def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory)
 
   if testStatus == "Missing":
     # The test is missing so see how many consecutive days that it is missing
-    currentTestDateObj = validateAndConvertYYYYMMDD(currentTestDate)
-    topTestDateObj = validateAndConvertYYYYMMDD(topTestBuildStartDate)
-    testHistoryStats['consec_missing_days'] = (currentTestDateObj - topTestDateObj).days
+    testHistoryStats['consec_missing_days'] = \
+      (currentTestDateDT - topTestDictTestingDayDT).days
     # There are no initial consecutive passing or nopassing days
     initialTestStatusHasChanged = True
   else:
@@ -1152,17 +1247,18 @@ def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory)
 
   previousNopassDate = None
 
-  # Loop over test history and update quantities
-  for pastTestDict in sortedTestHistoryLOD:
-    pastTestStatus = pastTestDict['status']
-    pastTestDate = dateFromBuildStartTime(pastTestDict['buildstarttime'])
-    # Count the initial consecutive streaks
+  # Loop over test history for each of the kth entries and update quantities
+  for pastTestDict_k in sortedTestHistoryLOD:
+    pastTestStatus_k = pastTestDict_k['status']
+    pastTestDateUtc_k = testingDayTimeObj.getTestingDayDateFromBuildStartTimeStr(
+      pastTestDict_k['buildstarttime'])
+    # Count the initial consecutive streaks for passing and nonpassing
     if (
-       (pastTestStatus=='Passed') == previousTestStatusPassed \
+       (pastTestStatus_k=='Passed') == previousTestStatusPassed \
        and not initialTestStatusHasChanged \
       ):
-      # The initial consecutive streak continues!
-      if pastTestStatus == 'Passed':
+      # The initial consecutive streak for passing or nonpassing continues!
+      if pastTestStatus_k == 'Passed':
         incr(testHistoryStats, 'consec_pass_days')
       else:
         incr(testHistoryStats, 'consec_nopass_days')
@@ -1170,22 +1266,50 @@ def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory)
       # The initial consecutive streak has been broken
       initialTestStatusHasChanged = True
     # Count total pass/nopass/missing tests
-    decr(testHistoryStats, 'missing_last_x_days')
-    if pastTestStatus == 'Passed':
+    decr(testHistoryStats, 'missing_last_x_days') # Test not missing this day!
+    if pastTestStatus_k == 'Passed':
       incr(testHistoryStats, 'pass_last_x_days')
     else:
       incr(testHistoryStats, 'nopass_last_x_days')
     # Find most recent previous nopass test date
     if (
         previousNopassDate == None \
-        and pastTestDate != currentTestDate \
-        and pastTestStatus != 'Passed' \
+        and pastTestDateUtc_k != currentTestDate \
+        and pastTestStatus_k != 'Passed' \
       ):
-      previousNopassDate = pastTestDate
+      previousNopassDate = pastTestDateUtc_k
       testHistoryStats['previous_nopass_date'] = previousNopassDate
 
   # Return the computed stuff
   return (sortedTestHistoryLOD, testHistoryStats, testStatus)
+
+
+# Get a new list with unique entires from an input sorted list of test dicts.
+#
+# The returned list is new and does not modify any of the entires in the input
+# sorted inputSortedTestHistoryLOD object.
+#
+def getUniqueSortedTestsHistoryLOD(inputSortedTestHistoryLOD):
+
+  if len(inputSortedTestHistoryLOD) == 0:
+    return inputSortedTestHistoryLOD
+
+  uniqueSortedTestHistoryLOD = []
+
+  lastUniqueTestDict = inputSortedTestHistoryLOD[0]
+  uniqueSortedTestHistoryLOD.append(lastUniqueTestDict)
+
+  idx = 1
+  while idx < len(inputSortedTestHistoryLOD):
+    candidateTestDict = inputSortedTestHistoryLOD[idx]
+    
+    if not checkCDashTestDictsAreSame(candidateTestDict, "a", lastUniqueTestDict, "b")[0]:
+      uniqueSortedTestHistoryLOD.append(candidateTestDict)
+      lastUniqueTestDict = candidateTestDict
+    # Else, this is dupliate test entry so skip
+    idx += 1
+
+  return uniqueSortedTestHistoryLOD
 
 
 # Extract testid and buildid from 'testDetailsLink' CDash test dict
@@ -1248,8 +1372,8 @@ def checkCDashTestDictsAreSame(testDict_1, testDict_1_name,
     time_2 = testDict_2['time'] 
     rel_err = abs(time_1 - time_2) / ( (time_1 + time_2 + 1e-5)/2.0 )
     rel_err_max = 1.0  # ToDo: Make this adjustable?
-    print("rel_err = "+str(rel_err))
-    print("rel_err_max = "+str(rel_err_max))
+    #print("rel_err = "+str(rel_err))
+    #print("rel_err_max = "+str(rel_err_max))
     if rel_err <= rel_err_max:
       testDict_1_copy.pop('time', None)
       testDict_2_copy.pop('time', None)
@@ -1260,7 +1384,7 @@ def checkCDashTestDictsAreSame(testDict_1, testDict_1_name,
     testDict_2_copy, testDict_2_name )
 
 
-# Get the test history CDash cache file.
+# Get the test history CDash cache filename
 #
 # Note: this takes care of things like having '/' in the test name
 #
@@ -1285,7 +1409,7 @@ class AddTestHistoryToTestDictFunctor(object):
   # By default, this wil always read the data from the cache file if that file
   # already exists.
   #
-  def __init__(self, cdashUrl, projectName, date, daysOfHistory,
+  def __init__(self, cdashUrl, projectName, date, testingDayStartTimeUtc, daysOfHistory,
     testCacheDir, useCachedCDashData=True, alwaysUseCacheFileIfExists=True,
     verbose=False, printDetails=False,
     extractCDashApiQueryData_in=extractCDashApiQueryData, # For unit testing
@@ -1293,6 +1417,7 @@ class AddTestHistoryToTestDictFunctor(object):
     self.__cdashUrl = cdashUrl
     self.__projectName = projectName
     self.__date = date
+    self.__testingDayStartTimeUtc = testingDayStartTimeUtc
     self.__daysOfHistory = daysOfHistory
     self.__testCacheDir = testCacheDir
     self.__useCachedCDashData = useCachedCDashData
@@ -1329,20 +1454,19 @@ class AddTestHistoryToTestDictFunctor(object):
     else:
       testAlreadyHasCDashData = False
 
-    # Date range for test history
-    dayAfterCurrentTestDay = \
-      (testDayDate+datetime.timedelta(days=1)).isoformat()
-    daysBeforeCurrentTestDay = \
-      (testDayDate+datetime.timedelta(days=-1*daysOfHistory+1)).isoformat()
+    # Get the date range for CDash queries
+    dateRangeBeginDT = testDayDate - datetime.timedelta(days=(daysOfHistory-1))
+    dateRangeBeginDateStr = CBTD.getDateStrFromDateTime(dateRangeBeginDT)
+    dateRangeEndDateStr = self.__date
+    beginEndUrlFields = "begin="+dateRangeBeginDateStr+"&end="+dateRangeEndDateStr
 
     # Define queryTests.php query filters for test history
     testHistoryQueryFilters = \
-      "filtercombine=and&filtercombine=&filtercount=5&showfilters=1&filtercombine=and"+\
+      beginEndUrlFields+"&"+\
+      "filtercombine=and&filtercombine=&filtercount=3&showfilters=1&filtercombine=and"+\
       "&field1=buildname&compare1=61&value1="+buildName+\
       "&field2=testname&compare2=61&value2="+testname+\
-      "&field3=site&compare3=61&value3="+site+\
-      "&field4=buildstarttime&compare4=84&value4="+dayAfterCurrentTestDay+\
-      "&field5=buildstarttime&compare5=83&value5="+daysBeforeCurrentTestDay
+      "&field3=site&compare3=61&value3="+site
     
     # URL used to get the history of the test in JSON form
     testHistoryQueryUrl = \
@@ -1355,11 +1479,11 @@ class AddTestHistoryToTestDictFunctor(object):
     # URL for to the build summary on index.php page
     buildHistoryEmailUrl = getCDashIndexBrowserUrl(
       cdashUrl, projectName, None,
-      "filtercombine=and&filtercombine=&filtercount=4&showfilters=1&filtercombine=and"+\
+      beginEndUrlFields+"&"+\
+      "filtercombine=and&filtercombine=&filtercount=2&showfilters=1&filtercombine=and"+\
       "&field1=buildname&compare1=61&value1="+buildName+\
-      "&field2=site&compare2=61&value2="+site+\
-      "&field3=buildstarttime&compare3=84&value3="+dayAfterCurrentTestDay+\
-      "&field4=buildstarttime&compare4=83&value4="+daysBeforeCurrentTestDay )
+      "&field2=site&compare2=61&value2="+site
+      )
     # ToDo: Replace this with the the URL to just this one build the index.php
     # page.  To do that, get the build stamp from the list of builds on CDash
     # and then create a URL link for this one build given 'site', 'buildName',
@@ -1397,7 +1521,7 @@ class AddTestHistoryToTestDictFunctor(object):
     # Sort and get test history stats and update core testDict fields
 
     (testHistoryLOD, testHistoryStats, testStatus) = sortTestHistoryGetStatistics(
-      testHistoryLOD, self.__date, daysOfHistory)
+      testHistoryLOD, self.__date, self.__testingDayStartTimeUtc, daysOfHistory)
 
     # Assert and update the status 
 

@@ -151,6 +151,8 @@ namespace Xpetra {
     //! The Target Map used to construct this Import object.
     Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("EpetraImportT::getTargetMap"); return toXpetra<GlobalOrdinal, Node>(import_->TargetMap()); }
 
+    void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const { XPETRA_MONITOR("EpetraImportT::setDistributorParameters");  }
+
     //@}
 
     //! @name I/O Methods

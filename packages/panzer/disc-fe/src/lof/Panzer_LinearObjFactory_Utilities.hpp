@@ -9,7 +9,7 @@ namespace panzer {
 
 // forward declaration
 template <typename> class LinearObjFactory;
-class UniqueGlobalIndexerBase;
+class GlobalIndexer;
 
 /** \brief Clone a linear object factory, but using a different domain. 
   *
@@ -23,7 +23,7 @@ class UniqueGlobalIndexerBase;
   *       object factory types.
   */ 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewDomain(const LinearObjFactory<panzer::Traits> & lof,
-                                                                         const Teuchos::RCP<const UniqueGlobalIndexerBase> & dUgi);
+                                                                         const Teuchos::RCP<const GlobalIndexer> & dUgi);
 
 /** \brief Clone a linear object factory, but using a different range. 
   *
@@ -37,7 +37,7 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewDomain(const L
   *       object factory types.
   */ 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRange(const LinearObjFactory<panzer::Traits> & lof,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & rUgi);
+                                                                        const Teuchos::RCP<const GlobalIndexer> & rUgi);
 
 /** \brief Clone a linear object factory, but using a different range and domain. 
   *
@@ -53,8 +53,8 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRange(const Li
   */ 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain(
                                                                         const LinearObjFactory<panzer::Traits> & lof,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & rUgi,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & dUgi);
+                                                                        const Teuchos::RCP<const GlobalIndexer> & rUgi,
+                                                                        const Teuchos::RCP<const GlobalIndexer> & dUgi);
 }
 
 #endif

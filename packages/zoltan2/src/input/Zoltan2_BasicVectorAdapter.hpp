@@ -65,9 +65,14 @@ namespace Zoltan2 {
 
     Data types:
     \li \c scalar_t is the data type for weights and vector entry values.
-    \li \c lno_t is the integral data type used by Zoltan2 for local indices and local counts.
-    \li \c gno_t is the data type used by the application for global Ids; must be a Teuchos Ordinal.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
-    \li \c node_t is a Kokkos CPU Node type.  If you don't use Kokkos, you can ignore this data type.
+    \li \c lno_t is the integral data type used by Zoltan2 for local indices
+           and local counts.
+    \li \c gno_t is the data type used by the application for global Ids; must
+           be a Teuchos Ordinal.  (Teuchos Ordinals are those data types for
+          which traits are defined in
+          Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
+    \li \c node_t is a Kokkos CPU Node type.  If you don't use Kokkos, you can
+          ignore this data type.
 
     The template parameter (\c User) is a C++ class type which provides the
     actual data types with which the Zoltan2 library will be compiled, through
@@ -238,7 +243,19 @@ public:
 
   void getIDsView(const gno_t *&ids) const {ids = idList_;}
 
+  void getIDsKokkosView(Kokkos::View<const gno_t *,
+    typename node_t::device_type> &ids) const
+  {
+    ids = this->kokkos_ids_;
+  }
+
   int getNumWeightsPerID() const { return numWeights_;}
+
+  virtual void getWeightsKokkos2dView(Kokkos::View<scalar_t **,
+    typename node_t::device_type> &wgt) const
+  {
+    wgt = kokkos_weights_;
+  }
 
   void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
@@ -270,16 +287,31 @@ public:
     entries_[idx].getStridedList(length, entries, stride);
   }
 
-private:
+  void getEntriesKokkosView(
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+    typename node_t::device_type> & entries) const
+  {
+    entries = kokkos_entries_;
+  }
 
+private:
   lno_t numIds_;
   const gno_t *idList_;
 
   int numEntriesPerID_;
   ArrayRCP<StridedData<lno_t, scalar_t> > entries_ ;
 
+  Kokkos::View<gno_t *, typename node_t::device_type> kokkos_ids_;
+
+  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+  Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+    typename node_t::device_type> kokkos_entries_;
+
   int numWeights_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
+
+  Kokkos::View<scalar_t**, typename node_t::device_type> kokkos_weights_;
 
   void createBasicVector(
     std::vector<const scalar_t *> &entries,  std::vector<int> &entryStride,
@@ -288,6 +320,17 @@ private:
     typedef StridedData<lno_t,scalar_t> input_t;
 
     if (numIds_){
+      // make kokkos ids
+      kokkos_ids_ = Kokkos::View<gno_t *, typename node_t::device_type>(
+        Kokkos::ViewAllocateWithoutInitializing("ids"), numIds_);
+      typename decltype(kokkos_ids_)::HostMirror
+        host_kokkos_ids_ = Kokkos::create_mirror_view(kokkos_ids_);
+      for(int n = 0; n < numIds_; ++n) {
+        host_kokkos_ids_(n) = idList_[n];
+      }
+      Kokkos::deep_copy(kokkos_ids_, host_kokkos_ids_);
+
+      // make coordinates
       int stride = 1;
       entries_ = arcp(new input_t[numEntriesPerID_], 0, numEntriesPerID_, true);
       for (int v=0; v < numEntriesPerID_; v++) {
@@ -295,6 +338,28 @@ private:
         ArrayRCP<const scalar_t> eltV(entries[v], 0, stride*numIds_, false);
         entries_[v] = input_t(eltV, stride);
       }
+
+      // setup kokkos entries
+      // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+      kokkos_entries_ = Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+        typename node_t::device_type>(
+        Kokkos::ViewAllocateWithoutInitializing("entries"),
+        numIds_, numEntriesPerID_);
+
+      size_t length;
+      const scalar_t * entriesPtr;
+
+      typename decltype(this->kokkos_entries_)::HostMirror host_kokkos_entries =
+        Kokkos::create_mirror_view(this->kokkos_entries_);
+
+      for (int idx=0; idx < numEntriesPerID_; idx++) {
+        entries_[idx].getStridedList(length, entriesPtr, stride);
+        size_t fill_index = 0;
+        for(int n = 0; n < numIds_; ++n) {
+          host_kokkos_entries(fill_index++,idx) = entriesPtr[n*stride];
+        }
+      }
+      Kokkos::deep_copy(this->kokkos_entries_, host_kokkos_entries);
     }
 
     if (numWeights_) {
@@ -305,6 +370,27 @@ private:
         ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*numIds_, false);
         weights_[w] = input_t(wgtV, stride);
       }
+
+      // set up final view with weights
+      kokkos_weights_ = Kokkos::View<scalar_t**,
+        typename node_t::device_type>(
+        Kokkos::ViewAllocateWithoutInitializing("kokkos weights"),
+        numIds_, numWeights_);
+
+      // setup weights
+      typename decltype(this->kokkos_weights_)::HostMirror
+        host_weight_temp_values =
+          Kokkos::create_mirror_view(this->kokkos_weights_);
+      for(int idx = 0; idx < numWeights_; ++idx) {
+        const scalar_t * weightsPtr;
+        size_t length;
+        weights_[idx].getStridedList(length, weightsPtr, stride);
+        size_t fill_index = 0;
+        for(size_t n = 0; n < length; n += stride) {
+          host_weight_temp_values(fill_index++,idx) = weightsPtr[n];
+        }
+      }
+      Kokkos::deep_copy(this->kokkos_weights_, host_weight_temp_values);
     }
   }
 };

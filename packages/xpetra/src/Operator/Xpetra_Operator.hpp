@@ -57,10 +57,10 @@
 
 namespace Xpetra {
 
-  template<class Scalar         = MultiVector<>::scalar_type,
-           class LocalOrdinal   = typename MultiVector<Scalar>::local_ordinal_type,
-           class GlobalOrdinal  = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
-           class Node           = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Operator : virtual public Teuchos::Describable {
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
@@ -114,6 +114,12 @@ namespace Xpetra {
     //@}
 
     virtual void removeEmptyProcessesInPlace(const RCP<const Map>& /* newMap */) { }
+
+    //! Compute a residual R = B - (*this) * X
+    virtual void residual(const MultiVector & X,
+                          const MultiVector & B,
+                          MultiVector& R) const = 0;
+
   };
 
 } // Xpetra namespace

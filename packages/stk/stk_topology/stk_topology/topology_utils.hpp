@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -50,22 +51,6 @@ struct rank_impl {
   template <typename Topology>
   STK_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::rank; }
-};
-
-template <typename NodeArrayA, typename NodeArrayB>
-struct equivalent_impl {
-  using result_type = std::pair<bool,unsigned>;
-
-  equivalent_impl( const NodeArrayA &a , const NodeArrayB &b )
-    : m_a(a), m_b(b)
-  {}
-
-  template <typename Topology>
-  result_type operator()(Topology) const
-  { return Topology::equivalent(m_a, m_b); }
-
-  const NodeArrayA & m_a;
-  const NodeArrayB & m_b;
 };
 
 template <typename NodeArrayA, typename NodeArrayB>
@@ -380,17 +365,6 @@ topology::rank_t topology::rank() const
       return topology::ELEMENT_RANK;
   return topology::INVALID_RANK;
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2019-04-04
-template <typename NodeArrayA, typename NodeArrayB>
-STK_DEPRECATED inline
-std::pair<bool,unsigned> topology::equivalent( const NodeArrayA &a, const NodeArrayB &b) const {
-  using functor = topology_detail::equivalent_impl<NodeArrayA,NodeArrayB>;
-  functor f(a,b);
-  topology::apply_host_functor< functor > apply( f );
-  return apply(m_value);
-}
-#endif
 
 template <typename NodeArrayA, typename NodeArrayB>
 STK_INLINE_FUNCTION

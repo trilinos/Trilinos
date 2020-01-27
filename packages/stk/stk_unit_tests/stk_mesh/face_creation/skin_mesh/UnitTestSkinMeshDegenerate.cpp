@@ -36,11 +36,10 @@
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
-#include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
-
-#include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_unit_tests/stk_mesh_fixtures/heterogeneous_mesh.hpp>
-#include <stk_unit_tests/stk_mesh_fixtures/degenerate_mesh.hpp>
+#include "SetupKeyholeMesh.hpp"
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/degenerate_mesh.hpp"
+#include "stk_unit_test_utils/stk_mesh_fixtures/heterogeneous_mesh.hpp"
 
 #include "UnitTestSkinMeshUseCaseUtils.hpp"
 

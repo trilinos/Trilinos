@@ -34,8 +34,7 @@
 #ifndef STRINGX_H
 #define STRINGX_H
 
-#include "terminal_color.h" // for operator<<, normal, red
-#include "util.h"           // for free_name_array, etc
+#include "util.h" // for free_name_array, etc
 
 //! Compare a string against another "master" string, where the string, str,
 //! can be abbreiviated to as little as min_length characters.  Returns true
@@ -58,7 +57,7 @@ std::string extract_token(std::string &s, const char *delimiters = " \t\n\r");
 //! Counts how many tokens are contained in the given string.
 int count_tokens(const std::string &s, const char *delimiters = " \t\n\r");
 
-//! Runs each string in the vector and returns the maximun size.
+//! Runs each string in the vector and returns the maximum size.
 int max_string_length(const std::vector<std::string> &names);
 
 //! Replaces each character of the string with its lower case equivalent.

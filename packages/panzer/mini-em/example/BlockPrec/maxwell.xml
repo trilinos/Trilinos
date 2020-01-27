@@ -2,12 +2,20 @@
 
   <ParameterList name="Mesh">
     <Parameter name="Source" type="string" value="Inline Mesh" />
+    <!-- <Parameter name="Source" type="string" value="Pamgen Mesh" /> -->
     <!-- <Parameter name="Source" type="string" value="Exodus File" /> -->
 
     <ParameterList name="Exodus File">
       <Parameter name="dt" type="double" value="6.0e-12"/>
       <ParameterList name="Exodus Parameters">
         <Parameter name="File Name" type="string" value="blob/blob.g" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Pamgen Mesh">
+      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <ParameterList name="Pamgen Parameters">
+        <Parameter name="File Name" type="string" value="pamgen.gen"/>
       </ParameterList>
     </ParameterList>
 
@@ -20,9 +28,9 @@
         <Parameter name="X Blocks" type="int" value="1" />
         <Parameter name="Y Blocks" type="int" value="1" />
         <Parameter name="Z Blocks" type="int" value="1" />
-        <Parameter name="X Elements" type="int" value="10" />
-        <Parameter name="Y Elements" type="int" value="10" />
-        <Parameter name="Z Elements" type="int" value="10" />
+        <Parameter name="X Elements" type="int" value="15" />
+        <Parameter name="Y Elements" type="int" value="15" />
+        <Parameter name="Z Elements" type="int" value="15" />
         <!-- <ParameterList name="Periodic BCs"> -->
         <!--   <Parameter name="Count" type="int" value="3"/> -->
         <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->

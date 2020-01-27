@@ -11,7 +11,5 @@
 ADD_SUBDIRECTORY(multiplesolve)
 ADD_SUBDIRECTORY(memory)
 ADD_SUBDIRECTORY(separatesetups)
-ADD_SUBDIRECTORY(stratimikos)
 ADD_SUBDIRECTORY(levelwrap)
 ADD_SUBDIRECTORY(blockcrs)
-
