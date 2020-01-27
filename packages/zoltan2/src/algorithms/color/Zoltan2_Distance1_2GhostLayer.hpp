@@ -363,7 +363,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
                                            <Tpetra::global_size_t>::invalid();
       RCP<const map_t> mapOwned = rcp(new map_t(dummy, vtxIDs, 0, comm));
       std::vector<gno_t> ghosts;
-      std::vector<gno_t> ghostowners;
+      std::vector<int> ghostowners;
       for(size_t i = nVtx; i < nVtx+nGhosts; i++){
         ghosts.push_back(ownedPlusGhosts[i]);
         ghostowners.push_back(-1);
@@ -372,7 +372,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       //get the owners of the vertices
       ArrayView<int> owningProcs = Teuchos::arrayViewFromVector(ghostowners);
       ArrayView<const gno_t> gids = Teuchos::arrayViewFromVector(ghosts);
-      Tpetra::LookupStatus ls = mapOwned->getRemoteIndexList(gids, owningProcs());
+      Tpetra::LookupStatus ls = mapOwned->getRemoteIndexList(gids, owningProcs);
       
       for(size_t i = 0; i < ghostowners.size(); i++){
         owners.push_back(ghostowners[i]);
