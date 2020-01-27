@@ -347,7 +347,6 @@ namespace internal {
   class fp
   {
   private:
-    using significand_type = uint64_t;
 
     // All sizes are in bits.
     // Subtract 1 to account for an implicit most significant bit in the
@@ -357,10 +356,10 @@ namespace internal {
     static FMT_CONSTEXPR_DECL const uint64_t implicit_bit = 1ull << double_significand_size;
 
   public:
-    significand_type f;
+    uint64_t f;
     int              e;
 
-    static FMT_CONSTEXPR_DECL const int significand_size = bits<significand_type>::value;
+    static FMT_CONSTEXPR_DECL const int significand_size = bits<uint64_t>::value;
 
     fp() : f(0), e(0) {}
     fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
@@ -445,7 +444,7 @@ namespace internal {
       assign(d);
       constexpr int min_normal_e =
           std::numeric_limits<float>::min_exponent - std::numeric_limits<double>::digits;
-      significand_type half_ulp =
+      uint64_t half_ulp =
           1 << (std::numeric_limits<double>::digits - std::numeric_limits<float>::digits - 1);
       if (min_normal_e > e)
         half_ulp <<= min_normal_e - e;

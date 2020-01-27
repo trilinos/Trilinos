@@ -1,28 +1,27 @@
 #ifndef TSQR_IMPL_CUBLASHANDLE_HPP
 #define TSQR_IMPL_CUBLASHANDLE_HPP
 
-#include "TpetraTSQR_config.h"
+#include "Tsqr_Impl_CuBlasHandle_fwd.hpp"
 #ifdef HAVE_TPETRATSQR_CUBLAS
+#include <cublas_v2.h>
 
 namespace TSQR {
 namespace Impl {
 
 class CuBlasHandle {
-private:
-  // This is actually a cublasHandle_t, which is a pointer type.
-  void* handle_ {nullptr};
-
-  CuBlasHandle (void* handle);
-
 public:
-  static CuBlasHandle getSingleton ();
+  CuBlasHandle () = delete;
+  CuBlasHandle (const CuBlasHandle&) = delete;
+  CuBlasHandle& operator= (const CuBlasHandle&) = delete;
+  CuBlasHandle (CuBlasHandle&&) = delete;
+  CuBlasHandle& operator= (CuBlasHandle&&) = delete;
 
-  // This is not really encapsulation, because the "handle" type is
-  // just a pointer.  However, it lets us define cuBlas wrapper
-  // functions without needing to make them friends of CuBlasHandle.
-  void* getHandle () const {
-    return handle_;
-  }
+  CuBlasHandle (cublasHandle_t handle);
+  cublasHandle_t getHandle () const;
+
+private:
+  // cublasHandle_t is actually a pointer type.
+  cublasHandle_t handle_ {nullptr};
 };
 
 } // namespace Impl

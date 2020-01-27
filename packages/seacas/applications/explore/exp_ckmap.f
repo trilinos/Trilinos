@@ -49,8 +49,6 @@ C   --   INDX - SCRATCH - size = ICNT
       CHARACTER*(*) TYPE
 
       CHARACTER*1024 STRA
-      CHARACTER*32   SCRSTR(2)
-
 C   --Check that each node/element appears once and only once in the map
 C     The 'map(i)' values may be larger than icnt, so we can't do a
 C     simple check.  Instead, we do an indexed sort and check for no
@@ -64,10 +62,8 @@ C     duplicate adjacent values.
 C ... There has been a request to show min and max ids to help with
 C     debugging potential database corruption issues.  Do it here.
 
-      call convert(scrstr(1), map(indx(1)), l1)
-      call convert(scrstr(2), map(indx(icnt)), l2)
-      write (stra, 10001) type, scrstr(1)(:l1), scrstr(2)(:l2)
-10001 FORMAT('INFO: ', A, ' global id range: ',A, ' to ', A)
+      write (stra, 10001) type, map(indx(1)), map(indx(icnt))
+10001 FORMAT('INFO: ', A, ' global id range: ',I12, ' to ', I12)
       call sqzstr(stra, lstra)
       CALL PRTERR ('CMDSPEC', STRA(:lstra))
 

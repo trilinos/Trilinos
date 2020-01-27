@@ -1,4 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="coarse: max size" type="int"    value="100"/>
-  <Parameter name="coarse: type"     type="string" value="none"/>
-</ParameterList>

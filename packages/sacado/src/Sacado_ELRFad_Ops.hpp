@@ -274,11 +274,10 @@ FAD_UNARYOP_MACRO(sinh,
 FAD_UNARYOP_MACRO(tanh,
                   TanhOp,
                   std::tanh(expr.val()),
-                  bar/(std::cosh(expr.val())*std::cosh(expr.val())),
+                  bar*(value_type(1)-std::tanh(expr.val())*std::tanh(expr.val())),
                   false,
-                  expr.dx(i)/( std::cosh(expr.val())* std::cosh(expr.val())),
-                  expr.fastAccessDx(i) /
-                    ( std::cosh(expr.val())* std::cosh(expr.val())))
+                  expr.dx(i)*(value_type(1)-std::tanh(expr.val())*std::tanh(expr.val())),
+                  expr.fastAccessDx(i)*(value_type(1)-std::tanh(expr.val())*std::tanh(expr.val())))
 FAD_UNARYOP_MACRO(acosh,
                   ACoshOp,
                   std::acosh(expr.val()),

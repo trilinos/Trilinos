@@ -145,8 +145,17 @@ public:
         dynamic_cast<const xt_mvector_t *>(vector_.get());
       ids = tvector->getTpetra_MultiVector()->getMap()->getMyGlobalIndices();
     }
+    else if (map_->lib() == Xpetra::UseEpetra) {
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
+      // this will call getIDsView to get raw ptr and create a view from it
+      return BaseAdapter<User>::getIDsKokkosView(ids);
+#else
+      throw std::logic_error("Epetra requested, but Trilinos is not "
+                           "built with Epetra");
+#endif
+    }
     else {
-      throw std::logic_error("getIDsKokkosView called but not on Tpetra!");
+      throw std::logic_error("getIDsKokkosView called but not on Tpetra or Epetra!");
     }
   }
 
@@ -322,14 +331,33 @@ template <typename User>
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> view2d =
       tvector->getTpetra_MultiVector()->template getLocalView<node_t>();
-
     elements = view2d;
-
-    // TODO: Delete later ... keeping in case we end up switching back
-    // elements = Kokkos::subview(view2d, Kokkos::ALL, idx);
+  }
+  else if (map_->lib() == Xpetra::UseEpetra){
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
+    typedef Xpetra::EpetraMultiVectorT<gno_t,node_t> xe_mvector_t;
+    const xe_mvector_t *evector =
+      dynamic_cast<const xe_mvector_t *>(vector_.get());
+    elements =
+      Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>
+      ("elements", evector->getLocalLength(), evector->getNumVectors());
+    if(evector->getLocalLength() > 0) {
+      for(size_t idx = 0; idx < evector->getNumVectors(); ++idx) {
+        const scalar_t * ptr;
+        int stride;
+        getEntriesView(ptr, stride, idx);
+        for(size_t n = 0; n < evector->getLocalLength(); ++n) {
+          elements(n, idx) = ptr[n];
+        }
+      }
+    }
+#else
+    throw std::logic_error("Epetra requested, but Trilinos is not "
+                           "built with Epetra");
+#endif
   }
   else {
-    throw std::logic_error("getEntriesKokkosView called but not using Tpetra!");
+    throw std::logic_error("getEntriesKokkosView called but not using Tpetra or Epetra!");
   }
 }
 

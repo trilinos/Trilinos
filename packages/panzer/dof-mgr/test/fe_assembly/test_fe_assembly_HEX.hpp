@@ -653,7 +653,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     else {
       *outStream << "Residual l2 norm : " << res_l2_norm << "\n";
     }
-  } catch (std::exception err) {
+  } catch (const std::exception & err) {
     *outStream << " Exception\n";
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;

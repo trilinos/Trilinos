@@ -87,8 +87,8 @@ C ... See if need to read the data
             IS = IXNNPS(INPS)
             DO 10 IVAR = 1, LISVAR(0)
                IF (ISVOK (LISVAR(IVAR),INPS) .NE. 0) THEN
-                  call exgnsv(ndb, nstep, ivar, id, nnnps(inps),
-     $                 vars(is,ivar), ierr)
+                  call exgnsv(ndb, nstep, lisvar(ivar), id, nnnps(inps),
+     $                 vars(is,lisvar(ivar)), ierr)
                end if
  10         continue
             ioff = ioff + nnnps(inps)
@@ -205,4 +205,3 @@ C ... See if need to read the data
 10030 FORMAT (/,1X, 'Set', I12, 1X, A, ':',
      &     I12, ' nodes', 1X, A, ' name = "',A,'"')
       END
-

@@ -1060,9 +1060,8 @@ namespace TSQR {
         // Make sure that both Lapack and CuSolver get the same
         // pseudorandom seed.
         std::vector<int> iseed_copy(iseed);
-        auto handle = Impl::CuSolverHandle::getSingleton();
         Kokkos::View<int> info("info");
-        Impl::CuSolver<Scalar> solver(handle, info.data());
+        Impl::CuSolver<Scalar> solver(info.data());
         verifyLapackTmpl(out, iseed_copy, solver, p, "CUSOLVER");
       }
 #endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER
@@ -1261,9 +1260,8 @@ namespace TSQR {
         // Make sure that both Lapack and CuSolver get the same
         // pseudorandom seed.
         std::vector<int> iseed_copy(iseed);
-        auto handle = Impl::CuSolverHandle::getSingleton();
         Kokkos::View<int> info("info");
-        Impl::CuSolver<Scalar> solver(handle, info.data());
+        Impl::CuSolver<Scalar> solver(info.data());
         benchmarkLapackTmpl(out, iseed_copy, solver, p, "CUSOLVER");
       }
 #endif // HAVE_TPETRATSQR_CUBLAS && HAVE_TPETRATSQR_CUSOLVER

@@ -28,7 +28,6 @@ template< class Device >
 bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           const CMD & cmd)
 {
-  typedef typename Kokkos::Compat::KokkosDeviceWrapperNode<Device> NodeType;
   bool success = true;
   try {
 
@@ -38,12 +37,12 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   using Teuchos::Array;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Stokhos::OneDOrthogPolyBasis<int,double> one_d_basis;
-  typedef Stokhos::LegendreBasis<int,double> legendre_basis;
-  typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > order_type;
-  typedef Stokhos::TotalOrderBasis<int,double,order_type> product_basis;
-  typedef Stokhos::Sparse3Tensor<int,double> Cijk;
-  typedef Stokhos::Quadrature<int,double> quadrature;
+  using one_d_basis    = Stokhos::OneDOrthogPolyBasis<int,double>;
+  using legendre_basis = Stokhos::LegendreBasis<int,double>;
+  using order_type     = Stokhos::LexographicLess< Stokhos::MultiIndex<int> >;
+  using product_basis  = Stokhos::TotalOrderBasis<int,double,order_type>;
+  using Cijk           = Stokhos::Sparse3Tensor<int,double>;
+  using  quadrature    = Stokhos::Quadrature<int,double>;
   const int dim = cmd.USE_UQ_DIM;
   const int order = cmd.USE_UQ_ORDER ;
   Array< RCP<const one_d_basis> > bases(dim);
@@ -52,8 +51,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   RCP<const product_basis> basis = rcp(new product_basis(bases));
   RCP<Cijk> cijk = basis->computeTripleProductTensor();
 
-  typedef Stokhos::DynamicStorage<int,double,Device> Storage;
-  typedef Sacado::UQ::PCE<Storage> Scalar;
+  using Storage = Stokhos::DynamicStorage<int,double,Device>;
+  using Scalar  = Sacado::UQ::PCE<Storage>;
   typename Scalar::cijk_type kokkos_cijk =
     Stokhos::create_product_tensor<Device>(*basis, *cijk);
   Kokkos::setGlobalCijkTensor(kokkos_cijk);
@@ -80,9 +79,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const int num_quad_points_aligned = (num_quad_points + mask) & ~mask;
 
   // Copy quadrature data to view's for assembly kernels
-  typedef Kokkos::Example::FENL::QuadratureData<Device> QD;
-  typedef typename QD::quad_weights_type quad_weights_type;
-  typedef typename QD::quad_values_type quad_values_type;
+  using QD                = Kokkos::Example::FENL::QuadratureData<Device>;
+  using quad_weights_type = typename QD::quad_weights_type;
+  using quad_values_type  = typename QD::quad_values_type;
   QD qd;
   qd.weights_view =
     quad_weights_type( "quad weights", num_quad_points_aligned );

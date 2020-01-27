@@ -205,7 +205,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
   if( !status_.numericFactorizationDone() ){
     // This casting-away of constness is probably OK because this
     // function is meant to be "logically const"
-    const_cast<type*>(this)->numericFactorization();
+    const_cast<type&>(*this).numericFactorization();
   }
 
   static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), Teuchos::ptrInArg(*b));

@@ -720,14 +720,14 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       k_lclInds1D_.extent (0) != 0 || k_gblInds1D_.extent (0) != 0, std::logic_error,
       ": cannot have 1D data structures allocated.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! lclInds2D_.is_null () || ! gblInds2D_.is_null (), std::logic_error,
-      ": cannot have 2D data structures allocated.");
 
-    if(!params.is_null() && params->isParameter("sorted") && !params->get<bool>("sorted"))
+    if(! params.is_null() && params->isParameter("sorted") &&
+       ! params->get<bool>("sorted")) {
       indicesAreSorted_ = false;
-    else
+    }
+    else {
       indicesAreSorted_ = true;
+    }
 
     setDomainRangeMaps (domainMap.is_null() ? rowMap_ : domainMap,
                         rangeMap .is_null() ? rowMap_ : rangeMap);
@@ -1142,21 +1142,6 @@ namespace Tpetra {
           return ::Tpetra::Details::getEntryOnHost (this->k_rowPtrs_, lclNumRows);
         }
       }
-      else if (this->storageStatus_ == ::Tpetra::Details::STORAGE_2D) {
-        size_t numAllocated = 0;
-        if (this->isLocallyIndexed ()) {
-          for (LocalOrdinal lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-            numAllocated += this->lclInds2D_[lclRow].size ();
-          }
-        }
-        else if (this->isGloballyIndexed ()) {
-          for (LocalOrdinal lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-            numAllocated += this->gblInds2D_[lclRow].size ();
-          }
-        }
-        // Neither locally nor globally indexed, means no indices allocated.
-        return numAllocated;
-      }
       else {
         return static_cast<size_t> (0);
       }
@@ -1384,9 +1369,6 @@ namespace Tpetra {
         const LO* const rowViewRaw = (len == 0) ? nullptr : rowView.data ();
         return Teuchos::ArrayView<const LO> (rowViewRaw, len, Teuchos::RCP_DISABLE_NODE_LOOKUP);
       }
-      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        return lclInds2D_[rowinfo.localRow] ();
-      }
       else {
         return Teuchos::ArrayView<const LO> (); // nothing in the row to view
       }
@@ -1408,31 +1390,15 @@ namespace Tpetra {
     constexpr bool debug = false;
 #endif // HAVE_TPETRA_DEBUG
 
-    if (rowInfo.allocSize != 0) {
-      if (k_lclInds1D_.extent (0) != 0) { // 1-D storage
-        if (debug) {
-          if (rowInfo.offset1D + rowInfo.allocSize >
-              static_cast<size_t> (k_lclInds1D_.extent (0))) {
-            return static_cast<LocalOrdinal> (-1);
-          }
-        }
-        lclInds = &k_lclInds1D_[rowInfo.offset1D];
-        capacity = rowInfo.allocSize;
-      }
-      else { // 2-D storage
-        if (debug) {
-          if (rowInfo.localRow >= static_cast<size_t> (lclInds2D_.size ())) {
-            return static_cast<LocalOrdinal> (-1);
-          }
-        }
-        // Use a const reference so we don't touch the ArrayRCP's ref
-        // count, since ArrayRCP's ref count is not thread safe.
-        const auto& curRow = lclInds2D_[rowInfo.localRow];
-        if (! curRow.empty ()) {
-          lclInds = curRow.getRawPtr ();
-          capacity = curRow.size ();
+    if (rowInfo.allocSize != 0 && k_lclInds1D_.extent (0) != 0) {
+      if (debug) {
+        if (rowInfo.offset1D + rowInfo.allocSize >
+            static_cast<size_t> (k_lclInds1D_.extent (0))) {
+          return static_cast<LocalOrdinal> (-1);
         }
       }
+      lclInds = k_lclInds1D_.data () + rowInfo.offset1D;
+      capacity = rowInfo.allocSize;
     }
     return static_cast<LocalOrdinal> (0);
   }
@@ -1463,9 +1429,6 @@ namespace Tpetra {
         row_view_type rowView = subview (row_view_type (k_lclInds1D_), rng);
         LO* const rowViewRaw = (len == 0) ? nullptr : rowView.data ();
         return Teuchos::ArrayView<LO> (rowViewRaw, len, Teuchos::RCP_DISABLE_NODE_LOOKUP);
-      }
-      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        return lclInds2D_[rowinfo.localRow] ();
       }
       else {
         return Teuchos::ArrayView<LO> (); // nothing in the row to view
@@ -1500,16 +1463,6 @@ namespace Tpetra {
         // performance in a measurable way.
         return Kokkos::subview (row_view_type (k_lclInds1D_), rng);
       }
-      else if (! this->lclInds2D_[rowInfo.localRow].empty ()) { // 2-D storage
-        // Use a reference, so that I don't touch the
-        // Teuchos::ArrayView reference count in a debug build.  (It
-        // has no reference count in a release build.)  This ensures
-        // thread safety.
-        //
-        // lclInds2D_ lives on host, so this code does not assume UVM.
-        Teuchos::Array<LO>& lclInds = this->lclInds2D_[rowInfo.localRow];
-        return row_view_type (lclInds.getRawPtr (), lclInds.size ());
-      }
       else {
         return row_view_type (); // nothing in the row to view
       }
@@ -1524,9 +1477,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalKokkosRowViewNonConst (const RowInfo& rowInfo)
   {
-    typedef LocalOrdinal LO;
-    typedef Kokkos::View<LO*, execution_space,
-      Kokkos::MemoryUnmanaged> row_view_type;
+    using row_view_type = Kokkos::View<LocalOrdinal*,
+      execution_space, Kokkos::MemoryUnmanaged>;
 
     if (rowInfo.allocSize == 0) {
       return row_view_type ();
@@ -1543,17 +1495,6 @@ namespace Tpetra {
         // performance in a measurable way.
         return Kokkos::subview (row_view_type (this->k_lclInds1D_), rng);
       }
-      else if (! this->lclInds2D_[rowInfo.localRow].empty ()) { // 2-D storage
-        // Use a reference, so that I don't touch the
-        // Teuchos::ArrayView reference count in a debug build.  (It
-        // has no reference count in a release build.)  This ensures
-        // thread safety.
-        //
-        // lclInds2D_ lives on host, so this code does not assume UVM.
-        Teuchos::Array<LO>& cols = this->lclInds2D_[rowInfo.localRow];
-        LO* const colsRaw = cols.getRawPtr ();
-        return row_view_type (colsRaw, cols.size ());
-      }
       else {
         return row_view_type (); // nothing in the row to view
       }
@@ -1568,9 +1509,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalKokkosRowView (const RowInfo& rowinfo) const
   {
-    typedef GlobalOrdinal GO;
-    typedef Kokkos::View<const GO*, execution_space,
-      Kokkos::MemoryUnmanaged> row_view_type;
+    using row_view_type = Kokkos::View<const GlobalOrdinal*,
+      execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
     if (rowinfo.allocSize == 0) {
       return row_view_type ();
@@ -1587,16 +1527,6 @@ namespace Tpetra {
         // performance in a measurable way.
         return Kokkos::subview (row_view_type (this->k_gblInds1D_), rng);
       }
-      else if (! this->gblInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        // Use a reference, so that I don't touch the
-        // Teuchos::ArrayView reference count in a debug build.  (It
-        // has no reference count in a release build.)  This ensures
-        // thread safety.
-        //
-        // gblInds2D_ lives on host, so this code does not assume UVM.
-        Teuchos::Array<GO>& cols = this->gblInds2D_[rowinfo.localRow];
-        return row_view_type (cols.getRawPtr (), cols.size ());
-      }
       else {
         return row_view_type (); // nothing in the row to view
       }
@@ -1609,23 +1539,24 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalView (const RowInfo& rowinfo) const
   {
-    Teuchos::ArrayView<const GlobalOrdinal> view;
-    if (rowinfo.allocSize > 0) {
-      if (k_gblInds1D_.extent (0) != 0) {
-        auto rng = std::make_pair (rowinfo.offset1D,
-                                   rowinfo.offset1D + rowinfo.allocSize);
-        // mfh 23 Nov 2015: Don't just create a subview of
-        // k_gblInds1D_ directly, because that first creates a
-        // _managed_ subview, then returns an unmanaged version of
-        // that.  That touches the reference count, which costs
-        // performance in a measurable way.
-        Kokkos::View<const GlobalOrdinal*, execution_space,
-          Kokkos::MemoryUnmanaged> k_gblInds1D_unmanaged = k_gblInds1D_;
-        view = Kokkos::Compat::getConstArrayView (Kokkos::subview (k_gblInds1D_unmanaged, rng));
-      }
-      else if (! gblInds2D_[rowinfo.localRow].empty()) {
-        view = gblInds2D_[rowinfo.localRow] ();
-      }
+    using GO = global_ordinal_type;
+
+    Teuchos::ArrayView<const GO> view;
+    if (rowinfo.allocSize > 0 && k_gblInds1D_.extent (0) != 0) {
+      const auto rng =
+        std::make_pair (rowinfo.offset1D,
+                        rowinfo.offset1D + rowinfo.allocSize);
+      // mfh 23 Nov 2015: Don't just create a subview of
+      // k_gblInds1D_ directly, because that first creates a
+      // _managed_ subview, then returns an unmanaged version of
+      // that.  That touches the reference count, which costs
+      // performance in a measurable way.
+      using row_view_type = Kokkos::View<const GO*,
+        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+      row_view_type k_gblInds1D_unmanaged = k_gblInds1D_;
+      using Kokkos::Compat::getConstArrayView;
+      using Kokkos::subview;
+      view = getConstArrayView (subview (k_gblInds1D_unmanaged, rng));
     }
     return view;
   }
@@ -1646,29 +1577,15 @@ namespace Tpetra {
     constexpr bool debug = false;
 #endif // HAVE_TPETRA_DEBUG
 
-    if (rowInfo.allocSize != 0) {
-      if (k_gblInds1D_.extent (0) != 0) { // 1-D storage
-        if (debug) {
-          if (rowInfo.offset1D + rowInfo.allocSize >
-              static_cast<size_t> (k_gblInds1D_.extent (0))) {
-            return static_cast<LocalOrdinal> (-1);
-          }
-        }
-        gblInds = &k_gblInds1D_[rowInfo.offset1D];
-        capacity = rowInfo.allocSize;
-      }
-      else {
-        if (debug) {
-          if (rowInfo.localRow >= static_cast<size_t> (gblInds2D_.size ())) {
-            return static_cast<LocalOrdinal> (-1);
-          }
-        }
-        const auto& curRow = gblInds2D_[rowInfo.localRow];
-        if (! curRow.empty ()) {
-          gblInds = curRow.getRawPtr ();
-          capacity = curRow.size ();
+    if (rowInfo.allocSize != 0 && k_gblInds1D_.extent (0) != 0) {
+      if (debug) {
+        if (rowInfo.offset1D + rowInfo.allocSize >
+            static_cast<size_t> (k_gblInds1D_.extent (0))) {
+          return static_cast<LocalOrdinal> (-1);
         }
       }
+      gblInds = k_gblInds1D_.data () + rowInfo.offset1D;
+      capacity = rowInfo.allocSize;
     }
     return static_cast<LocalOrdinal> (0);
   }
@@ -1679,23 +1596,24 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalViewNonConst (const RowInfo& rowinfo)
   {
-    Teuchos::ArrayView<GlobalOrdinal> view;
-    if (rowinfo.allocSize > 0) {
-      if (k_gblInds1D_.extent (0) != 0) {
-        auto rng = std::make_pair (rowinfo.offset1D,
-                                   rowinfo.offset1D + rowinfo.allocSize);
-        // mfh 23 Nov 2015: Don't just create a subview of
-        // k_gblInds1D_ directly, because that first creates a
-        // _managed_ subview, then returns an unmanaged version of
-        // that.  That touches the reference count, which costs
-        // performance in a measurable way.
-        Kokkos::View<GlobalOrdinal*, execution_space,
-          Kokkos::MemoryUnmanaged> k_gblInds1D_unmanaged = k_gblInds1D_;
-        view = Kokkos::Compat::getArrayView (Kokkos::subview (k_gblInds1D_unmanaged, rng));
-      }
-      else if (! gblInds2D_[rowinfo.localRow].empty()) {
-        view = gblInds2D_[rowinfo.localRow] ();
-      }
+    using GO = global_ordinal_type;
+
+    Teuchos::ArrayView<GO> view;
+    if (rowinfo.allocSize > 0 && k_gblInds1D_.extent (0) != 0) {
+      const auto rng =
+        std::make_pair (rowinfo.offset1D,
+                        rowinfo.offset1D + rowinfo.allocSize);
+      // mfh 23 Nov 2015: Don't just create a subview of
+      // k_gblInds1D_ directly, because that first creates a
+      // _managed_ subview, then returns an unmanaged version of
+      // that.  That touches the reference count, which costs
+      // performance in a measurable way.
+      using row_view_type = Kokkos::View<GO*, execution_space,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+      row_view_type k_gblInds1D_unmanaged = k_gblInds1D_;
+      using Kokkos::Compat::getArrayView;
+      using Kokkos::subview;
+      view = getArrayView (subview (k_gblInds1D_unmanaged, rng));
     }
     return view;
   }
@@ -1987,16 +1905,24 @@ namespace Tpetra {
     inp_view_type inputInds(inputGblColInds, numInputInds);
     size_t numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
       this->k_gblInds1D_, numEntries, inputInds, fun);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numInserted == Teuchos::OrdinalTraits<size_t>::invalid(),
-        std::runtime_error,
-        "There is not enough capacity to insert " << inputInds.size()  << " " <<
-        "indices in to row " << lclRow <<
-        " on rank " << this->getComm()->getRank() << "." <<
-        "The current size of the indices array is " << this->k_gblInds1D_.size() << ".  " <<
-        "The current size of the row pointers array is " << this->k_rowPtrs_.size() << ".  " <<
-        "The upper bound on the number of entries in this row must be increased to "
-        "accommodate one or more of the new indices.");
+
+    const bool insertFailed =
+      numInserted == Teuchos::OrdinalTraits<size_t>::invalid();
+    if(insertFailed) {
+      constexpr size_t ONE (1);
+      const int myRank = this->getComm()->getRank();
+      std::ostringstream os;
+      os << "On MPI Process " << myRank << ": Not enough capacity to "
+        "insert " << numInputInds
+         << " ind" << (numInputInds != ONE ? "ices" : "ex")
+         << " into local row " << lclRow << ", which currently has "
+         << rowInfo.numEntries
+         << " entr" << (rowInfo.numEntries != ONE ? "ies" : "y")
+         << " and total allocation size " << rowInfo.allocSize << ".";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, os.str());
+    }
+
     this->k_numRowEntries_(lclRow) += numInserted;
     this->setLocallyModified();
     return numInserted;
@@ -2027,12 +1953,24 @@ namespace Tpetra {
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
     auto numInserted = Details::insertCrsIndices(myRow, k_rowPtrs_,
       this->k_lclInds1D_, numEntries, inputInds, fun);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numInserted == Teuchos::OrdinalTraits<size_t>::invalid(),
-        std::runtime_error,
-        "There is not enough capacity to insert indices in to row " << myRow <<
-        ". The upper bound on the number of entries in this row must be increased to "
-        "accommodate one or more of the new indices.");
+
+    const bool insertFailed =
+      numInserted == Teuchos::OrdinalTraits<size_t>::invalid();
+    if(insertFailed) {
+      constexpr size_t ONE (1);
+      const size_t numInputInds(indices.size());
+      const int myRank = this->getComm()->getRank();
+      std::ostringstream os;
+      os << "On MPI Process " << myRank << ": Not enough capacity to "
+        "insert " << numInputInds
+         << " ind" << (numInputInds != ONE ? "ices" : "ex")
+         << " into local row " << myRow << ", which currently has "
+         << rowInfo.numEntries
+         << " entr" << (rowInfo.numEntries != ONE ? "ies" : "y")
+         << " and total allocation size " << rowInfo.allocSize << ".";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, os.str());
+    }
     numNewInds = numInserted;
     newNumEntries = rowInfo.numEntries + numNewInds;
 
@@ -2229,24 +2167,6 @@ namespace Tpetra {
         (this->storageStatus_ == ::Tpetra::Details::STORAGE_2D,
          std::logic_error,
          "Graph should never have 2D storage");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->indicesAreAllocated_ &&
-         this->storageStatus_ == ::Tpetra::Details::STORAGE_2D &&
-         this->isLocallyIndexed () &&
-         static_cast<LocalOrdinal> (this->lclInds2D_.size ()) != lclNumRows,
-         std::logic_error,
-         "Graph claims to have allocated indices, be locally indexed, and have "
-         "2-D storage, but lclInds2D_.size() = " << this->lclInds2D_.size ()
-         << " != getNodeNumRows() = " << lclNumRows << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->indicesAreAllocated_ &&
-         this->storageStatus_ == ::Tpetra::Details::STORAGE_2D &&
-         this->isGloballyIndexed () &&
-         static_cast<LocalOrdinal> (this->gblInds2D_.size ()) != lclNumRows,
-         std::logic_error,
-         "Graph claims to have allocated indices, be globally indexed, and have "
-         "2-D storage, but gblInds2D_.size() = " << this->gblInds2D_.size ()
-         << " != getNodeNumRows() = " << lclNumRows << ".");
 
       size_t nodeAllocSize = 0;
       try {
@@ -2330,19 +2250,13 @@ namespace Tpetra {
          this->k_gblInds1D_.extent (0) == 0,
          std::logic_error, "Graph has StaticProfile and is allocated "
          "nonnontrivally, but 1-D allocations are not present." << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->lclInds2D_ != Teuchos::null || this->gblInds2D_ != Teuchos::null,
-         std::logic_error, "Graph has StaticProfile, but 2-D allocations are "
-         "present." << suffix);
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! this->indicesAreAllocated () &&
          ((this->k_rowPtrs_.extent (0) != 0 ||
            this->k_numRowEntries_.extent (0) != 0) ||
           this->k_lclInds1D_.extent (0) != 0 ||
-          this->lclInds2D_ != Teuchos::null ||
-          this->k_gblInds1D_.extent (0) != 0 ||
-          this->gblInds2D_ != Teuchos::null),
+          this->k_gblInds1D_.extent (0) != 0),
          std::logic_error, "If indices are not allocated, "
          "then none of the buffers should be." << suffix);
       // indices may be local or global only if they are allocated
@@ -2357,42 +2271,33 @@ namespace Tpetra {
         (this->indicesAreLocal_ && this->indicesAreGlobal_,
          std::logic_error, "Indices may not be both local and global." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->indicesAreLocal_ &&
-         (this->k_gblInds1D_.extent (0) != 0 || ! this->gblInds2D_.is_null ()),
-         std::logic_error, "Indices are local, but either "
-         "k_gblInds1D_.extent(0) (= "
-         << this->k_gblInds1D_.extent (0) << ") != 0, or "
-         "gblInds2D_ is not null.  In other words, if indices are local, "
-         "then global allocations should not be present." << suffix);
+        (indicesAreLocal_ && k_gblInds1D_.extent (0) != 0,
+         std::logic_error, "Indices are local, but "
+         "k_gblInds1D_.extent(0) (= " << k_gblInds1D_.extent (0)
+         << ") != 0.  In other words, if indices are local, then "
+         "allocations of global indices should not be present."
+         << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->indicesAreGlobal_ &&
-         (this->k_lclInds1D_.extent (0) != 0 ||
-          ! this->lclInds2D_.is_null ()),
-         std::logic_error, "Indices are global, but either "
-         "k_lclInds1D_.extent(0) (= "
-         << this->k_lclInds1D_.extent (0) << ") != 0, or "
-         "lclInds2D_ is not null.  In other words, if indices are global, "
-         "then local allocations should not be present." << suffix);
+        (indicesAreGlobal_ && k_lclInds1D_.extent (0) != 0,
+         std::logic_error, "Indices are global, but "
+         "k_lclInds1D_.extent(0) (= " << k_lclInds1D_.extent(0)
+         << ") != 0.  In other words, if indices are global, "
+         "then allocations for local indices should not be present."
+         << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->indicesAreLocal_ &&
-         nodeAllocSize > 0 &&
-         this->k_lclInds1D_.extent (0) == 0 &&
-         this->getNodeNumRows () > 0 &&
-         this->lclInds2D_.is_null (),
-         std::logic_error, "Indices are local, getNodeAllocationSize() = "
-         << nodeAllocSize << " > 0, k_lclInds1D_.extent(0) = 0, "
-         "getNodeNumRows() = " << this->getNodeNumRows () << " > 0, and "
-         "lclInds2D_ is null." << suffix);
+        (indicesAreLocal_ && nodeAllocSize > 0 &&
+         k_lclInds1D_.extent (0) == 0 && getNodeNumRows () > 0,
+         std::logic_error, "Indices are local and "
+         "getNodeAllocationSize() = " << nodeAllocSize << " > 0, but "
+         "k_lclInds1D_.extent(0) = 0 and getNodeNumRows() = "
+         << getNodeNumRows () << " > 0." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->indicesAreGlobal_ &&
-         nodeAllocSize > 0 &&
-         this->k_gblInds1D_.extent (0) == 0 &&
-         this->getNodeNumRows () > 0 &&
-         this->gblInds2D_.is_null (),
-         std::logic_error, "Indices are global, getNodeAllocationSize() = "
-         << nodeAllocSize << " > 0, k_gblInds1D_.extent(0) = 0, "
-         "getNodeNumRows() = " << this->getNodeNumRows () << " > 0, and "
-         "gblInds2D_ is null." << suffix);
+        (indicesAreGlobal_ && nodeAllocSize > 0 &&
+         k_gblInds1D_.extent (0) == 0 && getNodeNumRows () > 0,
+         std::logic_error, "Indices are global and "
+         "getNodeAllocationSize() = " << nodeAllocSize << " > 0, but "
+         "k_gblInds1D_.extent(0) = 0 and getNodeNumRows() = "
+         << getNodeNumRows () << " > 0." << suffix);
       // check the actual allocations
       if (this->indicesAreAllocated () &&
           this->pftype_ == StaticProfile &&
@@ -3117,12 +3022,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       ((this->k_lclInds1D_.extent (0) != 0 || this->k_gblInds1D_.extent (0) != 0),
        std::runtime_error, "You may not call this method if 1-D data "
-       "structures are already allocated.");
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->lclInds2D_ != Teuchos::null ||
-       this->gblInds2D_ != Teuchos::null,
-       std::runtime_error, "You may not call this method if 2-D data "
        "structures are already allocated.");
 
     indicesAreAllocated_ = true;
@@ -4066,12 +3965,11 @@ namespace Tpetra {
     }
 
     if (requestOptimizedStorage) {
-      // With optimized storage, we don't need to store the 2-D column
-      // indices array-of-arrays, or the array of row entry counts.
+      // With optimized storage, we don't need to store
+      // the array of row entry counts.
 
-      // Free graph data structures that are only needed for 2-D or
+      // Free graph data structures that are only needed for
       // unpacked 1-D storage.
-      lclInds2D_ = Teuchos::null;
       k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
@@ -7277,9 +7175,6 @@ namespace Tpetra {
     std::swap(graph.k_lclInds1D_, this->k_lclInds1D_);
     std::swap(graph.k_gblInds1D_, this->k_gblInds1D_);
 
-    std::swap(graph.lclInds2D_, this->lclInds2D_);
-    std::swap(graph.gblInds2D_, this->gblInds2D_);
-
     std::swap(graph.storageStatus_, this->storageStatus_);
 
     std::swap(graph.indicesAreAllocated_, this->indicesAreAllocated_);
@@ -7347,9 +7242,6 @@ namespace Tpetra {
     output = this->pftype_ == graph.pftype_ ? output : false;    // ProfileType is a enum (scalar)
 
     output = this->numAllocForAllRows_ == graph.numAllocForAllRows_ ? output : false;
-
-    output = this->lclInds2D_ == graph.lclInds2D_ ? output : false;   // Teuchos::Array has == overloaded
-    output = this->gblInds2D_ == graph.gblInds2D_ ? output : false;   // Teuchos::Array has == overloaded
 
     output = this->storageStatus_ == graph.storageStatus_ ? output : false;  // EStorageStatus is an enum
 

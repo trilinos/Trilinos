@@ -228,7 +228,12 @@ namespace Ioss {
     if (!is_input()) {
       // Create full path to the output file at this point if it doesn't
       // exist...
-      create_path(DBFilename);
+      if (isParallel) {
+	Ioss::FileInfo::create_path(DBFilename, util().communicator());
+      }
+      else {
+	Ioss::FileInfo::create_path(DBFilename);
+      }
     }
   }
 
@@ -385,68 +390,6 @@ namespace Ioss {
       exists = static_cast<IfDatabaseExistsBehavior>(properties.get("APPEND_OUTPUT").get_int());
     }
     return exists;
-  }
-
-#if defined(_MSC_VER)
-#include <direct.h>
-#ifndef S_ISDIR
-#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
-#endif
-#endif
-
-  void DatabaseIO::create_path(const std::string &filename) const
-  {
-    bool               error_found = false;
-    std::ostringstream errmsg;
-
-    if (myProcessor == 0) {
-      Ioss::FileInfo file      = Ioss::FileInfo(filename);
-      std::string    path      = file.pathname();
-      std::string    path_root = path[0] == '/' ? "/" : "";
-
-      auto comps = tokenize(path, "/");
-      for (const auto &comp : comps) {
-        path_root += comp;
-
-        struct stat st;
-        if (stat(path_root.c_str(), &st) != 0) {
-          const int mode = 0777; // Users umask will be applied to this.
-#ifdef _MSC_VER
-          if (mkdir(path_root.c_str()) != 0 && errno != EEXIST) {
-#else
-          if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-#endif
-            fmt::print(errmsg, "ERROR: Cannot create directory '{}': {}\n", path_root,
-                       std::strerror(errno));
-            error_found = true;
-            break;
-          }
-        }
-        else if (!S_ISDIR(st.st_mode)) {
-          errno = ENOTDIR;
-          fmt::print(errmsg, "ERROR: Path '{}' is not a directory.\n", path_root);
-          error_found = true;
-          break;
-        }
-        path_root += "/";
-      }
-    }
-    else {
-      // Give the other processors something to say in case there is an error.
-      fmt::print(errmsg,
-                 "ERROR: Could not create path. See processor 0 output for more details.\n");
-    }
-
-    // Sync all processors with error status...
-    // All processors but 0 will have error_found=false
-    // Processor 0 will have error_found = true or false depending on path
-    // result.
-    int is_error = error_found ? 1 : 0;
-    error_found  = (util().global_minmax(is_error, Ioss::ParallelUtils::DO_MAX) == 1);
-
-    if (error_found) {
-      IOSS_ERROR(errmsg);
-    }
   }
 
   const std::string &DatabaseIO::decoded_filename() const

@@ -67,7 +67,7 @@ using namespace shards;
     try {                                                                                                                    \
       S ;                                                                                                                    \
     }                                                                                                                        \
-    catch (std::logic_error err) {                                                                                           \
+    catch (const std::logic_error & err) {                                                                                           \
       ++throwCounter;                                                                                                      \
         *outStream << "Expected Error " << nException << " -------------------------------------------------------------\n"; \
           *outStream << err.what() << '\n';                                                                                    \
@@ -320,7 +320,7 @@ Kokkos::initialize();
     *         Wrap up test: check if the test broke down unexpectedly due to an exception          *
     ************************************************************************************************/
 
-    catch (std::logic_error err) {
+    catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   };
@@ -517,7 +517,7 @@ Kokkos::initialize();
     *         Wrap up test: check if the test broke down unexpectedly due to an exception          *
     ************************************************************************************************/
  
-  catch (std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   };
@@ -1193,7 +1193,7 @@ Kokkos::initialize();
     *         Wrap up test: check if the test broke down unexpectedly due to an exception          *
     ************************************************************************************************/
 
-  catch(std::logic_error err) {
+  catch (const std::logic_error & err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }
