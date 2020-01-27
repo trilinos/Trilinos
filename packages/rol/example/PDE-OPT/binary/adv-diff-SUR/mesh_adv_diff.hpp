@@ -41,95 +41,68 @@
 // ************************************************************************
 // @HEADER
 
+#include "../../TOOLS/meshmanager.hpp"
 
-#ifndef ROL_SAMPLEDVECTOR_H
-#define ROL_SAMPLEDVECTOR_H
+template <class Real>
+class MeshManager_adv_diff : public MeshManager_Rectangle<Real> {
 
-namespace ROL {
-
-template <class Real, class Key=std::vector<Real>>
-class SampledVector {
 private:
-  // Storage
-  std::map<Key, int>                  indices_;
-  std::vector<bool>                   flags_;
-  std::vector<ROL::Ptr<Vector<Real>>> vectors_;
-  int maxIndex_;
 
-  // Update flags
-  bool updated_;
+  int nx_;
+  int ny_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
-  void reset(const bool flag = true) {
-    if ( flag ) {
-      flags_.assign(flags_.size(),false);
-//      typename std::map<Key, int>::iterator it;
-//      for (it = indices_.begin(); it != indices_.end(); ++it) {
-//        flags_[it->second] = false;
-//      }
-    }
+public: 
+
+  MeshManager_adv_diff(Teuchos::ParameterList &parlist) : MeshManager_Rectangle<Real>(parlist)
+  {
+    nx_ = parlist.sublist("Geometry").get("NX", 3);
+    ny_ = parlist.sublist("Geometry").get("NY", 3);
+    computeSideSets();
   }
 
-public:
-  /** \brief Constructor.
-  */
-  SampledVector(void)
-    : maxIndex_(0), updated_(false) { 
-    indices_.clear();
-    flags_.clear();
-    vectors_.clear();
-  }
 
-  /** \brief Update for SampledVector storage.
-  */
-  void update(const bool flag = true) {
-    updated_ = flag;
-    reset(flag);
-  }
+  void computeSideSets() {
 
-  /** \brief Return vector corresponding to input parameter.
-  */
-  bool get(Vector<Real> &x, const Key &param) {
-    int count = indices_.count(param);
-    bool flag = false;
-    int index = maxIndex_;
-    if (count) {
-      typename std::map<Key, int>::iterator it = indices_.find(param);
-      index = it->second;
-      flag  = flags_[index];
-      if (flag) {
-        x.set(*vectors_[index]);
-      }
+    int numSideSets = 2;
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(numSideSets);
+
+    // Dirichlet
+    (*meshSideSets_)[0].resize(4);
+    (*meshSideSets_)[0][0].resize(nx_);
+    (*meshSideSets_)[0][1].resize(0);
+    (*meshSideSets_)[0][2].resize(nx_);
+    (*meshSideSets_)[0][3].resize(ny_);
+    // Neumann
+    (*meshSideSets_)[1].resize(4);
+    (*meshSideSets_)[1][0].resize(0);
+    (*meshSideSets_)[1][1].resize(ny_);
+    (*meshSideSets_)[1][2].resize(0);
+    (*meshSideSets_)[1][3].resize(0);
+    
+    for (int i=0; i<nx_; ++i) {
+      (*meshSideSets_)[0][0][i] = i;
     }
-    else {
-      indices_.insert(std::pair<Key, int>(param, index));
-      flags_.push_back(false);
-      vectors_.push_back(x.clone()); 
-      maxIndex_++;
+    for (int i=0; i<ny_; ++i) {
+      (*meshSideSets_)[1][1][i] = (i+1)*nx_-1;
     }
-    return flag;
+    for (int i=0; i<nx_; ++i) {
+      (*meshSideSets_)[0][2][i] = i + nx_*(ny_-1);
+    }
+    for (int i=0; i<ny_; ++i) {
+      (*meshSideSets_)[0][3][i] = i*nx_;
+    }
+
+  } // computeSideSets
+
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
+    if (verbose) {
+      outStream << "Mesh_stoch_adv_diff: getSideSets called" << std::endl;
+      outStream << "Mesh_stoch_adv_diff: numSideSets = "     << meshSideSets_->size() << std::endl;
+    }
+    return meshSideSets_;
   }
-
-  /** \brief Set vector corresponding to input parameter.
-  */
-  void set(const Vector<Real> &x, const Key &param) {
-    int count = indices_.count(param);
-    int index = maxIndex_;
-    if (count) {
-      typename std::map<Key, int>::iterator it = indices_.find(param);
-      index = it->second;
-      flags_[index] = true;
-      vectors_[index]->set(x);
-    }
-    else {
-      indices_.insert(std::pair<Key, int>(param, index));
-      flags_.push_back(true);
-      vectors_.push_back(x.clone()); 
-      vectors_[index]->set(x);
-      maxIndex_++;
-    }
-  }
-}; // class SampledVector
-
-} // namespace ROL
-
-#endif
+  
+}; // MeshManager_stoch_adv_diff

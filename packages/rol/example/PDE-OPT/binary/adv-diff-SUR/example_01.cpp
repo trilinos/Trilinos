@@ -54,11 +54,9 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_PEBBL_Driver.hpp"
-#include "ROL_TeuchosBranchHelper_PEBBL.hpp"
-#include "branchHelper.hpp"
-
+#include "ROL_OptimizationSolver.hpp"
 #include "opfactory.hpp"
+#include "hilbert.hpp"
 
 int main(int argc, char *argv[]) {
 //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
@@ -87,25 +85,84 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    bool useQP = parlist->sublist("Problem").get("Use Quadratic Program",false);
-    ROL::Ptr<ROL::OptimizationProblemFactory<RealT>> factory;
-    ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper;
-    if (!useQP) {
-      RealT intTol = parlist->sublist("Problem").get("Integrality Tolerance",1e-6);
-      int method = parlist->sublist("Problem").get("Branching Method",0);
+    ROL::Ptr<BinaryAdvDiffFactory<RealT>> factory;
+    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
+    ROL::Ptr<ROL::OptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::Vector<RealT>> z, omega, uomega, uz, du;
+    RealT err(0);
+    int order = parlist->sublist("Problem").get("Hilbert Curve Order",6);
+    for (int i = 0; i < order; ++i) {
+      parlist->sublist("Problem").set("Hilbert Curve Order",i+1);
       factory = ROL::makePtr<BinaryAdvDiffFactory<RealT>>(*parlist,comm,outStream);
-      bHelper = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>(intTol,method);
-    }
-    else {
-      factory = ROL::makePtr<BinaryAdvDiffQPFactory<RealT>>(*parlist,comm,outStream);
-      bHelper = ROL::makePtr<ROL::TeuchosBranchHelper_PEBBL<int,RealT>>();
-    }
+      bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false); 
+      if (checkDeriv) factory->check(*outStream);
 
-    /*************************************************************************/
-    /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
-    /*************************************************************************/
-    ROL::ROL_PEBBL_Driver<RealT> pebbl(factory,parlist,bHelper,3,outStream);
-    pebbl.solve(argc,argv,*outStream);
+      /*************************************************************************/
+      /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
+      /*************************************************************************/
+      problem = factory->build();
+      if (checkDeriv) problem->check(*outStream);
+      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem, *parlist);
+      solver->solve(*outStream);
+      z = problem->getSolutionVector();
+      factory->getState(uz,z);
+
+      // Sum Up Rounding
+      omega = z->clone(); omega->zero();
+      std::vector<RealT> &zdata = *ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z)->getParameter()->getVector();
+      std::vector<RealT> &odata = *ROL::dynamicPtrCast<PDE_OptVector<RealT>>(omega)->getParameter()->getVector();
+      int n = std::pow(2,i+1), d(0);
+      RealT g1(0), g2(0);
+      for (int j = 0; j < n; ++j) {
+        for (int k = 0; k < n; ++k) {
+          hilbert::xy2d(i+1,j,k,d);
+          g1 += zdata[d];
+          g2 += static_cast<RealT>(1) - zdata[d];
+          if (g1 >= g2) {
+            odata[d] = static_cast<RealT>(1);
+            g1 -= static_cast<RealT>(1);
+          }
+          else {
+            g2 -= static_cast<RealT>(1);
+          }
+        }
+      }
+
+      // Solve PDE
+      factory->getState(uomega,omega);
+
+      // Print
+      std::stringstream uname, zname, oname, xname, yname;
+      uname << "state_" << i+1 << ".txt";
+      zname << "control_relaxed_" << i+1 << ".txt";
+      oname << "control_binary_" << i+1 << ".txt";
+      xname << "X_" << i+1 << ".txt";
+      yname << "Y_" << i+1 << ".txt";
+      factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(uomega)->getVector(),uname.str());
+      std::ofstream zfile, ofile, xfile, yfile;
+      zfile.open(zname.str());
+      ofile.open(oname.str());
+      xfile.open(xname.str());
+      yfile.open(yname.str());
+      int x(0), y(0);
+      for (unsigned j = 0; j < n*n; ++j) {
+        zfile << zdata[j] << std::endl;
+        ofile << odata[j] << std::endl;
+        hilbert::d2xy(i+1, j, x, y);
+        xfile << x << std::endl;
+        yfile << y << std::endl;
+      }
+      zfile.close();
+      ofile.close();
+      xfile.close();
+      yfile.close();
+
+      du = uz->clone();
+      du->set(*uz); du->axpy(static_cast<RealT>(-1),*uomega);
+      err = du->norm();
+      *outStream << "State Error: " << err << std::endl;
+    }
+    factory->print(*outStream);
 
     //*outStream << "OPTIMAL CONTROLS" << std::endl;
     //for (int i=0; i<controlDim; ++i) {
