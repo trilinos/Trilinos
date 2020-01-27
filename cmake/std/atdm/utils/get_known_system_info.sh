@@ -136,12 +136,6 @@ if [[ $SNLSYSTEM == "cts1" ]] ; then
   systemNameTypeMatchedListHostNames[cts1]=$SNLCLUSTER
 fi
 
-# TODO: vortex doesn't set SNLSYSTEM -- how do we tell if we're on an ats2 system?
-#if [[ $SNLSYSTEM == "ats2" ]] ; then
-#  systemNameTypeMatchedList+=(ats2)
-#  systemNameTypeMatchedListHostNames[ats2]=$SNLCLUSTER
-#fi
-
 # SEMS RHEL6 and RHEL7 systems
 if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
   systemNameTypeMatchedList+=(sems-rhel6)

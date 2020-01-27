@@ -1,1 +1,0 @@
-Trilinos-atdm-ats2-gnu-7.3.1-spmpi-2019.06.24_static_opt.sh
