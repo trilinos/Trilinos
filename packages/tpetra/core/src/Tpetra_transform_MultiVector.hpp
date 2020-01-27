@@ -323,6 +323,16 @@ namespace Tpetra {
              const LO lclNumRows = static_cast<LO> (input_lcl.extent (0));
              using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
              range_type range (execSpace, 0, lclNumRows);
+
+             // Note that the Transform.cpp test will not currently pass
+             // with CUDA_LAUNCH_BLOCKING=0. This is because execSpace is not
+             // considered by withLocalAccess so after requesting the transform
+             // with Host we don't get a sync and need_sync_host() is still true.
+             // That issue is regardless of whether CUDA_LAUNCH_BLOCKING is set.
+             // When withLocalAccess is fixed we should then have the proper fencing
+             // and the test will run correctly with CUDA_LAUNCH_BLOCKING=0 or =1.
+             // PR 6617 discusses these current issues.
+
              Kokkos::parallel_for (kernelLabel, range, g);
            },
            readOnly (input).on (memSpace),
@@ -357,6 +367,10 @@ namespace Tpetra {
             const LO lclNumRows = static_cast<LO> (input_lcl.extent (0));
             using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
             range_type range (execSpace, 0, lclNumRows);
+
+            // See note above for explanation why a pending fix to withLocalAccess
+            // will fix Transform.cpp test to pass with CUDA_LAUNCH_BLOCKING=0.
+
             Kokkos::parallel_for (kernelLabel, range, g);
           },
           readOnly (input).on (memSpace),
