@@ -1,6 +1,6 @@
 #ifndef __READMATRIXFROMFILE_HPP
 #define __READMATRIXFROMFILE_HPP
-
+#include<vector>
 template <typename global_ordinal_type, typename local_ordinal_type, typename scalar_type, typename map_type>
 void
 distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
@@ -78,7 +78,7 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
       global_ordinal_type curPos = rowPtr[myRow];
 
       if (curNumEntries > 0) {
-      	for(size_t ii = 0; ii < curNumEntries; ++ii) {
+      	for(local_ordinal_type ii = 0; ii < curNumEntries; ++ii) {
       	  myColInd[myCurPos++] = colInd[curPos++];
       	}
       }
@@ -135,7 +135,7 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 
 	  if (curNumEntries > 0) {
 
-	    for(size_t ii = 0; ii < curNumEntries; ++ii) {
+	    for(local_ordinal_type ii = 0; ii < curNumEntries; ++ii) {
 	      theirColInd[theirCurPos++] = colInd[curPos++];
 	    }
 	    
@@ -258,8 +258,16 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
     }
     std::cout << std::endl;
   }
+    
+  std::vector<size_t> myNumEnt_vec;
   
-  Teuchos::RCP<crs_matrix_type> pMatrix = Teuchos::rcp (new crs_matrix_type (pRowMap, myNumEntriesPerRow, Tpetra::DynamicProfile));
+  for(Teuchos_Ordinal i = 0; i < myNumEntriesPerRow.size(); i++){
+    myNumEnt_vec.push_back(myNumEntriesPerRow[i]);
+  }
+  
+  Teuchos::ArrayView<size_t> myNumEntriesView = Teuchos::arrayViewFromVector(myNumEnt_vec);
+
+  Teuchos::RCP<crs_matrix_type> pMatrix = Teuchos::rcp (new crs_matrix_type (pRowMap, myNumEntriesView, Tpetra::StaticProfile));
 
   Teuchos::ArrayView<const global_ordinal_type> myRows = pRowMap->getNodeElementList ();
   const size_t myNumRows = myRows.size ();
@@ -271,7 +279,7 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
     Teuchos::ArrayView<global_ordinal_type> curColInd = myColInd.view (myCurPos, curNumEntries);
     Teuchos::ArrayView<scalar_type> curValues = myValues.view (myCurPos, curNumEntries);
 
-    for (size_t k = 0; k < curNumEntries; ++k) {
+    for (Teuchos_Ordinal k = 0; k < curNumEntries; ++k) {
       curColInd[k] += indexBase;
     }
     
