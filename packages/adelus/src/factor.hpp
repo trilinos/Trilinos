@@ -53,7 +53,7 @@
 //#include "BLAS_prototypes_cpp.hpp"
 
 #include "macros.h"
-#include "pcomm.h"
+#include "pcomm.hpp"
 #include "mytime.hpp"
 
 #include "Kokkos_Core.hpp"

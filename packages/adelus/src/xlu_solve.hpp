@@ -64,7 +64,7 @@ jdkotul@sandia.gov
 #include "solve.hpp"
 #include "factor.hpp"
 #include "perm1.hpp"
-#include "pcomm.h"
+#include "pcomm.hpp"
 #include "mytime.hpp"
 
 #include "Kokkos_Core.hpp"
