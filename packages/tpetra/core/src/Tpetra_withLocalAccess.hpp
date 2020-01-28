@@ -880,7 +880,6 @@ namespace Tpetra {
 
         WithLocalAccess<Rest...>::withLocalAccess
           ([=] (with_local_access_function_argument_type<Rest>... args) {
-       // ([=] (typename Rest::function_argument_type... args) {
              userFunction (first_lcl_view, args...);
            },
            rest...);
