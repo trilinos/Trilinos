@@ -46,6 +46,8 @@
 
 //#include "defines.h"
 
+namespace Adelus {
+	
 int   me;                       /* processor id information */
 
 int   nprocs_cube;		/* num of procs in the allocated cube */
@@ -98,5 +100,7 @@ MPI_Comm row_comm,col_comm;
 
 
 /* volatile int   MSPLIT;           ZGEMM splitting parameter */
+
+}//namespace Adelus
 
 #endif
