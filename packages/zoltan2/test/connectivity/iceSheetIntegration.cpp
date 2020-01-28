@@ -16,6 +16,7 @@
 #include<sstream>
 #include<iostream>
 #include<fstream>
+#include<vector>
 
 #include "Zoltan2_IceUtil.h"
 
@@ -162,22 +163,22 @@ int main(int argc, char** argv)
   delete [] boundary_edges_global;
   delete [] grounded_flags_global;
 
-  std::cout<<me<<": is building the IceProp object\n";
-  Zoltan2::IceProp<Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t> > prop(comm, inputGraphAdapter, basalFriction, boundaryEdges, numLocalBoundaryEdges);
-  
-  std::cout<<me<<": is calling propagate\n";
-  int* removeFlags = prop.getDegenerateFeatureFlags();
-  std::cout<<me<<": Finished propagating\n";
-  std::cout<<me<<": removeFlags array: ";
+  std::cout<<me<<": calling the utility function\n";
+  Teuchos::ArrayView<const bool> basalView = Teuchos::ArrayView<const bool>(basalFriction,nlocal);
+  Teuchos::ArrayView<const gno_t> boundaryView = Teuchos::ArrayView<const gno_t>(boundaryEdges,2*numLocalBoundaryEdges);
+  std::vector<int> status_vec(nlocal,0);
+  std::vector<gno_t> hinge_vec(nlocal,0);
+  Zoltan2::DetectDegenerateVertices<Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t> >(comm, inputGraphAdapter,basalView,boundaryView,
+                                                                                                            Teuchos::arrayViewFromVector(status_vec),
+                                                                                                            Teuchos::arrayViewFromVector(hinge_vec));  
   for(size_t i = 0; i < nlocal; i++){
-    if(removeFlags[i] > -2){
+    if(status_vec[i] > -2){
       std::cout<<me<<": removed vertex "<<rowMap->getGlobalElement(i)<<"\n";
     }
   }
-  
   //read the answers and validate that we have the correct one.
   
-  int* ans_removed = new int[nglobal];
+  gno_t* ans_removed = new gno_t[nglobal];
   if(me == 0){
     for(size_t i = 0; i < nglobal;i++) ans_removed[i] = 0;
     std::ifstream fin(argv[5]);
@@ -193,11 +194,11 @@ int main(int argc, char** argv)
     }
   }  
   
-  Teuchos::broadcast<int,int>(*comm,0,nglobal,ans_removed);
+  Teuchos::broadcast<int,gno_t>(*comm,0,nglobal,ans_removed);
   
   int local_mismatches = 0;
   for(size_t i = 0; i < nlocal; i++){
-    if((removeFlags[i] > -2 && !ans_removed[rowMap->getGlobalElement(i)]) || (removeFlags[i] == -2 && ans_removed[rowMap->getGlobalElement(i)])){
+    if((status_vec[i] > -2 && !ans_removed[rowMap->getGlobalElement(i)]) || (status_vec[i] == -2 && ans_removed[rowMap->getGlobalElement(i)])){
       local_mismatches++;
       std::cout<<me<<": Found a mismatch, vertex "<<rowMap->getGlobalElement(i)+1<<"\n";
     }
