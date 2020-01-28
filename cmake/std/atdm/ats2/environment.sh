@@ -174,7 +174,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
   export ATDM_CONFIG_Kokkos_ENABLE_Cuda=ON
   export ATDM_CONFIG_Kokkos_ENABLE_Cuda_Lambda=ON
   export ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code=OFF
-  export KOKKOS_NUM_DEVICES=2
+  export KOKKOS_NUM_DEVICES=4
 fi
 
 # Common module - requires compiler to be loaded first
