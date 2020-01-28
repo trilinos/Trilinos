@@ -45,7 +45,6 @@
 #include <stk_mesh/base/FieldTraits.hpp>
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for PartVector, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_util/util/SortAndUnique.hpp"

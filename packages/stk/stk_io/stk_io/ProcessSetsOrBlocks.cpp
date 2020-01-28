@@ -66,6 +66,11 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   stk::io::default_part_processing(elem_blocks, meta);
 }
 
+void process_nodesets_without_distribution_factors(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
+  stk::io::default_part_processing(node_sets, meta);
+}
 
 void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 {

@@ -50,6 +50,7 @@
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
+#include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for char_traits, string
@@ -96,6 +97,7 @@ namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; }
 
 namespace stk {
 namespace mesh {
+class NgpMeshManager;
 class SideConnector;
 class BulkData;
 struct PartStorage;
@@ -185,6 +187,8 @@ public:
   /** \brief  The meta data manager for this bulk data manager. */
   const MetaData & mesh_meta_data() const { return m_mesh_meta_data ; }
         MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
+
+  NgpMesh & get_ngp_mesh();
 
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel.parallel() ; }
@@ -607,7 +611,7 @@ public:
   size_t get_num_communicated_entities() const { return m_entity_comm_list.size(); }
 
   bool in_shared(EntityKey key) const { return !internal_entity_comm_map_shared(key).empty(); }
-  bool in_shared(Entity entity) const { return !internal_entity_comm_map_shared(entity).empty(); }
+  bool in_shared(Entity entity) const;
   bool in_shared(EntityKey key, int proc) const;
   bool in_shared(Entity entity, int proc) const;
   bool in_receive_ghost( EntityKey key ) const;
@@ -888,12 +892,14 @@ protected: //functions
 
   bool inputs_ok_and_need_ghosting(Ghosting & ghosts ,
                                const std::vector<EntityProc> & add_send ,
-                               const std::vector<EntityKey> & remove_receive,
+                               const std::vector<Entity> & remove_receive,
                                std::vector<EntityProc> &filtered_add_send);
 
   void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs); // Mod Mark
 
-  void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
+  void ghost_entities_and_fields(Ghosting & ghosting,
+                                 const std::set<EntityProc , EntityLess>& new_send,
+                                 bool isFullRegen = false);
 
   void conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting,
                                                 stk::mesh::Entity entity,
@@ -1000,11 +1006,6 @@ protected: //functions
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<Entity> & remove_receive,
-                                 bool is_full_regen = false); // Mod Mark
-
-  void internal_change_ghosting( Ghosting & ghosts,
-                                 const std::vector<EntityProc> & add_send ,
-                                 const std::vector<EntityKey> & remove_receive,
                                  bool is_full_regen = false); // Mod Mark
 
   void internal_add_to_ghosting( Ghosting &ghosting, const std::vector<EntityProc> &add_send); // Mod Mark
@@ -1252,14 +1253,14 @@ private: //functions
   void verify_and_filter_add_send(Ghosting & ghosts, const std::vector<EntityProc> & add_send, bool &need_to_change_ghosting,
                                   bool &add_send_is_owned, std::vector <EntityProc> &filtered_add_send );
 
-  void verify_remove_receive(Ghosting & ghosts, const std::vector<EntityKey> & remove_receive, bool &need_to_change_ghosting, bool &remove_receive_are_part_of_this_ghosting);
+  void verify_remove_receive(Ghosting & ghosts, const std::vector<Entity> & remove_receive, bool &need_to_change_ghosting, bool &remove_receive_are_part_of_this_ghosting);
 
   bool check_errors_and_determine_if_ghosting_needed_in_parallel(const stk::mesh::Ghosting &ghosts,
                                         bool add_send_is_owned,
                                         bool remove_receive_are_part_of_this_ghosting,
                                         bool need_to_change_ghosting,
                                         const std::vector<EntityProc> & add_send,
-                                        const std::vector<EntityKey> & remove_receive);
+                                        const std::vector<Entity> & remove_receive);
 
   void delete_unneeded_entries_from_the_comm_list();
 
@@ -1585,6 +1586,7 @@ private: // data
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   std::shared_ptr<stk::mesh::ElemElemGraphUpdater> m_elemElemGraphUpdater;
   stk::mesh::impl::SideSetImpl<unsigned> m_sideSetData;
+  stk::mesh::NgpMeshManager* m_ngpMeshManager;
 
 protected:
   stk::mesh::impl::SoloSideIdGenerator m_soloSideIdGenerator;
