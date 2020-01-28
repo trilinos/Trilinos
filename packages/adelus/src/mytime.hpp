@@ -49,13 +49,15 @@
 #include <mpi.h>
 #include "defines.h"
 
+namespace Adelus {
+
 double get_seconds(double start)
 {
-    double time;		/* total seconds */
-    time = MPI_Wtime();
-    time = time - start;
-
-    return (time);
+  double time;		/* total seconds */
+  time = MPI_Wtime();
+  time = time - start;
+  
+  return (time);
 }
 
 /*
@@ -95,31 +97,32 @@ double get_seconds(double start)
 
 void showtime(const char *label, double *value)
 {
-
-    extern int me;		/* current processor number */
-    extern int nprocs_cube;
-
-    double avgtime;
-
-    struct {
-      double val;
-      int proc;
-    } max_in, max_out, min_in, min_out;
-    max_in.val = *value;
-    max_in.proc = me;
-    MPI_Allreduce(&max_in,&max_out,1,MPI_DOUBLE_INT,MPI_MAXLOC,MPI_COMM_WORLD);
-    min_in.val = *value;
-    min_in.proc = me;
-    MPI_Allreduce(&min_in,&min_out,1,MPI_DOUBLE_INT,MPI_MINLOC,MPI_COMM_WORLD);
-
-    MPI_Allreduce(value,&avgtime,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-
-    avgtime /= nprocs_cube;
-
-    if (me == 0) {
-      fprintf(stderr, "%s = %.4f (min, on proc %d), %.4f (avg), %.4f (max, on proc %d).\n",
-		      label,min_out.val,min_out.proc,avgtime, max_out.val,max_out.proc);
-    }
+  extern int me;		/* current processor number */
+  extern int nprocs_cube;
+  
+  double avgtime;
+  
+  struct {
+    double val;
+    int proc;
+  } max_in, max_out, min_in, min_out;
+  max_in.val = *value;
+  max_in.proc = me;
+  MPI_Allreduce(&max_in,&max_out,1,MPI_DOUBLE_INT,MPI_MAXLOC,MPI_COMM_WORLD);
+  min_in.val = *value;
+  min_in.proc = me;
+  MPI_Allreduce(&min_in,&min_out,1,MPI_DOUBLE_INT,MPI_MINLOC,MPI_COMM_WORLD);
+  
+  MPI_Allreduce(value,&avgtime,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  
+  avgtime /= nprocs_cube;
+  
+  if (me == 0) {
+    fprintf(stderr, "%s = %.4f (min, on proc %d), %.4f (avg), %.4f (max, on proc %d).\n",
+      label,min_out.val,min_out.proc,avgtime, max_out.val,max_out.proc);
   }
+}
+
+}//namespace Adelus
 
 #endif
