@@ -120,7 +120,7 @@ void testTachoSolver(int numRows,
 }
 
 int main(int argc, char *argv[]) {
-  Tacho::CommandLineParser opts("This example mimics Sierra Tacho interface");
+  Tacho::CommandLineParser opts("This example shows potential use case of Tacho interface");
 
   std::string file = "test.mtx";
   int niter = 1;
