@@ -18,15 +18,20 @@ namespace Zoltan2{
         template<typename lno_t>
 	class icePropGraph {
           public:
+            //n represents the number of vertices in the local graph
             size_t n;
+            //m represents the number of edges in the local graph
             size_t m;
+            //out_array is the adjacency array for each vertex
             lno_t* out_array;
+            //out_degree_list is the offset array for indexing the out_array
             lno_t* out_degree_list;
-            lno_t max_degree_vert;
-            double avg_out_degree;
+
+            //member function to return the degree of a given vertex.
             lno_t out_degree(lno_t vert){
               return (out_degree_list[vert+1] - out_degree_list[vert]);
             }
+            //member function to return the neighbors for a given vertex
             lno_t* out_vertices(lno_t vert){
               return (&out_array[out_degree_list[vert]]);
             }
@@ -42,7 +47,7 @@ namespace Zoltan2{
 	// Struct representing a vertex label.
 	// We define our own "addition" for these labels.
 	// Later, we'll create a Tpetra::FEMultiVector of these labels.
-	template<typename gno_t, typename lno_t>
+	template<typename lno_t, typename gno_t>
 	class IcePropVtxLabel {
 	public: 
           //The local ID for the vertex represented by this label
@@ -230,9 +235,9 @@ namespace Kokkos {
   namespace Details {
 
     template<>
-    class ArithTraits<Zoltan2::IcePropVtxLabel<Tpetra::Map<>::global_ordinal_type, Tpetra::Map<>::local_ordinal_type> > {  // specialized for IcePropVtxLabel struct
+    class ArithTraits<Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> > {  // specialized for IcePropVtxLabel struct
     public:
-      typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::global_ordinal_type,Tpetra::Map<>::local_ordinal_type> val_type;
+      typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type,Tpetra::Map<>::global_ordinal_type> val_type;
       typedef int mag_type;
     
       static const bool is_specialized = true;
@@ -281,8 +286,8 @@ namespace Kokkos {
 // provided serialization of vtxLabel into char*.
 namespace Teuchos{
 template<typename Ordinal>
-struct SerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::global_ordinal_type, Tpetra::Map<>::local_ordinal_type> >:
-       public Teuchos::DirectSerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::global_ordinal_type, Tpetra::Map<>::local_ordinal_type> >
+struct SerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> >:
+       public Teuchos::DirectSerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> >
 {};
 }//end namespace Teuchos
 
@@ -294,7 +299,8 @@ public:
   //typedefs for the FEMultiVector
   typedef typename MAP::local_ordinal_type lno_t;
   typedef typename MAP::global_ordinal_type gno_t;
-  typedef IcePropVtxLabel<gno_t,lno_t> scalar_t;
+  typedef IcePropVtxLabel<lno_t,gno_t> scalar_t;
+  typedef IcePropVtxLabel<lno_t,gno_t> label_t;
   typedef Tpetra::FEMultiVector<scalar_t,lno_t, gno_t> femv_t;	
   
   
@@ -316,13 +322,14 @@ public:
     femvData = femv->getData(0);
     for(lno_t i = 0; i < nLocalOwned + nLocalCopy; i++){
       gno_t gid = mapWithCopies->getGlobalElement(i);
-      IcePropVtxLabel<gno_t,lno_t> label(i);
+      label_t label(i);
       if(boundary_flags[i] > 2 && i < nLocalOwned) {
 	label.is_art = true;
       }
       if(grounding_flags[i]){
         label.first_label = gid;
         label.first_sender = gid;
+        label.first_used=true;
         icePropRegQueue.push(label.id);
       }
       femv->replaceLocalValue(i,0,label);
@@ -363,12 +370,12 @@ public:
     while(true){
       femv->switchActiveMultiVector(); 
       for(size_t i = 0; i < g->n; i++){
-	IcePropVtxLabel<gno_t,lno_t> curr_node = femvData[i];
+	label_t curr_node = femvData[i];
         if(curr_node.is_art && curr_node.getGroundingStatus() == ICEPROPGS_FULL){
           lno_t out_degree = g->out_degree(curr_node.id);//out_degree(g, curr_node.id);
           lno_t* outs = g->out_vertices(curr_node.id);//out_vertices(g, curr_node.id);
           for(int j = 0; j < out_degree; j++){
-            IcePropVtxLabel<gno_t,lno_t> neighbor = femvData[outs[j]];
+            label_t neighbor = femvData[outs[j]];
             if(neighbor.getGroundingStatus() == ICEPROPGS_HALF && neighbor.first_label != mapWithCopies->getGlobalElement(curr_node.id) && neighbor.first_sender == mapWithCopies->getGlobalElement(curr_node.id)){
               icePropRegQueue.push(curr_node.id);
             }
@@ -383,9 +390,9 @@ public:
       
       //add all articulation points to the icePropRegQueue
       for(size_t i = 0; i < g->n; i++){
-	IcePropVtxLabel<gno_t,lno_t> curr_node = femvData[i];
+	label_t curr_node = femvData[i];
         if(curr_node.getGroundingStatus() == ICEPROPGS_HALF){
-	  IcePropVtxLabel<gno_t,lno_t> cleared(curr_node.id);
+	  label_t cleared(curr_node.id);
           cleared.is_art = curr_node.is_art;
           femv->replaceLocalValue(i,0,cleared);
         }
@@ -427,7 +434,7 @@ public:
       if(icePropRegQueue.empty()) curr = &icePropArtQueue;
       else curr = &icePropRegQueue;
       while(!curr->empty()){
-	IcePropVtxLabel<gno_t,lno_t> curr_node = femvData[curr->front()];
+	label_t curr_node = femvData[curr->front()];
         curr->pop();
         
         //if the current node is a copy, it shouldn't propagate out to its neighbors.
@@ -436,7 +443,7 @@ public:
         lno_t out_degree = g->out_degree(curr_node.id);
         lno_t* outs = g->out_vertices(curr_node.id);
         for(int i = 0; i < out_degree; i++){
-	  IcePropVtxLabel<gno_t,lno_t> neighbor = femvData[outs[i]];
+	  label_t neighbor = femvData[outs[i]];
 	  IcePropGrounding_Status old_gs = neighbor.getGroundingStatus();
           
           //give curr_node's neighbor some more labels
@@ -468,7 +475,7 @@ public:
   
   //function that exchanges labels between two nodes
   //curr_node gives its labels to neighbor.
-  void giveLabels(IcePropVtxLabel<gno_t,lno_t>& curr_node, IcePropVtxLabel<gno_t,lno_t>& neighbor){
+  void giveLabels(IcePropVtxLabel<lno_t,gno_t>& curr_node, IcePropVtxLabel<lno_t,gno_t>& neighbor){
     IcePropGrounding_Status curr_gs = curr_node.getGroundingStatus();
     IcePropGrounding_Status nbor_gs = neighbor.getGroundingStatus();
     int curr_node_gid = mapWithCopies->getGlobalElement(curr_node.id);
@@ -480,8 +487,10 @@ public:
     if(curr_gs == ICEPROPGS_FULL && !curr_node.is_art){
       neighbor.first_label = curr_node.first_label;
       neighbor.first_sender = curr_node_gid;
+      neighbor.first_used = curr_node.first_used;
       neighbor.second_label = curr_node.second_label;
       neighbor.second_sender = curr_node_gid;
+      neighbor.second_used = curr_node.second_used;
       neighbor.bcc_name = curr_node.bcc_name;
       return;
     } else if (curr_gs == ICEPROPGS_FULL) {
@@ -491,11 +500,13 @@ public:
         if(nbor_gs == ICEPROPGS_NONE){
           neighbor.first_label = curr_node_gid;
           neighbor.first_sender = curr_node_gid;
+          neighbor.first_used = true;
           neighbor.bcc_name = curr_node.bcc_name;
         } else if(nbor_gs == ICEPROPGS_HALF){
           if(neighbor.first_label != curr_node_gid){
             neighbor.second_label = curr_node_gid;
             neighbor.second_sender = curr_node_gid;
+            neighbor.second_used = true;
           }
         }
       }
@@ -507,6 +518,7 @@ public:
       if(nbor_gs == ICEPROPGS_NONE){
         neighbor.first_label = curr_node.first_label;
         neighbor.first_sender = curr_node_gid;
+        neighbor.first_used = curr_node.first_used;
         neighbor.bcc_name = curr_node.bcc_name;
       } else if(nbor_gs == ICEPROPGS_HALF){
         //make sure you aren't giving a duplicate label, and that
@@ -514,6 +526,7 @@ public:
         if(neighbor.first_label != curr_node.first_label && neighbor.first_sender != curr_node_gid){
           neighbor.second_label = curr_node.first_label;
           neighbor.second_sender = curr_node_gid;
+          neighbor.second_used = true;
         }
       }
     }
@@ -574,8 +587,8 @@ public:
         //if neighborProc is me, I have to ground the neighbors.
         if(neighborProc == me){
           //replace local value with self-grounded vertex with new bcc_name
-          IcePropVtxLabel<gno_t,lno_t> firstNeighbor = femvData[ownedVtx];
-          IcePropVtxLabel<gno_t,lno_t> secondNeighbor = femvData[ghostVtx];
+          label_t firstNeighbor = femvData[ownedVtx];
+          label_t secondNeighbor = femvData[ghostVtx];
           gno_t firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);          
 	  gno_t secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
           firstNeighbor.first_label = firstNeighbor_gid;
@@ -622,8 +635,8 @@ public:
           }
           else if(emptyProc == me){
             //this processor will ground two random, empty neighbors.
-            IcePropVtxLabel<gno_t,lno_t> firstNeighbor = femvData[vtx1];
-            IcePropVtxLabel<gno_t,lno_t> secondNeighbor = femvData[vtx2];
+            label_t firstNeighbor = femvData[vtx1];
+            label_t secondNeighbor = femvData[vtx2];
             gno_t firstNeighbor_gid = mapWithCopies->getGlobalElement(firstNeighbor.id);
             gno_t secondNeighbor_gid = mapWithCopies->getGlobalElement(secondNeighbor.id);
             firstNeighbor.first_label = firstNeighbor_gid;
@@ -651,8 +664,8 @@ public:
           lno_t* outs = g->out_vertices(art_pt);
           for(int i = 0;i < out_degree; i++){
             if(femvData[outs[i]].getGroundingStatus() == ICEPROPGS_NONE){
-              IcePropVtxLabel<gno_t,lno_t> neighbor = femvData[outs[i]];
-              IcePropVtxLabel<gno_t,lno_t> artvtx = femvData[art_pt];
+              label_t neighbor = femvData[outs[i]];
+              label_t artvtx = femvData[art_pt];
               gno_t neighbor_gid = mapWithCopies->getGlobalElement(neighbor.id);
               neighbor.first_label = neighbor_gid;
               neighbor.first_sender = neighbor_gid;
@@ -690,7 +703,7 @@ public:
       }
       //clear half labels
       for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
-        IcePropVtxLabel<gno_t,lno_t> label = femvData[i];
+        label_t label = femvData[i];
         if(label.getGroundingStatus() == ICEPROPGS_HALF){
           label.first_label = -1;
           label.first_sender = -1;
@@ -718,7 +731,7 @@ public:
     }
     for(int i = 0; i < nLocalOwned; i++){
       if(!articulation_point_flags[i]){
-        IcePropVtxLabel<gno_t,lno_t> label = femvData[i];
+        label_t label = femvData[i];
         label.is_art = false;
         femv->replaceLocalValue(i,0,label);
       }
