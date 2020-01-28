@@ -121,10 +121,12 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ElasticityFactory<RealT>> factory
       = ROL::makePtr<ElasticityFactory<RealT>>(*parlist,comm,outStream);
     Teuchos::Time algoTimer("Algorithm Time", true);
-    if (false) {
+    bool binary = parlist->sublist("Problem").get("Binary",true);
+    if (!binary) {
       ROL::Ptr<ROL::OptimizationProblem<RealT>> problem = factory->build();
       bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
       if (derivCheck) {
+        factory->check();
         problem->check(*outStream);
       }
       ROL::OptimizationSolver<RealT> solver(*problem,*parlist);

@@ -2019,6 +2019,8 @@ void mult_A_B_reuse(
       }
     });
 
+  Kokkos::fence();
+
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::mult_A_B_reuse_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
@@ -2322,6 +2324,8 @@ void jacobi_A_B_newmatrix(
 
       }
     });
+
+  Kokkos::fence();
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -2666,6 +2670,8 @@ void jacobi_A_B_reuse(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
 #endif
+
+  Kokkos::fence();
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
