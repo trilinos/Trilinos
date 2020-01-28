@@ -70,6 +70,10 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 fi
 
+# NOTE: We do *NOT* purge the modules first like on other systems because that
+# messes up the ATS-2 env.  Therefore, it is recommended that the user load a
+# new shell and then load one of these envs.
+
 # Common modules for all builds
 module load git/2.20.0
 module load cmake/3.14.5
