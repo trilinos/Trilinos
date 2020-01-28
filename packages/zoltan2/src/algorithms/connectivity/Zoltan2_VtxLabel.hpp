@@ -363,7 +363,7 @@ public:
   // -2 means keep the vertex
   // -1 means the vertex is completely floating
   // any flag > -1 means the vertex is a part of a hinge, and the flag is the ID of the top-level hinge vertex
-  Teuchos::ArrayRCP<const scalar_t> propagate(void){ 
+  const Teuchos::ArrayRCP<const scalar_t>& propagate(void){ 
     //run bfs_prop
     bfs_prop();
     //check for potentially false articulation points
