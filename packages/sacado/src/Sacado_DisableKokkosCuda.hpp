@@ -34,7 +34,7 @@
 // Include this file in any translation unit to disable the use of Sacado
 // classes on Cuda.  Several Sacado classes (e.g., Sacado::Fad::GeneralFad)
 // are setup to work with Kokkos, but don't work with Cuda with some choices
-// of their template parameters (e.g., Sacado::Fad::MemPoolStorage).  However
+// of their template parameters.  However
 // if Cuda is enabled then __device__ is added to the KOKKOS_*_FUNCTION macros
 // which prevents these classes from compiling.  By including this file, the
 // __device__ annotation will be removed allowing these classes to be compiled

@@ -333,12 +333,10 @@ const int global_fad_size = 10;
 typedef Sacado::Fad::DFad<double> Fad_DFadType;
 typedef Sacado::Fad::SLFad<double,2*global_fad_size> Fad_SLFadType;
 typedef Sacado::Fad::SFad<double,global_fad_size> Fad_SFadType;
-typedef Sacado::Fad::DMFad<double> Fad_DMFadType;
 typedef Sacado::Fad::DVFad<double> Fad_DVFadType;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_SFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_SLFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_DMFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_DVFadType )
 
 typedef Sacado::ELRFad::DFad<double> ELRFad_DFadType;

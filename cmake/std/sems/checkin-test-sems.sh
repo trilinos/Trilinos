@@ -181,7 +181,6 @@ defaults = [
   \"-j4\",
   \"--use-ninja\",
   \"--ctest-timeout=300\",
-  \"--disable-packages=PyTrilinos,TriKota\",
   \"--skip-case-no-email\",
   ]
   " > $_LOCAL_CHECKIN_TEST_DEFAULTS
@@ -193,9 +192,6 @@ fi
 #
 # --ctest-timeout=300: A default 5 minute timeout for any individual test. You
 #   might want to increase if you have a slower machine.
-#
-# --disable-packages: These are packages that most Trilinos developers will
-#    never want to test by default.
 #
 # --skip-case-no-email: Don't send email for skipped test cases.
 #
