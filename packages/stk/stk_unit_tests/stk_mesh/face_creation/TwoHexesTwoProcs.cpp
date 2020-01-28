@@ -105,7 +105,7 @@ private:
     {
         stk::mesh::EntityVector permuted_element_side_nodes(side_topology.num_nodes());
         unsigned permutation = get_bulk().parallel_rank()>other_proc_id ? permutation_other_proc : 0;
-        side_topology.permutation_nodes(element_side_nodes, permutation, permuted_element_side_nodes.begin());
+        side_topology.permutation_nodes(element_side_nodes.data(), permutation, permuted_element_side_nodes.data());
         return permuted_element_side_nodes;
     }
 

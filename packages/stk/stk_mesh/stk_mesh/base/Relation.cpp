@@ -166,19 +166,9 @@ void get_entities_through_relations(
         EntityRank              entities_related_rank ,
         std::vector<Entity> & entities_related )
 {
-  entities_related.clear();
-
-  if ( ! entities.empty() ) {
-
-    const Entity* i = entities.data();
-    const Entity* j = i+entities.size();
-
-    int num_rels = mesh.num_connectivity(*i, entities_related_rank);
-    Entity const* rel_entities = mesh.begin(*i, entities_related_rank);
-
-    ++i;
-    get_entities_through_relations(mesh, rel_entities, rel_entities + num_rels, i, j, entities_related);
-  }
+  impl::find_entities_these_nodes_have_in_common(mesh, entities_related_rank,
+                                                 entities.size(), entities.data(),
+                                                 entities_related);
 }
 
 //----------------------------------------------------------------------

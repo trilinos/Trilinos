@@ -171,10 +171,12 @@ void EntityRepository::clear_created_entity_cache(EntityRank rank) const
     if (numOld > 0) {
       const EntityKey& firstNewKey = m_create_cache[rank][0].first;
       const EntityKey& lastOldKey = m_entities[rank][numOld-1].first;
-      if (firstNewKey < lastOldKey) {
+      const bool isOverlap = (firstNewKey < lastOldKey);
+      if (isOverlap) {
         EntityKeyEntityVector::iterator oldEnd = m_entities[rank].begin()+numOld;
-        EntityKeyEntityVector::iterator loc = std::lower_bound(m_entities[rank].begin(), oldEnd, firstNewKey, EntityKeyEntityLess());
-        std::inplace_merge(loc, oldEnd, m_entities[rank].end());
+        EntityKeyEntityVector::iterator startOfOverlap = std::lower_bound(m_entities[rank].begin(), oldEnd, firstNewKey, EntityKeyEntityLess());
+        EntityKeyEntityVector::iterator endOfOverlap = std::lower_bound(oldEnd, m_entities[rank].end(), lastOldKey, EntityKeyEntityLess());
+        std::inplace_merge(startOfOverlap, oldEnd, endOfOverlap);
       }
     }
     m_create_cache[rank].clear();

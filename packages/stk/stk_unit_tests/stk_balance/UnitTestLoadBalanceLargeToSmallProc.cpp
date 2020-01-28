@@ -18,12 +18,14 @@ protected:
 
 TEST_F(TestBalanceBalanceLargeToSmall, MxN_decompositionWithAura)
 {
+    stk::parallel_machine_barrier(get_comm());
     if(stk::parallel_machine_size(get_comm()) == static_cast<int>(get_num_procs_initial_decomp()))
         setup_and_test_balance_of_mesh(stk::mesh::BulkData::AUTO_AURA);
 }
 
 TEST_F(TestBalanceBalanceLargeToSmall, MxN_decompositionWithoutAura)
 {
+    stk::parallel_machine_barrier(get_comm());
     if(stk::parallel_machine_size(get_comm()) == static_cast<int>(get_num_procs_initial_decomp()))
         setup_and_test_balance_of_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 }
