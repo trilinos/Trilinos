@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -59,12 +57,39 @@ namespace Tpetra {
   ////////////////////////////////////////////////////////////
 
   namespace Details {
-    //! Access intent.
-    enum class AccessMode {
+    /// \brief Enum for declaring access intent.
+    ///
+    /// This is not for users; it's an implementation detail of
+    /// functions readOnly, writeOnly, and readWrite (see below).
+    enum class EAccess {
       ReadOnly,
       WriteOnly,
       ReadWrite
     };
+
+    /// \brief Tag class for declaring access intent.
+    ///
+    /// This is a class, not an enum, so that LocalAccess (see below)
+    /// can have a parameter pack.  You can't mix class types and
+    /// constexpr values in a parameter pack.  Compare to
+    /// Kokkos::MemoryTraits or Kokkos::Schedule.
+    template<const EAccess accessMode>
+    class Access {
+      /// \brief Type alias to help identifying the tag class.
+      ///
+      /// We follow Kokkos in identifying a tag class by checking
+      /// whether a type alias inside it has the same type as the tag
+      /// class itself.
+      using access_mode = Access<accessMode>;
+    };
+
+    template<class T> struct is_access_mode : public std::false_type {};
+    template<EAccess am>
+    struct is_access_mode<Access<am>> : public std::true_type {};
+
+    using read_only = Access<EAccess::ReadOnly>;
+    using write_only = Access<EAccess::WriteOnly>;
+    using read_write = Access<EAccess::ReadWrite>;
 
     /// \brief Given a global object, get its default memory space
     ///   (both the type and the default instance thereof).
@@ -85,10 +110,27 @@ namespace Tpetra {
       }
     };
 
+    /// \brief Given a global object, get its default execution space
+    ///   (both the type and the default instance thereof).
+    ///
+    /// This generic version should suffice for most Tpetra classes,
+    /// and for any class with a public <tt>device_type</tt> typedef
+    /// that is a Kokkos::Device specialization.
+    template<class GlobalObjectType>
+    struct DefaultExecutionSpace {
+      using type = typename GlobalObjectType::device_type::execution_space;
+
+      // Given a global object, get its (default) execution space instance.
+      static type space (const GlobalObjectType& /* G */) {
+        // This stub just assumes that 'type' is default constructible.
+        // In Kokkos, default-constructing a execution space instance just
+        // gives the default execution space.
+        return type ();
+      }
+    };
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-    template<class GlobalObjectType,
-             class MemorySpace,
-             const AccessMode am>
+    template<class GlobalObjectType, class ... Args>
     class LocalAccess; // forward declaration
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -105,7 +147,7 @@ namespace Tpetra {
     ///
     /// Specializations require the following two public features:
     /// <ul>
-    /// <li> <tt>master_local_object_type</tt> typedef </li>
+    /// <li> <tt>master_local_object_type</tt> type alias </li>
     /// <li> <tt>master_local_object_type get(LocalAccessType)</tt>
     ///      static method </li>
     /// </ul>
@@ -131,7 +173,8 @@ namespace Tpetra {
     /// right way is to specialize GetMasterLocalObject::get (see
     /// above).
     template<class LocalAccessType>
-    typename GetMasterLocalObject<LocalAccessType>::master_local_object_type
+    typename GetMasterLocalObject<LocalAccessType>::
+      master_local_object_type
     getMasterLocalObject (LocalAccessType LA) {
       return GetMasterLocalObject<LocalAccessType>::get (LA);
     }
@@ -176,11 +219,12 @@ namespace Tpetra {
     template<class LocalAccessType>
     typename GetNonowningLocalObject<LocalAccessType>::
     nonowning_local_object_type
-    getNonowningLocalObject (LocalAccessType LA,
+    getNonowningLocalObject(LocalAccessType LA,
       const typename GetMasterLocalObject<LocalAccessType>::
         master_local_object_type& master)
     {
-      return GetNonowningLocalObject<LocalAccessType>::get (LA, master);
+      using impl_type = GetNonowningLocalObject<LocalAccessType>;
+      return impl_type::get(LA, master);
     }
   } // namespace Details
 
@@ -209,43 +253,36 @@ namespace Tpetra {
   //////////////////////////////////////////////////////////////////////
 
   /// \brief Declare that you want to access the given global object's
-  ///   local data in read-only mode, in the object's default memory
-  ///   space.
+  ///   local data in read-only mode.
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    typename Details::DefaultMemorySpace<GlobalObjectType>::type,
-    Details::AccessMode::ReadOnly>
+    Details::read_only>
   readOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
   ///   local data in read-only mode (overload for const
-  ///   GlobalObjectType), in the object's default memory space.
+  ///   GlobalObjectType).
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    typename Details::DefaultMemorySpace<GlobalObjectType>::type,
-    Details::AccessMode::ReadOnly>
+    Details::read_only>
   readOnly (const GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
-  ///   local data in write-only mode, in the object's default memory
-  ///   space.
+  ///   local data in write-only mode.
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    typename Details::DefaultMemorySpace<GlobalObjectType>::type,
-    Details::AccessMode::WriteOnly>
+    Details::write_only>
   writeOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
-  ///   local data in read-and-write mode, in the object's default
-  ///   memory space.
+  ///   local data in read-and-write mode.
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    typename Details::DefaultMemorySpace<GlobalObjectType>::type,
-    Details::AccessMode::ReadWrite>
+    Details::read_write>
   readWrite (GlobalObjectType&);
 
   ////////////////////////////////////////////////////////////
@@ -253,57 +290,290 @@ namespace Tpetra {
   ////////////////////////////////////////////////////////////
 
   namespace Details {
+    //! Tag indicating an unspecified type in LocalAccessTraits.
+    struct unspecified_type {};
+
+    /// \brief Deduce types from parameter pack of LocalAccess.
+    ///
+    /// Deduce the following types from Args:
+    /// <ul>
+    /// <li>execution_space (Kokkos execution space)</li>
+    /// <li>memory_space (Kokkos memory space)</li>
+    /// <li>access_mode (Access type)</li>
+    /// </ul>
+    template<class ... Args>
+    struct LocalAccessTraits {};
+
+    // An empty list of template arguments constrains nothing.
+    template<>
+    struct LocalAccessTraits<> {
+      using execution_space = unspecified_type;
+      using memory_space = unspecified_type;
+      using access_mode = unspecified_type;
+    };
+
+    // Skip over any instances of unspecified_type.  This makes it
+    // easy to define the return types of LocalAccess::on and
+    // LocalAccess::at (see below).
+    template<class ... Rest>
+    struct LocalAccessTraits<unspecified_type, Rest...> {
+    private:
+      using rest_type = LocalAccessTraits<Rest...>;
+    public:
+      using execution_space = typename rest_type::execution_space;
+      using memory_space = typename rest_type::memory_space;
+      using access_mode = typename rest_type::access_mode;
+    };
+
+    template<class First, class ... Rest>
+    struct LocalAccessTraits<First, Rest...> {
+    private:
+      using rest_type = LocalAccessTraits<Rest...>;
+    public:
+      using execution_space = typename std::conditional<
+        Kokkos::Impl::is_execution_space<First>::value,
+        First,
+        typename rest_type::execution_space>::type;
+      using memory_space = typename std::conditional<
+        Kokkos::Impl::is_memory_space<First>::value,
+        First,
+        typename rest_type::memory_space>::type;
+      using access_mode = typename std::conditional<
+        is_access_mode<First>::value,
+        First,
+        typename rest_type::access_mode>::type;
+    };
+
+    template<class GlobalObjectType,
+             class Traits,
+             bool is_execution_space_specified = ! std::is_same<
+               typename Traits::execution_space,
+               unspecified_type>::value,
+             bool is_memory_space_specified = ! std::is_same<
+               typename Traits::memory_space,
+               unspecified_type>::value>
+    struct SpaceTypes {};
+
+    template<class GlobalObjectType, class Traits>
+    struct SpaceTypes<GlobalObjectType, Traits, true, true> {
+      using execution_space = typename Traits::execution_space;
+      using memory_space = typename Traits::memory_space;
+    };
+
+    // If only memory_space was specified, then get execution_space
+    // from memory_space's default execution space.
+    template<class GlobalObjectType, class Traits>
+    struct SpaceTypes<GlobalObjectType, Traits, false, true> {
+      using execution_space =
+        typename Traits::memory_space::execution_space;
+      using memory_space = typename Traits::memory_space;
+    };
+
+    // If only execution_space was specified, then get memory_space
+    // from execution_space's default memory space.
+    template<class GlobalObjectType, class Traits>
+    struct SpaceTypes<GlobalObjectType, Traits, true, false> {
+      using execution_space = typename Traits::execution_space;
+      using memory_space =
+        typename Traits::execution_space::memory_space;
+    };
+
+    // If neither execution_space nor memory_space were specified,
+    // then get them both from their defaults, that depend on
+    // GlobalObjectType.
+    template<class GlobalObjectType, class Traits>
+    struct SpaceTypes<GlobalObjectType, Traits, false, false> {
+      using execution_space =
+        typename DefaultExecutionSpace<GlobalObjectType>::type;
+      using memory_space =
+        typename DefaultMemorySpace<GlobalObjectType>::type;
+    };
+
     /// \brief Declaration of access intent for a global object.
     ///
-    /// Users aren't supposed to make instances of this class.  They
-    /// should use readOnly, writeOnly, or readWrite instead, then
-    /// call instance methods like on() and valid() on the resulting
-    /// LocalAccess instance.
-    template<class GlobalObjectType,
-             class MemorySpace,
-             const AccessMode am>
+    /// \tparam GlobalObjectType Type of the global object whose local
+    ///   data you want to access.
+    ///
+    /// \tparam Args Zero or more types, each of which may be a Kokkos
+    ///   execution space, a Kokkos memory space, or Access (see
+    ///   above).
+    ///
+    /// Users must not make instances of this class directly.  The
+    /// only way they may create an instance of LocalAccess is by
+    /// calling readOnly(), writeOnly(), readWrite(), or LocalAccess
+    /// instance methods like at(), on(), and valid().
+    ///
+    /// For X a Tpetra::MultiVector with
+    /// <tt>memory_space=Kokkos::CudaUVMSpace</tt> and
+    /// <tt>execution_space=Kokkos::Cuda</tt>, the following two code
+    /// examples must have the same effect:
+    ///
+    /// \code
+    /// readWrite(X).on(CudaUVMSpace()).at(DefaultHostExecutionSpace());
+    /// \endcode
+    ///
+    /// and
+    ///
+    /// \code
+    /// readWrite(X).at(DefaultHostExecutionSpace()).on(CudaUVMSpace());
+    /// \endcode
+    ///
+    /// That effect should be: "I intend to view X's local data in
+    /// read-and-write fashion at host execution, on a UVM
+    /// allocation."  Given Tpetra's current design (as of 26 Jan
+    /// 2020), if X needs sync to host, then that implies a fence, to
+    /// ensure that any device writes to X's local data are done.
+    ///
+    /// This means that LocalAccess needs to be able to know whether
+    /// the user has explicitly specified an execution space in which
+    /// to access local data.  Here is how <tt>on</tt> behaves:
+    ///
+    /// 1. If the input LocalAccess has no execution space explicitly
+    ///    specified, then do not constrain it.  withLocalAccess will
+    ///    assign a default execution space.  (This makes the "at
+    ///    after on" example above work correctly.)
+    ///
+    /// 2. Else, use the input LocalAccess' execution_space.  The
+    ///    caller is responsible for knowing whether NewMemorySpace is
+    ///    accessible from execution_space.
+    ///
+    /// Here is how <tt>at</tt> behaves:
+    ///
+    /// 1. If the input LocalAccess has no memory space explicitly
+    ///    specified, then do not constrain it.  withLocalAccess will
+    ///    assign a default memory space.  (This makes the "on after
+    ///    at" example above work correctly.)
+    ///
+    /// 2. Else, use the input LocalAccess' memory_space.  The caller
+    ///    is responsible for knowing whether NewExecutionSpace can
+    ///    access memory_space.
+    ///
+    /// The general behavior is that at() and on() both only constrain
+    /// the one thing that the user specified.  Only the "final"
+    /// LocalAccess object determines the behavior of withLocalAccess.
+    ///
+    /// For these reasons, LocalAccess needs to be able to distinguish
+    /// between "the user explicitly assigned an {execution, memory}
+    /// space," and "use the default {execution, memory} space."  This
+    /// is why LocalAccess has a template parameter pack.
+    template<class GlobalObjectType, class ... Args>
     class LocalAccess {
+    private:
+      using this_type = LocalAccess<GlobalObjectType, Args...>;
+      using traits = LocalAccessTraits<Args...>;
+      static constexpr bool is_execution_space_specified =
+        ! std::is_same<typename traits::execution_space,
+                       unspecified_type>::value;
+      static constexpr bool is_memory_space_specified =
+        ! std::is_same<typename traits::memory_space,
+                       unspecified_type>::value;
+      static constexpr bool is_access_mode_specified =
+        ! std::is_same<typename traits::access_mode,
+                       unspecified_type>::value;
+      static_assert(is_access_mode_specified, "LocalAccess requires "
+        "that you specify the access mode.  You may do this by "
+        "always starting construction of a LocalAccess instance "
+        "with readOnly, writeOnly, or readWrite.");
+
     public:
       using global_object_type = GlobalObjectType;
-      using memory_space = typename MemorySpace::memory_space;
-      static constexpr AccessMode access_mode = am;
 
-    private:
-      using canonical_this_type = LocalAccess<global_object_type,
-                                              memory_space,
-                                              access_mode>;
-    public:
-      /// \brief Constructor.
+      using execution_space =
+        typename SpaceTypes<global_object_type, traits>::execution_space;
+      static_assert(! is_execution_space_specified ||
+        Kokkos::Impl::is_execution_space<execution_space>::value,
+        "Specified execution space is not a Kokkos execution space.");
+      static_assert(is_execution_space_specified ||
+        Kokkos::Impl::is_execution_space<execution_space>::value,
+        "Default execution space is not a Kokkos execution space.");
+
+      using memory_space =
+        typename SpaceTypes<global_object_type, traits>::memory_space;
+      static_assert(! is_memory_space_specified ||
+        Kokkos::Impl::is_memory_space<memory_space>::value,
+        "Specified memory space is not a Kokkos memory space.");
+      static_assert(is_memory_space_specified ||
+        Kokkos::Impl::is_memory_space<memory_space>::value,
+        "Default memory space is not a Kokkos memory space.");
+
+      using access_mode = typename traits::access_mode;
+
+      /// \brief Constructor that specifies the global object, the
+      ///   execution memory space instance on which to view its local
+      ///   data, the memory space instance on which to view its local
+      ///   data, and (optionally) whether the global object is valid.
       ///
       /// Users must NOT call the LocalAccess constructor directly.
       /// They should instead start by calling readOnly, writeOnly, or
       /// readWrite above.  They may then use instance methods like
-      /// on() or valid() (see below).
+      /// at(), on(), or valid() (see below).
       ///
       /// G is a reference, because we only access it in a delimited
       /// scope.  G is nonconst, because even read-only local access
       /// may modify G.  For example, G may give access to its local
       /// data via lazy allocation of a data structure that differs
       /// from its normal internal storage format.
-      ///
-      /// Memory spaces should behave like Kokkos memory spaces.
-      /// Default construction should work and should get the default
-      /// instance of the space.  Otherwise, it may make sense to get
-      /// the default memory space from G.
       LocalAccess (global_object_type& G,
-                   memory_space space = memory_space (),
-                   const bool thisIsValid = true) :
+                   const execution_space& execSpace,
+                   const memory_space& memSpace,
+                   const bool viewIsValid = true) :
         G_ (G),
-        space_ (space),
-        valid_ (thisIsValid)
+        execSpace_ (execSpace),
+        memSpace_ (memSpace),
+        valid_ (viewIsValid)
       {}
 
-      /// \brief Type that users see, that's an argument to the
-      ///   function that they give to withLocalAccess.
-      using function_argument_type =
-        with_local_access_function_argument_type<canonical_this_type>;
+      /// \brief Constructor that specifies the global object and
+      ///   (optionally) whether it is valid.
+      LocalAccess (global_object_type& G,
+                   const bool viewIsValid = true) :
+        LocalAccess (G,
+          DefaultExecutionSpace<global_object_type>::space (G),
+          DefaultMemorySpace<global_object_type>::space (G),
+          viewIsValid)
+      {}
 
-    public:
+      /// \brief Constructor that specifies the global object, the
+      ///   execution space instance at which to view its local data,
+      ///   and (optionally) whether the global object is valid.
+      LocalAccess (global_object_type& G,
+                   const execution_space& execSpace,
+                   const bool viewIsValid = true) :
+        LocalAccess (G,
+          execSpace,
+          DefaultMemorySpace<global_object_type>::space (G),
+          viewIsValid)
+      {}
+
+      /// \brief Constructor that specifies the global object, the
+      ///   memory space instance on which to view its local data, and
+      ///   (optionally) whether the global object is valid.
+      LocalAccess (global_object_type& G,
+                   const memory_space& memSpace,
+                   const bool viewIsValid = true) :
+        LocalAccess (G,
+          DefaultExecutionSpace<global_object_type>::space (G),
+          memSpace,
+          viewIsValid)
+      {}
+
+      /// \brief Is access supposed to be valid?
+      ///
+      /// If not, then you may not access the global object's local
+      /// data inside a withLocalAccess scope governed by this
+      /// LocalAccess instance.
+      ///
+      /// See <tt>valid(const bool)</tt> below.
+      bool isValid () const { return valid_; }
+
+      /// \brief Execution space instance, at which the user will
+      ///   access local data.
+      execution_space getExecutionSpace () const { return execSpace_; }
+
+      /// \brief Memory space instance, on which the user will access
+      ///   local data.
+      memory_space getMemorySpace () const { return memSpace_; }
+
       /// \brief Declare at run time whether you actually want to
       ///   access the object.
       ///
@@ -315,25 +585,67 @@ namespace Tpetra {
       /// on allocating temporary space, copying from device to host,
       /// etc.  This implies that implementations must be able to
       /// construct "null" / empty master local objects.
-      LocalAccess<GlobalObjectType, MemorySpace, am>
+      this_type
       valid (const bool thisIsValid) const {
-        return {this->G_, this->space_, thisIsValid};
+        return {G_, getExecutionSpace(), getMemorySpace(),
+                thisIsValid};
       }
 
-      /// \brief Declare intent to access this object's local data in
+      /// \brief Declare intent to access this object's local data on
       ///   a specific (Kokkos) memory space (instance).
       template<class NewMemorySpace>
-      LocalAccess<GlobalObjectType, NewMemorySpace, am>
-      on (NewMemorySpace space) const {
-        return {this->G_, space, this->valid_};
+      typename std::conditional<
+        is_execution_space_specified,
+        LocalAccess<global_object_type, execution_space,
+                    NewMemorySpace, access_mode>,
+        LocalAccess<global_object_type, NewMemorySpace, access_mode>
+        >::type
+      on(const NewMemorySpace& memSpace) const {
+        using Kokkos::Impl::is_memory_space;
+        static_assert(is_memory_space<NewMemorySpace>::value,
+          "NewMemorySpace must be a Kokkos memory space.");
+
+        // We can't use std::conditional here, because we need the
+        // "select" method.
+        using alt_execution_space =
+          typename LocalAccess<global_object_type, NewMemorySpace,
+                               access_mode>::execution_space;
+        auto execSpace = Kokkos::Impl::if_c<
+          is_execution_space_specified,
+          execution_space,
+          alt_execution_space>::select(
+            getExecutionSpace(),
+            alt_execution_space());
+        return {G_, execSpace, memSpace, isValid()};
       }
 
-      //! Is access supposed to be valid?  (See valid() above.)
-      bool isValid () const { return this->valid_; }
+      /// \brief Declare intent to access this object's local data at
+      ///   a specific (Kokkos) execution space (instance).
+      template<class NewExecutionSpace>
+      typename std::conditional<
+        is_memory_space_specified,
+        LocalAccess<global_object_type, NewExecutionSpace,
+                    memory_space, access_mode>,
+        LocalAccess<global_object_type, NewExecutionSpace, access_mode>
+        >::type
+      at(const NewExecutionSpace& execSpace) const {
+        using Kokkos::Impl::is_execution_space;
+        static_assert(is_execution_space<NewExecutionSpace>::value,
+          "NewExecutionSpace must be a Kokkos execution space.");
 
-      /// \brief Memory space instance in which the user will access
-      ///   local data.
-      memory_space getSpace () const { return space_; }
+        // We can't use std::conditional here, because we need the
+        // "select" method.
+        using alt_memory_space =
+          typename LocalAccess<global_object_type, NewExecutionSpace,
+                               access_mode>::memory_space;
+        auto memSpace = Kokkos::Impl::if_c<
+          is_memory_space_specified,
+          memory_space,
+          alt_memory_space>::select(
+            getMemorySpace(),
+            alt_memory_space());
+        return {G_, execSpace, memSpace, isValid()};
+      }
 
     public:
       /// \brief Reference to the global object whose data the user
@@ -343,12 +655,20 @@ namespace Tpetra {
       /// delimited scope.
       global_object_type& G_;
 
-      /// \brief Memory space instance in which the user will access
+      /// \brief Execution space instance, with which the user will
+      ///   access local data.
+      ///
+      /// We assume that Kokkos execution spaces have shallow-copy
+      /// semantics.
+      execution_space execSpace_;
+
+      /// \brief Memory space instance, on which the user will access
       ///   local data.
       ///
       /// We assume that Kokkos memory spaces have shallow-copy
       /// semantics.
-      memory_space space_;
+      memory_space memSpace_;
+
       //! Will I actually need to access this object?
       bool valid_;
     };
@@ -358,45 +678,41 @@ namespace Tpetra {
   // Implementations of readOnly, writeOnly, and readWrite
   ////////////////////////////////////////////////////////////
 
-  template<class GOT>
+  template<class GlobalObjectType>
   Details::LocalAccess<
-    GOT,
-    typename Details::DefaultMemorySpace<GOT>::type,
-    Details::AccessMode::ReadOnly>
-  readOnly (GOT& G)
+    GlobalObjectType,
+    Details::read_only>
+  readOnly (GlobalObjectType& G)
   {
-    return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
+    return {G};
   }
 
-  template<class GOT>
+  template<class GlobalObjectType>
   Details::LocalAccess<
-    GOT,
-    typename Details::DefaultMemorySpace<GOT>::type,
-    Details::AccessMode::ReadOnly>
-  readOnly (const GOT& G)
+    GlobalObjectType,
+    Details::read_only>
+  readOnly (const GlobalObjectType& G)
   {
-    GOT& G_nc = const_cast<GOT&> (G);
-    return {G_nc, Details::DefaultMemorySpace<GOT>::space (G_nc), true};
+    GlobalObjectType& G_nc = const_cast<GlobalObjectType&> (G);
+    return {G_nc};
   }
 
-  template<class GOT>
+  template<class GlobalObjectType>
   Details::LocalAccess<
-    GOT,
-    typename Details::DefaultMemorySpace<GOT>::type,
-    Details::AccessMode::WriteOnly>
-  writeOnly (GOT& G)
+    GlobalObjectType,
+    Details::write_only>
+  writeOnly (GlobalObjectType& G)
   {
-    return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
+    return {G};
   }
 
-  template<class GOT>
+  template<class GlobalObjectType>
   Details::LocalAccess<
-    GOT,
-    typename Details::DefaultMemorySpace<GOT>::type,
-    Details::AccessMode::ReadWrite>
-  readWrite (GOT& G)
+    GlobalObjectType,
+    Details::read_write>
+  readWrite (GlobalObjectType& G)
   {
-    return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
+    return {G};
   }
 
   ////////////////////////////////////////////////////////////
@@ -482,20 +798,20 @@ namespace Tpetra {
     template<class ... LocalAccessTypes>
     struct WithLocalAccess {
       using current_user_function_type =
-        typename Details::ArgsToFunction<LocalAccessTypes...>::type;
+        typename ArgsToFunction<LocalAccessTypes...>::type;
 
       static void
       withLocalAccess (LocalAccessTypes...,
-                       typename Details::ArgsToFunction<LocalAccessTypes...>::type);
+                       typename ArgsToFunction<LocalAccessTypes...>::type);
     };
 
-    /// \brief Specialization of withLocalAccess that implements the
+    /// \brief Specialization of WithLocalAccess that implements the
     ///   "base class" of the user providing no GlobalObject
     ///   arguments, and a function that takes no arguments.
     template<>
     struct WithLocalAccess<> {
       using current_user_function_type =
-        typename Details::ArgsToFunction<>::type;
+        typename ArgsToFunction<>::type;
 
       static void
       withLocalAccess (current_user_function_type userFunction)
@@ -504,7 +820,7 @@ namespace Tpetra {
       }
     };
 
-    /// \brief Specialization of withLocalAccess that implements the
+    /// \brief Specialization of WithLocalAccess that implements the
     ///   "recursion case."
     ///
     /// \tparam FirstLocalAccessType Specialization of LocalAccess.
@@ -513,7 +829,7 @@ namespace Tpetra {
     template<class FirstLocalAccessType, class ... Rest>
     struct WithLocalAccess<FirstLocalAccessType, Rest...> {
       using current_user_function_type =
-        typename Details::ArgsToFunction<FirstLocalAccessType, Rest...>::type;
+        typename ArgsToFunction<FirstLocalAccessType, Rest...>::type;
 
       static void
       withLocalAccess (current_user_function_type userFunction,
@@ -563,7 +879,7 @@ namespace Tpetra {
         //    });
 
         WithLocalAccess<Rest...>::withLocalAccess
-          ([=] (typename Rest::function_argument_type... args) {
+          ([=] (with_local_access_function_argument_type<Rest>... args) {
              userFunction (first_lcl_view, args...);
            },
            rest...);
@@ -620,4 +936,3 @@ namespace Tpetra {
 } // namespace Tpetra
 
 #endif // TPETRA_WITHLOCALACCESS_HPP
-
