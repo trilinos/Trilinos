@@ -43,7 +43,6 @@
 
 
 
-
 #ifndef KOKKOSSPARSE_SPMV_HPP_
 #define KOKKOSSPARSE_SPMV_HPP_
 
