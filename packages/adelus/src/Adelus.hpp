@@ -72,7 +72,7 @@ namespace Adelus {
      \param my_row(Out)  - row number in processor mesh, 0 to the  number of processors for a column -1
      \param my_col(Out)  - column  number in processor mesh, 0 to the  number of processors for a row -1
     */
-
+  inline
   int GetDistribution( int* nprocs_row_,
                        int* number_of_unknowns,
                        int* nrhs_,
@@ -130,6 +130,7 @@ namespace Adelus {
     */
 
   template<class ZDView>
+  inline
   void FactorSolve( ZDView AA,
                     int my_rows_,
                     int my_cols_,
@@ -152,6 +153,7 @@ namespace Adelus {
   }
 
 #ifdef ZCPLX
+  inline
   void FactorSolve_devPtr( DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
@@ -183,6 +185,7 @@ namespace Adelus {
 #endif
     }
   }
+  inline
   void FactorSolve_hostPtr( DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
@@ -234,6 +237,7 @@ namespace Adelus {
   }
 #endif
 #ifdef DREAL
+  inline
   void FactorSolve_devPtr( DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
@@ -265,6 +269,7 @@ namespace Adelus {
 #endif
     }
   }
+  inline
   void FactorSolve_hostPtr( DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
@@ -316,6 +321,7 @@ namespace Adelus {
   }
 #endif
 #ifdef SCPLX
+  inline
   void FactorSolve_devPtr( DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
@@ -347,6 +353,7 @@ namespace Adelus {
 #endif
     }
   }
+  inline
   void FactorSolve_hostPtr( DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
@@ -398,6 +405,7 @@ namespace Adelus {
   }
 #endif
 #ifdef SREAL
+  inline
   void FactorSolve_devPtr( DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
@@ -429,6 +437,7 @@ namespace Adelus {
 #endif
     }
   }
+  inline
   void FactorSolve_hostPtr( DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,

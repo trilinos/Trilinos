@@ -111,7 +111,10 @@ extern MPI_Comm col_comm;
 //  });
 //}
 
+namespace Adelus {
+
 template<class ZDView, class ViewType1D, class ViewType2D, class ViewIntType1D>
+inline
 void factor(ZDView& ZV,                 // matrix and rhs
             ViewType2D& col1_view,      // col used for updating a col
             ViewType2D& row1_view,      // diagonal row
@@ -1121,5 +1124,7 @@ void factor(ZDView& ZV,                 // matrix and rhs
   showtime("Total time in factor",&totalfactortime);
 #endif
 }
+
+}//namespace Adelus
 
 #endif

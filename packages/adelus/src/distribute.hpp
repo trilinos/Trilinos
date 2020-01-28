@@ -71,6 +71,9 @@ jdkotul@sandia.gov
 
 #include <mpi.h>
 
+namespace Adelus {
+
+inline
 void distmat_(
                 int *nprocsr,
                 int *ncols,
@@ -133,5 +136,7 @@ void distmat_(
     if (*my_col < *nrhs_ % (*nprocsr)) ++(*my_rhs_);
 
 }
+
+}//namespace Adelus
 
 #endif

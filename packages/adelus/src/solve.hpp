@@ -94,6 +94,8 @@ extern MPI_Comm col_comm;
 #define SOHSTYPE (SOCOLTYPE + SOROWTYPE)
 //#define PERMTYPE ((1 << 14) + (1 << 15))
 
+namespace Adelus {
+
 /*  Customized elimination on the rhs that I own */	
 //diag_mag = ABS_VAL(*(ptr2+end_row-1));
 //for (j1=0; j1<n_rhs_this; j1++) {
@@ -118,6 +120,7 @@ void elimination_rhs(int N, ZDView& ptr3, ZDView& ptr2, RView& ptr4, int act_col
 }
 
 template<class ZDView>
+inline
 void back_solve6(ZDView& ZV)
 {
   typedef typename ZDView::value_type value_type;
@@ -470,6 +473,7 @@ void back_solve6(ZDView& ZV)
 #endif
 }
 
+}//namespace Adelus
 //void collect_vector(DATA_TYPE *vec)
 //{
 //  int j, k;

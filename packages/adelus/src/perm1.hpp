@@ -65,6 +65,8 @@ extern int ncols_matrix;       /* number of cols in the matrix */
 extern int my_rows;            /* num of rows I own */
 extern int my_cols;            /* num of cols I own */
 
+namespace Adelus {
+
 /*  Customized zcopy  */
 template<class XView, class YView>
 void zcopy_wr_local_index(int N, XView& X, YView& Y, int lidx) {
@@ -92,6 +94,7 @@ void zcopy_ld_local_index(int N, XView& X, YView& Y) {
 /*  Permutes -- unwraps the torus-wrap for the solution
     using the communication buffer             */
 template<class ZDView>
+inline
 void perm1_(ZDView& ZV, int *num_my_rhs) {
 
   int i;
@@ -294,5 +297,7 @@ void perm1_(ZDView& ZV, int *num_my_rhs) {
   showtime("Total time in perm",&totalpermtime);
 #endif
 }
+
+}//namespace Adelus
 
 #endif

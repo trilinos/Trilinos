@@ -69,7 +69,10 @@ jdkotul@sandia.gov
 
 #include "Kokkos_Core.hpp"
 
+namespace Adelus {
+
 template<class ZDView>
+inline
 void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, double *secs)
 {
   typedef typename ZDView::value_type value_type;
@@ -256,5 +259,7 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
   //free(pivot_vec);
 
 }
+
+}//namespace Adelus
 
 #endif
