@@ -53,14 +53,14 @@
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
-#include "matrixIssue402.hpp"
-
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 
 
 #include<KokkosKernels_IOUtils.hpp>
 
+//This file contains the matrix for test_issue402
+#include "matrixIssue402.hpp"
 
 //const char *input_filename = "sherman1.mtx";
 //const char *input_filename = "Si2.mtx";

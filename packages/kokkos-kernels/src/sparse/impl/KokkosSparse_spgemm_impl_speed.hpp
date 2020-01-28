@@ -199,7 +199,7 @@ struct KokkosSPGEMM
         marker [ind] = 0;
       }
     });
-
+    memory_space.release_chunk(dense_accum);
   }
 
 };
@@ -297,10 +297,9 @@ struct KokkosSPGEMM
 
         unit_memory(sizeof(nnz_lno_t) * 2 + sizeof(nnz_lno_t) + sizeof (scalar_t)),
         suggested_team_size(suggested_team_size_),
-        thread_memory((shared_memory_size /8 / suggested_team_size_) * 8),
+        thread_memory((shared_memory_size /sizeof(scalar_t) / suggested_team_size_) * sizeof(scalar_t)),
         shmem_key_size(), shared_memory_hash_func(), shmem_hash_size(1)
         {
-
           shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 2) / unit_memory);
           if (KOKKOSKERNELS_VERBOSE_){
             std::cout << "\t\tNumericCMEM -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<
@@ -313,6 +312,35 @@ struct KokkosSPGEMM
 
           shmem_key_size = shmem_key_size + ((shmem_key_size - shmem_hash_size) * sizeof(nnz_lno_t)) / (sizeof (nnz_lno_t) * 2 + sizeof(scalar_t));
           shmem_key_size = (shmem_key_size >> 1) << 1;
+
+          // thread_memory == 2*sizeof(nnz_lno_t) + shmem_hash_size*sizeof(nnz_lno_t) + 2*shmem_key_size*sizeof(nnz_lno_t) + rem_size*sizeof(scalar_t)
+          // check that memory is partitioned into aligned chunks
+          nnz_lno_t remainder_memory = thread_memory - sizeof(nnz_lno_t)*2 - shmem_hash_size*sizeof(nnz_lno_t);
+
+          // The remainder of memory for vals must be aligned into sizeof(scalar_t) chunks, and there must be at least as many entries as keys
+          nnz_lno_t val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
+
+          nnz_lno_t val_unalign_mem = val_memory % sizeof(scalar_t);
+          if (val_unalign_mem > 0) {
+            // Redistributing between shmem_key_size and vals involves exchange of 2 "keys" (key+next) per val
+            nnz_lno_t realign_chunk_mem = 2 * sizeof(nnz_lno_t);
+
+            bool is_align_possible = (val_unalign_mem % realign_chunk_mem) == 0;
+            if(!is_align_possible)
+            {
+              throw std::runtime_error("NumericCMEM Ctor Error: unable to align memory for shared memory allocations. Modify your shared memory request");
+            }
+
+            nnz_lno_t realign_chunks = val_unalign_mem / realign_chunk_mem; 
+
+            shmem_key_size -= realign_chunks;
+            val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
+            val_unalign_mem = val_memory%sizeof(scalar_t);
+          }
+
+          if (val_unalign_mem > 0) {
+            throw std::runtime_error("NumericCMEM Ctor Error: shared memory realignment failed. Modify your shared memory request");
+          }
 
           if (KOKKOSKERNELS_VERBOSE_){
             std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << shmem_hash_size  << " shmem_key_size:" << shmem_key_size << std::endl;
@@ -422,7 +450,7 @@ struct KokkosSPGEMM
           int overall_num_unsuccess = 0;
 
           Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-              [&] (const int threadid, int &overall_num_unsuccess_) {
+              [&] (const int /* threadid */, int &overall_num_unsuccess_) {
             overall_num_unsuccess_ += num_unsuccess;
           }, overall_num_unsuccess);
 
@@ -463,7 +491,7 @@ struct KokkosSPGEMM
     });
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
     return shared_memory_size;
   }
 };

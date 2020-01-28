@@ -56,15 +56,15 @@ template <typename KernelHandle,
 void spgemm_debug_symbolic(
     KernelHandle *handle,
     typename KernelHandle::nnz_lno_t m,
-    typename KernelHandle::nnz_lno_t n,
+    typename KernelHandle::nnz_lno_t /* n */,
     typename KernelHandle::nnz_lno_t k,
     alno_row_view_t_ row_mapA,
     alno_nnz_view_t_ entriesA,
 
-    bool transposeA,
+    bool /* transposeA */,
     blno_row_view_t_ row_mapB,
     blno_nnz_view_t_ entriesB,
-    bool transposeB,
+    bool /* transposeB */,
     clno_row_view_t_ row_mapC
     ){
   typename alno_row_view_t_::HostMirror h_rma = Kokkos::create_mirror_view (row_mapA);
@@ -151,19 +151,19 @@ template <typename KernelHandle,
   typename clno_nnz_view_t_,
   typename cscalar_nnz_view_t_>
 void spgemm_debug_numeric(
-    KernelHandle *handle,
+    KernelHandle * /* handle */,
     typename KernelHandle::nnz_lno_t m,
-    typename KernelHandle::nnz_lno_t n,
+    typename KernelHandle::nnz_lno_t /* n */,
     typename KernelHandle::nnz_lno_t k,
     alno_row_view_t_ row_mapA,
     alno_nnz_view_t_ entriesA,
     ascalar_nnz_view_t_ valuesA,
 
-    bool transposeA,
+    bool /* transposeA */,
     blno_row_view_t_ row_mapB,
     blno_nnz_view_t_ entriesB,
     bscalar_nnz_view_t_ valuesB,
-    bool transposeB,
+    bool /* transposeB */,
     clno_row_view_t_ row_mapC,
     clno_nnz_view_t_ entriesC,
     cscalar_nnz_view_t_ valuesC

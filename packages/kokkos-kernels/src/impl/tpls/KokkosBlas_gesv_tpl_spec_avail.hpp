@@ -53,6 +53,54 @@ struct gesv_tpl_spec_avail {
   enum : bool { value = false };
 };
 
+// Generic Host side BLAS (could be MKL or whatever)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+
+#define KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( SCALAR, LAYOUT, MEMSPACE ) \
+template<class ExecSpace> \
+struct gesv_tpl_spec_avail< \
+     Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+     >  { enum : bool { value = true }; };
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
+/*
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutRight, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutRight, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::HostSpace)
+#endif
+*/
+#endif
+
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
@@ -62,7 +110,7 @@ struct gesv_tpl_spec_avail< \
      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
      >  { enum : bool { value = true }; };
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \

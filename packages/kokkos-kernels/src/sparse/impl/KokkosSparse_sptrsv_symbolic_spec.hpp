@@ -124,6 +124,8 @@ struct SPTRSV_SYMBOLIC<KernelHandle, RowMapType, EntriesType, false, KOKKOSKERNE
                    const EntriesType entries)
   {
     auto sptrsv_handle = handle->get_sptrsv_handle();
+    auto nrows = row_map.extent(0)-1;
+    sptrsv_handle->new_init_handle(nrows);
 
     if ( sptrsv_handle->is_lower_tri() ) {
       Experimental::lower_tri_symbolic(*sptrsv_handle, row_map, entries);
