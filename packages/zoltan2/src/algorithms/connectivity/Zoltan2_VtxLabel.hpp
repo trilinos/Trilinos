@@ -181,7 +181,7 @@ namespace Zoltan2{
 	  }
 	};
 
-}//end namespace iceProp
+}//end namespace Zoltan2
         
 /////////////////////////////////////////////////////////////////////////
 // ArithTraits -- arithmetic traits needed for struct IcePropVtxLabel
@@ -706,8 +706,6 @@ private:
   
   Teuchos::ArrayRCP<const scalar_t> femvData;
 };
-}//end namespace iceProp
-
-
+}//end namespace Zoltan2
 
 #endif
