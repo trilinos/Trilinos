@@ -10,14 +10,16 @@
 # sourced script below will impact jobs on both of those
 # machines. please be mindful of this when making changes
 
+#
 # Handle KOKKOS_ARCH
+#
 
 if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* || \
   "$ATDM_CONFIG_COMPILER" == "XL"* ]]; then
   if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9
-    arch=pwr9
+    sparc_tpl_arch=pwr9
   else
     echo
     echo "***"
@@ -31,8 +33,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Volta70" ]] ; then
-    export ATDM_CONFIG_KOKKOS_ARCH=Volta70
-    arch=v100
+    export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70
+    sparc_tpl_arch=v100
   else
     echo
     echo "***"
@@ -52,17 +54,14 @@ else
   return
 fi
 
-export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-${arch}
+echo "Using $ATDM_CONFIG_SYSTEM_NAME compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
-echo "Using $ATDM_CONFIG_SYSTEM_NAME toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
-
+# Some basic settings
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=OFF
 export ATDM_CONFIG_BUILD_COUNT=8
-# export ATDM_CONFIG_CMAKE_JOB_POOL_LINK=2
-# NOTE: Above, currently setting CMAKE_JOB_POOL_LINK results in a build
-# failures with Ninja.  See https://gitlab.kitware.com/snl/project-1/issues/60
 
+# Set ctest -j parallel level for non-CUDA builds
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
   export OMP_NUM_THREADS=2
@@ -74,16 +73,17 @@ fi
 # messes up the ATS-2 env.  Therefore, it is recommended that the user load a
 # new shell and then load one of these envs.
 
-# Common modules for all builds
+# Load common modules for all builds
 module load git/2.20.0
 module load cmake/3.14.5
 
-if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24"* ]]; then
+#
+# Load compiler modules, TPL modules, and point to SPARC TPL install base dirs
+#
+
+if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24" ]]; then
   module load gcc/7.3.1
   module load lapack/3.8.0-gcc-4.9.3
-
-  # rabartl: ToDo: Above, we need to find a way to extract 'ats2-pwr9' out of
-  # this file for this to be general!
 
   export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3
   export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3
@@ -99,23 +99,21 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24"* ]]; then
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
-  if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
-    sparc_tpl_ext=ats2-${arch}_cuda-10.1.243_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-${arch}_cuda-10.1.243_gcc-7.3.1_spmpi-2019.06.24
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
+    sparc_tpl_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1
+    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1_spmpi-2019.06.24
   else
-    sparc_tpl_ext=ats2-${arch}_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-${arch}_gcc-7.3.1_spmpi-2019.06.24
+    sparc_tpl_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1
+    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1_spmpi-2019.06.24
   fi
-elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-2019.06.24_DISABLED"* ]]; then
+
+elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-2019.06.24_DISABLED" ]]; then
   module load xl/2019.08.20
   module load lapack/3.8.0-xl-2019.08.20
   module load gmake/4.2.1
 
   # Ninja not available for XL until cmake 3.17.0
   export ATDM_CONFIG_USE_NINJA=OFF
-
-  # rabartl: ToDo: Above, we need to find a way to extract 'ats2-pwr9' out of
-  # this file for this to be general!
 
   export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
   export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
@@ -131,23 +129,30 @@ elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-2019.06.24_DISABLED"* ]
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
-  if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
     export LD_LIBRARY_PATH=${BINUTILS_ROOT}/rh/lib/gcc/ppc64le-redhat-linux/7:${LD_LIBRARY_PATH}
-    sparc_tpl_ext=ats2-${arch}_cuda-10.1.243_xl-2019.08.20
-    sparc_tpl_mpi_ext=ats2-${arch}_cuda-10.1.243_xl-2019.08.20_spmpi-2019.06.24
+    sparc_tpl_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20
+    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20_spmpi-2019.06.24
   else
-    sparc_tpl_ext=ats2-${arch}_xl-2019.08.20
-    sparc_tpl_mpi_ext=ats2-${arch}_xl-2019.08.20_spmpi-2019.06.24
+    sparc_tpl_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20
+    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20_spmpi-2019.06.24
   fi
+
 else
   echo
   echo "***"
   echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
   echo "***"
   return
+
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
+#
+# Load module and do other setup for CUDA bulids
+#
+
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
+
   module load cuda/10.1.243
 
   # OpenMPI Settings
@@ -167,7 +172,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
 
   # ATDM Settings
   export ATDM_CONFIG_USE_CUDA=ON
-  #export ATDM_CONFIG_Kokkos_ENABLE_Cuda_UVM=ON, handled by above export
+  #export ATDM_CONFIG_Kokkos_ENABLE_Cuda_UVM=ON, handled by above ATDM_CONFIG_USE_CUDA export
   export ATDM_CONFIG_USE_OPENMP=OFF
   export ATDM_CONFIG_USE_PTHREADS=OFF
   export ATDM_CONFIG_CUDA_RDC=OFF
@@ -179,7 +184,22 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"CUDA"* ]]; then
   export ATDM_CONFIG_Kokkos_ENABLE_Cuda_Lambda=ON
   export ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code=OFF
   export KOKKOS_NUM_DEVICES=4
+
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
+
+  echo
+  echo "***"
+  echo "*** ERROR: CUDA version in COMPILER=$ATDM_CONFIG_COMPILER"
+  echo "*** is not supported on this system!  Only CUDA-10.1.243"
+  echo "*** is currently supported!"
+  echo "***"
+  return
+
 fi
+
+#
+# Final setup for all build configurations
+#
 
 # Common module - requires compiler to be loaded first
 module load spectrum-mpi/2019.06.24
@@ -190,6 +210,8 @@ export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 
 # NOTE: Invalid libbfd.so requires below for Trilinos to compile
 export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_ROOT}/lib/libiberty.a"
+
+export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-${sparc_tpl_arch}
 
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 
