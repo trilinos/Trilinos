@@ -128,6 +128,12 @@
 
 /**********************************************************************/
 
+/* Define a null string */
+
+#define PYTRILINOS_NULLSTR
+
+/**********************************************************************/
+
 #ifdef SWIG
 
   #define COMPILER_ID @CMAKE_CXX_COMPILER_ID@
