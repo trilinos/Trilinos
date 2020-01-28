@@ -70,7 +70,6 @@ IF (KOKKOS_ENABLE_CUDA)
   
   #currently float 128 test is not working. So common tests are explicitly added.  
   APPEND_GLOB(CUDA_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Common*.cpp)
-  
 
   KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
     common_cuda
@@ -96,8 +95,7 @@ IF (KOKKOS_ENABLE_OPENMP)
       Test_Main.cpp
       ${OPENMP_BLAS_SOURCES}
     )
-    
-        
+      
   APPEND_GLOB(OPENMP_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Sparse*.cpp)
 
   KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
@@ -202,7 +200,6 @@ IF (KOKKOS_ENABLE_PTHREAD)
       Test_Main.cpp
       ${THREADS_GRAPH_SOURCES}
   )
-  
   
   APPEND_GLOB(THREADS_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Common*.cpp)
 

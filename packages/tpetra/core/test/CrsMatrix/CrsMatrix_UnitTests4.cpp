@@ -846,6 +846,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     Tpetra::Details::inverseScaleBlockDiagonal(*diag2,false,*toScale2);
     Tpetra::Details::inverseScaleBlockDiagonal(*diag4,false,*toScale4);
 
+    Kokkos::fence();
+
     // Check norms
     Array<Mag> norms2(1), norms4(1);
     toScale2->norm1(norms2());
@@ -940,6 +942,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Now, let's rescale some vectors
     Tpetra::Details::inverseScaleBlockDiagonal(*diag2,true,*toScale2);
     Tpetra::Details::inverseScaleBlockDiagonal(*diag4,true,*toScale4);
+
+    Kokkos::fence();
 
     // Check norms
     Array<Mag> norms2(1), norms4(1);

@@ -111,7 +111,8 @@ namespace Tacho {
         _serial_thres_size(-1),
         _mb(-1),
         _nb(-1),
-        _front_update_mode(-1) {}
+        _front_update_mode(-1),
+        _max_num_superblocks(-1) {}
 
     Solver(const Solver &b) = default;
 

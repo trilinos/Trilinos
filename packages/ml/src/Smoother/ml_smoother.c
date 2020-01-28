@@ -7367,10 +7367,11 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 #ifdef BLOCKMLS
   int nblocks, *block_list;
 #endif
+   ML_Comm *comm;
 
    ML_Create(ml_subproblem,1);
    /*Replace the default MPI_COMM_WORLD inside ml_subproblem's communicator.*/
-   ML_Comm *comm = (*ml_subproblem)->comm;
+   comm = (*ml_subproblem)->comm;
    comm->USR_comm = Amat->comm->USR_comm;
    comm->ML_mypid = Amat->comm->ML_mypid;
    comm->ML_nprocs = Amat->comm->ML_nprocs;
