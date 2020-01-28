@@ -33,21 +33,21 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # Core files
 #
 
-#APPEND_SET(HEADERS
-#  Adelus_ConfigDefs.h
-#  )
+APPEND_SET(HEADERS
+  Adelus_ConfigDefs.h
+  )
 
 #
 # Util files
 #
 
-#APPEND_SET(HEADERS
-#  AdelusVersion.h
-#  )
+APPEND_SET(HEADERS
+  AdelusVersion.h
+  )
 
-#APPEND_SET(SOURCES
-#  AdelusVersion.cpp
-#  )
+APPEND_SET(SOURCES
+  AdelusVersion.cpp
+  )
 
 IF (TPL_ENABLE_MPI)
   #
