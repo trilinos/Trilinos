@@ -105,6 +105,13 @@ public:
     return ncval_;
   }
 
+  Ptr<Constraint<Real>> get(const int ind = 0) const {
+    if (ind < 0 || ind > static_cast<int>(cvec_.size())) {
+      throw Exception::NotImplemented(">>> Constraint_Partitioned::get : Index out of bounds!");
+    }
+    return cvec_[ind];
+  }
+
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     const int ncon = static_cast<int>(cvec_.size());
     for (int i = 0; i < ncon; ++i) {
