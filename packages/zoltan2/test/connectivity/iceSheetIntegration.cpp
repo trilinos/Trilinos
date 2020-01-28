@@ -16,6 +16,7 @@
 #include<sstream>
 #include<iostream>
 #include<fstream>
+#include<vector>
 
 #include "Zoltan2_IceUtil.h"
 
@@ -162,8 +163,15 @@ int main(int argc, char** argv)
   delete [] boundary_edges_global;
   delete [] grounded_flags_global;
 
-  std::cout<<me<<": is building the IceProp object\n";
-  Zoltan2::IceProp<Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t> > prop(comm, inputGraphAdapter, basalFriction, boundaryEdges, numLocalBoundaryEdges);
+  std::cout<<me<<": calling the utility function\n";
+  Teuchos::ArrayView<const bool> basalView = Teuchos::ArrayView<const bool>(basalFriction,nlocal);
+  Teuchos::ArrayView<const gno_t> boundaryView = Teuchos::ArrayView<const gno_t>(boundaryEdges,2*numLocalBoundaryEdges);
+  std::vector<int> status_vec(nlocal,0);
+  std::vector<gno_t> hinge_vec(nlocal,0);
+  Zoltan2::DetectDegenerateVertices<Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t> >(comm, inputGraphAdapter,basalView,boundaryView,
+                                                                                                            Teuchos::arrayViewFromVector(status_vec),
+                                                                                                            Teuchos::arrayViewFromVector(hinge_vec));  
+  /*Zoltan2::IceProp<Zoltan2::XpetraCrsGraphAdapter<Zoltan2_TestingFramework::tcrsGraph_t> > prop(comm, inputGraphAdapter, basalFriction, boundaryEdges, numLocalBoundaryEdges);
   
   std::cout<<me<<": is calling propagate\n";
   int* removeFlags = prop.getDegenerateFeatureFlags();
@@ -211,7 +219,7 @@ int main(int argc, char** argv)
     std::cout<<"FAIL "<<global_mismatches<<" mismatches\n";
   } else if(me == 0){
     std::cout<<"PASS\n";
-  }
+  }*/
   
   return 0;
 }
