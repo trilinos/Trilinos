@@ -130,9 +130,7 @@ do
     ;;
    # Ensure we only have one optimization flag because NVCC doesn't allow muliple
   -O*)
-    if [ $optimization_applied -eq 1 ]; then
-       echo "nvcc_wrapper - *warning* you have set multiple optimization flags (-O*), only the first is used because nvcc can only accept a single optimization setting."
-    else
+    if [ $optimization_applied -ne 1 ]; then
        shared_args="$shared_args $1"
        optimization_applied=1
     fi
@@ -189,7 +187,6 @@ do
   #Handle c++11
   --std=c++11|-std=c++11|--std=c++14|-std=c++14|--std=gnu++14|-std=gnu++14|--std=c++1y|-std=c++1y|--std=c++17|-std=c++17|--std=c++1z|-std=c++1z)
     if [ $stdcxx_applied -eq 1 ]; then
-       echo "nvcc_wrapper - *warning* you have set multiple optimization flags (-std=c++1* or --std=c++1*), overriding with the last one used because nvcc can only accept a single std setting"
        shared_args=`echo $shared_args | sed s/$last_cxx_applied//`
     fi
     applied=$1
