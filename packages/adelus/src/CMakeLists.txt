@@ -58,7 +58,7 @@ IF (TPL_ENABLE_MPI)
     block.h
     distribute.hpp
     factor.hpp
-    pcomm.h
+    pcomm.hpp
     perm1.hpp
     solve.hpp
     vars.hpp
@@ -71,7 +71,7 @@ IF (TPL_ENABLE_MPI)
     )
 
   APPEND_SET(SOURCES
-    pcomm.c
+    pcomm.cpp
     )
 
   #
