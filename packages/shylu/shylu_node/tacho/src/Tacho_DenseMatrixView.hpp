@@ -375,9 +375,9 @@ namespace Tacho {
              typename OrdinalTypeArray>
     inline
     void
-    applyRowPermutation(const DenseMatrixViewType &A, 
-                        const DenseMatrixViewType &B,
-                        const OrdinalTypeArray &p) {
+    applyRowPermutationToDenseMatrix(const DenseMatrixViewType &A,
+                                     const DenseMatrixViewType &B,
+                                     const OrdinalTypeArray &p) {
       const ordinal_type m = A.extent(0), n = A.extent(1);
       typedef typename DenseMatrixViewType::execution_space execution_space;
 

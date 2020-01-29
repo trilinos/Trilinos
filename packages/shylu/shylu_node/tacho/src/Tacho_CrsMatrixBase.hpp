@@ -283,5 +283,61 @@ namespace Tacho {
 
     };
 
+  template<typename CrsMatrixType,
+           typename OrdinalTypeArray>
+  inline
+  void
+  applyPermutationToCrsMatrix(/* */ CrsMatrixType &A,
+                              const CrsMatrixType &B,
+                              const OrdinalTypeArray &p,
+                              const OrdinalTypeArray &ip) {
+    const ordinal_type m = A.NumRows(), n = A.NumCols();
+    typedef typename CrsMatrixType::space_type space_type;
+
+    /// temporary matrix with the same structure
+    auto ap = A.RowPtr();
+    auto aj = A.Cols();
+    auto ax = A.Values();
+
+    auto perm = Kokkos::create_mirror_view(typename space_type::memory_space(),  p); Kokkos::deep_copy(perm,  p);
+    auto peri = Kokkos::create_mirror_view(typename space_type::memory_space(), ip); Kokkos::deep_copy(peri, ip);
+    {  /// permute row indices (exclusive scan)
+      Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > policy(0, m+1);
+      Kokkos::parallel_scan
+        (policy, KOKKOS_LAMBDA(const ordinal_type &i, size_type &update,
+                               const bool &final) {
+          if (final)
+            ap(i) = update;
+
+          if (i < m) {
+            const ordinal_type ii = peri(i);
+            update += (B.RowPtrEnd(ii) - B.RowPtrBegin(ii));
+          }
+        });
+      Kokkos::fence();
+    }
+    {  /// permute col indices (do not sort)
+      typedef Kokkos::TeamPolicy<space_type> team_policy_type;
+      team_policy_type policy(m, Kokkos::AUTO()); ///, Kokkos::AUTO());
+      Kokkos::parallel_for
+        (policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {
+          const ordinal_type
+            i = member.league_rank(),
+            ii = peri(i),
+            ncols = B.RowPtrEnd(ii) - B.RowPtrBegin(ii);
+
+          Kokkos::parallel_for
+            (Kokkos::TeamVectorRange(member, ncols),
+             [&](const ordinal_type &idx) {
+              const ordinal_type tgt_idx = ap(i) + idx;
+              const ordinal_type src_idx = B.RowPtrBegin(ii)+idx;
+              aj(tgt_idx) = perm(B.Col(src_idx));
+              ax(tgt_idx) = B.Value(src_idx);
+            });
+        });
+      Kokkos::fence();
+    }
+  }
+
 } // namespace tacho
 #endif

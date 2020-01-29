@@ -487,7 +487,7 @@ namespace Tacho {
 
         // copy b -> t
         timer.reset();
-        applyRowPermutation(t, b, _peri);
+        applyRowPermutationToDenseMatrix(t, b, _peri);
         stat.t_extra = timer.seconds();
         
         timer.reset();
@@ -511,7 +511,7 @@ namespace Tacho {
         
         // copy t -> x
         timer.reset();
-        applyRowPermutation(x, t, _perm);
+        applyRowPermutationToDenseMatrix(x, t, _perm);
         stat.t_extra += timer.seconds();
 
         if (verbose) {
@@ -791,7 +791,7 @@ namespace Tacho {
 
         // copy b -> t
         timer.reset();
-        applyRowPermutation(t, b, _peri);
+        applyRowPermutationToDenseMatrix(t, b, _peri);
         stat.t_extra = timer.seconds();
 
         {
@@ -875,7 +875,7 @@ namespace Tacho {
 
         // copy t -> x
         timer.reset();
-        applyRowPermutation(x, t, _perm);
+        applyRowPermutationToDenseMatrix(x, t, _perm);
         stat.t_extra += timer.seconds();
         
         if (verbose) {
