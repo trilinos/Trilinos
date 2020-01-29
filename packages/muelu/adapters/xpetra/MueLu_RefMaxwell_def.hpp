@@ -1318,8 +1318,11 @@ namespace MueLu {
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
       double dropTol = parameterList_.get("aggregation: drop tol",0.0);
       std::string dropScheme = parameterList_.get("aggregation: drop scheme","classical");
+      std::string distLaplAlgo = parameterList_.get("aggregation: distance laplacian algo","default");
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
       dropFact->SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(dropScheme));
+      if (!useKokkos_)
+        dropFact->SetParameter("aggregation: distance laplacian algo",Teuchos::ParameterEntry(distLaplAlgo));
 
       UncoupledAggFact->SetFactory("Graph", dropFact);
       int minAggSize = parameterList_.get("aggregation: min agg size",2);

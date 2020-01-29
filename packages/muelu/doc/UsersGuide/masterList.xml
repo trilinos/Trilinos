@@ -387,6 +387,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: distance laplacian algo</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: drop tol</name>
       <type>double</type>
       <default>0.0</default>

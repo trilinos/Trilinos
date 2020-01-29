@@ -75,8 +75,12 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <random>
 #include <string>
+
+// If defined, read environment variables.
+// Should be removed once we are confident that this works.
+// #define DJS_READ_ENV_VARIABLES
+
 
 namespace MueLu {
 
@@ -93,6 +97,7 @@ namespace MueLu {
       validParamList->getEntry("aggregation: drop scheme").setValidator(
         rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
     }
+    SET_VALID_ENTRY("aggregation: distance laplacian algo");
 #undef  SET_VALID_ENTRY
     validParamList->set< bool >                  ("lightweight wrap",           true, "Experimental option for lightweight graph access");
 
@@ -157,7 +162,46 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian)");
 
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
-      GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+      std::string distanceLaplacianAlgoStr = pL.get<std::string>("aggregation: distance laplacian algo");
+      real_type distanceLaplacianThreshold = STS::magnitude(threshold);
+      ////////////////////////////////////////////////////
+      // Remove this bit once we are confident that cut-based dropping works.
+#ifdef HAVE_MUELU_DEBUG
+      int distanceLaplacianCutVerbose = 0;
+#endif
+#ifdef DJS_READ_ENV_VARIABLES
+      if (getenv("MUELU_DROP_TOLERANCE_MODE")) {
+        distanceLaplacianAlgo = std::string(getenv("MUELU_DROP_TOLERANCE_MODE"));
+      }
+
+      if (getenv("MUELU_DROP_TOLERANCE_THRESHOLD")) {
+        auto tmp = atoi(getenv("MUELU_DROP_TOLERANCE_THRESHOLD"));
+        distanceLaplacianThreshold = 1e-4*tmp;
+      }
+
+# ifdef HAVE_MUELU_DEBUG
+      if (getenv("MUELU_DROP_TOLERANCE_VERBOSE")) {
+        distanceLaplacianCutVerbose = atoi(getenv("MUELU_DROP_TOLERANCE_VERBOSE"));
+      }
+# endif
+#endif
+      ////////////////////////////////////////////////////
+
+      enum distanceLaplacianAlgoType {defaultAlgo, unscaled_cut, scaled_cut};
+
+      distanceLaplacianAlgoType distanceLaplacianAlgo = defaultAlgo;
+      if (algo == "distance laplacian") {
+        if (distanceLaplacianAlgoStr == "default")
+          distanceLaplacianAlgo = defaultAlgo;
+        else if (distanceLaplacianAlgoStr == "unscaled cut")
+          distanceLaplacianAlgo = unscaled_cut;
+        else if (distanceLaplacianAlgoStr == "scaled cut")
+          distanceLaplacianAlgo = scaled_cut;
+        else
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut), not \"" << distanceLaplacianAlgoStr << "\"");
+        GetOStream(Runtime0) << "algorithm = \"" << algo << "\" distance laplacian algorithm = \"" << distanceLaplacianAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+      } else
+        GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
       Set<bool>(currentLevel, "Filtering", (threshold != STS::zero()));
 
       const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
@@ -691,25 +735,6 @@ namespace MueLu {
             }
           }
 
-          std::string drop_tol_mode("SCALED");
-          if (getenv("MUELU_DROP_TOLERANCE_MODE")) {
-            drop_tol_mode = std::string(getenv("MUELU_DROP_TOLERANCE_MODE"));
-          }
-          printf("DJS: Drop Tolerance Mode: %s\n", drop_tol_mode.c_str());
-
-          int drop_tol_verbose = 0;
-          if (getenv("MUELU_DROP_TOLERANCE_VERBOSE")) {
-            drop_tol_verbose = atoi(getenv("MUELU_DROP_TOLERANCE_VERBOSE"));
-          }
-          printf("DJS: Tolerance verbose: %d\n", drop_tol_verbose);
-
-          double drop_tol_threshold = 0.0;
-          if (getenv("MUELU_DROP_TOLERANCE_THRESHOLD")) {
-            auto tmp = atoi(getenv("MUELU_DROP_TOLERANCE_THRESHOLD"));
-            drop_tol_threshold = 1e-4*tmp;
-          }
-          printf("DJS: Threshold: %f\n", drop_tol_threshold);
-
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
@@ -740,11 +765,10 @@ namespace MueLu {
 
             LO nnz = indices.size(), rownnz = 0;
 
-            // if (threshold != STS::zero()) {
-            if ( true ) {
+            if (threshold != STS::zero()) {
 
               // default
-              if (drop_tol_mode == std::string("DEFAULT")) {
+              if (distanceLaplacianAlgo == defaultAlgo) {
                 for (LO colID = 0; colID < nnz; colID++) {
 
                   LO col = indices[colID];
@@ -756,8 +780,8 @@ namespace MueLu {
                   }
 
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
-                  typename STS::magnitudeType aiiajj = STS::magnitude(drop_tol_threshold*drop_tol_threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
-                  typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+                  real_type aiiajj = STS::magnitude(distanceLaplacianThreshold*distanceLaplacianThreshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  real_type aij    = STS::magnitude(laplVal*laplVal);
 
                   if (aij > aiiajj) {
                     columns[realnnz++] = col;
@@ -776,18 +800,20 @@ namespace MueLu {
                   DropTol& operator=(DropTol const&) = default;
                   DropTol& operator=(DropTol &&)     = default;
 
-                  DropTol(double m_, double a_, int c, bool d)
-                    : m{m_}, a{a_},  col{c}, drop{d}
+                  DropTol(real_type val_, real_type diag_, LO col_, bool drop_)
+                    : val{val_}, diag{diag_},  col{col_}, drop{drop_}
                   {}
 
-                  double m  {0.0};
-                  double a    {0.0};
-                  int    col  {INT_MAX};
-                  bool   drop {true};
+                  real_type val  {Teuchos::ScalarTraits<real_type>::zero()};
+                  real_type diag {Teuchos::ScalarTraits<real_type>::zero()};
+                  LO        col  {Teuchos::OrdinalTraits<LO>::invalid()};
+                  bool      drop {true};
                 };
 
                 std::vector<DropTol> drop_vec;
                 drop_vec.reserve(nnz);
+                const real_type zero = Teuchos::ScalarTraits<real_type>::zero();
+                const real_type one  = Teuchos::ScalarTraits<real_type>::one();
 
                 // find magnitudes
                 for (LO colID = 0; colID < nnz; colID++) {
@@ -795,89 +821,68 @@ namespace MueLu {
                   LO col = indices[colID];
 
                   if (row == col) {
-                    drop_vec.emplace_back( 0.0, 0.0, int(colID), false);
+                    drop_vec.emplace_back( zero, one, colID, false);
                     continue;
                   }
 
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
-                  typename STS::magnitudeType aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
-                  typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+                  real_type aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  real_type aij    = STS::magnitude(laplVal*laplVal);
 
-                  drop_vec.emplace_back(double(aij), double(aiiajj), int(colID), false);
+                  drop_vec.emplace_back(aij, aiiajj, colID, false);
                 }
 
-                const int n = int(drop_vec.size());
+                const size_t n = drop_vec.size();
 
-                if (drop_tol_mode == std::string("CUT_1")) {
+                if (distanceLaplacianAlgo == unscaled_cut) {
 
                   std::sort( drop_vec.begin(), drop_vec.end()
                            , [](DropTol const& a, DropTol const& b) {
-                               return a.m > b.m;
+                               return a.val > b.val;
                              }
                            );
 
                   bool drop = false;
-                  for (int i=1; i<n; ++i) {
+                  for (size_t i=1; i<n; ++i) {
                     if (!drop) {
                       auto const& x = drop_vec[i-1];
                       auto const& y = drop_vec[i];
-                      auto a = x.m;
-                      auto b = y.m;
-                      if (a/b > drop_tol_threshold) {
+                      auto a = x.val;
+                      auto b = y.val;
+                      if (a/b > distanceLaplacianThreshold) {
                         drop = true;
-                        if (drop_tol_verbose) {
-                          printf("DJS: KEEP, N, ROW:  %d, %d, %d\n", i+1, n, int(row));
+#ifdef HAVE_MUELU_DEBUG
+                        if (distanceLaplacianCutVerbose) {
+                          std::cout << "DJS: KEEP, N, ROW:  " << i+1 << ", " << n << ", " << row << std::endl;
                         }
+#endif
                       }
                     }
                     drop_vec[i].drop = drop;
                   }
                 }
-                else if (drop_tol_mode == std::string("CUT_2")) {
+                else if (distanceLaplacianAlgo == scaled_cut) {
 
                   std::sort( drop_vec.begin(), drop_vec.end()
                            , [](DropTol const& a, DropTol const& b) {
-                               return a.m/a.a > b.m/b.a;
+                               return a.val/a.diag > b.val/b.diag;
                              }
                            );
 
                   bool drop = false;
-                  for (int i=1; i<n; ++i) {
+                  for (size_t i=1; i<n; ++i) {
                     if (!drop) {
                       auto const& x = drop_vec[i-1];
                       auto const& y = drop_vec[i];
-                      auto a = x.m/x.a;
-                      auto b = y.m/y.a;
-                      if (a/b > drop_tol_threshold) {
+                      auto a = x.val/x.diag;
+                      auto b = y.val/y.diag;
+                      if (a/b > distanceLaplacianThreshold) {
                         drop = true;
-                        if (drop_tol_verbose) {
-                          printf("DJS: KEEP, N, ROW:  %d, %d, %d\n", i+1, n, int(row));
+#ifdef HAVE_MUELU_DEBUG
+                        if (distanceLaplacianCutVerbose) {
+                          std::cout << "DJS: KEEP, N, ROW:  " << i+1 << ", " << n << ", " << row << std::endl;
                         }
-                      }
-                    }
-                    drop_vec[i].drop = drop;
-                  }
-                }
-                else if (drop_tol_mode == std::string("CUT_3")) {
-
-                  std::sort( drop_vec.begin(), drop_vec.end()
-                           , [](DropTol const& a, DropTol const& b) {
-                               return a.m*a.a > b.m*b.a;
-                             }
-                           );
-
-                  bool drop = false;
-                  for (int i=1; i<n; ++i) {
-                    if (!drop) {
-                      auto const& x = drop_vec[i-1];
-                      auto const& y = drop_vec[i];
-                      auto a = x.m*x.a;
-                      auto b = y.m*y.a;
-                      if (a/b > drop_tol_threshold) {
-                        drop = true;
-                        if (drop_tol_verbose) {
-                          printf("DJS: KEEP, N, ROW:  %d, %d, %d\n", i+1, n, int(row));
-                        }
+#endif
                       }
                     }
                     drop_vec[i].drop = drop;
