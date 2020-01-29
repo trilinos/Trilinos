@@ -167,6 +167,42 @@ namespace Zoltan2{
             second_used = false;
 	    return *this;
 	  }
+
+          //stub overloads for FEMultiVector ETI
+          
+          static inline IcePropVtxLabel this_type_is_missing_a_specialization() {
+            return IcePropVtxLabel();
+          }
+
+          friend IcePropVtxLabel operator- (const IcePropVtxLabel& neg){
+            IcePropVtxLabel ret;
+            return ret;
+          }
+
+          friend IcePropVtxLabel operator*(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
+            IcePropVtxLabel ret;
+            return ret;
+          }
+
+          friend IcePropVtxLabel operator+(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
+            IcePropVtxLabel ret;
+            return ret;
+          }
+
+          friend IcePropVtxLabel operator-(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
+            IcePropVtxLabel ret;
+            return ret;
+          }
+
+          friend IcePropVtxLabel operator/(const IcePropVtxLabel& one, const IcePropVtxLabel& other){
+            IcePropVtxLabel ret;
+            return ret;
+          }
+
+          friend bool operator!=(const IcePropVtxLabel& lhs, const IcePropVtxLabel& rhs){
+            return !(lhs == rhs);
+          }
+          
 	  // += overload
 	  // for communicating copy's labels over processor boundaries.
           IcePropVtxLabel& operator+=(const IcePropVtxLabel& copy) {
@@ -267,6 +303,7 @@ namespace Kokkos {
       static const bool isOrdinal = true;
       static const bool isComparable = true;
       static const bool hasMachineParameters = false;
+      static KOKKOS_FORCEINLINE_FUNCTION val_type conj( const val_type &x){ return x; }
       static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude(
 	const val_type &x) 
       {
