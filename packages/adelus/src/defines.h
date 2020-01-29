@@ -101,54 +101,54 @@
 
 #ifdef ZCPLX
 
-#define CONST_ONE {1.0, 0.0}
-#define CONST_MINUS_ONE {-1.0, 0.0}
-#define CONST_ZERO {0.0, 0.0}
-#define NEGATIVE(X,Y) (Y).r=-(X).r;(Y).i=-(X).i
-#define ABS_VAL(X) ((X).r * (X).r + (X).i * (X).i)
-#define INVERSE(X,W,Z) (Z).r=(X).r/(W);(Z).i=-(X).i/(W)
-#define MULTIPLY(X,Y,Z) (Z).r=(X).r*(Y).r-(X).i*(Y).i;(Z).i=(X).r*(Y).i+(X).i*(Y).r
-#define DIVIDE(X,Y,W,Z) (Z).r=((X).r*(Y).r+(X).i*(Y).i)/(W);(Z).i=((X).i*(Y).r-(X).r*(Y).i)/(W)
+#define ADELUS_CONST_ONE {1.0, 0.0}
+#define ADELUS_CONST_MINUS_ONE {-1.0, 0.0}
+#define ADELUS_CONST_ZERO {0.0, 0.0}
+#define ADELUS_NEGATIVE(X,Y) (Y).r=-(X).r;(Y).i=-(X).i
+#define ADELUS_ABS_VAL(X) ((X).r * (X).r + (X).i * (X).i)
+#define ADELUS_INVERSE(X,W,Z) (Z).r=(X).r/(W);(Z).i=-(X).i/(W)
+#define ADELUS_MULTIPLY(X,Y,Z) (Z).r=(X).r*(Y).r-(X).i*(Y).i;(Z).i=(X).r*(Y).i+(X).i*(Y).r
+#define ADELUS_DIVIDE(X,Y,W,Z) (Z).r=((X).r*(Y).r+(X).i*(Y).i)/(W);(Z).i=((X).i*(Y).r-(X).r*(Y).i)/(W)
 
 #endif
 
 #ifdef  SCPLX
 
-#define CONST_ONE {1.0, 0.0}
-#define CONST_MINUS_ONE {-1.0, 0.0}
-#define CONST_ZERO {0.0, 0.0}
-#define NEGATIVE(X,Y) (Y).r=-(X).r;(Y).i=-(X).i
-#define ABS_VAL(X) ((X).r * (X).r + (X).i * (X).i)
-#define INVERSE(X,W,Z) (Z).r=(X).r/(W);(Z).i=-(X).i/(W)
-#define MULTIPLY(X,Y,Z) (Z).r=(X).r*(Y).r-(X).i*(Y).i;(Z).i=(X).r*(Y).i+(X).i*(Y).r
-#define DIVIDE(X,Y,W,Z) (Z).r=((X).r*(Y).r+(X).i*(Y).i)/(W);(Z).i=((X).i*(Y).r-(X).r*(Y).i)/(W)
+#define ADELUS_CONST_ONE {1.0, 0.0}
+#define ADELUS_CONST_MINUS_ONE {-1.0, 0.0}
+#define ADELUS_CONST_ZERO {0.0, 0.0}
+#define ADELUS_NEGATIVE(X,Y) (Y).r=-(X).r;(Y).i=-(X).i
+#define ADELUS_ABS_VAL(X) ((X).r * (X).r + (X).i * (X).i)
+#define ADELUS_INVERSE(X,W,Z) (Z).r=(X).r/(W);(Z).i=-(X).i/(W)
+#define ADELUS_MULTIPLY(X,Y,Z) (Z).r=(X).r*(Y).r-(X).i*(Y).i;(Z).i=(X).r*(Y).i+(X).i*(Y).r
+#define ADELUS_DIVIDE(X,Y,W,Z) (Z).r=((X).r*(Y).r+(X).i*(Y).i)/(W);(Z).i=((X).i*(Y).r-(X).r*(Y).i)/(W)
 
 #endif
 
 
 #ifdef DREAL
 
-#define CONST_ONE 1.0
-#define CONST_MINUS_ONE -1.0
-#define CONST_ZERO 0.0
-#define NEGATIVE(X,Y) (Y)=-(X)
-#define ABS_VAL(X) (fabs(X))
-#define INVERSE(X,W,Z) (Z)=CONST_ONE/(X)
-#define MULTIPLY(X,Y,Z) (Z)=(X)*(Y)
-#define DIVIDE(X,Y,W,Z) (Z)=(X)/(Y)
+#define ADELUS_CONST_ONE 1.0
+#define ADELUS_CONST_MINUS_ONE -1.0
+#define ADELUS_CONST_ZERO 0.0
+#define ADELUS_NEGATIVE(X,Y) (Y)=-(X)
+#define ADELUS_ABS_VAL(X) (fabs(X))
+#define ADELUS_INVERSE(X,W,Z) (Z)=CONST_ONE/(X)
+#define ADELUS_MULTIPLY(X,Y,Z) (Z)=(X)*(Y)
+#define ADELUS_DIVIDE(X,Y,W,Z) (Z)=(X)/(Y)
 
 #endif
 
 #ifdef SREAL
 
-#define CONST_ONE 1.0
-#define CONST_MINUS_ONE -1.0
-#define CONST_ZERO 0.0
-#define NEGATIVE(X,Y) (Y)=-(X)
-#define ABS_VAL(X) (fabs(X))
-#define INVERSE(X,W,Z) (Z)=CONST_ONE/(X)
-#define MULTIPLY(X,Y,Z) (Z)=(X)*(Y)
-#define DIVIDE(X,Y,W,Z) (Z)=(X)/(Y)
+#define ADELUS_CONST_ONE 1.0
+#define ADELUS_CONST_MINUS_ONE -1.0
+#define ADELUS_CONST_ZERO 0.0
+#define ADELUS_NEGATIVE(X,Y) (Y)=-(X)
+#define ADELUS_ABS_VAL(X) (fabs(X))
+#define ADELUS_INVERSE(X,W,Z) (Z)=CONST_ONE/(X)
+#define ADELUS_MULTIPLY(X,Y,Z) (Z)=(X)*(Y)
+#define ADELUS_DIVIDE(X,Y,W,Z) (Z)=(X)/(Y)
 
 #endif
 
