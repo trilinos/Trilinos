@@ -691,29 +691,24 @@ namespace MueLu {
             }
           }
 
-          std::string drop_tol_mode("MONTE_CARLO");
-
+          std::string drop_tol_mode("SCALED");
           if (getenv("MUELU_DROP_TOLERANCE_MODE")) {
             drop_tol_mode = std::string(getenv("MUELU_DROP_TOLERANCE_MODE"));
           }
-
           printf("DJS: Drop Tolerance Mode: %s\n", drop_tol_mode.c_str());
 
-          int drop_tol_value = 0;
-          if (getenv("MUELU_DROP_TOLERANCE_VALUE")) {
-            drop_tol_value = atoi(getenv("MUELU_DROP_TOLERANCE_VALUE"));
-            printf("DJS: Tolerance Value: %d\n", drop_tol_value);
+          int drop_tol_verbose = 0;
+          if (getenv("MUELU_DROP_TOLERANCE_VERBOSE")) {
+            drop_tol_verbose = atoi(getenv("MUELU_DROP_TOLERANCE_VERBOSE"));
           }
+          printf("DJS: Tolerance verbose: %d\n", drop_tol_verbose);
 
           double drop_tol_threshold = 0.0;
           if (getenv("MUELU_DROP_TOLERANCE_THRESHOLD")) {
             auto tmp = atoi(getenv("MUELU_DROP_TOLERANCE_THRESHOLD"));
             drop_tol_threshold = 1e-4*tmp;
-            printf("DJS: Threshold: %f\n", drop_tol_threshold);
           }
-
-          // DJS: Create RNG before entering row loop
-          static auto gen = std::mt19937(drop_tol_value);
+          printf("DJS: Threshold: %f\n", drop_tol_threshold);
 
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
@@ -749,10 +744,7 @@ namespace MueLu {
             if ( true ) {
 
               // default
-              if (  drop_tol_mode != std::string("MONTE_CARLO")
-                 && drop_tol_mode != std::string("SCALED")
-                 && drop_tol_mode != std::string("KEEP")
-                 ) {
+              if (drop_tol_mode == std::string("DEFAULT")) {
                 for (LO colID = 0; colID < nnz; colID++) {
 
                   LO col = indices[colID];
@@ -775,15 +767,6 @@ namespace MueLu {
                   }
                 }
               } else {
-                // DJS: Let's pre compute aij - aiiajj for all entries in the column,
-                // and store in vector of std::pairs<colID,aij-aiijj> and then
-                // sort them on aij-aiijj, which will give us the split points.  Grab a random number,
-                // pick the split from that and then drop all of the stuff which is past the split.
-                // NOTE: We want to drop all values below the split and keep all values above it.
-                // NOTE: Please always keep the diagonal :)
-                // For Monte Carlo: We also need some means of RNG seed control.  Add an RNG seed option to Trilinos Couplings example and then
-                //      use that RNG here.
-
                 struct DropTol {
 
                   DropTol()               = default;
@@ -793,11 +776,12 @@ namespace MueLu {
                   DropTol& operator=(DropTol const&) = default;
                   DropTol& operator=(DropTol &&)     = default;
 
-                  DropTol(double m, int c, bool d)
-                    : mag{m}, col{c}, drop{d}
+                  DropTol(double m_, double a_, int c, bool d)
+                    : m{m_}, a{a_},  col{c}, drop{d}
                   {}
 
-                  double mag  {0.0};
+                  double m  {0.0};
+                  double a    {0.0};
                   int    col  {INT_MAX};
                   bool   drop {true};
                 };
@@ -811,74 +795,100 @@ namespace MueLu {
                   LO col = indices[colID];
 
                   if (row == col) {
-                    drop_vec.emplace_back( 0.0, static_cast<int>(colID), false);
+                    drop_vec.emplace_back( 0.0, 0.0, int(colID), false);
                     continue;
                   }
 
                   SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
-                  typename STS::magnitudeType aiiajj = STS::magnitude(drop_tol_threshold*drop_tol_threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
-                  //typename STS::magnitudeType aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                  typename STS::magnitudeType aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                   typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 
-                  //drop_vec.emplace_back(static_cast<double>(aij - aiiajj), static_cast<int>(colID), false);
-                  if (aij > aiiajj) {
-                    drop_vec.emplace_back(double(aij-aiiajj), int(colID), false);
-                  } else {
-                    drop_vec.emplace_back(double(aij-aiiajj), int(colID), true);
-                  }
+                  drop_vec.emplace_back(double(aij), double(aiiajj), int(colID), false);
                 }
 
                 const int n = int(drop_vec.size());
-                std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) { return a.mag > b.mag; });
 
-                // use monte carlo
-                if (drop_tol_mode == std::string("MONTE_CARLO")) {
+                if (drop_tol_mode == std::string("CUT_1")) {
 
-                  int s = 1;
-                  for (; s<n && !drop_vec[s].drop; ++s);
+                  std::sort( drop_vec.begin(), drop_vec.end()
+                           , [](DropTol const& a, DropTol const& b) {
+                               return a.m > b.m;
+                             }
+                           );
 
-
-                  std::uniform_int_distribution<> dis(1, s);
-
-                  const int k = dis(gen);
-
-                  if (getenv("MUELU_DROP_TOLERANCE_VERBOSE")) {
-                    printf( "DJS:  row(%d), n(%d), s(%d), k(%d)\n"
-                          , int(row), n, s, k);
-                  }
-
-                  for (int i=k; i<n; ++i) {
-                    drop_vec[i].drop = true;
-                  }
-                } else if (drop_tol_mode == std::string("SCALED")) {
-
-                  double scale_value = 1e-3*drop_tol_value;
-
-                  if (scale_value < 1.0) scale_value = 1.0;
-
-
-                  constexpr double esplion = 1e-15;
-
-                  if ( drop_vec[0].mag < esplion) {
-                    drop_vec[0].drop = true;
-                  }
-
+                  bool drop = false;
                   for (int i=1; i<n; ++i) {
-                    if (  drop_vec[i-1].drop
-                       || drop_vec[i].mag < esplion
-                       || drop_vec[i-1].mag/drop_vec[i].mag > scale_value
-                       )
-                    {
-                      drop_vec[i].drop = true;
+                    if (!drop) {
+                      auto const& x = drop_vec[i-1];
+                      auto const& y = drop_vec[i];
+                      auto a = x.m;
+                      auto b = y.m;
+                      if (a/b > drop_tol_threshold) {
+                        drop = true;
+                        if (drop_tol_verbose) {
+                          printf("DJS: KEEP, N, ROW:  %d, %d, %d\n", i+1, n, int(row));
+                        }
+                      }
                     }
+                    drop_vec[i].drop = drop;
                   }
-                } else { // KEEP
-                  for (int i=drop_tol_value; i<n; ++i) {
-                    drop_vec[i].drop = true;
+                }
+                else if (drop_tol_mode == std::string("CUT_2")) {
+
+                  std::sort( drop_vec.begin(), drop_vec.end()
+                           , [](DropTol const& a, DropTol const& b) {
+                               return a.m/a.a > b.m/b.a;
+                             }
+                           );
+
+                  bool drop = false;
+                  for (int i=1; i<n; ++i) {
+                    if (!drop) {
+                      auto const& x = drop_vec[i-1];
+                      auto const& y = drop_vec[i];
+                      auto a = x.m/x.a;
+                      auto b = y.m/y.a;
+                      if (a/b > drop_tol_threshold) {
+                        drop = true;
+                        if (drop_tol_verbose) {
+                          printf("DJS: KEEP, N, ROW:  %d, %d, %d\n", i+1, n, int(row));
+                        }
+                      }
+                    }
+                    drop_vec[i].drop = drop;
+                  }
+                }
+                else if (drop_tol_mode == std::string("CUT_3")) {
+
+                  std::sort( drop_vec.begin(), drop_vec.end()
+                           , [](DropTol const& a, DropTol const& b) {
+                               return a.m*a.a > b.m*b.a;
+                             }
+                           );
+
+                  bool drop = false;
+                  for (int i=1; i<n; ++i) {
+                    if (!drop) {
+                      auto const& x = drop_vec[i-1];
+                      auto const& y = drop_vec[i];
+                      auto a = x.m*x.a;
+                      auto b = y.m*y.a;
+                      if (a/b > drop_tol_threshold) {
+                        drop = true;
+                        if (drop_tol_verbose) {
+                          printf("DJS: KEEP, N, ROW:  %d, %d, %d\n", i+1, n, int(row));
+                        }
+                      }
+                    }
+                    drop_vec[i].drop = drop;
                   }
                 }
 
-                std::sort(drop_vec.begin(), drop_vec.end(), [](DropTol const& a, DropTol const& b) { return a.col < b.col; } );
+                std::sort( drop_vec.begin(), drop_vec.end()
+                         , [](DropTol const& a, DropTol const& b) {
+                             return a.col < b.col;
+                           }
+                         );
 
                 for (LO colID = 0; colID < nnz; colID++) {
 
@@ -919,6 +929,7 @@ namespace MueLu {
             }
             rows[row+1] = realnnz;
           } //for (LO row = 0; row < numRows; row++)
+
           } //subtimer
           columns.resize(realnnz);
 
