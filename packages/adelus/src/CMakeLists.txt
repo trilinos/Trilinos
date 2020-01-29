@@ -34,7 +34,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #
 
 APPEND_SET(HEADERS
-  Adelus_ConfigDefs.h
+  Adelus_ConfigDefs.hpp
   )
 
 #
@@ -42,7 +42,7 @@ APPEND_SET(HEADERS
 #
 
 APPEND_SET(HEADERS
-  AdelusVersion.h
+  AdelusVersion.hpp
   )
 
 APPEND_SET(SOURCES
@@ -72,6 +72,7 @@ IF (TPL_ENABLE_MPI)
 
   APPEND_SET(SOURCES
     pcomm.cpp
+    distribute.cpp
     )
 
   #
