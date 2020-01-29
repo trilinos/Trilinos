@@ -14,14 +14,14 @@ if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CLANG" ]] ; then
-    export ATDM_CONFIG_COMPILER=CLANG-3.9.0
-  elif [[ "$ATDM_CONFIG_COMPILER" != "CLANG-3.9.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CLANG-7.0.1
+  elif [[ "$ATDM_CONFIG_COMPILER" != "CLANG-7.0.1" ]] ; then
     echo
     echo "***"
     echo "*** ERROR: CLANG COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only CLANG compilers supported on this system are:"
-    echo "***   clang (defaults to clang-3.9.0)"
-    echo "***   clang-3.9.0"
+    echo "***   clang (defaults to clang-7.0.1)"
+    echo "***   clang-7.0.1"
     echo "***"
     return
   fi
@@ -133,7 +133,14 @@ else
   export OMP_NUM_THREADS=1
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
+if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-7.0.1" ]] ; then
+  module load sems-clang/7.0.1
+  export OMPI_CXX=`which clang++`
+  export OMPI_CC=`which clang`
+  export OMPI_FC=`which gfortran`
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
+elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
   module load sems-clang/3.9.0
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
