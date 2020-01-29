@@ -207,14 +207,6 @@ namespace Belos {
                         RecycleSubspace = 0x2    /*!< Destroy any existing subspace inside the solver. */
   };
 
-  /// \brief The string name corresponding to the given StatusType enum value.
-  ///
-  /// This method is DEPRECATED because the generic-sounding name of
-  /// this function makes it easy to pass in the wrong enum type.  Use
-  /// \c convertStatusTypeToString() instead.
-  BELOS_DEPRECATED const char*
-  toString (const StatusType status);
-
   //! The string name corresponding to the given StatusType enum value.
   std::string
   convertStatusTypeToString (const StatusType status);

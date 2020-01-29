@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -61,12 +59,12 @@ private:
 public:
   using device_type = Kokkos::Device<execution_space, memory_space>;
 
-  StubGlobalObject () = delete;
-  StubGlobalObject (const int input) :
-    localData_ (std::make_shared<int> (input))
+  StubGlobalObject() = delete;
+  StubGlobalObject(const int input) :
+    localData_(std::make_shared<int> (input))
   {}
 
-  int value () const {
+  int value() const {
     return *localData_;
   }
 
@@ -79,9 +77,9 @@ private:
   // your class must expose a public method for getting a pointer to
   // the data, try your best to make that a nonowning pointer.
   friend std::shared_ptr<int>
-  getStubGlobalObjectOwningLocalData (StubGlobalObject& g)
+  getStubGlobalObjectOwningLocalData(StubGlobalObject& G)
   {
-    return g.localData_;
+    return G.localData_;
   }
 };
 
@@ -90,69 +88,49 @@ private:
 namespace Tpetra {
 namespace Details {
 
-template<class MemorySpace>
-struct GetMasterLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadOnly> >
-{
-private:
-  using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadOnly>;
+template<class AccessMode>
+struct StubGlobalObjectLocalObjectImpl {};
 
-public:
+template<>
+struct StubGlobalObjectLocalObjectImpl<Access<EAccess::ReadOnly> >
+{
   // In practice, prefer things that behave like std::unique_ptr,
   // since you don't actually need to share state.
   using master_local_object_type = std::shared_ptr<const int>;
 
   static master_local_object_type
-  get (local_access_type LA)
+  getOwning(StubGlobalObject& G)
   {
-    std::shared_ptr<int> p_nc = getStubGlobalObjectOwningLocalData (LA.G_);
-    return std::shared_ptr<const int> (p_nc);
+    std::shared_ptr<int> p_nc =
+      getStubGlobalObjectOwningLocalData(G);
+    return std::shared_ptr<const int>(p_nc);
   }
-};
 
-template<class MemorySpace>
-struct GetNonowningLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadOnly> >
-{
-private:
-  using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadOnly>;
-  using master_local_object_type =
-    typename GetMasterLocalObject<local_access_type>::master_local_object_type;
-
-public:
   using nonowning_local_object_type = const int*;
-
   static nonowning_local_object_type
-  get (local_access_type /* LA */,
-       const master_local_object_type& p)
+  getNonowning(StubGlobalObject& /* G */,
+               const master_local_object_type& p)
   {
     return p.get ();
   }
 };
 
 // Example of the "copy-back" model.
-template<class MemorySpace>
-struct GetMasterLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::WriteOnly> >
+template<>
+struct StubGlobalObjectLocalObjectImpl<Access<EAccess::WriteOnly> >
 {
 private:
-  using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::WriteOnly>;
-
   struct Deleter {
     // Capturing the std::shared_ptr means that we increment the
     // reference count, and thus keep it alive.
-    Deleter (int* raw, std::shared_ptr<int> sp) : raw_ (raw), sp_ (sp) {}
-
+    Deleter(int* raw, std::shared_ptr<int> sp) : raw_ (raw), sp_ (sp)
+    {}
     void operator() (int* p) {
       if (p != nullptr) {
         *sp_ = *raw_; // "copy back" happens here
         delete p;
       }
     }
-
     int* raw_ = nullptr;
     std::shared_ptr<int> sp_;
   };
@@ -161,82 +139,99 @@ public:
   using master_local_object_type = std::unique_ptr<int, Deleter>;
 
   static master_local_object_type
-  get (local_access_type LA)
+  getOwning(StubGlobalObject& G)
   {
-    std::shared_ptr<int> p_nc = getStubGlobalObjectOwningLocalData (LA.G_);
+    std::shared_ptr<int> p_nc = getStubGlobalObjectOwningLocalData(G);
     // Test write-only-ness, by deliberately ignoring any existing
     // value.  In practice, your class could do this in debug mode.
-    int* raw = new int (StubGlobalObject::flagValue);
-    Deleter deleter (raw, p_nc);
+    int* raw = new int(StubGlobalObject::flagValue);
+    Deleter deleter(raw, p_nc);
     return {raw, deleter};
   }
-};
 
-
-template<class MemorySpace>
-struct GetNonowningLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::WriteOnly> >
-{
-private:
-  using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::WriteOnly>;
-  using master_local_object_type =
-    typename GetMasterLocalObject<local_access_type>::master_local_object_type;
-
-public:
   using nonowning_local_object_type = int*;
 
   static nonowning_local_object_type
-  get (local_access_type /* LA */,
-       const master_local_object_type& p)
+  getNonowning(StubGlobalObject& /* G */,
+               const master_local_object_type& p)
   {
     return p.get ();
   }
 };
 
-template<class MemorySpace>
-struct GetMasterLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadWrite> >
+template<>
+struct StubGlobalObjectLocalObjectImpl<Access<EAccess::ReadWrite> >
 {
-private:
-  using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadWrite>;
-
-public:
   // In practice, prefer things that behave like std::unique_ptr,
   // since you don't actually need to share state.
   using master_local_object_type = std::shared_ptr<int>;
 
   static master_local_object_type
-  get (local_access_type LA)
+  getOwning(StubGlobalObject& G)
   {
-    return getStubGlobalObjectOwningLocalData (LA.G_);
+    return getStubGlobalObjectOwningLocalData(G);
   }
-};
 
-template<class MemorySpace>
-struct GetNonowningLocalObject<
-  LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadWrite> >
-{
-private:
-  using local_access_type =
-    LocalAccess<StubGlobalObject, MemorySpace, AccessMode::ReadWrite>;
-  using master_local_object_type =
-    typename GetMasterLocalObject<local_access_type>::master_local_object_type;
-
-public:
   using nonowning_local_object_type = int*;
 
   static nonowning_local_object_type
-  get (local_access_type /* LA */,
-       const master_local_object_type& p)
+  getNonowning(StubGlobalObject& /* G */,
+               const master_local_object_type& p)
   {
     return p.get ();
   }
 };
 
+//////////////////////////////////////////////////////////////////////
+
+template<class ... Args>
+struct GetMasterLocalObject<LocalAccess<StubGlobalObject, Args...>>
+{
+private:
+  using local_access_type = LocalAccess<StubGlobalObject, Args...>;
+  using access_mode = typename local_access_type::access_mode;
+  using impl_type =
+    StubGlobalObjectLocalObjectImpl<access_mode>;
+
+public:
+  // In practice, prefer things that behave like std::unique_ptr,
+  // since you don't actually need to share state.
+  using master_local_object_type =
+    typename impl_type::master_local_object_type;
+
+  static master_local_object_type get(local_access_type LA) {
+    return impl_type::getOwning(LA.G_);
+  }
+};
+
+//////////////////////////////////////////////////////////////////////
+
+template<class ... Args>
+struct GetNonowningLocalObject<LocalAccess<StubGlobalObject, Args...>>
+{
+private:
+  using local_access_type = LocalAccess<StubGlobalObject, Args...>;
+  using access_mode = typename local_access_type::access_mode;
+  using impl_type = StubGlobalObjectLocalObjectImpl<access_mode>;
+
+public:
+  using master_local_object_type =
+    typename impl_type::master_local_object_type;
+  using nonowning_local_object_type =
+    typename impl_type::nonowning_local_object_type;
+
+  static nonowning_local_object_type
+  get(local_access_type LA,
+      const master_local_object_type& p)
+  {
+    return impl_type::getNonowning(LA.G_, p);
+  }
+};
+
 } // namespace Details
 } // namespace Tpetra
+
+//////////////////////////////////////////////////////////////////////
 
 namespace { // (anonymous)
 
