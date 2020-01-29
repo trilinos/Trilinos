@@ -238,11 +238,13 @@ void factor(ZDView& ZV,                 // matrix and rhs
   //DATA_TYPE *row3 = reinterpret_cast<DATA_TYPE *>(row3_view.data());  /* ptr to temporary vector for rows */
   //int *pivot_vec  = reinterpret_cast<int *>(pivot_vec_view.data());   /* ptr to vector storing list of pivot rows */
 
+#ifdef PRINT_STATUS
   printf("Rank %i -- factor() Begin LU factorization, execution_space %s, memory_space %s\n", me, typeid(execution_space).name(), typeid(memory_space).name());
 #ifdef USE_DEEPCOPY
   printf("Rank %i -- factor() -- use Kokkos::deep_copy, KokkosBlas::iamax\n", me);
 #else
   printf("Rank %i -- factor() -- use KokkosBlas::copy, KokkosBlas::iamax\n", me);
+#endif
 #endif
   
 #ifdef GET_TIMING
@@ -1063,11 +1065,11 @@ void factor(ZDView& ZV,                 // matrix and rhs
         //act_row_ptr = sav_piv_row_ptr = row1; 
         act_row_j = 0; sav_piv_row_i=sav_piv_row_j=0; //KK
      }
-#ifdef PRINT_STATUS
-    if (((j%1000) == 0) && (me == 0)) {
-      fprintf(stderr," Column %d completed\n",j);
-    }
-#endif
+//#ifdef PRINT_STATUS
+//    if (((j%1000) == 0) && (me == 0)) {
+//      fprintf(stderr," Column %d completed\n",j);
+//    }
+//#endif
   }
 
 #ifdef GET_TIMING

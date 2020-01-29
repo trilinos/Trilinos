@@ -259,8 +259,10 @@ void back_solve6(ZDView& ZV)
 
   on_col = my_pos;
 
+#ifdef PRINT_STATUS
   printf("Rank %i -- back_solve6() Begin back solve, execution_space %s, memory_space %s\n",me, typeid(execution_space).name(), typeid(memory_space).name());
-  
+#endif
+
   for (j = j2; j >= 1-nprocs_row-extra; j--) {
 
     if ((j+nprocs_row-1 >= 0) && (n_rhs_this > 0)) {

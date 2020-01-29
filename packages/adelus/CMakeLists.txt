@@ -45,6 +45,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_USEDEEPCOPY
   "Use Kokkos::deep_copy for BLAS copy."
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PRINTSTATUS
+  PRINT_STATUS
+  "Enable status print."
+  OFF )
+
 #
 # C) Add the libraries, tests, and examples
 #

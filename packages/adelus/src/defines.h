@@ -48,7 +48,7 @@
 #undef CBLAS
 #undef DEBUG
 #define  OVERLAP
-#undef  PRINT_STATUS
+//#undef  PRINT_STATUS
 #undef   TIMING0
 
 

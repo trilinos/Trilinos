@@ -163,7 +163,9 @@ void perm1_(ZDView& ZV, int *num_my_rhs) {
     change_send = 0;
     next_s = 0;
 
+#ifdef PRINT_STATUS
     printf("Rank %i -- perm1_() Begin permutation, execution_space %s, memory_space %s\n",me,typeid(execution_space).name(),typeid(memory_space).name());
+#endif
 
     /* XCOPY(num,(vec),one,rhs_temp,one);  */
     for (i=0; i<my_rows; i++) {

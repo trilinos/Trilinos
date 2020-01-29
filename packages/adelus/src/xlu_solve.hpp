@@ -140,7 +140,9 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
 
   //begin_rhs = my_cols * my_rows;
 
+#ifdef PRINT_STATUS
   printf("Rank %i -- lusolve_() Begin LU+Solve+Perm, value_type %s, execution_space %s, memory_space %s\n", me, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+#endif
 
   /* allocate arrays for factor/solve */
 
@@ -212,7 +214,9 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
   initcomm();
 
   //factor(mat);
+#ifdef PRINT_STATUS
   printf("OpenMP or Cuda: Rank %i -- factor() starts ...\n", me);
+#endif
   factor(ZV,
          col1_view,
          row1_view,
@@ -229,13 +233,17 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
     /* Perform the backsolve  */
 
     //back_solve6(mat, rhs);
+#ifdef PRINT_STATUS
     printf("OpenMP or Cuda: Rank %i -- back_solve6() starts ...\n", me);
+#endif
     back_solve6(ZV);
 
     /* Permute the results -- undo the torus map    */
 
     //perm1_((mat+begin_rhs),&my_rhs);
+#ifdef PRINT_STATUS
     printf("OpenMP or Cuda: Rank %i -- perm1_()(permute the results -- undo the torus map) starts ...\n", me);
+#endif
     auto sub_ZV = subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
     perm1_(sub_ZV, &my_rhs);
   }

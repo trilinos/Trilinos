@@ -114,6 +114,10 @@ IF(Adelus_ENABLE_ZCPLX)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
     ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
+  IF(Adelus_ENABLE_PRINTSTATUS)
+    MESSAGE("     ... allow status print")
+    ADD_DEFINITIONS(-DPRINT_STATUS)
+  ENDIF()
   TRIBITS_ADD_LIBRARY(
     zadelus
     HEADERS ${HEADERS}
@@ -134,6 +138,10 @@ ELSEIF(Adelus_ENABLE_SCPLX)
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
     ADD_DEFINITIONS(-DUSE_DEEPCOPY)
+  ENDIF()
+  IF(Adelus_ENABLE_PRINTSTATUS)
+    MESSAGE("     ... allow status print")
+    ADD_DEFINITIONS(-DPRINT_STATUS)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
     cadelus
@@ -156,6 +164,10 @@ ELSEIF(Adelus_ENABLE_SREAL)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
     ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
+  IF(Adelus_ENABLE_PRINTSTATUS)
+    MESSAGE("     ... allow status print")
+    ADD_DEFINITIONS(-DPRINT_STATUS)
+  ENDIF()
   TRIBITS_ADD_LIBRARY(
     sadelus
     HEADERS ${HEADERS}
@@ -176,6 +188,10 @@ ELSEIF(Adelus_ENABLE_DREAL)
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
     ADD_DEFINITIONS(-DUSE_DEEPCOPY)
+  ENDIF()
+  IF(Adelus_ENABLE_PRINTSTATUS)
+    MESSAGE("     ... allow status print")
+    ADD_DEFINITIONS(-DPRINT_STATUS)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
     dadelus
