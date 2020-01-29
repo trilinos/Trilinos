@@ -65,11 +65,8 @@ jdkotul@sandia.gov
                my_row   --- my subblock of the matrix
                my_col   --- my subblock of the matrix
                                                                      */
-
-#ifndef __DISTRIBUTE_HPP__
-#define __DISTRIBUTE_HPP__
-
 #include <mpi.h>
+#include "distribute.hpp"
 
 namespace Adelus {
 
@@ -83,8 +80,57 @@ void distmat_(
                 int *my_first_col_,
                 int *my_rhs_,
                 int *my_row,
-                int *my_col);
+                int *my_col)
+{
+
+    int rank,nprocs;
+    int nprocs_col_, nrows;
+    int nprocs_row_;
+
+/*  Determine who I am and the number of processors that are being used    */
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+
+    nrows = *ncols;
+
+    nprocs_row_ = *nprocsr;
+
+    nprocs_col_ = nprocs/(*nprocsr) ;
+
+    /* Distribute the rows and columns   */
+
+    *my_row = rank/(*nprocsr);
+    *my_col = rank %(nprocs_row_);
+
+
+    *my_rows_ = nrows / nprocs_col_;
+
+    *my_first_row_ = (*my_row)*(*my_rows_) +1;
+
+    *my_first_row_ = ((*my_row) > (nrows%nprocs_col_)) ? *my_first_row_ + (nrows%nprocs_col_) :
+       *my_first_row_ + (*my_row);
+
+    if (*my_row < nrows % nprocs_col_)
+        ++(*my_rows_);
+
+    *my_cols_ = nrows / nprocs_row_;
+
+    *my_first_col_ = (*my_col)*(*my_cols_) + 1;
+
+    *my_first_col_ = ((*my_col) > (nrows%nprocs_row_)) ? *my_first_col_ + (nrows%nprocs_row_) :
+       *my_first_col_ + (*my_col);
+
+    *my_cols_ = *ncols / *nprocsr;
+    if (*my_col < *ncols % (*nprocsr))
+        ++(*my_cols_);
+
+    /* Distribute the RHS per processor */
+
+    *my_rhs_ = *nrhs_ / *nprocsr;
+    if (*my_col < *nrhs_ % (*nprocsr)) ++(*my_rhs_);
+
+}
 
 }//namespace Adelus
-
-#endif
