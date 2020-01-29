@@ -13,11 +13,12 @@ namespace Tacho {
     ///
     class Graph {
     public:
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+
+      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
 
       // scotch use int and long is misinterpreted in pointers
-      typedef Kokkos::View<ordinal_type*,host_exec_space> size_type_array;
+      typedef Kokkos::View<ordinal_type*,host_device_type> size_type_array;
 
     private:
       ordinal_type _m;
@@ -65,13 +66,13 @@ namespace Tacho {
         init(m, nnz, ap, aj);
       }
       
-      template<typename ValueType, typename SpaceType>
+      template<typename ValueType, typename DeviceType>
       inline
-      Graph(const CrsMatrixBase<ValueType,SpaceType> &A) {
+      Graph(const CrsMatrixBase<ValueType,DeviceType> &A) {
         //
         // host mirroring
         //
-        CrsMatrixBase<ValueType,host_exec_space> AA;
+        CrsMatrixBase<ValueType,host_device_type> AA;
         AA.createMirror(A);
         AA.copy(A);
         

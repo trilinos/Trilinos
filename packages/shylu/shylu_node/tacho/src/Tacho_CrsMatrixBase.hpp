@@ -12,15 +12,23 @@ namespace Tacho {
     /// \class CrsMatrixBase
     /// \breif CRS matrix base object using Kokkos view and subview
     template<typename ValueType,
-             typename SpaceType>
+             typename DeviceType>
     class CrsMatrixBase {
     public:
-      typedef ValueType    value_type;
-      typedef SpaceType    space_type;
+      typedef ValueType value_type;
+      typedef DeviceType device_type;
 
-      typedef Kokkos::View<value_type*,  space_type> value_type_array;
-      typedef Kokkos::View<ordinal_type*,space_type> ordinal_type_array;
-      typedef Kokkos::View<size_type*,   space_type> size_type_array;
+      typedef typename device_type::execution_space exec_space;
+      typedef typename device_type::memory_space exec_memory_space;
+
+      typedef Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace> host_device_type;
+      
+      typedef typename host_device_type::execution_space host_space;
+      typedef typename host_device_type::memory_space host_memory_space;      
+
+      typedef Kokkos::View<value_type*,  device_type> value_type_array;
+      typedef Kokkos::View<ordinal_type*,device_type> ordinal_type_array;
+      typedef Kokkos::View<size_type*,   device_type> size_type_array;
     
       template<typename, typename>
       friend class CrsMatrixBase;
@@ -221,9 +229,9 @@ namespace Tacho {
         _n        = b._n;
         _nnz      = b._nnz;
       
-        _ap = Kokkos::create_mirror_view(typename space_type::memory_space(), b._ap);
-        _aj = Kokkos::create_mirror_view(typename space_type::memory_space(), b._aj);
-        _ax = Kokkos::create_mirror_view(typename space_type::memory_space(), b._ax);
+        _ap = Kokkos::create_mirror_view(exec_memory_space(), b._ap);
+        _aj = Kokkos::create_mirror_view(exec_memory_space(), b._aj);
+        _ax = Kokkos::create_mirror_view(exec_memory_space(), b._ax);
       }
 
       /// \brief deep copy of matrix b
@@ -292,17 +300,18 @@ namespace Tacho {
                               const OrdinalTypeArray &p,
                               const OrdinalTypeArray &ip) {
     const ordinal_type m = A.NumRows(), n = A.NumCols();
-    typedef typename CrsMatrixType::space_type space_type;
+    typedef typename CrsMatrixType::exec_space exec_space;
+    typedef typename CrsMatrixType::exec_memory_space exec_memory_space;
 
     /// temporary matrix with the same structure
     auto ap = A.RowPtr();
     auto aj = A.Cols();
     auto ax = A.Values();
 
-    auto perm = Kokkos::create_mirror_view(typename space_type::memory_space(),  p); Kokkos::deep_copy(perm,  p);
-    auto peri = Kokkos::create_mirror_view(typename space_type::memory_space(), ip); Kokkos::deep_copy(peri, ip);
+    auto perm = Kokkos::create_mirror_view(exec_memory_space(),  p); Kokkos::deep_copy(perm,  p);
+    auto peri = Kokkos::create_mirror_view(exec_memory_space(), ip); Kokkos::deep_copy(peri, ip);
     {  /// permute row indices (exclusive scan)
-      Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > policy(0, m+1);
+      Kokkos::RangePolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > policy(0, m+1);
       Kokkos::parallel_scan
         (policy, KOKKOS_LAMBDA(const ordinal_type &i, size_type &update,
                                const bool &final) {
@@ -317,7 +326,7 @@ namespace Tacho {
       Kokkos::fence();
     }
     {  /// permute col indices (do not sort)
-      typedef Kokkos::TeamPolicy<space_type> team_policy_type;
+      typedef Kokkos::TeamPolicy<exec_space> team_policy_type;
       team_policy_type policy(m, Kokkos::AUTO()); ///, Kokkos::AUTO());
       Kokkos::parallel_for
         (policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {

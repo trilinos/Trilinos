@@ -14,9 +14,10 @@ namespace Tacho {
 
     class GraphTools_Metis {
     public:
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef Kokkos::View<idx_t*,host_exec_space> idx_t_array;
-      typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+
+      typedef Kokkos::View<idx_t*,host_device_type> idx_t_array;
+      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
 
     private:
         

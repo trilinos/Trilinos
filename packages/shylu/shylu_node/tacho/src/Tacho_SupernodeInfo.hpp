@@ -68,17 +68,24 @@ namespace Tacho {
     struct SupernodeInfo {
       typedef ValueType value_type;
       typedef SchedulerType scheduler_type;
-      typedef typename scheduler_type::execution_space exec_space;
 
-      typedef CrsMatrixBase<value_type,exec_space> crs_matrix_type;
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+      typedef typename device_type::execution_space exec_space;
+      typedef typename device_type::memory_space exec_memory_space;
 
-      typedef Kokkos::View<ordinal_type*,exec_space> ordinal_type_array;
-      typedef Kokkos::View<size_type*,exec_space> size_type_array;
-      typedef Kokkos::View<value_type*,exec_space> value_type_array;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+      typedef typename host_device_type::execution_space host_space;
+      typedef typename host_device_type::memory_space host_memory_space;
+
+      typedef CrsMatrixBase<value_type,device_type> crs_matrix_type;
+
+      typedef Kokkos::View<ordinal_type*,device_type> ordinal_type_array;
+      typedef Kokkos::View<size_type*,device_type> size_type_array;
+      typedef Kokkos::View<value_type*,device_type> value_type_array;
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> ordinal_pair_type;
-      typedef Kokkos::View<ordinal_pair_type*,exec_space> ordinal_pair_type_array;
-      typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix;
+      typedef Kokkos::View<ordinal_pair_type*,device_type> ordinal_pair_type_array;
+      typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> value_type_matrix;
 
       typedef DenseMatrixView<value_type,scheduler_type> dense_block_type;
       typedef DenseMatrixView<dense_block_type,scheduler_type> dense_matrix_of_blocks_type;
@@ -128,7 +135,7 @@ namespace Tacho {
         ~Supernode()  {}        
       };
       typedef struct Supernode supernode_type;
-      typedef Kokkos::View<supernode_type*,exec_space> supernode_type_array;
+      typedef Kokkos::View<supernode_type*,device_type> supernode_type_array;
 
       ///
       /// info for symbolic
@@ -236,8 +243,8 @@ namespace Tacho {
         {
           // finding max decendant supernode information is sequential
           // or level-based impl is required (too cumbersome..) 
-          auto h_supernodes = Kokkos::create_mirror_view(supernodes_); 
-          auto h_stree_parent = Kokkos::create_mirror_view(stree_parent_);           
+          auto h_supernodes = Kokkos::create_mirror_view(host_memory_space(), supernodes_); 
+          auto h_stree_parent = Kokkos::create_mirror_view(host_memory_space(), stree_parent_);           
           Kokkos::deep_copy(h_supernodes, supernodes_);
           Kokkos::deep_copy(h_stree_parent, stree_parent_);
           for (ordinal_type sid=0;sid<nsupernodes;++sid) {
@@ -428,7 +435,7 @@ namespace Tacho {
         const ordinal_type nsupernodes = self.supernodes.extent(0);
 
         auto d_last = Kokkos::subview(self.supernodes, nsupernodes - 1);
-        auto h_last = Kokkos::create_mirror_view(d_last);
+        auto h_last = Kokkos::create_mirror_view(host_memory_space(), d_last);
         Kokkos::deep_copy(h_last, d_last);
         auto last = h_last();
         //auto &last = supernodes(nsupernodes - 1);
@@ -461,7 +468,7 @@ namespace Tacho {
         
         // fill the matrix
         auto d_nnz = Kokkos::subview(ap, mm);
-        auto h_nnz = Kokkos::create_mirror_view(d_nnz);        
+        auto h_nnz = Kokkos::create_mirror_view(host_memory_space(), d_nnz);        
         Kokkos::deep_copy(h_nnz, d_nnz);
 
         const auto nnz = h_nnz();

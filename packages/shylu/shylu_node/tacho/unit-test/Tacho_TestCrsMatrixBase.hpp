@@ -12,8 +12,8 @@
 
 using namespace Tacho;
 
-typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
-typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
+typedef CrsMatrixBase<ValueType,HostDeviceType> CrsMatrixBaseHostType;
+typedef CrsMatrixBase<ValueType,DeviceType> CrsMatrixBaseDeviceType;
 
 TEST( CrsMatrixBase, constructor ) {  
   TEST_BEGIN;
@@ -149,7 +149,7 @@ TEST( CrsMatrixBase, permute ) {
   /// random permutation vector
   ///
   const ordinal_type m = Ad.NumRows();
-  typedef Kokkos::View<ordinal_type*,HostSpaceType> ordinal_type_array_host;
+  typedef Kokkos::View<ordinal_type*,HostDeviceType> ordinal_type_array_host;
   ordinal_type_array_host perm("perm", m), peri("peri", m);
 
   for (int i=0;i<m;++i)

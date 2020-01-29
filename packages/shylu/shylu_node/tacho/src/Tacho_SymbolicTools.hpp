@@ -10,9 +10,12 @@ namespace Tacho {
 
     class SymbolicTools {
     public:
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
-      typedef Kokkos::View<size_type*,host_exec_space> size_type_array;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+      typedef typename host_device_type::execution_space host_space;
+      typedef typename host_device_type::memory_space host_memory_space;
+
+      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
+      typedef Kokkos::View<size_type*,host_device_type> size_type_array;
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
@@ -509,10 +512,10 @@ namespace Tacho {
                     GraphToolType &G) {
         _m = A.NumRows();
         
-        _ap   = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), A.RowPtr());
-        _aj   = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), A.Cols());
-        _perm = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), G.PermVector());
-        _peri = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), G.InvPermVector());
+        _ap   = Kokkos::create_mirror_view(host_memory_space(), A.RowPtr());
+        _aj   = Kokkos::create_mirror_view(host_memory_space(), A.Cols());
+        _perm = Kokkos::create_mirror_view(host_memory_space(), G.PermVector());
+        _peri = Kokkos::create_mirror_view(host_memory_space(), G.InvPermVector());
 
         Kokkos::deep_copy(_ap, A.RowPtr());
         Kokkos::deep_copy(_aj, A.Cols());

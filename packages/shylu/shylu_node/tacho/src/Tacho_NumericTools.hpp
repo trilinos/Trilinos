@@ -54,7 +54,10 @@ namespace Tacho {
       /// device space typedefs
       ///
       typedef SchedulerType scheduler_type;
-      typedef typename scheduler_type::execution_space exec_space;
+
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+      typedef typename device_type::execution_space exec_space;
+      typedef typename device_type::memory_space exec_memory_space;
 
       typedef SupernodeInfo<value_type,scheduler_type> supernode_info_type;
       typedef typename supernode_info_type::crs_matrix_type crs_matrix_type;
@@ -70,10 +73,13 @@ namespace Tacho {
       typedef typename supernode_info_type::dense_block_type dense_block_type;
       typedef typename supernode_info_type::dense_matrix_of_blocks_type dense_matrix_of_blocks_type;
 
-      typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
+      typedef Kokkos::MemoryPool<device_type> memory_pool_type;
 
-      typedef Kokkos::DefaultHostExecutionSpace host_space;
-      typedef Kokkos::View<ordinal_type*,host_space> ordinal_type_array_host;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+      typedef typename host_device_type::execution_space host_space;
+      typedef typename host_device_type::memory_space host_memory_space;
+
+      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array_host;
 
     private:
 
@@ -174,7 +180,7 @@ namespace Tacho {
       void
       print_stat_factor() {
         double flop = 0;
-        auto h_supernodes = Kokkos::create_mirror_view(_supernodes);                    
+        auto h_supernodes = Kokkos::create_mirror_view(host_memory_space(), _supernodes);                    
         Kokkos::deep_copy(h_supernodes, _supernodes);  
         
         for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
@@ -366,7 +372,7 @@ namespace Tacho {
       void
       factorizeCholesky_Serial(const value_type_array &ax,
                                const ordinal_type verbose = 0) {
-        if (!std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+        if (!std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
           printf("factorizeCholesky_Serial cannot be executed on non-host devices\n");          
           return;
         }
@@ -414,7 +420,7 @@ namespace Tacho {
       factorizeCholesky_SerialPanel(const value_type_array &ax,
                                     const ordinal_type panelsize,
                                     const ordinal_type verbose = 0) {
-        if (!std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+        if (!std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
           printf("factorizeCholesky_SerialPanel cannot be executed on non-host devices\n");          
           return;
         }
@@ -465,7 +471,7 @@ namespace Tacho {
                            const value_type_matrix &b,   // right hand side
                            const value_type_matrix &t,   // temporary workspace (store permuted vectors)
                            const ordinal_type verbose = 0) {
-        if (!std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+        if (!std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
           printf("solveCholesky_Serial cannot be executed on non-host devices\n");          
           return;
         }
@@ -567,7 +573,7 @@ namespace Tacho {
         memory_pool_type bufpool;
         {
           const size_t cuda_max_team_size 
-            = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
+            = std::is_same<exec_memory_space,Kokkos::HostSpace>::value 
             ? 1 : 32;
           const size_t
             min_block_size  = 16,
@@ -580,7 +586,7 @@ namespace Tacho {
           for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
 
           size_t num_superblock_device = 0;
-          if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+          if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
             // host space 
             #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
               num_superblock_device = host_space::thread_pool_size(0);
@@ -597,7 +603,7 @@ namespace Tacho {
             num_superblock  = min(num_superblock_device, max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
           
-          bufpool = memory_pool_type(typename exec_space::memory_space(),
+          bufpool = memory_pool_type(exec_memory_space(),
                                      memory_capacity,
                                      min_block_size,
                                      max_block_size,
@@ -689,7 +695,7 @@ namespace Tacho {
         const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
         {
           const size_t cuda_max_team_size 
-            = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
+            = std::is_same<exec_memory_space,Kokkos::HostSpace>::value 
             ? 1 : 32;
           const size_t
             min_block_size       = 16,
@@ -703,7 +709,7 @@ namespace Tacho {
           for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
 
           size_t num_superblock_device = 0;
-          if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+          if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
             // host space 
             #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
               num_superblock_device = host_space::thread_pool_size(0);
@@ -720,7 +726,7 @@ namespace Tacho {
             num_superblock  = min(num_superblock_device, max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
           
-          bufpool = memory_pool_type(typename exec_space::memory_space(),
+          bufpool = memory_pool_type(exec_memory_space(),
                                      memory_capacity,
                                      min_block_size,
                                      max_block_size,
@@ -833,7 +839,7 @@ namespace Tacho {
             for ( ;superblock_size<max_block_size;superblock_size*=2);
 
             size_t num_superblock_device = 0;
-            if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+            if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
               // host space 
             #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
               num_superblock_device = host_space::thread_pool_size(0);
@@ -850,7 +856,7 @@ namespace Tacho {
               memory_capacity = num_superblock*superblock_size;
             
             if (_bufpool_solve_capacity < memory_capacity) {
-              _bufpool_solve = memory_pool_type(typename exec_space::memory_space(),
+              _bufpool_solve = memory_pool_type(exec_memory_space(),
                                                 memory_capacity,
                                                 min_block_size,
                                                 max_block_size,
@@ -936,7 +942,7 @@ namespace Tacho {
         memory_pool_type bufpool;
         {
           const size_t cuda_max_team_size 
-            = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
+            = std::is_same<exec_memory_space,Kokkos::HostSpace>::value 
             ? 1 : 32;
           const size_t
             min_block_size  = 16,
@@ -952,7 +958,7 @@ namespace Tacho {
           for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
 
           size_t num_superblock_device = 0;
-          if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+          if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
             // host space 
             #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
               num_superblock_device = host_space::thread_pool_size(0);
@@ -969,7 +975,7 @@ namespace Tacho {
             num_superblock  = min(num_superblock_device, max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
 
-          bufpool = memory_pool_type(typename exec_space::memory_space(),
+          bufpool = memory_pool_type(exec_memory_space(),
                                      memory_capacity,
                                      min_block_size,
                                      max_block_size,
@@ -1066,7 +1072,7 @@ namespace Tacho {
         memory_pool_type bufpool;
         {
           const size_t cuda_max_team_size 
-            = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
+            = std::is_same<exec_memory_space,Kokkos::HostSpace>::value 
             ? 1 : 32;
           const size_t
             min_block_size  = 16,
@@ -1082,7 +1088,7 @@ namespace Tacho {
           for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
 
           size_t num_superblock_device = 0;
-          if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+          if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
             // host space 
             #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
               num_superblock_device = host_space::thread_pool_size(0);
@@ -1099,7 +1105,7 @@ namespace Tacho {
             num_superblock  = min(num_superblock_device, max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
 
-          bufpool = memory_pool_type(typename exec_space::memory_space(),
+          bufpool = memory_pool_type(exec_memory_space(),
                                      memory_capacity,
                                      min_block_size,
                                      max_block_size,
@@ -1176,11 +1182,11 @@ namespace Tacho {
                                  size_t(x.extent(0)) != size_t(b.extent(0)) ||
                                  size_t(x.extent(1)) != size_t(b.extent(1)), std::logic_error,
                                  "A,x and b dimensions are not compatible");
-        CrsMatrixBase<value_type,host_space> h_A;
+        CrsMatrixBase<value_type,host_device_type> h_A;
         h_A.createMirror(A); h_A.copy(A);
 
-        auto h_x = Kokkos::create_mirror_view(x); Kokkos::deep_copy(h_x, x);
-        auto h_b = Kokkos::create_mirror_view(b); Kokkos::deep_copy(h_b, b);
+        auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); Kokkos::deep_copy(h_x, x);
+        auto h_b = Kokkos::create_mirror_view(host_memory_space(), b); Kokkos::deep_copy(h_b, b);
 
         typedef ArithTraits<value_type> arith_traits;
         const ordinal_type m = h_A.NumRows(), k = h_b.extent(1);
@@ -1206,7 +1212,7 @@ namespace Tacho {
                               const value_type_matrix &b) {
         crs_matrix_type A;
         auto d_last = Kokkos::subview(_ap, _m);
-        auto h_last = Kokkos::create_mirror_view(d_last);
+        auto h_last = Kokkos::create_mirror_view(host_memory_space(), d_last);
         Kokkos::deep_copy(h_last, d_last);
         A.setExternalMatrix(_m, _m, h_last(), //_ap(_m),
                             _ap, _aj, _ax);

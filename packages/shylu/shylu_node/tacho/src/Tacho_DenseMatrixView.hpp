@@ -17,7 +17,7 @@ namespace Tacho {
       typedef value_type non_const_value_type;
 
       typedef SchedulerType scheduler_type;
-      typedef typename scheduler_type::execution_space execution_space;
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
 
       typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
 
@@ -379,20 +379,20 @@ namespace Tacho {
                                      const DenseMatrixViewType &B,
                                      const OrdinalTypeArray &p) {
       const ordinal_type m = A.extent(0), n = A.extent(1);
-      typedef typename DenseMatrixViewType::execution_space execution_space;
+      typedef typename DenseMatrixViewType::device_type::execution_space exec_space;
 
-      if (true) { //std::is_same<typename execution_space::memory_space,Kokkos::HostSpace>::value) {
+      if (true) { //std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
         // serial copy on host
-        Kokkos::RangePolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > policy(0, m);
+        Kokkos::RangePolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > policy(0, m);
         Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
             for (ordinal_type j=0;j<n;++j)
               A(p(i), j) = B(i, j);
           });
       } else {      
         // gcc has compiler errors
-        // Kokkos::TeamPolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > policy(m, 1);
+        // Kokkos::TeamPolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > policy(m, 1);
         // Kokkos::parallel_for
-        //   (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<execution_space>::member_type &member) {
+        //   (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<exec_space>::member_type &member) {
         //     const ordinal_type i = member.league_rank();
         //     Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
         //         Kokkos::single(Kokkos::PerThread(member), [&]() {
