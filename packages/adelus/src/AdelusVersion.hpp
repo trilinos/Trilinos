@@ -41,15 +41,13 @@
 //@HEADER
 */
 
-/*! \file AdelusVersion.cpp
-    \brief Simple function for returning the current version number [necessary for portability]
-*/
+#ifndef ADELUS_VERSION_HPP
+#define ADELUS_VERSION_HPP
 
-#include "AdelusVersion.hpp"
-namespace Adelus {
+#include "Adelus_ConfigDefs.hpp"
 
-  std::string Adelus_Version() {
-  	return("Adelus Version 1.0 - 09/07/????");
-  }
+namespace Adelus{
+  std::string Adelus_Version();
+}
 
-}// namespace Adelus 
+#endif // ADELUS_VERSION_HPP
