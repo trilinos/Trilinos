@@ -428,6 +428,14 @@ RCP<const T> RCP<T>::getConst() const
 }
 
 
+template<class T>
+inline
+RCP<T>::operator bool() const
+{
+  return (get() != 0);
+}
+
+
 // Reference counting
 
 

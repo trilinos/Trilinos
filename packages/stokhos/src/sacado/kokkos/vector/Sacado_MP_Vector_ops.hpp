@@ -777,99 +777,6 @@ MP_BINARYOP_MACRO(min, MinOp, std::min)
 
 #undef MP_BINARYOP_MACRO
 
-//-------------------------- Relational Operators -----------------------
-
-#define MP_RELOP_MACRO(OP)                                              \
-namespace Sacado {                                                      \
-  namespace MP {                                                        \
-                                                                        \
-    template <typename T1, typename T2>                                 \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<T1>& expr1,                                 \
-                 const Expr<T2>& expr2)                                 \
-    {                                                                   \
-      return expr1.derived().val() OP expr2.derived().val();            \
-    }                                                                   \
-                                                                        \
-    template <typename T1, typename T2>                                 \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const volatile Expr<T1>& expr1,                        \
-                 const volatile Expr<T2>& expr2)                        \
-    {                                                                   \
-      return expr1.derived().val() OP expr2.derived().val();            \
-    }                                                                   \
-                                                                        \
-    template <typename T1, typename T2>                                 \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const volatile Expr<T1>& expr1,                        \
-                 const Expr<T2>& expr2)                                 \
-    {                                                                   \
-      return expr1.derived().val() OP expr2.derived().val();            \
-    }                                                                   \
-                                                                        \
-    template <typename T1, typename T2>                                 \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<T1>& expr1,                                 \
-                 const volatile Expr<T2>& expr2)                        \
-    {                                                                   \
-      return expr1.derived().val() OP expr2.derived().val();            \
-    }                                                                   \
-                                                                        \
-    template <typename T2>                                              \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const typename T2::value_type& a,                      \
-                 const Expr<T2>& expr2)                                 \
-    {                                                                   \
-      return a OP expr2.derived().val();                                \
-    }                                                                   \
-                                                                        \
-    template <typename T2>                                              \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const typename T2::value_type& a,                      \
-                 const volatile Expr<T2>& expr2)                        \
-    {                                                                   \
-      return a OP expr2.derived().val();                                \
-    }                                                                   \
-                                                                        \
-    template <typename T1>                                              \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<T1>& expr1,                                 \
-                 const typename T1::value_type& b)                      \
-    {                                                                   \
-      return expr1.derived().val() OP b;                                \
-    }                                                                   \
-                                                                        \
-    template <typename T1>                                              \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const volatile Expr<T1>& expr1,                        \
-                 const typename T1::value_type& b)                      \
-    {                                                                   \
-      return expr1.derived().val() OP b;                                \
-    }                                                                   \
-  }                                                                     \
-}
-
-MP_RELOP_MACRO(==)
-MP_RELOP_MACRO(!=)
-MP_RELOP_MACRO(<)
-MP_RELOP_MACRO(>)
-MP_RELOP_MACRO(<=)
-MP_RELOP_MACRO(>=)
-MP_RELOP_MACRO(<<=)
-MP_RELOP_MACRO(>>=)
-MP_RELOP_MACRO(&)
-MP_RELOP_MACRO(|)
-
-#undef MP_RELOP_MACRO
-
 namespace Sacado {
 
   namespace MP {
@@ -973,6 +880,6 @@ namespace std {
     for (int i=0; i<x.size(); i++)
       if (!isfinite(x.coeff(i)))
         return false;
-      return true;
+    return true;
   }
 }

@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -80,6 +78,14 @@ namespace { // (anonymous)
     using Tpetra::readOnly;
     using Tpetra::readWrite;
     using Tpetra::writeOnly;
+
+    using Tpetra::Details::GetMasterLocalObject;
+    using Tpetra::Details::GetNonowningLocalObject;
+    using Tpetra::Details::LocalAccess;
+    using Teuchos::TypeNameTraits;
+    using dev_mem_space =
+      typename multivec_type::dual_view_type::t_dev::memory_space;
+
     const bool debug = ::Tpetra::Details::Behavior::debug ();
 
     RCP<Teuchos::FancyOStream> outPtr = debug ?
@@ -105,17 +111,11 @@ namespace { // (anonymous)
         "exist and have the right public aliases" << endl;
       Teuchos::OSTab tab1 (myOut);
 
-      using Tpetra::Details::GetMasterLocalObject;
-      using Tpetra::Details::GetNonowningLocalObject;
-      using Tpetra::Details::LocalAccess;
-      using Tpetra::Details::AccessMode;
-      using Teuchos::TypeNameTraits;
-      using dev_mem_space =
-        typename multivec_type::dual_view_type::t_dev::memory_space;
-
       {
         using local_access_type =
-          LocalAccess<multivec_type, dev_mem_space, AccessMode::ReadOnly>;
+          LocalAccess<multivec_type, dev_mem_space,
+                      Tpetra::Details::read_only>;
+
         using mv_mlo = GetMasterLocalObject<local_access_type>::
           master_local_object_type;
         static_assert (Kokkos::is_view<mv_mlo::element_type>::value,
@@ -290,10 +290,8 @@ namespace { // (anonymous)
       auto lclAccess = writeOnly (vec).on (memory_space ());
 
       using local_access_type = decltype (lclAccess);
-      static_assert
-        (local_access_type::access_mode ==
-         Tpetra::Details::AccessMode::WriteOnly,
-         "Incorrect AccessMode");
+      static_assert(std::is_same<local_access_type::access_mode,
+        Tpetra::Details::write_only>::value, "Incorrect AccessMode");
       static_assert
         (std::is_same<local_access_type::global_object_type, vec_type>::value,
          "Incorrect global_object_type");
