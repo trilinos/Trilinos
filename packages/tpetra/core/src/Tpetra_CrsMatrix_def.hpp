@@ -314,9 +314,20 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
+    using std::endl;
     typedef typename local_matrix_type::values_type values_type;
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>[, "
       "RCP<ParameterList>]): ";
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("CrsMatrix(CrsGraph,params)");
+      std::ostringstream os;
+      os << *prefix << endl;
+      std::cerr << os.str ();
+    }
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (graph.is_null (), std::runtime_error, "Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -336,6 +347,11 @@ namespace Tpetra {
     const size_t numCols = graph->getColMap ()->getNodeNumElements ();
     auto lclGraph = graph->getLocalGraph ();
     const size_t numEnt = lclGraph.entries.extent (0);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate values: " << numEnt << endl;
+      std::cerr << os.str ();
+    }
     values_type val ("Tpetra::CrsMatrix::val", numEnt);
 
     auto lclMat = std::make_shared<local_matrix_type>
@@ -345,6 +361,13 @@ namespace Tpetra {
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Assign k_values1D_: old="
+         << k_values1D_.extent(0) << ", new="
+         << lclMat->values.extent(0) << endl;
+      std::cerr << os.str ();
+    }
     k_values1D_ = lclMat->values;
 
     checkInternalState ();
