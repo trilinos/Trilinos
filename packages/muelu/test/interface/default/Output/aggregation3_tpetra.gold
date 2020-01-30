@@ -31,6 +31,7 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -130,6 +131,7 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
