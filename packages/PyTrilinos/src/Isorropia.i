@@ -66,6 +66,10 @@ from . import _Base
 #include "numpy_include.hpp"
 %}
 
+// Include the NumPy typemaps
+%include "numpy.i"
+%fragment("NumPy_Macros");
+
 // PyTrilinos configuration
 %include "PyTrilinos_config.h"
 
