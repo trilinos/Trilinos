@@ -267,11 +267,6 @@ namespace Tacho {
       _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
       _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
 
-      //_h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
-      auto tmp = Kokkos::create_mirror_view(host_memory_space(), ap); 
-      Kokkos::deep_copy(tmp, ap);
-      _h_ap = tmp;
-
       _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
       _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
 
@@ -484,7 +479,7 @@ namespace Tacho {
       CrsMatrixBase<value_type,device_type> A; 
       A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-      return _N.computeRelativeResidual(A, x, b);
+      return Tacho::computeRelativeResidual(A, x, b);
     }
 
     int release() {
