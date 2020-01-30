@@ -625,7 +625,7 @@ public:
             continue;
           const int* dof = node->Dof();
           const int* lmdof = node->LMDof();
-          for (std::size_t j=0; j<node->Nlmdof(); ++j)
+          for (int j=0; j<node->Nlmdof(); ++j)
             lm_to_dof[lmdof[j]] = dof[j];
         }
       }
