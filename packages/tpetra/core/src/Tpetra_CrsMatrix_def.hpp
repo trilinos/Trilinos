@@ -1674,6 +1674,7 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using std::endl;
     using row_map_type = typename Graph::local_graph_type::row_map_type;
     using non_const_row_map_type = typename row_map_type::non_const_type;
     using values_type = typename local_matrix_type::values_type;
@@ -1681,8 +1682,16 @@ namespace Tpetra {
     // const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
 #endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionFLM ("Tpetra::CrsMatrix::fillLocalMatrix");
-
     const size_t lclNumRows = getNodeNumRows();
+
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("fillLocalMatrix");
+      std::ostringstream os;
+      os << *prefix << "lclNumRows: " << lclNumRows << endl;
+      std::cerr << os.str ();
+    }
 
     // The goals of this routine are first, to allocate and fill
     // packed 1-D storage (see below for an explanation) in the vals
@@ -1705,8 +1714,9 @@ namespace Tpetra {
     // optimized storage by default.
     bool requestOptimizedStorage = true;
     const bool default_OptimizeStorage =
-      ! isStaticGraph () || staticGraph_->isStorageOptimized ();
-    if (! params.is_null () && ! params->get ("Optimize Storage", default_OptimizeStorage)) {
+      ! isStaticGraph() || staticGraph_->isStorageOptimized();
+    if (! params.is_null() &&
+        ! params->get("Optimize Storage", default_OptimizeStorage)) {
       requestOptimizedStorage = false;
     }
     // If we're not allowed to change a static graph, then we can't
@@ -1714,7 +1724,8 @@ namespace Tpetra {
     // the graph's storage isn't already optimized, we can't optimize
     // the matrix's storage either.  Check and give warning, as
     // appropriate.
-    if (! staticGraph_->isStorageOptimized () && requestOptimizedStorage) {
+    if (! staticGraph_->isStorageOptimized () &&
+        requestOptimizedStorage) {
       TPETRA_ABUSE_WARNING
         (true, std::runtime_error, "You requested optimized storage "
          "by setting the \"Optimize Storage\" flag to \"true\" in "
@@ -1745,8 +1756,21 @@ namespace Tpetra {
     // structure of the sparse matrix does not change between linear
     // solves.
     if (nodeNumEntries != nodeNumAllocated) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Unpacked 1-D storage: numEnt="
+           << nodeNumEntries << ", allocSize=" << nodeNumAllocated
+           << endl;
+        std::cerr << os.str();
+      }
       // We have to pack the 1-D storage, since the user didn't fill
       // up all requested storage.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate packed row offsets: "
+           << (lclNumRows+1) << endl;
+        std::cerr << os.str();
+      }
       non_const_row_map_type tmpk_ptrs ("Tpetra::CrsGraph::ptr",
                                         lclNumRows+1);
       // Total number of entries in the matrix on the calling
@@ -1764,6 +1788,12 @@ namespace Tpetra {
 
       // Allocate the "packed" values array.
       // It has exactly the right number of entries.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate packed values: "
+           << lclTotalNumEntries << endl;
+        std::cerr << os.str ();
+      }
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
       // Pack k_values1D_ into k_vals.  We will replace k_values1D_ below.
@@ -1776,6 +1806,12 @@ namespace Tpetra {
                             range_type (0, lclNumRows), valsPacker);
     }
     else { // We don't have to pack, so just set the pointer.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Storage already packed: "
+           << "k_values1D_: " << k_values1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       k_vals = k_values1D_;
     }
 
@@ -1862,8 +1898,7 @@ namespace Tpetra {
     if (! graph.indicesAreAllocated ()) {
       // We only allocate values at most once per process, so it's OK
       // to check TPETRA_VERBOSE here.
-      using ::Tpetra::Details::Behavior;
-      const bool verbose = Behavior::verbose("CrsMatrix");
+      const bool verbose = Details::Behavior::verbose("CrsMatrix");
       this->allocateValues (LocalIndices, GraphNotYetAllocated, verbose);
     }
 
