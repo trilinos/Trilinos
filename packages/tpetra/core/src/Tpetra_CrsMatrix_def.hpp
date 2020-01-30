@@ -1275,6 +1275,7 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using std::endl;
     using row_map_type = typename local_matrix_type::row_map_type;
     using lclinds_1d_type = typename Graph::local_graph_type::entries_type::non_const_type;
     using values_type = typename local_matrix_type::values_type;
@@ -1285,7 +1286,16 @@ namespace Tpetra {
       "fillComplete or expertStaticFillComplete): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-    const bool debug = Details::Behavior::debug ("CrsGraph");
+    const bool debug = Details::Behavior::debug("CrsMatrix");
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("fillLocalGraphAndMatrix");
+      std::ostringstream os;
+      os << *prefix << endl;
+      std::cerr << os.str ();
+    }
 
     if (debug) {
       // fillComplete() only calls fillLocalGraphAndMatrix() if the
@@ -1347,7 +1357,16 @@ namespace Tpetra {
          << numOffsets << ") = " << valToCheck << ".");
     }
 
-    if (myGraph_->getNodeNumEntries () != myGraph_->getNodeAllocationSize ()) {
+    if (myGraph_->getNodeNumEntries() !=
+        myGraph_->getNodeAllocationSize()) {
+      if (verbose) {
+        std::ostringstream os;
+        const auto numEnt = myGraph_->getNodeNumEntries();
+        const auto allocSize = myGraph_->getNodeAllocationSize();
+        os << *prefix << "Unpacked 1-D storage: numEnt=" << numEnt
+           << ", allocSize=" << allocSize << endl;
+        std::cerr << os.str ();
+      }
       // The matrix's current 1-D storage is "unpacked."  This means
       // the row offsets may differ from what the final row offsets
       // should be.  This could happen, for example, if the user
@@ -1388,6 +1407,12 @@ namespace Tpetra {
         // Allocate the packed row offsets array.  We use a nonconst
         // temporary (packedRowOffsets) here, because k_ptrs is
         // const.  We will assign packedRowOffsets to k_ptrs below.
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Allocate packed row offsets: "
+             << (lclNumRows+1) << endl;
+          std::cerr << os.str ();
+        }
         typename row_map_type::non_const_type
           packedRowOffsets ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
         typename row_entries_type::const_type numRowEnt_h =
@@ -1419,7 +1444,19 @@ namespace Tpetra {
       }
 
       // Allocate the arrays of packed column indices and values.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate packed local column indices: "
+           << lclTotalNumEntries << endl;
+        std::cerr << os.str ();
+      }
       k_inds = lclinds_1d_type ("Tpetra::CrsGraph::ind", lclTotalNumEntries);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate packed values: "
+           << lclTotalNumEntries << endl;
+        std::cerr << os.str ();
+      }
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
       // curRowOffsets (myGraph_->k_rowPtrs_) (???), k_lclInds1D_,
@@ -1476,6 +1513,14 @@ namespace Tpetra {
       }
     }
     else { // We don't have to pack, so just set the pointers.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Storage already packed: k_rowPtrs_: "
+           << myGraph_->k_rowPtrs_.extent(0) << ", k_lclInds1D_: "
+           << myGraph_->k_lclInds1D_.extent(0) << ", k_values1D_: "
+           << k_values1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       k_ptrs_const = myGraph_->k_rowPtrs_;
       k_inds = myGraph_->k_lclInds1D_;
       k_vals = this->k_values1D_;
@@ -1551,17 +1596,52 @@ namespace Tpetra {
 
       // Free graph data structures that are only needed for
       // unpacked 1-D storage.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Optimizing storage: free k_numRowEntries_: "
+           << myGraph_->k_numRowEntries_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Assign k_rowPtrs_: old="
+           << myGraph_->k_rowPtrs_.extent(0) << ", new="
+           << k_ptrs_const.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_rowPtrs_ = k_ptrs_const;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Assign k_lclInds1D_: old="
+           << myGraph_->k_lclInds1D_.extent(0) << ", new="
+           << k_inds.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_lclInds1D_ = k_inds;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Assign k_values1D_: old="
+           << k_values1D_.extent(0) << ", new="
+           << k_vals.extent(0) << endl;
+        std::cerr << os.str();
+      }
       this->k_values1D_ = k_vals;
 
       // Whatever graph was before, it's StaticProfile now.
       myGraph_->pftype_ = StaticProfile;
       myGraph_->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
       this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
+    }
+    else {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "User requestetd NOT to optimize storage"
+           << endl;
+        std::cerr << os.str();
+      }
     }
 
     // Make the local graph, using the arrays of row offsets and
