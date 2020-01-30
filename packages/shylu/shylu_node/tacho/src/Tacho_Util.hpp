@@ -562,10 +562,11 @@ namespace Tacho {
     using device_type = Kokkos::Device<default_exec_space,default_memory_space>;
   };
 
-#if defined(KOKKOS_ENABLE_CUDA)
-  template<>
-  struct UseThisDevice<Kokkos::Cuda> { using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; };
-#endif
+  /// until kokkos dual view issue is resolved, we use uvm space 
+// #if defined(KOKKOS_ENABLE_CUDA)
+//   template<>
+//   struct UseThisDevice<Kokkos::Cuda> { using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaUVMSpace>; };
+// #endif
 #if defined(KOKKOS_ENABLE_OPENMP)
   template<>
   struct UseThisDevice<Kokkos::OpenMP> { using device_type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; };
