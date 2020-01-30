@@ -438,8 +438,6 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
   Scalar dtemp1, dtemp2, rhokp1;
   Scalar rhok = SC_ONE / s1;
 
-  Scalar blah;
-
   // First Iteration
   if (zeroInitGuess) {
     for(int j = 0; j < maxRegPerProc; j++) {
@@ -447,7 +445,6 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
       regP[j]->update( SC_ONE/theta, *regZ[j], SC_ZERO); // P = 1/theta Z
       regX[j]->update( SC_ONE, *regP[j], SC_ZERO);// X = 0 + P
     }
-    blah = SC_ZERO;
   }
   else { // Compute residual vector
     computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
@@ -456,7 +453,6 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
       regP[j]->update( SC_ONE/theta, *regZ[j], SC_ZERO);// P = 1/theta Z
       regX[j]->update( SC_ONE, *regP[j], SC_ONE);// X = X + P
     }
-    blah = SC_ONE;
   }
 
   // The rest of the iterations
