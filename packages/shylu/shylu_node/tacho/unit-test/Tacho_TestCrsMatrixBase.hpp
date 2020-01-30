@@ -174,11 +174,12 @@ TEST( CrsMatrixBase, permute ) {
   ///
   Ah.copy(Ad);
   for (ordinal_type i=0;i<m;++i) {
-    const ordinal_type jcnt = Bh.RowPtrEnd(i) - Bh.RowPtrBegin(i);
-    const ordinal_type boff = Bh.RowPtrBegin(i);
-    const ordinal_type aoff = Ah.RowPtrBegin(perm(i));
+    const ordinal_type row = perm(i);
+    const ordinal_type jcnt = Bh.RowPtrEnd(row) - Bh.RowPtrBegin(row);
+    const ordinal_type boff = Bh.RowPtrBegin(row);
+    const ordinal_type aoff = Ah.RowPtrBegin(i);
     for (ordinal_type j=0;j<jcnt;++j) {
-      EXPECT_EQ(Ah.Col(aoff+j), perm(Bh.Col(boff+j)));
+      EXPECT_EQ(Ah.Col(aoff+j), peri(Bh.Col(boff+j)));
       EXPECT_EQ(Ah.Value(aoff+j), Bh.Value(boff+j));
     }
   }
