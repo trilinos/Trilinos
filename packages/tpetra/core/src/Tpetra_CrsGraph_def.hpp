@@ -5090,6 +5090,18 @@ namespace Tpetra {
          << (indicesAreAllocated() ? "true" : "false") << endl;
       std::cerr << os.str ();
     }
+    const int myRank = ! verbose ? -1 : [&] () {
+      auto map = this->getMap();
+      if (map.is_null()) {
+        return -1;
+      }
+      auto comm = map->getComm();
+      if (comm.is_null()) {
+        return -1;
+      }
+      return comm->getRank();
+    } ();
+
     if (padding.size() == 0) {
       return;
     }
@@ -5151,7 +5163,8 @@ namespace Tpetra {
       indices_type indices("indices", this->k_gblInds1D_.extent(0));
       Kokkos::deep_copy(indices, this->k_gblInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-      padCrsArrays<row_ptrs_type,indices_type,padding_type>(row_ptrs_beg, row_ptrs_end, indices, padding);
+      padCrsArrays<row_ptrs_type,indices_type,padding_type>(row_ptrs_beg,
+        row_ptrs_end, indices, padding, myRank, verbose);
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Reassign k_gblInds1D_; old size: "
@@ -5170,7 +5183,8 @@ namespace Tpetra {
       local_indices_type indices("indices", this->k_lclInds1D_.extent(0));
       Kokkos::deep_copy(indices, this->k_lclInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-      padCrsArrays<row_ptrs_type,local_indices_type,padding_type>(row_ptrs_beg, row_ptrs_end, indices, padding);
+      padCrsArrays<row_ptrs_type,local_indices_type,padding_type>(row_ptrs_beg,
+        row_ptrs_end, indices, padding, myRank, verbose);
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Reassign k_lclInds1D_; old size: "

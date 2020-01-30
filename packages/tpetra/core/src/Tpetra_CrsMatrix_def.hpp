@@ -6234,6 +6234,17 @@ namespace Tpetra {
       os << *prefix << "padding.size(): " << padding.size() << endl;
       std::cerr << os.str ();
     }
+    const int myRank = ! verbose ? -1 : [&] () {
+      auto map = this->getMap();
+      if (map.is_null()) {
+        return -1;
+      }
+      auto comm = map->getComm();
+      if (comm.is_null()) {
+        return -1;
+      }
+      return comm->getRank();
+    } ();
 
     // NOTE (mfh 29 Jan 2020) This allocates the values array.
     if (! myGraph_->indicesAreAllocated ()) {
@@ -6305,7 +6316,8 @@ namespace Tpetra {
       indices_type indices("indices", myGraph_->k_gblInds1D_.extent(0));
       Kokkos::deep_copy(indices, myGraph_->k_gblInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg, row_ptr_end, indices, values, padding);
+      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg,
+        row_ptr_end, indices, values, padding, myRank, verbose);
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Free old myGraph_->k_gblInds1D_: "
@@ -6329,7 +6341,8 @@ namespace Tpetra {
       indices_type indices("indices", myGraph_->k_lclInds1D_.extent(0));
       Kokkos::deep_copy(indices, myGraph_->k_lclInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg, row_ptr_end, indices, values, padding);
+      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg,
+        row_ptr_end, indices, values, padding, myRank, verbose);
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Free old myGraph_->k_lclInds1D_: "
