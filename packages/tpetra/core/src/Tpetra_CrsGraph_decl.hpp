@@ -66,6 +66,7 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <functional> // std::function
+#include <memory>
 
 namespace Tpetra {
 
