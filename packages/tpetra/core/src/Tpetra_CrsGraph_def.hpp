@@ -3568,7 +3568,7 @@ namespace Tpetra {
     // Make indices local, if they aren't already.
     // The method doesn't do any work if the indices are already local.
     const std::pair<size_t, std::string> makeIndicesLocalResult =
-      this->makeIndicesLocal ();
+      this->makeIndicesLocal(verbose);
     if (debug) { // In debug mode, print error output on all processes
       using ::Tpetra::Details::gathervPrint;
       using Teuchos::RCP;
@@ -4469,7 +4469,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   std::pair<size_t, std::string>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  makeIndicesLocal ()
+  makeIndicesLocal (const bool verbose)
   {
     using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::arcp;
@@ -4487,6 +4487,14 @@ namespace Tpetra {
       device_type> gbl_col_inds_type;
     const char tfecfFuncName[] = "makeIndicesLocal: ";
     ProfilingRegion regionMakeIndicesLocal ("Tpetra::CrsGraph::makeIndicesLocal");
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("makeIndicesLocal");
+      std::ostringstream os;
+      os << *prefix << "lclNumRows: " << getNodeNumRows() << endl;
+      std::cerr << os.str();
+    }
 
     // These are somewhat global properties, so it's safe to have
     // exception checks for them, rather than returning an error code.
@@ -4557,6 +4565,12 @@ namespace Tpetra {
         // large allocation typically, so the overhead of creating
         // an std::string is minor.
         const std::string label ("Tpetra::CrsGraph::lclind");
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "(Re)allocate k_lclInds1D_: old="
+             << k_lclInds1D_.extent(0) << ", new=" << numEnt << endl;
+          std::cerr << os.str();
+        }
         k_lclInds1D_ =
           lcl_col_inds_type (view_alloc (label, WithoutInitializing), numEnt);
       }
@@ -4569,6 +4583,12 @@ namespace Tpetra {
       // following Kokkos issue:
       //
       // https://github.com/kokkos/kokkos/issues/442
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate device mirror k_numRowEnt: "
+           << h_numRowEnt.extent(0) << endl;
+        std::cerr << os.str();
+      }
       auto k_numRowEnt = Kokkos::create_mirror_view (device_type (), h_numRowEnt);
 
       using ::Tpetra::Details::convertColumnIndicesFromGlobalToLocal;
@@ -4600,6 +4620,12 @@ namespace Tpetra {
       // We've converted column indices from global to local, so we
       // can deallocate the global column indices (which we know are
       // in 1-D storage, because the graph has static profile).
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Free k_gblInds1D_: "
+           << k_gblInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       k_gblInds1D_ = gbl_col_inds_type ();
     } // globallyIndexed() && lclNumRows > 0
 
@@ -4610,7 +4636,6 @@ namespace Tpetra {
 
     return std::make_pair (lclNumErrs, errStrm.str ());
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4711,7 +4736,6 @@ namespace Tpetra {
       this->noRedundancies_ = true; // we just merged every row
     }
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void

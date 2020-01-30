@@ -1723,6 +1723,10 @@ namespace Tpetra {
     /// \pre The graph has a column Map.
     /// \post The graph is locally indexed.
     ///
+    /// \param verbose [in] Whether to print verbose debugging output.
+    ///   This exists because CrsMatrix may want to control output
+    ///   independently of the CrsGraph that it owns.
+    ///
     /// \return Error code and error string.  See below.
     ///
     /// First return value is the number of column indices on this
@@ -1734,7 +1738,8 @@ namespace Tpetra {
     ///
     /// Second return value is a human-readable error string.  If the
     /// first return value is zero, then the string may be empty.
-    std::pair<size_t, std::string> makeIndicesLocal ();
+    std::pair<size_t, std::string>
+    makeIndicesLocal(const bool verbose=false);
 
     /// \brief Make the Import and Export objects, if needed.
     ///

@@ -4648,8 +4648,18 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using std::endl;
     const char tfecfFuncName[] = "fillComplete: ";
-    ProfilingRegion regionFillComplete ("Tpetra::CrsMatrix::fillComplete");
+    ProfilingRegion regionFillComplete
+      ("Tpetra::CrsMatrix::fillComplete");
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("fillComplete(dom,ran,p)");
+      std::ostringstream os;
+      os << *prefix << endl;
+      std::cerr << os.str ();
+    }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->isFillActive () || this->isFillComplete (), std::runtime_error,
@@ -4687,8 +4697,6 @@ namespace Tpetra {
     }
 
     if (! this->getCrsGraphRef ().indicesAreAllocated ()) {
-      using ::Tpetra::Details::Behavior;
-      const bool verbose = Behavior::verbose("CrsMatrix");
       if (this->hasColMap ()) { // use local indices
         allocateValues(LocalIndices, GraphNotYetAllocated, verbose);
       }
@@ -4775,7 +4783,7 @@ namespace Tpetra {
       // Make indices local, if necessary.  The method won't do
       // anything if the graph is already locally indexed.
       const std::pair<size_t, std::string> makeIndicesLocalResult =
-        this->myGraph_->makeIndicesLocal ();
+        this->myGraph_->makeIndicesLocal(verbose);
       // TODO (mfh 20 Jul 2017) Instead of throwing here, pass along
       // the error state to makeImportExport or
       // computeGlobalConstants, which may do all-reduces and thus may
