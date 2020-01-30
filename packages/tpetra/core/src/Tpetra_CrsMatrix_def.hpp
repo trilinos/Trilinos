@@ -4326,6 +4326,7 @@ namespace Tpetra {
     using Teuchos::REDUCE_MAX;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
+    using std::endl;
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
     //typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -4333,6 +4334,15 @@ namespace Tpetra {
     const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
     ProfilingRegion regionGlobalAssemble ("Tpetra::CrsMatrix::globalAssemble");
 
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("globalAssemble");
+      std::ostringstream os;
+      os << *prefix << "nonlocals_.size()=" << nonlocals_.size()
+         << endl;
+      std::cerr << os.str();
+    }
     RCP<const Comm<int> > comm = getComm ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4423,6 +4433,11 @@ namespace Tpetra {
     //    to nonlocal rows.  We may use StaticProfile, since we have
     //    exact counts of the number of entries in each nonlocal row.
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Create nonlocal matrix" << endl;
+      std::cerr << os.str();
+    }
     RCP<crs_matrix_type> nonlocalMatrix =
       rcp (new crs_matrix_type (nonlocalRowMap, numEntPerNonlocalRow (),
                                 StaticProfile));
@@ -4453,14 +4468,29 @@ namespace Tpetra {
     int isLocallyComplete = 1; // true by default
 
     if (origRowMapIsOneToOne) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Original row Map is 1-to-1" << endl;
+        std::cerr << os.str();
+      }
       export_type exportToOrig (nonlocalRowMap, origRowMap);
       if (! exportToOrig.isLocallyComplete ()) {
         isLocallyComplete = 0;
+      }
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "doExport from nonlocalMatrix" << endl;
+        std::cerr << os.str();
       }
       this->doExport (*nonlocalMatrix, exportToOrig, Tpetra::ADD);
       // We're done at this point!
     }
     else {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Original row Map is NOT 1-to-1" << endl;
+        std::cerr << os.str();
+      }
       // If you ask a Map whether it is one to one, it does some
       // communication and stashes intermediate results for later use
       // by createOneToOne.  Thus, calling createOneToOne doesn't cost
@@ -4475,15 +4505,32 @@ namespace Tpetra {
       //
       // TODO (mfh 09 Sep 2016, 12 Sep 2016) Estimate # entries in
       // each row, to avoid reallocation during the Export operation.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Create & doExport into 1-to-1 matrix"
+           << endl;
+        std::cerr << os.str();
+      }
       crs_matrix_type oneToOneMatrix (oneToOneRowMap, 0);
       // Export from matrix of nonlocals into the temp one-to-one matrix.
-      oneToOneMatrix.doExport (*nonlocalMatrix, exportToOneToOne, Tpetra::ADD);
+      oneToOneMatrix.doExport(*nonlocalMatrix, exportToOneToOne,
+                              Tpetra::ADD);
 
       // We don't need the matrix of nonlocals anymore, so get rid of
       // it, to keep the memory high-water mark down.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Free nonlocalMatrix" << endl;
+        std::cerr << os.str();
+      }
       nonlocalMatrix = Teuchos::null;
 
       // Import from the one-to-one matrix to the original matrix.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "doImport from 1-to-1 matrix" << endl;
+        std::cerr << os.str();
+      }
       import_type importToOrig (oneToOneRowMap, origRowMap);
       this->doImport (oneToOneMatrix, importToOrig, Tpetra::ADD);
     }
@@ -4492,6 +4539,11 @@ namespace Tpetra {
     // committed side effects to *this.  The standard idiom for
     // clearing a Container like std::map, is to swap it with an empty
     // Container and let the swapped Container fall out of scope.
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Free nonlocals_ (std::map)" << endl;
+      std::cerr << os.str();
+    }
     decltype (nonlocals_) newNonlocals;
     std::swap (nonlocals_, newNonlocals);
 
