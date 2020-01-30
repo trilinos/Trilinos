@@ -2,6 +2,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_FEMultiVector.hpp"
+#include "Tpetra_MultiVector_decl.hpp"
+#include "Tpetra_MultiVector_def.hpp"
 
 #include <string>
 #include <sstream>
@@ -170,9 +172,9 @@ namespace Zoltan2{
 
           //stub overloads for FEMultiVector ETI
           
-          static inline IcePropVtxLabel this_type_is_missing_a_specialization() {
-            return IcePropVtxLabel();
-          }
+          //static inline IcePropVtxLabel this_type_is_missing_a_specialization() {
+          //  return IcePropVtxLabel();
+          //}
 
           friend IcePropVtxLabel operator- (const IcePropVtxLabel& neg){
             IcePropVtxLabel ret;
@@ -315,8 +317,54 @@ namespace Kokkos {
       static std::string name() { return "Zoltan2::IcePropVtxLabel"; }
     };
   }
+
 }
 
+namespace Kokkos {
+  
+  template<class Generator>
+  struct rand<Generator, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> > {
+    typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> Scalar;
+    //Max value returned by draw(Generator& gen)
+    KOKKOS_INLINE_FUNCTION static Scalar max() { return Scalar();}
+    //Returns a value between zero and max()
+    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen) {return Scalar();}
+    //Returns a value between zero and range()
+    //Note: for floating point values range can be larger than max()
+    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen, const Scalar& range){return Scalar();}
+    //Return value between start and end
+    KOKKOS_INLINE_FUNCTION static Scalar draw(Generator& gen, const Scalar& start, const Scalar& end){return Scalar();}
+  };
+  /*template<class Generator>
+  struct rand<Generator, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> > {
+    KOKKOS_INLINE_FUNCTION
+    static Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> max () {
+      return Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type>();
+    }
+    KOKKOS_INLINE_FUNCTION
+    static Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> draw (Generator& gen) {
+      const float re = gen.frand ();
+      const float im = gen.frand ();
+      return Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type>();
+    }
+    KOKKOS_INLINE_FUNCTION
+    static Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> draw (Generator& gen, 
+     const Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type>& range) {
+      const float re = gen.frand (real (range));
+      const float im = gen.frand (imag (range));
+      return Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type>();
+    }
+    KOKKOS_INLINE_FUNCTION
+    static Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> draw (Generator& gen, 
+     const Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type>& start, 
+     const Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type>& end) {
+      const float re = gen.frand (real (start), real (end));
+      const float im = gen.frand (imag (start), imag (end));
+      return Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type>();
+    }
+  };*/
+
+}
 /////////////////////////////////////////////////////////////////////////////
 // Teuchos::SerializationTraits are needed to copy vtxLabels into MPI buffers
 // Because sizeof(vtxLabel) works for struct vtxLabel, we'll use a 
@@ -326,6 +374,42 @@ template<typename Ordinal>
 struct SerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> >:
        public Teuchos::DirectSerializationTraits<Ordinal, Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> >
 {};
+
+struct ScalarTraits<Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> > {
+  public:
+    typedef Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, Tpetra::Map<>::global_ordinal_type> val_type;
+    typedef Tpetra::Map<>::global_ordinal_type magnitudeType;
+    
+    static const bool isComplex = false;
+    static const bool isOrdinal = false;
+    static const bool isComparable = false;
+    static const bool hasMachineParameters = false;
+
+    static magnitudeType eps()   { return 0;}
+    static magnitudeType sfmin() { return 1;}
+    static magnitudeType base()  { return 2;}
+    static magnitudeType prec()  { return 0;}
+    static magnitudeType t()     { return 0;}
+    static magnitudeType rnd()   { return 0;}
+    static magnitudeType emin()  { return 0;}
+    static magnitudeType rmin()  { return 0;}
+    static magnitudeType emax()  { return 0;}
+    static magnitudeType rmax()  { return 0;}
+    static magnitudeType magnitude(val_type a) {return 1;}
+    static val_type zero() { return val_type(0);}
+    static val_type one()  { return val_type(1);}
+    static magnitudeType real(val_type a) {return 1;}
+    static magnitudeType imag(val_type a) {return 0;}
+    static val_type conjugate(val_type a) {return a;}
+    static val_type nan() {return val_type();}
+    static bool isnaninf(const val_type &x) {return false;}
+    static void seedrandom(unsigned int s) {}
+    static val_type random() {return val_type();}
+    static std::string name(){return "Zoltan2::IcePropVtxLabel<lno_t, gno_t>";}
+    static val_type squareroot(val_type x) {return x;}
+    static val_type pow(val_type x, val_type y){ return x;}
+    static val_type pi() {return val_type();}
+};
 }//end namespace Teuchos
 
 namespace Zoltan2{

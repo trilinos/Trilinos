@@ -52,9 +52,9 @@
 
 #warning "KDDKDD HELLO"
 
-#include "Zoltan2_VtxLabel.hpp"
 #include "Tpetra_MultiVector_def.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
+#include "Zoltan2_VtxLabel.hpp"
 #include "Tpetra_FEMultiVector_def.hpp"
 #include "Tpetra_FEMultiVector_decl.hpp"
 
