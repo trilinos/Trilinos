@@ -306,10 +306,10 @@ namespace Tpetra {
         // Generic lambdas need C++14, so we need a typedef here.
         using input_view_type =
           with_local_access_function_argument_type<
-            decltype (readOnly (input).on (memSpace))>;
+            decltype (readOnly (input).on (memSpace). at(execSpace))>;
         using output_view_type =
           with_local_access_function_argument_type<
-            decltype (writeOnly (output).on (memSpace))>;
+            decltype (writeOnly (output).on (memSpace). at(execSpace))>;
 
         withLocalAccess
           ([=] (const input_view_type& input_lcl,
@@ -322,19 +322,10 @@ namespace Tpetra {
              using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
              range_type range (execSpace, 0, lclNumRows);
 
-             // Note that the Transform.cpp test will not currently pass
-             // with CUDA_LAUNCH_BLOCKING=0. This is because execSpace is not
-             // considered by withLocalAccess so after requesting the transform
-             // with Host we don't get a sync and need_sync_host() is still true.
-             // That issue is regardless of whether CUDA_LAUNCH_BLOCKING is set.
-             // When withLocalAccess is fixed we should then have the proper fencing
-             // and the test will run correctly with CUDA_LAUNCH_BLOCKING=0 or =1.
-             // PR 6617 discusses these current issues.
-
              Kokkos::parallel_for (kernelLabel, range, g);
            },
-           readOnly (input).on (memSpace),
-           writeOnly (output).on (memSpace));
+           readOnly (input).on (memSpace).at (execSpace),
+           writeOnly (output).on (memSpace).at (execSpace));
       }
 
       template<class UnaryFunctionType>
@@ -350,10 +341,10 @@ namespace Tpetra {
         // Generic lambdas need C++14, so we need typedefs here.
         using input_view_type =
           with_local_access_function_argument_type<
-            decltype (readOnly (input).on (memSpace))>;
+            decltype (readOnly (input).on (memSpace). at(execSpace))>;
         using output_view_type =
           with_local_access_function_argument_type<
-            decltype (writeOnly (output).on (memSpace))>;
+            decltype (writeOnly (output).on (memSpace). at(execSpace))>;
 
         withLocalAccess
           ([=] (const input_view_type& input_lcl,
@@ -366,13 +357,10 @@ namespace Tpetra {
             using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
             range_type range (execSpace, 0, lclNumRows);
 
-            // See note above for explanation why a pending fix to withLocalAccess
-            // will fix Transform.cpp test to pass with CUDA_LAUNCH_BLOCKING=0.
-
             Kokkos::parallel_for (kernelLabel, range, g);
           },
-          readOnly (input).on (memSpace),
-          writeOnly (output).on (memSpace));
+          readOnly (input).on (memSpace).at (execSpace),
+          writeOnly (output).on (memSpace).at (execSpace));
       }
 
     public:
@@ -513,16 +501,16 @@ namespace Tpetra {
             // for the withLocalAccess lambdas below.
             using input1_view_type =
               with_local_access_function_argument_type<
-                decltype (readOnly (input1_j_ref).on (memSpace))>;
+                decltype (readOnly (input1_j_ref).on (memSpace). at(execSpace))>;
             using input2_view_type =
               with_local_access_function_argument_type<
-                decltype (readOnly (input2_j_ref).on (memSpace))>;
+                decltype (readOnly (input2_j_ref).on (memSpace). at(execSpace))>;
             using rw_output_view_type =
               with_local_access_function_argument_type<
-                decltype (readWrite (output_j_ref).on (memSpace))>;
+                decltype (readWrite (output_j_ref).on (memSpace). at(execSpace))>;
             using wo_output_view_type =
               with_local_access_function_argument_type<
-                decltype (writeOnly (output_j_ref).on (memSpace))>;
+                decltype (writeOnly (output_j_ref).on (memSpace). at(execSpace))>;
 
             if (allsame) {
               withLocalAccess
@@ -535,7 +523,7 @@ namespace Tpetra {
                   functor_type functor (output_lcl, output_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readWrite (output_j_ref).on (memSpace));
+                readWrite (output_j_ref).on (memSpace).at (execSpace));
             }
             else if (in1in2same) { // and not same as output
               withLocalAccess
@@ -549,8 +537,8 @@ namespace Tpetra {
                   functor_type functor (input1_lcl, input1_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readOnly (input1_j_ref).on (memSpace),
-                writeOnly (output_j_ref).on (memSpace));
+                readOnly (input1_j_ref).on (memSpace).at (execSpace),
+                writeOnly (output_j_ref).on (memSpace).at (execSpace));
             }
             else if (outin1same) { // and input1 not same as input2
               withLocalAccess
@@ -564,8 +552,8 @@ namespace Tpetra {
                   functor_type functor (output_lcl, input2_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readOnly (input2_j_ref).on (memSpace),
-                readWrite (output_j_ref).on (memSpace));
+                readOnly (input2_j_ref).on (memSpace).at (execSpace),
+                readWrite (output_j_ref).on (memSpace).at (execSpace));
             }
             else if (outin2same) { // and input1 not same as input2
               withLocalAccess
@@ -579,8 +567,8 @@ namespace Tpetra {
                   functor_type functor (input1_lcl, output_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readOnly (input1_j_ref).on (memSpace),
-                readWrite (output_j_ref).on (memSpace));
+                readOnly (input1_j_ref).on (memSpace).at (execSpace),
+                readWrite (output_j_ref).on (memSpace).at (execSpace));
             }
             else { // output, input1, and input2 all differ
               withLocalAccess
@@ -595,9 +583,9 @@ namespace Tpetra {
                   functor_type functor (input1_lcl, input2_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readOnly (input1_j_ref).on (memSpace),
-                readOnly (input2_j_ref).on (memSpace),
-                writeOnly (output_j_ref).on (memSpace));
+                readOnly (input1_j_ref).on (memSpace).at (execSpace),
+                readOnly (input2_j_ref).on (memSpace).at (execSpace),
+                writeOnly (output_j_ref).on (memSpace).at (execSpace));
             }
           }
         }
@@ -616,16 +604,16 @@ namespace Tpetra {
           // for the withLocalAccess lambdas below.
           using input1_view_type =
             with_local_access_function_argument_type<
-              decltype (readOnly (input1).on (memSpace))>;
+              decltype (readOnly (input1).on (memSpace). at(execSpace))>;
           using input2_view_type =
             with_local_access_function_argument_type<
-              decltype (readOnly (input2).on (memSpace))>;
+              decltype (readOnly (input2).on (memSpace). at(execSpace))>;
           using rw_output_view_type =
             with_local_access_function_argument_type<
-              decltype (readWrite (output).on (memSpace))>;
+              decltype (readWrite (output).on (memSpace). at(execSpace))>;
           using wo_output_view_type =
             with_local_access_function_argument_type<
-              decltype (writeOnly (output).on (memSpace))>;
+              decltype (writeOnly (output).on (memSpace). at(execSpace))>;
 
           if (allsame) {
             withLocalAccess
@@ -638,7 +626,7 @@ namespace Tpetra {
                 functor_type functor (output_lcl, output_lcl, output_lcl, f);
                 Kokkos::parallel_for (kernelLabel, range, functor);
               },
-              readWrite (output).on (memSpace));
+              readWrite (output).on (memSpace).at (execSpace));
           }
           else if (in1in2same) { // and not same as output
             withLocalAccess
@@ -652,8 +640,8 @@ namespace Tpetra {
                 functor_type functor (input1_lcl, input1_lcl, output_lcl, f);
                 Kokkos::parallel_for (kernelLabel, range, functor);
               },
-              readOnly (input1).on (memSpace),
-              writeOnly (output).on (memSpace));
+              readOnly (input1).on (memSpace).at (execSpace),
+              writeOnly (output).on (memSpace).at (execSpace));
           }
           else if (outin1same) { // and input1 not same as input2
             withLocalAccess
@@ -667,8 +655,8 @@ namespace Tpetra {
                 functor_type functor (output_lcl, input2_lcl, output_lcl, f);
                 Kokkos::parallel_for (kernelLabel, range, functor);
               },
-              readOnly (input2).on (memSpace),
-              readWrite (output).on (memSpace));
+              readOnly (input2).on (memSpace).at (execSpace),
+              readWrite (output).on (memSpace).at (execSpace));
           }
           else if (outin2same) { // and input1 not same as input2
             withLocalAccess
@@ -682,8 +670,8 @@ namespace Tpetra {
                 functor_type functor (input1_lcl, output_lcl, output_lcl, f);
                 Kokkos::parallel_for (kernelLabel, range, functor);
               },
-              readOnly (input1).on (memSpace),
-              readWrite (output).on (memSpace));
+              readOnly (input1).on (memSpace).at (execSpace),
+              readWrite (output).on (memSpace).at (execSpace));
           }
           else { // output, input1, and input2 all differ
             withLocalAccess
@@ -698,9 +686,9 @@ namespace Tpetra {
                 functor_type functor (input1_lcl, input2_lcl, output_lcl, f);
                 Kokkos::parallel_for (kernelLabel, range, functor);
               },
-              readOnly (input1).on (memSpace),
-              readOnly (input2).on (memSpace),
-              writeOnly (output).on (memSpace));
+              readOnly (input1).on (memSpace).at (execSpace),
+              readOnly (input2).on (memSpace).at (execSpace),
+              writeOnly (output).on (memSpace).at (execSpace));
           }
         }
       }
