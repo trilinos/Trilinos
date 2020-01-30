@@ -66,11 +66,11 @@ struct CmdLineOpts {
   // adequate precision.
   int numTrials;
   // Number of rows per MPI process (hence "local") in the graph;
-  // number of block rows per MPI process in the BlockCrsMatrix.
   int lclNumRows;
-  // Number of entries per row in the sparses graph; thus, number of
-  // blocks per block row of the BlockCrsMatrix.
+  // Number of entries per row in the sparses graph;
   int numEntPerRow;
+  // Bool that determines if a warm up apply is performed before timing
+  bool warmUp;
 };
 
 // Use a utility from the Teuchos package of Trilinos to set up
@@ -87,15 +87,16 @@ setCmdLineOpts (CmdLineOpts& opts,
   opts.numTrials = 200;
   opts.lclNumRows = 10000;
   opts.numEntPerRow = 10;
+  opts.warmUp = true;
 
   clp.setOption ("numTrials", &(opts.numTrials), "Number of trials per "
-                 "timing loop (to increase timer precision)");
+                 "timing loop (to increase timer precision).");
   clp.setOption ("lclNumRows", &(opts.lclNumRows), "Number of rows per MPI "
-                 "process in the sparse graph; that is, the number of "
-                 "block rows in the BlockCrsMatrix");
+                 "process in the sparse graph.");
   clp.setOption ("numEntPerRow", &(opts.numEntPerRow), "Number of entries "
-                 "per row in the sparse graph; that is, number of blocks "
-                 "per block row of the BlockCrsMatrix");
+                 "per row in the sparse graph.");
+  clp.setOption ("warm-up", "no-warm-up", &(opts.warmUp), "Perform a first un-timed apply"
+                 " before running numTrials applies.");
 }
 
 // Actually read the command-line options from the command line,
@@ -166,6 +167,7 @@ printCmdLineOpts (Teuchos::FancyOStream& out,
   out << "numTrials: " << opts.numTrials << endl
       << "lclNumRows: " << opts.lclNumRows << endl
       << "numEntPerRow: " << opts.numEntPerRow << endl
+      << "warmUp: " << opts.warmUp << endl
       << endl;
 }
 
@@ -237,7 +239,7 @@ getTpetraGraph (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   return G;
 }
 
-// Get a Tpetra::BlockCrsMatrix for use in benchmarks.
+// Get a Tpetra::CrsMatrix for use in benchmarks.
 // This method takes the result of getTpetraGraph() (above) and
 // parameters that come from the command-line options read in by
 // parseCmdLineOpts.
@@ -254,17 +256,7 @@ getTpetraCrsMatrix (Teuchos::FancyOStream& out,
   using SC  = matrix_type::impl_scalar_type;
   using KAT = Kokkos::ArithTraits<SC>;
   using LO  = Tpetra::Map<>::local_ordinal_type;
-
-  // mfh 02 Jun 2016: Prefer Kokkos::Serial to the HostMirror as the
-  // pseudorandom number generator's execution space.  This is
-  // because, for CudaUVMSpace, the HostMirror is the same as the
-  // original.  This causes segfaults in the pseudorandom number
-  // generator, due to CUDA code trying to access host memory.
-#ifdef KOKKOS_ENABLE_SERIAL
-  using host_device_type = Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>;
-#else
-  using host_device_type = Kokkos::View<SC**, Kokkos::LayoutRight, device_type>::host_mirror_space;
-#endif // KOKKOS_ENABLE_SERIAL
+  using host_device_type     = Kokkos::View<SC*, Kokkos::LayoutRight, device_type>::host_mirror_space;
   using host_execution_space = host_device_type::execution_space;
 
   // We're filling on the host, so generate random numbers on the host.
@@ -358,6 +350,14 @@ main (int argc, char* argv[])
       static_cast<SC> (opts.numEntPerRow);
     X.putScalar (X_val);
     Y.putScalar (0.0);
+
+    // We first do a "warm-up" apply mainly to make sure UVM allocations
+    // are already set by the time we get to the timer.
+    // We make it an option to not do the warm-up in case someone wants to
+    // quantify how "first pass" apply does.
+    if(opts.warmUp) {
+      A->apply (X, Y);
+    }
 
     auto timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix apply (mat-vec)");
     {
