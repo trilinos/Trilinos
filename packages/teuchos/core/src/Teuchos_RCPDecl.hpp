@@ -650,6 +650,9 @@ public:
   /** \brief Shorthand for ptr(). */
   inline Ptr<T> operator()() const;
 
+  /** \brief Check if the RCP stores a non-null pointer */
+  inline explicit operator bool() const;
+  
   /** \brief Return an RCP<const T> version of *this. */
   inline RCP<const T> getConst() const;
 

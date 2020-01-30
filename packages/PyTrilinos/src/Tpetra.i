@@ -92,6 +92,11 @@ using Tpetra::Import;
 
 %}
 
+// Include the NumPy typemaps
+%include "numpy.i"
+%fragment("NumPy_Array_Requirements");
+%fragment("NumPy_Object_to_Array");
+
 // Define shortcuts for the default Tpetra template types
 %inline
 %{
