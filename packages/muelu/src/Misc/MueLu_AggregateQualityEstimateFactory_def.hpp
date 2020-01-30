@@ -100,20 +100,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & currentLevel) const {
 
-    return BuildP(currentLevel);
-
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level & currentLevel) const {
-
     FactoryMonitor m(*this, "Build", currentLevel);
 
     RCP<Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
     RCP<Aggregates> aggregates = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
 
     RCP<const Map> map = Get< RCP<const Map> >(currentLevel, "CoarseMap");
-    RCP<Xpetra::MultiVector<double,LO,GO,NO>> aggregate_qualities = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, 1);
+    RCP<Xpetra::MultiVector<magnitudeType,LO,GO,NO>> aggregate_qualities = Xpetra::MultiVectorFactory<magnitudeType,LO,GO,NO>::Build(map, 1);
 
     assert(!aggregates->AggregatesCrossProcessors());
     ComputeAggregateQualities(A, aggregates, aggregate_qualities);
@@ -168,7 +161,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<Xpetra::MultiVector<double,LO,GO,Node>> agg_qualities) const {
+  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const {
 
     const SC SCALAR_ZERO = Teuchos::ScalarTraits<SC>::zero();
     const SC SCALAR_ONE = Teuchos::ScalarTraits<SC>::one();
@@ -192,10 +185,10 @@ namespace MueLu {
       A->apply(*x, *tmp, Teuchos::NO_TRANS); // tmp now stores A*x
       A->apply(*x, *tmp, Teuchos::TRANS, -SCALAR_ONE, SCALAR_ONE); // tmp now stores A*x - A^T*x
 
-      Array<double> tmp_norm(1);
+      Array<magnitudeType> tmp_norm(1);
       tmp->norm2(tmp_norm());
 
-      Array<double> x_norm(1);
+      Array<magnitudeType> x_norm(1);
       tmp->norm2(x_norm());
 
       if (tmp_norm[0] > 1e-10*x_norm[0]) {
@@ -229,7 +222,7 @@ namespace MueLu {
     ArrayView<const LO> rowIndices;
     ArrayView<const SC> rowValues;
     ArrayView<const SC> colValues;
-    Teuchos::LAPACK<LO,double> myLapack;
+    Teuchos::LAPACK<LO,SC> myLapack;
 
     // Iterate over each aggregate to compute the quality estimate
     for (LO aggId=LO_ZERO; aggId<numAggs; ++aggId) {
@@ -335,13 +328,13 @@ namespace MueLu {
                     vr,aggSize,workArray.values(),workArray.length(),bwork,
                     &info);
 
-      assert(info == LO_ZERO);
+      TEUCHOS_ASSERT(info == LO_ZERO);
 
       SC maxEigenVal = SCALAR_ZERO;
 
       for (int i=LO_ZERO;i<aggSize;++i) {
 
-        assert(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
+        TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
         maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
 
       }
@@ -355,13 +348,13 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<double,LO,GO,Node>> agg_qualities) const {
+  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const {
 
     ParameterList pL = GetParameterList();
 
-    double good_agg_thresh = pL.get<double>("aggregate qualities: good aggregate threshold");
+    magnitudeType good_agg_thresh = Teuchos::as<magnitudeType>(pL.get<double>("aggregate qualities: good aggregate threshold"));
 
-    ArrayRCP<const double> data = agg_qualities->getData(0);
+    ArrayRCP<const magnitudeType> data = agg_qualities->getData(0);
 
     LO num_bad_aggs = 0;
     SC worst_agg = 0.0;
@@ -381,7 +374,7 @@ namespace MueLu {
 
     if (pL.get<bool>("aggregate qualities: file output")) {
       std::string filename = pL.get<std::string>("aggregate qualities: file base")+"."+std::to_string(level.GetLevelID());
-      Xpetra::IO<double,LO,GO,Node>::Write(filename, *agg_qualities);
+      Xpetra::IO<magnitudeType,LO,GO,Node>::Write(filename, *agg_qualities);
     }
 
   }

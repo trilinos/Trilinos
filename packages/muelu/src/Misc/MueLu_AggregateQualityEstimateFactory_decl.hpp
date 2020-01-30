@@ -91,6 +91,8 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+
     //! Constructor.
     AggregateQualityEstimateFactory();
 
@@ -118,7 +120,6 @@ namespace MueLu {
 
     //! Build aggregate quality esimates with this factory.
     void Build(Level & currentLevel) const;
-    void BuildP(Level & currentLevel) const;
 
     //@}
 
@@ -135,14 +136,84 @@ namespace MueLu {
     //! @name Internal method for computing aggregate quality.
     //@{
 
-    void ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<Xpetra::MultiVector<double,LO,GO,Node>> agg_qualities) const;
+    void ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const;
 
     //@}
 
     //! @name Internal method for outputting aggregate quality
     //@{
 
-    void OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<double,LO,GO,Node>> agg_qualities) const;
+    void OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const;
+
+    //@}
+
+
+  }; // class AggregateQualityEsimateFactory();
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  class AggregateQualityEstimateFactory<std::complex<double>, LocalOrdinal, GlobalOrdinal, Node> : public SingleLevelFactoryBase {
+    typedef std::complex<double> Scalar;
+#undef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  public:
+    //! @name Constructors/Destructors.
+    //@{
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+
+    //! Constructor.
+    AggregateQualityEstimateFactory() {};
+
+    //! Destructor.
+    virtual ~AggregateQualityEstimateFactory() {};
+
+    //@}
+
+    RCP<const ParameterList> GetValidParameterList() const {};
+
+    //! @name Input
+    //@{
+
+    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+    */
+    void DeclareInput(Level &currentLevel) const {};
+
+    //@}
+
+    //! @name Build methods.
+    //@{
+
+    //! Build aggregate quality esimates with this factory.
+    void Build(Level & currentLevel) const {};
+
+    //@}
+
+    //! @name Utility method to convert aggregate data to a convenient format.
+    //@{
+
+    //! Build aggregate quality esimates with this factory.
+    static void ConvertAggregatesData(RCP<const Aggregates> aggs, ArrayRCP<LO>& aggSortedVertices, ArrayRCP<LO>& aggsToIndices, ArrayRCP<LO>& aggSizes) {};
+
+    //@}
+
+  private:
+
+    //! @name Internal method for computing aggregate quality.
+    //@{
+
+    void ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const {};
+
+    //@}
+
+    //! @name Internal method for outputting aggregate quality
+    //@{
+
+    void OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const {};
 
     //@}
 
