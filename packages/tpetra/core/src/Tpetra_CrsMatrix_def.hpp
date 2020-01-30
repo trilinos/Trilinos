@@ -1077,20 +1077,30 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  allocateValues (ELocalGlobal lg, GraphAllocationStatus gas)
+  allocateValues (ELocalGlobal lg, GraphAllocationStatus gas,
+                  const bool verbose)
   {
+    using ::Tpetra::Details::Behavior;
+    using ::Tpetra::Details::ProfilingRegion;
+    using std::endl;
     const char tfecfFuncName[] = "allocateValues: ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
+    ProfilingRegion region("Tpetra::CrsMatrix::allocateValues");
 
-    ::Tpetra::Details::ProfilingRegion regionAllocateValues
-      ("Tpetra::CrsMatrix::allocateValues");
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("allocateValues");
+      std::ostringstream os;
+      os << *prefix << "{lg: "
+         << (lg == LocalIndices ? "Local" : "Global") << "Indices"
+         << ", gas: Graph"
+         << (gas == GraphAlreadyAllocated ? "Already" : "NotYet")
+         << "Allocated" << endl;
+      std::cerr << os.str ();
+    }
 
+    const bool debug = Behavior::debug("CrsMatrix");
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->staticGraph_.is_null (), std::logic_error,
@@ -1135,7 +1145,7 @@ namespace Tpetra {
            "gas = GraphNotYetAllocated, but myGraph_ is null." << suffix);
       }
       try {
-        this->myGraph_->allocateIndices (lg);
+        this->myGraph_->allocateIndices (lg, verbose);
       }
       catch (std::exception& e) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1177,6 +1187,13 @@ namespace Tpetra {
 
     // Allocate array of (packed???) matrix values.
     using values_type = typename local_matrix_type::values_type;
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate k_values1D_: Pre "
+         << k_values1D_.extent(0) << ", post "
+         << lclTotalNumEntries << endl;
+      std::cerr << os.str();
+    }
     this->k_values1D_ =
       values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
   }
@@ -1740,7 +1757,11 @@ namespace Tpetra {
       "Local row index " << lclRow << " does not belong to this process.");
 
     if (! graph.indicesAreAllocated ()) {
-      this->allocateValues (LocalIndices, GraphNotYetAllocated);
+      // We only allocate values at most once per process, so it's OK
+      // to check TPETRA_VERBOSE here.
+      using ::Tpetra::Details::Behavior;
+      const bool verbose = Behavior::verbose("CrsMatrix");
+      this->allocateValues (LocalIndices, GraphNotYetAllocated, verbose);
     }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -1814,7 +1835,11 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     if (! graph.indicesAreAllocated ()) {
-      this->allocateValues (GlobalIndices, GraphNotYetAllocated);
+      // We only allocate values at most once per process, so it's OK
+      // to check TPETRA_VERBOSE here.
+      using ::Tpetra::Details::Behavior;
+      const bool verbose = Behavior::verbose("CrsMatrix");
+      this->allocateValues (GlobalIndices, GraphNotYetAllocated, verbose);
       // mfh 23 Jul 2017: allocateValues invalidates existing
       // getRowInfo results.  Once we get rid of lazy graph
       // allocation, we'll be able to move the getRowInfo call outside
@@ -4472,12 +4497,13 @@ namespace Tpetra {
     }
 
     if (! this->getCrsGraphRef ().indicesAreAllocated ()) {
-      if (this->hasColMap ()) {
-        // We have a column Map, so use local indices.
-        this->allocateValues (LocalIndices, GraphNotYetAllocated);
-      } else {
-        // We don't have a column Map, so use global indices.
-        this->allocateValues (GlobalIndices, GraphNotYetAllocated);
+      using ::Tpetra::Details::Behavior;
+      const bool verbose = Behavior::verbose("CrsMatrix");
+      if (this->hasColMap ()) { // use local indices
+        allocateValues(LocalIndices, GraphNotYetAllocated, verbose);
+      }
+      else { // no column Map, so use global indices
+        allocateValues(GlobalIndices, GraphNotYetAllocated, verbose);
       }
     }
     // Global assemble, if we need to.  This call only costs a single
@@ -6166,20 +6192,52 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::unique_ptr<std::string>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  createPrefix(const char methodName[]) const
+  {
+    int myRank = -1;
+    auto map = this->getMap();
+    if (! map.is_null()) {
+      auto comm = map->getComm();
+      if (! comm.is_null()) {
+        myRank = comm->getRank();
+      }
+    }
+    std::ostringstream pfxStrm;
+    pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::"
+            << methodName << ": ";
+    return std::unique_ptr<std::string>(
+      new std::string(pfxStrm.str()));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding)
+  applyCrsPadding(
+    const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding,
+    const bool verbose)
   {
-    //    const char tfecfFuncName[] = "applyCrsPadding";
+    using ::Tpetra::Details::ProfilingRegion;
+    using Tpetra::Details::padCrsArrays;
+    using std::endl;
     using execution_space = typename device_type::execution_space;
     using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
     using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
-    using Tpetra::Details::padCrsArrays;
-
     const char tfecfFuncName[] = "applyCrsPadding: ";
+    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::applyCrsPadding");
 
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("applyCrsPadding");
+      std::ostringstream os;
+      os << *prefix << "padding.size(): " << padding.size() << endl;
+      std::cerr << os.str ();
+    }
+
+    // NOTE (mfh 29 Jan 2020) This allocates the values array.
     if (! myGraph_->indicesAreAllocated ()) {
-      this->allocateValues (GlobalIndices, GraphNotYetAllocated);
+      this->allocateValues (GlobalIndices, GraphNotYetAllocated, verbose);
     }
 
     if (padding.size() == 0)
@@ -6188,10 +6246,21 @@ namespace Tpetra {
     // Making copies here because k_rowPtrs_ has a const type. Otherwise, we
     // would use it directly.
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate row_ptrs_beg: "
+         << myGraph_->k_rowPtrs_.extent(0) << endl;
+      std::cerr << os.str();
+    }
     row_ptrs_type row_ptr_beg("row_ptr_beg", myGraph_->k_rowPtrs_.extent(0));
     Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
 
     const size_t N = (row_ptr_beg.extent(0) == 0 ? 0 : row_ptr_beg.extent(0) - 1);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate row_ptrs_end: " << N << endl;
+      std::cerr << os.str();
+    }
     row_ptrs_type row_ptr_end("row_ptr_end", N);
 
     bool refill_num_row_entries = false;
@@ -6217,15 +6286,32 @@ namespace Tpetra {
     }
 
     using values_type = typename local_matrix_type::values_type;
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate (copy of) values: " << k_values1D_.size() << endl;
+      std::cerr << os.str();
+    }
     values_type values("values", k_values1D_.size());
     Kokkos::deep_copy(values, k_values1D_);
 
     if(myGraph_->isGloballyIndexed()) {
       using indices_type = typename crs_graph_type::t_GlobalOrdinal_1D;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate (copy of) global column indices: "
+           << myGraph_->k_gblInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       indices_type indices("indices", myGraph_->k_gblInds1D_.extent(0));
       Kokkos::deep_copy(indices, myGraph_->k_gblInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
       padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg, row_ptr_end, indices, values, padding);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Free old myGraph_->k_gblInds1D_: "
+           << myGraph_->k_gblInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_gblInds1D_ = indices;
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           values.size() != indices.size(),
@@ -6234,10 +6320,22 @@ namespace Tpetra {
     }
     else {
       using indices_type = typename local_graph_type::entries_type::non_const_type;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate (copy of) local column indices: "
+           << myGraph_->k_lclInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       indices_type indices("indices", myGraph_->k_lclInds1D_.extent(0));
       Kokkos::deep_copy(indices, myGraph_->k_lclInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
       padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg, row_ptr_end, indices, values, padding);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Free old myGraph_->k_lclInds1D_: "
+           << myGraph_->k_lclInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_lclInds1D_ = indices;
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           values.size() != indices.size(),
@@ -6253,7 +6351,20 @@ namespace Tpetra {
                            }
                            );
     }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Free old myGraph_->k_rowPtrs_: "
+         << myGraph_->k_rowPtrs_.extent(0) << endl;
+      std::cerr << os.str();
+    }
     myGraph_->k_rowPtrs_ = row_ptr_beg;
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Free old k_values1D_: "
+         << k_values1D_.extent(0) << endl;
+      std::cerr << os.str();
+    }
     k_values1D_ = values;
   }
 
@@ -6423,25 +6534,21 @@ namespace Tpetra {
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = -1;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::copyAndPermute: ";
-        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
-      } ();
+      prefix = createPrefix("copyAndPermute");
       std::ostringstream os;
       os << *prefix << endl
+         << *prefix << "  numSameIDs: " << numSameIDs << endl
+         << *prefix << "  numPermute: " << permuteToLIDs.extent(0)
+         << endl
          << *prefix << "  "
-         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs")
+         << endl
          << *prefix << "  "
-         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
+         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs")
+         << endl
+         << *prefix << "  "
+         << "isStaticGraph: " << (isStaticGraph() ? "true" : "false")
+         << endl;
       std::cerr << os.str ();
     }
 
@@ -6464,11 +6571,11 @@ namespace Tpetra {
 
     if (!this->isStaticGraph ()) {
       auto padding =
-        this->myGraph_->computeCrsPadding(*srcMat.getGraph(), numSameIDs, permuteToLIDs, permuteFromLIDs);
+        this->myGraph_->computeCrsPadding(*srcMat.getGraph(),
+          numSameIDs, permuteToLIDs, permuteFromLIDs, verbose);
       if (padding.size() > 0)
-        this->applyCrsPadding(padding);
+        this->applyCrsPadding(padding, verbose);
     }
-
 
     if (verbose) {
       std::ostringstream os;
@@ -7359,9 +7466,9 @@ namespace Tpetra {
     }
 
     if (!this->isStaticGraph()) {
-      auto padding = myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID);
+      auto padding = myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID, verbose);
       if (padding.size() > 0)
-        this->applyCrsPadding(padding);
+        this->applyCrsPadding(padding, verbose);
     }
 
     if (debug) {

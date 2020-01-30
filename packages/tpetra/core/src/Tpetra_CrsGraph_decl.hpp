@@ -1163,17 +1163,21 @@ namespace Tpetra {
        buffer_device_type>& permuteFromLIDs) override;
 
     void
-    applyCrsPadding (const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding);
+    applyCrsPadding(
+      const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
+      const bool verbose);
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
     computeCrsPadding (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
                        const size_t numSameIDs,
                        const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) const;
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+                       const bool verbose) const;
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
     computeCrsPadding (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID) const;
+                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+                       const bool verbose) const;
 
     void
     computeCrsPaddingForSameIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
@@ -1480,6 +1484,9 @@ namespace Tpetra {
     };
 
   private:
+    std::unique_ptr<std::string>
+    createPrefix(const char methodName[]) const;
+
     // Friend declaration for nonmember function.
     template<class CrsGraphType>
     friend Teuchos::RCP<CrsGraphType>
@@ -1693,7 +1700,9 @@ namespace Tpetra {
     };
 
     bool indicesAreAllocated () const;
-    void allocateIndices (const ELocalGlobal lg);
+
+    void
+    allocateIndices(const ELocalGlobal lg, const bool verbose=false);
 
     //! \name Methods governing changes between global and local indices
     //@{
