@@ -435,7 +435,7 @@ namespace Tacho {
           
       timer.reset();
       {
-        value_type_array buf("buf", _info.max_schur_size*(_info.max_schur_size + 1));
+        value_type_array buf(do_not_initialize_tag("buf"), _info.max_schur_size*(_info.max_schur_size + 1));
         const size_t bufsize = buf.span()*sizeof(value_type);
         track_alloc(bufsize);
           
@@ -484,7 +484,7 @@ namespace Tacho {
       const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
       timer.reset();
       {
-        value_type_array buf("buf", _info.max_schur_size*(nb + 1));
+        value_type_array buf(do_not_initialize_tag("buf"), _info.max_schur_size*(nb + 1));
         const size_t bufsize = buf.span()*sizeof(value_type);
         track_alloc(bufsize);
           
@@ -541,7 +541,7 @@ namespace Tacho {
         
       timer.reset();
       {
-        value_type_array buf("buf", _info.max_schur_size*x.extent(1));
+        value_type_array buf(do_not_initialize_tag("buf"), _info.max_schur_size*x.extent(1));
         const size_t bufsize = buf.span()*sizeof(value_type);
         track_alloc(bufsize);
           
