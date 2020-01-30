@@ -100,7 +100,6 @@ namespace Tacho {
         _ax = value_type_array(ax, _nnz);
       }
 
-      KOKKOS_INLINE_FUNCTION
       void setNumNonZeros() { 
         if (_m) {
           auto last = Kokkos::subview(_ap, _m);

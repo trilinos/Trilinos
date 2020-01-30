@@ -575,6 +575,8 @@ namespace Tacho {
   struct UseThisDevice<Kokkos::Serial> { using device_type = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>; };
 #endif
 
+  using do_not_initialize_tag = Kokkos::ViewAllocateWithoutInitializing; 
+
 }
 
 #endif

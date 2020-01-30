@@ -96,7 +96,7 @@ int main (int argc, char *argv[]) {
     {
       timer.reset();
       Ap.createConfTo(A);
-      Tacho::applyPermutationToCrsMatrix(Ap, A, perm, peri);
+      Tacho::applyPermutationToCrsMatrixLower(Ap, A, perm, peri);
       Kokkos::fence();
       const double t_permute_A = timer.seconds();
 

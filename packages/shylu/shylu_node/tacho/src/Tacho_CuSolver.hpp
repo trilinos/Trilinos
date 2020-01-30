@@ -8,6 +8,9 @@
 #include "cusolverSp.h"
 #include "cusolverSp_LOWLEVEL_PREVIEW.h"
 
+#include <iostream>
+#include <type_traits>
+
 namespace Tacho {
 
   class CuSolver {
@@ -42,8 +45,8 @@ namespace Tacho {
     ordinal_type _m;
     size_type _nnz;
     
-    size_type_array _ap; 
-    ordinal_type_array _aj; 
+    size_type_array _ap;  /// ap_ordinal is used to interface to cuSolver
+    ordinal_type_array _ap_ordinal, _aj; 
     
     ordinal_type_array _perm, _peri;
     
@@ -89,10 +92,24 @@ namespace Tacho {
 
       _ap = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
       _aj = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
-      
-      auto last = Kokkos::subview(ap, _m);
-      auto h_last = Kokkos::create_mirror_view(host_memory_space(), last); Kokkos::deep_copy(h_last, last);
-      
+      Kokkos::fence();
+#if defined( TACHO_USE_INT_INT )
+      _ap_ordinal = ap;
+#else
+      /// LAMBDA cannot capture this pointer; make all variables local     
+      {
+        ordinal_type_array l_ap_ordinal(do_not_initialize_tag("CuSolver::ap_ordinal"), _ap.extent(0));
+        auto l_ap = _ap;
+        Kokkos::RangePolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > policy(0,l_ap.extent(0));
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int i) { 
+            l_ap_ordinal(i) = static_cast<int>(l_ap(i));
+          });
+        _ap_ordinal = l_ap_ordinal;
+      }
+#endif 
+      auto last = Kokkos::subview(_ap, _m);
+      auto h_last = Kokkos::create_mirror_view(host_memory_space(), last); 
+      Kokkos::deep_copy(h_last, last);
       _nnz = h_last();
       const double t_copy = timer.seconds();
 
@@ -100,7 +117,7 @@ namespace Tacho {
       _status = cusolverSpXcsrcholAnalysis(_handle, 
                                            _m, _nnz,
                                            _desc,
-                                           _ap.data(), _aj.data(),
+                                           _ap_ordinal.data(), _aj.data(),
                                            _chol_info); checkStatus("cusolverSpXcsrcholAnalysis");
       Kokkos::fence();
       const double t_analyze = timer.seconds();
@@ -131,21 +148,21 @@ namespace Tacho {
       size_t internalDataInBytes, workspaceInBytes;
       _status = cusolverSpDcsrcholBufferInfo(_handle, 
                                              _m, _nnz, _desc,
-                                             ax.data(), _ap.data(), _aj.data(),
+                                             ax.data(), _ap_ordinal.data(), _aj.data(),
                                              _chol_info,
                                              &internalDataInBytes,
                                              &workspaceInBytes); checkStatus("cusolverSpDcsrcholBufferInfo");
 
       const size_t bufsize = workspaceInBytes/sizeof(value_type);
       if (bufsize > _buf.extent(0))
-        _buf = value_type_array(Kokkos::ViewAllocateWithoutInitializing("cusolver buf"), bufsize);
+        _buf = value_type_array(do_not_initialize_tag("cusolver buf"), bufsize);
       Kokkos::fence();
       const double t_alloc = timer.seconds();
       
       timer.reset();
       _status = cusolverSpDcsrcholFactor(_handle,
                                          _m, _nnz, _desc,
-                                         ax.data(), _ap.data(), _aj.data(),
+                                         ax.data(), _ap_ordinal.data(), _aj.data(),
                                          _chol_info,
                                          _buf.data()); checkStatus("cusolverSpDcsrcholFactor");
       Kokkos::fence();                                         
