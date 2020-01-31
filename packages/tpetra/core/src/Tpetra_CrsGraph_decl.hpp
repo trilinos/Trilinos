@@ -66,6 +66,7 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <functional> // std::function
+#include <memory>
 
 namespace Tpetra {
 
@@ -1163,17 +1164,21 @@ namespace Tpetra {
        buffer_device_type>& permuteFromLIDs) override;
 
     void
-    applyCrsPadding (const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding);
+    applyCrsPadding(
+      const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
+      const bool verbose);
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
     computeCrsPadding (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
                        const size_t numSameIDs,
                        const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) const;
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+                       const bool verbose) const;
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
     computeCrsPadding (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID) const;
+                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+                       const bool verbose) const;
 
     void
     computeCrsPaddingForSameIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
@@ -1480,6 +1485,9 @@ namespace Tpetra {
     };
 
   private:
+    std::unique_ptr<std::string>
+    createPrefix(const char methodName[]) const;
+
     // Friend declaration for nonmember function.
     template<class CrsGraphType>
     friend Teuchos::RCP<CrsGraphType>
@@ -1693,7 +1701,9 @@ namespace Tpetra {
     };
 
     bool indicesAreAllocated () const;
-    void allocateIndices (const ELocalGlobal lg);
+
+    void
+    allocateIndices(const ELocalGlobal lg, const bool verbose=false);
 
     //! \name Methods governing changes between global and local indices
     //@{
@@ -1714,6 +1724,10 @@ namespace Tpetra {
     /// \pre The graph has a column Map.
     /// \post The graph is locally indexed.
     ///
+    /// \param verbose [in] Whether to print verbose debugging output.
+    ///   This exists because CrsMatrix may want to control output
+    ///   independently of the CrsGraph that it owns.
+    ///
     /// \return Error code and error string.  See below.
     ///
     /// First return value is the number of column indices on this
@@ -1725,7 +1739,8 @@ namespace Tpetra {
     ///
     /// Second return value is a human-readable error string.  If the
     /// first return value is zero, then the string may be empty.
-    std::pair<size_t, std::string> makeIndicesLocal ();
+    std::pair<size_t, std::string>
+    makeIndicesLocal(const bool verbose=false);
 
     /// \brief Make the Import and Export objects, if needed.
     ///
