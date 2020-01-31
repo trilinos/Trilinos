@@ -232,7 +232,7 @@ public:
 
     /*
     // Pad each row to have size divisible by alignment size
-    enum { Align = Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 2 };
+    enum { Align = std::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 2 };
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       const size_t rem = coord_work[i] % Align;
       if (rem > 0) {

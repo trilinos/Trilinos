@@ -155,7 +155,7 @@ namespace Tacho {
     static void
     copy(CrsMatBaseTypeA &A,
          const CrsMatBaseTypeB B) {
-      static_assert( Kokkos::Impl::is_same<
+      static_assert( std::is_same<
                      typename CrsMatBaseTypeA::space_type,
                      typename CrsMatBaseTypeB::space_type
                      >::value,
