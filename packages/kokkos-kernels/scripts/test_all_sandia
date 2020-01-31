@@ -31,7 +31,11 @@ if [[ "$HOSTNAME" == apollo\.* ]]; then
   MACHINE=apollo
 fi
 
-if [[ "$HOSTNAME" == mayer\.* ]]; then
+if [[ "$HOSTNAME" == kokkos-dev-2* ]]; then
+  MACHINE=kokkos-dev-2
+fi
+
+if [[ "$HOSTNAME" == may* ]]; then
   MACHINE=mayer
 #  module load git
 fi
@@ -69,7 +73,8 @@ CUDA_IBM_BUILD_LIST="Cuda_OpenMP,Cuda_Serial"
 
 GCC_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wignored-qualifiers,-Wempty-body,-Wclobbered,-Wuninitialized"
 IBM_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
-CLANG_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+CLANG_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+#CLANG_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
 INTEL_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
 CUDA_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
 PGI_WARNING_FLAGS=""
@@ -283,6 +288,68 @@ elif [ "$MACHINE" = "kokkos-dev" ]; then
                "cuda/8.0.44 $CUDA8_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   fi
+elif [ "$MACHINE" = "kokkos-dev-2" ]; then
+  source /projects/sems/modulefiles/utils/sems-modules-init.sh
+  module use /home/projects/x86-64/modulefiles/local
+  module purge
+  module load sems-env
+  module load kokkos-env
+
+  module load sems-git
+  module load sems-tex
+  module load sems-cmake/3.12.2
+  module load sems-gdb
+
+  SKIP_HWLOC=True
+
+  BASE_MODULE_LIST="sems-env,kokkos-env,kokkos-hwloc/1.10.1/base,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
+  GCC91_MODULE_LIST="sems-env,kokkos-env,kokkos-hwloc/1.10.1/base,<COMPILER_NAME>/<COMPILER_VERSION>"
+  NVCC_MODULE_LIST="sems-env,kokkos-env,kokkos-hwloc/1.10.1/base,<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/7.3.0"
+
+  CLANG_MODULE_LIST="sems-env,kokkos-env,sems-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/6.1.0"
+  CLANG8_MODULE_LIST="sems-env,kokkos-env,<COMPILER_NAME>/<COMPILER_VERSION>,cuda/10.0"
+
+  BUILD_LIST_CUDA_NVCC="Cuda_Serial,Cuda_Pthread"
+  BUILD_LIST_CUDA_CLANG="Cuda_Serial,Cuda_OpenMP"
+  BUILD_LIST_CLANG="Serial,Pthread,OpenMP"
+
+  if [ "$SPOT_CHECK" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/7.3.0 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
+               "gcc/8.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "gcc/9.1 $GCC91_MODULE_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/18.0.5 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "clang/8.0 $CLANG8_MODULE_LIST "Cuda_OpenMP,Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
+               "cuda/10.1 $NVCC_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )   
+  else
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("cuda/10.0 $NVCC_MODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/10.1 $NVCC_MODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "clang/8.0 $CLANG8_MODULE_LIST $BUILD_LIST_CUDA_CLANG clang++ $CUDA_WARNING_FLAGS"
+               "clang/8.0 $CLANG8_MODULE_LIST $BUILD_LIST_CLANG clang++ $CLANG_WARNING_FLAGS"
+               "gcc/4.8.4 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/4.9.3 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/5.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/6.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/8.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/9.1 $GCC91_MODULE_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/15.0.2 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/16.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/18.0.5 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/19.0.5 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "clang/3.5.2 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "clang/5.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "clang/7.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+    )
+  fi
+
+  if [ -z "$ARCH_FLAG" ]; then
+    ARCH_FLAG="--arch=SNB,Volta70"
+  fi
 elif [ "$MACHINE" = "white" ]; then
   source /etc/profile.d/modules.sh
   SKIP_HWLOC=True
@@ -294,7 +361,7 @@ elif [ "$MACHINE" = "white" ]; then
   CUDA10_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,ibm/xl/16.1.0"
 
   module load netlib/3.8.0/gcc
-  export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a"
+  export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a ${BLAS_ROOT}/lib/liblapack.a"
   # blas is compiled by gcc so use single underscore and power8 use return complex
   KOKKOS_OPTIONS="eti-only,blas-mangle_,blas-return-complex"
 
@@ -305,6 +372,7 @@ elif [ "$MACHINE" = "white" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/6.4.0 $BASE_MODULE_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
                "gcc/7.2.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.4.0 $BASE_MODULE_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
                "ibm/16.1.0 $IBM_MODULE_LIST "Serial" xlC $IBM_WARNING_FLAGS"
                "cuda/9.2.88 $CUDA_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/10.0.130 $CUDA10_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
@@ -313,6 +381,7 @@ elif [ "$MACHINE" = "white" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/6.4.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/7.2.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.4.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "ibm/16.1.0 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
                "ibm/16.1.1 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
                "cuda/9.2.88 $CUDA_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
@@ -336,7 +405,6 @@ elif [ "$MACHINE" = "bowman" ]; then
   # Format: (compiler module-list build-list exe-name warning-flag)
   COMPILERS=("intel/16.4.258 $BASE_MODULE_LIST $OLD_INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
              "intel/17.2.174 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-             "intel/18.2.199 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
   )
 
   if [ -z "$ARCH_FLAG" ]; then
@@ -351,8 +419,8 @@ elif [ "$MACHINE" = "mayer" ]; then
   ARM_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
 
   # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("gcc/7.2.0 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-             "arm/18.4.0 $ARM_MODULE_LIST $ARM_GCC_BUILD_LIST armclang++ $CLANG_WARNING_FLAGS"
+  COMPILERS=("gnu7/7.2.0 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+             "arm/19.2.0 $ARM_MODULE_LIST $ARM_GCC_BUILD_LIST armclang++ $CLANG_WARNING_FLAGS"
   )
 
   if [ -z "$ARCH_FLAG" ]; then
@@ -384,6 +452,7 @@ elif [ "$MACHINE" = "blake" ]; then
                "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/8.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
     )
     if [ -z "$ARCH_FLAG" ]; then
       ARCH_FLAG="--arch=SNB"

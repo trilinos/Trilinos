@@ -126,8 +126,6 @@ public:
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
 
 
-
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   struct cuSparseHandleType{
     cusparseHandle_t handle;
