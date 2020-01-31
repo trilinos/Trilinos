@@ -1485,9 +1485,6 @@ namespace Tpetra {
     };
 
   private:
-    std::unique_ptr<std::string>
-    createPrefix(const char methodName[]) const;
-
     // Friend declaration for nonmember function.
     template<class CrsGraphType>
     friend Teuchos::RCP<CrsGraphType>

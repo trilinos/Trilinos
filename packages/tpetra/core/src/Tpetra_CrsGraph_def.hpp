@@ -1214,7 +1214,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   allocateIndices (const ELocalGlobal lg, const bool verbose)
   {
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::ProfilingRegion;
     using Teuchos::arcp;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -1228,12 +1228,13 @@ namespace Tpetra {
       typename lcl_col_inds_type::array_layout,
       device_type> gbl_col_inds_type;
     const char tfecfFuncName[] = "allocateIndices: ";
-    const char suffix[] = "  Please report this bug to the Tpetra developers.";
+    const char suffix[] =
+      "  Please report this bug to the Tpetra developers.";
     ProfilingRegion profRegion("Tpetra::CrsGraph::allocateIndices");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("allocateIndices");
+      prefix = this->createPrefix("CrsGraph", "allocateIndices");
       std::ostringstream os;
       os << *prefix << "{lg="
          << (lg == GlobalIndices ? "GlobalIndices" : "LocalIndices")
@@ -4471,7 +4472,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   makeIndicesLocal (const bool verbose)
   {
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::ProfilingRegion;
     using Teuchos::arcp;
     using Teuchos::Array;
     using std::endl;
@@ -4490,7 +4491,7 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("makeIndicesLocal");
+      prefix = this->createPrefix("CrsGraph", "makeIndicesLocal");
       std::ostringstream os;
       os << *prefix << "lclNumRows: " << getNodeNumRows() << endl;
       std::cerr << os.str();
@@ -5095,19 +5096,22 @@ namespace Tpetra {
     const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding,
     const bool verbose)
   {
-    using ::Tpetra::Details::ProfilingRegion;
-    using Tpetra::Details::padCrsArrays;
+    using Details::ProfilingRegion;
+    using Details::padCrsArrays;
     using std::endl;
     using execution_space = typename device_type::execution_space;
-    using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
+    using row_ptrs_type =
+      typename local_graph_type::row_map_type::non_const_type;
     using indices_type = t_GlobalOrdinal_1D;
-    using local_indices_type = typename local_graph_type::entries_type::non_const_type;
-    using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
+    using local_indices_type =
+      typename local_graph_type::entries_type::non_const_type;
+    using range_policy = Kokkos::RangePolicy<execution_space,
+      Kokkos::IndexType<LocalOrdinal>>;
     ProfilingRegion regionCAP ("Tpetra::CrsGraph::applyCrsPadding");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("applyCrsPadding");
+      prefix = this->createPrefix("CrsGraph", "applyCrsPadding");
       std::ostringstream os;
       os << *prefix << "padding.size(): " << padding.size()
          << ", indicesAreAllocated: "
@@ -5236,26 +5240,6 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::unique_ptr<std::string>
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  createPrefix(const char methodName[]) const
-  {
-    int myRank = -1;
-    auto map = this->getMap();
-    if (! map.is_null()) {
-      auto comm = map->getComm();
-      if (! comm.is_null()) {
-        myRank = comm->getRank();
-      }
-    }
-    std::ostringstream pfxStrm;
-    pfxStrm << "Proc " << myRank << ": Tpetra::CrsGraph::"
-            << methodName << ": ";
-    return std::unique_ptr<std::string>(
-      new std::string(pfxStrm.str()));
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   computeCrsPadding (const RowGraph<LocalOrdinal,GlobalOrdinal,Node>& source,
@@ -5270,7 +5254,8 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("computeCrsPadding(same & permute)");
+      prefix = this->createPrefix("CrsGraph",
+        "computeCrsPadding(same & permute)");
       std::ostringstream os;
       os << *prefix << "{numSameIDs: " << numSameIDs
          << ", numPermutes: " << permuteFromLIDs.extent(0) << "}"
@@ -5432,7 +5417,8 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("computeCrsPadding(imports)");
+      prefix =
+        this->createPrefix("CrsGraph", "computeCrsPadding(imports)");
       std::ostringstream os;
       os << *prefix << "{importLIDs.extent(0): "
          << importLIDs.extent(0)
@@ -6119,18 +6105,19 @@ namespace Tpetra {
    Distributor& /* distor */,
    const CombineMode /* combineMode */ )
   {
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::Behavior;
+    using Details::ProfilingRegion;
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
     const char tfecfFuncName[] = "unpackAndCombine: ";
 
-    ProfilingRegion regionCGC ("Tpetra::CrsGraph::unpackAndCombine");
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ("CrsGraph");
+    ProfilingRegion regionCGC("Tpetra::CrsGraph::unpackAndCombine");
+    const bool verbose = Behavior::verbose("CrsGraph");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("unpackAndCombine");
+      prefix = this->createPrefix("CrsGraph", "unpackAndCombine");
       std::ostringstream os;
       os << *prefix << endl;
       std::cerr << os.str ();

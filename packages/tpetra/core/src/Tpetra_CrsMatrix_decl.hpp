@@ -3439,9 +3439,6 @@ namespace Tpetra {
       const bool verbose);
 
   private:
-    std::unique_ptr<std::string>
-    createPrefix(const char methodName[]) const;
-
     void
     copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                         const size_t numSameIDs,

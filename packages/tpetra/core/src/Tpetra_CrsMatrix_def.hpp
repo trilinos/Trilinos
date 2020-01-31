@@ -322,7 +322,7 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("CrsMatrix(CrsGraph,params)");
+      prefix = this->createPrefix("CrsMatrix", "CrsMatrix(graph,params)");
       std::ostringstream os;
       os << *prefix << endl;
       std::cerr << os.str ();
@@ -1113,7 +1113,7 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("allocateValues");
+      prefix = this->createPrefix("CrsMatrix", "allocateValues");
       std::ostringstream os;
       os << *prefix << "{lg: "
          << (lg == LocalIndices ? "Local" : "Global") << "Indices"
@@ -1291,7 +1291,7 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("fillLocalGraphAndMatrix");
+      prefix = this->createPrefix("CrsMatrix", "fillLocalGraphAndMatrix");
       std::ostringstream os;
       os << *prefix << endl;
       std::cerr << os.str ();
@@ -1687,7 +1687,7 @@ namespace Tpetra {
     const bool verbose = Details::Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("fillLocalMatrix");
+      prefix = this->createPrefix("CrsMatrix", "fillLocalMatrix");
       std::ostringstream os;
       os << *prefix << "lclNumRows: " << lclNumRows << endl;
       std::cerr << os.str ();
@@ -4318,7 +4318,8 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   globalAssemble ()
   {
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::Behavior;
+    using Details::ProfilingRegion;
     using Teuchos::Comm;
     using Teuchos::outArg;
     using Teuchos::RCP;
@@ -4334,10 +4335,10 @@ namespace Tpetra {
     const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
     ProfilingRegion regionGlobalAssemble ("Tpetra::CrsMatrix::globalAssemble");
 
-    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("globalAssemble");
+      prefix = this->createPrefix("CrsMatrix", "globalAssemble");
       std::ostringstream os;
       os << *prefix << "nonlocals_.size()=" << nonlocals_.size()
          << endl;
@@ -4644,7 +4645,8 @@ namespace Tpetra {
                 const Teuchos::RCP<const map_type>& rangeMap,
                 const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::Behavior;
+    using Details::ProfilingRegion;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -4652,10 +4654,10 @@ namespace Tpetra {
     const char tfecfFuncName[] = "fillComplete: ";
     ProfilingRegion regionFillComplete
       ("Tpetra::CrsMatrix::fillComplete");
-    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("fillComplete(dom,ran,p)");
+      prefix = this->createPrefix("CrsMatrix", "fillComplete(dom,ran,p)");
       std::ostringstream os;
       os << *prefix << endl;
       std::cerr << os.str ();
@@ -6390,34 +6392,14 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::unique_ptr<std::string>
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  createPrefix(const char methodName[]) const
-  {
-    int myRank = -1;
-    auto map = this->getMap();
-    if (! map.is_null()) {
-      auto comm = map->getComm();
-      if (! comm.is_null()) {
-        myRank = comm->getRank();
-      }
-    }
-    std::ostringstream pfxStrm;
-    pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::"
-            << methodName << ": ";
-    return std::unique_ptr<std::string>(
-      new std::string(pfxStrm.str()));
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   applyCrsPadding(
     const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding,
     const bool verbose)
   {
-    using ::Tpetra::Details::ProfilingRegion;
-    using Tpetra::Details::padCrsArrays;
+    using Details::ProfilingRegion;
+    using Details::padCrsArrays;
     using std::endl;
     using execution_space = typename device_type::execution_space;
     using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
@@ -6427,7 +6409,7 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("applyCrsPadding");
+      prefix = this->createPrefix("CrsMatrix", "applyCrsPadding");
       std::ostringstream os;
       os << *prefix << "padding.size(): " << padding.size() << endl;
       std::cerr << os.str ();
@@ -6734,18 +6716,19 @@ namespace Tpetra {
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
   {
-    using Tpetra::Details::dualViewStatusToString;
-    using Tpetra::Details::ProfilingRegion;
+    using Details::Behavior;
+    using Details::dualViewStatusToString;
+    using Details::ProfilingRegion;
     using std::endl;
 
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermute: ";
-    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermute");
+    ProfilingRegion regionCAP("Tpetra::CrsMatrix::copyAndPermute");
 
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = createPrefix("copyAndPermute");
+      prefix = this->createPrefix("CrsMatrix", "copyAndPermute");
       std::ostringstream os;
       os << *prefix << endl
          << *prefix << "  numSameIDs: " << numSameIDs << endl
