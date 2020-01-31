@@ -39,7 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-// This benchmark exercises Tpetra::CrsMatrix's the apply() method.
+// This benchmark exercises Tpetra::CrsMatrix's apply() method.
 // Tpetra implements sparse matrix and dense vector data structures and
 // computational kernels for users and other Trilinos data structures.
 // Tpetra uses MPI (Message Passing Interface) for distributed-memory
