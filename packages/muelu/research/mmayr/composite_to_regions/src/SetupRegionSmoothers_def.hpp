@@ -410,10 +410,10 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
   // Get max number of regions per proc
   const int maxRegPerProc = regX.size();
 
-  const int maxIter      = params->get<int>   ("smoother: sweeps");
-  const Scalar eigRatio  = params->get<double>("smoother: eigRatio");
+  const int maxIter = params->get<int>   ("smoother: sweeps");
+  const Scalar eigRatio = params->get<double>("smoother: Chebyshev eigRatio");
   const Scalar lambdaMax = params->get<Scalar>("chebyshev: lambda max");
-  const Scalar boostFactor = 1.1; // TODO: add as a param
+  const Scalar boostFactor = params->get<double>("smoother: Chebyshev boost factor");
 
   Teuchos::Array<RCP<Vector> > diag_inv = params->get<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal");
 
