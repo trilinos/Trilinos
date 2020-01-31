@@ -52,11 +52,29 @@
 
 #warning "KDDKDD HELLO"
 
-#include "Tpetra_MultiVector_def.hpp"
+#include "Tpetra_DistObject_decl.hpp"
+#include "Tpetra_DistObject_def.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
-#include "Zoltan2_VtxLabel.hpp"
-#include "Tpetra_FEMultiVector_def.hpp"
+#include "Tpetra_MultiVector_def.hpp"
+#include "Tpetra_Vector_decl.hpp"
+#include "Tpetra_Vector_def.hpp"
 #include "Tpetra_FEMultiVector_decl.hpp"
+#include "Tpetra_FEMultiVector_def.hpp"
+#include "Zoltan2_VtxLabel.hpp"
+
+template class Tpetra::DistObject< 
+  Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, 
+                           Tpetra::Map<>::global_ordinal_type> , 
+  Tpetra::Map<>::local_ordinal_type,
+  Tpetra::Map<>::global_ordinal_type,
+  Tpetra::Map<>::node_type >;
+
+template class Tpetra::Vector< 
+  Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, 
+                           Tpetra::Map<>::global_ordinal_type> , 
+  Tpetra::Map<>::local_ordinal_type,
+  Tpetra::Map<>::global_ordinal_type,
+  Tpetra::Map<>::node_type >;
 
 template class Tpetra::MultiVector< 
   Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, 
