@@ -849,7 +849,7 @@ namespace MueLu {
                       auto const& y = drop_vec[i];
                       auto a = x.val;
                       auto b = y.val;
-                      if (a/b > distanceLaplacianThreshold) {
+                      if (a > distanceLaplacianThreshold*b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
@@ -876,7 +876,7 @@ namespace MueLu {
                       auto const& y = drop_vec[i];
                       auto a = x.val/x.diag;
                       auto b = y.val/y.diag;
-                      if (a/b > distanceLaplacianThreshold) {
+                      if (a > distanceLaplacianThreshold*b) {
                         drop = true;
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
