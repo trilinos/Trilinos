@@ -75,8 +75,8 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
   fi
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-4.0.1" ]]; then
-  module load sparc-dev/clang-5.0.1_openmpi-4.0.1
+elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-4.0.2" ]]; then
+  module load sparc-dev/clang-5.0.1_openmpi-4.0.2
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
@@ -107,8 +107,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.1" ]] ; then
-  module load sparc-dev/gcc-7.2.0_openmpi-4.0.1
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.2" ]] ; then
+  module load sparc-dev/gcc-7.2.0_openmpi-4.0.2
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
   unset OMP_PROC_BIND
   unset OMP_PLACES
