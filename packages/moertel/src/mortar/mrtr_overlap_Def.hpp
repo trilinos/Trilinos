@@ -387,7 +387,7 @@ bool MOERTEL::Overlap<IFace>::build_sxim()
 
       double master_normal[3];
       MOERTEL::Node** nodes = mseg_.Nodes();
-      for (std::size_t j=0; j<mseg_.Nnode(); ++j)
+      for (int j=0; j<mseg_.Nnode(); ++j)
         for (std::size_t k=0; k<3; ++k)
           master_normal[k] += nodes[j]->Normal()[k];
 
@@ -401,7 +401,7 @@ bool MOERTEL::Overlap<IFace>::build_sxim()
         return false;
     }
     // project node i onto sseg
-    bool OK = projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
+    projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
 #if 0
     // check whether i is inside sseg
     if (sxim_[i][0]<=1. && sxim_[i][1]<=abs(1.-sxim_[i][0]) && sxim_[i][0]>=0. && sxim_[i][1]>=0.)
@@ -1468,7 +1468,7 @@ bool MOERTEL::Overlap<IFace>::Triangulation()
 
         double master_normal[3];
         MOERTEL::Node** nodes = mseg_.Nodes();
-        for (std::size_t j=0; j<mseg_.Nnode(); ++j)
+        for (int j=0; j<mseg_.Nnode(); ++j)
           for (std::size_t k=0; k<3; ++k)
             master_normal[k] += nodes[j]->Normal()[k];
 
