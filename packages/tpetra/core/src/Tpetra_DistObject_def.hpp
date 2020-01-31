@@ -285,19 +285,7 @@ namespace Tpetra {
     const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "Proc " << myRank << ": Tpetra::DistObject::doTransfer: ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
+      prefix = this->createPrefix("DistObject", modeString);
       std::ostringstream os;
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
@@ -306,7 +294,7 @@ namespace Tpetra {
                       restrictedMode);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Done!" << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
@@ -329,28 +317,16 @@ namespace Tpetra {
     const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
+      prefix = this->createPrefix("DistObject", modeString);
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, exporter, modeString, DoForward, CM, restrictedMode);
+    this->doTransfer (source, exporter, modeString, DoForward, CM,
+                      restrictedMode);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
-         << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
@@ -373,28 +349,16 @@ namespace Tpetra {
     const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
+      prefix = this->createPrefix("DistObject", modeString);
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, exporter, modeString, DoReverse, CM, restrictedMode);
+    this->doTransfer (source, exporter, modeString, DoReverse, CM,
+                      restrictedMode);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
-         << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
@@ -417,28 +381,16 @@ namespace Tpetra {
     const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
+      prefix = this->createPrefix("DistObject", modeString);
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, importer, modeString, DoReverse, CM, restrictedMode);
+    this->doTransfer (source, importer, modeString, DoReverse, CM,
+                      restrictedMode);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
-         << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
@@ -477,13 +429,8 @@ namespace Tpetra {
     const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      auto map = this->getMap();
-      auto comm = map.is_null() ? Teuchos::null : map->getComm();
-      const int myRank = comm.is_null() ? -1 : comm->getRank();
       std::ostringstream os;
-      os << "Proc " << myRank << ": " << funcName << ": ";
-      prefix = std::unique_ptr<std::string>(
-        new std::string(os.str()));
+      prefix = this->createPrefix("DistObject", "doTransfer");
       os << *prefix << "Source type: " << Teuchos::typeName(src)
          << ", Target type: " << Teuchos::typeName(*this) << endl;
       std::cerr << os.str();
@@ -656,31 +603,21 @@ namespace Tpetra {
     const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      const int myRank = [&] () {
-        auto map = this->getMap ();
-        if (map.get () == nullptr) {
-          return -1;
-        }
-        auto comm = map->getComm ();
-        if (comm.get () == nullptr) {
-          return -2;
-        }
-        return comm->getRank ();
-      } ();
+      prefix = this->createPrefix("DistObject",
+        "reallocArraysForNumPacketsPerLid");
       std::ostringstream os;
-      os << "Proc " << myRank << ": reallocArraysForNumPacketsPerLid("
-         << numExportLIDs << ", " << numImportLIDs << "): ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-    }
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "before:" << endl
-         << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
-                                               "numExportPacketsPerLID_")
+      os << *prefix
+         << "numExportLIDs: " << numExportLIDs
+         << ", numImportLIDs: " << numImportLIDs
+         << endl;
+      os << *prefix << "DualView status before:" << endl
+         << *prefix
+         << dualViewStatusToString (this->numExportPacketsPerLID_,
+                                    "numExportPacketsPerLID_")
          << endl
-         << *prefix << dualViewStatusToString (this->numImportPacketsPerLID_,
-                                               "numImportPacketsPerLID_")
+         << *prefix
+         << dualViewStatusToString (this->numImportPacketsPerLID_,
+                                    "numImportPacketsPerLID_")
          << endl;
       std::cerr << os.str ();
     }
@@ -706,7 +643,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "after:" << endl
+      os << *prefix << "DualView status after:" << endl
          << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
                                                "numExportPacketsPerLID_")
          << endl
@@ -763,12 +700,7 @@ namespace Tpetra {
     // string construction unless needed.  We set this below.
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      auto map = this->getMap ();
-      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
-      const int myRank = comm.is_null () ? 0 : comm->getRank ();
-      std::ostringstream os;
-      os << "Proc " << myRank << ": " << funcName << ": ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      prefix = this->createPrefix("DistObject", "doTransferNew");
     }
 
     if (verbose) {

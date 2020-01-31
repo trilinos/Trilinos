@@ -4970,22 +4970,21 @@ namespace Tpetra {
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteFromLIDs)
   {
+    using Details::Behavior;
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
     using this_type = CrsGraph<LO, GO, node_type>;
     using row_graph_type = RowGraph<LO, GO, node_type>;
     const char tfecfFuncName[] = "copyAndPermute: ";
-    const bool debug = ::Tpetra::Details::Behavior::debug ("CrsGraph");
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ("CrsGraph");
+    const bool debug = Behavior::debug("CrsGraph");
+    const bool verbose = Behavior::verbose("CrsGraph");
 
     std::unique_ptr<std::string> prefix;
     if (debug) {
+      prefix = this->createPrefix("CrsGraph", "copyAndPermute");
       std::ostringstream os;
-      const int myRank = this->getMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": Tpetra::CrsGraph::copyAndPermute: ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-      os << endl;
+      os << *prefix << endl;
       std::cerr << os.str ();
     }
 
@@ -5490,11 +5489,9 @@ namespace Tpetra {
     const bool debug = ::Tpetra::Details::Behavior::debug ("CrsGraph");
     std::unique_ptr<std::string> prefix;
     if (debug) {
+      prefix = this->createPrefix("CrsGraph", "packAndPrepare");
       std::ostringstream os;
-      const int myRank = this->getMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": Tpetra::CrsGraph::packAndPrepare: ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-      os << "Start" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
 
@@ -5842,10 +5839,9 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (debug) {
+      prefix = this->createPrefix("CrsGraph", "packFillActiveNew");
       std::ostringstream os;
-      os << "Proc " << myRank << ": Tpetra::CrsGraph::packFillActiveNew: ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-      os << "Start" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
 

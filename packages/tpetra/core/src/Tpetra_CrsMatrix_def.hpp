@@ -6791,8 +6791,9 @@ namespace Tpetra {
    size_t& constantNumPackets,
    Distributor& distor)
   {
-    using Tpetra::Details::dualViewStatusToString;
-    using Tpetra::Details::ProfilingRegion;
+    using Details::Behavior;
+    using Details::dualViewStatusToString;
+    using Details::ProfilingRegion;
     using Teuchos::outArg;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
@@ -6802,8 +6803,8 @@ namespace Tpetra {
     const char tfecfFuncName[] = "packAndPrepare: ";
     ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepare");
 
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool debug = Behavior::debug("CrsMatrix");
+    const bool verbose = Behavior::verbose("CrsMatrix");
 
     // Processes on which the communicator is null should not participate.
     Teuchos::RCP<const Teuchos::Comm<int> > pComm = this->getComm ();
@@ -6815,11 +6816,7 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = [myRank] () {
-        std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::packAndPrepare: ";
-        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
-      } ();
+      prefix = this->createPrefix("CrsMatrix", "packAndPrepare");
       std::ostringstream os;
       os << *prefix << "Start" << endl
          << *prefix << "  "
@@ -7176,7 +7173,8 @@ namespace Tpetra {
                         size_t& totalNumEntries,
                         const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs) const
   {
-    using Tpetra::Details::dualViewStatusToString;
+    using Details::Behavior;
+    using Details::dualViewStatusToString;
     using std::endl;
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
@@ -7186,24 +7184,10 @@ namespace Tpetra {
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
     // runs with large numbers of MPI processes.
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
-      prefix = [myRank] () {
-        std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::allocatePackSpaceNew: ";
-        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
-      } ();
-
+      prefix = this->createPrefix("CrsMatrix", "allocatePackSpaceNew");
       std::ostringstream os;
       os << *prefix << "Before:"
          << endl
@@ -7299,40 +7283,25 @@ namespace Tpetra {
                     size_t& constantNumPackets,
                     Distributor& /* distor */) const
   {
+    using Details::Behavior;
+    using Details::dualViewStatusToString;
+    using Details::PackTraits;
+    using Details::create_mirror_view_from_raw_host_array;
     using Kokkos::View;
-    using Tpetra::Details::dualViewStatusToString;
-    using Tpetra::Details::PackTraits;
-    using Tpetra::Details::create_mirror_view_from_raw_host_array;
     using std::endl;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef impl_scalar_type ST;
-    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using ST = impl_scalar_type;
+    using HES =
+      typename View<int*, device_type>::HostMirror::execution_space;
     const char tfecfFuncName[] = "packNonStaticNew: ";
 
-    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
-    // output to std::cerr on every MPI process.  This is unwise for
-    // runs with large numbers of MPI processes.
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
-      prefix = [myRank] () {
-        std::ostringstream pfxStrm;
-        pfxStrm << "(Proc " << myRank << ") ";
-        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
-      } ();
-
+      prefix = this->createPrefix("CrsMatrix", "packNonStaticNew");
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::packNonStaticNew:" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
 
@@ -7591,14 +7560,15 @@ namespace Tpetra {
    Distributor& distor,
    const CombineMode combineMode)
   {
-    using Tpetra::Details::dualViewStatusToString;
-    using Tpetra::Details::ProfilingRegion;
+    using Details::Behavior;
+    using Details::dualViewStatusToString;
+    using Details::ProfilingRegion;
     using std::endl;
     const char tfecfFuncName[] = "unpackAndCombine: ";
     ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombine");
 
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool debug = Behavior::debug("CrsMatrix");
+    const bool verbose = Behavior::verbose("CrsMatrix");
     constexpr int numValidModes = 5;
     const CombineMode validModes[numValidModes] =
       {ADD, REPLACE, ABSMAX, INSERT, ZERO};
@@ -7608,18 +7578,7 @@ namespace Tpetra {
     std::unique_ptr<std::string> prefix;
     int myRank = 0;
     if (verbose) {
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::unpackAndCombine: ";
-        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
-      } ();
+      prefix = this->createPrefix("CrsMatrix", "unpackAndCombine");
       std::ostringstream os;
       os << *prefix << "Start:" << endl
          << *prefix << "  "
@@ -7759,10 +7718,11 @@ namespace Tpetra {
     using Kokkos::View;
     using Kokkos::subview;
     using Kokkos::MemoryUnmanaged;
-    using Tpetra::Details::castAwayConstDualView;
-    using Tpetra::Details::create_mirror_view_from_raw_host_array;
-    using Tpetra::Details::PackTraits;
-    using Tpetra::Details::ScalarViewTraits;
+    using Details::Behavior;
+    using Details::castAwayConstDualView;
+    using Details::create_mirror_view_from_raw_host_array;
+    using Details::PackTraits;
+    using Details::ScalarViewTraits;
     using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -7775,28 +7735,11 @@ namespace Tpetra {
     typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
     const char tfecfFuncName[] = "unpackAndCombineImplNonStatic: ";
 
-    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
-    // output to std::cerr on every MPI process.  This is unwise for
-    // runs with large numbers of MPI processes.
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
-      prefix = [myRank] () {
-        std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::"
-        "unpackAndCombineImplNonStatic: ";
-        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
-      } ();
-
+      prefix = this->createPrefix("CrsMatrix",
+        "unpackAndCombineImplNonStatic: ");
       std::ostringstream os;
       os << *prefix << endl; // we've already printed DualViews' statuses
       std::cerr << os.str ();
@@ -8332,15 +8275,17 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& rangeMap,
                            const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    using Tpetra::Details::getArrayViewFromDualView;
-    using Tpetra::Details::packCrsMatrixWithOwningPIDs;
-    using Tpetra::Details::unpackAndCombineWithOwningPIDsCount;
-    using Tpetra::Details::unpackAndCombineIntoCrsArrays;
+    using Details::Behavior;
+    using Details::getArrayViewFromDualView;
+    using Details::packCrsMatrixWithOwningPIDs;
+    using Details::unpackAndCombineWithOwningPIDsCount;
+    using Details::unpackAndCombineIntoCrsArrays;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::Comm;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef node_type NT;
@@ -8348,18 +8293,17 @@ namespace Tpetra {
     typedef Vector<int, LO, GO, NT> IntVectorType;
     using Teuchos::as;
 
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool debug = Behavior::debug("CrsMatrix");
+    const bool verbose = Behavior::verbose("CrsMatrix");
     int MyPID = getComm ()->getRank ();
 
     std::unique_ptr<std::string> verbosePrefix;
     if (verbose) {
+      verbosePrefix =
+        this->createPrefix("CrsMatrix", "transferAndFillComplete");
       std::ostringstream os;
-      os << "Proc " << MyPID << ": transferAndFillComplete: ";
-      verbosePrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-
-      os << "start" << std::endl;
-      std::cerr << os.str ();
+      os << "start" << endl;
+      std::cerr << os.str();
     }
 
     //
