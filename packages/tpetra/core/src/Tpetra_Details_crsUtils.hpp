@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -47,6 +45,8 @@
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_UnorderedMap.hpp"
+#include <iostream>
+#include <memory>
 
 /// \file Tpetra_Details_crsUtils.hpp
 /// \brief Functions for manipulating CRS arrays
@@ -74,8 +74,19 @@ pad_crs_arrays(
     const RowPtr& row_ptr_end,
     Indices& indices,
     Values& values,
-    const Padding& padding)
+    const Padding& padding,
+    const int my_rank,
+    const bool verbose)
 {
+  using std::endl;
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Proc " << my_rank << ": Tpetra::...::pad_crs_arrays: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "padding.size()=" << padding.size() << endl;
+    std::cerr << os.str();
+  }
 
   if (padding.size() == 0 || row_ptr_beg.size() == 0) {
     // Nothing to do
@@ -87,6 +98,11 @@ pad_crs_arrays(
   // Determine if the indices array is large enough
   auto num_row = row_ptr_beg.size() - 1;
   auto policy = Kokkos::RangePolicy<typename Padding::execution_space>(0, num_row);
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Allocate entries_this_row: " << num_row << endl;
+    std::cerr << os.str();
+  }
   RowPtr entries_this_row("entries_this_row", num_row);
   Kokkos::deep_copy(entries_this_row, 0);
   size_t additional_size_needed = 0;
@@ -116,7 +132,20 @@ pad_crs_arrays(
   using vals_value_type = typename Values::non_const_value_type;
 
   // The indices array must be resized and the row_ptr arrays shuffled
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Allocate indices_new: "
+       << (indices.size() + additional_size_needed) << endl;
+    std::cerr << os.str();
+  }
   auto indices_new = uninitialized_view<Indices>("ind new", indices.size()+additional_size_needed);
+  if (verbose) {
+    const size_t new_size = pad_values ?
+      size_t(values.size()) + additional_size_needed : size_t(0);
+    std::ostringstream os;
+    os << *prefix << "Allocate values_new: " << new_size << endl;
+    std::cerr << os.str();
+  }
   auto values_new = uninitialized_view<Values>("val new", pad_values ? values.size()+additional_size_needed : 0);
   Kokkos::deep_copy(values_new, vals_value_type(0.0));
 
@@ -174,7 +203,19 @@ pad_crs_arrays(
     }
   }
 
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Assign to indices: old=" << indices.size()
+       << ", new=" << indices_new.size() << endl;
+    std::cerr << os.str();
+  }
   indices = indices_new;
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Assign to values: old=" << values.size()
+       << ", new=" << values_new.size() << endl;
+    std::cerr << os.str();
+  }
   values = values_new;
 }
 
@@ -303,12 +344,15 @@ padCrsArrays(
     const RowPtr& rowPtrBeg,
     const RowPtr& rowPtrEnd,
     Indices& indices,
-    const Padding& padding)
+    const Padding& padding,
+    const int my_rank,
+    const bool verbose)
 {
   using impl::pad_crs_arrays;
   // send empty values array
   Indices values;
-  pad_crs_arrays<RowPtr, Indices, Indices, Padding>(rowPtrBeg, rowPtrEnd, indices, values, padding);
+  pad_crs_arrays<RowPtr, Indices, Indices, Padding>(rowPtrBeg,
+    rowPtrEnd, indices, values, padding, my_rank, verbose);
 }
 
 template<class RowPtr, class Indices, class Values, class Padding>
@@ -318,10 +362,13 @@ padCrsArrays(
     const RowPtr& rowPtrEnd,
     Indices& indices,
     Values& values,
-    const Padding& padding)
+    const Padding& padding,
+    const int my_rank,
+    const bool verbose)
 {
   using impl::pad_crs_arrays;
-  pad_crs_arrays<RowPtr, Indices, Values, Padding>(rowPtrBeg, rowPtrEnd, indices, values, padding);
+  pad_crs_arrays<RowPtr, Indices, Values, Padding>(rowPtrBeg,
+    rowPtrEnd, indices, values, padding, my_rank, verbose);
 }
 
 /// \brief Insert new indices in to current list of indices

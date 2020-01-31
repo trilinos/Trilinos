@@ -117,7 +117,9 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
   execution_space().fence();
   TEST_ASSERT(!padding.failed_insert());
 
-  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
+  const int myRank = 0;
+  const bool verbose = false;
+  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding, myRank, verbose);
   TEST_ASSERT(indices.size() == static_cast<size_type>(num_indices + num_extra));
 
   {
@@ -190,7 +192,10 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2)
   }
   execution_space().fence();
   TEST_ASSERT(!padding.failed_insert());
-  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
+
+  const int myRank = 0;
+  const bool verbose = false;
+  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding, myRank, verbose);
 
   // Check row offsets
   TEST_ASSERT(row_ptrs_beg(0) == 0);

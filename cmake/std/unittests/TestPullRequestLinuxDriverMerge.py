@@ -8,7 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import os
-sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 import unittest
@@ -133,14 +133,14 @@ class Test_parsing(unittest.TestCase):
 programName: error: the following arguments are required: sourceRepo, \
 sourceBranch, targetRepo, targetBranch, sourceSHA, workspaceDir
 '''
-        if sys.version_info.major is not 3:
+        if sys.version_info.major != 3:
             expected_output = '''usage: programName [-h]
                    sourceRepo sourceBranch targetRepo targetBranch sourceSHA
                    workspaceDir\nprogramName: error: too few arguments
 '''
         with mock.patch.object(sys, 'argv', ['programName']), \
                 mock.patch('sys.stderr', new_callable=StringIO) as m_stderr:
-            if sys.version_info.major is not 3:
+            if sys.version_info.major != 3:
                 with self.assertRaisesRegexp(SystemExit, '2'):
                     PullRequestLinuxDriverMerge.parseArgs()
             else:
@@ -235,7 +235,7 @@ class Test_mergeBranch(unittest.TestCase):
                                     CalledProcessError(-1, 'cmd'),
                                     CalledProcessError(-2, 'cmd'),
                                     CalledProcessError(-3, 'cmd')]) as m_check_call:
-            if sys.version_info.major is not 3:
+            if sys.version_info.major != 3:
                 with self.assertRaisesRegexp(SystemExit, '12'):
                     PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
                                                                           'dev',
@@ -275,7 +275,7 @@ class Test_mergeBranch(unittest.TestCase):
                                       'df324ae']) as m_check_out, \
             mock.patch('subprocess.check_call') as m_check_call, \
             mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
-            if sys.version_info.major is not 3:
+            if sys.version_info.major != 3:
                 with self.assertRaisesRegexp(SystemExit, '-1'):
                     PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
                                                                           'dev',
@@ -361,7 +361,7 @@ class Test_run(unittest.TestCase):
   output None
   stdout None
   stderr None\n'''
-        if sys.version_info.major is not 3:
+        if sys.version_info.major != 3:
             expected_string = '''Recieved subprocess.CalledProcessError - returned -1
   from command test_cmd
   output None\n'''

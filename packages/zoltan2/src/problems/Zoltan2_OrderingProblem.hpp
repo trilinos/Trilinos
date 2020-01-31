@@ -161,6 +161,12 @@ public:
         Teuchos::tuple<std::string>( "amd", "package2", "package3" )));
     pl.set("order_package", "amd", "package to use in ordering",
       order_package_Validator);
+
+    RCP<Teuchos::StringValidator> rcm_root_selection_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "pseudoperipheral", "first", "smallest_degree" )));
+    pl.set("root_method", "pseudoperipheral", "method for selecting RCM root",
+      rcm_root_selection_Validator);
   }
 
   //!  \brief Direct the problem to create a solution.

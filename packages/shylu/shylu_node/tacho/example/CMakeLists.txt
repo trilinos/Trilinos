@@ -123,6 +123,16 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   )
 
   #
+  # External Interface
+  # 
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleExternalInterface
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleExternalInterface.cpp
+    COMM serial mpi
+  )
+
+  #
   # DenseByBlocks 
   #
   # TRIBITS_ADD_EXECUTABLE(
