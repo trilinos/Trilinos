@@ -15,6 +15,8 @@
 
 namespace Zoltan2{
         
+        template<typename MAP>
+        class iceSheetPropagation;
 	//Graph datastructure that represents the local
 	//graph in ice sheet propagation problems
         template<typename lno_t>
@@ -41,8 +43,8 @@ namespace Zoltan2{
         
         //global queues to allow easy propagation from the
 	//+= operator of IcePropVtxLabel.
-	std::queue<int> icePropArtQueue;
-	std::queue<int> icePropRegQueue;
+	//std::queue<int> icePropArtQueue;
+	//std::queue<int> icePropRegQueue;
 
         //Enum that denotes
 	enum IcePropGrounding_Status {ICEPROPGS_FULL=2, ICEPROPGS_HALF=1, ICEPROPGS_NONE = 0};
@@ -236,8 +238,8 @@ namespace Zoltan2{
             }
             
             if(getGroundingStatus() != owned_gs){
-              if(!is_art) icePropRegQueue.push(id);
-              else icePropArtQueue.push(id);
+              if(!is_art) iceSheetPropagation<Tpetra::Map<> >::regQueue.push(id);
+              else iceSheetPropagation<Tpetra::Map<> >::artQueue.push(id);
             }
             
 	    return *this;
@@ -424,7 +426,8 @@ public:
   typedef IcePropVtxLabel<lno_t,gno_t> label_t;
   typedef Tpetra::FEMultiVector<scalar_t,lno_t, gno_t> femv_t;	
   
-  
+  static std::queue<lno_t> artQueue;
+  static std::queue<lno_t> regQueue;
  	
   //Constructor creates FEMultiVector of IcePropVertexLabels,
   //and initializes the labels according to the input grounding information.
@@ -451,7 +454,7 @@ public:
         label.first_label = gid;
         label.first_sender = gid;
         label.first_used=true;
-        icePropRegQueue.push(label.id);
+        iceSheetPropagation<MAP>::regQueue.push(label.id);
       }
       femv->replaceLocalValue(i,0,label);
     }
@@ -498,12 +501,12 @@ public:
           for(int j = 0; j < out_degree; j++){
             label_t neighbor = femvData[outs[j]];
             if(neighbor.getGroundingStatus() == ICEPROPGS_HALF && neighbor.first_label != mapWithCopies->getGlobalElement(curr_node.id) && neighbor.first_sender == mapWithCopies->getGlobalElement(curr_node.id)){
-              icePropRegQueue.push(curr_node.id);
+              iceSheetPropagation<MAP>::regQueue.push(curr_node.id);
             }
           }
         }
       }
-      int local_done = icePropRegQueue.empty();
+      int local_done = iceSheetPropagation<MAP>::regQueue.empty();
       int done = 0;
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
       
@@ -518,7 +521,7 @@ public:
           femv->replaceLocalValue(i,0,cleared);
         }
         if(curr_node.getGroundingStatus() == ICEPROPGS_FULL && curr_node.is_art){
-          icePropRegQueue.push(curr_node.id);
+          iceSheetPropagation<MAP>::regQueue.push(curr_node.id);
         }
       }
       //re-run bfs_prop until incomplete propagation is fixed
@@ -552,8 +555,8 @@ public:
       femv->beginFill();
       //visit every node that changed
       std::queue<int>* curr;
-      if(icePropRegQueue.empty()) curr = &icePropArtQueue;
-      else curr = &icePropRegQueue;
+      if(iceSheetPropagation<MAP>::regQueue.empty()) curr = &iceSheetPropagation<MAP>::artQueue;
+      else curr = &iceSheetPropagation<MAP>::regQueue;
       while(!curr->empty()){
 	label_t curr_node = femvData[curr->front()];
         curr->pop();
@@ -572,20 +575,20 @@ public:
           
           if(old_gs != neighbor.getGroundingStatus()){
             femv->replaceLocalValue(outs[i],0,neighbor);
-            if(neighbor.is_art) icePropArtQueue.push(neighbor.id);
-            else icePropRegQueue.push(neighbor.id);
+            if(neighbor.is_art) iceSheetPropagation<MAP>::artQueue.push(neighbor.id);
+            else iceSheetPropagation<MAP>::regQueue.push(neighbor.id);
           }
         }
         if(curr->empty()){
-          if(curr == &icePropRegQueue) curr = &icePropArtQueue;
-          else curr = &icePropRegQueue;
+          if(curr == &iceSheetPropagation<MAP>::regQueue) curr = &iceSheetPropagation<MAP>::artQueue;
+          else curr = &iceSheetPropagation<MAP>::regQueue;
         }
         
       }
       femv->endFill();
       femv->doOwnedToOwnedPlusShared(Tpetra::ADD);
       femv->doOwnedPlusSharedToOwned(Tpetra::ADD);
-      int local_done = icePropRegQueue.empty() && icePropArtQueue.empty();
+      int local_done = iceSheetPropagation<MAP>::regQueue.empty() && iceSheetPropagation<MAP>::artQueue.empty();
       //this call makes sure that if any inter-processor communication changed labels
       //we catch the changes and keep propagating them.
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
@@ -653,8 +656,8 @@ public:
     }
     
     if(nbor_gs != neighbor.getGroundingStatus()){
-      if(neighbor.is_art) icePropArtQueue.push(neighbor.id);
-      else icePropRegQueue.push(neighbor.id);
+      if(neighbor.is_art) iceSheetPropagation<MAP>::artQueue.push(neighbor.id);
+      else iceSheetPropagation<MAP>::regQueue.push(neighbor.id);
     } 
   }
   
@@ -721,8 +724,8 @@ public:
           femv->replaceLocalValue(ownedVtx,0, firstNeighbor);
           femv->replaceLocalValue(ghostVtx,0, secondNeighbor);
           //push the neighbors on the reg queue
-          icePropRegQueue.push(ownedVtx);
-          icePropRegQueue.push(ghostVtx);
+          iceSheetPropagation<MAP>::regQueue.push(ownedVtx);
+          iceSheetPropagation<MAP>::regQueue.push(ghostVtx);
         } else if(neighborProc == -1){
           int foundEmptyPair = 0;
           lno_t vtx1 = -1, vtx2 = -1;
@@ -769,8 +772,8 @@ public:
             femv->replaceLocalValue(vtx1, 0, firstNeighbor);
             femv->replaceLocalValue(vtx2, 0, secondNeighbor);
             //put the neighbors on the regular queue
-            icePropRegQueue.push(vtx1);
-            icePropRegQueue.push(vtx2);
+            iceSheetPropagation<MAP>::regQueue.push(vtx1);
+            iceSheetPropagation<MAP>::regQueue.push(vtx2);
           }
         }
         femv->endFill();
@@ -794,8 +797,8 @@ public:
               artvtx.bcc_name = bcc_count*np+me;
               femv->replaceLocalValue(art_pt,0,artvtx);
               femv->replaceLocalValue(outs[i],0, neighbor);
-              icePropRegQueue.push(art_pt);
-              icePropRegQueue.push(outs[i]);
+              iceSheetPropagation<MAP>::regQueue.push(art_pt);
+              iceSheetPropagation<MAP>::regQueue.push(outs[i]);
               break;
             }
           }
@@ -878,6 +881,11 @@ private:
   
   Teuchos::ArrayRCP<const scalar_t> femvData;
 };
+
+//std::queue<iceSheetPropagation<Tpetra::Map<>>::lno_t> iceSheetPropagation<Tpetra::Map<>> ::regQueue;
+//std::queue<iceSheetPropagation<Tpetra::Map<>>::lno_t> iceSheetPropagation<Tpetra::Map<>> ::artQueue;
+
+
 }//end namespace Zoltan2
 
 #endif
