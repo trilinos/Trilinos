@@ -52,5 +52,4 @@ unset ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT
 unset atdm_run_script_on_compute_node
 unset ATDM_CONFIG_COMPLETED_ENV_SETUP
 unset ATDM_CONFIG_Kokkos_ENABLE_Serial
-unset ATDM_CONFIG_Kokkos_ENABLE_Cuda
 unset ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code
