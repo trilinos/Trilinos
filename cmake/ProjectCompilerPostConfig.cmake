@@ -1,4 +1,4 @@
-IF (${Trilinos_ENABLE_Kokkos})
+IF (${PROJECT_NAME}_ENABLE_Kokkos)
 
   MESSAGE("-- " "Skip adding flags for C++11 because Kokkos flags does that ...")
   # Set this to empty to trick Tribits into passing the C++11 flag check
