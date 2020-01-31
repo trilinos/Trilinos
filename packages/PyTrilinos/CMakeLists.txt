@@ -207,6 +207,7 @@ IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
     " is less than minimum version " ${SWIG_VERSION_FLOOR}
     )
 ENDIF()
+MESSAGE(STATUS "Found swig: " ${SWIG_VERSION})
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)

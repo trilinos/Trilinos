@@ -369,8 +369,8 @@
 %enddef
 
 %define %teuchos_rcp_dap(CONVERTER, CLASS...)
-  %teuchos_rcp_dap_typemaps(SWIGEMPTYHACK, CONVERTER, CLASS)
-  %teuchos_rcp_dap_typemaps(const        , CONVERTER, CLASS)
-  %teuchos_rcp_typemaps_overrides(SWIGEMPTYHACK, CLASS)
-  %teuchos_rcp_typemaps_overrides(const        , CLASS)
+  %teuchos_rcp_dap_typemaps(PYTRILINOS_NULLSTR, CONVERTER, CLASS)
+  %teuchos_rcp_dap_typemaps(const             , CONVERTER, CLASS)
+  %teuchos_rcp_typemaps_overrides(PYTRILINOS_NULLSTR, CLASS)
+  %teuchos_rcp_typemaps_overrides(const             , CLASS)
 %enddef
