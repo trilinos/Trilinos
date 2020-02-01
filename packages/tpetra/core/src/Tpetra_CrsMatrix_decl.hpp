@@ -3434,9 +3434,14 @@ namespace Tpetra {
     checkSizes (const SrcDistObject& source) override;
 
     void
-    applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
+    applyCrsPadding(
+      const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding,
+      const bool verbose);
 
   private:
+    std::unique_ptr<std::string>
+    createPrefix(const char methodName[]) const;
+
     void
     copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                         const size_t numSameIDs,
@@ -4150,6 +4155,8 @@ namespace Tpetra {
     /// \param lg [in] Argument passed into \c
     ///   myGraph_->allocateIndices(), if applicable.
     ///
+    /// \param verbose [in] Whether to print verbose debugging output.
+    ///
     /// \pre If the graph (that is, staticGraph_) indices are
     ///   already allocated, then gas must be GraphAlreadyAllocated.
     ///   Otherwise, gas must be GraphNotYetAllocated.  We only
@@ -4157,7 +4164,8 @@ namespace Tpetra {
     ///
     /// \pre If the graph indices are not already allocated, then
     ///   the graph must be owned by the matrix.
-    void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas);
+    void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas,
+                         const bool verbose);
 
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.
