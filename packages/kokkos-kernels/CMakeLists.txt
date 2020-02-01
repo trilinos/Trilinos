@@ -81,7 +81,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 
 ENDIF()
 
-IF(${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_OpenMP})
+IF(Kokkos_ENABLE_Serial OR Kokkos_ENABLE_Pthread OR Kokkos_ENABLE_OpenMP)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE
   KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
@@ -116,14 +116,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ENDIF()
 
 
-IF(${Kokkos_ENABLE_Serial})
+IF(Kokkos_ENABLE_Serial)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_SERIAL
   KOKKOSKERNELS_INST_EXECSPACE_SERIAL
   "Whether to build kernels for the execution space Kokkos::Serial.  This option is Kokkos_ENABLE_Serial=${Kokkos_ENABLE_Serial} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Serial is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_SERIAL_DEFAULT}
   )
-  IF(${${PACKAGE_NAME}_INST_EXECSPACE_SERIAL} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
+  IF(${PACKAGE_NAME}_INST_EXECSPACE_SERIAL AND ${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE)
     LIST(APPEND DEVICE_LIST "<Serial,HostSpace>")
   ENDIF()
 ENDIF()
