@@ -192,6 +192,6 @@
 // typemaps for both const and non-const versions.
 %define %teuchos_rcp(CLASS...)
   %shared_ptr(CLASS)
-  %teuchos_rcp_typemaps_overrides(SWIGEMPTYHACK, CLASS)
-  %teuchos_rcp_typemaps_overrides(const, CLASS)
+  %teuchos_rcp_typemaps_overrides(PYTRILINOS_NULLSTR, CLASS)
+  %teuchos_rcp_typemaps_overrides(const             , CLASS)
 %enddef

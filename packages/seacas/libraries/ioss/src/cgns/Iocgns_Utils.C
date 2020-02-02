@@ -80,29 +80,6 @@
   }
 
 namespace {
-  std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel)
-  {
-    int         proc = 0;
-    std::string zname{name};
-
-    if (is_parallel) {
-      // Name should/might be of the form `basename_proc-#`.  Strip
-      // off the `_proc-#` portion and return just the basename.
-      auto tokens = Ioss::tokenize(zname, "_");
-      zname       = tokens[0];
-      if (tokens.size() >= 2) {
-        size_t idx = tokens.size() - 1;
-        if (tokens[idx].substr(0, 5) == "proc-") {
-          auto ptoken = Ioss::tokenize(tokens[idx], "-");
-          proc        = std::stoi(ptoken[1]);
-          idx--;
-          zname = tokens[idx];
-        }
-      }
-    }
-    return std::make_pair(zname, proc);
-  }
-
   int power_2(int count)
   {
     // Return the maximum power of two which is less than or equal to 'count'
@@ -383,6 +360,29 @@ namespace {
     }
   }
 } // namespace
+
+std::pair<std::string, int> Iocgns::Utils::decompose_name(const std::string &name, bool is_parallel)
+{
+  int         proc = is_parallel ? -1 : 0;
+  std::string zname{name};
+
+  if (is_parallel) {
+    // Name should/might be of the form `basename_proc-#`.  Strip
+    // off the `_proc-#` portion and return just the basename.
+    auto tokens = Ioss::tokenize(zname, "_");
+    zname       = tokens[0];
+    if (tokens.size() >= 2) {
+      size_t idx = tokens.size() - 1;
+      if (tokens[idx].substr(0, 5) == "proc-") {
+        auto ptoken = Ioss::tokenize(tokens[idx], "-");
+        proc        = std::stoi(ptoken[1]);
+        idx--;
+        zname = tokens[idx];
+      }
+    }
+  }
+  return std::make_pair(zname, proc);
+}
 
 template <typename INT>
 void Iocgns::Utils::map_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
@@ -1229,6 +1229,12 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
         CGERR(cg_1to1_write(file_ptr, base, db_zone, connect_name.c_str(), donor_name.c_str(),
                             owner_range.data(), donor_range.data(), zgc.m_transform.data(),
                             &zgc_idx));
+
+        if (zgc.is_from_decomp()) {
+          CGERR(cg_goto(file_ptr, base, "Zone_t", db_zone, "ZoneGridConnectivity", 0,
+                        "GridConnectivity1to1_t", zgc_idx, "end"));
+          CGERR(cg_descriptor_write("Decomp", "is_decomp"));
+        }
       }
     }
   }

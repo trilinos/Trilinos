@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -337,9 +335,10 @@ unpackAndCombine
  const Kokkos::View<const Packet*, BufferDevice, Kokkos::MemoryUnmanaged>& imports,
  const Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>& num_packets_per_lid,
  const Kokkos::View<const LocalOrdinal*, BufferDevice, Kokkos::MemoryUnmanaged>& import_lids,
- const bool unpack_pids)
+ const bool unpack_pids,
+ const int myRank,
+ const bool verbose)
 {
-
   using ImportLidsView =
     Kokkos::View<const LocalOrdinal*, BufferDevice, Kokkos::MemoryUnmanaged>;
   using NumPacketsView =
@@ -366,7 +365,8 @@ unpackAndCombine
   auto padding =
     computeCrsPadding<NumPacketsView, ImportLidsView, device_type>
       (num_packets_per_lid, import_lids, unpack_pids);
-  padCrsArrays<RowView, IndicesView, decltype (padding) > (row_ptrs_beg, row_ptrs_end, indices, padding);
+  padCrsArrays<RowView, IndicesView, decltype (padding) > (row_ptrs_beg,
+    row_ptrs_end, indices, padding, myRank, verbose);
 
   // Get the offsets
   Kokkos::View<size_t*, device_type> offsets("offsets", num_import_lids+1);
@@ -949,9 +949,22 @@ unpackCrsGraphAndCombine(
   }
 
   // Now do the actual unpack!
+  const bool verbose = ::Tpetra::Details::Behavior::verbose("CrsGraph");
+  const int myRank = ! verbose ? -1 : [&] () {
+    auto map = graph.getMap();
+    if (map.is_null()) {
+      return -1;
+    }
+    auto comm = map->getComm();
+    if (comm.is_null()) {
+      return -1;
+    }
+    return comm->getRank();
+  } ();
+
   unpackAndCombine<LO, GO, row_ptrs_type, indices_type, buffer_device_type>
     (row_ptrs_beg, row_ptrs_end, indices, imports_d,
-     num_packets_per_lid_d, import_lids_d, false);
+     num_packets_per_lid_d, import_lids_d, false, myRank, verbose);
 
   // mfh Later, permit graph to be locally indexed, and check whether
   // incoming column indices are in the column Map.  If not, error.

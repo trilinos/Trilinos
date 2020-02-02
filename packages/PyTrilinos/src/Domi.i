@@ -112,6 +112,7 @@ other Trilinos solver technologies.
 
 // Include the NumPy typemaps
 %include "numpy.i"
+%fragment("NumPy_Object_to_Array");
 %pythoncode
 {
 import numpy
