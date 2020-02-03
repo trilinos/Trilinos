@@ -15,4 +15,8 @@ IF (Trilinos_ENABLE_DEBUG)
   ATDM_SET_ENABLE(Tempus_IMEX_RK_Staggered_FSA_MPI_1_DISABLE ON)
   ATDM_SET_ENABLE(Tempus_Newmark_MPI_1_DISABLE ON)
 
+  # Disble some timing out ROL tests (#6124)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_helmholtz_example_02_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(ROL_example_PDE-OPT_navier-stokes_example_01_MPI_4_DISABLE ON)
+
 ENDIF()
