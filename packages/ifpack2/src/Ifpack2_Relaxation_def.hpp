@@ -1837,7 +1837,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol->putScalar (STS::zero ());
   }
   else if (performImport) {
-    yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+    yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *Importer_, Tpetra::INSERT);
   }
 
   const Tpetra::ESweepDirection direction =
@@ -1845,7 +1845,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
-      yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+      yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *Importer_, Tpetra::INSERT);
     }
     A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
                         DampingFactor_, direction);
@@ -2532,7 +2532,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol->putScalar (STS::zero ());
   }
   else if (performImport) {
-    yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+    yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *Importer_, Tpetra::INSERT);
   }
 
   // FIXME (mfh 12 Sep 2014) Shouldn't this come from the user's parameter?
@@ -2540,7 +2540,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
-      yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+      yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *Importer_, Tpetra::INSERT);
     }
     A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
                         DampingFactor_, direction);
