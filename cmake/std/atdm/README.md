@@ -1041,7 +1041,7 @@ Once logged on to 'vortex' (SRN), one can either build and configure on the
 login node or the compute node. Make sure to setup SSH keys as described in
 `/opt/VORTEX_INTRO` before trying to build on a compute node. To get a list of
 compute nodes, run `bhosts`, then simply ssh to a given hostname. For example to
-configur, build and run the tests for the default `cuda-debug` build for
+configure, build and run the tests for the default `cuda-debug` build for
 `kokkos` (after cloning Trilinos on the `develop` branch), do:
 
 ```bash
@@ -1055,9 +1055,9 @@ $ cmake -G'Unix Makefiles' \
   -DTrilinos_ENABLE_Kokkos=ON \
   $TRILINOS_DIR
 
-$ make NP=20
+$ make -j20
 
-$ ctest
+$ ctest -j4
 ```
 
 **NOTES:**
