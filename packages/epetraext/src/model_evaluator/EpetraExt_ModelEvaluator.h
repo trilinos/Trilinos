@@ -97,27 +97,27 @@ public:
 
   /** \brief.  */
   enum EInArgsMembers {
-    IN_ARG_x_dot
-    ,IN_ARG_x
-    ,IN_ARG_x_dot_poly ///< Time derivative vector Taylor polynomial
-    ,IN_ARG_x_poly    ///< Solution vector Taylor polynomial
-    ,IN_ARG_x_dot_sg  ///< Stochastic Galerkin time derivative vector polynomial
-    ,IN_ARG_x_sg      ///< Stochastic Galerkin solution vector polynomial
-    ,IN_ARG_x_dot_mp  ///< Multi-point time derivative vector
-    ,IN_ARG_x_mp      ///< Multi-point solution vector
-    ,IN_ARG_t
-    ,IN_ARG_alpha
-    ,IN_ARG_beta
-    ,IN_ARG_step_size
-    ,IN_ARG_stage_number
-    ,IN_ARG_x_dotdot
-    ,IN_ARG_x_dotdot_poly ///< Time second derivative vector Taylor polynomial
-    ,IN_ARG_x_dotdot_sg  ///< Stochastic Galerkin time second derivative vector polynomial
-    ,IN_ARG_x_dotdot_mp  ///< Multi-point time second derivative vector
-    ,IN_ARG_omega        // < Coeff of second derivative term d(x_dotdot)/dx
-    ,IN_ARG_sg_basis ///< Stochastic Galerkin basis
-    ,IN_ARG_sg_quadrature ///< Stochastic Galerkin quadrature
-    ,IN_ARG_sg_expansion ///< Stochastic Galerkin expansion
+    IN_ARG_x_dot,
+    IN_ARG_x,
+    IN_ARG_x_dot_poly,    ///< Time derivative vector Taylor polynomial
+    IN_ARG_x_poly,        ///< Solution vector Taylor polynomial
+    IN_ARG_x_dot_sg,      ///< Stochastic Galerkin time derivative vector polynomial
+    IN_ARG_x_sg,          ///< Stochastic Galerkin solution vector polynomial
+    IN_ARG_x_dot_mp,      ///< Multi-point time derivative vector
+    IN_ARG_x_mp,          ///< Multi-point solution vector
+    IN_ARG_t,
+    IN_ARG_alpha,
+    IN_ARG_beta,
+    IN_ARG_step_size,
+    IN_ARG_stage_number,
+    IN_ARG_x_dotdot,
+    IN_ARG_x_dotdot_poly, ///< Time second derivative vector Taylor polynomial
+    IN_ARG_x_dotdot_sg,   ///< Stochastic Galerkin time second derivative vector polynomial
+    IN_ARG_x_dotdot_mp,   ///< Multi-point time second derivative vector
+    IN_ARG_omega,         ///< Coeff of second derivative term d(x_dotdot)/dx
+    IN_ARG_sg_basis,      ///< Stochastic Galerkin basis
+    IN_ARG_sg_quadrature, ///< Stochastic Galerkin quadrature
+    IN_ARG_sg_expansion   ///< Stochastic Galerkin expansion
   };
   static const int NUM_E_IN_ARGS_MEMBERS=21;
 
@@ -296,9 +296,9 @@ public:
 
   /** \brief. */
   enum EEvalType {
-    EVAL_TYPE_EXACT                ///< Exact function evaluation
-    ,EVAL_TYPE_APPROX_DERIV        ///< An approximate derivative (i.e. for a Jacobian)
-    ,EVAL_TYPE_VERY_APPROX_DERIV   ///< A very approximate derivative (i.e. for a preconditioner)
+    EVAL_TYPE_EXACT,              ///< Exact function evaluation
+    EVAL_TYPE_APPROX_DERIV,       ///< An approximate derivative (i.e. for a Jacobian)
+    EVAL_TYPE_VERY_APPROX_DERIV   ///< A very approximate derivative (i.e. for a preconditioner)
   };
 
   /** \brief . */
@@ -324,8 +324,8 @@ public:
 
   /** \brief . */
   enum EDerivativeMultiVectorOrientation {
-    DERIV_MV_BY_COL           ///< .
-    ,DERIV_TRANS_MV_BY_ROW    ///< .
+    DERIV_MV_BY_COL,          ///< .
+    DERIV_TRANS_MV_BY_ROW     ///< .
   };
 
   /** \brief . */
@@ -402,15 +402,15 @@ public:
 
   /** \brief . */
   enum EDerivativeLinearity {
-    DERIV_LINEARITY_UNKNOWN      ///< .
-    ,DERIV_LINEARITY_CONST       ///< .
-    ,DERIV_LINEARITY_NONCONST    ///< .
+    DERIV_LINEARITY_UNKNOWN,     ///< .
+    DERIV_LINEARITY_CONST,       ///< .
+    DERIV_LINEARITY_NONCONST     ///< .
   };
   /** \brief . */
   enum ERankStatus {
-    DERIV_RANK_UNKNOWN       ///< .
-    ,DERIV_RANK_FULL         ///< .
-    ,DERIV_RANK_DEFICIENT    ///< .
+    DERIV_RANK_UNKNOWN,      ///< .
+    DERIV_RANK_FULL,         ///< .
+    DERIV_RANK_DEFICIENT     ///< .
   };
 
   /** \brief . */
@@ -660,14 +660,14 @@ public:
 
   /** \brief.  */
   enum EOutArgsMembers {
-    OUT_ARG_f
-    ,OUT_ARG_W
-    ,OUT_ARG_f_poly   ///< Residual vector Taylor polynomial
-    ,OUT_ARG_f_sg     ///< Stochastic Galerkin residual vector polynomial
-    ,OUT_ARG_W_sg     ///< Stochastic Galerkin "W" operator polyomial
-    ,OUT_ARG_f_mp     ///< Multi-point residual vector
-    ,OUT_ARG_W_mp     ///< Multi-point "W" operator
-    ,OUT_ARG_WPrec   ///< Preconditioner operator (approx Jacobian)
+    OUT_ARG_f,
+    OUT_ARG_W,
+    OUT_ARG_f_poly,   ///< Residual vector Taylor polynomial
+    OUT_ARG_f_sg,     ///< Stochastic Galerkin residual vector polynomial
+    OUT_ARG_W_sg,     ///< Stochastic Galerkin "W" operator polyomial
+    OUT_ARG_f_mp,     ///< Multi-point residual vector
+    OUT_ARG_W_mp,     ///< Multi-point "W" operator
+    OUT_ARG_WPrec     ///< Preconditioner operator (approx Jacobian)
   };
   static const int NUM_E_OUT_ARGS_MEMBERS=9;
 
