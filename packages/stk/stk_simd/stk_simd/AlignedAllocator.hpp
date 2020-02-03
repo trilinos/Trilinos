@@ -34,13 +34,11 @@
 #ifndef STK_ALIGNED_ALLOCATOR_HPP
 #define STK_ALIGNED_ALLOCATOR_HPP
 
-#if defined(__APPLE__)
-#include <stdlib.h>
-#else
-#include <stdlib.h>
+#if !defined(__APPLE__)
 #include <malloc.h>
 #endif
 
+#include <stdlib.h>
 #include <memory>
 
 namespace non_std {

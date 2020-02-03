@@ -68,7 +68,8 @@ namespace mesh {
  *  \{
  */
 
-class MetaData ;  // Meta-data description of a mesh
+class BulkData;
+class MetaData;
 class FieldBase;
 
 /** \brief  Collections of \ref stk::mesh::Part "parts" are frequently
