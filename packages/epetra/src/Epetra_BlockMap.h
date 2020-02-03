@@ -151,7 +151,7 @@
 
   \warning A Epetra_Comm object is required for all Epetra_BlockMap constructors.
 
-  \bf {error handling}
+  <b>error handling</b>
 
   Most methods in Epetra_BlockMap return an integer error code.  If the error code is 0, then no error occurred.
   If > 0 then a warning error occurred.  If < 0 then a fatal error occurred.
