@@ -54,7 +54,6 @@
 */
 
 class Epetra_MpiSmpCommData : public Epetra_Data {
-	friend class Epetra_MpiSmpComm;
  private:
   //! @name Constructor/Destructor Methods
   //@{
