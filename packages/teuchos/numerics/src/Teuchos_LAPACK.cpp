@@ -461,13 +461,6 @@ namespace Teuchos
     STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
 
-  // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes them by ptr
-  void LAPACK<int, float>::TREXC(const char& COMPQ, const int& n, float* T, const int& ldt, float* Q, const int& ldq, const int& ifst, const int& ilst, float* WORK, int* info) const
-  {
-    int ifst_copy = ifst; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ilst_copy = ilst; // original passed by value and did not preserve lapack change - this method now deprecated
-    STREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst_copy, &ilst_copy, WORK, info);
-  }
   void LAPACK<int, float>::TREXC(const char& COMPQ, const int& n, float* T, const int& ldt, float* Q, const int& ldq, int* ifst, int* ilst, float* WORK, int* info) const
   { STREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, ifst, ilst, WORK, info); }
 
@@ -917,13 +910,6 @@ namespace Teuchos
     DTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
 
-  // deprecated - ifst and ilst were passed by value (changed to const OrdinalType& for api refactor) but lapack can modify them - new version passes them by ptr
-  void LAPACK<int, double>::TREXC(const char& COMPQ, const int& n, double* T, const int& ldt, double* Q, const int& ldq, const int& ifst, const int& ilst, double* WORK, int* info) const
-  {
-    int ifst_copy = ifst; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ilst_copy = ilst; // original passed by value and did not preserve lapack change - this method now deprecated
-    DTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst_copy, &ilst_copy, WORK, info);
-  }
   void LAPACK<int, double>::TREXC(const char& COMPQ, const int& n, double* T, const int& ldt, double* Q, const int& ldq, int* ifst, int* ilst, double* WORK, int* info) const
   {
     DTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, ifst, ilst, WORK, info);
@@ -1386,12 +1372,6 @@ namespace Teuchos
     CTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
   }
 
-  // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes them by ptr
-  void LAPACK<int, std::complex<float> >::TREXC(const char& COMPQ, const int& n, std::complex<float>* T, const int& ldt, std::complex<float>* Q, const int& ldq, const int& ifst, const int& ilst, std::complex<float>* WORK, int* info) const
-  {
-    CTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, info);
-  }
-
   void LAPACK<int, std::complex<float> >::TREXC(const char& COMPQ, const int& n, std::complex<float>* T, const int& ldt, std::complex<float>* Q, const int& ldq, int* ifst, int* ilst, std::complex<float>* WORK, int* info) const
   {
     CTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, ifst, ilst, info);
@@ -1833,13 +1813,7 @@ namespace Teuchos
     const char& whch = 'A';
     ZTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
   }
-
-  // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes them by ptr
-  void LAPACK<int, std::complex<double> >::TREXC(const char& COMPQ, const int& n, std::complex<double>* T, const int& ldt, std::complex<double>* Q, const int& ldq, const int& ifst, const int& ilst, std::complex<double>* WORK, int* info) const
-  {
-    ZTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, info);
-  }
-
+  
   void LAPACK<int, std::complex<double> >::TREXC(const char& COMPQ, const int& n, std::complex<double>* T, const int& ldt, std::complex<double>* Q, const int& ldq, int* ifst, int* ilst, std::complex<double>* WORK, int* info) const
   {
     ZTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, ifst, ilst, info);

@@ -500,8 +500,6 @@ namespace Teuchos
     /*! Reorders the Schur factorization of a matrix \c T via unitary similarity transformations so that the diagonal element of \c T with row index \c ifst is moved to row \c ilst. If \c ScalarType is \c float or \c double, then \c T should be in real Schur form and the operation affects the diagonal block referenced by \c ifst.
       \note This method will ignore the WORK vector when ScalarType is \c std::complex<float> or \c std::complex<double>.
     */
-    // deprecated - ifst and ilst were passed by value (changed to const OrdinalType& for api refactor) but lapack can modify them - new version passes them by ptr
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const OrdinalType& n, ScalarType* T, const OrdinalType& ldt, ScalarType* Q, const OrdinalType& ldq, const OrdinalType& ifst, const OrdinalType& ilst, ScalarType* WORK, OrdinalType* info) const;
     void TREXC(const char& COMPQ, const OrdinalType& n, ScalarType* T, const OrdinalType& ldt, ScalarType* Q, const OrdinalType& ldq, OrdinalType* ifst, OrdinalType* ilst, ScalarType* WORK, OrdinalType* info) const;
 
     /*! Computes some or all of the right and/or left eigenvectors of a pair of real matrices ( \c S, \c P ), where \c S is a quasi-triangular matrix and \c P is upper triangular.
@@ -1535,8 +1533,6 @@ namespace Teuchos
     void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const float* T, const int& ldt, float* VL, const int& ldvl, float* VR, const int& ldvr, const int& mm, int* m, float* WORK, int* info) const;
     void TREVC(const char& SIDE, const int& n, const float* T, const int& ldt, float* VL, const int& ldvl, float* VR, const int& ldvr, const int& mm, int* m, float* WORK, float* RWORK, int* info) const;
 
-    // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes them by ptr
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const int& n, float* T, const int& ldt, float* Q, const int& ldq, const int& ifst, const int& ilst, float* WORK, int* info) const;
     void TREXC(const char& COMPQ, const int& n, float* T, const int& ldt, float* Q, const int& ldq, int* ifst, int* ilst, float* WORK, int* info) const;
 
     void TGEVC(const char& SIDE, const char& HOWMNY, const int* SELECT, const int& n, float* S, const int& lds, float* P, const int& ldp, float* VL, const int& ldvl, float* VR, const int& ldvr, const int& mm, int* M, float* WORK, int* info) const;
@@ -1691,8 +1687,6 @@ namespace Teuchos
     void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const double* T, const int& ldt, double* VL, const int& ldvl, double* VR, const int& ldvr, const int& mm, int* m, double* WORK, int* info) const;
     void TREVC(const char& SIDE, const int& n, const double* T, const int& ldt, double* VL, const int& ldvl, double* VR, const int& ldvr, const int& mm, int* m, double* WORK, double* RWORK, int* info) const;
 
-    // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const int& n, double* T, const int& ldt, double* Q, const int& ldq, const int& ifst, const int& ilst, double* WORK, int* info) const;
     void TREXC(const char& COMPQ, const int& n, double* T, const int& ldt, double* Q, const int& ldq, int* ifst, int* ilst, double* WORK, int* info) const;
 
     void TGEVC(const char& SIDE, const char& HOWMNY, const int* SELECT, const int& n, double* S, const int& lds, double* P, const int& ldp, double* VL, const int& ldvl, double* VR, const int& ldvr, const int& mm, int* M, double* WORK, int* info) const;
@@ -1833,8 +1827,6 @@ namespace Teuchos
     void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const std::complex<float>* T, const int& ldt, std::complex<float>* VL, const int& ldvl, std::complex<float>* VR, const int& ldvr, const int& mm, int* m, std::complex<float>* WORK, float* RWORK, int* info) const;
     void TREVC(const char& SIDE, const int& n, const std::complex<float>* T, const int& ldt, std::complex<float>* VL, const int& ldvl, std::complex<float>* VR, const int& ldvr, const int& mm, int* m, std::complex<float>* WORK, float* RWORK, int* info) const;
 
-    // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) - new form passed by int * for consistency with float and double versions
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const int& n, std::complex<float>* T, const int& ldt, std::complex<float>* Q, const int& ldq, const int& ifst, const int& ilst, std::complex<float>* WORK, int* info) const;
     void TREXC(const char& COMPQ, const int& n, std::complex<float>* T, const int& ldt, std::complex<float>* Q, const int& ldq, int* ifst, int* ilst, std::complex<float>* WORK, int* info) const;
 
     // Rotation/reflection generators
@@ -1967,8 +1959,6 @@ namespace Teuchos
     void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const std::complex<double>* T, const int& ldt, std::complex<double>* VL, const int& ldvl, std::complex<double>* VR, const int& ldvr, const int& mm, int* m, std::complex<double>* WORK, double* RWORK, int* info) const;
     void TREVC(const char& SIDE, const int& n, const std::complex<double>* T, const int& ldt, std::complex<double>* VL, const int& ldvl, std::complex<double>* VR, const int& ldvr, const int& mm, int* m, std::complex<double>* WORK, double* RWORK, int* info) const;
 
-    // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) - new form passed by int * for consistency with float and double versions
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const int& n, std::complex<double>* T, const int& ldt, std::complex<double>* Q, const int& ldq, const int& ifst, const int& ilst, std::complex<double>* WORK, int* info) const;
     void TREXC(const char& COMPQ, const int& n, std::complex<double>* T, const int& ldt, std::complex<double>* Q, const int& ldq, int* ifst, int* ilst, std::complex<double>* WORK, int* info) const;
 
     // Rotation/reflection generators
