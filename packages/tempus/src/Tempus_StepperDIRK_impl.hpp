@@ -206,75 +206,77 @@ void StepperDIRK<Scalar>::takeStep(
     bool pass = true;
     Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
-        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
-        // ???: is it a good idea to leave this (no-op) here?
-        this->stepperObserver_
-            ->observeBeforeImplicitExplicitly(solutionHistory, *this);
+      // ???: is it a good idea to leave this (no-op) here?
+      this->stepperObserver_
+          ->observeBeforeImplicitExplicitly(solutionHistory, *this);
 
-      if ( i == 0 && this->getUseFSAL() &&
-           workingState->getNConsecutiveFailures() == 0 ) {
+      // Check if stageXDot_[i] is needed.
+      bool isNeeded = false;
+      for (int k=i+1; k<numStages; ++k) if (A(k,i) != 0.0) isNeeded = true;
+      if (b(i) != 0.0) isNeeded = true;
+      if (tableau_->isEmbedded() && this->getUseEmbedded() &&
+          tableau_->bstar()(i) != 0.0)
+        isNeeded = true;
+      if (isNeeded == false) {
+        assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+        continue;
+      }
 
-        RCP<Thyra::VectorBase<Scalar> > tmp = stageXDot_[0];
-        stageXDot_[0] = stageXDot_.back();
-        stageXDot_.back() = tmp;
-
-      } else {
-
-        Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
-        for (int j=0; j < i; ++j) {
-          if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-            Thyra::Vp_StV(xTilde_.ptr(), dt*A(i,j), *(stageXDot_[j]));
-          }
-        }
-
-        Scalar ts = time + c(i)*dt;
-        if (A(i,i) == Teuchos::ScalarTraits<Scalar>::zero()) {
-          // Explicit stage for the ImplicitODE_DAE
-          bool isNeeded = false;
-          for (int k=i+1; k<numStages; ++k) if (A(k,i) != 0.0) isNeeded = true;
-          if (b(i) != 0.0) isNeeded = true;
-          if (isNeeded == false) {
-            // stageXDot_[i] is not needed.
-            assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-          } else {
-            typedef Thyra::ModelEvaluatorBase MEB;
-            MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
-            MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
-            inArgs.set_x(xTilde_);
-            if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
-            if (inArgs.supports(MEB::IN_ARG_x_dot))
-              inArgs.set_x_dot(Teuchos::null);
-            outArgs.set_f(stageXDot_[i]);
-
-            this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-            this->wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
-          }
-        } else {
-          // Implicit stage for the ImplicitODE_DAE
-          const Scalar alpha = 1.0/(dt*A(i,i));
-          const Scalar beta  = 1.0;
-
-          // Setup TimeDerivative
-          Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
-            Teuchos::rcp(new StepperDIRKTimeDerivative<Scalar>(
-              alpha,xTilde_.getConst()));
-
-          auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
-            timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
-
-          this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
-
-          sStatus = this->solveImplicitODE(stageX_, stageXDot_[i], ts, p);
-
-          if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass=false;
-
-          this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
-
-          timeDer->compute(stageX_, stageXDot_[i]);
+      Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
+      for (int j=0; j < i; ++j) {
+        if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
+          Thyra::Vp_StV(xTilde_.ptr(), dt*A(i,j), *(stageXDot_[j]));
         }
       }
 
+      Scalar ts = time + c(i)*dt;
+      if (A(i,i) == Teuchos::ScalarTraits<Scalar>::zero()) {
+        // Explicit stage for the ImplicitODE_DAE
+        if (i == 0 && this->getUseFSAL() &&
+            workingState->getNConsecutiveFailures() == 0) {
+          // Reuse last evaluation for first step
+          RCP<Thyra::VectorBase<Scalar> > tmp = stageXDot_[0];
+          stageXDot_[0] = stageXDot_.back();
+          stageXDot_.back() = tmp;
+        } else {
+          // Calculate explicit stage
+          typedef Thyra::ModelEvaluatorBase MEB;
+          MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
+          MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+          inArgs.set_x(xTilde_);
+          if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
+          if (inArgs.supports(MEB::IN_ARG_x_dot))
+            inArgs.set_x_dot(Teuchos::null);
+          outArgs.set_f(stageXDot_[i]);
+
+          this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+          this->wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
+        }
+      } else {
+        // Implicit stage for the ImplicitODE_DAE
+        const Scalar alpha = 1.0/(dt*A(i,i));
+        const Scalar beta  = 1.0;
+
+        // Setup TimeDerivative
+        Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
+          Teuchos::rcp(new StepperDIRKTimeDerivative<Scalar>(
+            alpha,xTilde_.getConst()));
+
+        auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+          timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
+
+        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+
+        sStatus = this->solveImplicitODE(stageX_, stageXDot_[i], ts, p);
+
+        if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass=false;
+
+        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+
+        timeDer->compute(stageX_, stageXDot_[i]);
+      }
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 
