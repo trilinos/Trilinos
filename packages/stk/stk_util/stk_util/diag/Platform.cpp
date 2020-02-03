@@ -61,13 +61,11 @@
 #include <fcntl.h>
 
 #if defined(__GNUC__)
-#include <fstream>
 #ifndef __APPLE__
 #include <malloc.h>
 #else
 #include <sys/malloc.h>
 #endif
-#include <cstdlib>
 #include <sys/time.h>
 #include <sys/resource.h>
 #if __GNUC__ == 3 || __GNUC__ == 4 || __GNUC__ == 5
@@ -75,9 +73,7 @@
 #endif
 
 #elif defined(__PGI)
-#include <fstream>
 #include <malloc.h>
-#include <cstdlib>
 #include <sys/time.h>
 #include <sys/resource.h>
 

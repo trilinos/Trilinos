@@ -25,10 +25,10 @@
 
 using namespace Tacho;
 
-typedef CrsMatrixBase<ValueType,HostSpaceType>   CrsMatrixBaseHostType;
+typedef CrsMatrixBase<ValueType,HostDeviceType>   CrsMatrixBaseHostType;
 
 // we do not test for device space
-//typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
+//typedef CrsMatrixBase<ValueType,DeviceType> CrsMatrixBaseDeviceType;
 
 TEST( Symbolic, constructor ) {
   TEST_BEGIN;
@@ -49,7 +49,7 @@ TEST( Symbolic, constructor ) {
     A.RowPtrEnd(i) = cnt;
   }
 
-  typedef Kokkos::View<ordinal_type*,HostSpaceType> ordinal_type_array;
+  typedef Kokkos::View<ordinal_type*,HostDeviceType> ordinal_type_array;
 
   ordinal_type_array idx("idx", m);
   for (ordinal_type i=0;i<m;++i) idx(i) = i;
@@ -78,8 +78,8 @@ TEST( Symbolic, functions ) {
 #endif
   T.reorder();
 
-  typedef Kokkos::View<ordinal_type*,HostSpaceType> ordinal_type_array;
-  typedef Kokkos::View<size_type*,HostSpaceType> size_type_array;
+  typedef Kokkos::View<ordinal_type*,HostDeviceType> ordinal_type_array;
+  typedef Kokkos::View<size_type*,HostDeviceType> size_type_array;
 
   ordinal_type m = A.NumRows();
   size_type_array ap = A.RowPtr();

@@ -61,27 +61,57 @@ namespace Tempus {
  *  methods (see StepperExplicitRK for additional details).
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for DIRK is,
- *   - for \f$i = 1 \ldots s\f$ do
- *     - if \f$a_{ii} = 0\f$
- *       - \f$X_i \leftarrow x_{n-1}
- *                + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_j\f$
- *       - Evaluate \f$\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t)\f$
- *       - \f$\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)\f$
- *     - else
- *       - \f$\tilde{X} =
- *           x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}\f$
- *       - Define \f$\dot{X}_i \leftarrow
- *                              \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
- *       - Solve \f$\mathcal{F}_i(\dot{x} =
- *           \dot{X}_i,X_i,t_{n-1}+c_{i}\Delta t)=0\f$ for \f$X_i\f$
- *       - \f$\dot{X}_i \leftarrow \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
- *   - end for
- *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
+ *  The single-timestep algorithm for DIRK is
+ *
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
+ *  \caption{DIRK (Diagonally Implicit Runge-Kutta)}
+ *  \begin{algorithmic}[1]
+ *  \If {``Reset initial guess.''}
+ *    \State $X \leftarrow x_{n-1}$
+ *      \Comment{Reset initial guess to last timestep.}
+ *  \EndIf
+ *  \For {$i = 0 \ldots s-1$}        \Comment{Stage loop.}
+ *    \If {$A(k,i) = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$
+ *         and $b^\ast(i) = 0$}
+ *       \State $\dot{X}_i \leftarrow 0$
+ *         \Comment{Not needed for later calculations.}
+ *       \State {\bf continue}
+ *    \EndIf
+ *    \State $\tilde{X} \leftarrow
+ *                      x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}$
+ *    \If {$a_{ii} = 0$}             \Comment{Explicit stage.}
+ *      \If {$i=0$ and ``Use FSAL''} \Comment{Save an evaluation?}
+ *        \State $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
+ *                          \Comment{Use $\dot{X}_{s-1}$ from $n-1$ time step.}
+ *      \Else
+ *        \State $\dot{X}_i \leftarrow \bar{f}(\tilde{X},t_{n-1}+c_i\Delta t)$
+ *      \EndIf
+ *    \Else                          \Comment{Implicit stage.}
+ *      \If {``Zero initial guess.''}
+ *        \State $X \leftarrow 0$
+ *          \Comment{Else use previous stage value as initial guess.}
+ *      \EndIf
+ *      \State Solve $\mathcal{F}_i(
+ *                      \dot{X}_i = \frac{X - \tilde{X}}{a_{ii} \Delta t},
+ *                      X, t_{n-1}+c_{i}\Delta t) = 0$ for $X$
+ *      \State $\dot{X}_i \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
+ *    \EndIf
+ *  \EndFor
+ *  \State $x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=0}^{s-1}b_i\,\dot{X}_i$
+ *  \If {``Embedded''}  \Comment{Compute the local truncation error estimate.}
+ *    \State $\mathbf{e} \leftarrow
+ *                       \sum_{i=0}^{s-1} (b_i-b^\ast_i)\Delta t\,\dot{X}_i$
+ *    \State $\tilde{\mathbf{e}} \leftarrow
+ *           \mathbf{e}/(a_{tol} + \max(\|x_n\|, \|x_{n-1}\|)r_{tol})$
+ *    \State $e_n \leftarrow \|\tilde{\mathbf{e}}\|_\infty$
+ *  \EndIf
+ *  \end{algorithmic}
+ *  \f}
  *
  *  The First-Step-As-Last (FSAL) principle is not needed with DIRK, but
- *  maybe useful if the first stage is explicit (i.e, EDIRK).
- *  The default is to set useFSAL=false.
+ *  maybe useful if the first stage is explicit (EDIRK) (e.g., Trapezoidal
+ *  Method).  The default is to set useFSAL=false.
  *
  *  <b> Iteration Matrix, \f$W\f$.</b>
  *  Recalling that the definition of the iteration matrix, \f$W\f$, is

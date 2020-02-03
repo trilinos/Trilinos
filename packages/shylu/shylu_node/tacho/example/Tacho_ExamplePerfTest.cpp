@@ -107,10 +107,13 @@ int main (int argc, char *argv[]) {
     typedef int ordinal_type;
     typedef double value_type;
 
+    /// device type
+    typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+
     /// crs matrix format and dense multi vector
-    typedef Tacho::CrsMatrixBase<value_type,Kokkos::DefaultHostExecutionSpace> CrsMatrixBaseType;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,Kokkos::DefaultHostExecutionSpace> DenseMultiVectorType;
-    //typedef Kokkos::View<ordinal_type*,Kokkos::DefaultHostExecutionSpace> OrdinalTypeArray;
+    typedef Tacho::CrsMatrixBase<value_type,host_device_type> CrsMatrixBaseType;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_device_type> DenseMultiVectorType;
+    //typedef Kokkos::View<ordinal_type*,host_device_type> OrdinalTypeArray;
 
     ///
     /// problem setting
@@ -202,7 +205,7 @@ int main (int argc, char *argv[]) {
       }
 
       // 32bit vs 64bit integers; A uses size_t for size array
-      Kokkos::View<ordinal_type*,Kokkos::DefaultHostExecutionSpace> rowptr("rowptr", Asym.NumRows()+1);
+      Kokkos::View<ordinal_type*,host_device_type> rowptr("rowptr", Asym.NumRows()+1);
       for (ordinal_type i=0;i<=Asym.NumRows();++i)
         rowptr(i) = Asym.RowPtrBegin(i);
 
@@ -265,7 +268,7 @@ int main (int argc, char *argv[]) {
         pardiso.showStat(std::cout, Pardiso::Solve) << std::endl;   
       }
 
-      const double res = Tacho::NumericTools<value_type,Kokkos::DefaultHostExecutionSpace>::computeRelativeResidual(A, x, b);
+      const double res = Tacho::computeRelativeResidual(A, x, b);
       std::cout << "PardisoChol:: residual = " << res << "\n\n";
 
       r_val = pardiso.run(Pardiso::ReleaseAll);

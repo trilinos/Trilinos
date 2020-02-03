@@ -157,7 +157,8 @@ StkMeshIoBroker::StkMeshIoBroker()
 : m_communicator(MPI_COMM_NULL),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
-  m_autoLoadAttributes(true)
+  m_autoLoadAttributes(true),
+  m_autoLoadDistributionFactorPerNodeSet(true)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -166,7 +167,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
 : m_communicator(comm),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
-  m_autoLoadAttributes(true)
+  m_autoLoadAttributes(true),
+  m_autoLoadDistributionFactorPerNodeSet(true)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -400,8 +402,17 @@ void StkMeshIoBroker::store_attribute_field_ordering()
     const stk::mesh::PartVector& parts = meta_data().get_parts();
     attributeFieldOrderingByPartOrdinal.clear();
     attributeFieldOrderingByPartOrdinal.resize(parts.size());
-    for(const stk::mesh::Part* part : parts)  {
-        const Ioss::GroupingEntity* iossGroupingEntity = part->attribute<Ioss::GroupingEntity>();
+    for(stk::mesh::Part* part : parts)  {
+        auto ioss_region = get_input_io_region().get();
+        if(ioss_region == nullptr) {
+            continue;
+        }
+        Ioss::GroupingEntity* iossGroupingEntity;
+        if(ioss_region == nullptr) {
+            iossGroupingEntity = nullptr;
+        } else {
+            iossGroupingEntity = get_grouping_entity(*ioss_region, *part);
+        }
         if(iossGroupingEntity != nullptr) {
             std::vector<std::string> names = get_ordered_attribute_field_names(*iossGroupingEntity);
             const stk::mesh::FieldVector attrFields = get_fields_by_name(*m_metaData, names);
@@ -453,7 +464,12 @@ void StkMeshIoBroker::create_input_mesh()
     process_nodeblocks(*region,    meta_data());
     process_elementblocks(*region, meta_data());
     process_sidesets(*region,      meta_data());
-    process_nodesets(*region,      meta_data());
+
+    if(m_autoLoadDistributionFactorPerNodeSet) {
+        process_nodesets(*region,  meta_data());
+    } else {
+        process_nodesets_without_distribution_factors(*region, meta_data());
+    }
 
     create_surface_to_block_mapping();
     store_attribute_field_ordering();

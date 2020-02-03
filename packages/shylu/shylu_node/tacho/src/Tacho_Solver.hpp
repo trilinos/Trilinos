@@ -18,19 +18,24 @@ namespace Tacho {
   public:
     typedef ValueType value_type;
     typedef SchedulerType scheduler_type;
-    typedef typename scheduler_type::execution_space exec_space;
-    typedef typename exec_space::memory_space exec_memory_space;
-    typedef Kokkos::DefaultHostExecutionSpace host_space;
 
-    typedef Kokkos::View<size_type*,exec_space> size_type_array;
-    typedef Kokkos::View<ordinal_type*,exec_space> ordinal_type_array;
-    typedef Kokkos::View<value_type*,exec_space> value_type_array;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix; 
+    typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+    typedef typename device_type::execution_space exec_space;
+    typedef typename device_type::memory_space exec_memory_space;
 
-    typedef Kokkos::View<size_type*,host_space> size_type_array_host;
-    typedef Kokkos::View<ordinal_type*,host_space> ordinal_type_array_host;
-    typedef Kokkos::View<value_type*,host_space> value_type_array_host;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space> value_type_matrix_host; 
+    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+    typedef typename host_device_type::execution_space host_space;
+    typedef typename host_device_type::memory_space host_memory_space;
+
+    typedef Kokkos::View<size_type*,device_type> size_type_array;
+    typedef Kokkos::View<ordinal_type*,device_type> ordinal_type_array;
+    typedef Kokkos::View<value_type*,device_type> value_type_array;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> value_type_matrix; 
+
+    typedef Kokkos::View<size_type*,host_device_type> size_type_array_host;
+    typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array_host;
+    typedef Kokkos::View<value_type*,host_device_type> value_type_array_host;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_device_type> value_type_matrix_host; 
 
 #if defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
@@ -262,8 +267,8 @@ namespace Tacho {
       _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
       _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
 
-      _h_ap = Kokkos::create_mirror_view(ap); Kokkos::deep_copy(_h_ap, ap);
-      _h_aj = Kokkos::create_mirror_view(aj); Kokkos::deep_copy(_h_aj, aj);
+      _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
+      _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
 
       _nnz = _h_ap(m);
 
@@ -289,7 +294,7 @@ namespace Tacho {
 
         timer.reset();
         _U = value_type_matrix_host("U", _m, _m);
-        auto h_ax = Kokkos::create_mirror_view(ax); Kokkos::deep_copy(h_ax, ax);
+        auto h_ax = Kokkos::create_mirror_view(host_memory_space(), ax); Kokkos::deep_copy(h_ax, ax);
         for (ordinal_type i=0;i<_m;++i) {
           const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
           for (size_type j=jbeg;j<jend;++j) {
@@ -423,7 +428,7 @@ namespace Tacho {
         const double t_copy = timer.seconds();
 
         timer.reset();
-        auto h_x = Kokkos::create_mirror_view(x); 
+        auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
         Kokkos::deep_copy(h_x, x);
         Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
           ::invoke(Diag::NonUnit(), 1.0, _U, h_x);
@@ -471,10 +476,10 @@ namespace Tacho {
     double computeRelativeResidual(const value_type_array &ax,
                                    const value_type_matrix &x,
                                    const value_type_matrix &b) {
-      CrsMatrixBase<value_type,exec_space> A; 
+      CrsMatrixBase<value_type,device_type> A; 
       A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-      return _N.computeRelativeResidual(A, x, b);
+      return Tacho::computeRelativeResidual(A, x, b);
     }
 
     int release() {
