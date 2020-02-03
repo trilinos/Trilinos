@@ -403,20 +403,6 @@ namespace Teuchos
 
   template<class T>
   void
-  PerformanceMonitorBase<T>::clearTimer (const std::string& name)
-  {
-    clearCounter (name);
-  }
-
-  template<class T>
-  void
-  PerformanceMonitorBase<T>::clearTimers ()
-  {
-    clearCounters ();
-  }
-
-  template<class T>
-  void
   PerformanceMonitorBase<T>::clearCounters ()
   {
     counters ().clear ();
