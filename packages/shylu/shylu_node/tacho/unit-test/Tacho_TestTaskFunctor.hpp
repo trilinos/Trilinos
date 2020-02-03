@@ -13,15 +13,15 @@ using namespace Tacho;
 
 TEST( TaskFunctor, MemoryPool ) {
   TEST_BEGIN;
-  typedef Kokkos::TaskScheduler<HostSpaceType> scheduler_type;
-  typedef Kokkos::MemoryPool<HostSpaceType> memory_pool_type;
+  typedef Kokkos::TaskScheduler<typename HostDeviceType::execution_space> scheduler_type;
+  typedef Kokkos::MemoryPool<HostDeviceType> memory_pool_type;
   
-  typedef typename scheduler_type::memory_space memory_space;
+  typedef typename HostDeviceType::memory_space memory_space;
 
-  typedef TaskFunctor_MemoryPool_Allocate<HostSpaceType> functor_allocate;
-  typedef TaskFunctor_MemoryPool_Deallocate<HostSpaceType> functor_deallocate;
-  typedef TaskFunctor_MemoryPool_TestView<HostSpaceType> functor_test_view;
-  typedef TaskFunctor_MemoryPool_TestViewSee<HostSpaceType> functor_test_view_see;
+  typedef TaskFunctor_MemoryPool_Allocate<scheduler_type> functor_allocate;
+  typedef TaskFunctor_MemoryPool_Deallocate<scheduler_type> functor_deallocate;
+  typedef TaskFunctor_MemoryPool_TestView<scheduler_type> functor_test_view;
+  typedef TaskFunctor_MemoryPool_TestViewSee<scheduler_type> functor_test_view_see;
 
   // enum { MemoryCapacity = 4000 }; // Triggers infinite loop in memory pool.
   enum { MemoryCapacity = 16000 };
@@ -29,7 +29,7 @@ TEST( TaskFunctor, MemoryPool ) {
   enum { MaxBlockSize   = 1024 };
   enum { SuperBlockSize = 1u << 12 };
   
-  scheduler_type sched( memory_space()
+  scheduler_type sched( typename scheduler_type::memory_space()
                     , MemoryCapacity
                     , MinBlockSize
                     , MaxBlockSize
