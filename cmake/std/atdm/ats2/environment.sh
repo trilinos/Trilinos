@@ -246,6 +246,7 @@ export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 
 # TODO: Need -np support from the trilinos_jsrun wrapper.
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket 4"
+export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
 # Set common default compilers
 export CC=mpicc
