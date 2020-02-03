@@ -69,7 +69,7 @@ namespace LOCA {
       /*!
        * This interface is derived from the
        * NOX::Epetra::Interface::Jacobian and additionally provides a
-       * method for computing the shifted matrix \f$\alpha J + \beta M\f$.
+       * method for computing the shifted matrix \f$\alpha J + \beta M\f$ .
        * This is needed for linear stability analysis and Hopf tracking.
        */
       class TimeDependent : public virtual LOCA::Epetra::Interface::Required {
@@ -84,8 +84,8 @@ namespace LOCA {
 
     /*!
      * \brief Call user routine for computing the shifted matrix
-     * \f$\alpha J + \beta M\f$ where \f$J\f$ is the Jacobian matrix
-     * and \f$M\f$ is the mass matrix.
+     * \f$\alpha J + \beta M\f$ where \f$ J\f$ is the Jacobian matrix
+     * and \f$ M\f$ is the mass matrix.
      */
     virtual bool
         computeShiftedMatrix(double alpha, double beta,
