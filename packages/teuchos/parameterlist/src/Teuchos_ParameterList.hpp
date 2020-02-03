@@ -67,10 +67,10 @@ namespace Teuchos {
  * \relates ParameterList
  */
 enum EValidateUsed {
-  VALIDATE_USED_ENABLED   /*!< Validate that parameters in <tt>*this</tt> list
+  VALIDATE_USED_ENABLED,  /*!< Validate that parameters in <tt>*this</tt> list
                               set using the default value are present in
                               the validation list */
-  ,VALIDATE_USED_DISABLED /*!< Do not validate that parameters in <tt>*this</tt> list
+  VALIDATE_USED_DISABLED  /*!< Do not validate that parameters in <tt>*this</tt> list
                               set using the default value are present in
                               the validation list */
 };
@@ -79,10 +79,10 @@ enum EValidateUsed {
  * \relates ParameterList
  */
 enum EValidateDefaults {
-  VALIDATE_DEFAULTS_ENABLED   /*!< Validate that parameters in <tt>*this</tt> list
+  VALIDATE_DEFAULTS_ENABLED,  /*!< Validate that parameters in <tt>*this</tt> list
                                   set using the default value are present in
                                    the validation list */
-  ,VALIDATE_DEFAULTS_DISABLED /*!< Do not validate that parameters in <tt>*this</tt> list
+  VALIDATE_DEFAULTS_DISABLED  /*!< Do not validate that parameters in <tt>*this</tt> list
                                   set using the default value are present in
                                   the validation list */
 };
@@ -490,9 +490,9 @@ public:
   /** \brief Remove a parameter (does not depend on the type of the
    * parameter).
    *
-   * \param[in] name The name of the parameter to remove
+   * \param name (in) The name of the parameter to remove
    *
-   * \param[in] throwIfNotExists If <tt>true</tt> then if the parameter with
+   * \param throwIfNotExists (in) If <tt>true</tt> then if the parameter with
    * the name <tt>name</tt> does not exist then a std::exception will be
    * thrown!
    *
