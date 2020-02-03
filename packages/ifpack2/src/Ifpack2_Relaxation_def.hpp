@@ -1830,6 +1830,13 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                       static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
     }
     yBlockCol = yBlockColumnPointMap_;
+    if (pointImporter_.is_null()) {
+      using map_type = Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+      using import_type = Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>;
+      auto srcMap = rcp(new map_type(yBlock.getPointMap()));
+      auto tgtMap = rcp(new map_type(yBlockCol->getPointMap()));
+      pointImporter_ = rcp(new import_type(srcMap, tgtMap));
+    }
     performImport = true;
   }
 
@@ -1837,7 +1844,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol->putScalar (STS::zero ());
   }
   else if (performImport) {
-    yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *Importer_, Tpetra::INSERT);
+    yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *pointImporter_, Tpetra::INSERT);
   }
 
   const Tpetra::ESweepDirection direction =
@@ -1845,7 +1852,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
-      yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *Importer_, Tpetra::INSERT);
+      yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *pointImporter_, Tpetra::INSERT);
     }
     A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
                         DampingFactor_, direction);
@@ -2525,6 +2532,13 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                       static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
     }
     yBlockCol = yBlockColumnPointMap_;
+    if (pointImporter_.is_null()) {
+      using map_type = Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+      using import_type = Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>;
+      auto srcMap = rcp(new map_type(yBlock.getPointMap()));
+      auto tgtMap = rcp(new map_type(yBlockCol->getPointMap()));
+      pointImporter_ = rcp(new import_type(srcMap, tgtMap));
+    }
     performImport = true;
   }
 
@@ -2532,7 +2546,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol->putScalar (STS::zero ());
   }
   else if (performImport) {
-    yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *Importer_, Tpetra::INSERT);
+    yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *pointImporter_, Tpetra::INSERT);
   }
 
   // FIXME (mfh 12 Sep 2014) Shouldn't this come from the user's parameter?
@@ -2540,7 +2554,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
-      yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *Importer_, Tpetra::INSERT);
+      yBlockCol->getMultiVectorView().doImport (yBlock.getMultiVectorView(), *pointImporter_, Tpetra::INSERT);
     }
     A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
                         DampingFactor_, direction);
