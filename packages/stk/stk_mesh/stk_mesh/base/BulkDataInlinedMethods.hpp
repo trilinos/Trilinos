@@ -442,6 +442,16 @@ bool BulkData::has_permutation(Entity entity, EntityRank rank) const
 }
 
 inline
+bool BulkData::in_shared(Entity entity) const
+{
+  if (m_entitycomm[entity.local_offset()] != nullptr) {
+    const EntityCommInfo& info = m_entitycomm[entity.local_offset()]->comm_map.front();
+    return (info.ghost_id==SHARED);
+  }
+  return false;
+}
+
+inline
 bool BulkData::in_receive_ghost( EntityKey key ) const
 {
   const std::vector<Ghosting*> & ghosts= ghostings();

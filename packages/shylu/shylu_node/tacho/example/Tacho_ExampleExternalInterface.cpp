@@ -50,9 +50,9 @@ void testTachoSolver(int numRows,
   tachoParams[tacho::PANELSIZE] = 32;
 #else
 #  ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  tachoParams[tacho::MAXNUMSUPERBLOCKS] = Kokkos::DefaultHostExecutionSpace::thread_pool_size(0)/2;
+  tachoParams[tacho::MAXNUMSUPERBLOCKS] = tacho::host_space::thread_pool_size(0)/2;
 #  else
-  tachoParams[tacho::MAXNUMSUPERBLOCKS] = Kokkos::DefaultHostExecutionSpace::impl_thread_pool_size(0)/2;
+  tachoParams[tacho::MAXNUMSUPERBLOCKS] = tacho::host_space::impl_thread_pool_size(0)/2;
 #  endif
   tachoParams[tacho::BLOCKSIZE] = 256;
   tachoParams[tacho::PANELSIZE] = 128;
@@ -83,14 +83,14 @@ void testTachoSolver(int numRows,
   
   /// this example only works for single right hand side
   const int NRHS = 1;
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> ViewVectorType;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, tacho::device_type> ViewVectorType;
   ViewVectorType x("x", numRows, NRHS);
 
 #if defined (KOKKOS_ENABLE_CUDA)
   /// transfer b into device
   ViewVectorType b(Kokkos::ViewAllocateWithoutInitializing("b"), numRows, NRHS);
   Kokkos::deep_copy(Kokkos::subview(b, Kokkos::ALL(), 0), 
-                    Kokkos::View<double*,Kokkos::DefaultHostExecutionSpace>(rhs.data(), numRows));
+                    Kokkos::View<double*,tacho::device_type>(rhs.data(), numRows));
 #else
   /// wrap rhs data with view
   ViewVectorType b(rhs.data(), numRows, NRHS);
@@ -135,11 +135,11 @@ int main(int argc, char *argv[]) {
 
   Kokkos::initialize(argc, argv);
   const bool detail = false;
-  Tacho::printExecSpaceConfiguration<Kokkos::DefaultExecutionSpace>("DeviceSpace", detail);
-  Tacho::printExecSpaceConfiguration<Kokkos::DefaultHostExecutionSpace>("HostSpace",   detail);
+  Tacho::printExecSpaceConfiguration<tacho::exec_space>("DeviceSpace", detail);
+  Tacho::printExecSpaceConfiguration<tacho::host_space>("HostSpace",   detail);
   {
 
-    Tacho::CrsMatrixBase<double,Kokkos::DefaultHostExecutionSpace> A;
+    Tacho::CrsMatrixBase<double,tacho::host_device_type> A;
     {
       std::ifstream in;
       in.open(file);

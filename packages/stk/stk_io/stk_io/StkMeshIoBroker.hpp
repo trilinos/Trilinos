@@ -199,6 +199,11 @@ namespace stk {
           m_autoLoadAttributes = shouldAutoLoadAttributes;
       }
 
+      void set_auto_load_distribution_factor_per_nodeset(bool shouldAutoLoad)
+      {
+          m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
+      }
+
       // Create the Ioss::DatabaseIO associated with the specified filename
       // and type (exodus by default). The routine checks that the
       // file exists and is readable and will throw an exception if not.
@@ -729,6 +734,7 @@ namespace stk {
       size_t m_activeMeshIndex;
       SideSetFaceCreationBehavior m_sidesetFaceCreationBehavior;
       bool m_autoLoadAttributes;
+      bool m_autoLoadDistributionFactorPerNodeSet;
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {

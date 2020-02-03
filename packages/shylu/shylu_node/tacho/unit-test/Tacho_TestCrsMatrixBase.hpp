@@ -12,8 +12,8 @@
 
 using namespace Tacho;
 
-typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
-typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
+typedef CrsMatrixBase<ValueType,HostDeviceType> CrsMatrixBaseHostType;
+typedef CrsMatrixBase<ValueType,DeviceType> CrsMatrixBaseDeviceType;
 
 TEST( CrsMatrixBase, constructor ) {  
   TEST_BEGIN;
@@ -125,5 +125,67 @@ TEST( CrsMatrixBase, matrixmarket ) {
   }
   TEST_END;
 }
+
+TEST( CrsMatrixBase, permute ) {
+  TEST_BEGIN;
+  std::string inputfilename  = MM_TEST_FILE + ".mtx";
+
+  ///
+  /// host crs matrix read from matrix market
+  ///
+  CrsMatrixBaseHostType Ah, Bh;
+  MatrixMarket<ValueType>::read(inputfilename, Bh);
+  Ah.createConfTo(Bh);
+
+  ///
+  /// device crs matrix
+  ///
+  CrsMatrixBaseDeviceType Ad, Bd;
+  Ad.createMirror(Ah);
+  Bd.createMirror(Bh);
+  Bd.copy(Bh);
+
+  ///
+  /// random permutation vector
+  ///
+  const ordinal_type m = Ad.NumRows();
+  typedef Kokkos::View<ordinal_type*,HostDeviceType> ordinal_type_array_host;
+  ordinal_type_array_host perm("perm", m), peri("peri", m);
+
+  for (int i=0;i<m;++i)
+    perm(i) = i;
+
+  {
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(perm.data(), perm.data()+m, g);
+  }
+
+  for (ordinal_type i=0;i<m;++i)
+    peri(perm(i)) = i;
+
+  ///
+  /// A = P B P^{-1}
+  ///
+  applyPermutationToCrsMatrix(Ad, Bd, perm, peri);
+
+  ///
+  /// check on host
+  ///
+  Ah.copy(Ad);
+  for (ordinal_type i=0;i<m;++i) {
+    const ordinal_type row = perm(i);
+    const ordinal_type jcnt = Bh.RowPtrEnd(row) - Bh.RowPtrBegin(row);
+    const ordinal_type boff = Bh.RowPtrBegin(row);
+    const ordinal_type aoff = Ah.RowPtrBegin(i);
+    for (ordinal_type j=0;j<jcnt;++j) {
+      EXPECT_EQ(Ah.Col(aoff+j), peri(Bh.Col(boff+j)));
+      EXPECT_EQ(Ah.Value(aoff+j), Bh.Value(boff+j));
+    }
+  }
+  TEST_END;
+}
+
+
 
 #endif

@@ -410,10 +410,10 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
   // Get max number of regions per proc
   const int maxRegPerProc = regX.size();
 
-  const int maxIter      = params->get<int>   ("smoother: sweeps");
-  const Scalar eigRatio  = params->get<double>("smoother: eigRatio");
+  const int maxIter = params->get<int>   ("smoother: sweeps");
+  const Scalar eigRatio = params->get<double>("smoother: Chebyshev eigRatio");
   const Scalar lambdaMax = params->get<Scalar>("chebyshev: lambda max");
-  const Scalar lambdaMin = lambdaMax / eigRatio;
+  const Scalar boostFactor = params->get<double>("smoother: Chebyshev boost factor");
 
   Teuchos::Array<RCP<Vector> > diag_inv = params->get<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal");
 
@@ -421,8 +421,11 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
   const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar SC_TWO  = Teuchos::as<Scalar> (2);
 
-  const Scalar d = (lambdaMax + lambdaMin) / SC_TWO;// Ifpack2 calls this theta
-  const Scalar c = (lambdaMax - lambdaMin) / SC_TWO;// Ifpack2 calls this 1/delta
+  const Scalar alpha = lambdaMax / eigRatio;
+  const Scalar beta  = boostFactor * lambdaMax;
+  const Scalar delta = SC_TWO / (beta - alpha);
+  const Scalar theta = (beta + alpha) / SC_TWO;
+  const Scalar s1    = theta * delta;
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, revisedRowMapPerGrp);
@@ -432,47 +435,50 @@ void chebyshevIterate ( RCP<Teuchos::ParameterList> params,
   Array<RCP<Vector> > regZ(maxRegPerProc);
   createRegionalVector(regZ, revisedRowMapPerGrp);
 
-  Scalar alpha, beta;
+  Scalar dtemp1, dtemp2, rhokp1;
+  Scalar rhok = SC_ONE / s1;
 
-  for (int i = 0; i < maxIter; ++i) {
-
-    //solve (Z, D_inv, R); // z = D_inv * R, that is, D \ R.
-    
-    if (zeroInitGuess) {
-      for(int j = 0; j < maxRegPerProc; j++) {
-        regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regB[j], SC_ZERO);
-      }
+  // First Iteration
+  if (zeroInitGuess) {
+    for(int j = 0; j < maxRegPerProc; j++) {
+      regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regB[j], SC_ZERO);
+      regP[j]->update( SC_ONE/theta, *regZ[j], SC_ZERO); // P = 1/theta Z
+      regX[j]->update( SC_ONE, *regP[j], SC_ZERO);// X = 0 + P
     }
-    else {
-      // Compute residual vector
-      computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
+  }
+  else { // Compute residual vector
+    computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
+    for(int j = 0; j < maxRegPerProc; j++) {
+      regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regRes[j], SC_ZERO);// z = D_inv * R, that is, D \ R.
+      regP[j]->update( SC_ONE/theta, *regZ[j], SC_ZERO);// P = 1/theta Z
+      regX[j]->update( SC_ONE, *regP[j], SC_ONE);// X = X + P
+    }
+  }
 
-      for(int j = 0; j < maxRegPerProc; j++) {
-        regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regRes[j], SC_ZERO);
-      }
+  // The rest of the iterations
+  for (int i = 1; i < maxIter; ++i) {
+    // Compute residual vector
+    computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
+    // z = D_inv * R, that is, D \ R.
+    for(int j = 0; j < maxRegPerProc; j++) {
+      regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regRes[j], SC_ZERO);
     }
 
-    if (i == 0) {
-      for (int j=0; j < maxRegPerProc; j++) {
-        regP[j]->update( SC_ONE, *regZ[j], SC_ZERO); // P = Z
-      }
-      alpha = SC_TWO / d;
-    } else {
-      beta  = alpha * ( c / SC_TWO ) * ( c / SC_TWO );
-      alpha = SC_ONE / ( d - beta );
-      for (int j=0; j < maxRegPerProc; j++) {
-        regP[j]->update( SC_ONE, *regZ[j], beta);// P = Z + beta*P
-      }
-    }
+    rhokp1 = SC_ONE / (SC_TWO * s1 - rhok);
+    dtemp1 = rhokp1 * rhok;
+    dtemp2 = SC_TWO * rhokp1 * delta;
+    rhok = rhokp1;
     for (int j=0; j < maxRegPerProc; j++) {
-      regX[j]->update( alpha, *regP[j], SC_ONE);// X = X + alpha*P
+      regP[j]->update( dtemp2, *regZ[j], dtemp1);// P = dtemp2*Z + dtemp1*P
+      regX[j]->update( SC_ONE, *regP[j], SC_ONE);// X = X + P
     }
 
     // If we compute the residual here, we could either do R = B -
     // A*X, or R = R - alpha*A*P.  Since we choose the former, we
     // can move the computeResidual call to the top of the loop.
-    zeroInitGuess = false;
   }
+
+  zeroInitGuess = false;
 } // chebyshevIterate
 
 

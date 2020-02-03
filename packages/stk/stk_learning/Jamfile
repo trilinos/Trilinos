@@ -146,7 +146,7 @@ exe stk_learning_dgelement_utest
 
 exe stk_learning_openmp_utest
   :
-    $(gtest-root)/gtest/src/gtest_main.cc
+    $(gtest-root)/googletest/src/gtest_main.cc
     [ glob $(stk_learning-root)/OpenMP/*.C ]
     /sierra/stk_unit_test_utils//stk_unit_test_utils
   :
