@@ -522,8 +522,6 @@ namespace Teuchos
 
     //! Balances a general matrix A, through similarity transformations to make the rows and columns as close in norm as possible.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const OrdinalType& n, ScalarType* A, const OrdinalType& lda, const OrdinalType& ilo, const OrdinalType& ihi, MagnitudeType* scale, OrdinalType* info) const;
     void GEBAL(const char& JOBZ, const OrdinalType& n, ScalarType* A, const OrdinalType& lda, OrdinalType* ilo, OrdinalType* ihi, MagnitudeType* scale, OrdinalType* info) const;
 
     //! Forms the left or right eigenvectors of a general matrix that has been balanced by GEBAL by backward transformation of the computed eigenvectors \c V.
@@ -1523,8 +1521,6 @@ namespace Teuchos
 
     // Matrix balancing routines.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const int& n, float* A, const int& lda, const int& ilo, const int& ihi, float* scale, int* info) const;
     void GEBAL(const char& JOBZ, const int& n, float* A, const int& lda, int* ilo, int* ihi, float* scale, int* info) const;
 
     void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const float* scale, const int& m, float* V, const int& ldv, int* info) const;
@@ -1673,8 +1669,6 @@ namespace Teuchos
 
     // Matrix balancing routines.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const int& n, double* A, const int& lda, const int& ilo, const int& ihi, double* scale, int* info) const;
     void GEBAL(const char& JOBZ, const int& n, double* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const;
 
     void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const double* scale, const int& m, double* V, const int& ldv, int* info) const;
@@ -1807,8 +1801,6 @@ namespace Teuchos
 
     // Matrix balancing routines.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const int& n, std::complex<float>* A, const int& lda, const int& ilo, const int& ihi, float* scale, int* info) const;
     void GEBAL(const char& JOBZ, const int& n, std::complex<float>* A, const int& lda, int* ilo, int* ihi, float* scale, int* info) const;
 
     void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const float* scale, const int& m, std::complex<float>* V, const int& ldv, int* info) const;
@@ -1935,8 +1927,6 @@ namespace Teuchos
 
     // Matrix balancing routines.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const int& n, std::complex<double>* A, const int& lda, const int& ilo, const int& ihi, double* scale, int* info) const;
     void GEBAL(const char& JOBZ, const int& n, std::complex<double>* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const;
 
     void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const double* scale, const int& m, std::complex<double>* V, const int& ldv, int* info) const;

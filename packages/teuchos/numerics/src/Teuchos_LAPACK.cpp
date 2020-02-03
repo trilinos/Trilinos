@@ -464,13 +464,6 @@ namespace Teuchos
   void LAPACK<int, float>::LARFG( const int& n, float* alpha, float* x, const int& incx, float* tau ) const
   { SLARFG_F77(&n, alpha, x, &incx, tau); }
 
-  // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-  void LAPACK<int, float>::GEBAL(const char& JOBZ, const int& n, float* A, const int& lda, const int& ilo, const int& ihi, float* scale, int* info) const
-  {
-    int ilo_copy = ilo; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ihi_copy = ihi; // original passed by value and did not preserve lapack change - this method now deprecated
-    SGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo_copy, &ihi_copy, scale, info);
-  }
   void LAPACK<int, float>::GEBAL(const char& JOBZ, const int& n, float* A, const int& lda, int* ilo, int* ihi, float* scale, int* info) const
   { SGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, ilo, ihi, scale, info); }
 
@@ -909,13 +902,6 @@ namespace Teuchos
     DLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
-  // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-  void LAPACK<int, double>::GEBAL(const char& JOBZ, const int& n, double* A, const int& lda, const int& ilo, const int& ihi, double* scale, int* info) const
-  {
-    int ilo_copy = ilo; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ihi_copy = ihi; // original passed by value and did not preserve lapack change - this method now deprecated
-    DGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo_copy, &ihi_copy, scale, info);
-  }
   void LAPACK<int, double>::GEBAL(const char& JOBZ, const int& n, double* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const
   {
     DGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, ilo, ihi, scale, info);
@@ -1355,13 +1341,6 @@ namespace Teuchos
     CLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
-  // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-  void LAPACK<int, std::complex<float> >::GEBAL(const char& JOBZ, const int& n, std::complex<float>* A, const int& lda, const int& ilo, const int& ihi, float* scale, int* info) const
-  {
-    int ilo_copy = ilo; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ihi_copy = ihi; // original passed by value and did not preserve lapack change - this method now deprecated
-    CGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo_copy, &ihi_copy, scale, info);
-  }
   void LAPACK<int, std::complex<float> >::GEBAL(const char& JOBZ, const int& n, std::complex<float>* A, const int& lda, int* ilo, int* ihi, float* scale, int* info) const
   {
     CGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, ilo, ihi, scale, info);
@@ -1784,13 +1763,6 @@ namespace Teuchos
     ZLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
-  // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-  void LAPACK<int, std::complex<double> >::GEBAL(const char& JOBZ, const int& n, std::complex<double>* A, const int& lda, const int& ilo, const int& ihi, double* scale, int* info) const
-  {
-    int ilo_copy = ilo; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ihi_copy = ihi; // original passed by value and did not preserve lapack change - this method now deprecated
-    ZGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo_copy, &ihi_copy, scale, info);
-  }
   void LAPACK<int, std::complex<double> >::GEBAL(const char& JOBZ, const int& n, std::complex<double>* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const
   {
     ZGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, ilo, ihi, scale, info);
