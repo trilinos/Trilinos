@@ -617,6 +617,7 @@ example, skip the configure, skip the build, skip running tests, etc.
 * <a href="#spack-rhel-environment">Spack RHEL Environment</a>
 * <a href="#cee-rhel6-environment">CEE RHEL6 and RHEL7 Environment</a>
 * <a href="#waterman">waterman</a>
+* <a href="#vortex">ATS-2</a>
 
 
 ### ride/white
@@ -1034,6 +1035,39 @@ $ bsub -x -Is -n 20 \
 ```
 
 
+### vortex
+
+Once logged on to 'vortex' (SRN), one can either build and configure on the
+login node or the compute node. Make sure to setup SSH keys as described in
+`/opt/VORTEX_INTRO` before trying to build on a compute node. To get a list of
+compute nodes, run `bhosts`, then simply ssh to a given hostname. For example to
+configur, build and run the tests for the default `cuda-debug` build for
+`kokkos` (after cloning Trilinos on the `develop` branch), do:
+
+```bash
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
+
+$ cmake -G'Unix Makefiles' \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON \
+  -DTrilinos_ENABLE_Kokkos=ON \
+  $TRILINOS_DIR
+
+$ make NP=20
+
+$ ctest
+```
+
+**NOTES:**
+- Do NOT do `module purge` before loading the environment. Simply start off with
+  a clean default environment on vortex.
+- One can also `ssh` to a compute node (if you built on the login node) and
+run ctest from there.
+- To target the GPUs on vortex, one must run tests from the login node.
+
+
 ## Building and installing Trilinos for ATDM Applications
 
 See the following internal SNL wiki page for instructions on building and
@@ -1406,7 +1440,7 @@ they support are:
 
 * `spack-rhel/`: RHEL (and likely other Linux) systems with the SNL ATDM Spack modules installed.
 
-* `serrano/`: Supports SNL HPC CTS-1 machines 'serrano', 'eclipse', and
+* `cts1/`: Supports SNL HPC CTS-1 machines 'serrano', 'eclipse', and
   'ghost'.
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
@@ -1415,6 +1449,8 @@ they support are:
 * `tlcc2/`: Supports SNL HPC TLCC-2 machines 'chama', 'skybridge', etc..
 
 * `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.
+
+* `ats2/`: Supports GNU and CUDA builds on the SRN machine 'vortex'.
 
 
 ## Custom systems and configurations
