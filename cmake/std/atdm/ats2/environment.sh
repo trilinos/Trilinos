@@ -259,7 +259,7 @@ export F90=mpifort
 unset atdm_run_script_on_compute_node
 
 # TODO: Will this work be able to find the cuda runtime for targeting GPUs?
-source $ATDM_SCRIPT_DIR/common/define_atdm_run_on_lsf_compute_node_func.sh
+source $ATDM_SCRIPT_DIR/common/define_run_on_lsf_compute_node_func.sh
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 
