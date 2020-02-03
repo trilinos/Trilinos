@@ -2399,6 +2399,14 @@ namespace Tpetra {
     /// call sortGhostColumnGIDsWithinProcessBlock(false).
     bool sortGhostsAssociatedWithEachProcessor_;
 
+  private:
+    //! Get initial value of debug_ for this object.
+    static bool getDebug();
+
+    /// \brief Whether to do extra debug checks.
+    ///
+    /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
+    bool debug_ = getDebug();
   }; // class CrsGraph
 
   /// \brief Nonmember function to create an empty CrsGraph given a
