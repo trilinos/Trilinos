@@ -1,115 +1,54 @@
-/packages/amesos/            @trilinos/amesos
-
-/packages/amesos2/           @trilinos/amesos2
-
-/packages/anasazi/           @trilinos/anasazi
-
-/packages/aztecoo/           @trilinos/aztecoo
-
-/packages/belos/             @trilinos/belos
-
-/packages/claps/             @trilinos/claps
-
-/packages/domi/              @trilinos/domi
-
-/packages/epetra/            @trilinos/epetra
-
-/packages/epetraext/         @trilinos/epetraext
-
-/packages/fei/               @trilinos/fei
-
+/packages/amesos/            @trilinos/amesos/developers
+/packages/amesos2/           @trilinos/amesos2/developers
+/packages/anasazi/           @trilinos/anasazi/developers
+/packages/aztecoo/           @trilinos/aztecoo/developers
+/packages/belos/             @trilinos/belos/developers
+/packages/claps/             @trilinos/claps/developers
+/packages/domi/              @trilinos/domi/developers
+/packages/epetra/            @trilinos/epetra/developers
+/packages/epetraext/         @trilinos/epetraext/developers
+/packages/fei/               @trilinos/fei/developers
 #/packages/galeri/            @trilinos/
-
-/packages/globipack/         @trilinos/globipack
-
-/packages/ifpack/            @trilinos/ifpack
-
-/packages/ifpack2/           @trilinos/ifpack2
-
-/packages/intrepid/          @trilinos/intrepid
-
-/packages/intrepid2/         @trilinos/intrepid2
-
-/packages/isorropia/         @trilinos/isorropia
-
-/packages/kokkos/            @trilinos/kokkos
-
-/packages/kokkos-kernels/    @trilinos/kokkos-kernels
-
-/packages/komplex/           @trilinos/komplex
-
-#/packages/meshinggenie/      @trilinos/
-
+/packages/ifpack/            @trilinos/ifpack/developers
+/packages/ifpack2/           @trilinos/ifpack2/developers
+/packages/intrepid/          @trilinos/intrepid/developers
+/packages/intrepid2/         @trilinos/intrepid2/developers
+/packages/isorropia/         @trilinos/isorropia/developers
+/packages/kokkos/            @trilinos/kokkos/developers
+/packages/kokkos-kernels/    @trilinos/kokkos-kernels/developers
+/packages/komplex/           @trilinos/komplex/developers
 #/packages/minitensor/        @trilinos/
-
-/packages/ml/                @trilinos/ml
-
-/packages/moertel/           @trilinos/moertel
-
-/packages/muelu/             @trilinos/muelu
-
-/packages/new_package/       @trilinos/new_package
-
-/packages/nox/               @trilinos/nox
-
-/packages/optipack/          @trilinos/optipack
-
-/packages/pamgen/            @trilinos/pamgen
-
-/packages/panzer/            @trilinos/panzer
-
-/packages/phalanx/           @trilinos/phalanx
-
+/packages/ml/                @trilinos/ml/developers
+/packages/moertel/           @trilinos/moertel/developers
+/packages/muelu/             @trilinos/muelu/developers
+/packages/new_package/       @trilinos/new_package/developers
+/packages/nox/               @trilinos/nox/developers
+/packages/pamgen/            @trilinos/pamgen/developers
+/packages/panzer/            @trilinos/panzer/developers
+#/packages/percept/           @trilinos/
+/packages/phalanx/           @trilinos/phalanx/developers
 #/packages/pike/              @trilinos/
-
-/packages/piro/              @trilinos/piro
-
-/packages/pliris/            @trilinos/pliris
-
-/packages/PyTrilinos/        @trilinos/pytrilinos
-
-/packages/rol/               @trilinos/rol
-
-/packages/rtop/              @trilinos/rtop
-
-/packages/rythmos/           @trilinos/rythmos
-
-/packages/sacado/            @trilinos/sacado
-
-/packages/seacas/            @trilinos/seacas
-
-/packages/shards/            @trilinos/shards
-
-/packages/shylu/             @trilinos/shylu
-
-/packages/stk/               @trilinos/stk
-
-/packages/stokhos/           @trilinos/stokhos
-
-/packages/stratimikos/       @trilinos/stratimikos
-
-/packages/teko/              @trilinos/teko
-
-/packages/tempus/            @trilinos/tempus
-
-/packages/teuchos/           @trilinos/teuchos
-
-#/packages/ThreadPool/        @trilinos/
-
-/packages/thyra/             @trilinos/thyra
-
-/packages/tpetra/            @trilinos/tpetra
-
-/packages/TriKota/           @trilinos/trikota
-
+/packages/piro/              @trilinos/piro/developers
+/packages/pliris/            @trilinos/pliris/developers
+/packages/PyTrilinos/        @trilinos/pytrilinos/developers
+/packages/rol/               @trilinos/rol/developers
+/packages/rtop/              @trilinos/rtop/developers
+/packages/rythmos/           @trilinos/rythmos/developers
+/packages/sacado/            @trilinos/sacado/developers
+/packages/seacas/            @trilinos/seacas/developers
+/packages/shards/            @trilinos/shards/developers
+/packages/shylu/             @trilinos/shylu/developers
+/packages/stk/               @trilinos/stk/developers
+/packages/stokhos/           @trilinos/stokhos/developers
+/packages/stratimikos/       @trilinos/stratimikos/developers
+/packages/teko/              @trilinos/teko/developers
+/packages/tempus/            @trilinos/tempus/developers
+/packages/teuchos/           @trilinos/teuchos/developers
+/packages/thyra/             @trilinos/thyra/developers
+/packages/tpetra/            @trilinos/tpetra/developers
+/packages/TriKota/           @trilinos/trikota/developers
 #/packages/trilinoscouplings/ @trilinos/
-
-#/packages/trios/             @trilinos/
-
-/packages/triutils/          @trilinos/triutils
-
-/packages/xpetra/            @trilinos/xpetra
-
-/packages/zoltan/            @trilinos/zoltan
-
-/packages/zoltan2/           @trilinos/zoltan2
+/packages/triutils/          @trilinos/triutils/developers
+/packages/xpetra/            @trilinos/xpetra/developers
+/packages/zoltan/            @trilinos/zoltan/developers
+/packages/zoltan2/           @trilinos/zoltan2/developers
