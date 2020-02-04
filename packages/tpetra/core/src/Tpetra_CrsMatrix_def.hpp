@@ -6757,8 +6757,8 @@ namespace Tpetra {
   copyAndPermuteNonStaticGraph(
     const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
     const size_t numSameIDs,
-    const LocalOrdinal permuteToLIDs[],
-    const LocalOrdinal permuteFromLIDs[],
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs_dv,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs_dv,
     const size_t numPermutes)
   {
     using Details::ProfilingRegion;
@@ -6784,6 +6784,16 @@ namespace Tpetra {
     const char* const prefix_raw =
       verbose ? prefix.get()->c_str() : nullptr;
 
+    {
+      using row_graph_type = RowGraph<LO, GO, Node>;
+      const row_graph_type& srcGraph = *(srcMat.getGraph());
+      auto padding =
+        myGraph_->computeCrsPadding(srcGraph, numSameIDs,
+          permuteToLIDs_dv, permuteFromLIDs_dv, verbose);
+      if (padding.size() != 0) {
+        applyCrsPadding(padding, verbose);
+      }
+    }
     const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
     //
     // Copy the first numSame row from source to target (this matrix).
@@ -6845,6 +6855,8 @@ namespace Tpetra {
       std::ostringstream os;
       os << *prefix << "Do permutes" << endl;
     }
+    const LO* const permuteFromLIDs = permuteFromLIDs_dv.view_host().data();
+    const LO* const permuteToLIDs = permuteToLIDs_dv.view_host().data();
 
     const map_type& tgtRowMap = * (this->getRowMap ());
     for (size_t p = 0; p < numPermutes; ++p) {
@@ -6901,11 +6913,11 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  copyAndPermute
-  (const SrcDistObject& srcObj,
-   const size_t numSameIDs,
-   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
+  copyAndPermute(
+    const SrcDistObject& srcObj,
+    const size_t numSameIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
   {
     using Details::Behavior;
     using Details::dualViewStatusToString;
@@ -6944,33 +6956,24 @@ namespace Tpetra {
        << numPermute << "!= permuteFromLIDs.extent(0) = "
        << permuteFromLIDs.extent (0) << ".");
 
-    TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
-    auto permuteToLIDs_h = permuteToLIDs.view_host ();
-    TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );
-    auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
-
     // This dynamic cast should succeed, because we've already tested
     // it in checkSizes().
     using RMT = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const RMT& srcMat = dynamic_cast<const RMT&> (srcObj);
-
     if (isStaticGraph ()) {
+      TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
+      auto permuteToLIDs_h = permuteToLIDs.view_host ();
+      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );
+      auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
+
       copyAndPermuteStaticGraph(srcMat, numSameIDs,
                                 permuteToLIDs_h.data(),
                                 permuteFromLIDs_h.data(),
                                 numPermute);
     }
     else {
-      auto padding =
-        myGraph_->computeCrsPadding(*srcMat.getGraph(),
-          numSameIDs, permuteToLIDs, permuteFromLIDs, verbose);
-      if (padding.size() != 0) {
-        applyCrsPadding(padding, verbose);
-      }
-      copyAndPermuteNonStaticGraph(srcMat, numSameIDs,
-                                   permuteToLIDs_h.data(),
-                                   permuteFromLIDs_h.data(),
-                                   numPermute);
+      copyAndPermuteNonStaticGraph(srcMat, numSameIDs, permuteToLIDs,
+                                   permuteFromLIDs, numPermute);
     }
 
     if (verbose) {

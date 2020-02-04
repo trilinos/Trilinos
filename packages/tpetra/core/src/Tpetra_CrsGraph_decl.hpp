@@ -1169,11 +1169,12 @@ namespace Tpetra {
       const bool verbose);
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPadding (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-                       const bool verbose) const;
+    computeCrsPadding(
+      const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
+      const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+      const bool verbose) const;
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
     computeCrsPadding (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,

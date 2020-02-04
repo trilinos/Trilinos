@@ -3451,8 +3451,8 @@ namespace Tpetra {
     copyAndPermuteNonStaticGraph(
       const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
       const size_t numSameIDs,
-      const LocalOrdinal permuteToLIDs[],
-      const LocalOrdinal permuteFromLIDs[],
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs_dv,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs_dv,
       const size_t numPermutes);
 
   protected:
