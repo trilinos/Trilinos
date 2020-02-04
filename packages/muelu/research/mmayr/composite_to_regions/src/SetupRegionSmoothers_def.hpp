@@ -186,7 +186,8 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
 /*! \brief Do Gauss-Seidel smoothing
  *
  *  Perform Gauss-Seidel smoothing in the region layout using the true diagonal value
- *  recovered from the splitted matrix.
+ *  recovered from the splitted matrix. Off-diagonal values are just taken as they are
+ *  in region format.
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
@@ -205,14 +206,15 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
   // Get max number of regions per proc
   const int maxRegPerProc = regX.size();
 
-  const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
+  // Extract user-given and pre-computed data from paremter list
+  const int maxIter = smootherParams->get<int>("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
   Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
-
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, revisedRowMapPerGrp);
 
+  // GS iteration loop
   for (int iter = 0; iter < maxIter; ++iter) {
 
     /* Update the residual vector
@@ -237,13 +239,18 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
     Teuchos::ArrayRCP<SC> Onediag = diag_inv[0]->getDataNonConst(0);
 
     for (size_t k = 0; k < regionGrpMats[0]->getNodeNumRows(); k++) ldelta[k] = 0.;
+
+    // Loop over all rows in the region matrix
     for (size_t k = 0; k < regionGrpMats[0]->getNodeNumRows(); k++) {
+      // Extract a single row
       ArrayView<const LO> AAcols;
       ArrayView<const SC> AAvals;
       regionGrpMats[0]->getLocalRowView(k, AAcols, AAvals);
       const int *Acols    = AAcols.getRawPtr();
       const SC  *Avals = AAvals.getRawPtr();
       LO RowLeng = AAvals.size();
+
+      // Loop over entries in row k and perform GS iteration
       for (LO kk = 0; kk < RowLeng; kk++) {
           OneregRes[k] = OneregRes[k] - Avals[kk]*ldelta[Acols[kk]];
       }
@@ -256,7 +263,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
   return;
 } // GS
 
-
+//! Transfer region vector to composite format and compute its 2-norm
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 calcNorm2(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec,
@@ -271,6 +278,17 @@ calcNorm2(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
   return norm;
 } // calcNorm2
 
+/*! Compute inner product of two region vectors
+ *
+ * First, we transform the region vectors to the composite layout. Then, we utilize
+ * the Xpetra::Vector::dot() capability to compute the inner product.
+ *
+ * @param[in] regX First region vector
+ * @param[in] regY Second region vector
+ * @param[in] rowImportPerGrp Importer to transfer region vectors to composite layout
+ *
+ * @return Inner product of regX and regY
+ */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar
 dotProd(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regX,
@@ -351,6 +369,9 @@ powerMethod(RCP<Teuchos::ParameterList> params,
 } // powerMethod
 
 /*! \brief performs Chebyshev setup
+ *
+ * 1. Recover true diagonal value and compute its reciprocal
+ * 2. Use power method to estimate lambdaMx
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void chebyshevSetup(RCP<Teuchos::ParameterList> params,
@@ -501,13 +522,13 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
   {
     break;
   }
-  case 1:
-  case 2:
+  case 1: // Jacobi
+  case 2: // Gauss-Seidel
   {
     relaxationSmootherSetup(params, revisedRowMapPerGrp, regionGrpMats, rowImportPerGrp);
     break;
   }
-  case 3:
+  case 3: // Chebyshev
   {
     chebyshevSetup(params, regionGrpMats, regionInterfaceScaling, revisedRowMapPerGrp, rowImportPerGrp);
     break;
@@ -540,17 +561,17 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   {
     break;
   }
-  case 1:
+  case 1: // Jacobi
   {
     jacobiIterate(params, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp, zeroInitGuess);
     break;
   }
-  case 2:
+  case 2: // Gauss-Seidel
   {
     GSIterate(params, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp, zeroInitGuess);
     break;
   }
-  case 3:
+  case 3: // Chebyshev
     chebyshevIterate(params, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp, zeroInitGuess);
   {
     break;
