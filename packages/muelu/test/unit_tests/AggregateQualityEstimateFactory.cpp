@@ -155,8 +155,7 @@ namespace MueLuTests {
     
     out << "Testing aggregate qualities to make sure all aggregates are of good quality...\n\n";
 
-
-    ArrayRCP<const NT> aggQualitiesLocalData = aggQualities->getData(0);
+    ArrayRCP<const Node> aggQualitiesLocalData = aggQualities->getData(0);
 
     for (size_t i=0;i<aggQualities->getLocalLength();++i) {
       out << "Aggregate " << i << ": " << aggQualitiesLocalData[i] << "\n";
