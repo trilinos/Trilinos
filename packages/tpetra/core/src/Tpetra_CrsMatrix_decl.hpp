@@ -3440,11 +3440,21 @@ namespace Tpetra {
 
   private:
     void
-    copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
-                        const size_t numSameIDs,
-                        const LocalOrdinal permuteToLIDs[],
-                        const LocalOrdinal permuteFromLIDs[],
-                        const size_t numPermutes);
+    copyAndPermuteStaticGraph(
+      const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+      const size_t numSameIDs,
+      const LocalOrdinal permuteToLIDs[],
+      const LocalOrdinal permuteFromLIDs[],
+      const size_t numPermutes);
+
+    void
+    copyAndPermuteNonStaticGraph(
+      const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+      const size_t numSameIDs,
+      const LocalOrdinal permuteToLIDs[],
+      const LocalOrdinal permuteFromLIDs[],
+      const size_t numPermutes);
+
   protected:
     virtual void
     copyAndPermute
@@ -3982,9 +3992,22 @@ namespace Tpetra {
     /// about why we use \c Scalar and not \c impl_scalar_type here
     /// for the input array type.
     void
-    insertGlobalValuesFiltered (const GlobalOrdinal globalRow,
-                                const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                                const Teuchos::ArrayView<const Scalar>& values);
+    insertGlobalValuesFiltered(
+      const GlobalOrdinal globalRow,
+      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+      const Teuchos::ArrayView<const Scalar>& values,
+      const bool debug);
+
+    /// \brief Wrapper for insertGlobalValuesFiltered that prints
+    ///   helpful error messages if insertGlobalValuesFiltered throws.
+    void
+    insertGlobalValuesFilteredChecked(
+      const GlobalOrdinal globalRow,
+      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+      const Teuchos::ArrayView<const Scalar>& values,
+      const char* const prefix,
+      const bool debug,
+      const bool verbose);
 
     /// \brief Combine in the data using the given combine mode.
     ///
@@ -3998,10 +4021,14 @@ namespace Tpetra {
     /// about why we use \c Scalar and not \c impl_scalar_type here
     /// for the input array type.
     void
-    combineGlobalValues (const GlobalOrdinal globalRowIndex,
-                         const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
-                         const Teuchos::ArrayView<const Scalar>& values,
-                         const Tpetra::CombineMode combineMode);
+    combineGlobalValues(
+      const GlobalOrdinal globalRowIndex,
+      const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
+      const Teuchos::ArrayView<const Scalar>& values,
+      const Tpetra::CombineMode combineMode,
+      const char* const prefix,
+      const bool debug,
+      const bool verbose);
 
     /// \brief Combine in the data using the given combine mode.
     ///
@@ -4017,15 +4044,22 @@ namespace Tpetra {
     /// \param cols [in] Input (global) column indices corresponding
     ///   to the above values.
     /// \param combineMode [in] The CombineMode to use.
+    /// \param prefix [in] Prefix for verbose debugging output; must
+    ///   be nonnull if verbose is true.
+    /// \param debug [in] Whether to do debug checking.
+    /// \param verbose [in] Whether to print verbose debugging output.
     ///
     /// \return The number of modified entries.  No error if and only
     ///   if equal to numEnt.
     LocalOrdinal
-    combineGlobalValuesRaw (const LocalOrdinal lclRow,
-                            const LocalOrdinal numEnt,
-                            const impl_scalar_type vals[],
-                            const GlobalOrdinal cols[],
-                            const Tpetra::CombineMode combineMode);
+    combineGlobalValuesRaw(const LocalOrdinal lclRow,
+                           const LocalOrdinal numEnt,
+                           const impl_scalar_type vals[],
+                           const GlobalOrdinal cols[],
+                           const Tpetra::CombineMode combineMode,
+                           const char* const prefix,
+                           const bool debug,
+                           const bool verbose);
 
     /// \brief Transform CrsMatrix entries, using global indices;
     ///   backwards compatibility version that takes
