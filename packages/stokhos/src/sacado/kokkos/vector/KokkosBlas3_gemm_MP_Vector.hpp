@@ -72,7 +72,7 @@ gemm(const char transA[],
   static_assert(Kokkos::View<DB, PB...>::rank == 2, "GEMM: B must have rank 2 (be a matrix).");
   static_assert(Kokkos::View<DC, PC...>::rank == 2, "GEMM: C must have rank 2 (be a matrix).");
 
-  if (B.dimension_1() == 1 && C.dimension_1() == 1)
+  if (B.extent(1) == 1 && C.extent(1) == 1)
   {
     auto x = Kokkos::subview(B, Kokkos::ALL, 0);
     auto y = Kokkos::subview(C, Kokkos::ALL, 0);
