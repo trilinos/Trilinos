@@ -1600,7 +1600,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   tol = 10*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
-  for (size_t i=0; i<nrow; ++i)
+  for (GlobalOrdinal i=0; i<nrow; ++i)
     for (LocalOrdinal j=0; j<VectorSize; ++j){
       // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
       TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
@@ -1764,7 +1764,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   tol = 10*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
-  for (size_t i=0; i<nrow; ++i)
+  for (GlobalOrdinal i=0; i<nrow; ++i)
     for (LocalOrdinal j=0; j<VectorSize; ++j){
       // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
       TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
@@ -1928,7 +1928,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   tol = 10*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
-  for (size_t i=0; i<nrow; ++i)
+  for (GlobalOrdinal i=0; i<nrow; ++i)
     for (LocalOrdinal j=0; j<VectorSize; ++j){
       // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
       TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
