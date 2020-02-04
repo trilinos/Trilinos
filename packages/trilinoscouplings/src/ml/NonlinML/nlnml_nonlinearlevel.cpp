@@ -295,8 +295,14 @@ fineJac_(fineJac)
  *----------------------------------------------------------------------*/
 NLNML::NLNML_NonlinearLevel::~NLNML_NonlinearLevel()
 {
-  if (thislevel_ag_) ML_Aggregate_Destroy(&thislevel_ag_); thislevel_ag_ = NULL;
-  if (thislevel_ml_) ML_Destroy(&thislevel_ml_);           thislevel_ml_ = NULL;
+  if (thislevel_ag_) {
+    ML_Aggregate_Destroy(&thislevel_ag_);
+    thislevel_ag_ = NULL;
+  }
+  if (thislevel_ml_) {
+    ML_Destroy(&thislevel_ml_);
+    thislevel_ml_ = NULL;
+  }
   return;
 }
 
@@ -509,11 +515,12 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
   else
   {
      returnstatus = false;
-     if (Comm().MyPID() == 0)
+     if (Comm().MyPID() == 0) {
         //cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)="
         //     << norm2 << "\n"; fflush(stdout);
         printf("nlnML (level %d): ***WRN*** NOX: return status unknown, Norm(F)=%12.8e , Failed\n",level_,norm2);
         fflush(stdout);
+     }
   }
 
   // reset number of calls to coarseinterface->computeF
