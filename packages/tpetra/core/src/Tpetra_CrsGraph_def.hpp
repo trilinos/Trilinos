@@ -5245,48 +5245,116 @@ namespace Tpetra {
   {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
+    using std::endl;
     const char tfecfFuncName[] = "computeCrsPaddingForSameIds: ";
 
-    if (!numSameIDs)
+    std::unique_ptr<std::string> prefix;
+    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    if (verbose) {
+      prefix =
+        this->createPrefix("CrsGraph", "computeCrsPaddingForSameIDs");
+      std::ostringstream os;
+      os << *prefix << "numSameIDs: " << numSameIDs
+         << ", padAll: " << (padAll ? "true" : "false") << endl;
+      std::cerr << os.str();
+    }
+
+    if (! numSameIDs) {
       return;
+    }
 
     Kokkos::fence ();
 
     using insert_result =
       typename Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>::insert_result;
+    using this_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    const this_type* srcCrs = dynamic_cast<const this_type*>(&source);
 
     // Compute extra capacity needed to accommodate incoming data
     const map_type& src_row_map = * (source.getRowMap ());
+    const bool src_sorted = srcCrs == nullptr ? false : srcCrs->isSorted();
+    const bool tgt_sorted = this->isSorted();
+    const bool src_merged = srcCrs == nullptr ? false : srcCrs->isMerged();
+    const bool tgt_merged = this->isMerged();
+
+    std::vector<GO> src_row_inds;
+    std::vector<GO> tgt_row_inds;
+    std::vector<GO> merged_inds;
+
+    size_t srcNumDups = 0;
+    size_t tgtNumDups = 0;
+    size_t mergedNumDups = 0;
+
     for (LO tgt_lid = 0; tgt_lid < static_cast<LO> (numSameIDs); ++tgt_lid) {
       const GO src_gid = src_row_map.getGlobalElement(tgt_lid);
-      auto num_src_entries = source.getNumEntriesInGlobalRow(src_gid);
-
-      if (num_src_entries == 0)
+      size_t orig_num_src_entries = source.getNumEntriesInGlobalRow(src_gid);
+      if (orig_num_src_entries == 0) {
         continue;
-
+      }
       insert_result result;
       const GO tgt_gid = rowMap_->getGlobalElement(tgt_lid);
       if (padAll) {
-        result = padding.insert(tgt_lid, num_src_entries);
+        result = padding.insert(tgt_lid, orig_num_src_entries);
       }
       else {
-        size_t check_row_length = 0;
-        std::vector<GO> src_row_inds(num_src_entries);
-        Teuchos::ArrayView<GO> src_row_inds_view(src_row_inds.data(), src_row_inds.size());
-        source.getGlobalRowCopy(src_gid, src_row_inds_view, check_row_length);
-
-        auto num_tgt_entries = this->getNumEntriesInGlobalRow(tgt_gid);
-        std::vector<GO> tgt_row_inds(num_tgt_entries);
-        Teuchos::ArrayView<GO> tgt_row_inds_view(tgt_row_inds.data(), tgt_row_inds.size());
-        this->getGlobalRowCopy(tgt_gid, tgt_row_inds_view, check_row_length);
-
-        size_t how_much_padding = 0;
-        for (auto src_row_ind : src_row_inds) {
-          if (std::find(tgt_row_inds.begin(), tgt_row_inds.end(), src_row_ind) == tgt_row_inds.end()) {
-            // The target row does not have space for
-            how_much_padding++;
-          }
+        if (src_row_inds.size() < orig_num_src_entries) {
+          src_row_inds.resize(orig_num_src_entries);
         }
+        Teuchos::ArrayView<GO> src_row_inds_view(src_row_inds.data(), orig_num_src_entries);
+        source.getGlobalRowCopy(src_gid, src_row_inds_view, orig_num_src_entries);
+        if (! src_sorted) {
+          std::sort(src_row_inds_view.begin(), src_row_inds_view.end());
+        }
+        if (! src_merged) {
+          auto new_end = std::unique(src_row_inds_view.begin(), src_row_inds_view.end());
+          const size_t new_num_ent = static_cast<size_t>(new_end - src_row_inds_view.begin());
+          srcNumDups += (new_num_ent - orig_num_src_entries);
+          src_row_inds_view = Teuchos::ArrayView<GO>(src_row_inds_view.data(), new_num_ent);
+        }
+        if (src_row_inds_view.size() == 0) { // nothing new to insert
+          result = padding.insert(tgt_lid, size_t(0));
+          // FIXME (mfh 09 Apr 2019, 04 Feb 2020) Kokkos::UnorderedMap
+          // is allowed to fail even if the user did nothing wrong. We
+          // should actually have a retry option. I just copied this
+          // code over from computeCrsPadding.
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (result.failed(), std::runtime_error,
+             "unable to insert padding for LID " << tgt_lid);
+        }
+
+        size_t orig_num_tgt_entries = this->getNumEntriesInGlobalRow(tgt_gid);
+        if (tgt_row_inds.size() < orig_num_tgt_entries) {
+          tgt_row_inds.resize(orig_num_tgt_entries);
+        }
+        Teuchos::ArrayView<GO> tgt_row_inds_view(tgt_row_inds.data(), orig_num_tgt_entries);
+        this->getGlobalRowCopy(tgt_gid, tgt_row_inds_view, orig_num_tgt_entries);
+        if (! tgt_sorted) {
+          std::sort(tgt_row_inds_view.begin(), tgt_row_inds_view.end());
+        }
+        if (! tgt_merged) {
+          auto new_end = std::unique(tgt_row_inds_view.begin(), tgt_row_inds_view.end());
+          const size_t new_num_ent = static_cast<size_t>(new_end - tgt_row_inds_view.begin());
+          tgtNumDups += (new_num_ent - orig_num_tgt_entries);
+          tgt_row_inds_view = Teuchos::ArrayView<GO>(tgt_row_inds_view.data(), new_num_ent);
+        }
+
+        const size_t orig_num_merged =
+          size_t(src_row_inds_view.size()) + size_t(tgt_row_inds_view.size());
+        if (merged_inds.size() < orig_num_merged) {
+          merged_inds.resize(orig_num_merged);
+        }
+        auto merged_end =
+          std::merge(src_row_inds_view.begin(), src_row_inds_view.end(),
+                     tgt_row_inds_view.begin(), tgt_row_inds_view.end(),
+                     merged_inds.begin());
+        const size_t new_num_merged =
+          static_cast<size_t>(merged_end - merged_inds.begin());
+        mergedNumDups += (orig_num_merged - new_num_merged);
+
+        const size_t how_much_padding =
+          new_num_merged >= orig_num_tgt_entries ?
+          new_num_merged - orig_num_tgt_entries :
+          size_t(0);
         result = padding.insert (tgt_lid, how_much_padding);
       }
 
@@ -5296,6 +5364,14 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (result.failed(), std::runtime_error,
          "unable to insert padding for LID " << tgt_lid);
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done: srcNumDups: " << srcNumDups
+         << ", tgtNumDups: " << tgtNumDups
+         << ", mergedNumDups: " << mergedNumDups << endl;
+      std::cerr << os.str();
     }
   }
 
