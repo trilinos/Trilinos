@@ -7911,15 +7911,14 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
-                                   buffer_device_type>& importLIDs,
-                                 const Kokkos::DualView<const char*,
-                                   buffer_device_type>& imports,
-                                 const Kokkos::DualView<const size_t*,
-                                   buffer_device_type>& numPacketsPerLID,
-                                 const size_t /* constantNumPackets */,
-                                 Distributor& /* distor */,
-                                 const CombineMode combineMode)
+  unpackAndCombineImplNonStatic(
+    const Kokkos::DualView<const local_ordinal_type*,
+      buffer_device_type>& importLIDs,
+    Kokkos::DualView<char*, buffer_device_type> imports,
+    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+    const size_t constantNumPackets,
+    Distributor& distor,
+    const CombineMode combineMode)
   {
     using Kokkos::View;
     using Kokkos::subview;
@@ -7930,15 +7929,16 @@ namespace Tpetra {
     using Details::PackTraits;
     using Details::ScalarViewTraits;
     using std::endl;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef impl_scalar_type ST;
-    typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
-    typedef std::pair<typename View<int*, HES>::size_type,
-                      typename View<int*, HES>::size_type> pair_type;
-    typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
-    typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using ST = impl_scalar_type;
+    using size_type = typename Teuchos::ArrayView<LO>::size_type;
+    using HES =
+      typename View<int*, device_type>::HostMirror::execution_space;
+    using pair_type = std::pair<typename View<int*, HES>::size_type,
+                                typename View<int*, HES>::size_type>;
+    using gids_out_type = View<GO*, HES, MemoryUnmanaged>;
+    using vals_out_type = View<ST*, HES, MemoryUnmanaged>;
     const char tfecfFuncName[] = "unpackAndCombineImplNonStatic: ";
 
     const bool debug = Behavior::debug("CrsMatrix");
@@ -7946,7 +7946,7 @@ namespace Tpetra {
     std::unique_ptr<std::string> prefix;
     if (verbose) {
       prefix = this->createPrefix("CrsMatrix",
-        "unpackAndCombineImplNonStatic: ");
+        "unpackAndCombineImplNonStatic");
       std::ostringstream os;
       os << *prefix << endl; // we've already printed DualViews' statuses
       std::cerr << os.str ();
@@ -7969,22 +7969,20 @@ namespace Tpetra {
       return; // nothing to do; no need to combine entries
     }
 
-    // We're unpacking on host.  This is read-only host access of imports.
-    {
-      auto imports_nc = castAwayConstDualView (imports);
-      imports_nc.sync_host ();
+    // We're unpacking on host.  This is read-only host access.
+    if (imports.need_sync_host()) {
+      imports.sync_host ();
     }
-    auto imports_h = imports.view_host ();
+    auto imports_h = imports.view_host();
 
     // Read-only host access.
-    {
-      auto numPacketsPerLID_nc = castAwayConstDualView (numPacketsPerLID);
-      numPacketsPerLID_nc.sync_host ();
+    if (numPacketsPerLID.need_sync_host()) {
+      numPacketsPerLID.sync_host ();
     }
-    auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
+    auto numPacketsPerLID_h = numPacketsPerLID.view_host();
 
-    TEUCHOS_ASSERT( ! importLIDs.need_sync_host () );
-    auto importLIDs_h = importLIDs.view_host ();
+    TEUCHOS_ASSERT( ! importLIDs.need_sync_host() );
+    auto importLIDs_h = importLIDs.view_host();
 
     size_t numBytesPerValue;
     {
