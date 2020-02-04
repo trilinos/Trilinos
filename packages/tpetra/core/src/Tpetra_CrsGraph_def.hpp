@@ -78,6 +78,44 @@ namespace Tpetra {
   namespace Details {
     namespace Impl {
 
+      template<class LocalOrdinal, class GlobalOrdinal, class Node>
+      Teuchos::ArrayView<
+        typename RowGraph<
+          LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type>
+      getSortedMergedGlobalRow(
+        std::vector<GlobalOrdinal>& gblColIndsStorage,
+        size_t& origNumEntries,
+        size_t& numDuplicates,
+        const RowGraph<LocalOrdinal, GlobalOrdinal, Node>& graph,
+        const GlobalOrdinal gblRow,
+        const bool iAmSorted,
+        const bool iAmMerged)
+      {
+        using Teuchos::ArrayView;
+        using GO = GlobalOrdinal;
+
+        origNumEntries = graph.getNumEntriesInGlobalRow(gblRow);
+        if (origNumEntries > gblColIndsStorage.size()) {
+          gblColIndsStorage.resize(origNumEntries);
+        }
+        ArrayView<GO> gblColInds(gblColIndsStorage.data(),
+                                 origNumEntries);
+        graph.getGlobalRowCopy(gblRow, gblColInds, origNumEntries);
+        if (! iAmSorted) {
+          std::sort(gblColInds.begin(), gblColInds.end());
+        }
+        if (! iAmMerged) {
+          auto newEnd =
+            std::unique(gblColInds.begin(), gblColInds.end());
+          const size_t newNumEntries =
+            static_cast<size_t>(newEnd - gblColInds.begin());
+          numDuplicates = size_t(newNumEntries - origNumEntries);
+          gblColInds =
+            ArrayView<GO>(gblColInds.data(), newNumEntries);
+        }
+        return gblColInds;
+      }
+
       template<class LO, class GO, class DT, class OffsetType, class NumEntType>
       class ConvertColumnIndicesFromGlobalToLocal {
       public:
@@ -5245,6 +5283,7 @@ namespace Tpetra {
   {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
+    using Details::Impl::getSortedMergedGlobalRow;
     using std::endl;
     const char tfecfFuncName[] = "computeCrsPaddingForSameIds: ";
 
@@ -5297,20 +5336,12 @@ namespace Tpetra {
         result = padding.insert(tgt_lid, orig_num_src_entries);
       }
       else {
-        if (src_row_inds.size() < orig_num_src_entries) {
-          src_row_inds.resize(orig_num_src_entries);
-        }
-        Teuchos::ArrayView<GO> src_row_inds_view(src_row_inds.data(), orig_num_src_entries);
-        source.getGlobalRowCopy(src_gid, src_row_inds_view, orig_num_src_entries);
-        if (! src_sorted) {
-          std::sort(src_row_inds_view.begin(), src_row_inds_view.end());
-        }
-        if (! src_merged) {
-          auto new_end = std::unique(src_row_inds_view.begin(), src_row_inds_view.end());
-          const size_t new_num_ent = static_cast<size_t>(new_end - src_row_inds_view.begin());
-          srcNumDups += (new_num_ent - orig_num_src_entries);
-          src_row_inds_view = Teuchos::ArrayView<GO>(src_row_inds_view.data(), new_num_ent);
-        }
+        size_t curNumSrcDups = 0;
+        Teuchos::ArrayView<GO> src_row_inds_view =
+          getSortedMergedGlobalRow(src_row_inds, orig_num_src_entries,
+                                   curNumSrcDups, source, src_gid,
+                                   src_sorted, src_merged);
+        srcNumDups += curNumSrcDups;
         if (src_row_inds_view.size() == 0) { // nothing new to insert
           result = padding.insert(tgt_lid, size_t(0));
           // FIXME (mfh 09 Apr 2019, 04 Feb 2020) Kokkos::UnorderedMap
@@ -5322,21 +5353,13 @@ namespace Tpetra {
              "unable to insert padding for LID " << tgt_lid);
         }
 
-        size_t orig_num_tgt_entries = this->getNumEntriesInGlobalRow(tgt_gid);
-        if (tgt_row_inds.size() < orig_num_tgt_entries) {
-          tgt_row_inds.resize(orig_num_tgt_entries);
-        }
-        Teuchos::ArrayView<GO> tgt_row_inds_view(tgt_row_inds.data(), orig_num_tgt_entries);
-        this->getGlobalRowCopy(tgt_gid, tgt_row_inds_view, orig_num_tgt_entries);
-        if (! tgt_sorted) {
-          std::sort(tgt_row_inds_view.begin(), tgt_row_inds_view.end());
-        }
-        if (! tgt_merged) {
-          auto new_end = std::unique(tgt_row_inds_view.begin(), tgt_row_inds_view.end());
-          const size_t new_num_ent = static_cast<size_t>(new_end - tgt_row_inds_view.begin());
-          tgtNumDups += (new_num_ent - orig_num_tgt_entries);
-          tgt_row_inds_view = Teuchos::ArrayView<GO>(tgt_row_inds_view.data(), new_num_ent);
-        }
+        size_t orig_num_tgt_entries = 0;
+        size_t curNumTgtDups = 0;
+        Teuchos::ArrayView<GO> tgt_row_inds_view =
+          getSortedMergedGlobalRow(tgt_row_inds, orig_num_tgt_entries,
+                                   curNumTgtDups, *this, tgt_gid,
+                                   tgt_sorted, tgt_merged);
+        tgtNumDups += curNumTgtDups;
 
         const size_t orig_num_merged =
           size_t(src_row_inds_view.size()) + size_t(tgt_row_inds_view.size());

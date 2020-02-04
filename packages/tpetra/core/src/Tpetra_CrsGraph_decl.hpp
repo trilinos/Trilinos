@@ -1186,23 +1186,21 @@ namespace Tpetra {
                                  const size_t numSameIDs,
                                  const bool padAll) const;
     void
-    computeCrsPaddingForPermutedIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
-                                     const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-                                     const bool padAll) const;
+    computeCrsPaddingForPermutedIDs(
+      Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
+      const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+      const bool padAll) const;
 
     virtual void
-    packAndPrepare
-    (const SrcDistObject& source,
-     const Kokkos::DualView<const local_ordinal_type*,
-       buffer_device_type>& exportLIDs,
-     Kokkos::DualView<packet_type*,
-       buffer_device_type>& exports,
-     Kokkos::DualView<size_t*,
-       buffer_device_type> numPacketsPerLID,
-     size_t& constantNumPackets,
-     Distributor& distor) override;
+    packAndPrepare(
+      const SrcDistObject& source,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+      Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      size_t& constantNumPackets,
+      Distributor& distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
