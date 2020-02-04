@@ -456,7 +456,9 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> params,
   Array<RCP<Vector> > regZ(maxRegPerProc);
   createRegionalVector(regZ, revisedRowMapPerGrp);
 
-  Scalar dtemp1, dtemp2, rhokp1;
+  Scalar dtemp1 = SC_ZERO;
+  Scalar dtemp2 = SC_ZERO;
+  Scalar rhokp1 = SC_ZERO;
   Scalar rhok = SC_ONE / s1;
 
   // First Iteration
