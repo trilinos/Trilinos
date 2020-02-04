@@ -7822,19 +7822,14 @@ namespace Tpetra {
       return; // nothing to do
     }
 
-    if (!this->isStaticGraph()) {
-      auto padding = myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID, verbose);
-      if (padding.size() > 0)
-        this->applyCrsPadding(padding, verbose);
-    }
-
     if (debug) {
       using Teuchos::reduceAll;
       std::unique_ptr<std::ostringstream> msg (new std::ostringstream ());
       int lclBad = 0;
       try {
-        this->unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
-                                    constantNumPackets, distor, combineMode);
+        unpackAndCombineImpl(importLIDs, imports, numPacketsPerLID,
+                             constantNumPackets, distor, combineMode,
+                             verbose);
       } catch (std::exception& e) {
         lclBad = 1;
         *msg << e.what ();
@@ -7859,8 +7854,9 @@ namespace Tpetra {
       }
     }
     else {
-      this->unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
-                                  constantNumPackets, distor, combineMode);
+      unpackAndCombineImpl(importLIDs, imports, numPacketsPerLID,
+                           constantNumPackets, distor, combineMode,
+                           verbose);
     }
 
     if (verbose) {
@@ -7882,27 +7878,33 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineImpl (const Kokkos::DualView<const local_ordinal_type*,
-                          buffer_device_type>& importLIDs,
-                        const Kokkos::DualView<const char*,
-                          buffer_device_type>& imports,
-                        const Kokkos::DualView<const size_t*,
-                          buffer_device_type>& numPacketsPerLID,
-                        const size_t constantNumPackets,
-                        Distributor & distor,
-                        const CombineMode combineMode)
+  unpackAndCombineImpl(
+    const Kokkos::DualView<const local_ordinal_type*,
+      buffer_device_type>& importLIDs,
+    Kokkos::DualView<char*, buffer_device_type> imports,
+    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+    const size_t constantNumPackets,
+    Distributor & distor,
+    const CombineMode combineMode,
+    const bool verbose)
   {
-    if (this->isStaticGraph ()) {
-      using ::Tpetra::Details::unpackCrsMatrixAndCombineNew;
+    if (isStaticGraph ()) {
+      using Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew (*this, imports, numPacketsPerLID,
                                     importLIDs, constantNumPackets,
                                     distor, combineMode);
     }
     else {
-      this->unpackAndCombineImplNonStatic (importLIDs, imports,
-                                           numPacketsPerLID,
-                                           constantNumPackets,
-                                           distor, combineMode);
+      auto padding =
+        myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID,
+                                    verbose);
+      if (padding.size() > 0) {
+        applyCrsPadding(padding, verbose);
+      }
+      unpackAndCombineImplNonStatic(importLIDs, imports,
+                                    numPacketsPerLID,
+                                    constantNumPackets,
+                                    distor, combineMode);
     }
   }
 

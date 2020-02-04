@@ -3482,15 +3482,15 @@ namespace Tpetra {
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
     void
-    unpackAndCombineImpl (const Kokkos::DualView<const local_ordinal_type*,
-                            buffer_device_type>& importLIDs,
-                          const Kokkos::DualView<const char*,
-                            buffer_device_type>& imports,
-                          const Kokkos::DualView<const size_t*,
-                            buffer_device_type>& numPacketsPerLID,
-                          const size_t constantNumPackets,
-                          Distributor& distor,
-                          const CombineMode combineMode);
+    unpackAndCombineImpl(
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& importLIDs,
+      Kokkos::DualView<char*, buffer_device_type> imports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      const size_t constantNumPackets,
+      Distributor & distor,
+      const CombineMode combineMode,
+      const bool verbose);
 
     /// \brief Implementation of unpackAndCombineImpl for when the
     ///   target matrix's structure may change.
