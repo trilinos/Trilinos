@@ -260,6 +260,11 @@ static void Zoltan_Init(ZZ* zz)
   zz->Deterministic = ZOLTAN_DETERMINISTIC_DEF;
   zz->Obj_Weight_Dim = ZOLTAN_OBJ_WEIGHT_DEF;
   zz->Edge_Weight_Dim = ZOLTAN_EDGE_WEIGHT_DEF;
+ 
+  zz->Highest_Ancestor_ZZ = NULL;
+  zz->Group_Count = NULL;
+  zz->Num_Unique_Groups = 0; 
+  zz->Current_Hier_Level = -1; 
 
   zz->Get_Part_Multi = NULL;
   zz->Get_Part = NULL;

@@ -251,6 +251,14 @@ struct Zoltan_Struct {
                                       usually 0 (no weights) or 1            */
   int Timer;                      /*  Timer type that is currently active */
   struct Zoltan_Timer *ZTime;     /*  Timer structure for persistent timing. */
+
+  struct Zoltan_Struct *Highest_Ancestor_ZZ; /* ZZ Struct used for hier 
+                                                awareness in recursive calls */
+
+  int *Group_Count;
+  int Num_Unique_Groups;
+  int Current_Hier_Level;
+
   /***************************************************************************/
   ZOLTAN_PART_MULTI_FN *Get_Part_Multi;/* Fn ptr to get objects'
                                           part assignments.     */

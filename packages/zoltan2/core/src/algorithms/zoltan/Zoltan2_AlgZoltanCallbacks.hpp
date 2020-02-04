@@ -53,9 +53,16 @@
 
 #include <Zoltan2_HyperGraphModel.hpp>
 
+#include <Zoltan2_MachineRepresentation.hpp>
+
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 #include <zoltan_cpp.h>
+
+extern "C" {
+#include <zz_const.h>
+#include <zoltan_mem.h>
+}
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltanCallbacks.hpp
@@ -669,6 +676,398 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
     ZOLTAN_ID_PTR idPtr = &(pinIds[i*nGidEnt]);
     TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, pinIds_[i]);
   }
+}
+
+////////////////////////////
+// ZOLTAN_HIER_NUM_LEVELS_FN
+template <typename Adapter>
+static int zoltanHierNumLevels(void *data, 
+                               //int /* nGidEnt */, int nLidEnt, int nObj,
+                               //ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR lids,
+                               //int *parts, 
+                               int *ierr)
+{
+
+
+  // Find out how many levels of hierarchy this proc will participate in
+
+
+  typedef typename Adapter::scalar_t   pcoord_t;
+  typedef typename Adapter::part_t     part_t;
+ 
+  const MachineRepresentation<pcoord_t, part_t> *machine 
+    = static_cast<MachineRepresentation<pcoord_t, part_t> *>(data);
+  *ierr = ZOLTAN_OK;
+
+  int rank = machine->getMyRank();
+//  int ranks = machine->getNumRanks();
+
+  std::cout << "\nRank: " << rank 
+    << " HierNumLevels: " << machine->getNumNonuniformLevels() 
+    << " (+ 1?)" << std::endl;
+
+
+  // Group, Subgroup, Rack
+  return machine->getNumNonuniformLevels() + 1;
+//  return machine->getNumNonuniformLevels();
+}
+
+//////////////////////
+// ZOLTAN_HIER_PART_FN
+template <typename Adapter>
+static int zoltanHierPart(void *data, 
+                           //int /* nGidEnt */, int nLidEnt, int nObj,
+                           //ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR lids,
+                           int level, 
+                           int *ierr)
+{
+
+
+  // Determines parts to compute at this level 
+
+
+  typedef typename Adapter::scalar_t   pcoord_t;
+  typedef typename Adapter::part_t     part_t;
+
+  const MachineRepresentation<pcoord_t, part_t> *machine 
+    = static_cast<MachineRepresentation<pcoord_t, part_t> *>(data);
+  *ierr = ZOLTAN_OK;
+
+  int rank = machine->getMyRank();
+//  int ranks = machine->getNumRanks();
+
+  std::cout << "\n\n\n-\nRank: " << rank 
+    << " zoltanHierPart, level: " << level 
+    << "\n-\n\n"<< std::endl;
+  
+  part_t num_unique_groups = machine->getNumUniqueGroups();
+
+//  std::cout << "\nrank: " << rank 
+//    << " NUG: " << num_unique_groups << std::endl;
+
+//  std::cout << "\nrank: " << rank << ", 1" << std::endl;
+
+//  part_t *group_count = new part_t[num_unique_groups];
+
+  std::vector<part_t> group_count;
+  machine->getGroupCount2(group_count);
+
+  int group_idx;
+
+  int upper_cdf = 0;
+  int lower_cdf = 0;
+
+  for (int i = 0; i < num_unique_groups; ++i) { 
+  
+    lower_cdf = upper_cdf;
+    upper_cdf += int(group_count[i]);
+
+    if (rank < upper_cdf && rank >= lower_cdf) {
+
+//      std::cout << "\nRank: " << rank << " solving part " << i << std::endl;
+
+      group_idx = i;
+      break;
+    } 
+  }
+
+
+  if (level == 0)
+    return group_idx;
+
+  std::vector<part_t> num_unique_subgroups;
+  std::vector<std::vector<part_t>> subgroup_counts;
+
+  machine->getNumUniqueSubgroups(num_unique_subgroups);
+  machine->getSubgroupCounts(subgroup_counts);
+
+  
+  int subgroup_idx;
+  int group_rank = rank - lower_cdf;
+
+  lower_cdf = 0; 
+  upper_cdf = 0;
+
+  for (int i = 0; i < int(num_unique_subgroups[group_idx]); ++i) { 
+  
+    lower_cdf = upper_cdf;
+    upper_cdf += int(subgroup_counts[group_idx][i]);
+
+    if (group_rank < upper_cdf && group_rank >= lower_cdf) {
+
+      std::cout << "\nRank: " << rank 
+        << " solving part " << i 
+        << " of Group " << group_idx 
+        << " with group rank " << group_rank << std::endl;
+
+      subgroup_idx = i;
+      break;
+    } 
+  }
+
+  if (level == 1)
+    return subgroup_idx;
+
+
+
+//  for (int i = 0; i < num_unique_groups; ++i) {
+
+//    for (int j = 0; j < num_unique_subgroups[i]; ++j) {
+//      std::cout << "\nRank: " << rank 
+//        << " sgc[" << i << "][" << j << "]: " 
+//        << subgroup_counts[i][j];
+//    }
+//  }
+
+
+
+  std::cout << "\nRank: " << rank 
+    << " HierPart final level: " << level << std::endl;
+
+  return group_rank - lower_cdf;
+
+}
+
+////////////////////////
+// ZOLTAN_HIER_METHOD_FN
+template <typename Adapter>
+static void zoltanHierMethod(void *data, 
+                             //int /* nGidEnt */, int nLidEnt, int nObj,
+                             //ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR lids,
+                             //int *parts,
+                             int level,
+                             struct Zoltan_Struct *zz,
+                             int *ierr)
+{
+
+  // Let the application specify any balancing params for this level
+
+
+  typedef typename Adapter::scalar_t    pcoord_t;
+  typedef typename Adapter::part_t      part_t;
+
+  const MachineRepresentation<pcoord_t, part_t> *machine 
+    = static_cast<MachineRepresentation<pcoord_t, part_t> *>(data);
+  *ierr = ZOLTAN_OK;
+
+//  std::cout << "\nRank: " << machine->getMyRank() << " HierMethod 4, machine: " << machine->getMachineDim() << std::endl;
+
+//  int ranks = machine->getNumRanks();
+
+  int rank = machine->getMyRank();
+
+  std::cout << "\n\n\n--\nRank: " << rank 
+    << " zoltanHierMethod, level: " << level 
+    << "\n--\n\n"<< std::endl;
+
+  Zoltan_Set_Param(zz, "LB_Approach", "repartition");
+  Zoltan_Set_Param(zz, "LB_Method", "RCB");
+//  Zoltan_Set_Param(zz, "TFLOPS_SPECIAL", "1");
+//  Zoltan_Set_Param(zz, "", "1");
+
+  std::vector<part_t> group_count;
+  
+  if (level == 0) {
+    zz->Num_Unique_Groups = machine->getNumUniqueGroups();
+    machine->getGroupCount2(group_count);
+  }
+  else if (level == 1) {
+    std::vector<std::vector<part_t>> subgroup_counts;
+    std::vector<part_t> num_unique_subgroups;
+
+    machine->getGroupCount2(group_count);
+    machine->getSubgroupCounts(subgroup_counts);
+    machine->getNumUniqueSubgroups(num_unique_subgroups);
+
+//    pcoord_t * xyz = new pcoord_t[3];
+
+//    machine->getMyMachineCoordinate(xyz);
+//    int group_idx = xyz[0]; 
+
+    int group_idx;
+    int upper_cdf = 0;
+    int lower_cdf = 0;
+
+    for (int i = 0; i < zz->Num_Unique_Groups; ++i) { 
+  
+      lower_cdf = upper_cdf;
+      upper_cdf += int(group_count[i]);
+
+      if (rank < upper_cdf && rank >= lower_cdf) {
+
+//      std::cout << "\nRank: " << rank << " solving part " << i << std::endl;
+
+        group_idx = i;
+        break;
+      } 
+    }
+
+
+//    std::cout << "Rank: " << rank << " mach coord: " 
+//      << xyz[0] << " " << xyz[1] << " " << xyz[2] << std::endl; 
+
+//    std::cout << "\n\nSGC Rank: " << rank << std::endl;
+//    for (size_t i = 0; i < subgroup_counts.size(); ++i) {
+
+//      std::cout << "Rank: " << rank << " Group: " << i << "  ";
+//      for (size_t j = 0; j < subgroup_counts[i].size(); ++j) {
+//        std::cout << " " << subgroup_counts[i][j];
+//      }
+//      std::cout << std::endl;
+//    }
+
+    std::cout << "\n\nRank: " << rank
+      << " Level 1 Group idx: " << group_idx << std::endl;
+    //  << " nug: " << zz->Num_Unique_Groups << std::endl;
+   // std::cout << "\nRank: " << rank
+   //   << " Level 1 Group idx: " << group_idx << std::endl;
+
+//    std::cout << "\nRank: " << rank << " hi inside 0" << std::endl;
+    zz->Num_Unique_Groups = int(num_unique_subgroups[group_idx]);
+//    std::cout << "\nRank: " << rank << " hi inside 1" << std::endl;
+    group_count.resize(zz->Num_Unique_Groups);
+//    std::cout << "\nRank: " << rank << " hi inside 2" << std::endl;
+    group_count = subgroup_counts[group_idx];
+//    std::cout << "\nRank: " << rank << " hi inside 3" << std::endl;
+
+//    std::cout << "\nRank: " << rank
+//      << " Level 1 Group idx: " << group_idx 
+//      << " nug: " << zz->Num_Unique_Groups << std::endl;
+  
+    group_count.resize(zz->Num_Unique_Groups);
+
+//    delete [] xyz;
+  }
+  // level > 1
+  else {
+    std::vector<std::vector<part_t>> subgroup_counts;
+    std::vector<part_t> num_unique_subgroups;
+
+    machine->getGroupCount2(group_count);
+    machine->getSubgroupCounts(subgroup_counts);
+    machine->getNumUniqueSubgroups(num_unique_subgroups);
+
+//    pcoord_t * xyz = new pcoord_t[3];
+
+//    machine->getMyMachineCoordinate(xyz);
+//    int group_idx = int(xyz[0]); 
+//    int subgroup_idx = int(xyz[1]);
+    int group_idx;
+    int upper_cdf = 0;
+    int lower_cdf = 0;
+
+    for (int i = 0; i < zz->Num_Unique_Groups; ++i) { 
+  
+      lower_cdf = upper_cdf;
+      upper_cdf += int(group_count[i]);
+
+      if (rank < upper_cdf && rank >= lower_cdf) {
+
+//      std::cout << "\nRank: " << rank << " solving part " << i << std::endl;
+
+        group_idx = i;
+        break;
+      } 
+    }
+
+
+
+    int subgroup_idx;
+    int group_rank = rank - lower_cdf;
+
+    lower_cdf = 0; 
+    upper_cdf = 0;
+
+    for (int i = 0; i < int(num_unique_subgroups[group_idx]); ++i) { 
+    
+      lower_cdf = upper_cdf;
+      upper_cdf += int(subgroup_counts[group_idx][i]);
+
+      if (group_rank < upper_cdf && group_rank >= lower_cdf) {
+
+//        std::cout << "\nPartMethod Rank: " << rank 
+//          << " solving part " << i 
+//          << " of Group " << group_idx 
+//          << " with group rank " << group_rank << std::endl;
+
+        subgroup_idx = i;
+        break;
+      } 
+    }
+
+
+
+
+
+
+
+//    std::cout << "\nRank: " << rank
+//      << " Level 2+ Group idx: " << group_idx 
+//      << " Subgroup idx: " << subgroup_idx
+//      << std::endl;
+     
+    zz->Num_Unique_Groups = int(subgroup_counts[group_idx][subgroup_idx]); 
+    
+    group_count.resize(zz->Num_Unique_Groups);
+    std::iota(group_count.begin(), group_count.end(), 0); 
+    
+    std::cout << "\nRank: " << rank
+      << " Level 2+ Group idx: " << group_idx 
+      << " Subgroup idx: " << subgroup_idx
+      << " nug " << zz->Num_Unique_Groups
+      << std::endl;
+
+//    delete [] xyz;
+  }
+//  zz->Groups = 
+ 
+
+  std::cout << "\nRank: " << rank 
+    << " group_count size!: "
+    << group_count.size() << std::endl; 
+
+  std::vector<int> group_count_ints(group_count.begin(), group_count.end());
+
+//  zz->Groups = group_count_ints.data(); 
+
+//  zz->Group_Count = new int[zz->Num_Unique_Groups];
+  zz->Group_Count = 
+//    (int *) std::malloc(zz->Num_Unique_Groups * sizeof(int)); 
+    (int *) ZOLTAN_MALLOC(zz->Num_Unique_Groups * sizeof(int)); 
+
+
+//  if (machine->getMyRank() == 3)
+//    group_count_ints[5] = 777;
+
+  std::copy(group_count_ints.begin(), 
+            group_count_ints.end(), 
+            zz->Group_Count);
+
+
+  std::cout << "\nRank: " << machine->getMyRank() 
+   << " Callback groups address: " << (void *) zz->Group_Count 
+   << std::endl; 
+
+
+//  zz->Current_Hier_Level = level;
+
+//  char msg[16];
+
+//  sprintf(msg, "%d", 1);
+//  Zoltan_Set_Param(zz, "Num_Local_Parts", msg);
+
+//  sprintf(msg, "%d", ranks);
+//  Zoltan_Set_Param(zz, "Num_Global_Parts", msg); 
+
+//  zz->LB.Approach = "repartition"
+//  zz->LB.Method = "RCB"
+//  zz->Imb_Tol_Len = machine->getNumRanks();
+ 
+//  Zoltan_Set_Param(zz, "Imb_Tol_Len", machine->getNumRanks()); 
+
+//  ZOLTAN_FREE(&msg);
+
+  return;
 }
 
 }

@@ -566,6 +566,13 @@ public:
     return false;
   }
 
+  // Dragonfly machine requires just 1 level of nonuniform partitioning
+  // 1.) Group level    (groups of two-rack pairs)
+  virtual int getNumNonuniformLevels() const override {
+    return 1;
+  }
+
+
   // Return (approx) hop count from rank1 to rank2. Does not account for  
   // Dragonfly's dynamic routing.
   virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) const override {

@@ -161,6 +161,10 @@ public:
      */
     inline int getNumRanks() const { return machine->getNumRanks(); }
 
+    /*! \brief return the current rank.
+     */
+    inline int getMyRank() const { return machine->getMyRank(); }
+
     /*! \brief return the hop count between rank1 and rank2 
      */
     inline bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
@@ -193,7 +197,35 @@ public:
      *  "problems/Zoltan2_MappingProblem.hpp". 
      */ 
     inline bool getGroupCount(part_t *grp_count) const {
-      return machine->getGroupCount(grp_count);
+         return machine->getGroupCount(grp_count);
+    }
+
+    
+    
+    inline bool getGroupCount2(std::vector<part_t> &grp_count) const {
+      return machine->getGroupCount2(grp_count);
+    }
+
+//    inline bool getNumUniqueSubgroups(part_t *num_unique_subgrps) const {
+    inline bool getNumUniqueSubgroups(std::vector<part_t> &num_unique_subgrps) const {
+      return machine->getNumUniqueSubgroups(num_unique_subgrps);
+    }
+
+//    inline bool getSubgroupCounts(part_t **subgrp_counts) const {
+//      return machine->getSubgroupCounts(subgrp_counts);
+//    }
+
+    inline bool getSubgroupCounts(std::vector<std::vector<part_t>> &subgrp_counts) const {
+      return machine->getSubgroupCounts(subgrp_counts);
+    }
+
+    /*! \brief return the number of nonuniform levels required when
+     * hierarchically partitioning this machine class's coordinates.
+     *
+     *  (e.g. FatTree = 2, Dragonfly = 1)
+     */
+    inline int getNumNonuniformLevels() const {
+      return machine->getNumNonuniformLevels();
     }
 
     /*! \brief Set up validators specific to this Problem

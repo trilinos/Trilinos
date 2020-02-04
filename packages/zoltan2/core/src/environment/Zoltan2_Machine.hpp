@@ -91,6 +91,11 @@ public:
      */
     int getNumRanks() const { return numRanks; }
 
+    /*! \brief getMyRank function
+     *  return the current rank.
+     */
+    int getMyRank() const { return myRank; }
+
     /*! \brief getHopCount function
      *  set hops between rank1 and rank2
      *  return true if coordinates are available 
@@ -128,15 +133,24 @@ public:
     virtual bool getGroupCount(part_t *grp_count) const {
       return false;
     }
-
-    virtual bool getNumUniqueSubgroups(part_t *num_unique_subgrps) const {
+    
+    virtual bool getGroupCount2(std::vector<part_t> &grp_count) const {
       return false;
     }
 
-    virtual bool getSubgroupCounts(part_t **subgrp_counts) const {
+//    virtual bool getNumUniqueSubgroups(part_t *num_unique_subgrps) const {
+    virtual bool getNumUniqueSubgroups(std::vector<part_t> &num_unique_subgrps) const {
       return false;
     }
 
+//    virtual bool getSubgroupCounts(part_t **subgrp_counts) const {
+    virtual bool getSubgroupCounts(std::vector<std::vector<part_t>> &subgrp_counts) const {
+      return false;
+    }
+
+    virtual int getNumNonuniformLevels() const {
+      return 0;
+    }
 
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
 

@@ -50,6 +50,8 @@
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 #define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 
+#define ZOLTAN2_TASKMAPPING_MOVE
+
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_PartitioningAlgorithms.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -271,7 +273,7 @@ public:
     // didn't want to have low level changes with this particular refactor
     // TO DO: Add more Tuple constructors and then redo this code to be
     //  Teuchos::tuple<std::string> algorithm_names( "rcb", "multijagged" ... );
-    Array<std::string> algorithm_names(17);
+    Array<std::string> algorithm_names(18);
     algorithm_names[0] = "rcb";
     algorithm_names[1] = "multijagged";
     algorithm_names[2] = "rib";
@@ -289,6 +291,7 @@ public:
     algorithm_names[14] = "random";
     algorithm_names[15] = "zoltan";
     algorithm_names[16] = "forTestingOnly";
+    algorithm_names[17] = "hier";
     RCP<Teuchos::StringValidator> algorithm_Validator = Teuchos::rcp(
       new Teuchos::StringValidator( algorithm_names ));
     pl.set("algorithm", "random", "partitioning algorithm",
@@ -446,8 +449,13 @@ template <typename Adapter>
   // Create a copy of the user's communicator.
 
 #ifdef ZOLTAN2_TASKMAPPING_MOVE
-  machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
-                 new MachineRepresentation<scalar_t,part_t>(*(this->comm_)));
+//  machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
+//                 new MachineRepresentation<scalar_t,part_t>(*(this->comm_), 
+//                                                              this->env_->getParametersNonConst()));
+  
+  
+//  machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
+//                 new MachineRepresentation<scalar_t,part_t>(*(this->comm_)));
 #endif
 
   // Number of criteria is number of user supplied weights if non-zero.
@@ -553,6 +561,16 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                            this->comm_,
                                            this->baseInputAdapter_));
     }
+    else if (algName_ == std::string("hier")) {
+
+      if (this->comm_->getRank() == 0)
+        std::cout << "Building algorithm" << std::endl;
+
+      this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
+                                           this->comm_,
+                                           this->baseInputAdapter_,
+                                           this->machine_));
+    }
     else if (algName_ == std::string("parma")) {
       this->algorithm_ = rcp(new AlgParMA<Adapter>(this->envConst_,
                                            this->comm_,
@@ -642,7 +660,10 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   }
   //if mapping is 0 -- coordinate mapping
 
-#if ZOLTAN2_TASKMAPPING_MOVE
+
+//  mapping_type = 0;
+
+#ifdef ZOLTAN2_TASKMAPPING_MOVE_B
   if (mapping_type == 0){
 
     //part_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
@@ -667,7 +688,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
 #ifdef KDD_READY
     const part_t *oldParts = solution_->getPartListView();
-    size_t nLocal = ia->getNumLocalIds();
+    size_t nLocal = this->baseInputAdapater_->getNumLocalIds();
     for (size_t i = 0; i < nLocal; i++) {
       // kind of cheating since oldParts is a view; probably want an interface in solution 
       // for resetting the PartList rather than hacking in like this.
@@ -773,6 +794,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   if (algorithm != defString)
   {
 
+//    std::cout << "Algorithm: " << algorithm << std::endl;
+
     // Figure out the model required by the algorithm
     if (algorithm == std::string("block") ||
         algorithm == std::string("random") ||
@@ -783,11 +806,25 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
       algName_ = algorithm;
     }
-    else if (algorithm == std::string("zoltan") ||
+    else if (algorithm == std::string("zoltan") || 
              algorithm == std::string("parma") ||
              algorithm == std::string("forTestingOnly"))
     {
       algName_ = algorithm;
+    }
+    else if (algorithm == std::string("hier"))
+    {
+      if (this->comm_->getRank() == 0)
+        std::cout << "\nfound hier" << std::endl;
+
+      algName_ = algorithm;
+      
+      pl.set("Machine_Optimization_Level", 10, 
+          "Machine Coordinate Transformation Method",
+          Environment::getAnyIntValidator());
+
+      machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
+                 new MachineRepresentation<scalar_t,part_t>(*(this->comm_), pl));
     }
     else if (algorithm == std::string("rcb") ||
              algorithm == std::string("rib") ||

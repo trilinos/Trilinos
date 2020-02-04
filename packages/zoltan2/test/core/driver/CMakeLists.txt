@@ -49,6 +49,17 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
     test_driver
+    NAME geometricHierTest
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/geometricHierTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
     NAME test578
     NUM_MPI_PROCS 4
     COMM serial mpi
