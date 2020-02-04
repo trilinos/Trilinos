@@ -102,7 +102,7 @@ namespace Belos {
 			  Teuchos::ParameterList &params );
     
     //! Destructor.
-    virtual ~PseudoBlockGmresIter() {};
+    virtual ~PseudoBlockGmresIter() = default;
     //@}
 
 
