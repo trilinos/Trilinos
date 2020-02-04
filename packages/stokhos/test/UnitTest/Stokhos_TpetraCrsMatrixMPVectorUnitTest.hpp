@@ -1475,10 +1475,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   const int rank = comm->getRank ();
   const GlobalOrdinal mynrow = (rank==0 ? nrow: 0);
-  RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (mynrow, nrow, 0, comm));
+  RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (nrow, mynrow, 0, comm));
   RCP<Tpetra_CrsGraph> graph (new Tpetra_CrsGraph (map, size_t(3), Tpetra::StaticProfile));
-  for ( GlobalOrdinal i = 0; i<nrow; ++i)
-      for ( GlobalOrdinal j = 0; j<i+1; ++j)
+  for (GlobalOrdinal i = 0; i<nrow; ++i)
+      for (GlobalOrdinal j = 0; j<i+1; ++j)
           graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
   graph->fillComplete();
   
@@ -1578,7 +1578,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Set values in matrix
   Array<Scalar> vals(nrow);
   Scalar val;
-  for (size_t i=0; i<nrow; ++i){
+  for (GlobalOrdinal i=0; i<nrow; ++i){
     for (LocalOrdinal j=0; j<VectorSize; ++j){
       if (i==0 && j==0)
         val.fastAccessCoeff(j) = 1;
@@ -1639,10 +1639,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   const int rank = comm->getRank ();
   const GlobalOrdinal mynrow = (rank==0 ? nrow: 0);
-  RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (mynrow, nrow, 0, comm));
+  RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (nrow, mynrow, 0, comm));
   RCP<Tpetra_CrsGraph> graph (new Tpetra_CrsGraph (map, size_t(3), Tpetra::StaticProfile));
-  for ( GlobalOrdinal i = 0; i<nrow; ++i)
-      for ( GlobalOrdinal j = 0; j<i+1; ++j)
+  for (GlobalOrdinal i = 0; i<nrow; ++i)
+      for (GlobalOrdinal j = 0; j<i+1; ++j)
           graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
   graph->fillComplete();
   
@@ -1742,7 +1742,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Set values in matrix
   Array<Scalar> vals(nrow);
   Scalar val;
-  for (size_t i=0; i<nrow; ++i){
+  for (GlobalOrdinal i=0; i<nrow; ++i){
     for (LocalOrdinal j=0; j<VectorSize; ++j){
       if (i==0 && j==0)
         val.fastAccessCoeff(j) = 1;
@@ -1803,10 +1803,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   const int rank = comm->getRank ();
   const GlobalOrdinal mynrow = (rank==0 ? nrow: 0);
-  RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (mynrow, nrow, 0, comm));
+  RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (nrow, mynrow, 0, comm));
   RCP<Tpetra_CrsGraph> graph (new Tpetra_CrsGraph (map, size_t(3), Tpetra::StaticProfile));
-  for ( GlobalOrdinal i = 0; i<nrow; ++i)
-      for ( GlobalOrdinal j = 0; j<i+1; ++j)
+  for (GlobalOrdinal i = 0; i<nrow; ++i)
+      for (GlobalOrdinal j = 0; j<i+1; ++j)
           graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
   graph->fillComplete();
   
@@ -1906,7 +1906,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Set values in matrix
   Array<Scalar> vals(nrow);
   Scalar val;
-  for (size_t i=0; i<nrow; ++i){
+  for (GlobalOrdinal i=0; i<nrow; ++i){
     for (LocalOrdinal j=0; j<VectorSize; ++j){
       if (i==0 && j==0)
         val.fastAccessCoeff(j) = 1;
