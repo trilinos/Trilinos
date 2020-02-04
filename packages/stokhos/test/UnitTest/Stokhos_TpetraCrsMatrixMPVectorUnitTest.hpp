@@ -1535,76 +1535,78 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   problem->setProblem();
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
+  if (rank==0){
 
-  auto numIters = solver->getNumIters();
-  std::cout << "numIters = " << numIters << std::endl;
+    auto numIters = solver->getNumIters();
+    std::cout << "numIters = " << numIters << std::endl;
 
-#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
-  int numItersExpected = 3;
-  TEST_EQUALITY( numIters, numItersExpected);
-#endif
+  #ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+    int numItersExpected = 3;
+    TEST_EQUALITY( numIters, numItersExpected);
+  #endif
 
-#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
-  // Get and print number of ensemble iterations
-  std::vector<int> ensemble_iterations =
-    Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
-  out << "Ensemble iterations = ";
-  for (int i=0; i<VectorSize; ++i)
-    out << ensemble_iterations[i] << " ";
-  out << std::endl;
+  #ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+    // Get and print number of ensemble iterations
+    std::vector<int> ensemble_iterations =
+      Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
+    out << "Ensemble iterations = ";
+    for (int i=0; i<VectorSize; ++i)
+      out << ensemble_iterations[i] << " ";
+    out << std::endl;
 
-  std::vector<int> expected_ensemble_iterations(VectorSize);
-  for (LocalOrdinal j=0; j<VectorSize; ++j){
-    if (j==0)
-      expected_ensemble_iterations[j]= 3;
-    else if(j==1)
-      expected_ensemble_iterations[j]= 1;
-    else if (j==2)
-      expected_ensemble_iterations[j]= 0;
-    else
-      expected_ensemble_iterations[j]= 2;
-  }
-  // Check -- Correct answer is:
-  //     [ 3, 1, 0, 2, ..., 2]
-  for (LocalOrdinal j=0; j<VectorSize; ++j)
-      TEST_EQUALITY(expected_ensemble_iterations[j], ensemble_iterations[j]);
-#endif
-
-  // Check -- Correct answer is:
-  //     [ 1,   0, 0,   0, ...,   0 ]
-  //     [ 0,   0, 0, 1/2, ..., 1/2 ]
-  //     [ 0, 2/3, 0, 1/6, ..., 1/6 ]
-
-  // Set values in matrix
-  Array<Scalar> vals(nrow);
-  Scalar val;
-  for (GlobalOrdinal i=0; i<nrow; ++i){
+    std::vector<int> expected_ensemble_iterations(VectorSize);
     for (LocalOrdinal j=0; j<VectorSize; ++j){
-      if (i==0 && j==0)
-        val.fastAccessCoeff(j) = 1;
-      else if (i==0)
-        val.fastAccessCoeff(j) = 0;
-      else if (i==1 && j<3)
-        val.fastAccessCoeff(j) = 0;
-      else if (i==1)
-        val.fastAccessCoeff(j) = 1./2.;
-      else if (i==2 && (j==0 || j==2))
-        val.fastAccessCoeff(j) = 0;
-      else if (i==2 && j==1)
-        val.fastAccessCoeff(j) = 2./3;
-      else if (i==2 && j>2)
-        val.fastAccessCoeff(j) = 1./6;
+      if (j==0)
+        expected_ensemble_iterations[j]= 3;
+      else if(j==1)
+        expected_ensemble_iterations[j]= 1;
+      else if (j==2)
+        expected_ensemble_iterations[j]= 0;
+      else
+        expected_ensemble_iterations[j]= 2;
     }
-    vals[i] = val;
-  }
+    // Check -- Correct answer is:
+    //     [ 3, 1, 0, 2, ..., 2]
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+        TEST_EQUALITY(expected_ensemble_iterations[j], ensemble_iterations[j]);
+  #endif
 
-  tol = 10*tol;
-  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
-  for (GlobalOrdinal i=0; i<nrow; ++i)
-    for (LocalOrdinal j=0; j<VectorSize; ++j){
-      // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
-      TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
+    // Check -- Correct answer is:
+    //     [ 1,   0, 0,   0, ...,   0 ]
+    //     [ 0,   0, 0, 1/2, ..., 1/2 ]
+    //     [ 0, 2/3, 0, 1/6, ..., 1/6 ]
+
+    // Set values in matrix
+    Array<Scalar> vals(nrow);
+    Scalar val;
+    for (GlobalOrdinal i=0; i<nrow; ++i){
+      for (LocalOrdinal j=0; j<VectorSize; ++j){
+        if (i==0 && j==0)
+          val.fastAccessCoeff(j) = 1;
+        else if (i==0)
+          val.fastAccessCoeff(j) = 0;
+        else if (i==1 && j<3)
+          val.fastAccessCoeff(j) = 0;
+        else if (i==1)
+          val.fastAccessCoeff(j) = 1./2.;
+        else if (i==2 && (j==0 || j==2))
+          val.fastAccessCoeff(j) = 0;
+        else if (i==2 && j==1)
+          val.fastAccessCoeff(j) = 2./3;
+        else if (i==2 && j>2)
+          val.fastAccessCoeff(j) = 1./6;
+      }
+      vals[i] = val;
     }
+
+    tol = 10*tol;
+    ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+    for (GlobalOrdinal i=0; i<nrow; ++i)
+      for (LocalOrdinal j=0; j<VectorSize; ++j){
+        // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
+        TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
+      }
+  }
 }
 
 //
@@ -1699,76 +1701,78 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   problem->setProblem();
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
+  if (rank==0){
 
-  auto numIters = solver->getNumIters();
-  std::cout << "numIters = " << numIters << std::endl;
+    auto numIters = solver->getNumIters();
+    std::cout << "numIters = " << numIters << std::endl;
 
-#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
-  int numItersExpected = 3;
-  TEST_EQUALITY( numIters, numItersExpected);
-#endif
+  #ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+    int numItersExpected = 3;
+    TEST_EQUALITY( numIters, numItersExpected);
+  #endif
 
-#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
-  // Get and print number of ensemble iterations
-  std::vector<int> ensemble_iterations =
-    Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
-  out << "Ensemble iterations = ";
-  for (int i=0; i<VectorSize; ++i)
-    out << ensemble_iterations[i] << " ";
-  out << std::endl;
+  #ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+    // Get and print number of ensemble iterations
+    std::vector<int> ensemble_iterations =
+      Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
+    out << "Ensemble iterations = ";
+    for (int i=0; i<VectorSize; ++i)
+      out << ensemble_iterations[i] << " ";
+    out << std::endl;
 
-  std::vector<int> expected_ensemble_iterations(VectorSize);
-  for (LocalOrdinal j=0; j<VectorSize; ++j){
-    if (j==0)
-      expected_ensemble_iterations[j]= 3;
-    else if(j==1)
-      expected_ensemble_iterations[j]= 1;
-    else if (j==2)
-      expected_ensemble_iterations[j]= 0;
-    else
-      expected_ensemble_iterations[j]= 2;
-  }
-  // Check -- Correct answer is:
-  //     [ 3, 1, 0, 2, ..., 2]
-  for (LocalOrdinal j=0; j<VectorSize; ++j)
-      TEST_EQUALITY(expected_ensemble_iterations[j], ensemble_iterations[j]);
-#endif
-
-  // Check -- Correct answer is:
-  //     [ 1,   0, 0,   0, ...,   0 ]
-  //     [ 0,   0, 0, 1/2, ..., 1/2 ]
-  //     [ 0, 2/3, 0, 1/6, ..., 1/6 ]
-
-  // Set values in matrix
-  Array<Scalar> vals(nrow);
-  Scalar val;
-  for (GlobalOrdinal i=0; i<nrow; ++i){
+    std::vector<int> expected_ensemble_iterations(VectorSize);
     for (LocalOrdinal j=0; j<VectorSize; ++j){
-      if (i==0 && j==0)
-        val.fastAccessCoeff(j) = 1;
-      else if (i==0)
-        val.fastAccessCoeff(j) = 0;
-      else if (i==1 && j<3)
-        val.fastAccessCoeff(j) = 0;
-      else if (i==1)
-        val.fastAccessCoeff(j) = 1./2.;
-      else if (i==2 && (j==0 || j==2))
-        val.fastAccessCoeff(j) = 0;
-      else if (i==2 && j==1)
-        val.fastAccessCoeff(j) = 2./3;
-      else if (i==2 && j>2)
-        val.fastAccessCoeff(j) = 1./6;
+      if (j==0)
+        expected_ensemble_iterations[j]= 3;
+      else if(j==1)
+        expected_ensemble_iterations[j]= 1;
+      else if (j==2)
+        expected_ensemble_iterations[j]= 0;
+      else
+        expected_ensemble_iterations[j]= 2;
     }
-    vals[i] = val;
-  }
+    // Check -- Correct answer is:
+    //     [ 3, 1, 0, 2, ..., 2]
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+        TEST_EQUALITY(expected_ensemble_iterations[j], ensemble_iterations[j]);
+  #endif
 
-  tol = 10*tol;
-  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
-  for (GlobalOrdinal i=0; i<nrow; ++i)
-    for (LocalOrdinal j=0; j<VectorSize; ++j){
-      // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
-      TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
+    // Check -- Correct answer is:
+    //     [ 1,   0, 0,   0, ...,   0 ]
+    //     [ 0,   0, 0, 1/2, ..., 1/2 ]
+    //     [ 0, 2/3, 0, 1/6, ..., 1/6 ]
+
+    // Set values in matrix
+    Array<Scalar> vals(nrow);
+    Scalar val;
+    for (GlobalOrdinal i=0; i<nrow; ++i){
+      for (LocalOrdinal j=0; j<VectorSize; ++j){
+        if (i==0 && j==0)
+          val.fastAccessCoeff(j) = 1;
+        else if (i==0)
+          val.fastAccessCoeff(j) = 0;
+        else if (i==1 && j<3)
+          val.fastAccessCoeff(j) = 0;
+        else if (i==1)
+          val.fastAccessCoeff(j) = 1./2.;
+        else if (i==2 && (j==0 || j==2))
+          val.fastAccessCoeff(j) = 0;
+        else if (i==2 && j==1)
+          val.fastAccessCoeff(j) = 2./3;
+        else if (i==2 && j>2)
+          val.fastAccessCoeff(j) = 1./6;
+      }
+      vals[i] = val;
     }
+
+    tol = 10*tol;
+    ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+    for (GlobalOrdinal i=0; i<nrow; ++i)
+      for (LocalOrdinal j=0; j<VectorSize; ++j){
+        // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
+        TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
+      }
+  }
 }
 
 //
@@ -1863,76 +1867,78 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   problem->setProblem();
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
+  if (rank==0){
 
-  auto numIters = solver->getNumIters();
-  std::cout << "numIters = " << numIters << std::endl;
+    auto numIters = solver->getNumIters();
+    std::cout << "numIters = " << numIters << std::endl;
 
-#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
-  int numItersExpected = 3;
-  TEST_EQUALITY( numIters, numItersExpected);
-#endif
+  #ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+    int numItersExpected = 3;
+    TEST_EQUALITY( numIters, numItersExpected);
+  #endif
 
-#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
-  // Get and print number of ensemble iterations
-  std::vector<int> ensemble_iterations =
-    Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
-  out << "Ensemble iterations = ";
-  for (int i=0; i<VectorSize; ++i)
-    out << ensemble_iterations[i] << " ";
-  out << std::endl;
+  #ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+    // Get and print number of ensemble iterations
+    std::vector<int> ensemble_iterations =
+      Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
+    out << "Ensemble iterations = ";
+    for (int i=0; i<VectorSize; ++i)
+      out << ensemble_iterations[i] << " ";
+    out << std::endl;
 
-  std::vector<int> expected_ensemble_iterations(VectorSize);
-  for (LocalOrdinal j=0; j<VectorSize; ++j){
-    if (j==0)
-      expected_ensemble_iterations[j]= 3;
-    else if(j==1)
-      expected_ensemble_iterations[j]= 1;
-    else if (j==2)
-      expected_ensemble_iterations[j]= 0;
-    else
-      expected_ensemble_iterations[j]= 2;
-  }
-  // Check -- Correct answer is:
-  //     [ 3, 1, 0, 2, ..., 2]
-  for (LocalOrdinal j=0; j<VectorSize; ++j)
-      TEST_EQUALITY(expected_ensemble_iterations[j], ensemble_iterations[j]);
-#endif
-
-  // Check -- Correct answer is:
-  //     [ 1,   0, 0,   0, ...,   0 ]
-  //     [ 0,   0, 0, 1/2, ..., 1/2 ]
-  //     [ 0, 2/3, 0, 1/6, ..., 1/6 ]
-
-  // Set values in matrix
-  Array<Scalar> vals(nrow);
-  Scalar val;
-  for (GlobalOrdinal i=0; i<nrow; ++i){
+    std::vector<int> expected_ensemble_iterations(VectorSize);
     for (LocalOrdinal j=0; j<VectorSize; ++j){
-      if (i==0 && j==0)
-        val.fastAccessCoeff(j) = 1;
-      else if (i==0)
-        val.fastAccessCoeff(j) = 0;
-      else if (i==1 && j<3)
-        val.fastAccessCoeff(j) = 0;
-      else if (i==1)
-        val.fastAccessCoeff(j) = 1./2.;
-      else if (i==2 && (j==0 || j==2))
-        val.fastAccessCoeff(j) = 0;
-      else if (i==2 && j==1)
-        val.fastAccessCoeff(j) = 2./3;
-      else if (i==2 && j>2)
-        val.fastAccessCoeff(j) = 1./6;
+      if (j==0)
+        expected_ensemble_iterations[j]= 3;
+      else if(j==1)
+        expected_ensemble_iterations[j]= 1;
+      else if (j==2)
+        expected_ensemble_iterations[j]= 0;
+      else
+        expected_ensemble_iterations[j]= 2;
     }
-    vals[i] = val;
-  }
+    // Check -- Correct answer is:
+    //     [ 3, 1, 0, 2, ..., 2]
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+        TEST_EQUALITY(expected_ensemble_iterations[j], ensemble_iterations[j]);
+  #endif
 
-  tol = 10*tol;
-  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
-  for (GlobalOrdinal i=0; i<nrow; ++i)
-    for (LocalOrdinal j=0; j<VectorSize; ++j){
-      // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
-      TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
+    // Check -- Correct answer is:
+    //     [ 1,   0, 0,   0, ...,   0 ]
+    //     [ 0,   0, 0, 1/2, ..., 1/2 ]
+    //     [ 0, 2/3, 0, 1/6, ..., 1/6 ]
+
+    // Set values in matrix
+    Array<Scalar> vals(nrow);
+    Scalar val;
+    for (GlobalOrdinal i=0; i<nrow; ++i){
+      for (LocalOrdinal j=0; j<VectorSize; ++j){
+        if (i==0 && j==0)
+          val.fastAccessCoeff(j) = 1;
+        else if (i==0)
+          val.fastAccessCoeff(j) = 0;
+        else if (i==1 && j<3)
+          val.fastAccessCoeff(j) = 0;
+        else if (i==1)
+          val.fastAccessCoeff(j) = 1./2.;
+        else if (i==2 && (j==0 || j==2))
+          val.fastAccessCoeff(j) = 0;
+        else if (i==2 && j==1)
+          val.fastAccessCoeff(j) = 2./3;
+        else if (i==2 && j>2)
+          val.fastAccessCoeff(j) = 1./6;
+      }
+      vals[i] = val;
     }
+
+    tol = 10*tol;
+    ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+    for (GlobalOrdinal i=0; i<nrow; ++i)
+      for (LocalOrdinal j=0; j<VectorSize; ++j){
+        // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
+        TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
+      }
+  }
 }
 
 #else
