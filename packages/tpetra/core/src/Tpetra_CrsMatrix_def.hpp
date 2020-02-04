@@ -7816,6 +7816,12 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (true, std::invalid_argument, os.str ());
       }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (importLIDs.extent(0) != numPacketsPerLID.extent(0),
+         std::invalid_argument, "importLIDs.extent(0)="
+         << importLIDs.extent(0)
+         << " != numPacketsPerLID.extent(0)="
+         << numPacketsPerLID.extent(0) << ".");
     }
 
     if (combineMode == ZERO) {
@@ -7955,16 +7961,6 @@ namespace Tpetra {
       verbose ? prefix.get()->c_str() : nullptr;
 
     const size_type numImportLIDs = importLIDs.extent (0);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (numImportLIDs != static_cast<size_type> (numPacketsPerLID.extent (0)),
-       std::invalid_argument, "importLIDs.size() = " << numImportLIDs
-       << " != numPacketsPerLID.size() = " << numPacketsPerLID.extent (0)
-       << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (combineMode != ADD && combineMode != INSERT && combineMode != REPLACE &&
-       combineMode != ABSMAX && combineMode != ZERO, std::invalid_argument,
-       "Invalid CombineMode value " << combineMode << ".  Valid "
-       << "values include ADD, INSERT, REPLACE, ABSMAX, and ZERO.");
     if (combineMode == ZERO || numImportLIDs == 0) {
       return; // nothing to do; no need to combine entries
     }
