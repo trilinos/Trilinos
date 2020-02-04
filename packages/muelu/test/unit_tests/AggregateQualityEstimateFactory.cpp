@@ -141,7 +141,7 @@ namespace MueLuTests {
     level.Set("A",Op);
 
     AggregateQualityEstimateFactory aggQualityEstimateFactory;
-
+    std::cout<< *(aggQualityEstimateFactory.GetValidParameterList())<<std::endl;
     aggQualityEstimateFactory.SetParameter("aggregate qualities: check symmetry", Teuchos::ParameterEntry(false));
     aggQualityEstimateFactory.SetParameter("aggregate qualities: good aggregate threshold", Teuchos::ParameterEntry(100.0));
     aggQualityEstimateFactory.SetParameter("aggregate qualities: file output", Teuchos::ParameterEntry(false));
@@ -178,6 +178,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    // Don't test for complex - matrix reader won't work
+    if (TST::isComplex) {success=true; return;}
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -384,6 +387,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    // Don't test for complex - matrix reader won't work
+    if (TST::isComplex) {success=true; return;}
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 

@@ -170,6 +170,9 @@ namespace MueLu {
     const LO LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
     const LO LO_ONE = Teuchos::OrdinalTraits<LO>::one();
 
+    using MT = magnitudeType;
+    const MT MT_ZERO = Teuchos::ScalarTraits<MT>::zero();
+    const MT MT_ONE = Teuchos::ScalarTraits<MT>::one();
     ParameterList pL = GetParameterList();
 
     RCP<const Matrix> AT = A;
@@ -216,13 +219,13 @@ namespace MueLu {
 
     // Compute the per-aggregate quality estimate
 
-    typedef Teuchos::SerialDenseMatrix<LO,SC> DenseMatrix;
-    typedef Teuchos::SerialDenseVector<LO,SC> DenseVector;
+    typedef Teuchos::SerialDenseMatrix<LO,MT> DenseMatrix;
+    typedef Teuchos::SerialDenseVector<LO,MT> DenseVector;
 
     ArrayView<const LO> rowIndices;
     ArrayView<const SC> rowValues;
     ArrayView<const SC> colValues;
-    Teuchos::LAPACK<LO,SC> myLapack;
+    Teuchos::LAPACK<LO,MT> myLapack;
 
     // Iterate over each aggregate to compute the quality estimate
     for (LO aggId=LO_ZERO; aggId<numAggs; ++aggId) {
@@ -267,7 +270,7 @@ namespace MueLu {
 
           } else { // Element does belong to aggregate
 
-            A_aggPart(idx,idxInAgg) = val;
+            A_aggPart(idx,idxInAgg) = Teuchos::ScalarTraits<SC>::real(val);
 
           }
 
@@ -278,36 +281,32 @@ namespace MueLu {
       // Construct a diagonal matrix consisting of the diagonal
       // of A_aggPart
       DenseMatrix A_aggPartDiagonal(aggSize, aggSize, true);
-      SC diag_sum = SCALAR_ZERO;
+      MT diag_sum = MT_ZERO;
       for (int i=0;i<aggSize;++i) {
-        A_aggPartDiagonal(i,i) = A_aggPart(i,i);
-        diag_sum += A_aggPart(i,i);
+        A_aggPartDiagonal(i,i) = Teuchos::ScalarTraits<SC>::real(A_aggPart(i,i));
+        diag_sum += Teuchos::ScalarTraits<SC>::real(A_aggPart(i,i));
       }
 
       DenseMatrix ones(aggSize, aggSize, false);
-      ones.putScalar(SCALAR_ONE);
+      ones.putScalar(MT_ONE);
 
       // Compute matrix on top of generalized Rayleigh quotient
       // topMatrix = A_aggPartDiagonal - A_aggPartDiagonal*ones*A_aggPartDiagonal/diag_sum;
       DenseMatrix tmp(aggSize, aggSize, false);
       DenseMatrix topMatrix(A_aggPartDiagonal);
 
-      tmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, SCALAR_ONE, ones, A_aggPartDiagonal, SCALAR_ZERO);
-      topMatrix.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -SCALAR_ONE/diag_sum, A_aggPartDiagonal, tmp, SCALAR_ONE);
+      tmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, MT_ONE, ones, A_aggPartDiagonal, MT_ZERO);
+      topMatrix.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -MT_ONE/diag_sum, A_aggPartDiagonal, tmp, MT_ONE);
 
       // Compute matrix on bottom of generalized Rayleigh quotient
       DenseMatrix bottomMatrix(A_aggPart);
-      SC matrixNorm = A_aggPart.normInf();
+      MT matrixNorm = A_aggPart.normInf();
       for (int i=0;i<aggSize;++i){
         // Include a small perturbation to the bottom matrix to make it nonsingular
         bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) - 1e-12*matrixNorm;
       }
 
       // Compute generalized eigenvalues
-
-      // GGES only works on real matrices
-      assert(!Teuchos::ScalarTraits<SC>::isComplex);
-
       LO sdim, info;
       DenseVector alpha_real(aggSize, false);
       DenseVector alpha_imag(aggSize, false);
@@ -315,11 +314,11 @@ namespace MueLu {
 
       DenseVector workArray(14*(aggSize+1), false);
 
-      LO (*ptr2func)(SC*, SC*, SC*);
+      LO (*ptr2func)(MT*, MT*, MT*);
       ptr2func = NULL;
       LO* bwork = NULL;
-      SC* vl = NULL;
-      SC* vr = NULL;
+      MT* vl = NULL;
+      MT* vr = NULL;
 
       const char NO='N';
       myLapack.GGES(NO,NO,NO,ptr2func,aggSize,
@@ -330,7 +329,7 @@ namespace MueLu {
 
       TEUCHOS_ASSERT(info == LO_ZERO);
 
-      SC maxEigenVal = SCALAR_ZERO;
+      MT maxEigenVal = MT_ZERO;
 
       for (int i=LO_ZERO;i<aggSize;++i) {
 
@@ -339,7 +338,7 @@ namespace MueLu {
 
       }
 
-      (agg_qualities->getDataNonConst(0))[aggId] = SCALAR_TWO*maxEigenVal;
+      (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE)*maxEigenVal;
 
     }
 
@@ -353,11 +352,12 @@ namespace MueLu {
     ParameterList pL = GetParameterList();
 
     magnitudeType good_agg_thresh = Teuchos::as<magnitudeType>(pL.get<double>("aggregate qualities: good aggregate threshold"));
+    using MT = magnitudeType;
 
-    ArrayRCP<const magnitudeType> data = agg_qualities->getData(0);
+    ArrayRCP<const MT> data = agg_qualities->getData(0);
 
     LO num_bad_aggs = 0;
-    SC worst_agg = 0.0;
+    MT worst_agg = 0.0;
 
     for (size_t i=0;i<agg_qualities->getLocalLength();++i) {
 
