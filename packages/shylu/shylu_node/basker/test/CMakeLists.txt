@@ -1,4 +1,4 @@
-IF(Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_OPENMP)
 
     TRIBITS_ADD_EXECUTABLE(
         basker_test
@@ -77,7 +77,7 @@ IF(Kokkos_ENABLE_OpenMP)
      )
 
 
-ENDIF() ##END Kokkos_ENABLE_OpenMP
+ENDIF() ##END Kokkos_ENABLE_OPENMP
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files
         SOURCE_FILES matrix1.mtx coverage.mtx 

@@ -46,11 +46,10 @@ TARGETS =
 #=======================================================================
 #= Example Directories
 #=======================================================================
-HEADERS_HASHMAP_ACCUMULATOR =  $(wildcard $(KOKKOSKERNELS_SRC_PATH)/example/hashmap_accumulator/*.hpp)
-TEST_HEADERS += $(HEADERS_HASHMAP_ACCUMULATOR)
-
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/example/hashmap_accumulator/*.hpp)
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/example/hashmap_accumulator/*.cpp) 
 
+#EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/example/graph/PartitioningExample.cpp) 
 
 #=======================================================================
 #========================== TARGETS ====================================

@@ -351,6 +351,12 @@ void mkl_symbolic(
     return;
   }
 #else
+  (void)handle;
+  (void)m;          (void)n;          (void)k;
+  (void)row_mapA;   (void)row_mapB;   (void)row_mapC;
+  (void)entriesA;   (void)entriesB;
+  (void)transposeA; (void)transposeB;
+  (void)verbose;
   throw std::runtime_error ("MKL IS NOT DEFINED\n");
   //return;
 #endif
@@ -657,6 +663,13 @@ void mkl_symbolic(
       return;
     }
 #else
+    (void)handle;
+    (void)m;          (void)n;          (void)k;
+    (void)row_mapA;   (void)row_mapB;   (void)row_mapC;
+    (void)entriesA;   (void)entriesB;   (void)entriesC;
+    (void)valuesA;    (void)valuesB;    (void)valuesC;
+    (void)transposeA; (void)transposeB;
+    (void)verbose;
     throw std::runtime_error ("MKL IS NOT DEFINED\n");
     //return;
 #endif

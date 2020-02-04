@@ -876,9 +876,6 @@ public:
   template<class T2>
   inline void reset(T2* p, bool has_ownership = true);
 
-  /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
-  TEUCHOS_DEPRECATED inline int count() const;
-
   //@}
 
 private:

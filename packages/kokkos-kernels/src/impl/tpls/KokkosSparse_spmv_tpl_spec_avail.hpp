@@ -67,4 +67,4 @@ struct spmv_mv_tpl_spec_avail {
 }
 }
 
-#endif
+#endif // KOKKOSPARSE_SPMV_TPL_SPEC_AVAIL_HPP_
