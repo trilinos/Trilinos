@@ -204,6 +204,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     Map_warn_on_post_finalize_destruction
   COMM serial mpi
+  ENVIRONMENT KOKKOS_DISABLE_WARNINGS=ON
   STANDARD_PASS_OUTPUT
   )
 
@@ -212,6 +213,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     Map_no_warn_on_pre_finalize_destruction
   COMM serial mpi
+  ENVIRONMENT KOKKOS_DISABLE_WARNINGS=ON
   STANDARD_PASS_OUTPUT
   )
 
