@@ -92,39 +92,39 @@ TEST( CrsMatrixBase, constructor ) {
   TEST_END;
 }
 
-TEST( CrsMatrixBase, matrixmarket ) {
-  TEST_BEGIN;
-  std::string inputfilename  = MM_TEST_FILE + ".mtx";
-  std::string outputfilename = MM_TEST_FILE + "_read_output.mtx";      
+// TEST( CrsMatrixBase, matrixmarket ) {
+//   TEST_BEGIN;
+//   std::string inputfilename  = MM_TEST_FILE + ".mtx";
+//   std::string outputfilename = MM_TEST_FILE + "_read_output.mtx";      
 
-  CrsMatrixBaseHostType Ah;
-  MatrixMarket<ValueType>::read(inputfilename, Ah);
+//   CrsMatrixBaseHostType Ah;
+//   MatrixMarket<ValueType>::read(inputfilename, Ah);
 
-  std::ofstream out(outputfilename);
-  MatrixMarket<ValueType>::write(out, Ah);
+//   std::ofstream out(outputfilename);
+//   MatrixMarket<ValueType>::write(out, Ah);
 
-  CrsMatrixBaseHostType Bh;
-  MatrixMarket<ValueType>::read(outputfilename, Bh);
+//   CrsMatrixBaseHostType Bh;
+//   MatrixMarket<ValueType>::read(outputfilename, Bh);
 
-  ///
-  /// read and write the matrix and read again, 
-  /// then check if they are same
-  ///
-  EXPECT_EQ(Ah.NumRows(), Bh.NumRows());
-  EXPECT_EQ(Ah.NumCols(), Bh.NumCols());
-  EXPECT_EQ(Ah.NumNonZeros(), Bh.NumNonZeros());
+//   ///
+//   /// read and write the matrix and read again, 
+//   /// then check if they are same
+//   ///
+//   EXPECT_EQ(Ah.NumRows(), Bh.NumRows());
+//   EXPECT_EQ(Ah.NumCols(), Bh.NumCols());
+//   EXPECT_EQ(Ah.NumNonZeros(), Bh.NumNonZeros());
 
-  const ordinal_type m = Ah.NumRows();
-  for (ordinal_type i=0;i<m;++i) {
-    EXPECT_EQ(Ah.RowPtrBegin(i), Bh.RowPtrBegin(i));
-    const ordinal_type jbeg = Ah.RowPtrBegin(i), jend = Ah.RowPtrEnd(i);
-    for (ordinal_type j=jbeg;j<jend;++j) {
-      EXPECT_EQ(Ah.Col(j), Bh.Col(j));      
-      EXPECT_EQ(Ah.Value(j), Bh.Value(j));      
-    }
-  }
-  TEST_END;
-}
+//   const ordinal_type m = Ah.NumRows();
+//   for (ordinal_type i=0;i<m;++i) {
+//     EXPECT_EQ(Ah.RowPtrBegin(i), Bh.RowPtrBegin(i));
+//     const ordinal_type jbeg = Ah.RowPtrBegin(i), jend = Ah.RowPtrEnd(i);
+//     for (ordinal_type j=jbeg;j<jend;++j) {
+//       EXPECT_EQ(Ah.Col(j), Bh.Col(j));      
+//       EXPECT_EQ(Ah.Value(j), Bh.Value(j));      
+//     }
+//   }
+//   TEST_END;
+// }
 
 TEST( CrsMatrixBase, permute ) {
   TEST_BEGIN;
