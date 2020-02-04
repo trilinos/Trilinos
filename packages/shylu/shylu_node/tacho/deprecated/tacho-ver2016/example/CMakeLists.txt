@@ -8,7 +8,7 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluchol)
 
-IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
+IF(Kokkos_ENABLE_OPENMP OR Kokkos_ENABLE_SERIAL)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleCholSuperNodes
     NOEXEPREFIX
@@ -25,7 +25,7 @@ IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
   ENDIF()
 ENDIF()
 
-# IF(Kokkos_ENABLE_OpenMP)
+# IF(Kokkos_ENABLE_OPENMP)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleNPT_OpenMP
 #     NOEXEPREFIX
@@ -38,7 +38,7 @@ ENDIF()
 # # Dense Matrix Objects
 # # ====================
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleDenseMatrixBase_Pthreads
 #     NOEXEPREFIX
@@ -53,7 +53,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Cuda)
+# IF(Kokkos_ENABLE_CUDA)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleDenseMatrixBase_Cuda
 #     NOEXEPREFIX
@@ -65,7 +65,7 @@ ENDIF()
 # # Dense Linear Algebra
 # # ====================
 
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleDenseGemmByBlocks_Serial
 #     NOEXEPREFIX
@@ -92,7 +92,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_OpenMP)
+# IF(Kokkos_ENABLE_OPENMP)
 #   IF(TPL_ENABLE_MKL)
 #     TRIBITS_ADD_EXECUTABLE(
 #       Tacho_ExampleDenseGemmMKL_OpenMP
@@ -128,7 +128,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleDenseGemmByBlocks_Pthreads
 #     NOEXEPREFIX
@@ -155,7 +155,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Cuda)
+# IF(Kokkos_ENABLE_CUDA)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleDenseGemmByBlocks_Cuda
 #     NOEXEPREFIX
@@ -167,7 +167,7 @@ ENDIF()
 # # Crs Matrix Objects
 # # ==================
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleCrsMatrixBase_Pthreads
 #     NOEXEPREFIX
@@ -191,7 +191,7 @@ ENDIF()
 # # Graph Tools and Symbolic Factorization
 # # ======================================
 
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleGraphTools_Serial
 #     NOEXEPREFIX
@@ -206,7 +206,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_OpenMP)
+# IF(Kokkos_ENABLE_OPENMP)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleGraphTools_OpenMP
 #     NOEXEPREFIX
@@ -221,7 +221,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleGraphTools_Pthreads
 #     NOEXEPREFIX
@@ -252,7 +252,7 @@ ENDIF()
 # # Numeric Factorization
 # # =====================
 
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleCholSuperNodesByBlocks_Serial
 #     NOEXEPREFIX
@@ -261,7 +261,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_OpenMP)
+# IF(Kokkos_ENABLE_OPENMP)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleCholSuperNodesByBlocks_OpenMP
 #     NOEXEPREFIX
@@ -278,7 +278,7 @@ ENDIF()
 #   ENDIF()
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleCholUnblocked_Pthreads
 #     NOEXEPREFIX
@@ -308,8 +308,8 @@ ENDIF()
 # #   )
 # # ENDIF()
 
-# # IF(Kokkos_ENABLE_OpenMP)
-# # IF(Kokkos_ENABLE_Pthread)
+# # IF(Kokkos_ENABLE_OPENMP)
+# # IF(Kokkos_ENABLE_PTHREAD)
 # #   TRIBITS_ADD_EXECUTABLE(
 # #     Tacho_ExampleCholSuperNodesByBlocks_OpenMP
 # #     NOEXEPREFIX
@@ -323,7 +323,7 @@ ENDIF()
 # # Solver Interface
 # # ================
 
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleSolver_Serial
 #     NOEXEPREFIX
@@ -332,7 +332,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_OpenMP)
+# IF(Kokkos_ENABLE_OPENMP)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleSolver_OpenMP
 #     NOEXEPREFIX
@@ -341,7 +341,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleSolver_Pthreads
 #     NOEXEPREFIX

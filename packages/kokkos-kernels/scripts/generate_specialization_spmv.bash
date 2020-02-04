@@ -2,8 +2,8 @@
 
 Function=$1             #e.g. abs: function name
 FunctionExtended=$2     #e.g. KokkosBlas1_impl_MV_abs: prefix for files etc.
-MasterHeader=$3         #e.g. Kokkos_Blas1_MV_impl_abs.hpp: where the actual function definition and declaration lives 
-NameSpace=$4            #e.g. KokkosBlas: namespace it lives in 
+MasterHeader=$3         #e.g. Kokkos_Blas1_MV_impl_abs.hpp: where the actual function definition and declaration lives
+NameSpace=$4            #e.g. KokkosBlas: namespace it lives in
 KokkosKernelsPath=$5
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"

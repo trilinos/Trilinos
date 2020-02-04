@@ -27,6 +27,14 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv 
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv KokkosSparse_spmv_mv KokkosSparse_spmv_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 
 
+#spmv_struct
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv KokkosSparse_spmv_struct KokkosSparse_spmv_struct_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv KokkosSparse_spmv_mv_struct KokkosSparse_spmv_struct_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+
+#spiluk
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spiluk_numeric KokkosSparse_spiluk_numeric KokkosSparse_spiluk_numeric_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spiluk_symbolic KokkosSparse_spiluk_symbolic KokkosSparse_spiluk_symbolic_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+
 #abs
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash abs KokkosBlas1_abs KokkosBlas1_abs_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash abs KokkosBlas1_abs_mv KokkosBlas1_abs_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
@@ -38,6 +46,10 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash axpby Kokkos
 #dot
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash dot KokkosBlas1_dot KokkosBlas1_dot_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash dot KokkosBlas1_dot_mv KokkosBlas1_dot_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+
+#iamax
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash iamax KokkosBlas1_iamax KokkosBlas1_iamax_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash iamax KokkosBlas1_iamax_mv KokkosBlas1_iamax_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 
 #mult
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash mult KokkosBlas1_mult KokkosBlas1_mult_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}

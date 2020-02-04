@@ -138,8 +138,21 @@ gemv (const char trans[],
     typename KokkosKernels::Impl::GetUnifiedLayout<YViewType>::array_layout,
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
-  typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
-  impl_type::gemv (trans, alpha, A, x, beta, y);
+
+  // Degenerate case is essentially same as scal - use fallback impl 
+  // to avoid potential (unlikely?) circular dependence issues by including other KokkosBlas headers
+  if (A.extent(0) == 0 || A.extent(1) == 0)
+  {
+    const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
+    typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
+    fallback_impl_type::gemv (trans, alpha, A, x, beta, y);
+  }
+  else 
+  {
+    typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
+    impl_type::gemv (trans, alpha, A, x, beta, y);
+  }
+
 }
 
 } // namespace KokkosBlas

@@ -1853,13 +1853,12 @@ public:
 
         // Do multiple passes if array is too small.
         color_t degree = _idx(i+1)-_idx(i); // My degree
-        color_t offset = 0;
+        color_t offset = 1;
         for (; (offset <= degree + VB_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_COLORING_FORBIDDEN_SIZE){
           // initialize
           for (int j=0; j< VB_COLORING_FORBIDDEN_SIZE; j++){
             forbidden[j] = false;
           }
-          if (offset == 0) forbidden[0] = true; // by convention, start at 1
 
           // Check nbors, fill forbidden array.
           for (size_type j=_idx(i); j<_idx(i+1); j++){
@@ -2600,7 +2599,7 @@ public:
       : frontierSize_(frontierSize), newFrontierSize_(newFrontierSize) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const int dummy) const {
+    void operator() (const int /* dummy */) const {
       frontierSize_() = newFrontierSize_();
       newFrontierSize_() = 0;
     }
