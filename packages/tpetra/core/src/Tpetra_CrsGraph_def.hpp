@@ -5306,14 +5306,15 @@ namespace Tpetra {
 
     using insert_result =
       typename Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>::insert_result;
-    using this_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
-    const this_type* srcCrs = dynamic_cast<const this_type*>(&source);
 
     // Compute extra capacity needed to accommodate incoming data
     const map_type& src_row_map = * (source.getRowMap ());
+
+    using this_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    const this_type* srcCrs = dynamic_cast<const this_type*>(&source);
     const bool src_sorted = srcCrs == nullptr ? false : srcCrs->isSorted();
-    const bool tgt_sorted = this->isSorted();
     const bool src_merged = srcCrs == nullptr ? false : srcCrs->isMerged();
+    const bool tgt_sorted = this->isSorted();
     const bool tgt_merged = this->isMerged();
 
     std::vector<GO> src_row_inds;
@@ -5381,9 +5382,8 @@ namespace Tpetra {
         result = padding.insert (tgt_lid, how_much_padding);
       }
 
-      // FIXME (mfh 09 Apr 2019) Kokkos::UnorderedMap is allowed to fail even if
-      // the user did nothing wrong. We should actually have a retry option. I
-      // just copied this code over from computeCrsPadding.
+      // Kokkos::UnorderedMap is allowed to fail even if the user did
+      // nothing wrong. We should actually have a retry option.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (result.failed(), std::runtime_error,
          "unable to insert padding for LID " << tgt_lid);
@@ -5401,15 +5401,32 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  computeCrsPaddingForPermutedIDs (Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>& padding,
-                                   const RowGraph<LocalOrdinal,GlobalOrdinal,Node>& source,
-                                   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                                   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-                                   const bool padAll) const
+  computeCrsPaddingForPermutedIDs(
+    Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>& padding,
+    const RowGraph<LocalOrdinal,GlobalOrdinal,Node>& source,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    const bool padAll) const
   {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
-    const char tfecfFuncName[] = "computeCrsPaddingForPermutedIds: ";
+    using Details::Impl::getSortedMergedGlobalRow;
+    using std::endl;
+    const char tfecfFuncName[] = "computeCrsPaddingForPermutedIds";
+
+    std::unique_ptr<std::string> prefix;
+    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    if (verbose) {
+      prefix = this->createPrefix("CrsGraph", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "permuteToLIDs.extent(0): "
+         << permuteToLIDs.extent(0)
+         << ", permuteFromLIDs.extent(0): "
+         << permuteFromLIDs.extent(0)
+         << ", padAll: " << (padAll ? "true" : "false") << endl;
+      std::cerr << os.str();
+    }
+
     Kokkos::fence ();
 
     const map_type& src_row_map = * (source.getRowMap ());
@@ -5418,49 +5435,85 @@ namespace Tpetra {
       typename Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>::insert_result;
     auto permuteToLIDs_h = permuteToLIDs.view_host ();
     auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
-    for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
+
+    using this_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    const this_type* srcCrs = dynamic_cast<const this_type*>(&source);
+    const bool src_sorted = srcCrs == nullptr ? false : srcCrs->isSorted();
+    const bool src_merged = srcCrs == nullptr ? false : srcCrs->isMerged();
+    const bool tgt_sorted = this->isSorted();
+    const bool tgt_merged = this->isMerged();
+
+    std::vector<GO> src_row_inds;
+    std::vector<GO> tgt_row_inds;
+    std::vector<GO> merged_inds;
+
+    size_t srcNumDups = 0;
+    size_t tgtNumDups = 0;
+    size_t mergedNumDups = 0;
+
+    const LO numPermutes = static_cast<LO>(permuteToLIDs_h.extent(0));
+    for (LO i = 0; i < numPermutes; ++i) {
       const GO src_gid = src_row_map.getGlobalElement(permuteFromLIDs_h[i]);
-      auto num_src_entries = source.getNumEntriesInGlobalRow(src_gid);
-
-      if (num_src_entries == 0)
+      auto orig_num_src_entries = source.getNumEntriesInGlobalRow(src_gid);
+      if (orig_num_src_entries == 0) {
         continue;
-
+      }
       insert_result result;
       const LO tgt_lid = permuteToLIDs_h[i];
-      if (padAll)
-      {
-        result = padding.insert (tgt_lid, num_src_entries);
+      if (padAll) {
+        result = padding.insert (tgt_lid, orig_num_src_entries);
       }
       else {
-        size_t check_row_length = 0;
-        std::vector<GO> src_row_inds(num_src_entries);
-        Teuchos::ArrayView<GO> src_row_inds_view(src_row_inds.data(), src_row_inds.size());
-        source.getGlobalRowCopy(src_gid, src_row_inds_view, check_row_length);
+        size_t curNumSrcDups = 0;
+        Teuchos::ArrayView<GO> src_row_inds_view =
+          getSortedMergedGlobalRow(src_row_inds, orig_num_src_entries,
+                                   curNumSrcDups, source, src_gid,
+                                   src_sorted, src_merged);
+        srcNumDups += curNumSrcDups;
 
-        const GO tgt_gid = rowMap_->getGlobalElement (tgt_lid);
-        auto num_tgt_entries = this->getNumEntriesInGlobalRow(tgt_gid);
-        std::vector<GO> tgt_row_inds(num_tgt_entries);
-        Teuchos::ArrayView<GO> tgt_row_inds_view(tgt_row_inds.data(), tgt_row_inds.size());
-        this->getGlobalRowCopy(tgt_gid, tgt_row_inds_view, check_row_length);
+        const GO tgt_gid = rowMap_->getGlobalElement(tgt_lid);
+        size_t orig_num_tgt_entries = 0;
+        size_t curNumTgtDups = 0;
+        Teuchos::ArrayView<GO> tgt_row_inds_view =
+          getSortedMergedGlobalRow(tgt_row_inds, orig_num_tgt_entries,
+                                   curNumTgtDups, *this, tgt_gid,
+                                   tgt_sorted, tgt_merged);
+        tgtNumDups += curNumTgtDups;
 
-        size_t how_much_padding = 0;
-        for (auto src_row_ind : src_row_inds) {
-          if (std::find(tgt_row_inds.begin(), tgt_row_inds.end(), src_row_ind) == tgt_row_inds.end()) {
-            // The target row does not have space for
-            how_much_padding++;
-          }
+        const size_t orig_num_merged =
+          size_t(src_row_inds_view.size()) + size_t(tgt_row_inds_view.size());
+        if (merged_inds.size() < orig_num_merged) {
+          merged_inds.resize(orig_num_merged);
         }
+        auto merged_end =
+          std::merge(src_row_inds_view.begin(), src_row_inds_view.end(),
+                     tgt_row_inds_view.begin(), tgt_row_inds_view.end(),
+                     merged_inds.begin());
+        const size_t new_num_merged =
+          static_cast<size_t>(merged_end - merged_inds.begin());
+        mergedNumDups += (orig_num_merged - new_num_merged);
+
+        const size_t how_much_padding =
+          new_num_merged >= orig_num_tgt_entries ?
+          new_num_merged - orig_num_tgt_entries :
+          size_t(0);
         result = padding.insert (tgt_lid, how_much_padding);
       }
-      // FIXME (mfh 09 Apr 2019) Kokkos::UnorderedMap is allowed to
-      // fail even if the user did nothing wrong.  We should actually
-      // have a retry option.  I just copied this code over from
-      // computeCrsPadding.
+
+      // Kokkos::UnorderedMap is allowed to fail even if the user did
+      // nothing wrong.  We should actually have a retry option.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (result.failed(), std::runtime_error,
          "unable to insert padding for LID " << tgt_lid);
     }
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done: srcNumDups: " << srcNumDups
+         << ", tgtNumDups: " << tgtNumDups
+         << ", mergedNumDups: " << mergedNumDups << endl;
+      std::cerr << os.str();
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
