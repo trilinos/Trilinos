@@ -171,7 +171,7 @@ namespace MueLu {
 
     //@}
 
-    RCP<const ParameterList> GetValidParameterList() const {};
+    RCP<const ParameterList> GetValidParameterList() const {return Teuchos::rcp(new ParameterList());}
 
     //! @name Input
     //@{

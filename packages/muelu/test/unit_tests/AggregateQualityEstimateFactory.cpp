@@ -105,8 +105,8 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    typedef Xpetra::MultiVector<double,LO,GO,Node> MultiVectorDouble;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    typedef Xpetra::MultiVector<MT,LO,GO,Node> MultiVectorDouble;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -126,10 +126,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     typedef MueLu::AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> AggregateQualityEstimateFactory;
-
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
-
-    typedef Xpetra::MultiVector<double,LO,GO,NO> MultiVectorDouble;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    typedef Xpetra::MultiVector<MT,LO,GO,NO> MultiVectorDouble;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -157,7 +156,7 @@ namespace MueLuTests {
     out << "Testing aggregate qualities to make sure all aggregates are of good quality...\n\n";
 
 
-    ArrayRCP<const SC> aggQualitiesLocalData = aggQualities->getData(0);
+    ArrayRCP<const NT> aggQualitiesLocalData = aggQualities->getData(0);
 
     for (size_t i=0;i<aggQualities->getLocalLength();++i) {
       out << "Aggregate " << i << ": " << aggQualitiesLocalData[i] << "\n";
@@ -173,8 +172,8 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    typedef Xpetra::MultiVector<double,LO,GO,Node> MultiVectorDouble;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    typedef Xpetra::MultiVector<MT,LO,GO,Node> MultiVectorDouble;
     typedef MueLu::AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> AggregateQualityEstimateFactory;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -190,6 +189,7 @@ namespace MueLuTests {
     RCP<Matrix> A =  Xpetra::IO<SC, LO, GO, NO>::Read("TestMatrices/aniso2dx.mat", map_for_read);
 
     std::vector<std::string> test_matrices = { "TestMatrices/aniso2dx.mat", "TestMatrices/aniso2dy.mat", "TestMatrices/iso2d.mat" };
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 
     const std::vector<LO> AGG0_NODES = {0,1};
     const std::vector<LO> AGG1_NODES = {0,nx};
@@ -219,7 +219,7 @@ namespace MueLuTests {
 						    AGG15_NODES, AGG16_NODES, AGG17_NODES,
 						    AGG18_NODES};
 
-    const std::vector<double> AGG_QUALITIES = {2002., 2.002, 2670.000811,
+    const std::vector<MT> AGG_QUALITIES = {2002., 2.002, 2670.000811,
 					       2001.9998, 4003.999998, 4.004, 
 					       3003.666728, 4003.999198, 4003.998397,
 					       4003.999198, 2001.999599, 4003.999198,
@@ -283,7 +283,7 @@ namespace MueLuTests {
 
       RCP<MultiVectorDouble> aggQualities = level.Get< RCP<MultiVectorDouble> >("AggregateQualities", &aggQualityEstimateFactory);
     
-      ArrayRCP<const double> aggQualitiesLocalData = aggQualities->getData(0);
+      ArrayRCP<const MT> aggQualitiesLocalData = aggQualities->getData(0);
 
       ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
       AggregateQualityEstimateFactory::ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
@@ -378,8 +378,8 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    typedef Xpetra::MultiVector<double,LO,GO,Node> MultiVectorDouble;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    typedef Xpetra::MultiVector<MT,LO,GO,Node> MultiVectorDouble;
     typedef MueLu::AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> AggregateQualityEstimateFactory;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -424,7 +424,7 @@ namespace MueLuTests {
 						    AGG15_NODES, AGG16_NODES, AGG17_NODES,
 						    AGG18_NODES};
 
-    const std::vector<double> AGG_QUALITIES = {2.008365, 480.190476, 640.925507,
+    const std::vector<MT> AGG_QUALITIES = {2.008365, 480.190476, 640.925507,
 					       480.190465, 4.016730, 960.380952,
 					       960.380906, 720.956363, 960.380860,
 					       480.190453, 960.380906, 960.380860,
@@ -488,7 +488,7 @@ namespace MueLuTests {
 
       RCP<MultiVectorDouble> aggQualities = level.Get< RCP<MultiVectorDouble> >("AggregateQualities", &aggQualityEstimateFactory);
     
-      ArrayRCP<const double> aggQualitiesLocalData = aggQualities->getData(0);
+      ArrayRCP<const MT> aggQualitiesLocalData = aggQualities->getData(0);
 
       ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
       AggregateQualityEstimateFactory::ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
