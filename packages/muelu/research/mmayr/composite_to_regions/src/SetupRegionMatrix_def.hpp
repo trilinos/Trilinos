@@ -437,11 +437,7 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
     RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionGrpMats[j]);
     RCP<CrsMatrix> quasiRegionCrs = quasiRegionCrsWrap->getCrsMatrix();
     const LO numRows = Teuchos::as<LO>(quasiRegionCrs->getNodeNumRows());
-    // const size_t numNNZ  = quasiRegionGrpMats[j]->getNodeNumEntries();
-    ArrayRCP<const size_t> rowPtr;
-    ArrayRCP<const LO>     colInd;
-    ArrayRCP<const Scalar> values;
-    quasiRegionCrs->getAllValues(rowPtr, colInd, values);
+
     for (LO row = 0; row < numRows; ++row) { // loop over local rows of composite matrix
       GO rowGID = rowMapPerGrp[j]->getGlobalElement(row);
       std::size_t numEntries = quasiRegionGrpMats[j]->getNumEntriesInLocalRow(row); // number of entries in this row
