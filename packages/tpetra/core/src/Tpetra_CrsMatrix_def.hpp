@@ -6445,15 +6445,17 @@ namespace Tpetra {
     using execution_space = typename device_type::execution_space;
     using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
     using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
-    const char tfecfFuncName[] = "applyCrsPadding: ";
-    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::applyCrsPadding");
+    const char tfecfFuncName[] = "applyCrsPadding";
+    const char suffix[] =
+      ".  Please report this bug to the Tpetra developers.";
+    ProfilingRegion regionCAP("Tpetra::CrsMatrix::applyCrsPadding");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsMatrix", "applyCrsPadding");
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
       std::ostringstream os;
-      os << *prefix << "padding.size(): " << padding.size() << endl;
-      std::cerr << os.str ();
+      os << *prefix << "padding.size()=" << padding.size() << endl;
+      std::cerr << os.str();
     }
     const int myRank = ! verbose ? -1 : [&] () {
       auto map = this->getMap();
@@ -6468,12 +6470,13 @@ namespace Tpetra {
     } ();
 
     // NOTE (mfh 29 Jan 2020) This allocates the values array.
-    if (! myGraph_->indicesAreAllocated ()) {
-      this->allocateValues (GlobalIndices, GraphNotYetAllocated, verbose);
+    if (! myGraph_->indicesAreAllocated()) {
+      allocateValues(GlobalIndices, GraphNotYetAllocated, verbose);
     }
 
-    if (padding.size() == 0)
+    if (padding.size() == 0) {
       return;
+    }
 
     // Making copies here because k_rowPtrs_ has a const type. Otherwise, we
     // would use it directly.
@@ -6487,7 +6490,8 @@ namespace Tpetra {
     row_ptrs_type row_ptr_beg("row_ptr_beg", myGraph_->k_rowPtrs_.extent(0));
     Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
 
-    const size_t N = (row_ptr_beg.extent(0) == 0 ? 0 : row_ptr_beg.extent(0) - 1);
+    const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
+      size_t(row_ptr_beg.extent(0) - 1);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate row_ptrs_end: " << N << endl;
@@ -6519,30 +6523,27 @@ namespace Tpetra {
         });
     }
 
-    using values_type = typename local_matrix_type::values_type;
-    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-
     if (myGraph_->isGloballyIndexed()) {
-      //using indices_type = typename crs_graph_type::t_GlobalOrdinal_1D;
-      padCrsArrays /* <row_ptrs_type, indices_type, values_type, padding_type> */ (
-        row_ptr_beg, row_ptr_end, myGraph_->k_gblInds1D_, k_values1D_,
-        padding, myRank, verbose);
-
+      padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->k_gblInds1D_,
+                   k_values1D_, padding, myRank, verbose);
+      const auto newValuesLen = k_values1D_.extent(0);
+      const auto newColIndsLen = myGraph_->k_gblInds1D_.extent(0);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (k_values1D_.extent(0) != myGraph_->k_gblInds1D_.extent(0),
-         std::logic_error,
-         "After padding, values and indices should be same size");
+        (newValuesLen != newColIndsLen, std::logic_error,
+         "After padding, values and indices should be same size, but "
+         "k_values1D_.extent(0)=" << newValuesLen << " != myGraph_->"
+         "k_gblInds1D_.extent(0)=" << newColIndsLen << ".");
     }
     else {
-      //using indices_type = typename local_graph_type::entries_type::non_const_type;
-      padCrsArrays /* <row_ptrs_type,indices_type,values_type,padding_type> */ (
-        row_ptr_beg, row_ptr_end, myGraph_->k_lclInds1D_, k_values1D_,
-        padding, myRank, verbose);
-
+      padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->k_lclInds1D_,
+                   k_values1D_, padding, myRank, verbose);
+      const auto newValuesLen = k_values1D_.extent(0);
+      const auto newColIndsLen = myGraph_->k_lclInds1D_.extent(0);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (k_values1D_.extent(0) != myGraph_->k_lclInds1D_.extent(0),
-         std::logic_error,
-         "After padding, values and indices should be same size");
+        (newValuesLen != newColIndsLen, std::logic_error,
+         "After padding, values and indices should be same size, but "
+         "k_values1D_.extent(0)=" << newValuesLen << " != myGraph_->"
+         "k_lclInds1D_.extent(0)=" << newColIndsLen << ".");
     }
 
     if (refill_num_row_entries) {
@@ -7874,9 +7875,9 @@ namespace Tpetra {
 
     if (isStaticGraph ()) {
       using Details::unpackCrsMatrixAndCombineNew;
-      unpackCrsMatrixAndCombineNew (*this, imports, numPacketsPerLID,
-                                    importLIDs, constantNumPackets,
-                                    distor, combineMode);
+      unpackCrsMatrixAndCombineNew(*this, imports, numPacketsPerLID,
+                                   importLIDs, constantNumPackets,
+                                   distor, combineMode);
     }
     else {
       std::vector<size_t> paddingVec =
@@ -7946,14 +7947,13 @@ namespace Tpetra {
                                 typename View<int*, HES>::size_type>;
     using gids_out_type = View<GO*, HES, MemoryUnmanaged>;
     using vals_out_type = View<ST*, HES, MemoryUnmanaged>;
-    const char tfecfFuncName[] = "unpackAndCombineImplNonStatic: ";
+    const char tfecfFuncName[] = "unpackAndCombineImplNonStatic";
 
     const bool debug = Behavior::debug("CrsMatrix");
     const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsMatrix",
-        "unpackAndCombineImplNonStatic");
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
       std::ostringstream os;
       os << *prefix << endl; // we've already printed DualViews' statuses
       std::cerr << os.str ();
@@ -8006,18 +8006,19 @@ namespace Tpetra {
       // We need to unpack a nonzero number of entries for this row.
       if (debug) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (offset + numBytes > static_cast<size_t> (imports_h.extent (0)),
-           std::logic_error, "At local row index importLIDs_h[i=" << i << "]="
-           << importLIDs_h[i] << ", offset (=" << offset << ") + numBytes (="
-           << numBytes << ") > imports_h.extent(0)="
-           << imports_h.extent (0) << ".");
+          (offset + numBytes > size_t(imports_h.extent (0)),
+           std::logic_error, ": At local row index importLIDs_h[i="
+           << i << "]=" << importLIDs_h[i] << ", offset (=" << offset
+           << ") + numBytes (=" << numBytes << ") > "
+           "imports_h.extent(0)=" << imports_h.extent (0) << ".");
       }
       LO numEntLO = 0;
 
       if (debug) {
-        const size_t theNumBytes = PackTraits<LO>::packValueCount (numEntLO);
+        const size_t theNumBytes =
+          PackTraits<LO>::packValueCount (numEntLO);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (theNumBytes > numBytes, std::logic_error, "theNumBytes = "
+          (theNumBytes > numBytes, std::logic_error, ": theNumBytes="
            << theNumBytes << " > numBytes = " << numBytes << ".");
       }
       const char* const inBuf = imports_h.data () + offset;
@@ -8026,14 +8027,15 @@ namespace Tpetra {
 
       if (debug) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (actualNumBytes > numBytes, std::logic_error, "At i = " << i
+          (actualNumBytes > numBytes, std::logic_error, ": At i=" << i
            << ", actualNumBytes=" << actualNumBytes
            << " > numBytes=" << numBytes << ".");
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (numEntLO == 0, std::logic_error, "At local row index importLIDs_h[i="
-           << i << "]=" << importLIDs_h[i] << ", the number of entries read "
-           "from the packed data is numEntLO=" << numEntLO << ", but numBytes="
-           << numBytes << " != 0.");
+          (numEntLO == 0, std::logic_error, ": At local row index "
+           "importLIDs_h[i=" << i << "]=" << importLIDs_h[i] << ", "
+           "the number of entries read from the packed data is "
+           "numEntLO=" << numEntLO << ", but numBytes=" << numBytes
+           << " != 0.");
       }
 
       maxRowNumEnt = std::max(size_t(numEntLO), maxRowNumEnt);
@@ -8059,9 +8061,12 @@ namespace Tpetra {
       // for each row's data to contain the run-time size.  This is only
       // necessary if the size is not a compile-time constant.
       Scalar val;
-      gblColInds = ScalarViewTraits<GO, HES>::allocateArray (gid, maxRowNumEnt, "gids");
-      lclColInds = ScalarViewTraits<LO, HES>::allocateArray (lid, maxRowNumEnt, "lids");
-      vals = ScalarViewTraits<ST, HES>::allocateArray (val, maxRowNumEnt, "vals");
+      gblColInds = ScalarViewTraits<GO, HES>::allocateArray(
+        gid, maxRowNumEnt, "gids");
+      lclColInds = ScalarViewTraits<LO, HES>::allocateArray(
+        lid, maxRowNumEnt, "lids");
+      vals = ScalarViewTraits<ST, HES>::allocateArray(
+        val, maxRowNumEnt, "vals");
     }
 
     offset = 0;
@@ -8084,9 +8089,9 @@ namespace Tpetra {
         unpackRow (gidsOut.data (), valsOut.data (), imports_h.data (),
                    offset, numBytes, numEnt, numBytesPerValue);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numBytes != numBytesOut, std::logic_error, "At i = " << i << ", "
-         << "numBytes = " << numBytes << " != numBytesOut = " << numBytesOut
-         << ".");
+        (numBytes != numBytesOut, std::logic_error, ": At i=" << i
+         << ", numBytes=" << numBytes << " != numBytesOut="
+         << numBytesOut << ".");
 
       const ST* const valsRaw = const_cast<const ST*> (valsOut.data ());
       const GO* const gidsRaw = const_cast<const GO*> (gidsOut.data ());
