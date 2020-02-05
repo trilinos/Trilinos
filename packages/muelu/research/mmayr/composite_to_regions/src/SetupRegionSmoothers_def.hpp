@@ -431,22 +431,32 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> params,
   // Get max number of regions per proc
   const int maxRegPerProc = regX.size();
 
-  const int maxIter = params->get<int>   ("smoother: sweeps");
+  // Extract input data from parameter list
+  const int maxIter = params->get<int>("smoother: sweeps");
   const Scalar eigRatio = params->get<double>("smoother: Chebyshev eigRatio");
   const Scalar lambdaMax = params->get<Scalar>("chebyshev: lambda max");
   const Scalar boostFactor = params->get<double>("smoother: Chebyshev boost factor");
-
   Teuchos::Array<RCP<Vector> > diag_inv = params->get<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal");
 
+  // Define some constants for convenience
   const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
-  const Scalar SC_TWO  = Teuchos::as<Scalar> (2);
+  const Scalar SC_ONE = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar SC_TWO = Teuchos::as<Scalar> (2);
 
-  const Scalar alpha = lambdaMax / eigRatio;
-  const Scalar beta  = boostFactor * lambdaMax;
+  // Estimation of eigenvalue interval of interest: [alpha, beta]
+  const Scalar alpha = lambdaMax / eigRatio; // lower bound (estimate via given max-to-min ratio)
+  const Scalar beta = boostFactor * lambdaMax; // upper bound (estimated via boost factor)
+
+  // Algorithmic constants
   const Scalar delta = SC_TWO / (beta - alpha);
   const Scalar theta = (beta + alpha) / SC_TWO;
-  const Scalar s1    = theta * delta;
+  const Scalar s1 = theta * delta;
+
+  // Algorithmic parameters
+  Scalar dtemp1 = SC_ZERO;
+  Scalar dtemp2 = SC_ZERO;
+  Scalar rhokp1 = SC_ZERO;
+  Scalar rhok = SC_ONE / s1;
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, revisedRowMapPerGrp);
@@ -456,25 +466,20 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> params,
   Array<RCP<Vector> > regZ(maxRegPerProc);
   createRegionalVector(regZ, revisedRowMapPerGrp);
 
-  Scalar dtemp1 = SC_ZERO;
-  Scalar dtemp2 = SC_ZERO;
-  Scalar rhokp1 = SC_ZERO;
-  Scalar rhok = SC_ONE / s1;
-
   // First Iteration
   if (zeroInitGuess) {
     for(int j = 0; j < maxRegPerProc; j++) {
-      regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regB[j], SC_ZERO);
+      regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regB[j], SC_ZERO); // Z = D_inv * b
       regP[j]->update(SC_ONE/theta, *regZ[j], SC_ZERO); // P = 1/theta Z
-      regX[j]->update(SC_ONE, *regP[j], SC_ZERO);// X = 0 + P
+      regX[j]->update(SC_ONE, *regP[j], SC_ZERO); // X = 0 + P
     }
   }
   else { // Compute residual vector
     computeResidual(regRes, regX, regB, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp );
     for(int j = 0; j < maxRegPerProc; j++) {
-      regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regRes[j], SC_ZERO);// z = D_inv * R, that is, D \ R.
-      regP[j]->update(SC_ONE/theta, *regZ[j], SC_ZERO);// P = 1/theta Z
-      regX[j]->update(SC_ONE, *regP[j], SC_ONE);// X = X + P
+      regZ[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regRes[j], SC_ZERO); // z = D_inv * R, that is, D \ R.
+      regP[j]->update(SC_ONE/theta, *regZ[j], SC_ZERO); // P = 1/theta Z
+      regX[j]->update(SC_ONE, *regP[j], SC_ONE); // X = X + P
     }
   }
 
@@ -491,7 +496,7 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> params,
     dtemp1 = rhokp1 * rhok;
     dtemp2 = SC_TWO * rhokp1 * delta;
     rhok = rhokp1;
-    for (int j=0; j < maxRegPerProc; j++) {
+    for (int j = 0; j < maxRegPerProc; j++) {
       regP[j]->update(dtemp2, *regZ[j], dtemp1);// P = dtemp2*Z + dtemp1*P
       regX[j]->update(SC_ONE, *regP[j], SC_ONE);// X = X + P
     }
