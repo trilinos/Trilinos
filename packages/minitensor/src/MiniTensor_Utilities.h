@@ -42,6 +42,8 @@
 #if !defined(MiniTensor_Utilities_h)
 #define MiniTensor_Utilities_h
 
+#include <type_traits>
+
 #include "MiniTensor_config.h"
 #include "Sacado.hpp"
 
