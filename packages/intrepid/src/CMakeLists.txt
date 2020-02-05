@@ -63,7 +63,6 @@ APPEND_SET(HEADERS
   APPEND_SET(HEADERS ${HEADERS}
   )
 
-
 #
 # Discretization headers
 #

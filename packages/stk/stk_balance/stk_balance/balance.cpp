@@ -8,6 +8,7 @@
 #include "internal/balanceCoincidentElements.hpp"
 #include "internal/balanceCommandLine.hpp"
 #include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
+#include "internal/NodeBalancer.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Comm.hpp"
@@ -261,16 +262,27 @@ bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData&
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
 {
-    if( balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE )
+    if (balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE)
     {
         return loadBalance(balanceSettings, stkMeshBulkData, stkMeshBulkData.parallel_size(), selectors);
     }
     return false;
 }
 
+bool balanceStkMeshNodes(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
+{
+    if ((balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE) && balanceSettings.useNodeBalancer())
+    {
+      internal::NodeBalancer nodeBalancer(stkMeshBulkData);
+      return nodeBalancer.balance_node_entities(balanceSettings.getNodeBalancerTargetLoadBalance(),
+                                                balanceSettings.getNodeBalancerMaxIterations());
+    }
+    return false;
+}
+
 bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData)
 {
-    if(colorSettings.getGraphOption() == BalanceSettings::COLOR_MESH )
+    if (colorSettings.getGraphOption() == BalanceSettings::COLOR_MESH )
     {
       return colorMesh(colorSettings, stkMeshBulkData, {&(stkMeshBulkData.mesh_meta_data().locally_owned_part())});
     }

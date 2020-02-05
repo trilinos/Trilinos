@@ -1,6 +1,5 @@
 #include <stk_mesh/base/MeshDiagnostics.hpp>
 #include <stddef.h>                     // for size_t, nullptr
-#include <string>                       // for string
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <map>
 #include <string>

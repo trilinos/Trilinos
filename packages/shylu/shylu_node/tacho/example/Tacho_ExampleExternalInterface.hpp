@@ -19,13 +19,18 @@ namespace tacho {
      INDEX_LENGTH
     };
 
-  typedef Kokkos::View<double*> ViewVectorType;
-  typedef Kokkos::View<int*> ViewVectorTypeInt;
+  using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type;
+  using exec_space = typename device_type::execution_space;
+  
+  using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type;
+  using host_space = typename host_device_type::execution_space;
+
+  using ViewVectorType = Kokkos::View<double*,device_type>; 
+  using ViewVectorTypeInt = Kokkos::View<int*,device_type>; 
 
   template <class SX> class tachoSolver
   {
   public:
-    using exec_space = Kokkos::DefaultExecutionSpace;
     using sched_type = Kokkos::TaskSchedulerMultiple<exec_space>;
     typedef Tacho::Solver<SX,sched_type> solver_type;
 

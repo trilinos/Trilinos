@@ -1,0 +1,18 @@
+@PACKAGE_INIT@ 
+
+# Compute paths
+GET_FILENAME_COMPONENT(KokkosKernels_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+include(CMakeFindDependencyMacro)
+
+@KOKKOSKERNELS_TPL_EXPORTS@
+
+find_dependency(Kokkos HINTS @Kokkos_DIR@)
+
+SET(Kokkos_ENABLE_OPENMP  @Kokkos_ENABLE_OPENMP@)
+SET(Kokkos_ENABLE_CUDA    @Kokkos_ENABLE_CUDA@)
+SET(Kokkos_ENABLE_PTHREAD @Kokkos_ENABLE_PTHREAD@) 
+SET(Kokkos_ENABLE_SERIAL  @Kokkos_ENABLE_SERIAL@)
+
+INCLUDE("${KokkosKernels_CMAKE_DIR}/KokkosKernelsTargets.cmake")
+

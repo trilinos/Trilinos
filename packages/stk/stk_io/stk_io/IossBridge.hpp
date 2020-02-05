@@ -453,6 +453,14 @@ void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
  */
 bool is_part_io_part(const mesh::Part &part);
 
+bool is_part_io_part(const stk::mesh::Part* part);
+
+Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part);
+
+std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& meta, stk::mesh::EntityRank rank);
+
+std::vector<Ioss::EntityType> get_ioss_entity_types(stk::mesh::Part& part);
+
 std::string getPartName(stk::mesh::Part& part);
 
 void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName);
@@ -463,6 +471,11 @@ void set_original_topology_type(stk::mesh::Part& part);
 void set_original_topology_type(stk::mesh::Part& part, const std::string& origTopo);
 std::string get_original_topology_type(stk::mesh::Part& part);
 bool has_original_topology_type(stk::mesh::Part& part);
+
+void set_topology_type(stk::mesh::Part& part);
+void set_topology_type(stk::mesh::Part& part, const std::string& origTopo);
+std::string get_topology_type(stk::mesh::Part& part);
+bool has_topology_type(stk::mesh::Part& part);
 
 void set_original_part_id(stk::mesh::Part& part, const int64_t originalId);
 int64_t get_original_part_id(stk::mesh::Part& part);

@@ -319,8 +319,9 @@ crsMat_t3 run_experiment(
 	  row_mapC = lno_view_t
 			  ("non_const_lnow_row",
 					  m + 1);
-	  entriesC = lno_nnz_view_t ("");
-	  valuesC = scalar_view_t ("");
+	  entriesC = lno_nnz_view_t ("entriesC (empty)", 0);
+	  valuesC = scalar_view_t ("valuesC (empty)", 0);
+
 
 	  Kokkos::Impl::Timer timer1;
 	  spgemm_symbolic (

@@ -66,6 +66,7 @@ public:
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData);
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
+bool balanceStkMeshNodes(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData);
 bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData);
 void run_stk_rebalance(const ParsedOptions& options, MPI_Comm comm);
 void run_stk_balance_with_settings(const std::string& outputDirectory, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions);
