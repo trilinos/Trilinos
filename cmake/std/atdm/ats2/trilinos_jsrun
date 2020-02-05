@@ -13,6 +13,11 @@ function debug_print {
   fi
 }
 
+if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]]; then
+  echo "WARNING, you have not set TPETRA_ASSUME_CUDA_AWARE_MPI=0 or 1, defaulting to TPETRA_ASSUME_CUDA_AWARE_MPI=0"
+  export TPETRA_ASSUME_CUDA_AWARE=0
+fi
+
 for i in "${!args[@]}";
 do
   arg=${args[${i}]}
@@ -68,7 +73,7 @@ if [ "$np_is_one" == "true" ]; then
       debug_print "arg=$arg, found -M, prepending -disable_gpu_hooks"
       ip1=$(($i+1));
       # single quotes matter, as the argument to -M needs to be all args originally quoted to it
-      args[${ip1}]="'-disable_gpu_hooks ${args[${ip1}]}'"
+      args[${ip1}]="-disable_gpu_hooks ${args[${ip1}]}"
       debug_print "updated arg = ${args[${ip1}]}"
       added_disable="true"
       break
@@ -97,7 +102,7 @@ if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]
       debug_print "arg=$arg, found -M, prepending -gpu"
       ip1=$(($i+1));
       # single quotes matter, as the argument to -M needs to be all args originally quoted to it
-      args[${ip1}]="'-gpu ${args[${ip1}]}'"
+      args[${ip1}]="-gpu ${args[${ip1}]}"
       added_arg="true"
       break
     fi
@@ -112,8 +117,8 @@ if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]
 fi
 
 if [ "$ECHO_CMD" == "1" ]; then
-  1>&2 echo "TPETRA_ASSUME_CUDA_AWARE=${TPETRA_ASSUME_CUDA_AWARE_MPI} BEFORE: jsrun ${orig_args[@]}"
-  1>&2 echo "TPETRA_ASSUME_CUDA_AWARE=${TPETRA_ASSUME_CUDA_AWARE_MPI} AFTER : jsrun ${args[@]}"
+  1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
+  1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} AFTER : jsrun " $(printf "'%s' " "${args[@]}")
 fi
-eval jsrun ${args[@]}
+eval jsrun $(printf "'%s' " "${args[@]}")
 
