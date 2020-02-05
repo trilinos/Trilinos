@@ -463,8 +463,7 @@ public:
   {
     Kokkos::View<gno_t *, typename node_t::device_type>
       kokkos_ids("gids", getLocalNumIDs());
-    typename decltype(kokkos_ids)::HostMirror
-      host_kokkos_ids = Kokkos::create_mirror_view(kokkos_ids);
+    auto host_kokkos_ids = Kokkos::create_mirror_view(kokkos_ids);
 
     const gno_t * gnos;
     getIDsView(gnos);
@@ -496,8 +495,7 @@ public:
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>
       kokkos_coordinates("pamgen coords", getLocalNumIDs(), getDimension());
-    typename decltype(kokkos_coordinates)::HostMirror
-      host_temp_values = Kokkos::create_mirror_view(kokkos_coordinates);
+    auto host_temp_values = Kokkos::create_mirror_view(kokkos_coordinates);
     const scalar_t * coords;
     for(int dim = 0; dim < getDimension(); ++dim) {
       int stride = -1;

@@ -323,8 +323,7 @@ private:
       // make kokkos ids
       kokkos_ids_ = Kokkos::View<gno_t *, typename node_t::device_type>(
         Kokkos::ViewAllocateWithoutInitializing("ids"), numIds_);
-      typename decltype(kokkos_ids_)::HostMirror
-        host_kokkos_ids_ = Kokkos::create_mirror_view(kokkos_ids_);
+      auto host_kokkos_ids_ = Kokkos::create_mirror_view(kokkos_ids_);
       for(int n = 0; n < numIds_; ++n) {
         host_kokkos_ids_(n) = idList_[n];
       }
@@ -349,7 +348,7 @@ private:
       size_t length;
       const scalar_t * entriesPtr;
 
-      typename decltype(this->kokkos_entries_)::HostMirror host_kokkos_entries =
+      auto host_kokkos_entries =
         Kokkos::create_mirror_view(this->kokkos_entries_);
 
       for (int idx=0; idx < numEntriesPerID_; idx++) {
@@ -378,9 +377,8 @@ private:
         numIds_, numWeights_);
 
       // setup weights
-      typename decltype(this->kokkos_weights_)::HostMirror
-        host_weight_temp_values =
-          Kokkos::create_mirror_view(this->kokkos_weights_);
+      auto host_weight_temp_values =
+        Kokkos::create_mirror_view(this->kokkos_weights_);
       for(int idx = 0; idx < numWeights_; ++idx) {
         const scalar_t * weightsPtr;
         size_t length;
