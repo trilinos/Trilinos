@@ -6500,106 +6500,68 @@ namespace Tpetra {
       // Case 1: Unpacked storage
       refill_num_row_entries = true;
       auto num_row_entries = myGraph_->k_numRowEntries_;
-      Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
-                           KOKKOS_LAMBDA(const size_t i){
-                             row_ptr_end(i) = row_ptr_beg(i) + num_row_entries(i);
-                           }
-                           );
+      Kokkos::parallel_for
+        ("Fill end row pointers", range_policy(0, N),
+         KOKKOS_LAMBDA (const size_t i) {
+          row_ptr_end(i) = row_ptr_beg(i) + num_row_entries(i);
+        });
 
     } else {
-      // mfh If packed storage, don't need row_ptr_end to be separate allocation;
-      // could just have it alias row_ptr_beg+1.
+      // FIXME (mfh 04 Feb 2020) If packed storage, don't need
+      // row_ptr_end to be separate allocation; could just have it
+      // alias row_ptr_beg+1.
+      //
       // Case 2: Packed storage
-      Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
-                           KOKKOS_LAMBDA(const size_t i){
-                             row_ptr_end(i) = row_ptr_beg(i+1);
-                           }
-                           );
+      Kokkos::parallel_for
+        ("Fill end row pointers", range_policy(0, N),
+         KOKKOS_LAMBDA (const size_t i) {
+          row_ptr_end(i) = row_ptr_beg(i+1);
+        });
     }
 
     using values_type = typename local_matrix_type::values_type;
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Allocate (copy of) values: " << k_values1D_.size() << endl;
-      std::cerr << os.str();
-    }
-    values_type values("values", k_values1D_.size());
-    Kokkos::deep_copy(values, k_values1D_);
+    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
 
-    if(myGraph_->isGloballyIndexed()) {
-      using indices_type = typename crs_graph_type::t_GlobalOrdinal_1D;
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Allocate (copy of) global column indices: "
-           << myGraph_->k_gblInds1D_.extent(0) << endl;
-        std::cerr << os.str();
-      }
-      indices_type indices("indices", myGraph_->k_gblInds1D_.extent(0));
-      Kokkos::deep_copy(indices, myGraph_->k_gblInds1D_);
-      using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg,
-        row_ptr_end, indices, values, padding, myRank, verbose);
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Free old myGraph_->k_gblInds1D_: "
-           << myGraph_->k_gblInds1D_.extent(0) << endl;
-        std::cerr << os.str();
-      }
-      myGraph_->k_gblInds1D_ = indices;
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          values.size() != indices.size(),
-          std::logic_error,
-          "After padding, values and indices should be same size");
+    if (myGraph_->isGloballyIndexed()) {
+      //using indices_type = typename crs_graph_type::t_GlobalOrdinal_1D;
+      padCrsArrays /* <row_ptrs_type, indices_type, values_type, padding_type> */ (
+        row_ptr_beg, row_ptr_end, myGraph_->k_gblInds1D_, k_values1D_,
+        padding, myRank, verbose);
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (k_values1D_.extent(0) != myGraph_->k_gblInds1D_.extent(0),
+         std::logic_error,
+         "After padding, values and indices should be same size");
     }
     else {
-      using indices_type = typename local_graph_type::entries_type::non_const_type;
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Allocate (copy of) local column indices: "
-           << myGraph_->k_lclInds1D_.extent(0) << endl;
-        std::cerr << os.str();
-      }
-      indices_type indices("indices", myGraph_->k_lclInds1D_.extent(0));
-      Kokkos::deep_copy(indices, myGraph_->k_lclInds1D_);
-      using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg,
-        row_ptr_end, indices, values, padding, myRank, verbose);
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Free old myGraph_->k_lclInds1D_: "
-           << myGraph_->k_lclInds1D_.extent(0) << endl;
-        std::cerr << os.str();
-      }
-      myGraph_->k_lclInds1D_ = indices;
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          values.size() != indices.size(),
-          std::logic_error,
-          "After padding, values and indices should be same size");
+      //using indices_type = typename local_graph_type::entries_type::non_const_type;
+      padCrsArrays /* <row_ptrs_type,indices_type,values_type,padding_type> */ (
+        row_ptr_beg, row_ptr_end, myGraph_->k_lclInds1D_, k_values1D_,
+        padding, myRank, verbose);
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (k_values1D_.extent(0) != myGraph_->k_lclInds1D_.extent(0),
+         std::logic_error,
+         "After padding, values and indices should be same size");
     }
 
     if (refill_num_row_entries) {
       auto num_row_entries = myGraph_->k_numRowEntries_;
-      Kokkos::parallel_for("Fill num entries", range_policy(0, N),
-                           KOKKOS_LAMBDA(const size_t i){
-                             num_row_entries(i) = row_ptr_end(i) - row_ptr_beg(i);
-                           }
-                           );
+      Kokkos::parallel_for
+        ("Fill num entries", range_policy(0, N),
+         KOKKOS_LAMBDA (const size_t i) {
+          num_row_entries(i) = row_ptr_end(i) - row_ptr_beg(i);
+        });
     }
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Free old myGraph_->k_rowPtrs_: "
-         << myGraph_->k_rowPtrs_.extent(0) << endl;
+      os << *prefix << "Assign myGraph_->k_rowPtrs_: "
+         << "old=" << myGraph_->k_rowPtrs_.extent(0)
+         << ", new=" << row_ptr_beg.extent(0) << endl;
       std::cerr << os.str();
     }
     myGraph_->k_rowPtrs_ = row_ptr_beg;
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Free old k_values1D_: "
-         << k_values1D_.extent(0) << endl;
-      std::cerr << os.str();
-    }
-    k_values1D_ = values;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
