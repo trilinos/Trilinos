@@ -7812,7 +7812,7 @@ namespace Tpetra {
         // rank again here.  This is an error message, so the small
         // run-time cost doesn't matter.  See #1887.
         std::ostringstream os;
-        os << "(Proc " << comm.getRank () << ") " << msg->str () << endl;
+        os << "Proc " << comm.getRank () << ": " << msg->str () << endl;
         msg = std::unique_ptr<std::ostringstream> (new std::ostringstream ());
         ::Tpetra::Details::gathervPrint (*msg, os.str (), comm);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
