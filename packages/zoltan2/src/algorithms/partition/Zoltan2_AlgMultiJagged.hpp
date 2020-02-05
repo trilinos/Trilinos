@@ -3973,8 +3973,6 @@ struct ReduceWeightsFunctor {
       for(int n = 2 + value_count_weights;
         n < value_count_weights + value_count_rightleft - 2; n += 2) {
 #ifdef KOKKOS_ENABLE_CUDA
-
-#ifdef KOKKOS_ENABLE_CUDA
         scalar_t new_value = shared_ptr[n+1];
         scalar_t prev_value = current_right_closest(insert_right);
         while(new_value < prev_value) {
@@ -3991,15 +3989,6 @@ struct ReduceWeightsFunctor {
 
         ++insert_left;
         ++insert_right;
-#else
-        if(shared_ptr[n] > teamSum[n]) {
-          teamSum[n] = shared_ptr[n];
-        }
-        if(shared_ptr[n+1] < teamSum[n+1]) {
-          teamSum[n+1] = shared_ptr[n+1];
-        }
-#endif
-
 #else // KOKKOS_ENABLE_CUDA
         if(array.ptr[n] > teamSum[n]) {
           teamSum[n] = array.ptr[n];
