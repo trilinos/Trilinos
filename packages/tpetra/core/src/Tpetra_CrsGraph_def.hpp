@@ -5364,7 +5364,7 @@ namespace Tpetra {
 
         const size_t orig_num_merged =
           size_t(src_row_inds_view.size()) + size_t(tgt_row_inds_view.size());
-        if (merged_inds.size() < orig_num_merged) {
+        if (merged_inds.size() != orig_num_merged) {
           merged_inds.resize(orig_num_merged);
         }
         auto merged_end =
@@ -5482,7 +5482,7 @@ namespace Tpetra {
 
         const size_t orig_num_merged =
           size_t(src_row_inds_view.size()) + size_t(tgt_row_inds_view.size());
-        if (merged_inds.size() < orig_num_merged) {
+        if (merged_inds.size() != orig_num_merged) {
           merged_inds.resize(orig_num_merged);
         }
         auto merged_end =
@@ -5575,7 +5575,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>
+  std::vector<size_t>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   computePaddingForCrsMatrixUnpack(
     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
@@ -5583,6 +5583,10 @@ namespace Tpetra {
     Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
     const bool verbose) const
   {
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
+    using Details::Impl::getSortedMergedGlobalRow;
+    using Details::PackTraits;
     using std::endl;
     const char tfecfFuncName[] = "computePaddingForCrsMatrixUnpack";
 
@@ -5590,53 +5594,101 @@ namespace Tpetra {
     if (verbose) {
       prefix = this->createPrefix("CrsGraph", tfecfFuncName);
       std::ostringstream os;
-      os << *prefix << "importLIDs.extent(0): "
-         << importLIDs.extent(0)
-         << ", imports.extent(0): "
-         << imports.extent(0)
-         << ", numPacketsPerLID.extent(0): "
-         << numPacketsPerLID.extent(0)
-         << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str();
     }
 
-    // Creating padding for each new incoming index
-    Kokkos::fence ();  // Make sure device sees changes made by host
-    auto numEnt = static_cast<size_t> (importLIDs.extent (0));
-
-    // if (imports.need_sync_host()) {
-    //   imports.sync_host();
-    // }
+    Kokkos::fence ();  // Make sure host sees changes made by device
+    if (imports.need_sync_host()) {
+      imports.sync_host();
+    }
     if (numPacketsPerLID.need_sync_host ()) {
       numPacketsPerLID.sync_host();
     }
 
     auto importLIDs_h = importLIDs.view_host();
-    //auto imports_h = imports.view_host();
+    auto imports_h = imports.view_host();
     auto numPacketsPerLID_h = numPacketsPerLID.view_host();
 
-    // without unpacking the import/export buffer, we don't know how many of the
-    // numPacketsPerLID[i] LIDs exist in the target. Below, it is assumed that
-    // none do, and padding is requested for all.
-    //
-    // Use tmp_padding since Kokkos::UnorderedMap does not allow re-insertion
-    std::map<local_ordinal_type, size_t> tmp_padding;
-    for (size_t i = 0; i < numEnt; ++i)
-      tmp_padding[importLIDs_h[i]] += numPacketsPerLID_h[i];
+    const LO numImports = static_cast<LO>(importLIDs.extent(0));
+    const bool tgtSorted = isSorted();
+    const bool tgtMerged = isMerged();
 
-    using padding_type = Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>;
-    padding_type padding (importLIDs.extent (0));
-    for (auto&& item : tmp_padding) {
-      auto result = padding.insert (item.first, item.second);
-      // FIXME (mfh 09 Apr 2019) See note in other computeCrsPaddingoverload.
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (result.failed(), std::runtime_error,
-         ": Unable to insert padding for LID " << item.first);
+    std::vector<size_t> padding(numImports);
+    std::vector<GO> gblColIndsReceived;
+    std::vector<GO> gblColIndsTgt;
+    std::vector<GO> gblColIndsMerged;
+
+    size_t srcNumDups = 0;
+    size_t tgtNumDups = 0;
+    size_t mergedNumDups = 0;
+
+    size_t offset = 0;
+    for (LO whichImp = 0; whichImp < numImports; ++whichImp) {
+      const LO lclRowInd = importLIDs_h[whichImp];
+      const GO gblRowInd = rowMap_->getGlobalElement(lclRowInd);
+
+      const size_t numBytes = numPacketsPerLID_h[whichImp];
+      if (numBytes == 0) {
+        continue;
+      }
+      LO numEntriesReceived = 0;
+      const size_t numEntBeg = offset;
+      const size_t numEntLen =
+        PackTraits<LO>::packValueCount(numEntriesReceived);
+      PackTraits<LO>::unpackValue(numEntriesReceived,
+                                  imports_h.data() + numEntBeg);
+      const size_t gidsBeg = numEntBeg + numEntLen;
+
+      if (gblColIndsReceived.size() < size_t(numEntriesReceived)) {
+        gblColIndsReceived.resize(numEntriesReceived);
+      }
+      (void) PackTraits<GO>::unpackArray(gblColIndsReceived.data(),
+                                         imports_h.data() + gidsBeg,
+                                         numEntriesReceived);
+      std::sort(gblColIndsReceived.begin(), gblColIndsReceived.end());
+      auto newEnd = std::unique(gblColIndsReceived.begin(),
+                                gblColIndsReceived.end());
+      const size_t numEntriesUnique =
+        static_cast<size_t>(newEnd - gblColIndsReceived.begin());
+      gblColIndsReceived.resize(numEntriesUnique);
+      srcNumDups += (numEntriesReceived - numEntriesUnique);
+
+      size_t origNumTgtEnt = 0;
+      size_t curNumTgtDups = 0;
+      Teuchos::ArrayView<GO> gblColIndsTgtView =
+        getSortedMergedGlobalRow(gblColIndsTgt, origNumTgtEnt,
+                                 curNumTgtDups, *this, gblRowInd,
+                                 tgtSorted, tgtMerged);
+      tgtNumDups += curNumTgtDups;
+
+      const size_t origNumMerged = numEntriesUnique +
+        size_t(gblColIndsTgtView.size());
+      if (gblColIndsMerged.size() != origNumMerged) {
+        gblColIndsMerged.resize(origNumMerged);
+      }
+      auto mergedNewEnd =
+        std::merge(gblColIndsReceived.begin(), gblColIndsReceived.end(),
+                   gblColIndsTgtView.begin(), gblColIndsTgtView.end(),
+                   gblColIndsMerged.begin());
+      const size_t newNumMerged =
+        static_cast<size_t>(mergedNewEnd - gblColIndsMerged.begin());
+      mergedNumDups += (origNumMerged - newNumMerged);
+
+      const size_t extraSpaceNeeded = newNumMerged >= origNumTgtEnt ?
+        newNumMerged - origNumTgtEnt :
+        size_t(0);
+      padding[whichImp] = extraSpaceNeeded;
+      offset += numBytes;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (padding.failed_insert(), std::runtime_error,
-       ": Failed to insert one or more indices into padding map");
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done: srcNumDups: " << srcNumDups
+         << ", tgtNumDups: " << tgtNumDups
+         << ", mergedNumDups: " << mergedNumDups << endl;
+      std::cerr << os.str();
+    }
     return padding;
   }
 

@@ -7894,6 +7894,23 @@ namespace Tpetra {
     const CombineMode combineMode,
     const bool verbose)
   {
+    using std::endl;
+    using LO = local_ordinal_type;
+    const char tfecfFuncName[] = "unpackAndCombineImpl";
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "importLIDs.extent(0): "
+         << importLIDs.extent(0)
+         << ", imports.extent(0): "
+         << imports.extent(0)
+         << ", numPacketsPerLID.extent(0): "
+         << numPacketsPerLID.extent(0)
+         << endl;
+      std::cerr << os.str();
+    }
+
     if (isStaticGraph ()) {
       using Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew (*this, imports, numPacketsPerLID,
@@ -7901,8 +7918,31 @@ namespace Tpetra {
                                     distor, combineMode);
     }
     else {
-      auto padding = myGraph_->computePaddingForCrsMatrixUnpack(
-        importLIDs, imports, numPacketsPerLID, verbose);
+      std::vector<size_t> paddingVec =
+        myGraph_->computePaddingForCrsMatrixUnpack(
+          importLIDs, imports, numPacketsPerLID, verbose);
+      using padding_type =
+        Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>;
+      const LO numImports = static_cast<LO>(importLIDs.extent(0));
+      padding_type padding (numImports);
+
+      // padding gets pre-filled on devic, but we're modifying it on
+      // host here, so we need to fence to ensure that device is done.
+      Kokkos::fence();
+
+      auto importLIDs_h = importLIDs.view_host();
+      for (LO whichImp = 0; whichImp < numImports; ++whichImp) {
+        const LO lclRowInd = importLIDs_h[whichImp];
+        auto result = padding.insert(lclRowInd, paddingVec[whichImp]);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (result.failed(), std::runtime_error,
+           ": Unable to insert padding for LID " << lclRowInd);
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (padding.failed_insert(), std::runtime_error,
+         ": Failed to insert one or more indices into padding map");
+
       if (padding.size() > 0) {
         applyCrsPadding(padding, verbose);
       }
