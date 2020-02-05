@@ -7742,7 +7742,6 @@ namespace Tpetra {
       {"ADD", "REPLACE", "ABSMAX", "INSERT", "ZERO"};
 
     std::unique_ptr<std::string> prefix;
-    int myRank = 0;
     if (verbose) {
       prefix = this->createPrefix("CrsMatrix", "unpackAndCombine");
       std::ostringstream os;
@@ -7892,20 +7891,21 @@ namespace Tpetra {
       // host here, so we need to fence to ensure that device is done.
       Kokkos::fence();
 
-      auto importLIDs_h = importLIDs.view_host();
-      for (LO whichImp = 0; whichImp < numImports; ++whichImp) {
-        const LO lclRowInd = importLIDs_h[whichImp];
-        auto result = padding.insert(lclRowInd, paddingVec[whichImp]);
+      if (paddingVec.size() != 0) {
+        auto importLIDs_h = importLIDs.view_host();
+        for (LO whichImp = 0; whichImp < numImports; ++whichImp) {
+          const LO lclRowInd = importLIDs_h[whichImp];
+          auto result =
+            padding.insert(lclRowInd, paddingVec[whichImp]);
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (result.failed(), std::runtime_error,
+             ": Unable to insert padding for LID " << lclRowInd);
+        }
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (result.failed(), std::runtime_error,
-           ": Unable to insert padding for LID " << lclRowInd);
+          (padding.failed_insert(), std::runtime_error,
+           ": Failed to insert one or more indices into padding map");
       }
-
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (padding.failed_insert(), std::runtime_error,
-         ": Failed to insert one or more indices into padding map");
-
-      if (padding.size() > 0) {
+      if (padding.size() != 0) {
         applyCrsPadding(padding, verbose);
       }
       unpackAndCombineImplNonStatic(importLIDs, imports,
