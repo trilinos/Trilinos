@@ -278,11 +278,6 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
 
-    //virtual void setObserver(Teuchos::RCP<StepperRKObserver<Scalar> > obs);
-
-    //virtual Teuchos::RCP<StepperRKObserver<Scalar> > getObserver() const
-    //{ return stepperRKObserver_; }
-
     // deprecated
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);

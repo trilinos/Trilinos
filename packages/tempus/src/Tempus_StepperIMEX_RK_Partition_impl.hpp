@@ -336,18 +336,6 @@ void StepperIMEX_RK_Partition<Scalar>::setModelPair(
 }
 
 
-//template<class Scalar>
-//void StepperIMEX_RK_Partition<Scalar>::setObserver(
-  //Teuchos::RCP<StepperRKObserver<Scalar> > obs)
-//{
-  //if (obs != Teuchos::null) stepperRKObserver_ = obs;
-
-  //if (stepperRKObserver_ == Teuchos::null)
-    //stepperRKObserver_ = Teuchos::rcp(new StepperRKObserver<Scalar>());
-
-  //this->isInitialized_ = false;
-//}
-
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)

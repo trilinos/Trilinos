@@ -94,11 +94,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    //virtual void setObserver(Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs);
-
-    //virtual Teuchos::RCP<StepperLeapfrogObserver<Scalar> > getObserver() const
-    //{ return stepperLFObserver_; }
-
     // deprecated
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);

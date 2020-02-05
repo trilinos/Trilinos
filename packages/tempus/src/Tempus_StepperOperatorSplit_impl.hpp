@@ -83,6 +83,7 @@ void StepperOperatorSplit<Scalar>::setModel(
 
 }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE 
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::setNonConstModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
@@ -95,6 +96,7 @@ void StepperOperatorSplit<Scalar>::setNonConstModel(
   }
   return;
 }
+#endif
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >

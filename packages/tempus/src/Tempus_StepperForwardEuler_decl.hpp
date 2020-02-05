@@ -71,11 +71,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    //virtual void setObserver(Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs);
-
-    //virtual Teuchos::RCP<StepperForwardEulerObserver<Scalar> > getObserver() const
-    //{ return stepperFEObserver_; }
-
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 

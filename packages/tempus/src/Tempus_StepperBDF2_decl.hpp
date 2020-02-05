@@ -77,11 +77,6 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    //virtual void setObserver(Teuchos::RCP<StepperBDF2Observer<Scalar> > obs);
-
-    //virtual Teuchos::RCP<StepperBDF2Observer<Scalar> > getObserver() const
-    //{ return stepperBDF2Observer_; }
-
     // deprecated
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
@@ -146,7 +141,6 @@ private:
 
   Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
   Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
-  //Teuchos::RCP<StepperObserver<Scalar> > stepperBDF2Observer_;
   Scalar                                     order_ = Scalar(2.0);
 };
 

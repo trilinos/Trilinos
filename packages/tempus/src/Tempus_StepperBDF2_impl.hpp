@@ -121,18 +121,6 @@ void StepperBDF2<Scalar>::setStartUpStepper(
 }
 
 
-//template<class Scalar>
-//void StepperBDF2<Scalar>::setObserver(
-  //Teuchos::RCP<StepperBDF2Observer<Scalar> > obs)
-//{
-  //if (obs != Teuchos::null) stepperBDF2Observer_ = obs;
-
-  //if (stepperBDF2Observer_ == Teuchos::null)
-    //stepperBDF2Observer_ = Teuchos::rcp(new StepperBDF2Observer<Scalar>());
-
-  //this->isInitialized_ = false;
-//}
-
 template<class Scalar>
 void StepperBDF2<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
