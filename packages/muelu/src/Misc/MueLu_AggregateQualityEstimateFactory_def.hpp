@@ -163,7 +163,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const {
 
-    const SC SCALAR_ZERO = Teuchos::ScalarTraits<SC>::zero();
     const SC SCALAR_ONE = Teuchos::ScalarTraits<SC>::one();
     const SC SCALAR_TWO = SCALAR_ONE + SCALAR_ONE;
 
