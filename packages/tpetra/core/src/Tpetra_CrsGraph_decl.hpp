@@ -2414,6 +2414,15 @@ namespace Tpetra {
     ///
     /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
     bool debug_ = getDebug();
+
+    //! Get initial value of verbose_ for this object.
+    static bool getVerbose();
+
+    /// \brief Whether to do extra debug checks.
+    ///
+    /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
+    bool verbose_ = getVerbose();
+
   }; // class CrsGraph
 
   /// \brief Nonmember function to create an empty CrsGraph given a

@@ -301,6 +301,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getVerbose() {
+    return Details::Behavior::verbose("CrsGraph");
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const size_t maxNumEntriesPerRow,
@@ -1990,9 +1997,11 @@ namespace Tpetra {
                            const size_t numInputInds,
                            std::function<void(const size_t, const size_t, const size_t)> fun)
   {
+    using Details::verbosePrintArray;
     using Kokkos::View;
     using Kokkos::subview;
     using Kokkos::MemoryUnmanaged;
+    using Teuchos::ArrayView;
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
@@ -2010,13 +2019,28 @@ namespace Tpetra {
       constexpr size_t ONE (1);
       const int myRank = this->getComm()->getRank();
       std::ostringstream os;
-      os << "On MPI Process " << myRank << ": Not enough capacity to "
-        "insert " << numInputInds
+
+      os << "Proc " << myRank << ": Not enough capacity to insert "
+         << numInputInds
          << " ind" << (numInputInds != ONE ? "ices" : "ex")
          << " into local row " << lclRow << ", which currently has "
          << rowInfo.numEntries
          << " entr" << (rowInfo.numEntries != ONE ? "ies" : "y")
-         << " and total allocation size " << rowInfo.allocSize << ".";
+         << " and total allocation size " << rowInfo.allocSize
+         << ".  ";
+      const size_t maxNumToPrint =
+        Details::Behavior::verbosePrintCountThreshold();
+      ArrayView<const GO> inputGblColIndsView(inputGblColInds,
+                                              numInputInds);
+      verbosePrintArray(os, inputGblColIndsView, "Input global "
+                        "column indices", maxNumToPrint);
+      os << ", ";
+      const GO* const curGblColInds =
+        k_gblInds1D_.data() + rowInfo.offset1D;
+      ArrayView<const GO> curGblColIndsView(curGblColInds,
+                                            rowInfo.numEntries);
+      verbosePrintArray(os, curGblColIndsView, "Current global "
+                        "column indices", maxNumToPrint);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, os.str());
     }
@@ -2755,10 +2779,7 @@ namespace Tpetra {
        "Local row index " << localRow << " is not in the row Map "
        "on the calling process.");
     if (! indicesAreAllocated ()) {
-      // Allocating indices takes a while and only needs to be done
-      // once per MPI process, so it's OK to query TPETRA_VERBOSE.
-      const bool verbose = Details::Behavior::verbose("CrsGraph");
-      allocateIndices (LocalIndices, verbose);
+      allocateIndices (LocalIndices, verbose_);
     }
 
     if (debug_) {
@@ -2840,11 +2861,8 @@ namespace Tpetra {
       "You are not allowed to call this method if fill is not active.  "
       "If fillComplete has been called, you must first call resumeFill "
       "before you may insert indices.");
-    if (! this->indicesAreAllocated ()) {
-      // Allocating indices takes a while and only needs to be done
-      // once per MPI process, so it's OK to query TPETRA_VERBOSE.
-      const bool verbose = Details::Behavior::verbose("CrsGraph");
-      this->allocateIndices (GlobalIndices, verbose);
+    if (! indicesAreAllocated ()) {
+      allocateIndices (GlobalIndices, verbose_);
     }
     const LO lclRow = this->rowMap_->getLocalElement (gblRow);
     if (lclRow != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
@@ -2932,16 +2950,13 @@ namespace Tpetra {
        "You are not allowed to call this method if fill is not active.  "
        "If fillComplete has been called, you must first call resumeFill "
        "before you may insert indices.");
-    if (! this->indicesAreAllocated ()) {
-      // Allocating indices takes a while and only needs to be done
-      // once per MPI process, so it's OK to query TPETRA_VERBOSE.
-      const bool verbose = Details::Behavior::verbose("CrsGraph");
-      this->allocateIndices (GlobalIndices, verbose);
+    if (! indicesAreAllocated ()) {
+      allocateIndices (GlobalIndices, verbose_);
     }
 
     Teuchos::ArrayView<const GO> gblColInds_av (gblColInds, numGblColInds);
     // If we have a column Map, use it to filter the entries.
-    if (! this->colMap_.is_null ()) {
+    if (! colMap_.is_null ()) {
       const map_type& colMap = * (this->colMap_);
 
       LO curOffset = 0;
@@ -3012,10 +3027,7 @@ namespace Tpetra {
       ! rowMap_->isNodeLocalElement (lrow), std::runtime_error,
       "Local row " << lrow << " is not in the row Map on the calling process.");
     if (! indicesAreAllocated ()) {
-      // Allocating indices takes a while and only needs to be done
-      // once per MPI process, so it's OK to query TPETRA_VERBOSE.
-      const bool verbose = Details::Behavior::verbose("CrsGraph");
-      allocateIndices (LocalIndices, verbose);
+      allocateIndices (LocalIndices, verbose_);
     }
 
     // FIXME (mfh 13 Aug 2014) What if they haven't been cleared on
@@ -3514,7 +3526,7 @@ namespace Tpetra {
   {
     using std::endl;
     const char tfecfFuncName[] = "fillComplete: ";
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -5012,7 +5024,7 @@ namespace Tpetra {
     using this_type = CrsGraph<LO, GO, node_type>;
     using row_graph_type = RowGraph<LO, GO, node_type>;
     const char tfecfFuncName[] = "copyAndPermute: ";
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -5324,7 +5336,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "computeCrsPaddingForSameIds: ";
 
     std::unique_ptr<std::string> prefix;
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
     if (verbose) {
       prefix =
         this->createPrefix("CrsGraph", "computeCrsPaddingForSameIDs");
@@ -5452,7 +5464,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "computeCrsPaddingForPermutedIds";
 
     std::unique_ptr<std::string> prefix;
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
     if (verbose) {
       prefix = this->createPrefix("CrsGraph", tfecfFuncName);
       std::ostringstream os;
@@ -5747,7 +5759,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "packAndPrepare: ";
     ProfilingRegion region_papn ("Tpetra::CrsGraph::packAndPrepare");
 
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
     std::unique_ptr<std::string> prefix;
     if (verbose) {
       prefix = this->createPrefix("CrsGraph", "packAndPrepare");
@@ -5888,7 +5900,7 @@ namespace Tpetra {
     using device_execution_space =
       typename device_type::execution_space;
     const char tfecfFuncName[] = "packFillActive: ";
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
 
     const auto numExportLIDs = exportLIDs.size ();
     std::unique_ptr<std::string> prefix;
@@ -6106,7 +6118,7 @@ namespace Tpetra {
     using exports_dv_type =
       Kokkos::DualView<packet_type*, buffer_device_type>;
     const char tfecfFuncName[] = "packFillActiveNew: ";
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
 
     const auto numExportLIDs = exportLIDs.extent (0);
     std::unique_ptr<std::string> prefix;
@@ -6372,7 +6384,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "unpackAndCombine: ";
 
     ProfilingRegion regionCGC("Tpetra::CrsGraph::unpackAndCombine");
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -6578,7 +6590,7 @@ namespace Tpetra {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     const char tfecfFuncName[] = "getLocalDiagOffsets: ";
-    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    const bool verbose = verbose_;
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
