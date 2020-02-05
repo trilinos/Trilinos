@@ -48,8 +48,6 @@ namespace Tacho {
     size_type_array _ap;  /// ap_ordinal is used to interface to cuSolver
     ordinal_type_array _ap_ordinal, _aj; 
     
-    ordinal_type_array _perm, _peri;
-    
     value_type_array _buf;
     
     ordinal_type _verbose;
@@ -193,12 +191,13 @@ namespace Tacho {
       timer.reset();
       /// solve A x = t
       const ordinal_type len = x.extent(0), nrhs = x.extent(1);
-      for (ordinal_type i=0;i<nrhs;++i) 
+      for (ordinal_type i=0;i<nrhs;++i) {
         _status = cusolverSpDcsrcholSolve(_handle, 
                                           _m, 
                                           b.data()+i*len, x.data()+i*len,
                                           _chol_info,
                                           _buf.data()); checkStatus("cusolverSpDcsrcholSolve");
+      }
       Kokkos::fence();
       const double t_solve = timer.seconds();
       if (_verbose) {
