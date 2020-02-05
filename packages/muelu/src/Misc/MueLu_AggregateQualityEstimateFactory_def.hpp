@@ -331,8 +331,8 @@ namespace MueLu {
       MT maxEigenVal = MT_ZERO;
 
       for (int i=LO_ZERO;i<aggSize;++i) {
-
-        TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
+        // NOTE: In theory, the eigenvalues should be nearly real
+        //TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
         maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
 
       }
