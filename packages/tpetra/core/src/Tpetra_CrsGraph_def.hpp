@@ -5575,6 +5575,72 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  computePaddingForCrsMatrixUnpack(
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+    Kokkos::DualView<char*, buffer_device_type> imports,
+    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+    const bool verbose) const
+  {
+    using std::endl;
+    const char tfecfFuncName[] = "computePaddingForCrsMatrixUnpack";
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsGraph", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "importLIDs.extent(0): "
+         << importLIDs.extent(0)
+         << ", imports.extent(0): "
+         << imports.extent(0)
+         << ", numPacketsPerLID.extent(0): "
+         << numPacketsPerLID.extent(0)
+         << endl;
+      std::cerr << os.str();
+    }
+
+    // Creating padding for each new incoming index
+    Kokkos::fence ();  // Make sure device sees changes made by host
+    auto numEnt = static_cast<size_t> (importLIDs.extent (0));
+
+    // if (imports.need_sync_host()) {
+    //   imports.sync_host();
+    // }
+    if (numPacketsPerLID.need_sync_host ()) {
+      numPacketsPerLID.sync_host();
+    }
+
+    auto importLIDs_h = importLIDs.view_host();
+    //auto imports_h = imports.view_host();
+    auto numPacketsPerLID_h = numPacketsPerLID.view_host();
+
+    // without unpacking the import/export buffer, we don't know how many of the
+    // numPacketsPerLID[i] LIDs exist in the target. Below, it is assumed that
+    // none do, and padding is requested for all.
+    //
+    // Use tmp_padding since Kokkos::UnorderedMap does not allow re-insertion
+    std::map<local_ordinal_type, size_t> tmp_padding;
+    for (size_t i = 0; i < numEnt; ++i)
+      tmp_padding[importLIDs_h[i]] += numPacketsPerLID_h[i];
+
+    using padding_type = Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>;
+    padding_type padding (importLIDs.extent (0));
+    for (auto&& item : tmp_padding) {
+      auto result = padding.insert (item.first, item.second);
+      // FIXME (mfh 09 Apr 2019) See note in other computeCrsPaddingoverload.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (result.failed(), std::runtime_error,
+         ": Unable to insert padding for LID " << item.first);
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (padding.failed_insert(), std::runtime_error,
+       ": Failed to insert one or more indices into padding map");
+    return padding;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   packAndPrepare

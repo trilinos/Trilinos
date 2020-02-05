@@ -7901,9 +7901,8 @@ namespace Tpetra {
                                     distor, combineMode);
     }
     else {
-      auto padding =
-        myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID,
-                                    verbose);
+      auto padding = myGraph_->computePaddingForCrsMatrixUnpack(
+        importLIDs, imports, numPacketsPerLID, verbose);
       if (padding.size() > 0) {
         applyCrsPadding(padding, verbose);
       }
