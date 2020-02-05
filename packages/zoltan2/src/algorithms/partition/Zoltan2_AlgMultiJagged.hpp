@@ -4755,7 +4755,6 @@ mj_create_new_partitions(
       total_on_cut + 1); // extra index to use for tracking
   }
 
-
   // here we need to parallel reduce an array to count coords in each part
   // atomically adding, especially for low part count would kill us
   // in the original setup we kept arrays allocated for each thread but for
@@ -4764,21 +4763,8 @@ mj_create_new_partitions(
   // cuda.
   typedef Kokkos::TeamPolicy<typename mj_node_t::execution_space> policy_t;
 
-  // This particular functor is not working properly if the coord
-  // count is smaller than the num teams. For example 25 coords in a simple
-  // test with 60 teams caused issues. It is fixed by keeping the num teams
-  // as N/32. We discussed and decided to just leave this for now since it's
-  // working and it's only relevant to tiny test problems.
-
   // if not set use 60 - somewhat arbitrary based on initial performance tests
   int use_num_teams = mj_num_teams ? mj_num_teams : 60;
-  mj_lno_t range = coordinate_end_index - coordinate_begin_index;
-  if(use_num_teams > range/32) {
-    use_num_teams = range/32;
-  }
-  if(use_num_teams < 1) {
-    use_num_teams = 1;
-  }
 
   auto policy_ReduceFunctor = policy_t(use_num_teams, Kokkos::AUTO);
   typedef int array_t;
@@ -4970,6 +4956,7 @@ mj_create_new_partitions(
     block_policy(num_teams, num_threads);
   typedef typename Kokkos::TeamPolicy<typename mj_node_t::execution_space>::
     member_type member_type;
+  mj_lno_t range = coordinate_end_index - coordinate_begin_index;
   mj_lno_t block_size = range / num_teams + 1;
   Kokkos::parallel_for(block_policy, KOKKOS_LAMBDA(member_type team_member) {
     int team = team_member.league_rank();
