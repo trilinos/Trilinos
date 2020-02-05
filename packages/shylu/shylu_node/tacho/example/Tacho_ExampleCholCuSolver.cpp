@@ -39,9 +39,8 @@ int main (int argc, char *argv[]) {
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace",   detail);
 
   Kokkos::Impl::Timer timer;
-
-#if defined(KOKKOS_ENABLE_CUDA)
   int r_val = 0;
+#if defined(KOKKOS_ENABLE_CUDA)
   {
     ///
     /// read from crs matrix

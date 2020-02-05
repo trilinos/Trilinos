@@ -265,6 +265,8 @@ namespace Tacho {
       printf("             time for extra work e.g.,copy rhs:               %10.6f s\n", stat.t_extra);
       printf("             time for numeric solve:                          %10.6f s\n", stat.t_solve);
       printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
+      printf("  Memory\n");
+      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
       printf("\n");
     }
 
