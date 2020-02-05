@@ -6530,9 +6530,9 @@ namespace Tpetra {
       const auto newColIndsLen = myGraph_->k_gblInds1D_.extent(0);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (newValuesLen != newColIndsLen, std::logic_error,
-         "After padding, values and indices should be same size, but "
-         "k_values1D_.extent(0)=" << newValuesLen << " != myGraph_->"
-         "k_gblInds1D_.extent(0)=" << newColIndsLen << ".");
+         ": After padding, k_values1D_.extent(0)=" << newValuesLen
+         << " != myGraph_->k_gblInds1D_.extent(0)=" << newColIndsLen
+         << suffix);
     }
     else {
       padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->k_lclInds1D_,
@@ -6541,9 +6541,9 @@ namespace Tpetra {
       const auto newColIndsLen = myGraph_->k_lclInds1D_.extent(0);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (newValuesLen != newColIndsLen, std::logic_error,
-         "After padding, values and indices should be same size, but "
-         "k_values1D_.extent(0)=" << newValuesLen << " != myGraph_->"
-         "k_lclInds1D_.extent(0)=" << newColIndsLen << ".");
+         ": After padding, k_values1D_.extent(0)=" << newValuesLen
+         << " != myGraph_->k_lclInds1D_.extent(0)=" << newColIndsLen
+         << suffix);
     }
 
     if (refill_num_row_entries) {
