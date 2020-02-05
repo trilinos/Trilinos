@@ -1477,9 +1477,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   const GlobalOrdinal mynrow = (rank==0 ? nrow: 0);
   RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (nrow, mynrow, 0, comm));
   RCP<Tpetra_CrsGraph> graph (new Tpetra_CrsGraph (map, size_t(3), Tpetra::StaticProfile));
-  for (GlobalOrdinal i = 0; i<nrow; ++i)
+  if (rank==0)
+    for (GlobalOrdinal i = 0; i<nrow; ++i)
       for (GlobalOrdinal j = 0; j<i+1; ++j)
-          graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
+        graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
   graph->fillComplete();
   
   RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
@@ -1491,21 +1492,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
 
-  Scalar b_value = (Scalar) 0;
-  b_value[0] = 1.;
+  if (rank==0) {
+    Scalar b_value = (Scalar) 0;
+    b_value[0] = 1.;
 
-  b->sumIntoGlobalValue(0,b_value);
+    b->sumIntoGlobalValue(0,b_value);
 
-  b_value = (Scalar) 1;
-  b_value[1] = 0.;
-  b_value[2] = 0.;
+    b_value = (Scalar) 1;
+    b_value[1] = 0.;
+    b_value[2] = 0.;
 
-  b->sumIntoGlobalValue(1,b_value);
+    b->sumIntoGlobalValue(1,b_value);
 
-  b_value = (Scalar) 2;
-  b_value[2] = 0.;
+    b_value = (Scalar) 2;
+    b_value[2] = 0.;
 
-  b->sumIntoGlobalValue(2,b_value);
+    b->sumIntoGlobalValue(2,b_value);
+  }
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
@@ -1555,7 +1558,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     out << std::endl;
 
     std::vector<int> expected_ensemble_iterations(VectorSize);
-    for (LocalOrdinal j=0; j<VectorSize; ++j){
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
       if (j==0)
         expected_ensemble_iterations[j]= 3;
       else if(j==1)
@@ -1579,8 +1582,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     // Set values in matrix
     Array<Scalar> vals(nrow);
     Scalar val;
-    for (GlobalOrdinal i=0; i<nrow; ++i){
-      for (LocalOrdinal j=0; j<VectorSize; ++j){
+    for (GlobalOrdinal i=0; i<nrow; ++i) {
+      for (LocalOrdinal j=0; j<VectorSize; ++j) {
         if (i==0 && j==0)
           val.fastAccessCoeff(j) = 1;
         else if (i==0)
@@ -1602,7 +1605,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     tol = 10*tol;
     ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
     for (GlobalOrdinal i=0; i<nrow; ++i)
-      for (LocalOrdinal j=0; j<VectorSize; ++j){
+      for (LocalOrdinal j=0; j<VectorSize; ++j) {
         // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
         TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
       }
@@ -1643,9 +1646,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   const GlobalOrdinal mynrow = (rank==0 ? nrow: 0);
   RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (nrow, mynrow, 0, comm));
   RCP<Tpetra_CrsGraph> graph (new Tpetra_CrsGraph (map, size_t(3), Tpetra::StaticProfile));
-  for (GlobalOrdinal i = 0; i<nrow; ++i)
+  if (rank==0)
+    for (GlobalOrdinal i = 0; i<nrow; ++i)
       for (GlobalOrdinal j = 0; j<i+1; ++j)
-          graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
+        graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
   graph->fillComplete();
   
   RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
@@ -1657,21 +1661,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
 
-  Scalar b_value = (Scalar) 0;
-  b_value[0] = 1.;
+  if (rank==0) {
+    Scalar b_value = (Scalar) 0;
+    b_value[0] = 1.;
 
-  b->sumIntoGlobalValue(0,b_value);
+    b->sumIntoGlobalValue(0,b_value);
 
-  b_value = (Scalar) 1;
-  b_value[1] = 0.;
-  b_value[2] = 0.;
+    b_value = (Scalar) 1;
+    b_value[1] = 0.;
+    b_value[2] = 0.;
 
-  b->sumIntoGlobalValue(1,b_value);
+    b->sumIntoGlobalValue(1,b_value);
 
-  b_value = (Scalar) 2;
-  b_value[2] = 0.;
+    b_value = (Scalar) 2;
+    b_value[2] = 0.;
 
-  b->sumIntoGlobalValue(2,b_value);
+    b->sumIntoGlobalValue(2,b_value);
+  }
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
@@ -1721,7 +1727,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     out << std::endl;
 
     std::vector<int> expected_ensemble_iterations(VectorSize);
-    for (LocalOrdinal j=0; j<VectorSize; ++j){
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
       if (j==0)
         expected_ensemble_iterations[j]= 3;
       else if(j==1)
@@ -1745,8 +1751,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     // Set values in matrix
     Array<Scalar> vals(nrow);
     Scalar val;
-    for (GlobalOrdinal i=0; i<nrow; ++i){
-      for (LocalOrdinal j=0; j<VectorSize; ++j){
+    for (GlobalOrdinal i=0; i<nrow; ++i) {
+      for (LocalOrdinal j=0; j<VectorSize; ++j) {
         if (i==0 && j==0)
           val.fastAccessCoeff(j) = 1;
         else if (i==0)
@@ -1768,7 +1774,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     tol = 10*tol;
     ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
     for (GlobalOrdinal i=0; i<nrow; ++i)
-      for (LocalOrdinal j=0; j<VectorSize; ++j){
+      for (LocalOrdinal j=0; j<VectorSize; ++j) {
         // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
         TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
       }
@@ -1809,9 +1815,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   const GlobalOrdinal mynrow = (rank==0 ? nrow: 0);
   RCP<const Tpetra_Map> map = rcp (new Tpetra_Map (nrow, mynrow, 0, comm));
   RCP<Tpetra_CrsGraph> graph (new Tpetra_CrsGraph (map, size_t(3), Tpetra::StaticProfile));
-  for (GlobalOrdinal i = 0; i<nrow; ++i)
+  if (rank==0)
+    for (GlobalOrdinal i = 0; i<nrow; ++i)
       for (GlobalOrdinal j = 0; j<i+1; ++j)
-          graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
+        graph->insertGlobalIndices(i, tuple<GlobalOrdinal> (j));
   graph->fillComplete();
   
   RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
@@ -1823,21 +1830,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
 
-  Scalar b_value = (Scalar) 0;
-  b_value[0] = 1.;
+  if (rank==0) {
+    Scalar b_value = (Scalar) 0;
+    b_value[0] = 1.;
 
-  b->sumIntoGlobalValue(0,b_value);
+    b->sumIntoGlobalValue(0,b_value);
 
-  b_value = (Scalar) 1;
-  b_value[1] = 0.;
-  b_value[2] = 0.;
+    b_value = (Scalar) 1;
+    b_value[1] = 0.;
+    b_value[2] = 0.;
 
-  b->sumIntoGlobalValue(1,b_value);
+    b->sumIntoGlobalValue(1,b_value);
 
-  b_value = (Scalar) 2;
-  b_value[2] = 0.;
+    b_value = (Scalar) 2;
+    b_value[2] = 0.;
 
-  b->sumIntoGlobalValue(2,b_value);
+    b->sumIntoGlobalValue(2,b_value);
+  }
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
@@ -1887,7 +1896,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     out << std::endl;
 
     std::vector<int> expected_ensemble_iterations(VectorSize);
-    for (LocalOrdinal j=0; j<VectorSize; ++j){
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
       if (j==0)
         expected_ensemble_iterations[j]= 3;
       else if(j==1)
@@ -1911,8 +1920,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     // Set values in matrix
     Array<Scalar> vals(nrow);
     Scalar val;
-    for (GlobalOrdinal i=0; i<nrow; ++i){
-      for (LocalOrdinal j=0; j<VectorSize; ++j){
+    for (GlobalOrdinal i=0; i<nrow; ++i) {
+      for (LocalOrdinal j=0; j<VectorSize; ++j) {
         if (i==0 && j==0)
           val.fastAccessCoeff(j) = 1;
         else if (i==0)
@@ -1934,7 +1943,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     tol = 10*tol;
     ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
     for (GlobalOrdinal i=0; i<nrow; ++i)
-      for (LocalOrdinal j=0; j<VectorSize; ++j){
+      for (LocalOrdinal j=0; j<VectorSize; ++j) {
         // 1. is added both to x and vals to prevent issues with relative tolerances and values close to 0.
         TEST_FLOATING_EQUALITY(x_view[i].coeff(j)+1., vals[i].coeff(j)+1., tol);
       }
