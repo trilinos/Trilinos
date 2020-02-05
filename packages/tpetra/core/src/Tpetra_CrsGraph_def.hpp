@@ -5355,7 +5355,6 @@ namespace Tpetra {
 
     std::vector<GO> src_row_inds;
     std::vector<GO> tgt_row_inds;
-    std::vector<GO> merged_inds;
 
     size_t srcNumDups = 0;
     size_t tgtNumDups = 0;
@@ -5398,18 +5397,17 @@ namespace Tpetra {
                                    tgt_sorted, tgt_merged);
         tgtNumDups += curNumTgtDups;
 
+        const size_t numInCommon = Details::Impl::countNumInCommon(
+          src_row_inds_view.begin(),
+          src_row_inds_view.end(),
+          tgt_row_inds_view.begin(),
+          tgt_row_inds_view.end());
         const size_t orig_num_merged =
-          size_t(src_row_inds_view.size()) + size_t(tgt_row_inds_view.size());
-        if (merged_inds.size() != orig_num_merged) {
-          merged_inds.resize(orig_num_merged);
-        }
-        auto merged_end =
-          std::merge(src_row_inds_view.begin(), src_row_inds_view.end(),
-                     tgt_row_inds_view.begin(), tgt_row_inds_view.end(),
-                     merged_inds.begin());
-        const size_t new_num_merged =
-          static_cast<size_t>(merged_end - merged_inds.begin());
-        mergedNumDups += (orig_num_merged - new_num_merged);
+          size_t(src_row_inds_view.size()) +
+          size_t(tgt_row_inds_view.size());
+
+        const size_t new_num_merged = orig_num_merged - numInCommon;
+        mergedNumDups += numInCommon;
 
         const size_t how_much_padding =
           new_num_merged >= orig_num_tgt_entries ?
@@ -5438,10 +5436,13 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   computeCrsPaddingForPermutedIDs(
-    Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>& padding,
+    Kokkos::UnorderedMap<LocalOrdinal, size_t,
+      typename Node::device_type>& padding,
     const RowGraph<LocalOrdinal,GlobalOrdinal,Node>& source,
-    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    const Kokkos::DualView<const local_ordinal_type*,
+      buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*,
+      buffer_device_type>& permuteFromLIDs,
     const bool padAll) const
   {
     using LO = LocalOrdinal;
@@ -5468,7 +5469,8 @@ namespace Tpetra {
     const map_type& src_row_map = * (source.getRowMap ());
 
     using insert_result =
-      typename Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>::insert_result;
+      typename Kokkos::UnorderedMap<LocalOrdinal, size_t,
+        typename Node::device_type>::insert_result;
     auto permuteToLIDs_h = permuteToLIDs.view_host ();
     auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
 
@@ -5481,7 +5483,6 @@ namespace Tpetra {
 
     std::vector<GO> src_row_inds;
     std::vector<GO> tgt_row_inds;
-    std::vector<GO> merged_inds;
 
     size_t srcNumDups = 0;
     size_t tgtNumDups = 0;
@@ -5516,18 +5517,16 @@ namespace Tpetra {
                                    tgt_sorted, tgt_merged);
         tgtNumDups += curNumTgtDups;
 
+        const size_t numInCommon = Details::Impl::countNumInCommon(
+          src_row_inds_view.begin(),
+          src_row_inds_view.end(),
+          tgt_row_inds_view.begin(),
+          tgt_row_inds_view.end());
         const size_t orig_num_merged =
-          size_t(src_row_inds_view.size()) + size_t(tgt_row_inds_view.size());
-        if (merged_inds.size() != orig_num_merged) {
-          merged_inds.resize(orig_num_merged);
-        }
-        auto merged_end =
-          std::merge(src_row_inds_view.begin(), src_row_inds_view.end(),
-                     tgt_row_inds_view.begin(), tgt_row_inds_view.end(),
-                     merged_inds.begin());
-        const size_t new_num_merged =
-          static_cast<size_t>(merged_end - merged_inds.begin());
-        mergedNumDups += (orig_num_merged - new_num_merged);
+          size_t(src_row_inds_view.size()) +
+          size_t(tgt_row_inds_view.size());
+        const size_t new_num_merged = orig_num_merged - numInCommon;
+        mergedNumDups += numInCommon;
 
         const size_t how_much_padding =
           new_num_merged >= orig_num_tgt_entries ?
