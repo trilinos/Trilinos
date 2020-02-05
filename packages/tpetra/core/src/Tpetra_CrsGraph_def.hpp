@@ -145,7 +145,8 @@ namespace Tpetra {
             std::unique(gblColInds.begin(), gblColInds.end());
           const size_t newNumEntries =
             static_cast<size_t>(newEnd - gblColInds.begin());
-          numDuplicates = size_t(newNumEntries - origNumEntries);
+          TEUCHOS_ASSERT( origNumEntries >= newNumEntries );
+          numDuplicates = size_t(origNumEntries - newNumEntries);
           gblColInds =
             ArrayView<GO>(gblColInds.data(), newNumEntries);
         }
@@ -5686,7 +5687,7 @@ namespace Tpetra {
                                   imports_h.data() + numEntBeg);
       const size_t gidsBeg = numEntBeg + numEntLen;
 
-      if (gblColIndsReceived.size() < size_t(numEntriesReceived)) {
+      if (gblColIndsReceived.size() != size_t(numEntriesReceived)) {
         gblColIndsReceived.resize(numEntriesReceived);
       }
       (void) PackTraits<GO>::unpackArray(gblColIndsReceived.data(),
@@ -5697,8 +5698,11 @@ namespace Tpetra {
                                 gblColIndsReceived.end());
       const size_t numEntriesRecvdUnique =
         static_cast<size_t>(newEnd - gblColIndsReceived.begin());
+      TEUCHOS_ASSERT( numEntriesRecvdUnique <= size_t(numEntriesReceived) );
+      const size_t curSrcNumDups =
+        size_t(size_t(numEntriesReceived) - numEntriesRecvdUnique);
+      srcNumDups += curSrcNumDups;
       gblColIndsReceived.resize(numEntriesRecvdUnique);
-      srcNumDups += (numEntriesReceived - numEntriesRecvdUnique);
 
       size_t origNumTgtEnt = 0;
       size_t curNumTgtDups = 0;
