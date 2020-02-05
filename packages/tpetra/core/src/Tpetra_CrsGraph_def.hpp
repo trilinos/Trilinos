@@ -78,6 +78,42 @@ namespace Tpetra {
   namespace Details {
     namespace Impl {
 
+      template<class SourceIterator,
+               class TargetIterator>
+      size_t
+      countNumInCommon(SourceIterator srcBeg,
+                       SourceIterator srcEnd,
+                       TargetIterator tgtBeg,
+                       TargetIterator tgtEnd)
+      {
+        size_t numInCommon = 0;
+
+        auto srcIter = srcBeg;
+        auto tgtIter = tgtBeg;
+        while (srcIter != srcEnd && tgtIter != tgtEnd) {
+          tgtIter = std::lower_bound(tgtIter, tgtEnd, *srcIter);
+          if (tgtIter == tgtEnd) {
+            break;
+          }
+          if (*tgtIter == *srcIter) {
+            ++numInCommon;
+            ++srcIter;
+            ++tgtIter;
+          }
+
+          srcIter = std::lower_bound(srcIter, srcEnd, *tgtIter);
+          if (srcIter == srcEnd) {
+            break;
+          }
+          if (*srcIter == *tgtIter) {
+            ++numInCommon;
+            ++tgtIter;
+            ++srcIter;
+          }
+        }
+        return numInCommon;
+      }
+
       template<class LocalOrdinal, class GlobalOrdinal, class Node>
       Teuchos::ArrayView<
         typename RowGraph<
@@ -5617,7 +5653,6 @@ namespace Tpetra {
     std::vector<size_t> padding(numImports);
     std::vector<GO> gblColIndsReceived;
     std::vector<GO> gblColIndsTgt;
-    std::vector<GO> gblColIndsMerged;
 
     size_t srcNumDups = 0;
     size_t tgtNumDups = 0;
@@ -5649,10 +5684,10 @@ namespace Tpetra {
       std::sort(gblColIndsReceived.begin(), gblColIndsReceived.end());
       auto newEnd = std::unique(gblColIndsReceived.begin(),
                                 gblColIndsReceived.end());
-      const size_t numEntriesUnique =
+      const size_t numEntriesRecvdUnique =
         static_cast<size_t>(newEnd - gblColIndsReceived.begin());
-      gblColIndsReceived.resize(numEntriesUnique);
-      srcNumDups += (numEntriesReceived - numEntriesUnique);
+      gblColIndsReceived.resize(numEntriesRecvdUnique);
+      srcNumDups += (numEntriesReceived - numEntriesRecvdUnique);
 
       size_t origNumTgtEnt = 0;
       size_t curNumTgtDups = 0;
@@ -5662,18 +5697,15 @@ namespace Tpetra {
                                  tgtSorted, tgtMerged);
       tgtNumDups += curNumTgtDups;
 
-      const size_t origNumMerged = numEntriesUnique +
+      const size_t numInCommon = Details::Impl::countNumInCommon(
+        gblColIndsReceived.begin(),
+        gblColIndsReceived.end(),
+        gblColIndsTgt.begin(),
+        gblColIndsTgt.end());
+      const size_t origNumBoth = numEntriesRecvdUnique +
         size_t(gblColIndsTgtView.size());
-      if (gblColIndsMerged.size() != origNumMerged) {
-        gblColIndsMerged.resize(origNumMerged);
-      }
-      auto mergedNewEnd =
-        std::merge(gblColIndsReceived.begin(), gblColIndsReceived.end(),
-                   gblColIndsTgtView.begin(), gblColIndsTgtView.end(),
-                   gblColIndsMerged.begin());
-      const size_t newNumMerged =
-        static_cast<size_t>(mergedNewEnd - gblColIndsMerged.begin());
-      mergedNumDups += (origNumMerged - newNumMerged);
+      const size_t newNumMerged = origNumBoth - numInCommon;
+      mergedNumDups += numInCommon;
 
       const size_t extraSpaceNeeded = newNumMerged >= origNumTgtEnt ?
         newNumMerged - origNumTgtEnt :
