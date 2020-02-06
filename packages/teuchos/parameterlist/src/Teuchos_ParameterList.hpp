@@ -908,7 +908,7 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameModifiers (const ParameterList&
  * documentation strings or the same validators.
  *
  * \note This function respects ordering of the ParameterList entries; the same values in a different
- *       order will result in \false.
+ *       order will result in \em false.
  *
  * \relates ParameterList
  */
@@ -923,7 +923,7 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& li
  * documentation strings or the same validators.
  *
  * \note This function does not respect ordering of the ParameterList entries; the same values in a different
- *       order will result in \true.
+ *       order will result in \em true.
  *
  * \relates ParameterList
  */
