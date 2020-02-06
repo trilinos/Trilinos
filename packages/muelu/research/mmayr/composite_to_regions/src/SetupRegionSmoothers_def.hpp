@@ -214,6 +214,8 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, revisedRowMapPerGrp);
 
+  const size_t numRows = regionGrpMats[0]->getNodeNumRows();
+
   // GS iteration loop
   for (int iter = 0; iter < maxIter; ++iter) {
 
@@ -227,28 +229,27 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
     // update the solution and the residual
 
     using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
-    RCP<Vector> delta;
-    delta = VectorFactory::Build(regionGrpMats[0]->getRowMap(), true);
+    RCP<Vector> delta = VectorFactory::Build(regionGrpMats[0]->getRowMap(), true);
     ArrayRCP<SC> ldelta = delta->getDataNonConst(0);
     ArrayRCP<SC> OneregX = regX[0]->getDataNonConst(0);
     ArrayRCP<SC> OneregRes = regRes[0]->getDataNonConst(0);
-    if (zeroInitGuess) {  // copy regB to regRes
+    if (zeroInitGuess) { // copy regB to regRes
       ArrayRCP<SC> rhs = regB[0]->getDataNonConst(0);
-      for (size_t k = 0; k < regionGrpMats[0]->getNodeNumRows(); k++) OneregRes[k] = rhs[k];
+      for (size_t k = 0; k < numRows; ++k) OneregRes[k] = rhs[k];
     }
-    Teuchos::ArrayRCP<SC> Onediag = diag_inv[0]->getDataNonConst(0);
+    ArrayRCP<const SC> Onediag = diag_inv[0]->getData(0);
 
-    for (size_t k = 0; k < regionGrpMats[0]->getNodeNumRows(); k++) ldelta[k] = 0.;
+    for (size_t k = 0; k < numRows; ++k) ldelta[k] = 0.;
 
     // Loop over all rows in the region matrix
-    for (size_t k = 0; k < regionGrpMats[0]->getNodeNumRows(); k++) {
+    for (size_t k = 0; k < numRows; ++k) {
       // Extract a single row
       ArrayView<const LO> AAcols;
       ArrayView<const SC> AAvals;
       regionGrpMats[0]->getLocalRowView(k, AAcols, AAvals);
       const int *Acols = AAcols.getRawPtr();
       const SC  *Avals = AAvals.getRawPtr();
-      LO RowLeng = AAvals.size();
+      const LO RowLeng = AAvals.size();
 
       // Loop over entries in row k and perform GS iteration
       for (LO kk = 0; kk < RowLeng; kk++) {
