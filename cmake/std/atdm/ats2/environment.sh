@@ -181,7 +181,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
 
   # Kokkos Settings
-  export ATDM_CONFIG_Kokkos_ENABLE_Serial=ON
+  export ATDM_CONFIG_Kokkos_ENABLE_SERIAL=ON
   export KOKKOS_NUM_DEVICES=4
 
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
