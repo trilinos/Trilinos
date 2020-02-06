@@ -12,12 +12,11 @@
 namespace Zoltan2{
 
 /*! \brief A FatTree (e.g. Astra, Summit, & Sierra) Machine Class for 
- *  testing only. A more realistic machine should be used for 
- *  task mapping (i.e. see Zoltan2_MachineFatTree.hpp).
+ *  production. 
  */
 
 template <typename pcoord_t, typename part_t>
-class MachineFatTreeForTesting : public Machine <pcoord_t, part_t> {
+class MachineFatTree : public Machine <pcoord_t, part_t> {
 
 public:
   /*! \brief Constructor: FatTree (e.g. Astra, Summit, & Sierra) network 
@@ -28,7 +27,7 @@ public:
    *  \param comm Communication object.
    */
 
-  MachineFatTreeForTesting(const Teuchos::Comm<int> &comm):
+  MachineFatTree(const Teuchos::Comm<int> &comm):
     Machine<pcoord_t,part_t>(comm),
     transformed_networkDim(3), 
     actual_networkDim(3),
@@ -43,9 +42,7 @@ public:
     subgroup_counts(), 
     is_transformed(false),
     pl(NULL) {
-  
 
-//    comm.barrier();
     
     if (this->myRank == 0)
         std::cout << "\nCreating FatTree Machine!. Entered no PL FatTree\n" << std::endl;
@@ -124,7 +121,7 @@ public:
    *  \param comm Communication object.
    *  \param pl   Parameter List
    */
-  MachineFatTreeForTesting(const Teuchos::Comm<int> &comm, 
+  MachineFatTree(const Teuchos::Comm<int> &comm, 
              const Teuchos::ParameterList &pl_ ):
     Machine<pcoord_t,part_t>(comm),
     transformed_networkDim(3), 
@@ -159,6 +156,22 @@ public:
     std::vector<pcoord_t> xyz(actual_networkDim);
 
     getMyActualMachineCoordinate(xyz);
+
+    if(xyz[0] > actual_machine_extent[0] ||
+       xyz[1] > actual_machine_extent[1] ||
+       xyz[2] > actual_machine_extent[2]) {
+  
+      std::cout << "Rank: " << this->myRank
+        << " Coord: (" << xyz[0] 
+        << ", " << xyz[1] << ", " << xyz[2]
+        << ") is beyond extents ("
+        << actual_machine_extent[0] << ", "
+        << actual_machine_extent[0] << ", "
+        << actual_machine_extent[0] << ")! Exiting. "
+        << std::endl; 
+
+        exit(0);
+    }
 
 //    if (this->myRank == 0) 
 //      std::cout << "\nTransforming Coordinates" << std::endl;
@@ -274,7 +287,7 @@ public:
   }
 
   // Destructor
-  virtual ~MachineFatTreeForTesting() {
+  virtual ~MachineFatTree() {
 
     if (is_transformed) {
       is_transformed = false;
@@ -539,25 +552,25 @@ public:
 */
 //    srand(this->myRank);
 
-    int large_primex = 1117;
-    int large_primey = 5903;
-    int large_primez = 7393;
-    int base = 3947;
+//    int large_primex = 1117;
+//    int large_primey = 5903;
+//    int large_primez = 7393;
+//    int base = 3947;
 
-    int x = (base + this->myRank * large_primex) % 8;   // [A-H]
-    int y = (base + this->myRank * large_primey) % 36 + 1;  // [01-36]
-    int z = (base + this->myRank * large_primez) % 18 + 1;  // [01-18]
+//    int x = (base + this->myRank * large_primex) % 8;   // [A-H]
+//    int y = (base + this->myRank * large_primey) % 36 + 1;  // [01-36]
+//    int z = (base + this->myRank * large_primez) % 18 + 1;  // [01-18]
 
 
-    char row  = 'A' + x; // convert x to letter
+//    char row  = 'A' + x; // convert x to letter
     
-    char col[2];  
-    col[0] = '0' + int(y / 10);
-    col[1] = '0' + (y % 10);
+//    char col[2];  
+//    col[0] = '0' + int(y / 10);
+//    col[1] = '0' + (y % 10);
 
-    char node[2];
-    node[0] = '0' + int(z / 10);
-    node[1] = '0' + (z % 10);
+//    char node[2];
+//    node[0] = '0' + int(z / 10);
+//    node[1] = '0' + (z % 10);
     
 //    if (this->myRank == 0) {
 //      std::cout << "\nRank: " << this->myRank << " Row: " << row
@@ -567,12 +580,23 @@ public:
 
     char hostname[6];
 
-    hostname[0] = row;
-    hostname[1] = col[0];
-    hostname[2] = col[1];
-    hostname[3] = 'n';
-    hostname[4] = node[0];
-    hostname[5] = node[1];
+    rc = gethostname(hostname, sizeof(hostname));
+
+    if (rc != 0) {
+      std::cout << "Error reading hostname";
+      exit(1) 
+    }
+    else {
+      std::cout << "Rank: " << this->myRank 
+        << " hostname: " << hostname << std::endl;
+    }
+
+//    hostname[0] = row;
+//    hostname[1] = col[0];
+//    hostname[2] = col[1];
+//    hostname[3] = 'n';
+//    hostname[4] = node[0];
+//    hostname[5] = node[1];
 
 //    if (this->myRank == 0) {
 //    std::cout << "\nRank: " << this->myRank << " Hostname: " << hostname << std::endl;
@@ -891,7 +915,7 @@ private:
   bool convertHostnameToCoordinate(const char *nodename, std::vector<pcoord_t> &xyz) {
    
     // [A-H] 
-    int x = nodename[0] - 'A';
+    int x = nodename[0] - 'a';
     
     // [0-35]
     int y10 = nodename[1] - '0';
