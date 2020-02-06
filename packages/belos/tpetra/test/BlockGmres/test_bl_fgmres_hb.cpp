@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
     int numrhs = 1;      // total number of right-hand sides to solve for
     int blocksize = 1;   // blocksize used by solver
     int maxiters = -1;   // maximum number of iterations for solver to use
+    int length = 100;    // max subspace size
     std::string filename("bcsstk14.hb");
     MT tol = 1.0e-5;     // relative residual tolerance
 
@@ -110,6 +111,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
+    cmdp.setOption("max-subspace",&length,"Maximum number of blocks the solver can use for the subspace.");
     cmdp.setOption("block-size",&blocksize,"Block size to be used by the Gmres solver.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
@@ -156,8 +158,9 @@ int main(int argc, char *argv[]) {
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    belosList.set( "Flexible Gmres", true );               // DON'T DO THIS IN PRACTICE, it is not true.  
-                                                           // Just make sure the solver doesn't error out.
+    belosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov subspace (max subspace size)
+    belosList.set( "Flexible Gmres", true );               // use FGMRES
+                                                           
     int verbLevel = Belos::Errors + Belos::Warnings;
     if (debug) {
       verbLevel += Belos::Debug;
@@ -171,27 +174,22 @@ int main(int argc, char *argv[]) {
         belosList.set( "Output Frequency", frequency );
       }
     }
-int length = 100;
-int maxrestarts =50;
-ParameterList innerBelosList;
+
+    // Set parameters for the inner GMRES (preconditioning) iteration.
+    ParameterList innerBelosList;
     innerBelosList.set( "Solver", "BlockGmres" );               // Set the inner solver to use block Gmres
-    innerBelosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov       factorization
+    innerBelosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov subspace (max subspace size)
     innerBelosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     innerBelosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
-    innerBelosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
     innerBelosList.set( "Convergence Tolerance", 1.0e-2 );       // Relative convergence tolerance requested
     innerBelosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
-    innerBelosList.set( "Timer Label", "Belos Preconditioner Solve" );// Choose a different label for the   inner solve
-    //  
-    // *****Construct linear problem using A and Prec*****
-    // ***The solution and RHS vectors will be set later**
+    innerBelosList.set( "Timer Label", "Belos Preconditioner Solve" );// Choose a different label for the inner solve
+
+    // *****Construct linear problem for the inner iteration using A *****
     Belos::LinearProblem<double,MV,OP> innerProblem;
     innerProblem.setOperator( A );
-    //if (leftprec)
-    //  innerProblem.setLeftPrec( Prec );
-    //else
-    //  innerProblem.setRightPrec( Prec );
     innerProblem.setLabel( "Belos Preconditioner Solve" );
+
     //  
     // *****Create the inner block Gmres iteration********
     //  
@@ -200,7 +198,7 @@ ParameterList innerBelosList;
     //  
 
     //
-    // Construct an unpreconditioned linear problem instance.
+    // Construct a linear problem instance with GMRES as preconditoner.
     //
     Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
     problem.setInitResVec( B );
