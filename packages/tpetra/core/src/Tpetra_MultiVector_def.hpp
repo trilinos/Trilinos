@@ -1366,10 +1366,8 @@ namespace Tpetra {
       // when reallocDualViewIfNeeded is called, the modified flags 
       // are not cleared out. This can result in host and device views
       // being out-of-sync, resuling in an error in exports.modify_* calls.
-      // Adding a check of the sync state, and syncing if necessary, prevents
-      // this possible case.
-      if (exports.need_sync_host ())
-        exports.sync_host ();
+      // Clearing the sync flags prevents this possible case.
+      exports.clear_sync_state ();
       exports.modify_host ();
     }
     else {
@@ -1377,10 +1375,8 @@ namespace Tpetra {
       // when reallocDualViewIfNeeded is called, the modified flags 
       // are not cleared out. This can result in host and device views
       // being out-of-sync, resuling in an error in exports.modify_* calls.
-      // Adding a check of the sync state, and syncing if necessary, prevents
-      // this possible case.
-      if (exports.need_sync_device ())
-        exports.sync_device ();
+      // Clearing the sync flags prevents this possible case.
+      exports.clear_sync_state ();
       exports.modify_device ();
     }
 
