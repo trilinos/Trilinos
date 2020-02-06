@@ -1362,9 +1362,25 @@ namespace Tpetra {
     // Resizing currently requires calling the constructor, which
     // clears out the 'modified' flags.
     if (packOnHost) {
+      // nde 06 Feb 2020: If 'exports' does not require resize
+      // when reallocDualViewIfNeeded is called, the modified flags 
+      // are not cleared out. This can result in host and device views
+      // being out-of-sync, resuling in an error in exports.modify_* calls.
+      // Adding a check of the sync state, and syncing if necessary, prevents
+      // this possible case.
+      if (exports.need_sync_host ())
+        exports.sync_host ();
       exports.modify_host ();
     }
     else {
+      // nde 06 Feb 2020: If 'exports' does not require resize
+      // when reallocDualViewIfNeeded is called, the modified flags 
+      // are not cleared out. This can result in host and device views
+      // being out-of-sync, resuling in an error in exports.modify_* calls.
+      // Adding a check of the sync state, and syncing if necessary, prevents
+      // this possible case.
+      if (exports.need_sync_device ())
+        exports.sync_device ();
       exports.modify_device ();
     }
 
