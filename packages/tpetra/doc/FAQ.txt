@@ -124,19 +124,11 @@ variables that you would normally set:
 -D TPL_ENABLE_CUDA:BOOL=ON
 -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON
 -D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON
--D Trilinos_CXX11_FLAGS:STRING="-std=c++11 -expt-extended-lambda" 
 #+END_EXAMPLE
 
 If you already define ~CMAKE_CXX_FLAGS~ yourself, just make sure that
 you include the above options.  If the versions of ~nvcc~ and ~mpicxx~
-that live in your path are correct, then this should work.  The
-~-std=c++11~ option is required, though it may cause harmless build
-warnings that look like this:
-
-#+BEGIN_EXAMPLE
-cc1: warning: command line option '-std=c++11' is valid for C++/ObjC++
-but not for C [enabled by default]
-#+END_EXAMPLE
+that live in your path are correct, then this should work.
 
 If you enable CUDA using the above instructions, Kokkos will enable
 its CUDA support by default.  If Kokkos enables its CUDA support,

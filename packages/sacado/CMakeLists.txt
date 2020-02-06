@@ -123,16 +123,8 @@ int main()
 CHECK_CXX_SOURCE_COMPILES("${SOURCE_C99_TR1_CMATH}"
   HAS_C99_TR1_CMATH)
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Sacado_ENABLE_CXX11
-  HAVE_SACADO_CXX11
-  "Enable C++11 support in Sacado."
-  "${${PROJECT_NAME}_ENABLE_CXX11}"
-  )
-
-IF(Sacado_NEW_FAD_DESIGN_IS_DEFAULT AND NOT Sacado_ENABLE_CXX11)
-  message(FATAL_ERROR "New Fad design requires C++11 enabled.  Please reconfigure with ${PROJECT_NAME}_ENABLE_CXX11=ON.")
-ENDIF()
+# FIXME: Remove this hard-coded setting.  We always have C++11 now.
+SET(HAVE_SACADO_CXX11 ON)
 
 #
 # C) Add the libraries, tests, and examples
