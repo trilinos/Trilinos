@@ -262,8 +262,13 @@ namespace Tacho {
            << "    RowPtrArray length = " << _ap.extent(0) << std::endl
            << "    ColArray length    = " << _aj.extent(0) << std::endl 
            << "    ValueArray length  = " << _ax.extent(0) << std::endl
-           << std::endl;
-      
+           << std::endl
+           << "    Memory             = " 
+           << double( _ap.span()*sizeof(size_type) + 
+                      _aj.span()*sizeof(ordinal_type) +
+                      _ax.span()*sizeof(value_type) )/1e6 << " MB"
+           << std::endl << std::endl;
+
         if (detail) {
           const int w = 10;
           if ( (_ap.size() >  _m  ) && 

@@ -775,6 +775,7 @@ namespace Intrepid {
   
 } // end namespace Intrepid
 
+/*
 template<class FadType, class Scalar>
 struct Return_Type< Intrepid::FieldContainer<FadType>, Scalar>{
       typedef FadType& return_type;
@@ -786,7 +787,7 @@ struct Return_Type<const Intrepid::FieldContainer<FadType>, Scalar>{
       typedef FadType& return_type;
       typedef FadType  const_return_type;
 };
-
+*/
 
 // include templated definitions
 #include <Intrepid_FieldContainerDef.hpp>

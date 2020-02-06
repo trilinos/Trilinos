@@ -37,6 +37,9 @@ namespace Tacho {
     typedef Kokkos::View<value_type*,host_device_type> value_type_array_host;
     typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_device_type> value_type_matrix_host; 
 
+    typedef CrsMatrixBase<value_type,device_type> crs_matrix_type; 
+    typedef CrsMatrixBase<value_type,host_device_type> crs_matrix_type_host; 
+
 #if defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
 #else
@@ -184,6 +187,9 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
     }
 
+    ordinal_type_array getPermutationVector() const { return _perm;} 
+    ordinal_type_array getInversePermutationVector() const { return _peri; }
+
     // internal only
     int analyze(const ordinal_type m,
                 const size_type_array_host &ap,
@@ -211,7 +217,13 @@ namespace Tacho {
       }
 
       if (_m < _small_problem_thres) {
-        // for small problems, use lapack and no analysis
+        // for small problems, use lapack and no analysis and no permutation
+        _perm = Kokkos::create_mirror_view(exec_memory_space(), _h_perm); 
+        _peri = Kokkos::create_mirror_view(exec_memory_space(), _h_peri); 
+
+        Kokkos::deep_copy(_perm, _h_perm);
+        Kokkos::deep_copy(_peri, _h_peri);
+        
         if (_verbose) {
           printf("  Linear system A\n");
           printf("             number of equations:                             %10d\n", _m);
@@ -481,6 +493,47 @@ namespace Tacho {
 
       return Tacho::computeRelativeResidual(A, x, b);
     }
+    
+    void exportFactorsToCrsMatrix(crs_matrix_type &A) {
+      if (_m < _small_problem_thres) {
+        typedef ArithTraits<value_type> ats;
+        const value_type zero(0);
+
+        /// count nonzero elements in dense U
+        const ordinal_type m = _m;
+        size_type_array_host h_ap("h_ap", m+1);
+        for (ordinal_type i=0;i<m;++i) 
+          for (ordinal_type j=0;j<m;++j) 
+            h_ap(i+1) += (ats::abs(_U(i,j)) > zero);
+        
+        /// serial scan; this is a small problem
+        h_ap(0) = 0;
+        for (ordinal_type i=0;i<m;++i)
+          h_ap(i+1) += h_ap(i);
+
+        /// create a host crs matrix
+        const ordinal_type nnz = h_ap(m);
+        ordinal_type_array_host h_aj(do_not_initialize_tag("h_aj"), nnz);
+        value_type_array_host h_ax(do_not_initialize_tag("h_ax"), nnz);
+
+        for (ordinal_type i=0,k=0;i<m;++i) 
+          for (ordinal_type j=i;j<m;++j)
+            if (ats::abs(_U(i,j)) > zero) {
+              h_aj(k) = j;
+              h_ax(k) = _U(i,j);
+              ++k;
+            }
+
+        crs_matrix_type_host h_A;
+        h_A.setExternalMatrix(m, m, nnz, h_ap, h_aj, h_ax); 
+        ///h_A.showMe(std::cout, true);
+        A.clear();
+        A.createConfTo(h_A);
+        A.copy(h_A);
+      } else {
+        _N.exportFactorsToCrsMatrix(A, false);
+      }
+    } 
 
     int release() {
       if (_verbose) {
@@ -520,7 +573,7 @@ namespace Tacho {
         _stree_roots = ordinal_type_array_host();
         
         _N = numeric_tools_type();
-        _U =value_type_matrix_host();
+        _U = value_type_matrix_host();
         
         _verbose = 0;
         _small_problem_thres = 1024;
