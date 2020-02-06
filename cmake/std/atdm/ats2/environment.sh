@@ -175,17 +175,13 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   fi
   # ATDM Settings
   export ATDM_CONFIG_USE_CUDA=ON
-  #export ATDM_CONFIG_Kokkos_ENABLE_Cuda_UVM=ON, handled by above ATDM_CONFIG_USE_CUDA export
   export ATDM_CONFIG_USE_OPENMP=OFF
   export ATDM_CONFIG_USE_PTHREADS=OFF
   export ATDM_CONFIG_CUDA_RDC=OFF
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
 
   # Kokkos Settings
-  export ATDM_CONFIG_Kokkos_ENABLE_Serial=ON
-  export ATDM_CONFIG_Kokkos_ENABLE_Cuda=ON
-  export ATDM_CONFIG_Kokkos_ENABLE_Cuda_Lambda=ON
-  export ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code=OFF
+  export ATDM_CONFIG_Kokkos_ENABLE_SERIAL=ON
   export KOKKOS_NUM_DEVICES=4
 
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then

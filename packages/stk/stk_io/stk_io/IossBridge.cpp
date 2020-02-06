@@ -87,8 +87,7 @@
 #include "stk_mesh/base/Part.hpp"                    // for Part, etc
 #include "stk_mesh/base/Selector.hpp"                // for Selector, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_topology/topology.hpp"
-#include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg, etc
+#include "stk_util/util/ReportHandler.hpp"           // for ThrowRequireMsg, etc
 #include "stk_util/environment/EnvData.hpp"
 #include "stk_util/util/string_case_compare.hpp"
 namespace stk { namespace mesh { class Bucket; } }
@@ -132,7 +131,6 @@ namespace {
   static const std::string matrix_33("matrix_33");
 
   const std::string base_stk_part_name = "_base_stk_part_name";
-
 
   stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                         const stk::mesh::MetaData &meta)
@@ -451,12 +449,12 @@ namespace {
       }
   }
 
-  void put_io_part_attribute(stk::mesh::Part & part, Ioss::GroupingEntity* entity)
-  {
-    check_if_io_part_attribute_already_defined(part);
-    stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
-    meta.declare_attribute_no_delete(part, entity);
-  }
+  // void put_io_part_attribute(stk::mesh::Part & part, Ioss::GroupingEntity* entity)
+  // {
+  //   check_if_io_part_attribute_already_defined(part);
+  //   stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
+  //   meta.declare_attribute_no_delete(part, entity);
+  // }
 
   void add_canonical_name_property(Ioss::GroupingEntity* ge, stk::mesh::Part& part)
   {
@@ -715,7 +713,30 @@ namespace stk {
         return has_ioss_part_attribute<IossOriginalTopologyType>(part);
     }
 
+    struct IossTopologyType
+    {
+      std::string value;
+    };
 
+    void set_topology_type(stk::mesh::Part& part)
+    {
+        set_ioss_part_attribute<IossTopologyType>(part, part.topology().name());
+    }
+
+    void set_topology_type(stk::mesh::Part& part, const std::string& topo)
+    {
+        set_ioss_part_attribute<IossTopologyType>(part, topo);
+    }
+
+    std::string get_topology_type(stk::mesh::Part& part)
+    {
+        return get_ioss_part_attribute<IossTopologyType>(part);
+    }
+
+    bool has_topology_type(stk::mesh::Part& part)
+    {
+        return has_ioss_part_attribute<IossTopologyType>(part);
+    }
 
     struct IossAlternatePartName
     {
@@ -764,6 +785,58 @@ namespace stk {
             return pp;
         }
       return 0;
+    }
+
+    Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part) 
+    {
+      if(!stk::io::is_part_io_part(part)) { return nullptr; }
+
+      Ioss::GroupingEntity* entity = nullptr;
+      std::string partName = stk::io::getPartName(part);
+      std::vector<Ioss::EntityType> types = get_ioss_entity_types(part);
+
+      for(Ioss::EntityType type : types) {
+        entity = region.get_entity(partName, type);
+        if(entity != nullptr) {
+          return entity;
+        }
+      }
+      return nullptr;
+    }
+
+    std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& meta, stk::mesh::EntityRank rank)
+    {
+      std::vector<Ioss::EntityType> types;
+      switch(rank) {
+        case stk::topology::NODE_RANK:
+          types.push_back(Ioss::NODEBLOCK);
+          types.push_back(Ioss::NODESET);
+          break;
+        case stk::topology::ELEMENT_RANK:
+          types.push_back(Ioss::ELEMENTBLOCK);
+          types.push_back(Ioss::SUPERELEMENT);
+          break;
+        case stk::topology::EDGE_RANK:
+          if(meta.spatial_dimension() == 2) {
+            types.push_back(Ioss::SIDESET);
+            types.push_back(Ioss::SIDEBLOCK);
+          }
+          break;
+        case stk::topology::FACE_RANK:
+          if(meta.spatial_dimension() == 3) {
+            types.push_back(Ioss::SIDESET);
+            types.push_back(Ioss::SIDEBLOCK);
+          }
+          break;
+        default:
+          break;
+      }
+      return types;
+    }
+
+    std::vector<Ioss::EntityType> get_ioss_entity_types(stk::mesh::Part& part)
+    {
+      return get_ioss_entity_types(part.mesh_meta_data(), part.primary_entity_rank());
     }
 
     size_t db_api_int_size(const Ioss::GroupingEntity *entity)
@@ -1013,7 +1086,7 @@ namespace stk {
         if (entity->property_exists("id")) {
           meta.set_part_id(part, entity->get_property("id").get_int());
         }
-        ::put_io_part_attribute(part, entity);
+        stk::io::put_io_part_attribute(part);
       }
     }
 
@@ -1026,7 +1099,7 @@ namespace stk {
         if (entity->property_exists("id")) {
             meta.set_part_id(*part, entity->get_property("id").get_int());
         }
-        ::put_io_part_attribute(*part, entity);
+        stk::io::put_io_part_attribute(*part);
 
         const Ioss::ElementTopology *topology = entity->topology();
         // Check spatial dimension of the element topology here so we can
@@ -2725,6 +2798,12 @@ namespace stk {
     }
 
     //----------------------------------------------------------------------
+    bool is_part_io_part(const stk::mesh::Part* part)
+    {
+      if(part == nullptr) { return false; }
+      return is_part_io_part(*part);
+    }
+
     bool is_part_io_part(const stk::mesh::Part &part)
     {
       return nullptr != part.attribute<Ioss::GroupingEntity>();

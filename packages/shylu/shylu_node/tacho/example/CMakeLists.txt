@@ -172,9 +172,29 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   )
 
   #
+  # NVIDIA cuSolver
+  # 
+  IF(Kokkos_ENABLE_CUDA) 
+    TRIBITS_ADD_EXECUTABLE(
+      Tacho_ExampleCholCuSolver
+      NOEXEPREFIX
+      SOURCES Tacho_ExampleCholCuSolver.cpp
+      COMM serial mpi
+    )
+    TRIBITS_ADD_EXECUTABLE(
+      Tacho_ExampleCuSparseTriSolve
+      NOEXEPREFIX
+      SOURCES Tacho_ExampleCuSparseTriSolve.cpp
+      COMM serial mpi
+    )
+  ENDIF()
+
+
+
+  #
   # Intel MKL Pardiso and PerfTest
   #
-  IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
+  IF(Kokkos_ENABLE_OPENMP OR Kokkos_ENABLE_SERIAL)
     IF(TPL_ENABLE_MKL)
       TRIBITS_ADD_EXECUTABLE(
         Tacho_ExampleCholPardiso
@@ -219,7 +239,7 @@ IF (TACHO_HAVE_KOKKOS_TASK)
       COMM serial mpi
     )
   ENDIF()
-  
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
           SOURCE_FILES test.mtx
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}

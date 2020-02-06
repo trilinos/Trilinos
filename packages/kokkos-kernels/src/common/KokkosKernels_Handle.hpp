@@ -47,8 +47,20 @@
 #include "KokkosSparse_spgemm_handle.hpp"
 #include "KokkosSparse_spadd_handle.hpp"
 #include "KokkosSparse_sptrsv_handle.hpp"
+#include "KokkosSparse_spiluk_handle.hpp"
+
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
+    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
+   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
+
+ // Enable supernodal sptrsv
+ #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+
+#endif
 
 namespace KokkosKernels{
 
@@ -138,6 +150,7 @@ public:
     this->spgemmHandle = right_side_handle.get_spgemm_handle();
 
     this->sptrsvHandle = right_side_handle.get_sptrsv_handle();
+    this->spilukHandle = right_side_handle.get_spiluk_handle();
 
     this->team_work_size = right_side_handle.get_set_team_work_size();
     this->shared_memory_size = right_side_handle.get_shmem_size();
@@ -154,6 +167,7 @@ public:
     is_owner_of_the_spgemm_handle = false;
     is_owner_of_the_spadd_handle = false;
     is_owner_of_the_sptrsv_handle = false;
+    is_owner_of_the_spiluk_handle = false;
     //return *this;
   }
 
@@ -169,6 +183,7 @@ public:
   typedef typename KokkosSparse::
     GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GaussSeidelHandleType;
+
   //These are subclasses of GaussSeidelHandleType.
   typedef typename KokkosSparse::
     PointGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
@@ -205,6 +220,13 @@ public:
   typedef
     typename KokkosSparse::Experimental::SPTRSVHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPTRSVHandleType;
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+  using integer_view_host_t = typename SPTRSVHandleType::integer_view_host_t;
+#endif
+
+  typedef
+    typename KokkosSparse::Experimental::SPILUKHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      SPILUKHandleType;
 
 private:
 
@@ -215,6 +237,7 @@ private:
   SPGEMMHandleType *spgemmHandle;
   SPADDHandleType *spaddHandle;
   SPTRSVHandleType *sptrsvHandle;
+  SPILUKHandleType *spilukHandle;
 
   int team_work_size;
   size_t shared_memory_size;
@@ -231,6 +254,7 @@ private:
   bool is_owner_of_the_spgemm_handle;
   bool is_owner_of_the_spadd_handle;
   bool is_owner_of_the_sptrsv_handle;
+  bool is_owner_of_the_spiluk_handle;
 
 public:
 
@@ -241,6 +265,7 @@ public:
     , spgemmHandle(NULL)
     , spaddHandle(NULL)
     , sptrsvHandle(NULL)
+    , spilukHandle(NULL)
     , team_work_size(-1)
     , shared_memory_size(16128)
     , suggested_team_size(-1)
@@ -254,6 +279,7 @@ public:
     , is_owner_of_the_spgemm_handle(true)
     , is_owner_of_the_spadd_handle(true)
     , is_owner_of_the_sptrsv_handle(true)
+    , is_owner_of_the_spiluk_handle(true)
   { }
 
   ~KokkosKernelsHandle(){
@@ -263,6 +289,7 @@ public:
     this->destroy_spgemm_handle();
     this->destroy_spadd_handle();
     this->destroy_sptrsv_handle();
+    this->destroy_spiluk_handle();
   }
 
 
@@ -305,7 +332,7 @@ public:
    * \param concurrency: input, the number of threads overall. Not used currently.
    * \param overall_work_size: The overall work size.
    */
-  int get_team_work_size(const int team_size, const int concurrency, const nnz_lno_t overall_work_size){
+  int get_team_work_size(const int team_size, const int /* concurrency */, const nnz_lno_t /* overall_work_size */){
     if (this->team_work_size != -1) {
       return this->team_work_size;
     }
@@ -484,6 +511,7 @@ public:
   }
 
 
+
   GaussSeidelHandleType *get_gs_handle() {
     return this->gsHandle;
   }
@@ -519,8 +547,6 @@ public:
     }
   }
 
-
-
   SPADDHandleType *get_spadd_handle(){
     return this->spaddHandle;
   }
@@ -537,19 +563,84 @@ public:
     }
   }
 
-
-
   SPTRSVHandleType *get_sptrsv_handle(){
     return this->sptrsvHandle;
   }
+
   void create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows, bool lower_tri) {
     this->destroy_sptrsv_handle();
     this->is_owner_of_the_sptrsv_handle = true;
     this->sptrsvHandle = new SPTRSVHandleType(algm, nrows, lower_tri);
-    this->sptrsvHandle->reset_handle(nrows);
+//    this->sptrsvHandle->init_handle(nrows);
     this->sptrsvHandle->set_team_size(this->team_work_size);
     this->sptrsvHandle->set_vector_size(this->vector_size);
+
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+    // default SpMV option
+    if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+        algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+      this->set_sptrsv_column_major (true);
+    }
+#endif
   }
+
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+  void set_sptrsv_verbose (bool verbose) {
+    this->sptrsvHandle->set_verbose (verbose);
+  }
+
+
+  void set_sptrsv_perm (int *perm) {
+    this->sptrsvHandle->set_perm (perm);
+  }
+
+  void set_sptrsv_supernodes (int nsuper, integer_view_host_t supercols, int *etree) {
+    this->sptrsvHandle->set_supernodes (nsuper, supercols, etree);
+  }
+
+  void set_sptrsv_diag_supernode_sizes (int unblocked, int blocked) {
+    this->sptrsvHandle->set_supernode_size_unblocked(unblocked);
+    this->sptrsvHandle->set_supernode_size_blocked(blocked);
+  }
+
+  void set_sptrsv_merge_supernodes (bool flag) {
+    this->sptrsvHandle->set_merge_supernodes (flag);
+  }
+
+  void set_sptrsv_invert_offdiagonal (bool flag) {
+    if (flag == true && !(this->is_sptrsv_column_major ())) {
+      std::cout << std::endl
+                << " ** cannot invert offdiagonal in CSR **"
+                << std::endl << std::endl;
+      return;
+    }
+
+    this->sptrsvHandle->set_invert_offdiagonal (flag);
+  }
+
+  void set_sptrsv_etree (int *etree) {
+    this->sptrsvHandle->set_etree (etree);
+  }
+
+
+  void set_sptrsv_column_major (bool col_major) {
+    if (col_major == false && this->sptrsvHandle->get_invert_offdiagonal ()) {
+      std::cout << std::endl
+                << " ** cannot use CSR for inverting offdiagonal **"
+                << std::endl << std::endl;
+      return;
+    }
+    this->sptrsvHandle->set_column_major (col_major);
+  }
+
+  bool is_sptrsv_lower_tri () {
+    return this->sptrsvHandle->is_lower_tri ();
+  }
+
+  bool is_sptrsv_column_major () {
+    return this->sptrsvHandle->is_column_major ();
+  }
+#endif
   void destroy_sptrsv_handle(){
     if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)
     {
@@ -559,6 +650,25 @@ public:
   }
 
 
+  SPILUKHandleType *get_spiluk_handle(){
+    return this->spilukHandle;
+  }
+  void create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm algm, size_type nrows, size_type nnzL, size_type nnzU) {
+    this->destroy_spiluk_handle();
+    this->is_owner_of_the_spiluk_handle = true;
+    this->spilukHandle = new SPILUKHandleType(algm, nrows, nnzL, nnzU);
+    this->spilukHandle->reset_handle(nrows, nnzL, nnzU);
+    this->spilukHandle->set_team_size(this->team_work_size);
+    this->spilukHandle->set_vector_size(this->vector_size);
+  }
+  void destroy_spiluk_handle(){
+    if (is_owner_of_the_spiluk_handle && this->spilukHandle != nullptr)
+    {
+      delete this->spilukHandle;
+      this->spilukHandle = nullptr;
+    }
+  }
+  
 };    // end class KokkosKernelsHandle
 
 }

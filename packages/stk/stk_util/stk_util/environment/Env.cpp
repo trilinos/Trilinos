@@ -56,7 +56,6 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 
 #if defined(__GNUC__)
-#include <cstdlib>
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
