@@ -252,10 +252,10 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
 
       // Loop over entries in row k and perform GS iteration
       for (LO kk = 0; kk < RowLeng; kk++) {
-        OneregRes[k] = OneregRes[k] - Avals[kk]*ldelta[Acols[kk]];
+        OneregRes[k] -= Avals[kk]*ldelta[Acols[kk]];
       }
       ldelta[k] = damping*Onediag[k]*OneregRes[k];
-      OneregX[k] = OneregX[k] + ldelta[k];
+      OneregX[k] += ldelta[k];
     }
     zeroInitGuess = false;
   }
