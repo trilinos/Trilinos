@@ -46,14 +46,164 @@
 
 namespace { // (anonymous)
 
-  TEUCHOS_UNIT_TEST( Utils, CountNumInCommon )
+  void
+  testLists(Teuchos::FancyOStream& out,
+            bool& success,
+            std::vector<int>& list1,
+            std::vector<int>& list2,
+            const size_t expectedNumInCommon,
+            const size_t expectedUnionSize)
+  {
+    std::sort(list1.begin(), list1.end());
+    std::sort(list2.begin(), list2.end());
+    auto iter1 = std::unique(list1.begin(), list1.end());
+    auto iter2 = std::unique(list2.begin(), list2.end());
+
+    using Tpetra::Details::countNumInCommon;
+    const size_t numInCommon =
+      countNumInCommon(list1.begin(), iter1,
+                       list2.begin(), iter2);
+    TEST_EQUALITY( numInCommon, expectedNumInCommon );
+
+    const size_t unionSize =
+      list1.size() + list2.size() - numInCommon;
+    TEST_EQUALITY( unionSize, expectedUnionSize );
+
+    std::vector<int> unionInds(list1.size() + list2.size());
+    TEST_EQUALITY( unionInds.size(), list1.size() + list2.size() );
+
+    auto unionIter = std::set_union(list1.begin(), iter1,
+                                    list2.begin(), iter2,
+                                    unionInds.begin());
+    const size_t unionSize2 = size_t(unionIter - unionInds.begin());
+    TEST_EQUALITY( unionSize2, expectedUnionSize );
+  }
+
+  TEUCHOS_UNIT_TEST( Utils, CountNumInCommon_short )
+  {
+    {
+      std::vector<int> list1;
+      std::vector<int> list2;
+      testLists(out, success, list1, list2, 0, 0);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{666}};
+      std::vector<int> list2;
+      testLists(out, success, list1, list2, 0, 1);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1;
+      std::vector<int> list2{{666}};
+      testLists(out, success, list1, list2, 0, 1);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{418}};
+      std::vector<int> list2{{418}};
+      testLists(out, success, list1, list2, 1, 1);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{418, 419}};
+      std::vector<int> list2{{418}};
+      testLists(out, success, list1, list2, 1, 2);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{418}};
+      std::vector<int> list2{{418, 419}};
+      testLists(out, success, list1, list2, 1, 2);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{417, 418}};
+      std::vector<int> list2{{418}};
+      testLists(out, success, list1, list2, 1, 2);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{418}};
+      std::vector<int> list2{{417, 418}};
+      testLists(out, success, list1, list2, 1, 2);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{417, 418, 419}};
+      std::vector<int> list2{{418}};
+      testLists(out, success, list1, list2, 1, 3);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{418}};
+      std::vector<int> list2{{417, 418, 419}};
+      testLists(out, success, list1, list2, 1, 3);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{415, 418, 421}};
+      std::vector<int> list2{{418}};
+      testLists(out, success, list1, list2, 1, 3);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{418}};
+      std::vector<int> list2{{415, 418, 421}};
+      testLists(out, success, list1, list2, 1, 3);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{415, 419, 421}};
+      std::vector<int> list2{{418}};
+      testLists(out, success, list1, list2, 0, 4);
+      if (! success) {
+        return;
+      }
+    }
+    {
+      std::vector<int> list1{{418}};
+      std::vector<int> list2{{415, 419, 421}};
+      testLists(out, success, list1, list2, 0, 4);
+      if (! success) {
+        return;
+      }
+    }
+  }
+
+  // This came from an application test problem.
+  TEUCHOS_UNIT_TEST( Utils, CountNumInCommon_app )
   {
     std::vector<int> newGblColInds {{142944, 142945, 142946, 142947, 142948, 142949, 142950, 142951, 142952, 142953, 142954, 142955, 142959, 142960, 142961, 142965, 142966, 142967, 142968, 142969, 142970, 143142, 143143, 143144, 198279, 198280, 198281, 198282, 198283, 198284, 198291, 198292, 198293, 198303, 198304, 198305, 198309, 198310, 198311, 198333, 198334, 198335, 198336, 198337, 198338, 198339, 198340, 198341, 198342, 198343, 198344, 198345, 198346, 198347, 198348, 198349, 198350, 198351, 198352, 198353, 198354, 198355, 198356, 198699, 198700, 198701, 198702, 198703, 198704, 198705, 198706, 198707, 198708, 198709, 198710, 198711, 198712, 198713, 198729, 198730, 198731, 198732, 198733, 198734, 198735, 198736, 198737, 198738, 198739, 198740, 198741, 198742, 198743, 198744, 198745, 198746}};
 
     std::vector<int> curGblColInds {{166215, 166216, 166217, 166218, 166219, 166220, 166221, 166222, 166223, 166224, 166225, 166226, 166227, 166228, 166229, 166230, 166231, 166232, 166233, 166234, 166235, 166236, 166237, 166238, 166239, 166240, 166241, 166242, 166243, 166244, 166245, 166246, 166247, 198279, 198280, 198281, 198282, 198283, 198284, 198285, 198286, 198287, 198288, 198289, 198290, 198291, 198292, 198293, 198294, 198295, 198296, 198297, 198298, 198299, 198300, 198301, 198302, 198303, 198304, 198305, 198306, 198307, 198308, 198309, 198310, 198311, 198312, 198313, 198314, 198315, 198316, 198317, 198333, 198334, 198335, 198336, 198337, 198338, 198339, 198340, 198341, 198342, 198343, 198344, 198345, 198346, 198347, 198348, 198349, 198350, 198351, 198352, 198353, 198354, 198355, 198356}};
 
-    const size_t newGblColIndsSize (96);
-    const size_t curGblColIndsSize (96);
+    constexpr size_t newGblColIndsSize (96);
+    constexpr size_t curGblColIndsSize (96);
 
     TEST_EQUALITY( newGblColInds.size(), newGblColIndsSize );
     TEST_EQUALITY( curGblColInds.size(), curGblColIndsSize );
@@ -71,24 +221,10 @@ namespace { // (anonymous)
     TEST_EQUALITY( size_t(curIter - curGblColInds.begin()), curGblColIndsSize );
 
     constexpr size_t expectedMergeSize = 153;
-
-    using Tpetra::Details::countNumInCommon;
-    const size_t numInCommon =
-      countNumInCommon(newGblColInds.begin(), newIter,
-                       curGblColInds.begin(), curIter);
-    const size_t mergeSize =
-      newGblColIndsSize + curGblColIndsSize - numInCommon;
-    TEST_EQUALITY( mergeSize, expectedMergeSize );
-
-    std::vector<int> mergedInds(newGblColInds.size() + curGblColInds.size());
-    TEST_EQUALITY( mergedInds.size(), newGblColIndsSize + curGblColIndsSize );
-
-    auto mergedIter = std::set_union(newGblColInds.begin(), newIter,
-                                     curGblColInds.begin(), curIter,
-                                     mergedInds.begin());
-    const size_t mergeSize2 = size_t(mergedIter - mergedInds.begin());
-
-    TEST_EQUALITY( mergeSize2, expectedMergeSize );
+    constexpr size_t expectedNumInCommon = newGblColIndsSize +
+      curGblColIndsSize - expectedMergeSize;
+    testLists(out, success, newGblColInds, curGblColInds,
+              expectedNumInCommon, expectedMergeSize);
   }
 
 } // namespace (anonymous)
