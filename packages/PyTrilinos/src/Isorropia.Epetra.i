@@ -125,7 +125,7 @@ from . import _Epetra
 
 // Include Isorropia documentation (same as for Isorropia.i)
 #if SWIG_VERSION < 0x040000
-%feature("autodoc", "1")
+%feature("autodoc", "1");
 %include "Isorropia_dox.i"
 #endif
 
