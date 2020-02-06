@@ -248,6 +248,9 @@ ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON)
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_EXE_DISABLE ON)
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
 
+# Disable ctest DISABLED test (otherwise, this shows up on CDash as "NotRun")
+ATDM_SET_ENABLE(KokkosContainers_PerformanceTest_OpenMP_DISABLE ON)
+
 IF ("${ATDM_CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 
   # Too expensive for full debug builds after Kokkos 2.99 upgrade
