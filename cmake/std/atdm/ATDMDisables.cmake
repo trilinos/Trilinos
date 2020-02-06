@@ -250,6 +250,12 @@ ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManage
 
 IF ("${ATDM_CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 
+  # Too expensive for full debug builds after Kokkos 2.99 upgrade
+  ATDM_SET_ENABLE(KokkosCore_UnitTest_Serial_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(KokkosCore_UnitTest_OpenMP_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(KokkosKernels_blas_openmp_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(KokkosKernels_blas_serial_MPI_1_DISABLE ON)
+
   ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-4_DISABLE ON)
   ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedPoissonExample-ConvTest-Hex-Order-3_DISABLE ON)
 
