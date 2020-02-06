@@ -4938,8 +4938,8 @@ mj_create_new_partitions(
 
 #else
 
-#ifdef KOKKOS_HAVE_OPENMP
-  const int num_threads = omp_get_num_threads();
+#ifdef KOKKOS_ENABLE_OPENMP
+  const int num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
 #else
   const int num_threads = 1;
 #endif
