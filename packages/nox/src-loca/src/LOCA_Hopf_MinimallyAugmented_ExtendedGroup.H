@@ -104,10 +104,10 @@ namespace LOCA {
        *      \end{array}
        *      \right] = 0
        *   \f]
-       * where \f$z = [x, p, \omega]\in\Re^{n+2}\f$, \f$x\f$ is the
-       * solution vector, \f$p\f$ is the bifurcation parameter, \f$\omega\f$
+       * where \f$ z = [x, p, \omega]\in\Re^{n+2}\f$, \f$ x\f$ is the
+       * solution vector, \f$ p\f$ is the bifurcation parameter, \f$\omega\f$
        * is the Hopf frequency and \f$\sigma\in\Re\f$ is a measure of the
-       * singularity of \f$J+i\omega M\f$ and is defined via
+       * singularity of \f$ J+i\omega M\f$ and is defined via
        * \f[
        *     \begin{bmatrix}
        *       J+i\omega M & a \\
@@ -139,7 +139,7 @@ namespace LOCA {
        * \f[
        *     \sigma = w^H J+i\omega M v/n
        * \f]
-       * for any vectors \f$a\f$ and \f$b\f$ in \f$\mathbb{C}^n\f$.  Using
+       * for any vectors \f$ a\f$ and \f$ b\f$ in \f$\mathbb{C}^n\f$.  Using
        * these relationships, it is easy to show
        * \f[
        *     \begin{split}
@@ -150,8 +150,8 @@ namespace LOCA {
        *
        * The group stores an underlying group of type
        * LOCA::Hopf::MinimallyAugmented::AbstractGroup to represent
-       * the equations \f$F(x,p) = 0\f$ and to manipulate the underlying
-       * complex matrix \f$C = J+i\omega M\f$.  This interface defines methods
+       * the equations \f$ F(x,p) = 0\f$ and to manipulate the underlying
+       * complex matrix \f$ C = J+i\omega M\f$.  This interface defines methods
        * for computing the derivatives \f$(w^H C v)_x\f$ and \f$(w^H C v)_p\f$.
        * Since %LOCA is not able to deal with complex vectors and matrices
        * directly, the real-equivalent formulation is used for all complex
@@ -169,19 +169,19 @@ namespace LOCA {
        * to the constructor.  The parameters this class recognizes are:
        * <ul>
        * <li> "Bifurcation Parameter" -- [string] (Must be supplied) -
-       *    Name of the bifurcation parameter \f$p\f$
+       *    Name of the bifurcation parameter \f$ p\f$
        * <li> "Initial Frequency" -- [double] (Must be supplied)
        *      Initial guess for the Hopf frequency \f$\omega\f$.
        * <li> "Bordered Solver Method" -- [string] (default "Bordering")
        *      Method for solving bordered systems of equations.  See
        *      LOCA::BorderedSolver::Factory for a description.
        * <li> "Symmetric Jacobian"  -- [bool] (default: false) -
-       *    Flag indicating whether Jacobian matrix \f$J\f$ is symmetric,
-       *    in which case we force \f$a = b\f$ and therefore the second
-       *    tranpose solve for \f$w\f$ is unnecessary
+       *    Flag indicating whether Jacobian matrix \f$ J\f$ is symmetric,
+       *    in which case we force \f$ a = b\f$ and therefore the second
+       *    tranpose solve for \f$ w\f$ is unnecessary
        * <li> "Initial Null Vector Compuation" -- [string]
-       *      (default: "User Provided") - Method to compute initial \f$a\f$
-       *      and \f$b\f$ vectors.  Valid choices are:
+       *      (default: "User Provided") - Method to compute initial \f$ a\f$
+       *      and \f$ b\f$ vectors.  Valid choices are:
        *      <ul>
        *      <li> "User Provided" - Initial vectors are provided in the
        *           parameter list, in which case the following parameters
@@ -191,35 +191,35 @@ namespace LOCA {
        *                [Teuchos::RCP<NOX::Abstract::Vector>]
        *                (Must be supplied) -
        *                 Vector storing initial value for the real component
-       *                 of the \f$a\f$ vector
+       *                 of the \f$ a\f$ vector
        *           <li> "Initial Imaginary A Vector"  --
        *                [Teuchos::RCP<NOX::Abstract::Vector>]
        *                (Must be supplied) -
        *                 Vector storing initial value for the imaginary
-       *                 component of the \f$a\f$ vector
+       *                 component of the \f$ a\f$ vector
        *           <li> "Initial Real B Vector"  --
        *                 [Teuchos::RCP<NOX::Abstract::Vector>]
        *                 (Must be supplied for nonsymmetric Jacobians) -
        *                 Vector storing initial value for the real component
-       *                 of the \f$b\f$ vector
+       *                 of the \f$ b\f$ vector
        *           <li> "Initial Imaginary B Vector"  --
        *                [Teuchos::RCP<NOX::Abstract::Vector>]
        *                (Must be supplied) -
        *                 Vector storing initial value for the imaginary
-       *                 component of the \f$b\f$ vector
+       *                 component of the \f$ b\f$ vector
        *           </ul>
-       *      <li> "Solve df/dp" - Compute \f$a = J^{-T}df/dp\f$ and
-       *           \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation
+       *      <li> "Solve df/dp" - Compute \f$ a = J^{-T}df/dp\f$ and
+       *           \f$ b = J^{-1} df/dp\f$ where \f$ p\f$ is the bifurcation
        *           parameter.
        *      </ul>
        * <li> "Update Null Vectors Every Continuation Step"  --
        *    [bool] (default: true) -
-       *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
-       *    \f$a = w\f$ and \f$b = v\f$ every continuation step
+       *    Flag indicating whether to update \f$ a\f$ and \f$ b\f$ vectors via
+       *    \f$ a = w\f$ and \f$ b = v\f$ every continuation step
        * <li> "Update Null Vectors Every Nonlinear Iteration"  --
        *    [bool] (default: false) -
-       *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
-       *    \f$a = w\f$ and \f$b = v\f$ every nonlinear iteration
+       *    Flag indicating whether to update \f$ a\f$ and \f$ b\f$ vectors via
+       *    \f$ a = w\f$ and \f$ b = v\f$ every nonlinear iteration
        * </ul>
        */
       class ExtendedGroup :
@@ -235,7 +235,7 @@ namespace LOCA {
      * \param topParams [in] Parsed top-level parameter list.
      * \param hpfParams [in] Parameter list determining the
      * bordered solver method.
-     * \param grp [in] Group representing \f$f\f$.
+     * \param grp [in] Group representing \f$ f\f$.
      */
       ExtendedGroup(
        const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -419,7 +419,7 @@ namespace LOCA {
     virtual double getParam(std::string paramID) const;
 
     /*!
-     * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$
+     * Compute \f$\partial F/\partial p\f$ for each parameter \f$ p\f$
      * indexed by paramIDs.  The first column of \em dfdp holds F,
      * which is valid if \em isValidF is true.  Otherwise F must be
      * computed.
@@ -570,7 +570,7 @@ namespace LOCA {
     //! Hopf parameter list
     Teuchos::RCP<Teuchos::ParameterList> hopfParams;
 
-    //! Pointer to base group that defines \f$F\f$
+    //! Pointer to base group that defines \f$ F\f$
     Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup> grpPtr;
 
     //! Pointer to base group as a bordered group

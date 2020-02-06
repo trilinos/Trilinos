@@ -60,7 +60,6 @@ from . import _Epetra
 %enddef
 
 %module(package      = "PyTrilinos.Isorropia",
-	autodoc      = "1",
 	implicitconv = "1",
         moduleimport = %isorropia_epetra_importcode,
 	docstring    = %isorropia_epetra_docstring) Epetra
@@ -125,7 +124,10 @@ from . import _Epetra
 }
 
 // Include Isorropia documentation (same as for Isorropia.i)
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1")
 %include "Isorropia_dox.i"
+#endif
 
 // General ignore directives
 %ignore *::operator=;

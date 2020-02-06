@@ -82,8 +82,8 @@ namespace LOCA {
        * LOCA::TurningPoint::MooreSpence::AbstractGroup and
        * LOCa::TimeDependent::AbstractGroup and declares several
        * pure virtual methods for applying, solving, and computing derivatives
-       * of the complex matrix \f$J+i\omega B\f$ where \f$J\f$ is the Jacobian
-       * matrix, \f$B\f$ is the mass matrix, and \f$\omega\f$ is a (real)
+       * of the complex matrix \f$ J+i\omega B\f$ where \f$ J\f$ is the Jacobian
+       * matrix, \f$ B\f$ is the mass matrix, and \f$\omega\f$ is a (real)
        * scalar.
        */
       class AbstractGroup :
@@ -104,10 +104,10 @@ namespace LOCA {
      */
     //@{
 
-    //! Is  \f$J+i\omega B\f$ valid
+    //! Is  \f$ J+i\omega B\f$ valid
     virtual bool isComplex() const = 0;
 
-    //! Compute \f$J+i\omega B\f$
+    //! Compute \f$ J+i\omega B\f$
     /*!
      * The argument \b frequency stores \f$\omega\f$.
      */
@@ -141,7 +141,7 @@ namespace LOCA {
     /*!
      * \brief Computes the derivative
      * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial p}\f$
-     * where \f$p\f$ is the parameter indexed by \b paramIDs.
+     * where \f$ p\f$ is the parameter indexed by \b paramIDs.
      */
     virtual NOX::Abstract::Group::ReturnType
     computeDCeDp(const std::vector<int>& paramIDs,
@@ -155,7 +155,7 @@ namespace LOCA {
     /*!
      * \brief Computes the directional derivative
      * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial x} a\f$ for the
-     * given direction \f$a\f$.
+     * given direction \f$ a\f$.
      */
     virtual NOX::Abstract::Group::ReturnType
     computeDCeDxa(const NOX::Abstract::Vector& yVector,
@@ -168,7 +168,7 @@ namespace LOCA {
     /*!
      * \brief Computes the directional derivative
      * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial x} a\f$ for the
-     * given direction \f$a\f$. The
+     * given direction \f$ a\f$. The
      * arguments \b Ce_real and \b Ce_imag hold the real and imaginary
      * components of \f$(J+i\omega B)(y+iz)\f$.
      */
