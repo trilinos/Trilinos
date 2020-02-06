@@ -988,6 +988,45 @@ namespace Tpetra {
       }
       out << "]";
     }
+
+    /// \brief Given two sorted and merged ranges, return the number
+    ///   of elements they have in common.
+    template<class SourceIterator,
+             class TargetIterator>
+    size_t
+    countNumInCommon(SourceIterator srcBeg,
+                     SourceIterator srcEnd,
+                     TargetIterator tgtBeg,
+                     TargetIterator tgtEnd)
+    {
+      size_t numInCommon = 0;
+
+      auto srcIter = srcBeg;
+      auto tgtIter = tgtBeg;
+      while (srcIter != srcEnd && tgtIter != tgtEnd) {
+        tgtIter = std::lower_bound(tgtIter, tgtEnd, *srcIter);
+        if (tgtIter == tgtEnd) {
+          break;
+        }
+        if (*tgtIter == *srcIter) {
+          ++numInCommon;
+          ++srcIter;
+          ++tgtIter;
+        }
+
+        srcIter = std::lower_bound(srcIter, srcEnd, *tgtIter);
+        if (srcIter == srcEnd) {
+          break;
+        }
+        if (*srcIter == *tgtIter) {
+          ++numInCommon;
+          ++tgtIter;
+          ++srcIter;
+        }
+      }
+      return numInCommon;
+    }
+
   } // namespace Details
 } // namespace Tpetra
 
