@@ -764,7 +764,8 @@ bool KokkosSPGEMM
     out_rowmap_view_t out_row_map,
     out_nnz_view_t &out_nnz_indices,
     out_nnz_view_t &out_nnz_sets,
-    bool compress_in_single_step){
+    bool compress_in_single_step)
+{
   //get the execution space type.
   KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
   //get the suggested vectorlane size based on the execution space, and average number of nnzs per row.
@@ -904,7 +905,8 @@ bool KokkosSPGEMM
       if(use_unordered_compress)
       {
         size_type max_row_nnz = 0;
-        KokkosKernels::Impl::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
+        if(n)
+          KokkosKernels::Impl::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
         MyExecSpace().fence();
         KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
 
