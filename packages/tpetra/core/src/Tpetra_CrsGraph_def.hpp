@@ -65,6 +65,7 @@
 #include "Tpetra_Details_packCrsGraph.hpp"
 #include "Tpetra_Details_unpackCrsGraphAndCombine.hpp"
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
+#include "Tpetra_Util.hpp"
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -77,42 +78,6 @@
 namespace Tpetra {
   namespace Details {
     namespace Impl {
-
-      template<class SourceIterator,
-               class TargetIterator>
-      size_t
-      countNumInCommon(SourceIterator srcBeg,
-                       SourceIterator srcEnd,
-                       TargetIterator tgtBeg,
-                       TargetIterator tgtEnd)
-      {
-        size_t numInCommon = 0;
-
-        auto srcIter = srcBeg;
-        auto tgtIter = tgtBeg;
-        while (srcIter != srcEnd && tgtIter != tgtEnd) {
-          tgtIter = std::lower_bound(tgtIter, tgtEnd, *srcIter);
-          if (tgtIter == tgtEnd) {
-            break;
-          }
-          if (*tgtIter == *srcIter) {
-            ++numInCommon;
-            ++srcIter;
-            ++tgtIter;
-          }
-
-          srcIter = std::lower_bound(srcIter, srcEnd, *tgtIter);
-          if (srcIter == srcEnd) {
-            break;
-          }
-          if (*srcIter == *tgtIter) {
-            ++numInCommon;
-            ++tgtIter;
-            ++srcIter;
-          }
-        }
-        return numInCommon;
-      }
 
       template<class LocalOrdinal, class GlobalOrdinal, class Node>
       Teuchos::ArrayView<
@@ -5382,7 +5347,8 @@ namespace Tpetra {
       insert_result result;
       const GO tgt_gid = rowMap_->getGlobalElement(tgt_lid);
       if (padAll) {
-        result = padding.insert(tgt_lid, orig_num_src_entries);
+        const size_t orig_num_tgt_entries = this->getNumEntriesInGlobalRow(tgt_gid);
+        result = padding.insert(tgt_lid, orig_num_src_entries + orig_num_tgt_entries);
       }
       else {
         size_t curNumSrcDups = 0;
@@ -5392,14 +5358,7 @@ namespace Tpetra {
                                    src_sorted, src_merged);
         srcNumDups += curNumSrcDups;
         if (src_row_inds_view.size() == 0) { // nothing new to insert
-          result = padding.insert(tgt_lid, size_t(0));
-          // FIXME (mfh 09 Apr 2019, 04 Feb 2020) Kokkos::UnorderedMap
-          // is allowed to fail even if the user did nothing wrong. We
-          // should actually have a retry option. I just copied this
-          // code over from computeCrsPadding.
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (result.failed(), std::runtime_error,
-             "unable to insert padding for LID " << tgt_lid);
+          continue;
         }
 
         size_t orig_num_tgt_entries = 0;
@@ -5410,30 +5369,27 @@ namespace Tpetra {
                                    tgt_sorted, tgt_merged);
         tgtNumDups += curNumTgtDups;
 
-        const size_t numInCommon = Details::Impl::countNumInCommon(
+        const size_t numInCommon = Details::countNumInCommon(
           src_row_inds_view.begin(),
           src_row_inds_view.end(),
           tgt_row_inds_view.begin(),
           tgt_row_inds_view.end());
-        const size_t orig_num_merged =
+        const size_t orig_num_union =
           size_t(src_row_inds_view.size()) +
           size_t(tgt_row_inds_view.size());
 
-        const size_t new_num_merged = orig_num_merged - numInCommon;
+        const size_t new_num_union = orig_num_union - numInCommon;
         mergedNumDups += numInCommon;
 
-        const size_t how_much_padding =
-          new_num_merged >= orig_num_tgt_entries ?
-          new_num_merged - orig_num_tgt_entries :
-          size_t(0);
-        result = padding.insert (tgt_lid, how_much_padding);
+        if (new_num_union > orig_num_tgt_entries) {
+          result = padding.insert (tgt_lid, new_num_union);
+          // Kokkos::UnorderedMap is allowed to fail even if the user did
+          // nothing wrong. We should actually have a retry option.
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (result.failed(), std::runtime_error,
+             "unable to insert padding for LID " << tgt_lid);
+        }
       }
-
-      // Kokkos::UnorderedMap is allowed to fail even if the user did
-      // nothing wrong. We should actually have a retry option.
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (result.failed(), std::runtime_error,
-         "unable to insert padding for LID " << tgt_lid);
     }
 
     if (verbose) {
@@ -5511,7 +5467,10 @@ namespace Tpetra {
       insert_result result;
       const LO tgt_lid = permuteToLIDs_h[i];
       if (padAll) {
-        result = padding.insert (tgt_lid, orig_num_src_entries);
+        const size_t orig_num_tgt_entries =
+          getNumEntriesInLocalRow(tgt_lid);
+        result = padding.insert(
+          tgt_lid, orig_num_src_entries + orig_num_tgt_entries);
       }
       else {
         size_t curNumSrcDups = 0;
@@ -5530,22 +5489,25 @@ namespace Tpetra {
                                    tgt_sorted, tgt_merged);
         tgtNumDups += curNumTgtDups;
 
-        const size_t numInCommon = Details::Impl::countNumInCommon(
+        const size_t numInCommon = Details::countNumInCommon(
           src_row_inds_view.begin(),
           src_row_inds_view.end(),
           tgt_row_inds_view.begin(),
           tgt_row_inds_view.end());
-        const size_t orig_num_merged =
+        const size_t orig_num_union =
           size_t(src_row_inds_view.size()) +
           size_t(tgt_row_inds_view.size());
-        const size_t new_num_merged = orig_num_merged - numInCommon;
+        const size_t new_num_union = orig_num_union - numInCommon;
         mergedNumDups += numInCommon;
 
-        const size_t how_much_padding =
-          new_num_merged >= orig_num_tgt_entries ?
-          new_num_merged - orig_num_tgt_entries :
-          size_t(0);
-        result = padding.insert (tgt_lid, how_much_padding);
+        if (new_num_union > orig_num_tgt_entries) {
+          result = padding.insert (tgt_lid, new_num_union);
+          // Kokkos::UnorderedMap is allowed to fail even if the user did
+          // nothing wrong. We should actually have a retry option.
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (result.failed(), std::runtime_error,
+             "unable to insert padding for LID " << tgt_lid);
+        }
       }
 
       // Kokkos::UnorderedMap is allowed to fail even if the user did
@@ -5712,7 +5674,7 @@ namespace Tpetra {
                                  tgtSorted, tgtMerged);
       tgtNumDups += curNumTgtDups;
 
-      const size_t numInCommon = Details::Impl::countNumInCommon(
+      const size_t numInCommon = Details::countNumInCommon(
         gblColIndsReceived.begin(),
         gblColIndsReceived.end(),
         gblColIndsTgt.begin(),
@@ -5722,10 +5684,7 @@ namespace Tpetra {
       const size_t newNumMerged = origNumBoth - numInCommon;
       mergedNumDups += numInCommon;
 
-      const size_t extraSpaceNeeded = newNumMerged >= origNumTgtEnt ?
-        newNumMerged - origNumTgtEnt :
-        size_t(0);
-      padding[whichImp] = extraSpaceNeeded;
+      padding[whichImp] = std::max(newNumMerged, origNumTgtEnt);
       offset += numBytes;
     }
 
