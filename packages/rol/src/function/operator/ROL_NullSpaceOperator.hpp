@@ -46,7 +46,7 @@
 
 #include "ROL_Constraint.hpp"
 #include "ROL_PartitionedVector.hpp"
-#include "ROL_Krylov.hpp"
+#include "ROL_KrylovFactory.hpp"
 #include "ROL_AugmentedSystemOperator.hpp"
 #include "ROL_AugmentedSystemPrecOperator.hpp"
 
