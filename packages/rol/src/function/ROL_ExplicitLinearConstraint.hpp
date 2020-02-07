@@ -163,10 +163,15 @@ public:
     return acon_[ind];
   }
 
+  virtual void project(Vector<Real> &x,
+                 const Vector<Real> &y) const {
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+    nsop_->apply(x,y,tol);
+  }
+
   virtual void project(Ptr<Vector<Real>> &x,
                  const Ptr<Vector<Real>> &y) const {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
-    nsop_->apply(*x,*y,tol);
+    project(*x,*y);
   }
 
 }; // class ExplicitLinearConstraint
