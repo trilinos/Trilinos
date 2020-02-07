@@ -188,6 +188,12 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   export ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code=OFF
   export KOKKOS_NUM_DEVICES=4
 
+  # CTEST Settings
+  # TPETRA_ASSUME_CUDA_AWARE_MPI is used by cmake/std/atdm/ats2/trilinos_jsrun
+  export TPETRA_ASSUME_CUDA_AWARE_MPI=0
+  # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by cmake/ctest/driver/atdm/ats2/local-driver.sh
+  export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=1
+
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
 
   echo
@@ -245,7 +251,7 @@ export MPIF90=`which mpif90`
 export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 
 # TODO: Need -np support from the trilinos_jsrun wrapper.
-export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket 4"
+export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
 # Set common default compilers
