@@ -21,9 +21,8 @@ function debug_print {
 # @return void
 ################################################################################
 function evaluate_jsrun_command {
-  # Set retry
-  if [[ ! "$JSRUN_WRAPPER_NUM_RETRIES" == "" && 
-        ! $JSRUN_WRAPPER_NUM_RETRIES = *[[:digit:]]* ]]; then
+  # Set retry, assume JSRUN_WRAPPER_NUM_RETRIES is valid if set
+  if [[ ! "$JSRUN_WRAPPER_NUM_RETRIES" == "" ]]; then
     retry=${JSRUN_WRAPPER_NUM_RETRIES}
   else
     retry=3
