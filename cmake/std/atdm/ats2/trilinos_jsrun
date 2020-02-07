@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Globals
 DEBUG_SCRIPT="${DEBUG_SCRIPT-:0}"
 ECHO_CMD="${ECHO_CMD=:0}"
 np_is_one="false"
@@ -13,11 +14,42 @@ function debug_print {
   fi
 }
 
+################################################################################
+# @brief: Hack around JSM server error "Error: Remote JSM server is not
+# responding"
+# This function assumes that "args" has been initialized
+# @return void
+################################################################################
+function evaluate_jsrun_command {
+  # Set retry
+  if [[ ! "$JSRUN_WRAPPER_NUM_RETRIES" == "" && 
+        ! $JSRUN_WRAPPER_NUM_RETRIES = *[[:digit:]]* ]]; then
+    retry=${JSRUN_WRAPPER_NUM_RETRIES}
+  else
+    retry=3
+  fi
+  grep_status=0
+
+  # Retry jsrun command until retry is exhausted or JSM server error is not found
+  while [[ $grep_status -eq 0 && $retry -ne 0 ]]; do
+    eval jsrun $(printf "'%s' " "${args[@]}") &> cmd.out
+
+    grep 'Error: Remote JSM server is not responding' cmd.out &> /dev/null
+    grep_status=$?
+
+    retry=$((retry-1))
+  done
+  cat cmd.out
+  rm cmd.out
+}
+
+# Check if TPETRA_ASSUME_CUDA_AWARE_MPI is set and default to 0 if unset.
 if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]]; then
   echo "WARNING, you have not set TPETRA_ASSUME_CUDA_AWARE_MPI=0 or 1, defaulting to TPETRA_ASSUME_CUDA_AWARE_MPI=0"
   export TPETRA_ASSUME_CUDA_AWARE=0
 fi
 
+# Parse input arguments and modify them for jsrun
 for i in "${!args[@]}";
 do
   arg=${args[${i}]}
@@ -116,9 +148,4 @@ if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]
   fi
 fi
 
-if [ "$ECHO_CMD" == "1" ]; then
-  1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
-  1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} AFTER : jsrun " $(printf "'%s' " "${args[@]}")
-fi
-eval jsrun $(printf "'%s' " "${args[@]}")
-
+evaluate_jsrun_command
