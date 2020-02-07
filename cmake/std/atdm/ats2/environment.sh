@@ -58,8 +58,11 @@ echo "Using $ATDM_CONFIG_SYSTEM_NAME compiler stack $ATDM_CONFIG_COMPILER to bui
 
 # Some basic settings
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
-export ATDM_CONFIG_USE_NINJA=OFF
+export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=8
+# ToDo: Experiment with increasing the build parallelism for different
+# compilers, different build configurations, on the login node vs. the compute
+# node, etc.
 
 # Set ctest -j parallel level for non-CUDA builds
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
@@ -181,7 +184,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
 
   # Kokkos Settings
-  export ATDM_CONFIG_Kokkos_ENABLE_Serial=ON
+  export ATDM_CONFIG_Kokkos_ENABLE_SERIAL=ON
   export KOKKOS_NUM_DEVICES=4
 
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
@@ -202,6 +205,9 @@ fi
 
 # Common module - requires compiler to be loaded first
 module load spectrum-mpi/2019.06.24
+
+# Prepend path to ninja after all of the modules are loaded
+export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
 
 # ATDM specific config variables
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
