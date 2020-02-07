@@ -52,19 +52,22 @@ namespace ROL {
 
 template <class Real>
 Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol) {
-  Real dnorm = d.norm(), zero(0);
-  if ( dnorm == zero ) {
-    return zero;
-  }
-  Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), one(1), v0(0), v1(0);
-  Real xnorm = x.norm(), h = cbrteps * std::max(xnorm/dnorm,one);
-  ROL::Ptr<Vector<Real>> y = x.clone();
-  y->set(x); y->axpy(h, d);
-  v0 = value(x,tol);
-  update(*y);
-  v1 = value(*y,tol);
-  update(x);
-  return (v1 - v0) / h;
+  Ptr<Vector<Real>> g = x.dual().clone();
+  gradient(*g,x,tol);
+  return d.dot(g->dual());
+  //Real dnorm = d.norm(), zero(0);
+  //if ( dnorm == zero ) {
+  //  return zero;
+  //}
+  //Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), one(1), v0(0), v1(0);
+  //Real xnorm = x.norm(), h = cbrteps * std::max(xnorm/dnorm,one);
+  //ROL::Ptr<Vector<Real>> y = x.clone();
+  //y->set(x); y->axpy(h, d);
+  //v0 = value(x,tol);
+  //update(*y);
+  //v1 = value(*y,tol);
+  //update(x);
+  //return (v1 - v0) / h;
 }
 
 template <class Real>
