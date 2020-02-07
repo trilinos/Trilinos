@@ -6696,11 +6696,25 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       auto sub_host_dst_coordinates
         = Kokkos::subview(host_dst_coordinates, Kokkos::ALL, i);
       // Note Layout Left means we can do these in contiguous blocks
-      ArrayView<mj_scalar_t> sent_coord(
-        sub_host_src_coordinates.data(), this->num_local_coords);
+      // This form was causing problems on cuda 10 pascal nodes, issue #6422
+      // Doing a manual copy clears the error though it seems this is probably
+      // just shifting some kind of race condition or UVM issue around. The
+      // bug can be sensitive to simple changes like adding a printf log.
+
+      // Using this form will segfault on cuda 10 pascal node
+      //ArrayView<mj_scalar_t> sent_coord(
+      //  sub_host_src_coordinates.data(), this->num_local_coords);
+
+      // Manual copy will clear the error but this is probably just due to
+      // shifting some kind of race condition.
+      ArrayRCP<mj_scalar_t> sent_coord(this->num_local_coords);
+      for(int n = 0; n < this->num_local_coords; ++n) {
+        sent_coord[n] = sub_host_src_coordinates[n];
+      }
+
       ArrayRCP<mj_scalar_t> received_coord(num_incoming_gnos);
       distributor.doPostsAndWaits<mj_scalar_t>(
-        sent_coord, 1, received_coord());
+        sent_coord(), 1, received_coord());
       memcpy(sub_host_dst_coordinates.data(),
         received_coord.getRawPtr(), num_incoming_gnos * sizeof(mj_scalar_t));
     }
