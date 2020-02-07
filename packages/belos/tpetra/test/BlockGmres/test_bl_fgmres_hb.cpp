@@ -52,16 +52,14 @@
 #include "BelosBlockGmresSolMgr.hpp"
 
 // I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
-#include <Tpetra_MatrixIO.hpp>
+#include "Tpetra_MatrixIO.hpp"
 
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_StandardCatchMacros.hpp>
-#include <Tpetra_Core.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
-using namespace Teuchos;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
@@ -69,11 +67,14 @@ using std::endl;
 using std::cout;
 using std::vector;
 using Teuchos::tuple;
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::ParameterList;
 
 int main(int argc, char *argv[]) {
 
   typedef double                           ST;
-  typedef ScalarTraits<ST>                SCT;
+  typedef Teuchos::ScalarTraits<ST>       SCT;
   typedef SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;
@@ -89,7 +90,7 @@ int main(int argc, char *argv[]) {
 
     int MyPID = 0;
 
-    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
     //
     // Get test parameters from command-line processor
     //
@@ -103,7 +104,7 @@ int main(int argc, char *argv[]) {
     std::string filename("bcsstk14.hb");
     MT tol = 1.0e-5;     // relative residual tolerance
 
-    CommandLineProcessor cmdp(false,true);
+    Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
     cmdp.setOption("max-subspace",&length,"Maximum number of blocks the solver can use for the subspace.");
     cmdp.setOption("block-size",&blocksize,"Block size to be used by the Gmres solver.");
-    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+    if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
     if (debug) {
@@ -177,7 +178,6 @@ int main(int argc, char *argv[]) {
 
     // Set parameters for the inner GMRES (preconditioning) iteration.
     ParameterList innerBelosList;
-    innerBelosList.set( "Solver", "BlockGmres" );               // Set the inner solver to use block Gmres
     innerBelosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov subspace (max subspace size)
     innerBelosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     innerBelosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
     // *****Create the inner block Gmres iteration********
     //  
     RCP<Belos::TpetraOperator<ST>> innerSolver;
-    innerSolver = rcp( new Belos::TpetraOperator<ST>( rcpFromRef(innerProblem), rcpFromRef(innerBelosList), true ) );
+    innerSolver = rcp( new Belos::TpetraOperator<ST>( rcpFromRef(innerProblem), rcpFromRef(innerBelosList), "Block Gmres", true ) );
     //  
 
     //
@@ -268,4 +268,4 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-} // end test_bl_cg_hb.cpp
+} // end test_bl_fgmres_hb.cpp
