@@ -6662,16 +6662,16 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // migrate gnos.
     {
       ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
-      auto host_current_mj_gnos =
+      auto src_host_current_mj_gnos =
         Kokkos::create_mirror_view(Kokkos::HostSpace(), this->current_mj_gnos);
-      Kokkos::deep_copy(host_current_mj_gnos, this->current_mj_gnos);
+      Kokkos::deep_copy(src_host_current_mj_gnos, this->current_mj_gnos);
       ArrayView<mj_gno_t> sent_gnos(
-        host_current_mj_gnos.data(), this->num_local_coords);
+        src_host_current_mj_gnos.data(), this->num_local_coords);
       distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
       this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
         Kokkos::ViewAllocateWithoutInitializing("gids"), num_incoming_gnos);
-      host_current_mj_gnos = Kokkos::create_mirror_view(
-        Kokkos::HostSpace(), this->current_mj_gnos);
+      auto host_current_mj_gnos = Kokkos::create_mirror_view(
+        this->current_mj_gnos);
       memcpy(host_current_mj_gnos.data(),
         received_gnos.getRawPtr(), num_incoming_gnos * sizeof(mj_gno_t));
       Kokkos::deep_copy(this->current_mj_gnos, host_current_mj_gnos);
@@ -6681,8 +6681,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t>
       dst_coordinates("mj_coordinates", num_incoming_gnos, this->coord_dim);
-    auto host_dst_coordinates = Kokkos::create_mirror_view(
-      Kokkos::HostSpace(), dst_coordinates);
+    auto host_dst_coordinates = Kokkos::create_mirror_view(dst_coordinates);
     auto host_src_coordinates = Kokkos::create_mirror_view(
       Kokkos::HostSpace(), this->mj_coordinates);
     Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
@@ -6758,18 +6757,18 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // we need the part assigment arrays as well, since
     // there will be multiple parts in processor.
     if(num_procs < num_parts) {
-      auto host_assigned_part_ids =
+      auto src_host_assigned_part_ids =
         Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
-      Kokkos::deep_copy(host_assigned_part_ids, assigned_part_ids);
+      Kokkos::deep_copy(src_host_assigned_part_ids, assigned_part_ids);
       ArrayView<mj_part_t> sent_partids(
-        host_assigned_part_ids.data(), this->num_local_coords);
+        src_host_assigned_part_ids.data(), this->num_local_coords);
       ArrayRCP<mj_part_t> received_partids(num_incoming_gnos);
       distributor.doPostsAndWaits<mj_part_t>(
         sent_partids, 1, received_partids());
       this->assigned_part_ids = Kokkos::View<mj_part_t *, device_t>
         ("assigned_part_ids", num_incoming_gnos);
-      host_assigned_part_ids =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
+      auto host_assigned_part_ids = Kokkos::create_mirror_view(
+        this->assigned_part_ids);
       memcpy(
         host_assigned_part_ids.data(),
         received_partids.getRawPtr(),
@@ -7604,26 +7603,26 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       // MPI buffers should be Kokkos::HostSpace, not Kokkos::CudaUVMSpace
 
       // migrate gnos to actual owners.
-      auto host_current_mj_gnos =
+      auto src_host_current_mj_gnos =
         Kokkos::create_mirror_view(Kokkos::HostSpace(), this->current_mj_gnos);
-      Kokkos::deep_copy(host_current_mj_gnos, this->current_mj_gnos);
+      Kokkos::deep_copy(src_host_current_mj_gnos, this->current_mj_gnos);
       ArrayRCP<mj_gno_t> received_gnos(incoming);
-      ArrayView<mj_gno_t> sent_gnos(host_current_mj_gnos.data(),
+      ArrayView<mj_gno_t> sent_gnos(src_host_current_mj_gnos.data(),
         this->num_local_coords);
       distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
       this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
         Kokkos::ViewAllocateWithoutInitializing("current_mj_gnos"), incoming);
-      host_current_mj_gnos = Kokkos::create_mirror_view(
-        Kokkos::HostSpace(), this->current_mj_gnos);
+      auto host_current_mj_gnos = Kokkos::create_mirror_view(
+        this->current_mj_gnos);
       memcpy(host_current_mj_gnos.data(),
         received_gnos.getRawPtr(), incoming * sizeof(mj_gno_t));
       Kokkos::deep_copy(this->current_mj_gnos, host_current_mj_gnos);
 
       // migrate part ids to actual owners.
-      auto host_assigned_part_ids =
+      auto src_host_assigned_part_ids =
         Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
-      Kokkos::deep_copy(host_assigned_part_ids, this->assigned_part_ids);
-      ArrayView<mj_part_t> sent_partids(host_assigned_part_ids.data(),
+      Kokkos::deep_copy(src_host_assigned_part_ids, this->assigned_part_ids);
+      ArrayView<mj_part_t> sent_partids(src_host_assigned_part_ids.data(),
         this->num_local_coords);
       ArrayRCP<mj_part_t> received_partids(incoming);
       distributor.doPostsAndWaits<mj_part_t>(
@@ -7632,8 +7631,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         Kokkos::View<mj_part_t*, device_t>(
           Kokkos::ViewAllocateWithoutInitializing("assigned_part_ids"),
           incoming);
-      host_assigned_part_ids =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
+      auto host_assigned_part_ids = Kokkos::create_mirror_view(
+        this->assigned_part_ids);
       memcpy( host_assigned_part_ids.data(),
         received_partids.getRawPtr(), incoming * sizeof(mj_part_t));
       deep_copy(this->assigned_part_ids, host_assigned_part_ids);
@@ -8782,18 +8781,18 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
   // migrate gnos.
   {
     ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
-    Kokkos::View<mj_gno_t*, Kokkos::Serial> host_initial_mj_gnos
-      ("host_initial_mj_gnos", initial_mj_gnos_.size());
+    Kokkos::View<mj_gno_t*, Kokkos::Serial> host_initial_mj_gnos(
+      Kokkos::ViewAllocateWithoutInitializing("host_initial_mj_gnos"),
+      initial_mj_gnos_.size()); // initial_mj_gnos_ is const mj_gno_t *
     Kokkos::deep_copy(host_initial_mj_gnos, initial_mj_gnos_);
     ArrayView<const mj_gno_t> sent_gnos(host_initial_mj_gnos.data(),
       num_local_coords_);
     distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
-
     result_initial_mj_gnos_ = Kokkos::View<mj_gno_t*, device_t>(
       Kokkos::ViewAllocateWithoutInitializing("result_initial_mj_gnos_"),
       num_incoming_gnos);
     auto host_result_initial_mj_gnos_ = Kokkos::create_mirror_view(
-      Kokkos::HostSpace(), result_initial_mj_gnos_);
+      result_initial_mj_gnos_);
     memcpy(host_result_initial_mj_gnos_.data(),
       received_gnos.getRawPtr(), num_incoming_gnos * sizeof(mj_gno_t));
     Kokkos::deep_copy(result_initial_mj_gnos_, host_result_initial_mj_gnos_);
@@ -8805,8 +8804,8 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
     Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"),
     num_incoming_gnos, this->coord_dim);
   auto host_dst_coordinates = Kokkos::create_mirror_view(
-    Kokkos::HostSpace(), dst_coordinates);
-  auto  host_src_coordinates =
+    dst_coordinates);
+  auto host_src_coordinates =
     Kokkos::create_mirror_view(Kokkos::HostSpace(), this->mj_coordinates);
   Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
   for(int i = 0; i < this->coord_dim; ++i) {
@@ -9037,8 +9036,9 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     // Reorder results so that they match the order of the input
     std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid;
     localGidToLid.reserve(result_num_local_coords);
-    Kokkos::View<mj_gno_t*, Kokkos::Serial> host_result_initial_mj_gnos
-      ("host_result_initial_mj_gnos", result_initial_mj_gnos_.size());
+    Kokkos::View<mj_gno_t*, Kokkos::Serial> host_result_initial_mj_gnos(
+      Kokkos::ViewAllocateWithoutInitializing("host_result_initial_mj_gnos"),
+      result_initial_mj_gnos_.size());
     Kokkos::deep_copy(host_result_initial_mj_gnos, result_initial_mj_gnos_);
     for(mj_lno_t i = 0; i < result_num_local_coords; i++) {
       localGidToLid[host_result_initial_mj_gnos(i)] = i;
@@ -9049,8 +9049,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     auto host_result_assigned_part_ids =
       Kokkos::create_mirror_view(result_assigned_part_ids);
     Kokkos::deep_copy(host_result_assigned_part_ids, result_assigned_part_ids);
-    Kokkos::View<mj_gno_t*, Kokkos::Serial> host_result_mj_gnos
-      ("host_result_mj_gnos", result_mj_gnos.size());
+    auto host_result_mj_gnos = Kokkos::create_mirror_view(result_mj_gnos);
     Kokkos::deep_copy(host_result_mj_gnos, result_mj_gnos);
     for(mj_lno_t i = 0; i < result_num_local_coords; i++) {
       mj_lno_t origLID = localGidToLid[host_result_mj_gnos(i)];
