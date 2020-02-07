@@ -166,6 +166,7 @@ public:
 /// You have to create one of the subclasses.  The normal way to
 /// handle a Comm is to pass it around using RCP (a reference-counted
 /// "smart" pointer).  For example:
+///
 /// \code
 /// // Make a Comm.  This one happens to wrap MPI_COMM_WORLD.
 /// RCP<const Comm<int> > comm = rcp (new MpiComm (MPI_COMM_WORLD));

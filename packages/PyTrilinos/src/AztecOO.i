@@ -70,7 +70,6 @@ example subdirectory of the PyTrilinos package:
 %enddef
 
 %module(package   = "PyTrilinos",
-	autodoc   = "1",
 	docstring = %aztecoo_docstring) AztecOO
 
 #if SWIG_VERSION >= 0x030000
@@ -133,9 +132,7 @@ struct OperatorData
 #include "PyTrilinos_AztecOO_Headers.hpp"
 %}
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
+// PyTrilinos configuration
 %include "PyTrilinos_config.h"
 
 // AztecOO enumerated types support
@@ -153,7 +150,10 @@ struct OperatorData
 %include "az_aztec_defs.h"
 
 // Include AztecOO documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "AztecOO_dox.i"
+#endif
 
 // Include the NumPy typemaps
 %include "numpy.i"

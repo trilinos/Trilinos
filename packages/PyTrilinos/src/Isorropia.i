@@ -51,7 +51,6 @@ from . import _Base
 %enddef
 
 %module(package      = "PyTrilinos.Isorropia",
-	autodoc      = "1",
         moduleimport = %isorropia_importcode) Base
 
 %{
@@ -78,12 +77,12 @@ from . import _Base
 %ignore *::operator=;
 %ignore *::operator[];
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include Isorropia documentation (this file will need to be
 // generated before it can be included)
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Isorropia_dox.i"
+#endif
 
 // Trilinos interface import
 %import "Teuchos.i"

@@ -484,9 +484,6 @@ convertPythonToTpetraVector(PyObject * pyobj,
 
 %}
 
-// Global swig features
-%feature("autodoc", "1");
-
 // SWIG standard library include files
 using std::string;
 %include "stl.i"
@@ -506,7 +503,10 @@ import numpy
 %include "Teuchos_Array.i"
 
 // Include Tpetra documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Tpetra_dox.i"
+#endif
 
 // Include the standard exception handlers
 %include "exception.i"
