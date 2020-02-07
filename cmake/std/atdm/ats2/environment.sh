@@ -250,7 +250,6 @@ export MPIF90=`which mpif90`
 
 export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 
-# TODO: Need -np support from the trilinos_jsrun wrapper.
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
@@ -264,7 +263,6 @@ export F90=mpifort
 # Define function atdm_run_script_on_compute_node
 unset atdm_run_script_on_compute_node
 
-# TODO: Will this work be able to find the cuda runtime for targeting GPUs?
 source $ATDM_SCRIPT_DIR/common/define_run_on_lsf_compute_node_func.sh
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
