@@ -31,80 +31,27 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ModificationObserver_hpp
-#define ModificationObserver_hpp
+#ifndef STK_ENTITYPARALLELSTATE_HPP
+#define STK_ENTITYPARALLELSTATE_HPP
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/EntityLess.hpp>
+#include <stk_mesh/base/EntityCommListInfo.hpp>
 
-namespace stk
-{
-namespace mesh
-{
+namespace stk {
+namespace mesh {
 
-class ModificationObserver
-{
-public:
-    virtual ~ModificationObserver()
-    {
-    }
+class BulkData;
 
-    virtual void entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
-    {
-    }
+struct EntityParallelState {
+  int                 from_proc;
+  EntityState         state;
+  EntityCommListInfo  comm_info;
+  bool                remote_owned_closure;
+  const BulkData* mesh;
 
-    virtual void entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
-    {
-    }
-
-    virtual void entity_added(stk::mesh::Entity entity)
-    {
-    }
-
-    virtual void entity_deleted(stk::mesh::Entity entity)
-    {
-    }
-
-    virtual void modification_begin_notification()
-    {
-    }
-  
-    virtual void started_modification_end_notification()
-    {
-    }
-
-    virtual void finished_modification_end_notification()
-    {
-    }
-
-    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-    }
-
-    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-    }
-
-    virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
-    {
-        valuesToReduce.clear();
-    }
-
-    virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
-    {
-    }
+  bool operator<(const EntityParallelState& rhs) const
+  { return EntityLess(*mesh)(comm_info.entity, rhs.comm_info.entity); }
 };
 
 }

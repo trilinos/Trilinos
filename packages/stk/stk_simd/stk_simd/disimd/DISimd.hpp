@@ -43,8 +43,8 @@
 
 namespace stk {
 namespace simd {
-constexpr int ndoubles = ::simd::simd<double,::simd::simd_abi::native>::size();
-constexpr int nfloats = ::simd::simd<float,::simd::simd_abi::native>::size();
+constexpr int ndoubles = SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>::size();
+constexpr int nfloats = SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>::size();
 }
 }
 

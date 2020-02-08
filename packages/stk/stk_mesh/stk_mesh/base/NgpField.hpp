@@ -47,6 +47,8 @@
 namespace stk {
 namespace mesh {
 
+constexpr unsigned bucketSize = impl::BucketRepository::default_bucket_capacity;
+
 constexpr unsigned INVALID_ORDINAL = 9999999;
 
 template<typename T> class ConstHostField;
@@ -105,8 +107,11 @@ public:
   void set_all(const HostMesh& ngpMesh, const T& value)
   {
     stk::mesh::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const HostMesh::MeshIndex& entity) {
-                               T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, *entity.bucket, entity.bucketOrd));
-                               *fieldPtr = value;
+                                     T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, *entity.bucket, entity.bucketOrd));
+                                     int numScalars = stk::mesh::field_scalars_per_entity(*field, *entity.bucket);
+                                     for (int i=0; i<numScalars; i++) {
+                                       fieldPtr[i] = value;
+                                     }
                              });
   }
 

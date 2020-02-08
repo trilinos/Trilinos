@@ -445,8 +445,7 @@ inline
 bool BulkData::in_shared(Entity entity) const
 {
   if (m_entitycomm[entity.local_offset()] != nullptr) {
-    const EntityCommInfo& info = m_entitycomm[entity.local_offset()]->comm_map.front();
-    return (info.ghost_id==SHARED);
+    return m_entitycomm[entity.local_offset()]->isShared;
   }
   return false;
 }

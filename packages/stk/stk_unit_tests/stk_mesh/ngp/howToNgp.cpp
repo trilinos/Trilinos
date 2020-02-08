@@ -100,7 +100,8 @@ void test_mesh_up_to_date(stk::mesh::BulkData& bulk)
   bulk.modification_begin();
   bulk.modification_end();
 
-  EXPECT_TRUE(ngpMesh.is_up_to_date());
+  MeshType& newNgpMesh = bulk.get_ngp_mesh();
+  EXPECT_TRUE(newNgpMesh.is_up_to_date());
   //ENDNgpMeshUpToDate
 }
 
@@ -255,6 +256,25 @@ TEST_F(NgpHowTo, loopOverElemNodes)
     return;
   }
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
+  double init = 0.0;
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+#ifndef KOKKOS_ENABLE_CUDA
+  run_connected_node_test<stk::mesh::HostMesh>(get_bulk());
+#endif
+  run_connected_node_test<stk::mesh::DeviceMesh>(get_bulk());
+}
+
+TEST_F(NgpHowTo, loopOverElemNodes_bucketCapacity)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
+  const unsigned bucketCapacity = 8;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
   auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
   double init = 0.0;
   stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
@@ -770,6 +790,18 @@ stk::mesh::Field<DataType> &create_field_with_num_states_and_init(stk::mesh::Met
   return field;
 }
 
+template <typename DataType>
+stk::mesh::Field<DataType, stk::mesh::Cartesian> &create_vector_field_with_num_states_and_init(stk::mesh::MetaData &meta,
+                                                                                               const std::string & fieldName,
+                                                                                               int numStates,
+                                                                                               int fieldDimension,
+                                                                                               DataType* init)
+{
+  auto &field = meta.declare_field<stk::mesh::Field<DataType, stk::mesh::Cartesian>>(stk::topology::ELEM_RANK, fieldName, numStates);
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(), fieldDimension, init);
+  return field;
+}
+
 stk::mesh::Field<int> &create_field(stk::mesh::MetaData &meta)
 {
   int numStates = 1;
@@ -867,7 +899,7 @@ TEST_F(NgpHowTo, useConvenientMultistateFields)
   verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
 }
 
-TEST_F(NgpHowTo, setAllFieldValues)
+TEST_F(NgpHowTo, setAllScalarFieldValues)
 {
   int numStates = 2;
   double initialValue = 0.0;
@@ -882,6 +914,30 @@ TEST_F(NgpHowTo, setAllFieldValues)
 
   double expectedSum = stk::mesh::count_selected_entities(get_meta().locally_owned_part(),
                                                           get_bulk().buckets(stk::topology::ELEM_RANK));
+  double sum = stk::mesh::get_field_sum(ngpMesh, ngpField, get_meta().locally_owned_part());
+  EXPECT_NEAR(expectedSum, sum, 1e-14);
+}
+
+TEST_F(NgpHowTo, setAllVectorFieldValues)
+{
+  int numStates = 2;
+  double initialValue[] = {0.0, 0.0, 0.0};
+  int fieldDimension = 3;
+  auto& stkField = create_vector_field_with_num_states_and_init<double>(get_meta(),
+                                                                        "myField",
+                                                                        numStates,
+                                                                        fieldDimension,
+                                                                        initialValue);
+  setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+
+  stk::mesh::NgpField<double> ngpField(get_bulk(), stkField);
+  stk::mesh::NgpMesh ngpMesh(get_bulk());
+
+  double fieldVal = 1.0;
+  ngpField.set_all(ngpMesh, fieldVal);
+
+  double expectedSum = fieldDimension*stk::mesh::count_selected_entities(get_meta().locally_owned_part(),
+                                                                         get_bulk().buckets(stk::topology::ELEM_RANK));
   double sum = stk::mesh::get_field_sum(ngpMesh, ngpField, get_meta().locally_owned_part());
   EXPECT_NEAR(expectedSum, sum, 1e-14);
 }
@@ -1261,5 +1317,189 @@ TEST(NgpMesh, meshIndices)
 
   ASSERT_EQ(fieldVal, data[0]);
 }
+
+//==============================================================================
+class FakeEntity {
+public:
+  STK_FUNCTION
+  FakeEntity()
+    : m_value(0)
+  {
+    printf("FakeEntity: (%i) Calling default constructor\n", m_value);
+  }
+
+  STK_FUNCTION
+  explicit FakeEntity(int value)
+    : m_value(value)
+  {
+    printf("FakeEntity: (%i) Calling constructor\n", m_value);
+  }
+
+  STK_FUNCTION
+  ~FakeEntity() {
+    printf("FakeEntity: (%i) Calling destructor\n", m_value);
+  }
+
+  STK_FUNCTION
+  FakeEntity(const FakeEntity& rhs) {
+    printf("FakeEntity: (%i) Calling copy constructor\n", m_value);
+  }
+
+  STK_FUNCTION
+  FakeEntity& operator=(const FakeEntity& rhs) {
+    printf("FakeEntity: (%i) Calling copy assignment operator\n", m_value);
+    if (&rhs == this) return *this;
+    m_value = rhs.m_value;
+    return *this;
+  }
+
+  STK_FUNCTION
+  int value() const { return m_value; }
+
+private:
+  int m_value;
+};
+
+using FakeConnectivity = Kokkos::View<FakeEntity*, stk::mesh::MemSpace>;
+
+class FakeBucket {
+public:
+  STK_FUNCTION
+  FakeBucket()
+    : m_value(0)
+  {
+    printf("FakeBucket: (%i) Calling default constructor\n", m_value);
+  }
+
+  STK_FUNCTION
+  explicit FakeBucket(int value)
+    : m_value(value)
+  {
+    printf("FakeBucket: (%i) Calling constructor\n", m_value);
+  }
+
+  STK_FUNCTION
+  ~FakeBucket() {
+    printf("FakeBucket: (%i) Calling destructor\n", m_value);
+  }
+
+  STK_FUNCTION
+  FakeBucket(const FakeBucket& rhs) {
+    printf("FakeBucket: (%i) Calling copy constructor\n", m_value);
+  }
+
+  STK_FUNCTION
+  FakeBucket& operator=(const FakeBucket& rhs) {
+    printf("FakeBucket: (%i) Calling copy assignment operator\n", m_value);
+    if (&rhs == this) return *this;
+    return *this;
+  }
+
+  void initialize(int numValues) {
+    m_innerView = FakeConnectivity("Data", numValues);
+  }
+
+  STK_FUNCTION
+  int value(int i) const { return m_innerView[i].value(); }
+
+private:
+  int m_value;
+  FakeConnectivity m_innerView;
+};
+
+using FakeBuckets = Kokkos::View<FakeBucket*, stk::mesh::UVMMemSpace>;
+
+class FakeMesh
+{
+public:
+  STK_FUNCTION
+  FakeMesh()
+    : m_isInitialized(false),
+      m_numBuckets(1),
+      m_numEntities(2)
+  {
+    printf("FakeMesh: Calling default constructor\n");
+    update(0);
+  }
+
+  STK_FUNCTION
+  ~FakeMesh() {
+    printf("FakeMesh: Calling destructor\n");
+    if (m_fakeBuckets.use_count() == 1) {
+      clear();
+    }
+  }
+
+  STK_FUNCTION
+  FakeMesh(const FakeMesh & rhs) {
+    printf("FakeMesh: Calling copy constructor\n");
+    m_fakeBuckets = rhs.m_fakeBuckets;
+    m_isInitialized = rhs.m_isInitialized;
+    m_numBuckets = rhs.m_numBuckets;
+    m_numEntities = rhs.m_numEntities;
+  }
+
+  FakeMesh & operator=(const FakeMesh & rhs) = delete;
+
+  void clear() {
+    for (size_t i = 0; i < m_fakeBuckets.size(); ++i) {
+      m_fakeBuckets[i].~FakeBucket();
+    }
+  }
+
+  void fill(int iter) {
+    m_fakeBuckets = FakeBuckets(Kokkos::ViewAllocateWithoutInitializing("Outer"), m_numBuckets);
+    for (int i = 0; i < m_numBuckets; ++i) {
+      printf("\nFilling buckets: bucket = %i (iter = %i)\n", i+1, iter);
+      new (&m_fakeBuckets[i]) FakeBucket(i+1);
+      m_fakeBuckets[i].initialize(m_numEntities);
+    }
+
+  }
+
+  void update(int iter) {
+    if (m_isInitialized) {
+      clear();
+    }
+    fill(iter);
+    m_isInitialized = true;
+  }
+
+  STK_FUNCTION
+  void do_stuff() const {
+    for (int i = 0; i < m_numBuckets; ++i) {
+      for (int j = 0; j < m_numEntities; ++j) {
+        printf("Doing stuff: FakeBucket value = %i\n", m_fakeBuckets[i].value(j));
+      }
+    }
+  }
+
+private:
+  FakeBuckets m_fakeBuckets;
+  bool m_isInitialized;
+  int m_numBuckets;
+  int m_numEntities;
+};
+
+void check_fake_mesh_on_device()
+{
+  FakeMesh fakeMesh;
+
+  const int numMeshMods = 3;
+  for (int i = 0; i < numMeshMods; ++i) {
+    fakeMesh.update(i+1);
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int idx) {
+                           fakeMesh.do_stuff();
+                         });
+  }
+
+}
+
+TEST(NgpExperiment, DISABLED_FakeMesh)
+{
+  check_fake_mesh_on_device();
+}
+
+//==============================================================================
 
 }

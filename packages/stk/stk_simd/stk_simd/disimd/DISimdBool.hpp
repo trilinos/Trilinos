@@ -49,7 +49,7 @@ class Bool {
     {
     }
     
-  STK_MATH_FORCE_INLINE Bool(const ::simd::simd_mask<double,::simd::simd_abi::native>& x)
+  STK_MATH_FORCE_INLINE Bool(const SIMD_NAMESPACE::simd_mask<double, SIMD_NAMESPACE::simd_abi::native>& x)
     : _data(x)
     {
     }
@@ -67,7 +67,7 @@ class Bool {
   STK_MATH_FORCE_INLINE double& operator[](int i) {return (reinterpret_cast<double*>(&_data))[i];}
   STK_MATH_FORCE_INLINE const double& operator[](int i) const {return (reinterpret_cast<const double*>(&_data))[i];}
 
-  ::simd::simd_mask<double,::simd::simd_abi::native> _data; // the "_" means you should try not to use this directly
+  SIMD_NAMESPACE::simd_mask<double, SIMD_NAMESPACE::simd_abi::native> _data; // the "_" means you should try not to use this directly
   // it is made public to avoid function call overhead 
   // and/or so the compiler doesn't have to use up one of
   // inlining depths (usually max inlining depth ~5)

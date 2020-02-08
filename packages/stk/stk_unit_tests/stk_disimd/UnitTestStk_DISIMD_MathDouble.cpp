@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 
+#ifndef STK_KOKKOS_SIMD
 #define STK_KOKKOS_SIMD
+#endif
 
 #include "stk_simd/Simd.hpp"
 //#include <cmath>

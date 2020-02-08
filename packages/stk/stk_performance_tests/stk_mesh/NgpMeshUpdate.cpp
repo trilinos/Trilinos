@@ -194,7 +194,7 @@ TEST_F( NgpMeshChangeElementPartMembership, Timing )
   Timer timer(get_comm());
   setup_host_mesh();
 
-  for (int i=0; i<400; i++) {
+  for (int i=0; i<50; i++) {
     timer.start_timing();
     change_element_part_membership(i);
     timer.update_timing();
@@ -209,7 +209,7 @@ TEST_F( NgpMeshCreateEntity, Timing )
   Timer timer(get_comm());
   setup_host_mesh();
 
-  for (int i=0; i<400; i++) {
+  for (int i=0; i<50; i++) {
     timer.start_timing();
     create_entity(i);
     timer.update_timing();
@@ -224,7 +224,7 @@ TEST_F( NgpMeshGhosting, Timing )
   Timer timer(get_comm());
   setup_host_mesh();
 
-  for (int i=0; i<400; i++) {
+  for (int i=0; i<50; i++) {
     timer.start_timing();
     ghost_element(i);
     timer.update_timing();

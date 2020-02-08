@@ -155,8 +155,6 @@ public:
   inline static MetaData & get( const FieldBase & field ) { return field.meta_data(); }
 
   static const MetaData & get( const BulkData & bulk_data );
-  static const MetaData & get( const Bucket & bucket );
-  static const MetaData & get( const Ghosting & ghost );
 
   /** \brief  Construct a meta data manager to own parts and fields.  */
   explicit MetaData(size_t spatial_dimension, const std::vector<std::string>& rank_names = std::vector<std::string>());
