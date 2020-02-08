@@ -267,6 +267,7 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
                                  const bool makeCompCoords)
 {
 #include "Xpetra_UseShortNames.hpp"
+  using CoordType = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
   coarseCompOp = MatrixFactory::Build(compRowMap,
                                        // This estimate is very conservative and probably costs us lots of memory...
                                       8*regMatrix[0]->getCrsGraph()->getNodeMaxNumRowEntries());
@@ -321,14 +322,16 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
         regCoordImporter[regionIdx] = ImportFactory::Build(compCoordMap, quasiRegCoordMap[regionIdx]);
       }
     }
-    compCoarseCoordinates = MultiVectorFactory::Build(compCoordMap, regCoarseCoordinates[0]->getNumVectors());
+    compCoarseCoordinates = Xpetra::MultiVectorFactory<CoordType, LocalOrdinal, GlobalOrdinal, Node>
+      ::Build(compCoordMap, regCoarseCoordinates[0]->getNumVectors());
     TEUCHOS_ASSERT(Teuchos::nonnull(compCoarseCoordinates));
 
     // The following looks like regionalToComposite for Vector
     // but it is a bit different since we do not want to add
     // entries in the coordinate MultiVector as we would for
     // a solution or residual vector.
-    RCP<MultiVector> quasiRegCoarseCoordinates;
+    RCP<Xpetra::MultiVector<CoordType, LocalOrdinal, GlobalOrdinal, Node>>
+      quasiRegCoarseCoordinates;
     for(int grpIdx = 0; grpIdx < maxRegPerProc; ++grpIdx) {
       quasiRegCoarseCoordinates = regCoarseCoordinates[grpIdx];
       TEUCHOS_ASSERT(Teuchos::nonnull(quasiRegCoarseCoordinates));
