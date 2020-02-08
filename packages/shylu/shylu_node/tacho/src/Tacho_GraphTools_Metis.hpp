@@ -14,9 +14,10 @@ namespace Tacho {
 
     class GraphTools_Metis {
     public:
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef Kokkos::View<idx_t*,host_exec_space> idx_t_array;
-      typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+
+      typedef Kokkos::View<idx_t*,host_device_type> idx_t_array;
+      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
 
     private:
         
@@ -47,8 +48,8 @@ namespace Tacho {
         // input 
         _nvts = g.NumRows();
 
-        _xadj   = idx_t_array("idx_t_xadj",   g.RowPtr().extent(0));
-        _adjncy = idx_t_array("idx_t_adjncy", g.ColIdx().extent(0));
+        _xadj   = idx_t_array(do_not_initialize_tag("Metis::idx_t_xadj"),   g.RowPtr().extent(0));
+        _adjncy = idx_t_array(do_not_initialize_tag("Metis::idx_t_adjncy"), g.ColIdx().extent(0));
         _vwgt   = idx_t_array();
 
         const auto &g_row_ptr = g.RowPtr();
@@ -62,12 +63,12 @@ namespace Tacho {
         METIS_SetDefaultOptions(_options);
         _options[METIS_OPTION_NUMBERING] = 0;
 
-        _perm_t = idx_t_array("idx_t_perm", _nvts);
-        _peri_t = idx_t_array("idx_t_peri", _nvts);    
+        _perm_t = idx_t_array(do_not_initialize_tag("idx_t_perm"), _nvts);
+        _peri_t = idx_t_array(do_not_initialize_tag("idx_t_peri"), _nvts);    
 
         // output
-        _perm  = ordinal_type_array("Metis::PermutationArray", _nvts);
-        _peri  = ordinal_type_array("Metis::InvPermutationArray", _nvts);    
+        _perm  = ordinal_type_array(do_not_initialize_tag("Metis::PermutationArray"), _nvts);
+        _peri  = ordinal_type_array(do_not_initialize_tag("Metis::InvPermutationArray"), _nvts);    
       }
       virtual~GraphTools_Metis() {}
 

@@ -303,7 +303,7 @@ TEST_F(MathFunctionWithTwoDoubleArg, Multiplysign_ScalarAndSimdMatch)
 
 // bool and double
 
-TEST_F(MathFunctionWithBoolAndDoubleArg, Ternary_ScalarAndSimdMatch)
+TEST_F(MathFunctionWithBoolAndDoubleArg, DISABLED_Ternary_ScalarAndSimdMatch)
 {
   test_simd_operator([](bool x, double y) { return x ? y : 0.0; },
                      [](stk::simd::Bool x, stk::simd::Double y) { return stk::math::if_then_else_zero(x,y); },
@@ -365,8 +365,6 @@ TEST(StkSimd, SimdSpecialFunctions)
     x[n] = (rand()-0.5)/RAND_MAX;
     y[n] = (rand()-0.5)/RAND_MAX;
   }
-
-  printf("ndoubles = %d\n", stk::simd::ndoubles);
 
   // abs
 
@@ -528,7 +526,7 @@ TEST(StkSimd, SimdSpecialFunctions)
 
 TEST(StkSimd, SimdAddSubtractMultDivide) 
 {
-  int N = 400000;
+  int N = 800000;
   double t0; // timing variable
 
   std::vector<double> x(N);
@@ -543,20 +541,24 @@ TEST(StkSimd, SimdAddSubtractMultDivide)
   }
   
   t0 = -stk::get_time_in_seconds();
+  for(int i=0; i<10; ++i) {
   for (int n=0; n < N; n+=stk::simd::ndoubles) {
     const stk::simd::Double a = stk::simd::load(&x[n]);
     const stk::simd::Double b = stk::simd::load(&y[n]);
     const stk::simd::Double c = ( a+b*(a-b) )/a;
     stk::simd::store(&out1[n],c);
   }
+  }
   t0 += stk::get_time_in_seconds();
   std::cout << "SIMD ADD,SUB,MUL,DIV took " << t0 << " seconds" <<  std::endl;
   
   t0 = -stk::get_time_in_seconds();
+  for(int i=0; i<10; ++i) {
   for (int n=0; n < N; ++n) {
     const double a = x[n];
     const double b = y[n];
     out2[n] = ( a+b*(a-b) )/a;
+  }
   }
   t0 += stk::get_time_in_seconds();
   std::cout << "Real ADD,SUB,MUL,DIV took " << t0 << " seconds" <<  std::endl;
@@ -1859,7 +1861,8 @@ TEST(StkSimd, simd_isnan)
   
 }
 
-std::vector<double> X_RandomValues(int N = 500000) {
+std::vector<double> X_RandomValues(int N = 500000)
+{
   std::vector<double> x(N);
   for (int n=0; n < N; ++n) {
     x[n] = 21*(rand()-0.4)/RAND_MAX;
@@ -1867,7 +1870,8 @@ std::vector<double> X_RandomValues(int N = 500000) {
   return x;
 }
 
-std::vector<double> Y_RandomValues(std::vector<double>& x) {
+std::vector<double> Y_RandomValues(std::vector<double>& x)
+{
   int N = x.size();
   std::vector<double> y(N);
   for (int n=0; n < N; ++n) {

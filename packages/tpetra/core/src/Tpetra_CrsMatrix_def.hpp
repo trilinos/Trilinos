@@ -314,9 +314,20 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
+    using std::endl;
     typedef typename local_matrix_type::values_type values_type;
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>[, "
       "RCP<ParameterList>]): ";
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("CrsMatrix(CrsGraph,params)");
+      std::ostringstream os;
+      os << *prefix << endl;
+      std::cerr << os.str ();
+    }
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (graph.is_null (), std::runtime_error, "Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -336,6 +347,11 @@ namespace Tpetra {
     const size_t numCols = graph->getColMap ()->getNodeNumElements ();
     auto lclGraph = graph->getLocalGraph ();
     const size_t numEnt = lclGraph.entries.extent (0);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate values: " << numEnt << endl;
+      std::cerr << os.str ();
+    }
     values_type val ("Tpetra::CrsMatrix::val", numEnt);
 
     auto lclMat = std::make_shared<local_matrix_type>
@@ -345,6 +361,13 @@ namespace Tpetra {
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Assign k_values1D_: old="
+         << k_values1D_.extent(0) << ", new="
+         << lclMat->values.extent(0) << endl;
+      std::cerr << os.str ();
+    }
     k_values1D_ = lclMat->values;
 
     checkInternalState ();
@@ -1077,20 +1100,30 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  allocateValues (ELocalGlobal lg, GraphAllocationStatus gas)
+  allocateValues (ELocalGlobal lg, GraphAllocationStatus gas,
+                  const bool verbose)
   {
+    using ::Tpetra::Details::Behavior;
+    using ::Tpetra::Details::ProfilingRegion;
+    using std::endl;
     const char tfecfFuncName[] = "allocateValues: ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
+    ProfilingRegion region("Tpetra::CrsMatrix::allocateValues");
 
-    ::Tpetra::Details::ProfilingRegion regionAllocateValues
-      ("Tpetra::CrsMatrix::allocateValues");
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("allocateValues");
+      std::ostringstream os;
+      os << *prefix << "{lg: "
+         << (lg == LocalIndices ? "Local" : "Global") << "Indices"
+         << ", gas: Graph"
+         << (gas == GraphAlreadyAllocated ? "Already" : "NotYet")
+         << "Allocated" << endl;
+      std::cerr << os.str ();
+    }
 
+    const bool debug = Behavior::debug("CrsMatrix");
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->staticGraph_.is_null (), std::logic_error,
@@ -1135,7 +1168,7 @@ namespace Tpetra {
            "gas = GraphNotYetAllocated, but myGraph_ is null." << suffix);
       }
       try {
-        this->myGraph_->allocateIndices (lg);
+        this->myGraph_->allocateIndices (lg, verbose);
       }
       catch (std::exception& e) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1177,6 +1210,13 @@ namespace Tpetra {
 
     // Allocate array of (packed???) matrix values.
     using values_type = typename local_matrix_type::values_type;
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate k_values1D_: Pre "
+         << k_values1D_.extent(0) << ", post "
+         << lclTotalNumEntries << endl;
+      std::cerr << os.str();
+    }
     this->k_values1D_ =
       values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
   }
@@ -1235,6 +1275,7 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using std::endl;
     using row_map_type = typename local_matrix_type::row_map_type;
     using lclinds_1d_type = typename Graph::local_graph_type::entries_type::non_const_type;
     using values_type = typename local_matrix_type::values_type;
@@ -1245,7 +1286,16 @@ namespace Tpetra {
       "fillComplete or expertStaticFillComplete): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-    const bool debug = Details::Behavior::debug ("CrsGraph");
+    const bool debug = Details::Behavior::debug("CrsMatrix");
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("fillLocalGraphAndMatrix");
+      std::ostringstream os;
+      os << *prefix << endl;
+      std::cerr << os.str ();
+    }
 
     if (debug) {
       // fillComplete() only calls fillLocalGraphAndMatrix() if the
@@ -1307,7 +1357,16 @@ namespace Tpetra {
          << numOffsets << ") = " << valToCheck << ".");
     }
 
-    if (myGraph_->getNodeNumEntries () != myGraph_->getNodeAllocationSize ()) {
+    if (myGraph_->getNodeNumEntries() !=
+        myGraph_->getNodeAllocationSize()) {
+      if (verbose) {
+        std::ostringstream os;
+        const auto numEnt = myGraph_->getNodeNumEntries();
+        const auto allocSize = myGraph_->getNodeAllocationSize();
+        os << *prefix << "Unpacked 1-D storage: numEnt=" << numEnt
+           << ", allocSize=" << allocSize << endl;
+        std::cerr << os.str ();
+      }
       // The matrix's current 1-D storage is "unpacked."  This means
       // the row offsets may differ from what the final row offsets
       // should be.  This could happen, for example, if the user
@@ -1348,6 +1407,12 @@ namespace Tpetra {
         // Allocate the packed row offsets array.  We use a nonconst
         // temporary (packedRowOffsets) here, because k_ptrs is
         // const.  We will assign packedRowOffsets to k_ptrs below.
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Allocate packed row offsets: "
+             << (lclNumRows+1) << endl;
+          std::cerr << os.str ();
+        }
         typename row_map_type::non_const_type
           packedRowOffsets ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
         typename row_entries_type::const_type numRowEnt_h =
@@ -1379,7 +1444,19 @@ namespace Tpetra {
       }
 
       // Allocate the arrays of packed column indices and values.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate packed local column indices: "
+           << lclTotalNumEntries << endl;
+        std::cerr << os.str ();
+      }
       k_inds = lclinds_1d_type ("Tpetra::CrsGraph::ind", lclTotalNumEntries);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate packed values: "
+           << lclTotalNumEntries << endl;
+        std::cerr << os.str ();
+      }
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
       // curRowOffsets (myGraph_->k_rowPtrs_) (???), k_lclInds1D_,
@@ -1436,6 +1513,14 @@ namespace Tpetra {
       }
     }
     else { // We don't have to pack, so just set the pointers.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Storage already packed: k_rowPtrs_: "
+           << myGraph_->k_rowPtrs_.extent(0) << ", k_lclInds1D_: "
+           << myGraph_->k_lclInds1D_.extent(0) << ", k_values1D_: "
+           << k_values1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       k_ptrs_const = myGraph_->k_rowPtrs_;
       k_inds = myGraph_->k_lclInds1D_;
       k_vals = this->k_values1D_;
@@ -1511,17 +1596,52 @@ namespace Tpetra {
 
       // Free graph data structures that are only needed for
       // unpacked 1-D storage.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Optimizing storage: free k_numRowEntries_: "
+           << myGraph_->k_numRowEntries_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Assign k_rowPtrs_: old="
+           << myGraph_->k_rowPtrs_.extent(0) << ", new="
+           << k_ptrs_const.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_rowPtrs_ = k_ptrs_const;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Assign k_lclInds1D_: old="
+           << myGraph_->k_lclInds1D_.extent(0) << ", new="
+           << k_inds.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_lclInds1D_ = k_inds;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Assign k_values1D_: old="
+           << k_values1D_.extent(0) << ", new="
+           << k_vals.extent(0) << endl;
+        std::cerr << os.str();
+      }
       this->k_values1D_ = k_vals;
 
       // Whatever graph was before, it's StaticProfile now.
       myGraph_->pftype_ = StaticProfile;
       myGraph_->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
       this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
+    }
+    else {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "User requestetd NOT to optimize storage"
+           << endl;
+        std::cerr << os.str();
+      }
     }
 
     // Make the local graph, using the arrays of row offsets and
@@ -1554,6 +1674,7 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using std::endl;
     using row_map_type = typename Graph::local_graph_type::row_map_type;
     using non_const_row_map_type = typename row_map_type::non_const_type;
     using values_type = typename local_matrix_type::values_type;
@@ -1561,8 +1682,16 @@ namespace Tpetra {
     // const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
 #endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionFLM ("Tpetra::CrsMatrix::fillLocalMatrix");
-
     const size_t lclNumRows = getNodeNumRows();
+
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("fillLocalMatrix");
+      std::ostringstream os;
+      os << *prefix << "lclNumRows: " << lclNumRows << endl;
+      std::cerr << os.str ();
+    }
 
     // The goals of this routine are first, to allocate and fill
     // packed 1-D storage (see below for an explanation) in the vals
@@ -1585,8 +1714,9 @@ namespace Tpetra {
     // optimized storage by default.
     bool requestOptimizedStorage = true;
     const bool default_OptimizeStorage =
-      ! isStaticGraph () || staticGraph_->isStorageOptimized ();
-    if (! params.is_null () && ! params->get ("Optimize Storage", default_OptimizeStorage)) {
+      ! isStaticGraph() || staticGraph_->isStorageOptimized();
+    if (! params.is_null() &&
+        ! params->get("Optimize Storage", default_OptimizeStorage)) {
       requestOptimizedStorage = false;
     }
     // If we're not allowed to change a static graph, then we can't
@@ -1594,7 +1724,8 @@ namespace Tpetra {
     // the graph's storage isn't already optimized, we can't optimize
     // the matrix's storage either.  Check and give warning, as
     // appropriate.
-    if (! staticGraph_->isStorageOptimized () && requestOptimizedStorage) {
+    if (! staticGraph_->isStorageOptimized () &&
+        requestOptimizedStorage) {
       TPETRA_ABUSE_WARNING
         (true, std::runtime_error, "You requested optimized storage "
          "by setting the \"Optimize Storage\" flag to \"true\" in "
@@ -1625,8 +1756,21 @@ namespace Tpetra {
     // structure of the sparse matrix does not change between linear
     // solves.
     if (nodeNumEntries != nodeNumAllocated) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Unpacked 1-D storage: numEnt="
+           << nodeNumEntries << ", allocSize=" << nodeNumAllocated
+           << endl;
+        std::cerr << os.str();
+      }
       // We have to pack the 1-D storage, since the user didn't fill
       // up all requested storage.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate packed row offsets: "
+           << (lclNumRows+1) << endl;
+        std::cerr << os.str();
+      }
       non_const_row_map_type tmpk_ptrs ("Tpetra::CrsGraph::ptr",
                                         lclNumRows+1);
       // Total number of entries in the matrix on the calling
@@ -1644,6 +1788,12 @@ namespace Tpetra {
 
       // Allocate the "packed" values array.
       // It has exactly the right number of entries.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate packed values: "
+           << lclTotalNumEntries << endl;
+        std::cerr << os.str ();
+      }
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
       // Pack k_values1D_ into k_vals.  We will replace k_values1D_ below.
@@ -1656,6 +1806,12 @@ namespace Tpetra {
                             range_type (0, lclNumRows), valsPacker);
     }
     else { // We don't have to pack, so just set the pointer.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Storage already packed: "
+           << "k_values1D_: " << k_values1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       k_vals = k_values1D_;
     }
 
@@ -1740,7 +1896,10 @@ namespace Tpetra {
       "Local row index " << lclRow << " does not belong to this process.");
 
     if (! graph.indicesAreAllocated ()) {
-      this->allocateValues (LocalIndices, GraphNotYetAllocated);
+      // We only allocate values at most once per process, so it's OK
+      // to check TPETRA_VERBOSE here.
+      const bool verbose = Details::Behavior::verbose("CrsMatrix");
+      this->allocateValues (LocalIndices, GraphNotYetAllocated, verbose);
     }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -1814,7 +1973,11 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     if (! graph.indicesAreAllocated ()) {
-      this->allocateValues (GlobalIndices, GraphNotYetAllocated);
+      // We only allocate values at most once per process, so it's OK
+      // to check TPETRA_VERBOSE here.
+      using ::Tpetra::Details::Behavior;
+      const bool verbose = Behavior::verbose("CrsMatrix");
+      this->allocateValues (GlobalIndices, GraphNotYetAllocated, verbose);
       // mfh 23 Jul 2017: allocateValues invalidates existing
       // getRowInfo results.  Once we get rid of lazy graph
       // allocation, we'll be able to move the getRowInfo call outside
@@ -4163,6 +4326,7 @@ namespace Tpetra {
     using Teuchos::REDUCE_MAX;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
+    using std::endl;
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
     //typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -4170,6 +4334,15 @@ namespace Tpetra {
     const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
     ProfilingRegion regionGlobalAssemble ("Tpetra::CrsMatrix::globalAssemble");
 
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("globalAssemble");
+      std::ostringstream os;
+      os << *prefix << "nonlocals_.size()=" << nonlocals_.size()
+         << endl;
+      std::cerr << os.str();
+    }
     RCP<const Comm<int> > comm = getComm ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4260,6 +4433,11 @@ namespace Tpetra {
     //    to nonlocal rows.  We may use StaticProfile, since we have
     //    exact counts of the number of entries in each nonlocal row.
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Create nonlocal matrix" << endl;
+      std::cerr << os.str();
+    }
     RCP<crs_matrix_type> nonlocalMatrix =
       rcp (new crs_matrix_type (nonlocalRowMap, numEntPerNonlocalRow (),
                                 StaticProfile));
@@ -4290,14 +4468,29 @@ namespace Tpetra {
     int isLocallyComplete = 1; // true by default
 
     if (origRowMapIsOneToOne) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Original row Map is 1-to-1" << endl;
+        std::cerr << os.str();
+      }
       export_type exportToOrig (nonlocalRowMap, origRowMap);
       if (! exportToOrig.isLocallyComplete ()) {
         isLocallyComplete = 0;
+      }
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "doExport from nonlocalMatrix" << endl;
+        std::cerr << os.str();
       }
       this->doExport (*nonlocalMatrix, exportToOrig, Tpetra::ADD);
       // We're done at this point!
     }
     else {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Original row Map is NOT 1-to-1" << endl;
+        std::cerr << os.str();
+      }
       // If you ask a Map whether it is one to one, it does some
       // communication and stashes intermediate results for later use
       // by createOneToOne.  Thus, calling createOneToOne doesn't cost
@@ -4312,15 +4505,32 @@ namespace Tpetra {
       //
       // TODO (mfh 09 Sep 2016, 12 Sep 2016) Estimate # entries in
       // each row, to avoid reallocation during the Export operation.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Create & doExport into 1-to-1 matrix"
+           << endl;
+        std::cerr << os.str();
+      }
       crs_matrix_type oneToOneMatrix (oneToOneRowMap, 0);
       // Export from matrix of nonlocals into the temp one-to-one matrix.
-      oneToOneMatrix.doExport (*nonlocalMatrix, exportToOneToOne, Tpetra::ADD);
+      oneToOneMatrix.doExport(*nonlocalMatrix, exportToOneToOne,
+                              Tpetra::ADD);
 
       // We don't need the matrix of nonlocals anymore, so get rid of
       // it, to keep the memory high-water mark down.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Free nonlocalMatrix" << endl;
+        std::cerr << os.str();
+      }
       nonlocalMatrix = Teuchos::null;
 
       // Import from the one-to-one matrix to the original matrix.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "doImport from 1-to-1 matrix" << endl;
+        std::cerr << os.str();
+      }
       import_type importToOrig (oneToOneRowMap, origRowMap);
       this->doImport (oneToOneMatrix, importToOrig, Tpetra::ADD);
     }
@@ -4329,6 +4539,11 @@ namespace Tpetra {
     // committed side effects to *this.  The standard idiom for
     // clearing a Container like std::map, is to swap it with an empty
     // Container and let the swapped Container fall out of scope.
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Free nonlocals_ (std::map)" << endl;
+      std::cerr << os.str();
+    }
     decltype (nonlocals_) newNonlocals;
     std::swap (nonlocals_, newNonlocals);
 
@@ -4433,8 +4648,18 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using std::endl;
     const char tfecfFuncName[] = "fillComplete: ";
-    ProfilingRegion regionFillComplete ("Tpetra::CrsMatrix::fillComplete");
+    ProfilingRegion regionFillComplete
+      ("Tpetra::CrsMatrix::fillComplete");
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("fillComplete(dom,ran,p)");
+      std::ostringstream os;
+      os << *prefix << endl;
+      std::cerr << os.str ();
+    }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->isFillActive () || this->isFillComplete (), std::runtime_error,
@@ -4472,12 +4697,11 @@ namespace Tpetra {
     }
 
     if (! this->getCrsGraphRef ().indicesAreAllocated ()) {
-      if (this->hasColMap ()) {
-        // We have a column Map, so use local indices.
-        this->allocateValues (LocalIndices, GraphNotYetAllocated);
-      } else {
-        // We don't have a column Map, so use global indices.
-        this->allocateValues (GlobalIndices, GraphNotYetAllocated);
+      if (this->hasColMap ()) { // use local indices
+        allocateValues(LocalIndices, GraphNotYetAllocated, verbose);
+      }
+      else { // no column Map, so use global indices
+        allocateValues(GlobalIndices, GraphNotYetAllocated, verbose);
       }
     }
     // Global assemble, if we need to.  This call only costs a single
@@ -4559,7 +4783,7 @@ namespace Tpetra {
       // Make indices local, if necessary.  The method won't do
       // anything if the graph is already locally indexed.
       const std::pair<size_t, std::string> makeIndicesLocalResult =
-        this->myGraph_->makeIndicesLocal ();
+        this->myGraph_->makeIndicesLocal(verbose);
       // TODO (mfh 20 Jul 2017) Instead of throwing here, pass along
       // the error state to makeImportExport or
       // computeGlobalConstants, which may do all-reduces and thus may
@@ -6166,20 +6390,63 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::unique_ptr<std::string>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  createPrefix(const char methodName[]) const
+  {
+    int myRank = -1;
+    auto map = this->getMap();
+    if (! map.is_null()) {
+      auto comm = map->getComm();
+      if (! comm.is_null()) {
+        myRank = comm->getRank();
+      }
+    }
+    std::ostringstream pfxStrm;
+    pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::"
+            << methodName << ": ";
+    return std::unique_ptr<std::string>(
+      new std::string(pfxStrm.str()));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding)
+  applyCrsPadding(
+    const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding,
+    const bool verbose)
   {
-    //    const char tfecfFuncName[] = "applyCrsPadding";
+    using ::Tpetra::Details::ProfilingRegion;
+    using Tpetra::Details::padCrsArrays;
+    using std::endl;
     using execution_space = typename device_type::execution_space;
     using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
     using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
-    using Tpetra::Details::padCrsArrays;
-
     const char tfecfFuncName[] = "applyCrsPadding: ";
+    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::applyCrsPadding");
 
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = createPrefix("applyCrsPadding");
+      std::ostringstream os;
+      os << *prefix << "padding.size(): " << padding.size() << endl;
+      std::cerr << os.str ();
+    }
+    const int myRank = ! verbose ? -1 : [&] () {
+      auto map = this->getMap();
+      if (map.is_null()) {
+        return -1;
+      }
+      auto comm = map->getComm();
+      if (comm.is_null()) {
+        return -1;
+      }
+      return comm->getRank();
+    } ();
+
+    // NOTE (mfh 29 Jan 2020) This allocates the values array.
     if (! myGraph_->indicesAreAllocated ()) {
-      this->allocateValues (GlobalIndices, GraphNotYetAllocated);
+      this->allocateValues (GlobalIndices, GraphNotYetAllocated, verbose);
     }
 
     if (padding.size() == 0)
@@ -6188,10 +6455,21 @@ namespace Tpetra {
     // Making copies here because k_rowPtrs_ has a const type. Otherwise, we
     // would use it directly.
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate row_ptrs_beg: "
+         << myGraph_->k_rowPtrs_.extent(0) << endl;
+      std::cerr << os.str();
+    }
     row_ptrs_type row_ptr_beg("row_ptr_beg", myGraph_->k_rowPtrs_.extent(0));
     Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
 
     const size_t N = (row_ptr_beg.extent(0) == 0 ? 0 : row_ptr_beg.extent(0) - 1);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate row_ptrs_end: " << N << endl;
+      std::cerr << os.str();
+    }
     row_ptrs_type row_ptr_end("row_ptr_end", N);
 
     bool refill_num_row_entries = false;
@@ -6217,15 +6495,33 @@ namespace Tpetra {
     }
 
     using values_type = typename local_matrix_type::values_type;
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate (copy of) values: " << k_values1D_.size() << endl;
+      std::cerr << os.str();
+    }
     values_type values("values", k_values1D_.size());
     Kokkos::deep_copy(values, k_values1D_);
 
     if(myGraph_->isGloballyIndexed()) {
       using indices_type = typename crs_graph_type::t_GlobalOrdinal_1D;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate (copy of) global column indices: "
+           << myGraph_->k_gblInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       indices_type indices("indices", myGraph_->k_gblInds1D_.extent(0));
       Kokkos::deep_copy(indices, myGraph_->k_gblInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg, row_ptr_end, indices, values, padding);
+      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg,
+        row_ptr_end, indices, values, padding, myRank, verbose);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Free old myGraph_->k_gblInds1D_: "
+           << myGraph_->k_gblInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_gblInds1D_ = indices;
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           values.size() != indices.size(),
@@ -6234,10 +6530,23 @@ namespace Tpetra {
     }
     else {
       using indices_type = typename local_graph_type::entries_type::non_const_type;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Allocate (copy of) local column indices: "
+           << myGraph_->k_lclInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       indices_type indices("indices", myGraph_->k_lclInds1D_.extent(0));
       Kokkos::deep_copy(indices, myGraph_->k_lclInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg, row_ptr_end, indices, values, padding);
+      padCrsArrays<row_ptrs_type,indices_type,values_type,padding_type>(row_ptr_beg,
+        row_ptr_end, indices, values, padding, myRank, verbose);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Free old myGraph_->k_lclInds1D_: "
+           << myGraph_->k_lclInds1D_.extent(0) << endl;
+        std::cerr << os.str();
+      }
       myGraph_->k_lclInds1D_ = indices;
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           values.size() != indices.size(),
@@ -6253,7 +6562,20 @@ namespace Tpetra {
                            }
                            );
     }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Free old myGraph_->k_rowPtrs_: "
+         << myGraph_->k_rowPtrs_.extent(0) << endl;
+      std::cerr << os.str();
+    }
     myGraph_->k_rowPtrs_ = row_ptr_beg;
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Free old k_values1D_: "
+         << k_values1D_.extent(0) << endl;
+      std::cerr << os.str();
+    }
     k_values1D_ = values;
   }
 
@@ -6423,25 +6745,21 @@ namespace Tpetra {
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = -1;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::copyAndPermute: ";
-        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
-      } ();
+      prefix = createPrefix("copyAndPermute");
       std::ostringstream os;
       os << *prefix << endl
+         << *prefix << "  numSameIDs: " << numSameIDs << endl
+         << *prefix << "  numPermute: " << permuteToLIDs.extent(0)
+         << endl
          << *prefix << "  "
-         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs")
+         << endl
          << *prefix << "  "
-         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
+         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs")
+         << endl
+         << *prefix << "  "
+         << "isStaticGraph: " << (isStaticGraph() ? "true" : "false")
+         << endl;
       std::cerr << os.str ();
     }
 
@@ -6464,11 +6782,11 @@ namespace Tpetra {
 
     if (!this->isStaticGraph ()) {
       auto padding =
-        this->myGraph_->computeCrsPadding(*srcMat.getGraph(), numSameIDs, permuteToLIDs, permuteFromLIDs);
+        this->myGraph_->computeCrsPadding(*srcMat.getGraph(),
+          numSameIDs, permuteToLIDs, permuteFromLIDs, verbose);
       if (padding.size() > 0)
-        this->applyCrsPadding(padding);
+        this->applyCrsPadding(padding, verbose);
     }
-
 
     if (verbose) {
       std::ostringstream os;
@@ -7359,9 +7677,9 @@ namespace Tpetra {
     }
 
     if (!this->isStaticGraph()) {
-      auto padding = myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID);
+      auto padding = myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID, verbose);
       if (padding.size() > 0)
-        this->applyCrsPadding(padding);
+        this->applyCrsPadding(padding, verbose);
     }
 
     if (debug) {

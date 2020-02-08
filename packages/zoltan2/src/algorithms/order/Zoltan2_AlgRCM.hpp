@@ -116,6 +116,7 @@ class AlgRCM : public Algorithm<Adapter>
   
     // RCM constructs invPerm, not perm
     const ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
+    const ArrayRCP<lno_t> tmpPerm(invPerm.size()); //temporary array used in reversing order
   
     // Check if there are actually edges to reorder.
     // If there are not, then just use the natural ordering.
@@ -140,9 +141,9 @@ class AlgRCM : public Algorithm<Adapter>
     size_t count = 0; // CM label, reversed later
     size_t next = 0;  // next unmarked vertex
     Teuchos::Array<std::pair<gno_t, offset_t> >  children; // children and their degrees
-  
+
     while (count < nVtx) {
-  
+
       // Find suitable root vertex for this component.
       // First find an unmarked vertex, use to find root in next component.
       while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(invPerm[next]) != INVALID)) next++;
@@ -165,6 +166,7 @@ class AlgRCM : public Algorithm<Adapter>
       Q.push(root);
       //cout << "Debug: invPerm[" << root << "] = " << count << endl;
       invPerm[root] = count++;
+      tmpPerm[invPerm[root]] = root;
   
       while (Q.size()){
         // Get a vertex from the queue
@@ -194,22 +196,30 @@ class AlgRCM : public Algorithm<Adapter>
           // Push children on the queue in sorted order.
           gno_t child = it->first;
           invPerm[child] = count++; // Label as we push on Q
+          tmpPerm[invPerm[child]] = child;
           Q.push(child);
           //cout << "Debug: invPerm[" << child << "] = " << count << endl;
         }
       }
     }
-  
-    // Reverse labels for RCM
+
+    // Old row tmpPerm[i] is now the new row i.
+
+    // Reverse labels for RCM.
     bool reverse = true; // TODO: Make parameter
     if (reverse) {
       lno_t temp;
       for (size_t i=0; i < nVtx/2; ++i) {
-        // Swap (invPerm[i], invPerm[nVtx-i])
-        temp = invPerm[i];
-        invPerm[i] = invPerm[nVtx-1-i];
-        invPerm[nVtx-1-i] = temp;
+        // This effectively does the work of two loops:
+        //    1) for (i=1; i< nVtx/2; ++i)
+        //         swap of tmpPerm[i] and tmpPerm[nVtx-1-i]
+        //    2) for (i=0; i < nVtx; ++i)
+        //         invPerm[tmpPerm[i]] = i;
+        temp = tmpPerm[i];
+        invPerm[tmpPerm[nVtx-1-i]] = i;
+        invPerm[temp] = nVtx-1-i;
       }
+
     }
   
     solution->setHaveInverse(true);

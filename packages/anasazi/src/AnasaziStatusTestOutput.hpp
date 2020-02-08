@@ -87,9 +87,9 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
    * called. When both the \c mod criterion and the \c printStates criterion are satisfied, the status test will be printed to the 
    * OutputManager with ::MsgType of ::StatusTestDetails.
    *
-   * @param[in] mod A positive number describes how often the output should be printed. On every call to checkStatus(), an internal counter
+   * @param mod (in) A positive number describes how often the output should be printed. On every call to checkStatus(), an internal counter
    *                is incremented. Printing may only occur when this counter is congruent to zero modulo \c mod. Default: 1 (attempt to print on every call to checkStatus())
-   * @param[in] printStates A combination of ::TestStatus values for which the output may be printed. Default: ::Passed (attempt to print whenever checkStatus() will return ::Passed)
+   * @param printStates (in) A combination of ::TestStatus values for which the output may be printed. Default: ::Passed (attempt to print whenever checkStatus() will return ::Passed)
    *
    */
   StatusTestOutput(const Teuchos::RCP<OutputManager<ScalarType> > &printer, 

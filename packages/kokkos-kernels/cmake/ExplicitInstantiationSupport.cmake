@@ -33,7 +33,7 @@ IF(${PACKAGE_NAME}_USE_STATIC_ETI_MACROS_HEADER_FILE)
   # The user wants us to accept their header file and not generate one.
   MESSAGE("-- NOTE: Skipping generation and using provided static file"
      " '${${PACKAGE_NAME}_USE_STATIC_ETI_MACROS_HEADER_FILE}'")
-  CONFIGURE_FILE(
+  KOKKOS_CONFIGURE_FILE(
     ${${PACKAGE_NAME}_USE_STATIC_ETI_MACROS_HEADER_FILE}
     ${${PACKAGE_NAME}_ETI_FILE_PATH}
     COPYONY
@@ -58,7 +58,7 @@ SET(${PACKAGE_NAME}_ETI_FIELDS "S|LO|D")
 # FIXME (mfh 17 Aug 2015, 16 Oct 2015) A better way to do this would
 # be to subtract away all enabled GlobalOrdinal types.  Plus, what if
 # someone really wants a CrsMatrix<int,...>?
-TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=short|short int|unsigned short|unsigned short int|int|unsigned|unsigned int|long|long int|unsigned long|unsigned long int|long long|long long int|unsigned long long|unsigned long long int|int16_t|uint16_t|int32_t|uint32_t|int64_t|uint64_t|size_t|ptrdiff_t" "LO=.*" "D=.*")
+KOKKOS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=short|short int|unsigned short|unsigned short int|int|unsigned|unsigned int|long|long int|unsigned long|unsigned long int|long long|long long int|unsigned long long|unsigned long long int|int16_t|uint16_t|int32_t|uint32_t|int64_t|uint64_t|size_t|ptrdiff_t" "LO=.*" "D=.*")
 
 # TriBITS' ETI system expects a set of types to be a string, delimited
 # by |.  Each template parameter (e.g., Scalar, LocalOrdinal, ...) has
@@ -91,7 +91,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 # Construct the "type expansion" string that TriBITS' ETI system
 # expects.  Even if ETI is OFF, we will use this to generate macros
 # for instantiating tests.
-TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_LIBRARYSET 
+KOKKOS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_LIBRARYSET
   "S=${${PACKAGE_NAME}_ETI_SCALARS}"
   "LO=${${PACKAGE_NAME}_ETI_LORDS}" 
   "D=${${PACKAGE_NAME}_ETI_DEVICES}")
@@ -99,12 +99,12 @@ TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_LIBRARYSET
 # Construct the "type expansion" string that TriBITS' ETI system
 # expects.  Even if ETI is OFF, we will use this to generate macros
 # for instantiating tests.
-TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_LIBRARYSET_ORDINAL_SCALAR
+KOKKOS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_LIBRARYSET_ORDINAL_SCALAR
   "S=${${PACKAGE_NAME}_ETI_SCALARS_ORDS}"
   "LO=${${PACKAGE_NAME}_ETI_LORDS}" 
   "D=${${PACKAGE_NAME}_ETI_DEVICES}")
 
-TRIBITS_ADD_ETI_INSTANTIATIONS(${PACKAGE_NAME} ${${PACKAGE_NAME}_ETI_LIBRARYSET})
+KOKKOS_ADD_ETI_INSTANTIATIONS(${PACKAGE_NAME} ${${PACKAGE_NAME}_ETI_LIBRARYSET})
 
 MESSAGE(STATUS "Set of enabled types, before exclusions: ${${PACKAGE_NAME}_ETI_LIBRARYSET}")
 
@@ -116,7 +116,7 @@ MESSAGE(STATUS "Set of enabled types, before exclusions: ${${PACKAGE_NAME}_ETI_L
 
 # Generate macros that exclude possible ordinal types from the
 # list of Scalar types.
-TRIBITS_ETI_GENERATE_MACROS(
+KOKKOS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}"
     "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
     "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};${${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR}"  
@@ -128,7 +128,7 @@ TRIBITS_ETI_GENERATE_MACROS(
     "KOKKOSKERNELS_INSTANTIATE_S_NO_ORDINAL_SCALAR(S)"         KOKKOSKERNELS_INSTANTIATE_S_NO_ORDINAL_SCALAR)
 
 # Generate macros include ONLY possible ordinal types in the list of Scalar types.
-TRIBITS_ETI_GENERATE_MACROS(
+KOKKOS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}" 
     "${${PACKAGE_NAME}_ETI_LIBRARYSET_ORDINAL_SCALAR}" 
     "${${PACKAGE_NAME}_ETI_EXCLUDE_SET}"
@@ -141,7 +141,7 @@ TRIBITS_ETI_GENERATE_MACROS(
 
 # Generate macros that include all Scalar types (if applicable),
 # including possible ordinal types.
-TRIBITS_ETI_GENERATE_MACROS(
+KOKKOS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}"
     "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
     "${${PACKAGE_NAME}_ETI_EXCLUDE_SET}"
@@ -160,13 +160,13 @@ TRIBITS_ETI_GENERATE_MACROS(
 # like "long long" or "std::complex<double>".  Thus, we define
 # typedefs that remove the offending characters.  The typedefs also
 # get written to the generated header file.
-TRIBITS_ETI_GENERATE_TYPEDEF_MACRO(KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS "KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS" "${eti_typedefs}")
+KOKKOS_ETI_GENERATE_TYPEDEF_MACRO(KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS "KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS" "${eti_typedefs}")
 
 # Generate the header file ${PACKAGE_NAME}_ETIHelperMacros.h, from the
 # file ${PACKAGE_NAME}_ETIHelperMacros.h.in (that lives in this
 # directory).  The generated header file gets written to the Trilinos
 # build directory, in packages/tpetra/kernels/src/.
-CONFIGURE_FILE(
+KOKKOS_CONFIGURE_FILE(
   ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/${PACKAGE_NAME}_ETIHelperMacros.h.in
   ${${PACKAGE_NAME}_ETI_FILE_PATH}
   )

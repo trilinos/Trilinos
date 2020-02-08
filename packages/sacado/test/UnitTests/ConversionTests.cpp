@@ -189,14 +189,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Conversion, OtherConversions, AD )
 typedef Sacado::Fad::DFad<double> Fad_DFadType;
 typedef Sacado::Fad::SLFad<double,global_fad_size> Fad_SLFadType;
 typedef Sacado::Fad::SFad<double,global_fad_size> Fad_SFadType;
-typedef Sacado::Fad::DMFad<double> Fad_DMFadType;
 typedef Sacado::Fad::DVFad<double> Fad_DVFadType;
 typedef Sacado::Fad::SimpleFad<double> Fad_SimpleFadType;
 typedef Sacado::Fad::ViewFad<double,global_fad_size,1,Fad_DFadType> Fad_VFadType;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_SLFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_SFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_DMFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_DVFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_SimpleFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ViewConversions, Fad_VFadType )
@@ -246,21 +244,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, OtherConversions, RadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, OtherConversions, Rad2Type )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, OtherConversions, RadVecType )
 
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage<double>::defaultPool_ = NULL;
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage< Sacado::Fad::DMFad<double> >::defaultPool_ = NULL;
-
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  Sacado::Fad::MemPoolManager<double> poolManager(100);
-  Sacado::Fad::MemPool *pool = poolManager.getMemoryPool(global_fad_size);
-  Sacado::Fad::DMFad<double>::setDefaultPool(pool);
-
-  Sacado::Fad::MemPoolManager< Sacado::Fad::DMFad<double> > poolManager2(100);
-  Sacado::Fad::MemPool *pool2 = poolManager2.getMemoryPool(global_fad_size);
-  Sacado::Fad::DMFad< Sacado::Fad::DMFad<double> >::setDefaultPool(pool2);
 
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }

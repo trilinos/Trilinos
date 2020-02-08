@@ -1477,8 +1477,8 @@ struct ReduceRowSizeFunctor{
   const size_type min_val;
   ReduceRowSizeFunctor(
       const size_type *rb,const  size_type *re): rowmap_view_begins(rb), rowmap_view_ends(re),
-          min_val((std::numeric_limits<size_type>::lowest())){
-  }
+          min_val(0)
+  {}
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, size_type &max_reduction) const {
     size_type val = rowmap_view_ends[i] - rowmap_view_begins[i] ;
@@ -1521,8 +1521,8 @@ struct ReduceMaxRowFunctor{
   const value_type min_val;
   ReduceMaxRowFunctor(
       view_type rowmap_view_): rowmap_view(rowmap_view_),
-          min_val((std::numeric_limits<value_type>::lowest())){
-  }
+          min_val(0)
+  {}
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, value_type &max_reduction) const {
     value_type val = rowmap_view(i+1) - rowmap_view(i) ;

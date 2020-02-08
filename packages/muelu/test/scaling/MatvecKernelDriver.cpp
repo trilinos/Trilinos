@@ -73,6 +73,7 @@
 #endif
 
 #if defined(HAVE_MUELU_CUSPARSE)
+#include "cublas_v2.h"
 #include "cusparse.h"
 #endif
 

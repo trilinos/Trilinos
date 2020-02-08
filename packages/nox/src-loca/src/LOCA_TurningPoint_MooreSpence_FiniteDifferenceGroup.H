@@ -107,7 +107,7 @@ namespace LOCA {
     /*!
      * \brief Computes the directional derivative
      * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction
-     * \f$a\f$.
+     * \f$ a\f$.
      */
     /*!
      * The calculation is implemented by calling the corresponding
@@ -122,7 +122,7 @@ namespace LOCA {
     /*!
      * \brief Computes the directional derivative
      * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction
-     * \f$a\f$.
+     * \f$ a\f$.
      */
     /*!
      * The calculation is implemented by calling the corresponding

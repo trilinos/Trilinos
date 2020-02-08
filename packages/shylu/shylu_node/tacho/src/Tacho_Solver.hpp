@@ -18,19 +18,27 @@ namespace Tacho {
   public:
     typedef ValueType value_type;
     typedef SchedulerType scheduler_type;
-    typedef typename scheduler_type::execution_space exec_space;
-    typedef typename exec_space::memory_space exec_memory_space;
-    typedef Kokkos::DefaultHostExecutionSpace host_space;
 
-    typedef Kokkos::View<size_type*,exec_space> size_type_array;
-    typedef Kokkos::View<ordinal_type*,exec_space> ordinal_type_array;
-    typedef Kokkos::View<value_type*,exec_space> value_type_array;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix; 
+    typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+    typedef typename device_type::execution_space exec_space;
+    typedef typename device_type::memory_space exec_memory_space;
 
-    typedef Kokkos::View<size_type*,host_space> size_type_array_host;
-    typedef Kokkos::View<ordinal_type*,host_space> ordinal_type_array_host;
-    typedef Kokkos::View<value_type*,host_space> value_type_array_host;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space> value_type_matrix_host; 
+    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+    typedef typename host_device_type::execution_space host_space;
+    typedef typename host_device_type::memory_space host_memory_space;
+
+    typedef Kokkos::View<size_type*,device_type> size_type_array;
+    typedef Kokkos::View<ordinal_type*,device_type> ordinal_type_array;
+    typedef Kokkos::View<value_type*,device_type> value_type_array;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> value_type_matrix; 
+
+    typedef Kokkos::View<size_type*,host_device_type> size_type_array_host;
+    typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array_host;
+    typedef Kokkos::View<value_type*,host_device_type> value_type_array_host;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_device_type> value_type_matrix_host; 
+
+    typedef CrsMatrixBase<value_type,device_type> crs_matrix_type; 
+    typedef CrsMatrixBase<value_type,host_device_type> crs_matrix_type_host; 
 
 #if defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
@@ -111,7 +119,8 @@ namespace Tacho {
         _serial_thres_size(-1),
         _mb(-1),
         _nb(-1),
-        _front_update_mode(-1) {}
+        _front_update_mode(-1),
+        _max_num_superblocks(-1) {}
 
     Solver(const Solver &b) = default;
 
@@ -178,6 +187,9 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
     }
 
+    ordinal_type_array getPermutationVector() const { return _perm;} 
+    ordinal_type_array getInversePermutationVector() const { return _peri; }
+
     // internal only
     int analyze(const ordinal_type m,
                 const size_type_array_host &ap,
@@ -205,7 +217,13 @@ namespace Tacho {
       }
 
       if (_m < _small_problem_thres) {
-        // for small problems, use lapack and no analysis
+        // for small problems, use lapack and no analysis and no permutation
+        _perm = Kokkos::create_mirror_view(exec_memory_space(), _h_perm); 
+        _peri = Kokkos::create_mirror_view(exec_memory_space(), _h_peri); 
+
+        Kokkos::deep_copy(_perm, _h_perm);
+        Kokkos::deep_copy(_peri, _h_peri);
+        
         if (_verbose) {
           printf("  Linear system A\n");
           printf("             number of equations:                             %10d\n", _m);
@@ -261,8 +279,8 @@ namespace Tacho {
       _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
       _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
 
-      _h_ap = Kokkos::create_mirror_view(ap); Kokkos::deep_copy(_h_ap, ap);
-      _h_aj = Kokkos::create_mirror_view(aj); Kokkos::deep_copy(_h_aj, aj);
+      _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
+      _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
 
       _nnz = _h_ap(m);
 
@@ -288,7 +306,7 @@ namespace Tacho {
 
         timer.reset();
         _U = value_type_matrix_host("U", _m, _m);
-        auto h_ax = Kokkos::create_mirror_view(ax); Kokkos::deep_copy(h_ax, ax);
+        auto h_ax = Kokkos::create_mirror_view(host_memory_space(), ax); Kokkos::deep_copy(h_ax, ax);
         for (ordinal_type i=0;i<_m;++i) {
           const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
           for (size_type j=jbeg;j<jend;++j) {
@@ -422,7 +440,7 @@ namespace Tacho {
         const double t_copy = timer.seconds();
 
         timer.reset();
-        auto h_x = Kokkos::create_mirror_view(x); 
+        auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
         Kokkos::deep_copy(h_x, x);
         Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
           ::invoke(Diag::NonUnit(), 1.0, _U, h_x);
@@ -470,11 +488,52 @@ namespace Tacho {
     double computeRelativeResidual(const value_type_array &ax,
                                    const value_type_matrix &x,
                                    const value_type_matrix &b) {
-      CrsMatrixBase<value_type,exec_space> A; 
+      CrsMatrixBase<value_type,device_type> A; 
       A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-      return _N.computeRelativeResidual(A, x, b);
+      return Tacho::computeRelativeResidual(A, x, b);
     }
+    
+    void exportFactorsToCrsMatrix(crs_matrix_type &A) {
+      if (_m < _small_problem_thres) {
+        typedef ArithTraits<value_type> ats;
+        const value_type zero(0);
+
+        /// count nonzero elements in dense U
+        const ordinal_type m = _m;
+        size_type_array_host h_ap("h_ap", m+1);
+        for (ordinal_type i=0;i<m;++i) 
+          for (ordinal_type j=0;j<m;++j) 
+            h_ap(i+1) += (ats::abs(_U(i,j)) > zero);
+        
+        /// serial scan; this is a small problem
+        h_ap(0) = 0;
+        for (ordinal_type i=0;i<m;++i)
+          h_ap(i+1) += h_ap(i);
+
+        /// create a host crs matrix
+        const ordinal_type nnz = h_ap(m);
+        ordinal_type_array_host h_aj(do_not_initialize_tag("h_aj"), nnz);
+        value_type_array_host h_ax(do_not_initialize_tag("h_ax"), nnz);
+
+        for (ordinal_type i=0,k=0;i<m;++i) 
+          for (ordinal_type j=i;j<m;++j)
+            if (ats::abs(_U(i,j)) > zero) {
+              h_aj(k) = j;
+              h_ax(k) = _U(i,j);
+              ++k;
+            }
+
+        crs_matrix_type_host h_A;
+        h_A.setExternalMatrix(m, m, nnz, h_ap, h_aj, h_ax); 
+        ///h_A.showMe(std::cout, true);
+        A.clear();
+        A.createConfTo(h_A);
+        A.copy(h_A);
+      } else {
+        _N.exportFactorsToCrsMatrix(A, false);
+      }
+    } 
 
     int release() {
       if (_verbose) {
@@ -514,7 +573,7 @@ namespace Tacho {
         _stree_roots = ordinal_type_array_host();
         
         _N = numeric_tools_type();
-        _U =value_type_matrix_host();
+        _U = value_type_matrix_host();
         
         _verbose = 0;
         _small_problem_thres = 1024;

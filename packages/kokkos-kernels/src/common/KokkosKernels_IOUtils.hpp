@@ -40,6 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
+#include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <cstdlib>
@@ -47,6 +49,7 @@
 #include <algorithm>
 #include <vector>
 #include <stdexcept>
+#include <type_traits>
 #ifndef _KOKKOSKERNELSIOUTILS_HPP
 #define _KOKKOSKERNELSIOUTILS_HPP
 
@@ -75,7 +78,7 @@ void kk_sparseMatrix_generate(
 {
   rowPtr = new SizeType[nrows+1];
 
-  OrdinalType elements_per_row = nnz/nrows;
+  OrdinalType elements_per_row = nrows ? nnz/nrows : 0;
   srand(13721);
   rowPtr[0] = 0;
   for(int row=0;row<nrows;row++)
@@ -688,7 +691,7 @@ void write_graph_crs(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *
     }
     myFile  << std::endl;
   }
-  for (lno_t i = 0; i < ne; ++i){
+  for (size_type i = 0; i < ne; ++i){
     myFile  << ew[i] << " ";
   }
   myFile  << std::endl;
@@ -711,18 +714,159 @@ void write_graph_ligra(lno_t nv, size_type ne,const size_type *xadj,const  lno_t
   ff.close();
 }
 
+//MM: types and utility functions for parsing the MatrixMarket format
+namespace MM
+{
+  enum MtxObject
+  {
+    UNDEFINED_OBJECT,
+    MATRIX,
+    VECTOR
+  };
+  enum MtxFormat
+  {
+    UNDEFINED_FORMAT,
+    COORDINATE,
+    ARRAY
+  };
+  enum MtxField
+  {
+    UNDEFINED_FIELD,
+    REAL,     //includes both float and double
+    COMPLEX,  //includes complex<float> and complex<double>
+    INTEGER,  //includes all integer types
+    PATTERN   //not a type, but means the value for every entry is 1
+  };
+  enum MtxSym
+  {
+    UNDEFINED_SYMMETRY,
+    GENERAL,
+    SYMMETRIC,      //A(i, j) = A(j, i)
+    SKEW_SYMMETRIC, //A(i, j) = -A(j, i)
+    HERMITIAN       //A(i, j) = a + bi; A(j, i) = a - bi
+  };
+
+  //readScalar/writeScalar: read and write a scalar in the form that it appears in an .mtx file.
+  //The >> and << operators won't work, because complex appears as "real imag", not "(real, imag)"
+  template<typename scalar_t>
+  scalar_t readScalar(std::istream& is)
+  {
+    scalar_t val;
+    is >> val;
+    return val;
+  }
+
+  template<>
+  inline Kokkos::complex<float> readScalar(std::istream& is)
+  {
+    float r, i;
+    is >> r;
+    is >> i;
+    return Kokkos::complex<float>(r, i);
+  }
+
+  template<>
+  inline Kokkos::complex<double> readScalar(std::istream& is)
+  {
+    double r, i;
+    is >> r;
+    is >> i;
+    return Kokkos::complex<double>(r, i);
+  }
+
+  template<typename scalar_t>
+  void writeScalar(std::ostream& os, scalar_t val)
+  {
+    os << val;
+  }
+
+  template<>
+  inline void writeScalar(std::ostream& os, Kokkos::complex<float> val)
+  {
+    os << val.real() << ' ' << val.imag();
+  }
+
+  template<>
+  inline void writeScalar(std::ostream& os, Kokkos::complex<double> val)
+  {
+    os << val.real() << ' ' << val.imag();
+  }
+
+  //symmetryFlip: given a value for A(i, j), return the value that
+  //should be inserted at A(j, i) (if any)
+  template<typename scalar_t>
+  scalar_t symmetryFlip(scalar_t val, MtxSym symFlag)
+  {
+    if(symFlag == SKEW_SYMMETRIC)
+      return -val;
+    return val;
+  }
+
+  template<>
+  inline Kokkos::complex<float> symmetryFlip(Kokkos::complex<float> val, MtxSym symFlag)
+  {
+    if(symFlag == HERMITIAN)
+      return Kokkos::conj(val);
+    else if(symFlag == SKEW_SYMMETRIC)
+      return -val;
+    return val;
+  }
+
+  template<>
+  inline Kokkos::complex<double> symmetryFlip(Kokkos::complex<double> val, MtxSym symFlag)
+  {
+    if(symFlag == HERMITIAN)
+      return Kokkos::conj(val);
+    else if(symFlag == SKEW_SYMMETRIC)
+      return -val;
+    return val;
+  }
+}
+
+template <typename lno_t, typename size_type, typename scalar_t>
+void write_matrix_mtx(lno_t nrows, lno_t ncols, size_type nentries, const size_type *xadj, const lno_t *adj, const scalar_t *vals, const char *filename) {
+  std::ofstream myFile (filename);
+  myFile  << "%%MatrixMarket matrix coordinate ";
+  if(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
+      std::is_same<scalar_t, Kokkos::complex<double>>::value)
+    myFile << "complex";
+  else
+    myFile << "real";
+  myFile << " general\n";
+  myFile << nrows << " " << ncols << " " << nentries << '\n';
+  myFile << std::setprecision(17) << std::scientific;
+  for (lno_t i = 0; i < nrows; ++i) {
+    size_type b = xadj[i];
+    size_type e = xadj[i + 1];
+    for (size_type j = b; j < e; ++j) {
+      myFile  << i + 1 << " " << adj[j] + 1 << " ";
+      MM::writeScalar<scalar_t>(myFile, vals[j]);
+      myFile << '\n';
+    }
+  }
+  myFile.close();
+}
 
 template <typename lno_t, typename size_type, typename scalar_t>
 void write_graph_mtx(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t *ew,const  char *filename){
 
   std::ofstream myFile (filename);
-  myFile  << "%%MatrixMarket matrix coordinate real general" << std::endl;
-  myFile  << nv << " " << nv << " " << ne << std::endl;
+  myFile  << "%%MatrixMarket matrix coordinate ";
+  if(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
+      std::is_same<scalar_t, Kokkos::complex<double>>::value)
+    myFile << "complex";
+  else
+    myFile << "real";
+  myFile << " general\n";
+  myFile  << nv << " " << nv << " " << ne << '\n';
+  myFile << std::setprecision(8) << std::scientific;
   for (lno_t i = 0; i < nv; ++i){
     size_type b = xadj[i];
     size_type e = xadj[i + 1];
     for (size_type j = b; j < e; ++j){
-      myFile  << i + 1 << " " << (adj)[j] + 1 << " " << ew [j] << std::endl;
+      myFile  << i + 1 << " " << (adj)[j] + 1 << " ";
+      MM::writeScalar<scalar_t>(myFile, ew[j]);
+      myFile << '\n';
     }
   }
 
@@ -747,6 +891,32 @@ void read_graph_bin(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scal
   myFile.close();
 }
 
+//When Kokkos issue #2313 is resolved, can delete
+//parseScalar and just use operator>>
+template<typename scalar_t>
+scalar_t parseScalar(std::istream& is)
+{
+  scalar_t val;
+  is >> val;
+  return val;
+}
+
+template<>
+inline Kokkos::complex<float> parseScalar(std::istream& is)
+{
+  std::complex<float> val;
+  is >> val;
+  return Kokkos::complex<float>(val);
+}
+
+template<>
+inline Kokkos::complex<double> parseScalar(std::istream& is)
+{
+  std::complex<double> val;
+  is >> val;
+  return Kokkos::complex<double>(val);
+}
+
 template <typename lno_t, typename size_type, typename scalar_t>
 void read_graph_crs(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scalar_t **ew, const char *filename){
 
@@ -765,7 +935,7 @@ void read_graph_crs(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scal
     myFile  >> (*adj)[i];
   }
   for (size_type i = 0; i < *ne; ++i){
-    myFile  >> (*ew)[i];
+    (*ew)[i] = parseScalar<scalar_t>(myFile);
   }
   myFile.close();
 }
@@ -784,57 +954,54 @@ inline bool endswith (std::string const &fullString, std::string const &ending) 
 
 template <typename crs_matrix_t>
 void write_kokkos_crst_matrix(crs_matrix_t a_crsmat,const  char *filename){
-
-
   typedef typename crs_matrix_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename crs_matrix_t::values_type::non_const_type   values_view_t;
+  typedef typename graph_t::row_map_type::non_const_type     row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type     cols_view_t;
+  typedef typename crs_matrix_t::values_type::non_const_type values_view_t;
 
-  typedef typename cols_view_t::value_type lno_t;
-  typedef typename row_map_view_t::value_type size_type;
-  typedef typename values_view_t::value_type scalar_t;
+  typedef typename row_map_view_t::value_type offset_t;
+  typedef typename cols_view_t::value_type    lno_t;
+  typedef typename values_view_t::value_type  scalar_t;
+  typedef typename values_view_t::size_type   size_type;
+
+  size_type nnz = a_crsmat.nnz();
+
+  auto a_rowmap_view = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), a_crsmat.graph.row_map);
+  auto a_entries_view = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), a_crsmat.graph.entries);
+  auto a_values_view = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), a_crsmat.values);
+  offset_t* a_rowmap  = const_cast<offset_t*>(a_rowmap_view.data());
+  lno_t*    a_entries = a_entries_view.data();
+  scalar_t* a_values  = a_values_view.data();
 
   std::string strfilename(filename);
-  if (endswith(strfilename, ".mtx")){
-    write_graph_mtx<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
-        a_crsmat.graph.entries.extent(0),
-        a_crsmat.graph.row_map.data(),
-        a_crsmat.graph.entries.data(),
-        a_crsmat.values.data(),filename);
+  if (endswith(strfilename, ".mtx") || endswith(strfilename, ".mm")){
+    write_matrix_mtx<lno_t, offset_t, scalar_t>(
+        a_crsmat.numRows(), a_crsmat.numCols(), a_crsmat.nnz(),
+        a_rowmap, a_entries, a_values, filename);
+    return;
   }
-
-  else if (endswith(strfilename, ".bin")){
-    write_graph_bin<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
-        a_crsmat.graph.entries.extent(0),
-        a_crsmat.graph.row_map.data(),
-        a_crsmat.graph.entries.data(),
-        a_crsmat.values.data(),filename);
+  else if(a_crsmat.numRows() != a_crsmat.numCols())
+  {
+    throw std::runtime_error("For formats other than MatrixMarket (suffix .mm or .mtx),\n"
+        "write_kokkos_crst_matrix only supports square matrices");
+  }
+  if (endswith(strfilename, ".bin")){
+    write_graph_bin<lno_t, offset_t, scalar_t>(a_crsmat.numRows(),
+        nnz, a_rowmap, a_entries, a_values, filename);
   }
   else if (endswith(strfilename, ".ligra")){
-    write_graph_ligra<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
-        a_crsmat.graph.entries.extent(0),
-        a_crsmat.graph.row_map.data(),
-        a_crsmat.graph.entries.data(),
-        a_crsmat.values.data(),filename);
+    write_graph_ligra<lno_t, offset_t, scalar_t>(a_crsmat.numRows(),
+        nnz, a_rowmap, a_entries, a_values, filename);
   }
   else if (endswith(strfilename, ".crs")){
-    write_graph_crs<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
-        a_crsmat.graph.entries.extent(0),
-        a_crsmat.graph.row_map.data(),
-        a_crsmat.graph.entries.data(),
-        a_crsmat.values.data(),filename);
-
+    write_graph_crs<lno_t, offset_t, scalar_t>(a_crsmat.numRows(),
+        nnz, a_rowmap, a_entries, a_values, filename);
   }
   else {
-    throw std::runtime_error ("Writer is not available\n");
+    std::string errMsg = std::string("write_kokkos_crst_matrix: File extension on ") + filename + " does not correspond to a known format";
+    throw std::runtime_error(errMsg);
   }
-
-
 }
-
-
-
 
 template <typename lno_t, typename size_type, typename scalar_t>
 int read_mtx (
@@ -842,8 +1009,9 @@ int read_mtx (
     lno_t *nv, size_type *ne,
     size_type **xadj, lno_t **adj, scalar_t **ew,
     bool symmetrize = false, bool remove_diagonal = true,
-    bool transpose = false){
-
+    bool transpose = false)
+{
+  using namespace MM;
   std::ifstream mmf (fileName, std::ifstream::in);
   if (!mmf.is_open()) {
     throw std::runtime_error ("File cannot be opened\n");
@@ -856,64 +1024,84 @@ int read_mtx (
     throw std::runtime_error ("Invalid MM file. Line-1\n");
   }
 
-
-  int mtx_object = 0; // 0- matrix, 1-vector
-  int mtx_format = 0; // 0- coordinate; 1- array
-  //int mtx_field = 0; //0-real, 1-double, 2-complex, 3- integer, 4-pattern
-  int mtx_sym = 0; //0-general, 1-symmetric, 2-skew-symmetric, 3-hermitian
+  //make sure every required field is in the file, by initializing them to UNDEFINED_*
+  MtxObject mtx_object = UNDEFINED_OBJECT;
+  MtxFormat mtx_format = UNDEFINED_FORMAT;
+  MtxField mtx_field = UNDEFINED_FIELD;
+  MtxSym mtx_sym = UNDEFINED_SYMMETRY;
 
   if (fline.find("matrix") != std::string::npos){
-    mtx_object = 0;
+    mtx_object = MATRIX;
   } else if (fline.find("vector") != std::string::npos){
-    mtx_object = 1;
+    mtx_object = VECTOR;
+    throw std::runtime_error("MatrixMarket \"vector\" is not supported by KokkosKernels read_mtx()");
   }
 
   if (fline.find("coordinate") != std::string::npos){
-    mtx_format = 0;
+    //sparse
+    mtx_format = COORDINATE;
   }
-  else if (fline.find("array") == std::string::npos){
-    mtx_format = 1;
+  else if (fline.find("array") != std::string::npos){
+    //dense
+    mtx_format = ARRAY;
   }
 
-  if (fline.find("real") != std::string::npos){
-    //mtx_field = 0;
-  }
-  else if (fline.find("double") != std::string::npos){
-    //mtx_field = 1;
+  if(fline.find("real") != std::string::npos || 
+     fline.find("double") != std::string::npos)
+  {
+    if(!std::is_floating_point<scalar_t>::value)
+      throw std::runtime_error("scalar_t in read_mtx() incompatible with float or double typed MatrixMarket file.");
+    else
+      mtx_field = REAL;
   }
   else if (fline.find("complex") != std::string::npos){
-    //mtx_field = 2;
+    if(!(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
+          std::is_same<scalar_t, Kokkos::complex<double>>::value))
+      throw std::runtime_error("scalar_t in read_mtx() incompatible with complex-typed MatrixMarket file.");
+    else
+      mtx_field = COMPLEX;
   }
   else if (fline.find("integer") != std::string::npos){
-    //mtx_field = 3;
+    if(std::is_integral<scalar_t>::value)
+      mtx_field = INTEGER;
+    else
+      throw std::runtime_error("scalar_t in read_mtx() incompatible with integer-typed MatrixMarket file.");
   }
   else if (fline.find("pattern") != std::string::npos){
-    //mtx_field = 4;
+    mtx_field = PATTERN;
+    //any reasonable choice for scalar_t can represent "1" or "1.0 + 0i", so nothing to check here
   }
 
-  if (fline.find("skew-symmetric") != std::string::npos){
-    mtx_sym = 2;
+  if (fline.find("general") != std::string::npos){
+    mtx_sym = GENERAL;
+  }
+  else if (fline.find("skew-symmetric") != std::string::npos){
+    mtx_sym = SKEW_SYMMETRIC;
   }
   else if (fline.find("symmetric") != std::string::npos){
-    mtx_sym = 1;
+    //checking for "symmetric" after "skew-symmetric" because it's a substring
+    mtx_sym = SYMMETRIC;
   }
-  else if (fline.find("hermitian") != std::string::npos){
-    mtx_sym = 3;
+  else if (fline.find("hermitian") != std::string::npos ||
+      fline.find("Hermitian") != std::string::npos){
+    mtx_sym = HERMITIAN;
   }
-  else if (fline.find("general") != std::string::npos){
-    mtx_sym = 0;
+  //Validate the matrix attributes
+  if(mtx_format == ARRAY)
+  {
+    if(mtx_sym == UNDEFINED_SYMMETRY)
+      mtx_sym = GENERAL;
+    if(mtx_sym != GENERAL)
+      throw std::runtime_error("array format MatrixMarket file must have general symmetry (optional to include \"general\")");
   }
-
-  if (mtx_object == 1) {
-    throw std::runtime_error ("VECTOR TYPE NOT HANDLED YET\n");
-  }
-  if (mtx_format == 1) {
-    throw std::runtime_error ("ARRAY TYPE NOT HANDLED YET\n");
-  }
-  if (!symmetrize && (mtx_sym == 2 || mtx_sym == 3)) {
-    throw std::runtime_error ("SKEW-SYMMETRIC and HERMITIAN TYPE NOT HANDLED YET\n");
-  }
-
+  if(mtx_object == UNDEFINED_OBJECT)
+    throw std::runtime_error("MatrixMarket file header is missing the object type.");
+  if(mtx_format == UNDEFINED_FORMAT)
+    throw std::runtime_error("MatrixMarket file header is missing the format.");
+  if(mtx_field == UNDEFINED_FIELD)
+    throw std::runtime_error("MatrixMarket file header is missing the field type.");
+  if(mtx_sym == UNDEFINED_SYMMETRY)
+    throw std::runtime_error("MatrixMarket file header is missing the symmetry type.");
 
   while(1){
     getline(mmf, fline);
@@ -922,24 +1110,57 @@ int read_mtx (
   std::stringstream ss (fline);
   lno_t nr = 0, nc = 0;
   size_type nnz = 0;
-
-  ss >> nr >> nc >> nnz;
-
-
-  //if (nr != nc) {std::cerr << "NON-SQUARE MATRIX TYPE NOT HANDLED YET"<< std::endl; return (1); }
-  size_type noEdges = nnz;
-  if (mtx_sym == 1 || symmetrize) noEdges = 2 * nnz;
-
-  std::vector <struct Edge<lno_t, scalar_t> > edges (noEdges);
+  ss >> nr >> nc;
+  if(mtx_format == COORDINATE)
+    ss >> nnz;
+  else
+    nnz = nr * nc;
+  size_type numEdges = nnz;
+  symmetrize = symmetrize || mtx_sym != GENERAL;
+  if(symmetrize && nr != nc)
+  {
+    throw std::runtime_error("A non-square matrix cannot be symmetrized.");
+  }
+  if(mtx_format == ARRAY)
+  {
+    //Array format only supports general symmetry and non-pattern 
+    if(symmetrize)
+      throw std::runtime_error("array format MatrixMarket file cannot be symmetrized.");
+    if(mtx_field == PATTERN)
+      throw std::runtime_error("array format MatrixMarket file can't have \"pattern\" field type.");
+  }
+  if(symmetrize)
+  {
+    numEdges = 2 * nnz;
+  }
+  //numEdges is only an upper bound (diagonal entries may be removed)
+  std::vector <struct Edge<lno_t, scalar_t> > edges (numEdges);
   size_type nE = 0;
-  lno_t noDiagonal = 0;
+  lno_t numDiagonal = 0;
   for (size_type i = 0; i < nnz; ++i){
     getline(mmf, fline);
     std::stringstream ss2 (fline);
     struct Edge<lno_t, scalar_t> tmp;
+    //read source, dest (edge) and weight (value)
     lno_t s,d;
     scalar_t w;
-    ss2 >> s >> d >> w;
+    if(mtx_format == ARRAY)
+    {
+      //In array format, entries are listed in column major order,
+      //so the row and column can be determined just from the index i
+      //(but make them 1-based indices, to match the way coordinate works)
+      s = i % nr + 1; //row
+      d = i / nr + 1; //col
+    }
+    else
+    {
+      //In coordinate format, row and col of each entry is read from file
+      ss2 >> s >> d;
+    }
+    if(mtx_field == PATTERN)
+      w = 1;
+    else
+      w = readScalar<scalar_t>(ss2);
     if (!transpose){
       tmp.src = s - 1;
       tmp.dst = d - 1;
@@ -950,38 +1171,33 @@ int read_mtx (
       tmp.dst = s - 1;
       tmp.ew = w;
     }
-
     if (tmp.src == tmp.dst){
-      noDiagonal++;
+      numDiagonal++;
       if (!remove_diagonal){
         edges[nE++] = tmp;
       }
       continue;
     }
     edges[nE++] = tmp;
-    if (mtx_sym == 1 || symmetrize){
+    if (symmetrize){
       struct Edge<lno_t, scalar_t> tmp2;
       tmp2.src = tmp.dst;
       tmp2.dst = tmp.src;
-      tmp2.ew = tmp.ew;
+      //the symmetrized value is w, -w or conj(w) if mtx_sym is
+      //SYMMETRIC, SKEW_SYMMETRIC or HERMITIAN, respectively.
+      tmp2.ew = symmetryFlip<scalar_t>(tmp.ew, mtx_sym);
       edges[nE++] = tmp2;
     }
   }
-
   mmf.close();
-
   std::sort (edges.begin(), edges.begin() + nE);
-
   if (transpose){
     lno_t tmp = nr;
     nr = nc;
     nc = tmp;
   }
-
   //idx *nv, idx *ne, idx **xadj, idx **adj, wt **wt
-
   *nv = nr;
-
   *ne = nE;
   //*xadj = new idx[nr + 1];
   md_malloc<size_type>(xadj, nr+1);
@@ -989,15 +1205,13 @@ int read_mtx (
   md_malloc<lno_t>(adj, nE);
   //*ew = new wt[nE];
   md_malloc<scalar_t>(ew, nE);
-
   size_type eind = 0;
   size_type actual = 0;
   for (lno_t i = 0; i < nr; ++i){
     (*xadj)[i] = actual;
     bool is_first = true;
-    while (edges[eind].src == i){
+    while (eind < nE && edges[eind].src == i){
       if (is_first || !symmetrize || eind == 0 || (eind > 0 && edges[eind - 1].dst != edges[eind].dst)){
-
         (*adj)[actual] = edges[eind].dst;
         (*ew)[actual] = edges[eind].ew;
         ++actual;
@@ -1015,7 +1229,7 @@ template <typename lno_t, typename size_type, typename scalar_t>
 void read_matrix(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scalar_t **ew, const char *filename){
 
   std::string strfilename(filename);
-  if (endswith(strfilename, ".mtx")){
+  if (endswith(strfilename, ".mtx") || endswith(strfilename, ".mm")){
     read_mtx (
         filename,
         nv, ne,

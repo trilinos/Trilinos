@@ -590,6 +590,11 @@ namespace stk {
                 {
                     add_missing_fields(missingFields, missingFieldCollector);
                 }
+                else {
+                    for (auto missingField : missingFieldCollector) {
+                        std::cout << "Missing field: " << missingField.second->db_name() << std::endl;
+                    }
+                }
             }
         }
 

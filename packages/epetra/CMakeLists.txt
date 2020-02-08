@@ -113,7 +113,6 @@ TRIBITS_EXCLUDE_FILES(
   src/Epetra_InvOperator.cpp
   src/Epetra_LinearProblemRedistor.cpp
   src/Epetra_LinearProblemRedistor.h
-  src/Epetra_MpiSmpComm.*
   src/stamp-h.in
   src/xxemacs
   test/BasicPerfTest/runSummary

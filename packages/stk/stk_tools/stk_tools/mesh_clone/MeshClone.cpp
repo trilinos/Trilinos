@@ -2,14 +2,13 @@
 #include "MeshCloneIo.hpp"
 #include "MeshCloneUtils.hpp"
 #include <stk_mesh/base/DestroyElements.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 #include "stk_mesh/base/Part.hpp"
 #include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_topology/topology.hpp"
 #include "stk_util/util/ReportHandler.hpp"
-#include <stk_mesh/base/DestroyElements.hpp>
 
 namespace stk {
 namespace mesh {

@@ -77,9 +77,9 @@ public:
    /** Give access of the "direct" permutation vector that is owned by the current
       processor.
 
-      \param[out] size Number of elements in the array.
+      \param size [out] Number of elements in the array.
 
-      \param[out] array Pointer to the the part assignements array inside
+      \param array [out] Pointer to the the part assignements array inside
                         the object.
 
       \remark This pointer is only significant if the object still exists.
@@ -95,11 +95,11 @@ public:
 
   /** Copy a part of the "direct" permutation vector.
 
-      \param[in] len of the array given by the user.
+      \param len [in] of the array given by the user.
 
-      \param[out] size Number of elements in the array.
+      \param size [out] Number of elements in the array.
 
-      \param[out] array Direct permutation vector. Allocated by the user with
+      \param array [out] Direct permutation vector. Allocated by the user with
                         a size of at least @c len elements.
 
       \remark Memory space which is not useful in the array is not
