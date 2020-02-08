@@ -147,6 +147,9 @@ namespace stk {
       void set_subset_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_subset_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
+      void set_skin_mesh_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_skin_mesh_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
+
       void set_shared_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_shared_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
@@ -767,6 +770,18 @@ namespace stk {
 						     stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->set_subset_selector(Teuchos::rcpFromRef(my_selector));
+    }
+
+    inline void StkMeshIoBroker::set_skin_mesh_selector(size_t output_file_index,
+						     Teuchos::RCP<stk::mesh::Selector> my_selector) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_skin_mesh_selector(my_selector);
+    }
+
+    inline void StkMeshIoBroker::set_skin_mesh_selector(size_t output_file_index,
+						     stk::mesh::Selector &my_selector) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_skin_mesh_selector(Teuchos::rcpFromRef(my_selector));
     }
 
     inline void StkMeshIoBroker::set_shared_selector(size_t output_file_index,

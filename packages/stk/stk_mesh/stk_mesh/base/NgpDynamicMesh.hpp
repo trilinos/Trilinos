@@ -35,6 +35,7 @@
 #define STK_MESH_NGPDYNAMICMESH_HPP
 
 #include "stk_util/stk_config.h"
+#include "stk_util/util/StridedArray.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_MemoryPool.hpp"
 #include "stk_mesh/base/BulkData.hpp"
@@ -49,6 +50,7 @@
 #include "stk_mesh/base/Field.hpp"
 
 #include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_mesh/base/NgpUtils.hpp"
 #include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_util/util/StkNgpVector.hpp"
 
@@ -94,7 +96,7 @@ bool all_parts_match(const UnmanagedPartOrdViewType& lhsParts, const UnmanagedPa
 }
 
 struct DynamicBucket {
-  typedef Entities<const stk::mesh::Entity> ConnectedNodes;
+  typedef util::StridedArray<const stk::mesh::Entity> ConnectedNodes;
 
   STK_FUNCTION
   DynamicBucket()

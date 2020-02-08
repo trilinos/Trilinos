@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,55 +30,34 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
 
-#ifndef STK_SIMD_DISIMD_DISIMDBOOLF_HPP
-#define STK_SIMD_DISIMD_DISIMDBOOLF_HPP
+#ifndef STK_MESH_NGPUTILS_HPP
+#define STK_MESH_NGPUTILS_HPP
+
+#include <stk_util/stk_config.h>
+#include "stk_mesh/base/Bucket.hpp"
+#include "stk_mesh/base/Types.hpp"
+#include <stk_mesh/base/BulkData.hpp>
+
+#include <stk_util/util/StkNgpVector.hpp>
 
 namespace stk {
-namespace simd {
+namespace mesh {
 
-class Boolf {
+inline stk::NgpVector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
+                                               stk::mesh::EntityRank rank,
+                                               const stk::mesh::Selector &selector)
+{
+  const stk::mesh::BucketVector &buckets = bulk.get_buckets(rank, selector);
+  stk::NgpVector<unsigned> bucketIds(buckets.size());
+  for(size_t i=0; i<buckets.size(); i++)
+    bucketIds[i] = buckets[i]->bucket_id();
+  bucketIds.copy_host_to_device();
+  return bucketIds;
+}
 
- public:
-    
-  STK_MATH_FORCE_INLINE Boolf() {}
-    
-  STK_MATH_FORCE_INLINE Boolf(bool x) 
-    : _data(x)
-    {
-    }
-    
-  STK_MATH_FORCE_INLINE Boolf(const SIMD_NAMESPACE::simd_mask<float, SIMD_NAMESPACE::simd_abi::native>& x)
-    : _data(x) 
-    {
-    }
+}
+}
 
-  STK_MATH_FORCE_INLINE Boolf(const Boolf& x) 
-    : _data(x._data) 
-    {
-    }
-    
-  STK_MATH_FORCE_INLINE Boolf& operator= (const Boolf& x) {
-    _data = x._data;
-    return *this;
-  }
-
-  STK_MATH_FORCE_INLINE float& operator[](int i) {return (reinterpret_cast<float*>(&_data))[i];}
-  STK_MATH_FORCE_INLINE const float& operator[](int i) const {return (reinterpret_cast<const float*>(&_data))[i];}
-     
-  SIMD_NAMESPACE::simd_mask<float, SIMD_NAMESPACE::simd_abi::native> _data; // the "_" means you should try not to use this directly
-  // it is made public to avoid function call overhead 
-  // and/or so the compiler doesn't have to use up one of
-  // inlining depths (usually max inlining depth ~5)
-
-};
-
-const Boolf TRUE_VALf(true);
-const Boolf FALSE_VALf(false);
-
-} // namespace simd
-} // namespace stk
-
-#endif // STK_SIMD_DISIMD_DISIMDBOOLF_HPP
+#endif
 

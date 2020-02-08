@@ -14,8 +14,10 @@ class FaceCreatorUsingBulkDataFaceSharingTester : public FaceCreatorFixture
 {
 protected:
 
-    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                               unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
     {
+        ThrowRequireMsg(bucketCapacity == stk::mesh::impl::BucketRepository::default_bucket_capacity, "allocate_bulk: BulkDataFaceSharingTester doesn't recognize non-default bucket-capacity");
         set_bulk(new stk::unit_test_util::BulkDataFaceSharingTester(get_meta(), get_comm(), auraOption));
     }
 

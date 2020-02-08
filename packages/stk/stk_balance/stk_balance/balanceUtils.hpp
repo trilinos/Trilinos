@@ -258,6 +258,20 @@ public:
     virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return true; }
 };
 
+class StkBalanceSettings : public GraphCreationSettings
+{
+public:
+    StkBalanceSettings()
+      : GraphCreationSettings()
+    {}
+
+    ~StkBalanceSettings() = default;
+
+    std::string getCoordinateFieldName() const override {
+      return "balance_coordinates";
+    }
+};
+
 class BasicZoltan2Settings : public GraphCreationSettings
 {
 public:
