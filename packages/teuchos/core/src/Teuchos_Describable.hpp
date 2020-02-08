@@ -130,7 +130,7 @@ public:
    * mean.  It would be a good idea for Trilinos developers to reach a
    * consensus on this.  For example, if the subclass implements a
    * large data structure like a sparse matrix, VERB_NONE should print
-   * nothing at all, VERB_LOW should print \f$O(1)\f$ data relative to
+   * nothing at all, VERB_LOW should print \f$ O(1)\f$ data relative to
    * the dimensions and number of entries of the matrix, and
    * VERB_EXTREME may print all the entries of the matrix.  The
    * subclass must decide how to interpret verbosity levels in between

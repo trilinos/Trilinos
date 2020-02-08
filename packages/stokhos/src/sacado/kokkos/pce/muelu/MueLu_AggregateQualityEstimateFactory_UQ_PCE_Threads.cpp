@@ -1,12 +1,11 @@
-
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//               Epetra: Linear Algebra Services Package
-//                 Copyright 2011 Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,30 +34,34 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
-// ************************************************************************
-//@HEADER
+// ***********************************************************************
+// @HEADER
 
-#include "Epetra_MpiSmpCommData.h"
-//#include "Epetra_ConfigDefs.h" //DATA_DEBUG
 
-//=============================================================================
-Epetra_MpiSmpCommData::Epetra_MpiSmpCommData(MPI_Comm& Comm)
-	: Comm_(Comm),
-		curTag_(minTag_),
-		ThreadID_(0),
-		NumThreads_(1)
-{
-	MPI_Comm_size(Comm, &size_);
-	MPI_Comm_rank(Comm, &rank_);
-	minTag_ = 24050;
-	maxTag_ = 24099;
-	NodeID_ = rank_;
-	//cout << "--MSCD created (dc), addr: " << this << std::endl; //DATA_DEBUG
-}
 
-//=============================================================================
-Epetra_MpiSmpCommData::~Epetra_MpiSmpCommData() {
-	//cout << "--MSCD destroyed, addr: " << this << std::endl; //DATA_DEBUG
-}
+
+#include "MueLu_ExplicitInstantiation.hpp"
+#include "Stokhos_ConfigDefs.h"
+
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+
+#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
+#include "Stokhos_MueLu_UQ_PCE.hpp"
+
+#include "MueLu_AggregateQualityEstimateFactory_def.hpp"
+
+#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
+  template class MueLu::AggregateQualityEstimateFactory<S, LO, GO, N>;
+
+#define MUELU_INST_N(N) \
+  INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+INSTANTIATE_TPETRA_UQ_PCE_THREADS(MUELU_INST_N)
+
+#endif
+
+

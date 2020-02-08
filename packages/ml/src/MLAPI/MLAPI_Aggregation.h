@@ -49,7 +49,7 @@ Build Ptent and NextNS as usual but as Epetra objects.
                                    instead from zero. This is useful to
                                    create block matrices.
 
-\author Michael Gee (gee@lnm.mw.tum.de)
+\author Michael Gee (gee\@lnm.mw.tum.de)
 */
 void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
               double* thisns, Teuchos::RCP<Epetra_CrsMatrix>& Ptent,
@@ -69,7 +69,7 @@ Build Ptent and NextNS as usual but as Epetra objects.
                                    instead from zero. This is useful to
                                    create block matrices.
 
-\author Michael Gee (gee@lnm.mw.tum.de)
+\author Michael Gee (gee\@lnm.mw.tum.de)
 */
 void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
               double* thisns, Teuchos::RCP<Epetra_CrsMatrix>& Ptent,
@@ -95,7 +95,7 @@ void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
 
 \return returns processor-local number of aggregates
 
-\author Michael Gee (gee@lnm.mw.tum.de)
+\author Michael Gee (gee\@lnm.mw.tum.de)
 */
 int GetAggregates(Epetra_RowMatrix& A, Teuchos::ParameterList& List,
                    double* thisns, Epetra_IntVector& aggrinfo);
@@ -122,7 +122,7 @@ int GetAggregates(Epetra_RowMatrix& A, Teuchos::ParameterList& List,
 
 \return returns processor-local number of aggregates
 
-\author Michael Gee (gee@lnm.mw.tum.de)
+\author Michael Gee (gee\@lnm.mw.tum.de)
 */
 int GetGlobalAggregates(Epetra_RowMatrix& A, Teuchos::ParameterList& List,
                         double* thisns, Epetra_IntVector& aggrinfo);

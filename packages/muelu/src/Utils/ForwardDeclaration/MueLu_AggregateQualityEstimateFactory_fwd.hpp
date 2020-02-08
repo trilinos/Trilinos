@@ -1,9 +1,9 @@
-/*
-//@HEADER
-// ************************************************************************
+// @HEADER
 //
-//               Epetra: Linear Algebra Services Package
-//                 Copyright 2011 Sandia Corporation
+// ***********************************************************************
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,51 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
-//@HEADER
-*/
+// ***********************************************************************
+//
+// @HEADER
+#ifndef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_FWD_HPP
+#define MUELU_AGGREGATEQUALITYESTIMATEFACTORY_FWD_HPP
 
-#ifndef EPETRA_MPISMPCOMMDATA_H
-#define EPETRA_MPISMPCOMMDATA_H
 
-#include "Epetra_Data.h"
-#include <mpi.h>
 
-//! Epetra_MpiSmpCommData:  The Epetra Mpi Shared Memory ParallelCommunication Data Class.
-/*! The Epetra_MpiSmpCommData class is an implementation detail of Epetra_MpiSmpComm.
-    It is reference-counted, and can be shared by multiple Epetra_MpiSmpComm instances.
-		It derives from Epetra_Data, and inherits reference-counting from it.
-*/
 
-class Epetra_MpiSmpCommData : public Epetra_Data {
-	friend class Epetra_MpiSmpComm;
- private:
-  //! @name Constructor/Destructor Methods
-  //@{
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class AggregateQualityEstimateFactory;
+}
 
-  //! Epetra_MpiSmpCommData Default Constructor.
-  Epetra_MpiSmpCommData(MPI_Comm & Comm);
+#ifndef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
+#define MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
+#endif
 
-  //! Epetra_MpiSmpCommData Destructor.
-  ~Epetra_MpiSmpCommData();
 
-  //@}
 
-	MPI_Comm Comm_; //!< \internal MPI_Comm variable.
-  int rank_;
-  int size_;
-  int minTag_;
-  int maxTag_;
-  mutable int curTag_;
-  int ThreadID_;
-  int NodeID_;
-  int NumThreads_;
-
-	// these are intentionally declared but not defined. See Epetra Developer's Guide for details.
-  Epetra_MpiSmpCommData(const Epetra_MpiSmpCommData & CommData);
-	Epetra_MpiSmpCommData& operator=(const Epetra_MpiSmpCommData & CommData);
-
-};
-#endif /* EPETRA_MPISMPCOMMDATA_H */
+#endif // MUELU_AGGREGATEQUALITYESTIMATEFACTORY_FWD_HPP

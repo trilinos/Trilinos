@@ -58,7 +58,6 @@ other Trilinos solver technologies.
 %enddef
 
 %module(package   = "PyTrilinos",
-        autodoc   = "1",
         docstring = %domi_docstring) Domi
 
 %{
@@ -85,9 +84,7 @@ other Trilinos solver technologies.
 
 %}
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
+// PyTrilinos configuration
 %include "PyTrilinos_config.h"
 
 // Domi enumerated types support
@@ -105,7 +102,10 @@ other Trilinos solver technologies.
 %include "Domi_ConfigDefs.hpp"
 
 // Include Domi documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Domi_dox.i"
+#endif
 
 // SWIG library include files
 %include "stl.i"

@@ -5,6 +5,9 @@
 #ifdef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregationExportFactory;
 #endif
+#ifdef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
+typedef MueLu::AggregateQualityEstimateFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregateQualityEstimateFactory;
+#endif
 #ifdef MUELU_AMALGAMATIONFACTORY_SHORT
 typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AmalgamationFactory;
 #endif

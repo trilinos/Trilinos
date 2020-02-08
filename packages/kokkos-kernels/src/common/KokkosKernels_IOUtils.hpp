@@ -78,7 +78,7 @@ void kk_sparseMatrix_generate(
 {
   rowPtr = new SizeType[nrows+1];
 
-  OrdinalType elements_per_row = nnz/nrows;
+  OrdinalType elements_per_row = nrows ? nnz/nrows : 0;
   srand(13721);
   rowPtr[0] = 0;
   for(int row=0;row<nrows;row++)
