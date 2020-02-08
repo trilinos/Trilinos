@@ -106,6 +106,7 @@ void ProjectedGradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
     alpha0_ = ((denom > ROL_EPSILON<Real>()) ? -half*gs/denom : alpha0bnd_);
     alpha0_ = ((alpha0_ > alpha0bnd_) ? alpha0_ : 10.0*one);
   }
+  state_->searchSize = alpha0_;
 }
 
 template<typename Real>
