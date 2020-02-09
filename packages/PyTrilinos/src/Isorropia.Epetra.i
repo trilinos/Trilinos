@@ -195,12 +195,27 @@ del sys, op
 %}
 %apply (int* ARGOUT_ARRAY1, int DIM1) {(int* elementList, int len)};
 %apply (int DIM1, int* ARGOUT_ARRAY1) {(int len, int* array)};
+%ignore Isorropia::Epetra::Colorer::Colorer(const Epetra_CrsGraph*,
+                                            const Teuchos::ParameterList&,
+                                            bool);
+%ignore Isorropia::Epetra::Colorer::Colorer(const Epetra_RowMatrix*,
+                                            const Teuchos::ParameterList&,
+                                            bool);
 %include "Isorropia_EpetraColorer.hpp"
 
 ////////////////////////////////////////////
 // Isorropia::Epetra::Partitioner support //
 ////////////////////////////////////////////
 %teuchos_rcp(Isorropia::Epetra::Partitioner)
+%ignore Isorropia::Epetra::Partitioner::Partitioner(const Epetra_CrsGraph*,
+                                                    const Teuchos::ParameterList&,
+                                                    bool);
+%ignore Isorropia::Epetra::Partitioner::Partitioner(const Epetra_RowMatrix*,
+                                                    const Teuchos::ParameterList&,
+                                                    bool);
+%ignore Isorropia::Epetra::Partitioner::Partitioner(const Epetra_BlockMap*,
+                                                    const Teuchos::ParameterList&,
+                                                    bool);
 %ignore Isorropia::Epetra::Partitioner::createNewMap(Epetra_Map *&);
 %include "Isorropia_EpetraPartitioner.hpp"
 
@@ -212,6 +227,8 @@ del sys, op
 // Isorropia::Epetra::Redistributor support //
 //////////////////////////////////////////////
 %teuchos_rcp(Isorropia::Epetra::Redistributor)
+%ignore Isorropia::Epetra::Redistributor::Redistributor(Isorropia::Epetra::Partitioner*);
+%ignore Isorropia::Epetra::Redistributor::Redistributor(Epetra_Map*);
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_CrsMatrix const &, Epetra_CrsMatrix *&, bool);
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_RowMatrix const &, Epetra_CrsMatrix *&, bool);
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_Vector const &, Epetra_Vector *&);
@@ -231,6 +248,12 @@ del sys, op
 ////////////////////////////////////////
 %teuchos_rcp(Isorropia::Epetra::Orderer)
 %apply (int DIM1, int* ARGOUT_ARRAY1) {(int len, int* array)};
+%ignore Isorropia::Epetra::Orderer::Orderer(const Epetra_CrsGraph*,
+                                            const Teuchos::ParameterList&,
+                                            bool);
+%ignore Isorropia::Epetra::Orderer::Orderer(const Epetra_RowMatrix*,
+                                            const Teuchos::ParameterList&,
+                                            bool);
 %include "Isorropia_EpetraOrderer.hpp"
 
 ///////////////////////////////////////////////
