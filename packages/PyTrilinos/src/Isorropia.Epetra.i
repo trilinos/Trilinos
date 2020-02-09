@@ -188,6 +188,11 @@ del sys, op
 // Isorropia::Epetra::Colorer support //
 ////////////////////////////////////////
 %teuchos_rcp(Isorropia::Epetra::Colorer)
+%feature("pythonprepend") Isorropia::Epetra::Colorer::generateMapColoring()
+%{
+  raise DeprecationWarning("Isorropia.Epetra.Colorer.generateMapColoring() " +
+                           "is deprecated. Use generateRowMapColoring()")
+%}
 %apply (int* ARGOUT_ARRAY1, int DIM1) {(int* elementList, int len)};
 %apply (int DIM1, int* ARGOUT_ARRAY1) {(int len, int* array)};
 %include "Isorropia_EpetraColorer.hpp"
