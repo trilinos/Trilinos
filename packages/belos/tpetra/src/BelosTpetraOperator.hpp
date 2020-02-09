@@ -151,7 +151,7 @@ public:
       lp_->setInitResVec( vec_X );
     }
     lp_->setProblem( vec_Y, vec_X );
-    Belos::ReturnType ret = solver_->solve();
+    solver_->solve();
   };
   //@}
   
@@ -159,7 +159,7 @@ public:
   //@{ 
 
   //! Return the name of the requested solver.
-  const char* getSolverName() const { return solver_name_; };
+  const std::string getSolverName() const { return solver_name_; };
   
   //! Return whether the operator supports applying its transpose or conjugate transpose.
   bool hasTransposeApply() const override { return false; };
