@@ -149,7 +149,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
     gs = s->dot(*state_->stepVec);
     incAlpha = (state_->value - ftrial >= -c1_*gs);
     if (verbosity_ > 1) {
-      outStream << "  In GradientAlgorithm_B: Backtracking" << std::endl;
+      outStream << "  In GradientAlgorithm_B: Line Search"  << std::endl;
       outStream << "    Step size:                        " << state_->searchSize   << std::endl;
       outStream << "    Trial objective value:            " << ftrial               << std::endl;
       outStream << "    Computed reduction:               " << state_->value-ftrial << std::endl;
@@ -159,11 +159,12 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
       outStream << "    Increase alpha?:                  " << incAlpha             << std::endl;
     }
     if (incAlpha && useAdapt_) {
+      alphaP  = state_->searchSize;
+      ftrialP = ftrial;
       while ( state_->value - ftrial >= -c1_*gs
+           && ftrial <= ftrialP
            && state_->searchSize < maxAlpha_
            && ls_nfval < maxit_ ) {
-        alphaP  = state_->searchSize;
-        ftrialP = ftrial;
         state_->searchSize *= rhoinc_;
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
@@ -183,8 +184,10 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
           outStream << "    Sufficient decrease bound:        " << -gs*c1_              << std::endl;
           outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
         }
+        alphaP  = state_->searchSize;
+        ftrialP = ftrial;
       }
-      if (state_->value - ftrial < -c1_*gs) {
+      if (state_->value - ftrial < -c1_*gs || ftrial > ftrialP) {
         ftrial = ftrialP;
         state_->searchSize = alphaP;
         state_->iterateVec->set(x);

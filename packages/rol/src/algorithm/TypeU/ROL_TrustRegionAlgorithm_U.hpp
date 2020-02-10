@@ -47,7 +47,7 @@
 #include "ROL_Algorithm_U.hpp"
 #include "ROL_TrustRegion_U_Types.hpp"
 #include "ROL_TrustRegion_U.hpp"
-#include "ROL_TrustRegionUtilities_U.hpp"
+#include "ROL_TrustRegionUtilities.hpp"
 #include "ROL_Secant.hpp"
 
 /** \class ROL::TrustRegionAlgorithm_U
@@ -73,7 +73,7 @@ private:
   Real                     gamma2_; ///< Radius increase rate.
   Real                     TRsafe_; ///< Safeguard size for numerically evaluating ratio.
   Real                     eps_;    ///< Safeguard for numerically evaluating ratio.
-  ETRFlag                  TRflag_; ///< Trust-region exit flag.
+  TrustRegion::ETRFlag     TRflag_; ///< Trust-region exit flag.
   int                      SPflag_; ///< Subproblem solver termination flag.
   int                      SPiter_; ///< Subproblem solver iteration count.
 
@@ -133,20 +133,6 @@ private:
       @param[in]      obj        is the objective function.
   */
   void computeGradient(const Vector<Real> &x, Objective<Real> &obj);
-
-  Real initialRadius(int &nfval, const Vector<Real> &x,
-                     const Vector<Real> &g, Vector<Real> &Bg, const Real fx,
-                     const Real gnorm, Objective<Real> &obj,
-                     std::ostream &outStream = std::cout) const;
-
-  void analyzeRatio(Real &rho, ETRFlag &flag,
-                    const Real fold, const Real ftrial, const Real pRed,
-                    std::ostream &outStream = std::cout) const;
-
-  Real interpolateRadius(const Vector<Real> &g, const Vector<Real> &s,
-                         const Real snorm, const Real pRed, const Real fold,
-                         const Real ftrial, const Real del,
-                         std::ostream &outStream = std::cout) const;
 
 }; // class ROL::TrustRegionAlgorithm_U
 

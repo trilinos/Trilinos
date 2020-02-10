@@ -44,43 +44,46 @@
 #ifndef ROL_TRUSTREGIONUTILITIES_U_H
 #define ROL_TRUSTREGIONUTILITIES_U_H
 
+#include "ROL_TrustRegionModel_U.hpp"
+
 namespace ROL {
+namespace TrustRegion {
 
 /** \enum  ROL::TypeU::TrustRegion::ETRFlag 
     \brief Enumation of flags used by trust-region solvers.
 
-    \arg TR_FLAG_SUCCESS        Actual and predicted reductions are positive 
-    \arg TR_FLAG_POSPREDNEG     Reduction is positive, predicted negative (impossible)
-    \arg TR_FLAG_NPOSPREDPOS    Reduction is nonpositive, predicted positive
-    \arg TR_FLAG_NPOSPREDNEG    Reduction is nonpositive, predicted negative (impossible)
-    \arg TR_FLAG_NAN            Actual and/or predicted reduction is NaN
+    \arg SUCCESS        Actual and predicted reductions are positive 
+    \arg POSPREDNEG     Reduction is positive, predicted negative (impossible)
+    \arg NPOSPREDPOS    Reduction is nonpositive, predicted positive
+    \arg NPOSPREDNEG    Reduction is nonpositive, predicted negative (impossible)
+    \arg TRNAN          Actual and/or predicted reduction is NaN
 
 */
 enum ETRFlag {
-  TR_FLAG_SUCCESS = 0,
-  TR_FLAG_POSPREDNEG,
-  TR_FLAG_NPOSPREDPOS,
-  TR_FLAG_NPOSPREDNEG,
-  TR_FLAG_NAN,
-  TR_FLAG_UNDEFINED 
+  SUCCESS = 0,
+  POSPREDNEG,
+  NPOSPREDPOS,
+  NPOSPREDNEG,
+  TRNAN,
+  UNDEFINED 
 };
 
 inline std::string ETRFlagToString(ETRFlag trf) {
   std::string retString;
   switch(trf) {
-    case TR_FLAG_SUCCESS:  
+    case SUCCESS:  
       retString = "Both actual and predicted reductions are positive (success)";
       break;
-    case TR_FLAG_POSPREDNEG: 
+    case POSPREDNEG: 
       retString = "Actual reduction is positive and predicted reduction is negative (impossible)";
       break;
-    case TR_FLAG_NPOSPREDPOS: 
+    case NPOSPREDPOS: 
       retString = "Actual reduction is nonpositive and predicted reduction is positive";
       break;
-    case TR_FLAG_NPOSPREDNEG:
+    case NPOSPREDNEG:
       retString = "Actual reduction is nonpositive and predicted reduction is negative (impossible)";
       break;
-    case TR_FLAG_NAN:
+    case TRNAN:
       retString = "Actual and/or predicted reduction is a NaN";
       break;
     default:
@@ -89,7 +92,76 @@ inline std::string ETRFlagToString(ETRFlag trf) {
   return retString;
 }
 
-namespace TrustRegion {
+template<typename Real>
+inline Real initialRadius(int &nfval,
+                          const Vector<Real> &x,
+                          const Vector<Real> &g,
+                          Vector<Real> &Bg,
+                          const Real fx,
+                          const Real gnorm,
+                          Objective<Real> &obj,
+			  TrustRegionModel_U<Real> &model,
+                          const Real delMax,
+                          const int iter,
+                          std::ostream &outStream,
+                          const bool print = false) {
+  const Real zero(0), half(0.5), one(1), two(2), three(3), six(6);
+  const Real eps(ROL_EPSILON<Real>());
+  Real del(ROL_INF<Real>());
+  Ptr<Vector<Real>> xcp = x.clone();
+  model.setData(obj,x,g);
+  Real htol = std::sqrt(eps);
+  model.hessVec(Bg,g.dual(),x,htol);
+  Real gBg = Bg.dot(g);
+  Real alpha = one;
+  if ( gBg > eps ) {
+    alpha = gnorm*gnorm/gBg;
+  }
+  // Evaluate the objective function at the Cauchy point
+  xcp->set(g.dual());
+  xcp->scale(-alpha);
+  Real gs = xcp->dot(g.dual());
+  xcp->plus(x);
+  obj.update(*xcp,false);
+  Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
+  Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
+  nfval++;
+  // Perform cubic interpolation to determine initial trust region radius
+  Real a = fnew - fx - gs - half*alpha*alpha*gBg;
+  if ( std::abs(a) < eps ) { 
+    // a = 0 implies the objective is quadratic in the negative gradient direction
+    del = std::min(alpha*gnorm,delMax);
+  }
+  else {
+    Real b = half*alpha*alpha*gBg;
+    Real c = gs;
+    if ( b*b-three*a*c > eps ) {
+      // There is at least one critical point
+      Real t1 = (-b-std::sqrt(b*b-three*a*c))/(three*a);
+      Real t2 = (-b+std::sqrt(b*b-three*a*c))/(three*a);
+      if ( six*a*t1 + two*b > zero ) {
+        // t1 is the minimizer
+        del = std::min(t1*alpha*gnorm,delMax);
+      }
+      else {
+        // t2 is the minimizer
+        del = std::min(t2*alpha*gnorm,delMax);
+      }
+    }
+    else {
+      del = std::min(alpha*gnorm,delMax);
+    }
+  }
+  if (del <= eps*gnorm) {
+    del = one;
+  }
+  obj.update(x,true,iter);
+  if ( print ) {
+    outStream << "  In TrustRegionUtilities::initialRadius"      << std::endl;
+    outStream << "    Initial radius:                          " << del << std::endl;
+  }
+  return del;
+}
 
 template<typename Real>
 inline void analyzeRatio(Real &rho,
@@ -106,29 +178,29 @@ inline void analyzeRatio(Real &rho,
   Real aRed_safe = aRed + eps, pRed_safe = pRed + eps;
   if (((std::abs(aRed_safe) < epsi) && (std::abs(pRed_safe) < epsi)) || aRed == pRed) {
     rho  = one;
-    flag = TR_FLAG_SUCCESS;
+    flag = SUCCESS;
   }
   else if ( std::isnan(aRed_safe) || std::isnan(pRed_safe) ) {
     rho  = -one;
-    flag = TR_FLAG_NAN;
+    flag = TRNAN;
   }
   else {
     rho = aRed_safe/pRed_safe;
     if (pRed_safe < zero && aRed_safe > zero) {
-      flag = TR_FLAG_POSPREDNEG;
+      flag = POSPREDNEG;
     }
     else if (aRed_safe <= zero && pRed_safe > zero) {
-      flag = TR_FLAG_NPOSPREDPOS;
+      flag = NPOSPREDPOS;
     }
     else if (aRed_safe <= zero && pRed_safe < zero) {
-      flag = TR_FLAG_NPOSPREDNEG;
+      flag = NPOSPREDNEG;
     }
     else {
-      flag = TR_FLAG_SUCCESS;
+      flag = SUCCESS;
     }
   }
   if ( print ) {
-    outStream << "  In TrustRegion::analyzeRatio" << std::endl;
+    outStream << "  In TrustRegionUtilities::analyzeRatio"       << std::endl;
     outStream << "    Current objective function value:        " << fold      << std::endl;
     outStream << "    New objective function value:            " << ftrial    << std::endl;
     outStream << "    Actual reduction:                        " << aRed      << std::endl;
@@ -159,7 +231,7 @@ inline Real interpolateRadius(const Vector<Real> &g,
   Real modelVal = fold - pRed;
   Real theta = (one-eta2)*gs/((one-eta2)*(fold+gs)+eta2*modelVal-ftrial);
   if ( print ) {
-    outStream << "  In TrustRegion::interpolateRadius" << std::endl;
+    outStream << "  In TrustRegionUtilities::interpolateRadius"  << std::endl;
     outStream << "    Interpolation model value:               " << modelVal << std::endl;
     outStream << "    Interpolation step length:               " << theta    << std::endl;
   }

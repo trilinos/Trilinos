@@ -127,8 +127,10 @@ void TrustRegionAlgorithm_U<Real>::initialize(const Vector<Real> &x,
   // Compute initial trust region radius if desired.
   if ( state_->searchSize <= static_cast<Real>(0) ) {
     int nfval = 0;
-    state_->searchSize = initialRadius(nfval,x,*state_->gradientVec,Bg,
-                                       state_->value,state_->gnorm,obj,outStream);
+    state_->searchSize
+      = TrustRegion::initialRadius<Real>(nfval,x,*state_->gradientVec,Bg,
+          state_->value,state_->gnorm,obj,*model_,delMax_,state_->iter,
+          outStream,(verbosity_>1));
     state_->nfval += nfval;
   }
 }
@@ -178,142 +180,6 @@ void TrustRegionAlgorithm_U<Real>::computeGradient(const Vector<Real> &x,
 }
 
 template<typename Real>
-Real TrustRegionAlgorithm_U<Real>::initialRadius(int &nfval,
-                                                 const Vector<Real> &x,
-                                                 const Vector<Real> &g,
-                                                 Vector<Real> &Bg,
-                                                 const Real fx,
-                                                 const Real gnorm,
-                                                 Objective<Real> &obj,
-                                                 std::ostream &outStream) const {
-  const Real zero(0), half(0.5), one(1), two(2), three(3), six(6);
-  const Real eps(ROL_EPSILON<Real>());
-  Real del(ROL_INF<Real>());
-  Ptr<Vector<Real>> xcp = x.clone();
-  model_->setData(obj,x,g);
-  Real htol = std::sqrt(eps);
-  model_->hessVec(Bg,g.dual(),x,htol);
-  Real gBg = Bg.dot(g);
-  Real alpha = one;
-  if ( gBg > eps ) {
-    alpha = gnorm*gnorm/gBg;
-  }
-  // Evaluate the objective function at the Cauchy point
-  xcp->set(g.dual());
-  xcp->scale(-alpha);
-  Real gs = xcp->dot(g.dual());
-  xcp->plus(x);
-  obj.update(*xcp,false);
-  Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
-  Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
-  nfval++;
-  // Perform cubic interpolation to determine initial trust region radius
-  Real a = fnew - fx - gs - half*alpha*alpha*gBg;
-  if ( std::abs(a) < eps ) { 
-    // a = 0 implies the objective is quadratic in the negative gradient direction
-    del = std::min(alpha*gnorm,delMax_);
-  }
-  else {
-    Real b = half*alpha*alpha*gBg;
-    Real c = gs;
-    if ( b*b-three*a*c > eps ) {
-      // There is at least one critical point
-      Real t1 = (-b-std::sqrt(b*b-three*a*c))/(three*a);
-      Real t2 = (-b+std::sqrt(b*b-three*a*c))/(three*a);
-      if ( six*a*t1 + two*b > zero ) {
-        // t1 is the minimizer
-        del = std::min(t1*alpha*gnorm,delMax_);
-      }
-      else {
-        // t2 is the minimizer
-        del = std::min(t2*alpha*gnorm,delMax_);
-      }
-    }
-    else {
-      del = std::min(alpha*gnorm,delMax_);
-    }
-  }
-  if (del <= eps*gnorm) {
-    del = one;
-  }
-  obj.update(x,true,state_->iter);
-  if ( verbosity_ > 1 ) {
-    outStream << "  In TrustRegionAlgorithm_U::initialRadius" << std::endl;
-    outStream << "    Initial radius:                          " << del << std::endl;
-  }
-  return del;
-}
-
-template<typename Real>
-void TrustRegionAlgorithm_U<Real>::analyzeRatio(Real &rho,
-                                                ETRFlag &flag,
-                                          const Real fold,
-                                          const Real ftrial,
-                                          const Real pRed,
-                                                std::ostream &outStream) const {
-  const Real zero(0), one(1);
-  Real eps       = eps_*std::max(one,fold);
-  Real aRed      = fold - ftrial;
-  Real aRed_safe = aRed + eps, pRed_safe = pRed + eps;
-  if (((std::abs(aRed_safe) < eps_) && (std::abs(pRed_safe) < eps_)) || aRed == pRed) {
-    rho  = one;
-    flag = TR_FLAG_SUCCESS;
-  }
-  else if ( std::isnan(aRed_safe) || std::isnan(pRed_safe) ) {
-    rho  = -one;
-    flag = TR_FLAG_NAN;
-  }
-  else {
-    rho = aRed_safe/pRed_safe;
-    if (pRed_safe < zero && aRed_safe > zero) {
-      flag = TR_FLAG_POSPREDNEG;
-    }
-    else if (aRed_safe <= zero && pRed_safe > zero) {
-      flag = TR_FLAG_NPOSPREDPOS;
-    }
-    else if (aRed_safe <= zero && pRed_safe < zero) {
-      flag = TR_FLAG_NPOSPREDNEG;
-    }
-    else {
-      flag = TR_FLAG_SUCCESS;
-    }
-  }
-  if ( verbosity_ > 1 ) {
-    outStream << "  In TrustRegionAlgorithm_U::analyzeRatio" << std::endl;
-    outStream << "    Current objective function value:        " << fold      << std::endl;
-    outStream << "    New objective function value:            " << ftrial    << std::endl;
-    outStream << "    Actual reduction:                        " << aRed      << std::endl;
-    outStream << "    Predicted reduction:                     " << pRed      << std::endl;
-    outStream << "    Safeguard:                               " << eps_      << std::endl;
-    outStream << "    Actual reduction with safeguard:         " << aRed_safe << std::endl;
-    outStream << "    Predicted reduction with safeguard:      " << pRed_safe << std::endl;
-    outStream << "    Ratio of actual and predicted reduction: " << rho       << std::endl;
-    outStream << "    Trust-region flag:                       " << flag      << std::endl;
-  }
-}
-
-template<typename Real>
-Real TrustRegionAlgorithm_U<Real>::interpolateRadius(const Vector<Real> &g,
-                                                     const Vector<Real> &s,
-                                                     const Real snorm,
-                                                     const Real pRed,
-                                                     const Real fold,
-                                                     const Real ftrial,
-                                                     const Real del,
-                                                     std::ostream &outStream) const {
-  const Real one(1);
-  Real gs = g.dot(s.dual());
-  Real modelVal = fold - pRed;
-  Real theta = (one-eta2_)*gs/((one-eta2_)*(fold+gs)+eta2_*modelVal-ftrial);
-  if ( verbosity_ > 1 ) {
-    outStream << "  In TrustRegionAlgorithm_U::interpolateRadius" << std::endl;
-    outStream << "    Interpolation model value:               " << modelVal << std::endl;
-    outStream << "    Interpolation step length:               " << theta    << std::endl;
-  }
-  return std::min(gamma1_*std::min(snorm,del),std::max(gamma0_,theta)*del);
-}
-
-template<typename Real>
 std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &x,
                                                             const Vector<Real> &g, 
                                                             Objective<Real>    &obj,
@@ -341,16 +207,16 @@ std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &
     x.plus(*state_->stepVec);
     ftrial = computeValue(x,obj,pRed);
     // Compute ratio of actual and predicted reduction
-    TRflag_ = TR_FLAG_SUCCESS;
+    TRflag_ = TrustRegion::SUCCESS;
     TrustRegion::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
     // Update algorithm state
     state_->iter++;
     // Accept/reject step and update trust region radius
-    if ((rho < eta0_ && TRflag_ == TR_FLAG_SUCCESS)
+    if ((rho < eta0_ && TRflag_ == TrustRegion::SUCCESS)
         || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
       obj.update(x,false,state_->iter);
-      if (rho < zero && TRflag_ != TR_FLAG_NAN) {
+      if (rho < zero && TRflag_ != TrustRegion::TRNAN) {
         // Negative reduction, interpolate to find new trust-region radius
         state_->searchSize = TrustRegion::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
           state_->snorm,pRed,state_->value,ftrial,state_->searchSize,gamma0_,gamma1_,eta2_,
@@ -361,8 +227,8 @@ std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &
       }
       if (useInexact_[1]) computeGradient(x,obj);
     }
-    else if ((rho >= eta0_ && TRflag_ != TR_FLAG_NPOSPREDNEG)
-             || (TRflag_ == TR_FLAG_POSPREDNEG)) { // Step Accepted
+    else if ((rho >= eta0_ && TRflag_ != TrustRegion::NPOSPREDNEG)
+             || (TRflag_ == TrustRegion::POSPREDNEG)) { // Step Accepted
       state_->iterateVec->set(x);
       state_->value = ftrial;
       obj.update(x,true,state_->iter);
@@ -399,9 +265,9 @@ std::string TrustRegionAlgorithm_U<Real>::printHeader(void) const {
     hist << "  #grad   - Number of times the gradient was computed" << std::endl;
     hist << std::endl;
     hist << "  tr_flag - Trust-Region flag" << std::endl;
-    for( int flag = TR_FLAG_SUCCESS; flag != TR_FLAG_UNDEFINED; ++flag ) {
+    for( int flag = TrustRegion::SUCCESS; flag != TrustRegion::UNDEFINED; ++flag ) {
       hist << "    " << NumberToString(flag) << " - "
-           << ETRFlagToString(static_cast<ETRFlag>(flag)) << std::endl;
+           << TrustRegion::ETRFlagToString(static_cast<TrustRegion::ETRFlag>(flag)) << std::endl;
     }
     if( etr_ == TRUSTREGION_U_TRUNCATEDCG ) {
       hist << std::endl;
