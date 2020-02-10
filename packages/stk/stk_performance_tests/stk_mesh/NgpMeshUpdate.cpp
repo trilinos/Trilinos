@@ -34,20 +34,124 @@
 
 #include <string>
 #include <gtest/gtest.h>
-#include <stk_ngp/NgpMesh.hpp>
+#include <stk_mesh/base/NgpMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
-class NgpMeshUpdate : public stk::unit_test_util::MeshFixture {
+class Timer
+{
 public:
-  NgpMeshUpdate()
-    : stk::unit_test_util::MeshFixture(),
+  Timer(MPI_Comm comm)
+    : communicator(comm),
+      iterationStartTime(0.0),
       cumulativeTime(0.0),
-      ngpMeshHwm(0),
-      newPartName("block2"),
+      iterationStartHwm(0),
+      meshOperationHwm(1)
+  { }
+
+  void start_timing()
+  {
+    iterationStartTime = stk::wall_time();
+    iterationStartHwm = stk::get_max_hwm_across_procs(communicator);
+  }
+
+  void update_timing()
+  {
+    cumulativeTime += stk::wall_dtime(iterationStartTime);
+    size_t currentHwm = stk::get_max_hwm_across_procs(communicator) - iterationStartHwm;
+    meshOperationHwm = std::max(currentHwm, meshOperationHwm);
+  }
+
+  void print_timing()
+  {
+    double timeAll = stk::get_global_sum(communicator, cumulativeTime);
+    stk::print_stats_for_performance_compare(std::cout, timeAll, meshOperationHwm, 1, communicator);
+  }
+
+private:
+  MPI_Comm communicator;
+  double iterationStartTime;
+  double cumulativeTime;
+  size_t iterationStartHwm;
+  size_t meshOperationHwm;
+};
+
+class NgpMeshChangeElementPartMembership : public stk::unit_test_util::MeshFixture
+{
+public:
+  NgpMeshChangeElementPartMembership()
+    : stk::unit_test_util::MeshFixture(),
+      newPartName("block2")
+  { }
+
+  void setup_host_mesh()
+  {
+    setup_mesh("generated:1x1x1000000", stk::mesh::BulkData::NO_AUTO_AURA);
+    get_meta().declare_part(newPartName);
+  }
+
+  void change_element_part_membership(int cycle)
+  {
+    get_bulk().modification_begin();
+    get_bulk().change_entity_parts<stk::mesh::ConstPartVector>(get_element(cycle), {get_part()});
+    get_bulk().modification_end();
+    get_bulk().get_ngp_mesh();
+  }
+
+private:
+  stk::mesh::Entity get_element(int cycle)
+  {
+    stk::mesh::EntityId elemId = cycle+1;
+    return get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+  }
+
+  const stk::mesh::Part* get_part()
+  {
+    return get_meta().get_part(newPartName);
+  }
+
+  std::string newPartName;
+};
+
+class NgpMeshCreateEntity : public stk::unit_test_util::MeshFixture
+{
+public:
+  NgpMeshCreateEntity()
+    : stk::unit_test_util::MeshFixture(),
+      numElements(1000000)
+  { }
+
+  void setup_host_mesh()
+  {
+    setup_mesh("generated:1x1x1000000", stk::mesh::BulkData::NO_AUTO_AURA);
+  }
+
+  void create_entity(int cycle)
+  {
+    get_bulk().modification_begin();
+    get_bulk().declare_element(get_new_entity_id(cycle));
+    get_bulk().modification_end();
+    get_bulk().get_ngp_mesh();
+  }
+
+private:
+  stk::mesh::EntityId get_new_entity_id(int cycle)
+  {
+    return numElements + cycle + 1;
+  }
+
+  int numElements;
+};
+
+class NgpMeshGhosting : public stk::unit_test_util::MeshFixture
+{
+public:
+  NgpMeshGhosting()
+    : stk::unit_test_util::MeshFixture(),
+      numElements(1000000),
       ghostingName("testGhosting")
   { }
 
@@ -55,109 +159,75 @@ protected:
   void setup_host_mesh()
   {
     setup_mesh("generated:1x1x1000000", stk::mesh::BulkData::NO_AUTO_AURA);
-    numElements = 1000000;
-    get_meta().declare_part(newPartName);
-
     get_bulk().modification_begin();
     ghosting = &get_bulk().create_ghosting(ghostingName);
     get_bulk().modification_end();
   }
 
-  void change_element_part_membership(int cycle)
-  {
-    stk::mesh::EntityId elemId = cycle+1;
-    stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
-    const stk::mesh::Part* part = get_meta().get_part(newPartName);
-
-    get_bulk().modification_begin();
-    get_bulk().change_entity_parts<stk::mesh::ConstPartVector>(elem, {part});
-    get_bulk().modification_end();
-  }
-
-  void create_entity(int cycle)
-  {
-    stk::mesh::EntityId elemId = numElements + cycle + 1;
-
-    get_bulk().modification_begin();
-    get_bulk().declare_element(elemId);
-    get_bulk().modification_end();
-  }
-
   void ghost_element(int cycle)
+  {
+    get_bulk().modification_begin();
+    get_bulk().change_ghosting(*ghosting, element_to_ghost(cycle));
+    get_bulk().modification_end();
+    get_bulk().get_ngp_mesh();
+  }
+
+private:
+  stk::mesh::EntityProcVec element_to_ghost(int cycle)
   {
     stk::mesh::EntityId firstLocalElemId = get_parallel_rank()*numElements/2 + 1;
     stk::mesh::EntityId elemId = firstLocalElemId + cycle;
     stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
     int ghostRank = 1 - get_parallel_rank();
-    stk::mesh::EntityProcVec toGhost = {{elem, ghostRank}};
-
-    get_bulk().modification_begin();
-    get_bulk().change_ghosting(*ghosting, toGhost);
-    get_bulk().modification_end();
+    return {{elem, ghostRank}};
   }
 
-  void time_get_ngp_mesh()
-  {
-    iterationStartTime = stk::wall_time();
-    bulkDataHwm = stk::get_max_hwm_across_procs(get_comm());
-
-    ngp::StaticMesh ngpMesh(get_bulk());
-
-    cumulativeTime += stk::wall_dtime(iterationStartTime);
-    size_t currentNgpMeshHwm = stk::get_max_hwm_across_procs(get_comm()) - bulkDataHwm;
-    ngpMeshHwm = std::max(currentNgpMeshHwm, ngpMeshHwm);
-  }
-
-  void print_timing()
-  {
-    double timeAll = stk::get_global_sum(get_comm(), cumulativeTime);
-    stk::print_stats_for_performance_compare(std::cout, timeAll, ngpMeshHwm, 1, get_comm());
-  }
-
-private:
-  double iterationStartTime;
-  double cumulativeTime;
-  size_t bulkDataHwm;
-  size_t ngpMeshHwm;
-
-  std::string newPartName;
   int numElements;
   std::string ghostingName;
   stk::mesh::Ghosting* ghosting;
 };
 
-TEST_F( NgpMeshUpdate, PartMembership )
+TEST_F( NgpMeshChangeElementPartMembership, Timing )
 {
   if (get_parallel_size() != 1) return;
 
+  Timer timer(get_comm());
   setup_host_mesh();
-  for (int i=0; i<400; i++) {
+
+  for (int i=0; i<50; i++) {
+    timer.start_timing();
     change_element_part_membership(i);
-    time_get_ngp_mesh();
+    timer.update_timing();
   }
-  print_timing();
+  timer.print_timing();
 }
 
-TEST_F( NgpMeshUpdate, EntityCreation )
+TEST_F( NgpMeshCreateEntity, Timing )
 {
   if (get_parallel_size() != 1) return;
 
+  Timer timer(get_comm());
   setup_host_mesh();
-  for (int i=0; i<400; i++) {
+
+  for (int i=0; i<50; i++) {
+    timer.start_timing();
     create_entity(i);
-    time_get_ngp_mesh();
+    timer.update_timing();
   }
-  print_timing();
+  timer.print_timing();
 }
 
-TEST_F( NgpMeshUpdate, Ghosting )
+TEST_F( NgpMeshGhosting, Timing )
 {
   if (get_parallel_size() != 2) return;
 
+  Timer timer(get_comm());
   setup_host_mesh();
-  for (int i=0; i<400; i++) {
+
+  for (int i=0; i<50; i++) {
+    timer.start_timing();
     ghost_element(i);
-    time_get_ngp_mesh();
+    timer.update_timing();
   }
-  print_timing();
+  timer.print_timing();
 }

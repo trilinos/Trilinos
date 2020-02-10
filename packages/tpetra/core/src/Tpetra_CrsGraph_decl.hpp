@@ -66,6 +66,7 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <functional> // std::function
+#include <memory>
 
 namespace Tpetra {
 
@@ -327,7 +328,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -350,7 +351,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayView<const size_t>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
@@ -379,7 +380,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const size_t maxNumEntriesPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -404,7 +405,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
@@ -430,7 +431,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayView<const size_t>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
@@ -1163,17 +1164,21 @@ namespace Tpetra {
        buffer_device_type>& permuteFromLIDs) override;
 
     void
-    applyCrsPadding (const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding);
+    applyCrsPadding(
+      const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
+      const bool verbose);
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
     computeCrsPadding (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
                        const size_t numSameIDs,
                        const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) const;
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+                       const bool verbose) const;
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
     computeCrsPadding (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID) const;
+                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+                       const bool verbose) const;
 
     void
     computeCrsPaddingForSameIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
@@ -1480,6 +1485,9 @@ namespace Tpetra {
     };
 
   private:
+    std::unique_ptr<std::string>
+    createPrefix(const char methodName[]) const;
+
     // Friend declaration for nonmember function.
     template<class CrsGraphType>
     friend Teuchos::RCP<CrsGraphType>
@@ -1693,7 +1701,9 @@ namespace Tpetra {
     };
 
     bool indicesAreAllocated () const;
-    void allocateIndices (const ELocalGlobal lg);
+
+    void
+    allocateIndices(const ELocalGlobal lg, const bool verbose=false);
 
     //! \name Methods governing changes between global and local indices
     //@{
@@ -1714,6 +1724,10 @@ namespace Tpetra {
     /// \pre The graph has a column Map.
     /// \post The graph is locally indexed.
     ///
+    /// \param verbose [in] Whether to print verbose debugging output.
+    ///   This exists because CrsMatrix may want to control output
+    ///   independently of the CrsGraph that it owns.
+    ///
     /// \return Error code and error string.  See below.
     ///
     /// First return value is the number of column indices on this
@@ -1725,7 +1739,8 @@ namespace Tpetra {
     ///
     /// Second return value is a human-readable error string.  If the
     /// first return value is zero, then the string may be empty.
-    std::pair<size_t, std::string> makeIndicesLocal ();
+    std::pair<size_t, std::string>
+    makeIndicesLocal(const bool verbose=false);
 
     /// \brief Make the Import and Export objects, if needed.
     ///
@@ -2306,32 +2321,6 @@ namespace Tpetra {
     /// of entries allowed per process, but does <i>not</i> otherwise
     /// bound the number of entries per row.
     //@{
-
-    /// \brief Local column indices for all rows.
-    ///
-    /// This is only allocated if
-    ///
-    ///   - The calling process has a nonzero number of entries
-    ///   - The graph has DynamicProfile (2-D storage)
-    ///   - The graph is locally indexed
-    ///
-    /// In that case, if i_lcl is the local index of a locally owned
-    /// row, then lclInds2D_[i_lcl] stores the local column indices
-    /// for that row.
-    Teuchos::ArrayRCP<Teuchos::Array<local_ordinal_type> > lclInds2D_;
-
-    /// \brief Global column indices for all rows.
-    ///
-    /// This is only allocated if
-    ///
-    ///   - The calling process has a nonzero number of entries
-    ///   - The graph has DynamicProfile (2-D storage)
-    ///   - The graph is globally indexed
-    ///
-    /// In that case, if i_gbl is the global index of a globally owned
-    /// row, then gblInds2D_[i_gbl] stores the global column indices
-    /// for that row.
-    Teuchos::ArrayRCP<Teuchos::Array<global_ordinal_type> > gblInds2D_;
 
     /// \brief The type of k_numRowEntries_ (see below).
     ///

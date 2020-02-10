@@ -480,9 +480,10 @@ public:
 
   /*! @brief Recompute the preconditioner (not implemented for Maxwell).
 
-    @param[in] keepFineLevelSmoother : If true, the fine level smoother is not recomputed.  This is useful
-    if the smoother is expensive to create, e.g., an incomplete factorization, and the fine level matrix
-    has not changed.
+    @param keepFineLevelSmoother (In) : If true, the fine level
+    smoother is not recomputed.  This is useful if the smoother is
+    expensive to create, e.g., an incomplete factorization, and the
+    fine level matrix has not changed.
   */
   int ReComputePreconditioner(bool keepFineLevelSmoother=false);
 

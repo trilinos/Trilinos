@@ -50,14 +50,6 @@
 
 #include <stk_util/util/FeatureTest.hpp>
 
-#include <math.h>
-#include <sstream>
-#include <iomanip>
-#include <algorithm>
-#include <functional>
-#include <stdexcept>
-#include <limits>
-
 #include <memory>
 
 #include <stk_util/util/Writer.hpp>

@@ -101,6 +101,14 @@ public:
         }
     }
 
+    void notify_modification_begin()
+    {
+        for(std::shared_ptr<ModificationObserver>& observer : observers)
+        {
+            observer->modification_begin_notification();
+        }
+    }
+  
     void notify_started_modification_end()
     {
         for(std::shared_ptr<ModificationObserver>& observer : observers)

@@ -55,10 +55,7 @@
 #include "Teuchos_Assert.hpp"
 
 
-#include <Intrepid_KokkosRank.hpp>
-#ifdef INTREPID_OLD_KOKKOS_CODE
-#include "Kokkos_Core.hpp"
-#endif
+#include <Intrepid_Rank.hpp>
 namespace Intrepid {
   
 /** \class Intrepid::RealSpaceTools
@@ -243,11 +240,6 @@ class RealSpaceTools {
     template<class ArrayDet, class ArrayIn>
     static void det(ArrayDet & detArray, const ArrayIn & inMats);
     
-/*    #ifdef INTREPID_OLD_KOKKOS_CODE
-    template<class ArrayDet, class ArrayIn>
-    static void detTemp(ArrayDet & inverseMats, const ArrayIn & inMats);
-    #endif
-    */
     template<class ArrayDet, class ArrayIn, int matRank>
 	struct detTempSpec;
     /** \brief Adds contiguous data <b><var>inArray1</var></b> and <b><var>inArray2</var></b>
@@ -507,5 +499,4 @@ class RealSpaceTools {
 // include templated definitions
 #include <Intrepid_RealSpaceToolsDef.hpp>
 
-//#include <Intrepid_RealSpaceToolsDef_Kokkos.hpp>
 #endif

@@ -97,8 +97,8 @@ public:
 
     Computes
     \f[ v = J u, \f]
-    where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector,
-    and \f$v\f$ is the result vector.  Returns true if successful.
+    where \f$ J\f$ is the Jacobian, \f$ u\f$ is the input vector,
+    and \f$ v\f$ is the result vector.  Returns true if successful.
   */
   virtual bool applyJacobian(const NOX::Epetra::Vector& input,
                  NOX::Epetra::Vector& result) const = 0;
@@ -106,9 +106,9 @@ public:
   /*!
     \brief Applies Jacobian-Transpose to the given input vector and puts the answer in the result.
 
-    Computes
-    \f[ v = J^T u, \f]
-    where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is the result vector.  Returns true if successful.
+    Computes \f[ v = J^T u, \f] where \f$ J\f$ is the Jacobian, \f$
+    u\f$ is the input vector, and \f$ v\f$ is the result vector.
+    Returns true if successful.
 
   */
   virtual bool applyJacobianTranspose(const NOX::Epetra::Vector& input,
@@ -120,8 +120,8 @@ public:
 
     Computes
     \f[ v = J^{-1} u, \f]
-    where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector,
-    and \f$v\f$ is the result vector.
+    where \f$ J\f$ is the Jacobian, \f$ u\f$ is the input vector,
+    and \f$ v\f$ is the result vector.
 
     The parameter list contains the linear solver options.
   */
@@ -132,13 +132,13 @@ public:
   /*!
     \brief Apply right preconditiong to the given input vector
 
-    Let \f$M\f$ be a right preconditioner for the Jacobian \f$J\f$; in
-    other words, \f$M\f$ is a matrix such that
+    Let \f$ M\f$ be a right preconditioner for the Jacobian \f$ J\f$; in
+    other words, \f$ M\f$ is a matrix such that
     \f[ JM \approx I. \f]
 
     Compute
     \f[ u = M^{-1} v, \f]
-    where \f$u\f$ is the input vector and \f$v\f$ is the result vector.
+    where \f$ u\f$ is the input vector and \f$ v\f$ is the result vector.
 
     If <em>useTranspose</em> is true, then the transpose of the
     preconditioner is applied:

@@ -51,7 +51,7 @@
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosSparse_spmv.hpp>
-#include <Kokkos_Blas1.hpp>
+#include <KokkosBlas.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 // Examples headers:

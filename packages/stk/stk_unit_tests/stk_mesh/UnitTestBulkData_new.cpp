@@ -44,7 +44,6 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting, operator<<
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, PartVector, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/FixtureNodeSharing.hpp"

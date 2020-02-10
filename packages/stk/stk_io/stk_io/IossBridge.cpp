@@ -87,8 +87,7 @@
 #include "stk_mesh/base/Part.hpp"                    // for Part, etc
 #include "stk_mesh/base/Selector.hpp"                // for Selector, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_topology/topology.hpp"
-#include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg, etc
+#include "stk_util/util/ReportHandler.hpp"           // for ThrowRequireMsg, etc
 #include "stk_util/environment/EnvData.hpp"
 #include "stk_util/util/string_case_compare.hpp"
 namespace stk { namespace mesh { class Bucket; } }
@@ -132,7 +131,6 @@ namespace {
   static const std::string matrix_33("matrix_33");
 
   const std::string base_stk_part_name = "_base_stk_part_name";
-
 
   stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                         const stk::mesh::MetaData &meta)
@@ -451,13 +449,6 @@ namespace {
       }
   }
 
-  void put_io_part_attribute(stk::mesh::Part & part, Ioss::GroupingEntity* entity)
-  {
-    check_if_io_part_attribute_already_defined(part);
-    stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
-    meta.declare_attribute_no_delete(part, entity);
-  }
-
   void add_canonical_name_property(Ioss::GroupingEntity* ge, stk::mesh::Part& part)
   {
     if(stk::io::has_alternate_part_name(part)) {
@@ -715,7 +706,30 @@ namespace stk {
         return has_ioss_part_attribute<IossOriginalTopologyType>(part);
     }
 
+    struct IossTopologyType
+    {
+      std::string value;
+    };
 
+    void set_topology_type(stk::mesh::Part& part)
+    {
+        set_ioss_part_attribute<IossTopologyType>(part, part.topology().name());
+    }
+
+    void set_topology_type(stk::mesh::Part& part, const std::string& topo)
+    {
+        set_ioss_part_attribute<IossTopologyType>(part, topo);
+    }
+
+    std::string get_topology_type(stk::mesh::Part& part)
+    {
+        return get_ioss_part_attribute<IossTopologyType>(part);
+    }
+
+    bool has_topology_type(stk::mesh::Part& part)
+    {
+        return has_ioss_part_attribute<IossTopologyType>(part);
+    }
 
     struct IossAlternatePartName
     {
@@ -764,6 +778,58 @@ namespace stk {
             return pp;
         }
       return 0;
+    }
+
+    Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part) 
+    {
+      if(!stk::io::is_part_io_part(part)) { return nullptr; }
+
+      Ioss::GroupingEntity* entity = nullptr;
+      std::string partName = stk::io::getPartName(part);
+      std::vector<Ioss::EntityType> types = get_ioss_entity_types(part);
+
+      for(Ioss::EntityType type : types) {
+        entity = region.get_entity(partName, type);
+        if(entity != nullptr) {
+          return entity;
+        }
+      }
+      return nullptr;
+    }
+
+    std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& meta, stk::mesh::EntityRank rank)
+    {
+      std::vector<Ioss::EntityType> types;
+      switch(rank) {
+        case stk::topology::NODE_RANK:
+          types.push_back(Ioss::NODEBLOCK);
+          types.push_back(Ioss::NODESET);
+          break;
+        case stk::topology::ELEMENT_RANK:
+          types.push_back(Ioss::ELEMENTBLOCK);
+          types.push_back(Ioss::SUPERELEMENT);
+          break;
+        case stk::topology::EDGE_RANK:
+          if(meta.spatial_dimension() == 2) {
+            types.push_back(Ioss::SIDESET);
+            types.push_back(Ioss::SIDEBLOCK);
+          }
+          break;
+        case stk::topology::FACE_RANK:
+          if(meta.spatial_dimension() == 3) {
+            types.push_back(Ioss::SIDESET);
+            types.push_back(Ioss::SIDEBLOCK);
+          }
+          break;
+        default:
+          break;
+      }
+      return types;
+    }
+
+    std::vector<Ioss::EntityType> get_ioss_entity_types(stk::mesh::Part& part)
+    {
+      return get_ioss_entity_types(part.mesh_meta_data(), part.primary_entity_rank());
     }
 
     size_t db_api_int_size(const Ioss::GroupingEntity *entity)
@@ -1013,7 +1079,7 @@ namespace stk {
         if (entity->property_exists("id")) {
           meta.set_part_id(part, entity->get_property("id").get_int());
         }
-        ::put_io_part_attribute(part, entity);
+        stk::io::put_io_part_attribute(part);
       }
     }
 
@@ -1026,7 +1092,7 @@ namespace stk {
         if (entity->property_exists("id")) {
             meta.set_part_id(*part, entity->get_property("id").get_int());
         }
-        ::put_io_part_attribute(*part, entity);
+        stk::io::put_io_part_attribute(*part);
 
         const Ioss::ElementTopology *topology = entity->topology();
         // Check spatial dimension of the element topology here so we can
@@ -1666,6 +1732,10 @@ namespace stk {
 
     namespace {
 
+    stk::mesh::EntityRank get_output_rank(const stk::io::OutputParams& params)
+    {
+      return params.has_skin_mesh_selector() ? params.bulk_data().mesh_meta_data().side_rank() : stk::topology::ELEMENT_RANK;
+    }
 
     //----------------------------------------------------------------------
     void define_node_block(stk::io::OutputParams &params,
@@ -1680,7 +1750,7 @@ namespace stk {
       //This is because some codes (sierra framework) don't put the coordinate
       //field on the universal part. (framework puts it on active and inactive parts)
       const int spatial_dim = meta.spatial_dimension();
-      stk::mesh::EntityRank rank = params.get_is_skin_mesh() ? stk::topology::FACE_RANK : stk::topology::ELEMENT_RANK;
+      stk::mesh::EntityRank rank = get_output_rank(params);
       //--------------------------------
       // Create the special universal node block:
       mesh::Selector shared_selector = params.has_shared_selector() ? *(params.get_shared_selector())
@@ -1723,7 +1793,7 @@ namespace stk {
                          const std::string &name,
                          const bool isDerivedNodeset = false)
     {
-      mesh::EntityRank rank = stk::topology::ELEM_RANK;
+      mesh::EntityRank rank = get_output_rank(params);
       mesh::MetaData & meta = mesh::MetaData::get(part);
       Ioss::Region & io_region = params.io_region();
 
@@ -1954,13 +2024,15 @@ namespace stk {
           throw std::runtime_error( msg.str() );
         }
 
+        stk::mesh::EntityRank rank = get_output_rank(params);
+
         mesh::Selector selector = meta.locally_owned_part() & part;
         if (params.get_subset_selector()) selector &= *params.get_subset_selector();
+        if (params.get_output_selector(rank)) selector &= *params.get_output_selector(rank);
 
-        stk::mesh::EntityRank rank = params.get_is_skin_mesh() ? meta.side_rank() : stk::topology::ELEMENT_RANK;
         std::string topologyName = map_stk_topology_to_ioss(topo);
 
-        if( params.get_is_skin_mesh() ) {
+        if( params.has_skin_mesh_selector() ) {
           // FIX THIS...Assumes homogenous faces... <- From Frio (tookusa)
           topologyName = map_stk_topology_to_ioss(topo.face_topology(0));
 
@@ -1992,7 +2064,7 @@ namespace stk {
             }
 
             bool use_original_topology = has_original_topology_type(part);
-            if(use_original_topology && !params.get_is_skin_mesh()) {
+            if(use_original_topology && !params.has_skin_mesh_selector()) {
                 add_original_topology_property(eb, part);
             }
         }
@@ -2036,11 +2108,12 @@ namespace stk {
       {
         const mesh::BulkData & bulk = params.bulk_data();
         Ioss::Region & io_region = params.io_region();
+        mesh::EntityRank rank = get_output_rank(params);
         const stk::mesh::Selector *subset_selector = params.get_subset_selector();
-        const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
+        const stk::mesh::Selector *output_selector = params.get_output_selector(rank);
 
         if (bulk.parallel_size() > 1) {
-          const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
+          const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
           const std::string cs_name("node_symm_comm_spec");
 
           mesh::Selector selector = meta.globally_shared_part();
@@ -2079,7 +2152,7 @@ namespace stk {
       {
         const stk::mesh::EntityRank si_rank = mesh::MetaData::get(part).side_rank();
 
-        bool create_sideset = ! params.get_is_skin_mesh();
+        bool create_sideset = ! params.has_skin_mesh_selector();
         if (part.subsets().empty()) {
           // Only define a sideset for this part if its superset part is
           // not a side-containing part..  (i.e., this part is not a subset part
@@ -2177,7 +2250,7 @@ namespace stk {
        const mesh::BulkData &bulk_data = params.bulk_data();
        const bool sort_stk_parts_by_name = params.get_sort_stk_parts_by_name();
 
-       const mesh::MetaData & meta_data = mesh::MetaData::get(bulk_data);
+       const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
        define_node_block(params, meta_data.universal_part());
 
        // All parts of the meta data:
@@ -2296,9 +2369,10 @@ namespace stk {
         // Similarly for the element "ids" field related to bulk data
         // using element ids.
         const stk::mesh::BulkData &bulk = params.bulk_data();
+        stk::mesh::EntityRank rank = get_output_rank(params);
 
-        std::vector<mesh::Entity> nodes ;
-        size_t num_nodes = get_entities_for_nodeblock(params, part, stk::topology::ELEM_RANK,
+        std::vector<mesh::Entity> nodes;
+        size_t num_nodes = get_entities_for_nodeblock(params, part, rank,
                                                       nodes, true);
 
         std::vector<INT> node_ids; node_ids.reserve(num_nodes);
@@ -2324,7 +2398,7 @@ namespace stk {
           nb.put_field_data("owning_processor", owning_processor);
         }
 
-        const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
         const mesh::FieldBase *coord_field = meta_data.coordinate_field();
         assert(coord_field != nullptr);
         field_data_to_ioss(bulk, coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
@@ -2389,7 +2463,7 @@ namespace stk {
                                          const std::vector<mesh::Entity>& meshObjects)
       {
         const stk::mesh::BulkData& stkmesh = params.bulk_data();
-        bool skin_mesh = params.get_is_skin_mesh();
+        bool skin_mesh = params.has_skin_mesh_selector();
         if(!skin_mesh) return; // This map only supported for skinning the mesh.
 
         size_t entitySize = block->get_property("entity_count").get_int();
@@ -2425,7 +2499,7 @@ namespace stk {
       void output_element_block(stk::io::OutputParams &params, Ioss::ElementBlock *block)
       {
         const stk::mesh::BulkData &bulk = params.bulk_data();
-        const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
         const std::string& name = block->name();
         mesh::Part* part = getPart( meta_data, name);
         assert(part != nullptr);
@@ -2437,13 +2511,13 @@ namespace stk {
           throw std::runtime_error( msg.str() );
         }
 
-        if (params.get_is_skin_mesh() && topo == stk::topology::PARTICLE) {
+        if (params.has_skin_mesh_selector() && topo == stk::topology::PARTICLE) {
           return;
         }
 
         std::vector<mesh::Entity> elements;
         stk::mesh::EntityRank type = part_primary_entity_rank(*part);
-        if (params.get_is_skin_mesh()) {
+        if (params.has_skin_mesh_selector()) {
           type = meta_data.side_rank();
         }
         size_t num_elems = get_entities(params, *part, type, elements, false);
@@ -2451,8 +2525,8 @@ namespace stk {
 //        size_t nodes_per_elem = topo.num_nodes();
         size_t nodes_per_elem = block->get_property("topology_node_count").get_int();
 
-        std::vector<INT> elem_ids; elem_ids.reserve(num_elems);
-        std::vector<INT> connectivity; connectivity.reserve(num_elems*nodes_per_elem);
+        std::vector<INT> elem_ids; elem_ids.reserve(num_elems == 0 ? 1 : num_elems);
+        std::vector<INT> connectivity; connectivity.reserve( (num_elems*nodes_per_elem) == 0 ? 1 : (num_elems*nodes_per_elem));
 
         for (size_t i = 0; i < num_elems; ++i) {
 
@@ -2502,7 +2576,7 @@ namespace stk {
                                               stk::mesh::Part* part,
                                               std::vector<stk::mesh::Entity>& nodes)
       {
-          const stk::mesh::MetaData & metaData = mesh::MetaData::get(bulk);
+          const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
           const std::string& name = ns->name();
           const std::string dfName = s_distribution_factors + "_" + name;
           stk::mesh::Field<double>* df_field = metaData.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, dfName);
@@ -2536,7 +2610,7 @@ namespace stk {
       void output_node_set(stk::io::OutputParams &params, Ioss::NodeSet *ns)
       {
         const stk::mesh::BulkData &bulk = params.bulk_data();
-        const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
         const std::string& name = ns->name();
         mesh::Part* part = getPart( meta_data, name);
 
@@ -2558,8 +2632,9 @@ namespace stk {
           }
         }
 
-        std::vector<stk::mesh::Entity> nodes ;
-        size_t num_nodes = get_entities_for_nodeblock(params, *part, stk::topology::ELEM_RANK, nodes, true);
+        std::vector<stk::mesh::Entity> nodes;
+        mesh::EntityRank rank = get_output_rank(params);
+        size_t num_nodes = get_entities_for_nodeblock(params, *part, rank, nodes, true);
 
         std::vector<INT> node_ids; node_ids.reserve(num_nodes);
         for(size_t i=0; i<num_nodes; ++i) {
@@ -2597,11 +2672,12 @@ namespace stk {
       {
         Ioss::Region &io_region = params.io_region();
         const stk::mesh::BulkData &bulk = params.bulk_data();
+        mesh::EntityRank rank = get_output_rank(params);
         const stk::mesh::Selector *subset_selector = params.get_subset_selector();
-        const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
+        const stk::mesh::Selector *output_selector = params.get_output_selector(rank);
 
         if (bulk.parallel_size() > 1) {
-          const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
+          const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
           mesh::Selector selector = meta.globally_shared_part();
           if (subset_selector) selector &= *subset_selector;
           if (output_selector) selector &= *output_selector;
@@ -2636,7 +2712,7 @@ namespace stk {
       template <typename INT>
       void output_side_set(stk::io::OutputParams &params, Ioss::SideSet *ss)
       {
-        const stk::mesh::MetaData & meta = mesh::MetaData::get(params.bulk_data());
+        const stk::mesh::MetaData & meta = params.bulk_data().mesh_meta_data();
 
         size_t block_count = ss->block_count();
         for (size_t i=0; i < block_count; i++) {
@@ -2654,7 +2730,7 @@ namespace stk {
 
     void write_output_db_node_block(stk::io::OutputParams &params)
     {
-        const stk::mesh::MetaData & meta = mesh::MetaData::get(params.bulk_data());
+        const stk::mesh::MetaData & meta = params.bulk_data().mesh_meta_data();
         Ioss::Region &io_region = params.io_region();
 
         bool ints64bit = db_api_int_size(&io_region) == 8;
@@ -2725,6 +2801,12 @@ namespace stk {
     }
 
     //----------------------------------------------------------------------
+    bool is_part_io_part(const stk::mesh::Part* part)
+    {
+      if(part == nullptr) { return false; }
+      return is_part_io_part(*part);
+    }
+
     bool is_part_io_part(const stk::mesh::Part &part)
     {
       return nullptr != part.attribute<Ioss::GroupingEntity>();

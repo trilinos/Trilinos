@@ -893,7 +893,7 @@ public:
       // either that or mark fields of this class as 'mutable'.  The
       // problem is that applyBlock wants to do lazy initialization of
       // temporary block multivectors.
-      const_cast<this_type*> (this)->applyBlock (X_view, Y_view, mode, alpha, beta);
+      const_cast<this_type&> (*this).applyBlock (X_view, Y_view, mode, alpha, beta);
     } catch (std::invalid_argument& e) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::invalid_argument, "Tpetra::BlockCrsMatrix::"
@@ -3458,7 +3458,7 @@ public:
       // the easiest and least memory-intensive way to implement this
       // method.
       typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-      const_cast<this_type*> (this)->sync_host ();
+      const_cast<this_type&> (*this).sync_host ();
 
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION

@@ -232,20 +232,20 @@ which Node type gets enabled by default:
   2. Otherwise, if you're building with OpenMP, Tpetra uses OpenMP by
      default.
   3. Otherwise, if Kokkos enables the Serial execution space (if
-     Kokkos_ENABLE_Serial is ON), Tpetra uses Serial by default.
+     Kokkos_ENABLE_SERIAL is ON), Tpetra uses Serial by default.
   4. Otherwise, if Kokkos enables the Threads execution space (if
-     Kokkos_ENABLE_Pthread is ON), Tpetra uses Threads by default.
+     Kokkos_ENABLE_PTHREAD is ON), Tpetra uses Threads by default.
 
 If you wish to enable other Node types, you may set the following
 CMake options.  You do NOT need to set any of these options explicitly
 if the Node type would be enabled by default anyway.
 
-  - Tpetra_INST_CUDA (Kokkos_ENABLE_Cuda must be ON, and Trilinos must
+  - Tpetra_INST_CUDA (Kokkos_ENABLE_CUDA must be ON, and Trilinos must
     be built with CUDA; ON by default if building with CUDA)
-  - Tpetra_INST_OPENMP (Kokkos_ENABLE_OpenMP must be ON, and Trilinos
+  - Tpetra_INST_OPENMP (Kokkos_ENABLE_OPENMP must be ON, and Trilinos
     must be built with OpenMP support)
-  - Tpetra_INST_PTHREAD (Kokkos_ENABLE_Pthread must be ON)
-  - Tpetra_INST_SERIAL (Kokkos_ENABLE_Serial must be ON)
+  - Tpetra_INST_PTHREAD (Kokkos_ENABLE_PTHREAD must be ON)
+  - Tpetra_INST_SERIAL (Kokkos_ENABLE_SERIAL must be ON)
 
 While it is legal to enable both the OpenMP and Pthreads back-ends in
 the same executable, it is a bad idea.  Both back-ends spawn their own
@@ -722,7 +722,7 @@ if ETI (explicit template instantiation) is enabled:
 # Disable KokkosClassic::OpenMPNode
 -D TpetraClassic_ENABLE_OpenMP:BOOL=OFF
 # Shut off Kokkos' Pthreads back-end.
--D Kokkos_ENABLE_Pthread:BOOL=OFF
+-D Kokkos_ENABLE_PTHREAD:BOOL=OFF
 
 * Deprecated variable-block-size classes (like VbrMatrix).
 
@@ -831,7 +831,7 @@ The following options may reduce build times if ETI is enabled:
 # Disable KokkosClassic::OpenMPNode
 -D KokkosClassic_ENABLE_OpenMP:BOOL=OFF
 # Shut off Kokkos' Pthreads back-end in favor of OpenMP
--D Kokkos_ENABLE_Pthread:BOOL=OFF
+-D Kokkos_ENABLE_PTHREAD:BOOL=OFF
 
 You must also enable the following subpackages explicitly, since they
 are not Primary Tested at the moment:

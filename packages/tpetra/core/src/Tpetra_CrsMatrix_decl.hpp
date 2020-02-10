@@ -3434,9 +3434,14 @@ namespace Tpetra {
     checkSizes (const SrcDistObject& source) override;
 
     void
-    applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
+    applyCrsPadding(
+      const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding,
+      const bool verbose);
 
   private:
+    std::unique_ptr<std::string>
+    createPrefix(const char methodName[]) const;
+
     void
     copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                         const size_t numSameIDs,
@@ -4140,13 +4145,6 @@ namespace Tpetra {
       GraphNotYetAllocated
     };
 
-  private:
-    /// \brief Allocate 2-D storage for matrix values.
-    ///
-    /// This is an implementation detail of allocateValues() (see below).
-    Teuchos::ArrayRCP<Teuchos::Array<impl_scalar_type> >
-    allocateValues2D ();
-
   protected:
     /// \brief Allocate values (and optionally indices) using the Node.
     ///
@@ -4157,6 +4155,8 @@ namespace Tpetra {
     /// \param lg [in] Argument passed into \c
     ///   myGraph_->allocateIndices(), if applicable.
     ///
+    /// \param verbose [in] Whether to print verbose debugging output.
+    ///
     /// \pre If the graph (that is, staticGraph_) indices are
     ///   already allocated, then gas must be GraphAlreadyAllocated.
     ///   Otherwise, gas must be GraphNotYetAllocated.  We only
@@ -4164,7 +4164,8 @@ namespace Tpetra {
     ///
     /// \pre If the graph indices are not already allocated, then
     ///   the graph must be owned by the matrix.
-    void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas);
+    void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas,
+                         const bool verbose);
 
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.
@@ -4460,22 +4461,11 @@ namespace Tpetra {
     //! The local sparse matrix, wrapped in a multiply operator.
     std::shared_ptr<local_multiply_op_type> lclMatrix_;
 
-    /// \name Sparse matrix values.
+    /// \brief Sparse matrix values, as part of compressed sparse row
+    ///   ("1-D") storage.
     ///
-    /// k_values1D_ represents the values assuming "1-D" compressed
-    /// sparse row storage.  values2D_ represents the values as an
-    /// array of arrays, one (inner) array per row of the sparse
-    /// matrix.
-    ///
-    /// Before allocation, both arrays are null.  After allocation,
-    /// one is null.  If static allocation, then values2D_ is null.
-    /// If dynamic allocation, then k_values1D_ is null.  The
-    /// allocation always matches that of graph_, as the graph does
-    /// the allocation for the matrix.
-    //@{
+    /// Before allocation, this array is empty.
     typename local_matrix_type::values_type k_values1D_;
-    Teuchos::ArrayRCP<Teuchos::Array<impl_scalar_type> > values2D_;
-    //@}
 
     /// \brief Status of the matrix's storage, when not in a
     ///   fill-complete state.
@@ -4484,7 +4474,7 @@ namespace Tpetra {
     /// When the matrix is fill complete, it <i>always</i> uses 1-D
     /// "packed" storage.  However, if the "Optimize Storage"
     /// parameter to fillComplete was false, the matrix may keep
-    /// unpacked 1-D or 2-D storage around and resume it on the next
+    /// unpacked 1-D storage around and resume it on the next
     /// resumeFill call.
     ::Tpetra::Details::EStorageStatus storageStatus_;
 

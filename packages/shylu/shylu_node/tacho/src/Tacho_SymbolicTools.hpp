@@ -10,9 +10,12 @@ namespace Tacho {
 
     class SymbolicTools {
     public:
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
-      typedef Kokkos::View<size_type*,host_exec_space> size_type_array;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+      typedef typename host_device_type::execution_space host_space;
+      typedef typename host_device_type::memory_space host_memory_space;
+
+      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
+      typedef Kokkos::View<size_type*,host_device_type> size_type_array;
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
@@ -128,7 +131,7 @@ namespace Tacho {
         }
 
         // prefix scan
-        up = size_type_array("up", m+1);
+        up = size_type_array(do_not_initialize_tag("up"), m+1); up(0) = size_type();
         for (ordinal_type i=0;i<m;++i)
           up(i+1) = up(i) + upper_row_cnt(i);
         
@@ -205,7 +208,7 @@ namespace Tacho {
           flag(k) = true; // supernodes begin
 
           for (ordinal_type i=0;i<m;++i) k += flag(i);
-          supernodes = ordinal_type_array("supernodes", k+1);
+          supernodes = ordinal_type_array(do_not_initialize_tag("supernodes"), k+1);
           
           // record supernodes 
           k = 0;
@@ -317,8 +320,8 @@ namespace Tacho {
         const ordinal_type_array null_ordinal_type_array;
 
         /// count the # of associated columns to all supernodes
-        gid_super_panel_ptr = size_type_array("gid_super_panel_ptr", numSupernodes+1);
-        sid_super_panel_ptr= size_type_array("sid_super_panel_ptr", numSupernodes+1);
+        gid_super_panel_ptr = size_type_array(do_not_initialize_tag("gid_super_panel_ptr"), numSupernodes+1); gid_super_panel_ptr(0) = size_type();
+        sid_super_panel_ptr = size_type_array(do_not_initialize_tag("sid_super_panel_ptr"), numSupernodes+1); sid_super_panel_ptr(0) = size_type();
 
         for (ordinal_type sid=0;sid<numSupernodes;++sid) {
           const ordinal_type sbeg = supernodes(sid), send = supernodes(sid+1);
@@ -427,12 +430,12 @@ namespace Tacho {
             else
               ++flag(stree_parent(sid));
           }
-          stree_roots = ordinal_type_array("stree_roots", cnt);
+          stree_roots = ordinal_type_array(do_not_initialize_tag("stree_roots"), cnt);
         }
 
         // prefix scan
         {
-          stree_ptr = size_type_array("stree_ptr", numSupernodes + 1);
+          stree_ptr = size_type_array(do_not_initialize_tag("stree_ptr"), numSupernodes + 1); stree_ptr(0) = size_type();
           for (ordinal_type sid=0;sid<numSupernodes;++sid)
             stree_ptr(sid+1) = stree_ptr(sid) + flag(sid); 
         }
@@ -440,7 +443,7 @@ namespace Tacho {
         {
           clear_array(numSupernodes, flag);
           ordinal_type cnt = 0;
-          stree_children = ordinal_type_array("stree_children", stree_ptr(numSupernodes));
+          stree_children = ordinal_type_array(do_not_initialize_tag("stree_children"), stree_ptr(numSupernodes));
           for (ordinal_type sid=0;sid<numSupernodes;++sid) {
             const ordinal_type sidpar = stree_parent(sid);                       
             if (sidpar == -1) 
@@ -509,10 +512,10 @@ namespace Tacho {
                     GraphToolType &G) {
         _m = A.NumRows();
         
-        _ap   = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), A.RowPtr());
-        _aj   = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), A.Cols());
-        _perm = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), G.PermVector());
-        _peri = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), G.InvPermVector());
+        _ap   = Kokkos::create_mirror_view(host_memory_space(), A.RowPtr());
+        _aj   = Kokkos::create_mirror_view(host_memory_space(), A.Cols());
+        _perm = Kokkos::create_mirror_view(host_memory_space(), G.PermVector());
+        _peri = Kokkos::create_mirror_view(host_memory_space(), G.InvPermVector());
 
         Kokkos::deep_copy(_ap, A.RowPtr());
         Kokkos::deep_copy(_aj, A.Cols());
@@ -572,8 +575,8 @@ namespace Tacho {
 
         // compute elimination tree
         timer.reset();
-        ordinal_type_array work("work", _m*4); 
-        ordinal_type_array parent("parent", _m); 
+        ordinal_type_array work(do_not_initialize_tag("work"), _m*4); 
+        ordinal_type_array parent(do_not_initialize_tag("parent"), _m); 
 
         track_alloc(work.span()*sizeof(ordinal_type));
         track_alloc(parent.span()*sizeof(ordinal_type));

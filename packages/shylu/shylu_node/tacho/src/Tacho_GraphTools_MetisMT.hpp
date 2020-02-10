@@ -14,14 +14,15 @@ namespace Tacho {
 
     class GraphTools_MetisMT {
     public:
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace> host_device_type;
+      typedef typename host_device_type::execution_space host_space;
 
-      typedef Kokkos::View<mtmetis_vtx_type*,host_exec_space> mtmetis_vtx_type_array;
-      typedef Kokkos::View<mtmetis_adj_type*,host_exec_space> mtmetis_adj_type_array;
-      typedef Kokkos::View<mtmetis_wgt_type*,host_exec_space> mtmetis_wgt_type_array;
-      typedef Kokkos::View<mtmetis_pid_type*,host_exec_space> mtmetis_pid_type_array;
+      typedef Kokkos::View<mtmetis_vtx_type*,host_device_type> mtmetis_vtx_type_array;
+      typedef Kokkos::View<mtmetis_adj_type*,host_device_type> mtmetis_adj_type_array;
+      typedef Kokkos::View<mtmetis_wgt_type*,host_device_type> mtmetis_wgt_type_array;
+      typedef Kokkos::View<mtmetis_pid_type*,host_device_type> mtmetis_pid_type_array;
 
-      typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
+      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
 
     private:
         
@@ -80,7 +81,7 @@ namespace Tacho {
         //   MTMETIS_VERBOSITY_HIGH,
         //   MTMETIS_VERBOSITY_MAXIMUM
 
-        _options[MTMETIS_OPTION_NTHREADS]  = host_exec_space::thread_pool_size(0); // from kokkos
+        _options[MTMETIS_OPTION_NTHREADS]  = host_space::thread_pool_size(0); // from kokkos
         //_options[MTMETIS_OPTION_SEED]      = 0; // for testing, use the same seed now
         //_options[MTMETIS_OPTION_PTYPE]     = MTMETIS_PTYPE_ND; // when explicit interface is used
         //_options[MTMETIS_OPTION_VERBOSITY] = MTMETIS_VERBOSITY_NONE;

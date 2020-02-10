@@ -40,15 +40,12 @@ with open(options.logFile) as f:
                 continue
             time = float(match[2])
             depth = separator.count('|')
-            stack = stack[:depth-1]+[label]
+            stack = stack[:depth]+[label]
             prevDepth = depth
             data['/'.join(stack)] = time
-            if depth > 1:
-                total_time = data['/'.join(stack[:depth-1])]
-                data['/'.join(stack[:depth-1])] = total_time - time
-            else:
-                data['/'.join(stack[:depth-1])] = 0.0
-
+            if depth > 0:
+                total_time = data['/'.join(stack[:depth])]
+                data['/'.join(stack[:depth])] = total_time - time
 if options.root != '':
     data_new = {}
     for label in data:

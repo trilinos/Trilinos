@@ -2,8 +2,8 @@
 
 Function=$1             #e.g. abs: function name
 FunctionExtended=$2     #e.g. KokkosBlas1_abs: prefix for files etc.
-MasterHeader=$3         #e.g. Kokkos_Blas1_abs_spec.hpp: where the specialization layer lives 
-NameSpace=$4            #e.g. KokkosBlas: namespace it lives in 
+MasterHeader=$3         #e.g. Kokkos_Blas1_abs_spec.hpp: where the specialization layer lives
+NameSpace=$4            #e.g. KokkosBlas: namespace it lives in
 KokkosKernelsPath=$5
 OrdinalList="int int64_t"
 OffsetList="int size_t"
@@ -60,4 +60,3 @@ echo "#endif // ${Function_UpperCase}_ETI_SPEC_AVAIL_HPP_" >> ${filename_spec_av
 echo "} // Impl" >> ${filename_spec_decl_hpp}
 echo "} // ${NameSpace}" >> ${filename_spec_decl_hpp}
 echo "#endif // ${Function_UpperCase}_ETI_SPEC_DECL_HPP_" >> ${filename_spec_decl_hpp}
-

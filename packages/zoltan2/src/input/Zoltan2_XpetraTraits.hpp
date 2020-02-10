@@ -53,6 +53,7 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_Standards.hpp>
 
+#include <Xpetra_TpetraCrsGraph.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <Tpetra_Vector.hpp>

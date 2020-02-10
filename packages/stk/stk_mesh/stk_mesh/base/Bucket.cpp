@@ -45,7 +45,6 @@
 #include <stk_mesh/base/FieldTraits.hpp>
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for PartVector, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_util/util/SortAndUnique.hpp"
@@ -324,6 +323,12 @@ size_t Bucket::memory_size_in_bytes() const
   return bytes;
 }
 
+bool Bucket::member(stk::mesh::PartOrdinal partOrdinal) const {
+  const stk::mesh::MetaData& meta = mesh().mesh_meta_data();
+  const stk::mesh::Part* part = meta.get_parts()[partOrdinal];
+  return member(*part);
+}
+
 void Bucket::change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
 {
     unsigned num_nodes = this->num_nodes(bucket_ordinal);
@@ -490,7 +495,7 @@ bool has_superset( const Bucket & bucket , const PartVector & ps )
 
 void Bucket::supersets( PartVector & ps ) const
 {
-  const MetaData & mesh_meta_data = MetaData::get( *this );
+  const MetaData & mesh_meta_data = m_mesh.mesh_meta_data();
 
   std::pair<const unsigned *, const unsigned *>
     part_ord = superset_part_ordinals();
@@ -535,7 +540,7 @@ bool Bucket::field_data_is_allocated(const FieldBase& field) const
 
 std::ostream & operator << ( std::ostream & s , const Bucket & k )
 {
-  const MetaData & mesh_meta_data = MetaData::get(k);
+  const MetaData & mesh_meta_data = k.mesh().mesh_meta_data();
   const std::string & entity_rank_name =
     mesh_meta_data.entity_rank_names()[ k.entity_rank() ];
 
@@ -553,7 +558,7 @@ std::ostream & operator << ( std::ostream & s , const Bucket & k )
 std::ostream &
 print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 {
-  const MetaData & mesh_meta_data = MetaData::get(bucket);
+  const MetaData & mesh_meta_data = bucket.mesh().mesh_meta_data();
   const BulkData & mesh = bucket.mesh();
   const std::string & entity_rank_name =
     mesh_meta_data.entity_rank_names()[ bucket.entity_rank() ];

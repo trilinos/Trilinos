@@ -40,7 +40,11 @@
 #include <assert.h>
 #include <Kokkos_Macros.hpp>
 
+#ifdef KOKKOS_ENABLE_CUDA
+#define STK_MATH_FORCE_INLINE  __host__  __forceinline__
+#else
 #define STK_MATH_FORCE_INLINE KOKKOS_FORCEINLINE_FUNCTION
+#endif
 
 namespace stk {
 namespace math {

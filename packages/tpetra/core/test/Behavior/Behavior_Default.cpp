@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -48,6 +46,8 @@
 #include <Tpetra_Details_Behavior.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <cstdlib> // std::getenv
+
 namespace {
 
 /*
@@ -81,4 +81,30 @@ TEUCHOS_UNIT_TEST(Behavior, Default)
   bool cuda_aware_mpi = Tpetra::Details::Behavior::assumeMpiIsCudaAware();
   TEUCHOS_TEST_ASSERT(cuda_aware_mpi==cuda_aware_mpi_default, out, success);
 }
+
+TEUCHOS_UNIT_TEST(Behavior, verbosePrintCountThreshold) {
+  // We only require that the default be between these values.
+  const size_t maxVal (1000);
+  const size_t minVal (100);
+  const size_t val0 =
+    Tpetra::Details::Behavior::verbosePrintCountThreshold();
+  TEST_ASSERT( val0 >= minVal && val0 <= maxVal );
+
+  const size_t val1 =
+    Tpetra::Details::Behavior::verbosePrintCountThreshold();
+  TEST_ASSERT( val1 >= minVal && val1 <= maxVal );
+}
+
+TEUCHOS_UNIT_TEST(Behavior, longRowMinNumEntries) {
+  // We only require that the default be at least this much.
+  const size_t minVal (100);
+  const size_t val0 =
+    Tpetra::Details::Behavior::longRowMinNumEntries();
+  TEST_ASSERT( val0 >= minVal );
+
+  const size_t val1 =
+    Tpetra::Details::Behavior::longRowMinNumEntries();
+  TEST_ASSERT( val1 >= minVal );
+}
+
 } // namespace (anonymous)

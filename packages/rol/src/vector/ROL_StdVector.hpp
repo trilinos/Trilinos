@@ -46,7 +46,7 @@
 
 #include <algorithm>
 #include <cstdlib>
-
+#include <initializer_list>
 #include "ROL_Vector.hpp"
 
 /** \class ROL::StdVector
@@ -59,19 +59,21 @@ namespace ROL {
 template <class Real, class Element=Real>
 class StdVector : public Vector<Real> {
 
-  typedef typename std::vector<Real>::size_type uint;
-
-private:
-
-  Ptr<std::vector<Element>>  std_vec_;
+  using size_type = typename std::vector<Real>::size_type;
 
 public:
 
-  StdVector(const Ptr<std::vector<Element>> & std_vec) : std_vec_(std_vec) {}
+  StdVector( const Ptr<std::vector<Element>> & std_vec ) : std_vec_(std_vec) {}
 
-  StdVector(const int dim, const Element val=0.0) {
+  StdVector( const int dim, const Element val=0.0 ) {
     std_vec_ = makePtr<std::vector<Element>>(dim,val);
   }
+
+  StdVector( std::initializer_list<Element> ilist ) : 
+    std_vec_( makePtr<std::vector<Element>>(ilist) ) {}
+
+  Real& operator[] ( int i ) { return (*std_vec_)[i]; }
+  const Real& operator[] ( int i ) const { return (*std_vec_)[i]; }
 
   void set( const Vector<Real> &x ) {
 
@@ -79,7 +81,7 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector &ex = dynamic_cast<const StdVector&>(x);
+    const StdVector &ex = static_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
     std::copy(xval.begin(),xval.end(),std_vec_->begin());
   }
@@ -90,10 +92,10 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector &ex = dynamic_cast<const StdVector&>(x);
+    const StdVector &ex = static_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    uint dim  = std_vec_->size();
-    for (uint i=0; i<dim; i++) {
+    size_type dim  = std_vec_->size();
+    for (size_type i=0; i<dim; i++) {
       (*std_vec_)[i] += xval[i];
     }
   }
@@ -104,19 +106,20 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector &ex = dynamic_cast<const StdVector&>(x);
+    const StdVector &ex = static_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    uint dim  = std_vec_->size();
-    for (uint i=0; i<dim; i++) {
+    size_type dim  = std_vec_->size();
+    for (size_type i=0; i<dim; i++) {
       (*std_vec_)[i] += alpha*xval[i];
     }
   }
 
   void scale( const Real alpha ) {
-    uint dim = std_vec_->size();
-    for (uint i=0; i<dim; i++) {
-      (*std_vec_)[i] *= alpha;
-    }
+    for( auto& e : *std_vec_ ) e *= alpha;
+//    size_type dim = std_vec_->size();
+//    for (size_type i=0; i<dim; i++) {
+//      (*std_vec_)[i] *= alpha;
+//    }
   }
 
   virtual Real dot( const Vector<Real> &x ) const {
@@ -125,14 +128,15 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector & ex = dynamic_cast<const StdVector&>(x);
+    const StdVector& ex = static_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    uint dim  = std_vec_->size();
-    Real val = 0;
-    for (uint i=0; i<dim; i++) {
-      val += (*std_vec_)[i]*xval[i];
-    }
-    return val;
+//    size_type dim  = std_vec_->size();
+//    Real val = 0;
+//    for (size_type i=0; i<dim; i++) {
+//      val += (*std_vec_)[i]*xval[i];
+//    }
+//    return val;
+    return std::inner_product(std_vec_->begin(), std_vec_->end(), xval.begin(), Real(0));
   }
 
   Real norm() const {
@@ -158,8 +162,7 @@ public:
     ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
-
-    Ptr<Vector<Real>> e = clone();
+    auto e = clone();
     (*staticPtrCast<StdVector>(e)->getVector())[i] = 1.0;
     return e;
   }
@@ -169,10 +172,11 @@ public:
   }
 
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    uint dim  = std_vec_->size();
-    for(uint i=0; i<dim; ++i) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i]);
-    }
+//    size_type dim  = std_vec_->size();
+//    for(size_type i=0; i<dim; ++i) {
+//      (*std_vec_)[i] = f.apply((*std_vec_)[i]);
+//    }
+    for( auto& e : *std_vec_ ) e = f.apply(e);
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
@@ -181,10 +185,10 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector & ex = dynamic_cast<const StdVector&>(x);
+    const StdVector & ex = static_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    uint dim  = std_vec_->size();
-    for (uint i=0; i<dim; i++) {
+    size_type dim  = std_vec_->size();
+    for (size_type i=0; i<dim; i++) {
       (*std_vec_)[i] = f.apply((*std_vec_)[i],xval[i]);
     }
 
@@ -192,36 +196,46 @@ public:
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     Real result = r.initialValue();
-    uint dim  = std_vec_->size();
-    for(uint i=0; i<dim; ++i) {
+    size_type dim  = std_vec_->size();
+    for(size_type i=0; i<dim; ++i) {
       r.reduce((*std_vec_)[i],result);
     }
     return result;
   }
 
   void setScalar( const Real C ) {
-    uint dim = std_vec_->size();
+    size_type dim = std_vec_->size();
     std_vec_->assign(dim,C);
   }
 
   void randomize( const Real l = 0.0, const Real u = 1.0 ) {
     Real a = (u-l);
     Real b = l;
-    Real x(0);
-    uint dim = std_vec_->size();
-    for (uint i=0; i<dim; ++i) {
-      x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
-      (*std_vec_)[i] = a*x + b;
-    }
+//    Real x(0);
+//    size_type dim = std_vec_->size();
+//    for (size_type i=0; i<dim; ++i) {
+//      x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+//      (*std_vec_)[i] = a*x + b;
+//    }
+    auto get_rand = [a,b]( Real& e ) { 
+      auto x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX); 
+      e = a*x+b;
+    };
+    std::for_each( std_vec_->begin(), std_vec_->end(), get_rand );
   }
 
   virtual void print( std::ostream &outStream ) const {
-    uint dim = std_vec_->size();
-    for(uint i=0; i<dim; ++i) {
-      outStream << (*std_vec_)[i] << " ";
-    }
+//    size_type dim = std_vec_->size();
+//    for(size_type i=0; i<dim; ++i) {
+//      outStream << (*std_vec_)[i] << " ";
+//    }
+    for( auto e : *std_vec_ ) outStream << e << " ";
     outStream << std::endl;
   }
+
+private:
+
+  Ptr<std::vector<Element>>  std_vec_;
 
 }; // class StdVector
 
