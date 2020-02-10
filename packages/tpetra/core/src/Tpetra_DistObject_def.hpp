@@ -51,7 +51,9 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_checkGlobalError.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include <typeinfo>
 #include <memory>
@@ -678,7 +680,7 @@ namespace Tpetra {
     using Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::getArrayViewFromDualView;
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::ProfilingRegion;
     using Kokkos::Compat::getArrayView;
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
@@ -695,6 +697,7 @@ namespace Tpetra {
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
+    const bool debug = Behavior::debug("DistObject");
     const bool verbose = Behavior::verbose("DistObject");
     // Prefix for verbose output.  Use a pointer, so we don't pay for
     // string construction unless needed.  We set this below.
@@ -1164,16 +1167,36 @@ namespace Tpetra {
         Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-        // NOTE (mfh 26 Apr 2016) We don't actually need to sync the
-        // input DualViews, but they DO need to be most recently
-        // updated in the same memory space.
-        //
-        // FIXME (mfh 26 Apr 2016) Check that all input DualViews
-        // were most recently updated in the same memory space, and
-        // sync them to the same place (based on commOnHost) if not.
-        this->unpackAndCombine (remoteLIDs, this->imports_,
-                                this->numImportPacketsPerLID_,
-                                constantNumPackets, distor, CM);
+        if (debug) {
+          std::ostringstream lclErrStrm;
+          bool lclSuccess = false;
+          try {
+            this->unpackAndCombine (remoteLIDs, this->imports_,
+                                    this->numImportPacketsPerLID_,
+                                    constantNumPackets, distor, CM);
+            lclSuccess = true;
+          }
+          catch (std::exception& e) {
+            lclErrStrm << "unpackAndCombine threw an exception: "
+                       << endl << e.what();
+          }
+          catch (...) {
+            lclErrStrm << "unpackAndCombine threw an exception "
+              "not a subclass of std::exception.";
+          }
+          const char gblErrMsgHeader[] = "Tpetra::DistObject::"
+            "doTransferNew threw an exception in unpackAndCombine on "
+            "one or more processes in the DistObject's communicator.";
+          auto comm = getMap()->getComm();
+          Details::checkGlobalError(std::cerr, lclSuccess,
+                                    lclErrStrm.str().c_str(),
+                                    gblErrMsgHeader, *comm);
+        }
+        else {
+          this->unpackAndCombine (remoteLIDs, this->imports_,
+                                  this->numImportPacketsPerLID_,
+                                  constantNumPackets, distor, CM);
+        }
       } // if (needCommunication)
     } // if (CM != ZERO)
 

@@ -3435,7 +3435,7 @@ namespace Tpetra {
 
     void
     applyCrsPadding(
-      const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding,
+      const typename crs_graph_type::padding_type& padding,
       const bool verbose);
 
   private:

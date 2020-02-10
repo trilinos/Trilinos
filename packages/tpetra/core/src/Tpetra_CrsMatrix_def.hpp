@@ -6436,15 +6436,18 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   applyCrsPadding(
-    const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding,
+    const typename crs_graph_type::padding_type& padding,
     const bool verbose)
   {
     using Details::ProfilingRegion;
     using Details::padCrsArrays;
     using std::endl;
+    using LO = local_ordinal_type;
     using execution_space = typename device_type::execution_space;
-    using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
-    using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
+    using row_ptrs_type =
+      typename local_graph_type::row_map_type::non_const_type;
+    using range_policy =
+      Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
     const char tfecfFuncName[] = "applyCrsPadding";
     const char suffix[] =
       ".  Please report this bug to the Tpetra developers.";
@@ -6454,7 +6457,9 @@ namespace Tpetra {
     if (verbose) {
       prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
       std::ostringstream os;
-      os << *prefix << "padding.size()=" << padding.size() << endl;
+      os << *prefix << "padding: ";
+      padding.print(os);
+      os << endl;
       std::cerr << os.str();
     }
     const int myRank = ! verbose ? -1 : [&] () {
@@ -6471,12 +6476,18 @@ namespace Tpetra {
 
     // NOTE (mfh 29 Jan 2020) This allocates the values array.
     if (! myGraph_->indicesAreAllocated()) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Call allocateIndices" << endl;
+        std::cerr << os.str();
+      }
       allocateValues(GlobalIndices, GraphNotYetAllocated, verbose);
     }
 
-    if (padding.size() == 0) {
-      return;
-    }
+    // FIXME (mfh 10 Feb 2020) We shouldn't actually reallocate
+    // row_ptrs_beg or allocate row_ptrs_end unless the allocation
+    // size needs to increase.  That should be the job of
+    // padCrsArrays.
 
     // Making copies here because k_rowPtrs_ has a const type. Otherwise, we
     // would use it directly.
@@ -6487,7 +6498,11 @@ namespace Tpetra {
          << myGraph_->k_rowPtrs_.extent(0) << endl;
       std::cerr << os.str();
     }
-    row_ptrs_type row_ptr_beg("row_ptr_beg", myGraph_->k_rowPtrs_.extent(0));
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+    row_ptrs_type row_ptr_beg(
+      view_alloc("row_ptr_beg", WithoutInitializing),
+      myGraph_->k_rowPtrs_.extent(0));
     Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
 
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
@@ -6497,25 +6512,26 @@ namespace Tpetra {
       os << *prefix << "Allocate row_ptrs_end: " << N << endl;
       std::cerr << os.str();
     }
-    row_ptrs_type row_ptr_end("row_ptr_end", N);
+    row_ptrs_type row_ptr_end(
+      view_alloc("row_ptr_end", WithoutInitializing), N);
 
-    bool refill_num_row_entries = false;
-    if (myGraph_->k_numRowEntries_.extent(0) > 0) {
-      // Case 1: Unpacked storage
-      refill_num_row_entries = true;
+    const bool refill_num_row_entries =
+      myGraph_->k_numRowEntries_.extent(0) != 0;
+
+    if (refill_num_row_entries) { // unpacked storage
+      // We can't assume correct *this capture until C++17, and it's
+      // likely more efficient just to capture what we need anyway.
       auto num_row_entries = myGraph_->k_numRowEntries_;
       Kokkos::parallel_for
         ("Fill end row pointers", range_policy(0, N),
          KOKKOS_LAMBDA (const size_t i) {
           row_ptr_end(i) = row_ptr_beg(i) + num_row_entries(i);
         });
-
-    } else {
-      // FIXME (mfh 04 Feb 2020) If packed storage, don't need
-      // row_ptr_end to be separate allocation; could just have it
-      // alias row_ptr_beg+1.
-      //
-      // Case 2: Packed storage
+    }
+    else {
+      // FIXME (mfh 04 Feb 2020) Fix padCrsArrays so that if packed
+      // storage, we don't need row_ptr_end to be separate allocation;
+      // could just have it alias row_ptr_beg+1.
       Kokkos::parallel_for
         ("Fill end row pointers", range_policy(0, N),
          KOKKOS_LAMBDA (const size_t i) {
@@ -6557,10 +6573,12 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Assign myGraph_->k_rowPtrs_: "
-         << "old=" << myGraph_->k_rowPtrs_.extent(0)
-         << ", new=" << row_ptr_beg.extent(0) << endl;
+      os << *prefix << "Assign myGraph_->k_rowPtrs_; "
+         << "old size: " << myGraph_->k_rowPtrs_.extent(0)
+         << ", new size: " << row_ptr_beg.extent(0) << endl;
       std::cerr << os.str();
+      TEUCHOS_ASSERT( myGraph_->k_rowPtrs_.extent(0) ==
+                      row_ptr_beg.extent(0) );
     }
     myGraph_->k_rowPtrs_ = row_ptr_beg;
   }
@@ -6753,8 +6771,8 @@ namespace Tpetra {
       auto padding =
         myGraph_->computeCrsPadding(srcGraph, numSameIDs,
           permuteToLIDs_dv, permuteFromLIDs_dv, verbose);
-      if (padding.size() != 0) {
-        applyCrsPadding(padding, verbose);
+      if (padding->increase() != 0) {
+        applyCrsPadding(*padding, verbose);
       }
     }
     const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
@@ -6791,8 +6809,8 @@ namespace Tpetra {
         // copy.  Really it's the GIDs that have to be copied (because
         // they have to be converted from LIDs).
         size_t checkRowLength = 0;
-        srcMat.getGlobalRowCopy (sourceGID, rowIndsView, rowValsView, checkRowLength);
-
+        srcMat.getGlobalRowCopy (sourceGID, rowIndsView, rowValsView,
+                                 checkRowLength);
         if (debug) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (rowLength != checkRowLength, std::logic_error, ": For "
@@ -7880,34 +7898,13 @@ namespace Tpetra {
                                    distor, combineMode);
     }
     else {
-      std::vector<size_t> paddingVec =
-        myGraph_->computePaddingForCrsMatrixUnpack(
-          importLIDs, imports, numPacketsPerLID, verbose);
-      using padding_type =
-        Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>;
-      const LO numImports = static_cast<LO>(importLIDs.extent(0));
-      padding_type padding (numImports);
-
-      // padding gets pre-filled on devic, but we're modifying it on
-      // host here, so we need to fence to ensure that device is done.
-      Kokkos::fence();
-
-      if (paddingVec.size() != 0) {
-        auto importLIDs_h = importLIDs.view_host();
-        for (LO whichImp = 0; whichImp < numImports; ++whichImp) {
-          const LO lclRowInd = importLIDs_h[whichImp];
-          auto result =
-            padding.insert(lclRowInd, paddingVec[whichImp]);
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (result.failed(), std::runtime_error,
-             ": Unable to insert padding for LID " << lclRowInd);
+      {
+        auto padding =
+          myGraph_->computePaddingForCrsMatrixUnpack(
+            importLIDs, imports, numPacketsPerLID, verbose);
+        if (padding->increase() != 0) {
+          applyCrsPadding(*padding, verbose);
         }
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (padding.failed_insert(), std::runtime_error,
-           ": Failed to insert one or more indices into padding map");
-      }
-      if (padding.size() != 0) {
-        applyCrsPadding(padding, verbose);
       }
       unpackAndCombineImplNonStatic(importLIDs, imports,
                                     numPacketsPerLID,
