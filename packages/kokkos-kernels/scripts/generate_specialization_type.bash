@@ -9,9 +9,16 @@ filename_master_hpp=$7      #e.g. Kokkos_Blas1_MV_impl_abs.hpp: where the actual
 NameSpace=$8                #e.g. KokkosBlas: namespace it lives in
 KokkosKernelsPath=$9        
 
+# Makes an associative array to map the full scalar name to an abbreviated form
+declare -A FilenamesAbbreviationsList=(["double"]="dbl" ["float"]="flt"
+    ["Kokkos::complex<double>"]="Kokkos::cmplx<dbl>"
+    ["Kokkos::complex<float>"]="Kokkos::cmplx<flt>"
+    ["CudaSpace"]="CudaS" ["CudaHostPinnedSpace"]="CudaHPS"
+    ["CudaUVMSpace"]="CudaUS")
+
 Macro=`echo ${FunctionExtended} | awk '{print toupper($0)}'`
 Scalar_UpperCase=`echo ${Scalar} | awk '{print toupper($0)}' | sed 's|\:\:|\_|g' | sed 's|<|_|g' | sed 's|>|_|g'`
-Scalar_FileName=`echo ${Scalar} | sed 's|\:\:|\_|g' | sed 's|<|_|g' | sed 's|>|_|g'`
+Scalar_FileName=`echo ${FilenamesAbbreviationsList[${Scalar}]} | sed 's|\:\:|\_|g' | sed 's|<|_|g' | sed 's|>|_|g'`
 Layout_UpperCase=`echo ${Layout} | awk '{print toupper($0)}'`
 ExecSpace_UpperCase=`echo ${ExecSpace} | awk '{print toupper($0)}'`
 
@@ -20,7 +27,11 @@ MemSpace_UpperCase=`echo ${MemSpace#$prefix} | awk '{print toupper($0)}'`
 
 #MemSpace_UpperCase=`echo ${MemSpace} | awk '{print toupper($0)}'`
 
-filename_cpp=generated_specializations_cpp/${Function}/${FunctionExtended}_eti_spec_inst_${Scalar_FileName}_${Layout}_${ExecSpace}_${MemSpace#$prefix}.cpp
+if [ -z ${FilenamesAbbreviationsList[${MemSpace}]} ]; then
+    filename_cpp=generated_specializations_cpp/${Function}/${FunctionExtended}_eti_spec_inst_${Scalar_FileName}_${Layout}_${ExecSpace}_${MemSpace#$prefix}.cpp
+else
+    filename_cpp=generated_specializations_cpp/${Function}/${FunctionExtended}_eti_spec_inst_${Scalar_FileName}_${Layout}_${ExecSpace}_${FilenamesAbbreviationsList[${MemSpace}]#$prefix}.cpp
+fi
 filename_spec_avail_hpp=generated_specializations_hpp/${FunctionExtended}_eti_spec_avail.hpp
 filename_spec_decl_hpp=generated_specializations_hpp/${FunctionExtended}_eti_spec_decl.hpp
 

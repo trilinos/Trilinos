@@ -683,6 +683,16 @@ int main(int argc, char *argv[])
     }
     #endif
 
+    #if defined(KOKKOS_ENABLE_THREADS)
+    if(params.use_threads)
+    {
+        if(!use_multi_mem)
+        {
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Threads, Kokkos::Threads::memory_space>(params);
+        }
+    }
+    #endif
+
     #if defined(KOKKOS_ENABLE_CUDA)
     if(params.use_cuda)
     {

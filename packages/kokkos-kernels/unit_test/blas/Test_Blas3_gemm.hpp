@@ -147,7 +147,9 @@ namespace Test {
       // eps = K * 75 * machine_eps * 7
       double diff_C_expected = 1.0*sqrt(K)*K*75*machine_eps*7;
 
-      //printf("Result: %e %e\n",diff_C_average,diff_C_expected);
+      if ( (diff_C_average >= 1.05*diff_C_expected ) ) {
+        printf("Result: %e %e\n",diff_C_average,diff_C_expected);
+      }
       EXPECT_TRUE( (diff_C_average < 1.05*diff_C_expected ) );
     }
   }

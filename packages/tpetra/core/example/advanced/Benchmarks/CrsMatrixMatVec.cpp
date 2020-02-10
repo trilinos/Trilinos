@@ -335,8 +335,18 @@ main (int argc, char* argv[])
     out << "Command-line options:" << endl;
     printCmdLineOpts (out, opts);
 
-    auto G = getTpetraGraph (comm, opts);
-    auto A = getTpetraCrsMatrix (out, G, opts);
+    auto timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: getGraph");
+    RCP<Tpetra::CrsGraph<> > G;
+    {
+      TimeMonitor timeMon (*timer);
+      G = getTpetraGraph (comm, opts);
+    }
+    timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: getCrsMatrix");
+    RCP<Tpetra::CrsMatrix<> > A;
+    {
+      TimeMonitor timeMon (*timer);
+      A = getTpetraCrsMatrix (out, G, opts);
+    }
     Tpetra::Vector<> X (A->getDomainMap ());
     Tpetra::Vector<> Y (A->getRangeMap ());
 
@@ -346,23 +356,29 @@ main (int argc, char* argv[])
     // (or even denorms) via traps.  This is very expensive, so if the
     // norms increase or decrease a lot, that might trigger the slow
     // case.
-    const SC X_val = static_cast<SC> (1.0) /
-      static_cast<SC> (opts.numEntPerRow);
-    X.putScalar (X_val);
-    Y.putScalar (0.0);
+    timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: create vectors");
+    {
+      TimeMonitor timeMon (*timer);
+      const SC X_val = static_cast<SC> (1.0) /
+        static_cast<SC> (opts.numEntPerRow);
+      X.putScalar (X_val);
+      Y.putScalar (0.0);
+    }
 
     // We first do a "warm-up" apply mainly to make sure UVM allocations
     // are already set by the time we get to the timer.
     // We make it an option to not do the warm-up in case someone wants to
     // quantify how "first pass" apply does.
+    timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: apply (warm-up)");
     if(opts.warmUp) {
+      TimeMonitor timeMon (*timer);
       A->apply (X, Y);
     }
 
-    auto timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix apply (mat-vec)");
+    timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: apply (mat-vec)");
     {
-      TimeMonitor timeMon (*timer);
       for (int trial = 0; trial < opts.numTrials; ++trial) {
+        TimeMonitor timeMon (*timer);
         A->apply (X, Y);
       }
     }

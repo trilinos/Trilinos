@@ -107,8 +107,8 @@ namespace LOCA {
       //@{
 
       /*!
-       * \brief Replace Jacobian \f$J\f$ by \f$aJ+bI\f$ where \f$I\f$ is
-       * the identity matrix and \f$p\f$ is a scalar.
+       * \brief Replace Jacobian \f$ J\f$ by \f$ aJ+bI\f$ where \f$ I\f$ is
+       * the identity matrix and \f$ p\f$ is a scalar.
        */
       /*!
        * Implementation here prints an error message and returns
@@ -199,13 +199,13 @@ namespace LOCA {
        */
       //@{
 
-      //! Is  \f$J+i\omega B\f$ valid
+      //! Is  \f$ J+i\omega B\f$ valid
       /*!
        * The implementation here always returns false.
        */
       virtual bool isComplex() const;
 
-      //! Compute \f$J+i\omega B\f$
+      //! Compute \f$ J+i\omega B\f$
       /*!
        * Implementation here prints an error message and returns
        * NOX::Abstract::Group::NotDefined.

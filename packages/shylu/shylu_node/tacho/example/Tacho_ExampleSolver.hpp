@@ -62,24 +62,24 @@ int driver (int argc, char *argv[]) {
 
   const bool detail = false;
 
-  typedef Kokkos::DefaultExecutionSpace exec_space;
-  typedef Kokkos::DefaultHostExecutionSpace host_space;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type device_type;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
 
-  typedef TaskSchedulerType<exec_space> scheduler_type;
-
-  Tacho::printExecSpaceConfiguration<exec_space>("DeviceSpace", detail);
-  Tacho::printExecSpaceConfiguration<host_space>("HostSpace",   detail);
+  typedef TaskSchedulerType<typename device_type::execution_space> scheduler_type;
+  
+  Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
+  Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace",   detail);
   printf("Scheduler Type = %s\n", scheduler_name);
 
   int r_val = 0;
   
   {
     /// crs matrix format and dense multi vector
-    //typedef Tacho::CrsMatrixBase<value_type,exec_space> CrsMatrixBaseType;
-    typedef Tacho::CrsMatrixBase<value_type,host_space> CrsMatrixBaseTypeHost;
+    //typedef Tacho::CrsMatrixBase<value_type,device_type> CrsMatrixBaseType;
+    typedef Tacho::CrsMatrixBase<value_type,host_device_type> CrsMatrixBaseTypeHost;
     
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> DenseMultiVectorType;
-    //typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space> DenseMultiVectorTypeHost;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> DenseMultiVectorType;
+    //typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_device_type> DenseMultiVectorTypeHost;
 
     /// read a spd matrix of matrix market format
     CrsMatrixBaseTypeHost A;
@@ -97,9 +97,9 @@ int driver (int argc, char *argv[]) {
     
     ///
     /// * to wrap triple pointers, declare following view types
-    ///   typedef Kokkos::View<ordinal_type*,Kokkos::DefaultHostExecutionSpace>  ordinal_type_array;
-    ///   typedef Kokkos::View<size_type*,   Kokkos::DefaultHostExecutionSpace>  size_type_array;
-    ///   typedef Kokkos::View<value_type*   ,Kokkos::DefaultHostExecutionSpace> value_type_array;
+    ///   typedef Kokkos::View<ordinal_type*,host_device_type>  ordinal_type_array;
+    ///   typedef Kokkos::View<size_type*,   host_device_type>  size_type_array;
+    ///   typedef Kokkos::View<value_type*,  host_device_type> value_type_array;
     ///
     /// * or, these can be derived from CrsMatrixBaseType
     ///   typedef typename CrsMatrixBaseType::ordinal_type_array ordinal_type_array;
@@ -123,7 +123,7 @@ int driver (int argc, char *argv[]) {
     solver.setBlocksize(mb);
     solver.setPanelsize(nb);
 
-    auto values_on_device = Kokkos::create_mirror_view(typename exec_space::memory_space(), A.Values());
+    auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
     Kokkos::deep_copy(values_on_device, A.Values());
 
     /// inputs are used for graph reordering and analysis
@@ -140,7 +140,7 @@ int driver (int argc, char *argv[]) {
       t("t", A.NumRows(), nrhs); // temp workspace (store permuted rhs)
     
     {
-      Kokkos::Random_XorShift64_Pool<exec_space> random(13718);
+      Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
       Kokkos::fill_random(b, random, value_type(1));
     }
     solver.solve(x, b, t);

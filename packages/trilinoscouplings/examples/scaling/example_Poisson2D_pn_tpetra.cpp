@@ -858,12 +858,12 @@ int main(int argc, char *argv[]) {
     dist1 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges1[0][0]), P1_elemToNode(i, opposite_edges1[0][1]));
     dist2 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[0][0]), P1_elemToNode(i, opposite_edges2[0][1]));
     dist3 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges1[1][0]), P1_elemToNode(i, opposite_edges1[1][1]));
-    dist4 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[1][1]), P1_elemToNode(i, opposite_edges2[1][1]));
+    dist4 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[1][0]), P1_elemToNode(i, opposite_edges2[1][1]));
     taper = std::max(dist1/dist2, dist2/dist1);
     taper = std::max(taper, dist3/dist4);
     taper = std::max(taper, dist4/dist3);
     local_stat_max[5] = std::max(local_stat_max[5], taper);
-    local_stat_min[5] = std::max(local_stat_min[5], taper);
+    local_stat_min[5] = std::min(local_stat_min[5], taper);
     local_stat_sum[5] += taper;
 
 

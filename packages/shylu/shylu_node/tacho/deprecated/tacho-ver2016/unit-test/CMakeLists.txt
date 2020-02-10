@@ -23,7 +23,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TESTONLYLIBS kokkos_gtest
 )
 
-IF(Kokkos_ENABLE_Serial)
+IF(Kokkos_ENABLE_SERIAL)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tacho_TestSerial
     NOEXEPREFIX
@@ -35,7 +35,7 @@ IF(Kokkos_ENABLE_Serial)
   )
 ENDIF()
 
-IF(Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_OPENMP)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tacho_TestOpenMP
     NOEXEPREFIX
@@ -47,6 +47,6 @@ IF(Kokkos_ENABLE_OpenMP)
   )
 ENDIF()
 
-IF(Kokkos_ENABLE_Cuda)
+IF(Kokkos_ENABLE_CUDA)
 
 ENDIF()

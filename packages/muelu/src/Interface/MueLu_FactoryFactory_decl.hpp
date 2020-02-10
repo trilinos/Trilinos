@@ -67,6 +67,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Exceptions.hpp"
 
+#include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BlackBoxPFactory.hpp"
@@ -223,6 +224,7 @@ namespace MueLu {
       }
 
       // TODO: see how Teko handles this (=> register factories).
+      if (factoryName == "AggregateQualityEstimateFactory")       return Build2<AggregateQualityEstimateFactory>       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AggregationExportFactory")              return Build2<AggregationExportFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AmalgamationFactory")                   return Build2<AmalgamationFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedCoarseMapFactory")               return Build2<BlockedCoarseMapFactory>               (paramList, factoryMapIn, factoryManagersIn);

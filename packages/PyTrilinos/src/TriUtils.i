@@ -69,7 +69,6 @@ example subdirectory of the PyTrilinos package:
 %enddef
 
 %module(package = "PyTrilinos",
-	autodoc = "1",
 	docstring = %triutils_docstring) TriUtils
 
 %{
@@ -106,11 +105,11 @@ example subdirectory of the PyTrilinos package:
 // Include PyTrilinos configuration
 %include "PyTrilinos_config.h"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include the TriUtils documentation
-%include "TriUtils_dox.i"    // Doxygen-generated documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
+%include "TriUtils_dox.i"
+#endif
 
 // Standard exception handling
 %include "exception.i"

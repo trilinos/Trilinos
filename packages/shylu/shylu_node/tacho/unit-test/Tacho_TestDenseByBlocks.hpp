@@ -18,11 +18,11 @@
 
 using namespace Tacho;
 
-typedef Kokkos::View<ValueType*,HostSpaceType>   value_type_array_host;
-typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array;
+typedef Kokkos::View<ValueType*,HostDeviceType>   value_type_array_host;
+typedef Kokkos::View<ValueType*,DeviceType> value_type_array;
 
-typedef TaskSchedulerType<DeviceSpaceType> scheduler_type;
-typedef TaskSchedulerType<HostSpaceType> host_scheduler_type;
+typedef TaskSchedulerType<typename DeviceType::execution_space> scheduler_type;
+typedef TaskSchedulerType<typename HostDeviceType::execution_space> host_scheduler_type;
 
 typedef ArithTraits<ValueType> ats;
 
@@ -48,7 +48,7 @@ TEST( DenseByBlocks, chol ) {
   
   // a  : referece with lapack
   // a1 : byblocks with partitioned matrices
-  Kokkos::DualView<ValueType*,DeviceSpaceType> a("a", m*m), a1("a1", m*m);
+  Kokkos::DualView<ValueType*,DeviceType> a("a", m*m), a1("a1", m*m);
   
   // reference lapack 
   {
@@ -85,7 +85,7 @@ TEST( DenseByBlocks, chol ) {
 
     a1.sync_device();
 
-    Kokkos::DualView<DenseMatrixViewType*,DeviceSpaceType> h("h", bm*bm);
+    Kokkos::DualView<DenseMatrixViewType*,DeviceType> h("h", bm*bm);
     h.modify_host();
 
     DenseMatrixOfBlocksTypeHost H;
@@ -149,7 +149,7 @@ TEST( DenseByBlocks, gemm ) {
 
   // c  : result from reference blas
   // c1 : result from partitioned matrices
-  Kokkos::DualView<ValueType*,DeviceSpaceType> a("a", m*k), b("b", k*n), c("c", m*n), c1("c1", m*n);
+  Kokkos::DualView<ValueType*,DeviceType> a("a", m*k), b("b", k*n), c("c", m*n), c1("c1", m*n);
 
 
   // reference blas
@@ -216,7 +216,7 @@ TEST( DenseByBlocks, gemm ) {
       bn = (n/mb) + (n%mb>0),
       bk = (k/mb) + (k%mb>0);
     
-    Kokkos::DualView<DenseMatrixViewType*,DeviceSpaceType> ha("ha", bm*bk), hb("hb", bk*bn), hc("hc", bm*bn);
+    Kokkos::DualView<DenseMatrixViewType*,DeviceType> ha("ha", bm*bk), hb("hb", bk*bn), hc("hc", bm*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HB, HC;
 
@@ -310,7 +310,7 @@ TEST( DenseByBlocks, herk ) {
 
   // c  : result from reference blas
   // c1 : result from byblocks
-  Kokkos::DualView<ValueType*,DeviceSpaceType> a("a", k*n), c("c", n*n), c1("c1", n*n);
+  Kokkos::DualView<ValueType*,DeviceType> a("a", k*n), c("c", n*n), c1("c1", n*n);
 
   // referece: blas herk
   {
@@ -362,7 +362,7 @@ TEST( DenseByBlocks, herk ) {
       bn = (n/mb) + (n%mb>0),
       bk = (k/mb) + (k%mb>0);
     
-    Kokkos::DualView<DenseMatrixViewType*,DeviceSpaceType> ha("ha", bk*bn), hc("hc", bn*bn);
+    Kokkos::DualView<DenseMatrixViewType*,DeviceType> ha("ha", bk*bn), hc("hc", bn*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HC;
 
@@ -392,7 +392,7 @@ TEST( DenseByBlocks, herk ) {
       num_superblock  = 4,
       superblock_size = task_queue_span/num_superblock;
     
-    scheduler_type sched(typename scheduler_type::memory_space(),
+    scheduler_type sched(typename scheduler_type::memory_space(), 
                          task_queue_span,
                          min_block_size,
                          max_block_size,
@@ -449,7 +449,7 @@ TEST( DenseByBlocks, trsm ) {
 
   // b  : result from reference blas
   // b1 : result from byblocks
-  Kokkos::DualView<ValueType*,DeviceSpaceType> a("a", m*m), b("c", m*n), b1("c1", m*n);
+  Kokkos::DualView<ValueType*,DeviceType> a("a", m*m), b("c", m*n), b1("c1", m*n);
 
   // reference blas
   {
@@ -502,7 +502,7 @@ TEST( DenseByBlocks, trsm ) {
       bm = (m/mb) + (m%mb>0),
       bn = (n/mb) + (n%mb>0);
 
-    Kokkos::DualView<DenseMatrixViewType*,DeviceSpaceType> ha("ha", bm*bm), hb("hb", bm*bn);
+    Kokkos::DualView<DenseMatrixViewType*,DeviceType> ha("ha", bm*bm), hb("hb", bm*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HB;
 
@@ -605,7 +605,7 @@ TEST( DenseByBlocks, trsm ) {
 //     num_superblock  = 1,
 //     superblock_size = span/num_superblock;
     
-//   Kokkos::MemoryPool<HostSpaceType> pool(typename HostSpaceType::memory_space(),
+//   Kokkos::MemoryPool<HostDeviceType> pool(typename HostDeviceType::memory_space(),
 //                                          span,
 //                                          min_block_size,
 //                                          max_block_size,
