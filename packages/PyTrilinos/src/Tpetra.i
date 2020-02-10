@@ -610,6 +610,7 @@ import numpy
 ////////////////////////////////////////////////////////////
 // Use %import and forward declarations to prevent SWIG warnings when
 // we %include "Tpetra_ConfigDefs.hpp"
+#pragma SWIG nowarn=305
 %import "Teuchos_config.h"
 %import "Teuchos_ConfigDefs.hpp"
 %import "Teuchos_ENull.hpp"
