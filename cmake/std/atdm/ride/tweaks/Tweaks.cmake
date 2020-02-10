@@ -2,6 +2,13 @@
 # Disables across multiple builds on 'ride'
 #
 
+IF (ATDM_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+
+  # Disable some expensive KokkosKernels tests in pure debug builds (#6464)
+  ATDM_SET_ENABLE(KokkosKernels_sparse_serial_MPI_1_DISABLE ON)
+
+ENDIF()
+
 IF (Trilinos_ENABLE_DEBUG)
 
   # Disable Tempus tests that started timing out in debug builds when
