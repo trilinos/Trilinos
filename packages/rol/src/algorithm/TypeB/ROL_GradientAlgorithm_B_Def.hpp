@@ -41,36 +41,39 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PROJECTEDGRADIENTALGORITHM_B_DEF_H
-#define ROL_PROJECTEDGRADIENTALGORITHM_B_DEF_H
+#ifndef ROL_GRADIENTALGORITHM_B_DEF_H
+#define ROL_GRADIENTALGORITHM_B_DEF_H
 
 namespace ROL {
 
 template<typename Real>
-ProjectedGradientAlgorithm_B<Real>::ProjectedGradientAlgorithm_B(ParameterList &list) {
+GradientAlgorithm_B<Real>::GradientAlgorithm_B(ParameterList &list) {
   // Set status test
   status_->reset();
   status_->add(makePtr<StatusTest<Real>>(list));
 
   // Parse parameter list
   ParameterList &lslist = list.sublist("Step").sublist("Line Search");
-  maxit_        = lslist.get("Function Evaluation Limit",                    20);
-  alpha0_       = lslist.get("Initial Step Size",                           1.0);
-  alpha0bnd_    = lslist.get("Lower Bound for Initial Step Size",          1e-4);
-  useralpha_    = lslist.get("User Defined Initial Step Size",            false);
-  usePrevAlpha_ = lslist.get("Use Previous Step Length as Initial Guess", false);
-  c1_           = lslist.get("Sufficient Decrease Tolerance",              1e-4);
-  rho_          = lslist.sublist("Line-Search Method").get("Backtracking Rate",0.5);
-  verbosity_   = list.sublist("General").get("Output Level",0);
-  printHeader_ = verbosity_ > 2;
+  maxit_        = lslist.get("Function Evaluation Limit",                        20);
+  alpha0_       = lslist.get("Initial Step Size",                               1.0);
+  alpha0bnd_    = lslist.get("Lower Bound for Initial Step Size",              1e-4);
+  useralpha_    = lslist.get("User Defined Initial Step Size",                false);
+  usePrevAlpha_ = lslist.get("Use Previous Step Length as Initial Guess",     false);
+  c1_           = lslist.get("Sufficient Decrease Tolerance",                  1e-4);
+  maxAlpha_     = lslist.get("Maximum Step Size",                           alpha0_);
+  useAdapt_     = lslist.get("Use Adaptive Step Size Selection",               true);
+  rhodec_       = lslist.sublist("Line-Search Method").get("Backtracking Rate", 0.5);
+  rhoinc_       = lslist.sublist("Line-Search Method").get("Increase Rate"    , 2.0);
+  verbosity_    = list.sublist("General").get("Output Level",                     0);
+  printHeader_  = verbosity_ > 2;
 }
 
 template<typename Real>
-void ProjectedGradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
-                                                    const Vector<Real>    &g,
-                                                    Objective<Real>       &obj,
-                                                    BoundConstraint<Real> &bnd,
-                                                    std::ostream &outStream) {
+void GradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
+                                           const Vector<Real>    &g,
+                                           Objective<Real>       &obj,
+                                           BoundConstraint<Real> &bnd,
+                                           std::ostream &outStream) {
   const Real one(1);
   if (proj_ == nullPtr) {
     proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(x),makePtrFromRef(bnd));
@@ -103,26 +106,28 @@ void ProjectedGradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
     // Minimize quadratic interpolate to compute new alpha
     Real gs    = state_->stepVec->dot(state_->gradientVec->dual());
     Real denom = (fnew - state_->value - gs);
+    bool flag  = maxAlpha_ == alpha0_;
     alpha0_ = ((denom > ROL_EPSILON<Real>()) ? -half*gs/denom : alpha0bnd_);
-    alpha0_ = ((alpha0_ > alpha0bnd_) ? alpha0_ : 10.0*one);
+    alpha0_ = ((alpha0_ > alpha0bnd_) ? alpha0_ : one);
+    if (flag) maxAlpha_ = alpha0_;
   }
   state_->searchSize = alpha0_;
 }
 
 template<typename Real>
-std::vector<std::string> ProjectedGradientAlgorithm_B<Real>::run(
-                              Vector<Real>          &x,
-                              const Vector<Real>    &g, 
-                              Objective<Real>       &obj,
-                              BoundConstraint<Real> &bnd,
-                              std::ostream          &outStream ) {
+std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &x,
+                                                         const Vector<Real>    &g, 
+                                                         Objective<Real>       &obj,
+                                                         BoundConstraint<Real> &bnd,
+                                                         std::ostream          &outStream ) {
   const Real one(1);
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
   Ptr<Vector<Real>> s = x.clone();
-  Real ftrial(0), gs(0), tol(std::sqrt(ROL_EPSILON<Real>()));
+  Real ftrial(0), gs(0), ftrialP(0), alphaP(0), tol(std::sqrt(ROL_EPSILON<Real>()));
   int ls_nfval = 0;
+  bool incAlpha = false;
 
   // Output
   output.push_back(print(true));
@@ -132,7 +137,7 @@ std::vector<std::string> ProjectedGradientAlgorithm_B<Real>::run(
   state_->stepVec->set(state_->gradientVec->dual());
   while (status_->check(*state_)) {
     // Perform backtracking line search 
-    if (!usePrevAlpha_) state_->searchSize = alpha0_;
+    if (!usePrevAlpha_ && !useAdapt_) state_->searchSize = alpha0_;
     state_->iterateVec->set(x);
     state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
     proj_->project(*state_->iterateVec);
@@ -142,34 +147,75 @@ std::vector<std::string> ProjectedGradientAlgorithm_B<Real>::run(
     s->set(*state_->iterateVec);
     s->axpy(-one,x);
     gs = s->dot(*state_->stepVec);
+    incAlpha = (state_->value - ftrial >= -c1_*gs);
     if (verbosity_ > 1) {
-      outStream << "  In ProjectedGradientAlgorithm_B: Backtracking" << std::endl;
-      outStream << "    Step size:                        " << state_->searchSize << std::endl;
-      outStream << "    Trial objective value:            " << ftrial << std::endl;
+      outStream << "  In GradientAlgorithm_B: Backtracking" << std::endl;
+      outStream << "    Step size:                        " << state_->searchSize   << std::endl;
+      outStream << "    Trial objective value:            " << ftrial               << std::endl;
       outStream << "    Computed reduction:               " << state_->value-ftrial << std::endl;
-      outStream << "    Dot product of gradient and step: " << gs << std::endl;
-      outStream << "    Sufficient decrease bound:        " << -gs*c1_ << std::endl;
-      outStream << "    Number of function evaluations:   " << ls_nfval << std::endl;
+      outStream << "    Dot product of gradient and step: " << gs                   << std::endl;
+      outStream << "    Sufficient decrease bound:        " << -gs*c1_              << std::endl;
+      outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
+      outStream << "    Increase alpha?:                  " << incAlpha             << std::endl;
     }
-    while ( state_->value - ftrial < -c1_*gs && ls_nfval < maxit_ ) {
-      state_->searchSize *= rho_;
-      state_->iterateVec->set(x);
-      state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
-      proj_->project(*state_->iterateVec);
-      obj.update(*state_->iterateVec,false);
-      ftrial = obj.value(*state_->iterateVec,tol);
-      ls_nfval++;
-      s->set(*state_->iterateVec);
-      s->axpy(-one,x);
-      gs = s->dot(*state_->stepVec);
-      if (verbosity_ > 1) {
-        outStream << std::endl;
-        outStream << "    Step size:                        " << state_->searchSize << std::endl;
-        outStream << "    Trial objective value:            " << ftrial << std::endl;
-        outStream << "    Computed reduction:               " << state_->value-ftrial << std::endl;
-        outStream << "    Dot product of gradient and step: " << gs << std::endl;
-        outStream << "    Sufficient decrease bound:        " << -gs*c1_ << std::endl;
-        outStream << "    Number of function evaluations:   " << ls_nfval << std::endl;
+    if (incAlpha && useAdapt_) {
+      while ( state_->value - ftrial >= -c1_*gs
+           && state_->searchSize < maxAlpha_
+           && ls_nfval < maxit_ ) {
+        alphaP  = state_->searchSize;
+        ftrialP = ftrial;
+        state_->searchSize *= rhoinc_;
+        state_->iterateVec->set(x);
+        state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
+        proj_->project(*state_->iterateVec);
+        obj.update(*state_->iterateVec,false);
+        ftrial = obj.value(*state_->iterateVec,tol);
+        ls_nfval++;
+        s->set(*state_->iterateVec);
+        s->axpy(-one,x);
+        gs = s->dot(*state_->stepVec);
+        if (verbosity_ > 1) {
+          outStream << std::endl;
+          outStream << "    Step size:                        " << state_->searchSize   << std::endl;
+          outStream << "    Trial objective value:            " << ftrial               << std::endl;
+          outStream << "    Computed reduction:               " << state_->value-ftrial << std::endl;
+          outStream << "    Dot product of gradient and step: " << gs                   << std::endl;
+          outStream << "    Sufficient decrease bound:        " << -gs*c1_              << std::endl;
+          outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
+        }
+      }
+      if (state_->value - ftrial < -c1_*gs) {
+        ftrial = ftrialP;
+        state_->searchSize = alphaP;
+        state_->iterateVec->set(x);
+        state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
+        proj_->project(*state_->iterateVec);
+        obj.update(*state_->iterateVec,false);
+        s->set(*state_->iterateVec);
+        s->axpy(-one,x);
+      }
+    }
+    else {
+      while ( state_->value - ftrial < -c1_*gs && ls_nfval < maxit_ ) {
+        state_->searchSize *= rhodec_;
+        state_->iterateVec->set(x);
+        state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
+        proj_->project(*state_->iterateVec);
+        obj.update(*state_->iterateVec,false);
+        ftrial = obj.value(*state_->iterateVec,tol);
+        ls_nfval++;
+        s->set(*state_->iterateVec);
+        s->axpy(-one,x);
+        gs = s->dot(*state_->stepVec);
+        if (verbosity_ > 1) {
+          outStream << std::endl;
+          outStream << "    Step size:                        " << state_->searchSize   << std::endl;
+          outStream << "    Trial objective value:            " << ftrial               << std::endl;
+          outStream << "    Computed reduction:               " << state_->value-ftrial << std::endl;
+          outStream << "    Dot product of gradient and step: " << gs                   << std::endl;
+          outStream << "    Sufficient decrease bound:        " << -gs*c1_              << std::endl;
+          outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
+        }
       }
     }
     state_->nfval += ls_nfval;
@@ -207,7 +253,7 @@ std::vector<std::string> ProjectedGradientAlgorithm_B<Real>::run(
 }
 
 template<typename Real>
-std::string ProjectedGradientAlgorithm_B<Real>::printHeader( void ) const {
+std::string GradientAlgorithm_B<Real>::printHeader( void ) const {
   std::stringstream hist;
   if (verbosity_ > 1) {
     hist << std::string(109,'-') << std::endl;
@@ -236,14 +282,14 @@ std::string ProjectedGradientAlgorithm_B<Real>::printHeader( void ) const {
 }
 
 template<typename Real>
-std::string ProjectedGradientAlgorithm_B<Real>::printName( void ) const {
+std::string GradientAlgorithm_B<Real>::printName( void ) const {
   std::stringstream hist;
   hist << std::endl << "Projected Gradient Descent with Backtracking Line Search" << std::endl;
   return hist.str();
 }
 
 template<typename Real>
-std::string ProjectedGradientAlgorithm_B<Real>::print( const bool print_header ) const {
+std::string GradientAlgorithm_B<Real>::print( const bool print_header ) const {
   std::stringstream hist;
   hist << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) {

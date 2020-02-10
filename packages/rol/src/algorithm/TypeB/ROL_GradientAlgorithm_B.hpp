@@ -41,23 +41,23 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PROJECTEDGRADIENTALGORITHM_B_H
-#define ROL_PROJECTEDGRADIENTALGORITHM_B_H
+#ifndef ROL_GRADIENTALGORITHM_B_H
+#define ROL_GRADIENTALGORITHM_B_H
 
 #include "ROL_Algorithm_B.hpp"
 
-/** \class ROL::ProjectedGradientAlgorithm_B
+/** \class ROL::GradientAlgorithm_B
     \brief Provides an interface to run the projected gradient algorithm.
 */
 
 namespace ROL {
 
 template<typename Real>
-class ProjectedGradientAlgorithm_B : public Algorithm_B<Real> {
+class GradientAlgorithm_B : public Algorithm_B<Real> {
 private:
   int maxit_;
-  Real alpha0_, alpha0bnd_, rho_, c1_;
-  bool useralpha_, usePrevAlpha_;
+  Real alpha0_, alpha0bnd_, rhodec_, rhoinc_, c1_, maxAlpha_;
+  bool useralpha_, usePrevAlpha_, useAdapt_;
   int verbosity_;
   bool printHeader_;
 
@@ -73,7 +73,7 @@ private:
 
 public:
 
-  ProjectedGradientAlgorithm_B(ParameterList &list);
+  GradientAlgorithm_B(ParameterList &list);
 
   using Algorithm_B<Real>::run;
   std::vector<std::string> run( Vector<Real>          &x,
@@ -88,10 +88,10 @@ public:
 
   std::string print( const bool print_header = false ) const override;
 
-}; // class ROL::ProjectedGradientAlgorithm_B
+}; // class ROL::GradientAlgorithm_B
 
 } // namespace ROL
 
-#include "ROL_ProjectedGradientAlgorithm_B_Def.hpp"
+#include "ROL_GradientAlgorithm_B_Def.hpp"
 
 #endif
