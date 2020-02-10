@@ -25,8 +25,7 @@
 #include "stk_mesh/base/FieldBase.hpp"               // for field_data
 #include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_topology/topology.hpp"
-#include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg
+#include "stk_util/util/ReportHandler.hpp"           // for ThrowRequireMsg
 
 namespace stk { namespace mesh { class Part; } }
 // clang-format on

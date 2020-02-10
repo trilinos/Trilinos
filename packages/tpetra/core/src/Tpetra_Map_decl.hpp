@@ -104,7 +104,7 @@ namespace Tpetra {
   ///   If the default <tt>GlobalOrdinal</tt> is <tt>int</tt>, then
   ///   the <i>global</i> number of rows or columns in the matrix may
   ///   be no more than \c INT_MAX, which for typical 32-bit \c int is
-  ///   \f$2^{31} - 1\f$ (about two billion).  If you want to solve
+  ///   \f$ 2^{31} - 1\f$ (about two billion).  If you want to solve
   ///   larger problems, you must use a 64-bit integer type here.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
@@ -174,7 +174,7 @@ namespace Tpetra {
   /// have different types.  In Epetra, local and global indices both
   /// have type \c int.  In Tpetra, you get to pick the type of each.
   /// For example, you can use a 64-bit integer \c GlobalOrdinal type
-  /// to solve problems with more than \f$2^{31}\f$ unknowns, but a
+  /// to solve problems with more than \f$ 2^{31}\f$ unknowns, but a
   /// 32-bit integer \c LocalOrdinal type to save bandwidth in sparse
   /// matrix-vector multiply.
   ///
@@ -184,7 +184,7 @@ namespace Tpetra {
   /// over the processes in its communicator, such that each process
   /// gets a contiguous interval of zero or more of those global
   /// indices, with the indices owned by a process p strictly greater
-  /// than those owned by process q if \f$p > q\f$.  Formally, we call
+  /// than those owned by process q if \f$ p > q\f$.  Formally, we call
   /// a Map contiguous when all of the following hold:
   /// <ol>
   /// <li>the set of global indices (over all processes) forms an
@@ -193,9 +193,9 @@ namespace Tpetra {
   ///   process in the Map's communicator, </li>
   /// <li>the (ordered) list of global indices on each process p in
   ///   the Map's communicator forms a contiguous interval, and </li>
-  /// <li>if process p owns a global index \f$g_p\f$ and process q
-  ///   owns a global index \f$g_q\f$, and if \f$p > q\f$, then
-  ///   \f$g_p > g_q\f$. </li>
+  /// <li>if process p owns a global index \f$ g_p\f$ and process q
+  ///   owns a global index \f$ g_q\f$, and if \f$ p > q\f$, then
+  ///   \f$ g_p > g_q\f$. </li>
   /// </ol>
   /// Different processes may own different numbers of global indices.
   /// We call a Map <i>uniform</i> if it is contiguous, <i>and</i> if

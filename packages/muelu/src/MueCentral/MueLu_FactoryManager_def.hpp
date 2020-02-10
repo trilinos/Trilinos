@@ -53,6 +53,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
@@ -190,6 +191,7 @@ namespace MueLu {
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       if (varName == "UnAmalgamationInfo")              return MUELU_KOKKOS_FACTORY(varName, AmalgamationFactory, AmalgamationFactory_kokkos);
       if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
+      if (varName == "AggregateQualities")       return SetAndReturnDefaultFactory(varName, rcp(new AggregateQualityEstimateFactory()));
       if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");

@@ -32,7 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <math.h>
 #include <cmath>
 #include <ctime>
 #include <math.h>       //Needed for erf and erfc on solaris.

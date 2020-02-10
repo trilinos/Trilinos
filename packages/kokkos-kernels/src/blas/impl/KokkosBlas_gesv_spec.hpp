@@ -92,14 +92,15 @@ namespace Impl {
 
 template<class AMatrix,
          class BXMV,
+         class IPIVV,
          bool tpl_spec_avail = gesv_tpl_spec_avail<AMatrix, BXMV>::value,
          bool eti_spec_avail = gesv_eti_spec_avail<AMatrix, BXMV>::value
         >
 struct GESV{
   static void
-  gesv (const char pivot[],
-        AMatrix& A,
-        BXMV& B);
+  gesv (AMatrix& A,
+        BXMV& B,
+        IPIVV& IPIV);
 };
 
 
@@ -107,12 +108,13 @@ struct GESV{
 //! Full specialization of gesv for multi vectors.
 // Unification layer
 template<class AMatrix,
-         class BXMV>
-struct GESV< AMatrix, BXMV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
+         class BXMV,
+         class IPIVV>
+struct GESV<AMatrix, BXMV, IPIVV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
   static void
-  gesv (const char pivot[],
-        const AMatrix& A,
-        const BXMV& B)
+  gesv (const AMatrix& A,
+        const BXMV& B,
+        const IPIVV& IPIV)
   {
    //NOTE: Might add the implementation of KokkosBlas::gesv later
   }
@@ -137,6 +139,9 @@ struct GESV< AMatrix, BXMV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
                       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,  \
                                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                      Kokkos::View<int *, LAYOUT_TYPE,  \
+                                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                       false, true >; \
 
 #define KOKKOSBLAS_GESV_ETI_SPEC_INST( SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
@@ -146,6 +151,9 @@ struct GESV< AMatrix, BXMV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,  \
                                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                      Kokkos::View<int *, LAYOUT_TYPE,  \
+                                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                       false, true > ;
 

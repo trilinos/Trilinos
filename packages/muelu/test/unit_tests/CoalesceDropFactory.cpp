@@ -262,7 +262,6 @@ namespace MueLuTests {
     fineLevel.Request("DofsPerNode", &dropFact);
 
     dropFact.Build(fineLevel);
-
     fineLevel.print(out);
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);

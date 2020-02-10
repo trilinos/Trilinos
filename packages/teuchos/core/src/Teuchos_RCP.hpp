@@ -600,14 +600,6 @@ void RCP<T>::reset(T2* p, bool has_ownership_in)
   *this = rcp(p, has_ownership_in);
 }
 
-
-template<class T>
-inline
-int RCP<T>::count() const
-{
-  return node_.count();
-}
-
 }  // end namespace Teuchos
 
 

@@ -307,7 +307,7 @@ struct HashmapAccumulator
       value_type value,
 
       size_type *used_size_,
-      const size_type max_value_size_,
+      const size_type /* max_value_size_ */,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
@@ -344,7 +344,7 @@ struct HashmapAccumulator
       key_type key,
 
       size_type *used_size_,
-      const size_type max_value_size_,
+      const size_type /* max_value_size_ */,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
@@ -379,8 +379,8 @@ struct HashmapAccumulator
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeAdd_TrackHashes (
-      const team_member_t & teamMember,
-      const int vector_size,
+      const team_member_t & /* teamMember */,
+      const int /* vector_size */,
 
       size_type &hash,
       const key_type key,
@@ -448,8 +448,8 @@ struct HashmapAccumulator
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeAdd (
-      const team_member_t & teamMember,
-      const int vector_size,
+      const team_member_t & /* teamMember */,
+      const int /* vector_size */,
       size_type &hash,
       const key_type key,
       const value_type value,
@@ -505,8 +505,8 @@ struct HashmapAccumulator
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash (
-      const team_member_t & teamMember,
-      const int &vector_size,
+      const team_member_t & /* teamMember */,
+      const int &/* vector_size */,
 
       const size_type &hash,
       const key_type &key,
@@ -563,8 +563,8 @@ struct HashmapAccumulator
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeOr (
-      const team_member_t & teamMember,
-      const int &vector_size,
+      const team_member_t & /* teamMember */,
+      const int &/* vector_size */,
 
       const size_type &hash,
       const key_type &key,
@@ -624,8 +624,8 @@ struct HashmapAccumulator
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeOr_TrackHashes (
-      const team_member_t & teamMember,
-      const int &vector_size,
+      const team_member_t & /* teamMember */,
+      const int &/* vector_size */,
 
       const size_type &hash,
       const key_type &key,
@@ -684,8 +684,8 @@ struct HashmapAccumulator
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_TrackHashes (
-      const team_member_t & teamMember,
-      const int &vector_size,
+      const team_member_t & /* teamMember */,
+      const int &/* vector_size */,
 
       const size_type &hash,
       const key_type &key,

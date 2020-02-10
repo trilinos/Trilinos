@@ -107,7 +107,7 @@ namespace LOCA {
      *
      * \f[ g(x, \lambda) = \lambda F(x) + (1.0 - \lambda)(x - a)(S) \f]
      *
-     * where \f$x\f$ is the solution vector, \f$ \lambda \f$ is an artificial
+     * where \f$ x\f$ is the solution vector, \f$ \lambda \f$ is an artificial
      * parameter, \f$ F(x) \f$ is the set of nonlinear equations the user
      * supplies, \f$ g(x) \f$ is the corresponding set of
      * homotopy equations that LOCA will solve, \f$ a \f$ is a random
@@ -142,7 +142,7 @@ namespace LOCA {
        * \param global_data [in] Global data object
        * \param topParams [in] Parsed top-level parameter list.
        * \param hParams [in] Homotopy parameters
-       * \param grp [in] Group representing \f$f\f$.
+       * \param grp [in] Group representing \f$ f\f$.
        */
       DeflatedGroup(
        const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -329,7 +329,7 @@ namespace LOCA {
       virtual double getParam(std::string paramID) const;
 
       /*!
-       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$ p\f$
        * indexed by paramIDs.  The first column of \em dfdp holds F,
        * which is valid if \em isValidF is true.  Otherwise F must be
        * computed.
@@ -475,7 +475,7 @@ namespace LOCA {
       //! Pitchfork parameter list
       Teuchos::RCP<Teuchos::ParameterList> homotopyParams;
 
-      //! Pointer to base group that defines \f$F\f$
+      //! Pointer to base group that defines \f$ F\f$
       Teuchos::RCP<LOCA::Homotopy::AbstractGroup> grpPtr;
 
       //! Pointer to base group as a bordered group

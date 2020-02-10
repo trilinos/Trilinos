@@ -52,7 +52,7 @@
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include<KokkosKernels_IOUtils.hpp>
+#include <KokkosKernels_IOUtils.hpp>
 
 #include "KokkosSparse_sptrsv.hpp"
 
@@ -344,7 +344,7 @@ void run_test_sptrsv() {
 
   typedef Kokkos::View< size_type*, device >  RowMapType;
   typedef Kokkos::View< lno_t*, device >      EntriesType;
-  typedef Kokkos::View< scalar_t*, device >     ValuesType;
+  typedef Kokkos::View< scalar_t*, device >   ValuesType;
 
   // Lower tri
   {
@@ -391,10 +391,6 @@ void run_test_sptrsv() {
     typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
-    KernelHandle kh;
-    bool is_lower_tri = true;
-    kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
-    
     // Create known_lhs, generate rhs, then solve for lhs to compare to known_lhs
     ValuesType known_lhs("known_lhs", nrows);
     // Create known solution lhs set to all 1's
@@ -410,60 +406,107 @@ void run_test_sptrsv() {
     crsMat_t triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
     KokkosSparse::spmv( "N", ONE, triMtx, known_lhs, ZERO, rhs);
 
-    sptrsv_symbolic( &kh, row_map, entries );
-    Kokkos::fence();
+    {
+      KernelHandle kh;
+      bool is_lower_tri = true;
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
 
-    kh.get_sptrsv_handle()->print_algorithm();
-    sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
-    Kokkos::fence();
+      sptrsv_symbolic( &kh, row_map, entries );
+      Kokkos::fence();
 
-    scalar_t sum = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-    if ( sum != lhs.extent(0) ) {
-      std::cout << "Lower Tri Solve FAILURE" << std::endl;
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Lower Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+
+      Kokkos::deep_copy(lhs, 0);
+      kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Lower Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+
+      //FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
+      /*
+      Kokkos::deep_copy(lhs, 0);
+      kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Lower Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      */
+
+      kh.destroy_sptrsv_handle();
     }
-    else {
-      std::cout << "Lower Tri Solve SUCCESS!" << std::endl;
+
+    {
+      Kokkos::deep_copy(lhs, 0);
+      KernelHandle kh;
+      bool is_lower_tri = true;
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows, is_lower_tri);
+      auto chain_threshold = 1;
+      kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
+
+      sptrsv_symbolic( &kh, row_map, entries );
+      Kokkos::fence();
+
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Lower Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+
+      kh.destroy_sptrsv_handle();
     }
-    EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
 
-    Kokkos::deep_copy(lhs, 0);
-    kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
-    kh.get_sptrsv_handle()->print_algorithm();
-    sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
-    Kokkos::fence();
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value)
+    {
+      Kokkos::deep_copy(lhs, 0);
+      KernelHandle kh;
+      bool is_lower_tri = true;
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows, is_lower_tri);
 
-    sum = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-    if ( sum != lhs.extent(0) ) {
-      std::cout << "Lower Tri Solve FAILURE" << std::endl;
+      sptrsv_symbolic(&kh, row_map, entries, values);
+      Kokkos::fence();
+
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Lower Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+
+      kh.destroy_sptrsv_handle();
     }
-    else {
-      std::cout << "Lower Tri Solve SUCCESS!" << std::endl;
-    }
-    EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
-
-/*
-//FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
-    Kokkos::deep_copy(lhs, 0);
-    kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
-    kh.get_sptrsv_handle()->print_algorithm();
-    sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
-    Kokkos::fence();
-
-    sum = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-    if ( sum != lhs.extent(0) ) {
-      std::cout << "Lower Tri Solve FAILURE" << std::endl;
-    }
-    else {
-      std::cout << "Lower Tri Solve SUCCESS!" << std::endl;
-    }
-    EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
-*/
-
-
-    kh.destroy_sptrsv_handle();
+#endif
   }
   // Upper tri
   {
@@ -510,10 +553,6 @@ void run_test_sptrsv() {
     typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
-    KernelHandle kh;
-    bool is_lower_tri = false;
-    kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
-    
     // Create known_lhs, generate rhs, then solve for lhs to compare to known_lhs
     ValuesType known_lhs("known_lhs", nrows);
     // Create known solution lhs set to all 1's
@@ -529,60 +568,108 @@ void run_test_sptrsv() {
     crsMat_t triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
     KokkosSparse::spmv( "N", ONE, triMtx, known_lhs, ZERO, rhs);
 
-    sptrsv_symbolic( &kh, row_map, entries );
-    Kokkos::fence();
+    {
+      KernelHandle kh;
+      bool is_lower_tri = false;
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
 
-    kh.get_sptrsv_handle()->print_algorithm();
-    sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
-    Kokkos::fence();
+      sptrsv_symbolic( &kh, row_map, entries );
+      Kokkos::fence();
 
-    scalar_t sum = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-    if ( sum != lhs.extent(0) ) {
-      std::cout << "Upper Tri Solve FAILURE" << std::endl;
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Upper Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+
+      Kokkos::deep_copy(lhs, 0);
+      kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Upper Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+
+      //FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
+      /*
+      Kokkos::deep_copy(lhs, 0);
+      kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Upper Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      */
+
+
+      kh.destroy_sptrsv_handle();
     }
-    else {
-      std::cout << "Upper Tri Solve SUCCESS!" << std::endl;
+
+    {
+      Kokkos::deep_copy(lhs, 0);
+      KernelHandle kh;
+      bool is_lower_tri = false;
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows, is_lower_tri);
+      auto chain_threshold = 1;
+      kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
+
+      sptrsv_symbolic( &kh, row_map, entries );
+      Kokkos::fence();
+
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Upper Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+
+      kh.destroy_sptrsv_handle();
     }
-    EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
 
-    Kokkos::deep_copy(lhs, 0);
-    kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
-    kh.get_sptrsv_handle()->print_algorithm();
-    sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
-    Kokkos::fence();
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value)
+    {
+      Kokkos::deep_copy(lhs, 0);
+      KernelHandle kh;
+      bool is_lower_tri = false;
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows, is_lower_tri);
 
-    sum = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-    if ( sum != lhs.extent(0) ) {
-      std::cout << "Upper Tri Solve FAILURE" << std::endl;
+      sptrsv_symbolic(&kh, row_map, entries, values);
+      Kokkos::fence();
+
+      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      Kokkos::fence();
+
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Upper Tri Solve FAILURE" << std::endl;
+        kh.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+
+      kh.destroy_sptrsv_handle();
     }
-    else {
-      std::cout << "Upper Tri Solve SUCCESS!" << std::endl;
-    }
-    EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
-
-/*
-//FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
-    Kokkos::deep_copy(lhs, 0);
-    kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
-    kh.get_sptrsv_handle()->print_algorithm();
-    sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
-    Kokkos::fence();
-
-    sum = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-    if ( sum != lhs.extent(0) ) {
-      std::cout << "Upper Tri Solve FAILURE" << std::endl;
-    }
-    else {
-      std::cout << "Upper Tri Solve SUCCESS!" << std::endl;
-    }
-    EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
-*/
-
-
-    kh.destroy_sptrsv_handle();
+#endif
   }
 
 }

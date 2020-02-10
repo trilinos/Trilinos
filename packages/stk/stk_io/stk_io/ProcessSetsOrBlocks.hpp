@@ -266,6 +266,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   }
 }
 
+void process_nodesets_without_distribution_factors(Ioss::Region &region, stk::mesh::MetaData &meta);
 void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta);
 template <typename INT>
 void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)

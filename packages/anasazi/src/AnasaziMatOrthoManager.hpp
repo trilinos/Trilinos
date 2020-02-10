@@ -117,7 +117,7 @@ namespace Anasazi {
      * \f[
      *    \langle x, y \rangle = x^H M y
      * \f]
-     * Optionally allows the provision of \f$M y\f$ and/or \f$M x\f$. See OrthoManager::innerProd() for more details.
+     * Optionally allows the provision of \f$ M y\f$ and/or \f$ M x\f$. See OrthoManager::innerProd() for more details.
      *
      */
     void innerProdMat(
@@ -133,7 +133,7 @@ namespace Anasazi {
      *  \f[
      *     \|x\|_M = \sqrt{x^H M y}
      *  \f]
-     *  Optionally allows the provision of \f$M x\f$. See OrthoManager::norm() for more details.
+     *  Optionally allows the provision of \f$ M x\f$. See OrthoManager::norm() for more details.
      */
     void normMat(
           const MV& X,
@@ -143,7 +143,7 @@ namespace Anasazi {
 
     /*! \brief Provides matrix-based projection method.
      *
-     * This method optionally allows the provision of \f$M X\f$ and/or the \f$M Q[i]\f$. See OrthoManager::project() for more details.
+     * This method optionally allows the provision of \f$ M X\f$ and/or the \f$ M Q[i]\f$. See OrthoManager::project() for more details.
      @param X, Q, C [in/out] As in OrthoManager::project()
 
      @param MX [in/out] If specified by the user, on input \c MX is required to be the image of \c X under the operator getOp().
@@ -163,7 +163,7 @@ namespace Anasazi {
 
     /*! \brief Provides matrix-based orthonormalization method.
      *
-     * This method optionally allows the provision of \f$M X\f$. See orthoManager::normalize() for more details.
+     * This method optionally allows the provision of \f$ M X\f$. See orthoManager::normalize() for more details.
      @param X, B [in/out] As in OrthoManager::normalize()
 
      @param MX [in/out] If specified by the user, on input \c MX is required to be the image of \c X under the operator getOp().
@@ -182,7 +182,7 @@ namespace Anasazi {
 
     /*! \brief Provides matrix-based projection/orthonormalization method.
      *
-     * This method optionally allows the provision of \f$M X\f$ and/or the \f$M Q[i]\f$. See orthoManager::projectAndNormalize() for more details.
+     * This method optionally allows the provision of \f$ M X\f$ and/or the \f$ M Q[i]\f$. See orthoManager::projectAndNormalize() for more details.
      @param X, Q, C, B [in/out] As in OrthoManager::projectAndNormalize()
 
      @param MX [in/out] If specified by the user, on input \c MX is required to be the image of \c X under the operator getOp().

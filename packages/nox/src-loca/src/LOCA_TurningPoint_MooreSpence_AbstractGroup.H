@@ -77,7 +77,7 @@ namespace LOCA {
        *
        * This class is derived from the LOCA::MultiContinuation::AbstractGroup
        * and declares several pure virtual methods compute various
-       * derivatives of \f$Jn\f$ for a given \f$n\f$.  Default implementations
+       * derivatives of \f$ Jn\f$ for a given \f$ n\f$.  Default implementations
        * for the derivatives using finite differencing are implemented in the
        * LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup.
        */
@@ -110,7 +110,7 @@ namespace LOCA {
     /*!
      * \brief Computes the directional derivative
      * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction
-     * \f$a\f$.
+     * \f$ a\f$.
      */
     virtual NOX::Abstract::Group::ReturnType
     computeDJnDxaMulti(const NOX::Abstract::Vector& nullVector,
@@ -120,7 +120,7 @@ namespace LOCA {
     /*!
      * \brief Computes the directional derivative
      * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction
-     * \f$a\f$.
+     * \f$ a\f$.
      */
     virtual NOX::Abstract::Group::ReturnType
     computeDJnDxaMulti(const NOX::Abstract::Vector& nullVector,
