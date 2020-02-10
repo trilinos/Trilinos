@@ -8,7 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import os
-sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 import unittest
@@ -26,6 +26,8 @@ except ImportError:  # pragma nocover
 from argparse import Namespace
 from subprocess import CalledProcessError
 
+if 'MODULESHOME' not in os.environ: # for things like our macs
+    os.environ['MODULESHOME'] = os.getcwd()
 import PullRequestLinuxDriverTest
 
 

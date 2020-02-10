@@ -145,7 +145,7 @@ struct MV_Nrm2w_Right_FunctorVector
   typename XMV::const_type m_x, m_w;
   bool m_take_sqrt;
 
-  MV_Nrm2w_Right_FunctorVector (const XMV& x, const XMV& w, const bool& take_sqrt) :
+  MV_Nrm2w_Right_FunctorVector (const XMV& x, const XMV& /* w */, const bool& take_sqrt) :
     value_count (x.extent(1)), m_x (x), m_w (x), m_take_sqrt(take_sqrt)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value,

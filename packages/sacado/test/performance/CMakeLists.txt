@@ -3,7 +3,7 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURC
 
 # Don't build these tests when Cuda is enabled -- they take forever to compile
 # using the nvcc wrapper
-IF (${PACKAGE_NAME}_ENABLE_TeuchosCore AND NOT Kokkos_ENABLE_Cuda)
+IF (${PACKAGE_NAME}_ENABLE_TeuchosCore AND NOT Kokkos_ENABLE_CUDA)
 
   TRIBITS_ADD_EXECUTABLE(
     fad_expr_depth

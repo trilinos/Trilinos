@@ -68,8 +68,8 @@ namespace Anasazi {
 /// This example shows how to define a custom StatusTest so that
 /// Anasazi's solver LOBPCG converges correctly with spectrum folding.
 /// Without a custom status test, Anasazi would compute the residual
-/// as \f$R = A^2 X - X \Sigma^2\f$.  The custom status test makes
-/// Anasazi use the residual \f$R = A X - X \Sigma\f$ instead.
+/// as \f$ R = A^2 X - X \Sigma^2\f$.  The custom status test makes
+/// Anasazi use the residual \f$ R = A X - X \Sigma\f$ instead.
 
 template <class ScalarType, class MV, class OP>
 class StatusTest {

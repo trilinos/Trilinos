@@ -165,7 +165,7 @@ public:
 
      Computes
      \f[ v = J^{-1} u, \f]
-     where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is
+     where \f$ J\f$ is the Jacobian, \f$ u\f$ is the input vector, and \f$ v\f$ is
 the result vector.
 
      The "Tolerance" parameter specifies that the
@@ -176,10 +176,11 @@ the result vector.
 
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-     <li> NOX::Abstract::Group::BadDependency - If \f$J\f$ has not been computed     <li> NOX::Abstract::Group::NotConverged - If the linear solve fails to satisfy the "Tolerance"
-          specified in \c params
+     <li> NOX::Abstract::Group::NotDefined - Returned by default
+          implementation in NOX::Abstract::Group
+     <li> NOX::Abstract::Group::BadDependency - If \f$ J\f$ has not been computed
+     <li> NOX::Abstract::Group::NotConverged - If the linear solve
+          fails to satisfy the "Tolerance" specified in \c params
      <li> NOX::Abstract::Group::Failed - If the computation fails
      <li> NOX::Abstract::Group::Ok - Otherwise
      </ul>

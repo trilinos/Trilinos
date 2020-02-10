@@ -669,11 +669,19 @@ TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
 
 //Note, these test segfault with the stk::search::SearchMethod::MORTON_LINEARIZED_BVH
 //I'm not sure who uses that search method or it is supposed to be production ready
+#ifdef INSTANTIATE_TEST_SUITE_P
+INSTANTIATE_TEST_SUITE_P(GeometricTransferTest, GeometricTransferTest,
+    ::testing::Values(stk::search::SearchMethod::KDTREE));
+
+INSTANTIATE_TEST_SUITE_P(ReducedDependencyGeometricTransferTest, ReducedDependencyGeometricTransferTest,
+    ::testing::Values(stk::search::SearchMethod::KDTREE));
+#else
 INSTANTIATE_TEST_CASE_P(GeometricTransferTest, GeometricTransferTest,
     ::testing::Values(stk::search::SearchMethod::KDTREE),);
 
 INSTANTIATE_TEST_CASE_P(ReducedDependencyGeometricTransferTest, ReducedDependencyGeometricTransferTest,
     ::testing::Values(stk::search::SearchMethod::KDTREE),);
+#endif
 
 }
 }

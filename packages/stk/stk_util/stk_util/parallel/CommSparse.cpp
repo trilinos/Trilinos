@@ -69,6 +69,10 @@ void communicate_any( ParallelMachine p_comm ,
   const unsigned num_recv = recv_procs.size();
   const unsigned num_send = send_procs.size();
 
+  if (num_recv==0 && num_send==0) {
+    return;
+  }
+
   //------------------------------
   // Post receives for specific processors with specific sizes
 
@@ -196,7 +200,7 @@ void CommSparse::allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsign
   }
 }
 
-void CommSparse::allocate_buffers()
+bool CommSparse::allocate_buffers()
 {
   m_send.resize(m_size);
   m_recv.resize(m_size);
@@ -216,6 +220,7 @@ void CommSparse::allocate_buffers()
       m_recv_procs = m_send_procs;
     }
   }
+  return ((m_send_procs.size() > 0) || (m_recv_procs.size() > 0));
 }
 
 void CommSparse::allocate_buffers(const std::vector<int>& send_procs, const std::vector<int>& recv_procs)

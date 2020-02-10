@@ -52,7 +52,6 @@ from .  import _Base
 
 %module(package      = "PyTrilinos.NOX.PETSc",
 	directors    = "1",
-	autodoc      = "1",
 	implicitconv = "1",
         moduleimport = %nox_petsc_importcode) Base
 
@@ -116,7 +115,10 @@ using namespace NOX::Petsc;
 }
 
 // Include NOX documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "NOX_dox.i"
+#endif
 
 // General ignore directives
 %ignore *::print(ostream &);

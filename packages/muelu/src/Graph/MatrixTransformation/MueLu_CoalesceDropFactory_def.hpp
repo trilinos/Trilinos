@@ -152,7 +152,7 @@ namespace MueLu {
 
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
       GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
-      Set(currentLevel, "Filtering", (threshold != STS::zero()));
+      Set<bool>(currentLevel, "Filtering", (threshold != STS::zero()));
 
       const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
@@ -801,7 +801,7 @@ namespace MueLu {
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
       //GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
       GetOStream(Runtime0) << "algorithm = \"" << "failsafe" << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
-      Set(currentLevel, "Filtering", (threshold != STS::zero()));
+      Set<bool>(currentLevel, "Filtering", (threshold != STS::zero()));
 
       RCP<const Map> rowMap = A->getRowMap();
       RCP<const Map> colMap = A->getColMap();

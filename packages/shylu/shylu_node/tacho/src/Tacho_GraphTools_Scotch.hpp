@@ -14,8 +14,8 @@ namespace Tacho {
 
     class GraphTools_Scotch {
     public:
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef Kokkos::View<SCOTCH_Num*,host_exec_space> ordinal_type_array;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace> host_device_type;
+      typedef Kokkos::View<SCOTCH_Num*,host_device_type> ordinal_type_array;
 
       enum : int { DefaultRandomSeed = -1 };
 

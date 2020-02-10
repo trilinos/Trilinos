@@ -35,8 +35,6 @@ HEADER
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ***********************************************************************
 //@HEADER
 */
@@ -905,12 +903,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->apply(x, y)" );
 
   const Scalar exactSol = 0.2;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using mag_type = typename STS::magnitudeType;
+  const auto tol = mag_type(100.0) * STS::eps();
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
     Scalar* yb = ylcl.data();
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol,1e-14);
+      TEST_FLOATING_EQUALITY(yb[j], exactSol, tol);
     }
   }
 }

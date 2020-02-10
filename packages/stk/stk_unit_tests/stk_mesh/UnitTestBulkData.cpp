@@ -43,7 +43,6 @@
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <algorithm>                    // for sort
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
@@ -84,7 +83,6 @@
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_util/parallel/CommSparse.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
@@ -117,10 +115,6 @@ using stk::mesh::EntityRank;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-const EntityRank FACE_RANK = stk::topology::FACE_RANK;
-const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
-
 //====================
 extern int gl_argc;
 extern char** gl_argv;
@@ -132,7 +126,7 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
-    Selector select_owned(MetaData::get(mesh).locally_owned_part());
+    Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
 
     std::vector<size_t> before_count;
     std::vector<size_t> after_count;
@@ -215,7 +209,8 @@ void donate_all_shared_nodes(stk::unit_test_util::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
-    const Selector select_used = MetaData::get(mesh).locally_owned_part() | MetaData::get(mesh).globally_shared_part();
+    const MetaData& meta = mesh.mesh_meta_data();
+    const Selector select_used = meta.locally_owned_part() | meta.globally_shared_part();
 
     std::vector<size_t> before_count;
     std::vector<size_t> after_count;
@@ -2040,7 +2035,7 @@ TEST(BulkData, test_get_entities )
     hf.generate_mesh();
     const stk::mesh::BulkData &mesh = hf.m_bulk_data;
 
-    Selector select_owned(MetaData::get(mesh).locally_owned_part());
+    Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
     const stk::mesh::BucketVector &bucket_ptrs = mesh.get_buckets(stk::topology::NODE_RANK, select_owned);
     stk::mesh::EntityVector entities;
     mesh.get_entities(stk::topology::NODE_RANK, select_owned, entities);
@@ -3188,17 +3183,17 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
     }
     mesh.my_resolve_ownership_of_modified_entities(modified_entities);
     if (myRank == 0) {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
     }
     else if (myRank == 1) {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
     }
     else {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
     }
 }
 

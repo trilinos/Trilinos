@@ -1362,9 +1362,21 @@ namespace Tpetra {
     // Resizing currently requires calling the constructor, which
     // clears out the 'modified' flags.
     if (packOnHost) {
+      // nde 06 Feb 2020: If 'exports' does not require resize
+      // when reallocDualViewIfNeeded is called, the modified flags 
+      // are not cleared out. This can result in host and device views
+      // being out-of-sync, resuling in an error in exports.modify_* calls.
+      // Clearing the sync flags prevents this possible case.
+      exports.clear_sync_state ();
       exports.modify_host ();
     }
     else {
+      // nde 06 Feb 2020: If 'exports' does not require resize
+      // when reallocDualViewIfNeeded is called, the modified flags 
+      // are not cleared out. This can result in host and device views
+      // being out-of-sync, resuling in an error in exports.modify_* calls.
+      // Clearing the sync flags prevents this possible case.
+      exports.clear_sync_state ();
       exports.modify_device ();
     }
 
@@ -1917,7 +1929,7 @@ namespace Tpetra {
 
     // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
     if (this->need_sync_device ()) {
-      const_cast<MV*>(this)->sync_device ();
+      const_cast<MV&>(*this).sync_device ();
     }
     if (A.need_sync_device ()) {
       const_cast<MV&>(A).sync_device ();
@@ -2889,7 +2901,7 @@ namespace Tpetra {
     // viewBuffer or viewBufferNonConst methods always implied a
     // device->host synchronization.  Thus, we synchronize here as
     // well.
-    const_cast<MV*> (this)->sync_host ();
+    const_cast<MV&> (*this).sync_host ();
 
     auto hostView = getLocalViewHost ();
     const size_t col = isConstantStride () ? j : whichVectors_[j];
@@ -3395,15 +3407,23 @@ namespace Tpetra {
     // be exactly what we need, so we won't have to resize them later.
     {
       const size_t newSize = X.imports_.extent (0) / numCols;
+      const size_t offset = jj*newSize;
       auto newImports = X.imports_;
-      newImports.d_view = subview (X.imports_.d_view, range_type (0, newSize));
-      newImports.h_view = subview (X.imports_.h_view, range_type (0, newSize));
+      newImports.d_view = subview (X.imports_.d_view,
+                                   range_type (offset, offset+newSize));
+      newImports.h_view = subview (X.imports_.h_view,
+                                   range_type (offset, offset+newSize));
+      this->imports_ = newImports;
     }
     {
       const size_t newSize = X.exports_.extent (0) / numCols;
+      const size_t offset = jj*newSize;
       auto newExports = X.exports_;
-      newExports.d_view = subview (X.exports_.d_view, range_type (0, newSize));
-      newExports.h_view = subview (X.exports_.h_view, range_type (0, newSize));
+      newExports.d_view = subview (X.exports_.d_view,
+                                   range_type (offset, offset+newSize));
+      newExports.h_view = subview (X.exports_.h_view,
+                                   range_type (offset, offset+newSize));
+      this->exports_ = newExports;
     }
     // These two DualViews already either have the right number of
     // entries, or zero entries.  This means that we don't need to

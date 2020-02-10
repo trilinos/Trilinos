@@ -427,7 +427,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     \return Integer error code, set to 0 if successful.
 
     \pre Filled()==true.
-    \pre If CV=View when the graph was constructed, then this method will be effective \only if the indices of the graph were already contiguous.  In this case, the indices are left untouched and internal storage for the graph is minimized.
+    \pre If CV=View when the graph was constructed, then this method will be effective \a only if the indices of the graph were already contiguous.  In this case, the indices are left untouched and internal storage for the graph is minimized.
 
     \post StorageOptimized()==true, if successful
   */

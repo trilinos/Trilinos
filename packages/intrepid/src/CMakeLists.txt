@@ -53,53 +53,15 @@ APPEND_SET(HEADERS
   Shared/Intrepid_PointTools.hpp
   Shared/Intrepid_PolylibDef.hpp
   Shared/Intrepid_Polylib.hpp
+  Shared/Intrepid_Rank.hpp
   Shared/Intrepid_RealSpaceToolsDef.hpp
   Shared/Intrepid_RealSpaceTools.hpp
   Shared/Intrepid_Types.hpp
   Shared/Intrepid_Utils.hpp
   )
 
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
   APPEND_SET(HEADERS ${HEADERS}
-  Kokkos/Intrepid_KokkosRank.hpp
   )
-IF (Intrepid_ENABLE_DEPRECATED_KOKKOS_CODE) 
-IF (HAVE_INTREPID_KOKKOSCORE AND KOKKOS_ENABLE_CUDA)
-  IF( TPL_ENABLE_MPI )
-      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-  ENDIF()
-
-
-  CUDA_INCLUDE_DIRECTORIES( ${CUDA_INCLUDE_DIRECTORIES} "." )
-  CUDA_INCLUDE_DIRECTORIES( ${CUDA_INCLUDE_DIRECTORIES}
-                     ${KokkosCore_INCLUDE_DIRS}
-                     ${Intrepid_INCLUDE_DIRS}
-                     ${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
-
-
-
- SET(SOURCES ${SOURCES}
-      ${OBJECTS_CUDA1}
-      ${OBJECTS_CUDA2}
-      ${OBJECTS_CUDA3}
-      )
-
-
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
-  APPEND_SET(HEADERS ${HEADERS}
-  Kokkos/Intrepid_KokkosRank.hpp
-  )	
-ENDIF()
-
-IF(HAVE_INTREPID_KOKKOSCORE)
-
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
-  APPEND_SET(HEADERS ${HEADERS}
-  Kokkos/Intrepid_KokkosRank.hpp
-  )	
-ENDIF()
-ENDIF()
-
 
 #
 # Discretization headers
@@ -263,11 +225,6 @@ APPEND_SET(HEADERS
   Cell/Intrepid_CellTools.hpp
   Cell/Intrepid_CellToolsDef.hpp
   )
-IF(INTREPID_OLD_KOKKOS_CODE)
-  APPEND_SET(HEADERS
-    Cell/Intrepid_CellTools_Kokkos.hpp
-  )
-ENDIF()
 
 #
 # All sources

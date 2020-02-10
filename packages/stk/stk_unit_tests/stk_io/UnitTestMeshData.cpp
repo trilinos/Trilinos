@@ -344,6 +344,18 @@ TEST( StkMeshIoBroker, large_mesh_test )
   }
 }
 
+TEST(StkMeshIoBroker, removeIoPartAttribute)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:1x1x1", bulk);
+
+  for (stk::mesh::Part *part : meta.get_mesh_parts())
+      if ( stk::io::is_part_io_part(*part))
+          stk::io::remove_io_part_attribute(*part);
+}
+
 class StkIoFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
@@ -378,4 +390,3 @@ TEST_F(StkIoFixture, customCoordinateName)
 
     unlink(meshName.c_str());
 }
-

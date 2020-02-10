@@ -37,9 +37,9 @@ namespace KokkosBatched {
     const int k = (m < n ? m : n);
     if (k <= 0) return 0;
 
-    using mag_type = typename MagnitudeScalarType<ValueType>::type;
-    const mag_type       abs_tiny =  tiny > 0 ? tiny : mag_type(-tiny);
-    const mag_type minus_abs_tiny = -abs_tiny;
+    using mst = typename MagnitudeScalarType<ValueType>::type;
+    const auto       abs_tiny =  tiny > 0 ? tiny : mst(-tiny);
+    const auto minus_abs_tiny = -abs_tiny;
 
     for (int p=0;p<k;++p) {
       const int iend = m-p-1, jend = n-p-1;

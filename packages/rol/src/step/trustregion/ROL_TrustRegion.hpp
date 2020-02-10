@@ -60,7 +60,7 @@ template<class Real>
 class TrustRegion {
 private:
 
-  ROL::Ptr<Vector<Real> > prim_, dual_;
+  ROL::Ptr<Vector<Real> > prim_, dual_, xtmp_;
 
   ETrustRegionModel TRmodel_;
 
@@ -78,6 +78,12 @@ private:
   int updateIter_, cnt_;
 
   unsigned verbosity_;
+
+  // POST SMOOTHING PARAMETERS
+  Real alpha_init_; ///< Initial line-search parameter for projected methods.
+  int  max_fval_;   ///< Maximum function evaluations in line-search for projected methods.
+  Real mu_;         ///< Post-Smoothing tolerance for projected methods.
+  Real beta_;       ///< Post-Smoothing rate for projected methods.
 
 public:
 
@@ -113,11 +119,17 @@ public:
     forceFactor_ = ilist.get("Forcing Sequence Reduction Factor", static_cast<Real>(0.1));
     // Get verbosity level
     verbosity_ = glist.get("Print Verbosity", 0);
+    // Post-smoothing parameters
+    max_fval_    = list.sublist("Post-Smoothing").get("Function Evaluation Limit", 20);
+    alpha_init_  = list.sublist("Post-Smoothing").get("Initial Step Size", static_cast<Real>(1));
+    mu_          = list.sublist("Post-Smoothing").get("Tolerance",         static_cast<Real>(0.9999));
+    beta_        = list.sublist("Post-Smoothing").get("Rate",              static_cast<Real>(0.01));
   }
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
     prim_ = x.clone();
     dual_ = g.clone();
+    xtmp_ = x.clone();
   }
 
   virtual void update( Vector<Real>           &x,
@@ -163,7 +175,10 @@ public:
     }
     // Evaluate objective function at new iterate
     prim_->set(x); prim_->plus(s);
-    obj.update(*prim_,true);
+    if (bnd.isActivated()) {
+      bnd.project(*prim_);
+    }
+    obj.update(*prim_);
     fnew = obj.value(*prim_,ftol);
 
     nfval = 1;
@@ -226,7 +241,6 @@ public:
     /***************************************************************************************************/
     // FINISH COMPUTE RATIO OF ACTUAL AND PREDICTED REDUCTION
     /***************************************************************************************************/
-
 
     /***************************************************************************************************/
     // BEGIN CHECK SUFFICIENT DECREASE FOR BOUND CONSTRAINED PROBLEMS
@@ -300,12 +314,62 @@ public:
     }
     else if ((rho >= eta0_ && flagTR != TRUSTREGION_FLAG_NPOSPREDNEG) ||
              (flagTR == TRUSTREGION_FLAG_POSPREDNEG)) { // Step Accepted
-      x.plus(s);
-      obj.update(x,true,iter);
+      // Perform line search (smoothing) to ensure decrease 
+      if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
+        Real tol = std::sqrt(ROL_EPSILON<Real>());
+        // Compute new gradient
+        xtmp_->set(x); xtmp_->plus(s);
+        bnd.project(*xtmp_);
+        obj.gradient(*dual_,*xtmp_,tol); // MUST DO SOMETHING HERE WITH TOL
+        ngrad++;
+        // Compute smoothed step
+        Real alpha(1);
+        prim_->set(*xtmp_);
+        prim_->axpy(-alpha/alpha_init_,dual_->dual());
+        bnd.project(*prim_);
+        // Compute new objective value
+        obj.update(*prim_);
+        Real ftmp = obj.value(*prim_,tol); // MUST DO SOMETHING HERE WITH TOL
+        nfval++;
+        // Perform smoothing
+        int cnt = 0;
+        alpha = alpha_init_;
+        while ( (ftmp-fnew) >= mu_*aRed ) { 
+          prim_->set(*xtmp_);
+          prim_->axpy(-alpha/alpha_init_,dual_->dual());
+          bnd.project(*prim_);
+          obj.update(*prim_);
+          ftmp = obj.value(*prim_,tol); // MUST DO SOMETHING HERE WITH TOL
+          nfval++;
+          if ( cnt >= max_fval_ ) {
+            break;
+          }
+          alpha *= beta_;
+          cnt++;
+        }
+        // Store objective function and iteration information
+        if (std::isnan(ftmp)) {
+          flagTR = TRUSTREGION_FLAG_NAN;
+          del = gamma1_*std::min(snorm,del);
+	  rho = static_cast<Real>(-1);
+	  //x.axpy(static_cast<Real>(-1),s);
+	  //obj.update(x,true,iter);
+	  fnew = fold1;
+	}
+	else {
+          fnew = ftmp;
+          x.set(*prim_);
+	}
+      }
+      else {
+        x.plus(s);
+      }
       if (rho >= eta2_) { // Increase trust-region radius
         del = gamma2_*del;
       }
+      obj.update(x,true,iter);
     }
+
     if ( verbosity_ > 0 ) {
       std::cout << "    Trust-region radius after update:        " << del << std::endl;
       std::cout << std::endl;

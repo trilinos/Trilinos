@@ -429,6 +429,15 @@ struct topology
     : m_value(topo.m_value)
   {}
 
+  STK_INLINE_FUNCTION
+  stk::topology& operator=(const topology& rhs)
+  {
+    if (&rhs != this) {
+      m_value = rhs.m_value;
+    }
+    return *this;
+  }
+
   //***************************************************************************
   // comparison operator
   //***************************************************************************

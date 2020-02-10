@@ -47,7 +47,7 @@
 #include <cmath>
 #include <limits>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Blas1.hpp>
+#include <KokkosBlas.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <impl/Kokkos_Timer.hpp>
 

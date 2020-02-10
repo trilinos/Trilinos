@@ -419,13 +419,13 @@ namespace Intrepid2
                       
                       int degreeLengthField1 = degreesField1.extent_int(0);
                       int degreeLengthField2 = degreesField2.extent_int(0);
-                      for (int d=0; d<degreeLengthField1; d++)
+                      for (int d3=0; d3<degreeLengthField1; d3++)
                       {
-                        this->fieldOrdinalPolynomialDegree_(tensorFieldOrdinal,d) = degreesField1(d);
+                        this->fieldOrdinalPolynomialDegree_(tensorFieldOrdinal,d3) = degreesField1(d3);
                       }
-                      for (int d=0; d<degreeLengthField2; d++)
+                      for (int d3=0; d3<degreeLengthField2; d3++)
                       {
-                        this->fieldOrdinalPolynomialDegree_(tensorFieldOrdinal,d+degreeLengthField1) = degreesField2(d);
+                        this->fieldOrdinalPolynomialDegree_(tensorFieldOrdinal,d3+degreeLengthField1) = degreesField2(d3);
                       }
                     }
                   } // localDofID1

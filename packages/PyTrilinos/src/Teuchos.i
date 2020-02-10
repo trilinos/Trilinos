@@ -50,7 +50,6 @@ from . import _Base
 
 %module(package      = "PyTrilinos.Teuchos",
 	directors    = "1",
-	autodoc      = "1",
 	implicitconv = "1",
         moduleimport = %teuchos_base_importcode) Base
 
@@ -82,11 +81,13 @@ using std::string;
 %include "exception.i"
 
 // Global swig features
-%feature("autodoc", "1");
 %feature("compactdefaultargs");
 
 // Include Teuchos documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Teuchos_dox.i"
+#endif
 
 // C++ STL support.  If the wrapped class uses standard template
 // library containers, the following %include wraps the containers

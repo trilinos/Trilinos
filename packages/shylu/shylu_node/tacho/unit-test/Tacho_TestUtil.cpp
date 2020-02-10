@@ -5,8 +5,8 @@
 
 using namespace Tacho;
 
-typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
-typedef Kokkos::DefaultExecutionSpace     DeviceSpaceType;
+typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type HostDeviceType;
+typedef typename UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type DeviceType;
 
 #define TEST_BEGIN 
 #define TEST_END   
@@ -105,13 +105,13 @@ TEST( util, task_scheduler ) {
   unsigned int max_block_size  = 1024; // 10
   unsigned int superblock_size = 1024; // 10
 
-  typedef TaskSchedulerType<HostSpaceType> host_scheduler_type;
+  typedef TaskSchedulerType<typename HostDeviceType::execution_space> host_scheduler_type;
   host_scheduler_type host_sched(typename host_scheduler_type::memory_space(),
                              span,
                              min_block_size,
                              max_block_size,
                              superblock_size);
-  typedef TaskSchedulerType<DeviceSpaceType> device_scheduler_type;
+  typedef TaskSchedulerType<typename DeviceType::execution_space> device_scheduler_type;
   device_scheduler_type device_sched(typename device_scheduler_type::memory_space(),
                                  span,
                                  min_block_size,
@@ -125,8 +125,8 @@ int main (int argc, char *argv[]) {
   Kokkos::initialize(argc, argv);
 
   const bool detail = false;
-  printExecSpaceConfiguration<DeviceSpaceType>("DeviceSpace", detail);
-  printExecSpaceConfiguration<HostSpaceType>  ("HostSpace",   detail);
+  printExecSpaceConfiguration<typename DeviceType::execution_space>("DeviceSpace", detail);
+  printExecSpaceConfiguration<typename HostDeviceType::execution_space>("HostSpace", detail);
   
   printf("Scheduler Type = %s\n", scheduler_name); 
 
