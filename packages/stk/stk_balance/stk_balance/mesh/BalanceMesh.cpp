@@ -1,4 +1,4 @@
-// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+ // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
 // Solutions of Sandia, LLC (NTESS). Under the terms of Contract
 // DE-NA0003525 with NTESS, the U.S. Government retains certain rights
 // in this software.
@@ -6,15 +6,15 @@
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
- // 
+ //
  //     * Redistributions of source code must retain the above copyright
  //       notice, this list of conditions and the following disclaimer.
- // 
+ //
  //     * Redistributions in binary form must reproduce the above
  //       copyright notice, this list of conditions and the following
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
- // 
+ //
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -31,83 +31,32 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ModificationObserver_hpp
-#define ModificationObserver_hpp
+#include "BalanceMesh.hpp"
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Entity.hpp>
+namespace stk {
+namespace balance {
 
-namespace stk
+
+InternalMesh::InternalMesh(MPI_Comm comm, const std::string& coordinateFieldName)
+  : bulk(meta, comm)
 {
-namespace mesh
-{
-
-class ModificationObserver
-{
-public:
-    virtual ~ModificationObserver()
-    {
-    }
-
-    virtual void entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
-    {
-    }
-
-    virtual void entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
-    {
-    }
-
-    virtual void entity_added(stk::mesh::Entity entity)
-    {
-    }
-
-    virtual void entity_deleted(stk::mesh::Entity entity)
-    {
-    }
-
-    virtual void modification_begin_notification()
-    {
-    }
-  
-    virtual void started_modification_end_notification()
-    {
-    }
-
-    virtual void finished_modification_end_notification()
-    {
-    }
-
-    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-    }
-
-    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-    }
-
-    virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
-    {
-        valuesToReduce.clear();
-    }
-
-    virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
-    {
-    }
-};
-
-}
+  meta.set_coordinate_field_name(coordinateFieldName);
 }
 
-#endif
+stk::mesh::BulkData& InternalMesh::get_bulk()
+{
+  return bulk;
+}
+
+
+ExternalMesh::ExternalMesh(stk::mesh::BulkData& externalBulk)
+  : meta(externalBulk.mesh_meta_data()), bulk(externalBulk)
+{ }
+
+stk::mesh::BulkData& ExternalMesh::get_bulk()
+{
+  return bulk;
+}
+
+
+} }

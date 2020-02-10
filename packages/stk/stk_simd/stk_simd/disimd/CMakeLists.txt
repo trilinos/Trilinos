@@ -33,23 +33,6 @@
 # 
 
 
-#
-# A) Package-specific configuration options
-#
-
-#TRIBITS_CONFIGURE_FILE(STK_config.h)
-
-#
-# B) Define the header and source files (and directories)
-#
-
-ADD_SUBDIRECTORY(disimd)
-ADD_SUBDIRECTORY(avx)
-ADD_SUBDIRECTORY(avx512)
-ADD_SUBDIRECTORY(sse)
-ADD_SUBDIRECTORY(no_simd)
-
-#
 # src
 #
 
@@ -71,5 +54,5 @@ FILE(GLOB HEADERS *.hpp)
 #
 
 INSTALL(FILES ${HEADERS} DESTINATION
-${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_simd/)
+${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_simd/disimd)
 

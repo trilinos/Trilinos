@@ -69,6 +69,8 @@ public:
 // handle communication.
 struct EntityComm
 {
+  bool isShared;
+  bool isGhost;
   EntityCommInfoVector comm_map;
 };
 

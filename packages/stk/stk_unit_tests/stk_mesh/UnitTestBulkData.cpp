@@ -126,7 +126,7 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
-    Selector select_owned(MetaData::get(mesh).locally_owned_part());
+    Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
 
     std::vector<size_t> before_count;
     std::vector<size_t> after_count;
@@ -209,7 +209,8 @@ void donate_all_shared_nodes(stk::unit_test_util::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
-    const Selector select_used = MetaData::get(mesh).locally_owned_part() | MetaData::get(mesh).globally_shared_part();
+    const MetaData& meta = mesh.mesh_meta_data();
+    const Selector select_used = meta.locally_owned_part() | meta.globally_shared_part();
 
     std::vector<size_t> before_count;
     std::vector<size_t> after_count;
@@ -2034,7 +2035,7 @@ TEST(BulkData, test_get_entities )
     hf.generate_mesh();
     const stk::mesh::BulkData &mesh = hf.m_bulk_data;
 
-    Selector select_owned(MetaData::get(mesh).locally_owned_part());
+    Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
     const stk::mesh::BucketVector &bucket_ptrs = mesh.get_buckets(stk::topology::NODE_RANK, select_owned);
     stk::mesh::EntityVector entities;
     mesh.get_entities(stk::topology::NODE_RANK, select_owned, entities);

@@ -49,13 +49,13 @@ namespace mesh {
 
 void fillNumEntitiesPerRankOnThisProc(const BulkData & M, std::vector<size_t>&local, const Selector *selector)
 {
-    const MetaData & S = MetaData::get(M);
-    const EntityRank entity_rank_count = static_cast<EntityRank>(S.entity_rank_count());
+    const MetaData & meta = M.mesh_meta_data();
+    const EntityRank entity_rank_count = static_cast<EntityRank>(meta.entity_rank_count());
     size_t numEntityRanks = entity_rank_count;
     local.clear();
     local.resize(numEntityRanks,0);
 
-    Selector owns = S.locally_owned_part();
+    Selector owns = meta.locally_owned_part();
     for(EntityRank i = stk::topology::NODE_RANK; i < numEntityRanks; ++i)
     {
         const BucketVector & ks = M.buckets(i);

@@ -73,6 +73,9 @@ void create_one_element_mesh_with_nodeset(stk::mesh::BulkData& bulk, const std::
     stk::mesh::Field<double, stk::mesh::Cartesian> & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
     stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), spatialDim, static_cast<double*>(nullptr));
 
+    stk::mesh::Field<double> & nodeSetField = meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "nodeSetField", 1);
+    stk::mesh::put_field_on_mesh(nodeSetField, *nodesetPart, 1, static_cast<double*>(nullptr));
+
     meta.commit();
 
     std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
@@ -130,7 +133,7 @@ void create_and_write_one_hex_mesh_with_nodeset(const std::string& filename)
 
   create_one_element_mesh_with_nodeset(bulk, filename);
 
-  stk::io::write_mesh(filename, bulk);
+  stk::io::write_mesh_with_fields(filename, bulk, 1, 1.0);
 }
 
 TEST(StkMeshIoBroker, readNodesetWithDistributionFactor) {
@@ -174,5 +177,107 @@ TEST(StkMeshIoBroker, readNodesetWithoutDistributionFactor) {
   stk::mesh::FieldBase* nodeSetDf = meta.get_field(stk::topology::NODE_RANK, "distribution_factors_nodelist_1");
   EXPECT_TRUE(nodeSetDf == nullptr);
   unlink(inputFile.c_str());
+}
+
+void setup_field_data(const std::string& inputFile, const std::string& nodeSetFieldName, stk::mesh::BulkData& bulk)
+{
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  create_and_write_one_hex_mesh_with_nodeset(inputFile);
+
+  meta.declare_part_with_topology("nodelist_1", stk::topology::NODE);
+  meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, nodeSetFieldName, 1);
+}
+
+void load_field_data(const std::string& inputFile, stk::mesh::BulkData& bulk, stk::io::StkMeshIoBroker& ioBroker, stk::io::MeshField& meshField)
+{
+  ioBroker.set_bulk_data(bulk);
+  ioBroker.add_mesh_database(inputFile, stk::io::READ_MESH);
+  ioBroker.create_input_mesh();
+  ioBroker.populate_bulk_data();
+
+  ioBroker.add_input_field(meshField);
+}
+
+void test_field_data_no_throw(const std::string& inputFile, stk::mesh::BulkData& bulk, stk::io::MeshField& meshField)
+{
+  stk::io::StkMeshIoBroker ioBroker;
+  load_field_data(inputFile, bulk, ioBroker, meshField);
+
+  EXPECT_NO_THROW(ioBroker.read_defined_input_fields(0.0));
+  unlink(inputFile.c_str());
+}
+
+void test_field_data_throw(const std::string& inputFile, stk::mesh::BulkData& bulk, stk::io::MeshField& meshField)
+{
+  stk::io::StkMeshIoBroker ioBroker;
+  load_field_data(inputFile, bulk, ioBroker, meshField);
+
+  EXPECT_THROW(ioBroker.read_defined_input_fields(0.0), std::runtime_error);
+  unlink(inputFile.c_str());
+}
+
+TEST(StkMeshIoBroker, readSubsetFieldData) {
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  std::string inputFile = "readSubsetFieldData.g";
+  std::string nodeSetString = "nodeSetField";
+
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  setup_field_data(inputFile, nodeSetString, bulk);
+
+  stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
+  stk::mesh::Part* nodesetPart = meta.get_part("nodelist_1");
+
+  stk::mesh::put_field_on_mesh(*nodeSetField, *nodesetPart, 1, static_cast<double*>(nullptr));
+
+  stk::io::MeshField meshField(nodeSetField, nodeSetString);
+  meshField.add_subset(*nodesetPart);
+
+  test_field_data_no_throw(inputFile, bulk, meshField);
+}
+
+TEST(StkMeshIoBroker, readFieldDataOnUniversalSetButNotDefinedOnSubset) {
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  std::string inputFile = "readFieldDataOnUniversalSetButNotDefinedOnSubset.g";
+  std::string nodeSetString = "nodeSetField";
+
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  setup_field_data(inputFile, nodeSetString, bulk);
+
+  stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
+  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, static_cast<double*>(nullptr));
+
+  stk::io::MeshField meshField(nodeSetField, nodeSetString);
+
+  test_field_data_throw(inputFile, bulk, meshField);
+}
+
+TEST(StkMeshIoBroker, readFieldDataOnUniversalSetAndDefinedOnSubset) {
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  std::string inputFile = "readFieldDataOnUniversalSetAndDefinedOnSubset.g";
+  std::string nodeSetString = "nodeSetField";
+
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  setup_field_data(inputFile, nodeSetString, bulk);
+
+  stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
+  stk::mesh::Part* nodesetPart = meta.get_part("nodelist_1");
+  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, static_cast<double*>(nullptr));
+
+  stk::io::MeshField meshField(nodeSetField, nodeSetString);
+  meshField.add_subset(*nodesetPart);
+
+  test_field_data_no_throw(inputFile, bulk, meshField);
 }
 }

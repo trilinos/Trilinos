@@ -1,4 +1,4 @@
-// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+ // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
 // Solutions of Sandia, LLC (NTESS). Under the terms of Contract
 // DE-NA0003525 with NTESS, the U.S. Government retains certain rights
 // in this software.
@@ -31,83 +31,50 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ModificationObserver_hpp
-#define ModificationObserver_hpp
+#ifndef STK_UTIL_UTIL_STRIDEDARRAY_HPP
+#define STK_UTIL_UTIL_STRIDEDARRAY_HPP
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Entity.hpp>
+#include <stk_util/stk_config.h>
 
 namespace stk
 {
-namespace mesh
+namespace util
 {
+constexpr unsigned defaultStride = 512;
 
-class ModificationObserver
+template <typename T>
+class StridedArray
 {
 public:
-    virtual ~ModificationObserver()
-    {
-    }
-
-    virtual void entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
-    {
-    }
-
-    virtual void entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
-    {
-    }
-
-    virtual void entity_added(stk::mesh::Entity entity)
-    {
-    }
-
-    virtual void entity_deleted(stk::mesh::Entity entity)
-    {
-    }
-
-    virtual void modification_begin_notification()
-    {
-    }
-  
-    virtual void started_modification_end_notification()
-    {
-    }
-
-    virtual void finished_modification_end_notification()
-    {
-    }
-
-    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-    }
-
-    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-    }
-
-    virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
-    {
-    }
-
-    virtual void fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
-    {
-        valuesToReduce.clear();
-    }
-
-    virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
-    {
-    }
+  STK_FUNCTION 
+  StridedArray() : dataPointer(nullptr), length(0), stride(defaultStride)
+  {
+  }
+  STK_FUNCTION
+  StridedArray(T* e, unsigned n, int stride_in=defaultStride) : dataPointer(e), length(n), stride(stride_in)
+  {
+  }
+  STK_FUNCTION
+  T operator[](unsigned i) const
+  {
+#ifdef __CUDA_ARCH__
+    return dataPointer[stride*i];
+#else
+    return dataPointer[i];
+#endif
+  }
+  STK_FUNCTION
+  unsigned size() const
+  { 
+    return length;
+  }
+private:
+  T* dataPointer;
+  unsigned length;
+  int stride;
 };
 
-}
-}
+} //namespace util
+} //namespace stk
 
 #endif
