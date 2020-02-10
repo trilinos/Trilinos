@@ -99,9 +99,14 @@ def main(comm):
 
     if iAmRoot: print("Constructing Isorropia.Epetra.Colorer")
     colorer = Isorropia.Epetra.Colorer(crsg)
-
-    print(colorer.elemsWithColor(0))
-
+    print("Elements with color =", colorer.elemsWithColor(0))
+    try:
+        colorer.generateMapColoring()
+    except DeprecationWarning as e:
+        print(e.args[0])
+    else:
+        raise RuntimeError("Isorropia.Epetra.Colorer.generateMapColoring() did"
+                           " not generate deprecation warning")
 
     pList = {"partitioning method": "random",
              "Zoltan": {"debug_level": "0"}}

@@ -94,6 +94,7 @@ using namespace NOX::Epetra;
 
 // Configuration
 %include "Epetra_DLLExportMacro.h"
+%include "NOX_Config.h"
 
 // Include NOX documentation
 #if SWIG_VERSION < 0x040000
