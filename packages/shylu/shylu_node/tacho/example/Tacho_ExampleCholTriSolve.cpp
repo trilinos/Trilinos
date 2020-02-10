@@ -209,15 +209,19 @@ int main (int argc, char *argv[]) {
          N.getSupernodesInfo(),
          S.SupernodesTreeLevel(),
          nrhs);
-    TS.prepare(512, 128);
-    TS.createCudaStream(128);
+    const int device_function_thres = 512;
+    TS.initialize(device_function_thres, verbose);
+
+    const int nstreams = 32; //128
+    TS.createCudaStream(nstreams);
     t = timer.seconds();    
-    std::cout << "CholTriSolve:: TriSolve preparation::time = " << t << std::endl;
+    std::cout << "CholTriSolve:: TriSolve prepare::time = " << t << std::endl;
 
     timer.reset();        
-    TS.solveCholesky(X, B, W);
+    TS.solveCholesky(X, B, W, verbose);
     t = timer.seconds();    
     std::cout << "CholTriSolve:: solve matrix::time = " << t << std::endl;
+    TS.release(verbose);
 #else
     ///
     /// solve via tasking
@@ -237,6 +241,8 @@ int main (int argc, char *argv[]) {
 
     const double res = N.computeRelativeResidual(X, B);
     std::cout << "CholTriSolve:: residual = " << res << std::endl;
+
+    N.release(verbose);
   }
   Kokkos::finalize();
 

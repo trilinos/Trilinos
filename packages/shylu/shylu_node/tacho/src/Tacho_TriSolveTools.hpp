@@ -6,6 +6,14 @@
 
 #include "Tacho_Util.hpp"
 
+#include "Tacho_Trsv.hpp"
+#include "Tacho_Trsv_External.hpp"
+
+#include "Tacho_Gemv.hpp"
+#include "Tacho_Gemv_External.hpp"
+
+#include "Tacho_SupernodeInfo.hpp"
+
 #include "Tacho_TeamFunctor_SolveLowerChol.hpp"
 #include "Tacho_TeamFunctor_SolveUpperChol.hpp"
 #if defined (KOKKOS_ENABLE_CUDA)
@@ -64,13 +72,14 @@ namespace Tacho {
     /// this is passed into computation algorithm without reference counting
     ///
     supernode_info_type _info;
-      
+    ordinal_type_array_host _h_stree_level;
+
     // supernodes details       
     ordinal_type _nsupernodes;
     supernode_type_array_host _h_supernodes;
 
     // 0: device level function, 1: team policy, 2: team policy recursive
-    ordinal_type _device_function_thres, _team_recursive_thres;
+    ordinal_type _device_function_thres;//, _team_recursive_thres;
     ordinal_type _device_level_cut, _team_recursive_level_cut;
     ordinal_type_array_host _h_compute_mode;
     ordinal_type_array        _compute_mode;
@@ -85,8 +94,8 @@ namespace Tacho {
 
     // workspace
     ordinal_type _max_nrhs;
-    size_type_array _buf_ptr;
     size_type_array_host _h_buf_ptr;
+    size_type_array _buf_ptr;
     value_type_array _buf;
 
     // cuda stream
@@ -98,6 +107,14 @@ namespace Tacho {
     cuda_stream_array_host _cuda_streams;
     int _status;
 #endif
+
+    ///
+    /// statistics
+    ///
+    struct {
+      double t_init, t_prepare, t_solve, t_extra;
+      double m_used, m_peak;
+    } stat;
 
   public:
 
@@ -117,29 +134,136 @@ namespace Tacho {
 
     inline
     void
-    initialize(const ordinal_type verbose = 0) {
-      if (verbose) {
-        printf("Summary: TriSolveTools (Release)\n");
-        printf("================================\n");
-      }
+    track_alloc(const double in) {
+      stat.m_used += in;
+      stat.m_peak  = max(stat.m_peak, stat.m_used);
     }
 
     inline
     void
-    release(const ordinal_type verbose = 0) {
-      if (verbose) {
-        printf("Summary: TriSolveTools (Release)\n");
-        printf("================================\n");
-      }
+    track_free(const double out) {
+      stat.m_used -= out;
     }
 
-    TriSolveTools() 
-    {}
-    
-    TriSolveTools(const TriSolveTools &b) = default;
+    inline
+    void
+    reset_stat() {
+      stat.t_solve = 0;
+      stat.t_extra = 0;
+      stat.m_used = 0;
+      stat.m_peak = 0;
+    }
 
-    void prepare(const ordinal_type device_function_thres,
-                 const ordinal_type team_recursive_thres) {
+    inline
+    void
+    print_stat_init() {
+      printf("  Time\n");
+      printf("             time for initialization:                         %10.6f s\n", stat.t_init);
+      printf("             time for compute mode classification:            %10.6f s\n", stat.t_prepare);
+      printf("             total time spent:                                %10.6f s\n", (stat.t_init+stat.t_prepare));
+      printf("\n");
+      printf("  Memory\n");
+      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
+      printf("             peak memory used in solve:                       %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("\n");
+    }
+      
+    inline
+    void
+    print_stat_solve() {
+      printf("  Time\n");
+      printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
+      printf("\n");
+      printf("  Memory\n");
+      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
+      printf("\n");
+    }
+
+    inline
+    void
+    print_stat_memory() {
+      printf("  Memory\n"); // better get zero leak
+      printf("             leak (or not tracked) memory:                    %10.2f MB\n", stat.m_used/1024/1024);
+    }
+
+    inline
+    void
+    initialize(const ordinal_type device_function_thres,
+               // const ordinal_type team_recursive_thres,
+               const ordinal_type verbose = 0) {
+      Kokkos::Impl::Timer timer;
+
+      timer.reset();
+
+      // # of supernodes
+      _nsupernodes = _info.supernodes.extent(0);
+
+      // local host supernodes info 
+      _h_supernodes = Kokkos::create_mirror_view(host_memory_space(), _info.supernodes);
+      Kokkos::deep_copy(_h_supernodes, _info.supernodes);
+
+      // # of levels
+      _nlevel = 0;
+      {
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
+          _nlevel = max(_h_stree_level(sid), _nlevel);
+        ++_nlevel;
+      }
+
+      // create level ptr
+      _h_level_ptr = size_type_array_host("h_level_ptr", _nlevel+1);
+      {
+        // first count # of supernodes in each level
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
+          ++_h_level_ptr(_h_stree_level(sid)+1);
+        
+        // scan 
+        for (ordinal_type i=0;i<_nlevel;++i) 
+          _h_level_ptr(i+1) += _h_level_ptr(i);
+      }
+
+      // fill sids
+      _h_level_sids = ordinal_type_array_host(do_not_initialize_tag("h_level_sids"), _nsupernodes);
+      {
+        size_type_array_host tmp_level_ptr(do_not_initialize_tag("tmp_level_ptr"), _h_level_ptr.extent(0));
+        Kokkos::deep_copy(tmp_level_ptr, _h_level_ptr);
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+          const ordinal_type lvl = _h_stree_level(sid);
+          _h_level_sids(tmp_level_ptr(lvl)++) = sid;
+        }
+      }
+      _level_sids = Kokkos::create_mirror_view(exec_memory_space(), _h_level_sids); 
+      Kokkos::deep_copy(_level_sids, _h_level_sids);
+      track_alloc(_level_sids.span()*sizeof(ordinal_type));
+
+      // create workspace; this might needs to be created in prepare
+      _h_buf_ptr = size_type_array_host(do_not_initialize_tag("h_buf_ptr"), _nsupernodes+1);
+      {
+        _h_buf_ptr(0) = 0;
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+          const auto s = _h_supernodes(sid); 
+          // anticipating other algorithms, consider tT and tB space
+          _h_buf_ptr(sid+1) = s.n*_max_nrhs; //(s.n-s.m)*_max_nrhs;
+        }
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
+          _h_buf_ptr(sid+1) += _h_buf_ptr(sid);
+      }
+      _buf_ptr = Kokkos::create_mirror_view(exec_memory_space(), _h_buf_ptr);
+      Kokkos::deep_copy(_buf_ptr, _h_buf_ptr);
+      track_alloc(_buf_ptr.span()*sizeof(size_type));
+
+      _buf = value_type_array(do_not_initialize_tag("buf"), _h_buf_ptr(_nsupernodes));
+      track_alloc(_buf.span()*sizeof(value_type));
+
+      // cuda stream setup
+#if defined(KOKKOS_ENABLE_CUDA)
+      _status = cublasCreate(&_cublas_handle); checkCuBlasStatus("cublasCreate");
+      _nstreams = 0;
+#endif
+      stat.t_init = timer.seconds();
+
+      timer.reset();
+
       _h_compute_mode = ordinal_type_array_host(do_not_initialize_tag("h_compute_mode"), _nsupernodes);
       Kokkos::deep_copy(_h_compute_mode, -1);
 
@@ -158,9 +282,9 @@ namespace Tacho {
       }
       
       _team_recursive_level_cut = _nlevel;
-      _team_recursive_thres = team_recursive_thres;
-      {
-        // recursive function on cuda does not work well; need workspace for postorder of children
+      //_team_recursive_thres = team_recursive_thres;
+      // {
+      //   //recursive function on cuda does not work well; need workspace for postorder of children
       //   for (ordinal_type lvl=_device_level_cut;lvl<_nlevel;++lvl) {
       //     const ordinal_type 
       //       pbeg = _h_level_ptr(lvl), 
@@ -178,22 +302,22 @@ namespace Tacho {
       //       break;
       //     }
       //   }
-        
-        {
-          for (ordinal_type lvl=_device_level_cut;lvl<_team_recursive_level_cut;++lvl) {          
-            const ordinal_type 
-              pbeg = _h_level_ptr(lvl), 
-              pend = _h_level_ptr(lvl+1);
-            for (ordinal_type p=pbeg;p<pend;++p) {
-              const ordinal_type sid = _h_level_sids(p);
-              const auto s = _h_supernodes(sid); 
-              const ordinal_type m = s.m, n = s.n-s.m;
-              if (m > _device_function_thres || 
-                  n > _device_function_thres) {
-                _h_compute_mode(sid) = 0;
-              } else {
-                _h_compute_mode(sid) = 1;
-              }
+      // }  
+
+      {        
+        for (ordinal_type lvl=_device_level_cut;lvl<_team_recursive_level_cut;++lvl) {          
+          const ordinal_type 
+            pbeg = _h_level_ptr(lvl), 
+            pend = _h_level_ptr(lvl+1);
+          for (ordinal_type p=pbeg;p<pend;++p) {
+            const ordinal_type sid = _h_level_sids(p);
+            const auto s = _h_supernodes(sid); 
+            const ordinal_type m = s.m, n = s.n-s.m;
+            if (m > _device_function_thres || 
+                n > _device_function_thres) {
+              _h_compute_mode(sid) = 0;
+            } else {
+              _h_compute_mode(sid) = 1;
             }
           }
         }
@@ -201,11 +325,35 @@ namespace Tacho {
 
       _compute_mode = Kokkos::create_mirror_view(exec_memory_space(), _h_compute_mode);
       Kokkos::deep_copy(_compute_mode, _h_compute_mode);
+      track_alloc(_compute_mode.span()*sizeof(ordinal_type));
+
+      stat.t_prepare = timer.seconds();
+
+      if (verbose) {
+        printf("Summary: TriSolveTools (Initialize)\n");
+        printf("===================================\n");
+        print_stat_init();
+      }
     }
 
-    ///
-    /// construction (assume input matrix and symbolic are from host)
-    ///
+    inline
+    void
+    release(const ordinal_type verbose = 0) {
+      track_free(_buf_ptr.span()*sizeof(size_type));
+      track_free(_buf.span()*sizeof(value_type));
+      track_free(_compute_mode.span()*sizeof(ordinal_type));
+      track_free(_level_sids.span()*sizeof(ordinal_type));
+      if (verbose) {
+        printf("Summary: TriSolveTools (Release)\n");
+        printf("================================\n");
+        print_stat_memory();
+      }
+    }
+
+    TriSolveTools()  {}
+    
+    TriSolveTools(const TriSolveTools &b) = default;
+
     TriSolveTools(// input permutation
                   const ordinal_type_array &perm,
                   const ordinal_type_array &peri,
@@ -215,68 +363,9 @@ namespace Tacho {
                   const ordinal_type max_nrhs)
       : _perm(perm), _peri(peri),
         _info(info),
-        _max_nrhs(max_nrhs) {
-      // # of supernodes
-      _nsupernodes = _info.supernodes.extent(0);
-
-      // local host supernodes info 
-      _h_supernodes = Kokkos::create_mirror_view(host_memory_space(), _info.supernodes);
-      Kokkos::deep_copy(_h_supernodes, _info.supernodes);
-
-      // # of levels
-      _nlevel = 0;
-      {
-        for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
-          _nlevel = max(h_stree_level(sid), _nlevel);
-        ++_nlevel;
-      }
-
-      // create level ptr
-      _h_level_ptr = size_type_array_host("h_level_ptr", _nlevel+1);
-      {
-        // first count # of supernodes in each level
-        for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
-          ++_h_level_ptr(h_stree_level(sid)+1);
-        
-        // scan 
-        for (ordinal_type i=0;i<_nlevel;++i) 
-          _h_level_ptr(i+1) += _h_level_ptr(i);
-      }
-
-      // fill sids
-      _h_level_sids = ordinal_type_array_host(do_not_initialize_tag("h_level_sids"), _nsupernodes);
-      {
-        size_type_array_host tmp_level_ptr(do_not_initialize_tag("tmp_level_ptr"), _h_level_ptr.extent(0));
-        Kokkos::deep_copy(tmp_level_ptr, _h_level_ptr);
-        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-          const ordinal_type lvl = h_stree_level(sid);
-          _h_level_sids(tmp_level_ptr(lvl)++) = sid;
-        }
-      }
-      _level_sids = Kokkos::create_mirror_view(exec_memory_space(), _h_level_sids); 
-      Kokkos::deep_copy(_level_sids, _h_level_sids);
-
-      // create workspace
-      _h_buf_ptr = size_type_array_host(do_not_initialize_tag("h_buf_ptr"), _nsupernodes+1);
-      {
-        _h_buf_ptr(0) = 0;
-        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-          const auto s = _h_supernodes(sid); 
-          _h_buf_ptr(sid+1) = (s.n-s.m)*_max_nrhs;
-        }
-        for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
-          _h_buf_ptr(sid+1) += _h_buf_ptr(sid);
-      }
-      _buf_ptr = Kokkos::create_mirror_view(exec_memory_space(), _h_buf_ptr);
-      Kokkos::deep_copy(_buf_ptr, _h_buf_ptr);
-      _buf = value_type_array(do_not_initialize_tag("buf"), _h_buf_ptr(_nsupernodes));
-
-      // cuda stream setup
-#if defined(KOKKOS_ENABLE_CUDA)
-      _status = cublasCreate(&_cublas_handle); checkCuBlasStatus("cublasCreate");
-      _nstreams = 0;
-#endif
-    }
+        _h_stree_level(h_stree_level),
+        _max_nrhs(max_nrhs) 
+    {}
 
     virtual~TriSolveTools() {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -315,7 +404,7 @@ namespace Tacho {
     solveLowerOnDevice(const ordinal_type pbeg, 
                        const ordinal_type pend,
                        const value_type_matrix &t) {
-      constexpr bool _is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), zero(0);
       for (ordinal_type p=pbeg,q=0;p<pend;++p) {
@@ -334,7 +423,7 @@ namespace Tacho {
               const ordinal_type offm = s.row_begin;
               UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
               auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
-              if (_is_host) {
+              if (is_host) {
                 const ordinal_type member(0); // dummy member for testing
                 Trsv<Uplo::Upper,Trans::ConjTranspose,Algo::External>
                   ::invoke(member, Diag::NonUnit(), AL, tT);
@@ -353,7 +442,7 @@ namespace Tacho {
                 // solve offdiag
                 UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
                 UnmanagedViewType<value_type_matrix> tB(_buf.data()+_h_buf_ptr(sid), n, nrhs);
-                if (_is_host) {
+                if (is_host) {
                   const ordinal_type member(0); // dummy member for testing
                   Gemv<Trans::ConjTranspose,Algo::External>
                     ::invoke(member, minus_one, AR, tT, zero, tB);
@@ -382,7 +471,7 @@ namespace Tacho {
     solveUpperOnDevice(const ordinal_type pbeg,
                        const ordinal_type pend,
                        const value_type_matrix &t) {
-      constexpr bool _is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1);
       for (ordinal_type p=pbeg,q=0;p<pend;++p) {
@@ -406,7 +495,7 @@ namespace Tacho {
                 
                 if (n > 0) {
                   const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-                  if (_is_host) {
+                  if (is_host) {
                     const ordinal_type member(0); // dummy member for testing
                     Gemv<Trans::NoTranspose,Algo::External>
                       ::invoke(member, minus_one, AR, tB, one, tT);
@@ -423,7 +512,7 @@ namespace Tacho {
 #endif
                   }
                 }
-                if (_is_host) {
+                if (is_host) {
                   const ordinal_type member(0); // dummy member for testing
                   Trsv<Uplo::Upper,Trans::NoTranspose,Algo::External>
                     ::invoke(member, Diag::NonUnit(), AL, tT);
@@ -463,15 +552,23 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
                                x.data() == t.data(), std::logic_error,
                                "x, b, t, and w have the same data pointer");
-      constexpr bool _is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
 
       // solve U^{H} (U x) = b 
       const ordinal_type nrhs = x.extent(1);
+      TACHO_TEST_FOR_EXCEPTION(nrhs > _max_nrhs, std::logic_error,
+                               "nrhs is bigger than max nrhs");
+      
+      Kokkos::Impl::Timer timer;
+
 
 
       // 0. permute and copy b -> t
+      timer.reset();
       applyRowPermutationToDenseMatrix(t, b, _perm);      
+      stat.t_extra = timer.seconds();
 
+      timer.reset();
       { 
         {
           typedef TeamFunctor_SolveLowerChol<supernode_info_type> functor_type;
@@ -503,7 +600,7 @@ namespace Tacho {
 
             functor.setRange(pbeg, pend);
             team_policy_solve_update policy_solve_update(1,1,1);
-            if (_is_host) {
+            if (is_host) {
               policy_solve_update = team_policy_solve_update(pcnt, 1, 1);
             } else {
               policy_solve_update = team_policy_solve_update(pcnt, 8, 8);
@@ -521,11 +618,11 @@ namespace Tacho {
               solveLowerOnDevice(pbeg, pend, t);
               
               functor.setRange(pbeg, pend);
-              if (_is_host) {
+              if (is_host) {
                 policy_solve  = team_policy_solve(pcnt, 1, 1);
                 policy_update = team_policy_update(pcnt, 1, 1);
               } else {
-                policy_solve  = team_policy_solve(pcnt, 16, 16);
+                policy_solve  = team_policy_solve(pcnt, 32,  8);
                 policy_update = team_policy_update(pcnt, 1, 32);
               }
               if (lvl < _device_level_cut) {
@@ -569,11 +666,11 @@ namespace Tacho {
                 pcnt = pend - pbeg;
               
               functor.setRange(pbeg, pend);
-              if (_is_host) {
+              if (is_host) {
                 policy_solve  = team_policy_solve(pcnt, 1, 1);
                 policy_update = team_policy_update(pcnt, 1, 1);
               } else {
-                policy_solve  = team_policy_solve(pcnt, 16, 16);
+                policy_solve  = team_policy_solve(pcnt, 32,  8);
                 policy_update = team_policy_update(pcnt, 1, 32);
               }
               Kokkos::parallel_for("update upper", policy_update, functor);              
@@ -598,7 +695,7 @@ namespace Tacho {
 
             functor.setRange(pbeg, pend);
             team_policy_solve_update policy_solve_update(1,1,1);
-            if (_is_host) {
+            if (is_host) {
               policy_solve_update = team_policy_solve_update(pcnt, 1, 1);
             } else {
               policy_solve_update = team_policy_solve_update(pcnt, 8, 8);
@@ -609,16 +706,19 @@ namespace Tacho {
         }/// end of upper tri solve
 
       } // end of solve
+      stat.t_solve = timer.seconds();
 
       // permute and copy t -> x
+      timer.reset();
       applyRowPermutationToDenseMatrix(x, t, _peri);
+      stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: TriSolveTools (ParallelSolve: %3d)\n", ordinal_type(x.extent(1)));
+        printf("Summary: TriSolveTools (ParallelSolve: %3d)\n", nrhs);
         printf("===========================================\n");
+        print_stat_solve();
       }
     }
-
 
   };
 

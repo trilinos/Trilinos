@@ -103,7 +103,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void update(MemberType &member, const ordinal_type sid) const {
       const auto &s = _info.supernodes(sid);
-      value_type *ptr = s.buf; 
+      //value_type *ptr = s.buf; 
       {
         const ordinal_type n = s.n - s.m;
         {
