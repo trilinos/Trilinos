@@ -62,7 +62,7 @@ TRIBITS_ADD_TEST(
     "--inputFile=complete --colorMethod=Hybrid"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+)
 
 TRIBITS_ADD_TEST(
   Coloring1
@@ -73,7 +73,7 @@ TRIBITS_ADD_TEST(
     "--inputFile=noedges --colorMethod=Hybrid"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+)
 
 TRIBITS_ADD_TEST(
   Coloring1
@@ -82,6 +82,61 @@ TRIBITS_ADD_TEST(
   COMM serial mpi
   ARGS
     "--inputFile=complete --colorMethod=Hybrid"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+  Coloring1
+  NAME Coloring1_simple_2GL
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--inputFile=simple --colorMethod=2GL"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+  Coloring1
+  NAME Coloring1_commanchedual_2GL
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--inputFile=commanche_dual --colorMethod=2GL"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+  Coloring1
+  NAME Coloring1_complete_2GL
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+    "--inputFile=complete --colorMethod=2GL"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Coloring1
+  NAME Coloring1_noedges_2GL
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--inputFile=noedges --colorMethod=2GL"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Coloring1
+  NAME Coloring1_complete_2GL_one-gets-none
+  NUM_MPI_PROCS 9
+  COMM serial mpi
+  ARGS
+    "--inputFile=complete --colorMethod=2GL"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
