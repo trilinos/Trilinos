@@ -38,11 +38,6 @@ public:
   ///   queried by calling cache_size_hint().
   CholQR () = default;
 
-
-  void initialize(MV& A, size_t nrows) {
-    W = makeStaticLocalMultiVector (A, nrows, nrows);
-  }
-
   /// \brief Compute the QR factorization of the matrix A.
   ///
   /// Compute the QR factorization of the nrows by ncols matrix A,
@@ -61,25 +56,21 @@ public:
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
 
-    // Compute R := A^T * A, using a single BLAS call.
+    // quick return
     size_t ncols = A.getNumVectors ();
-    #if 1
-    MV R_mv;
-    if (ncols >= W.getNumVectors ()) {
-      if (ncols > W.getNumVectors ()) {
-        // reinitialize (initiall W is 0x0)
-        initialize(A, ncols);
-      }
-      R_mv = W;
-    } else {
-      // create subview
-      auto lclMap = makeLocalMap (*(A.getMap ()), ncols);
-      Teuchos::Range1D cols(0, ncols-1);
-
-      R_mv = MV (W, lclMap);
-      R_mv = * (R_mv.subView (cols));
+    size_t nrows = A.getLocalLength ();
+    if (ncols == 0 || nrows == 0) {
+      return 0;
     }
-    R_mv.putScalar (zero);
+
+
+    // Compute R := A^T * A, using a single BLAS call.
+    #if 1
+    // MV with "static" memory (e.g., Tpetra manages the static GPU memory pool)
+    MV R_mv = makeStaticLocalMultiVector (A, ncols, ncols);
+    R_mv.putScalar (STS::zero ());
+
+    // compute R := A^T * A
     R_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, one, A, A, zero);
     #else
     MVT::MvTransMv(one, A, A, R);
@@ -137,7 +128,6 @@ public:
     {
       auto A_d = A.getLocalViewDevice ();
       auto R_d = R_mv.getLocalViewDevice ();
-
       KokkosBlas::trsm ("R", "U", "N", "N",
                         one, R_d, A_d);
     }
@@ -150,7 +140,6 @@ public:
       SC* const A_lcl_raw = reinterpret_cast<SC*> (A_lcl.data ());
       const LO LDA = LO (A.getStride ());
 
-      size_t nrows = A.getLocalLength ();
       blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI,
                  Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
                  nrows, ncols, one, R.values(), R.stride(),
@@ -161,9 +150,6 @@ public:
 
     return (info > 0 ? info : ncols);
   }
-
-private:
-  MV W;
 };
 
 
