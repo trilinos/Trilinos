@@ -159,12 +159,13 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
       outStream << "    Increase alpha?:                  " << incAlpha             << std::endl;
     }
     if (incAlpha && useAdapt_) {
-      alphaP  = state_->searchSize;
-      ftrialP = ftrial;
+      ftrialP = ROL_INF<Real>();
       while ( state_->value - ftrial >= -c1_*gs
            && ftrial <= ftrialP
            && state_->searchSize < maxAlpha_
            && ls_nfval < maxit_ ) {
+        alphaP  = state_->searchSize;
+        ftrialP = ftrial;
         state_->searchSize *= rhoinc_;
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
@@ -184,8 +185,6 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
           outStream << "    Sufficient decrease bound:        " << -gs*c1_              << std::endl;
           outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
         }
-        alphaP  = state_->searchSize;
-        ftrialP = ftrial;
       }
       if (state_->value - ftrial < -c1_*gs || ftrial > ftrialP) {
         ftrial = ftrialP;
