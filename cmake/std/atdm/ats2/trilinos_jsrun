@@ -21,6 +21,11 @@ function debug_print {
 # @return void
 ################################################################################
 function evaluate_jsrun_command {
+  if [ "$ECHO_CMD" == "1" ]; then
+    1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
+    1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} AFTER : jsrun " $(printf "'%s' " "${args[@]}")
+  fi
+
   # Set retry, assume JSRUN_WRAPPER_NUM_RETRIES is valid if set
   if [[ ! "$JSRUN_WRAPPER_NUM_RETRIES" == "" ]]; then
     retry=${JSRUN_WRAPPER_NUM_RETRIES}
@@ -31,15 +36,15 @@ function evaluate_jsrun_command {
 
   # Retry jsrun command until retry is exhausted or JSM server error is not found
   while [[ $grep_status -eq 0 && $retry -ne 0 ]]; do
-    eval jsrun $(printf "'%s' " "${args[@]}") &> cmd.out
+    out_file=$(${ATDM_CONFIG_SCRIPT_DIR}/ats2/eval_wrapper jsrun $(printf "'%s' " "${args[@]}"))
 
-    grep 'Error: Remote JSM server is not responding' cmd.out &> /dev/null
+    grep 'Error: Remote JSM server is not responding' $out_file &> /dev/null
     grep_status=$?
 
     retry=$((retry-1))
   done
-  cat cmd.out
-  rm cmd.out
+  cat $out_file
+  rm $out_file
 }
 
 # Check if TPETRA_ASSUME_CUDA_AWARE_MPI is set and default to 0 if unset.
@@ -145,6 +150,9 @@ if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]
     # prepend the argument
     args=("-M -gpu" "${args[@]}")
   fi
+
+  # Point jsrun to pami
+  args=("-E LD_PRELOAD=$OPAL_PREFIX/lib/pami_451/libpami.so" "${args[@]}")
 fi
 
 evaluate_jsrun_command

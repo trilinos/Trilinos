@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Create process ID specific output file
+out_file=$$_cmd.out
+
+# Evaluate the command passed in and redirect all output
+eval $@ &> $out_file
+
+# Return the name of the out_file to the caller
+echo $out_file
