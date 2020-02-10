@@ -98,14 +98,11 @@ int main(int narg, char *arg[]) {
 
   ia.getWeightsKokkosView(weightsIn);
 
-  typename decltype(globalIdsIn)::HostMirror host_globalIdsIn =
-    Kokkos::create_mirror_view(globalIdsIn);
+  auto host_globalIdsIn = Kokkos::create_mirror_view(globalIdsIn);
   Kokkos::deep_copy(host_globalIdsIn, globalIdsIn);
-  typename decltype(weightsIn)::HostMirror host_weightsIn =
-    Kokkos::create_mirror_view(weightsIn);
+  auto host_weightsIn = Kokkos::create_mirror_view(weightsIn);
   Kokkos::deep_copy(host_weightsIn, weightsIn);
-  typename decltype(weights)::HostMirror host_weights =
-    Kokkos::create_mirror_view(weights);
+  auto host_weights = Kokkos::create_mirror_view(weights);
   Kokkos::deep_copy(host_weights, weights);
 
   auto host_w0 = Kokkos::subview(host_weightsIn, Kokkos::ALL, 0);

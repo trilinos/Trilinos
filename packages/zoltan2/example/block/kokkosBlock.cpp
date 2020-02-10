@@ -86,8 +86,7 @@ int main(int narg, char *arg[]) {
 
   Kokkos::View<globalId_t*, typename node_t::device_type>
     globalIds(Kokkos::ViewAllocateWithoutInitializing("globalIds"), localCount);
-  typename decltype(globalIds)::HostMirror
-    host_globalIds = Kokkos::create_mirror_view(globalIds);
+  auto host_globalIds = Kokkos::create_mirror_view(globalIds);
 
   if (rank == 0) {
     for (int i = 0, num = 40; i < nprocs ; i++, num += 40) {
@@ -150,8 +149,7 @@ int main(int narg, char *arg[]) {
   Kokkos::View<const globalId_t *, typename node_t::device_type> ids;
   ia.getIDsKokkosView(ids);
 
-  typename decltype(ids)::HostMirror host_ids =
-    Kokkos::create_mirror_view(ids);
+  auto host_ids = Kokkos::create_mirror_view(ids);
   Kokkos::deep_copy(host_ids, ids);
 
   Kokkos::View<int*, Kokkos::HostSpace> partCounts("partCounts", nprocs);
