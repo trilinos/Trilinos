@@ -239,8 +239,6 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
     }
     ArrayRCP<const SC> Onediag = diag_inv[0]->getData(0);
 
-    for (size_t k = 0; k < numRows; ++k) ldelta[k] = 0.;
-
     // Loop over all rows in the region matrix
     for (size_t k = 0; k < numRows; ++k) {
       // Extract a single row
