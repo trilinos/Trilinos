@@ -6,6 +6,9 @@
 
 #include "Tacho_Util.hpp"
 
+#include "Tacho_Trsm.hpp"
+#include "Tacho_Trsm_External.hpp"
+
 #include "Tacho_Trsv.hpp"
 #include "Tacho_Trsv_External.hpp"
 
@@ -14,8 +17,11 @@
 
 #include "Tacho_SupernodeInfo.hpp"
 
+#include "Tacho_TeamFunctor_InvertPanel.hpp"
+
 #include "Tacho_TeamFunctor_SolveLowerChol.hpp"
 #include "Tacho_TeamFunctor_SolveUpperChol.hpp"
+
 #if defined (KOKKOS_ENABLE_CUDA)
 #include "cublas_v2.h"
 #endif
@@ -92,7 +98,7 @@ namespace Tacho {
     // level sids on device
     ordinal_type_array _level_sids;
 
-    // workspace
+    // workspace for right hand side
     ordinal_type _max_nrhs;
     size_type_array_host _h_buf_ptr;
     size_type_array _buf_ptr;
@@ -112,8 +118,9 @@ namespace Tacho {
     /// statistics
     ///
     struct {
-      double t_init, t_prepare, t_solve, t_extra;
+      double t_init, t_mode_classification, t_prepare, t_solve, t_extra;
       double m_used, m_peak;
+      int n_device_problems, n_team_problems;
     } stat;
 
   public:
@@ -159,12 +166,34 @@ namespace Tacho {
     print_stat_init() {
       printf("  Time\n");
       printf("             time for initialization:                         %10.6f s\n", stat.t_init);
-      printf("             time for compute mode classification:            %10.6f s\n", stat.t_prepare);
-      printf("             total time spent:                                %10.6f s\n", (stat.t_init+stat.t_prepare));
+      printf("             time for compute mode classification:            %10.6f s\n", stat.t_mode_classification);
+      printf("             total time spent:                                %10.6f s\n", (stat.t_init+stat.t_mode_classification));
       printf("\n");
       printf("  Memory\n");
       printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
       printf("             peak memory used in solve:                       %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("\n");
+      printf("  Compute Mode in Solve\n");
+      printf("             # of subproblems using device functions:         %6d\n", stat.n_device_problems);
+      printf("             # of subproblems using team functions:           %6d\n", stat.n_team_problems);
+      printf("             total # of subproblems:                          %6d\n", (stat.n_device_problems+stat.n_team_problems));
+      printf("\n");
+    }
+
+    inline
+    void
+    print_stat_prepare() {
+      printf("  Time\n");
+      printf("             total time spent:                                %10.6f s\n", stat.t_prepare);
+      printf("\n");
+      printf("  Memory\n");
+      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
+      printf("             peak memory used in solve:                       %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("\n");
+      printf("  Compute Mode in Prepare\n");
+      printf("             # of subproblems using device functions:         %6d\n", stat.n_device_problems);
+      printf("             # of subproblems using team functions:           %6d\n", stat.n_team_problems);
+      printf("             total # of subproblems:                          %6d\n", (stat.n_device_problems+stat.n_team_problems));
       printf("\n");
     }
       
@@ -277,6 +306,7 @@ namespace Tacho {
           for (ordinal_type p=pbeg;p<pend;++p) {
             const ordinal_type sid = _h_level_sids(p);
             _h_compute_mode(sid) = 0;
+            ++stat.n_device_problems;
           }
         }
       }
@@ -316,8 +346,10 @@ namespace Tacho {
             if (m > _device_function_thres || 
                 n > _device_function_thres) {
               _h_compute_mode(sid) = 0;
+              ++stat.n_device_problems;
             } else {
               _h_compute_mode(sid) = 1;
+              ++stat.n_team_problems;
             }
           }
         }
@@ -327,7 +359,7 @@ namespace Tacho {
       Kokkos::deep_copy(_compute_mode, _h_compute_mode);
       track_alloc(_compute_mode.span()*sizeof(ordinal_type));
 
-      stat.t_prepare = timer.seconds();
+      stat.t_mode_classification = timer.seconds();
 
       if (verbose) {
         printf("Summary: TriSolveTools (Initialize)\n");
@@ -380,7 +412,7 @@ namespace Tacho {
 
     inline
     void
-    createCudaStream(const ordinal_type nstreams) {
+    createStream(const ordinal_type nstreams) {
 #if defined(KOKKOS_ENABLE_CUDA)
       // destroy previously created streams
       for (ordinal_type i=0;i<_nstreams;++i) {
@@ -394,9 +426,96 @@ namespace Tacho {
       for (ordinal_type i=0;i<_nstreams;++i) {
         _status = cudaStreamCreate(&_cuda_streams[i]); checkCudaStatus("cudaStreamCreate");
       }
-#else
-      // no-op
 #endif
+    }
+    
+    inline 
+    void
+    invertPanelOnDevice(const bool invertPanel, 
+                       const ordinal_type nstreams,
+                       const ordinal_type_array_host &h_prepare_mode, 
+                       const value_type_array &work) {
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      for (ordinal_type sid=0,q=0;sid<_nsupernodes;++sid) {
+        if (h_prepare_mode(sid) == 0) {
+          const value_type one(1), zero(0);
+          const auto &s = _h_supernodes(sid);
+
+          // stream setting
+          ordinal_type idx;
+#if defined(KOKKOS_ENABLE_CUDA)
+          idx = q%nstreams; ++q;
+          _status = cublasSetStream(_cublas_handle, _cuda_streams[idx]); checkCuBlasStatus("cublasSetStream");
+          const auto exec_instance = Kokkos::Cuda(_cuda_streams[idx]);
+          const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
+#else
+          idx = 0;
+#endif
+          // make local variables to capture          
+          const ordinal_type m = s.m, n = invertPanel ? s.n : s.m;
+          const size_type worksize_per_stream = _info.max_supernode_size*_info.max_supernode_size;
+          value_type *pptr = s.buf;
+          value_type *aptr = work.data()+idx*worksize_per_stream;
+
+          // copy to work space and set identity for inversion
+#if defined(KOKKOS_ENABLE_CUDA)
+          {
+            typedef Kokkos::RangePolicy<exec_space> range_policy_type;
+            const range_policy_type policy(exec_instance, 0, m*m);
+            Kokkos::parallel_for
+              ("copy and set identity",
+               Kokkos::Experimental::require(policy, work_item_property),
+               KOKKOS_LAMBDA(const ordinal_type &k) {
+                const ordinal_type i=k%m;
+                const ordinal_type j=k/m;
+                // copy and set identity
+                aptr[i+j*m] = i <= j ? pptr[i+j*m] : zero;
+                pptr[i+j*m] = i == j ? one : zero;
+              });
+          }
+#else
+          idx = 0;
+          {
+            typedef Kokkos::RangePolicy<exec_space> range_policy_type;
+            const range_policy_type policy(0, m*m);
+            Kokkos::parallel_for
+              ("copy and set identity",
+               policy,
+               KOKKOS_LAMBDA(const ordinal_type &k) {
+                const ordinal_type i=k%m;
+                const ordinal_type j=k/m;
+                // copy and set identity
+                aptr[i+j*m] = i <= j ? pptr[i+j*m] : zero;
+                pptr[i+j*m] = i == j ? one : zero;
+              });
+          }
+#endif
+
+          // invert panels
+          if (m > 0) {
+            UnmanagedViewType<value_type_matrix> A(aptr, m, m); 
+            UnmanagedViewType<value_type_matrix> P(pptr, m, n);
+            const value_type one(1);
+            if (is_host) {
+              const ordinal_type member(0); // dummy member for testing                
+              Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
+                ::invoke(member, Diag::NonUnit(), one, A, P);
+            } else {
+#if defined(KOKKOS_ENABLE_CUDA)
+              _status = cublasDtrsm(_cublas_handle, 
+                                    CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER,
+                                    CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,
+                                    m, n,
+                                    &one, 
+                                    A.data(), A.stride_1(),
+                                    P.data(), P.stride_1()); checkCuBlasStatus("cublasDtrsm");
+#endif
+            }
+          }               
+        } else {
+          // do nothing
+        }
+      }
     }
     
     inline
@@ -536,6 +655,120 @@ namespace Tacho {
     /// 
     /// Level set solve
     /// ---------------
+    inline
+    void
+    prepareSolve(const ordinal_type algo_type,
+                 const ordinal_type arg_nstreams,  
+                 const ordinal_type verbose = 0) {
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      stat.n_device_problems = 0;
+      stat.n_team_problems = 0;
+      
+      Kokkos::Impl::Timer timer;
+      timer.reset();
+
+#if defined(KOKKOS_ENABLE_CUDA)
+      const ordinal_type nstreams 
+        = (arg_nstreams == -1 || arg_nstreams > _nstreams) ? _nstreams : arg_nstreams;
+#else
+      const ordinal_type nstreams = 1;
+#endif
+      
+      // algo: 0) trsv, 1) invert diagonal, 2) invert panel
+      // workspace is required for each stream
+      ordinal_type max_supernode_team(0);
+      ordinal_type_array_host h_prepare_mode;      
+      ordinal_type_array        prepare_mode;
+      value_type_array work;
+      if (algo_type > 0) {
+        const size_type worksize_per_stream = _info.max_supernode_size*_info.max_supernode_size;
+        work = value_type_array(do_not_initialize_tag("work"), nstreams*worksize_per_stream);
+        track_alloc(work.span()*sizeof(value_type));
+        h_prepare_mode = ordinal_type_array_host(do_not_initialize_tag("h_prepare_mode"), _nsupernodes);
+        {
+          // we cannot really test team only case as we use shared memory
+          // we can test device only mode
+          for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+            const auto &s = _h_supernodes(sid);
+            if (s.m > _device_function_thres || s.n > _device_function_thres) {// if (true) {
+              h_prepare_mode(sid) = 0; // compute on device
+              ++stat.n_device_problems;
+            } else {
+              h_prepare_mode(sid) = 1; // compute in team
+              max_supernode_team = max(max_supernode_team, s.m);
+              ++stat.n_team_problems;
+            }
+          }
+        }
+        prepare_mode = Kokkos::create_mirror_view(exec_memory_space(), h_prepare_mode); 
+        Kokkos::deep_copy(prepare_mode, h_prepare_mode);
+        track_alloc(prepare_mode.span()*sizeof(ordinal_type));
+      }
+
+      {
+        typedef TeamFunctor_InvertPanel<supernode_info_type> functor_type;
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                   typename functor_type::DiagTag> team_policy_diag_type;
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                   typename functor_type::PanelTag> team_policy_panel_type;
+        const ordinal_type scratch_level(1);
+        functor_type functor(_info,
+                             prepare_mode,
+                             scratch_level);
+
+        team_policy_diag_type policy_diag(1,1,1);
+        team_policy_panel_type policy_panel(1,1,1);
+        if (algo_type > 0) {
+          if (is_host) {
+            policy_diag = team_policy_diag_type(_nsupernodes, 1, 1);
+            policy_panel = team_policy_panel_type(_nsupernodes, 1, 1);
+          } else {
+            policy_diag = team_policy_diag_type(_nsupernodes, 16, 16);
+            policy_panel = team_policy_panel_type(_nsupernodes, 16, 16);
+          }
+          // add scratch space per team
+          typedef typename exec_space::scratch_memory_space shmem_space;
+          typedef Kokkos::View<value_type*,shmem_space,Kokkos::MemoryUnmanaged> team_shared_memory_view_type;
+          const ordinal_type per_team_scratch = team_shared_memory_view_type::shmem_size(max_supernode_team*max_supernode_team);
+          policy_diag  = policy_diag.set_scratch_size(scratch_level, Kokkos::PerTeam(per_team_scratch));
+          policy_panel = policy_panel.set_scratch_size(scratch_level, Kokkos::PerTeam(per_team_scratch));
+        }
+           
+        switch (algo_type) {
+        case 0: {
+          break; 
+        }
+        case 1: {
+          invertPanelOnDevice(false, nstreams, h_prepare_mode, work);
+          Kokkos::parallel_for("invert diag", policy_diag, functor);
+          break;
+        }
+        case 2: {
+          invertPanelOnDevice(true, nstreams, h_prepare_mode, work);
+          Kokkos::parallel_for("invert panel", policy_panel, functor);
+          break;
+        }
+        default: {
+          printf("Error: algo_type is not supported, %d\n", algo_type);
+          std::runtime_error("prepareSolve failed");
+          break;
+        }
+        }
+        Kokkos::fence();
+      }
+      
+      if (algo_type > 0) {
+        track_free(work.span()*sizeof(value_type));
+        track_free(prepare_mode.span()*sizeof(ordinal_type));
+      }
+      stat.t_prepare = timer.seconds();
+      
+      if (verbose) {
+        printf("Summary: TriSolveTools (prepareSolve)\n");
+        printf("=====================================\n");
+        print_stat_prepare();
+      }
+    }
 
     inline
     void
@@ -560,8 +793,6 @@ namespace Tacho {
                                "nrhs is bigger than max nrhs");
       
       Kokkos::Impl::Timer timer;
-
-
 
       // 0. permute and copy b -> t
       timer.reset();

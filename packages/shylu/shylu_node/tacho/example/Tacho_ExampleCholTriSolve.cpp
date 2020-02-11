@@ -41,6 +41,10 @@ int main (int argc, char *argv[]) {
   int serial_thres_size = -1; // 32 is better
   int mb = 0;
   int nb = 0;
+  int device_function_thres = 256;
+  int nstreams_solve = 8;
+  int nstreams_prepare = 2;
+  int algo_type = 0;
 
   opts.set_option<bool>("serial", "Flag to use serial algorithm", &serial);
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
@@ -51,6 +55,10 @@ int main (int argc, char *argv[]) {
   opts.set_option<int>("serial-thres", "Serialization threshold size", &serial_thres_size);
   opts.set_option<int>("mb", "Blocksize", &mb);
   opts.set_option<int>("nb", "Panelsize", &nb);
+  opts.set_option<int>("algo-type", "Algorithm variant for trisolve", &algo_type);
+  opts.set_option<int>("nstreams-solve", "# of streams used in trisolve", &nstreams_solve);
+  opts.set_option<int>("nstreams-prepare", "# of streams used in trisolve", &nstreams_prepare);
+  opts.set_option<int>("device-function-thres", "device function is used above this threshold", &device_function_thres);
 
 #if !defined (KOKKOS_ENABLE_CUDA)
   // override serial flag
@@ -209,11 +217,9 @@ int main (int argc, char *argv[]) {
          N.getSupernodesInfo(),
          S.SupernodesTreeLevel(),
          nrhs);
-    const int device_function_thres = 512;
     TS.initialize(device_function_thres, verbose);
-
-    const int nstreams = 32; //128
-    TS.createCudaStream(nstreams);
+    TS.createStream(nstreams_solve);
+    TS.prepareSolve(algo_type, nstreams_prepare, verbose);
     t = timer.seconds();    
     std::cout << "CholTriSolve:: TriSolve prepare::time = " << t << std::endl;
 
