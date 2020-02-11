@@ -4939,7 +4939,8 @@ mj_create_new_partitions(
 #else
 
 #ifdef KOKKOS_ENABLE_OPENMP
-  const int num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
+  // will return and fix this - revert back to 1 for clear auto testing
+  const int num_threads = 1; // Kokkos::OpenMP::impl_max_hardware_threads();
 #else
   const int num_threads = 1;
 #endif
