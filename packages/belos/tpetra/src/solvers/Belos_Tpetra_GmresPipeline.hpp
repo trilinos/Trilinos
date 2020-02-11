@@ -207,8 +207,8 @@ private:
         if (k >= 0) {
           if (k > 0) {
             req->wait (); // wait for idot
-            Kokkos::View<dot_type*, device_type> v_iter (vals.data (),   iter+1);
-            Kokkos::View<dot_type*, device_type> h_iter (vals_h.data (), iter+1);
+            auto v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+1));
+            auto h_iter = Kokkos::subview(vals_h, std::pair<int, int>(0, iter+1));
             Kokkos::deep_copy (h_iter, v_iter);
 
             for (int i = 0; i <= iter; i++) {
@@ -293,7 +293,7 @@ private:
           Teuchos::Range1D index_prev(0, iter+1);
           const MV Qprev  = * (Q.subView(index_prev));
 
-          Kokkos::View<dot_type*, device_type> v_iter (vals.data (), iter+2);
+          auto v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+2));
           vec_type W = * (V.getVectorNonConst (iter+1));
           req = Tpetra::idot (v_iter, Qprev, W);
         }
