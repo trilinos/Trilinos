@@ -145,7 +145,7 @@ public:
   /// complete the canceled request (as required by the MPI standard).
   virtual ~CommRequest() {}
 
-  //! Wait on this request (a blocking operation).
+  /// Wait on this request (a blocking operation).
   virtual RCP<CommStatus<OrdinalType> > wait () = 0;
 };
 
@@ -231,6 +231,7 @@ public:
 /// with MPI enabled, you may use GlobalMPISession to call MPI_Init if
 /// necessary, and DefaultComm to "get a default communicator."  For
 /// example:
+/// \code
 /// int main (int argc, char* argv[]) {
 ///   using Teuchos::Comm;
 ///   using Teuchos::DefaultComm;

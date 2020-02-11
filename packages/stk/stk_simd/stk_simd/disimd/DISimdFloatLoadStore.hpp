@@ -38,12 +38,12 @@ namespace stk {
 namespace simd {
 
 STK_MATH_FORCE_INLINE simd::Float load_aligned(const float* x) {
-  return simd::Float(::simd::simd<float,::simd::simd_abi::native>(x,::simd::element_aligned_tag()));
+  return simd::Float(SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>(x, SIMD_NAMESPACE::element_aligned_tag()));
 }
 
 STK_MATH_FORCE_INLINE simd::Float load(const float* x) {
   //FIXME: supposed to be un-aligned load...
-  return simd::Float(::simd::simd<float,::simd::simd_abi::native>(x,::simd::element_aligned_tag()));
+  return simd::Float(SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>(x, SIMD_NAMESPACE::element_aligned_tag()));
 }
     
 STK_MATH_FORCE_INLINE simd::Float load(const float* x, const int offset) {
@@ -55,12 +55,12 @@ STK_MATH_FORCE_INLINE simd::Float load(const float* x, const int offset) {
 }
   
 STK_MATH_FORCE_INLINE void store_aligned(float* x, const simd::Float& z) {
-  z._data.copy_to(x, ::simd::element_aligned_tag());
+  z._data.copy_to(x, SIMD_NAMESPACE::element_aligned_tag());
 }
 
 STK_MATH_FORCE_INLINE void store(float* x, const simd::Float& z) {
   //FIXME: supposed to be un-aligned store...
-  z._data.copy_to(x, ::simd::element_aligned_tag());
+  z._data.copy_to(x, SIMD_NAMESPACE::element_aligned_tag());
 }
   
 STK_MATH_FORCE_INLINE void store(float* x, const simd::Float& z, const int offset) {

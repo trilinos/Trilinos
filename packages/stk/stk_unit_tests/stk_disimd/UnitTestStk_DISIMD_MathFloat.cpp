@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
+#ifndef STK_KOKKOS_SIMD
 #define STK_KOKKOS_SIMD
+#endif
 
 #include <stk_simd/Simd.hpp>
 #include <cmath>
@@ -1451,18 +1453,18 @@ TEST(StkDISimd, SimdChooseFloat)
 {
   std::cout<<"Using simd_abi = '"<<stk::unit_test_simd::get_simd_abi_native_name()<<"'"<<std::endl;
 
-  simd::simd<float, simd::simd_abi::native> one(1.0f);
-  simd::simd<float, simd::simd_abi::native> zero(0.0f);
+  SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native> one(1.0f);
+  SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native> zero(0.0f);
 
   std::vector<float> maskVec(stk::simd::nfloats, 0.0f);
   maskVec[0] = 1.0f;
-  simd::simd<float, simd::simd_abi::native> maskFloat(maskVec.data(), simd::element_aligned_tag());
-  //simd::simd_mask<float, simd::simd_abi::native> mask(maskFloat.get());
+  SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native> maskFloat(maskVec.data(), SIMD_NAMESPACE::element_aligned_tag());
+  //SIMD_NAMESPACE::simd_mask<float, SIMD_NAMESPACE::simd_abi::native> mask(maskFloat.get());
   auto mask = (maskFloat == one);
 
-  simd::simd<float, simd::simd_abi::native> masked = simd::choose(mask, one, zero);
+  SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native> masked = SIMD_NAMESPACE::choose(mask, one, zero);
   std::vector<float> maskedVec(stk::simd::nfloats);
-  masked.copy_to(maskedVec.data(), simd::element_aligned_tag());
+  masked.copy_to(maskedVec.data(), SIMD_NAMESPACE::element_aligned_tag());
 
   ASSERT_EQ(maskVec, maskedVec);
 }

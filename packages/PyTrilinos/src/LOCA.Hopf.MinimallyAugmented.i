@@ -173,10 +173,9 @@ from . import MooreSpence
 %teuchos_rcp(LOCA::Hopf::MooreSpence::FiniteDifferenceGroup)
 
 // Base class support
+#pragma SWIG nowarn=473
 %import "NOX.Abstract.i"
 %import(module="BorderedSystem") "LOCA_BorderedSystem_AbstractGroup.H"
-%warnfilter(473) LOCA::MultiContinuation::AbstractGroup;
-%warnfilter(473) LOCA::MultiContinuation::ConstraintInterfaceMVDX;
 %import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
@@ -189,7 +188,6 @@ from . import MooreSpence
 %import(module="MooreSpence") "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 
 // LOCA::Hopf::MinimallyAugmented Constraint class
-%warnfilter(473) LOCA::Hopf::MinimallyAugmented::Constraint;
 %feature("director") LOCA::Hopf::MinimallyAugmented::Constraint;
 %include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 

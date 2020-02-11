@@ -50,7 +50,10 @@
 
 // Include Domi headers
 #include "Domi_MDMap.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "Domi_MDVector.hpp"
+#pragma GCC diagnostic pop
 
 // Verbosity
 // #define PYTRILINOS_DOMI_UTIL_VERBOSE

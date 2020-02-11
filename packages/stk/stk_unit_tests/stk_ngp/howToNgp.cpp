@@ -755,6 +755,18 @@ stk::mesh::Field<DataType> &create_field_with_num_states_and_init(stk::mesh::Met
     return field;
 }
 
+template <typename DataType>
+stk::mesh::Field<DataType, stk::mesh::Cartesian> &create_vector_field_with_num_states_and_init(stk::mesh::MetaData &meta,
+                                                                                               const std::string & fieldName,
+                                                                                               int numStates,
+                                                                                               int fieldDimension,
+                                                                                               DataType* init)
+{
+  auto &field = meta.declare_field<stk::mesh::Field<DataType, stk::mesh::Cartesian>>(stk::topology::ELEM_RANK, fieldName, numStates);
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(), fieldDimension, init);
+  return field;
+}
+
 stk::mesh::Field<int> &create_field(stk::mesh::MetaData &meta)
 {
     int numStates = 1;
@@ -850,7 +862,7 @@ TEST_F(NgpHowTo, useConvenientMultistateFields)
     verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
 }
 
-TEST_F(NgpHowTo, setAllFieldValues)
+TEST_F(NgpHowTo, setAllScalarFieldValues)
 {
     int numStates = 2;
     double initialValue = 0.0;
@@ -866,6 +878,30 @@ TEST_F(NgpHowTo, setAllFieldValues)
     double expectedSum = 4.0;
     double sum = ngp::get_field_sum(ngpMesh, ngpField, get_meta().universal_part());
     EXPECT_NEAR(expectedSum, sum, 1e-14);
+}
+
+TEST_F(NgpHowTo, setAllVectorFieldValues)
+{
+  int numStates = 2;
+  double initialValue[] = {0.0, 0.0, 0.0};
+  int fieldDimension = 3;
+  auto& stkField = create_vector_field_with_num_states_and_init<double>(get_meta(),
+                                                                        "myField",
+                                                                        numStates,
+                                                                        fieldDimension,
+                                                                        initialValue);
+  setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+
+  ngp::Field<double> ngpField(get_bulk(), stkField);
+  ngp::Mesh ngpMesh(get_bulk());
+
+  double fieldVal = 1.0;
+  ngpField.set_all(ngpMesh, fieldVal);
+
+  double expectedSum = fieldDimension*stk::mesh::count_selected_entities(get_meta().locally_owned_part(),
+                                                                         get_bulk().buckets(stk::topology::ELEM_RANK));
+  double sum = ngp::get_field_sum(ngpMesh, ngpField, get_meta().locally_owned_part());
+  EXPECT_NEAR(expectedSum, sum, 1e-14);
 }
 
 

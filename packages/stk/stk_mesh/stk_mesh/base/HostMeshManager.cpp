@@ -29,7 +29,7 @@ HostMeshManager::get_mesh()
 
 void HostMeshManager::update_mesh()
 {
-  m_hostMesh.update_buckets();
+  m_hostMesh.update_mesh();
 }
 
 }

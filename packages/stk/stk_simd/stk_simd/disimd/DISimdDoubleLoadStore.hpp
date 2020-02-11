@@ -38,12 +38,12 @@ namespace stk {
 namespace simd {
 
 STK_MATH_FORCE_INLINE simd::Double load_aligned(const double* x) {
-  return simd::Double(::simd::simd<double,::simd::simd_abi::native>(x,::simd::element_aligned_tag()));
+  return simd::Double(SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>(x, SIMD_NAMESPACE::element_aligned_tag()));
 }
 
 STK_MATH_FORCE_INLINE simd::Double load(const double* x) {
   //FIXME: supposed to be un-aligned load...
-  return simd::Double(::simd::simd<double,::simd::simd_abi::native>(x,::simd::element_aligned_tag()));
+  return simd::Double(SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>(x, SIMD_NAMESPACE::element_aligned_tag()));
 }
     
 STK_MATH_FORCE_INLINE simd::Double load(const double* x, const int offset) {
@@ -55,12 +55,12 @@ STK_MATH_FORCE_INLINE simd::Double load(const double* x, const int offset) {
 }
   
 STK_MATH_FORCE_INLINE void store_aligned(double* x, const simd::Double& z) {
-  z._data.copy_to(x, ::simd::element_aligned_tag());
+  z._data.copy_to(x, SIMD_NAMESPACE::element_aligned_tag());
 }
 
 STK_MATH_FORCE_INLINE void store(double* x, const simd::Double& z) {
   //FIXME: supposed to be un-aligned store...
-  z._data.copy_to(x, ::simd::element_aligned_tag());
+  z._data.copy_to(x, SIMD_NAMESPACE::element_aligned_tag());
 }
   
 STK_MATH_FORCE_INLINE void store(double* x, const simd::Double& z, const int offset) {

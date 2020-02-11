@@ -98,6 +98,7 @@ other Trilinos solver technologies.
 %ignore PACKAGE_TARNAME;
 #undef  PACKAGE_VERSION
 %ignore PACKAGE_VERSION;
+#pragma SWIG nowarn=305
 %include "Domi_config.h"
 %include "Domi_ConfigDefs.hpp"
 

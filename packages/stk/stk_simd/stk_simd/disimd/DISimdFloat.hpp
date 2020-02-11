@@ -48,7 +48,7 @@ struct Float {
     : _data(float(x)) {
   }
 
-  STK_MATH_FORCE_INLINE Float(const ::simd::simd<float,::simd::simd_abi::native>& x)
+  STK_MATH_FORCE_INLINE Float(const SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>& x)
     : _data(x) {
   }
 
@@ -108,7 +108,7 @@ struct Float {
   }
 
   STK_MATH_FORCE_INLINE Float operator-() const {
-    return (::simd::simd<float,::simd::simd_abi::native>(0.0) - _data);
+    return (SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>(0.0) - _data);
   }
 
   STK_MATH_FORCE_INLINE float& operator[](int i) {return (reinterpret_cast<float*>(&_data))[i];}
@@ -120,7 +120,7 @@ struct Float {
   STK_MATH_FORCE_INLINE uint32_t& UInt(int i) {return (reinterpret_cast<uint32_t*>(&_data))[i];}
   STK_MATH_FORCE_INLINE const uint32_t& UInt(int i) const {return (reinterpret_cast<const uint32_t*>(&_data))[i];}
 
-  ::simd::simd<float,::simd::simd_abi::native> _data; // the "_" means you should try not to use this directly
+  SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native> _data; // the "_" means you should try not to use this directly
   // it is made public to avoid function call overhead 
   // and/or so the compiler doesn't have to use up one of
   // inlining depths (usually max inlining depth ~5)
