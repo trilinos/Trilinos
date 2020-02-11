@@ -308,38 +308,38 @@ private:
     update_primal_nd(*xnew_,x,lam);
     Real rnorm = residual_nd(*res_,*xnew_);
     const Real ctol = std::min(atol,rtol*rnorm);
-    Real alpha(1), tmp(0), mu(0), rho(1); //, dd(0);
+    Real alpha(1), tmp(0), mu(0), rho(1), dd(0);
     int cnt = 0, maxit = 1000;
     for (cnt = 0; cnt < maxit; ++cnt) {
       // Compute Newton step
-      mu  = std::max(rnorm,c1*std::sqrt(rnorm));
+      mu  = c1*std::max(rnorm,std::sqrt(rnorm));
       rho = std::min(half,c2*std::min(std::sqrt(rnorm),rnorm)); // Unused
       solve_newton_system_nd(dlam,*res_,*xnew_,mu,rho);
       lnew_->set(lam); lnew_->axpy(-alpha, dlam);
       update_primal_nd(*xnew_,x,*lnew_);
-      tmp = residual_nd(*res_,*xnew_);
+      //tmp = residual_nd(*res_,*xnew_);
       /* Begin Solodov and Svaiter */
-      //rnorm = residual_nd(*res_,*xnew_);
-      //tmp   = dlam.dot(res_->dual());
-      //dd    = dlam.dot(dlam);
+      rnorm = residual_nd(*res_,*xnew_);
+      tmp   = dlam.dot(res_->dual());
+      dd    = dlam.dot(dlam);
       /* End Solodov and Svaiter */
       // Perform backtracking line search
-      while ( tmp > (one-decr*alpha)*rnorm && alpha > stol ) {
+      //while ( tmp > (one-decr*alpha)*rnorm && alpha > stol ) {
       /* Begin Solodov and Svaiter */
-      //while ( tmp < decr*(one-rho)*mu*dd && alpha > stol ) {
+      while ( tmp < decr*(one-rho)*mu*dd && alpha > stol ) {
       /* End Solodov and Svaiter */
         alpha *= factor;
         lnew_->set(lam); lnew_->axpy(-alpha, dlam);
         update_primal_nd(*xnew_,x,*lnew_);
-        tmp = residual_nd(*res_,*xnew_);
+        //tmp = residual_nd(*res_,*xnew_);
         /* Begin Solodov and Svaiter */
-        //rnorm = residual_nd(*res_,*xnew_);
-        //tmp   = dlam.dot(res_->dual());
+        rnorm = residual_nd(*res_,*xnew_);
+        tmp   = dlam.dot(res_->dual());
         /* End Solodov and Svaiter */
       }
       // Update iterate
       lam.set(*lnew_);
-      rnorm = tmp;
+      //rnorm = tmp;
       /* Begin Solodov and Svaiter */
       //lam.axpy(-alpha*tmp/(rnorm*rnorm),res_->dual());
       //update_primal_nd(*xnew_,x,lam);
