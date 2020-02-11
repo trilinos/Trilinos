@@ -1021,17 +1021,17 @@ namespace MueLu {
 
     // Aggregate qualities
     if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, true)) {
-	RCP<Factory> aggQualityFact = rcp(new AggregateQualityEstimateFactory<SC,LO,GO,Node>);
-	ParameterList aggQualityParams;
-	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: good aggregate threshold", double,      aggQualityParams);
-	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file output",              bool,        aggQualityParams);
-	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file base",                std::string, aggQualityParams);
-	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: check symmetry",           bool,        aggQualityParams);
-	aggQualityFact->SetParameterList(aggQualityParams);
-	manager.SetFactory("AggregateQualities", aggQualityFact);
+        RCP<Factory> aggQualityFact = rcp(new AggregateQualityEstimateFactory());
+        ParameterList aggQualityParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: good aggregate threshold", double,      aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file output",              bool,        aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file base",                std::string, aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: check symmetry",           bool,        aggQualityParams);
+        aggQualityFact->SetParameterList(aggQualityParams);
+        manager.SetFactory("AggregateQualities", aggQualityFact);
 
-	assert(aggType == "uncoupled");
-	aggFactory->SetFactory("AggregateQualities", aggQualityFact);
+        assert(aggType == "uncoupled");
+        aggFactory->SetFactory("AggregateQualities", aggQualityFact);
     }
 
 
