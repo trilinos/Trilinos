@@ -13,7 +13,7 @@
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Geometry">
-    <Parameter name="Width"             type="double"  value="1.0"  />
+    <Parameter name="Width"             type="double"  value="2.0"  />
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />

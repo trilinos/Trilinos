@@ -54,6 +54,8 @@
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
@@ -88,17 +90,28 @@ public:
   PDE_adv_diff(Teuchos::ParameterList &parlist) {
     // Finite element fields.
     int basisOrder = parlist.sublist("Problem").get("Order of FE Discretization",1);
-    if (basisOrder == 1) {
-      basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+    int cubDegree = parlist.sublist("PDE Poisson").get("Cubature Degree",4);
+    int probDim    = parlist.sublist("Problem").get("Problem Dimension",2);
+    if (probDim == 2) {
+      if (basisOrder == 1) {
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      else if (basisOrder == 2) {
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
     }
-    else if (basisOrder == 2) {
-      basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+    else if (probDim == 3) {
+      if (basisOrder == 1) {
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      else if (basisOrder == 2) {
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.
     shards::CellTopology cellType = basisPtr_->getBaseCellTopology();        // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                       // create cubature factory
-    int cubDegree = parlist.sublist("PDE Poisson").get("Cubature Degree",2); // set cubature degree, e.g., 2
     cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
 
     order_ = parlist.sublist("Problem").get("Hilbert Curve Order", 2);
@@ -117,53 +130,39 @@ public:
     int f = fe_vol_->gradN()->dimension(1);
     int p = fe_vol_->gradN()->dimension(2);
     int d = fe_vol_->gradN()->dimension(3);
-    // INITIALIZE RESIDUAL
+    // INITIALIZE RESIDUAL AND STORAGE
     res = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> kappa, V;
+    ROL::Ptr<Intrepid::FieldContainer<Real>> gradU_eval, kappa_gradU, V_gradU, valZ_eval;
+    kappa       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    V           = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+    gradU_eval  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+    kappa_gradU = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+    V_gradU     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     // COMPUTE PDE COEFFICIENTS
-    ROL::Ptr<Intrepid::FieldContainer<Real>> kappa
-      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real>> V
-      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real>> rhs
-      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    computeCoefficients(kappa,V,rhs);
-    // COMPUTE DIFFUSION TERM
-    // Compute grad(U)
-    ROL::Ptr<Intrepid::FieldContainer<Real>> gradU_eval =
-      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+    computeCoefficients(kappa,V);
+    // EVALUE GRADIENT OF U AT QUADRATURE POINTS
     fe_vol_->evaluateGradient(gradU_eval, u_coeff);
-    // Multiply kappa * grad(U)
-    Intrepid::FieldContainer<Real> kappa_gradU(c, p, d);
-    Intrepid::FunctionSpaceTools::tensorMultiplyDataData<Real>(kappa_gradU,
+    // COMPUTE DIFFUSION TERM
+    Intrepid::FunctionSpaceTools::tensorMultiplyDataData<Real>(*kappa_gradU,
                                                                *kappa,
                                                                *gradU_eval);
-    // Integrate (kappa * grad(U)) . grad(N)
     Intrepid::FunctionSpaceTools::integrate<Real>(*res,
-                                                  kappa_gradU,
-                                                  *(fe_vol_->gradNdetJ()),
+                                                  *kappa_gradU,
+                                                  *fe_vol_->gradNdetJ(),
                                                   Intrepid::COMP_CPP, false);
     // ADD ADVECTION TERM TO RESIDUAL
-    // Multiply V . grad(U)
-    Intrepid::FieldContainer<Real> V_gradU(c, p);
-    Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(V_gradU,
+    Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*V_gradU,
                                                             *V,
                                                             *gradU_eval);
-    // Integrate (V . grad(U)) * N
     Intrepid::FunctionSpaceTools::integrate<Real>(*res,
-                                                  V_gradU,
+                                                  *V_gradU,
                                                   *(fe_vol_->NdetJ()),
-                                                  Intrepid::COMP_CPP, true);
-    // ADD RHS TO RESIDUAL
-    Intrepid::FunctionSpaceTools::integrate<Real>(*res,
-                                                  *rhs,
-                                                  (*fe_vol_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
 
     // ADD CONTROL TERM TO RESIDUAL
-    // Compute Z
     if (z_coeff != ROL::nullPtr) {
-      ROL::Ptr<Intrepid::FieldContainer<Real>> valZ_eval =
-        ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
       fe_vol_->evaluateValue(valZ_eval, z_coeff);
       Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                     *valZ_eval,
@@ -172,8 +171,6 @@ public:
     }
     else {
       int n = std::pow(2,order_);
-      ROL::Ptr<Intrepid::FieldContainer<Real>> valZ_eval =
-        ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
       for (int i = 0; i < n*n; ++i) {
         *valZ_eval = *ctrl_wts_[i];
         Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,(*z_param)[i]);
@@ -207,37 +204,30 @@ public:
     int f = fe_vol_->gradN()->dimension(1);
     int p = fe_vol_->gradN()->dimension(2);
     int d = fe_vol_->gradN()->dimension(3);
-    // INITILAIZE JACOBIAN
+    // INITILAIZE JACOBIAN AND STORAGE
     jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> kappa, V, kappa_gradN, V_gradN;
+    kappa       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    V           = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+    kappa_gradN = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p, d);
+    V_gradN     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p);
     // COMPUTE PDE COEFFICIENTS
-    ROL::Ptr<Intrepid::FieldContainer<Real>> kappa
-      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    ROL::Ptr<Intrepid::FieldContainer<Real>> V
-      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
-    ROL::Ptr<Intrepid::FieldContainer<Real>> rhs
-      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    computeCoefficients(kappa,V,rhs);
+    computeCoefficients(kappa,V);
     // COMPUTE DIFFUSION TERM
-    // Multiply kappa * grad(N)
-    Intrepid::FieldContainer<Real> kappa_gradN(c, f, p, d);
-    Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(kappa_gradN,
+    Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*kappa_gradN,
                                                                 *kappa,
-                                                                *(fe_vol_->gradN()));
-    // Integrate (kappa * grad(N)) . grad(N)
+                                                                *fe_vol_->gradN());
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
-                                                  kappa_gradN,
-                                                  *(fe_vol_->gradNdetJ()),
+                                                  *kappa_gradN,
+                                                  *fe_vol_->gradNdetJ(),
                                                   Intrepid::COMP_CPP, false);
     // ADD ADVECTION TERM TO JACOBIAN
-    // Multiply V . grad(N)
-    Intrepid::FieldContainer<Real> V_gradN(c, f, p);
-    Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(V_gradN,
+    Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(*V_gradN,
                                                              *V,
-                                                             *(fe_vol_->gradN()));
-    // Integrate (V . grad(U)) * N
+                                                             *fe_vol_->gradN());
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
-                                                  V_gradN,
-                                                  *(fe_vol_->NdetJ()),
+                                                  *V_gradN,
+                                                  *fe_vol_->NdetJ(),
                                                   Intrepid::COMP_CPP, true);
     // APPLY DIRICHLET CONDITIONS
     int numLocalSideIds = bdryCellLocIds_[0].size();
@@ -492,43 +482,12 @@ private:
   }
 
   void evaluateVelocity(std::vector<Real> &adv, const std::vector<Real> &x) const {
+    adv.assign(x.size(),static_cast<Real>(0));
     adv[0] = static_cast<Real>(1);
-    adv[1] = static_cast<Real>(0);
-  }
-
-  Real evaluateRHS(const std::vector<Real> &x) const {
-    const int ns = 5;             
-    const Real half(0.5), two(2);
-    Real source(0), arg1(0), arg2(0), mag(0), x0(0), y0(0), sx(0), sy(0);
-    // Upper and lower bounds on source magintudes
-    const std::vector<Real> ml = {1.5, 1.2, 1.5, 1.2, 1.1};
-    const std::vector<Real> mu = {2.5, 1.8, 1.9, 2.6, 1.5};
-    // Upper and lower bounds on source locations
-    const std::vector<Real> xl = {0.45, 0.75, 0.40, 0.05, 0.85};
-    const std::vector<Real> xu = {0.55, 0.85, 0.60, 0.35, 0.95};
-    const std::vector<Real> yl = {0.25, 0.55, 0.50, 0.45, 0.45};
-    const std::vector<Real> yu = {0.35, 0.65, 0.70, 0.65, 0.55};
-    // Upper and lower bounds on source widths
-    const std::vector<Real> sxl = {0.03, 0.02, 0.01, 0.02, 0.015};
-    const std::vector<Real> sxu = {0.07, 0.04, 0.05, 0.04, 0.025};
-    const std::vector<Real> syl = {0.04, 0.01, 0.02, 0.02, 0.01};
-    const std::vector<Real> syu = {0.12, 0.05, 0.04, 0.04, 0.03};
-    for (int i=0; i<ns; ++i) {
-      mag  = half*(ml[i]+mu[i]);
-      x0   = half*(xl[i]+xu[i]);
-      y0   = half*(yl[i]+yu[i]);
-      sx   = half*(sxl[i]+sxu[i]);
-      sy   = half*(syl[i]+syu[i]);
-      arg1 = std::pow((x[0]-x0)/sx, two);
-      arg2 = std::pow((x[1]-y0)/sy, two);
-      source += mag*std::exp(-half*(arg1+arg2));
-    }
-    return source;
   }
 
   void computeCoefficients(ROL::Ptr<Intrepid::FieldContainer<Real>> &kappa,
-                           ROL::Ptr<Intrepid::FieldContainer<Real>> &V,
-                           ROL::Ptr<Intrepid::FieldContainer<Real>> &rhs) const {
+                           ROL::Ptr<Intrepid::FieldContainer<Real>> &V) const {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int p = fe_vol_->gradN()->dimension(2);
@@ -546,8 +505,6 @@ private:
         for (int k = 0; k < d; ++k) {
           (*V)(i,j,k) = adv[k];
         }
-        // Compute forcing term f
-        (*rhs)(i,j) = -evaluateRHS(pt);
       }
     }
   }
