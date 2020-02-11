@@ -42,6 +42,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/baseImpl/Partition.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 namespace stk
@@ -517,6 +518,27 @@ stk::mesh::Entity get_side_entity_for_elem_id_side_pair_of_rank(const stk::mesh:
 {
     stk::mesh::Entity const elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
     return get_side_entity_for_elem_side_pair_of_rank(bulk, elem, sideOrdinal, sideRank);
+}
+
+EntityId get_max_id_on_local_proc(const BulkData& bulk, EntityRank rank)
+{
+    const BucketVector& buckets = bulk.buckets(rank);
+    EntityId maxId = 0;
+    for(const Bucket* bptr : buckets) {
+      const Bucket& bkt = *bptr;
+      if (bkt.getPartition()->needs_to_be_sorted()) {
+        for(Entity entity : bkt) {
+          maxId = std::max(maxId, bulk.identifier(entity));
+        }
+      }
+      else {
+        unsigned indexOfLastEntityInBucket = bkt.size() - 1;
+        EntityId id = bulk.identifier(bkt[indexOfLastEntityInBucket]);
+        maxId = std::max(maxId, id);
+      }
+    }
+
+    return maxId;
 }
 
 }

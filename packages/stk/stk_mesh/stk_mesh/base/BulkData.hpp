@@ -67,6 +67,7 @@
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/base/EntityProcMapping.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_util/diag/Timer.hpp>
@@ -80,6 +81,7 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class EntityProcMapping; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
@@ -188,7 +190,16 @@ public:
   const MetaData & mesh_meta_data() const { return m_mesh_meta_data ; }
         MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
 
+  /** \brief  Acquire a reference to an NgpMesh that is targeted to build configuration.
+   *          Calling this method will automatically update the NgpMesh for you.
+   *          Do not store a persistent pointer or reference unless you are willing
+   *          to manually call update_ngp_mesh() when appropriate.
+   */
   NgpMesh & get_ngp_mesh();
+
+  /** \brief  Perform manual update of a persistent NgpMesh instance.
+   */
+  void update_ngp_mesh();
 
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel.parallel() ; }
@@ -233,6 +244,7 @@ public:
    */
   bool modification_begin(const std::string description = std::string("UNSPECIFIED"))
   {
+      notifier.notify_modification_begin();
       m_lastModificationDescription = description;
       return m_meshModification.modification_begin(description);
   }
@@ -949,9 +961,12 @@ protected: //functions
 
   PairIterEntityComm internal_entity_comm_map_shared(Entity entity) const
   {
-    if (m_entitycomm[entity.local_offset()] != nullptr) {
-      const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
-      return shared_comm_info_range(vec);
+    const EntityComm* entityComm = m_entitycomm[entity.local_offset()];
+    if (entityComm != nullptr) {
+      if (entityComm->isShared) {
+        const EntityCommInfoVector& vec = entityComm->comm_map;
+        return shared_comm_info_range(vec);
+      }
     }
     return PairIterEntityComm();
   }
@@ -1007,6 +1022,9 @@ protected: //functions
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<Entity> & remove_receive,
                                  bool is_full_regen = false); // Mod Mark
+
+  void internal_change_ghosting( Ghosting & ghosts,
+                                 EntityProcMapping& entityProcMapping);
 
   void internal_add_to_ghosting( Ghosting &ghosting, const std::vector<EntityProc> &add_send); // Mod Mark
 
@@ -1082,6 +1100,12 @@ protected: //functions
   {
       EntityKey key = entity_key(entity);
       std::pair<EntityComm*,bool> result = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
+      if (val.ghost_id == 0) {
+        result.first->isShared = true;
+      }
+      else {
+        result.first->isGhost = true;
+      }
       if(result.second)
       {
           m_entitycomm[entity.local_offset()] = result.first;
@@ -1137,10 +1161,10 @@ protected: //functions
    *
    *  - a collective parallel operation.
    */
-  void internal_regenerate_aura(); // Mod Mark
-  void fill_list_of_entities_to_send_for_aura_ghosting(std::vector<EntityProc> &send); // Mod Mark
+  void internal_regenerate_aura();
+  void fill_list_of_entities_to_send_for_aura_ghosting(EntityProcMapping& send);
 
-  void require_ok_to_modify() const ; // Mod Mark
+  void require_ok_to_modify() const ;
   void internal_update_fast_comm_maps();
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }

@@ -39,6 +39,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/EntityProcMapping.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
@@ -411,6 +412,21 @@ bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_node
     return should_connect;
 }
 
+struct StoreInEntityProcMapping {
+    StoreInEntityProcMapping(BulkData & mesh_in, stk::mesh::EntityProcMapping& epm_in)
+    :mesh(mesh_in)
+    ,myMapping(epm_in)
+    {}
+
+    void operator()(Entity entity) {
+      myMapping.addEntityProc(entity, proc);
+    }
+
+    BulkData & mesh;
+    stk::mesh::EntityProcMapping& myMapping;
+    int proc;
+};
+
 struct StoreInEntityProcSet {
     StoreInEntityProcSet(
             BulkData & mesh_in,
@@ -508,10 +524,21 @@ void comm_sync_send_recv(
   std::vector<Entity> & new_recv,
   std::vector<bool>& ghostStatus );
 
+void comm_sync_aura_send_recv(
+  BulkData & mesh ,
+  std::vector<EntityProc> & sendGhosts,
+  EntityProcMapping& entityProcMapping,
+  std::vector<bool>& ghostStatus );
+
 void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
                              const EntityRank rank_of_orig_entity,
                              const int share_proc,
                              std::vector<EntityProc>& send);
+
+void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
+                             const EntityRank rank_of_orig_entity,
+                             const int share_proc,
+                             EntityProcMapping& send);
 
 void move_unowned_entities_for_owner_to_ghost(
   stk::mesh::BulkData & mesh ,

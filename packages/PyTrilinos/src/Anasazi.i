@@ -437,6 +437,7 @@ namespace std { struct ostream; }
 // Anasazi EpetraAdapter support //
 ///////////////////////////////////
 #ifdef HAVE_PYTRILINOS_EPETRA
+#pragma SWIG nowarn=317
 %include "AnasaziEpetraAdapter.hpp"
 %ignore
 Anasazi::MultiVecTraits< double,
