@@ -78,7 +78,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   // Full argument list construction.
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
-    model, obs, useFSAL, ICConsistency, ICConsistencyCheck));   
+    model, obs, useFSAL, ICConsistency, ICConsistencyCheck));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, StepperFactory_Construction)
 #endif // STEPPERFACTORY_CONSTRUCTION
 
 
-// ************************************************************                                    
+// ************************************************************
 // ************************************************************
 class StepperForwardEulerModifierTest
   : virtual public Tempus::StepperForwardEulerModifierBase<double>
@@ -177,7 +177,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
     stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);
@@ -288,7 +288,7 @@ public:
       stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);
@@ -395,7 +395,7 @@ public:
       stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (0.0);
   icState->setIndex   (0);
   icState->setTimeStep(0.0);

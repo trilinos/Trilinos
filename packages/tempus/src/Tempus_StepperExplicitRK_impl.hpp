@@ -218,19 +218,6 @@ void StepperExplicitRK<Scalar>::setObserver(
   this->isInitialized_ = false;
 }
 #endif
-template<class Scalar>
-void StepperExplicitRK<Scalar>::setAppAction(
-  Teuchos::RCP<StepperRKAppAction<Scalar> > appAction)
-{
-  if (appAction == Teuchos::null) {
-    // Create default appAction
-    stepperRKAppAction_ =
-      Teuchos::rcp(new StepperRKModifierDefault<Scalar>());
-  } else {
-    stepperRKAppAction_ = appAction;
-  }
-  this->isInitialized_ = false;
-}
 
 
 template<class Scalar>
@@ -301,7 +288,7 @@ void StepperExplicitRK<Scalar>::takeStep(
     this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
 #endif
     RCP<StepperExplicitRK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-    stepperRKAppAction_->execute(solutionHistory, thisStepper,
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
@@ -330,9 +317,9 @@ void StepperExplicitRK<Scalar>::takeStep(
       // ???: is it a good idea to leave this (no-op) here?
       this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 #endif
-      stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STAGE);
-      stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
       if ( i == 0 && this->getUseFSAL() &&
@@ -358,9 +345,9 @@ void StepperExplicitRK<Scalar>::takeStep(
 
         this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
 #endif
-        stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
           StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
-        stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
           StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
 
         auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
@@ -372,7 +359,7 @@ void StepperExplicitRK<Scalar>::takeStep(
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
 #endif
-      stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STAGE);
     }
 
@@ -431,7 +418,7 @@ void StepperExplicitRK<Scalar>::takeStep(
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
 #endif
-    stepperRKAppAction_->execute(solutionHistory, thisStepper,
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   // reset the stage number
@@ -471,7 +458,7 @@ void StepperExplicitRK<Scalar>::describe(
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
 #endif
-  out << "  stepperRKAppAction_= " << stepperRKAppAction_ << std::endl;
+  out << "  stepperRKAppAction_= " << this->stepperRKAppAction_ << std::endl;
   out << "  stageX_            = " << this->stageX_ << std::endl;
   out << "  stageXDot_.size()  = " << stageXDot_.size() << std::endl;
   const int numStages = stageXDot_.size();
@@ -506,7 +493,7 @@ bool StepperExplicitRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
     out << "The observer is not set!\n";
   }
 #endif
-  if (stepperRKAppAction_ == Teuchos::null) {
+  if (this->stepperRKAppAction_ == Teuchos::null) {
     isValidSetup = false;
     out << "The AppAction is not set!\n";
   }

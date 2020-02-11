@@ -1866,6 +1866,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperDIRK_BackwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -1880,6 +1881,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperDIRK_BackwardEuler(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("RK Backward Euler");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -1976,6 +1993,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_2Stage2ndOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -1996,6 +2014,28 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_2Stage2ndOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+    Scalar gamma = Scalar(0.2928932188134524))
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    const Scalar one = ST::one();
+    gammaDefault_ = Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one));
+
+    this->setStepperType("SDIRK 2 Stage 2nd order");
+    this->setGamma(gamma);
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   void setGamma(Scalar gamma)
@@ -2117,7 +2157,7 @@ public:
     this->setupTableau();
     this->setupDefault();
   }
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_3Stage2ndOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -2133,6 +2173,23 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_3Stage2ndOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+
+    this->setStepperType("SDIRK 3 Stage 2nd order");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -2252,6 +2309,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_2Stage3rdOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -2276,6 +2334,32 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_2Stage3rdOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+    std::string gammaType = "3rd Order A-stable",
+    Scalar gamma = Scalar(0.7886751345948128))
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const Scalar one = ST::one();
+    gammaDefault_ = as<Scalar>((3*one+ST::squareroot(3*one))/(6*one));
+    gammaTypeDefault_ = "3rd Order A-stable";
+
+    this->setStepperType("SDIRK 2 Stage 3rd order");
+    this->setGammaType(gammaType);
+    this->setGamma(gamma);
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   void setGammaType(std::string gammaType)
@@ -2420,6 +2504,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperEDIRK_2Stage3rdOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -2434,6 +2519,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperEDIRK_2Stage3rdOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("EDIRK 2 Stage 3rd order");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -2541,6 +2642,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperDIRK_1StageTheta(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -2560,6 +2662,27 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperDIRK_1StageTheta(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+    Scalar theta = Scalar(0.5))
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    thetaDefault_ = ST::one()/(2*ST::one());
+
+    this->setStepperType("DIRK 1 Stage Theta Method");
+    this->setTheta(theta);
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   void setTheta(Scalar theta)
@@ -2680,6 +2803,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperEDIRK_2StageTheta(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -2699,6 +2823,27 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperEDIRK_2StageTheta(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+    Scalar theta = Scalar(0.5))
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    thetaDefault_ = ST::one()/(2*ST::one());
+
+    this->setStepperType("EDIRK 2 Stage Theta Method");
+    this->setTheta(theta);
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   void setTheta(Scalar theta)
@@ -2820,6 +2965,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperEDIRK_TrapezoidalRule(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -2834,6 +2980,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperEDIRK_TrapezoidalRule(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("RK Trapezoidal Rule");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -2936,6 +3098,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_ImplicitMidpoint(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -2950,6 +3113,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_ImplicitMidpoint(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("RK Implicit Midpoint");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3044,6 +3223,7 @@ class StepperSDIRK_SSPDIRK22 :
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_SSPDIRK22(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -3058,6 +3238,22 @@ class StepperSDIRK_SSPDIRK22 :
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_SSPDIRK22(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("SSPDIRK22");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3152,6 +3348,7 @@ class StepperSDIRK_SSPDIRK32 :
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_SSPDIRK32(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -3166,6 +3363,22 @@ class StepperSDIRK_SSPDIRK32 :
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_SSPDIRK32(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("SSPDIRK32");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3262,6 +3475,7 @@ class StepperSDIRK_SSPDIRK23 :
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_SSPDIRK23(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -3276,6 +3490,22 @@ class StepperSDIRK_SSPDIRK23 :
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_SSPDIRK23(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("SSPDIRK23");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3371,6 +3601,7 @@ class StepperSDIRK_SSPDIRK33 :
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_SSPDIRK33(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -3385,6 +3616,22 @@ class StepperSDIRK_SSPDIRK33 :
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_SSPDIRK33(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("SSPDIRK33");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3487,6 +3734,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperDIRK_1Stage1stOrderRadauIA(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -3501,6 +3749,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperDIRK_1Stage1stOrderRadauIA(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("RK Implicit 1 Stage 1st order Radau IA");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3592,6 +3856,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperDIRK_2Stage2ndOrderLobattoIIIB(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -3606,6 +3871,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperDIRK_2Stage2ndOrderLobattoIIIB(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("RK Implicit 2 Stage 2nd order Lobatto IIIB");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3714,6 +3995,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_5Stage4thOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -3728,6 +4010,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_5Stage4thOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("SDIRK 5 Stage 4th order");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -3879,6 +4177,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_3Stage4thOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -3893,6 +4192,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_3Stage4thOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("SDIRK 3 Stage 4th order");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -4015,6 +4330,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_5Stage5thOrder(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -4029,6 +4345,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_5Stage5thOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("SDIRK 5 Stage 5th order");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -4193,6 +4525,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_21Pair(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -4207,6 +4540,22 @@ public:
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperSDIRK_21Pair(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+  {
+    this->setStepperType("SDIRK 2(1) Pair");
+    this->setupTableau();
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -4319,6 +4668,7 @@ public:
     this->setupDefault();
   }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperDIRK_General(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
@@ -4345,6 +4695,34 @@ public:
 
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+#endif
+  StepperDIRK_General(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+    const Teuchos::SerialDenseMatrix<int,Scalar>& A,
+    const Teuchos::SerialDenseVector<int,Scalar>& b,
+    const Teuchos::SerialDenseVector<int,Scalar>& c,
+    const int order,
+    const int orderMin,
+    const int orderMax,
+    const Teuchos::SerialDenseVector<int,Scalar>& bstar)
+  {
+    this->setStepperType("General DIRK");
+    this->setTableau(A,b,c,order,orderMin,orderMax,bstar);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->tableau_->isImplicit() != true, std::logic_error,
+      "Error - General DIRK did not receive a DIRK Butcher Tableau!\n");
+
+    this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+                useEmbedded, zeroInitialGuess, stepperRKAppAction);
   }
 
   std::string getDescription() const

@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_3_8Rule, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_3_8Rule, AppAction)
 {
-  testExplicitRKAppAction("RK Explicit 3/8 Rule", out, success);
+  testRKAppAction("RK Explicit 3/8 Rule", out, success);
 }
 
 

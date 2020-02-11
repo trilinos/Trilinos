@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST(ERK_General, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_General, AppAction)
 {
-  testExplicitRKAppAction("General ERK", out, success);
+  testRKAppAction("General ERK", out, success);
 }
 
 

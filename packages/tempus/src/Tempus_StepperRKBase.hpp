@@ -12,6 +12,8 @@
 #include "Thyra_VectorBase.hpp"
 
 #include "Tempus_Stepper.hpp"
+#include "Tempus_StepperRKAppAction.hpp"
+#include "Tempus_StepperRKModifierDefault.hpp"
 
 
 namespace Tempus {
@@ -34,10 +36,27 @@ public:
 
   virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStageX() {return stageX_;}
 
+  virtual void setAppAction(Teuchos::RCP<StepperRKAppAction<Scalar> > appAction)
+  {
+    if (appAction == Teuchos::null) {
+      // Create default appAction
+      stepperRKAppAction_ =
+        Teuchos::rcp(new StepperRKModifierDefault<Scalar>());
+    } else {
+      stepperRKAppAction_ = appAction;
+    }
+    this->isInitialized_ = false;
+  }
+
+  virtual Teuchos::RCP<StepperRKAppAction<Scalar> > getAppAction() const
+    { return stepperRKAppAction_; }
+
 protected:
 
   int stageNumber_;    //< The Runge-Kutta stage number, {0,...,s-1}.
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > stageX_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >  stageX_;
+  Teuchos::RCP<StepperRKAppAction<Scalar> > stepperRKAppAction_;
+
 };
 
 } // namespace Tempus

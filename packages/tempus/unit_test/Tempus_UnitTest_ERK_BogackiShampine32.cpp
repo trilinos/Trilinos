@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_BogackiShampine32, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_BogackiShampine32, AppAction)
 {
-  testExplicitRKAppAction("Bogacki-Shampine 3(2) Pair", out, success);
+  testRKAppAction("Bogacki-Shampine 3(2) Pair", out, success);
 }
 
 

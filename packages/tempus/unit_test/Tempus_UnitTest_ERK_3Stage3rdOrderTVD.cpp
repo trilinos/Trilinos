@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_3Stage3rdOrderTVD, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_3Stage3rdOrderTVD, AppAction)
 {
-  testExplicitRKAppAction("RK Explicit 3 Stage 3rd order TVD", out, success);
+  testRKAppAction("RK Explicit 3 Stage 3rd order TVD", out, success);
 }
 
 

@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_4Stage4thOrder, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_4Stage4thOrder, AppAction)
 {
-  testExplicitRKAppAction("RK Explicit 4 Stage", out, success);
+  testRKAppAction("RK Explicit 4 Stage", out, success);
 }
 
 
