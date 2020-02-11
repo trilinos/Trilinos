@@ -75,6 +75,10 @@ public:
     // A^T * A = R^T * R, where R is ncols by ncols upper
     // triangular.
     int info = 0;
+    if (R_mv.need_sync_host()) {
+      // sync R to host before modifying it in place on host
+      R_mv.sync_host();
+    }
     R_mv.modify_host ();
     {
       auto R_h = R_mv.getLocalViewHost ();
