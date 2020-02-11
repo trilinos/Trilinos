@@ -47,9 +47,9 @@
 #include "ROL_TrustRegionModel_U.hpp"
 
 namespace ROL {
-namespace TrustRegion {
+namespace TRUtils {
 
-/** \enum  ROL::TypeU::TrustRegion::ETRFlag 
+/** \enum  ROL::TRUtils::ETRFlag 
     \brief Enumation of flags used by trust-region solvers.
 
     \arg SUCCESS        Actual and predicted reductions are positive 
