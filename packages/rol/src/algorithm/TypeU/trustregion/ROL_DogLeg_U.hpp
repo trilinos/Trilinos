@@ -69,13 +69,13 @@ public:
     dual_   = g.clone();
   }
 
-  void solve( Vector<Real>           &s,
-              Real                   &snorm,
-              Real                   &pRed,
-              int                    &iflag,
-              int                    &iter,
-              const Real              del,
-              TrustRegionModel_U<Real>            &model ) {
+  void solve( Vector<Real>             &s,
+              Real                     &snorm,
+              Real                     &pRed,
+              int                      &iflag,
+              int                      &iter,
+              const Real                del,
+              TrustRegionModel_U<Real> &model ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     const Real zero(0), half(0.5), one(1), two(2);
     iter = 0;

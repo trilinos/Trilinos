@@ -88,6 +88,8 @@ protected:
 
   void initialize(const Vector<Real> &x, const Vector<Real> &g); 
 
+  Real optimalityCriterion(const Vector<Real> &x, const Vector<Real> &g, Vector<Real> &primal) const;
+
 public:
 
   virtual ~Algorithm_B() {}

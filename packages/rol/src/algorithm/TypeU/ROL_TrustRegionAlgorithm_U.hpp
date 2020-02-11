@@ -64,18 +64,18 @@ private:
   Ptr<TrustRegion_U<Real>>      solver_; ///< Container for trust-region solver object.
   Ptr<TrustRegionModel_U<Real>> model_;  ///< Container for trust-region model.
   ETrustRegionU                 etr_;    ///< Trust-region subproblem solver type.
-  Real                     delMax_; ///< Maximum trust-region radius.
-  Real                     eta0_;   ///< Step acceptance threshold.
-  Real                     eta1_;   ///< Radius decrease threshold.
-  Real                     eta2_;   ///< Radius increase threshold.
-  Real                     gamma0_; ///< Radius decrease rate (negative rho).
-  Real                     gamma1_; ///< Radius decrease rate (positive rho).
-  Real                     gamma2_; ///< Radius increase rate.
-  Real                     TRsafe_; ///< Safeguard size for numerically evaluating ratio.
-  Real                     eps_;    ///< Safeguard for numerically evaluating ratio.
-  TrustRegion::ETRFlag     TRflag_; ///< Trust-region exit flag.
-  int                      SPflag_; ///< Subproblem solver termination flag.
-  int                      SPiter_; ///< Subproblem solver iteration count.
+  Real                          delMax_; ///< Maximum trust-region radius.
+  Real                          eta0_;   ///< Step acceptance threshold.
+  Real                          eta1_;   ///< Radius decrease threshold.
+  Real                          eta2_;   ///< Radius increase threshold.
+  Real                          gamma0_; ///< Radius decrease rate (negative rho).
+  Real                          gamma1_; ///< Radius decrease rate (positive rho).
+  Real                          gamma2_; ///< Radius increase rate.
+  Real                          TRsafe_; ///< Safeguard size for numerically evaluating ratio.
+  Real                          eps_;    ///< Safeguard for numerically evaluating ratio.
+  TrustRegion::ETRFlag          TRflag_; ///< Trust-region exit flag.
+  int                           SPflag_; ///< Subproblem solver termination flag.
+  int                           SPiter_; ///< Subproblem solver iteration count.
 
   // SECANT INFORMATION
   ESecant esec_; ///< Secant type.

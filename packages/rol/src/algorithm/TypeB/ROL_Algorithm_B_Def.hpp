@@ -81,6 +81,18 @@ void Algorithm_B<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g)
 }
 
 template<typename Real>
+Real Algorithm_B<Real>::optimalityCriterion(const Vector<Real> &x,
+                                            const Vector<Real> &g,
+                                            Vector<Real> &primal) const {
+  const Real one(1);
+  primal.set(x);
+  primal.axpy(-one,g.dual());
+  proj_->project(primal);
+  primal.axpy(-one,x);
+  return primal.norm();
+}
+
+template<typename Real>
 void Algorithm_B<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
                                       const bool combineStatus) {
   if (!combineStatus) { // Do not combine status tests

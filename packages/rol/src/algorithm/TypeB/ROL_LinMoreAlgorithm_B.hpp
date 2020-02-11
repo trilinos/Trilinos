@@ -45,6 +45,9 @@
 #define ROL_LINMOREALGORITHM_B_H
 
 #include "ROL_Algorithm_B.hpp"
+#include "ROL_TrustRegionModel_U.hpp"
+#include "ROL_TrustRegionUtilities.hpp"
+#include "ROL_NullSpaceOperator.hpp"
 
 /** \class ROL::LinMoreAlgorithm_B
     \brief Provides an interface to run the trust-region algorithm of Lin and More.
@@ -55,20 +58,32 @@ namespace ROL {
 template<typename Real>
 class LinMoreAlgorithm_B : public Algorithm_B<Real> {
 private:
-  Ptr<Vector<Real>> x_, s_, g_;
-  Ptr<Vector<Real>> pwa1_, pwa2_, pwa3_, dwa1_, dwa2_, dwa3_;
+  Ptr<TrustRegionModel_U<Real>> model_;  ///< Container for trust-region model.
+  Real                        delMax_; ///< Maximum trust-region radius.
+  Real                        eta0_;   ///< Step acceptance threshold.
+  Real                        eta1_;   ///< Radius decrease threshold.
+  Real                        eta2_;   ///< Radius increase threshold.
+  Real                        gamma0_; ///< Radius decrease rate (negative rho).
+  Real                        gamma1_; ///< Radius decrease rate (positive rho).
+  Real                        gamma2_; ///< Radius increase rate.
+  Real                        TRsafe_; ///< Safeguard size for numerically evaluating ratio.
+  Real                        eps_;    ///< Safeguard for numerically evaluating ratio.
+  TrustRegion::ETRFlag        TRflag_; ///< Trust-region exit flag.
+  int                         SPflag_; ///< Subproblem solver termination flag.
+  int                         SPiter_; ///< Subproblem solver iteration count.
 
-  Real tol1_, tol2_, alpha_;
+  // SECANT INFORMATION
+  ESecant esec_; ///< Secant type.
+  bool useSecantPrecond_;
+  bool useSecantHessVec_;
+
+  Real tol1_, tol2_;
   int maxit_;
 
   unsigned verbosity_;
   bool printHeader_;
 
-  bool hasEcon_;
-  Ptr<ReducedConstraint<Real>> rcon_;
-  PtrVector<Real>> ran_;
-
-  class ReducedConstraint : Constraint<Real> {
+  class ReducedConstraint : public Constraint<Real> {
     private:
       const Ptr<Constraint<Real>> con_;
       const Ptr<BoundConstraint<Real>> bnd_;
@@ -87,15 +102,15 @@ private:
       void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
         const Real zero(0);
         prim_->set(x);
-        bnd_->pruneActive(prim_,*x_,zero);
-        con_->value(c,*prim_,zero);
+        bnd_->pruneActive(*prim_,*x_,zero);
+        con_->value(c,*prim_,tol);
       }
 
       void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
         const Real zero(0);
         prim_->set(v);
-        bnd_->pruneActive(prim_,*x_,zero);
-        con_->applyJacobian(jv,*prim_,x,zero);
+        bnd_->pruneActive(*prim_,*x_,zero);
+        con_->applyJacobian(jv,*prim_,x,tol);
       }
 
       void applyAdjointJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
@@ -110,25 +125,35 @@ private:
       }
   };
 
+  bool hasEcon_;
+  Ptr<ReducedConstraint> rcon_;
+
   using Algorithm_B<Real>::state_;
   using Algorithm_B<Real>::status_;
   using Algorithm_B<Real>::proj_;
 
 public:
-  LinMoreAlgorithm_B(ParameterList &list);
+  LinMoreAlgorithm_B(ParameterList &list, const Ptr<Secant<Real>> &secant = nullPtr);
 
+  using Algorithm_B<Real>::run;
   std::vector<std::string> run( Vector<Real>          &x,
                                 const Vector<Real>    &g, 
                                 Objective<Real>       &obj,
                                 BoundConstraint<Real> &bnd,
                                 std::ostream          &outStream = std::cout);
 
-  void solve( Vector<Real>           &s,
-              Real                   &snorm,
-              int                    &iflag,
-              int                    &iter,
-              const Real              del,
-              TrustRegionModel<Real> &model );
+  std::string printHeader( void ) const;
+
+  std::string printName( void ) const;
+
+  std::string print( const bool print_header = false ) const;
+
+private:
+  void initialize(Vector<Real>          &x,
+                  const Vector<Real>    &g,
+                  Objective<Real>       &obj,
+                  BoundConstraint<Real> &bnd,
+                  std::ostream &outStream = std::cout);
 
   // Compute the projected step s = P(x + alpha*w) - x
   // Returns the norm of the projected step s
@@ -146,12 +171,12 @@ public:
   //   x     -- The anchor vector x (unchanged)
   //   g     -- The (dual) gradient vector g (unchanged)
   //   del   -- The trust region radius (unchanged)
-  //   obj   -- Objective function (used for hessVec)
+  //   model -- Trust region model
   //   dwa   -- Dual working array
   Real dcauchy(Vector<Real> &s, Real &alpha,
                const Vector<Real> &x, const Vector<Real> &g,
-               const Real del, Objective<Real> &obj,
-               Vector<Real> &pwa1, Vector<Real> &pwa2, Vector<Real> &dwa,
+               const Real del, TrustRegionModel_U<Real> &model,
+               Vector<Real> &dwa,
                std::ostream &outStream = std::cout);
 
   // Perform projected search to determine beta such that
@@ -163,8 +188,9 @@ public:
   //   pwa   -- Primal working array
   //   dwa   -- Dual working array
   Real dprsrch(Vector<Real> &x, Vector<Real> &s,
-               const Vector<Real> &g, Objective<Real> &obj,
-               Vector<Real> &pwa, Vector<Real> &dwa,
+               const Vector<Real> &g, TrustRegionModel_U<Real> &model,
+               BoundConstraint<Real> &bnd,
+               Vector<Real> &pwa, Vector<Real> &dwa, Vector<Real> &pwa1,
                std::ostream &outStream = std::cout);
 
   // Compute sigma such that ||x+sigma*p||_inv(M) = del.  This is called
@@ -183,7 +209,7 @@ public:
   //   iflag   -- Termination flag
   //   iter    -- Number of CG iterations
   //   del     -- Trust region radius (unchanged)
-  //   obj     -- Objective function (used for hessVec)
+  //   model   -- Trust region model
   //   bnd     -- Bound constraint used to remove active variables
   //   tol     -- Residual stopping tolerance (unchanged)
   //   stol    -- Preconditioned residual stopping tolerance (unchanged)
@@ -196,32 +222,26 @@ public:
   //   dwa     -- Dual working array that stores the pruned vector in precond
   Real dtrpcg(Vector<Real> &w, int &iflag, int &iter,
               const Vector<Real> &g, const Vector<Real> &x,
-              const Real del, Objective<Real> &obj, BoundConstraint<Real> &bnd,
+              const Real del, TrustRegionModel_U<Real> &model, BoundConstraint<Real> &bnd,
               const Real tol, const Real stol, const int itermax,
               Vector<Real> &p, Vector<Real> &q, Vector<Real> &r,
-              Vector<Real> &t, Vector<Real> &pwa, const Vector<Real> &dwa) const;
+              Vector<Real> &t, Vector<Real> &pwa, Vector<Real> &dwa) const;
 
   void applyFreeHessian(Vector<Real> &hv,
                        const Vector<Real> &v,
                        const Vector<Real> &x,
-                       Objective<Real> &obj,
+                       TrustRegionModel_U<Real> &model,
                        BoundConstraint<Real> &bnd,
                        Real &tol,
-                       Vector<Real> &pwa);
+                       Vector<Real> &pwa) const;
 
   void applyFreePrecond(Vector<Real> &hv,
                         const Vector<Real> &v,
                         const Vector<Real> &x,
-                        Objective<Real> &obj,
+                        TrustRegionModel_U<Real> &model,
                         BoundConstraint<Real> &bnd,
                         Real &tol,
-                        Vector<Real> &dwa) {
-
-  std::string printHeader( void ) const;
-
-  std::string printName( void ) const;
-
-  std::string print( const bool print_header = false ) const;
+                        Vector<Real> &dwa) const;
 
 }; // class ROL::LinMoreAlgorithm_B
 

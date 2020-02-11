@@ -59,15 +59,15 @@ namespace ROL {
 template <class Real>
 class AugmentedSystemOperator : public LinearOperator<Real> {
 private:
-  const Ptr<Constraint<Real>> con_;
-  const Ptr<Vector<Real>>     x_;
-  const Real                  delta_;
+  const Ptr<Constraint<Real>>   con_;
+  const Ptr<const Vector<Real>> x_;
+  const Real                    delta_;
 
 public:
   virtual ~AugmentedSystemOperator() {}
-  AugmentedSystemOperator(const Ptr<Constraint<Real>> &con,
-                          const Ptr<Vector<Real>>     &x,
-                          const Real                   delta = -1.0)
+  AugmentedSystemOperator(const Ptr<Constraint<Real>>   &con,
+                          const Ptr<const Vector<Real>> &x,
+                          const Real                     delta = -1.0)
     : con_(con), x_(x), delta_(delta) {}
 
   void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {

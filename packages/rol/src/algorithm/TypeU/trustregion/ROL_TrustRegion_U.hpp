@@ -60,13 +60,13 @@ public:
 
   virtual void initialize(const Vector<Real> &x, const Vector<Real> &g) {}
 
-  virtual void solve(Vector<Real>              &s,          // Step (to be computed)
-                     Real                      &snorm,      // Step norm (to be computed)
-                     Real                      &pRed,       // Predicted reduction (to be computed)
-                     int                       &iflag,      // Exit flag (to be computed)
-                     int                       &iter,       // Iteration count (to be computed)
-                     const Real                 del,        // Trust-region radius
-                     TrustRegionModel_U<Real>  &model) = 0; // Trust-region model
+  virtual void solve(Vector<Real>             &s,          // Step (to be computed)
+                     Real                     &snorm,      // Step norm (to be computed)
+                     Real                     &pRed,       // Predicted reduction (to be computed)
+                     int                      &iflag,      // Exit flag (to be computed)
+                     int                      &iter,       // Iteration count (to be computed)
+                     const Real                del,        // Trust-region radius
+                     TrustRegionModel_U<Real> &model) = 0; // Trust-region model
 };
 
 } // namespace ROL

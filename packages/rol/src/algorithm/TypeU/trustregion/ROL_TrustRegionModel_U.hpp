@@ -112,7 +112,7 @@ public:
   virtual ~TrustRegionModel_U() {}
 
   TrustRegionModel_U(ParameterList           &list,
-                     const Ptr<Secant<Real>> &secant = nullPtr)
+                   const Ptr<Secant<Real>> &secant = nullPtr)
     : obj_(nullPtr), x_(nullPtr), g_(nullPtr),
       secant_(secant) {
     ParameterList &slist = list.sublist("General").sublist("Secant");

@@ -116,17 +116,17 @@ private:
 public:
   virtual ~NullSpaceOperator() {}
   NullSpaceOperator(const Ptr<Constraint<Real>> &con,
-                    const Ptr<Vector<Real>>     &dom,
-                    const Ptr<Vector<Real>>     &ran)
+                    const Vector<Real> &dom,
+                    const Vector<Real> &ran)
     : con_(con), useInexact_(false) {
     iterKrylov_ = 0;
     flagKrylov_ = 0;
-    dim_        = ran->dimension();
+    dim_        = ran.dimension();
     if (dim_==1) {
       Real tol = std::sqrt(ROL_EPSILON<Real>());
-      b1_ = dom->dual().clone();
-      b2_ = ran->clone(); b2_->setScalar(1.0);
-      con_->applyAdjointJacobian(*b1_,*b2_,*dom,tol);
+      b1_ = dom.dual().clone();
+      b2_ = ran.clone(); b2_->setScalar(1.0);
+      con_->applyAdjointJacobian(*b1_,*b2_,dom,tol);
       b1sqr_ = b1_->dot(*b1_);
     }
     else {
@@ -139,24 +139,29 @@ public:
       list.sublist("General").sublist("Krylov").set("Iteration Limit", 200);
       krylov_ = KrylovFactory<Real>(list);
 
-      augsys_ = makePtr<AugmentedSystemOperator<Real>>(con,dom);
-      augsysprec_ = makePtr<AugmentedSystemPrecOperator<Real>>(con,dom);
+      augsys_ = makePtr<AugmentedSystemOperator<Real>>(con,makePtrFromRef(dom));
+      augsysprec_ = makePtr<AugmentedSystemPrecOperator<Real>>(con,makePtrFromRef(dom));
 
-      v1_ = dom->dual().clone();
-      v2_ = ran->dual().clone();
+      v1_ = dom.dual().clone();
+      v2_ = ran.dual().clone();
       vv_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({v1_, v2_}));
 
-      w1_ = dom->dual().clone();
-      w2_ = ran->dual().clone();
+      w1_ = dom.dual().clone();
+      w2_ = ran.dual().clone();
       ww_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({w1_, w2_}));
 
-      b1_ = dom->dual().clone();
-      b2_ = ran->clone();
+      b1_ = dom.dual().clone();
+      b2_ = ran.clone();
       bb_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({b1_, b2_}));
 
-      mul_ = ran->dual().clone();
+      mul_ = ran.dual().clone();
     }
   }
+
+  NullSpaceOperator(const Ptr<Constraint<Real>> &con,
+                    const Ptr<Vector<Real>> &dom,
+                    const Ptr<Vector<Real>> &ran)
+    : NullSpaceOperator(con,*dom,*ran) {}
 
   virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     if (dim_==1) {
