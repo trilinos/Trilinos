@@ -128,7 +128,7 @@ void TrustRegionAlgorithm_U<Real>::initialize(const Vector<Real> &x,
   if ( state_->searchSize <= static_cast<Real>(0) ) {
     int nfval = 0;
     state_->searchSize
-      = TrustRegion::initialRadius<Real>(nfval,x,*state_->gradientVec,Bg,
+      = TRUtils::initialRadius<Real>(nfval,x,*state_->gradientVec,Bg,
           state_->value,state_->gnorm,obj,*model_,delMax_,state_->iter,
           outStream,(verbosity_>1));
     state_->nfval += nfval;
@@ -207,18 +207,18 @@ std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &
     x.plus(*state_->stepVec);
     ftrial = computeValue(x,obj,pRed);
     // Compute ratio of actual and predicted reduction
-    TRflag_ = TrustRegion::SUCCESS;
-    TrustRegion::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    TRflag_ = TRUtils::SUCCESS;
+    TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
     // Update algorithm state
     state_->iter++;
     // Accept/reject step and update trust region radius
-    if ((rho < eta0_ && TRflag_ == TrustRegion::SUCCESS)
+    if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS)
         || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
       obj.update(x,false,state_->iter);
-      if (rho < zero && TRflag_ != TrustRegion::TRNAN) {
+      if (rho < zero && TRflag_ != TRUtils::TRNAN) {
         // Negative reduction, interpolate to find new trust-region radius
-        state_->searchSize = TrustRegion::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
+        state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
           state_->snorm,pRed,state_->value,ftrial,state_->searchSize,gamma0_,gamma1_,eta2_,
           outStream,verbosity_>1);
       }
@@ -227,8 +227,8 @@ std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &
       }
       if (useInexact_[1]) computeGradient(x,obj);
     }
-    else if ((rho >= eta0_ && TRflag_ != TrustRegion::NPOSPREDNEG)
-             || (TRflag_ == TrustRegion::POSPREDNEG)) { // Step Accepted
+    else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
+             || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->iterateVec->set(x);
       state_->value = ftrial;
       obj.update(x,true,state_->iter);
@@ -265,9 +265,9 @@ std::string TrustRegionAlgorithm_U<Real>::printHeader(void) const {
     hist << "  #grad   - Number of times the gradient was computed" << std::endl;
     hist << std::endl;
     hist << "  tr_flag - Trust-Region flag" << std::endl;
-    for( int flag = TrustRegion::SUCCESS; flag != TrustRegion::UNDEFINED; ++flag ) {
+    for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
       hist << "    " << NumberToString(flag) << " - "
-           << TrustRegion::ETRFlagToString(static_cast<TrustRegion::ETRFlag>(flag)) << std::endl;
+           << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
     }
     if( etr_ == TRUSTREGION_U_TRUNCATEDCG ) {
       hist << std::endl;

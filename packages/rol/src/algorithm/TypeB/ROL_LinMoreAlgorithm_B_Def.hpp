@@ -256,19 +256,19 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     state_->nfval++;
 
     // Compute ratio of acutal and predicted reduction
-    TRflag_ = TrustRegion::SUCCESS;
-    TrustRegion::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    TRflag_ = TRUtils::SUCCESS;
+    TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
 
     // Update algorithm state
     state_->iter++;
     // Accept/reject step and update trust region radius
-    if ((rho < eta0_ && TRflag_ == TrustRegion::SUCCESS)
+    if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS)
         || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
       obj.update(x,false,state_->iter);
-      if (rho < zero && TRflag_ != TrustRegion::TRNAN) {
+      if (rho < zero && TRflag_ != TRUtils::TRNAN) {
         // Negative reduction, interpolate to find new trust-region radius
-        state_->searchSize = TrustRegion::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
+        state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
           state_->snorm,pRed,state_->value,ftrial,state_->searchSize,gamma0_,gamma1_,eta2_,
           outStream,verbosity_>1);
       }
@@ -276,8 +276,8 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
         state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
       }
     }
-    else if ((rho >= eta0_ && TRflag_ != TrustRegion::NPOSPREDNEG)
-             || (TRflag_ == TrustRegion::POSPREDNEG)) { // Step Accepted
+    else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
+             || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->value = ftrial;
       obj.update(x,true,state_->iter);
       // Increase trust-region radius
@@ -576,9 +576,9 @@ std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
     hist << "  #grad   - Number of times the gradient was computed" << std::endl;
     hist << std::endl;
     hist << "  tr_flag - Trust-Region flag" << std::endl;
-    for( int flag = TrustRegion::SUCCESS; flag != TrustRegion::UNDEFINED; ++flag ) {
+    for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
       hist << "    " << NumberToString(flag) << " - "
-           << TrustRegion::ETRFlagToString(static_cast<TrustRegion::ETRFlag>(flag)) << std::endl;
+           << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
     }
     hist << std::endl;
     hist << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;

@@ -68,7 +68,7 @@ private:
   Real                        gamma2_; ///< Radius increase rate.
   Real                        TRsafe_; ///< Safeguard size for numerically evaluating ratio.
   Real                        eps_;    ///< Safeguard for numerically evaluating ratio.
-  TrustRegion::ETRFlag        TRflag_; ///< Trust-region exit flag.
+  TRUtils::ETRFlag            TRflag_; ///< Trust-region exit flag.
   int                         SPflag_; ///< Subproblem solver termination flag.
   int                         SPiter_; ///< Subproblem solver iteration count.
 
