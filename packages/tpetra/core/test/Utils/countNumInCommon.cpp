@@ -90,7 +90,9 @@ namespace { // (anonymous)
       }
     }
     {
-      std::vector<int> list1{{666}};
+      std::vector<int> list1;
+      list1.push_back(666);
+      // std::vector<int> list1{{666}}; // warns; don't do this
       std::vector<int> list2;
       testLists(out, success, list1, list2, 0, 1);
       if (! success) {
@@ -99,15 +101,18 @@ namespace { // (anonymous)
     }
     {
       std::vector<int> list1;
-      std::vector<int> list2{{666}};
+      std::vector<int> list2;
+      list2.push_back(666);
       testLists(out, success, list1, list2, 0, 1);
       if (! success) {
         return;
       }
     }
     {
-      std::vector<int> list1{{418}};
-      std::vector<int> list2{{418}};
+      std::vector<int> list1;
+      list1.push_back(418);
+      std::vector<int> list2;
+      list2.push_back(418);
       testLists(out, success, list1, list2, 1, 1);
       if (! success) {
         return;
@@ -115,14 +120,16 @@ namespace { // (anonymous)
     }
     {
       std::vector<int> list1{{418, 419}};
-      std::vector<int> list2{{418}};
+      std::vector<int> list2;
+      list2.push_back(418);
       testLists(out, success, list1, list2, 1, 2);
       if (! success) {
         return;
       }
     }
     {
-      std::vector<int> list1{{418}};
+      std::vector<int> list1;
+      list1.push_back(418);
       std::vector<int> list2{{418, 419}};
       testLists(out, success, list1, list2, 1, 2);
       if (! success) {
@@ -131,14 +138,16 @@ namespace { // (anonymous)
     }
     {
       std::vector<int> list1{{417, 418}};
-      std::vector<int> list2{{418}};
+      std::vector<int> list2;
+      list2.push_back(418);
       testLists(out, success, list1, list2, 1, 2);
       if (! success) {
         return;
       }
     }
     {
-      std::vector<int> list1{{418}};
+      std::vector<int> list1;
+      list1.push_back(418);
       std::vector<int> list2{{417, 418}};
       testLists(out, success, list1, list2, 1, 2);
       if (! success) {
@@ -147,14 +156,16 @@ namespace { // (anonymous)
     }
     {
       std::vector<int> list1{{417, 418, 419}};
-      std::vector<int> list2{{418}};
+      std::vector<int> list2;
+      list2.push_back(418);
       testLists(out, success, list1, list2, 1, 3);
       if (! success) {
         return;
       }
     }
     {
-      std::vector<int> list1{{418}};
+      std::vector<int> list1;
+      list1.push_back(418);
       std::vector<int> list2{{417, 418, 419}};
       testLists(out, success, list1, list2, 1, 3);
       if (! success) {
@@ -163,14 +174,16 @@ namespace { // (anonymous)
     }
     {
       std::vector<int> list1{{415, 418, 421}};
-      std::vector<int> list2{{418}};
+      std::vector<int> list2;
+      list2.push_back(418);
       testLists(out, success, list1, list2, 1, 3);
       if (! success) {
         return;
       }
     }
     {
-      std::vector<int> list1{{418}};
+      std::vector<int> list1;
+      list1.push_back(418);
       std::vector<int> list2{{415, 418, 421}};
       testLists(out, success, list1, list2, 1, 3);
       if (! success) {
@@ -179,14 +192,16 @@ namespace { // (anonymous)
     }
     {
       std::vector<int> list1{{415, 419, 421}};
-      std::vector<int> list2{{418}};
+      std::vector<int> list2;
+      list2.push_back(418);
       testLists(out, success, list1, list2, 0, 4);
       if (! success) {
         return;
       }
     }
     {
-      std::vector<int> list1{{418}};
+      std::vector<int> list1;
+      list1.push_back(418);
       std::vector<int> list2{{415, 419, 421}};
       testLists(out, success, list1, list2, 0, 4);
       if (! success) {
@@ -202,8 +217,8 @@ namespace { // (anonymous)
 
     std::vector<int> curGblColInds {{166215, 166216, 166217, 166218, 166219, 166220, 166221, 166222, 166223, 166224, 166225, 166226, 166227, 166228, 166229, 166230, 166231, 166232, 166233, 166234, 166235, 166236, 166237, 166238, 166239, 166240, 166241, 166242, 166243, 166244, 166245, 166246, 166247, 198279, 198280, 198281, 198282, 198283, 198284, 198285, 198286, 198287, 198288, 198289, 198290, 198291, 198292, 198293, 198294, 198295, 198296, 198297, 198298, 198299, 198300, 198301, 198302, 198303, 198304, 198305, 198306, 198307, 198308, 198309, 198310, 198311, 198312, 198313, 198314, 198315, 198316, 198317, 198333, 198334, 198335, 198336, 198337, 198338, 198339, 198340, 198341, 198342, 198343, 198344, 198345, 198346, 198347, 198348, 198349, 198350, 198351, 198352, 198353, 198354, 198355, 198356}};
 
-    constexpr size_t newGblColIndsSize (96);
-    constexpr size_t curGblColIndsSize (96);
+    constexpr size_t newGblColIndsSize(96);
+    constexpr size_t curGblColIndsSize(96);
 
     TEST_EQUALITY( newGblColInds.size(), newGblColIndsSize );
     TEST_EQUALITY( curGblColInds.size(), curGblColIndsSize );
