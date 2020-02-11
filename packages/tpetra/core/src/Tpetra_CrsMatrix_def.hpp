@@ -6771,9 +6771,7 @@ namespace Tpetra {
       auto padding =
         myGraph_->computeCrsPadding(srcGraph, numSameIDs,
           permuteToLIDs_dv, permuteFromLIDs_dv, verbose);
-      if (padding->increase() != 0) {
-        applyCrsPadding(*padding, verbose);
-      }
+      applyCrsPadding(*padding, verbose);
     }
     const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
     //
@@ -7902,9 +7900,7 @@ namespace Tpetra {
         auto padding =
           myGraph_->computePaddingForCrsMatrixUnpack(
             importLIDs, imports, numPacketsPerLID, verbose);
-        if (padding->increase() != 0) {
-          applyCrsPadding(*padding, verbose);
-        }
+        applyCrsPadding(*padding, verbose);
       }
       unpackAndCombineImplNonStatic(importLIDs, imports,
                                     numPacketsPerLID,

@@ -206,18 +206,6 @@ pad_crs_arrays(
     return; // nothing to do
   }
 
-  // const size_t additional_size_needed = padding.increase();
-  // if (additional_size_needed == 0 || row_ptr_beg.size() == 0) {
-  //   if (verbose) {
-  //     std::ostringstream os;
-  //     os << *prefix << "Done; no padding needed" << endl;
-  //     std::cerr << os.str();
-  //   }
-  //   return; // nothing to do
-  // }
-
-  // If we get this far, then we need reallocation.
-
   const size_t lclNumRows(row_ptr_beg.size() - 1);
   RowPtr newAllocPerRow =
     make_uninitialized_view<RowPtr>("newAllocPerRow", lclNumRows,

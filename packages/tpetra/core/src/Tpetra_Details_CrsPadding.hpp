@@ -101,7 +101,6 @@ namespace Tpetra {
       }
 
       void print(std::ostream& out) const {
-        out << "increase: " << increase() << ", ";
         const size_t maxNumToPrint =
           Details::Behavior::verbosePrintCountThreshold();
         const size_t size = entries_.size();
@@ -122,12 +121,6 @@ namespace Tpetra {
           ++k;
         }
         out << "]";
-      }
-
-      /// \brief Increase (increment in the number of entries) in
-      ///   required allocation size.
-      size_t increase() const {
-        return increase_;
       }
 
       struct Result {
@@ -189,9 +182,12 @@ namespace Tpetra {
                                  tgtGblColInds, newNumTgtEnt,
                                  srcGblColInds, newNumSrcEnt);
         unionNumDups += (newNumTgtEnt + newNumSrcEnt - unionNumEnt);
-        if (unionNumEnt > origNumTgtEnt) {
-          increase_ += (unionNumEnt - origNumTgtEnt);
-        }
+
+        // FIXME (mfh 10 Feb 2020) If unionNumEnt <= origNumTgtEnt,
+        // then don't even store the row.  This should save space for
+        // a common case in which the calling process receives few
+        // rows.  Remember that CrsPadding only accounts for entries;
+        // it ignores any free space at the end of each row.
       }
 
       std::vector<GO>&
@@ -251,7 +247,6 @@ namespace Tpetra {
       // sense to store them all in one map.
       std::map<LO, std::vector<GO> > entries_;
       std::vector<GO> scratchColInds_;
-      size_t increase_ = 0;
     };
   } // namespace Details
 } // namespace Tpetra

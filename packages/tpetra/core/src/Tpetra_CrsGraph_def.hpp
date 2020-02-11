@@ -5195,14 +5195,10 @@ namespace Tpetra {
     if (isGloballyIndexed()) {
       padCrsArrays(row_ptrs_beg, row_ptrs_end, k_gblInds1D_,
                    padding, myRank, verbose);
-      TEUCHOS_ASSERT( padding.increase() == 0 ||
-                      k_gblInds1D_.extent(0) != 0 );
     }
     else {
       padCrsArrays(row_ptrs_beg, row_ptrs_end, k_lclInds1D_,
                    padding, myRank, verbose);
-      TEUCHOS_ASSERT( padding.increase() == 0 ||
-                      k_lclInds1D_.extent(0) != 0 );
     }
 
     if (refill_num_row_entries) {
