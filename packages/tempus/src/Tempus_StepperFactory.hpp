@@ -12,6 +12,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperBDF2.hpp"
 #include "Tempus_StepperNewmarkImplicitAForm.hpp"
 #include "Tempus_StepperNewmarkImplicitDForm.hpp"
@@ -256,6 +257,20 @@ public:
 
   /// Set StepperRK member data from the ParameterList.
   void setStepperRKValues(
+    Teuchos::RCP<StepperExplicitRK<Scalar> > stepper,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    if (stepperPL != Teuchos::null) {
+      stepperPL->validateParametersAndSetDefaults(
+                                              *stepper->getValidParameters());
+      setStepperValues(stepper, stepperPL);
+      stepper->setUseEmbedded(
+        stepperPL->get<bool>("Use Embedded",stepper->getUseEmbeddedDefault()));
+    }
+  }
+
+  /// Set StepperRK member data from the ParameterList.
+  void setStepperERKValues(
     Teuchos::RCP<StepperExplicitRK<Scalar> > stepper,
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
@@ -962,6 +977,7 @@ public:
     return stepper;
   }
 
+
   Teuchos::RCP<StepperDIRK_General<Scalar> >
   createStepperDIRK_General(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -1044,7 +1060,7 @@ public:
     return stepper;
   }
 
-  
+
   Teuchos::RCP<StepperSDIRK_SSPDIRK22<Scalar> >
   createStepperSDIRK_SSPDIRK22(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,

@@ -46,6 +46,7 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return appModel_;}
 
@@ -74,26 +75,6 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()    const {return true;}
     virtual bool isMultiStepMethod()  const {return !isOneStepMethod();}
-
-    /// Set x for Stepper storage.
-    virtual void setStepperX(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
-      { stepperX_ = x; }
-    /// Set xDot for Stepper storage.
-    virtual void setStepperXDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xDot)
-      { stepperXDot_ = xDot; }
-    /// Set x for Stepper storage.
-    virtual void setStepperXDotDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot)
-      { stepperXDotDot_ = xDotDot; }
-
-    /// Get x from SolutionState or Stepper storage.
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStepperX(
-      Teuchos::RCP<SolutionState<Scalar> > state);
-    /// Get xDot from SolutionState or Stepper storage.
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStepperXDot(
-      Teuchos::RCP<SolutionState<Scalar> > state);
-    /// Get xDotDot from SolutionState or Stepper storage.
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStepperXDotDot(
-      Teuchos::RCP<SolutionState<Scalar> > state);
 
     /// Evaluate xDot = f(x,t).
     virtual void evaluateExplicitODE(
@@ -128,12 +109,7 @@ protected:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
   Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
-
-  // RCP to state or temporary storage if needed.
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >           stepperX_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >           stepperXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >           stepperXDotDot_;
-};
+ };
 
 } // namespace Tempus
 #endif // Tempus_StepperExplicit_decl_hpp
