@@ -54,7 +54,7 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   status_->add(makePtr<StatusTest<Real>>(list));
 
   // Trust-Region Parameters
-  state_->searchSize = list.sublist("Step").sublist("Trust Region").get("Initial Radius",            -1);
+  state_->searchSize = list.sublist("Step").sublist("Trust Region").get("Initial Radius",            -1.0);
   delMax_ = list.sublist("Step").sublist("Trust Region").get("Maximum Radius",                       1.e8);
   eta0_   = list.sublist("Step").sublist("Trust Region").get("Step Acceptance Threshold",            0.05);
   eta1_   = list.sublist("Step").sublist("Trust Region").get("Radius Shrinking Threshold",           0.05);
