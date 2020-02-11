@@ -15,8 +15,8 @@ template<class SC = Tpetra::Operator<>::scalar_type,
 class CholQR {
 private:
   using LO = typename MV::local_ordinal_type;
-  typedef Teuchos::BLAS<LO, SC> blas_type;
-  typedef Teuchos::LAPACK<LO, SC> lapack_type;
+  using blas_type = Teuchos::BLAS<LO, SC>;
+  using lapack_type = Teuchos::LAPACK<LO, SC>;
 
 public:
   /// \typedef FactorOutput
@@ -25,11 +25,11 @@ public:
   /// Here, FactorOutput is just a minimal object whose value is
   /// irrelevant, so that this class' interface looks like that of
   /// \c CholQR.
-  typedef int FactorOutput;
-  typedef Teuchos::ScalarTraits<SC> STS;
-  typedef typename STS::magnitudeType mag_type;
-  typedef Teuchos::SerialDenseMatrix<LO, SC> dense_matrix_type;
-  typedef Belos::MultiVecTraits<SC, MV> MVT;
+  using FactorOutput = int;
+  using STS = Teuchos::ScalarTraits<SC>;
+  using mag_type = typename STS::magnitudeType;
+  using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
+  using MVT = Belos::MultiVecTraits<SC, MV>;
 
   /// \brief Constructor
   ///
@@ -63,25 +63,18 @@ public:
       return 0;
     }
 
-
     // Compute R := A^T * A, using a single BLAS call.
-    #if 1
     // MV with "static" memory (e.g., Tpetra manages the static GPU memory pool)
     MV R_mv = makeStaticLocalMultiVector (A, ncols, ncols);
-    R_mv.putScalar (STS::zero ());
+    //R_mv.putScalar (STS::zero ());
 
     // compute R := A^T * A
     R_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, one, A, A, zero);
-    #else
-    MVT::MvTransMv(one, A, A, R);
-    #endif
 
     // Compute the Cholesky factorization of R in place, so that
     // A^T * A = R^T * R, where R is ncols by ncols upper
     // triangular.
     int info = 0;
-    #define BELOS_CHOLQR_USE_KOKKOSKERNEL
-    #if defined(BELOS_CHOLQR_USE_KOKKOSKERNEL)
     R_mv.modify_host ();
     {
       auto R_h = R_mv.getLocalViewHost ();
@@ -92,6 +85,7 @@ public:
         throw std::runtime_error("Cholesky factorization failed");
       }
     }
+    // Copy to the output R
     Tpetra::deep_copy (R, R_mv);
     // TODO: replace with a routine to zero out lower-triangular
     //     : not needed, but done for testing
@@ -100,29 +94,12 @@ public:
         R(i, j) = zero;
       }
     }
-    #else
-    Tpetra::deep_copy (R, R_mv);
-    lapack.POTRF ('U', ncols, R.values (), R.stride (), &info);
-    if (info < 0) {
-      ncols = -info;
-      // FIXME (mfh 17 Sep 2018) Don't throw; report an error code.
-      throw std::runtime_error("Cholesky factorization failed");
-    }
-    // TODO: replace with a routine to zero out lower-triangular
-    //     : not needed, but done for testing
-    for (size_t i=0; i<ncols; i++) {
-      for (size_t j=0; j<i; j++) {
-        R(i, j) = zero;
-      }
-    }
-    #endif
 
     // Compute A := A * R^{-1}.  We do this in place in A, using
     // BLAS' TRSM with the R factor (form POTRF) stored in the upper
     // triangle of R.
 
     // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
-    #if defined(BELOS_CHOLQR_USE_KOKKOSKERNEL)
     A.sync_device ();
     A.modify_device ();
     {
@@ -131,22 +108,6 @@ public:
       KokkosBlas::trsm ("R", "U", "N", "N",
                         one, R_d, A_d);
     }
-    #else
-    A.sync_host ();
-    A.modify_host ();
-    {
-      auto A_lcl = A.getLocalViewHost ();
-
-      SC* const A_lcl_raw = reinterpret_cast<SC*> (A_lcl.data ());
-      const LO LDA = LO (A.getStride ());
-
-      blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI,
-                 Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
-                 nrows, ncols, one, R.values(), R.stride(),
-                 A_lcl_raw, LDA);
-    }
-    A.template sync<typename MV::device_type::memory_space> ();
-    #endif
 
     return (info > 0 ? info : ncols);
   }
