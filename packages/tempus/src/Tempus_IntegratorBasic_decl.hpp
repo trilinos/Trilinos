@@ -164,8 +164,14 @@ public:
     virtual void setScreenOutputIndexInterval(int i)
     { integratorPL_->set("Screen Output Index Interval", i); }
 
+    virtual int getScreenOutputIndexInterval() const
+    { return integratorPL_->get<int>("Screen Output Index Interval"); }
+
     virtual void setScreenOutputIndexList(std::string s)
     { integratorPL_->set("Screen Output Index List", s); }
+
+    virtual std::string getScreenOutputIndexList() const
+    { return integratorPL_->get<std::string>("Screen Output Index List", ""); }
   //@}
 
   /// Parse when screen output should be executed
