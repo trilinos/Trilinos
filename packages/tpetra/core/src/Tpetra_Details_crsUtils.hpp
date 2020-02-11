@@ -235,6 +235,8 @@ pad_crs_arrays(
          const size_t end   = row_ptr_beg_h[lclRowInd+1];
          TEUCHOS_ASSERT( end >= start );
          const size_t oldAllocSize = end - start;
+         const size_t oldNumEnt = row_ptr_end_h[lclRowInd] - start;
+         TEUCHOS_ASSERT( oldNumEnt <= oldAllocSize );
 
          // This is not a pack routine.  Do not shrink!  Shrinking now
          // to fit the number of entries would ignore users' hint for
@@ -242,9 +244,10 @@ pad_crs_arrays(
          // only counts entries and ignores any available free space.
 
          auto result = padding.get_result(lclRowInd);
-         if (result.found && result.allocSize > oldAllocSize) {
-           lclIncrease += (result.allocSize - oldAllocSize);
-           newAllocPerRow_h[lclRowInd] = result.allocSize;
+         const size_t newNumEnt = oldNumEnt + result.numInSrcNotInTgt;
+         if (newNumEnt > oldAllocSize) {
+           lclIncrease += (newNumEnt - oldAllocSize);
+           newAllocPerRow_h[lclRowInd] = newNumEnt;
          }
          else {
            newAllocPerRow_h[lclRowInd] = oldAllocSize;

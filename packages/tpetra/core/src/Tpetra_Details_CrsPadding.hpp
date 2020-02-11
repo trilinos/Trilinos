@@ -124,7 +124,7 @@ namespace Tpetra {
       }
 
       struct Result {
-        size_t allocSize;
+        size_t numInSrcNotInTgt;
         bool found;
       };
 
@@ -182,18 +182,12 @@ namespace Tpetra {
                                  tgtGblColInds, newNumTgtEnt,
                                  srcGblColInds, newNumSrcEnt);
         unionNumDups += (newNumTgtEnt + newNumSrcEnt - unionNumEnt);
-
-        // FIXME (mfh 10 Feb 2020) If unionNumEnt <= origNumTgtEnt,
-        // then don't even store the row.  This should save space for
-        // a common case in which the calling process receives few
-        // rows.  Remember that CrsPadding only accounts for entries;
-        // it ignores any free space at the end of each row.
       }
 
       std::vector<GO>&
-      get_union_col_inds(const Phase /* phase */,
-                         const LO /* whichIndex */,
-                         const LO tgtLclRowInd)
+      get_difference_col_inds(const Phase /* phase */,
+                              const LO /* whichIndex */,
+                              const LO tgtLclRowInd)
       {
         return entries_[tgtLclRowInd];
       }
@@ -209,37 +203,83 @@ namespace Tpetra {
         const GO srcColInds[], // sorted & merged
         const size_t numSrcEnt)
       {
-        std::vector<GO>& unionColInds =
-          get_union_col_inds(phase, whichIndex, tgtLclRowInd);
+        using Details::countNumInCommon;
+        // We only need to accumulate those source indices that are
+        // not already target indices.  This is because we always have
+        // the target indices on input to this function, so there's no
+        // need to store them here again.  That still could be a lot
+        // to store, but it's better than duplicating target matrix
+        // storage.
+        //
+        // This means that consumers of this data structure need to
+        // treat entries_[tgtLclRowInd].size() as an increment, not as
+        // the required new allocation size itself.
+        //
+        // We store
+        //
+        // difference(union(incoming source indices,
+        //                  already stored source indices),
+        //            target indices)
 
-        if (unionColInds.size() == 0) {
-          auto tgtEnd = tgtColInds + numTgtEnt;
-          auto srcEnd = srcColInds + numSrcEnt;
-          const size_t numInCommon = Details::countNumInCommon(
-            srcColInds, srcEnd, tgtColInds, tgtEnd);
-          unionNumEnt = numTgtEnt + numSrcEnt - numInCommon;
-          unionColInds.resize(unionNumEnt);
-          (void) std::set_union(tgtColInds, tgtEnd,
-                                srcColInds, srcEnd,
-                                unionColInds.begin());
-        }
-        else {
-          // We've already seen the target graph/matrix row before, so
-          // we need not even look at tgtColInds.
-          const size_t oldUnionSize = unionColInds.size();
+        auto tgtEnd = tgtColInds + numTgtEnt;
+        auto srcEnd = srcColInds + numSrcEnt;
+        const size_t numInCommon = countNumInCommon(
+          srcColInds, srcEnd, tgtColInds, tgtEnd);
+        TEUCHOS_ASSERT( numTgtEnt + numSrcEnt >= numInCommon );
+        unionNumEnt = numTgtEnt + numSrcEnt - numInCommon;
 
-          const size_t maxUnionSize = numSrcEnt + unionColInds.size();
-          if (scratchColInds_.size() < maxUnionSize) {
-            scratchColInds_.resize(maxUnionSize);
+        if (unionNumEnt > numTgtEnt) {
+          TEUCHOS_ASSERT( numSrcEnt != 0 );
+
+          // At least one input source index isn't in the target.
+          std::vector<GO>& diffColInds =
+            get_difference_col_inds(phase, whichIndex, tgtLclRowInd);
+          const size_t oldDiffNumEnt = diffColInds.size();
+
+          if (oldDiffNumEnt == 0) {
+            TEUCHOS_ASSERT( numSrcEnt >= numInCommon );
+            const size_t newDiffNumEnt = numSrcEnt - numInCommon;
+            diffColInds.resize(newDiffNumEnt);
+            auto diffEnd = std::set_difference(srcColInds, srcEnd,
+                                               tgtColInds, tgtEnd,
+                                               diffColInds.begin());
+            const size_t newLen(diffEnd - diffColInds.begin());
+            TEUCHOS_ASSERT( newLen == newDiffNumEnt );
           }
-          auto scratchEnd = std::set_union(
-            srcColInds, srcColInds + numSrcEnt,
-            unionColInds.begin(), unionColInds.end(),
-            scratchColInds_.begin());
-          unionNumEnt = size_t(scratchEnd - scratchColInds_.begin());
-          unionColInds.resize(unionNumEnt);
-          std::copy(scratchColInds_.begin(), scratchColInds_.end(),
-                    unionColInds.begin());
+          else {
+            TEUCHOS_ASSERT( diffColInds.data() != nullptr );
+
+            // scratch = union(srcColInds, diffColInds)
+            const size_t unionSize = numSrcEnt + oldDiffNumEnt -
+              countNumInCommon(srcColInds, srcEnd,
+                               diffColInds.begin(),
+                               diffColInds.end());
+            if (scratchColInds_.size() < unionSize) {
+              scratchColInds_.resize(unionSize);
+            }
+            auto unionBeg = scratchColInds_.begin();
+
+            auto unionEnd = std::set_union(
+              srcColInds, srcEnd,
+              diffColInds.begin(), diffColInds.end(),
+              unionBeg);
+            const size_t newUnionLen(unionEnd - unionBeg);
+            TEUCHOS_ASSERT( newUnionLen == unionSize );
+
+            // diffColInds = difference(scratch, tgtColInds)
+            const size_t unionTgtInCommon = countNumInCommon(
+              unionBeg, unionEnd, tgtColInds, tgtEnd);
+            TEUCHOS_ASSERT( unionSize >= unionTgtInCommon );
+
+            const size_t newDiffNumEnt = unionSize - unionTgtInCommon;
+            TEUCHOS_ASSERT( newDiffNumEnt >= oldDiffNumEnt );
+            diffColInds.resize(newDiffNumEnt);
+            auto diffEnd = std::set_difference(unionBeg, unionEnd,
+                                               tgtColInds, tgtEnd,
+                                               diffColInds.begin());
+            const size_t diffLen(diffEnd - diffColInds.begin());
+            TEUCHOS_ASSERT( diffLen == newDiffNumEnt );
+          }
         }
       }
 
