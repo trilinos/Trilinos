@@ -77,8 +77,7 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   namespace Details {
     template<class LocalOrdinal,
-             class GlobalOrdinal,
-             class DeviceType>
+             class GlobalOrdinal>
     class CrsPadding;
   } // namespace Details
 
@@ -1157,7 +1156,7 @@ namespace Tpetra {
        buffer_device_type>& permuteFromLIDs) override;
 
     using padding_type = Details::CrsPadding<
-      local_ordinal_type, global_ordinal_type, device_type>;
+      local_ordinal_type, global_ordinal_type>;
 
     void
     applyCrsPadding(const padding_type& padding,

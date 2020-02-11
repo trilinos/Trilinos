@@ -158,9 +158,6 @@ pad_crs_arrays(
 {
   using Kokkos::view_alloc;
   using Kokkos::WithoutInitializing;
-  using execution_space = typename Indices::execution_space;
-  using range_type = Kokkos::RangePolicy<execution_space, size_t>;
-
   using std::endl;
   std::unique_ptr<std::string> prefix;
 
@@ -173,19 +170,19 @@ pad_crs_arrays(
     os << "Start" << endl;
     std::cerr << os.str();
   }
+  Kokkos::HostSpace hostSpace;
 
   if (verbose) {
     std::ostringstream os;
     os << *prefix << "On input: ";
-
     auto row_ptr_beg_h =
-      Kokkos::create_mirror_view(Kokkos::HostSpace(), row_ptr_beg);
+      Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
     Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
     verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg before scan",
                       maxNumToPrint);
     os << ", ";
     auto row_ptr_end_h =
-      Kokkos::create_mirror_view(Kokkos::HostSpace(), row_ptr_end);
+      Kokkos::create_mirror_view(hostSpace, row_ptr_end);
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
     verbosePrintArray(os, row_ptr_end_h, "row_ptr_end before scan",
                       maxNumToPrint);
@@ -217,7 +214,6 @@ pad_crs_arrays(
   }
   size_t increase = 0;
   {
-    Kokkos::HostSpace hostSpace;
     auto row_ptr_end_h = create_mirror_view(
       hostSpace, row_ptr_end, verbose, prefix.get());
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
@@ -227,9 +223,11 @@ pad_crs_arrays(
 
     auto newAllocPerRow_h = create_mirror_view(
       hostSpace, newAllocPerRow, verbose, prefix.get());
+    using host_range_type = Kokkos::RangePolicy<
+      Kokkos::DefaultHostExecutionSpace, size_t>;
     Kokkos::parallel_reduce
       ("Tpetra::CrsGraph: Compute new allocation size per row",
-       range_type(0, lclNumRows),
+       host_range_type(0, lclNumRows),
        [&] (const size_t lclRowInd, size_t& lclIncrease) {
          const size_t start = row_ptr_beg_h[lclRowInd];
          const size_t end   = row_ptr_beg_h[lclRowInd+1];
@@ -291,6 +289,8 @@ pad_crs_arrays(
     os << *prefix << "Repack" << endl;
     std::cerr << os.str();
   }
+  using execution_space = typename Indices::execution_space;
+  using range_type = Kokkos::RangePolicy<execution_space, size_t>;
   Kokkos::parallel_scan(
     "Tpetra::CrsGraph or CrsMatrix repack",
     range_type(0, lclNumRows+1),
@@ -339,7 +339,7 @@ pad_crs_arrays(
 
     os << *prefix;
     auto row_ptr_beg_h =
-      Kokkos::create_mirror_view(Kokkos::HostSpace(), row_ptr_beg);
+      Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
     Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
     verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg after scan",
                       maxNumToPrint);
@@ -347,7 +347,7 @@ pad_crs_arrays(
 
     os << *prefix;
     auto row_ptr_end_h =
-      Kokkos::create_mirror_view(Kokkos::HostSpace(), row_ptr_end);
+      Kokkos::create_mirror_view(hostSpace, row_ptr_end);
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
     verbosePrintArray(os, row_ptr_end_h, "row_ptr_end after scan",
                       maxNumToPrint);
@@ -364,10 +364,9 @@ pad_crs_arrays(
                  verbose, prefix.get());
 
   if (verbose) {
-    Kokkos::HostSpace hostSpace;
-    auto indices_h = create_mirror_view(hostSpace, indices);
+    auto indices_h = Kokkos::create_mirror_view(hostSpace, indices);
     Kokkos::deep_copy(indices_h, indices);
-    auto values_h = create_mirror_view(hostSpace, values);
+    auto values_h = Kokkos::create_mirror_view(hostSpace, values);
     Kokkos::deep_copy(values_h, values);
     std::ostringstream os;
     os << "On output: ";

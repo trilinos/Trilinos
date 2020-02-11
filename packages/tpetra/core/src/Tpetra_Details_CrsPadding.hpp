@@ -10,7 +10,10 @@
 namespace Tpetra {
   namespace Details {
 
-    template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+    /// \brief Keep track of how much more space a CrsGraph or
+    ///   CrsMatrix needs, when the graph or matrix is the target of a
+    ///   doExport or doImport.
+    template<class LocalOrdinal, class GlobalOrdinal>
     class CrsPadding {
     private:
       using LO = LocalOrdinal;
@@ -128,6 +131,13 @@ namespace Tpetra {
         bool found;
       };
 
+      /// \brief For a given target matrix local row index, return the
+      ///   number of unique source column indices to merge into that
+      ///   row encountered thus far that are not already in the row,
+      ///   and whether we've seen that row already.
+      ///
+      /// This method relies only on const methods of std::map, and
+      /// thus should be thread safe (on host).
       Result
       get_result(const LO targetLocalIndex) const
       {
