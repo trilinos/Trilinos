@@ -1,6 +1,9 @@
 #!/bin/bash
 
 # Create process ID specific output file
+# NOTE: This could result in a race condition if there are very few
+# available PIDS and the PID wraps. The .out file name should really
+# be based on the distinct test name.
 out_file=$$_cmd.out
 
 # Evaluate the command passed in and redirect all output

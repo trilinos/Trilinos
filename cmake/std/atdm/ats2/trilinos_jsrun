@@ -41,6 +41,11 @@ function evaluate_jsrun_command {
     grep 'Error: Remote JSM server is not responding' $out_file &> /dev/null
     grep_status=$?
 
+    # Sleep for a few seconds before retrying the test.
+    if [[ $grep_status -eq 0 && $retry -ne 1 ]]; then 
+      sleep 3
+    fi
+
     retry=$((retry-1))
   done
   cat $out_file
