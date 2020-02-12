@@ -127,6 +127,7 @@ private:
 
   bool hasEcon_;
   Ptr<ReducedConstraint> rcon_;
+  Ptr<NullSpaceOperator<Real>> ns_;
 
   using Algorithm_B<Real>::state_;
   using Algorithm_B<Real>::status_;

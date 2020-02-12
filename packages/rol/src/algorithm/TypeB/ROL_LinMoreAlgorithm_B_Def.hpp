@@ -121,6 +121,8 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
     rcon_ = makePtr<ReducedConstraint>(proj_->getLinearConstraint(),
                                        makePtrFromRef(bnd),
                                        makePtrFromRef(x));
+    ns_   = makePtr<NullSpaceOperator<Real>>(rcon_,x,
+                                       proj_->getMultiplier()->dual());
   }
 }
 
@@ -175,9 +177,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     SPiter_ = 0; SPflag_ = 0;
     if (verbosity_ > 1) {
       outStream << std::endl;
-      outStream << "  Computation of Cauchy point"          << std::endl;
-      outStream << "    Norm of Cauchy point:             " << state_->iterateVec->norm() << std::endl;
-      outStream << "    Norm of free gradient components: " << gfnorm                     << std::endl;
+      outStream << "    Norm of free gradient components: " << gfnorm << std::endl;
     }
 
     // Main step computation loop
@@ -205,10 +205,6 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
 
       // Projected search
       state_->snorm = dprsrch(*state_->iterateVec,*s,*gvec,*model_,bnd,*pwa1,*dwa1,*pwa2);
-      if (verbosity_ > 1) {
-        outStream << "    Step length (beta*s):             " << state_->snorm              << std::endl;
-        outStream << "    Iterate length:                   " << state_->iterateVec->norm() << std::endl;
-      }
 
       // Model gradient at s = x[i+1] - x[0]
       state_->stepVec->set(*state_->iterateVec);
@@ -225,9 +221,9 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       }
       if (verbosity_ > 1) {
         outStream << std::endl;
-        outStream << "  Update model gradient"                << std::endl;
-        outStream << "    Step length:                      " << s->norm()  << std::endl;
-        outStream << "    Norm of free gradient components: " << gfnormf    << std::endl;
+        outStream << "  Projected search"                     << std::endl;
+        outStream << "    Step length (beta*s):             " << state_->snorm << std::endl;
+        outStream << "    Norm of free gradient components: " << gfnormf       << std::endl;
         outStream << std::endl;
       }
 
@@ -569,8 +565,8 @@ void LinMoreAlgorithm_B<Real>::applyFreePrecond(Vector<Real> &hv,
   else {
     // Perform null space projection
     rcon_->setX(makePtrFromRef(x));
-    NullSpaceOperator<Real> ns(rcon_,x,proj_->getMultiplier()->dual());
-    ns.apply(hv,v,tol);
+    ns_->update(x);
+    ns_->apply(hv,v,tol);
   }
 }
 

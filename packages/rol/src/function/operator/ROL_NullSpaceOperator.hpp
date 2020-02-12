@@ -163,6 +163,18 @@ public:
                     const Ptr<Vector<Real>> &ran)
     : NullSpaceOperator(con,*dom,*ran) {}
 
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    if (dim_==1) {
+      Real tol = std::sqrt(ROL_EPSILON<Real>());
+      con_->applyAdjointJacobian(*b1_,*b2_,x,tol);
+      b1sqr_ = b1_->dot(*b1_);
+    }
+    else {
+      augsys_ = makePtr<AugmentedSystemOperator<Real>>(con_,makePtrFromRef(x));
+      augsysprec_ = makePtr<AugmentedSystemPrecOperator<Real>>(con_,makePtrFromRef(x));
+    }
+  }
+
   virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     if (dim_==1) {
       Real dot = v.dot(*b1_);
