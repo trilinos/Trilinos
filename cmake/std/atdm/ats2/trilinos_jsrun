@@ -47,7 +47,7 @@ function evaluate_jsrun_command {
   # Retry jsrun command until retry is exhausted or JSM server error is not found
   while [[ $grep_status -eq 0 && $retry -ne 0 ]]; do
     # Evaluate the command passed in and redirect all output
-    jsrun $(printf "'%s' " "${args[@]}") &> $out_file
+    eval jsrun $(printf "'%s' " "${args[@]}") &> $out_file
     jsrun_ret=$?
 
     grep 'Error: Remote JSM server is not responding' $out_file &> /dev/null
