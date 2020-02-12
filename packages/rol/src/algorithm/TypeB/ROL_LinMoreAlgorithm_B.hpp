@@ -48,6 +48,7 @@
 #include "ROL_TrustRegionModel_U.hpp"
 #include "ROL_TrustRegionUtilities.hpp"
 #include "ROL_NullSpaceOperator.hpp"
+#include "ROL_ReducedLinearConstraint.hpp"
 
 /** \class ROL::LinMoreAlgorithm_B
     \brief Provides an interface to run the trust-region algorithm of Lin and More.
@@ -58,30 +59,40 @@ namespace ROL {
 template<typename Real>
 class LinMoreAlgorithm_B : public Algorithm_B<Real> {
 private:
-  Ptr<TrustRegionModel_U<Real>> model_;  ///< Container for trust-region model.
-  Real                        delMax_; ///< Maximum trust-region radius.
-  Real                        eta0_;   ///< Step acceptance threshold.
-  Real                        eta1_;   ///< Radius decrease threshold.
-  Real                        eta2_;   ///< Radius increase threshold.
-  Real                        gamma0_; ///< Radius decrease rate (negative rho).
-  Real                        gamma1_; ///< Radius decrease rate (positive rho).
-  Real                        gamma2_; ///< Radius increase rate.
-  Real                        TRsafe_; ///< Safeguard size for numerically evaluating ratio.
-  Real                        eps_;    ///< Safeguard for numerically evaluating ratio.
-  TRUtils::ETRFlag            TRflag_; ///< Trust-region exit flag.
-  int                         SPflag_; ///< Subproblem solver termination flag.
-  int                         SPiter_; ///< Subproblem solver iteration count.
+  Ptr<TrustRegionModel_U<Real>> model_;  ///< Container for trust-region model
+  Real                          delMax_; ///< Maximum trust-region radius (default: 1e8)
+  Real                          eta0_;   ///< Step acceptance threshold (default: 0.05)
+  Real                          eta1_;   ///< Radius decrease threshold (default: 0.05)
+  Real                          eta2_;   ///< Radius increase threshold (default: 0.9)
+  Real                          gamma0_; ///< Radius decrease rate (negative rho) (default: 0.0625)
+  Real                          gamma1_; ///< Radius decrease rate (positive rho) (default: 0.25)
+  Real                          gamma2_; ///< Radius increase rate (default: 2.5)
+  Real                          TRsafe_; ///< Safeguard size for numerically evaluating ratio (default: 1e2)
+  Real                          eps_;    ///< Safeguard for numerically evaluating ratio
+  TRUtils::ETRFlag              TRflag_; ///< Trust-region exit flag
+  int                           SPflag_; ///< Subproblem solver termination flag
+  int                           SPiter_; ///< Subproblem solver iteration count
 
   // SECANT INFORMATION
-  ESecant esec_; ///< Secant type.
-  bool useSecantPrecond_;
-  bool useSecantHessVec_;
+  ESecant esec_;          ///< Secant type (default: Limited-Memory BFGS)
+  bool useSecantPrecond_; ///< Flag to use secant as a preconditioner (default: false)
+  bool useSecantHessVec_; ///< Flag to use secant as Hessian (default: false)
 
-  Real tol1_, tol2_;
-  int maxit_;
+  // TRUNCATED CG INFORMATION
+  Real tol1_; ///< Absolute tolerance for truncated CG (default: 1e-4)
+  Real tol2_; ///< Relative tolerance for truncated CG (default: 1e-2)
+  int maxit_; ///< Maximum number of CG iterations (default: 20)
 
-  unsigned verbosity_;
-  bool printHeader_;
+  // ALGORITHM SPECIFIC PARAMETERS
+  int minit_;      ///< Maximum number of minor (subproblem solve) iterations (default: 10)
+  int extlim_;     ///< Maximum number of extrapolation steps for Cauchy point (default: 10)
+  Real interpf_;   ///< Backtracking rate for Cauchy point computation (default: 1e-1)
+  Real extrapf_;   ///< Extrapolation rate for Cauchy point computation (default: 1e1)
+  Real mu0_;       ///< Sufficient decrease parameter (default: 1e-2)
+  Real interpfPS_; ///< Backtracking rate for projected search (default: 0.5)
+
+  unsigned verbosity_; ///< Output level (default: 0)
+  bool printHeader_;   ///< Flag to print header at every iteration
 
   class ReducedConstraint : public Constraint<Real> {
     private:
@@ -125,9 +136,9 @@ private:
       }
   };
 
-  bool hasEcon_;
-  Ptr<ReducedConstraint> rcon_;
-  Ptr<NullSpaceOperator<Real>> ns_;
+  bool hasEcon_;                            ///< Flag signifies if equality constraints exist
+  Ptr<ReducedLinearConstraint<Real>> rcon_; ///< Equality constraint restricted to current active variables
+  Ptr<NullSpaceOperator<Real>> ns_;         ///< Null space projection onto reduced equality constraint Jacobian
 
   using Algorithm_B<Real>::state_;
   using Algorithm_B<Real>::status_;

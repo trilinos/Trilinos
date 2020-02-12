@@ -53,22 +53,30 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   status_->reset();
   status_->add(makePtr<StatusTest<Real>>(list));
 
+  ParameterList &trlist = list.sublist("Step").sublist("Trust Region");
   // Trust-Region Parameters
-  state_->searchSize = list.sublist("Step").sublist("Trust Region").get("Initial Radius",            -1.0);
-  delMax_ = list.sublist("Step").sublist("Trust Region").get("Maximum Radius",                       1.e8);
-  eta0_   = list.sublist("Step").sublist("Trust Region").get("Step Acceptance Threshold",            0.05);
-  eta1_   = list.sublist("Step").sublist("Trust Region").get("Radius Shrinking Threshold",           0.05);
-  eta2_   = list.sublist("Step").sublist("Trust Region").get("Radius Growing Threshold",             0.9);
-  gamma0_ = list.sublist("Step").sublist("Trust Region").get("Radius Shrinking Rate (Negative rho)", 0.0625);
-  gamma1_ = list.sublist("Step").sublist("Trust Region").get("Radius Shrinking Rate (Positive rho)", 0.25);
-  gamma2_ = list.sublist("Step").sublist("Trust Region").get("Radius Growing Rate",                  2.5);
-  TRsafe_ = list.sublist("Step").sublist("Trust Region").get("Safeguard Size",                       100.0);
+  state_->searchSize = trlist.get("Initial Radius",            -1.0);
+  delMax_ = trlist.get("Maximum Radius",                       1.e8);
+  eta0_   = trlist.get("Step Acceptance Threshold",            0.05);
+  eta1_   = trlist.get("Radius Shrinking Threshold",           0.05);
+  eta2_   = trlist.get("Radius Growing Threshold",             0.9);
+  gamma0_ = trlist.get("Radius Shrinking Rate (Negative rho)", 0.0625);
+  gamma1_ = trlist.get("Radius Shrinking Rate (Positive rho)", 0.25);
+  gamma2_ = trlist.get("Radius Growing Rate",                  2.5);
+  TRsafe_ = trlist.get("Safeguard Size",                       100.0);
   eps_    = TRsafe_*ROL_EPSILON<Real>();
-  // Krylov parameter list
-  maxit_       = list.sublist("General").sublist("Krylov").get("Iteration Limit",    20);
-  tol1_        = list.sublist("General").sublist("Krylov").get("Absolute Tolerance", 1e-4);
-  tol2_        = list.sublist("General").sublist("Krylov").get("Relative Tolerance", 1e-2);
-  // Output parameters
+  // Krylov Parameters
+  maxit_ = list.sublist("General").sublist("Krylov").get("Iteration Limit",    20);
+  tol1_  = list.sublist("General").sublist("Krylov").get("Absolute Tolerance", 1e-4);
+  tol2_  = list.sublist("General").sublist("Krylov").get("Relative Tolerance", 1e-2);
+  // Algorithm-Specific Parameters
+  minit_     = trlist.sublist("Lin-More").get("Maximum Number of Minor Iterations",    10);
+  extlim_    = trlist.sublist("Lin-More").get("Maximum Number of Extrapolation Steps", 10);
+  interpf_   = trlist.sublist("Lin-More").get("Cauchy Point Backtracking Rate",        0.1);
+  extrapf_   = trlist.sublist("Lin-More").get("Cauchy Point Extrapolation Rate",       10.0);
+  mu0_       = trlist.sublist("Lin-More").get("Sufficient Decrease Parameter",         1e-2);
+  interpfPS_ = trlist.sublist("Lin-More").get("Projected Search Backtracking Rate",    0.5);
+  // Output Parameters
   verbosity_   = list.sublist("General").get("Output Level",0);
   printHeader_ = verbosity_ > 2;
   // Secant Information
@@ -118,11 +126,11 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   }
   // Initialize null space projection
   if (hasEcon_) {
-    rcon_ = makePtr<ReducedConstraint>(proj_->getLinearConstraint(),
-                                       makePtrFromRef(bnd),
-                                       makePtrFromRef(x));
+    rcon_ = makePtr<ReducedLinearConstraint<Real>>(proj_->getLinearConstraint(),
+                                                   makePtrFromRef(bnd),
+                                                   makePtrFromRef(x));
     ns_   = makePtr<NullSpaceOperator<Real>>(rcon_,x,
-                                       proj_->getMultiplier()->dual());
+                                             proj_->getMultiplier()->dual());
   }
 }
 
@@ -133,10 +141,9 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
                                                        BoundConstraint<Real> &bnd,
                                                        std::ostream          &outStream ) {
   const Real zero(0), half(0.5), one(1);
-  const int dim = x.dimension();
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   Real gfnorm(0), gfnormf(0), tol(0), stol(0), gs(0);
-  Real ftrial(0), pRed(0), rho(1), alpha(1);
+  Real ftrial(0), sHs(0), pRed(0), rho(1), alpha(1);
   int flagCG(0), iterCG(0);
   // Initialize trust-region data
   std::vector<std::string> output;
@@ -180,10 +187,8 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       outStream << "    Norm of free gradient components: " << gfnorm << std::endl;
     }
 
-    // Main step computation loop
-    // There are at most dim iterations since at least one
-    // face becomes active at each iteration
-    for (int i = 0; i < dim; ++i) {
+    // Trust-region subproblem solve loop
+    for (int i = 0; i < minit_; ++i) {
       // Run Truncated CG
       flagCG = 0; iterCG = 0;
       tol  = std::min(tol1_,tol2_*gfnorm);
@@ -195,7 +200,6 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       if (verbosity_ > 1) {
         outStream << std::endl;
         outStream << "  Computation of CG step"               << std::endl;
-        outStream << "    Number of faces:                  " << dim           << std::endl;
         outStream << "    Current face (i):                 " << i             << std::endl;
         outStream << "    CG step length:                   " << state_->snorm << std::endl;
         outStream << "    Number of CG iterations:          " << iterCG        << std::endl;
@@ -210,6 +214,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       state_->stepVec->set(*state_->iterateVec);
       state_->stepVec->axpy(-one,x); // s = x[i+1]-x[0]
       model_->hessVec(*gvec,*state_->stepVec,x,tol0);
+      sHs = state_->stepVec->dot(gvec->dual());
       gvec->plus(*state_->gradientVec);
       bnd.pruneActive(*gvec,*state_->iterateVec,zero);
       if (hasEcon_) {
@@ -248,10 +253,11 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       gfnorm = gfnormf;
     }
     // Update norm of step and update model predicted reduction
-    state_->snorm = state_->stepVec->norm();
-    model_->hessVec(*dwa1,*state_->stepVec,x,tol0);
+    //state_->snorm = state_->stepVec->norm();
+    //model_->hessVec(*dwa1,*state_->stepVec,x,tol0);
     gs   = state_->stepVec->dot(state_->gradientVec->dual());
-    pRed = -(half * state_->stepVec->dot(dwa1->dual()) + gs);
+    pRed = -half*sHs - gs;
+    //pRed = -(half * state_->stepVec->dot(dwa1->dual()) + gs);
 
     // Compute trial objective value
     x.plus(*state_->stepVec);
@@ -324,7 +330,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
                                        TrustRegionModel_U<Real> &model,
                                        Vector<Real> &dwa,
                                        std::ostream &outStream) {
-  const Real half(0.5), mu0(0.01), interpf(0.1), extrapf(10);
+  const Real half(0.5);
   // const Real zero(0); // Unused
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   bool interp = false;
@@ -338,34 +344,34 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     model.hessVec(dwa,s,x,tol);
     gs = s.dot(g);
     q  = half * s.dot(dwa.dual()) + gs;
-    interp = (q > mu0*gs);
+    interp = (q > mu0_*gs);
   }
   // Either increase or decrease alpha to find approximate Cauchy point
+  int cnt = 0;
   if (interp) {
     bool search = true;
     while (search) {
-      alpha *= interpf;
+      alpha *= interpf_;
       snorm = dgpstep(s,g,x,-alpha);
       if (snorm <= del) {
         model.hessVec(dwa,s,x,tol);
         gs = s.dot(g);
         q  = half * s.dot(dwa.dual()) + gs;
-        search = (q > mu0*gs);
+        search = (q > mu0_*gs);
       }
     }
   }
   else {
     bool search = true;
     Real alphas = alpha;
-    int cnt = 0;
     while (search) {
-      alpha *= extrapf;
+      alpha *= extrapf_;
       snorm = dgpstep(s,g,x,-alpha);
-      if (snorm <= del && cnt < 10) {
+      if (snorm <= del && cnt < extlim_) {
         model.hessVec(dwa,s,x,tol);
         gs = s.dot(g);
         q  = half * s.dot(dwa.dual()) + gs;
-        if (q <= mu0*gs) {
+        if (q <= mu0_*gs) {
           search = true;
           alphas = alpha;
         }
@@ -384,8 +390,11 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
   if (verbosity_ > 1) {
     outStream << std::endl;
     outStream << "  Cauchy point"                         << std::endl;
-    outStream << "    Step length (alpha):              " << alpha      << std::endl;
-    outStream << "    Step length (alpha*g):            " << snorm      << std::endl;
+    outStream << "    Step length (alpha):              " << alpha << std::endl;
+    outStream << "    Step length (alpha*g):            " << snorm << std::endl;
+    if (!interp) {
+      outStream << "    Number of extrapolation steps:    " << cnt << std::endl;
+    }
   }
   return snorm;
 }
@@ -398,7 +407,7 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
                                        Vector<Real> &pwa, Vector<Real> &dwa,
                                        Vector<Real> &pwa1,
                                        std::ostream &outStream) {
-  const Real half(0.5), mu0(0.01), interpf(0.5);
+  const Real half(0.5);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   Real beta(1), snorm(0), q(0), gs(0);
   int nsteps = 0;
@@ -410,11 +419,11 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     applyFreeHessian(dwa,pwa,x,model,bnd,tol,pwa1);
     gs = pwa.dot(g.dual());
     q  = half * s.dot(dwa.dual()) + gs;
-    if (q <= mu0*gs || nsteps > 10) {
+    if (q <= mu0_*gs) { // || nsteps > 10) {
       search = false;
     }
     else {
-      beta *= interpf;
+      beta *= interpfPS_;
     }
   }
   snorm = dgpstep(pwa,s,x,beta);
