@@ -1039,8 +1039,7 @@ $ bsub -x -Is -n 20 \
 
 Once logged on to 'vortex' (SRN), one can either build and configure on the
 login node or the compute node. Make sure to setup SSH keys as described in
-`/opt/VORTEX_INTRO` before trying to build on a compute node. To get a list of
-compute nodes, run `bhosts`, then simply ssh to a given hostname. For example to
+`/opt/VORTEX_INTRO` before trying to build on a compute node. For example to
 configure, build and run the tests for the default `cuda-debug` build for
 `kokkos` (after cloning Trilinos on the `develop` branch), do:
 
@@ -1056,16 +1055,25 @@ $ cmake -G'Unix Makefiles' \
   $TRILINOS_DIR
 
 $ make -j20
+```
 
+You may run the above commands from an interactive bsub session as well:
+```bash
+$ bsub -J YOUR_JOB_NAME -W 4:00 -Is bash
+```
+
+Ctest runs everything using the `jsrun` command. You must run jsrun from a
+compute node which can be acquired using the above bsub command.
+
+Once you're on a compute node, you can run ctest. For example:
+```bash
 $ ctest -j4
 ```
 
 **NOTES:**
 - Do NOT do `module purge` before loading the environment. Simply start off with
   a clean default environment on vortex.
-- One can also `ssh` to a compute node (if you built on the login node) and
-run ctest from there.
-- To target the GPUs on vortex, one must run tests from the login node.
+- One can also `ssh` to a compute node and run ctest from there.
 
 
 ## Building and installing Trilinos for ATDM Applications
