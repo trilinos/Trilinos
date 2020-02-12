@@ -210,6 +210,7 @@ inline void analyzeRatio(Real &rho,
     outStream << "    Predicted reduction with safeguard:      " << pRed_safe << std::endl;
     outStream << "    Ratio of actual and predicted reduction: " << rho       << std::endl;
     outStream << "    Trust-region flag:                       " << flag      << std::endl;
+    outStream << std::endl;
   }
 }
 
@@ -234,6 +235,7 @@ inline Real interpolateRadius(const Vector<Real> &g,
     outStream << "  In TrustRegionUtilities::interpolateRadius"  << std::endl;
     outStream << "    Interpolation model value:               " << modelVal << std::endl;
     outStream << "    Interpolation step length:               " << theta    << std::endl;
+    outStream << std::endl;
   }
   return std::min(gamma1*std::min(snorm,del),std::max(gamma0,theta)*del);
 }
