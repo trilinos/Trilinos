@@ -6523,7 +6523,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     {
       // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
       auto host_src_coordinates = Kokkos::create_mirror_view(
-        Kokkos::Serial(), this->mj_coordinates);
+        Kokkos::HostSpace(), this->mj_coordinates);
       Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
       Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t>
         dst_coordinates(Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"),
@@ -6531,13 +6531,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       auto host_dst_coordinates = Kokkos::create_mirror_view(
         Kokkos::HostSpace(), dst_coordinates);
       for(int i = 0; i < this->coord_dim; ++i) {
-        Kokkos::View<mj_scalar_t*, Kokkos::Serial> sub_host_src_coordinates;
+        Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates;
         // view could be size 0 if graph was not distributed
         if(host_src_coordinates.extent(0) != 0) {
           sub_host_src_coordinates =
             Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
         }
-        Kokkos::View<mj_scalar_t *, Kokkos::Serial> sub_host_dst_coordinates
+        Kokkos::View<mj_scalar_t *, Kokkos::HostSpace> sub_host_dst_coordinates
           = Kokkos::subview(host_dst_coordinates, Kokkos::ALL, i);
         // Note Layout Left means we can do these in contiguous blocks
         message_tag++;
@@ -6687,7 +6687,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       Kokkos::HostSpace(), this->mj_coordinates);
     Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
     for(int i = 0; i < this->coord_dim; ++i) {
-      Kokkos::View<mj_scalar_t*, Kokkos::Serial> sub_host_src_coordinates;
+      Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates;
       // view could be size 0 if graph was not distributed
       if(host_src_coordinates.extent(0) != 0) {
         sub_host_src_coordinates =
@@ -8796,7 +8796,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
   // migrate gnos.
   {
     ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
-    Kokkos::View<mj_gno_t*, Kokkos::Serial> host_initial_mj_gnos(
+    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> host_initial_mj_gnos(
       Kokkos::ViewAllocateWithoutInitializing("host_initial_mj_gnos"),
       initial_mj_gnos_.size()); // initial_mj_gnos_ is const mj_gno_t *
     Kokkos::deep_copy(host_initial_mj_gnos, initial_mj_gnos_);
@@ -9051,7 +9051,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     // Reorder results so that they match the order of the input
     std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid;
     localGidToLid.reserve(result_num_local_coords);
-    Kokkos::View<mj_gno_t*, Kokkos::Serial> host_result_initial_mj_gnos(
+    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> host_result_initial_mj_gnos(
       Kokkos::ViewAllocateWithoutInitializing("host_result_initial_mj_gnos"),
       result_initial_mj_gnos_.size());
     Kokkos::deep_copy(host_result_initial_mj_gnos, result_initial_mj_gnos_);
