@@ -147,7 +147,8 @@ private:
   //   g     -- The (dual) gradient vector g (unchanged)
   //   del   -- The trust region radius (unchanged)
   //   model -- Trust region model
-  //   dwa   -- Dual working array
+  //   dwa   -- Dual working array, stores Hessian applied to step
+  //   dwa1  -- Dual working array
   Real dcauchy(Vector<Real> &s, Real &alpha,
                const Vector<Real> &x, const Vector<Real> &g,
                const Real del, TrustRegionModel_U<Real> &model,
