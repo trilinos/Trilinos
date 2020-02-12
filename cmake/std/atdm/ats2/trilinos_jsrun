@@ -42,12 +42,16 @@ function evaluate_jsrun_command {
     grep_status=$?
 
     # Sleep for a few seconds before retrying the test.
-    if [[ $grep_status -eq 0 && $retry -ne 1 ]]; then 
+    if [[ $grep_status -eq 0 && $retry -ne 1 ]]; then
       sleep 3
     fi
 
     retry=$((retry-1))
   done
+
+  if [ "$ECHO_CMD" == "1" ]; then
+    echo "out_file=$out_file"
+  fi
   cat $out_file
   rm $out_file
 }
