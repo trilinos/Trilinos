@@ -248,17 +248,15 @@ namespace Tpetra {
 
           if (oldDiffNumEnt == 0) {
             TEUCHOS_ASSERT( numSrcEnt >= numInCommon );
-            const size_t newDiffNumEnt = numSrcEnt - numInCommon;
-            diffColInds.resize(newDiffNumEnt);
+            diffColInds.resize(numSrcEnt);
             auto diffEnd = std::set_difference(srcColInds, srcEnd,
                                                tgtColInds, tgtEnd,
                                                diffColInds.begin());
             const size_t newLen(diffEnd - diffColInds.begin());
-            TEUCHOS_ASSERT( newLen == newDiffNumEnt );
+            TEUCHOS_ASSERT( newLen <= numSrcEnt );
+            diffColInds.resize(newLen);
           }
           else {
-            TEUCHOS_ASSERT( diffColInds.data() != nullptr );
-
             // scratch = union(srcColInds, diffColInds)
             const size_t unionSize = numSrcEnt + oldDiffNumEnt -
               countNumInCommon(srcColInds, srcEnd,
@@ -268,7 +266,6 @@ namespace Tpetra {
               scratchColInds_.resize(unionSize);
             }
             auto unionBeg = scratchColInds_.begin();
-
             auto unionEnd = std::set_union(
               srcColInds, srcEnd,
               diffColInds.begin(), diffColInds.end(),
@@ -281,14 +278,13 @@ namespace Tpetra {
               unionBeg, unionEnd, tgtColInds, tgtEnd);
             TEUCHOS_ASSERT( unionSize >= unionTgtInCommon );
 
-            const size_t newDiffNumEnt = unionSize - unionTgtInCommon;
-            TEUCHOS_ASSERT( newDiffNumEnt >= oldDiffNumEnt );
-            diffColInds.resize(newDiffNumEnt);
+            diffColInds.resize(unionSize);
             auto diffEnd = std::set_difference(unionBeg, unionEnd,
                                                tgtColInds, tgtEnd,
                                                diffColInds.begin());
             const size_t diffLen(diffEnd - diffColInds.begin());
-            TEUCHOS_ASSERT( diffLen == newDiffNumEnt );
+            TEUCHOS_ASSERT( diffLen <= unionSize );
+            diffColInds.resize(diffLen);
           }
         }
       }
