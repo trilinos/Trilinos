@@ -9,7 +9,7 @@
 #include<Zoltan2_PartitioningSolution.hpp>
 #include<Zoltan2_Util.hpp>
 #include<Zoltan2_TPLTraits.hpp>
-#include<Zoltan2_VtxLabel.hpp>
+#include<Zoltan2_IceProp.hpp>
 #include<Zoltan2_AlltoAll.hpp>
 
 /*! \file Zoltan2_IceSheet.hpp

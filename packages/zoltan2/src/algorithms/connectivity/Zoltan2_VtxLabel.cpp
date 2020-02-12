@@ -62,8 +62,6 @@
 #include "Tpetra_FEMultiVector_def.hpp"
 #include "Zoltan2_VtxLabel.hpp"
 
-std::queue<Zoltan2::iceSheetPropagation<Tpetra::Map<>>::lno_t> Zoltan2::iceSheetPropagation<Tpetra::Map<>>::regQueue;
-std::queue<Zoltan2::iceSheetPropagation<Tpetra::Map<>>::lno_t> Zoltan2::iceSheetPropagation<Tpetra::Map<>>::artQueue;
 
 template class Tpetra::DistObject< 
   Zoltan2::IcePropVtxLabel<Tpetra::Map<>::local_ordinal_type, 
