@@ -1471,7 +1471,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Kokkos::initialize();
 
   // Build diagonal matrix
-  GlobalOrdinal nrow = 10;
+  GlobalOrdinal nrow = 20;
   RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
@@ -1625,7 +1625,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Kokkos::initialize();
 
   // Build diagonal matrix
-  GlobalOrdinal nrow = 10;
+  GlobalOrdinal nrow = 20;
   RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
@@ -1779,7 +1779,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Kokkos::initialize();
 
   // Build diagonal matrix
-  GlobalOrdinal nrow = 10;
+  GlobalOrdinal nrow = 20;
   RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
