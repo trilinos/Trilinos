@@ -40,7 +40,7 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Map.hpp"
 #include "Kokkos_Core.hpp"
@@ -59,13 +59,13 @@ namespace { // (anonymous)
   using std::endl;
   using GST = Tpetra::global_size_t;
 
-  // Both source and target matrices have one row on each process.
+  // Both source and target graphs have one row on each process.
   //
-  // Target matrix global column indices:
+  // Target graph's global column indices:
   // Proc 0: Global row index 0: [0, 1, 2, 3, 4, 5]
   // Proc 1: Global row index 1: [0, 1, 2, 3, 4, 5]
   //
-  // Source matrix global column indices:
+  // Source graph's global column indices:
   // Proc 0: Global row index 1: []
   // Proc 1: Global row index 0: [3, 4, 5, 6, 7, 8, 9]
   //
@@ -73,22 +73,20 @@ namespace { // (anonymous)
   // Proc 0: Global row index 0: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
   // Proc 1: Global row index 1: [0, 1, 2, 3, 4, 5]
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, UnpackMerge1, Scalar, Node )
+  TEUCHOS_UNIT_TEST( CrsGraph, UnpackMerge1 )
   {
     using LO = Tpetra::Map<>::local_ordinal_type;
     using GO = Tpetra::Map<>::global_ordinal_type;
-    using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
-    using import_type = Tpetra::Import<LO, GO, Node>;
-    using map_type = Tpetra::Map<LO, GO, Node>;
-    using STS = Teuchos::ScalarTraits<Scalar>;
+    using crs_graph_type = Tpetra::CrsGraph<LO, GO>;
+    using import_type = Tpetra::Import<LO, GO>;
+    using map_type = Tpetra::Map<LO, GO>;
 
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myRank = comm->getRank();
     const int numProcs = comm->getSize();
 
-    out << "Test that Tpetra::CrsMatrix::unpackAndCombine into a "
-      "target matrix with a non-static graph merges column indices"
-      << endl;
+    out << "Test that Tpetra::CrsGraph::unpackAndCombine into a "
+      "target graph merges column indices" << endl;
     Teuchos::OSTab tab1(out);
 
     TEST_ASSERT( numProcs == 2 );
@@ -139,43 +137,19 @@ namespace { // (anonymous)
       srcGblColInds = std::vector<GO>{{3, 4, 5, 6, 7, 8, 9}};
     }
     std::vector<GO> tgtGblColInds{{0, 1, 2, 3, 4, 5}};
-    std::vector<Scalar> srcVals(srcGblColInds.size(), Scalar(1.0));
-    std::vector<Scalar> tgtVals(tgtGblColInds.size(), Scalar(1.0));
-
-    std::vector<Scalar> expectedTgtVals;
-    if (myRank == 0) {
-      expectedTgtVals.resize(10);
-      for(LO k = 0; k < LO(3); ++k) {
-        expectedTgtVals[k] = 1.0;
-      }
-      for(LO k = LO(3); k < LO(6); ++k) {
-        expectedTgtVals[k] = 2.0;
-      }
-      for(LO k = LO(6); k < LO(10); ++k) {
-        expectedTgtVals[k] = 1.0;
-      }
-    }
-    else if (myRank == 1) {
-      expectedTgtVals.resize(6);
-      for(LO k = 0; k < LO(6); ++k) {
-        expectedTgtVals[k] = 1.0;
-      }
-    }
 
     for (const bool A_src_is_fill_complete : {false, true}) {
       out << "A_src will" << (A_src_is_fill_complete ? "" : " NOT")
           << " be fill complete." << endl;
-      crs_matrix_type A_src(srcRowMap, colMap, srcGblColInds.size());
-      crs_matrix_type A_tgt(tgtRowMap, colMap, tgtGblColInds.size());
+      crs_graph_type A_src(srcRowMap, colMap, srcGblColInds.size());
+      crs_graph_type A_tgt(tgtRowMap, colMap, tgtGblColInds.size());
 
       for (LO lclRow = 0; lclRow < srcLclNumRows; ++lclRow) {
         const GO gblRow = srcRowMap->getGlobalElement(lclRow);
-        A_tgt.insertGlobalValues(gblRow,
-          Teuchos::ArrayView<const GO>(tgtGblColInds),
-          Teuchos::ArrayView<const Scalar>(tgtVals));
-        A_src.insertGlobalValues(gblRow,
-          Teuchos::ArrayView<const GO>(srcGblColInds),
-          Teuchos::ArrayView<const Scalar>(srcVals));
+        A_tgt.insertGlobalIndices(
+          gblRow, Teuchos::ArrayView<const GO>(tgtGblColInds));
+        A_src.insertGlobalIndices(
+          gblRow, Teuchos::ArrayView<const GO>(srcGblColInds));
       }
       if (A_src_is_fill_complete) {
         A_src.fillComplete(domMap, ranMap);
@@ -183,27 +157,21 @@ namespace { // (anonymous)
 
       out << "Finished A_src.fillComplete(domMap, ranMap)" << endl;
 
-      TEST_ASSERT( ! A_tgt.isStaticGraph() );
-
       A_tgt.doImport(A_src, importer, Tpetra::INSERT);
       A_tgt.fillComplete(domMap, ranMap);
 
       Kokkos::fence(); // since we're accessing data on host now
 
       Teuchos::ArrayView<const LO> lclColInds;
-      Teuchos::ArrayView<const Scalar> vals;
       const LO lclRowToTest (0);
-      A_tgt.getLocalRowView(lclRowToTest, lclColInds, vals);
+      A_tgt.getLocalRowView(lclRowToTest, lclColInds);
 
       const LO expectedNumEnt = myRank == 0 ? LO(10) : LO(6);
       TEST_EQUALITY( LO(lclColInds.size()), expectedNumEnt );
-      TEST_EQUALITY( LO(vals.size()), expectedNumEnt );
 
       if (success && myRank == 0) {
         for (LO k = 0; k < expectedNumEnt; ++k) {
           TEST_EQUALITY( lclColInds[k], LO(k) );
-          const Scalar expectedVal = expectedTgtVals[k];
-          TEST_EQUALITY( vals[k], expectedVal );
         }
       }
 
@@ -215,17 +183,14 @@ namespace { // (anonymous)
     }
   }
 
-  //TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, UnpackMerge2, Scalar, Node )
-  TEUCHOS_UNIT_TEST( CrsMatrix, UnpackMerge2 )
+  TEUCHOS_UNIT_TEST( CrsGraph, UnpackMerge2 )
   {
-    using Scalar = Tpetra::CrsMatrix<>::scalar_type;
     using LO = Tpetra::Map<>::local_ordinal_type;
     using GO = Tpetra::Map<>::global_ordinal_type;
     using Node = Tpetra::Map<>::node_type;
-    using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
+    using crs_graph_type = Tpetra::CrsGraph<LO, GO, Node>;
     using import_type = Tpetra::Import<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
-    using STS = Teuchos::ScalarTraits<Scalar>;
     int lclSuccess = 1;
     int gblSuccess = 0;
 
@@ -336,50 +301,17 @@ namespace { // (anonymous)
     out << "Number of elements in set union of column indices: "
         << unionSize << endl;
 
-    std::vector<Scalar> srcVals(srcGblColInds.size(), Scalar(1.0));
-    std::vector<Scalar> tgtVals(tgtGblColInds.size(), Scalar(1.0));
-
-    std::vector<Scalar> expectedTgtVals;
-    if (myRank == 0) {
-      std::vector<GO> intersectionGblColInds
-        (std::min(srcGblColInds.size(), tgtGblColInds.size()));
-      auto intersectionEnd =
-        std::set_intersection(srcBeg, srcEnd, tgtBeg, tgtEnd,
-                              intersectionGblColInds.begin());
-      intersectionGblColInds.resize
-        (intersectionEnd - intersectionGblColInds.begin());
-
-      expectedTgtVals.resize(unionSize);
-      for(size_t k = 0; k < unionSize; ++k) {
-        const GO resultGid = unionGblColInds[k];
-        auto it = std::lower_bound(intersectionGblColInds.begin(),
-                                   intersectionGblColInds.end(),
-                                   resultGid);
-        if (it != intersectionGblColInds.end() &&
-            *it == resultGid) {
-          expectedTgtVals[k] = 2.0;
-        }
-        else {
-          expectedTgtVals[k] = 1.0;
-        }
-      }
-    }
-
-    crs_matrix_type A_src(srcRowMap, colMap, srcGblColInds.size());
-    crs_matrix_type A_tgt(tgtRowMap, colMap, tgtGblColInds.size());
+    crs_graph_type A_src(srcRowMap, colMap, srcGblColInds.size());
+    crs_graph_type A_tgt(tgtRowMap, colMap, tgtGblColInds.size());
 
     for (LO lclRow = 0; lclRow < srcLclNumRows; ++lclRow) {
       const GO gblRow = srcRowMap->getGlobalElement(lclRow);
-      A_tgt.insertGlobalValues(gblRow,
-        Teuchos::ArrayView<const GO>(tgtGblColInds),
-        Teuchos::ArrayView<const Scalar>(tgtVals));
-      A_src.insertGlobalValues(gblRow,
-        Teuchos::ArrayView<const GO>(srcGblColInds),
-        Teuchos::ArrayView<const Scalar>(srcVals));
+      A_tgt.insertGlobalIndices(
+        gblRow, Teuchos::ArrayView<const GO>(tgtGblColInds));
+      A_src.insertGlobalIndices(
+        gblRow, Teuchos::ArrayView<const GO>(srcGblColInds));
     }
     A_src.fillComplete(domMap, ranMap);
-
-    TEST_ASSERT( ! A_tgt.isStaticGraph() );
 
     A_tgt.doImport(A_src, importer, Tpetra::INSERT);
     A_tgt.fillComplete(domMap, ranMap);
@@ -390,21 +322,16 @@ namespace { // (anonymous)
       const GO gblRowToTest = tgtRowMap->getMinGlobalIndex();
       size_t numEnt = A_tgt.getNumEntriesInGlobalRow(gblRowToTest);
       Teuchos::Array<GO> gblColInds(numEnt);
-      Teuchos::Array<Scalar> vals(numEnt);
-      A_tgt.getGlobalRowCopy(gblRowToTest, gblColInds(),
-                             vals(), numEnt);
+      A_tgt.getGlobalRowCopy(gblRowToTest, gblColInds(), numEnt);
 
-      const LO expectedNumEnt(expectedTgtVals.size());
+      const LO expectedNumEnt(unionGblColInds.size());
       TEST_EQUALITY( size_t(numEnt), expectedNumEnt );
       TEST_EQUALITY( size_t(gblColInds.size()),
                      size_t(expectedNumEnt) );
-      TEST_EQUALITY( size_t(vals.size()), size_t(expectedNumEnt) );
 
       if (success) {
         for (LO k = 0; k < expectedNumEnt; ++k) {
           TEST_EQUALITY( gblColInds[k], unionGblColInds[k] );
-          const Scalar expectedVal = expectedTgtVals[k];
-          TEST_EQUALITY( vals[k], expectedVal );
         }
       }
     }
@@ -414,17 +341,5 @@ namespace { // (anonymous)
     reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
     TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
-
-//
-// INSTANTIATIONS
-//
-
-#define UNIT_TEST_GROUP( SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, UnpackMerge1, SCALAR, NODE )
-  //TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, UnpackMerge2, SCALAR, NODE )
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_SN( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)
