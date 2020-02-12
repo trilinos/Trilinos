@@ -190,7 +190,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       stol = tol; //zero;
       state_->snorm = dtrpcg(*s,flagCG,iterCG,*gvec,*state_->iterateVec,
                       state_->searchSize,*model_,bnd,tol,stol,maxit_,
-                      *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3);
+                      *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
       SPiter_ += iterCG;
       if (verbosity_ > 1) {
         outStream << std::endl;
@@ -221,7 +221,6 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       }
       if (verbosity_ > 1) {
         outStream << std::endl;
-        outStream << "  Projected search"                     << std::endl;
         outStream << "    Step length (beta*s):             " << state_->snorm << std::endl;
         outStream << "    Norm of free gradient components: " << gfnormf       << std::endl;
         outStream << std::endl;
@@ -459,7 +458,8 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
                                       BoundConstraint<Real> &bnd,
                                       const Real tol, const Real stol, const int itermax,
                                       Vector<Real> &p, Vector<Real> &q, Vector<Real> &r,
-                                      Vector<Real> &t, Vector<Real> &pwa, Vector<Real> &dwa) const {
+                                      Vector<Real> &t, Vector<Real> &pwa, Vector<Real> &dwa,
+                                      std::ostream &outStream) const {
   // p = step
   // q = hessian applied to step p
   // t = residual

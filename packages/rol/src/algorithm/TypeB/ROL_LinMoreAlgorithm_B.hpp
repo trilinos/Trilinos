@@ -226,7 +226,8 @@ private:
               const Real del, TrustRegionModel_U<Real> &model, BoundConstraint<Real> &bnd,
               const Real tol, const Real stol, const int itermax,
               Vector<Real> &p, Vector<Real> &q, Vector<Real> &r,
-              Vector<Real> &t, Vector<Real> &pwa, Vector<Real> &dwa) const;
+              Vector<Real> &t, Vector<Real> &pwa, Vector<Real> &dwa,
+              std::ostream &outStream = std::cout) const;
 
   void applyFreeHessian(Vector<Real> &hv,
                        const Vector<Real> &v,
