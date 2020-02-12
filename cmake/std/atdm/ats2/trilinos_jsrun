@@ -21,6 +21,16 @@ function debug_print {
 # @return void
 ################################################################################
 function evaluate_jsrun_command {
+  local jsrun_ret
+  local out_file
+  local retry
+  local grep_status
+
+  # Create process ID specific output file
+  # Instead of attempting to find the test name in $@, let's use
+  # the hash of the test command to avoid race conditions.
+  out_file=$(printf "'%s' " "${args[@]}" | md5sum | awk '{print $1".out"}')
+
   if [ "$ECHO_CMD" == "1" ]; then
     1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
     1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} AFTER : jsrun " $(printf "'%s' " "${args[@]}")
@@ -36,7 +46,9 @@ function evaluate_jsrun_command {
 
   # Retry jsrun command until retry is exhausted or JSM server error is not found
   while [[ $grep_status -eq 0 && $retry -ne 0 ]]; do
-    out_file=$(${ATDM_CONFIG_SCRIPT_DIR}/ats2/eval_wrapper jsrun $(printf "'%s' " "${args[@]}"))
+    # Evaluate the command passed in and redirect all output
+    jsrun $(printf "'%s' " "${args[@]}") &> $out_file
+    jsrun_ret=$?
 
     grep 'Error: Remote JSM server is not responding' $out_file &> /dev/null
     grep_status=$?
@@ -54,6 +66,7 @@ function evaluate_jsrun_command {
   fi
   cat $out_file
   rm $out_file
+  return $jsrun_ret
 }
 
 # Check if TPETRA_ASSUME_CUDA_AWARE_MPI is set and default to 0 if unset.
@@ -165,3 +178,4 @@ if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]
 fi
 
 evaluate_jsrun_command
+exit $?
