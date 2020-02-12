@@ -60,18 +60,22 @@ template<typename Real>
 class LinMoreAlgorithm_B : public Algorithm_B<Real> {
 private:
   Ptr<TrustRegionModel_U<Real>> model_;  ///< Container for trust-region model
-  Real                          delMax_; ///< Maximum trust-region radius (default: 1e8)
-  Real                          eta0_;   ///< Step acceptance threshold (default: 0.05)
-  Real                          eta1_;   ///< Radius decrease threshold (default: 0.05)
-  Real                          eta2_;   ///< Radius increase threshold (default: 0.9)
-  Real                          gamma0_; ///< Radius decrease rate (negative rho) (default: 0.0625)
-  Real                          gamma1_; ///< Radius decrease rate (positive rho) (default: 0.25)
-  Real                          gamma2_; ///< Radius increase rate (default: 2.5)
-  Real                          TRsafe_; ///< Safeguard size for numerically evaluating ratio (default: 1e2)
-  Real                          eps_;    ///< Safeguard for numerically evaluating ratio
-  TRUtils::ETRFlag              TRflag_; ///< Trust-region exit flag
-  int                           SPflag_; ///< Subproblem solver termination flag
-  int                           SPiter_; ///< Subproblem solver iteration count
+
+  // TRUST REGION PARAMETERS
+  Real delMax_; ///< Maximum trust-region radius (default: 1e8)
+  Real eta0_;   ///< Step acceptance threshold (default: 0.05)
+  Real eta1_;   ///< Radius decrease threshold (default: 0.05)
+  Real eta2_;   ///< Radius increase threshold (default: 0.9)
+  Real gamma0_; ///< Radius decrease rate (negative rho) (default: 0.0625)
+  Real gamma1_; ///< Radius decrease rate (positive rho) (default: 0.25)
+  Real gamma2_; ///< Radius increase rate (default: 2.5)
+  Real TRsafe_; ///< Safeguard size for numerically evaluating ratio (default: 1e2)
+  Real eps_;    ///< Safeguard for numerically evaluating ratio
+
+  // ITERATION FLAGS/INFORMATION
+  TRUtils::ETRFlag TRflag_; ///< Trust-region exit flag
+  int SPflag_;              ///< Subproblem solver termination flag
+  int SPiter_;              ///< Subproblem solver iteration count
 
   // SECANT INFORMATION
   ESecant esec_;          ///< Secant type (default: Limited-Memory BFGS)
@@ -94,48 +98,6 @@ private:
   mutable int nhess_;  ///< Number of Hessian applications
   unsigned verbosity_; ///< Output level (default: 0)
   bool printHeader_;   ///< Flag to print header at every iteration
-
-  class ReducedConstraint : public Constraint<Real> {
-    private:
-      const Ptr<Constraint<Real>> con_;
-      const Ptr<BoundConstraint<Real>> bnd_;
-      Ptr<const Vector<Real>> x_;
-      Ptr<Vector<Real>> prim_;
-    public:
-      ReducedConstraint(const Ptr<Constraint<Real>> &con,
-                        const Ptr<BoundConstraint<Real>> &bnd,
-                        const Ptr<const Vector<Real>> &x)
-        : con_(con), bnd_(bnd), x_(x), prim_(x->clone()) {}
-
-      void setX(const Ptr<const Vector<Real>> &x) {
-        x_ = x;
-      }
-
-      void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-        const Real zero(0);
-        prim_->set(x);
-        bnd_->pruneActive(*prim_,*x_,zero);
-        con_->value(c,*prim_,tol);
-      }
-
-      void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-        const Real zero(0);
-        prim_->set(v);
-        bnd_->pruneActive(*prim_,*x_,zero);
-        con_->applyJacobian(jv,*prim_,x,tol);
-      }
-
-      void applyAdjointJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-        const Real zero(0);
-        con_->applyAdjointJacobian(jv,v,x,tol);
-        bnd_->pruneActive(jv,*x_,zero);
-      }
-
-      void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
-                               const Vector<Real> &x, Real &tol) {
-        ahuv.zero();
-      }
-  };
 
   bool hasEcon_;                            ///< Flag signifies if equality constraints exist
   Ptr<ReducedLinearConstraint<Real>> rcon_; ///< Equality constraint restricted to current active variables
