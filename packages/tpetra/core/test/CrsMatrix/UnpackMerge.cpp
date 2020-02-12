@@ -395,7 +395,7 @@ namespace { // (anonymous)
                              vals(), numEnt);
 
       const LO expectedNumEnt(expectedTgtVals.size());
-      TEST_EQUALITY( size_t(numEnt), expectedNumEnt );
+      TEST_EQUALITY( size_t(numEnt), size_t(expectedNumEnt) );
       TEST_EQUALITY( size_t(gblColInds.size()),
                      size_t(expectedNumEnt) );
       TEST_EQUALITY( size_t(vals.size()), size_t(expectedNumEnt) );
