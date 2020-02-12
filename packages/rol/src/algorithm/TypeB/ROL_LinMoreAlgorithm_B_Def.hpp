@@ -105,6 +105,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   }
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);
+  nhess_ = 0;
   // Update approximate gradient and approximate objective function.
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
   proj_->project(x);
@@ -163,15 +164,16 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     // Compute Cauchy point (TRON notation: xnew = x[1])
     state_->snorm = dcauchy(*s,alpha,x,*state_->gradientVec,state_->searchSize,
-                    *model_,*dwa1,outStream); // Solve 1D optimization problem for alpha
-    xnew->set(x);               // TRON notation: model.getIterate() = x[0]
-    xnew->plus(*s);             // Set xnew = x[0] + alpha*g
-    proj_->project(*xnew);      // Project xnew onto feasible set
+                    *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
+    xnew->set(x);                                   // TRON notation: model.getIterate() = x[0]
+    xnew->plus(*s);                                 // Set xnew = x[0] + alpha*g
+    proj_->project(*xnew);                          // Project xnew onto feasible set
 
     // Model gradient at s = x[1] - x[0]
     state_->stepVec->set(*xnew);
     state_->stepVec->axpy(-one,x); // s = x[i+1]-x[0]
-    model_->hessVec(*gvec,*state_->stepVec,x,tol0);
+    //model_->hessVec(*gvec,*state_->stepVec,x,tol0); nhess_++;
+    gvec->set(*dwa1); // hessVec from Cauchy point computation
     gvec->plus(*state_->gradientVec);
     bnd.pruneActive(*gvec,*xnew,zero);
     if (hasEcon_) {
@@ -213,7 +215,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       // Model gradient at s = x[i+1] - x[0]
       state_->stepVec->set(*xnew);
       state_->stepVec->axpy(-one,x); // s = x[i+1]-x[0]
-      model_->hessVec(*gvec,*state_->stepVec,x,tol0);
+      model_->hessVec(*gvec,*state_->stepVec,x,tol0); nhess_++;
       sHs = state_->stepVec->dot(gvec->dual());
       gvec->plus(*state_->gradientVec);
       bnd.pruneActive(*gvec,*xnew,zero);
@@ -225,7 +227,6 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
         gfnormf = gvec->norm();
       }
       if (verbosity_ > 1) {
-        outStream << std::endl;
         outStream << "    Step length (beta*s):             " << state_->snorm << std::endl;
         outStream << "    Norm of free gradient components: " << gfnormf       << std::endl;
         outStream << std::endl;
@@ -254,7 +255,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     }
     // Update norm of step and update model predicted reduction
     //state_->snorm = state_->stepVec->norm();
-    //model_->hessVec(*dwa1,*state_->stepVec,x,tol0);
+    //model_->hessVec(*dwa1,*state_->stepVec,x,tol0); nhess_++;
     gs   = state_->stepVec->dot(state_->gradientVec->dual());
     pRed = -half*sHs - gs;
     //pRed = -(half * state_->stepVec->dot(dwa1->dual()) + gs);
@@ -328,7 +329,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
                                        const Vector<Real> &g,
                                        const Real del,
                                        TrustRegionModel_U<Real> &model,
-                                       Vector<Real> &dwa,
+                                       Vector<Real> &dwa, Vector<Real> &dwa1,
                                        std::ostream &outStream) {
   const Real half(0.5);
   // const Real zero(0); // Unused
@@ -341,7 +342,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     interp = true;
   }
   else {
-    model.hessVec(dwa,s,x,tol);
+    model.hessVec(dwa,s,x,tol); nhess_++;
     gs = s.dot(g);
     q  = half * s.dot(dwa.dual()) + gs;
     interp = (q > mu0_*gs);
@@ -354,7 +355,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
       alpha *= interpf_;
       snorm = dgpstep(s,g,x,-alpha);
       if (snorm <= del) {
-        model.hessVec(dwa,s,x,tol);
+        model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
         q  = half * s.dot(dwa.dual()) + gs;
         search = (q > mu0_*gs);
@@ -364,18 +365,21 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
   else {
     bool search = true;
     Real alphas = alpha;
+    dwa1.set(dwa);
     while (search) {
       alpha *= extrapf_;
       snorm = dgpstep(s,g,x,-alpha);
       if (snorm <= del && cnt < extlim_) {
-        model.hessVec(dwa,s,x,tol);
+        model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
         q  = half * s.dot(dwa.dual()) + gs;
         if (q <= mu0_*gs) {
+          dwa1.set(dwa);
           search = true;
           alphas = alpha;
         }
         else {
+          dwa.set(dwa1);
           search = false;
         }
       }
@@ -432,6 +436,7 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     outStream << std::endl;
     outStream << "  Projected search"                     << std::endl;
     outStream << "    Step length (beta):               " << beta       << std::endl;
+    outStream << "    Model decrease (q):               " << q          << std::endl;
     outStream << "    Number of steps:                  " << nsteps     << std::endl;
   }
   return snorm;
@@ -502,6 +507,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
     // Check for negative curvature or if iterate exceeds trust region
     if (kappa <= zero || alpha >= sigma) {
       w.axpy(sigma,p);
+      sMs = del*del;
       iflag = (kappa<=zero) ? 2 : 3;
       break;
     }
@@ -515,6 +521,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
     tnorm = t.norm();
     //if (rnorm <= stol || tnorm <= tol) {
     if (rtr <= stol*stol || tnorm <= tol) {
+      sMs   = sMs + two*alpha*sMp + alpha*alpha*pMp;
       iflag = 0;
       break;
     }
@@ -526,9 +533,9 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
     //   sMs = <s, inv(M)s> or <s, s> if equality constraint present
     //   sMp = <s, inv(M)p> or <s, p> if equality constraint present
     //   pMp = <p, inv(M)p> or <p, p> if equality constraint present
-    sMs  = sMs + two*alpha*sMp + alpha*alpha*pMp;
-    sMp  = beta*(sMp + alpha*pMp);
-    pMp  = rho + beta*beta*pMp;
+    sMs = sMs + two*alpha*sMp + alpha*alpha*pMp;
+    sMp = beta*(sMp + alpha*pMp);
+    pMp = (!hasEcon_ ? rho : p.dot(p)) + beta*beta*pMp;
   }
   // Check iteration count
   if (iter == itermax) {
@@ -537,7 +544,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
   if (iflag != 1) { 
     iter++;
   }
-  return w.norm();
+  return std::sqrt(sMs); // w.norm();
 }
 
 template<typename Real>
@@ -551,7 +558,7 @@ void LinMoreAlgorithm_B<Real>::applyFreeHessian(Vector<Real> &hv,
   const Real zero(0);
   pwa.set(v);
   bnd.pruneActive(pwa,x,zero);
-  model.hessVec(hv,pwa,x,tol);
+  model.hessVec(hv,pwa,x,tol); nhess_++;
   bnd.pruneActive(hv,x,zero);
 }
 
@@ -591,6 +598,7 @@ std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
     hist << "  delta   - Trust-Region radius" << std::endl;
     hist << "  #fval   - Number of times the objective function was evaluated" << std::endl;
     hist << "  #grad   - Number of times the gradient was computed" << std::endl;
+    hist << "  #hess   - Number of times the Hessian was applied" << std::endl;
     hist << std::endl;
     hist << "  tr_flag - Trust-Region flag" << std::endl;
     for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
@@ -614,6 +622,7 @@ std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
   hist << std::setw(15) << std::left << "delta";
   hist << std::setw(10) << std::left << "#fval";
   hist << std::setw(10) << std::left << "#grad";
+  hist << std::setw(10) << std::left << "#hess";
   hist << std::setw(10) << std::left << "tr_flag";
   hist << std::setw(10) << std::left << "iterCG";
   hist << std::setw(10) << std::left << "flagCG";
@@ -656,6 +665,7 @@ std::string LinMoreAlgorithm_B<Real>::print( const bool print_header ) const {
     hist << std::setw(15) << std::left << state_->searchSize;
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << nhess_;
     hist << std::setw(10) << std::left << TRflag_;
     hist << std::setw(10) << std::left << SPiter_;
     hist << std::setw(10) << std::left << SPflag_;

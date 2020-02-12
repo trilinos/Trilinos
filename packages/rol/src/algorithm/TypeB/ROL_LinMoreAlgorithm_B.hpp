@@ -91,6 +91,7 @@ private:
   Real mu0_;       ///< Sufficient decrease parameter (default: 1e-2)
   Real interpfPS_; ///< Backtracking rate for projected search (default: 0.5)
 
+  mutable int nhess_;  ///< Number of Hessian applications
   unsigned verbosity_; ///< Output level (default: 0)
   bool printHeader_;   ///< Flag to print header at every iteration
 
@@ -188,7 +189,7 @@ private:
   Real dcauchy(Vector<Real> &s, Real &alpha,
                const Vector<Real> &x, const Vector<Real> &g,
                const Real del, TrustRegionModel_U<Real> &model,
-               Vector<Real> &dwa,
+               Vector<Real> &dwa, Vector<Real> &dwa1,
                std::ostream &outStream = std::cout);
 
   // Perform projected search to determine beta such that
