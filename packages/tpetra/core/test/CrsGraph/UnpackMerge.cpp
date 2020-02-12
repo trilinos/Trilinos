@@ -325,7 +325,7 @@ namespace { // (anonymous)
       A_tgt.getGlobalRowCopy(gblRowToTest, gblColInds(), numEnt);
 
       const LO expectedNumEnt(unionGblColInds.size());
-      TEST_EQUALITY( size_t(numEnt), expectedNumEnt );
+      TEST_EQUALITY( size_t(numEnt), size_t(expectedNumEnt) );
       TEST_EQUALITY( size_t(gblColInds.size()),
                      size_t(expectedNumEnt) );
 
