@@ -30,6 +30,11 @@
 #include "mkl.h"
 #endif
 
+#if defined(KOKKOS_ENABLE_CUDA) 
+#include "cublas.h"
+#include "cublas_v2.h"
+#endif
+
 /// \file Tacho_Util.hpp
 /// \brief Utility functions and constant integer class like an enum class.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -381,12 +386,18 @@ namespace Tacho {
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_UPLO mkl_param = CblasUpper;
 #endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasFillMode_t cublas_param = CUBLAS_FILL_MODE_UPPER;
+#endif
     };
     struct Lower        { 
       enum : int { tag = 402 }; 
       static constexpr char param = 'L'; 
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_UPLO mkl_param = CblasLower;
+#endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasFillMode_t cublas_param = CUBLAS_FILL_MODE_LOWER;
 #endif
     };
   };
@@ -409,12 +420,18 @@ namespace Tacho {
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_SIDE mkl_param = CblasLeft;
 #endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasSideMode_t cublas_param = CUBLAS_SIDE_LEFT;
+#endif
     };
     struct Right        { 
       enum : int { tag = 502 }; 
       static constexpr char param = 'R'; 
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_SIDE mkl_param = CblasRight;
+#endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasSideMode_t cublas_param = CUBLAS_SIDE_RIGHT;
 #endif
     };
   };
@@ -436,12 +453,18 @@ namespace Tacho {
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_DIAG mkl_param = CblasUnit;
 #endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasDiagType_t cublas_param = CUBLAS_DIAG_UNIT;
+#endif
     };
     struct NonUnit      { 
       enum : int { tag = 602 }; 
       static constexpr char param = 'N'; 
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_DIAG mkl_param = CblasNonUnit;
+#endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasDiagType_t cublas_param = CUBLAS_DIAG_NON_UNIT;
 #endif
     };
   };
@@ -460,6 +483,9 @@ namespace Tacho {
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_TRANSPOSE mkl_param = CblasTrans;
 #endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasOperation_t cublas_param = CUBLAS_OP_T;
+#endif
     };
     struct ConjTranspose  { 
       enum : int { tag = 702 }; 
@@ -467,12 +493,18 @@ namespace Tacho {
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_TRANSPOSE mkl_param = CblasConjTrans;
 #endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasOperation_t cublas_param = CUBLAS_OP_C;
+#endif
     };
     struct NoTranspose    { 
       enum : int { tag = 703 }; 
       static constexpr char param = 'N'; 
 #if defined(__INTEL_MKL__)  
       static constexpr CBLAS_TRANSPOSE mkl_param = CblasNoTrans;
+#endif
+#if defined(CUBLAS_VERSION)
+      static constexpr cublasOperation_t cublas_param = CUBLAS_OP_N;
 #endif
     };
   };
@@ -529,6 +561,7 @@ namespace Tacho {
     struct External { enum : int { tag = 1001 }; };
     struct Internal { enum : int { tag = 1002 }; };
     struct ByBlocks { enum : int { tag = 1003 }; };
+    struct OnDevice { enum : int { tag = 1004 }; };
 
     struct Workflow {
       struct Serial      { enum : int { tag = 2001 }; };
@@ -554,7 +587,7 @@ namespace Tacho {
                                      typename ViewType::memory_traits>;
   template <typename ViewType>
   using ConstUnmanagedViewType = ConstViewType<UnmanagedViewType<ViewType> >;
-  
+
   template<typename ExecSpace>
   struct UseThisDevice {
     using default_exec_space = Kokkos::DefaultExecutionSpace;
@@ -562,11 +595,11 @@ namespace Tacho {
     using device_type = Kokkos::Device<default_exec_space,default_memory_space>;
   };
 
-  /// until kokkos dual view issue is resolved, we use uvm space 
-// #if defined(KOKKOS_ENABLE_CUDA)
-//   template<>
-//   struct UseThisDevice<Kokkos::Cuda> { using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaUVMSpace>; };
-// #endif
+  /// until kokkos dual view issue is resolved, we follow the default space in Trilinos (uvm)
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  struct UseThisDevice<Kokkos::Cuda> { using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; };
+#endif
 #if defined(KOKKOS_ENABLE_OPENMP)
   template<>
   struct UseThisDevice<Kokkos::OpenMP> { using device_type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; };

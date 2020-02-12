@@ -7,13 +7,13 @@
 #include "Tacho_Util.hpp"
 
 #include "Tacho_Trsm.hpp"
-#include "Tacho_Trsm_External.hpp"
+#include "Tacho_Trsm_OnDevice.hpp"
 
 #include "Tacho_Trsv.hpp"
-#include "Tacho_Trsv_External.hpp"
+#include "Tacho_Trsv_OnDevice.hpp"
 
 #include "Tacho_Gemv.hpp"
-#include "Tacho_Gemv_External.hpp"
+#include "Tacho_Gemv_OnDevice.hpp"
 
 #include "Tacho_SupernodeInfo.hpp"
 
@@ -22,9 +22,6 @@
 #include "Tacho_TeamFunctor_SolveLowerChol.hpp"
 #include "Tacho_TeamFunctor_SolveUpperChol.hpp"
 
-#if defined (KOKKOS_ENABLE_CUDA)
-#include "cublas_v2.h"
-#endif
 namespace Tacho {
 
   ///
@@ -106,14 +103,18 @@ namespace Tacho {
     size_type_array _buf_ptr;
     value_type_array _buf;
 
+    // common for host and cuda
+    int _status;
+
     // cuda stream
 #if defined(KOKKOS_ENABLE_CUDA)
     ordinal_type _nstreams;
-    cublasHandle_t _cublas_handle;
+    cublasHandle_t _handle;
     //typedef Kokkos::View<cudaStream_t*,Kokkos::HostSpace> cuda_stream_array_host;
     typedef std::vector<cudaStream_t> cuda_stream_array_host;
     cuda_stream_array_host _cuda_streams;
-    int _status;
+#else 
+    int _handle; // dummy handle for convenience
 #endif
 
     ///
@@ -127,7 +128,7 @@ namespace Tacho {
 
   public:
 
-#if defined(KOKKOS_ENABLE_CUDA)
+
     inline 
     void 
     checkStatus(const char *func, const char *lib) {
@@ -137,9 +138,22 @@ namespace Tacho {
         std::runtime_error("checkStatus failed");
       }
     }
-    inline void checkCuBlasStatus(const char *func) { checkStatus(func, "CuBlas");  }
-    inline void checkCudaStatus(const char *func) { checkStatus(func, "Cuda");  }
+    inline void checkDeviceBlasStatus(const char *func) { 
+#if defined(KOKKOS_ENABLE_CUDA)
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      checkStatus(func, is_host ? "HostBlas" : "CuBlas");
+#else
+      checkStatus(func, "HostBlas");      
+#endif  
+    }
+    inline void checkDeviceStatus(const char *func) {
+#if defined(KOKKOS_ENABLE_CUDA)
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      checkStatus(func, is_host ? "Host" : "Cuda");
+#else
+      checkStatus(func, "Host");  
 #endif
+    }
 
     inline
     void
@@ -295,7 +309,7 @@ namespace Tacho {
 
       // cuda stream setup
 #if defined(KOKKOS_ENABLE_CUDA)
-      _status = cublasCreate(&_cublas_handle); checkCuBlasStatus("cublasCreate");
+      _status = cublasCreate(&_handle); checkDeviceStatus("cublasCreate");
       _nstreams = 0;
 #endif
       stat.t_init = timer.seconds();
@@ -321,28 +335,6 @@ namespace Tacho {
       }
       
       _team_serial_level_cut = _nlevel;
-      //_team_recursive_thres = team_recursive_thres;
-      // {
-      //   //recursive function on cuda does not work well; need workspace for postorder of children
-      //   for (ordinal_type lvl=_device_level_cut;lvl<_nlevel;++lvl) {
-      //     const ordinal_type 
-      //       pbeg = _h_level_ptr(lvl), 
-      //       pend = _h_level_ptr(lvl+1),
-      //       pcnt = pend - pbeg;
-      //     if (pcnt > _team_recursive_thres) { 
-      //       _team_serial_level_cut = lvl;
-      //       const ordinal_type 
-      //         rbeg = _h_level_ptr(_team_serial_level_cut),
-      //         rend = _h_level_ptr(_team_serial_level_cut+1);
-      //       for (ordinal_type r=rbeg;r<rend;++r) {
-      //         const ordinal_type sid = _h_level_sids(r);
-      //         _h_compute_mode(sid) = 2;
-      //       }
-      //       break;
-      //     }
-      //   }
-      // }  
-
       {        
         for (ordinal_type lvl=_device_level_cut;lvl<_team_serial_level_cut;++lvl) {          
           const ordinal_type 
@@ -370,8 +362,8 @@ namespace Tacho {
       stat.t_mode_classification = timer.seconds();
 
       if (verbose) {
-        printf("Summary: TriSolveTools (Initialize)\n");
-        printf("===================================\n");
+        printf("Summary: TriSolveTools Variant %2d (Initialize)\n", variant);
+        printf("==============================================\n");
         print_stat_init();
       }
     }
@@ -384,8 +376,8 @@ namespace Tacho {
       track_free(_compute_mode.span()*sizeof(ordinal_type));
       track_free(_level_sids.span()*sizeof(ordinal_type));
       if (verbose) {
-        printf("Summary: TriSolveTools (Release)\n");
-        printf("================================\n");
+        printf("Summary: TriSolveTools Variant %2d (Release)\n", variant);
+        printf("===========================================\n");
         print_stat_memory();
       }
     }
@@ -411,10 +403,10 @@ namespace Tacho {
 #if defined(KOKKOS_ENABLE_CUDA)
       // destroy previously created streams
       for (ordinal_type i=0;i<_nstreams;++i) {
-        _status = cudaStreamDestroy(_cuda_streams[i]); checkCudaStatus("cudaStreamDestroy");
+        _status = cudaStreamDestroy(_cuda_streams[i]); checkDeviceStatus("cudaStreamDestroy");
       }
       _cuda_streams.clear();
-      _status = cublasDestroy(_cublas_handle); checkCuBlasStatus("cublasDestroy");
+      _status = cublasDestroy(_handle); checkDeviceStatus("cublasDestroy");
 #endif
     }
 
@@ -424,7 +416,7 @@ namespace Tacho {
 #if defined(KOKKOS_ENABLE_CUDA)
       // destroy previously created streams
       for (ordinal_type i=0;i<_nstreams;++i) {
-        _status = cudaStreamDestroy(_cuda_streams[i]); checkCudaStatus("cudaStreamDestroy");
+        _status = cudaStreamDestroy(_cuda_streams[i]); checkDeviceStatus("cudaStreamDestroy");
       }
       // new streams
       _nstreams = nstreams;
@@ -432,17 +424,16 @@ namespace Tacho {
       _cuda_streams.clear();
       _cuda_streams.resize(_nstreams);
       for (ordinal_type i=0;i<_nstreams;++i) {
-        _status = cudaStreamCreate(&_cuda_streams[i]); checkCudaStatus("cudaStreamCreate");
+        _status = cudaStreamCreate(&_cuda_streams[i]); checkDeviceStatus("cudaStreamCreate");
       }
 #endif
     }
     
     inline 
     void
-    invertPanelOnDevice( const ordinal_type nstreams,
+    invertPanelOnDevice(const ordinal_type nstreams,
                         const ordinal_type_array_host &h_prepare_mode, 
                         const value_type_array &work) {
-      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       for (ordinal_type sid=0,q=0;sid<_nsupernodes;++sid) {
         if (h_prepare_mode(sid) == 0) {
           const value_type minus_one(-1), one(1), zero(0);
@@ -452,10 +443,12 @@ namespace Tacho {
           ordinal_type idx;
 #if defined(KOKKOS_ENABLE_CUDA)
           idx = q%nstreams; ++q;
-          _status = cublasSetStream(_cublas_handle, _cuda_streams[idx]); checkCuBlasStatus("cublasSetStream");
+          _status = cublasSetStream(_handle, _cuda_streams[idx]); checkDeviceStatus("cublasSetStream");
           const auto exec_instance = Kokkos::Cuda(_cuda_streams[idx]);
           const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
 #else
+          const auto exec_instance = Kokkos::DefaultHostExecutionSpace();
+          const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
           idx = 0;
 #endif
           // make local variables to capture          
@@ -470,7 +463,6 @@ namespace Tacho {
             const UnmanagedViewType<value_type_matrix> P(pptr, m, n);
 
             // copy to work space and set identity for inversion
-#if defined(KOKKOS_ENABLE_CUDA)
             {
               typedef Kokkos::RangePolicy<exec_space> range_policy_type;
               const range_policy_type policy(exec_instance, 0, m*m);
@@ -485,38 +477,9 @@ namespace Tacho {
                   P(i,j) = i == j ? use_this_one : zero;
                 });
             }
-#else
-            {
-              typedef Kokkos::RangePolicy<exec_space> range_policy_type;
-              const range_policy_type policy(0, m*m);
-              Kokkos::parallel_for
-                ("copy and set identity",
-                 policy,
-                 KOKKOS_LAMBDA(const ordinal_type &k) {
-                  const ordinal_type i=k%m;
-                  const ordinal_type j=k/m;
-                  // copy and set identity
-                  A(i,j) = i <= j ? P(i,j) : zero;
-                  P(i,j) = i == j ? use_this_one : zero;
-                });
-            }
-#endif
             // invert panels
-            if (is_host) {
-              const ordinal_type member(0); // dummy member for testing                
-              Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-                ::invoke(member, Diag::NonUnit(), use_this_one, A, P);
-            } else {
-#if defined(KOKKOS_ENABLE_CUDA)
-              _status = cublasDtrsm(_cublas_handle, 
-                                    CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER,
-                                    CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,
-                                    m, n,
-                                    &use_this_one,
-                                    A.data(), A.stride_1(),
-                                    P.data(), P.stride_1()); checkCuBlasStatus("cublasDtrsm");
-#endif
-            }
+            _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
+              ::invoke(_handle, Diag::NonUnit(), use_this_one, A, P); checkDeviceBlasStatus("trsm");
           }               
         } else {
           // do nothing
@@ -529,14 +492,13 @@ namespace Tacho {
     solveLowerOnDeviceVar0(const ordinal_type pbeg, 
                            const ordinal_type pend,
                            const value_type_matrix &t) {
-      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), zero(0);
       for (ordinal_type p=pbeg,q=0;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_compute_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          _status = cublasSetStream(_cublas_handle, _cuda_streams[q%_nstreams]); checkCuBlasStatus("cublasSetStream");
+          _status = cublasSetStream(_handle, _cuda_streams[q%_nstreams]); checkDeviceStatus("cublasSetStream");
           ++q;
 #endif          
           const auto &s = _h_supernodes(sid);
@@ -548,43 +510,16 @@ namespace Tacho {
 
               const ordinal_type offm = s.row_begin;
               auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
-              if (is_host) {
-                const ordinal_type member(0); // dummy member for testing
-                Trsv<Uplo::Upper,Trans::ConjTranspose,Algo::External>
-                  ::invoke(member, Diag::NonUnit(), AL, tT);
-              } else {
-                /// cublas
-#if defined(KOKKOS_ENABLE_CUDA)
-                _status = cublasDtrsv(_cublas_handle, CUBLAS_FILL_MODE_UPPER,
-                                      CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
-                                      m, 
-                                      AL.data(), AL.stride_1(),
-                                      tT.data(), tT.stride_0()); checkCuBlasStatus("cublasDtrsv");
-#endif
-              }
+              _status = Trsv<Uplo::Upper,Trans::ConjTranspose,Algo::OnDevice>
+                ::invoke(_handle, Diag::NonUnit(), AL, tT); checkDeviceBlasStatus("trsv");
 
               if (n_m > 0) {
                 // solve offdiag
                 value_type *bptr = _buf.data()+_h_buf_ptr(sid);
                 UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n_m;
                 UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-                if (is_host) {
-                  const ordinal_type member(0); // dummy member for testing
-                  Gemv<Trans::ConjTranspose,Algo::External>
-                    ::invoke(member, minus_one, AR, tT, zero, bB);
-                } else {
-                  // cublas
-#if defined(KOKKOS_ENABLE_CUDA)
-                  _status = cublasDgemv(_cublas_handle, CUBLAS_OP_C,
-                                        m, n_m, 
-                                        &minus_one,
-                                        AR.data(), AR.stride_1(),
-                                        tT.data(), tT.stride_0(),
-                                        &zero,
-                                        bB.data(), bB.stride_0()); checkCuBlasStatus("cublasDgemv");
-#endif
-
-                }
+                _status = Gemv<Trans::ConjTranspose,Algo::OnDevice>
+                  ::invoke(_handle, minus_one, AR, tT, zero, bB); checkDeviceBlasStatus("gemv");
               }
             }
           }
@@ -597,14 +532,13 @@ namespace Tacho {
     solveLowerOnDeviceVar1(const ordinal_type pbeg, 
                            const ordinal_type pend,
                            const value_type_matrix &t) {
-      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1), zero(0);
       for (ordinal_type p=pbeg,q=0;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_compute_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          _status = cublasSetStream(_cublas_handle, _cuda_streams[q%_nstreams]); checkCuBlasStatus("cublasSetStream");
+          _status = cublasSetStream(_handle, _cuda_streams[q%_nstreams]); checkDeviceStatus("cublasSetStream");
           ++q;
 #endif          
           const auto &s = _h_supernodes(sid);
@@ -620,43 +554,14 @@ namespace Tacho {
               const ordinal_type offm = s.row_begin;
               auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
 
-              if (is_host) {
-                const ordinal_type member(0); // dummy member for testing
-                Gemv<Trans::ConjTranspose,Algo::External>
-                  ::invoke(member, one, AL, tT, zero, bT);
-              } else {
-                /// cublas
-#if defined(KOKKOS_ENABLE_CUDA)
-                _status = cublasDgemv(_cublas_handle, CUBLAS_OP_C,
-                                      m, m, 
-                                      &one,
-                                      AL.data(), AL.stride_1(),
-                                      tT.data(), tT.stride_0(),
-                                      &zero,
-                                      bT.data(), bT.stride_0()); checkCuBlasStatus("cublasDgemv");
-#endif
-              }
+              _status = Gemv<Trans::ConjTranspose,Algo::OnDevice>
+                ::invoke(_handle, one, AL, tT, zero, bT); checkDeviceBlasStatus("gemv");
 
               if (n_m > 0) {
                 UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n_m;
                 auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
-                if (is_host) {
-                  const ordinal_type member(0); // dummy member for testing
-                  Gemv<Trans::ConjTranspose,Algo::External>
-                    ::invoke(member, minus_one, AR, bT, zero, bB);
-                } else {
-                  // cublas
-#if defined(KOKKOS_ENABLE_CUDA)
-                  _status = cublasDgemv(_cublas_handle, CUBLAS_OP_C,
-                                        m, n_m, 
-                                        &minus_one,
-                                        AR.data(), AR.stride_1(),
-                                        bT.data(), bT.stride_0(),
-                                        &zero,
-                                        bB.data(), bB.stride_0()); checkCuBlasStatus("cublasDgemv");
-#endif
-
-                }
+                _status = Gemv<Trans::ConjTranspose,Algo::OnDevice>
+                  ::invoke(_handle, minus_one, AR, bT, zero, bB); checkDeviceBlasStatus("gemv");
               }
             }
           }
@@ -681,14 +586,13 @@ namespace Tacho {
     solveUpperOnDeviceVar0(const ordinal_type pbeg,
                            const ordinal_type pend,
                            const value_type_matrix &t) {
-      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1);
       for (ordinal_type p=pbeg,q=0;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_compute_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          _status = cublasSetStream(_cublas_handle, _cuda_streams[q%_nstreams]); checkCuBlasStatus("cublasSetStream");
+          _status = cublasSetStream(_handle, _cuda_streams[q%_nstreams]); checkDeviceStatus("cublasSetStream");
           ++q;
 #endif          
           const auto &s = _h_supernodes(sid);
@@ -704,37 +608,11 @@ namespace Tacho {
                 
               if (n_m > 0) {
                 const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-                if (is_host) {
-                  const ordinal_type member(0); // dummy member for testing
-                  Gemv<Trans::NoTranspose,Algo::External>
-                    ::invoke(member, minus_one, AR, bB, one, tT);
-                } else {
-                  // cublas
-#if defined(KOKKOS_ENABLE_CUDA)
-                  _status = cublasDgemv(_cublas_handle, CUBLAS_OP_N,
-                                        m, n_m, 
-                                        &minus_one,
-                                        AR.data(), AR.stride_1(),
-                                        bB.data(), bB.stride_0(),
-                                        &one,
-                                        tT.data(), tT.stride_0()); checkCuBlasStatus("cublasDgemv");
-#endif
-                }
+                Gemv<Trans::NoTranspose,Algo::OnDevice>
+                  ::invoke(_handle, minus_one, AR, bB, one, tT); checkDeviceBlasStatus("gemv");
               }
-              if (is_host) {
-                const ordinal_type member(0); // dummy member for testing
-                Trsv<Uplo::Upper,Trans::NoTranspose,Algo::External>
-                  ::invoke(member, Diag::NonUnit(), AL, tT);
-              } else {
-                // cublas
-#if defined(KOKKOS_ENABLE_CUDA)
-                _status = cublasDtrsv(_cublas_handle, CUBLAS_FILL_MODE_UPPER,
-                                      CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,
-                                      m, 
-                                      AL.data(), AL.stride_1(),
-                                      tT.data(), tT.stride_0()); checkCuBlasStatus("cublasDtrsv");
-#endif
-              }
+              _status = Trsv<Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
+                ::invoke(_handle, Diag::NonUnit(), AL, tT); checkDeviceBlasStatus("trsv");
             }
           }
         }
@@ -746,7 +624,6 @@ namespace Tacho {
     solveUpperOnDeviceVar1(const ordinal_type pbeg,
                            const ordinal_type pend,
                            const value_type_matrix &t) {
-      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1), zero(0);
       for (ordinal_type p=pbeg,q=0;p<pend;++p) {
@@ -755,10 +632,12 @@ namespace Tacho {
           ordinal_type idx;
 #if defined(KOKKOS_ENABLE_CUDA)
           idx = q%_nstreams; ++q;
-          _status = cublasSetStream(_cublas_handle, _cuda_streams[idx]); checkCuBlasStatus("cublasSetStream");
+          _status = cublasSetStream(_handle, _cuda_streams[idx]); checkDeviceStatus("cublasSetStream");
           const auto exec_instance = Kokkos::Cuda(_cuda_streams[idx]);
           const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
 #else
+          const auto exec_instance = Kokkos::DefaultHostExecutionSpace();
+          const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
           idx = 0;
 #endif
           const auto &s = _h_supernodes(sid);
@@ -776,41 +655,13 @@ namespace Tacho {
               if (n_m > 0) {
                 const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
                 auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
-                if (is_host) {
-                  const ordinal_type member(0); // dummy member for testing
-                  Gemv<Trans::NoTranspose,Algo::External>
-                    ::invoke(member, minus_one, AR, bB, one, tT);
-                } else {
-                  // cublas
-#if defined(KOKKOS_ENABLE_CUDA)
-                  _status = cublasDgemv(_cublas_handle, CUBLAS_OP_N,
-                                        m, n_m, 
-                                        &minus_one,
-                                        AR.data(), AR.stride_1(),
-                                        bB.data(), bB.stride_0(),
-                                        &one,
-                                        tT.data(), tT.stride_0()); checkCuBlasStatus("cublasDgemv");
-#endif
-                }
+                Gemv<Trans::NoTranspose,Algo::OnDevice>
+                  ::invoke(_handle, minus_one, AR, bB, one, tT); checkDeviceBlasStatus("gemv");
               }
-              if (is_host) {
-                const ordinal_type member(0); // dummy member for testing
-                Gemv<Trans::NoTranspose,Algo::External>
-                  ::invoke(member, one, AL, tT, zero, bT);
-              } else {
-                // cublas
-#if defined(KOKKOS_ENABLE_CUDA)
-                _status = cublasDgemv(_cublas_handle, CUBLAS_OP_N,
-                                      m, m, 
-                                      &one,
-                                      AL.data(), AL.stride_1(),
-                                      tT.data(), tT.stride_0(),
-                                      &zero,
-                                      bT.data(), bT.stride_0()); checkCuBlasStatus("cublasDgemv");
-#endif
-              }
+              Gemv<Trans::NoTranspose,Algo::OnDevice>
+                ::invoke(_handle, one, AL, tT, zero, bT); checkDeviceBlasStatus("gemv");
+
               /// copy bT to tT
-#if defined(KOKKOS_ENABLE_CUDA)
               {
                 typedef Kokkos::RangePolicy<exec_space> range_policy_type;
                 const range_policy_type policy(exec_instance, 0, m*nrhs);
@@ -823,20 +674,6 @@ namespace Tacho {
                     tT(i,j) = bT(i,j);
                   });
               }
-#else
-              {
-                typedef Kokkos::RangePolicy<exec_space> range_policy_type;
-                const range_policy_type policy(0, m*nrhs);
-                Kokkos::parallel_for
-                  ("copy",
-                   policy,
-                   KOKKOS_LAMBDA(const ordinal_type &k) {
-                    const ordinal_type i=k%m;
-                    const ordinal_type j=k/m;
-                    tT(i,j) = bT(i,j);
-                  });
-              }
-#endif
             }
           }
         }
@@ -944,8 +781,8 @@ namespace Tacho {
       }
       
       if (verbose) {
-        printf("Summary: TriSolveTools (prepareSolve)\n");
-        printf("=====================================\n");
+        printf("Summary: TriSolveTools Variant %2d (prepareSolve)\n", variant);
+        printf("================================================\n");
         print_stat_prepare();
       }
     }
@@ -1101,8 +938,8 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: TriSolveTools (ParallelSolve: %3d)\n", nrhs);
-        printf("===========================================\n");
+        printf("Summary: TriSolveTools Variant %2d (ParallelSolve: %3d)\n", variant, nrhs);
+        printf("======================================================\n");
         print_stat_solve();
       }
     }
@@ -1270,3 +1107,25 @@ namespace Tacho {
     //     printf("===========================================\n");
     //   }
     // }
+
+      //_team_recursive_thres = team_recursive_thres;
+      // {
+      //   //recursive function on cuda does not work well; need workspace for postorder of children
+      //   for (ordinal_type lvl=_device_level_cut;lvl<_nlevel;++lvl) {
+      //     const ordinal_type 
+      //       pbeg = _h_level_ptr(lvl), 
+      //       pend = _h_level_ptr(lvl+1),
+      //       pcnt = pend - pbeg;
+      //     if (pcnt > _team_recursive_thres) { 
+      //       _team_serial_level_cut = lvl;
+      //       const ordinal_type 
+      //         rbeg = _h_level_ptr(_team_serial_level_cut),
+      //         rend = _h_level_ptr(_team_serial_level_cut+1);
+      //       for (ordinal_type r=rbeg;r<rend;++r) {
+      //         const ordinal_type sid = _h_level_sids(r);
+      //         _h_compute_mode(sid) = 2;
+      //       }
+      //       break;
+      //     }
+      //   }
+      // }  

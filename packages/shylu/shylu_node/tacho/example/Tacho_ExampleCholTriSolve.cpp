@@ -212,7 +212,11 @@ int main (int argc, char *argv[]) {
     std::cout << "CholTriSolve:: solve matrix via TriSolveTools" << std::endl;
 
     timer.reset();        
-    constexpr int variant = 1;
+#if defined(TACHO_USE_TRISOLVE_VARIANT)
+    constexpr int variant = TACHO_USE_TRISOLVE_VARIANT;
+#else
+    constexpr int variant = 0;
+#endif
     Tacho::TriSolveTools<value_type,scheduler_type,variant> 
       TS(t_perm, t_peri,
          N.getSupernodesInfo(),
