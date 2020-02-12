@@ -164,15 +164,20 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     state_->stepVec->axpy(-one,x); // s = x[i+1]-x[0]
     model_->hessVec(*gvec,*state_->stepVec,x,tol0);
     gvec->plus(*state_->gradientVec);
-//    bnd.pruneActive(*gvec,*state_->iterateVec,zero);
-//    gfnorm = gvec->norm();
-    gfnorm = Algorithm_B<Real>::optimalityCriterion(*state_->iterateVec,*gvec,*pwa1);
+    bnd.pruneActive(*gvec,*state_->iterateVec,zero);
+    if (hasEcon_) {
+      applyFreePrecond(*pwa1,*gvec,*state_->iterateVec,*model_,bnd,tol0,*dwa1);
+      gfnorm = pwa1->norm();
+    }
+    else {
+      gfnorm = gvec->norm();
+    }
     SPiter_ = 0; SPflag_ = 0;
     if (verbosity_ > 1) {
       outStream << std::endl;
       outStream << "  Computation of Cauchy point"          << std::endl;
       outStream << "    Norm of Cauchy point:             " << state_->iterateVec->norm() << std::endl;
-      outStream << "    Norm of free gradient components: " << gfnorm     << std::endl;
+      outStream << "    Norm of free gradient components: " << gfnorm                     << std::endl;
     }
 
     // Main step computation loop
@@ -181,9 +186,8 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     for (int i = 0; i < dim; ++i) {
       // Run Truncated CG
       flagCG = 0; iterCG = 0;
-      tol  = tol2_*gfnorm;
+      tol  = std::min(tol1_,tol2_*gfnorm);
       stol = tol; //zero;
-      bnd.pruneActive(*gvec,*state_->iterateVec,zero); // Compute reduced gradient
       state_->snorm = dtrpcg(*s,flagCG,iterCG,*gvec,*state_->iterateVec,
                       state_->searchSize,*model_,bnd,tol,stol,maxit_,
                       *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3);
@@ -191,12 +195,12 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       if (verbosity_ > 1) {
         outStream << std::endl;
         outStream << "  Computation of CG step"               << std::endl;
-        outStream << "    Number of faces:                  " << dim        << std::endl;
-        outStream << "    Current face (i):                 " << i          << std::endl;
+        outStream << "    Number of faces:                  " << dim           << std::endl;
+        outStream << "    Current face (i):                 " << i             << std::endl;
         outStream << "    CG step length:                   " << state_->snorm << std::endl;
-        outStream << "    Number of CG iterations:          " << iterCG     << std::endl;
-        outStream << "    CG flag:                          " << flagCG     << std::endl;
-        outStream << "    Total number of iterations:       " << SPiter_    << std::endl;
+        outStream << "    Number of CG iterations:          " << iterCG        << std::endl;
+        outStream << "    CG flag:                          " << flagCG        << std::endl;
+        outStream << "    Total number of iterations:       " << SPiter_       << std::endl;
       }
 
       // Projected search
@@ -211,9 +215,14 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       state_->stepVec->axpy(-one,x); // s = x[i+1]-x[0]
       model_->hessVec(*gvec,*state_->stepVec,x,tol0);
       gvec->plus(*state_->gradientVec);
-//      bnd.pruneActive(*gvec,*state_->iterateVec,zero);
-//      gfnormf = gvec->norm();
-      gfnormf = Algorithm_B<Real>::optimalityCriterion(*state_->iterateVec,*gvec,*pwa1);
+      bnd.pruneActive(*gvec,*state_->iterateVec,zero);
+      if (hasEcon_) {
+        applyFreePrecond(*pwa1,*gvec,*state_->iterateVec,*model_,bnd,tol0,*dwa1);
+        gfnormf = pwa1->norm();
+      }
+      else {
+        gfnormf = gvec->norm();
+      }
       if (verbosity_ > 1) {
         outStream << std::endl;
         outStream << "  Update model gradient"                << std::endl;
@@ -246,7 +255,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     // Update norm of step and update model predicted reduction
     state_->snorm = state_->stepVec->norm();
     model_->hessVec(*dwa1,*state_->stepVec,x,tol0);
-    gs = state_->stepVec->dot(state_->gradientVec->dual());
+    gs   = state_->stepVec->dot(state_->gradientVec->dual());
     pRed = -(half * state_->stepVec->dot(dwa1->dual()) + gs);
 
     // Compute trial objective value
@@ -455,6 +464,10 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
                                       const Real tol, const Real stol, const int itermax,
                                       Vector<Real> &p, Vector<Real> &q, Vector<Real> &r,
                                       Vector<Real> &t, Vector<Real> &pwa, Vector<Real> &dwa) const {
+  // p = step
+  // q = hessian applied to step p
+  // t = residual
+  // r = preconditioned residual
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   const Real zero(0), one(1), two(2);
   Real rho(0), tnorm(0), rnorm0(0), kappa(0), beta(0), sigma(0), alpha(0), rtr(0); //, rnorm(0)
@@ -473,7 +486,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
   }
   // Initialize direction
   p.set(r);
-  pMp = rho;
+  pMp = (!hasEcon_ ? rho : p.dot(p)); // If no equality constraint, used preconditioned norm
   // Iterate CG
   for (iter = 0; iter < itermax; ++iter) {
     // Apply Hessian to direction dir
@@ -506,9 +519,9 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
     p.scale(beta); p.plus(r);
     rho  = rtr;
     // Update dot products
-    //   sMs = <s, inv(M)s>
-    //   sMp = <s, inv(M)p>
-    //   pMp = <p, inv(M)p>
+    //   sMs = <s, inv(M)s> or <s, s> if equality constraint present
+    //   sMp = <s, inv(M)p> or <s, p> if equality constraint present
+    //   pMp = <p, inv(M)p> or <p, p> if equality constraint present
     sMs  = sMs + two*alpha*sMp + alpha*alpha*pMp;
     sMp  = beta*(sMp + alpha*pMp);
     pMp  = rho + beta*beta*pMp;
