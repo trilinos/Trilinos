@@ -51,9 +51,10 @@ namespace Tacho {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void copyAndSetIdentity(MemberType &member, 
+                            const value_type use_this_one,
                             value_type_matrix A, 
                             value_type_matrix P) const {
-      const value_type one(1), zero(0);
+      const value_type zero(0);
       const ordinal_type m = A.extent(0);
       Kokkos::parallel_for
         (Kokkos::TeamVectorRange(member, m*m),
@@ -61,26 +62,31 @@ namespace Tacho {
           const ordinal_type i = k%m;
           const ordinal_type j = k/m;
           A(i,j) = i <= j ? P(i,j) : zero;
-          P(i,j) = i == j ? one : zero;
+          P(i,j) = i == j ? use_this_one : zero;
         });
     }
 
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void invert(MemberType &member, 
+                const value_type use_this_one,
                 const value_type_matrix &A, 
                 const value_type_matrix &P) const {
-      const value_type one(1);
       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
-        ::invoke(member, Diag::NonUnit(), one, A, P);
+        ::invoke(member, Diag::NonUnit(), use_this_one, A, P);
     }
 
-    struct DiagTag {};
-    struct PanelTag {};
+    template<int Var> struct VariantTag {};
 
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void operator()(const DiagTag &, const MemberType &member) const {
+    void operator()(const VariantTag<0> &, const MemberType &member) const {
+      // dummy
+    }
+
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const VariantTag<1> &, const MemberType &member) const {
       const ordinal_type sid = member.league_rank();
       const ordinal_type mode = _prepare_mode(sid);
       if (mode == 1) {
@@ -88,8 +94,9 @@ namespace Tacho {
         const ordinal_type m = s.m;
         UnmanagedViewType<value_type_matrix> A(member.team_scratch(_scratch_level), m, m); 
         UnmanagedViewType<value_type_matrix> P(s.buf, m, m);
-        copyAndSetIdentity(member, A, P);
-        invert(member, A, P);
+        const value_type one(1);
+        copyAndSetIdentity(member, one, A, P);
+        invert(member, one, A, P);
       } else {
         // skip
       }         
@@ -97,7 +104,7 @@ namespace Tacho {
 
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void operator()(const PanelTag &, const MemberType &member) const {
+    void operator()(const VariantTag<2> &, const MemberType &member) const {
       const ordinal_type sid = member.league_rank();
       const ordinal_type mode = _prepare_mode(sid);
       if (mode == 1) {
@@ -105,8 +112,9 @@ namespace Tacho {
         const ordinal_type m = s.m, n = s.n;
         UnmanagedViewType<value_type_matrix> A(member.team_scratch(_scratch_level), m, m); 
         UnmanagedViewType<value_type_matrix> P(s.buf, m, n);
-        copyAndSetIdentity(member, A, P);
-        invert(member, A, P);
+        const value_type minus_one(-1);
+        copyAndSetIdentity(member, minus_one, A, P);
+        invert(member, minus_one, A, P);
       } else {
         // skip
       }         
