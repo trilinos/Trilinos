@@ -617,7 +617,7 @@ example, skip the configure, skip the build, skip running tests, etc.
 * <a href="#spack-rhel-environment">Spack RHEL Environment</a>
 * <a href="#cee-rhel6-environment">CEE RHEL6 and RHEL7 Environment</a>
 * <a href="#waterman">waterman</a>
-* <a href="#vortex">ATS-2</a>
+* <a href="#ats-2">ATS-2</a>
 
 
 ### ride/white
@@ -1035,34 +1035,35 @@ $ bsub -x -Is -n 20 \
 ```
 
 
-### vortex
+### ATS-2
 
-Once logged on to 'vortex' (SRN), one can either build and configure on the
-login node or the compute node. Make sure to setup SSH keys as described in
-`/opt/VORTEX_INTRO` before trying to build on a compute node. For example to
-configure, build and run the tests for the default `cuda-debug` build for
-`kokkos` (after cloning Trilinos on the `develop` branch), do:
+Once logged on a suppported ATS-2 system like 'vortex' (SRN), one can either
+build and configure on the login node or the compute node. Make sure to setup
+SSH keys as described in `/opt/VORTEX_INTRO` before trying to build on a
+compute node. For example to configure, build and run the tests for the
+default `cuda-debug` build for `Kokkos` (after cloning Trilinos on the
+`develop` branch), do:
 
 ```bash
 $ cd <some_build_dir>/
 
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
 
-$ cmake -G'Unix Makefiles' \
+$ cmake -GNinja \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
   -DTrilinos_ENABLE_TESTS=ON \
   -DTrilinos_ENABLE_Kokkos=ON \
   $TRILINOS_DIR
 
-$ make -j20
+$ make NP=20
 ```
 
 You may run the above commands from an interactive bsub session as well:
 ```bash
-$ bsub -J YOUR_JOB_NAME -W 4:00 -Is bash
+$ bsub -J <YOUR_JOB_NAME> -W 4:00 -Is bash
 ```
 
-Ctest runs everything using the `jsrun` command. You must run jsrun from a
+CTest runs everything using the `jsrun` command. You must run jsrun from a
 compute node which can be acquired using the above bsub command.
 
 Once you're on a compute node, you can run ctest. For example:
