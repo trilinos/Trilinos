@@ -82,7 +82,8 @@ public:
     R_mv.modify_host ();
     {
       auto R_h = R_mv.getLocalViewHost ();
-      lapack.POTRF ('U', ncols, R_h.data (), R_h.extent (0), &info);
+      int ldr = int (R_h.extent (0));
+      lapack.POTRF ('U', ncols, R_h.data (), ldr, &info);
       if (info < 0) {
         ncols = -info;
         // FIXME (mfh 17 Sep 2018) Don't throw; report an error code.
