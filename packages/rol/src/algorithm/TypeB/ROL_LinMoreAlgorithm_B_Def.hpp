@@ -141,7 +141,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
                                                        Objective<Real>       &obj,
                                                        BoundConstraint<Real> &bnd,
                                                        std::ostream          &outStream ) {
-  const Real zero(0), half(0.5), one(1);
+  const Real zero(0), half(0.5);
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   Real gfnorm(0), gfnormf(0), tol(0), stol(0), gs(0);
   Real ftrial(0), sHs(0), pRed(0), rho(1), alpha(1);
@@ -163,16 +163,13 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     // Compute Cauchy point (TRON notation: xnew = x[1])
-    state_->snorm = dcauchy(*s,alpha,x,*state_->gradientVec,state_->searchSize,
+    state_->snorm = dcauchy(*state_->stepVec,alpha,x,
+                    *state_->gradientVec,state_->searchSize,
                     *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
     xnew->set(x);                                   // TRON notation: model.getIterate() = x[0]
-    xnew->plus(*s);                                 // Set xnew = x[0] + alpha*g
-    proj_->project(*xnew);                          // Project xnew onto feasible set
+    xnew->plus(*state_->stepVec);                   // Set xnew = x[0] + alpha*g
 
     // Model gradient at s = x[1] - x[0]
-    state_->stepVec->set(*xnew);
-    state_->stepVec->axpy(-one,x); // s = x[i+1]-x[0]
-    //model_->hessVec(*gvec,*state_->stepVec,x,tol0); nhess_++;
     gvec->set(*dwa1); // hessVec from Cauchy point computation
     gvec->plus(*state_->gradientVec);
     bnd.pruneActive(*gvec,*xnew,zero);
@@ -212,8 +209,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       state_->snorm = dprsrch(*xnew,*s,*gvec,*model_,bnd,*pwa1,*dwa1,*pwa2);
 
       // Model gradient at s = x[i+1] - x[0]
-      state_->stepVec->set(*xnew);
-      state_->stepVec->axpy(-one,x); // s = x[i+1]-x[0]
+      state_->stepVec->plus(*s);
       model_->hessVec(*gvec,*state_->stepVec,x,tol0); nhess_++;
       sHs = state_->stepVec->dot(gvec->dual());
       gvec->plus(*state_->gradientVec);
@@ -253,11 +249,8 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       gfnorm = gfnormf;
     }
     // Update norm of step and update model predicted reduction
-    //state_->snorm = state_->stepVec->norm();
-    //model_->hessVec(*dwa1,*state_->stepVec,x,tol0); nhess_++;
     gs   = state_->stepVec->dot(state_->gradientVec->dual());
     pRed = -half*sHs - gs;
-    //pRed = -(half * state_->stepVec->dot(dwa1->dual()) + gs);
 
     // Compute trial objective value
     x.plus(*state_->stepVec);
