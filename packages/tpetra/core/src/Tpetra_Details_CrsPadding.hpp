@@ -192,8 +192,9 @@ namespace Tpetra {
         if (! tgtIsUnique) {
           tgtEnd = std::unique(tgtGblColInds, tgtEnd);
           newNumTgtEnt = size_t(tgtEnd - tgtGblColInds);
+          TEUCHOS_ASSERT( newNumTgtEnt <= origNumTgtEnt );
+          tgtNumDups += (origNumTgtEnt - newNumTgtEnt);
         }
-        tgtNumDups += (origNumTgtEnt - newNumTgtEnt);
 
         if (verbose_) {
           std::ostringstream os;
@@ -207,8 +208,9 @@ namespace Tpetra {
         if (! srcIsUnique) {
           srcEnd = std::unique(srcGblColInds, srcEnd);
           newNumSrcEnt = size_t(srcEnd - srcGblColInds);
+          TEUCHOS_ASSERT( newNumSrcEnt <= origNumSrcEnt );
+          srcNumDups += (origNumSrcEnt - newNumSrcEnt);
         }
-        srcNumDups += (origNumSrcEnt - newNumSrcEnt);
 
         if (verbose_) {
           std::ostringstream os;
@@ -283,14 +285,13 @@ namespace Tpetra {
         auto srcEnd = srcColInds + numSrcEnt;
         const size_t numInCommon = countNumInCommon(
           srcColInds, srcEnd, tgtColInds, tgtEnd);
-        TEUCHOS_ASSERT( numTgtEnt + numSrcEnt >= numInCommon );
-        unionNumEnt = numTgtEnt + numSrcEnt - numInCommon;
         if (verbose_) {
           std::ostringstream os;
-          os << *prefix << "numInCommon=" << numInCommon
-             << ", unionNumEnt=" << unionNumEnt << endl;
+          os << *prefix << "numInCommon=" << numInCommon << endl;
           std::cerr << os.str();
         }
+        TEUCHOS_ASSERT( numTgtEnt + numSrcEnt >= numInCommon );
+        unionNumEnt = numTgtEnt + numSrcEnt - numInCommon;
 
         if (numInCommon == numSrcEnt) {
           if (verbose_) {
