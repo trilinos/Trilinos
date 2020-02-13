@@ -597,7 +597,7 @@ namespace Tacho {
 #if defined(KOKKOS_ENABLE_CUDA)
       ordinal_type q(0);
 #endif 
-      for (ordinal_type p=pbeg,q=0;p<pend;++p) {
+      for (ordinal_type p=pbeg;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_compute_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
