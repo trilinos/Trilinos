@@ -147,11 +147,13 @@ private:
   }
 
   void project_1d(Vector<Real> &x, Real &lam, Real &dlam) const {
-    const Real eps = ROL_EPSILON<Real>();
+    const Real atol(1e-4*std::sqrt(ROL_EPSILON<Real>())), rtol(1e-2);
     const Real zero(0), one(1), two(2), c1(0.1), c2(0.75), c3(0.25);
     Real lam1(0), lam2(0), lam3(0), r1(0), r2(0), s(0);
     update_primal_1d(*xnew_,x,lam);
     Real r = residual_1d(*xnew_);
+    const Real ctol = std::min(atol,rtol*std::abs(r));
+    int cnt = 0, maxit = 1000;
     // Bracketing phase
     if ( r < zero ) {
       lam1 = lam;
@@ -159,7 +161,7 @@ private:
       r1   = r;
       update_primal_1d(*xnew_,x,lam);
       r    = residual_1d(*xnew_);
-      while ( r < zero ) {
+      while ( r < zero && cnt < maxit ) {
         lam1  = lam;
         r1    = r;
         s     = std::max(r1/r-one,c1);
@@ -167,6 +169,7 @@ private:
         lam  += dlam;
         update_primal_1d(*xnew_,x,lam);
         r     = residual_1d(*xnew_);
+	cnt++;
       }
       lam2 = lam;
       r2   = r;
@@ -177,7 +180,7 @@ private:
       lam -= dlam;
       update_primal_1d(*xnew_,x,lam);
       r    = residual_1d(*xnew_);
-      while ( r > zero ) {
+      while ( r > zero && cnt < maxit ) {
         lam2  = lam;
         r2    = r;
         s     = std::max(r2/r-one,c1);
@@ -196,7 +199,8 @@ private:
     lam   = lam2-dlam;
     update_primal_1d(*xnew_,x,lam);
     r     = residual_1d(*xnew_);
-    while ( std::abs(r) > eps && std::abs(dlam) > eps ) {
+    cnt   = 0;
+    while ( std::abs(r) > ctol && std::abs(dlam) > ctol && cnt < maxit ) {
       if ( r > zero ) {
         if ( s <= two ) {
           lam2 = lam;
@@ -232,9 +236,14 @@ private:
           lam  = lam3;
           s    = (lam2-lam1)/(lam2-lam);
         }
+	cnt++;
       }
       update_primal_1d(*xnew_,x,lam);
       r = residual_1d(*xnew_);
+    }
+    if (std::abs(r) > ctol) {
+      //throw Exception::NotImplemented(">>> ROL::PolyhedralProjection::project : Projection failed!");
+      std::cout << ">>> ROL::PolyhedralProjection::project : Projection failed!  rnorm = " << std::abs(r) << "  rtol = " << ctol << std::endl;
     }
     // Return projection
     x.set(*xnew_);
@@ -353,7 +362,7 @@ private:
     }
     if (rnorm > ctol) {
       //throw Exception::NotImplemented(">>> ROL::PolyhedralProjection::project : Projection failed!");
-      std::cout << ">>> ROL::PolyhedralProjection::project : Projection failed!  rnorm = " << rnorm << std::endl;
+      std::cout << ">>> ROL::PolyhedralProjection::project : Projection failed!  rnorm = " << rnorm << "  rtol = " << ctol << std::endl;
     }
     x.set(*xnew_);
   }
