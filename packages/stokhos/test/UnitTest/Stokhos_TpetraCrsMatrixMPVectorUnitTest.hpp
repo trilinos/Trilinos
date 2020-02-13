@@ -1553,7 +1553,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Get and print number of ensemble iterations
   std::vector<int> ensemble_iterations =
-    Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
+    static_cast<const Belos::StatusTestImpResNorm<BelosScalar, MV, OP> *>(solver->getResidualStatusTest())->getEnsembleIterations();
   out << "Ensemble iterations = ";
   for (auto ensemble_iteration : ensemble_iterations)
     out << ensemble_iteration << " ";
@@ -1707,7 +1707,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Get and print number of ensemble iterations
   std::vector<int> ensemble_iterations =
-    Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
+    static_cast<const Belos::StatusTestImpResNorm<BelosScalar, MV, OP> *>(solver->getResidualStatusTest())->getEnsembleIterations();
   out << "Ensemble iterations = ";
   for (auto ensemble_iteration : ensemble_iterations)
     out << ensemble_iteration << " ";
@@ -1861,7 +1861,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Get and print number of ensemble iterations
   std::vector<int> ensemble_iterations =
-    Teuchos::rcp_static_cast<Belos::StatusTestImpResNorm<BelosScalar, MV, OP>>(solver->getResidualStatusTest())->getEnsembleIterations();
+    static_cast<const Belos::StatusTestImpResNorm<BelosScalar, MV, OP> *>(solver->getResidualStatusTest())->getEnsembleIterations();
   out << "Ensemble iterations = ";
   for (auto ensemble_iteration : ensemble_iterations)
     out << ensemble_iteration << " ";
