@@ -1,3 +1,46 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
+
 #pragma once
 
 #ifdef __SSE__
@@ -190,28 +233,28 @@ class simd_storage {
   using value_type = T;
   using simd_type = simd<T, Abi>;
   SIMD_ALWAYS_INLINE inline simd_storage() = default;
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline static constexpr
+  SIMD_ALWAYS_INLINE inline static constexpr
   int size() { return simd<T, Abi>::size(); }
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline
+  SIMD_ALWAYS_INLINE inline
   simd_storage(simd<T, Abi> const& value) {
     value.copy_to(m_value, element_aligned_tag());
   }
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE explicit inline
+  SIMD_ALWAYS_INLINE explicit inline
   simd_storage(T value)
     :simd_storage(simd<T, Abi>(value))
   {}
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline
+  SIMD_ALWAYS_INLINE inline
   simd_storage& operator=(simd<T, Abi> const& value) {
     value.copy_to(m_value, element_aligned_tag());
     return *this;
   }
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE
+  SIMD_ALWAYS_INLINE inline
   T const* data() const { return m_value; }
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE
+  SIMD_ALWAYS_INLINE inline
   T* data() { return m_value; }
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE
+  SIMD_ALWAYS_INLINE inline
   T const& operator[](int i) const { return m_value[i]; }
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE
+  SIMD_ALWAYS_INLINE inline
   T& operator[](int i) { return m_value[i]; }
 };
 
@@ -308,6 +351,11 @@ class simd<T, simd_abi::scalar> {
     return simd_mask<T, simd_abi::scalar>(m_value == other.m_value);
   }
 };
+
+template <class T>
+SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, simd_abi::scalar> abs(simd<T, simd_abi::scalar> const& a) {
+  return simd<T, simd_abi::scalar>(std::abs(a.get()));
+}
 
 template <class T>
 SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, simd_abi::scalar> sqrt(simd<T, simd_abi::scalar> const& a) {
@@ -504,6 +552,14 @@ class simd<T, simd_abi::pack<N>> {
     return result;
   }
 };
+
+template <class T, int N>
+SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, simd_abi::pack<N>> abs(simd<T, simd_abi::pack<N>> const& a) {
+  simd<T, simd_abi::pack<N>> result;
+  using std::sqrt;
+  SIMD_PRAGMA for (int i = 0; i < a.size(); ++i) result[i] = abs(a[i]);
+  return result;
+}
 
 template <class T, int N>
 SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, simd_abi::pack<N>> sqrt(simd<T, simd_abi::pack<N>> const& a) {
@@ -726,6 +782,14 @@ SIMD_ALWAYS_INLINE inline simd<float, simd_abi::vector_size<32>>::simd(float val
 }
 
 template <class T, int N>
+SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, simd_abi::vector_size<N>> abs(simd<T, simd_abi::vector_size<N>> const& a) {
+  simd<T, simd_abi::vector_size<N>> result;
+  using std::sqrt;
+  SIMD_PRAGMA for (int i = 0; i < a.size(); ++i) result.get()[i] = abs(a[i]);
+  return result;
+}
+
+template <class T, int N>
 SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, simd_abi::vector_size<N>> sqrt(simd<T, simd_abi::vector_size<N>> const& a) {
   simd<T, simd_abi::vector_size<N>> result;
   using std::sqrt;
@@ -897,6 +961,11 @@ class simd<float, simd_abi::sse> {
   }
 };
 
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::sse> abs(simd<float, simd_abi::sse> const& a) {
+  __m128 const sign_mask = _mm_set1_ps(-0.f);  // -0.f = 1 << 31
+  return simd<float, simd_abi::sse>(_mm_andnot_ps(sign_mask, a.get()));
+}
+
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::sse> sqrt(simd<float, simd_abi::sse> const& a) {
   return simd<float, simd_abi::sse>(_mm_sqrt_ps(a.get()));
 }
@@ -1032,6 +1101,11 @@ class simd<double, simd_abi::sse> {
     return simd_mask<double, simd_abi::sse>(_mm_cmpeq_pd(m_value, other.m_value));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::sse> abs(simd<double, simd_abi::sse> const& a) {
+  __m128d const sign_mask = _mm_set1_pd(-0.);  // -0. = 1 << 63
+  return simd<double, simd_abi::sse>(_mm_andnot_pd(sign_mask, a.get()));
+}
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::sse> sqrt(simd<double, simd_abi::sse> const& a) {
   return simd<double, simd_abi::sse>(_mm_sqrt_pd(a.get()));
@@ -1178,6 +1252,11 @@ class simd<float, simd_abi::avx> {
   }
 };
 
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx> abs(simd<float, simd_abi::avx> const& a) {
+  __m256 sign_mask = _mm256_set1_ps(-0.f);  // -0.f = 1 << 31
+  return simd<float, simd_abi::avx>(_mm256_andnot_ps(sign_mask, a.get()));
+}
+
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx> sqrt(simd<float, simd_abi::avx> const& a) {
   return simd<float, simd_abi::avx>(_mm256_sqrt_ps(a.get()));
 }
@@ -1311,6 +1390,11 @@ class simd<double, simd_abi::avx> {
     return simd_mask<double, simd_abi::avx>(_mm256_cmp_pd(m_value, other.m_value, _CMP_EQ_OS));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx> abs(simd<double, simd_abi::avx> const& a) {
+  __m256d const sign_mask = _mm256_set1_pd(-0.f);  // -0.f = 1 << 31
+  return simd<double, simd_abi::avx>(_mm256_andnot_pd(sign_mask, a.get()));
+}
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx> sqrt(simd<double, simd_abi::avx> const& a) {
   return simd<double, simd_abi::avx>(_mm256_sqrt_pd(a.get()));
@@ -1456,6 +1540,11 @@ class simd<float, simd_abi::avx512> {
   }
 };
 
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> abs(simd<float, simd_abi::avx512> const& a) {
+  __m512 const rhs = a.get();
+  return reinterpret_cast<__m512>(_mm512_and_epi32(reinterpret_cast<__m512i>(rhs), _mm512_set1_epi32(0x7fffffff)));
+}
+
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> sqrt(simd<float, simd_abi::avx512> const& a) {
   return simd<float, simd_abi::avx512>(_mm512_sqrt_ps(a.get()));
 }
@@ -1586,6 +1675,12 @@ class simd<double, simd_abi::avx512> {
   }
 };
 
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> abs(simd<double, simd_abi::avx512> const& a) {
+  __m512d const rhs = a.get();
+  return reinterpret_cast<__m512d>(_mm512_and_epi64(_mm512_set1_epi64(0x7FFFFFFFFFFFFFFF),
+        reinterpret_cast<__m512i>(rhs)));
+}
+
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> sqrt(simd<double, simd_abi::avx512> const& a) {
   return simd<double, simd_abi::avx512>(_mm512_sqrt_pd(a.get()));
 }
@@ -1660,11 +1755,11 @@ class simd_mask<float, simd_abi::neon> {
 };
 
 SIMD_ALWAYS_INLINE inline bool all_of(simd_mask<float, simd_abi::neon> const& a) {
-  return vminvq_u32(a) == std::uint32_t(-std::int32_t(1));
+  return vminvq_u32(a.get()) == std::uint32_t(-std::int32_t(1));
 }
 
 SIMD_ALWAYS_INLINE inline bool any_of(simd_mask<float, simd_abi::neon> const& a) {
-  return vmaxvq_u32(a) == std::uint32_t(-std::int32_t(1));
+  return vmaxvq_u32(a.get()) == std::uint32_t(-std::int32_t(1));
 }
 
 template <>
@@ -1726,6 +1821,10 @@ class simd<float, simd_abi::neon> {
   }
 };
 
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::neon> abs(simd<float, simd_abi::neon> const& a) {
+  return simd<float, simd_abi::neon>(vabsq_f32(a.get()));
+}
+
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::neon> sqrt(simd<float, simd_abi::neon> const& a) {
   return simd<float, simd_abi::neon>(vsqrtq_f32(a.get()));
 }
@@ -1780,7 +1879,7 @@ class simd_mask<double, simd_abi::neon> {
     return simd_mask(vandq_u64(m_value, other.m_value));
   }
   SIMD_ALWAYS_INLINE inline simd_mask operator!() const {
-    return simd_mask(vmvnq_u64(m_value));
+    return simd_mask(vreinterpretq_u64_u32(vmvnq_u32(vreinterpretq_u32_u64(m_value))));
   }
 };
 
@@ -1850,6 +1949,10 @@ class simd<double, simd_abi::neon> {
     return simd_mask<double, simd_abi::neon>(vceqq_f64(m_value, other.m_value));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::neon> abs(simd<double, simd_abi::neon> const& a) {
+  return simd<double, simd_abi::neon>(vabsq_f64(a.get()));
+}
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::neon> sqrt(simd<double, simd_abi::neon> const& a) {
   return simd<double, simd_abi::neon>(vsqrtq_f64(a.get()));
@@ -1989,6 +2092,10 @@ class simd<float, simd_abi::vsx> {
   }
 };
 
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::vsx> abs(simd<float, simd_abi::vsx> const& a) {
+  return simd<float, simd_abi::vsx>(vec_abs(a.get()));
+}
+
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::vsx> sqrt(simd<float, simd_abi::vsx> const& a) {
   return simd<float, simd_abi::vsx>(vec_sqrt(a.get()));
 }
@@ -2122,6 +2229,10 @@ class simd<double, simd_abi::vsx> {
   }
 };
 
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::vsx> abs(simd<double, simd_abi::vsx> const& a) {
+  return simd<double, simd_abi::vsx>(vec_abs(a.get()));
+}
+
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::vsx> sqrt(simd<double, simd_abi::vsx> const& a) {
   return simd<double, simd_abi::vsx>(vec_sqrt(a.get()));
 }
@@ -2164,6 +2275,39 @@ class cuda_warp {
 };
 
 }
+
+template <class T, int N>
+class simd_storage<T, simd_abi::cuda_warp<N>> {
+  T m_value[simd<T, simd_abi::cuda_warp<N>>::size()];
+ public:
+  using value_type = T;
+  using abi_type = simd_abi::cuda_warp<N>;
+  using simd_type = simd<T, abi_type>;
+  SIMD_ALWAYS_INLINE inline simd_storage() = default;
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline static constexpr
+  int size() { return simd<T, abi_type>::size(); }
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline
+  simd_storage(simd<T, abi_type> const& value) {
+    value.copy_to(m_value, element_aligned_tag());
+  }
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE explicit inline
+  simd_storage(T value)
+    :simd_storage(simd<T, abi_type>(value))
+  {}
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline
+  simd_storage& operator=(simd<T, abi_type> const& value) {
+    value.copy_to(m_value, element_aligned_tag());
+    return *this;
+  }
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE
+  T const* data() const { return m_value; }
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE
+  T* data() { return m_value; }
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE
+  T const& operator[](int i) const { return m_value[i]; }
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE
+  T& operator[](int i) { return m_value[i]; }
+};
 
 template <class T, int N>
 class simd_mask<T, simd_abi::cuda_warp<N>> {
@@ -2268,6 +2412,11 @@ class simd<T, simd_abi::cuda_warp<N>> {
     return mask_type(m_value == other.m_value);
   }
 };
+
+template <class T, int N>
+SIMD_CUDA_ALWAYS_INLINE SIMD_HOST_DEVICE simd<T, simd_abi::cuda_warp<N>> abs(simd<T, simd_abi::cuda_warp<N>> const& a) {
+  return simd<T, simd_abi::cuda_warp<N>>(std::abs(a.get()));
+}
 
 template <class T, int N>
 SIMD_CUDA_ALWAYS_INLINE SIMD_HOST_DEVICE simd<T, simd_abi::cuda_warp<N>> sqrt(simd<T, simd_abi::cuda_warp<N>> const& a) {

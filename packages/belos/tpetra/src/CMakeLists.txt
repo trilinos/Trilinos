@@ -28,6 +28,7 @@ APPEND_SET(HEADERS
   BelosOperatorTraits_Tpetra.hpp
   BelosSolverFactory_Tpetra.hpp
   BelosTpetraAdapter.hpp
+  BelosTpetraOperator.hpp
   Belos_Details_Tpetra_registerLinearSolverFactory.hpp
   Belos_Details_Tpetra_registerSolverFactory.hpp
   )

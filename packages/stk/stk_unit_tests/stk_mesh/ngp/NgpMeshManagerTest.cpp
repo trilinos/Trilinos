@@ -59,7 +59,11 @@ TEST(NgpMeshManager, NgpMesh_Update)
 
   stk::mesh::NgpMesh& ngpMesh = ngpMeshManager->get_mesh();
 
+#ifdef KOKKOS_ENABLE_CUDA
   EXPECT_FALSE(ngpMesh.is_up_to_date());
+#else
+  EXPECT_TRUE(ngpMesh.is_up_to_date());
+#endif
 
   ngpMeshManager->update_mesh();
 

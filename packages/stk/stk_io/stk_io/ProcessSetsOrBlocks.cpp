@@ -212,7 +212,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
 {
     assert(sset->type() == Ioss::SIDESET);
 
-    const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     Ioss::Region *region = sset->get_database()->get_region();
 //    const std::string universalAlias = region->get_alias("universal_sideset");

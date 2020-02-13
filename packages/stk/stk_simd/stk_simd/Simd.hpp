@@ -41,6 +41,7 @@
 #include <stk_math/StkMath.hpp>
 
 #define STK_HAVE_SIMD
+#define SIMD_NAMESPACE kokkos_simd
 
 #if defined ( STK_KOKKOS_SIMD )
 #include "disimd/DISimd.hpp"

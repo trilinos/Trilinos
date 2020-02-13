@@ -113,7 +113,7 @@ STK_MATH_FORCE_INLINE simd::Double fmadd(const simd::Double& a, const simd::Doub
 //}
 
 STK_MATH_FORCE_INLINE simd::Double sqrt(const simd::Double& x) {
-  return simd::Double(::simd::sqrt(x._data));
+  return simd::Double(SIMD_NAMESPACE::sqrt(x._data));
 }
   
 STK_MATH_FORCE_INLINE simd::Double cbrt(const simd::Double& x) {
@@ -319,11 +319,11 @@ STK_MATH_FORCE_INLINE simd::Double abs(const simd::Double& x) {
 }
 
 STK_MATH_FORCE_INLINE simd::Double min(const simd::Double& x, const simd::Double& y) {
-  return simd::Double(::simd::min(x._data, y._data));
+  return simd::Double(SIMD_NAMESPACE::min(x._data, y._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Double max(const simd::Double& x, const simd::Double& y) {
-  return simd::Double(::simd::max(x._data, y._data));
+  return simd::Double(SIMD_NAMESPACE::max(x._data, y._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Bool isnan(const simd::Double& a) {
@@ -339,11 +339,11 @@ STK_MATH_FORCE_INLINE simd::Bool isnan(const simd::Double& a) {
 }
 
 STK_MATH_FORCE_INLINE simd::Double if_then_else(const simd::Bool& b, const simd::Double& v1, const simd::Double& v2) {
-  return simd::Double( ::simd::choose(b._data, v1._data, v2._data));
+  return simd::Double(SIMD_NAMESPACE::choose(b._data, v1._data, v2._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Double if_then_else_zero(const simd::Bool& b, const simd::Double& v) {
-  return simd::Double( ::simd::choose(b._data, v._data, ::simd::simd<double,::simd::simd_abi::native>(0.0)));
+  return simd::Double(SIMD_NAMESPACE::choose(b._data, v._data, SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>(0.0)));
 }
 
 } // namespace math

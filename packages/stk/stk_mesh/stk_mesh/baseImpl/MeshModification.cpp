@@ -69,8 +69,6 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
 
     ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
 
-    m_bulkData.m_entity_repo->clear_all_cache();
-
     if(m_bulkData.parallel_size() > 1)
     {
         // Resolve modification or deletion of shared entities

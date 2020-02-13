@@ -49,7 +49,7 @@ class Boolf {
     {
     }
     
-  STK_MATH_FORCE_INLINE Boolf(const ::simd::simd_mask<float,::simd::simd_abi::native>& x) 
+  STK_MATH_FORCE_INLINE Boolf(const SIMD_NAMESPACE::simd_mask<float, SIMD_NAMESPACE::simd_abi::native>& x)
     : _data(x) 
     {
     }
@@ -67,7 +67,7 @@ class Boolf {
   STK_MATH_FORCE_INLINE float& operator[](int i) {return (reinterpret_cast<float*>(&_data))[i];}
   STK_MATH_FORCE_INLINE const float& operator[](int i) const {return (reinterpret_cast<const float*>(&_data))[i];}
      
-  ::simd::simd_mask<float,::simd::simd_abi::native> _data; // the "_" means you should try not to use this directly
+  SIMD_NAMESPACE::simd_mask<float, SIMD_NAMESPACE::simd_abi::native> _data; // the "_" means you should try not to use this directly
   // it is made public to avoid function call overhead 
   // and/or so the compiler doesn't have to use up one of
   // inlining depths (usually max inlining depth ~5)

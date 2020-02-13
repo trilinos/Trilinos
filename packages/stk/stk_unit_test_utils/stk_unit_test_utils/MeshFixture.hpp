@@ -37,6 +37,7 @@
 #include "mpi.h"
 #include <gtest/gtest.h>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/baseImpl/BucketRepository.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_ngp_test/ngp_test.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
@@ -76,9 +77,10 @@ protected:
         metaData = nullptr;
     }
 
-    void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                          unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
     {
-        allocate_bulk(auraOption);
+        allocate_bulk(auraOption, bucketCapacity);
     }
 
     virtual void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -129,12 +131,18 @@ protected:
         return *bulkData;
     }
 
-    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                               unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
     {
         if(nullptr == metaData)
             allocate_meta();
 
-        bulkData = new stk::mesh::BulkData(get_meta(), communicator, auraOption);
+        bulkData = new stk::mesh::BulkData(get_meta(), communicator, auraOption,
+#ifdef SIERRA_MIGRATION
+                                           false,
+#endif
+                                           nullptr,
+                                           bucketCapacity);
     }
 
     virtual void allocate_meta(unsigned spatialDim = 3, const std::vector<std::string>& entityRankNames = {})

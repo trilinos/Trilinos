@@ -166,11 +166,13 @@ class MxNRebalanceOnNProcs : public  stk::unit_test_util::MeshFixture
 protected:
     void set_communicator(MPI_Comm comm) { communicator = comm; }
 
-    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                               unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
     {
         if(nullptr == metaData)
             allocate_meta();
 
+        ThrowRequireMsg(bucketCapacity == stk::mesh::impl::BucketRepository::default_bucket_capacity, "allocate_bulk: BulkDataForBalance doesn't use non-default bucket-capacity.");
         bulkData = new BulkDataForBalance(get_meta(), communicator, auraOption);
     }
 };

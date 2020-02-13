@@ -1681,11 +1681,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     Kokkos::View<mj_scalar_t *, device_t> mj_current_dim_coords =
       Kokkos::subview(this->mj_coordinates, Kokkos::ALL, coordInd);
 
-    typename decltype(process_local_min_max_coord_total_weight)::HostMirror
-      host_process_local_min_max_coord_total_weight =
+    auto host_process_local_min_max_coord_total_weight =
       Kokkos::create_mirror_view(process_local_min_max_coord_total_weight);
-    typename decltype(global_min_max_coord_total_weight)::HostMirror
-      host_global_min_max_coord_total_weight =
+    auto host_global_min_max_coord_total_weight =
       Kokkos::create_mirror_view(global_min_max_coord_total_weight);
 
     // run for all available parts.
@@ -3071,8 +3069,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
   Kokkos::View<mj_scalar_t*, device_t> device_cumulative(
     "device_cumulative", num_cuts);
-  typename decltype(device_cumulative)::HostMirror
-    host_cumulative = Kokkos::create_mirror_view(device_cumulative);
+  auto host_cumulative = Kokkos::create_mirror_view(device_cumulative);
 
   mj_scalar_t cumulative = 0;
 
@@ -3976,8 +3973,6 @@ struct ReduceWeightsFunctor {
       for(int n = 2 + value_count_weights;
         n < value_count_weights + value_count_rightleft - 2; n += 2) {
 #ifdef KOKKOS_ENABLE_CUDA
-
-#ifdef KOKKOS_ENABLE_CUDA
         scalar_t new_value = shared_ptr[n+1];
         scalar_t prev_value = current_right_closest(insert_right);
         while(new_value < prev_value) {
@@ -3994,15 +3989,6 @@ struct ReduceWeightsFunctor {
 
         ++insert_left;
         ++insert_right;
-#else
-        if(shared_ptr[n] > teamSum[n]) {
-          teamSum[n] = shared_ptr[n];
-        }
-        if(shared_ptr[n+1] < teamSum[n+1]) {
-          teamSum[n+1] = shared_ptr[n+1];
-        }
-#endif
-
 #else // KOKKOS_ENABLE_CUDA
         if(array.ptr[n] > teamSum[n]) {
           teamSum[n] = array.ptr[n];
@@ -4222,8 +4208,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
 #endif
 
 #ifndef KOKKOS_ENABLE_CUDA
-    typename decltype(my_current_part_weights)::HostMirror
-      hostArray = Kokkos::create_mirror_view(my_current_part_weights);
+    auto hostArray = Kokkos::create_mirror_view(my_current_part_weights);
 
     for(int i = 0; i < static_cast<int>(total_part_count); ++i) {
       hostArray(i) = reduce_array[i];
@@ -4231,11 +4216,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
 
     Kokkos::deep_copy(my_current_part_weights, hostArray);
 
-    typename decltype(my_current_left_closest)::HostMirror
-      hostLeftArray = Kokkos::create_mirror_view(my_current_left_closest);
-    typename decltype(my_current_right_closest)::HostMirror
-      hostRightArray =
-        Kokkos::create_mirror_view(my_current_right_closest);
+    auto hostLeftArray = Kokkos::create_mirror_view(my_current_left_closest);
+    auto hostRightArray = Kokkos::create_mirror_view(my_current_right_closest);
     for(mj_part_t cut = 0; cut < num_cuts; ++cut) {
       hostLeftArray(cut)  = reduce_array[weight_array_length + (cut+1)*2+0];
       hostRightArray(cut) = reduce_array[weight_array_length + (cut+1)*2+1];
@@ -4773,7 +4755,6 @@ mj_create_new_partitions(
       total_on_cut + 1); // extra index to use for tracking
   }
 
-
   // here we need to parallel reduce an array to count coords in each part
   // atomically adding, especially for low part count would kill us
   // in the original setup we kept arrays allocated for each thread but for
@@ -4782,21 +4763,8 @@ mj_create_new_partitions(
   // cuda.
   typedef Kokkos::TeamPolicy<typename mj_node_t::execution_space> policy_t;
 
-  // This particular functor is not working properly if the coord
-  // count is smaller than the num teams. For example 25 coords in a simple
-  // test with 60 teams caused issues. It is fixed by keeping the num teams
-  // as N/32. We discussed and decided to just leave this for now since it's
-  // working and it's only relevant to tiny test problems.
-
   // if not set use 60 - somewhat arbitrary based on initial performance tests
   int use_num_teams = mj_num_teams ? mj_num_teams : 60;
-  mj_lno_t range = coordinate_end_index - coordinate_begin_index;
-  if(use_num_teams > range/32) {
-    use_num_teams = range/32;
-  }
-  if(use_num_teams < 1) {
-    use_num_teams = 1;
-  }
 
   auto policy_ReduceFunctor = policy_t(use_num_teams, Kokkos::AUTO);
   typedef int array_t;
@@ -4970,8 +4938,9 @@ mj_create_new_partitions(
 
 #else
 
-#ifdef KOKKOS_HAVE_OPENMP
-  const int num_threads = omp_get_num_threads();
+#ifdef KOKKOS_ENABLE_OPENMP
+  // will return and fix this - revert back to 1 for clear auto testing
+  const int num_threads = 1; // Kokkos::OpenMP::impl_max_hardware_threads();
 #else
   const int num_threads = 1;
 #endif
@@ -4988,6 +4957,7 @@ mj_create_new_partitions(
     block_policy(num_teams, num_threads);
   typedef typename Kokkos::TeamPolicy<typename mj_node_t::execution_space>::
     member_type member_type;
+  mj_lno_t range = coordinate_end_index - coordinate_begin_index;
   mj_lno_t block_size = range / num_teams + 1;
   Kokkos::parallel_for(block_policy, KOKKOS_LAMBDA(member_type team_member) {
     int team = team_member.league_rank();
@@ -5438,12 +5408,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
   }, rectilinear_cut_count);
 
   if(rectilinear_cut_count > 0) {
-    typename decltype(local_process_rectilinear_cut_weight)::HostMirror
-      host_local_process_rectilinear_cut_weight =
-      Kokkos::create_mirror_view(local_process_rectilinear_cut_weight);
-    typename decltype(local_global_rectilinear_cut_weight)::HostMirror
-      host_local_global_rectilinear_cut_weight =
-      Kokkos::create_mirror_view(local_global_rectilinear_cut_weight);
+    auto host_local_process_rectilinear_cut_weight =
+      Kokkos::create_mirror_view(Kokkos::HostSpace(),
+      local_process_rectilinear_cut_weight);
+    auto host_local_global_rectilinear_cut_weight =
+      Kokkos::create_mirror_view(Kokkos::HostSpace(),
+      local_global_rectilinear_cut_weight);
     Kokkos::deep_copy(host_local_process_rectilinear_cut_weight,
       local_process_rectilinear_cut_weight);
     Kokkos::deep_copy(host_local_global_rectilinear_cut_weight,
@@ -5581,8 +5551,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     points_per_part(i) =
       local_new_part_xadj(i) - ((i == 0) ? 0 : local_new_part_xadj(i-1));
   });
-  typename decltype(points_per_part)::HostMirror
-    host_points_per_part = Kokkos::create_mirror_view(points_per_part);
+  auto host_points_per_part = Kokkos::create_mirror_view(points_per_part);
   Kokkos::deep_copy(host_points_per_part, points_per_part);
   for(int i = 0; i < num_parts; ++i) {
     my_local_points_to_reduce_sum[i] = host_points_per_part(i);
@@ -5699,12 +5668,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   mj_lno_t *send_count_to_each_proc,
   int *coordinate_destinations) {
 
-  typename decltype(this->new_part_xadj)::HostMirror
-    host_new_part_xadj = Kokkos::create_mirror_view(this->new_part_xadj);
+  auto host_new_part_xadj = Kokkos::create_mirror_view(this->new_part_xadj);
   deep_copy(host_new_part_xadj, this->new_part_xadj);
 
-  typename decltype(this->new_coordinate_permutations)::HostMirror
-    host_new_coordinate_permutations =
+  auto host_new_coordinate_permutations =
     Kokkos::create_mirror_view(this->new_coordinate_permutations);
   deep_copy(host_new_coordinate_permutations, this->new_coordinate_permutations);
 
@@ -6171,13 +6138,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   mj_part_t part_shift_amount = output_part_numbering_begin_index;
   mj_part_t previous_processor = -1;
 
-  typename decltype(this->new_part_xadj)::HostMirror
-    local_new_part_xadj =
-    Kokkos::create_mirror_view(this->new_part_xadj);
+  auto local_new_part_xadj = Kokkos::create_mirror_view(this->new_part_xadj);
   Kokkos::deep_copy(local_new_part_xadj, this->new_part_xadj);
 
-  typename decltype(this->new_part_xadj)::HostMirror
-    local_new_coordinate_permutations =
+  auto local_new_coordinate_permutations =
     Kokkos::create_mirror_view(this->new_coordinate_permutations);
   Kokkos::deep_copy(local_new_coordinate_permutations,
     this->new_coordinate_permutations);
@@ -6532,18 +6496,17 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     this->mj_env->timerStart(MACRO_TIMERS,
       mj_timer_base_string + "Migration Z1Migration-" + iteration);
 
-    // note we currently do migration on HostMirror for MPI which may change
-    // in the future, for example could use cuda aware MPI
+    // MPI Buffers should be on Kokkos::HostSpace not Kokkos::CudaUVMSpace
 
     // migrate gnos.
     {
-      typename decltype(this->current_mj_gnos)::HostMirror host_current_mj_gnos =
-        Kokkos::create_mirror_view(this->current_mj_gnos);
+      auto host_current_mj_gnos = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), this->current_mj_gnos);
       Kokkos::deep_copy(host_current_mj_gnos, this->current_mj_gnos);
       Kokkos::View<mj_gno_t*, device_t> dst_gnos(
         Kokkos::ViewAllocateWithoutInitializing("dst_gnos"), num_incoming_gnos);
-      typename decltype(dst_gnos)::HostMirror
-        host_dst_gnos = Kokkos::create_mirror_view(dst_gnos);
+      auto host_dst_gnos = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), dst_gnos);
       message_tag++;
       ierr = Zoltan_Comm_Do(
         plan,
@@ -6559,18 +6522,22 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     //migrate coordinates
     {
       // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-      typename decltype(this->mj_coordinates)::HostMirror host_src_coordinates =
-        Kokkos::create_mirror_view(this->mj_coordinates);
+      auto host_src_coordinates = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), this->mj_coordinates);
       Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
       Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t>
         dst_coordinates(Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"),
         num_incoming_gnos, this->coord_dim);
-      typename decltype(dst_coordinates)::HostMirror
-        host_dst_coordinates = Kokkos::create_mirror_view(dst_coordinates);
+      auto host_dst_coordinates = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), dst_coordinates);
       for(int i = 0; i < this->coord_dim; ++i) {
-        Kokkos::View<mj_scalar_t *, device_t> sub_host_src_coordinates
-          = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
-        Kokkos::View<mj_scalar_t *, device_t> sub_host_dst_coordinates
+        Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates;
+        // view could be size 0 if graph was not distributed
+        if(host_src_coordinates.extent(0) != 0) {
+          sub_host_src_coordinates =
+            Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
+        }
+        Kokkos::View<mj_scalar_t *, Kokkos::HostSpace> sub_host_dst_coordinates
           = Kokkos::subview(host_dst_coordinates, Kokkos::ALL, i);
         // Note Layout Left means we can do these in contiguous blocks
         message_tag++;
@@ -6588,18 +6555,17 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
     // migrate weights.
     {
-      typename decltype(this->mj_weights)::HostMirror
-        host_src_weights = Kokkos::create_mirror_view(this->mj_weights);
+      auto host_src_weights = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), this->mj_weights);
       Kokkos::deep_copy(host_src_weights, this->mj_weights);
       Kokkos::View<mj_scalar_t**, device_t> dst_weights(
-       Kokkos::ViewAllocateWithoutInitializing("mj_weights"),
-       num_incoming_gnos, this->num_weights_per_coord);
-      typename decltype(dst_weights)::HostMirror host_dst_weights =
-        Kokkos::create_mirror_view(dst_weights);
+        Kokkos::ViewAllocateWithoutInitializing("mj_weights"),
+        num_incoming_gnos, this->num_weights_per_coord);
+      auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
       for(int i = 0; i < this->num_weights_per_coord; ++i) {
-        Kokkos::View<mj_scalar_t *, device_t> sub_host_src_weights
+        auto sub_host_src_weights
           = Kokkos::subview(host_src_weights, Kokkos::ALL, i);
-        Kokkos::View<mj_scalar_t *, device_t> sub_host_dst_weights
+        auto sub_host_dst_weights
           = Kokkos::subview(host_dst_weights, Kokkos::ALL, i);
         ArrayRCP<mj_scalar_t> sent_weight(this->num_local_coords);
         // Copy because of layout
@@ -6645,16 +6611,14 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // we need the part assigment arrays as well, since
     // there will be multiple parts in processor.
     {
-      typename decltype(this->assigned_part_ids)::HostMirror
-        host_src_assigned_part_ids =
-        Kokkos::create_mirror_view(this->assigned_part_ids);
+      auto host_src_assigned_part_ids = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), this->assigned_part_ids);
       Kokkos::deep_copy(host_src_assigned_part_ids, this->assigned_part_ids);
       Kokkos::View<int *, device_t> dst_assigned_part_ids(
         Kokkos::ViewAllocateWithoutInitializing("assigned_part_ids"),
         num_incoming_gnos);
-      typename decltype(dst_assigned_part_ids)::HostMirror
-        host_dst_assigned_part_ids =
-        Kokkos::create_mirror_view(dst_assigned_part_ids);
+      auto host_dst_assigned_part_ids = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), dst_assigned_part_ids);
       mj_part_t *new_parts = new mj_part_t[num_incoming_gnos];
       if(num_procs < num_parts) {
         message_tag++;
@@ -6693,21 +6657,22 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     this->mj_env->timerStart(MACRO_TIMERS, mj_timer_base_string +
       "Migration DistributorMigration-" + iteration);
 
-    // note we currently do migration on HostMirror for MPI which may change
-    // in the future, for example could use cuda aware MPI
+    // note MPI buffers should all be on Kokkos::HostSpace and not
+    // Kokkos::CudaUVMSpace.
 
     // migrate gnos.
     {
       ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
-      typename decltype(this->current_mj_gnos)::HostMirror host_current_mj_gnos =
-        Kokkos::create_mirror_view(this->current_mj_gnos);
-      Kokkos::deep_copy(host_current_mj_gnos, this->current_mj_gnos);
+      auto src_host_current_mj_gnos =
+        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->current_mj_gnos);
+      Kokkos::deep_copy(src_host_current_mj_gnos, this->current_mj_gnos);
       ArrayView<mj_gno_t> sent_gnos(
-        host_current_mj_gnos.data(), this->num_local_coords);
+        src_host_current_mj_gnos.data(), this->num_local_coords);
       distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
       this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
         Kokkos::ViewAllocateWithoutInitializing("gids"), num_incoming_gnos);
-      host_current_mj_gnos = Kokkos::create_mirror_view(this->current_mj_gnos);
+      auto host_current_mj_gnos = Kokkos::create_mirror_view(
+        this->current_mj_gnos);
       memcpy(host_current_mj_gnos.data(),
         received_gnos.getRawPtr(), num_incoming_gnos * sizeof(mj_gno_t));
       Kokkos::deep_copy(this->current_mj_gnos, host_current_mj_gnos);
@@ -6717,14 +6682,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t>
       dst_coordinates("mj_coordinates", num_incoming_gnos, this->coord_dim);
-    typename decltype(dst_coordinates)::HostMirror
-      host_dst_coordinates = Kokkos::create_mirror_view(dst_coordinates);
-    typename decltype(this->mj_coordinates)::HostMirror host_src_coordinates =
-      Kokkos::create_mirror_view(this->mj_coordinates);
+    auto host_dst_coordinates = Kokkos::create_mirror_view(dst_coordinates);
+    auto host_src_coordinates = Kokkos::create_mirror_view(
+      Kokkos::HostSpace(), this->mj_coordinates);
     Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
     for(int i = 0; i < this->coord_dim; ++i) {
-      typename Kokkos::View<mj_scalar_t*, device_t>::HostMirror
-        sub_host_src_coordinates;
+      Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates;
       // view could be size 0 if graph was not distributed
       if(host_src_coordinates.extent(0) != 0) {
         sub_host_src_coordinates =
@@ -6734,11 +6697,25 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       auto sub_host_dst_coordinates
         = Kokkos::subview(host_dst_coordinates, Kokkos::ALL, i);
       // Note Layout Left means we can do these in contiguous blocks
-      ArrayView<mj_scalar_t> sent_coord(
-        sub_host_src_coordinates.data(), this->num_local_coords);
+      // This form was causing problems on cuda 10 pascal nodes, issue #6422
+      // Doing a manual copy clears the error though it seems this is probably
+      // just shifting some kind of race condition or UVM issue around. The
+      // bug can be sensitive to simple changes like adding a printf log.
+
+      // Using this form will segfault on cuda 10 pascal node
+      //ArrayView<mj_scalar_t> sent_coord(
+      //  sub_host_src_coordinates.data(), this->num_local_coords);
+
+      // Manual copy will clear the error but this is probably just due to
+      // shifting some kind of race condition.
+      ArrayRCP<mj_scalar_t> sent_coord(this->num_local_coords);
+      for(int n = 0; n < this->num_local_coords; ++n) {
+        sent_coord[n] = sub_host_src_coordinates[n];
+      }
+
       ArrayRCP<mj_scalar_t> received_coord(num_incoming_gnos);
       distributor.doPostsAndWaits<mj_scalar_t>(
-        sent_coord, 1, received_coord());
+        sent_coord(), 1, received_coord());
       memcpy(sub_host_dst_coordinates.data(),
         received_coord.getRawPtr(), num_incoming_gnos * sizeof(mj_scalar_t));
     }
@@ -6748,10 +6725,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // migrate weights.
     Kokkos::View<mj_scalar_t**, device_t> dst_weights(
      "mj_weights", num_incoming_gnos, this->num_weights_per_coord);
-    typename decltype(dst_weights)::HostMirror host_dst_weights =
-      Kokkos::create_mirror_view(dst_weights);
-    typename decltype(this->mj_weights)::HostMirror
-      host_src_weights = Kokkos::create_mirror_view(this->mj_weights);
+    auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
+    auto host_src_weights = Kokkos::create_mirror_view(
+      Kokkos::HostSpace(), this->mj_weights);
     Kokkos::deep_copy(host_src_weights, this->mj_weights);
     for(int i = 0; i < this->num_weights_per_coord; ++i) {
       auto sub_host_src_weights
@@ -6796,19 +6772,18 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // we need the part assigment arrays as well, since
     // there will be multiple parts in processor.
     if(num_procs < num_parts) {
-      typename decltype(this->assigned_part_ids)::HostMirror
-        host_assigned_part_ids =
-        Kokkos::create_mirror_view(this->assigned_part_ids);
-      Kokkos::deep_copy(host_assigned_part_ids, assigned_part_ids);
+      auto src_host_assigned_part_ids =
+        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
+      Kokkos::deep_copy(src_host_assigned_part_ids, assigned_part_ids);
       ArrayView<mj_part_t> sent_partids(
-        host_assigned_part_ids.data(), this->num_local_coords);
+        src_host_assigned_part_ids.data(), this->num_local_coords);
       ArrayRCP<mj_part_t> received_partids(num_incoming_gnos);
       distributor.doPostsAndWaits<mj_part_t>(
         sent_partids, 1, received_partids());
       this->assigned_part_ids = Kokkos::View<mj_part_t *, device_t>
         ("assigned_part_ids", num_incoming_gnos);
-      host_assigned_part_ids =
-        Kokkos::create_mirror_view(this->assigned_part_ids);
+      auto host_assigned_part_ids = Kokkos::create_mirror_view(
+        this->assigned_part_ids);
       memcpy(
         host_assigned_part_ids.data(),
         received_partids.getRawPtr(),
@@ -7231,8 +7206,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
   auto local_current_concurrent_cut_coordinate =
     current_concurrent_cut_coordinate;
-  typename decltype(local_current_concurrent_cut_coordinate)::HostMirror
-    host_current_concurrent_cut_coordinate =
+  auto host_current_concurrent_cut_coordinate =
     Kokkos::create_mirror_view(local_current_concurrent_cut_coordinate);
   Kokkos::deep_copy(host_current_concurrent_cut_coordinate,
     local_current_concurrent_cut_coordinate);
@@ -7254,22 +7228,17 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     host_current_concurrent_cut_coordinate);
 
   // now the actual part assigment.
-  typename decltype(coordinate_permutations)::HostMirror
-    host_coordinate_permutations =
+  auto host_coordinate_permutations =
     Kokkos::create_mirror_view(coordinate_permutations);
   Kokkos::deep_copy(host_coordinate_permutations, coordinate_permutations);
 
-  typename decltype(assigned_part_ids)::HostMirror
-    host_assigned_part_ids =
-    Kokkos::create_mirror_view(assigned_part_ids);
+  auto host_assigned_part_ids = Kokkos::create_mirror_view(assigned_part_ids);
   Kokkos::deep_copy(host_assigned_part_ids, assigned_part_ids);
 
-  typename decltype(mj_coordinates)::HostMirror
-    host_mj_coordinates = Kokkos::create_mirror_view(mj_coordinates);
+  auto host_mj_coordinates = Kokkos::create_mirror_view(mj_coordinates);
   Kokkos::deep_copy(host_mj_coordinates, mj_coordinates);
 
-  typename decltype(thread_point_counts)::HostMirror
-    host_thread_point_counts = Kokkos::create_mirror_view(thread_point_counts);
+  auto host_thread_point_counts = Kokkos::create_mirror_view(thread_point_counts);
   Kokkos::deep_copy(host_thread_point_counts, thread_point_counts);
 
   auto local_coord_dim = this->coord_dim;
@@ -7328,15 +7297,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
   mj_part_t previous_cut_map = cut_map[0];
 
-  typename decltype(thread_cut_line_weight_to_put_left)::HostMirror
-    host_thread_cut_line_weight_to_put_left =
+  auto host_thread_cut_line_weight_to_put_left =
     Kokkos::create_mirror_view(thread_cut_line_weight_to_put_left);
   Kokkos::deep_copy(host_thread_cut_line_weight_to_put_left,
     thread_cut_line_weight_to_put_left);
 
-  typename decltype(mj_weights)::HostMirror
-    host_mj_weights =
-    Kokkos::create_mirror_view(mj_weights);
+  auto host_mj_weights = Kokkos::create_mirror_view(mj_weights);
   Kokkos::deep_copy(host_mj_weights, mj_weights);
 
   // this is how much previous part owns the weight of the current part.
@@ -7476,9 +7442,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   }
 
   auto local_out_part_xadj = out_part_xadj;
-  typename decltype(local_out_part_xadj)::HostMirror
-    host_out_part_xadj =
-    Kokkos::create_mirror_view(local_out_part_xadj);
+  auto host_out_part_xadj = Kokkos::create_mirror_view(local_out_part_xadj);
   Kokkos::deep_copy(host_out_part_xadj, out_part_xadj);
 
   // creation of part_xadj as in usual case.
@@ -7498,8 +7462,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     host_thread_point_counts(j) += host_out_part_xadj(j - 1);
   }
 
-  typename decltype(new_coordinate_permutations)::HostMirror
-    host_new_coordinate_permutations =
+  auto host_new_coordinate_permutations =
     Kokkos::create_mirror_view(new_coordinate_permutations);
   Kokkos::deep_copy(host_new_coordinate_permutations,
     new_coordinate_permutations);
@@ -7594,17 +7557,16 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       this->mj_env->timerStart(MACRO_TIMERS,
         mj_timer_base_string + "Final Z1PlanComm");
 
-      // note we currently do migration on HostMirror for MPI which may change
-      // in the future, for example could use cuda aware MPI
+      // MPI Buffers should be on Kokkos::HostSpace not Kokkos::CudaUVMSpace
 
       // migrate gnos to actual owners.
-      typename decltype (this->current_mj_gnos)::HostMirror
-        host_current_mj_gnos = Kokkos::create_mirror_view(this->current_mj_gnos);
+      auto host_current_mj_gnos = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), this->current_mj_gnos);
       deep_copy(host_current_mj_gnos, this->current_mj_gnos);
       Kokkos::View<mj_gno_t*, device_t> dst_gnos(
         Kokkos::ViewAllocateWithoutInitializing("dst_gnos"), incoming);
-      typename decltype (dst_gnos)::HostMirror
-        host_dst_gnos = Kokkos::create_mirror_view(dst_gnos);
+      auto host_dst_gnos = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), dst_gnos);
       message_tag++;
       ierr = Zoltan_Comm_Do( plan, message_tag,
         (char *) host_current_mj_gnos.data(),
@@ -7614,13 +7576,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       this->current_mj_gnos = dst_gnos;
 
       // migrate part ids to actual owners.
-      typename decltype (this->assigned_part_ids)::HostMirror
-        host_src_part_ids = Kokkos::create_mirror_view(this->assigned_part_ids);
+      auto host_src_part_ids = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), this->assigned_part_ids);
       deep_copy(host_src_part_ids, this->assigned_part_ids);
       Kokkos::View<mj_part_t*, device_t> dst_part_ids(
         Kokkos::ViewAllocateWithoutInitializing("dst_part_ids"), incoming);
-      typename decltype (dst_part_ids)::HostMirror
-        host_dst_part_ids = Kokkos::create_mirror_view(dst_part_ids);
+      auto host_dst_part_ids = Kokkos::create_mirror_view(
+        Kokkos::HostSpace(), dst_part_ids);
       message_tag++;
       ierr = Zoltan_Comm_Do( plan, message_tag,
         (char *) host_src_part_ids.data(),
@@ -7653,31 +7615,29 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       this->mj_env->timerStart(MACRO_TIMERS,
         mj_timer_base_string + "Final DistributorPlanComm");
 
-      // note we currently do migration on HostMirror for MPI which may change
-      // in the future, for example could use cuda aware MPI
+      // MPI buffers should be Kokkos::HostSpace, not Kokkos::CudaUVMSpace
 
       // migrate gnos to actual owners.
-      typename decltype (this->current_mj_gnos)::HostMirror
-        host_current_mj_gnos =
-        Kokkos::create_mirror_view(this->current_mj_gnos);
-      Kokkos::deep_copy(host_current_mj_gnos, this->current_mj_gnos);
+      auto src_host_current_mj_gnos =
+        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->current_mj_gnos);
+      Kokkos::deep_copy(src_host_current_mj_gnos, this->current_mj_gnos);
       ArrayRCP<mj_gno_t> received_gnos(incoming);
-      ArrayView<mj_gno_t> sent_gnos(host_current_mj_gnos.data(),
+      ArrayView<mj_gno_t> sent_gnos(src_host_current_mj_gnos.data(),
         this->num_local_coords);
       distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
       this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
         Kokkos::ViewAllocateWithoutInitializing("current_mj_gnos"), incoming);
-      host_current_mj_gnos = Kokkos::create_mirror_view(this->current_mj_gnos);
+      auto host_current_mj_gnos = Kokkos::create_mirror_view(
+        this->current_mj_gnos);
       memcpy(host_current_mj_gnos.data(),
         received_gnos.getRawPtr(), incoming * sizeof(mj_gno_t));
       Kokkos::deep_copy(this->current_mj_gnos, host_current_mj_gnos);
 
       // migrate part ids to actual owners.
-      typename decltype (this->assigned_part_ids)::HostMirror
-        host_assigned_part_ids =
-        Kokkos::create_mirror_view(this->assigned_part_ids);
-      Kokkos::deep_copy(host_assigned_part_ids, this->assigned_part_ids);
-      ArrayView<mj_part_t> sent_partids(host_assigned_part_ids.data(),
+      auto src_host_assigned_part_ids =
+        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
+      Kokkos::deep_copy(src_host_assigned_part_ids, this->assigned_part_ids);
+      ArrayView<mj_part_t> sent_partids(src_host_assigned_part_ids.data(),
         this->num_local_coords);
       ArrayRCP<mj_part_t> received_partids(incoming);
       distributor.doPostsAndWaits<mj_part_t>(
@@ -7686,8 +7646,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         Kokkos::View<mj_part_t*, device_t>(
           Kokkos::ViewAllocateWithoutInitializing("assigned_part_ids"),
           incoming);
-      host_assigned_part_ids =
-        Kokkos::create_mirror_view(this->assigned_part_ids);
+      auto host_assigned_part_ids = Kokkos::create_mirror_view(
+        this->assigned_part_ids);
       memcpy( host_assigned_part_ids.data(),
         received_partids.getRawPtr(), incoming * sizeof(mj_part_t));
       deep_copy(this->assigned_part_ids, host_assigned_part_ids);
@@ -7963,11 +7923,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
     mj_part_t obtained_part_index = 0;
 
-    typename decltype(process_local_min_max_coord_total_weight)::HostMirror
-      host_process_local_min_max_coord_total_weight =
+    auto host_process_local_min_max_coord_total_weight =
       Kokkos::create_mirror_view(process_local_min_max_coord_total_weight);
-    typename decltype(global_min_max_coord_total_weight)::HostMirror
-      host_global_min_max_coord_total_weight =
+    auto host_global_min_max_coord_total_weight =
       Kokkos::create_mirror_view(global_min_max_coord_total_weight);
 
     // run for all available parts.
@@ -8833,25 +8791,23 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
   mj_env_->timerStart(MACRO_TIMERS,
     timer_base_string + "PreMigration DistributorMigration");
 
-  // note we currently do migration on HostMirror for MPI which may change
-  // in the future, for example could use cuda aware MPI
+  // MPI Buffers should be on Kokkos::HostSpace not Kokkos::CudaUVMSpace
 
   // migrate gnos.
   {
     ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
-    typename Kokkos::View<const mj_gno_t*, device_t>::HostMirror
-      host_initial_mj_gnos = Kokkos::create_mirror_view(initial_mj_gnos_);
+    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> host_initial_mj_gnos(
+      Kokkos::ViewAllocateWithoutInitializing("host_initial_mj_gnos"),
+      initial_mj_gnos_.size()); // initial_mj_gnos_ is const mj_gno_t *
     Kokkos::deep_copy(host_initial_mj_gnos, initial_mj_gnos_);
     ArrayView<const mj_gno_t> sent_gnos(host_initial_mj_gnos.data(),
       num_local_coords_);
     distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
-
     result_initial_mj_gnos_ = Kokkos::View<mj_gno_t*, device_t>(
       Kokkos::ViewAllocateWithoutInitializing("result_initial_mj_gnos_"),
       num_incoming_gnos);
-    typename Kokkos::View<mj_gno_t*, device_t>::HostMirror
-       host_result_initial_mj_gnos_ =
-       Kokkos::create_mirror_view(result_initial_mj_gnos_);
+    auto host_result_initial_mj_gnos_ = Kokkos::create_mirror_view(
+      result_initial_mj_gnos_);
     memcpy(host_result_initial_mj_gnos_.data(),
       received_gnos.getRawPtr(), num_incoming_gnos * sizeof(mj_gno_t));
     Kokkos::deep_copy(result_initial_mj_gnos_, host_result_initial_mj_gnos_);
@@ -8862,10 +8818,10 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
   Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t> dst_coordinates(
     Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"),
     num_incoming_gnos, this->coord_dim);
-  typename decltype(dst_coordinates)::HostMirror
-    host_dst_coordinates = Kokkos::create_mirror_view(dst_coordinates);
-  typename decltype(this->mj_coordinates)::HostMirror host_src_coordinates =
-    Kokkos::create_mirror_view(this->mj_coordinates);
+  auto host_dst_coordinates = Kokkos::create_mirror_view(
+    dst_coordinates);
+  auto host_src_coordinates =
+    Kokkos::create_mirror_view(Kokkos::HostSpace(), this->mj_coordinates);
   Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
   for(int i = 0; i < this->coord_dim; ++i) {
     auto sub_host_src_coordinates
@@ -8888,10 +8844,8 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
   Kokkos::View<mj_scalar_t**, device_t> dst_weights(
     Kokkos::ViewAllocateWithoutInitializing("mj_weights"),
     num_incoming_gnos, this->num_weights_per_coord);
-  typename decltype(dst_weights)::HostMirror host_dst_weights =
-    Kokkos::create_mirror_view(dst_weights);
-  typename decltype(this->mj_weights)::HostMirror
-    host_src_weights = Kokkos::create_mirror_view(this->mj_weights);
+  auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
+  auto host_src_weights = Kokkos::create_mirror_view(this->mj_weights);
   Kokkos::deep_copy(host_src_weights, this->mj_weights);
   for(int i = 0; i < this->num_weights_per_coord; ++i) {
     auto sub_host_src_weights
@@ -9097,9 +9051,9 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     // Reorder results so that they match the order of the input
     std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid;
     localGidToLid.reserve(result_num_local_coords);
-    typename decltype(result_initial_mj_gnos_)::HostMirror
-      host_result_initial_mj_gnos =
-      Kokkos::create_mirror_view(result_initial_mj_gnos_);
+    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> host_result_initial_mj_gnos(
+      Kokkos::ViewAllocateWithoutInitializing("host_result_initial_mj_gnos"),
+      result_initial_mj_gnos_.size());
     Kokkos::deep_copy(host_result_initial_mj_gnos, result_initial_mj_gnos_);
     for(mj_lno_t i = 0; i < result_num_local_coords; i++) {
       localGidToLid[host_result_initial_mj_gnos(i)] = i;
@@ -9107,12 +9061,10 @@ void Zoltan2_AlgMJ<Adapter>::partition(
 
     ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[result_num_local_coords],
         0, result_num_local_coords, true);
-    typename decltype(result_assigned_part_ids)::HostMirror
-      host_result_assigned_part_ids =
+    auto host_result_assigned_part_ids =
       Kokkos::create_mirror_view(result_assigned_part_ids);
     Kokkos::deep_copy(host_result_assigned_part_ids, result_assigned_part_ids);
-    typename decltype(result_mj_gnos)::HostMirror
-      host_result_mj_gnos = Kokkos::create_mirror_view(result_mj_gnos);
+    auto host_result_mj_gnos = Kokkos::create_mirror_view(result_mj_gnos);
     Kokkos::deep_copy(host_result_mj_gnos, result_mj_gnos);
     for(mj_lno_t i = 0; i < result_num_local_coords; i++) {
       mj_lno_t origLID = localGidToLid[host_result_mj_gnos(i)];
@@ -9158,8 +9110,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
       {
         std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid2;
         localGidToLid2.reserve(this->num_local_coords);
-        typename decltype(this->initial_mj_gnos)::HostMirror
-          host_initial_mj_gnos =
+        auto host_initial_mj_gnos =
           Kokkos::create_mirror_view(this->initial_mj_gnos);
         Kokkos::deep_copy(host_initial_mj_gnos,
           this->initial_mj_gnos);

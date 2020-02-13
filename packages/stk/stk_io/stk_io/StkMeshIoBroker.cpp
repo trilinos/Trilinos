@@ -1230,14 +1230,10 @@ int StkMeshIoBroker::check_integer_size_requirements_parallel()
         const stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(m_bulkData->mesh_meta_data().entity_rank_count());
         bool foundLargeId = false;
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<numRanks; rank++) {
-            stk::mesh::const_entity_iterator beginIter = m_bulkData->begin_entities(rank);
-            stk::mesh::const_entity_iterator endIter = m_bulkData->end_entities(rank);
-            if (std::distance(beginIter, endIter) > 0) {
-                stk::mesh::EntityKey lastKey = (--endIter)->first;
-                if (lastKey.id() > (size_t)std::numeric_limits<int>::max()) {
-                    foundLargeId = true;
-                    break;
-                }
+            stk::mesh::EntityId maxId = stk::mesh::get_max_id_on_local_proc(*m_bulkData, rank);
+            if (maxId > (size_t)std::numeric_limits<int>::max()) {
+                foundLargeId = true;
+                break;
             }
         }
         stk::ParallelMachine comm = m_bulkData->parallel();
