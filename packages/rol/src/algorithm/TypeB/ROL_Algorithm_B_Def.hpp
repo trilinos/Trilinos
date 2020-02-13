@@ -140,7 +140,17 @@ std::vector<std::string> Algorithm_B<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &imul,
                                                  BoundConstraint<Real> &ibnd,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,bnd,icon,imul,ibnd,outStream);
+  ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+                             makePtrFromRef(ibnd),makePtrFromRef(x),
+                             makePtrFromRef(bnd));
+  Ptr<Constraint<Real>>      econ = cm.getConstraint();
+  Ptr<Vector<Real>>          emul = cm.getMultiplier();
+  Ptr<Vector<Real>>          xvec = cm.getOptVector();
+  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
+  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
+  //return run(*xvec,xvec->dual(),*sobj,*xbnd,*econ,*emul,outStream);
+  Ptr<Vector<Real>>          xdual = xvec->dual().clone();
+  return run(*xvec,*xdual,*sobj,*xbnd,*econ,*emul,outStream);
 }
 
 template<typename Real>
@@ -152,15 +162,7 @@ std::vector<std::string> Algorithm_B<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &imul,
                                                  BoundConstraint<Real> &ibnd,
                                                  std::ostream          &outStream ) {
-  ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
-                             makePtrFromRef(ibnd),makePtrFromRef(x),
-                             makePtrFromRef(bnd));
-  Ptr<Constraint<Real>>      econ = cm.getConstraint();
-  Ptr<Vector<Real>>          emul = cm.getMultiplier();
-  Ptr<Vector<Real>>          xvec = cm.getOptVector();
-  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
-  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
-  return run(*xvec,xvec->dual(),*sobj,*xbnd,*econ,*emul,outStream);
+  return run(x,obj,bnd,icon,imul,ibnd,outStream);
 }
 
 template<typename Real>

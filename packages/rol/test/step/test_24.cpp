@@ -45,6 +45,7 @@
     \brief Validate projected gradient algorithm.
 */
 
+#include "ROL_HS21.hpp"
 #include "ROL_HS41.hpp"
 #include "ROL_HS53.hpp"
 #include "ROL_LinMoreAlgorithm_B.hpp"
@@ -132,6 +133,30 @@ int main(int argc, char *argv[]) {
     e4 = (data[3]-static_cast<RealT>( -5.0/43.0));
     e5 = (data[4]-static_cast<RealT>( 11.0/43.0));
     err = std::max(std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4)),std::abs(e5));
+    *outStream << "  Max-Error = " << err << std::endl;
+    errorFlag += (err > tol ? 1 : 0);
+
+    ROL::Ptr<ROL::Vector<RealT>>          imul;
+    ROL::Ptr<ROL::Constraint<RealT>>      icon;
+    ROL::Ptr<ROL::BoundConstraint<RealT>> ibnd;
+
+    *outStream << std::endl << "Hock and Schittkowski Problem #21" << std::endl << std::endl;
+    ROL::ZOO::getHS21<RealT> HS21;
+    obj  = HS21.getObjective();
+    sol  = HS21.getInitialGuess();
+    bnd  = HS21.getBoundConstraint();
+    icon = HS21.getInequalityConstraint();
+    imul = HS21.getInequalityMultiplier();
+    ibnd = HS21.getSlackBoundConstraint();
+
+    algo = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
+    algo->run(*sol,*obj,*bnd,*icon,*imul,*ibnd,*outStream);
+
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1] << std::endl;
+    e1 = (data[0]-static_cast<RealT>(2));
+    e2 = (data[1]-static_cast<RealT>(0));
+    err = std::max(std::abs(e1),std::abs(e2));
     *outStream << "  Max-Error = " << err << std::endl;
     errorFlag += (err > tol ? 1 : 0);
   }
