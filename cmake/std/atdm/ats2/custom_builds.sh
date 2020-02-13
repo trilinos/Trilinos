@@ -13,6 +13,7 @@ if   [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-xl-2019.08.20-spmpi-2019.06.2
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_xl-2019.08.20"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-xl-2019"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_xl-2019"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-xl"* ]] \
   ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1.243_XL-2019.08.20_SPMPI-2019.06.24
 
@@ -32,6 +33,7 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243-gnu-7.3.1-spmpi-2019.06.24"* 
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243_gnu-7"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1.243"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-gnu"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]] \
   ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1.243_GNU-7.3.1_SPMPI-2019.06.24
