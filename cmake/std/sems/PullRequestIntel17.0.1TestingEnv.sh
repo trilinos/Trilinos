@@ -14,9 +14,9 @@ export SEMS_FORCE_LOCAL_COMPILER_VERSION=4.9.3
 module load sems-gcc/4.9.3
 module load sems-intel/17.0.1
 module load sems-mpich/3.2
-module load sems-python/2.7.9
 module load sems-git/2.10.1
 module load sems-boost/1.63.0/base
+module swap sems-python/3.5.2
 module load sems-zlib/1.2.8/base
 module load sems-hdf5/1.8.12/parallel
 module load sems-netcdf/4.4.1/exo_parallel

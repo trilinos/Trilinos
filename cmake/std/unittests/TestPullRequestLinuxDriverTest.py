@@ -335,22 +335,6 @@ ENDMACRO()
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
 
-    def test_call_python2(self):
-        expected_output = '''Enabled packages:
--- Setting Trilinos_ENABLE_TrilinosFrameworkTests = ON
-
-'''
-
-        l_arguments = self.arguments
-        l_arguments.job_base_name = 'Trilinos_pullrequest_python_2'
-        with mock.patch('subprocess.check_call',
-                        side_effect=self.success_side_effect()) as m_out, \
-            mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
-            PullRequestLinuxDriverTest.createPackageEnables(l_arguments)
-        m_out.assert_not_called()
-        self.assertEqual(expected_output, m_stdout.getvalue())
-        os.unlink('packageEnables.cmake')
-
     def test_call_failure(self):
         expected_output = '''There was an issue generating packageEnables.cmake.  The error code was: 39
 '''
@@ -445,58 +429,6 @@ class Test_setEnviron(unittest.TestCase):
                         self.assertNotEqual(os.environ[key].find(l_str), -1)
 
         m_mod.assert_has_calls(expected_list, any_order=True)
-
-
-    def test_buildEnv_passes_with_python2(self):
-        """Find the function"""
-        PR_name = 'Trilinos_pullrequest_python_2'
-        expected_list = [mock.call('load', 'sems-git/2.10.1'),
-                         mock.call('load', 'sems-gcc/7.2.0'),
-                         mock.call('unload', 'sems-python/2.7.9'),
-                         mock.call('load', 'sems-cmake/3.10.3'),
-                         mock.call('load', 'atdm-env'),
-                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
-                         ]
-        expected_env = {'PYTHONPATH':
-                            os.path.join(os.path.sep,
-                                         'projects',
-                                         'sierra',
-                                         'linux_rh7',
-                                         'install',
-                                         'Python',
-                                         'extras',
-                                         'lib',
-                                         'python2.7',
-                                         'site-packages'),
-                        'MANPATH':
-                            os.path.join(os.path.sep,
-                                         'projects',
-                                         'sierra',
-                                         'linux_rh7',
-                                         'install',
-                                         'Python',
-                                         '2.7.15',
-                                         'share',
-                                         'man'),
-                        'PATH': [os.path.join(os.path.sep,
-                                              'projects',
-                                              'sierra',
-                                              'linux_rh7',
-                                              'install',
-                                              'Python',
-                                              '2.7.15',
-                                              'bin'),
-                                 os.path.join(os.path.sep,
-                                              'projects',
-                                              'sierra',
-                                              'linux_rh7',
-                                              'install',
-                                              'Python',
-                                              'extras'
-                                              'bin'),
-                                 '/fake/path']}
-
-        self.buildEnv_passes(PR_name, expected_list, expected_env)
 
 
     def test_buildEnv_passes_with_python3(self):

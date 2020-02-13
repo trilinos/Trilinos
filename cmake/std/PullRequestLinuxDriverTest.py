@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 #
 # Change shebang line to '/usr/bin/python -3' for python 3.x porting warnings
@@ -163,13 +163,6 @@ def setBuildEnviron(arguments):
                       'sems-cmake/3.10.3',
                       'atdm-env',
                       'atdm-ninja_fortran/1.7.2'],
-                 'Trilinos_pullrequest_python_2':
-                     ['sems-git/2.10.1',
-                      'sems-gcc/7.2.0',
-                      ('', 'sems-python/2.7.9'),
-                      'sems-cmake/3.10.3',
-                      'atdm-env',
-                      'atdm-ninja_fortran/1.7.2'],
                 'Trilinos_pullrequest_python_3':
                      ['sems-git/2.10.1',
                       'sems-gcc/7.2.0',
@@ -235,45 +228,6 @@ def setBuildEnviron(arguments):
                       {'OMP_NUM_THREADS': '2'},
                   'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
                       {'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_python_2':
-                      {'PYTHONPATH':
-                           os.path.join(os.path.sep,
-                                        'projects',
-                                        'sierra',
-                                        'linux_rh7',
-                                        'install',
-                                        'Python',
-                                        'extras',
-                                        'lib',
-                                        'python2.7',
-                                        'site-packages'),
-                       'MANPATH':
-                           os.path.join(os.path.sep,
-                                        'projects',
-                                        'sierra',
-                                        'linux_rh7',
-                                        'install',
-                                        'Python',
-                                        '2.7.15',
-                                        'share',
-                                        'man'),
-                       'PATH': os.path.join(os.path.sep,
-                                            'projects',
-                                            'sierra',
-                                            'linux_rh7',
-                                            'install',
-                                            'Python',
-                                            '2.7.15',
-                                            'bin') + os.pathsep +
-                               os.path.join(os.path.sep,
-                                            'projects',
-                                            'sierra',
-                                            'linux_rh7',
-                                            'install',
-                                            'Python',
-                                            'extras'
-                                            'bin')}
-        ,
                  'Trilinos_pullrequest_python_3':
                       {'PYTHONPATH':
                            os.path.join(os.path.sep,
@@ -470,8 +424,7 @@ def compute_n():
 
 
 def createPackageEnables(arguments):
-    enable_map = {'Trilinos_pullrequest_python_2': 'TrilinosFrameworkTests',
-                  'Trilinos_pullrequest_python_3': 'TrilinosFrameworkTests'}
+    enable_map = {'Trilinos_pullrequest_python_3': 'TrilinosFrameworkTests'}
 
     try:
         if arguments.job_base_name not in enable_map:
@@ -516,7 +469,6 @@ config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4Testing
               'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
               'Trilinos_pullrequest_gcc_8.3.0': 'PullRequestLinuxGCC8.3.0TestingSettings.cmake',
               'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
-              'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
               'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
 
 

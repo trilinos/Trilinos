@@ -26,9 +26,8 @@ module load sems-cmake/3.10.3
 module load sems-ninja_fortran/1.8.2
 
 # we will have implicitly gotten the sems python (2) from
-# the boost module above for whaever reason - reset it
+# the boost module above for whatever reason - reset it
 # to the one we are testing.
-module unload sems-python
-module load sems-python/3.5.2
+module swap sems-python/3.5.2
 
 unset PYTHONHOME
