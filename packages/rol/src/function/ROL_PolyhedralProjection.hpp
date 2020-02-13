@@ -148,6 +148,7 @@ private:
 
   void project_1d(Vector<Real> &x, Real &lam, Real &dlam) const {
     const Real atol(1e-4*std::sqrt(ROL_EPSILON<Real>())), rtol(1e-2);
+    const Real ltol(ROL_EPSILON<Real>());
     const Real zero(0), one(1), two(2), c1(0.1), c2(0.75), c3(0.25);
     Real lam1(0), lam2(0), lam3(0), r1(0), r2(0), s(0);
     update_primal_1d(*xnew_,x,lam);
@@ -200,7 +201,7 @@ private:
     update_primal_1d(*xnew_,x,lam);
     r     = residual_1d(*xnew_);
     cnt   = 0;
-    while ( std::abs(r) > ctol && std::abs(dlam) > ctol && cnt < maxit ) {
+    while ( std::abs(r) > ctol && std::abs(dlam) > ltol && cnt < maxit ) {
       if ( r > zero ) {
         if ( s <= two ) {
           lam2 = lam;

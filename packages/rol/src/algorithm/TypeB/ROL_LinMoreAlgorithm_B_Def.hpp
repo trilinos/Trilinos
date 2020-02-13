@@ -387,7 +387,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     outStream << "  Cauchy point"                         << std::endl;
     outStream << "    Step length (alpha):              " << alpha << std::endl;
     outStream << "    Step length (alpha*g):            " << snorm << std::endl;
-    outStream << "    Model decrease (q):               " << q          << std::endl;
+    outStream << "    Model decrease (pRed):            " << -q    << std::endl;
     if (!interp) {
       outStream << "    Number of extrapolation steps:    " << cnt << std::endl;
     }
@@ -426,10 +426,10 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
   if (verbosity_ > 1) {
     outStream << std::endl;
     outStream << "  Projected search"                     << std::endl;
-    outStream << "    Step length (beta):               " << beta       << std::endl;
+    outStream << "    Step length (beta):               " << beta          << std::endl;
     outStream << "    Step length (beta*s):             " << state_->snorm << std::endl;
-    outStream << "    Model decrease (q):               " << q          << std::endl;
-    outStream << "    Number of steps:                  " << nsteps     << std::endl;
+    outStream << "    Model decrease (pRed):            " << -q            << std::endl;
+    outStream << "    Number of steps:                  " << nsteps        << std::endl;
   }
   return snorm;
 }
