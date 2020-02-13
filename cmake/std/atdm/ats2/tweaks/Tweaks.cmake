@@ -7,6 +7,9 @@ IF (ATDM_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
   # Disable some expensive KokkosKernels tests in pure debug builds (#6464)
   ATDM_SET_ENABLE(KokkosKernels_sparse_serial_MPI_1_DISABLE ON)
 
+  # Disable test that just has problems with BinUtils interaction (#6821)
+  ATDM_SET_ENABLE(TeuchosCore_show_stack_DISABLE ON)
+
 ENDIF()
 
 IF (Trilinos_ENABLE_DEBUG)

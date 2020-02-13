@@ -22,11 +22,13 @@ function atdm_config_get_abs_dir_path() {
 export atdm_config_get_abs_dir_path
 
 # Get the base dir for the sourced script
-ATDM_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
+ATDM_SCRIPT_DIR=$(readlink -f \
+                $(echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"))
 #echo "ATDM_SCRIPT_DIR = '$ATDM_SCRIPT_DIR'"
 
 # Absolute path to this scripts dir
-export ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${ATDM_SCRIPT_DIR}`
+export ATDM_CONFIG_SCRIPT_DIR=$ATDM_SCRIPT_DIR
+
 
 #
 # A) Read the command-line arguments
