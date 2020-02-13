@@ -33,13 +33,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Util.hpp"
 #include "Tpetra_Details_makeValidVerboseStream.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -773,11 +773,11 @@ namespace Tpetra {
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
       std::ostringstream os;
-      os << "Proc " << myRank << ": computeReceives: ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-      os << "{selfMessage_: " << (selfMessage_ ? "true" : "false")
-         << ", tag: " << tag << "}" << endl;
-      *out_ << os.str ();
+      os << "Proc " << myRank << ": Tpetra::Distributor::computeReceives: ";
+      prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+      os << "selfMessage_: " << (selfMessage_ ? "true" : "false")
+         << ", tag: " << tag << endl;
+      std::cerr << os.str();
     }
 
     // toProcsFromMe[i] == the number of messages sent by this process
@@ -809,7 +809,7 @@ namespace Tpetra {
       if (verbose_) {
         std::ostringstream os;
         os << *prefix << "Reduce & scatter" << endl;
-        *out_ << os.str ();
+        std::cerr << os.str();
       }
 
       // Compute the number of receives that this process needs to
@@ -920,7 +920,7 @@ namespace Tpetra {
       std::ostringstream os;
       os << *prefix << "Post " << actualNumReceives << " irecv"
          << (actualNumReceives != size_t (1) ? "s" : "") << endl;
-      *out_ << os.str ();
+      std::cerr << os.str();
     }
 
     // Post the (nonblocking) receives.
@@ -936,7 +936,7 @@ namespace Tpetra {
       if (verbose_) {
         std::ostringstream os;
         os << *prefix << "Posted any-proc irecv w/ tag " << tag << endl;
-        *out_ << os.str ();
+        std::cerr << os.str();
       }
     }
 
@@ -944,7 +944,7 @@ namespace Tpetra {
       std::ostringstream os;
       os << *prefix << "Post " << numSends_ << " send"
          << (numSends_ != size_t (1) ? "s" : "") << endl;
-      *out_ << os.str ();
+      std::cerr << os.str();
     }
     // Post the sends: Tell each process to which we are sending how
     // many packets it should expect from us in the communication
@@ -965,7 +965,7 @@ namespace Tpetra {
           std::ostringstream os;
           os << *prefix << "Posted send to Proc " << procsTo_[i] << " w/ tag "
              << tag << endl;
-          *out_ << os.str ();
+          std::cerr << os.str();
         }
       }
       else {
@@ -984,7 +984,7 @@ namespace Tpetra {
       std::ostringstream os;
       os << myRank << ": computeReceives: waitAll on "
          << requests.size () << " requests" << endl;
-      *out_ << os.str ();
+      std::cerr << os.str();
     }
     //
     // Wait on all the receives.  When they arrive, check the status
@@ -1031,8 +1031,8 @@ namespace Tpetra {
 
     if (verbose_) {
       std::ostringstream os;
-      os << *prefix << "Done!" << endl;
-      *out_ << os.str ();
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
     }
   }
 
@@ -1044,20 +1044,25 @@ namespace Tpetra {
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
     using std::endl;
-    const char rawPrefix[] = "Tpetra::Distributor::createFromSends: ";
+    const char rawPrefix[] = "Tpetra::Distributor::createFromSends";
 
     Teuchos::OSTab tab (out_);
     const size_t numExports = exportProcIDs.size();
     const int myProcID = comm_->getRank();
     const int numProcs = comm_->getSize();
 
+    const bool debug = Details::Behavior::debug("Distributor");
+    const size_t maxNumToPrint = verbose_ ?
+      Details::Behavior::verbosePrintCountThreshold() : size_t(0);
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
       std::ostringstream os;
       os << "Proc " << myProcID << ": " << rawPrefix << ": ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-      os << "exportPIDs: " << exportProcIDs << endl;
-      *out_ << os.str ();
+      prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+      Details::verbosePrintArray(os, exportProcIDs, "exportPIDs",
+                                 maxNumToPrint);
+      os << endl;
+      std::cerr << os.str();
     }
 
     // exportProcIDs tells us the communication pattern for this
@@ -1114,15 +1119,11 @@ namespace Tpetra {
     size_t numActive = 0;
     int needSendBuff = 0; // Boolean
 
-#ifdef HAVE_TPETRA_DEBUG
-    int badID = -1; // only used in a debug build
-#endif // HAVE_TPETRA_DEBUG
+    int badID = -1; // only used in debug mode
     for (size_t i = 0; i < numExports; ++i) {
       const int exportID = exportProcIDs[i];
       if (exportID >= numProcs) {
-#ifdef HAVE_TPETRA_DEBUG
         badID = myProcID;
-#endif // HAVE_TPETRA_DEBUG
         break;
       }
       else if (exportID >= 0) {
@@ -1147,32 +1148,31 @@ namespace Tpetra {
       }
     }
 
-#ifdef HAVE_TPETRA_DEBUG
-    // Test whether any process in the communicator got an invalid
-    // process ID.  If badID != -1 on this process, then it equals
-    // this process' rank.  The max of all badID over all processes is
-    // the max rank which has an invalid process ID.
-    {
+    if (debug) {
+      // Test whether any process in the communicator got an invalid
+      // process ID.  If badID != -1 on this process, then it equals
+      // this process' rank.  The max of all badID over all processes
+      // is the max rank which has an invalid process ID.
       int gbl_badID;
       reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
-      TEUCHOS_TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::createFromSends: Proc " << gbl_badID
-        << ", perhaps among other processes, got a bad send process ID.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (gbl_badID >= 0, std::runtime_error, rawPrefix << "Proc "
+         << gbl_badID << ", perhaps among other processes, got a bad "
+         "send process ID.");
     }
-#else
-    // FIXME (mfh 12 Apr 2013, 15 Jul 2015) Rather than simply
-    // ignoring this information, we should think about how to pass it
-    // along so that all the processes find out about it.  In a
-    // release build with efficiency warnings turned off, the next
-    // collective communication happens in computeReceives().  We
-    // could figure out how to encode the error flag in that
-    // operation, for example by adding an extra entry to the
-    // collective's output array that encodes the error condition (0
-    // on all processes if no error, else 1 on any process with the
-    // error, so that the sum will produce a nonzero value if any
-    // process had an error).  I'll defer this change for now and
-    // recommend instead that people with troubles try a debug build.
-#endif // HAVE_TPETRA_DEBUG
+    // FIXME (mfh 12 Apr 2013, 15 Jul 2015, 13 Feb 2020) Rather than
+    // simply ignoring this information when not in debug mode, we
+    // should think about how to pass it along so that all the
+    // processes find out about it.  In a release build with
+    // efficiency warnings turned off, the next collective
+    // communication happens in computeReceives().  We could figure
+    // out how to encode the error flag in that operation, for example
+    // by adding an extra entry to the collective's output array that
+    // encodes the error condition (0 on all processes if no error,
+    // else 1 on any process with the error, so that the sum will
+    // produce a nonzero value if any process had an error).  I'll
+    // defer this change for now and recommend instead that people
+    // with troubles try a debug build.
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
     {
@@ -1186,6 +1186,12 @@ namespace Tpetra {
     }
 #endif
 
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Detect whether I have a self message" << endl;
+      std::cerr << os.str();
+    }
+
     // Determine from the caller's data whether or not the current
     // process should send (a) message(s) to itself.
     if (starts[myProcID] != 0) {
@@ -1195,11 +1201,15 @@ namespace Tpetra {
       selfMessage_ = false;
     }
 
-#ifdef HAVE_TEUCHOS_DEBUG
     bool index_neq_numActive = false;
     bool send_neq_numSends = false;
-#endif
     if (! needSendBuff) {
+      if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "I don't need a send buffer or indicesTo_ "
+          "(fast path)" << endl;
+        std::cerr << os.str();
+      }
       // grouped by proc, no send buffer or indicesTo_ needed
       numSends_ = 0;
       // Count total number of sends, i.e., total number of procs to
@@ -1235,11 +1245,9 @@ namespace Tpetra {
           index     += starts[procID];
           procIndex += starts[procID];
         }
-#ifdef HAVE_TEUCHOS_DEBUG
         if (index != numActive) {
           index_neq_numActive = true;
         }
-#endif
       }
       // sort the startsTo and proc IDs together, in ascending order, according
       // to proc IDs
@@ -1257,6 +1265,12 @@ namespace Tpetra {
       }
     }
     else {
+      if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "I need a send buffer & indicesTo_ "
+          "(slow path)" << endl;
+        std::cerr << os.str();
+      }
       // not grouped by proc, need send buffer and indicesTo_
 
       // starts[i] is the number of sends to proc i
@@ -1341,34 +1355,42 @@ namespace Tpetra {
           ++snd;
         }
       }
-#ifdef HAVE_TEUCHOS_DEBUG
       if (snd != numSends_) {
         send_neq_numSends = true;
       }
-#endif
     }
-#ifdef HAVE_TEUCHOS_DEBUG
-        SHARED_TEST_FOR_EXCEPTION(index_neq_numActive, std::logic_error,
-            "Tpetra::Distributor::createFromSends: logic error. Please notify the Tpetra team.",*comm_);
-        SHARED_TEST_FOR_EXCEPTION(send_neq_numSends, std::logic_error,
-            "Tpetra::Distributor::createFromSends: logic error. Please notify the Tpetra team.",*comm_);
-#endif
+    if (debug) {
+      SHARED_TEST_FOR_EXCEPTION
+        (index_neq_numActive, std::logic_error,
+         rawPrefix << "logic error. Please notify the Tpetra team.", *comm_);
+      SHARED_TEST_FOR_EXCEPTION
+        (send_neq_numSends, std::logic_error,
+         rawPrefix << "logic error. Please notify the Tpetra team.", *comm_);
+    }
 
-    if (selfMessage_) --numSends_;
+    if (selfMessage_) {
+      if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "Sending self message; numSends "
+           << numSends_ << " -> " << (numSends_ - 1) << endl;
+        std::cerr << os.str();
+      }
+      --numSends_;
+    }
 
     // Invert map to see what msgs are received and what length
     computeReceives();
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done!" << endl;
-      *out_ << os.str ();
-    }
 
     // createFromRecvs() calls createFromSends(), but will set
     // howInitialized_ again after calling createFromSends().
     howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
 
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Done; totalReceiveLength_="
+         << totalReceiveLength_ << endl;
+      std::cerr << os.str();
+    }
     return totalReceiveLength_;
   }
 

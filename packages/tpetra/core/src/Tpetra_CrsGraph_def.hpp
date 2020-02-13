@@ -5535,8 +5535,11 @@ namespace Tpetra {
          << numPacketsPerLID.extent(0) << endl;
       std::cerr << os.str();
     }
+    const bool extraVerbose =
+      verbose && Details::Behavior::verbose("CrsPadding");
 
     const LO numImports = static_cast<LO>(importLIDs.extent(0));
+    TEUCHOS_ASSERT( LO(numPacketsPerLID.extent(0)) >= numImports );
     std::unique_ptr<padding_type> padding(
       new padding_type(padding_type::create_from_imports,
                        numImports));
@@ -5572,6 +5575,13 @@ namespace Tpetra {
       // global column indices, then other stuff like the matrix
       // values in that row).
       const size_t numBytes = numPacketsPerLID_h[whichImport];
+      if (extraVerbose) {
+        std::ostringstream os;
+        os << *prefix << "whichImport=" << whichImport
+           << ", numImports=" << numImports
+           << ", numBytes=" << numBytes << endl;
+        std::cerr << os.str();
+      }
       if (numBytes == 0) {
         continue; // special case: no entries to unpack for this row
       }
@@ -5579,8 +5589,18 @@ namespace Tpetra {
       const size_t numEntBeg = offset;
       const size_t numEntLen =
         PackTraits<LO>::packValueCount(origSrcNumEnt);
+      TEUCHOS_ASSERT( numBytes >= numEntLen );
+      TEUCHOS_ASSERT( imports_h.extent(0) >= numEntBeg + numEntLen );
       PackTraits<LO>::unpackValue(origSrcNumEnt,
                                   imports_h.data() + numEntBeg);
+      if (extraVerbose) {
+        std::ostringstream os;
+        os << *prefix << "whichImport=" << whichImport
+           << ": origSrcNumEnt=" << origSrcNumEnt << endl;
+        std::cerr << os.str();
+      }
+      TEUCHOS_ASSERT( origSrcNumEnt >= LO(0) );
+      TEUCHOS_ASSERT( numBytes >= size_t(numEntLen + origSrcNumEnt * sizeof(GO)) );
       const size_t gidsBeg = numEntBeg + numEntLen;
       if (srcGblColIndsScratch.size() < size_t(origSrcNumEnt)) {
         srcGblColIndsScratch.resize(origSrcNumEnt);

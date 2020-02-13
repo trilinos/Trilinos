@@ -7879,7 +7879,9 @@ namespace Tpetra {
     if (verbose) {
       prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
       std::ostringstream os;
-      os << *prefix << "importLIDs.extent(0): "
+      os << *prefix << "isStaticGraph(): "
+         << (isStaticGraph() ? "true" : "false")
+         << ", importLIDs.extent(0): "
          << importLIDs.extent(0)
          << ", imports.extent(0): "
          << imports.extent(0)
@@ -7897,15 +7899,44 @@ namespace Tpetra {
     }
     else {
       {
-        auto padding =
-          myGraph_->computePaddingForCrsMatrixUnpack(
+        using padding_type = typename crs_graph_type::padding_type;
+        std::unique_ptr<padding_type> padding;
+        try {
+          padding = myGraph_->computePaddingForCrsMatrixUnpack(
             importLIDs, imports, numPacketsPerLID, verbose);
+        }
+        catch (std::exception& e) {
+          const auto rowMap = getRowMap();
+          const auto comm = rowMap.is_null() ? Teuchos::null :
+            rowMap->getComm();
+          const int myRank = comm.is_null() ? -1 : comm->getRank();
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, "Proc " << myRank << ": "
+             "Tpetra::CrsGraph::computePaddingForCrsMatrixUnpack "
+             "threw an exception: " << e.what());
+        }
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Call applyCrsPadding" << endl;
+          std::cerr << os.str();
+        }
         applyCrsPadding(*padding, verbose);
+      }
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Call unpackAndCombineImplNonStatic" << endl;
+        std::cerr << os.str();
       }
       unpackAndCombineImplNonStatic(importLIDs, imports,
                                     numPacketsPerLID,
                                     constantNumPackets,
                                     distor, combineMode);
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
     }
   }
 
