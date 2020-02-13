@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 """Implements tests for the clean_sentinel script."""
 # pylint: disable=wrong-import-position

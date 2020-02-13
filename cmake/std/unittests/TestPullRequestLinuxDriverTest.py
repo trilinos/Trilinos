@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 '''
 Tests for the Test chunk of the Driver script
@@ -64,9 +64,10 @@ class Test_run(unittest.TestCase):
                                         self.jenkins_build_number,
                                         self.jenkins_workspace])
         self.m_environ = mock.patch.dict(os.environ, {'JOB_BASE_NAME': self.job_base_name,
-                                                     'JOB_NAME': 'TEST_JOB_NAME',
-                                                     'WORKSPACE': self.jenkins_workspace,
-                                                     'NODE_NAME': 'TEST_NODE_NAME'},
+                                                      'JOB_NAME': 'TEST_JOB_NAME',
+                                                      'JENKINS_JOB_WEIGHT': '29',
+                                                      'WORKSPACE': self.jenkins_workspace,
+                                                      'NODE_NAME': 'TEST_NODE_NAME'},
                                          clear=True)
 
     def test_verifyGit_fails_with_old_version(self):
@@ -147,7 +148,7 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
 
 
     def test_verifyTargetBranch_passes_with_master_target_mm_source(self):
-        """Check to see that git is in path"""
+        """Check to see that target branch can be master if master_merge is in the source branch"""
         l_argv = mock.patch.object(sys, 'argv', ['programName',
                                    self.source_url,
                                    'master_merge_20200130_120155',
@@ -195,11 +196,22 @@ Set CWD = /dev/null/workspace
                 self.m_environ, \
                 mock.patch('PullRequestLinuxDriverTest.createPackageEnables'), \
                 mock.patch('PullRequestLinuxDriverTest.setBuildEnviron'), \
-                mock.patch('PullRequestLinuxDriverTest.getCDashTrack'):
+                mock.patch('PullRequestLinuxDriverTest.getCDashTrack') as m_track:
             PullRequestLinuxDriverTest.run()
 
         self.assertEqual(expected_out, m_output.getvalue())
-        m_call.assert_called_once()
+        m_call.assert_called_once_with(['ctest', '-S',
+                                        'simple_testing.cmake',
+                                        '-Dbuild_name=PR-8888-test-JenkinsBaseName-7777',
+                                        '-Dskip_by_parts_submit=OFF',
+                                        '-Dskip_update_step=ON',
+                                        '-Ddashboard_model=Experimental',
+                                        '-Ddashboard_track={}'.format(m_track.return_value),
+                                        '-DPARALLEL_LEVEL=20',
+                                        '-Dbuild_dir=/dev/null/workspace/pull_request_test',
+                                        '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
+                                        '-Dpackage_enables=../packageEnables.cmake',
+                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
 
 
     def test_verifyTargetBranch_passes_with_develop_target(self):
