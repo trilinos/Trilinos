@@ -295,7 +295,7 @@ private:
 
           auto v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+2));
           vec_type W = * (V.getVectorNonConst (iter+1));
-          req = Tpetra::idot (v_iter, Qprev, W);
+          req = Tpetra::idot (v_iter, Qprev, static_cast<const MV&> (W));
         }
       } // End of restart cycle
 
@@ -386,7 +386,7 @@ private:
             const MV Qprev  = * (Q.subView(index_prev));
 
             vec_type W = * (V.getVectorNonConst (iter));
-            req = Tpetra::idot (vals, Qprev, W);
+            req = Tpetra::idot (vals, Qprev, static_cast<const MV&> (W));
           }
         }
       }
