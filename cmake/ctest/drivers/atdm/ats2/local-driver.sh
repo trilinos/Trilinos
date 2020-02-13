@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 if [ "${LSF_CTEST_TIMEOUT}" == "" ] ; then
-  LSF_CTEST_TIMEOUT=4:00
+  LSF_CTEST_TIMEOUT=12:00
   # This is just running tests, not the entire build!
 fi
 
