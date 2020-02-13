@@ -2,7 +2,7 @@
 
 # Globals
 DEBUG_SCRIPT="${DEBUG_SCRIPT-:0}"
-ECHO_CMD="${ECHO_CMD=:0}"
+ECHO_CMD="${ECHO_CMD:-1}"
 np_is_one="false"
 orig_args=("$@")
 args=("$@")
