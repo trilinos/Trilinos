@@ -749,7 +749,7 @@ namespace Tacho {
       if (variant > 0) {
         typedef TeamFunctor_InvertPanel<supernode_info_type> functor_type;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-                                   typename functor_type::VariantTag<variant> > team_policy_type;
+                                   typename functor_type::template VariantTag<variant> > team_policy_type;
 
         const ordinal_type scratch_level(1);
         functor_type functor(_info,
@@ -825,9 +825,9 @@ namespace Tacho {
         {
           typedef TeamFunctor_SolveLowerChol<supernode_info_type> functor_type;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-                                     typename functor_type::SolveTag<variant> > team_policy_solve;
+                                     typename functor_type::template SolveTag<variant> > team_policy_solve;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-                                     typename functor_type::UpdateTag<variant> > team_policy_update;
+                                     typename functor_type::template UpdateTag<variant> > team_policy_update;
           // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
           //                            typename functor_type::DummyTag> team_policy_solve;
           // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
@@ -879,9 +879,9 @@ namespace Tacho {
         {
           typedef TeamFunctor_SolveUpperChol<supernode_info_type> functor_type;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-                                     typename functor_type::SolveTag<variant> > team_policy_solve;
+                                     typename functor_type::template SolveTag<variant> > team_policy_solve;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-                                     typename functor_type::UpdateTag<variant> > team_policy_update;
+                                     typename functor_type::template UpdateTag<variant> > team_policy_update;
           // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
           //                            typename functor_type::DummyTag> team_policy_solve;
           // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
