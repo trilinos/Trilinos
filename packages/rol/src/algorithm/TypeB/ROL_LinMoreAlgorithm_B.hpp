@@ -163,10 +163,10 @@ private:
   //   model -- Contains objective and bound constraint information
   //   pwa   -- Primal working array
   //   dwa   -- Dual working array
-  Real dprsrch(Vector<Real> &x, Vector<Real> &s,
+  Real dprsrch(Vector<Real> &x, Vector<Real> &s, Real &q,
                const Vector<Real> &g, TrustRegionModel_U<Real> &model,
                BoundConstraint<Real> &bnd,
-               Vector<Real> &pwa, Vector<Real> &dwa, Vector<Real> &pwa1,
+               Vector<Real> &pwa, Vector<Real> &dwa,
                std::ostream &outStream = std::cout);
 
   // Compute sigma such that ||x+sigma*p||_inv(M) = del.  This is called

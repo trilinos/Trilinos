@@ -141,15 +141,16 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
                                                        Objective<Real>       &obj,
                                                        BoundConstraint<Real> &bnd,
                                                        std::ostream          &outStream ) {
-  const Real zero(0), half(0.5);
+  const Real zero(0);
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
-  Real gfnorm(0), gfnormf(0), tol(0), stol(0), gs(0);
-  Real ftrial(0), sHs(0), pRed(0), rho(1), alpha(1);
+  Real gfnorm(0), gfnormf(0), tol(0), stol(0);
+  Real ftrial(0), pRed(0), rho(1), alpha(1), q(0);
   int flagCG(0), iterCG(0);
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
-  Ptr<Vector<Real>> xnew = x.clone(), s    = x.clone(), gvec = g.clone();
+  Ptr<Vector<Real>> s = x.clone();
+  Ptr<Vector<Real>> gmod = g.clone(), gfree = g.clone();
   Ptr<Vector<Real>> pwa1 = x.clone(), pwa2 = x.clone(), pwa3 = x.clone();
   Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone(), dwa3 = g.clone();
 
@@ -159,26 +160,26 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
 
   while (status_->check(*state_)) {
     // Build trust-region model
-    model_->setData(obj,x,*state_->gradientVec);
+    model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     // Compute Cauchy point (TRON notation: xnew = x[1])
-    state_->snorm = dcauchy(*state_->stepVec,alpha,x,
+    state_->snorm = dcauchy(*state_->stepVec,alpha,*state_->iterateVec,
                     *state_->gradientVec,state_->searchSize,
                     *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
-    xnew->set(x);                                   // TRON notation: model.getIterate() = x[0]
-    xnew->plus(*state_->stepVec);                   // Set xnew = x[0] + alpha*g
+    x.plus(*state_->stepVec);                       // Set x = x[0] + alpha*g
 
     // Model gradient at s = x[1] - x[0]
-    gvec->set(*dwa1); // hessVec from Cauchy point computation
-    gvec->plus(*state_->gradientVec);
-    bnd.pruneActive(*gvec,*xnew,zero);
+    gmod->set(*dwa1); // hessVec from Cauchy point computation
+    gmod->plus(*state_->gradientVec);
+    gfree->set(*gmod);
+    bnd.pruneActive(*gfree,x,zero);
     if (hasEcon_) {
-      applyFreePrecond(*pwa1,*gvec,*xnew,*model_,bnd,tol0,*dwa1);
+      applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1);
       gfnorm = pwa1->norm();
     }
     else {
-      gfnorm = gvec->norm();
+      gfnorm = gfree->norm();
     }
     SPiter_ = 0; SPflag_ = 0;
     if (verbosity_ > 1) {
@@ -191,7 +192,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       flagCG = 0; iterCG = 0;
       tol  = std::min(tol1_,tol2_*gfnorm);
       stol = tol; //zero;
-      state_->snorm = dtrpcg(*s,flagCG,iterCG,*gvec,*xnew,
+      state_->snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
                       state_->searchSize,*model_,bnd,tol,stol,maxit_,
                       *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
       SPiter_ += iterCG;
@@ -206,20 +207,19 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       }
 
       // Projected search
-      state_->snorm = dprsrch(*xnew,*s,*gvec,*model_,bnd,*pwa1,*dwa1,*pwa2);
+      state_->snorm = dprsrch(x,*s,q,*gmod,*model_,bnd,*pwa1,*dwa1);
 
       // Model gradient at s = x[i+1] - x[0]
       state_->stepVec->plus(*s);
-      model_->hessVec(*gvec,*state_->stepVec,x,tol0); nhess_++;
-      sHs = state_->stepVec->dot(gvec->dual());
-      gvec->plus(*state_->gradientVec);
-      bnd.pruneActive(*gvec,*xnew,zero);
+      gmod->plus(*dwa1); // gmod = H(x[i+1]-x[i]) + H(x[i]-x[0]) + g
+      gfree->set(*gmod);
+      bnd.pruneActive(*gfree,x,zero);
       if (hasEcon_) {
-        applyFreePrecond(*pwa1,*gvec,*xnew,*model_,bnd,tol0,*dwa1);
+        applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1);
         gfnormf = pwa1->norm();
       }
       else {
-        gfnormf = gvec->norm();
+        gfnormf = gfree->norm();
       }
       if (verbosity_ > 1) {
         outStream << "    Step length (beta*s):             " << state_->snorm << std::endl;
@@ -249,11 +249,9 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       gfnorm = gfnormf;
     }
     // Update norm of step and update model predicted reduction
-    gs   = state_->stepVec->dot(state_->gradientVec->dual());
-    pRed = -half*sHs - gs;
+    pRed = -q;
 
     // Compute trial objective value
-    x.plus(*state_->stepVec);
     obj.update(x,false);
     ftrial = obj.value(x,tol0);
     state_->nfval++;
@@ -265,8 +263,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     // Update algorithm state
     state_->iter++;
     // Accept/reject step and update trust region radius
-    if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS)
-        || (TRflag_ >= 2)) { // Step Rejected
+    if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS) || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
       obj.update(x,false,state_->iter);
       if (rho < zero && TRflag_ != TRUtils::TRNAN) {
@@ -286,13 +283,13 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize *= gamma2_;
       // Compute gradient at new iterate
-      gvec->set(*state_->gradientVec);
+      dwa1->set(*state_->gradientVec);
       obj.gradient(*state_->gradientVec,x,tol0);
       state_->ngrad++;
-      state_->gnorm = Algorithm_B<Real>::optimalityCriterion(x,*state_->gradientVec,*xnew);
+      state_->gnorm = Algorithm_B<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1);
       state_->iterateVec->set(x);
       // Update secant information in trust-region model
-      model_->update(x,*state_->stepVec,*gvec,*state_->gradientVec,
+      model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
                      state_->snorm,state_->iter);
     }
 
@@ -397,22 +394,21 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
 
 template<typename Real>
 Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
-                                       const Vector<Real> &g,
+                                       Real &q, const Vector<Real> &g,
                                        TrustRegionModel_U<Real> &model,
                                        BoundConstraint<Real> &bnd,
                                        Vector<Real> &pwa, Vector<Real> &dwa,
-                                       Vector<Real> &pwa1,
                                        std::ostream &outStream) {
   const Real half(0.5);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
-  Real beta(1), snorm(0), q(0), gs(0);
+  Real beta(1), snorm(0), gs(0);
   int nsteps = 0;
   // Reduce beta until sufficient decrease is satisfied
   bool search = true;
   while (search) {
     nsteps++;
     snorm = dgpstep(pwa,s,x,beta);
-    applyFreeHessian(dwa,pwa,x,model,bnd,tol,pwa1);
+    model.hessVec(dwa,pwa,x,tol);
     gs = pwa.dot(g.dual());
     q  = half * s.dot(dwa.dual()) + gs;
     if (q <= mu0_*gs) { // || nsteps > 10) {
