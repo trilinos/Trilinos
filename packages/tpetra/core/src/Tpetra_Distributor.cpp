@@ -145,14 +145,12 @@ namespace Tpetra {
 
   Distributor::
   Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-               const Teuchos::RCP<Teuchos::FancyOStream>& out,
+               const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
                const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
-    , out_ (::Tpetra::Details::makeValidVerboseStream (out))
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
-    , verbose_ (tpetraDistributorDebugDefault)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -162,9 +160,7 @@ namespace Tpetra {
     , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
-    TEUCHOS_ASSERT( ! out_.is_null () );
-
-    this->setParameterList (plist); // sets verbose_ via Behavior
+    this->setParameterList(plist);
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
@@ -190,7 +186,6 @@ namespace Tpetra {
   Distributor::
   Distributor (const Distributor& distributor)
     : comm_ (distributor.comm_)
-    , out_ (distributor.out_)
     , howInitialized_ (Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
@@ -217,8 +212,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    TEUCHOS_ASSERT( ! out_.is_null () );
-
     RCP<const ParameterList> rhsList = distributor.getParameterList ();
     RCP<ParameterList> newList = rhsList.is_null () ? Teuchos::null :
       Teuchos::parameterList (*rhsList);
@@ -235,7 +228,6 @@ namespace Tpetra {
     using Teuchos::RCP;
 
     std::swap (comm_, rhs.comm_);
-    std::swap (out_, rhs.out_);
     std::swap (howInitialized_, rhs.howInitialized_);
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
@@ -276,6 +268,25 @@ namespace Tpetra {
     // Distributor use the same timers.
   }
 
+  bool
+  Distributor::getVerbose()
+  {
+    return Details::Behavior::verbose("Distributor") ||
+      Details::Behavior::verbose("Tpetra::Distributor");
+  }
+
+  std::unique_ptr<std::string>
+  Distributor::
+  createPrefix(const char methodName[]) const
+  {
+    const int myRank = comm_.is_null() ? -1 : comm_->getRank();
+    std::ostringstream pfxStrm;
+    pfxStrm << "Proc " << myRank << ": Tpetra::Distributor::"
+            << methodName << ": ";
+    return std::unique_ptr<std::string>(
+      new std::string(pfxStrm.str()));
+  }
+
   void
   Distributor::
   setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
@@ -284,19 +295,12 @@ namespace Tpetra {
     using Teuchos::FancyOStream;
     using Teuchos::getIntegralValue;
     using Teuchos::includesVerbLevel;
-    using Teuchos::OSTab;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
     using std::endl;
 
-    const bool verboseDefault = Behavior::verbose ("Distributor") ||
-      Behavior::verbose ("Tpetra::Distributor");
-
-    if (plist.is_null ()) {
-      verbose_ = verboseDefault;
-    }
-    else {
+    if (! plist.is_null()) {
       RCP<const ParameterList> validParams = getValidParameters ();
       plist->validateParametersAndSetDefaults (*validParams);
 
@@ -305,7 +309,6 @@ namespace Tpetra {
       const Details::EDistributorSendType sendType =
         getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
       const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
-      const bool debug = plist->get<bool> ("Debug");
       {
         // mfh 03 May 2016: We keep this option only for backwards
         // compatibility, but it must always be true.  See discussion of
@@ -340,7 +343,6 @@ namespace Tpetra {
       sendType_ = sendType;
       barrierBetween_ = barrierBetween;
       useDistinctTags_ = useDistinctTags;
-      verbose_ = debug || verboseDefault;
 
       // ParameterListAcceptor semantics require pointer identity of the
       // sublist passed to setParameterList(), so we save the pointer.
@@ -444,7 +446,7 @@ namespace Tpetra {
   void
   Distributor::createReverseDistributor() const
   {
-    reverseDistributor_ = Teuchos::rcp (new Distributor (comm_, out_));
+    reverseDistributor_ = Teuchos::rcp(new Distributor(comm_));
     reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
     reverseDistributor_->sendType_ = sendType_;
     reverseDistributor_->barrierBetween_ = barrierBetween_;
@@ -521,47 +523,45 @@ namespace Tpetra {
     using Teuchos::FancyOStream;
     using Teuchos::includesVerbLevel;
     using Teuchos::is_null;
-    using Teuchos::OSTab;
     using Teuchos::RCP;
     using Teuchos::waitAll;
     using std::endl;
-
-    Teuchos::OSTab tab (out_);
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doWaits_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
     const int myRank = comm_->getRank ();
+    const bool debug = Details::Behavior::debug("Distributor");
 
+    std::unique_ptr<std::string> prefix;
     if (verbose_) {
+      prefix = createPrefix("doWaits");
       std::ostringstream os;
-      os << myRank << ": doWaits: # reqs = "
-         << requests_.size () << endl;
-      *out_ << os.str ();
+      os << *prefix << "Start: requests_.size(): "
+         << requests_.size() << endl;
+      std::cerr << os.str();
     }
 
     if (requests_.size() > 0) {
-      waitAll (*comm_, requests_());
+      waitAll(*comm_, requests_());
 
-#ifdef HAVE_TEUCHOS_DEBUG
-      // Make sure that waitAll() nulled out all the requests.
-      for (Array<RCP<CommRequest<int> > >::const_iterator it = requests_.begin();
-           it != requests_.end(); ++it)
-      {
-        TEUCHOS_TEST_FOR_EXCEPTION( ! is_null (*it), std::runtime_error,
-          Teuchos::typeName(*this) << "::doWaits(): Communication requests "
-          "should all be null aftr calling Teuchos::waitAll() on them, but "
-          "at least one request is not null.");
+      if (debug) {
+        // Make sure that waitAll() nulled out all the requests.
+        for (auto it = requests_.begin(); it != requests_.end(); ++it) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! is_null(*it), std::runtime_error,
+             "Tpetra::Distributor::doWaits: Communication requests "
+             "should all be null aftr calling Teuchos::waitAll on "
+             "them, but at least one request is not null.");
+        }
       }
-#endif // HAVE_TEUCHOS_DEBUG
       // Restore the invariant that requests_.size() is the number of
       // outstanding nonblocking communication requests.
       requests_.resize (0);
     }
 
-#ifdef HAVE_TEUCHOS_DEBUG
-    {
+    if (debug) {
       const int localSizeNonzero = (requests_.size () != 0) ? 1 : 0;
       int globalSizeNonzero = 0;
       Teuchos::reduceAll<int, int> (*comm_, Teuchos::REDUCE_MAX,
@@ -573,12 +573,11 @@ namespace Tpetra {
         "a nonzero number of outstanding posts.  There should be none at this "
         "point.  Please report this bug to the Tpetra developers.");
     }
-#endif // HAVE_TEUCHOS_DEBUG
 
     if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": doWaits done" << endl;
-      *out_ << os.str ();
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
     }
   }
 
@@ -659,7 +658,7 @@ namespace Tpetra {
 
   void
   Distributor::
-  describe (Teuchos::FancyOStream &out,
+  describe (Teuchos::FancyOStream& out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     using std::endl;
@@ -762,7 +761,6 @@ namespace Tpetra {
     using Teuchos::waitAll;
     using std::endl;
 
-    Teuchos::OSTab tab (out_);
     const int myRank = comm_->getRank();
     const int numProcs = comm_->getSize();
 
@@ -772,11 +770,11 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
+      prefix = createPrefix("computeReceives");
       std::ostringstream os;
-      os << "Proc " << myRank << ": Tpetra::Distributor::computeReceives: ";
-      prefix = std::unique_ptr<std::string>(new std::string(os.str()));
-      os << "selfMessage_: " << (selfMessage_ ? "true" : "false")
-         << ", tag: " << tag << endl;
+      os << *prefix
+         << "selfMessage_: " << (selfMessage_ ? "true" : "false")
+         << ", pathTag: " << pathTag << ", tag: " << tag << endl;
       std::cerr << os.str();
     }
 
@@ -1046,7 +1044,6 @@ namespace Tpetra {
     using std::endl;
     const char rawPrefix[] = "Tpetra::Distributor::createFromSends";
 
-    Teuchos::OSTab tab (out_);
     const size_t numExports = exportProcIDs.size();
     const int myProcID = comm_->getRank();
     const int numProcs = comm_->getSize();
@@ -1056,9 +1053,9 @@ namespace Tpetra {
       Details::Behavior::verbosePrintCountThreshold() : size_t(0);
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
+      prefix = createPrefix("createFromSends");
       std::ostringstream os;
-      os << "Proc " << myProcID << ": " << rawPrefix << ": ";
-      prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+      os << *prefix;
       Details::verbosePrintArray(os, exportProcIDs, "exportPIDs",
                                  maxNumToPrint);
       os << endl;
@@ -1399,6 +1396,14 @@ namespace Tpetra {
   createFromSendsAndRecvs (const Teuchos::ArrayView<const int>& exportProcIDs,
                            const Teuchos::ArrayView<const int>& remoteProcIDs)
   {
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
+      prefix = createPrefix("createFromSendsAndRecvs");
+      std::ostringstream os;
+      os << *prefix << "Start" << std::endl;
+      std::cerr << os.str();
+    }
+
     // note the exportProcIDs and remoteProcIDs _must_ be a list that has
     // an entry for each GID. If the export/remoteProcIDs is taken from
     // the getProcs{From|To} lists that are extracted from a previous distributor,
@@ -1590,6 +1595,12 @@ namespace Tpetra {
     }
 #endif // 0
     numReceives_-=selfMessage_;
+
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Done" << std::endl;
+      std::cerr << os.str();
+    }
   }
 
 } // namespace Tpetra

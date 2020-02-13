@@ -5248,9 +5248,15 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
+    const int myRank = [&] () {
+      auto comm = rowMap_.is_null() ? Teuchos::null :
+        rowMap_->getComm();
+      return comm.is_null() ? -1 : comm->getRank();
+    } ();
     std::unique_ptr<padding_type> padding(
       new padding_type(padding_type::create_from_sames_and_permutes,
-                       numSameIDs, permuteFromLIDs.extent(0)));
+                       myRank, numSameIDs,
+                       permuteFromLIDs.extent(0)));
 
     // We're accessing data on host, so make sure all device
     // computations on the graphs' data are done.
@@ -5441,9 +5447,14 @@ namespace Tpetra {
     }
 
     const LO numImports = static_cast<LO>(importLIDs.extent(0));
+    const int myRank = [&] () {
+      auto comm = rowMap_.is_null() ? Teuchos::null :
+        rowMap_->getComm();
+      return comm.is_null() ? -1 : comm->getRank();
+    } ();
     std::unique_ptr<padding_type> padding(
       new padding_type(padding_type::create_from_imports,
-                       numImports));
+                       myRank, numImports));
     Kokkos::fence(); // Make sure device sees changes made by host
     if (imports.need_sync_host()) {
       imports.sync_host();
@@ -5540,9 +5551,14 @@ namespace Tpetra {
 
     const LO numImports = static_cast<LO>(importLIDs.extent(0));
     TEUCHOS_ASSERT( LO(numPacketsPerLID.extent(0)) >= numImports );
+    const int myRank = [&] () {
+      auto comm = rowMap_.is_null() ? Teuchos::null :
+        rowMap_->getComm();
+      return comm.is_null() ? -1 : comm->getRank();
+    } ();
     std::unique_ptr<padding_type> padding(
       new padding_type(padding_type::create_from_imports,
-                       numImports));
+      myRank, numImports));
     Kokkos::fence(); // Make sure host sees changes made by device
     if (imports.need_sync_host()) {
       imports.sync_host();
@@ -5596,7 +5612,8 @@ namespace Tpetra {
       if (extraVerbose) {
         std::ostringstream os;
         os << *prefix << "whichImport=" << whichImport
-           << ": origSrcNumEnt=" << origSrcNumEnt << endl;
+           << ", numImports=" << numImports
+           << ", origSrcNumEnt=" << origSrcNumEnt << endl;
         std::cerr << os.str();
       }
       TEUCHOS_ASSERT( origSrcNumEnt >= LO(0) );
@@ -5616,6 +5633,13 @@ namespace Tpetra {
         tgtGblColIndsScratch, *this, tgtGblRowInd);
       const size_t origNumTgtEnt(tgtGblColInds.size());
 
+      if (extraVerbose) {
+        std::ostringstream os;
+        os << *prefix << "whichImport=" << whichImport
+           << ", numImports=" << numImports
+           << ": Call padding->update_import" << endl;
+        std::cerr << os.str();
+      }
       padding->update_import(tgtNumDups, srcNumDups, mergedNumDups,
                              whichImport, tgtLclRowInd,
                              tgtGblColInds.getRawPtr(),

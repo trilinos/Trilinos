@@ -4,7 +4,9 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Util.hpp"
 #include <algorithm>
-#include <type_traits>
+#include <iostream>
+#include <memory>
+#include <sstream>
 #include <vector>
 
 namespace Tpetra {
@@ -30,14 +32,18 @@ namespace Tpetra {
       static constexpr create_from_sames_and_permutes_tag
         create_from_sames_and_permutes {};
       CrsPadding(create_from_sames_and_permutes_tag /* tag */,
+                 const int myRank,
                  const size_t /* numSameIDs */,
                  const size_t /* numPermutes */)
+        : myRank_(myRank)
       {}
 
       struct create_from_imports_tag {};
       static constexpr create_from_imports_tag create_from_imports {};
       CrsPadding(create_from_imports_tag /* tag */,
+                 const int myRank,
                  const size_t /* numImports */)
+        : myRank_(myRank)
       {}
 
       void
@@ -166,6 +172,18 @@ namespace Tpetra {
         const size_t origNumSrcEnt,
         const bool srcIsUnique)
       {
+        using std::endl;
+        std::unique_ptr<std::string> prefix;
+        if (verbose_) {
+          prefix = createPrefix("update_impl");
+          std::ostringstream os;
+          os << *prefix << "Start: "
+             << "targetLocalIndex=" << targetLocalIndex
+             << ", origNumTgtEnt=" << origNumTgtEnt
+             << ", origNumSrcEnt=" << origNumSrcEnt << endl;
+          std::cerr << os.str();
+        }
+
         // FIXME (08 Feb 2020) We only need to sort and unique
         // tgtGblColInds if we haven't already seen it before.
         size_t newNumTgtEnt = origNumTgtEnt;
@@ -177,6 +195,12 @@ namespace Tpetra {
         }
         tgtNumDups += (origNumTgtEnt - newNumTgtEnt);
 
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix << "tgtNumDups=" << tgtNumDups << endl;
+          std::cerr << os.str();
+        }
+
         size_t newNumSrcEnt = origNumSrcEnt;
         auto srcEnd = srcGblColInds + origNumSrcEnt;
         std::sort(srcGblColInds, srcEnd);
@@ -186,12 +210,25 @@ namespace Tpetra {
         }
         srcNumDups += (origNumSrcEnt - newNumSrcEnt);
 
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix << "srcNumDups=" << srcNumDups << endl;
+          std::cerr << os.str();
+        }
+
         size_t unionNumEnt = 0;
         merge_with_current_state(phase, unionNumEnt,
                                  whichImport, targetLocalIndex,
                                  tgtGblColInds, newNumTgtEnt,
                                  srcGblColInds, newNumSrcEnt);
         unionNumDups += (newNumTgtEnt + newNumSrcEnt - unionNumEnt);
+
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix << "Done: "
+             << "unionNumDups=" << unionNumDups << endl;
+          std::cerr << os.str();
+        }
       }
 
       std::vector<GO>&
@@ -214,6 +251,17 @@ namespace Tpetra {
         const size_t numSrcEnt)
       {
         using Details::countNumInCommon;
+        using std::endl;
+        std::unique_ptr<std::string> prefix;
+        if (verbose_) {
+          prefix = createPrefix("merge_with_current_state");
+          std::ostringstream os;
+          os << *prefix << "Start: "
+             << "tgtLclRowInd=" << tgtLclRowInd
+             << ", numTgtEnt=" << numTgtEnt
+             << ", numSrcEnt=" << numSrcEnt << endl;
+          std::cerr << os.str();
+        }
         // We only need to accumulate those source indices that are
         // not already target indices.  This is because we always have
         // the target indices on input to this function, so there's no
@@ -239,6 +287,12 @@ namespace Tpetra {
         unionNumEnt = numTgtEnt + numSrcEnt - numInCommon;
 
         if (unionNumEnt > numTgtEnt) {
+          if (verbose_) {
+            std::ostringstream os;
+            os << *prefix << "unionNumEnt=" << unionNumEnt
+               << " > numTgtEnt=" << numTgtEnt << endl;
+            std::cerr << os.str();
+          }
           TEUCHOS_ASSERT( numSrcEnt != 0 );
 
           // At least one input source index isn't in the target.
@@ -247,6 +301,11 @@ namespace Tpetra {
           const size_t oldDiffNumEnt = diffColInds.size();
 
           if (oldDiffNumEnt == 0) {
+            if (verbose_) {
+              std::ostringstream os;
+              os << *prefix << "oldDiffNumEnt=0" << endl;
+              std::cerr << os.str();
+            }
             TEUCHOS_ASSERT( numSrcEnt >= numInCommon );
             diffColInds.resize(numSrcEnt);
             auto diffEnd = std::set_difference(srcColInds, srcEnd,
@@ -257,6 +316,12 @@ namespace Tpetra {
             diffColInds.resize(newLen);
           }
           else {
+            if (verbose_) {
+              std::ostringstream os;
+              os << *prefix << "oldDiffNumEnt=" << oldDiffNumEnt
+                 << "; call countNumInCommon" << endl;
+              std::cerr << os.str();
+            }
             // scratch = union(srcColInds, diffColInds)
             const size_t unionSize = numSrcEnt + oldDiffNumEnt -
               countNumInCommon(srcColInds, srcEnd,
@@ -264,6 +329,13 @@ namespace Tpetra {
                                diffColInds.end());
             if (scratchColInds_.size() < unionSize) {
               scratchColInds_.resize(unionSize);
+            }
+            if (verbose_) {
+              std::ostringstream os;
+              os << *prefix << "oldDiffNumEnt=" << oldDiffNumEnt
+                 << ", unionSize=" << unionSize << ", call set_union"
+                 << endl;
+              std::cerr << os.str();
             }
             auto unionBeg = scratchColInds_.begin();
             auto unionEnd = std::set_union(
@@ -276,6 +348,14 @@ namespace Tpetra {
             // diffColInds = difference(scratch, tgtColInds)
             const size_t unionTgtInCommon = countNumInCommon(
               unionBeg, unionEnd, tgtColInds, tgtEnd);
+            if (verbose_) {
+              std::ostringstream os;
+              os << *prefix << "oldDiffNumEnt=" << oldDiffNumEnt
+                 << ", unionSize=" << unionSize
+                 << ", unionTgtInCommon=" << unionTgtInCommon
+                 << "; call set_difference" << endl;
+              std::cerr << os.str();
+            }
             TEUCHOS_ASSERT( unionSize >= unionTgtInCommon );
 
             diffColInds.resize(unionSize);
@@ -287,12 +367,29 @@ namespace Tpetra {
             diffColInds.resize(diffLen);
           }
         }
+
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix << "Done" << endl;
+          std::cerr << os.str();
+        }
+      }
+
+      std::unique_ptr<std::string>
+      createPrefix(const char funcName[])
+      {
+        std::ostringstream os;
+        os << "Proc " << myRank_ << ": CrsPadding::" << funcName
+           << ": ";
+        return std::unique_ptr<std::string>(new std::string(os.str()));
       }
 
       // imports may overlap with sames and/or permutes, so it makes
       // sense to store them all in one map.
       std::map<LO, std::vector<GO> > entries_;
       std::vector<GO> scratchColInds_;
+      int myRank_ = -1;
+      bool verbose_ = Behavior::verbose("CrsPadding");
     };
   } // namespace Details
 } // namespace Tpetra
