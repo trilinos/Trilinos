@@ -32,6 +32,6 @@ if [ "${Trilinos_CTEST_RUN_CUDA_AWARE_MPI}" == "1" ]; then
   export CTEST_DO_BUILD=OFF
   atdm_run_script_on_compute_node \
     $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh \
-    $PWD/ctest-s-driver-cuda-aware-mpi.out
+    $PWD/ctest-s-driver-cuda-aware-mpi.out \
     ${LSF_CTEST_TIMEOUT}
 fi
