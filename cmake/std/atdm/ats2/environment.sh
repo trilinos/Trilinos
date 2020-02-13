@@ -187,6 +187,12 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   export ATDM_CONFIG_Kokkos_ENABLE_SERIAL=ON
   export KOKKOS_NUM_DEVICES=4
 
+  # CTEST Settings
+  # TPETRA_ASSUME_CUDA_AWARE_MPI is used by cmake/std/atdm/ats2/trilinos_jsrun
+  export TPETRA_ASSUME_CUDA_AWARE_MPI=0
+  # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by cmake/ctest/driver/atdm/ats2/local-driver.sh
+  export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=1
+
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
 
   echo
@@ -244,7 +250,10 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAGS="-disable_gpu_hooks;-map-by;socket:PE=4"
+export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
+
+export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
+export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
 # Set common default compilers
 export CC=mpicc
@@ -255,7 +264,8 @@ export F90=mpifort
 
 # Define function atdm_run_script_on_compute_node
 unset atdm_run_script_on_compute_node
-source $ATDM_SCRIPT_DIR/common/define_atdm_run_script_on_local_node.sh
+
+source $ATDM_SCRIPT_DIR/common/define_run_on_lsf_compute_node_func.sh
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 
