@@ -184,6 +184,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     SPiter_ = 0; SPflag_ = 0;
     if (verbosity_ > 1) {
       outStream << "    Norm of free gradient components: " << gfnorm << std::endl;
+      outStream << std::endl;
     }
 
     // Trust-region subproblem solve loop
@@ -197,17 +198,17 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
                       *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
       SPiter_ += iterCG;
       if (verbosity_ > 1) {
-        outStream << std::endl;
         outStream << "  Computation of CG step"               << std::endl;
         outStream << "    Current face (i):                 " << i             << std::endl;
         outStream << "    CG step length:                   " << state_->snorm << std::endl;
         outStream << "    Number of CG iterations:          " << iterCG        << std::endl;
         outStream << "    CG flag:                          " << flagCG        << std::endl;
         outStream << "    Total number of iterations:       " << SPiter_       << std::endl;
+        outStream << std::endl;
       }
 
       // Projected search
-      state_->snorm = dprsrch(x,*s,q,*gmod,*model_,bnd,*pwa1,*dwa1);
+      state_->snorm = dprsrch(x,*s,q,*gmod,*model_,bnd,*pwa1,*dwa1,outStream);
 
       // Model gradient at s = x[i+1] - x[0]
       state_->stepVec->plus(*s);
@@ -222,7 +223,6 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
         gfnormf = gfree->norm();
       }
       if (verbosity_ > 1) {
-        outStream << "    Step length (beta*s):             " << state_->snorm << std::endl;
         outStream << "    Norm of free gradient components: " << gfnormf       << std::endl;
         outStream << std::endl;
       }
@@ -384,7 +384,6 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     snorm = dgpstep(s,g,x,-alpha);
   }
   if (verbosity_ > 1) {
-    outStream << std::endl;
     outStream << "  Cauchy point"                         << std::endl;
     outStream << "    Step length (alpha):              " << alpha << std::endl;
     outStream << "    Step length (alpha*g):            " << snorm << std::endl;
@@ -428,6 +427,7 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     outStream << std::endl;
     outStream << "  Projected search"                     << std::endl;
     outStream << "    Step length (beta):               " << beta       << std::endl;
+    outStream << "    Step length (beta*s):             " << state_->snorm << std::endl;
     outStream << "    Model decrease (q):               " << q          << std::endl;
     outStream << "    Number of steps:                  " << nsteps     << std::endl;
   }
