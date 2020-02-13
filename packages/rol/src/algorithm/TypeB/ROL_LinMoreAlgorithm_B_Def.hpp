@@ -185,7 +185,6 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     }
     SPiter_ = 0; SPflag_ = 0;
     if (verbosity_ > 1) {
-      outStream << std::endl;
       outStream << "    Norm of free gradient components: " << gfnorm << std::endl;
     }
 
