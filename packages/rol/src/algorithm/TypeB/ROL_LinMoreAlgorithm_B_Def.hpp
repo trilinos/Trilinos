@@ -354,6 +354,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
   else {
     bool search = true;
     Real alphas = alpha;
+    Real qs = q;
     dwa1.set(dwa);
     while (search) {
       alpha *= extrapf_;
@@ -366,8 +367,10 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
           dwa1.set(dwa);
           search = true;
           alphas = alpha;
+          qs     = q;
         }
         else {
+          q = qs;
           dwa.set(dwa1);
           search = false;
         }
@@ -385,6 +388,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     outStream << "  Cauchy point"                         << std::endl;
     outStream << "    Step length (alpha):              " << alpha << std::endl;
     outStream << "    Step length (alpha*g):            " << snorm << std::endl;
+    outStream << "    Model decrease (q):               " << q          << std::endl;
     if (!interp) {
       outStream << "    Number of extrapolation steps:    " << cnt << std::endl;
     }
