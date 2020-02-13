@@ -980,8 +980,9 @@ namespace Tpetra {
 
     if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: waitAll on "
-         << requests.size () << " requests" << endl;
+      const size_t numReq = requests.size();
+      os << *prefix << "waitAll on " << numReq << " request"
+         << (numReq != size_t(1) ? "s" : "") << endl;
       std::cerr << os.str();
     }
     //
