@@ -434,7 +434,10 @@ namespace Tacho {
     invertPanelOnDevice(const ordinal_type nstreams,
                         const ordinal_type_array_host &h_prepare_mode, 
                         const value_type_array &work) {
-      for (ordinal_type sid=0,q=0;sid<_nsupernodes;++sid) {
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif
+      for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
         if (h_prepare_mode(sid) == 0) {
           const value_type minus_one(-1), one(1), zero(0);
           const auto &s = _h_supernodes(sid);
@@ -494,7 +497,10 @@ namespace Tacho {
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), zero(0);
-      for (ordinal_type p=pbeg,q=0;p<pend;++p) {
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif
+      for (ordinal_type p=pbeg;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_compute_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -534,7 +540,10 @@ namespace Tacho {
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1), zero(0);
-      for (ordinal_type p=pbeg,q=0;p<pend;++p) {
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif
+      for (ordinal_type p=pbeg;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_compute_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -574,11 +583,8 @@ namespace Tacho {
     solveLowerOnDevice(const ordinal_type pbeg, 
                        const ordinal_type pend,
                        const value_type_matrix &t) {
-      switch (variant) {
-      case 0: solveLowerOnDeviceVar0(pbeg, pend, t); break;
-      case 1: solveLowerOnDeviceVar1(pbeg, pend, t); break;
-      case 2: break;
-      }
+      if (variant == 0) solveLowerOnDeviceVar0(pbeg, pend, t); 
+      if (variant == 1) solveLowerOnDeviceVar1(pbeg, pend, t); 
     }
     
     inline
@@ -588,6 +594,9 @@ namespace Tacho {
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1);
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif 
       for (ordinal_type p=pbeg,q=0;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_compute_mode(sid) == 0) {
@@ -626,19 +635,20 @@ namespace Tacho {
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1), zero(0);
-      for (ordinal_type p=pbeg,q=0;p<pend;++p) {
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif
+      for (ordinal_type p=pbeg;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_compute_mode(sid) == 0) {
-          ordinal_type idx;
 #if defined(KOKKOS_ENABLE_CUDA)
-          idx = q%_nstreams; ++q;
+          const ordinal_type idx = q%_nstreams; ++q;
           _status = cublasSetStream(_handle, _cuda_streams[idx]); checkDeviceStatus("cublasSetStream");
           const auto exec_instance = Kokkos::Cuda(_cuda_streams[idx]);
           const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
 #else
           const auto exec_instance = Kokkos::DefaultHostExecutionSpace();
           const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
-          idx = 0;
 #endif
           const auto &s = _h_supernodes(sid);
           {
@@ -685,11 +695,8 @@ namespace Tacho {
     solveUpperOnDevice(const ordinal_type pbeg,
                        const ordinal_type pend,
                        const value_type_matrix &t) {
-      switch (variant) {
-      case 0: solveUpperOnDeviceVar0(pbeg, pend, t); break;
-      case 1: solveUpperOnDeviceVar1(pbeg, pend, t); break;
-      case 2: break;
-      }
+      if (variant == 0) solveUpperOnDeviceVar0(pbeg, pend, t); 
+      if (variant == 1) solveUpperOnDeviceVar1(pbeg, pend, t); 
     }
 
     /// 
