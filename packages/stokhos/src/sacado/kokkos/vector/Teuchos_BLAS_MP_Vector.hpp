@@ -126,22 +126,6 @@ class BLAS<OrdinalType, Sacado::MP::Vector<Storage>> : public Teuchos::DefaultBL
   typedef Teuchos::DefaultBLASImpl<OrdinalType, Sacado::MP::Vector<Storage>> BLASType;
 
 public:
-  //! @name Constructor/Destructor.
-  //@{
-
-  //! Default constructor.
-  BLAS(bool use_default_impl = true,
-       bool use_dynamic = true, OrdinalType static_workspace_size = 0){};
-
-  //! Copy constructor.
-
-  BLAS(const BLAS &x){};
-
-  //! Destructor.
-  virtual ~BLAS(){};
-
-  //@}
-
   template <typename alpha_type, typename A_type>
   void TRSM(Teuchos::ESide side, Teuchos::EUplo uplo,
             Teuchos::ETransp transa, Teuchos::EDiag diag,
