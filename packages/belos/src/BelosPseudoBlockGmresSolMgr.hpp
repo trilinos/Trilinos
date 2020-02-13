@@ -367,8 +367,8 @@ namespace Belos {
     bool isLOADetected() const override { return loaDetected_; }
 
     //! Return the residual status test
-    Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> >
-    getResidualStatusTest() const { return impConvTest_; }
+    const StatusTestResNorm<ScalarType,MV,OP> *
+    getResidualStatusTest() const { return impConvTest_.getRawPtr(); }
     //@}
 
     //! @name Set methods
