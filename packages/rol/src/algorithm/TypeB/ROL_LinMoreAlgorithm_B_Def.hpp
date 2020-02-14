@@ -165,7 +165,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     // Compute Cauchy point (TRON notation: xnew = x[1])
     state_->snorm = dcauchy(*state_->stepVec,alpha,*state_->iterateVec,
-                    *state_->gradientVec,state_->searchSize,
+                    state_->gradientVec->dual(),state_->searchSize,
                     *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
     x.plus(*state_->stepVec);                       // Set x = x[0] + alpha*g
 
@@ -208,7 +208,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       }
 
       // Projected search
-      state_->snorm = dprsrch(x,*s,q,*gmod,*model_,bnd,*pwa1,*dwa1,outStream);
+      state_->snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
 
       // Model gradient at s = x[i+1] - x[0]
       state_->stepVec->plus(*s);
@@ -325,7 +325,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   bool interp = false;
   Real q(0), gs(0), snorm(0);
-  // Compute s = P(x[0] - alpha g[0].dual())
+  // Compute s = P(x[0] - alpha g[0])
   snorm = dgpstep(s,g,x,-alpha);
   if (snorm > del) {
     interp = true;
@@ -412,7 +412,7 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     nsteps++;
     snorm = dgpstep(pwa,s,x,beta);
     model.hessVec(dwa,pwa,x,tol);
-    gs = pwa.dot(g.dual());
+    gs = pwa.dot(g);
     q  = half * s.dot(dwa.dual()) + gs;
     if (q <= mu0_*gs) { // || nsteps > 10) {
       search = false;

@@ -162,7 +162,7 @@ private:
       r1   = r;
       update_primal_1d(*xnew_,x,lam);
       r    = residual_1d(*xnew_);
-      while ( r < zero && cnt < maxit ) {
+      while ( r < zero && std::abs(r) > ctol && cnt < maxit ) {
         lam1  = lam;
         r1    = r;
         s     = std::max(r1/r-one,c1);
@@ -181,7 +181,7 @@ private:
       lam -= dlam;
       update_primal_1d(*xnew_,x,lam);
       r    = residual_1d(*xnew_);
-      while ( r > zero && cnt < maxit ) {
+      while ( r > zero && std::abs(r) > ctol && cnt < maxit ) {
         lam2  = lam;
         r2    = r;
         s     = std::max(r2/r-one,c1);
