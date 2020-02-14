@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 if [ "${LSF_CTEST_TIMEOUT}" == "" ] ; then
-  LSF_CTEST_TIMEOUT=4:00
+  LSF_CTEST_TIMEOUT=12:00
   # This is just running tests, not the entire build!
 fi
 
@@ -32,6 +32,6 @@ if [ "${Trilinos_CTEST_RUN_CUDA_AWARE_MPI}" == "1" ]; then
   export CTEST_DO_BUILD=OFF
   atdm_run_script_on_compute_node \
     $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh \
-    $PWD/ctest-s-driver-cuda-aware-mpi.out
+    $PWD/ctest-s-driver-cuda-aware-mpi.out \
     ${LSF_CTEST_TIMEOUT}
 fi
