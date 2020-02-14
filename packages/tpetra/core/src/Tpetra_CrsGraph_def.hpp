@@ -4706,34 +4706,69 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   sortAndMergeAllIndices (const bool sorted, const bool merged)
   {
-    using ::Tpetra::Details::ProfilingRegion;
-    typedef LocalOrdinal LO;
-    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
-      host_execution_space;
-    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
-    const char tfecfFuncName[] = "sortAndMergeAllIndices: ";
-    ProfilingRegion regionSortAndMerge ("Tpetra::CrsGraph::sortAndMergeAllIndices");
+    using std::endl;
+    using LO = LocalOrdinal;
+    using host_execution_space =
+      typename Kokkos::View<LO*, device_type>::HostMirror::
+        execution_space;
+    using range_type = Kokkos::RangePolicy<host_execution_space, LO>;
+    const char tfecfFuncName[] = "sortAndMergeAllIndices";
+    Details::ProfilingRegion regionSortAndMerge
+      ("Tpetra::CrsGraph::sortAndMergeAllIndices");
 
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
+      prefix = this->createPrefix("CrsGraph", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "Start: "
+         << "sorted=" << (sorted ? "true" : "false")
+         << ", merged=" << (merged ? "true" : "false") << endl;
+      std::cerr << os.str();
+    }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isGloballyIndexed (), std::logic_error,
+      (this->isGloballyIndexed(), std::logic_error,
        "This method may only be called after makeIndicesLocal." );
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! merged && this->isStorageOptimized (), std::logic_error,
-       "The graph is already storage optimized, so we shouldn't be merging any "
-       "indices.  Please report this bug to the Tpetra developers.");
+      (! merged && this->isStorageOptimized(), std::logic_error,
+       "The graph is already storage optimized, so we shouldn't be "
+       "merging any indices.  "
+       "Please report this bug to the Tpetra developers.");
 
     if (! sorted || ! merged) {
-      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
-      size_t totalNumDups = 0;
-      // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
-      Kokkos::parallel_reduce (range_type (0, lclNumRows),
-        [this, sorted, merged] (const LO& lclRow, size_t& numDups) {
-          const RowInfo rowInfo = this->getRowInfo (lclRow);
-          numDups += this->sortAndMergeRowIndices (rowInfo, sorted, merged);
-        }, totalNumDups);
+      const LO lclNumRows(this->getNodeNumRows());
+      auto range = range_type(0, lclNumRows);
+
+      // FIXME (mfh 08 May 2017) Loops below assume CUDA UVM.
+      if (verbose_) {
+        size_t totalNumDups = 0;
+        Kokkos::parallel_reduce(range,
+          [this, sorted, merged] (const LO lclRow, size_t& numDups)
+          {
+            const RowInfo rowInfo = this->getRowInfo(lclRow);
+            numDups += this->sortAndMergeRowIndices(rowInfo, sorted, merged);
+          },
+          totalNumDups);
+        std::ostringstream os;
+        os << *prefix << "totalNumDups=" << totalNumDups << endl;
+        std::cerr << os.str();
+      }
+      else {
+        // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+        Kokkos::parallel_for(range,
+          [this, sorted, merged] (const LO lclRow)
+          {
+            const RowInfo rowInfo = this->getRowInfo(lclRow);
+            this->sortAndMergeRowIndices(rowInfo, sorted, merged);
+          });
+      }
       this->indicesAreSorted_ = true; // we just sorted every row
       this->noRedundancies_ = true; // we just merged every row
+    }
+
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
     }
   }
 
@@ -5311,9 +5346,6 @@ namespace Tpetra {
 
     std::vector<GO> srcGblColIndsScratch;
     std::vector<GO> tgtGblColIndsScratch;
-    size_t srcNumDups = 0;
-    size_t tgtNumDups = 0;
-    // size_t mergedNumDups = 0;
     for (LO lclRowInd = 0; lclRowInd < numSameIDs; ++lclRowInd) {
       const GO srcGblRowInd = srcRowMap.getGlobalElement(lclRowInd);
       const GO tgtGblRowInd = tgtRowMap.getGlobalElement(lclRowInd);
@@ -5321,17 +5353,14 @@ namespace Tpetra {
         srcGblColIndsScratch, source, srcGblRowInd);
       auto tgtGblColInds = getRowGraphGlobalRow(
         tgtGblColIndsScratch, *this, tgtGblRowInd);
-      padding.update_same(tgtNumDups, srcNumDups, /* mergedNumDups, */
-                          lclRowInd, tgtGblColInds.getRawPtr(),
+      padding.update_same(lclRowInd, tgtGblColInds.getRawPtr(),
                           tgtGblColInds.size(), tgt_is_unique,
                           srcGblColInds.getRawPtr(),
                           srcGblColInds.size(), src_is_unique);
     }
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Done: srcNumDups: " << srcNumDups
-         << ", tgtNumDups: " << tgtNumDups << endl;
-      // os << ", mergedNumDups: " << mergedNumDups << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str();
     }
   }
@@ -5385,9 +5414,6 @@ namespace Tpetra {
 
     std::vector<GO> srcGblColIndsScratch;
     std::vector<GO> tgtGblColIndsScratch;
-    size_t srcNumDups = 0;
-    size_t tgtNumDups = 0;
-    // size_t mergedNumDups = 0;
     const LO numPermutes = static_cast<LO>(permuteToLIDs_h.extent(0));
     for (LO whichPermute = 0; whichPermute < numPermutes; ++whichPermute) {
       const LO srcLclRowInd = permuteFromLIDs_h[whichPermute];
@@ -5398,8 +5424,7 @@ namespace Tpetra {
       const GO tgtGblRowInd = tgtRowMap.getGlobalElement(tgtLclRowInd);
       auto tgtGblColInds = getRowGraphGlobalRow(
         tgtGblColIndsScratch, *this, tgtGblRowInd);
-      padding.update_permute(tgtNumDups, srcNumDups, /* mergedNumDups, */
-                             whichPermute, tgtLclRowInd,
+      padding.update_permute(whichPermute, tgtLclRowInd,
                              tgtGblColInds.getRawPtr(),
                              tgtGblColInds.size(), tgt_is_unique,
                              srcGblColInds.getRawPtr(),
@@ -5408,9 +5433,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Done: srcNumDups: " << srcNumDups
-         << ", tgtNumDups: " << tgtNumDups << endl;
-      // os << ", mergedNumDups: " << mergedNumDups << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str();
     }
   }
@@ -5476,9 +5499,6 @@ namespace Tpetra {
     const bool tgt_is_unique = isMerged();
 
     std::vector<GO> tgtGblColIndsScratch;
-    size_t srcNumDups = 0;
-    size_t tgtNumDups = 0;
-    /* size_t mergedNumDups = 0; */
     size_t offset = 0;
     for (LO whichImport = 0; whichImport < numImports; ++whichImport) {
       // CrsGraph packs just global column indices, while CrsMatrix
@@ -5496,8 +5516,7 @@ namespace Tpetra {
         tgtGblColIndsScratch, *this, tgtGblRowInd);
       const size_t origTgtNumEnt(tgtGblColInds.size());
 
-      padding->update_import(tgtNumDups, srcNumDups, /* mergedNumDups, */
-                             whichImport, tgtLclRowInd,
+      padding->update_import(whichImport, tgtLclRowInd,
                              tgtGblColInds.getRawPtr(),
                              origTgtNumEnt, tgt_is_unique,
                              srcGblColInds,
@@ -5507,9 +5526,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Done: srcNumDups: " << srcNumDups
-         << ", tgtNumDups: " << tgtNumDups << endl;
-      // os << ", mergedNumDups: " << mergedNumDups << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str();
     }
     return padding;
@@ -5581,9 +5598,6 @@ namespace Tpetra {
 
     std::vector<GO> srcGblColIndsScratch;
     std::vector<GO> tgtGblColIndsScratch;
-    size_t srcNumDups = 0;
-    size_t tgtNumDups = 0;
-    // size_t mergedNumDups = 0;
     size_t offset = 0;
     for (LO whichImport = 0; whichImport < numImports; ++whichImport) {
       // CrsGraph packs just global column indices, while CrsMatrix
@@ -5640,8 +5654,7 @@ namespace Tpetra {
            << ": Call padding->update_import" << endl;
         std::cerr << os.str();
       }
-      padding->update_import(tgtNumDups, srcNumDups, /* mergedNumDups, */
-                             whichImport, tgtLclRowInd,
+      padding->update_import(whichImport, tgtLclRowInd,
                              tgtGblColInds.getRawPtr(),
                              origNumTgtEnt, tgt_is_unique,
                              srcGblColInds,
@@ -5651,9 +5664,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Done: srcNumDups: " << srcNumDups
-         << ", tgtNumDups: " << tgtNumDups << endl;
-      // os << ", mergedNumDups: " << mergedNumDups << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str();
     }
     return padding;

@@ -1056,7 +1056,7 @@ namespace Tpetra {
     if (verbose_) {
       prefix = createPrefix("createFromSends");
       std::ostringstream os;
-      os << *prefix;
+      os << *prefix << "Start: ";
       Details::verbosePrintArray(os, exportProcIDs, "exportPIDs",
                                  maxNumToPrint);
       os << endl;

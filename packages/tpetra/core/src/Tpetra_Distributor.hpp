@@ -2940,10 +2940,10 @@ namespace Tpetra {
 
   template <class OrdinalType>
   void Distributor::
-  computeSends (const Teuchos::ArrayView<const OrdinalType> & importGIDs,
-                const Teuchos::ArrayView<const int> & importProcIDs,
-                Teuchos::Array<OrdinalType> & exportGIDs,
-                Teuchos::Array<int> & exportProcIDs)
+  computeSends(const Teuchos::ArrayView<const OrdinalType>& importGIDs,
+               const Teuchos::ArrayView<const int>& importProcIDs,
+               Teuchos::Array<OrdinalType>& exportGIDs,
+               Teuchos::Array<int>& exportProcIDs)
   {
     // NOTE (mfh 19 Apr 2012): There was a note on this code saying:
     // "assumes that size_t >= Ordinal".  The code certainly does
@@ -2955,7 +2955,10 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using std::endl;
-    typedef typename ArrayView<const OrdinalType>::size_type size_type;
+    using size_type = typename ArrayView<const OrdinalType>::size_type;
+    const char errPrefix[] = "Tpetra::Distributor::computeSends: ";
+    const char suffix[] =
+      "  Please report this bug to the Tpetra developers.";
 
     const int myRank = comm_->getRank ();
     std::unique_ptr<std::string> prefix;
@@ -2966,18 +2969,18 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      importGIDs.size () != importProcIDs.size (), std::invalid_argument,
-      "Tpetra::Distributor::computeSends: On Process " << myRank << ": "
-      "importProcIDs.size() = " << importProcIDs.size ()
-      << " != importGIDs.size() = " << importGIDs.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (importGIDs.size () != importProcIDs.size (),
+       std::invalid_argument, errPrefix << "On Process " << myRank
+       << ": importProcIDs.size()=" << importProcIDs.size()
+       << " != importGIDs.size()=" << importGIDs.size() << ".");
 
-    const size_type numImports = importProcIDs.size ();
-    Array<size_t> importObjs (2*numImports);
+    const size_type numImports = importProcIDs.size();
+    Array<size_t> importObjs(2*numImports);
     // Pack pairs (importGIDs[i], my process ID) to send into importObjs.
     for (size_type i = 0; i < numImports; ++i) {
-      importObjs[2*i]   = static_cast<size_t> (importGIDs[i]);
-      importObjs[2*i+1] = static_cast<size_t> (myRank);
+      importObjs[2*i]   = static_cast<size_t>(importGIDs[i]);
+      importObjs[2*i+1] = static_cast<size_t>(myRank);
     }
     //
     // Use a temporary Distributor to send the (importGIDs[i], myRank)
@@ -2991,24 +2994,25 @@ namespace Tpetra {
     }
     // mfh 20 Mar 2014: An extra-cautious cast from unsigned to
     // signed, in order to forestall any possible causes for Bug 6069.
-    const size_t numExportsAsSizeT = tempPlan.createFromSends (importProcIDs);
-    const size_type numExports = static_cast<size_type> (numExportsAsSizeT);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numExports < 0, std::logic_error, "Tpetra::Distributor::computeSends: "
-      "tempPlan.createFromSends() returned numExports = " << numExportsAsSizeT
-      << " as a size_t, which overflows to " << numExports << " when cast to "
-      << Teuchos::TypeNameTraits<size_type>::name () << ".  "
-      "Please report this bug to the Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_type> (tempPlan.getTotalReceiveLength ()) != numExports,
-      std::logic_error, "Tpetra::Distributor::computeSends: tempPlan.getTotal"
-      "ReceiveLength() = " << tempPlan.getTotalReceiveLength () << " != num"
-      "Exports = " << numExports  << ".  Please report this bug to the "
-      "Tpetra developers.");
+    const size_t numExportsAsSizeT =
+      tempPlan.createFromSends(importProcIDs);
+    const size_type numExports =
+      static_cast<size_type>(numExportsAsSizeT);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (numExports < 0, std::logic_error, errPrefix <<
+       "tempPlan.createFromSends() returned numExports="
+       << numExportsAsSizeT << " as a size_t, which overflows to "
+       << numExports << " when cast to " <<
+       Teuchos::TypeNameTraits<size_type>::name () << "." << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (size_type(tempPlan.getTotalReceiveLength()) != numExports,
+       std::logic_error, errPrefix << "tempPlan.getTotalReceiveLength()="
+       << tempPlan.getTotalReceiveLength () << " != numExports="
+       << numExports  << "." << suffix);
 
     if (numExports > 0) {
-      exportGIDs.resize (numExports);
-      exportProcIDs.resize (numExports);
+      exportGIDs.resize(numExports);
+      exportProcIDs.resize(numExports);
     }
 
     // exportObjs: Packed receive buffer.  (exportObjs[2*i],
@@ -3019,21 +3023,16 @@ namespace Tpetra {
     // size_t.  This issue might come up, for example, on a 32-bit
     // machine using 64-bit global indices.  I will add a check here
     // for that case.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      sizeof (size_t) < sizeof (OrdinalType), std::logic_error,
-      "Tpetra::Distributor::computeSends: sizeof(size_t) = " << sizeof(size_t)
-      << " < sizeof(" << Teuchos::TypeNameTraits<OrdinalType>::name () << ") = "
-      << sizeof (OrdinalType) << ".  This violates an assumption of the "
-      "method.  It's not hard to work around (just use Array<OrdinalType> as "
-      "the export buffer, not Array<size_t>), but we haven't done that yet.  "
-      "Please report this bug to the Tpetra developers.");
+    static_assert(sizeof(size_t) >= sizeof(OrdinalType),
+      "Tpetra::Distributor::computeSends: "
+      "sizeof(size_t) < sizeof(OrdinalType).");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      tempPlan.getTotalReceiveLength () < static_cast<size_t> (numExports),
-      std::logic_error,
-      "Tpetra::Distributor::computeSends: tempPlan.getTotalReceiveLength() = "
-      << tempPlan.getTotalReceiveLength() << " < numExports = " << numExports
-      << ".  Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (tempPlan.getTotalReceiveLength () < size_t(numExports),
+       std::logic_error,
+       errPrefix << "tempPlan.getTotalReceiveLength()="
+       << tempPlan.getTotalReceiveLength() << " < numExports="
+       << numExports << "." << suffix);
 
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
     if (verbose_) {
@@ -3064,8 +3063,8 @@ namespace Tpetra {
                    Teuchos::Array<int> &exportProcIDs)
   {
     using std::endl;
+    const char errPrefix[] = "Tpetra::Distributor::createFromRecvs: ";
     const int myRank = comm_->getRank();
-    const bool debug = Details::Behavior::debug("Distributor");
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
@@ -3075,6 +3074,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
+    const bool debug = Details::Behavior::debug("Distributor");
     if (debug) {
       using Teuchos::outArg;
       using Teuchos::REDUCE_MAX;
@@ -3086,23 +3086,24 @@ namespace Tpetra {
       int maxErrProc = -1;
       reduceAll(*comm_, REDUCE_MAX, errProc, outArg(maxErrProc));
       TEUCHOS_TEST_FOR_EXCEPTION
-        (maxErrProc != -1, std::runtime_error,
-         "Tpetra::Distributor::createFromRecvs: lists of remote IDs "
-         "and remote process IDs must have the same size on all participating "
-         "processes.  Maximum process ID with error: " << maxErrProc << ".");
+        (maxErrProc != -1, std::runtime_error, errPrefix << "Lists "
+         "of remote IDs and remote process IDs must have the same "
+         "size on all participating processes.  Maximum process ID "
+         "with error: " << maxErrProc << ".");
     }
     else { // in non-debug mode, just test locally
+      // NOTE (mfh 13 Feb 2020) This needs to throw std::runtime_error
+      // in order to make an existing Distributor unit test pass.
       TEUCHOS_TEST_FOR_EXCEPTION
-        (remoteGIDs.size () != remoteProcIDs.size (), std::invalid_argument,
-         "Tpetra::Distributor::createFromRecvs<" <<
-         Teuchos::TypeNameTraits<OrdinalType>::name () << ">(): On Process " <<
-         myRank << ": remoteGIDs.size() = " << remoteGIDs.size () << " != "
-         "remoteProcIDs.size() = " << remoteProcIDs.size () << ".");
+        (remoteGIDs.size() != remoteProcIDs.size(), std::runtime_error,
+         errPrefix << "On Process " << myRank << ": "
+         "remoteGIDs.size()=" << remoteGIDs.size() <<
+         " != remoteProcIDs.size()=" << remoteProcIDs.size() << ".");
     }
 
-    computeSends (remoteGIDs, remoteProcIDs, exportGIDs, exportProcIDs);
+    computeSends(remoteGIDs, remoteProcIDs, exportGIDs, exportProcIDs);
 
-    const size_t numProcsSendingToMe = createFromSends (exportProcIDs ());
+    const size_t numProcsSendingToMe = createFromSends(exportProcIDs ());
 
     if (verbose_) {
       // NOTE (mfh 20 Mar 2014) If remoteProcIDs could contain
