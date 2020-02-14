@@ -22,60 +22,43 @@
 #include "Tacho_GraphTools_CAMD.hpp"
 
 #include "Tacho_NumericTools.hpp"
+#include "Tacho_TriSolveTools.hpp"
 
 #include "Tacho_CommandLineParser.hpp"
 
-#ifdef TACHO_HAVE_MKL
-#include "mkl_service.h"
-#endif
-
-using namespace Tacho;
-
-/// select a kokkos task scheudler
-/// - DeprecatedTaskScheduler, DeprecatedTaskSchedulerMultiple
-/// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
-#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
-static const char * scheduler_name = "DeprecatedTaskScheduler";
-#endif
-#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
-template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
-static const char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
-#endif
-#if defined(TACHO_USE_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
-static const char * scheduler_name = "TaskScheduler";
-#endif
-#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
 template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
 static const char * scheduler_name = "TaskSchedulerMultiple";
-#endif
-#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
-static const char * scheduler_name = "ChaseLevTaskScheduler";
-#endif
-
 
 int main (int argc, char *argv[]) {
-  CommandLineParser opts("This example program measure the performance of Tacho on Kokkos::OpenMP");
+  Tacho::CommandLineParser opts("This example program measure the performance of Tacho on Kokkos::OpenMP");
 
   bool serial = false;
   int nthreads = 1;
   bool verbose = true;
   std::string file = "test.mtx";
+  int max_num_superblocks = 4;
   int nrhs = 1;
   int serial_thres_size = -1; // 32 is better
   int mb = 0;
   int nb = 0;
+  int device_level_cut = 0;
+  int device_function_thres = 256;
+  int nstreams_solve = 8;
+  int nstreams_prepare = 2;
 
   opts.set_option<bool>("serial", "Flag to use serial algorithm", &serial);
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
+  opts.set_option<int>("max-num-superblocks", "Max number of superblocks", &max_num_superblocks);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("serial-thres", "Serialization threshold size", &serial_thres_size);
   opts.set_option<int>("mb", "Blocksize", &mb);
   opts.set_option<int>("nb", "Panelsize", &nb);
+  opts.set_option<int>("nstreams-solve", "# of streams used in trisolve", &nstreams_solve);
+  opts.set_option<int>("nstreams-prepare", "# of streams used in trisolve", &nstreams_prepare);
+  opts.set_option<int>("device-level-cut", "tree cut level to force device function", &device_level_cut);
+  opts.set_option<int>("device-function-thres", "device function is used above this threshold", &device_function_thres);
 
 #if !defined (KOKKOS_ENABLE_CUDA)
   // override serial flag
@@ -90,27 +73,26 @@ int main (int argc, char *argv[]) {
 
   Kokkos::initialize(argc, argv);
 
-  typedef Kokkos::DefaultExecutionSpace exec_space;
-  //typedef Kokkos::DefaultHostExecutionSpace exec_space;
-  typedef Kokkos::DefaultHostExecutionSpace host_space;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type device_type;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
 
-  typedef TaskSchedulerType<exec_space> scheduler_type;
+  typedef TaskSchedulerType<typename device_type::execution_space> scheduler_type;
 
-  printExecSpaceConfiguration<exec_space> ("DeviceSpace", false);
-  printExecSpaceConfiguration<host_space> ("HostSpace",   false);
+  Tacho::printExecSpaceConfiguration<typename device_type::execution_space> ("DeviceSpace", false);
+  Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space> ("HostSpace", false);
   printf("Scheduler Type = %s\n", scheduler_name);
   
   int r_val = 0;
   
   {
     typedef double value_type;
-    typedef CrsMatrixBase<value_type,host_space> CrsMatrixBaseTypeHost;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> DenseMatrixBaseType;
+    typedef Tacho::CrsMatrixBase<value_type,host_device_type> CrsMatrixBaseTypeHost;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> DenseMatrixBaseType;
     
     Kokkos::Impl::Timer timer;
     double t = 0.0;
 
-    std::cout << "CholSupernodes:: import input file = " << file << std::endl;
+    std::cout << "CholTriSolve:: import input file = " << file << std::endl;
     CrsMatrixBaseTypeHost A;
     timer.reset();
     {
@@ -122,29 +104,29 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      MatrixMarket<value_type>::read(file, A);
+      Tacho::MatrixMarket<value_type>::read(file, A);
     }
-    Graph G(A);
+    Tacho::Graph G(A);
     t = timer.seconds();
-    std::cout << "CholSupernodes:: import input file::time = " << t << std::endl;
+    std::cout << "CholTriSolve:: import input file::time = " << t << std::endl;
 
-    std::cout << "CholSupernodes:: analyze matrix" << std::endl;
+    std::cout << "CholTriSolve:: analyze matrix" << std::endl;
     timer.reset();
 #if   defined(TACHO_HAVE_METIS)
-    GraphTools_Metis T(G);
+    Tacho::GraphTools_Metis T(G);
 #elif defined(TACHO_HAVE_SCOTCH)
-    GraphTools_Scotch T(G);
+    Tacho::GraphTools_Scotch T(G);
 #else
-    GraphTools_CAMD T(G);
+    Tacho::GraphTools_CAMD T(G);
 #endif
     T.reorder(verbose);
     
-    SymbolicTools S(A, T);
+    Tacho::SymbolicTools S(A, T);
     S.symbolicFactorize(verbose);
     t = timer.seconds();
-    std::cout << "CholSupernodes:: analyze matrix::time = " << t << std::endl;
+    std::cout << "CholTriSolve:: analyze matrix::time = " << t << std::endl;
 
-    typedef typename exec_space::memory_space device_memory_space; 
+    typedef typename device_type::memory_space device_memory_space; 
     
     auto a_row_ptr              = Kokkos::create_mirror_view(device_memory_space(), A.RowPtr());
     auto a_cols                 = Kokkos::create_mirror_view(device_memory_space(), A.Cols());
@@ -178,7 +160,7 @@ int main (int argc, char *argv[]) {
     Kokkos::deep_copy(s_snodes_tree_ptr      , S.SupernodesTreePtr());
     Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
 
-    NumericTools<value_type,scheduler_type> 
+    Tacho::NumericTools<value_type,scheduler_type> 
       N(A.NumRows(), a_row_ptr, a_cols,
         t_perm, t_peri,
         S.NumSupernodes(), s_supernodes,
@@ -189,8 +171,9 @@ int main (int argc, char *argv[]) {
         S.SupernodesTreeRoots());
 
     N.setSerialThresholdSize(serial_thres_size);
+    N.setMaxNumberOfSuperblocks(max_num_superblocks);
 
-    std::cout << "CholSupernodes:: factorize matrix" << std::endl;
+    std::cout << "CholTriSolve:: factorize matrix" << std::endl;
     timer.reset();    
     if (serial) {
 #if !defined (KOKKOS_ENABLE_CUDA)
@@ -210,33 +193,67 @@ int main (int argc, char *argv[]) {
       }
     }
     t = timer.seconds();    
-    std::cout << "CholSupernodes:: factorize matrix::time = " << t << std::endl;
+    std::cout << "CholTriSolve:: factorize matrix::time = " << t << std::endl;
     
     DenseMatrixBaseType 
       B("B", A.NumRows(), nrhs), 
       X("X", A.NumRows(), nrhs), 
-      Y("Y", A.NumRows(), nrhs);
+      W("W", A.NumRows(), nrhs);
 
     {
-      Kokkos::Random_XorShift64_Pool<exec_space> random(13718);      
+      Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);      
       Kokkos::fill_random(B, random, value_type(1));
     }
 
-    std::cout << "CholSupernodes:: solve matrix" << std::endl;
+#if 1
+    ///
+    /// solve via level set
+    ///
+    std::cout << "CholTriSolve:: solve matrix via TriSolveTools" << std::endl;
+
+    timer.reset();        
+#if defined(TACHO_USE_TRISOLVE_VARIANT)
+    constexpr int variant = TACHO_USE_TRISOLVE_VARIANT;
+#else
+    constexpr int variant = 0;
+#endif
+    Tacho::TriSolveTools<value_type,scheduler_type,variant> 
+      TS(t_perm, t_peri,
+         N.getSupernodesInfo(),
+         S.SupernodesTreeLevel(),
+         nrhs);
+    TS.initialize(device_level_cut, device_function_thres, verbose);
+    TS.createStream(nstreams_solve);
+    TS.prepareSolve(nstreams_prepare, verbose); 
+    t = timer.seconds();    
+    std::cout << "CholTriSolve:: TriSolve prepare::time = " << t << std::endl;
+
+    timer.reset();        
+    TS.solveCholesky(X, B, W, verbose); 
+    t = timer.seconds();    
+    std::cout << "CholTriSolve:: solve matrix::time = " << t << std::endl;
+    TS.release(verbose);
+#else
+    ///
+    /// solve via tasking
+    ///
+    std::cout << "CholTriSolve:: solve matrix" << std::endl;
     timer.reset();    
     if (serial) {
 #if !defined (KOKKOS_ENABLE_CUDA)
-      N.solveCholesky_Serial(X, B, Y, verbose);
+      N.solveCholesky_Serial(X, B, W0, verbose);
 #endif
     } else {
-      N.solveCholesky_Parallel(X, B, Y, verbose);
+      N.solveCholesky_Parallel(X, B, W0, verbose);
     }
     t = timer.seconds();    
-    std::cout << "CholSupernodes:: solve matrix::time = " << t << std::endl;
+    std::cout << "CholTriSolve:: solve matrix::time = " << t << std::endl;
+#endif
 
     const double res = N.computeRelativeResidual(X, B);
-    //const double eps = std::numeric_limits<double>::epsilon()*100;
-    std::cout << "CholSupernodes:: residual = " << res << std::endl;
+    std::cout << "CholTriSolve:: residual = " << res << std::endl;
+
+    N.release(verbose);
   }
   Kokkos::finalize();
 
