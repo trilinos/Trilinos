@@ -516,8 +516,9 @@ namespace Tpetra {
     reverseDistributor_->reverseDistributor_ = Teuchos::null;
   }
 
-
-  void Distributor::doWaits() {
+  void
+  Distributor::doWaits()
+  {
     using Teuchos::Array;
     using Teuchos::CommRequest;
     using Teuchos::FancyOStream;
@@ -531,7 +532,6 @@ namespace Tpetra {
     Teuchos::TimeMonitor timeMon (*timer_doWaits_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    const int myRank = comm_->getRank ();
     const bool debug = Details::Behavior::debug("Distributor");
 
     std::unique_ptr<std::string> prefix;
