@@ -50,7 +50,7 @@ namespace Tpetra {
       update_same(
         size_t& tgtNumDups, // accumulator
         size_t& srcNumDups, // accumulator
-        size_t& unionNumDups, // accumulator
+        /* size_t& unionNumDups, */ // accumulator
         const LO targetLocalIndex,
         GO tgtGblColInds[],
         const size_t origNumTgtEnt,
@@ -61,7 +61,7 @@ namespace Tpetra {
       {
         const LO whichSame = targetLocalIndex;
         update_impl(Phase::SAME,
-                    tgtNumDups, srcNumDups, unionNumDups,
+                    tgtNumDups, srcNumDups, /* unionNumDups, */
                     whichSame, targetLocalIndex,
                     tgtGblColInds, origNumTgtEnt, tgtIsUnique,
                     srcGblColInds, origNumSrcEnt, srcIsUnique);
@@ -71,7 +71,7 @@ namespace Tpetra {
       update_permute(
         size_t& tgtNumDups, // accumulator
         size_t& srcNumDups, // accumulator
-        size_t& unionNumDups, // accumulator
+        /* size_t& unionNumDups, */ // accumulator
         const LO whichPermute, // index in permuteFrom/To
         const LO targetLocalIndex,
         GO tgtGblColInds[],
@@ -82,7 +82,7 @@ namespace Tpetra {
         const bool srcIsUnique)
       {
         update_impl(Phase::PERMUTE,
-                    tgtNumDups, srcNumDups, unionNumDups,
+                    tgtNumDups, srcNumDups, /* unionNumDups, */
                     whichPermute, targetLocalIndex,
                     tgtGblColInds, origNumTgtEnt, tgtIsUnique,
                     srcGblColInds, origNumSrcEnt, srcIsUnique);
@@ -92,7 +92,7 @@ namespace Tpetra {
       update_import(
         size_t& tgtNumDups, // accumulator
         size_t& srcNumDups, // accumulator
-        size_t& unionNumDups, // accumulator
+        /* size_t& unionNumDups, */ // accumulator
         const LO whichImport,
         const LO targetLocalIndex,
         GO tgtGblColInds[],
@@ -103,7 +103,7 @@ namespace Tpetra {
         const bool srcIsUnique)
       {
         update_impl(Phase::IMPORT,
-                    tgtNumDups, srcNumDups, unionNumDups,
+                    tgtNumDups, srcNumDups, /* unionNumDups, */
                     whichImport, targetLocalIndex,
                     tgtGblColInds, origNumTgtEnt, tgtIsUnique,
                     srcGblColInds, origNumSrcEnt, srcIsUnique);
@@ -162,7 +162,7 @@ namespace Tpetra {
         const Phase phase,
         size_t& tgtNumDups,
         size_t& srcNumDups,
-        size_t& unionNumDups,
+        /* size_t& unionNumDups, */
         const LO whichImport,
         const LO targetLocalIndex,
         GO tgtGblColInds[],
@@ -218,17 +218,15 @@ namespace Tpetra {
           std::cerr << os.str();
         }
 
-        size_t unionNumEnt = 0;
-        merge_with_current_state(phase, unionNumEnt,
+        //size_t unionNumEnt = 0;
+        merge_with_current_state(phase, /* unionNumEnt, */
                                  whichImport, targetLocalIndex,
                                  tgtGblColInds, newNumTgtEnt,
                                  srcGblColInds, newNumSrcEnt);
-        unionNumDups += (newNumTgtEnt + newNumSrcEnt - unionNumEnt);
-
         if (verbose_) {
           std::ostringstream os;
-          os << *prefix << "Done: "
-             << "unionNumDups=" << unionNumDups << endl;
+          os << *prefix << "Done" << endl;
+          // os << "unionNumDups=" << unionNumDups << endl;
           std::cerr << os.str();
         }
       }
@@ -244,7 +242,7 @@ namespace Tpetra {
       void
       merge_with_current_state(
         const Phase phase,
-        size_t& unionNumEnt,
+        /* size_t& unionNumEnt, */
         const LO whichIndex,
         const LO tgtLclRowInd,
         const GO tgtColInds[], // sorted & merged
@@ -283,24 +281,24 @@ namespace Tpetra {
 
         auto tgtEnd = tgtColInds + numTgtEnt;
         auto srcEnd = srcColInds + numSrcEnt;
-        const size_t numInCommon = countNumInCommon(
-          srcColInds, srcEnd, tgtColInds, tgtEnd);
-        if (verbose_) {
-          std::ostringstream os;
-          os << *prefix << "numInCommon=" << numInCommon << endl;
-          std::cerr << os.str();
-        }
-        TEUCHOS_ASSERT( numTgtEnt + numSrcEnt >= numInCommon );
-        unionNumEnt = numTgtEnt + numSrcEnt - numInCommon;
+        // const size_t numInCommon = countNumInCommon(
+        //   srcColInds, srcEnd, tgtColInds, tgtEnd);
+        // if (verbose_) {
+        //   std::ostringstream os;
+        //   os << *prefix << "numInCommon=" << numInCommon << endl;
+        //   std::cerr << os.str();
+        // }
+        // TEUCHOS_ASSERT( numTgtEnt + numSrcEnt >= numInCommon );
+        // unionNumEnt = numTgtEnt + numSrcEnt - numInCommon;
 
-        if (numInCommon == numSrcEnt) {
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << "Done (early; store nothing)" << endl;
-            std::cerr << os.str();
-          }
-          return;
-        }
+        // if (numInCommon == numSrcEnt) {
+        //   if (verbose_) {
+        //     std::ostringstream os;
+        //     os << *prefix << "Done (early; store nothing)" << endl;
+        //     std::cerr << os.str();
+        //   }
+        //   return;
+        // }
 
         // At least one input source index isn't in the target.
         std::vector<GO>& diffColInds =

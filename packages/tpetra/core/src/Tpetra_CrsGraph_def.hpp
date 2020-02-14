@@ -5313,7 +5313,7 @@ namespace Tpetra {
     std::vector<GO> tgtGblColIndsScratch;
     size_t srcNumDups = 0;
     size_t tgtNumDups = 0;
-    size_t mergedNumDups = 0;
+    // size_t mergedNumDups = 0;
     for (LO lclRowInd = 0; lclRowInd < numSameIDs; ++lclRowInd) {
       const GO srcGblRowInd = srcRowMap.getGlobalElement(lclRowInd);
       const GO tgtGblRowInd = tgtRowMap.getGlobalElement(lclRowInd);
@@ -5321,7 +5321,7 @@ namespace Tpetra {
         srcGblColIndsScratch, source, srcGblRowInd);
       auto tgtGblColInds = getRowGraphGlobalRow(
         tgtGblColIndsScratch, *this, tgtGblRowInd);
-      padding.update_same(tgtNumDups, srcNumDups, mergedNumDups,
+      padding.update_same(tgtNumDups, srcNumDups, /* mergedNumDups, */
                           lclRowInd, tgtGblColInds.getRawPtr(),
                           tgtGblColInds.size(), tgt_is_unique,
                           srcGblColInds.getRawPtr(),
@@ -5330,8 +5330,8 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done: srcNumDups: " << srcNumDups
-         << ", tgtNumDups: " << tgtNumDups
-         << ", mergedNumDups: " << mergedNumDups << endl;
+         << ", tgtNumDups: " << tgtNumDups << endl;
+      // os << ", mergedNumDups: " << mergedNumDups << endl;
       std::cerr << os.str();
     }
   }
@@ -5387,7 +5387,7 @@ namespace Tpetra {
     std::vector<GO> tgtGblColIndsScratch;
     size_t srcNumDups = 0;
     size_t tgtNumDups = 0;
-    size_t mergedNumDups = 0;
+    // size_t mergedNumDups = 0;
     const LO numPermutes = static_cast<LO>(permuteToLIDs_h.extent(0));
     for (LO whichPermute = 0; whichPermute < numPermutes; ++whichPermute) {
       const LO srcLclRowInd = permuteFromLIDs_h[whichPermute];
@@ -5398,7 +5398,7 @@ namespace Tpetra {
       const GO tgtGblRowInd = tgtRowMap.getGlobalElement(tgtLclRowInd);
       auto tgtGblColInds = getRowGraphGlobalRow(
         tgtGblColIndsScratch, *this, tgtGblRowInd);
-      padding.update_permute(tgtNumDups, srcNumDups, mergedNumDups,
+      padding.update_permute(tgtNumDups, srcNumDups, /* mergedNumDups, */
                              whichPermute, tgtLclRowInd,
                              tgtGblColInds.getRawPtr(),
                              tgtGblColInds.size(), tgt_is_unique,
@@ -5409,8 +5409,8 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done: srcNumDups: " << srcNumDups
-         << ", tgtNumDups: " << tgtNumDups
-         << ", mergedNumDups: " << mergedNumDups << endl;
+         << ", tgtNumDups: " << tgtNumDups << endl;
+      // os << ", mergedNumDups: " << mergedNumDups << endl;
       std::cerr << os.str();
     }
   }
@@ -5478,7 +5478,7 @@ namespace Tpetra {
     std::vector<GO> tgtGblColIndsScratch;
     size_t srcNumDups = 0;
     size_t tgtNumDups = 0;
-    size_t mergedNumDups = 0;
+    /* size_t mergedNumDups = 0; */
     size_t offset = 0;
     for (LO whichImport = 0; whichImport < numImports; ++whichImport) {
       // CrsGraph packs just global column indices, while CrsMatrix
@@ -5496,7 +5496,7 @@ namespace Tpetra {
         tgtGblColIndsScratch, *this, tgtGblRowInd);
       const size_t origTgtNumEnt(tgtGblColInds.size());
 
-      padding->update_import(tgtNumDups, srcNumDups, mergedNumDups,
+      padding->update_import(tgtNumDups, srcNumDups, /* mergedNumDups, */
                              whichImport, tgtLclRowInd,
                              tgtGblColInds.getRawPtr(),
                              origTgtNumEnt, tgt_is_unique,
@@ -5508,8 +5508,8 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done: srcNumDups: " << srcNumDups
-         << ", tgtNumDups: " << tgtNumDups
-         << ", mergedNumDups: " << mergedNumDups << endl;
+         << ", tgtNumDups: " << tgtNumDups << endl;
+      // os << ", mergedNumDups: " << mergedNumDups << endl;
       std::cerr << os.str();
     }
     return padding;
@@ -5583,7 +5583,7 @@ namespace Tpetra {
     std::vector<GO> tgtGblColIndsScratch;
     size_t srcNumDups = 0;
     size_t tgtNumDups = 0;
-    size_t mergedNumDups = 0;
+    // size_t mergedNumDups = 0;
     size_t offset = 0;
     for (LO whichImport = 0; whichImport < numImports; ++whichImport) {
       // CrsGraph packs just global column indices, while CrsMatrix
@@ -5640,7 +5640,7 @@ namespace Tpetra {
            << ": Call padding->update_import" << endl;
         std::cerr << os.str();
       }
-      padding->update_import(tgtNumDups, srcNumDups, mergedNumDups,
+      padding->update_import(tgtNumDups, srcNumDups, /* mergedNumDups, */
                              whichImport, tgtLclRowInd,
                              tgtGblColInds.getRawPtr(),
                              origNumTgtEnt, tgt_is_unique,
@@ -5652,8 +5652,8 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done: srcNumDups: " << srcNumDups
-         << ", tgtNumDups: " << tgtNumDups
-         << ", mergedNumDups: " << mergedNumDups << endl;
+         << ", tgtNumDups: " << tgtNumDups << endl;
+      // os << ", mergedNumDups: " << mergedNumDups << endl;
       std::cerr << os.str();
     }
     return padding;
