@@ -47,6 +47,20 @@ IF (TACHO_HAVE_KOKKOS_TASK)
     SOURCES Tacho_ExampleCholSupernodes.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholTriSolveVar0
+    TARGET_DEFINES -DTACHO_USE_TRISOLVE_VARIANT=0
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholTriSolve.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholTriSolveVar1
+    TARGET_DEFINES -DTACHO_USE_TRISOLVE_VARIANT=1
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholTriSolve.cpp
+    COMM serial mpi
+  )
 
   #
   # Solver
