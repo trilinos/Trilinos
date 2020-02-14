@@ -193,6 +193,22 @@ def setBuildEnviron(arguments):
                      'sems-cmake/3.10.3',
                      'atdm-env',
                      'atdm-ninja_fortran/1.7.2'],
+                'Trilinos_pullrequest_gcc_8.3.0':
+                     ['sems-env',
+                     'sems-git/2.10.1',
+                     'sems-gcc/8.3.0',
+                     'sems-openmpi/1.10.1',
+                     'sems-python/2.7.9',
+                     'sems-boost/1.66.0/base',
+                     'sems-zlib/1.2.8/base',
+                     'sems-hdf5/1.8.12/parallel',
+                     'sems-netcdf/4.4.1/exo_parallel',
+                     'sems-parmetis/4.0.3/parallel',
+                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
+                     'sems-superlu/4.3/base',
+                     'sems-cmake/3.10.3',
+                     'atdm-env',
+                     'atdm-ninja_fortran/1.7.2'],
                 'Trilinos_pullrequest_intel_17.0.1':
                      ['sems-env',
                      'sems-git/2.10.1',
@@ -297,6 +313,9 @@ def setBuildEnviron(arguments):
                                             'extras'
                                             'bin')},
                  'Trilinos_pullrequest_gcc_7.2.0':
+                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
+                       'OMP_NUM_THREADS': '2'},
+                 'Trilinos_pullrequest_gcc_8.3.0':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
                        'OMP_NUM_THREADS': '2'},
                  'Trilinos_pullrequest_intel_17.0.1':
@@ -495,6 +514,7 @@ config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4Testing
               'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
               'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
               'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
+              'Trilinos_pullrequest_gcc_8.3.0': 'PullRequestLinuxGCC8.3.0TestingSettings.cmake',
               'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
               'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
               'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
