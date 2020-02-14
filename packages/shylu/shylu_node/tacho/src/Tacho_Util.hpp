@@ -31,7 +31,6 @@
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA) 
-#include "cublas.h"
 #include "cublas_v2.h"
 #endif
 
