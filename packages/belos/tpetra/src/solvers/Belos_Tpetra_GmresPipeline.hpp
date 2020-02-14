@@ -25,6 +25,7 @@ private:
   using vec_type = typename Krylov<SC, MV, OP>::vec_type;
   using device_type = typename MV::device_type;
   using dot_type = typename MV::dot_type;
+  using dot_view_type = Kokkos::View<dot_type*, device_type>;
 
 public:
   GmresPipeline () :
@@ -136,8 +137,7 @@ private:
 
     // for idot
     std::shared_ptr<Tpetra::Details::CommRequest> req;
-    Kokkos::View<dot_type*, device_type> vals ("results[numVecs]",
-                                               restart+1);
+    dot_view_type vals ("results[numVecs]", restart+1);
     auto vals_h = Kokkos::create_mirror_view (vals);
 
     // Initialize starting vector
@@ -293,7 +293,7 @@ private:
           Teuchos::Range1D index_prev(0, iter+1);
           const MV Qprev  = * (Q.subView(index_prev));
 
-          auto v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+2));
+          dot_view_type v_iter = Kokkos::subview(vals, std::pair<int, int>(0, iter+2));
           vec_type W = * (V.getVectorNonConst (iter+1));
           req = Tpetra::idot (v_iter, Qprev, static_cast<const MV&> (W));
         }

@@ -27,9 +27,10 @@ public:
   /// \c CholQR.
   using FactorOutput = int;
   using STS = Teuchos::ScalarTraits<SC>;
+  using MVT = Belos::MultiVecTraits<SC, MV>;
   using mag_type = typename STS::magnitudeType;
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
-  using MVT = Belos::MultiVecTraits<SC, MV>;
+  using IST = typename MV::impl_scalar_type;
 
   /// \brief Constructor
   ///
@@ -83,7 +84,8 @@ public:
     {
       auto R_h = R_mv.getLocalViewHost ();
       int ldr = int (R_h.extent (0));
-      lapack.POTRF ('U', ncols, R_h.data (), ldr, &info);
+      IST *Rimpl = reinterpret_cast<IST*> (R_h.data ());
+      lapack.POTRF ('U', ncols, Rimpl, ldr, &info);
       if (info < 0) {
         ncols = -info;
         // FIXME (mfh 17 Sep 2018) Don't throw; report an error code.
