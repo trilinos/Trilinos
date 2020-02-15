@@ -276,7 +276,7 @@ private:
                   const Real                        alpha = 1e-4)
         : con_(con), bnd_(bnd), y_(y), xdual_(xdual), xprim_(xprim), alpha_(alpha) {}
       void apply(Vector<Real> &Jx, const Vector<Real> &x, Real &tol) const {
-        con_->applyAdjointJacobian(*xdual_,x,*y_,tol);
+        con_->applyAdjointJacobian(*xdual_,x.dual(),*y_,tol);
         xprim_->set(xdual_->dual());
         bnd_->pruneActive(*xprim_,*y_);
         con_->applyJacobian(Jx,*xprim_,*y_,tol);
