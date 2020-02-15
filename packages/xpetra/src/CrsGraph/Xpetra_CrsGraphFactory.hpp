@@ -254,7 +254,7 @@ namespace Xpetra {
     CrsGraphFactory() {}
 
   public:
-    //! Constructor for empty matrix (intended use is an import/export target - can't insert entries directly)
+    //! Constructor for empty graph (intended use is an import/export target - can't insert entries directly)
     static RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
     Build (const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap)
     {
@@ -439,7 +439,7 @@ namespace Xpetra {
     CrsGraphFactory() {}
 
   public:
-    //! Constructor for empty matrix (intended use is an import/export target - can't insert entries directly)
+    //! Constructor for empty graph (intended use is an import/export target - can't insert entries directly)
     static RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
     Build (const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap)
     {
