@@ -391,6 +391,18 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       std::vector< offset_t> first_layer_ghost_offsets;
       constructSecondGhostLayer(ownedPlusGhosts,owners, adjs, offsets, mapOwned,
                                 first_layer_ghost_adjs, first_layer_ghost_offsets);
+      
+      std::cout<<comm->getRank()<<": 2GL offset length: "<<first_layer_ghost_offsets.size()<<" adjs: "<<first_layer_ghost_adjs.size()<<"\n";
+      std::cout<<comm->getRank()<<": 2GL offset contents: ";
+      for(int i = 0; i < first_layer_ghost_offsets.size(); i++){
+        std::cout<<first_layer_ghost_offsets[i]<<" ";
+      }
+      std::cout<<"\n";
+      std::cout<<comm->getRank()<<": 2GL adjs contents: ";
+      for(int i = 0; i < first_layer_ghost_adjs.size(); i++){
+        std::cout<<first_layer_ghost_adjs[i]<<" ";
+      }
+      std::cout<<"\n";
       //we potentially reordered the local IDs of the ghost vertices, so we need
       //to re-insert the GIDs into the global to local ID mapping.
       globalToLocal.clear();
@@ -413,7 +425,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         }
         local_ghost_adjs.push_back(globalToLocal[first_layer_ghost_adjs[i]]);
       }
-
+      std::cout<<comm->getRank()<<": constructing mapWithCopies\n";
       dummy = Teuchos::OrdinalTraits <Tpetra::global_size_t>::invalid();
       RCP<const map_t> mapWithCopies = rcp(new map_t(dummy,
                                            Teuchos::arrayViewFromVector(ownedPlusGhosts),
@@ -423,11 +435,12 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
                                                             mapWithCopies));
       Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned,
                                                     importer, 1, true));
-      
+      std::cout<<comm->getRank()<<": done constructing mapWithCopies\n";
       timeReorder->stop();
       //Create random numbers seeded on global IDs, as in AlgHybridGMB.
       //This may or may not have an effect on this algorithm, but we
       //might as well see.
+      std::cout<<comm->getRank()<<": building random numbers\n";
       std::vector<int> rand(ownedPlusGhosts.size());
       for(size_t i = 0; i < rand.size(); i++){
         Zoltan_Srand((unsigned int) ownedPlusGhosts[i], NULL);
@@ -440,6 +453,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Teuchos::ArrayView<const offset_t> ghost_offsets = Teuchos::arrayViewFromVector(first_layer_ghost_offsets);
       Teuchos::ArrayView<const lno_t> ghost_adjacencies = Teuchos::arrayViewFromVector(local_ghost_adjs);
       //call the coloring algorithm
+      std::cout<<comm->getRank()<<": Calling coloring function\n";
       twoGhostLayer(nVtx, nVtx+nGhosts, local_adjs_view, offsets, ghost_adjacencies, ghost_offsets,
                     femv, ownedPlusGhosts, globalToLocal, rand);
       
@@ -480,9 +494,11 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
 
       //communicate the initial coloring.
       timeBoundaryComm->start();
+      std::cout<<comm->getRank()<<": before communicating first\n";
       femv->switchActiveMultiVector();
       femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
       femv->switchActiveMultiVector();
+      std::cout<<comm->getRank()<<": after communicating first\n";
       timeBoundaryComm->stop();
       
       //create the graph structures which allow KokkosKernels to recolor the conflicting vertices
@@ -565,7 +581,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       int distributedRounds = 0;
       
       //see if recoloring is necessary.
-      bool done = (recoloringSize(0) == 0);
+      bool done = false;//(recoloringSize(0) == 0);
       if(comm->getSize()==1) done = true;
       
       //recolor until no conflicts are left
@@ -579,9 +595,11 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         //communicate the new colors
         timeBoundaryComp->stop();
         timeBoundaryComm->start();
+        std::cout<<comm->getRank()<<": before communicating in loop\n";
         femv->switchActiveMultiVector();
         femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
         femv->switchActiveMultiVector();
+        std::cout<<comm->getRank()<<": after communicating in loop\n";
         timeBoundaryComm->stop();
         timeBoundaryComp->start();
 
@@ -608,7 +626,9 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         Kokkos::fence(); 
         int localDone = recoloringSize(0);
         int globalDone = 0;
+        std::cout<<comm->getRank()<<": before reduceAll\n";
         Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &localDone, &globalDone);
+        std::cout<<comm->getRank()<<": after reduceAll\n";
         done = !globalDone;
       
       }//end coloring
