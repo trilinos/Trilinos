@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -56,6 +54,7 @@
 #include "Tpetra_SrcDistObject.hpp"
 #include "Tpetra_DistObject_fwd.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include <memory>
 #include <type_traits>
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
@@ -906,6 +905,10 @@ namespace Tpetra {
     Teuchos::RCP<const map_type> map_;
 
   protected:
+    std::unique_ptr<std::string>
+    createPrefix(const char className[],
+                 const char methodName[]) const;
+    
     /// \brief Buffer into which packed data are imported (received
     ///   from other processes).
     ///
