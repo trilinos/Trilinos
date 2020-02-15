@@ -106,9 +106,9 @@ public:
 
   virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     if (dim_==1) {
-      Real dot = v.dot(*b1_);
+      Real dot = v.dot(b1_->dual());
       Hv.set(v);
-      Hv.axpy(-dot/b1sqr_,*b1_);
+      Hv.axpy(-dot/b1sqr_,b1_->dual());
     }
     else {
       b1_->set(v); b2_->zero();
