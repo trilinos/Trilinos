@@ -938,9 +938,10 @@ namespace MueLu {
       MUELU_KOKKOS_FACTORY_NO_DECL(dropFactory, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       ParameterList dropParams;
       dropParams.set("lightweight wrap", true);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
       if (useKokkos_) {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, dropParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, dropParams);
