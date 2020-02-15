@@ -76,17 +76,9 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   namespace Details {
-
-    template<class LO, class GO, class NT>
-    void
-    unpackCrsGraphAndCombine(
-        CrsGraph<LO, GO, NT>& graph,
-        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
-        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-        const Teuchos::ArrayView<const LO>& importLIDs,
-        size_t constantNumPackets,
-        Distributor & distor,
-        CombineMode combineMode);
+    template<class LocalOrdinal,
+             class GlobalOrdinal>
+    class CrsPadding;
   } // namespace Details
 
   namespace { // (anonymous)
@@ -1163,46 +1155,66 @@ namespace Tpetra {
      const Kokkos::DualView<const local_ordinal_type*,
        buffer_device_type>& permuteFromLIDs) override;
 
-    void
-    applyCrsPadding(
-      const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
-      const bool verbose);
-
-    Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPadding (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-                       const bool verbose) const;
-
-    Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPadding (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-                       const bool verbose) const;
+    using padding_type = Details::CrsPadding<
+      local_ordinal_type, global_ordinal_type>;
 
     void
-    computeCrsPaddingForSameIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
-                                 const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                                 const size_t numSameIDs,
-                                 const bool padAll) const;
+    applyCrsPadding(const padding_type& padding,
+                    const bool verbose);
+
+    std::unique_ptr<padding_type>
+    computeCrsPadding(
+      const RowGraph<local_ordinal_type, global_ordinal_type,
+        node_type>& source,
+      const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& permuteFromLIDs,
+      const bool verbose) const;
+
+    // This actually modifies imports by sorting it.
+    std::unique_ptr<padding_type>
+    computeCrsPaddingForImports(
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& importLIDs,
+      Kokkos::DualView<packet_type*, buffer_device_type> imports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      const bool verbose) const;
+
+    std::unique_ptr<padding_type>
+    computePaddingForCrsMatrixUnpack(
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& importLIDs,
+      Kokkos::DualView<char*, buffer_device_type> imports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      const bool verbose) const;
+
     void
-    computeCrsPaddingForPermutedIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
-                                     const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-                                     const bool padAll) const;
+    computeCrsPaddingForSameIDs(
+      padding_type& padding,
+      const RowGraph<local_ordinal_type, global_ordinal_type,
+        node_type>& source,
+      const local_ordinal_type numSameIDs) const;
+
+    void
+    computeCrsPaddingForPermutedIDs(
+      padding_type& padding,
+      const RowGraph<local_ordinal_type, global_ordinal_type,
+        node_type>& source,
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*,
+      buffer_device_type>& permuteFromLIDs) const;
 
     virtual void
-    packAndPrepare
-    (const SrcDistObject& source,
-     const Kokkos::DualView<const local_ordinal_type*,
-       buffer_device_type>& exportLIDs,
-     Kokkos::DualView<packet_type*,
-       buffer_device_type>& exports,
-     Kokkos::DualView<size_t*,
-       buffer_device_type> numPacketsPerLID,
-     size_t& constantNumPackets,
-     Distributor& distor) override;
+    packAndPrepare(
+      const SrcDistObject& source,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+      Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      size_t& constantNumPackets,
+      Distributor& distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
@@ -1485,9 +1497,6 @@ namespace Tpetra {
     };
 
   private:
-    std::unique_ptr<std::string>
-    createPrefix(const char methodName[]) const;
-
     // Friend declaration for nonmember function.
     template<class CrsGraphType>
     friend Teuchos::RCP<CrsGraphType>
@@ -1554,17 +1563,6 @@ namespace Tpetra {
                                                                  typename CrsGraphType::global_ordinal_type,
                                                                  typename CrsGraphType::node_type> >& rangeMap,
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
-
-    template<class LO, class GO, class NT>
-    friend void
-    ::Tpetra::Details::unpackCrsGraphAndCombine(
-        CrsGraph<LO, GO, NT>& graph,
-        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
-        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-        const Teuchos::ArrayView<const LO>& importLIDs,
-        size_t constantNumPackets,
-        Distributor & distor,
-        CombineMode combineMode);
 
   public:
     /// \brief Import from <tt>this</tt> to the given destination
@@ -2401,6 +2399,23 @@ namespace Tpetra {
     /// If you don't want to sort (for compatibility with Epetra),
     /// call sortGhostColumnGIDsWithinProcessBlock(false).
     bool sortGhostsAssociatedWithEachProcessor_;
+
+  private:
+    //! Get initial value of debug_ for this object.
+    static bool getDebug();
+
+    /// \brief Whether to do extra debug checks.
+    ///
+    /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
+    bool debug_ = getDebug();
+
+    //! Get initial value of verbose_ for this object.
+    static bool getVerbose();
+
+    /// \brief Whether to do extra debug checks.
+    ///
+    /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
+    bool verbose_ = getVerbose();
 
   }; // class CrsGraph
 

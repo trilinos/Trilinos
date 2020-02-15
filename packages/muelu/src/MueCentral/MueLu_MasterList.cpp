@@ -188,6 +188,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
@@ -548,6 +549,8 @@ namespace MueLu {
          ("aggregation: ordering","aggregation: ordering")
       
          ("aggregation: drop scheme","aggregation: drop scheme")
+      
+         ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
       
          ("aggregation: threshold","aggregation: drop tol")
       

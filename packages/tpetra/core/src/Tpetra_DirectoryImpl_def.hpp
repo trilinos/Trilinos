@@ -34,13 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#ifndef __Tpetra_DirectoryImpl_def_hpp
-#define __Tpetra_DirectoryImpl_def_hpp
+#ifndef TPETRA_DIRECTORYIMPL_DEF_HPP
+#define TPETRA_DIRECTORYIMPL_DEF_HPP
 
 /// \file Tpetra_DirectoryImpl_def.hpp
 /// \brief Definition of implementation details of Tpetra::Directory.
@@ -48,6 +46,7 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_TieBreak.hpp"
+#include "Tpetra_Util.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Teuchos_Comm.hpp"
 #include <memory>
@@ -943,7 +942,8 @@ namespace Tpetra {
       using Teuchos::as;
       using Teuchos::RCP;
       using Teuchos::toString;
-      using ::Tpetra::Details::Behavior;
+      using Details::Behavior;
+      using Details::verbosePrintArray;
       using std::cerr;
       using std::endl;
       using size_type = typename Array<GO>::size_type;
@@ -955,6 +955,9 @@ namespace Tpetra {
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const bool verbose = Behavior::verbose ("Directory") ||
         Behavior::verbose ("Tpetra::Directory");
+      const size_t maxNumToPrint = verbose ?
+        Behavior::verbosePrintCountThreshold() : size_t(0);
+
       std::unique_ptr<std::string> procPrefix;
       if (verbose) {
         std::ostringstream os;
@@ -966,12 +969,16 @@ namespace Tpetra {
           os << map.getComm ()->getRank ();
         }
         os << ": ";
-        procPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-        os << funcPrefix << "{GIDs: " << toString (globalIDs)
-           << ", PIDs: " << toString (nodeIDs)
-           << ", LIDs: " << toString (localIDs)
-           << ", computeLIDs: " << (computeLIDs ? "true" : "false")
-           << "}" << endl;
+        procPrefix = std::unique_ptr<std::string>(
+          new std::string(os.str()));
+        os << funcPrefix << "{";
+        verbosePrintArray(os, globalIDs, "GIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, nodeIDs, "PIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, localIDs, "LIDs", maxNumToPrint);
+        os << ", computeLIDs: "
+           << (computeLIDs ? "true" : "false") << "}" << endl;
         cerr << os.str ();
       }
 
@@ -1001,8 +1008,9 @@ namespace Tpetra {
       res = directoryMap_->getRemoteIndexList (globalIDs, dirImages ());
       if (verbose) {
         std::ostringstream os;
-        os << *procPrefix << "directoryMap_->getRemoteIndexList "
-          "PIDs result: " << toString (dirImages) << endl;
+        os << *procPrefix << "Director Map getRemoteIndexList out ";
+        verbosePrintArray(os, dirImages, "PIDs", maxNumToPrint);
+        os << endl;
         cerr << os.str ();
       }
 
@@ -1032,9 +1040,11 @@ namespace Tpetra {
       if (verbose) {
         std::ostringstream os;
         os << *procPrefix << "Distributor::createFromRecvs result: "
-           << "{sendGIDs: " << toString (sendGIDs)
-           << ", sendPIDs: " << toString (sendImages)
-           << "}" << endl;
+           << "{";
+        verbosePrintArray(os, sendGIDs, "sendGIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, sendImages, "sendPIDs", maxNumToPrint);
+        os << "}" << endl;
         cerr << os.str ();
       }
       const size_type numSends = sendGIDs.size ();
@@ -1181,16 +1191,18 @@ namespace Tpetra {
       // doWaits.  The code is still correct in this form, however.
       if (verbose) {
         std::ostringstream os;
-        os << *procPrefix << "Call doPostsAndWaits: {packetSize: "
-           << packetSize << ", exports: " << toString (exports) << "}"
-           << endl;
+        os << *procPrefix << "Call doPostsAndWaits: {"
+           << "packetSize: " << packetSize << ", ";
+        verbosePrintArray(os, exports, "exports", maxNumToPrint);
+        os << "}" << endl;
         cerr << os.str ();
       }
       distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
       if (verbose) {
         std::ostringstream os;
-        os << *procPrefix << "doPostsAndWaits result: "
-           << toString (imports) << endl;
+        os << *procPrefix << "doPostsAndWaits result: ";
+        verbosePrintArray(os, imports, "imports", maxNumToPrint);
+        os << endl;
         cerr << os.str ();
       }
 
@@ -1202,8 +1214,11 @@ namespace Tpetra {
       sort2 (sortedIDs.begin(), sortedIDs.begin() + numEntries, offset.begin());
       if (verbose) {
         std::ostringstream os;
-        os << *procPrefix << "sortedIDs: " << toString (sortedIDs)
-           << ", offset: " << toString (offset) << endl;
+        os << *procPrefix;
+        verbosePrintArray(os, sortedIDs, "sortedIDs", maxNumToPrint);
+        os << ", ";
+        verbosePrintArray(os, offset, "offset", maxNumToPrint);
+        os << endl;
         cerr << os.str ();
       }
 
@@ -1281,4 +1296,4 @@ namespace Tpetra {
     template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
   }
 
-#endif // __Tpetra_DirectoryImpl_def_hpp
+#endif // TPETRA_DIRECTORYIMPL_DEF_HPP
