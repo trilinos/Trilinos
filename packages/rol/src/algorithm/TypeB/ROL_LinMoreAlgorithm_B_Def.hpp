@@ -209,24 +209,26 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       }
 
       // Projected search
-      state_->snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
-      pRed += -q;
+      if (iterCG>0) { // Only do projected search if CG step is nonzero
+        state_->snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
+        pRed += -q;
 
-      // Model gradient at s = x[i+1] - x[0]
-      state_->stepVec->plus(*s);
-      gmod->plus(*dwa1); // gmod = H(x[i+1]-x[i]) + H(x[i]-x[0]) + g
-      gfree->set(*gmod);
-      bnd.pruneActive(*gfree,x,zero);
-      if (hasEcon_) {
-        applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1);
-        gfnormf = pwa1->norm();
-      }
-      else {
-        gfnormf = gfree->norm();
-      }
-      if (verbosity_ > 1) {
-        outStream << "    Norm of free gradient components: " << gfnormf       << std::endl;
-        outStream << std::endl;
+        // Model gradient at s = x[i+1] - x[0]
+        state_->stepVec->plus(*s);
+        gmod->plus(*dwa1); // gmod = H(x[i+1]-x[i]) + H(x[i]-x[0]) + g
+        gfree->set(*gmod);
+        bnd.pruneActive(*gfree,x,zero);
+        if (hasEcon_) {
+          applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1);
+          gfnormf = pwa1->norm();
+        }
+        else {
+          gfnormf = gfree->norm();
+        }
+        if (verbosity_ > 1) {
+          outStream << "    Norm of free gradient components: " << gfnormf       << std::endl;
+          outStream << std::endl;
+        }
       }
 
       // Termination check
