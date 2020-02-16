@@ -92,6 +92,12 @@ public:
 
   //! @name Constructor/Destructor Methods
   //@{
+  //! Constructor for empty DynamicProfile graph (no space is preallocated).
+  EpetraCrsGraphT(const RCP< const map_type > &rowMap, const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
+
   //! Constructor specifying fixed number of entries for each row.
   EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
@@ -357,6 +363,11 @@ public:
 
   //! @name Constructor/Destructor Methods
   //@{
+
+  //! Constructor for empty DynamicProfile graph (no space is preallocated).
+  EpetraCrsGraphT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap)
+: graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), 0, false))) { }
+
   //! Constructor specifying fixed number of entries for each row.
   EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
 : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, true))) { }
@@ -719,6 +730,11 @@ public:
 
   //! @name Constructor/Destructor Methods
   //@{
+  
+  //! Constructor for empty DynamicProfile graph (no space is preallocated).
+  EpetraCrsGraphT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap)
+: graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), 0, false))) { }
+
   //! Constructor specifying fixed number of entries for each row.
   EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
 : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, true))) { }

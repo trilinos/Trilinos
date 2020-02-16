@@ -714,7 +714,7 @@ namespace FROSch {
                     commGraph->fillComplete(domainMap,NodesMap_); // AH 08/07/2019: Can we remove some fillComplete?
                     commGraphTmp->doExport(*commGraph,*commExporter,INSERT);
                     commGraphTmp->fillComplete(domainMap,UniqueNodesMap_);
-                    commGraph = CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,LO(0));
+                    commGraph = CrsGraphFactory<LO,GO,NO>::Build(NodesMap_);
                     commGraph->doImport(*commGraphTmp,*commExporter,INSERT);
 
                     componentsSubdomains = IntVecVecPtr(NumMyNodes_);
