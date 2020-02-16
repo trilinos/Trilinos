@@ -62,6 +62,7 @@ private:
   const Ptr<Vector<Real>> x_;
 
   mutable Ptr<Vector<Real>> b1_;
+  mutable Ptr<Vector<Real>> b1dual_;
   mutable Ptr<Vector<Real>> b2_;
   mutable Ptr<Vector<Real>> mul_;
 
@@ -78,9 +79,11 @@ public:
     dim_ = ran.dimension();
     if (dim_==1) {
       Real tol = std::sqrt(ROL_EPSILON<Real>());
-      b1_ = dom.dual().clone();
-      b2_ = ran.clone(); b2_->setScalar(1.0);
+      b1_     = dom.dual().clone();
+      b1dual_ = dom.clone();
+      b2_     = ran.dual().clone(); b2_->setScalar(1.0);
       con_->applyAdjointJacobian(*b1_,*b2_,dom,tol);
+      b1dual_->set(b1_->dual());
       b1sqr_ = b1_->dot(*b1_);
     }
     else {
@@ -100,15 +103,16 @@ public:
     if (dim_==1) {
       Real tol = std::sqrt(ROL_EPSILON<Real>());
       con_->applyAdjointJacobian(*b1_,*b2_,x,tol);
+      b1dual_->set(b1_->dual());
       b1sqr_ = b1_->dot(*b1_);
     }
   }
 
   virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     if (dim_==1) {
-      Real dot = v.dot(b1_->dual());
+      Real dot = v.dot(*b1dual_);
       Hv.set(v);
-      Hv.axpy(-dot/b1sqr_,b1_->dual());
+      Hv.axpy(-dot/b1sqr_,*b1dual_);
     }
     else {
       b1_->set(v); b2_->zero();
