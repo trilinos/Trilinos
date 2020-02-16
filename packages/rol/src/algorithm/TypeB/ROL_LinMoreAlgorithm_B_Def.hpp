@@ -250,8 +250,6 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       // Update free gradient norm
       gfnorm = gfnormf;
     }
-    // Update norm of step and update model predicted reduction
-    //pRed = -q;
 
     // Compute trial objective value
     obj.update(x,false);
