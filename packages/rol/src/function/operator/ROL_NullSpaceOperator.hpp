@@ -115,7 +115,7 @@ public:
       Hv.axpy(-dot/b1sqr_,*b1dual_);
     }
     else {
-      b1_->set(v); b2_->zero();
+      b1_->set(v.dual()); b2_->zero();
       con_->solveAugmentedSystem(Hv,*mul_,*b1_,*b2_,*x_,tol);
     }
   }
