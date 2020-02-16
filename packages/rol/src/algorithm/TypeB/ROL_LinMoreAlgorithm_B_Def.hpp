@@ -209,6 +209,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       }
 
       // Projected search
+      gfnormf = zero;
       if (iterCG>0) { // Only do projected search if CG step is nonzero
         state_->snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
         pRed += -q;
