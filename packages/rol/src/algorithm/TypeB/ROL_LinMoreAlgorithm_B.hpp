@@ -149,7 +149,7 @@ private:
   //   model -- Trust region model
   //   dwa   -- Dual working array, stores Hessian applied to step
   //   dwa1  -- Dual working array
-  Real dcauchy(Vector<Real> &s, Real &alpha,
+  Real dcauchy(Vector<Real> &s, Real &alpha, Real &q,
                const Vector<Real> &x, const Vector<Real> &g,
                const Real del, TrustRegionModel_U<Real> &model,
                Vector<Real> &dwa, Vector<Real> &dwa1,

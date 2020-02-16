@@ -164,10 +164,11 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     // Compute Cauchy point (TRON notation: xnew = x[1])
-    state_->snorm = dcauchy(*state_->stepVec,alpha,*state_->iterateVec,
+    state_->snorm = dcauchy(*state_->stepVec,alpha,q,*state_->iterateVec,
                     state_->gradientVec->dual(),state_->searchSize,
                     *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
     x.plus(*state_->stepVec);                       // Set x = x[0] + alpha*g
+    pRed = -q;
 
     // Model gradient at s = x[1] - x[0]
     gmod->set(*dwa1); // hessVec from Cauchy point computation
@@ -209,6 +210,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
 
       // Projected search
       state_->snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
+      pRed += -q;
 
       // Model gradient at s = x[i+1] - x[0]
       state_->stepVec->plus(*s);
@@ -249,7 +251,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       gfnorm = gfnormf;
     }
     // Update norm of step and update model predicted reduction
-    pRed = -q;
+    //pRed = -q;
 
     // Compute trial objective value
     obj.update(x,false);
@@ -314,6 +316,7 @@ Real LinMoreAlgorithm_B<Real>::dgpstep(Vector<Real> &s, const Vector<Real> &w,
 template<typename Real>
 Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
                                        Real &alpha,
+                                       Real &q,
                                        const Vector<Real> &x,
                                        const Vector<Real> &g,
                                        const Real del,
@@ -324,7 +327,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
   // const Real zero(0); // Unused
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   bool interp = false;
-  Real q(0), gs(0), snorm(0);
+  Real gs(0), snorm(0);
   // Compute s = P(x[0] - alpha g[0])
   snorm = dgpstep(s,g,x,-alpha);
   if (snorm > del) {
