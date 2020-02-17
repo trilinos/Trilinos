@@ -44,6 +44,7 @@
 #ifndef ROL_NULL_SPACE_OPERATOR_H
 #define ROL_NULL_SPACE_OPERATOR_H
 
+#include "ROL_LinearOperator.hpp"
 #include "ROL_Constraint.hpp"
 
 /** @ingroup func_group
@@ -60,6 +61,7 @@ class NullSpaceOperator : public LinearOperator<Real> {
 private:
   const Ptr<Constraint<Real>> con_;
   const Ptr<Vector<Real>> x_;
+  const bool useAugSys_;
 
   mutable Ptr<Vector<Real>> b1_;
   mutable Ptr<Vector<Real>> b1dual_;
@@ -73,11 +75,12 @@ public:
   virtual ~NullSpaceOperator() {}
   NullSpaceOperator(const Ptr<Constraint<Real>> &con,
                     const Vector<Real> &dom,
-                    const Vector<Real> &ran)
-    : con_(con), x_(dom.clone()) {
+                    const Vector<Real> &ran,
+                    const bool useAugSys = false)
+    : con_(con), x_(dom.clone()), useAugSys_(useAugSys) {
     x_->set(dom);
     dim_ = ran.dimension();
-    if (dim_==1) {
+    if (dim_==1 && !useAugSys_) {
       Real tol = std::sqrt(ROL_EPSILON<Real>());
       b1_     = dom.dual().clone();
       b1dual_ = dom.clone();
@@ -100,7 +103,7 @@ public:
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     x_->set(x);
-    if (dim_==1) {
+    if (dim_==1 && !useAugSys_) {
       Real tol = std::sqrt(ROL_EPSILON<Real>());
       con_->applyAdjointJacobian(*b1_,*b2_,x,tol);
       b1dual_->set(b1_->dual());
@@ -109,7 +112,7 @@ public:
   }
 
   virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-    if (dim_==1) {
+    if (dim_==1 && !useAugSys_) {
       Real dot = v.dot(*b1dual_);
       Hv.set(v);
       Hv.axpy(-dot/b1sqr_,*b1dual_);
