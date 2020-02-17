@@ -70,12 +70,14 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   tol1_  = list.sublist("General").sublist("Krylov").get("Absolute Tolerance", 1e-4);
   tol2_  = list.sublist("General").sublist("Krylov").get("Relative Tolerance", 1e-2);
   // Algorithm-Specific Parameters
-  minit_     = trlist.sublist("Lin-More").get("Maximum Number of Minor Iterations",    10);
-  extlim_    = trlist.sublist("Lin-More").get("Maximum Number of Extrapolation Steps", 10);
-  interpf_   = trlist.sublist("Lin-More").get("Cauchy Point Backtracking Rate",        0.1);
-  extrapf_   = trlist.sublist("Lin-More").get("Cauchy Point Extrapolation Rate",       10.0);
-  mu0_       = trlist.sublist("Lin-More").get("Sufficient Decrease Parameter",         1e-2);
-  interpfPS_ = trlist.sublist("Lin-More").get("Projected Search Backtracking Rate",    0.5);
+  minit_     = trlist.sublist("Lin-More").get("Maximum Number of Minor Iterations",       10);
+  extlim_    = trlist.sublist("Lin-More").get("Maximum Number of Extrapolation Steps",    10);
+  interpf_   = trlist.sublist("Lin-More").get("Cauchy Point Backtracking Rate",           0.1);
+  extrapf_   = trlist.sublist("Lin-More").get("Cauchy Point Extrapolation Rate",          10.0);
+  alphamax_  = trlist.sublist("Lin-More").get("Max Cauchy Point Length",                  1e10);
+  mu0_       = trlist.sublist("Lin-More").get("Sufficient Decrease Parameter",            1e-2);
+  interpfPS_ = trlist.sublist("Lin-More").get("Projected Search Backtracking Rate",       0.5);
+  pslim_     = trlist.sublist("Lin-MOre").get("Maximum Number of Projected Search Steps", 20);
   // Output Parameters
   verbosity_   = list.sublist("General").get("Output Level",0);
   printHeader_ = verbosity_ > 2;
@@ -361,7 +363,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     Real alphas = alpha;
     Real qs = q;
     dwa1.set(dwa);
-    while (search) {
+    while (search && alpha < alphamax_) {
       alpha *= extrapf_;
       snorm = dgpstep(s,g,x,-alpha);
       if (snorm <= del && cnt < extlim_) {
@@ -419,7 +421,7 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     model.hessVec(dwa,pwa,x,tol);
     gs = pwa.dot(g);
     q  = half * s.dot(dwa.dual()) + gs;
-    if (q <= mu0_*gs) { // || nsteps > 10) {
+    if (q <= mu0_*gs || nsteps > pslim_) {
       search = false;
     }
     else {
