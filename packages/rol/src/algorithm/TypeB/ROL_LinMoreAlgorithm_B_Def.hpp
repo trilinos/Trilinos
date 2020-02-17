@@ -143,7 +143,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
                                                        std::ostream          &outStream ) {
   const Real zero(0);
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
-  Real gfnorm(0), gfnormf(0), tol(0), stol(0);
+  Real gfnorm(0), gfnormf(0), tol(0), stol(0), snorm(0);
   Real ftrial(0), pRed(0), rho(1), alpha(1), q(0);
   int flagCG(0), iterCG(0);
   // Initialize trust-region data
@@ -164,7 +164,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     // Compute Cauchy point (TRON notation: xnew = x[1])
-    state_->snorm = dcauchy(*state_->stepVec,alpha,q,*state_->iterateVec,
+    snorm = dcauchy(*state_->stepVec,alpha,q,*state_->iterateVec,
                     state_->gradientVec->dual(),state_->searchSize,
                     *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
     x.plus(*state_->stepVec);                       // Set x = x[0] + alpha*g
@@ -176,7 +176,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     gfree->set(*gmod);
     bnd.pruneActive(*gfree,x,zero);
     if (hasEcon_) {
-      applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1);
+      applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1,*pwa2);
       gfnorm = pwa1->norm();
     }
     else {
@@ -194,24 +194,24 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       flagCG = 0; iterCG = 0;
       tol  = std::min(tol1_,tol2_*gfnorm);
       stol = tol; //zero;
-      state_->snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
-                      state_->searchSize,*model_,bnd,tol,stol,maxit_,
-                      *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
+      snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
+                     state_->searchSize,*model_,bnd,tol,stol,maxit_,
+                     *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
       SPiter_ += iterCG;
       if (verbosity_ > 1) {
         outStream << "  Computation of CG step"               << std::endl;
-        outStream << "    Current face (i):                 " << i             << std::endl;
-        outStream << "    CG step length:                   " << state_->snorm << std::endl;
-        outStream << "    Number of CG iterations:          " << iterCG        << std::endl;
-        outStream << "    CG flag:                          " << flagCG        << std::endl;
-        outStream << "    Total number of iterations:       " << SPiter_       << std::endl;
+        outStream << "    Current face (i):                 " << i       << std::endl;
+        outStream << "    CG step length:                   " << snorm   << std::endl;
+        outStream << "    Number of CG iterations:          " << iterCG  << std::endl;
+        outStream << "    CG flag:                          " << flagCG  << std::endl;
+        outStream << "    Total number of iterations:       " << SPiter_ << std::endl;
         outStream << std::endl;
       }
 
       // Projected search
       gfnormf = zero;
       if (iterCG>0) { // Only do projected search if CG step is nonzero
-        state_->snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
+        snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
         pRed += -q;
 
         // Model gradient at s = x[i+1] - x[0]
@@ -220,7 +220,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
         gfree->set(*gmod);
         bnd.pruneActive(*gfree,x,zero);
         if (hasEcon_) {
-          applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1);
+          applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1,*pwa2);
           gfnormf = pwa1->norm();
         }
         else {
@@ -253,6 +253,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       // Update free gradient norm
       gfnorm = gfnormf;
     }
+    state_->snorm = state_->stepVec->norm();
 
     // Compute trial objective value
     obj.update(x,false);
@@ -483,7 +484,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
   // Compute residual
   t.set(g); t.scale(-one);
   // Preconditioned residual
-  applyFreePrecond(r,t,x,model,bnd,tol0,dwa);
+  applyFreePrecond(r,t,x,model,bnd,tol0,dwa,pwa);
   rho    = r.dot(t.dual());
   rnorm0 = std::sqrt(rho);
   if ( rnorm0 == zero ) {
@@ -510,7 +511,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
     // Update iterate and residuals
     w.axpy(alpha,p);
     t.axpy(-alpha,q);
-    applyFreePrecond(r,t,x,model,bnd,tol0,dwa);
+    applyFreePrecond(r,t,x,model,bnd,tol0,dwa,pwa);
     // Exit if residual tolerance is met
     rtr   = r.dot(t.dual());
     //rnorm = std::sqrt(std::abs(rtr));
@@ -565,7 +566,8 @@ void LinMoreAlgorithm_B<Real>::applyFreePrecond(Vector<Real> &hv,
                                                 TrustRegionModel_U<Real> &model,
                                                 BoundConstraint<Real> &bnd,
                                                 Real &tol,
-                                                Vector<Real> &dwa) const {
+                                                Vector<Real> &dwa,
+                                                Vector<Real> &pwa) const {
   if (!hasEcon_) {
     const Real zero(0);
     dwa.set(v);
@@ -577,7 +579,8 @@ void LinMoreAlgorithm_B<Real>::applyFreePrecond(Vector<Real> &hv,
     // Perform null space projection
     rcon_->setX(makePtrFromRef(x));
     ns_->update(x);
-    ns_->apply(hv,v,tol);
+    pwa.set(v.dual());
+    ns_->apply(hv,pwa,tol);
   }
 }
 

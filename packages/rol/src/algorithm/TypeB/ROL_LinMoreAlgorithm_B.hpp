@@ -218,7 +218,8 @@ private:
                         TrustRegionModel_U<Real> &model,
                         BoundConstraint<Real> &bnd,
                         Real &tol,
-                        Vector<Real> &dwa) const;
+                        Vector<Real> &dwa,
+                        Vector<Real> &pwa) const;
 
 }; // class ROL::LinMoreAlgorithm_B
 

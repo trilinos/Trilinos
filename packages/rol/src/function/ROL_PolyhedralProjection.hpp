@@ -57,6 +57,7 @@ private:
   const Ptr<BoundConstraint<Real>> bnd_;
   const Ptr<Constraint<Real>>      con_;
   const Ptr<Vector<Real>>          mul_;
+  const bool                       useSN_;
 
   int dim_;
   Ptr<Krylov<Real>> krylov_;
@@ -69,8 +70,9 @@ public:
   PolyhedralProjection(const Ptr<const Vector<Real>>    &x,
                        const Ptr<BoundConstraint<Real>> &bnd,
                        const Ptr<Constraint<Real>>      &con = nullPtr,
-                       const Ptr<Vector<Real>>          &mul = nullPtr)
-    : bnd_(bnd), con_(con), mul_(mul) {
+                       const Ptr<Vector<Real>>          &mul = nullPtr,
+                       const bool useSN = false)
+    : bnd_(bnd), con_(con), mul_(mul), useSN_(useSN) {
     xnew_  = x->clone();
     xprim_ = x->clone();
     xdual_ = x->dual().clone();
@@ -80,7 +82,7 @@ public:
       dim_ = mul->dimension();
       res_ = mul->dual().clone();
     }
-    if (dim_ == 1) {
+    if (dim_ == 1 && !useSN_) {
       mul1_  = static_cast<Real>(0);
       dlam1_ = static_cast<Real>(2);
       // con.value(x) = xprim_->dot(x) + b_
@@ -92,7 +94,7 @@ public:
       con_->applyAdjointJacobian(*xdual_,*mul_,*x,tol);
       xprim_->set(xdual_->dual());
     }
-    else if (dim_ > 1) {
+    else {
       lnew_ = mul->clone();
       dlam_ = mul->clone();
 
@@ -111,7 +113,7 @@ public:
       bnd_->project(x);
     }
     else {
-      if (dim_==1) {
+      if (dim_==1 && !useSN_) {
         mul1_  = static_cast<Real>(0);
         dlam1_ = static_cast<Real>(2);
         //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);
@@ -153,6 +155,10 @@ private:
     Real lam1(0), lam2(0), lam3(0), r1(0), r2(0), s(0);
     update_primal_1d(*xnew_,x,lam);
     Real r = residual_1d(*xnew_);
+    if (r == zero) {
+      x.set(*xnew_);
+      return;
+    }
     const Real ctol = std::min(atol,rtol*std::abs(r));
     int cnt = 0, maxit = 1000;
     // Bracketing phase
