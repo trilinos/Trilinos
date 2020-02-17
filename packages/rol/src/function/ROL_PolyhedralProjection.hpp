@@ -62,7 +62,7 @@ private:
   int dim_;
   Ptr<Krylov<Real>> krylov_;
   Ptr<Vector<Real>> xnew_, xdual_, xprim_, lnew_, dlam_, res_;
-  Real b_, mul1_, dlam1_;
+  Real b_, mul1_, dlam1_, cdot_;
 
 public:
   virtual ~PolyhedralProjection() {}
@@ -93,6 +93,7 @@ public:
       mul_->setScalar(static_cast<Real>(1));
       con_->applyAdjointJacobian(*xdual_,*mul_,*x,tol);
       xprim_->set(xdual_->dual());
+      cdot_ = xprim_->dot(*xprim_);
     }
     else {
       lnew_ = mul->clone();
@@ -114,7 +115,8 @@ public:
     }
     else {
       if (dim_==1 && !useSN_) {
-        mul1_  = static_cast<Real>(0);
+        mul1_  = (-b_-xprim_->dot(x))/cdot_;
+        //mul1_  = static_cast<Real>(0);
         dlam1_ = static_cast<Real>(2);
         //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);
         project_1d(x,mul1_,dlam1_);
