@@ -433,10 +433,10 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
   if (verbosity_ > 1) {
     outStream << std::endl;
     outStream << "  Projected search"                     << std::endl;
-    outStream << "    Step length (beta):               " << beta          << std::endl;
-    outStream << "    Step length (beta*s):             " << state_->snorm << std::endl;
-    outStream << "    Model decrease (pRed):            " << -q            << std::endl;
-    outStream << "    Number of steps:                  " << nsteps        << std::endl;
+    outStream << "    Step length (beta):               " << beta   << std::endl;
+    outStream << "    Step length (beta*s):             " << snorm  << std::endl;
+    outStream << "    Model decrease (pRed):            " << -q     << std::endl;
+    outStream << "    Number of steps:                  " << nsteps << std::endl;
   }
   return snorm;
 }
