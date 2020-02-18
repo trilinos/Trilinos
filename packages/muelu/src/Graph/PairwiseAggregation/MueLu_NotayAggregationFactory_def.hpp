@@ -170,36 +170,43 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build_InitialAggregation", currentLevel);
     using STS = Teuchos::ScalarTraits<Scalar>;
     using MT = typename STS::magnitudeType;
-    MT MT_ZERO = Teuchos::ScalarTraits<MT>::zero;
-    SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero;    
-    MT MT_ONE  = Teuchos::ScalarTraits<MT>::one;
+    MT MT_ZERO = Teuchos::ScalarTraits<MT>::zero();
+    SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();    
+    MT MT_ONE  = Teuchos::ScalarTraits<MT>::one();
     MT MT_TWO  = MT_ONE + MT_ONE;
-    LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid;
-    
+    LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    LO LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
+
     const MT kappa = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
     const MT kappa_init  = kappa / (kappa - MT_TWO);
     
     LO numRows = aggStat.size();    
     numNonAggregatedNodes = numRows;
-    
+    const int myRank  = graph.GetComm()->getRank();
     
     // FIXME: Assumes 1 dof per node
 
 
-    // Extract diagonal
+    // Extract diagonal, rowsums, etc
     RCP<Vector> ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
     RCP<Vector> ghostedRowSum = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDeletedRowsum(*A);
     RCP<Vector> ghostedAbsRowSum = MueLu::Utilities<MT,LO,GO,NO>::GetMatrixOverlappedAbsDeletedRowsum(*A);
     const ArrayRCP<const SC> D     = ghostedDiag->getData(0);
     const ArrayRCP<const SC> S     = ghostedRowSum->getData(0);
     const ArrayRCP<const SC> AbsRs = ghostedAbsRowSum->getData(0);
-           
+      
+    // Aggregates stuff
+    ArrayRCP<LO> vertex2AggId_rcp = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    ArrayRCP<LO> procWinner_rcp   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    ArrayView<LO> vertex2AggId    = vertex2AggId_rcp();
+    ArrayView<LO> procWinner      = procWinner_rcp();
+     
     // Algorithm 4.2
 
     // 0,1 : Initialize: Flag boundary conditions
     // Modification: We assume symmetry here aij = aji
     
-    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+    for (LO row = 0; row < Teuchos::as<LO>(A.getRowMap()->getNodeNumElements()); ++row) {
       MT aii = STS::magnitude(D[row]);
       MT rowsum = AbsRs[row];
       
@@ -218,19 +225,33 @@ namespace MueLu {
     
     
     // 2 : Iteration
-    while (numNonAggregatedNodes > 0) {
+    LO aggIndex = LO_ZERO;
+    while (numNonAggregatedNodes > 0 && current_idx < numRows) {
+      // If we're aggregated already, skip this guy
+      if(aggStat[current_idx] != READY) 
+        current_idx++;
+
       MT best_mu = MT_ZERO;
       bool have_buddy = false;
       LO best_idx = LO_INVALID;
       
-      size_t nnz = A->getNumEntriesInLocalRow(current_idx);
+      size_t nnz = A.getNumEntriesInLocalRow(current_idx);
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
-      A->getLocalRowView(row, indices, vals);
+      A.getLocalRowView(row, indices, vals);
 
       MT aii = STS::real(D[current_idx]);
       MT si  = S[current_idx];
+      MT mu  = MT_ZERO;
       for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+        // Skip aggregated neighbors
+        if(aggStat[indices[colID]] != READY) 
+          continue;
+
+        // Skips off-rank neighbors
+        if(indices[colID] > numRows)
+          continue;
+
 	MT aij = STS::real(vals[colID]);
 	MT ajj = STS::real(D[colID]);
 	MT sj  = S[colID];
@@ -238,17 +259,50 @@ namespace MueLu {
 	if(aii - si + ajj - sj >= MT_ZERO) {
 	  MT mu_top    = MT_TWO / ( MT_ONE / aii + MT_ONE / ajj);
 	  MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - sj) + MT_ONE / (ajj - sj) );
-	  MT mu = mu_top / mu_bottom;
+	  mu = mu_top / mu_bottom;
 	  if (best_idx == LO_INVALID ||  mymu < best_mu) {
 	    best_mu  = my;
 	    best_idx = row;
 	  }
-	}
-	
+	}	
+      }// end column for loop
+      
+      if(best_idx == LO_INVALID) {
+        // We found no potential node-buddy, so let's just make this a singleton        
+        // NOTE: The behavior of what to do if you have no un-aggregated neighbors is not specified in
+        // the paper        
+        aggStat[current_idx] = ONEPT;
+        vertex2AggId[current_idx] = aggIndex;
+        procWinner[current_idx]   = myRank;
+	numNonAggregatedNodes--;
+        agg_index++;
       }
-    }
+      else {
+        // We have a buddy, so aggregate, either as a singleton or as a pair, depending on mu
+        if(mu <= kappa) { 
+          LO mybuddy_idx = indices[best_idx];
+          aggStat[current_idx] = AGGREGATED;
+          aggStat[mybuddy_idx] = AGGREGATED;
+          vertex2AggId[current_idx] = aggIndex;
+          vertex2AggId[mybuddy_idx] = aggIndex;
+          procWinner[current_idx]   = myRank;
+          procWinner[mybuddy_idx]   = myRank;
+          numNonAggregatedNodes-=2;
+          agg_index++;
+        }
+        else {
+          aggStat[current_idx] = ONEPT;
+          vertex2AggId[current_idx] = aggIndex;
+          procWinner[current_idx]   = myRank;
+          numNonAggregatedNodes--;
+          agg_index++;
+        }
+      }
+    }// end Algorithm 4.2
 
-    // next
+    // update aggregate object
+    aggregates.SetNumAggregates(aggIndex);
+    
   }
 
 
