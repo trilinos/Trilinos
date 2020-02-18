@@ -146,5 +146,64 @@ Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters()
   return solverPL;
 }
 
+
+template<class Scalar>
+void Stepper<Scalar>::initialize()
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+
+  bool isValidSetup = this->isValidSetup(*out);
+
+  if (isValidSetup)
+    this->isInitialized_ = true;   // Only place it is set to true.
+  else
+    this->describe(*out, Teuchos::VERB_MEDIUM);
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::checkInitialized()
+{
+#ifdef TEMPUS_HIDE_DEPRECATED_CODE
+  if ( !this->isInitialized() ) {
+    this->describe( *(this->getOStream()), Teuchos::VERB_MEDIUM);
+    TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
+      "Error - " << this->description() << " is not initialized!");
+  }
+#endif // TEMPUS_HIDE_DEPRECATED_CODE
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::describe(Teuchos::FancyOStream        & out,
+                               const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << "--- Stepper ---\n"
+      << "  isInitialized_      = " << Teuchos::toString(isInitialized_) << std::endl
+      << "  stepperType_        = " << stepperType_ << std::endl
+      << "  useFSAL_            = " << Teuchos::toString(useFSAL_) << std::endl
+      << "  ICConsistency_      = " << ICConsistency_ << std::endl
+      << "  ICConsistencyCheck_ = " << Teuchos::toString(ICConsistencyCheck_) << std::endl;
+}
+
+
+template<class Scalar>
+bool Stepper<Scalar>::isValidSetup(
+  Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !(ICConsistency_ == "None" || ICConsistency_ == "Zero" ||
+         ICConsistency_ == "App"  || ICConsistency_ == "Consistent") ) {
+    isValidSetup = false;
+    out << "The IC consistency does not have a valid value!\n"
+        << "('None', 'Zero', 'App' or 'Consistent')\n"
+        << "  ICConsistency  = " << ICConsistency_ << "\n";
+  }
+
+  return isValidSetup;
+}
+
+
 } // namespace Tempus
 #endif // Tempus_Stepper_impl_hpp

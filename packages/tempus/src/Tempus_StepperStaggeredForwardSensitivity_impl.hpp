@@ -28,6 +28,7 @@ template<class Scalar>
 StepperStaggeredForwardSensitivity<Scalar>::
 StepperStaggeredForwardSensitivity()
 {
+  this->setStepperType(        "StaggeredForwardSensitivity");
   this->setParams(Teuchos::null, Teuchos::null);
 }
 
@@ -40,6 +41,7 @@ StepperStaggeredForwardSensitivity(
   const Teuchos::RCP<Teuchos::ParameterList>& sens_pList)
 {
   // Set all the input parameters and call initialize
+  this->setStepperType(        "StaggeredForwardSensitivity");
   this->setParams(pList, sens_pList);
   this->setModel(appModel);
   this->initialize();
@@ -79,15 +81,8 @@ setModel(
     sensitivityStepper_ = sf->createStepper(stepperPL_, fsa_model_);
   else
     sensitivityStepper_->setModel(fsa_model_);
-}
 
-
-template<class Scalar>
-void StepperStaggeredForwardSensitivity<Scalar>::
-setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
+  this->isInitialized_ = false;
 }
 
 
@@ -107,13 +102,8 @@ setSolver(
 {
   stateStepper_->setSolver(solver);
   sensitivityStepper_->setSolver(solver);
-}
 
-
-template<class Scalar>
-void StepperStaggeredForwardSensitivity<Scalar>::
-initialize()
-{
+  this->isInitialized_ = false;
 }
 
 
@@ -122,6 +112,8 @@ void StepperStaggeredForwardSensitivity<Scalar>::
 takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -282,10 +274,53 @@ describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperStaggeredForwardSensitivity ---\n";
+  out << "  stateStepper_         = " << stateStepper_ <<std::endl;
+  out << "  sensitivityStepper_   = " << sensitivityStepper_ <<std::endl;
+  out << "  combined_fsa_model_   = " << combined_fsa_model_ <<std::endl;
+  out << "  fsa_model_            = " << fsa_model_ <<std::endl;
+  out << "  stateSolutionHistory_ = " << stateSolutionHistory_ <<std::endl;
+  out << "  sensSolutionHistory_  = " << sensSolutionHistory_ <<std::endl;
+  out << "------------------------------------------" << std::endl;
+
   out << description() << "::describe:" << std::endl;
   stateStepper_->describe(out, verbLevel);
   out << std::endl;
   sensitivityStepper_->describe(out, verbLevel);
+}
+
+
+template<class Scalar>
+bool StepperStaggeredForwardSensitivity<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  if (stateStepper_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The state stepper is not set!\n";
+  }
+
+  if (sensitivityStepper_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The sensitivity stepper is not set!\n";
+  }
+
+  if (combined_fsa_model_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The combined FSA model is not set!\n";
+  }
+
+  if (fsa_model_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The FSA model is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

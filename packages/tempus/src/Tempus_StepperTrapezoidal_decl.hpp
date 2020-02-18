@@ -88,9 +88,6 @@ public:
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperTrapObserver_; }
 
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
-
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
@@ -126,6 +123,8 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
   virtual bool getUseFSALDefault() const { return true; }
   virtual std::string getICConsistencyDefault() const { return "Consistent"; }

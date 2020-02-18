@@ -80,8 +80,6 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel();
 
     virtual void setSolver(
@@ -95,9 +93,6 @@ public:
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
-
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -168,6 +163,8 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
 

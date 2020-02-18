@@ -68,10 +68,9 @@ public:
   }
 
   /// Create stepper from ParameterList with its details.
-  Teuchos::RCP<Stepper<Scalar> > createStepper(
+  Teuchos::RCP<Stepper<Scalar> > createMultiSteppers(
     Teuchos::RCP<Teuchos::ParameterList> stepperPL,
-    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > >
-      models = Teuchos::null)
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
   {
     std::string stepperType = stepperPL->get<std::string>("Stepper Type");
     return this->createStepper(models, stepperType, stepperPL);
