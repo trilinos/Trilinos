@@ -420,7 +420,6 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     snorm = dgpstep(pwa,s,x,beta);
     model.hessVec(dwa,pwa,x,tol);
     gs = pwa.dot(g);
-//    q  = half * s.dot(dwa.dual()) + gs;
     q  = half * pwa.dot(dwa.dual()) + gs;
     if (q <= mu0_*gs || nsteps > pslim_) {
       search = false;
