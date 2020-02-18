@@ -394,7 +394,7 @@ int main(int narg, char** arg)
   
   std::cout << "Going to validate the soln" << std::endl;
   // Verify that checkColoring is a coloring
-  if(colorAlg == "Hybrid" && comm->getSize() > 1){
+  if(colorAlg=="2GL" ||colorAlg == "Hybrid"){
     //need to check a distributed coloring
     testReturn = validateDistributedColoring(Matrix, checkColoring, me);
   } else if (checkLength > 0){

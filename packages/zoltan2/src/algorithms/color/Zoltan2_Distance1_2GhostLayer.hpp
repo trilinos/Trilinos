@@ -315,7 +315,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Teuchos::ArrayView<int> adjsrecvcounts_view = Teuchos::arrayViewFromVector(adjrecvcounts);
       Zoltan2::AlltoAllv<lno_t>(*comm, *env, send_adjs_view, adjsendcounts_view, ghost_adjs, adjsrecvcounts_view);
       std::cout<<"Assembling complete, putting together ghost layer\n";
-      for(int i = 0; i < recvadjscount; i ++){
+      for(offset_t i = 0; i < recvadjscount; i ++){
         adjs_2GL.push_back(ghost_adjs[i]);
       }
       
@@ -392,17 +392,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       constructSecondGhostLayer(ownedPlusGhosts,owners, adjs, offsets, mapOwned,
                                 first_layer_ghost_adjs, first_layer_ghost_offsets);
       
-      std::cout<<comm->getRank()<<": 2GL offset length: "<<first_layer_ghost_offsets.size()<<" adjs: "<<first_layer_ghost_adjs.size()<<"\n";
-      std::cout<<comm->getRank()<<": 2GL offset contents: ";
-      for(int i = 0; i < first_layer_ghost_offsets.size(); i++){
-        std::cout<<first_layer_ghost_offsets[i]<<" ";
-      }
-      std::cout<<"\n";
-      std::cout<<comm->getRank()<<": 2GL adjs contents: ";
-      for(int i = 0; i < first_layer_ghost_adjs.size(); i++){
-        std::cout<<first_layer_ghost_adjs[i]<<" ";
-      }
-      std::cout<<"\n";
       //we potentially reordered the local IDs of the ghost vertices, so we need
       //to re-insert the GIDs into the global to local ID mapping.
       globalToLocal.clear();
