@@ -63,7 +63,10 @@
 
 // Tpetra includes
 #include "Tpetra_Map.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "Tpetra_MultiVector.hpp"
+#pragma GCC diagnostic pop
 
 ////////////////////////////////////////////////////////////////////////
 

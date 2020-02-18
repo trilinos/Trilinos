@@ -144,6 +144,11 @@ namespace Impl{
       //return;
     }
 #else
+    (void)handle;
+    (void)m;          (void)n;          (void)k;
+    (void)row_mapA;   (void)row_mapB;   (void)row_mapC;
+    (void)entriesA;   (void)entriesB;
+    (void)transposeA; (void)transposeB;
     throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
     //return;
 #endif
@@ -171,11 +176,11 @@ namespace Impl{
       ain_nonzero_index_view_type entriesA,
       ain_nonzero_value_view_type valuesA,
 
-      bool transposeA,
+      bool /* transposeA */,
       bin_row_index_view_type row_mapB,
       bin_nonzero_index_view_type entriesB,
       bin_nonzero_value_view_type valuesB,
-      bool transposeB,
+      bool /* transposeB */,
       cin_row_index_view_type row_mapC,
       cin_nonzero_index_view_type entriesC,
       cin_nonzero_value_view_type valuesC){
@@ -286,6 +291,11 @@ namespace Impl{
       //return;
     }
 #else
+    (void)handle;
+    (void)m;        (void)n;        (void)k;
+    (void)row_mapA; (void)row_mapB; (void)row_mapC;
+    (void)entriesA; (void)entriesB; (void)entriesC;
+    (void)valuesA;  (void)valuesB;  (void)valuesC;
     throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
     //return;
 #endif

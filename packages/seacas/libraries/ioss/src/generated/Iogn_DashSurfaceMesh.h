@@ -210,6 +210,8 @@ namespace Iogn {
     void element_map(std::vector<int> &map) const override;
 
   private:
+    std::string get_sideset_topology() const override;
+
     DashSurfaceData mDashSurfaceData;
   };
 
@@ -265,6 +267,8 @@ namespace Iogn {
     void element_map(std::vector<int> &map) const override;
 
   private:
+    std::string get_sideset_topology() const override;
+
     int64_t mGlobalNumberOfElements;
     int64_t mLocalNumberOfElements;
 

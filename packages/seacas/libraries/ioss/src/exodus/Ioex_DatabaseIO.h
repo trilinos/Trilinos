@@ -103,8 +103,7 @@ namespace Ioex {
 
     ~DatabaseIO() override;
 
-
-    const std::string get_format() const override {return "Exodus";}
+    const std::string get_format() const override { return "Exodus"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed

@@ -1077,7 +1077,7 @@ void comm_sync_send_recv(
         //  Add it to my send list.
         ThrowRequireMsg(mesh.is_valid(e),
             "Unknown entity key: " <<
-            MetaData::get(mesh).entity_rank_name(entity_key.rank()) <<
+            mesh.mesh_meta_data().entity_rank_name(entity_key.rank()) <<
             "[" << entity_key.id() << "]");
         EntityProc tmp( e , proc );
         sendGhosts.insert( tmp );
@@ -1173,7 +1173,7 @@ void comm_sync_send_recv(
         //  Add it to my send list.
         ThrowRequireMsg(mesh.is_valid(e),
             "Unknown entity key: " <<
-            MetaData::get(mesh).entity_rank_name(entity_key.rank()) <<
+            mesh.mesh_meta_data().entity_rank_name(entity_key.rank()) <<
             "[" << entity_key.id() << "]");
         EntityProc tmp( e , proc );
         sendGhosts.insert( tmp );
@@ -1184,6 +1184,87 @@ void comm_sync_send_recv(
         //  otherwise don't worry about it - I will receive
         //  it in the final new-ghosting communication.
         recvGhosts.push_back( e );
+        ghostStatus[e.local_offset()] = true;
+      }
+    }
+  }
+}
+
+void comm_sync_aura_send_recv(
+  BulkData & mesh ,
+  std::vector<EntityProc>& sendGhosts,
+  EntityProcMapping& entityProcMapping,
+  std::vector<bool>& ghostStatus )
+{
+  const int parallel_rank = mesh.parallel_rank();
+  const int parallel_size = mesh.parallel_size();
+
+  stk::CommSparse all( mesh.parallel() );
+
+  // Communication sizing:
+
+  for (const EntityProc& ep : sendGhosts) {
+    const int owner = mesh.parallel_owner_rank(ep.first);
+    all.send_buffer( ep.second ).skip<EntityKey>(1).skip<int>(1);
+    if ( owner != parallel_rank ) {
+      all.send_buffer( owner ).skip<EntityKey>(1).skip<int>(1);
+    }
+  }
+
+  all.allocate_buffers();
+
+  // Loop thru all entities in sendGhosts, send the entity key to the sharing/ghosting proc
+  // Also, if the owner of the entity is NOT me, also send the entity key to the owing proc
+
+  // Communication packing (with message content comments):
+  for (const EntityProc& ep : sendGhosts) {
+    const Entity entity = ep.first;
+    const int owner = mesh.parallel_owner_rank(entity);
+
+    // Inform receiver of ghosting, the receiver does not own
+    // and does not share this entity.
+    // The ghost either already exists or is a to-be-done new ghost.
+    // This status will be resolved on the final communication pass
+    // when new ghosts are packed and sent.
+
+    const EntityKey entity_key = mesh.entity_key(entity);
+    const int proc = ep.second;
+
+    all.send_buffer( proc ).pack(entity_key).pack(proc);
+
+    if (owner != parallel_rank) {
+      all.send_buffer(owner).pack(entity_key).pack(proc);
+
+      //Erase it from my processor's ghosting responsibility:
+      entityProcMapping.eraseEntityProc(entity, proc);
+    }
+  }
+
+  all.communicate();
+
+  // Loop thru all the buffers, and insert ghosting request for entity e to other proc
+  // if the proc sending me the data is me, then insert into new_recv.
+  // Communication unpacking:
+  for ( int p = 0 ; p < parallel_size ; ++p ) {
+    CommBuffer & buf = all.recv_buffer(p);
+    while ( buf.remaining() ) {
+
+      EntityKey entity_key;
+      int proc = 0;
+
+      buf.unpack(entity_key).unpack(proc);
+
+      Entity const e = mesh.get_entity( entity_key );
+
+      if (parallel_rank != proc) {
+        //Receiving a ghosting need for an entity I own, add it.
+        entityProcMapping.addEntityProc(e, proc);
+      }
+      else if ( mesh.is_valid(e) ) {
+        //  I am the receiver for this ghost.
+        //  If I already have it add it to the receive list,
+        //  otherwise don't worry about it - I will receive
+        //  it in the final new-ghosting communication.
         ghostStatus[e.local_offset()] = true;
       }
     }
@@ -1203,6 +1284,38 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
   if ( bulk_data.bucket(rel_entity).owned() && ! bulk_data.in_shared(rel_entity, share_proc) ) {
 
     send.emplace_back(rel_entity,share_proc);
+
+    // There may be even higher-ranking entities that need to be ghosted, so we must recurse
+    const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());
+    for (EntityRank irank = static_cast<EntityRank>(rel_entity_rank + 1); irank < end_rank; ++irank)
+    {
+      const int num_rels = bulk_data.num_connectivity(rel_entity, irank);
+      Entity const* rels     = bulk_data.begin(rel_entity, irank);
+
+      for (int r = 0; r < num_rels; ++r)
+      {
+        Entity const rel_of_rel_entity = rels[r];
+        if (bulk_data.is_valid(rel_of_rel_entity)) {
+          insert_upward_relations(bulk_data, rel_of_rel_entity, rel_entity_rank, share_proc, send);
+        }
+      }
+    }
+  }
+}
+
+void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
+                             const EntityRank rank_of_orig_entity,
+                             const int share_proc,
+                             EntityProcMapping& send)
+{
+  EntityRank rel_entity_rank = bulk_data.entity_rank(rel_entity);
+  ThrowAssert(rel_entity_rank > rank_of_orig_entity);
+
+  // If related entity is higher rank, I own it, and it is not
+  // already shared by proc, ghost it to the sharing processor.
+  if ( bulk_data.bucket(rel_entity).owned() && ! bulk_data.in_shared(rel_entity, share_proc) ) {
+
+    send.addEntityProc(rel_entity,share_proc);
 
     // There may be even higher-ranking entities that need to be ghosted, so we must recurse
     const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());

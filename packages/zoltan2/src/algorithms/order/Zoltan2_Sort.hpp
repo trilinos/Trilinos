@@ -89,9 +89,9 @@ class SortPairs
     {
       // Sort in increasing (default) or decreasing order of value
       if (inc)
-        std::sort (listofPairs.begin(), listofPairs.end(), Details::SortInc<key_t, value_t>);
+        std::stable_sort (listofPairs.begin(), listofPairs.end(), Details::SortInc<key_t, value_t>);
       else
-        std::sort (listofPairs.begin(), listofPairs.end(), Details::SortDec<key_t, value_t>);
+        std::stable_sort (listofPairs.begin(), listofPairs.end(), Details::SortDec<key_t, value_t>);
     }
 
 };

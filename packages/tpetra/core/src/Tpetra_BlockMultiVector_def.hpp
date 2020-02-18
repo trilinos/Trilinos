@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -825,6 +823,6 @@ blockJacobiUpdate (const Scalar& alpha,
 // Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
-  template class BlockMultiVector< S, LO, GO, NODE >; 
+  template class BlockMultiVector< S, LO, GO, NODE >;
 
 #endif // TPETRA_BLOCKMULTIVECTOR_DEF_HPP

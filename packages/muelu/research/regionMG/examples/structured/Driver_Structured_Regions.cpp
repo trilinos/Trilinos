@@ -169,7 +169,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
   int         smootherIts        = 2;                   clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
   double      smootherDamp       = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
-  double      smootherEigRatio   = 2.0;                 clp.setOption("smootherEigRatio",      &smootherEigRatio,  "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
+  double      smootherChebyEigRatio = 2.0;              clp.setOption("smootherChebyEigRatio", &smootherChebyEigRatio, "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
+  double      smootherChebyBoostFactor = 1.1;           clp.setOption("smootherChebyBoostFactor", &smootherChebyBoostFactor, "boost factor for Chebyshev smoother");
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
@@ -185,6 +186,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool profileSolve = false;                            clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
   int  cacheSize = 0;                                   clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
+  bool useStackedTimer   = false;                       clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -220,7 +222,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   smootherParams[0]->set("smoother: type",    smootherType);
   smootherParams[0]->set("smoother: sweeps",  smootherIts);
   smootherParams[0]->set("smoother: damping", smootherDamp);
-  smootherParams[0]->set("smoother: eigRatio", smootherEigRatio);
+  smootherParams[0]->set("smoother: Chebyshev eigRatio", smootherChebyEigRatio);
+  smootherParams[0]->set("smoother: Chebyshev boost factor", smootherChebyBoostFactor);
 
   bool useUnstructured = false;
   Array<LO> unstructuredRanks = Teuchos::fromStringToArray<LO>(unstructured);
@@ -244,7 +247,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 
   comm->barrier();
-  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+  if(useStackedTimer)
+    stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Build Composite Matrix")));
 
@@ -479,7 +485,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
-  // In our very particular case we know that a node is at most shared by 4 regions.
+  // In our very particular case we know that a node is at most shared by 4 (8) regions in 2D (3D) problems.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
   // would be appropriate.
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGID
@@ -693,7 +699,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Solve with V-cycle")));
 
   {
-    std::cout << myRank << " | Running V-cycle ..." << std::endl;
+//    std::cout << myRank << " | Running V-cycle ..." << std::endl;
 
     // Extract the number of levels from the prolongator data structure
     int numLevels = regProlong.size();
@@ -797,8 +803,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     const int old_precision = std::cout.precision();
     std::cout << std::setprecision(8) << std::scientific;
     int cycle = 0;
+
+    Array<Teuchos::RCP<Vector> > regCorrect(maxRegPerProc);
+    for (int j = 0; j < maxRegPerProc; j++) {
+      regCorrect[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
+    }
     for (cycle = 0; cycle < maxIts; ++cycle)
     {
+      const Scalar SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+      regCorrect[0]->putScalar(SC_ZERO);
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
@@ -836,10 +849,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         /////////////////////////////////////////////////////////////////////////
 
         //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
+
+        bool zeroInitGuess = true;
+        scaleInterfaceDOFs(regRes, regInterfaceScalings[0], false);
         vCycle(0, numLevels,
-               regX, regB, regMatrices,
+               regCorrect, regRes, regMatrices,
                regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-               regInterfaceScalings, smootherParams, coarseSolverData, hierarchyData);
+               regInterfaceScalings, smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
+
+        regX[0]->update(one, *regCorrect[0], one);
     }
     if (myRank == 0)
       std::cout << "Number of iterations performed for this solve: " << cycle << std::endl;
@@ -854,9 +872,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<ParameterList> reportParams = rcp(new ParameterList);
   const std::string filter = "";
-  std::ios_base::fmtflags ff(out.flags());
-  TimeMonitor::report(comm.ptr(), out, filter, reportParams);
-  out << std::setiosflags(ff);
+  if (useStackedTimer) {
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(out, comm, options);
+  } else {
+    std::ios_base::fmtflags ff(out.flags());
+    TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+    out << std::setiosflags(ff);
+  }
 
   TimeMonitor::clearCounters();
 

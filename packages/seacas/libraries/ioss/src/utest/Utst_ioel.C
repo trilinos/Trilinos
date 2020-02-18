@@ -80,16 +80,16 @@ int test_all_elements()
   int err_count = 0;
 
   Ioss::NameList elements;
-  int            element_count = Ioss::ElementTopology::describe(&elements);
+  Ioss::ElementTopology::describe(&elements);
 
-  for (int i = 0; i < element_count; i++) {
-    fmt::print(stderr, "Testing element: {:<25}", elements[i]);
-    bool result = test_element(elements[i]);
-    if (result || elements[i] == "unknown" || elements[i] == "invalid_topology") {
+  for (const auto &element : elements) {
+    fmt::print(stderr, "Testing element: {:<25}", element);
+    bool result = test_element(element);
+    if (result || element == "unknown" || element == "invalid_topology") {
       fmt::print(stderr, " OK\n");
     }
     else {
-      fmt::print(stderr, "\n        element: {:<25}FAIL\n", elements[i]);
+      fmt::print(stderr, "\n        element: {:<25}FAIL\n", element);
       err_count++;
     }
   }
@@ -133,7 +133,7 @@ bool test_element(const std::string &type)
 
   // Check that master element name is an alias...
   if (!element->is_alias(element->master_element_name())) {
-    if (element->name() == "edge2d2" || element->name() == "edge2d3") { // kluge
+    if (element->name() == "edge2d2" || element->name() == "edge2d3" || element->name() == "edge2d4") { // kluge
       fmt::print(stderr, "\n\tMaster element name is not valid alias (ignore) ");
     }
     else {
@@ -348,20 +348,40 @@ bool test_element(const std::string &type)
 
             result = false;
           }
+	  if (element->name() == "wedge12" || element->name() == "hex16") {
+	    continue;
+	  }
+
+	  if (edge_conn.size() != size_t(order) + 1) {
+	    fmt::print(stderr, "\n\tInvalid edge connectivity count. ({} must equal {})", edge_conn.size(), order+1);
+              result = false;
+            }
+
+	  if (order > 1 && face_conn.size() < fncn + (order-1) * num_edges_face) {
+	    fmt::print(stderr, "\n\tInvalid face connectivity count ({} must be greater than {} + {}*{}).",
+		       face_conn.size(), fncn, order-1, num_edges_face);
+              result = false;
+            }
           if (order == 2) {
-            if (edge_conn.size() != 3) {
-              fmt::print(stderr, "\n\tInvalid edge connectivity count.");
-              result = false;
-            }
-            if (face_conn.size() < fncn + num_edges_face) {
-              fmt::print(stderr, "\n\tInvalid face connectivity count.");
-              result = false;
-            }
             if (edge_conn[2] != face_conn[fncn + j]) {
               fmt::print(stderr,
                          "\n\tMid-Side Node Edge Connectivity does not match face "
                          "connectivity for edge {} on face {}",
                          j + 1, i);
+              result = false;
+            }
+          }
+          else if (order == 3) {
+	    auto en2 = edge_conn[2];
+	    auto en3 = edge_conn[3];
+
+	    auto fn2 = face_conn[fncn + 2*j];
+	    auto fn3 = face_conn[fncn + 2*j + 1];
+	    if (en2 != fn2 && en3 != fn2 && en2 != fn3 && en3 != fn3) {
+              fmt::print(stderr,
+                         "\n\tMid-Side Node Edge Connectivity does not match face "
+                         "connectivity for edge {} on face {} ({} {} : {} {})",
+                         j + 1, i, en2, en3, fn2, fn3);
               result = false;
             }
           }

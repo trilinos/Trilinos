@@ -267,6 +267,7 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
                                  const bool makeCompCoords)
 {
 #include "Xpetra_UseShortNames.hpp"
+  using CoordType = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
   coarseCompOp = MatrixFactory::Build(compRowMap,
                                        // This estimate is very conservative and probably costs us lots of memory...
                                       8*regMatrix[0]->getCrsGraph()->getNodeMaxNumRowEntries());
@@ -321,14 +322,16 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
         regCoordImporter[regionIdx] = ImportFactory::Build(compCoordMap, quasiRegCoordMap[regionIdx]);
       }
     }
-    compCoarseCoordinates = MultiVectorFactory::Build(compCoordMap, regCoarseCoordinates[0]->getNumVectors());
+    compCoarseCoordinates = Xpetra::MultiVectorFactory<CoordType, LocalOrdinal, GlobalOrdinal, Node>
+      ::Build(compCoordMap, regCoarseCoordinates[0]->getNumVectors());
     TEUCHOS_ASSERT(Teuchos::nonnull(compCoarseCoordinates));
 
     // The following looks like regionalToComposite for Vector
     // but it is a bit different since we do not want to add
     // entries in the coordinate MultiVector as we would for
     // a solution or residual vector.
-    RCP<MultiVector> quasiRegCoarseCoordinates;
+    RCP<Xpetra::MultiVector<CoordType, LocalOrdinal, GlobalOrdinal, Node>>
+      quasiRegCoarseCoordinates;
     for(int grpIdx = 0; grpIdx < maxRegPerProc; ++grpIdx) {
       quasiRegCoarseCoordinates = regCoarseCoordinates[grpIdx];
       TEUCHOS_ASSERT(Teuchos::nonnull(quasiRegCoarseCoordinates));
@@ -775,7 +778,10 @@ void createRegionHierarchy(const int maxRegPerProc,
                               regRowImporters,
                               quasiRegRowMaps);
 
-  for(int levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
+  int noCoarseSmoothing = 1;
+  if (coarseSolverType == "smoother") noCoarseSmoothing = 0;
+
+  for(int levelIdx = 0; levelIdx < numLevels-noCoarseSmoothing; ++levelIdx) {
     smootherSetup(smootherParams[levelIdx], regRowMaps[levelIdx],
                   regMatrices[levelIdx], regInterfaceScalings[levelIdx],
                   regRowImporters[levelIdx]);
@@ -845,6 +851,7 @@ void vCycle(const int l, ///< ID of current level
             Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > > regRowImporters, ///< regional row importers
             Array<Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > > regInterfaceScalings, ///< regional interface scaling factors
             Array<RCP<Teuchos::ParameterList> > smootherParams, ///< region smoother parameter list
+	    bool& zeroInitGuess,
             RCP<ParameterList> coarseSolverData = Teuchos::null,
             RCP<ParameterList> hierarchyData = Teuchos::null)
 {
@@ -875,7 +882,7 @@ void vCycle(const int l, ///< ID of current level
 
     // pre-smoothing
     smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
-                  regRowMaps[l], regRowImporters[l]);
+                  regRowMaps[l], regRowImporters[l], zeroInitGuess);
 
     tm = Teuchos::null;
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 2 - compute residual")));
@@ -915,12 +922,13 @@ void vCycle(const int l, ///< ID of current level
     sumInterfaceValues(coarseRegB, regRowMaps[l+1], regRowImporters[l+1]);
 
     tm = Teuchos::null;
+    bool coarseZeroInitGuess = true; 
 
     // Call V-cycle recursively
     vCycle(l+1, numLevels,
            coarseRegX, coarseRegB, regMatrices, regProlong, compRowMaps,
            quasiRegRowMaps, regRowMaps, regRowImporters, regInterfaceScalings,
-           smootherParams, coarseSolverData, hierarchyData);
+           smootherParams, coarseZeroInitGuess, coarseSolverData, hierarchyData);
 
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 6 - transfer coarse to fine")));
 
@@ -940,6 +948,7 @@ void vCycle(const int l, ///< ID of current level
     for (int j = 0; j < maxRegPerProc; j++) {
       fineRegX[j]->update(SC_ONE, *regCorrection[j], SC_ONE);
     }
+    if (coarseZeroInitGuess) zeroInitGuess = true;
 
 //    std::cout << "level: " << l << std::endl;
 
@@ -948,7 +957,7 @@ void vCycle(const int l, ///< ID of current level
 
     // post-smoothing
     smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
-                  regRowMaps[l], regRowImporters[l]);
+                  regRowMaps[l], regRowImporters[l], zeroInitGuess);
 
     tm = Teuchos::null;
 
@@ -964,8 +973,9 @@ void vCycle(const int l, ///< ID of current level
     const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
     if (coarseSolverType == "smoother") {
       smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrices[l],
-                  regRowMaps[l], regRowImporters[l]);
+                  regRowMaps[l], regRowImporters[l], zeroInitGuess);
     } else {
+      zeroInitGuess = false;
       // First get the Xpetra vectors from region to composite format
       RCP<const Map> coarseRowMap = coarseSolverData->get<RCP<const Map> >("compCoarseRowMap");
       RCP<Vector> compX = VectorFactory::Build(coarseRowMap, true);
@@ -1032,7 +1042,8 @@ void vCycle(const int l, ///< ID of current level
         RCP<Hierarchy> amgHierarchy = coarseSolverData->get<RCP<Hierarchy>>("amg hierarchy object");
 
         // Run a single V-cycle
-        amgHierarchy->Iterate(*compRhs, *compX, 1);
+
+        amgHierarchy->Iterate(*compRhs, *compX, true, 1);
       }
       else
       {

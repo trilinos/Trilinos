@@ -256,7 +256,7 @@ namespace MueLu {
     myGraph->fillComplete(domainMap, rowMap);
     *out << "Prolongator CrsGraph computed" << std::endl;
 
-  } // BuildAggregates()
+  } // BuildGraph()
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

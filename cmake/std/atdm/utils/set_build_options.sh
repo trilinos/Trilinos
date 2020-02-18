@@ -131,6 +131,8 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-3.9.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG-3.9.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG-5.0.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-7.0.1"* ]]; then
+  export ATDM_CONFIG_COMPILER=CLANG-7.0.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG
 else

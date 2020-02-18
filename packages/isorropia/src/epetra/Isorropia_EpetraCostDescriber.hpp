@@ -154,7 +154,7 @@ public:
       representing real
       coordinates, then the weights represent the weight assigned to each coordinate.
 
-      \param[in] vwgts  vector of weights, one for each vertex
+      \param vwgts [in]  vector of weights, one for each vertex
    */
   void setVertexWeights(Teuchos::RCP<const Epetra_Vector> vwgts);
 

@@ -65,6 +65,10 @@ public:
     {
     }
 
+    virtual void modification_begin_notification()
+    {
+    }
+  
     virtual void started_modification_end_notification()
     {
     }

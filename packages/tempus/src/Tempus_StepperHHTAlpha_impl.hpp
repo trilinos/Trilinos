@@ -48,8 +48,6 @@ predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > tmp =
-    Thyra::createMember<Scalar>(dPred.space());
   //dPred = dt*v + dt*dt/2.0*(1.0-2.0*beta_)*a
   Scalar aConst = dt*dt/2.0*(1.0-2.0*beta_);
   Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a);
@@ -132,8 +130,9 @@ template<class Scalar>
 void StepperHHTAlpha<Scalar>::setBeta(Scalar beta)
 {
   if (schemeName_ != "Newmark Beta User Defined") {
-    *out_ << "\nWARNING: schemeName != 'Newmark Beta User Defined' (=" <<schemeName_<< ").\n"
-          << " Not setting beta, and leaving as beta = " << beta_ << "!\n";
+    *out_ << "\nWARNING: schemeName != 'Newmark Beta User Defined' (= '"
+          << schemeName_ << "').\n"
+          << " Leaving as beta = " << beta_ << "!\n";
     return;
   }
 
@@ -154,6 +153,8 @@ void StepperHHTAlpha<Scalar>::setBeta(Scalar beta)
     std::logic_error,
     "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Beta = "
     << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -161,8 +162,9 @@ template<class Scalar>
 void StepperHHTAlpha<Scalar>::setGamma(Scalar gamma)
 {
   if (schemeName_ != "Newmark Beta User Defined") {
-    *out_ << "\nWARNING: schemeName != 'Newmark Beta User Defined' (=" <<schemeName_<< ").\n"
-          << " Not setting gamma, and leaving as gamma = " << gamma_ << "!\n";
+    *out_ << "\nWARNING: schemeName != 'Newmark Beta User Defined' (= '"
+          << schemeName_ << "').\n"
+          << " Leaving as gamma = " << gamma_ << "!\n";
     return;
   }
 
@@ -172,6 +174,8 @@ void StepperHHTAlpha<Scalar>::setGamma(Scalar gamma)
     std::logic_error,
     "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Gamma ="
     <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -184,6 +188,8 @@ void StepperHHTAlpha<Scalar>::setAlphaF(Scalar alpha_f)
     std::logic_error,
     "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_f = "
     << alpha_f_ << ".  Please select Alpha_f >= 0 and <= 1. \n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -196,6 +202,8 @@ void StepperHHTAlpha<Scalar>::setAlphaM(Scalar alpha_m)
     std::logic_error,
     "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_m = "
     << alpha_m_ << ".  Please select Alpha_m >= 0 and < 1. \n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -226,6 +234,8 @@ void StepperHHTAlpha<Scalar>::setSchemeName(
        <<"'Newmark Beta Linear Acceleration', \n"
        <<"'Newmark Beta Central Difference' and 'Newmark Beta User Defined'.\n");
   }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -247,6 +257,7 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
   this->setAlphaM(             0.0);
 
   this->setObserver();
+  this->setDefaultSolver();
 }
 
 
@@ -272,17 +283,18 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setZeroInitialGuess(   zeroInitialGuess);
   this->setSchemeName(         schemeName);
-  this->setBeta(               beta);
-  this->setGamma(              gamma);
+  if (schemeName == "Newmark Beta User Defined") {
+    this->setBeta(               beta);
+    this->setGamma(              gamma);
+  }
   this->setAlphaF(             alpha_f);
   this->setAlphaM(             alpha_m);
 
   this->setObserver(obs);
+  this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
-
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
 }
@@ -300,20 +312,13 @@ void StepperHHTAlpha<Scalar>::setModel(
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                                       "HHT-Alpha"));
   this->wrapperModel_ = wrapperModel;
-}
 
+  TEUCHOS_TEST_FOR_EXCEPTION(this->solver_ == Teuchos::null, std::logic_error,
+    "Error - Solver is not set!\n");
+  if (this->wrapperModel_ != Teuchos::null)
+    this->solver_->setModel(this->wrapperModel_);
 
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
-    std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperHHTAlpha::initialize()\n");
-
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
+  this->isInitialized_ = false;
 }
 
 
@@ -324,6 +329,8 @@ void StepperHHTAlpha<Scalar>::takeStep(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperHHTAlpha::takeStep()");
@@ -375,16 +382,16 @@ void StepperHHTAlpha<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
-      if (this->initial_guess_ != Teuchos::null) { //set initial guess for Newton, if provided
+      if (this->initialGuess_ != Teuchos::null) { //set initial guess for Newton, if provided
         //Throw an exception if initial_guess is not compatible with solution
-        bool is_compatible = (a_init->space())->isCompatible(*this->initial_guess_->space());
+        bool is_compatible = (a_init->space())->isCompatible(*this->initialGuess_->space());
         TEUCHOS_TEST_FOR_EXCEPTION(
             is_compatible != true, std::logic_error,
               "Error in Tempus::NemwarkImplicitAForm takeStep(): user-provided initial guess'!\n"
               << "for Newton is not compatible with solution vector!\n");
-        Thyra::copy(*this->initial_guess_, a_init.ptr());
+        Thyra::copy(*this->initialGuess_, a_init.ptr());
       }
-      else { //if no initial_guess_ provide, set 0 initial guess
+      else { //if no initialGuess_ provide, set 0 initial guess
         Thyra::put_scalar(0.0, a_init.ptr());
       }
       wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
@@ -456,13 +463,50 @@ getDefaultStepperState()
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+   const Teuchos::EVerbosityLevel      verbLevel) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
+
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperHHTAlpha ---\n";
+  out << "  schemeName_ = " << schemeName_ << std::endl;
+  out << "  beta_       = " << beta_       << std::endl;
+  out << "  gamma_      = " << gamma_      << std::endl;
+  out << "  alpha_f_    = " << alpha_f_    << std::endl;
+  out << "  alpha_m_    = " << alpha_m_    << std::endl;
+  out << "-----------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperHHTAlpha<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  //if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if (this->wrapperModel_->getAppModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The application ModelEvaluator is not set!\n";
+  }
+
+  if (this->wrapperModel_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The wrapper ModelEvaluator is not set!\n";
+  }
+
+  if (this->solver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The solver is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

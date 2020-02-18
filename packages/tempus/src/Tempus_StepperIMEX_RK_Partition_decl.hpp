@@ -23,7 +23,7 @@ namespace Tempus {
  *  Partitioned IMEX-RK is similar to the IMEX-RK (StepperIMEX_RK),
  *  except a portion of the solution only requires explicit integration,
  *  and should not be part of the implicit solution to reduce computational
- *  costs.  Again our ODE can be written as
+ *  costs.  Again our implicit ODE can be written as
  *  \f{eqnarray*}{
  *    M(z,t)\, \dot{z} + G(z,t) + F(z,t) & = & 0, \\
  *    \mathcal{G}(\dot{z},z,t) + F(z,t) & = & 0,
@@ -41,8 +41,8 @@ namespace Tempus {
  *  but a portion of the solution vector, \f$y\f$, is "explicit-only"
  *  and is only evolved by \f$F^y(x,y,t)\f$, while \f$x\f$ is the
  *  Implicit/Explicit (IMEX) solution vector, and is evolved explicitly by
- *  \f$F^x(x,y,t)\f$ evolved implicitly by \f$G^x(x,y,t)\f$.
- *  Note we can expand this to explicitly show all the terms as
+ *  \f$F^x(x,y,t)\f$ and is evolved implicitly by \f$G^x(x,y,t)\f$.
+ *  Note we can expand this to show all the terms as
  *  \f{eqnarray*}{
  *    & & M^y(x,y,t)\: \dot{y} + F^y(x,y,t) = 0, \\
  *    & & M^x(x,y,t)\: \dot{x} + F^x(x,y,t) + G^x(x,y,t) = 0, \\
@@ -53,27 +53,30 @@ namespace Tempus {
  *    +  \left\{ \begin{array}{c}    f^y  \\    f^x  \end{array}\right\}
  *    +  \left\{ \begin{array}{c}     0   \\    g^x  \end{array}\right\} = 0
  *  \f]
- *  where \f$f^y(x,y,t) = M^y(x,y,t)^{-1}\, F^y(x,y,t)\f$,
- *  \f$f^x(x,y,t) = M^x(x,y,t)^{-1}\, F^x(x,y,t)\f$, and
- *  \f$g^x(x,y,t) = M^x(x,y,t)^{-1}\, G^x(x,y,t)\f$,
+ *  where
+ *  \f{eqnarray*}{
+ *    f^y(x,y,t) & = & M^y(x,y,t)^{-1}\, F^y(x,y,t), \\
+ *    f^x(x,y,t) & = & M^x(x,y,t)^{-1}\, F^x(x,y,t), \\
+ *    g^x(x,y,t) & = & M^x(x,y,t)^{-1}\, G^x(x,y,t),
+ *  \f}
  *  or
  *  \f[
- *    \dot{z} + f(x,y,t) + g(x,y,t) = 0,
+ *    \dot{z} + g(x,y,t) + f(x,y,t) = 0,
  *  \f]
  *  where \f$f(x,y,t) = M(x,y,t)^{-1}\, F(x,y,t)\f$, and
  *  \f$g(x,y,t) = M(x,y,t)^{-1}\, G(x,y,t)\f$.
- *  Using Butcher tableaus for the
- *  explicit terms
+ *  Using Butcher tableaus for the explicit and implicit terms
  *  \f[ \begin{array}{c|c}
- *    \hat{c} & \hat{A} \\ \hline
+ *    \hat{c} & \hat{a} \\ \hline
  *            & \hat{b}^T
  *  \end{array}
- *  \;\;\;\; \mbox{ and for implicit terms } \;\;\;\;
+ *  \;\;\;\; \mbox{ and } \;\;\;\;
  *  \begin{array}{c|c}
- *    c & A \\ \hline
+ *    c & a \\ \hline
  *      & b^T
  *  \end{array}, \f]
- *  the basic scheme for this partitioned, \f$s\f$-stage, IMEX-RK is
+ *  respectively, the basic scheme for this partitioned, \f$s\f$-stage,
+ *  IMEX-RK method is
  *  \f[ \begin{array}{rcll}
  *   Z_i & = & Z_{n-1}
  *   - \Delta t \sum_{j=1}^{i-1} \hat{a}_{ij}\; f(Z_j,\hat{t}_j)
@@ -93,19 +96,26 @@ namespace Tempus {
  *   - \Delta t \sum_{j=1}^i           a_{ij}\; g^x(Z_j,     t_j)
  *     &   \mbox{for } i=1\ldots s, \\
  *   y_n & = & y_{n-1}
- *   - \Delta t \sum_{i=1}^s \hat{b}_{i}\; f^y(X_i,Y_i,\hat{t}_i) & \\
+ *   - \Delta t \sum_{i=1}^s \hat{b}_{i}\; f^y(Z_i,\hat{t}_i) & \\
  *   x_n & = & x_{n-1}
  *   - \Delta t \sum_{i=1}^s \left[ \hat{b}_i\; f^x(Z_i,\hat{t}_i)
  *                                 +     b_i\;  g^x(Z_i,     t_i) \right] &
  *  \end{array} \f]
  *  where \f$\hat{t}_i = t_{n-1}+\hat{c}_i\Delta t\f$ and
- *  \f$t_i = t_{n-1}+c_i\Delta t\f$.
- *
- *  For iterative solvers, it is useful to write the stage solutions as
+ *  \f$t_i = t_{n-1}+c_i\Delta t\f$.  Note that the "slow" explicit physics,
+ *  \f$f^y(Z_j,\hat{t}_j)\f$ and \f$f^x(Z_j,\hat{t}_j)\f$, is evaluated at
+ *  the explicit stage time, \f$\hat{t}_j\f$, and the "fast" implicit physics,
+ *  \f$g^x(Z_j,t_j)\f$, is evaluated at the implicit stage time, \f$t_j\f$.
+ *  We can write the stage solution, \f$Z_i\f$, as
  *  \f[
  *    Z_i = \tilde{Z} - a_{ii} \Delta t\, g(Z_i,t_i)
  *  \f]
- *  or expanded as
+ *  where
+ *  \f[
+ *    \tilde{Z} = z_{n-1} - \Delta t \sum_{j=1}^{i-1}
+ *      \left[\hat{a}_{ij}\, f(Z_j,\hat{t}_j) + a_{ij}\, g(Z_j, t_j)\right]
+ *  \f]
+ *  or in expanded form as
  *  \f[
  *    \left\{ \begin{array}{c}        Y_i \\        X_i  \end{array}\right\} =
  *    \left\{ \begin{array}{c} \tilde{Y}  \\ \tilde{X}_i \end{array}\right\}
@@ -114,77 +124,87 @@ namespace Tempus {
  *  \f]
  *  where
  *  \f{eqnarray*}{
- *    \tilde{Z} & = & z_{n-1} - \Delta t \sum_{j=1}^{i-1}
- *      \left[\hat{a}_{ij}\, f(Z_j,\hat{t}_j) + a_{ij}\, g(Z_j, t_j)\right] \\
  *    \tilde{Y} & = & y_{n-1} - \Delta t \sum_{j=1}^{i-1}
  *      \left[\hat{a}_{ij}\, f^y(Z_j,\hat{t}_j)\right] \\
  *    \tilde{X} & = & x_{n-1} - \Delta t \sum_{j=1}^{i-1}
  *      \left[\hat{a}_{ij}\, f^x(Z_j,\hat{t}_j) +a_{ij}\, g^x(Z_j,t_j)\right] \\
  *  \f}
- *  and note that \f$Y_i = \tilde{Y}\f$.  Rearranging to solve for the
- *  implicit term
- *  \f{eqnarray*}{
- *    g  (Z_i,t_i) & = & - \frac{Z_i - \tilde{Z}}{a_{ii} \Delta t} \\
- *    g^x(Z_i,t_i) & = & - \frac{X_i - \tilde{X}}{a_{ii} \Delta t}
- *  \f}
- *  We additionally need the time derivative at each stage for the implicit
- *  solve.  Let us define the following time derivative for \f$x\f$ portion
- *  of the solution
- *  \f[
- *    \dot{X}_i(X_i,Y_i,t_i) + f^x(X_i,Y_i,t_i) + g^x(X_i,Y_i,t_i) = 0
- *  \f]
- *  where we split \f$Z_i\f$ arguments into \f$X_i\f$ and \f$Y_i\f$ to
- *  emphasize that \f$X_i\f$ is the solution for the implicit solve and
- *  \f$Y_i\f$ are parameters in this set of equations.  The above time
- *  derivative, \f$\dot{X}_i\f$, is NOT likely the same as the real time
- *  derivative, \f$\dot{x}(x(t_i), y(t_i), t_i)\f$, unless
- *  \f$\hat{c}_i = c_i \rightarrow \hat{t}_i = t_i\f$
- *  (Reasoning: \f$x(t_i) \neq X_i\f$ and \f$y(t_i) \neq Y_i\f$ unless
- *  \f$\hat{t}_i = t_i\f$).  Also note that the explicit term,
- *  \f$f^x(X_i,Y_i,t_i)\f$, is evaluated at the implicit stage time, \f$t_i\f$.
+ *  and note that \f$Y_i = \tilde{Y}\f$.
  *
- *  We can form the time derivative
- *  \f{eqnarray*}{
- *    \dot{X}(X_i,Y_i,t_i) & = & - g^x(X_i,Y_i,t_i) - f^x(X_i,Y_i,t_i) \\
- *    \dot{X}(X_i,Y_i,t_i) & = &
- *      \frac{X_i - \tilde{X}}{a_{ii} \Delta t} - f^x(X_i,Y_i,t_i) \\
- *  \f}
- *  Returning to the governing equation for the IMEX solution vector, \f$X_i\f$
- *  \f{eqnarray*}{
- *    M^x(X_i,Y_i,t_i)\,
- *    \dot{X}(X_i,Y_i,t_i) + F^x(X_i,Y_i,t_i) + G^x(X_i,Y_i,t_i) & = & 0 \\
- *    M^x(X_i,Y_i,t_i)\,
- *    \left[ \frac{X_i - \tilde{X}}{a_{ii} \Delta t} - f^x(X_i,Y_i,t_i) \right]
- *      + F^x(X_i,Y_i,t_i) + G^x(X_i,Y_i,t_i) & = & 0 \\
- *    M^x(X_i,Y_i,t_i)\,
- *    \left[ \frac{X_i - \tilde{X}}{a_{ii} \Delta t} \right]
- *    + G(X_i,Y_i,t_i) & = & 0 \\
- *  \f}
- *  Recall \f$\mathcal{G}^x(\dot{x},x,y,t) = M^x(x,y,t)\,\dot{x} + G^x(x,y,t)\f$
- *  and if we define a pseudo time derivative, which is equivalent to the
- *  time derivative for the implicit solve,
- *  \f[
- *    \tilde{\dot{X}} = \frac{X_i - \tilde{X}}{a_{ii} \Delta t},
- *  \f]
+ *  Noting that we will be solving the implicit ODE for \f$\dot{X}_i\f$,
  *  we can write
  *  \f[
  *    \mathcal{G}^x(\tilde{\dot{X}},X_i,Y_i,t_i) =
- *       M^x(X_i,Y_i,t_i)\, \tilde{\dot{X}} + G^x(X_i,Y_i,t_i) = 0
+ *      \tilde{\dot{X}} + g^x(X_i,Y_i,t_i) = 0
+ *  \f]
+ *  where we have defined a pseudo time derivative, \f$\tilde{\dot{X}}\f$,
+ *  \f[
+ *    \tilde{\dot{X}} \equiv \frac{X_i - \tilde{X}}{a_{ii} \Delta t}
+ *    \quad \quad \left[ = -g^x(X_i,Y_i,t_i)\right]
+ *  \f]
+ *  that can be used with the implicit solve but is <b>not</b> the stage
+ *  time derivative for the IMEX equations, \f$\dot{X}_i\f$.
+ *  (Note that \f$\tilde{\dot{X}}\f$
+ *  can be interpreted as the rate of change of the solution due to the
+ *  implicit "fast" physics.)
+ *  Note that we are solving for \f$X_i\f$, and \f$Y_i\f$ are included as
+ *  parameters possibly needed in the IMEX equations.
+ *
+ *  To obtain the stage time derivative, \f$\dot{Z}_i\f$, for the
+ *  entire system, we can evaluate
+ *  the governing equation at the implicit stage time, \f$t_i\f$,
+ *  \f[
+ *    \dot{Z}_i(Z_i,t_i) + f(Z_i,t_i) + g(Z_i,t_i) = 0
+ *  \f]
+ *  The above time derivative, \f$\dot{Z}_i\f$, is likely <b>not</b>
+ *  the same as the real time derivative, \f$\dot{x}(x(t_i), y(t_i), t_i)\f$,
+ *  unless \f$\hat{c}_i = c_i \rightarrow \hat{t}_i = t_i\f$
+ *  (Reasoning: \f$x(t_i) \neq X_i\f$ and \f$y(t_i) \neq Y_i\f$ unless
+ *  \f$\hat{t}_i = t_i\f$).  Also note that the explicit term,
+ *  \f$f(Z_i,t_i)\f$, is evaluated at the implicit stage time, \f$t_i\f$.
+ *  Solving for \f$\dot{Z}_i\f$, we find
+ *  \f[
+ *    \dot{Z}(Z_i,t_i) = - g(Z_i,t_i) - f(Z_i,t_i)
  *  \f]
  *
+ *  <b> Iteration Matrix, \f$W\f$.</b>
+ *  Recalling that the definition of the iteration matrix, \f$W\f$, is
+ *  \f[
+ *    W = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
+ *      + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n},
+ *  \f]
+ *  where \f$ \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n}, \f$
+ *  and \f$ \beta \equiv \frac{\partial x_n}{\partial x_n} = 1\f$. For the
+ *  IMEX equations, we are solving
+ *  \f[
+ *    \mathcal{G}^x(\tilde{\dot{X}},X_i,Y_i,t_i) =
+ *      \tilde{\dot{X}} + g^x(X_i,Y_i,t_i) = 0
+ *  \f]
+ *  where \f$\mathcal{F}_n \rightarrow \mathcal{G}^x\f$,
+ *  \f$x_n \rightarrow X_{i}\f$, and
+ *  \f$\dot{x}_n(x_n) \rightarrow \tilde{\dot{X}}(X_{i})\f$.
+ *  The time derivative for the implicit solves is
+ *  \f[
+ *    \tilde{\dot{X}} \equiv \frac{X_i - \tilde{X}}{a_{ii} \Delta t}
+ *  \f]
+ *  and we can determine that
+ *  \f$ \alpha = \frac{1}{a_{ii} \Delta t} \f$
+ *  and \f$ \beta = 1 \f$, and therefore write
+ *  \f[
+ *    W = \frac{1}{a_{ii} \Delta t}
+ *        \frac{\partial \mathcal{G}^x}{\partial \tilde{\dot{X}}}
+ *      + \frac{\partial \mathcal{G}^x}{\partial X_i}.
+ *  \f]
+ *
+ *  <b>Explicit Stage in the Implicit Tableau.</b>
  *  For general DIRK methods, we need to also handle the case when
  *  \f$a_{ii}=0\f$.  The IMEX stage values can be simply evaluated
  *  similiar to the "explicit-only" stage values, e.g.,
  *  \f[
- *     X_i = \tilde{X} = x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left(
- *            \hat{a}_{ij}\, f^x_j + a_{ij}\, g^x_j \right)
+ *     X_i = \tilde{X} = x_{n-1} - \Delta t \sum_{j=1}^{i-1}
+ *      \left[\hat{a}_{ij}\, f^x(Z_j,\hat{t}_j) +a_{ij}\, g^x(Z_j,t_j)\right]
  *  \f]
- *  and then we can simply evaluate
- *  \f{eqnarray*}{
- *     f_i   & = & f  (Z_i,\hat{t}_i) \\
- *     g^x_i & = & g^x(X_i,Y_i,  t_i)
- *  \f}
- *  We can then form the time derivative as
+ *  and the time derivative of the stage solution is
  *  \f[
  *    \dot{X}_i = - g^x(X_i,Y_i,t_i) - f^x(X_i,Y_i,t_i)
  *  \f]
@@ -202,12 +222,13 @@ namespace Tempus {
  *       - \f$X_i   \leftarrow \tilde{X}\f$
  *       - \f$g^x_i \leftarrow g^x(X_i,Y_i,t_i)\f$
  *     - else
- *       - Define \f$\tilde{\dot{X}}(X_i,Y_i,t_i)
- *            = \frac{X_i-\tilde{X}}{a_{ii} \Delta t}\f$
- *       - Solve \f$\mathcal{G}^x(\tilde{\dot{X}},X_i,Y_i,t_i) = 0\f$
+ *       - Solve \f$\mathcal{G}^x(
+ *           \tilde{\dot{X}} = \frac{X_i-\tilde{X}}{a_{ii} \Delta t},
+ *           X_i,Y_i,t_i) = 0\f$
  *         for \f$X_i\f$ where \f$Y_i\f$ are known parameters
  *       - \f$g^x_i \leftarrow - \tilde{\dot{X}}\f$
  *     - \f$f_i \leftarrow f(Z_i,\hat{t}_i)\f$
+ *     - \f$\dot{Z} \leftarrow - g(Z_i,t_i) - f(Z_i,t_i)\f$ [Optionally]
  *   - end for
  *   - \f$z_n = z_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\, f_i\f$
  *   - \f$x_n \mathrel{+{=}} - \Delta t\,\sum_{i=1}^{s} b_i\, g^x_i\f$
@@ -331,6 +352,8 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
   void evalImplicitModelExplicitly(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,

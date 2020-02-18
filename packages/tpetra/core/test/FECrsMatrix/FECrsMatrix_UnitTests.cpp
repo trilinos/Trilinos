@@ -224,9 +224,9 @@ std::vector<std::vector<Scalar> > generate_fem1d_element_values() {
   return mat;
 }
 
-template<class Scalar, class Node>
-Kokkos::View<Scalar[2][2], Kokkos::LayoutLeft, typename Node::device_type > generate_fem1d_element_values_kokkos() {
-  Kokkos::View<Scalar[2][2], Kokkos::LayoutLeft, typename Node::device_type> mat ("fem1d_element_values");
+template<class ImplScalarType, class Node>
+Kokkos::View<ImplScalarType[2][2], Kokkos::LayoutLeft, typename Node::device_type > generate_fem1d_element_values_kokkos() {  
+  Kokkos::View<ImplScalarType[2][2], Kokkos::LayoutLeft, typename Node::device_type> mat ("fem1d_element_values");
 
   auto mat_h = Kokkos::create_mirror_view(mat);
   mat_h(0,0) =  1.0;
@@ -340,7 +340,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
 
   // Generate the "local stiffness matrix"
   std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
-  auto kokkosValues = generate_fem1d_element_values_kokkos<Scalar, Node>();
+  auto kokkosValues = generate_fem1d_element_values_kokkos<ImplScalarType, Node>();
 
   // Make the matrix two ways
   FEMAT mat1(graph); // Here we use graph as a FECrsGraph
@@ -398,9 +398,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, S
   generate_fem1d_graph(numLocal,comm,pack);
   
   // Make the graph    
-  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
-  // not being handled correctly. 
-  RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,4));
+  RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,3));
 
   graph->beginFill();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
@@ -463,9 +461,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   generate_fem1d_graph(numLocal,comm,pack);
   
   // Make the graph    
-  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
-  // not being handled correctly. 
-  RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,4));
+  RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,3));
 
   graph->beginFill();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
@@ -484,7 +480,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
 
   // Generate the "local stiffness matrix"
   std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
-  auto kokkosValues = generate_fem1d_element_values_kokkos<Scalar, Node>();
+  auto kokkosValues = generate_fem1d_element_values_kokkos<ImplScalarType, Node>();
 
   // Make the matrix two ways
   FEMAT mat1(graph); // Here we use graph as a FECrsGraph
@@ -532,8 +528,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_Kokkos, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, SCALAR, NODE )
-  
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, SCALAR, NODE ) 
+
+
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )

@@ -248,10 +248,29 @@ ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON)
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_EXE_DISABLE ON)
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
 
+IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
+
+  # Disable ctest DISABLED test (otherwise, this shows up on CDash as "NotRun")
+  ATDM_SET_ENABLE(KokkosContainers_PerformanceTest_OpenMP_DISABLE ON)
+
+ENDIF()
+
 IF ("${ATDM_CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 
   ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-4_DISABLE ON)
   ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedPoissonExample-ConvTest-Hex-Order-3_DISABLE ON)
+
+  # Too expensive for full debug builds after Kokkos 2.99 upgrade
+  ATDM_SET_ENABLE(KokkosCore_UnitTest_Serial_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(KokkosKernels_blas_serial_MPI_1_DISABLE ON)
+
+  IF (ATDM_USE_OPENMP)
+
+    # Too expensive for full debug builds after Kokkos 2.99 upgrade
+    ATDM_SET_ENABLE(KokkosCore_UnitTest_OpenMP_MPI_1_DISABLE ON)
+    ATDM_SET_ENABLE(KokkosKernels_blas_openmp_MPI_1_DISABLE ON)
+
+  ENDIF()
 
 ENDIF()
 
@@ -281,5 +300,8 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
   ATDM_SET_ENABLE(Zoltan_ch_grid20x19_zoltan_parallel_DISABLE ON)
   ATDM_SET_ENABLE(Zoltan_ch_nograph_zoltan_parallel_DISABLE ON)
   ATDM_SET_ENABLE(Zoltan_ch_simple_zoltan_parallel_DISABLE ON)
+
+  # Disable ctest DISABLED test (otherwise, this shows up on CDash as "NotRun")
+  ATDM_SET_ENABLE(KokkosContainers_PerformanceTest_Cuda_DISABLE ON)
 
 ENDIF()

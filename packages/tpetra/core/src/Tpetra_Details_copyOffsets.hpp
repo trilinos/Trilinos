@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -168,7 +166,8 @@ namespace { // (anonymous)
 
     const bool verbose = Details::Behavior::verbose ();
     if (verbose) {
-      constexpr size_t maxNumToPrint = 100;
+      const size_t maxNumToPrint =
+        Details::Behavior::verbosePrintCountThreshold();
       const size_t srcLen (src.extent (0));
       if (srcLen <= maxNumToPrint) {
         auto dst_h = Kokkos::create_mirror_view (dst);
@@ -195,7 +194,11 @@ namespace { // (anonymous)
         os << "].";
       }
       else {
-        os << "  src and dst are too long to print.";
+        os << "  src.extent(0) > " << maxNumToPrint << ", Tpetra's "
+          "verbose print count threshold.  To increase this, set the "
+          "environment variable TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD "
+          "to the desired threshold and rerun.  You do NOT need to "
+          "rebuild Trilinos.";
       }
     }
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, os.str ());

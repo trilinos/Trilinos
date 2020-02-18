@@ -1,4 +1,39 @@
+ // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ //
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ //
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ //
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include <vector>
+
+#include "mesh/BalanceMesh.hpp"
 
 #include "balance.hpp"
 #include "balanceUtils.hpp"               // for BalanceSettings, etc
@@ -8,6 +43,7 @@
 #include "internal/balanceCoincidentElements.hpp"
 #include "internal/balanceCommandLine.hpp"
 #include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
+#include "internal/NodeBalancer.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Comm.hpp"
@@ -253,24 +289,47 @@ bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk
     return totalNumColors > 0;
 }
 
-bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
+bool internalBalanceStkMesh(const BalanceSettings& balanceSettings, BalanceMesh& mesh, const std::vector<stk::mesh::Selector>& selectors)
 {
-    std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().locally_owned_part()};
-    return balanceStkMesh(balanceSettings, stkMeshBulkData, selectors);
+  if( balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE )
+  {
+    return loadBalance(balanceSettings, mesh.get_bulk(), mesh.get_bulk().parallel_size(), selectors);
+  }
+  return false;
+}
+
+bool internalBalanceStkMesh(const BalanceSettings& balanceSettings, BalanceMesh& mesh)
+{
+  std::vector<stk::mesh::Selector> selectors = {mesh.get_bulk().mesh_meta_data().locally_owned_part()};
+  return internalBalanceStkMesh(balanceSettings, mesh, selectors);
 }
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
 {
-    if( balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE )
+  ExternalMesh mesh(stkMeshBulkData);
+  return internalBalanceStkMesh(balanceSettings, mesh, selectors);
+}
+
+bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
+{
+  ExternalMesh mesh(stkMeshBulkData);
+  return internalBalanceStkMesh(balanceSettings, mesh);
+}
+
+bool balanceStkMeshNodes(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
+{
+    if ((balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE) && balanceSettings.useNodeBalancer())
     {
-        return loadBalance(balanceSettings, stkMeshBulkData, stkMeshBulkData.parallel_size(), selectors);
+      internal::NodeBalancer nodeBalancer(stkMeshBulkData);
+      return nodeBalancer.balance_node_entities(balanceSettings.getNodeBalancerTargetLoadBalance(),
+                                                balanceSettings.getNodeBalancerMaxIterations());
     }
     return false;
 }
 
 bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData)
 {
-    if(colorSettings.getGraphOption() == BalanceSettings::COLOR_MESH )
+    if (colorSettings.getGraphOption() == BalanceSettings::COLOR_MESH )
     {
       return colorMesh(colorSettings, stkMeshBulkData, {&(stkMeshBulkData.mesh_meta_data().locally_owned_part())});
     }
@@ -315,10 +374,12 @@ void fill_coloring_parts_with_topology(const stk::mesh::MetaData& meta, const st
     }
 }
 
-void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, stk::mesh::BulkData &inputBulk, const std::string& outputFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
+void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, BalanceMesh& inputMesh, const std::string& outputFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
 {
     stk::mesh::MetaData metaB;
     stk::mesh::BulkData bulkB(metaB, comm);
+
+    stk::mesh::BulkData& inputBulk = inputMesh.get_bulk();
 
     stk::mesh::BulkData *balancedBulk = nullptr;
     if(stk::io::get_transient_fields(inputBulk.mesh_meta_data()).empty())
@@ -332,7 +393,8 @@ void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, st
         balancedBulk = &bulkB;
     }
 
-    stk::balance::balanceStkMesh(graphOptions, *balancedBulk);
+    ExternalMesh balancedMesh(*balancedBulk);
+    stk::balance::internalBalanceStkMesh(graphOptions, balancedMesh);
 
     stk::io::StkMeshIoBroker stkOutput;
     stkOutput.set_bulk_data(*balancedBulk);
@@ -374,7 +436,7 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
     }
 }
 
-void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
+void initial_decomp_and_balance(BalanceMesh& mesh,
                                 stk::balance::BalanceSettings& graphOptions,
                                 const std::string& exodusFilename,
                                 const std::string& outputFilename,
@@ -383,11 +445,21 @@ void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
     stk::io::StkMeshIoBroker stkInput;
     stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", initialDecompMethod));
 
-    internal::logMessage(bulk.parallel(), "Reading mesh and performing initial decomposition");
-    read_mesh_with_auto_decomp(stkInput, exodusFilename, bulk, graphOptions);
+    internal::logMessage(mesh.get_bulk().parallel(), "Reading mesh and performing initial decomposition");
+    read_mesh_with_auto_decomp(stkInput, exodusFilename, mesh.get_bulk(), graphOptions);
 
-    make_mesh_consistent_with_parallel_mesh_rule1(bulk);
-    run_static_stk_balance_with_settings(stkInput, bulk, outputFilename, bulk.parallel(), graphOptions);
+    make_mesh_consistent_with_parallel_mesh_rule1(mesh.get_bulk());
+    run_static_stk_balance_with_settings(stkInput, mesh, outputFilename, mesh.get_bulk().parallel(), graphOptions);
+}
+
+void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
+                                stk::balance::BalanceSettings& graphOptions,
+                                const std::string& exodusFilename,
+                                const std::string& outputFilename,
+                                const std::string & initialDecompMethod)
+{
+  ExternalMesh mesh(bulk);
+  initial_decomp_and_balance(mesh, graphOptions, exodusFilename, outputFilename, initialDecompMethod);
 }
 
 void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& balanceSettings)
@@ -402,11 +474,10 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
                      <<"wish to copy the input-file to an output-file of the same name.");
 
     const std::string initialDecompMethod = "RIB";
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, comm);
-    meta.set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
-    initial_decomp_and_balance(bulk, balanceSettings, exodusFilename, outputFilename, initialDecompMethod);
+    InternalMesh mesh(comm, balanceSettings.getCoordinateFieldName());
+
+    initial_decomp_and_balance(mesh, balanceSettings, exodusFilename, outputFilename, initialDecompMethod);
 }
 
 StkBalanceSettings create_balance_settings(const stk::balance::ParsedOptions & options)

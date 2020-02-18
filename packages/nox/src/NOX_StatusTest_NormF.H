@@ -85,7 +85,7 @@ namespace StatusTest {
   Finally, we return NOX::StatusTest::Converged if \f$\alpha <
   \beta\f$, and NOX::StatusTest::Unconverged otherwise.
   Here \f$\alpha\f$
-  represents the norm of \f$F(x)\f$ and \f$\beta\f$ represents the
+  represents the norm of \f$ F(x)\f$ and \f$\beta\f$ represents the
   tolerance, as described below.
 
   Let \f$\gamma\f$ denote an optional scale factor defined as

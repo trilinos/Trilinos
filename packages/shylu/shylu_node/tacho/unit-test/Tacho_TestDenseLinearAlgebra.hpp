@@ -20,7 +20,7 @@ using namespace Tacho;
 using std::abs;
 using Kokkos::abs;
 
-typedef Kokkos::DualView<ValueType**,Kokkos::LayoutLeft,DeviceSpaceType> matrix_type;
+typedef Kokkos::DualView<ValueType**,Kokkos::LayoutLeft,DeviceType> matrix_type;
 
 namespace Test {
   struct Functor_TeamGemm {
@@ -62,7 +62,7 @@ namespace Test {
       _C.sync_device();
       _C.modify_device();
 
-      Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
 
       _C.sync_host();
     }
@@ -84,7 +84,7 @@ TEST( DenseLinearAlgebra, team_gemm_nn ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
 
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -131,7 +131,7 @@ TEST( DenseLinearAlgebra, team_gemm_nt ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -173,7 +173,7 @@ TEST( DenseLinearAlgebra, team_gemm_nc ) {
   matrix_type A1("A1", m, k), B1("B1", n, k), C1("C1", m, n);
   matrix_type   A2("A2", m, k), B2("B2", n, k), C2("C2", m, n);
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -213,7 +213,7 @@ TEST( DenseLinearAlgebra, team_gemm_tn ) {
   matrix_type A1("A1", k, m), B1("B1", k, n), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", k, n), C2("C2", m, n);
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -257,7 +257,7 @@ TEST( DenseLinearAlgebra, team_gemm_tt ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -301,7 +301,7 @@ TEST( DenseLinearAlgebra, team_gemm_tc ) {
   B1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -345,7 +345,7 @@ TEST( DenseLinearAlgebra, team_gemm_cn ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -389,7 +389,7 @@ TEST( DenseLinearAlgebra, team_gemm_ct ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -433,7 +433,7 @@ TEST( DenseLinearAlgebra, team_gemm_cc ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(B1.d_view, random, ValueType(1));
@@ -503,7 +503,7 @@ namespace Test {
       _y.sync_device();
       _y.modify_device();
 
-      Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
 
       _y.sync_host();
     }
@@ -524,7 +524,7 @@ TEST( DenseLinearAlgebra, team_gemv_n ) {
   x1.modify_device();
   y1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(x1.d_view, random, ValueType(1));
@@ -567,7 +567,7 @@ TEST( DenseLinearAlgebra, team_gemv_t ) {
   x1.modify_device();
   y1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(x1.d_view, random, ValueType(1));
@@ -610,7 +610,7 @@ TEST( DenseLinearAlgebra, team_gemv_c ) {
   x1.modify_device();
   y1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(x1.d_view, random, ValueType(1));
@@ -676,7 +676,7 @@ namespace Test {
       _C.sync_device();
       _C.modify_device();
 
-      Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
 
       _C.sync_host();
     }
@@ -697,7 +697,7 @@ TEST( DenseLinearAlgebra, team_herk_un ) {
   A1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(C1.d_view, random, ValueType(1));
@@ -738,7 +738,7 @@ TEST( DenseLinearAlgebra, team_herk_uc ) {
   A1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(C1.d_view, random, ValueType(1));
@@ -779,7 +779,7 @@ TEST( DenseLinearAlgebra, team_herk_ln ) {
   A1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(C1.d_view, random, ValueType(1));
@@ -820,7 +820,7 @@ TEST( DenseLinearAlgebra, team_herk_lc ) {
   A1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   
   Kokkos::fill_random(A1.d_view, random, ValueType(1));
   Kokkos::fill_random(C1.d_view, random, ValueType(1));
@@ -879,7 +879,7 @@ namespace Test {
       _b.sync_device();
       _b.modify_device();
       
-      Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
       
       _b.sync_host();
     }
@@ -894,7 +894,7 @@ namespace Test {
     A1.modify_device();                                       \
     b1.modify_device();                                       \
                                                                         \
-    Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);      \
+    Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);      \
                                                                         \
     Kokkos::fill_random(A1.d_view, random, ValueType(1));               \
     Kokkos::fill_random(b1.d_view, random, ValueType(1));               \
@@ -1094,7 +1094,7 @@ namespace Test {
       _B.sync_device();
       _B.modify_device();
       
-      Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
 
       _B.sync_host();
     }
@@ -1108,7 +1108,7 @@ namespace Test {
     A1.modify_device();                                       \
     B1.modify_device();                                       \
                                                                         \
-    Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);      \
+    Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);      \
                                                                         \
     Kokkos::fill_random(A1.d_view, random, ValueType(1));               \
     Kokkos::fill_random(B1.d_view, random, ValueType(1));               \
@@ -1331,7 +1331,7 @@ namespace Test {
       _A.sync_device();
       _A.modify_device();
       
-      Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
 
       _A.sync_host();
     }

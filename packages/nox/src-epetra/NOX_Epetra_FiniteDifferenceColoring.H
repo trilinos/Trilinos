@@ -82,9 +82,9 @@ computeF(), respectively, where \f$ N \f$ is the number of colors.
 
   \f[ J_{ij} = \frac{\partial F_i}{\partial x_j} = \frac{F_i(x+\delta\mathbf{e}_j) - F_i(x)}{\delta}  \f]
 
-where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$
+where \f$ J\f$ is the Jacobian, \f$ F\f$ is the function evaluation, \f$ x\f$
 is the solution vector, and \f$\delta\f$ is a small perturbation to the
-\f$x_j\f$ entry.
+\f$ x_j\f$ entry.
 
 Instead of perturbing each \f$ N_{dof} \f$ problem degrees of freedom
 sequentially and then evaluating all \f$ N_{dof} \f$ functions for each

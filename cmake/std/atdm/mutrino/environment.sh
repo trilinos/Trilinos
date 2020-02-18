@@ -72,7 +72,7 @@ fi
 # Load the modules (can't purge)
 module load devpack/20180124/cray/7.6.2/intel/17.0.4
 module load gcc/4.9.3
-module load cmake/3.9.0
+module load cmake/3.14.6
 
 # No RPATH for static builds
 export ATDM_CONFIG_CMAKE_SKIP_INSTALL_RPATH=ON
@@ -80,7 +80,7 @@ export ATDM_CONFIG_CMAKE_SKIP_INSTALL_RPATH=ON
 
 # Use manually installed cmake and ninja to allow usage of ninja and
 # all-at-once mode
-export PATH=/projects/netpub/atdm/cmake-3.11.4/bin:/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
+export PATH=/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
 
 # Set MPI wrappers
 export MPICXX=`which CC`

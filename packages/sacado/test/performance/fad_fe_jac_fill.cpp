@@ -37,9 +37,6 @@
 // A performance test that computes a finite-element-like Jacobian using
 // several Fad variants
 
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage<double>::defaultPool_ = NULL;
-
 void FAD::error(const char *msg) {
   std::cout << msg << std::endl;
 }
@@ -72,11 +69,6 @@ int main(int argc, char* argv[]) {
       return 1;
 
     double mesh_spacing = 1.0 / static_cast<double>(num_nodes - 1);
-
-    // Memory pool & manager
-    Sacado::Fad::MemPoolManager<double> poolManager(num_nodes*num_eqns);
-    Sacado::Fad::MemPool* pool = poolManager.getMemoryPool(num_nodes*num_eqns);
-    Sacado::Fad::DMFad<double>::setDefaultPool(pool);
 
     std::cout.setf(std::ios::scientific);
     std::cout.precision(p);
@@ -161,9 +153,6 @@ int main(int argc, char* argv[]) {
 
     t = fad_jac_fill< Sacado::Fad::SimpleFad<double> >(num_nodes, num_eqns, mesh_spacing);
     std::cout << "SimpleFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
-
-    t = fad_jac_fill< Sacado::Fad::DMFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "DMFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
 
     if (num_eqns*2 == 4) {
       t = fad_jac_fill< Sacado::ELRFad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);

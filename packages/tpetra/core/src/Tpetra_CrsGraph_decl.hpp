@@ -66,6 +66,7 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <functional> // std::function
+#include <memory>
 
 namespace Tpetra {
 
@@ -75,17 +76,9 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   namespace Details {
-
-    template<class LO, class GO, class NT>
-    void
-    unpackCrsGraphAndCombine(
-        CrsGraph<LO, GO, NT>& graph,
-        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
-        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-        const Teuchos::ArrayView<const LO>& importLIDs,
-        size_t constantNumPackets,
-        Distributor & distor,
-        CombineMode combineMode);
+    template<class LocalOrdinal,
+             class GlobalOrdinal>
+    class CrsPadding;
   } // namespace Details
 
   namespace { // (anonymous)
@@ -327,7 +320,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -350,7 +343,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayView<const size_t>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
@@ -379,7 +372,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const size_t maxNumEntriesPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -404,7 +397,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
@@ -430,7 +423,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayView<const size_t>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
@@ -1162,42 +1155,66 @@ namespace Tpetra {
      const Kokkos::DualView<const local_ordinal_type*,
        buffer_device_type>& permuteFromLIDs) override;
 
-    void
-    applyCrsPadding (const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding);
-
-    Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPadding (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) const;
-
-    Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPadding (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID) const;
+    using padding_type = Details::CrsPadding<
+      local_ordinal_type, global_ordinal_type>;
 
     void
-    computeCrsPaddingForSameIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
-                                 const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                                 const size_t numSameIDs,
-                                 const bool padAll) const;
+    applyCrsPadding(const padding_type& padding,
+                    const bool verbose);
+
+    std::unique_ptr<padding_type>
+    computeCrsPadding(
+      const RowGraph<local_ordinal_type, global_ordinal_type,
+        node_type>& source,
+      const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& permuteFromLIDs,
+      const bool verbose) const;
+
+    // This actually modifies imports by sorting it.
+    std::unique_ptr<padding_type>
+    computeCrsPaddingForImports(
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& importLIDs,
+      Kokkos::DualView<packet_type*, buffer_device_type> imports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      const bool verbose) const;
+
+    std::unique_ptr<padding_type>
+    computePaddingForCrsMatrixUnpack(
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& importLIDs,
+      Kokkos::DualView<char*, buffer_device_type> imports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      const bool verbose) const;
+
     void
-    computeCrsPaddingForPermutedIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
-                                     const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-                                     const bool padAll) const;
+    computeCrsPaddingForSameIDs(
+      padding_type& padding,
+      const RowGraph<local_ordinal_type, global_ordinal_type,
+        node_type>& source,
+      const local_ordinal_type numSameIDs) const;
+
+    void
+    computeCrsPaddingForPermutedIDs(
+      padding_type& padding,
+      const RowGraph<local_ordinal_type, global_ordinal_type,
+        node_type>& source,
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*,
+      buffer_device_type>& permuteFromLIDs) const;
 
     virtual void
-    packAndPrepare
-    (const SrcDistObject& source,
-     const Kokkos::DualView<const local_ordinal_type*,
-       buffer_device_type>& exportLIDs,
-     Kokkos::DualView<packet_type*,
-       buffer_device_type>& exports,
-     Kokkos::DualView<size_t*,
-       buffer_device_type> numPacketsPerLID,
-     size_t& constantNumPackets,
-     Distributor& distor) override;
+    packAndPrepare(
+      const SrcDistObject& source,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+      Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      size_t& constantNumPackets,
+      Distributor& distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
@@ -1547,17 +1564,6 @@ namespace Tpetra {
                                                                  typename CrsGraphType::node_type> >& rangeMap,
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-    template<class LO, class GO, class NT>
-    friend void
-    ::Tpetra::Details::unpackCrsGraphAndCombine(
-        CrsGraph<LO, GO, NT>& graph,
-        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
-        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-        const Teuchos::ArrayView<const LO>& importLIDs,
-        size_t constantNumPackets,
-        Distributor & distor,
-        CombineMode combineMode);
-
   public:
     /// \brief Import from <tt>this</tt> to the given destination
     ///   graph, and make the result fill complete.
@@ -1693,7 +1699,9 @@ namespace Tpetra {
     };
 
     bool indicesAreAllocated () const;
-    void allocateIndices (const ELocalGlobal lg);
+
+    void
+    allocateIndices(const ELocalGlobal lg, const bool verbose=false);
 
     //! \name Methods governing changes between global and local indices
     //@{
@@ -1714,6 +1722,10 @@ namespace Tpetra {
     /// \pre The graph has a column Map.
     /// \post The graph is locally indexed.
     ///
+    /// \param verbose [in] Whether to print verbose debugging output.
+    ///   This exists because CrsMatrix may want to control output
+    ///   independently of the CrsGraph that it owns.
+    ///
     /// \return Error code and error string.  See below.
     ///
     /// First return value is the number of column indices on this
@@ -1725,7 +1737,8 @@ namespace Tpetra {
     ///
     /// Second return value is a human-readable error string.  If the
     /// first return value is zero, then the string may be empty.
-    std::pair<size_t, std::string> makeIndicesLocal ();
+    std::pair<size_t, std::string>
+    makeIndicesLocal(const bool verbose=false);
 
     /// \brief Make the Import and Export objects, if needed.
     ///
@@ -2307,32 +2320,6 @@ namespace Tpetra {
     /// bound the number of entries per row.
     //@{
 
-    /// \brief Local column indices for all rows.
-    ///
-    /// This is only allocated if
-    ///
-    ///   - The calling process has a nonzero number of entries
-    ///   - The graph has DynamicProfile (2-D storage)
-    ///   - The graph is locally indexed
-    ///
-    /// In that case, if i_lcl is the local index of a locally owned
-    /// row, then lclInds2D_[i_lcl] stores the local column indices
-    /// for that row.
-    Teuchos::ArrayRCP<Teuchos::Array<local_ordinal_type> > lclInds2D_;
-
-    /// \brief Global column indices for all rows.
-    ///
-    /// This is only allocated if
-    ///
-    ///   - The calling process has a nonzero number of entries
-    ///   - The graph has DynamicProfile (2-D storage)
-    ///   - The graph is globally indexed
-    ///
-    /// In that case, if i_gbl is the global index of a globally owned
-    /// row, then gblInds2D_[i_gbl] stores the global column indices
-    /// for that row.
-    Teuchos::ArrayRCP<Teuchos::Array<global_ordinal_type> > gblInds2D_;
-
     /// \brief The type of k_numRowEntries_ (see below).
     ///
     /// This View gets used only on host.  However, making this
@@ -2412,6 +2399,23 @@ namespace Tpetra {
     /// If you don't want to sort (for compatibility with Epetra),
     /// call sortGhostColumnGIDsWithinProcessBlock(false).
     bool sortGhostsAssociatedWithEachProcessor_;
+
+  private:
+    //! Get initial value of debug_ for this object.
+    static bool getDebug();
+
+    /// \brief Whether to do extra debug checks.
+    ///
+    /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
+    bool debug_ = getDebug();
+
+    //! Get initial value of verbose_ for this object.
+    static bool getVerbose();
+
+    /// \brief Whether to do extra debug checks.
+    ///
+    /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
+    bool verbose_ = getVerbose();
 
   }; // class CrsGraph
 

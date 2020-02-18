@@ -34,6 +34,8 @@
 #ifndef STK_ENTITYLESS_HPP
 #define STK_ENTITYLESS_HPP
 
+#include <stk_mesh/base/Types.hpp>
+
 namespace stk {
 namespace mesh {
 

@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -44,6 +42,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_as.hpp"
 
@@ -176,11 +175,6 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-// mfh 01 Apr 2013: Distributor only checks input arguments in a
-// debug build, so this test is only enabled in a debug build.
-#ifdef HAVE_TPETRA_DEBUG
-  ////
   TEUCHOS_UNIT_TEST( Distributor, badArgsFromSends)
   {
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -190,27 +184,33 @@ namespace {
     // every node
     size_t numImports = 0;
 
-    // create from sends with bad node IDs
-    {
-      Distributor distributor(comm);
-      TEST_THROW( numImports = distributor.createFromSends( tuple<int>(myImageID+1)), std::runtime_error );
-    }
-    // Printing numImports prevents a compiler warning (set but unused).
-    out << "numImports result: " << numImports << std::endl;
+    const bool debug = Tpetra::Details::Behavior::debug("Distributor");
 
-    {
-      Distributor distributor(comm);
-      TEST_THROW( numImports = distributor.createFromSends( tuple<int>(0,myImageID+1,0)), std::runtime_error );
+    // create from sends with bad node IDs
+    if (debug) {
+      {
+        Distributor distributor(comm);
+        TEST_THROW( numImports = distributor.createFromSends( tuple<int>(myImageID+1)), std::runtime_error );
+        // Printing numImports prevents a compiler warning (set but unused).
+        out << "numImports result: " << numImports << std::endl;
+      }
+      {
+        Distributor distributor(comm);
+        TEST_THROW( numImports = distributor.createFromSends( tuple<int>(0,myImageID+1,0)), std::runtime_error );
+        // Printing numImports prevents a compiler warning (set but unused).
+        out << "numImports result: " << numImports << std::endl;
+      }
     }
-    // Printing numImports prevents a compiler warning (set but unused).
-    out << "numImports result: " << numImports << std::endl;
+    else {
+      out << "Debug mode not enabled; set TPETRA_DEBUG=Distributor "
+        "to test." << std::endl;
+    }
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-#endif // HAVE_TPETRA_DEBUG
 
   ////
   TEUCHOS_UNIT_TEST( Distributor, createFromSendsMixedContig)
@@ -864,52 +864,55 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-// mfh 01 Apr 2013: Distributor only checks input arguments in a
-// debug build, so this test is only enabled in a debug build.
-#ifdef HAVE_TPETRA_DEBUG
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, badArgsFromRecvs, Ordinal )
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
-    // each node i sends to node i+1
-    // for the last node, this results in an invalid node id, which should throw an exception on
-    // every node
-    // create from recvs with bad node IDs
-    {
-      Distributor distributor(comm);
-      Array<Ordinal> exportIDs;
-      Array<int> exportNodeIDs;
-      TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0), tuple<int>(myImageID+1), exportIDs, exportNodeIDs), std::runtime_error );
+    const bool debug = Tpetra::Details::Behavior::debug("Distributor");
+
+    // Each (MPI) process i sends to process i+1.  For the last
+    // process, calling createFromRecvs with these data result in an
+    // invalid process id.  In debug mode, this should throw an
+    // exception on every process.
+
+    if (debug) {
+      {
+        Distributor distributor(comm);
+        Array<Ordinal> exportIDs;
+        Array<int> exportNodeIDs;
+        TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0), tuple<int>(myImageID+1), exportIDs, exportNodeIDs), std::runtime_error );
+      }
+      {
+        Distributor distributor(comm);
+        Array<Ordinal> exportIDs;
+        Array<int> exportNodeIDs;
+        TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0,0,0), tuple<int>(0,myImageID+1,0), exportIDs, exportNodeIDs), std::runtime_error );
+      }
+      // create from recvs with conflicting sizes, but otherwise valid entries
+      {
+        Distributor distributor(comm);
+        Array<Ordinal> exportIDs;
+        Array<int> exportNodeIDs;
+        TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0), tuple<int>(0,0), exportIDs, exportNodeIDs), std::runtime_error );
+      }
+      {
+        Distributor distributor(comm);
+        Array<Ordinal> exportIDs;
+        Array<int> exportNodeIDs;
+        TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0,0), tuple<int>(0), exportIDs, exportNodeIDs), std::runtime_error );
+      }
     }
-    {
-      Distributor distributor(comm);
-      Array<Ordinal> exportIDs;
-      Array<int> exportNodeIDs;
-      TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0,0,0), tuple<int>(0,myImageID+1,0), exportIDs, exportNodeIDs), std::runtime_error );
+    else {
+      out << "Debug mode not enabled; set TPETRA_DEBUG=Distributor "
+        "to test." << std::endl;
     }
-    // create from recvs with conflicting sizes, but otherwise valid entries
-    {
-      Distributor distributor(comm);
-      Array<Ordinal> exportIDs;
-      Array<int> exportNodeIDs;
-      TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0), tuple<int>(0,0), exportIDs, exportNodeIDs), std::runtime_error );
-    }
-    {
-      Distributor distributor(comm);
-      Array<Ordinal> exportIDs;
-      Array<int> exportNodeIDs;
-      TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0,0), tuple<int>(0), exportIDs, exportNodeIDs), std::runtime_error );
-    }
+
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-#endif // HAVE_TPETRA_DEBUG
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromRecvs, Ordinal )
   {
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -995,5 +998,3 @@ namespace {
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }
-
-

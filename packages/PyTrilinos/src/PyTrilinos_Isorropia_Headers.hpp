@@ -47,6 +47,10 @@
 #include "PyTrilinos_config.h"
 #include "Isorropia_ConfigDefs.hpp"
 
+// Turn off deprecation macro for python wrappers
+#undef  __deprecated
+#define __deprecated
+
 // Isorropia include files
 #include "Isorropia_Version.hpp"
 #include "Isorropia_Operator.hpp"

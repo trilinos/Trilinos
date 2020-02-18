@@ -80,29 +80,6 @@
   }
 
 namespace {
-  std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel)
-  {
-    int         proc = 0;
-    std::string zname{name};
-
-    if (is_parallel) {
-      // Name should/might be of the form `basename_proc-#`.  Strip
-      // off the `_proc-#` portion and return just the basename.
-      auto tokens = Ioss::tokenize(zname, "_");
-      zname       = tokens[0];
-      if (tokens.size() >= 2) {
-        size_t idx = tokens.size() - 1;
-        if (tokens[idx].substr(0, 5) == "proc-") {
-          auto ptoken = Ioss::tokenize(tokens[idx], "-");
-          proc        = std::stoi(ptoken[1]);
-          idx--;
-          zname = tokens[idx];
-        }
-      }
-    }
-    return std::make_pair(zname, proc);
-  }
-
   int power_2(int count)
   {
     // Return the maximum power of two which is less than or equal to 'count'
@@ -383,6 +360,113 @@ namespace {
     }
   }
 } // namespace
+
+std::pair<std::string, int> Iocgns::Utils::decompose_name(const std::string &name, bool is_parallel)
+{
+  int         proc = is_parallel ? -1 : 0;
+  std::string zname{name};
+
+  if (is_parallel) {
+    // Name should/might be of the form `basename_proc-#`.  Strip
+    // off the `_proc-#` portion and return just the basename.
+    auto tokens = Ioss::tokenize(zname, "_");
+    zname       = tokens[0];
+    if (tokens.size() >= 2) {
+      size_t idx = tokens.size() - 1;
+      if (tokens[idx].substr(0, 5) == "proc-") {
+        auto ptoken = Ioss::tokenize(tokens[idx], "-");
+        proc        = std::stoi(ptoken[1]);
+        idx--;
+        zname = tokens[idx];
+      }
+    }
+  }
+  return std::make_pair(zname, proc);
+}
+
+template <typename INT>
+void Iocgns::Utils::map_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
+                                          INT *idata)
+{
+  // Map from CGNS to IOSS/Exodus/Patran order...
+  switch (topo->shape()) {
+  case Ioss::ElementShape::HEX:
+    switch (topo->number_nodes()) {
+    case 8:
+    case 20: break;
+    case 27: {
+      // nodes 1 through 20 are the same...
+      //
+      // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
+      // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
+      static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
+      for (size_t i = 0; i < element_count; i++) {
+        size_t             con_beg = 27 * i; // start of connectivity for i'th element.
+        std::array<int, 7> reorder;
+        for (size_t j = 0; j < 7; j++) {
+          reorder[j] = idata[con_beg + hex27_map[j]];
+        }
+
+        for (size_t j = 0; j < 7; j++) {
+          idata[con_beg + 20 + j] = reorder[j];
+        }
+      }
+    }
+    }
+    break;
+  default:
+      // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add error
+      // checking)
+      ;
+  }
+}
+
+template void Iocgns::Utils::map_cgns_connectivity<int>(const Ioss::ElementTopology *topo,
+                                                        size_t element_count, int *idata);
+template void Iocgns::Utils::map_cgns_connectivity<int64_t>(const Ioss::ElementTopology *topo,
+                                                            size_t element_count, int64_t *idata);
+
+template <typename INT>
+void Iocgns::Utils::unmap_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
+                                            INT *idata)
+{
+  // Map from IOSS/Exodus/Patran to CGNS order...
+  switch (topo->shape()) {
+  case Ioss::ElementShape::HEX:
+    switch (topo->number_nodes()) {
+    case 8:
+    case 20: break;
+    case 27: {
+      // nodes 1 through 20 are the same...
+      //
+      // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
+      // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
+      static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
+      for (size_t i = 0; i < element_count; i++) {
+        size_t             con_beg = 27 * i; // start of connectivity for i'th element.
+        std::array<int, 7> reorder;
+        for (size_t j = 0; j < 7; j++) {
+          reorder[j] = idata[con_beg + 20 + j];
+        }
+
+        for (size_t j = 0; j < 7; j++) {
+          idata[con_beg + hex27_map[j]] = reorder[j];
+        }
+      }
+    }
+    }
+    break;
+  default:
+      // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add error
+      // checking)
+      ;
+  }
+}
+
+template void Iocgns::Utils::unmap_cgns_connectivity<int>(const Ioss::ElementTopology *topo,
+                                                          size_t element_count, int *idata);
+template void Iocgns::Utils::unmap_cgns_connectivity<int64_t>(const Ioss::ElementTopology *topo,
+                                                              size_t element_count, int64_t *idata);
 
 void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *function, int lineno,
                                int processor)
@@ -1145,6 +1229,12 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
         CGERR(cg_1to1_write(file_ptr, base, db_zone, connect_name.c_str(), donor_name.c_str(),
                             owner_range.data(), donor_range.data(), zgc.m_transform.data(),
                             &zgc_idx));
+
+        if (zgc.is_from_decomp()) {
+          CGERR(cg_goto(file_ptr, base, "Zone_t", db_zone, "ZoneGridConnectivity", 0,
+                        "GridConnectivity1to1_t", zgc_idx, "end"));
+          CGERR(cg_descriptor_write("Decomp", "is_decomp"));
+        }
       }
     }
   }

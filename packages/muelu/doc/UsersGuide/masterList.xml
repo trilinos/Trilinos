@@ -387,6 +387,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: distance laplacian algo</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: drop tol</name>
       <type>double</type>
       <default>0.0</default>
@@ -411,6 +420,15 @@
       <visible>true</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
+
+    <parameter>
+      <name>aggregation: compute aggregate qualities</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to compute aggregate quality estimates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
 
     <parameter>
       <name>aggregation: brick x size</name>
@@ -686,6 +704,42 @@
 
 
   </aggregation>
+
+  <aggregate_qualities>
+
+    <parameter>
+      <name>aggregate qualities: check symmetry</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: good aggregate threshold</name>
+      <type>double</type>
+      <default>100.0</default>
+      <description>Maximum quality where aggregate is considered acceptable.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: file output</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to output files containing the aggregate qualities.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: file base</name>
+      <type>string</type>
+      <default>agg_qualities</default>
+      <description>Base of filename for aggregate quality output.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+  </aggregate_qualities>
 
   <misc>
 
