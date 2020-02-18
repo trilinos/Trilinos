@@ -43,7 +43,7 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_USERAGGREGATIONFACTORY_DECL_HPP_
+#ifndef MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_
 
 

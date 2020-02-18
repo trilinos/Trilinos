@@ -43,21 +43,52 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AMGXOPERATOR_FWD_HPP
-#define MUELU_AMGXOPERATOR_FWD_HPP
+#include "Teuchos_UnitTestHarness.hpp"
+#include "MueLu_TestHelpers.hpp"
+#include "MueLu_Version.hpp"
 
-#include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_AMGX)
+#include "MueLu_NotayAggregationFactory.hpp"
 
-namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class AMGXOperator;
-}
+namespace MueLuTests {
 
-#ifndef MUELU_AMGXOPERATOR_SHORT
-#define MUELU_AMGXOPERATOR_SHORT
-#endif
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(NotayAggregation, InitialAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-#endif
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
-#endif // MUELU_AMGXOPERATOR_FWD_HPP
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
+    RCP<Aggregates> aggregates = rcp(new Aggregates(*A.getGraph()));    
+    RCP<NotayAggregationFactory> NAF;
+    std::vector<unsigned> aggStat;
+    LO numUnaggregatedNodes;
+
+    Teuchos::ParameterList params;
+    params.set("aggregation: Dirichlet threshold",10);
+    NAF::BuildInitialAggregation(params,*A,*aggregates,aggStat,numUnaggregatedNodes);
+    aggregates->print(*out,Teuchos::VERB_EXTREME);
+
+
+    TEST_EQUALITY(numUnaggregatedNodes, 0);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+
+  } // InitialAggregation
+
+
+#  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NotayAggregation,InitialAggregation,Scalar,LO,GO,Node) 
+
+
+#include <MueLu_ETI_4arg.hpp>
+
+
+} // namespace MueLuTests

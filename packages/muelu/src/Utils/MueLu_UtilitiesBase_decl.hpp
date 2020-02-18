@@ -406,11 +406,11 @@ namespace MueLu {
         ArrayView<const SC> vals;
         A.getLocalRowView(row, indices, vals);
 
-        MT si = STS::zero();
+        MT si = MTS::zero();
 
         for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
           if(colID != row) {
-            si += MTS::magnitude(vals[colID]);
+            si += STS::magnitude(vals[colID]);
           }
         }
         localVals[row] = si;

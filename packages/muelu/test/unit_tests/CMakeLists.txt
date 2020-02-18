@@ -39,6 +39,7 @@ APPEND_SET(SOURCES
   MueLu_UnitTests.cpp
   MueLu_TestHelpers.cpp
   MultiVectorTransferFactory.cpp
+  NotayAggregationFactory.cpp
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
   PermutedTransferFactory.cpp
