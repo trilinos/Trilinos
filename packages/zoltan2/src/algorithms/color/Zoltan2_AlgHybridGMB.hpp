@@ -48,7 +48,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
   private:
 
     void buildModel(modelFlag_t &flags); 
-    
+
+    //function to invoke KokkosKernels distance-1 coloring    
     template <class ExecutionSpace, typename TempMemorySpace, 
               typename MemorySpace>
     void colorInterior(const size_t nVtx, 
@@ -113,6 +114,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
     int numColors;
     
   public:
+    //constructor for the  hybrid distributed distance-1 algorithm
     AlgHybridGMB(
       const RCP<const base_adapter_t> &adapter_, 
       const RCP<Teuchos::ParameterList> &pl_,
@@ -163,14 +165,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
       std::vector<lno_t> reorderToLocal;
       for(size_t i = 0;  i< nVtx; i++) reorderToLocal.push_back(i);
       
-      volatile int debug = 0;
-//      if(rank == 0){
-//        printf("%d PID %d ready for attach\n", rank, getpid());
-//        while(debug == 0){
-//          usleep(1000);
-//        }
-//      }
-      //printf("Starting to create local graph\n");
       //Set up a typical local mapping here.
       std::unordered_map<gno_t,lno_t> globalToLocal;
       std::vector<gno_t> ownedPlusGhosts;
@@ -191,12 +185,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
         
       finalAdjs_vec.resize(adjs.size()); 
       for(size_t i = 0; i < finalAdjs_vec.size();i++){
-        //printf("finalAdjs index %d is local vtx %d\n",i,globalToLocal[adjs[i]]);
         finalAdjs_vec[i] = globalToLocal[adjs[i]];
       }
-      //finalAdjs = Teuchos::arrayViewFromVector(finalAdjs_vec);
       for(int i = 0; i < offsets.size(); i++) finalOffset_vec.push_back(offsets[i]);
-      //finalOffsets = offsets;
       finalGIDs = ownedPlusGhosts;
 
       Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
@@ -216,7 +207,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                                             mapWithCopies));
       Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, 
                                                     importer, 1, true));
-      //printf("Done creating local graph\n");
       timeReorder->stop();
       //Get color array to fill
       ArrayRCP<int> colors = solution->getColorsRCP();
@@ -246,7 +236,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
         colors[reorderToLocal[i]] = femv->getData(0)[i];
       }
      
-      Teuchos::TimeMonitor::summarize();
+      //RESULT REPORTING INSTRUMENTATION
+      //Teuchos::TimeMonitor::summarize();
       Teuchos::TimeMonitor::zeroOutTimers();
       comm->barrier();
     }
@@ -339,7 +330,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
       
       //bootstrap distributed coloring, add conflicting vertices to the recoloring queue.
       if(comm->getSize() > 1){
-        printf("Rank %d: communicating before while loop\n",comm->getRank());
         timeBoundaryComp->stop();
         timeBoundaryComm->start();
         femv->switchActiveMultiVector();
@@ -433,7 +423,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
         Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_SUM,1, &localDone, &globalDone);
         //We're only allowed to stop once everyone has no work to do.
         //collectives will hang if one process exits. 
-        printf("globalDone = %d\n",globalDone);
         distributedRounds++;
         done = !globalDone;
       }
@@ -443,13 +432,14 @@ class AlgHybridGMB : public Algorithm<Adapter>
       
       
       //print how many rounds of speculating/correcting happened (this should be the same for all ranks):
+      /* RESULT REPORTING INSTRUMENTATION
       if(comm->getRank()==0) printf("did %d rounds of distributed coloring\n", distributedRounds);
       int totalVertsPerRound[100];
       for(int i = 0; i < 100; i++) totalVertsPerRound[i]=0;
       Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM,100,vertsPerRound,totalVertsPerRound);
       for(int i = 0; i < std::min(distributedRounds,100); i++){
         if(comm->getRank()==0) printf("recolored %d vertices in round %d\n",totalVertsPerRound[i],i);
-      }
+      }*/
     }
 };
 
