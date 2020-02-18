@@ -254,7 +254,7 @@ private:
     }
     if (std::abs(r) > ctol) {
       //throw Exception::NotImplemented(">>> ROL::PolyhedralProjection::project : Projection failed!");
-      std::cout << ">>> ROL::PolyhedralProjection::project : Projection failed!  rnorm = " << std::abs(r) << "  rtol = " << ctol << std::endl;
+      std::cout << ">>> ROL::PolyhedralProjection::project : Projection may be inaccurate!  rnorm = " << std::abs(r) << "  rtol = " << ctol << std::endl;
     }
     // Return projection
     x.set(*xnew_);
@@ -373,7 +373,7 @@ private:
     }
     if (rnorm > ctol) {
       //throw Exception::NotImplemented(">>> ROL::PolyhedralProjection::project : Projection failed!");
-      std::cout << ">>> ROL::PolyhedralProjection::project : Projection failed!  rnorm = " << rnorm << "  rtol = " << ctol << std::endl;
+      std::cout << ">>> ROL::PolyhedralProjection::project : Projection may be inaccurate!  rnorm = " << rnorm << "  rtol = " << ctol << std::endl;
     }
     x.set(*xnew_);
   }
