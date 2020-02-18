@@ -97,21 +97,25 @@ public:
   // TODO - Not sure yet best place for organizing these typedefs
   typedef Tacho::ordinal_type                                  ordinal_type;
   typedef Tacho::size_type                                        size_type;
-  typedef Kokkos::DefaultHostExecutionSpace                   HostSpaceType;
 
-  typedef Kokkos::DefaultExecutionSpace                      DeviceSpaceType;
+  typedef Kokkos::DefaultExecutionSpace                     exec_space_type;
+  typedef Kokkos::DefaultHostExecutionSpace            host_exec_space_type;
 
+  typedef typename
+    Tacho::UseThisDevice<exec_space_type>::device_type          device_type;
+  typedef typename
+    Tacho::UseThisDevice<host_exec_space_type>::device_type host_device_type;
 
-  typedef Kokkos::TaskScheduler<DeviceSpaceType>              SchedulerType;
+  typedef Kokkos::TaskScheduler<exec_space_type>             scheduler_type;
 
-  typedef Kokkos::View<size_type*, DeviceSpaceType>       device_size_type_array;
-  typedef Kokkos::View<ordinal_type*, DeviceSpaceType> device_ordinal_type_array;
-  typedef Kokkos::View<tacho_type*, DeviceSpaceType>     device_value_type_array;
+  typedef Kokkos::View<size_type*, device_type>       device_size_type_array;
+  typedef Kokkos::View<ordinal_type*, device_type> device_ordinal_type_array;
+  typedef Kokkos::View<tacho_type*, device_type>     device_value_type_array;
 
   // also work with host space - right now symbolic requires host space so we
   // do everything in device space if source was device, then deep_copy
-  typedef Kokkos::View<size_type*, HostSpaceType>          host_size_type_array;
-  typedef Kokkos::View<ordinal_type*, HostSpaceType>    host_ordinal_type_array;
+  typedef Kokkos::View<size_type*, host_device_type>       host_size_type_array;
+  typedef Kokkos::View<ordinal_type*, host_device_type> host_ordinal_type_array;
 
   /// \name Constructor/Destructor methods
   //@{
@@ -218,14 +222,14 @@ private:
 
   // struct holds all data necessary to make a tacho factorization or solve call
   mutable struct TACHOData {
-    typename Tacho::Solver<tacho_type,SchedulerType> solver;
+    typename Tacho::Solver<tacho_type, scheduler_type> solver;
 
     // TODO: Implement the paramter options - confirm which we want and which have been implemented
     // int num_kokkos_threads;
     // int max_num_superblocks;
   } data_;
 
-  typedef typename Tacho::Solver<tacho_type,SchedulerType>::value_type_matrix
+  typedef typename Tacho::Solver<tacho_type, scheduler_type>::value_type_matrix
     device_solve_array_t;
 
   // used as an internal workspace - possibly we can store this better in TACHOData
