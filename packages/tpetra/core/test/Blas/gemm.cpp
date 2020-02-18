@@ -35,14 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Map.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Core.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
@@ -64,7 +63,6 @@ namespace {
     Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP ();
     clp.setOption ("M", &M, "First matrix dimension M");
   }
-
 
   template<class ValueType,
            const bool isInteger = std::is_integral<ValueType>::value>
@@ -227,7 +225,7 @@ namespace {
       }
     }
 
-    const LO A2_stride = A2.stride(1); 
+    const LO A2_stride = A2.stride(1);
     const LO B2_stride = B2.stride(1);
     const LO C2_stride = C2.stride(1);
 
@@ -373,10 +371,11 @@ namespace {
         const bool isTrans_B = transOptIsTrans[transInd_B];
         const bool isConj_B = transOptIsConj[transInd_B];
 
-        testGemmVsTeuchosBlasForOneTransComb<EntryType, CoeffType, DeviceType>
-          (out, success, randPool, m, n, k,
-           trans_A, isTrans_A, isConj_A,
-           trans_B, isTrans_B, isConj_B);
+        testGemmVsTeuchosBlasForOneTransComb<
+          EntryType, CoeffType, DeviceType>(
+            out, success, randPool, m, n, k,
+            trans_A, isTrans_A, isConj_A,
+            trans_B, isTrans_B, isConj_B);
         if (! success) {
           out << "At least one test FAILED; abandoning the others." << endl;
           return;
@@ -391,40 +390,37 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Blas, Gemm, SCALAR )
   {
-    typedef SCALAR entry_type;
-    typedef SCALAR coeff_type;
-    typedef Tpetra::Map<> map_type;
-    typedef map_type::device_type device_type;
+    using entry_type = SCALAR;
+    using coeff_type = SCALAR;
+    using execution_space = Kokkos::DefaultExecutionSpace;
+    using memory_space = execution_space::memory_space;
+    using device_type = Kokkos::Device<execution_space, memory_space>;
+    const bool debug = Tpetra::Details::Behavior::debug("gemm");
 
-    Teuchos::OSTab tab0 (out);
-    out << "Test \"KokkosBlas::gemm\"" << endl;
-    Teuchos::OSTab tab1 (out);
+    Teuchos::RCP<Teuchos::FancyOStream> fancyOutPtr = debug ?
+      Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cerr)) :
+      Teuchos::rcpFromRef(out);
+    Teuchos::FancyOStream& fancyOut = *fancyOutPtr;
 
-    auto comm = Tpetra::TestingUtilities::getDefaultComm ();
-    // Creating a Map instance takes care of Kokkos initialization and
-    // finalization automatically.
-    Tpetra::Map<> map (comm->getSize (), 1, 0, comm);
+    fancyOut << "Test \"KokkosBlas::gemm\"" << endl;
+    Teuchos::OSTab tab1(fancyOut);
 
-    auto randPool = preparePseudorandomNumberGenerator<device_type> ();
+    auto randPool = preparePseudorandomNumberGenerator<device_type>();
     const LO n_vals[] = {1, 2, 5, 13};
     const LO k_vals[] = {1, 2, 5, 13};
 
-    if (comm->getRank() == 0) std::cout << std::endl;
+    fancyOut << endl;
     LO m = M;
-    {
-      for (LO n : n_vals) {
-        for (LO k : k_vals) {
-          if (comm->getRank() == 0) 
-            std::cout << "Testing m,n,k = " << m << "," << n << "," << k 
-                      << std::endl;
-          testGemmVsTeuchosBlas<entry_type, coeff_type, device_type> (out,
-                                                                      success,
-                                                                      randPool,
-                                                                      m, n, k);
-          if (! success) {
-            out << "At least one test FAILED; abandoning the others." << endl;
-            return;
-          }
+    for (LO n : n_vals) {
+      for (LO k : k_vals) {
+        fancyOut << "Testing m,n,k = " << m << "," << n << "," << k
+                 << endl;
+        testGemmVsTeuchosBlas<entry_type, coeff_type, device_type>(
+          fancyOut, success, randPool, m, n, k);
+        if (! success) {
+          fancyOut << "At least one test FAILED; abandoning the others."
+                   << endl;
+          return;
         }
       }
     }
@@ -444,3 +440,11 @@ namespace {
 } // namespace (anonymous)
 
 
+int
+main(int argc, char* argv[])
+{
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  const int errCode =
+    Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
+  return errCode;
+}

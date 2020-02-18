@@ -50,11 +50,11 @@
 #define INTREPID_UTILS_HPP
 
 #include "Intrepid_ConfigDefs.hpp"
+#include "Intrepid_Rank.hpp"
 #include "Intrepid_Types.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Intrepid_KokkosRank.hpp"
 namespace Intrepid {
 
 /***************************************************************************************************

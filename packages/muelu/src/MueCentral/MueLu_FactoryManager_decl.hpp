@@ -51,6 +51,7 @@
 #include "MueLu_FactoryManagerBase.hpp"
 
 #include "MueLu_AmalgamationFactory_fwd.hpp"
+#include "MueLu_AggregateQualityEstimateFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"

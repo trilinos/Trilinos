@@ -35,7 +35,6 @@
 #include "Sacado_No_Kokkos.hpp"
 
 #if SACADO_ENABLE_NEW_DESIGN
-#include "Sacado_Fad_Exp_DMFad.hpp"
 #include "Sacado_Fad_Exp_DVFad.hpp"
 #include "Sacado_Fad_Exp_ViewFad.hpp"
 
@@ -132,39 +131,6 @@ TEUCHOS_UNIT_TEST( MoveConstructorTests, DFad )
   TEST_EQUALITY_CONST( x.size(), 0 );
   TEST_EQUALITY_CONST( x.val(), value_type(1.5) );
   TEST_EQUALITY( x.dx(), null_ptr );
-}
-
-TEUCHOS_UNIT_TEST( MoveConstructorTests, DMFad )
-{
-  typedef double value_type;
-  typedef Sacado::Fad::Exp::DMFad<value_type> ad_type;
-  success = true;
-
-  // Setup memory pool
-  Sacado::Fad::MemPoolManager<value_type> poolManager(100);
-  Sacado::Fad::MemPool *pool = poolManager.getMemoryPool(global_fad_size);
-  ad_type::setDefaultPool(pool);
-
-  // Initialize AD type
-  ad_type x(global_fad_size, value_type(1.5));
-  for (int i=0; i<global_fad_size; ++i)
-    x.fastAccessDx(i) = value_type(2.0+i);
-
-  // Move x into y
-  ad_type y = std::move(x);
-
-  // Check y is correct
-  TEST_EQUALITY_CONST( y.size(), global_fad_size );
-  TEST_EQUALITY_CONST( y.val(), value_type(1.5) );
-  for (int i=0; i<global_fad_size; ++i) {
-    TEST_EQUALITY_CONST( y.dx(i), value_type(2.0+i) );
-  }
-
-  // Check x is correct
-  value_type *null_ptr = nullptr;
-  TEST_EQUALITY_CONST( x.size(), 0 );
-  TEST_EQUALITY_CONST( x.val(), value_type(1.5) );
-  TEST_EQUALITY_CONST( x.dx(), null_ptr );
 }
 
 TEUCHOS_UNIT_TEST( MoveConstructorTests, DVFad_Owned )
@@ -358,40 +324,6 @@ TEUCHOS_UNIT_TEST( MoveAssignmentTests, DFad )
   TEST_EQUALITY( x.dx(), null_ptr );
 }
 
-TEUCHOS_UNIT_TEST( MoveAssignmentTests, DMFad )
-{
-  typedef double value_type;
-  typedef Sacado::Fad::Exp::DMFad<value_type> ad_type;
-  success = true;
-
-  // Setup memory pool
-  Sacado::Fad::MemPoolManager<value_type> poolManager(100);
-  Sacado::Fad::MemPool *pool = poolManager.getMemoryPool(global_fad_size);
-  ad_type::setDefaultPool(pool);
-
-  // Initialize AD type
-  ad_type x(global_fad_size, value_type(1.5));
-  for (int i=0; i<global_fad_size; ++i)
-    x.fastAccessDx(i) = value_type(2.0+i);
-
-  // Move x into y
-  ad_type y(0.5);
-  y = std::move(x);
-
-  // Check y is correct
-  TEST_EQUALITY_CONST( y.size(), global_fad_size );
-  TEST_EQUALITY_CONST( y.val(), value_type(1.5) );
-  for (int i=0; i<global_fad_size; ++i) {
-    TEST_EQUALITY_CONST( y.dx(i), value_type(2.0+i) );
-  }
-
-  // Check x is correct
-  value_type *null_ptr = nullptr;
-  TEST_EQUALITY_CONST( x.size(), 0 );
-  TEST_EQUALITY_CONST( x.val(), value_type(1.5) );
-  TEST_EQUALITY_CONST( x.dx(), null_ptr );
-}
-
 TEUCHOS_UNIT_TEST( MoveAssignmentTests, DVFad_Owned )
 {
   typedef double value_type;
@@ -494,9 +426,6 @@ TEUCHOS_UNIT_TEST( MoveAssignmentTests, ViewFad )
     TEST_EQUALITY_CONST( x.dx(i), value_type(2.0+i) );
   }
 }
-
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::Exp::MemPoolStorage<double>::defaultPool_ = nullptr;
 
 #endif
 

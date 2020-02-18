@@ -33,9 +33,9 @@ ENDIF ()
 # objects for CUDA.  See Trilinos GitHub issue #1939.
 
 ASSERT_DEFINED(TPL_ENABLE_CUDA)
-ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
 
-IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_CUDA)
   SET (Tpetra_ENABLE_CUDA_DEFAULT ON)
 ELSE ()
   SET (Tpetra_ENABLE_CUDA_DEFAULT OFF)
@@ -45,7 +45,7 @@ ASSERT_DEFINED (Tpetra_ENABLE_CUDA_DEFAULT)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_CUDA
   TPETRA_ENABLE_CUDA
-  "Enable use of CUDA in Tpetra.  This requires TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda.  That is, you must build with CUDA enabled, and let Kokkos use CUDA.  (The latter should be ON by default, if building with CUDA enabled.)  If both of those are ON, then Tpetra_ENABLE_CUDA is ON by default.  You may set Tpetra_ENABLE_CUDA:BOOL=OFF explicitly if you do not wish Tpetra or downstream packages to use CUDA."
+  "Enable use of CUDA in Tpetra.  This requires TPL_ENABLE_CUDA AND Kokkos_ENABLE_CUDA.  That is, you must build with CUDA enabled, and let Kokkos use CUDA.  (The latter should be ON by default, if building with CUDA enabled.)  If both of those are ON, then Tpetra_ENABLE_CUDA is ON by default.  You may set Tpetra_ENABLE_CUDA:BOOL=OFF explicitly if you do not wish Tpetra or downstream packages to use CUDA."
   ${Tpetra_ENABLE_CUDA_DEFAULT})
 
 # It's possible for users to _disable_ CUDA in Tpetra.  However,
@@ -54,10 +54,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 
 ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 IF (Tpetra_ENABLE_CUDA AND (NOT TPL_ENABLE_CUDA))
-  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but TPL_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_Cuda must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but TPL_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_CUDA must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
 ENDIF ()
-IF (Tpetra_ENABLE_CUDA AND (NOT Kokkos_ENABLE_Cuda))
-  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but Kokkos_ENABLE_Cuda is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_Cuda must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+IF (Tpetra_ENABLE_CUDA AND (NOT Kokkos_ENABLE_CUDA))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but Kokkos_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_CUDA must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
 ENDIF ()
 
 # Kokkos and Tpetra require C++11 as of the 12.0 release.
@@ -77,25 +77,30 @@ IF (Tpetra_ENABLE_CUDA)
     MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
   ENDIF ()
 
+  message("CUDA_VERSION=${CUDA_VERSION}")
+
   # mfh 30 Sep 2017: Make sure that either Trilinos_CXX_FLAGS
   # or CMAKE_CXX_FLAGS includes the "--expt-extended-lambda"
   # or "-expt-extended-lambda" (either is valid; see #1797
   # discussion) flag.
-  SET (TpetraCore_FOUND_CUDA_LAMBDA_FLAG OFF)
-  IF (DEFINED Trilinos_CXX_FLAGS AND Trilinos_CXX_FLAGS MATCHES "-expt-extended-lambda")
-    # mfh 30 Sep 2017: Even if you put the flag in Trilinos_CXX_FLAGS,
-    # Trilinos seems to move that flag into CMAKE_CXX_FLAGS for some
-    # reason.  Nevertheless, it doesn't hurt to check both.
-    SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
-  ELSEIF (DEFINED CMAKE_CXX_FLAGS AND CMAKE_CXX_FLAGS MATCHES "-expt-extended-lambda")
-    SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
-  ENDIF ()
-  IF (NOT TpetraCore_FOUND_CUDA_LAMBDA_FLAG)
-    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require, at least with CUDA_VERSION >= 7.5 and <= 9.0, that you add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS.  You must also set Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.")
-  ENDIF ()
+  # jjw 25 Oct 2019: It is no longer necessary to verify flags in this way
+  # As long as Kokkos_ENABLE_CUDA_LAMBDA is set, then Kokkos will transitively add all
+  # flags necessary for correctness via target_link_libraries
+  #SET (TpetraCore_FOUND_CUDA_LAMBDA_FLAG OFF)
+  #IF (DEFINED Trilinos_CXX_FLAGS AND Trilinos_CXX_FLAGS MATCHES "-expt-extended-lambda")
+  #  # mfh 30 Sep 2017: Even if you put the flag in Trilinos_CXX_FLAGS,
+  #  # Trilinos seems to move that flag into CMAKE_CXX_FLAGS for some
+  #  # reason.  Nevertheless, it doesn't hurt to check both.
+  #  SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
+  #ELSEIF (DEFINED CMAKE_CXX_FLAGS AND CMAKE_CXX_FLAGS MATCHES "-expt-extended-lambda")
+  #  SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
+  #ENDIF ()
+  #IF (NOT TpetraCore_FOUND_CUDA_LAMBDA_FLAG)
+  #  MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require, at least with CUDA_VERSION >= 7.5 and <= 9.0, that you add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS.  You must also set Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON, if it is not already ON by default.")
+  #ENDIF ()
 
-  IF (NOT DEFINED Kokkos_ENABLE_Cuda_Lambda OR NOT Kokkos_ENABLE_Cuda_Lambda)
-    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You must also add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS, at least with CUDA_VERSION >= 7.5 and <= 9.0.")
+  IF (NOT DEFINED Kokkos_ENABLE_CUDA_LAMBDA OR NOT Kokkos_ENABLE_CUDA_LAMBDA)
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You must also use at least with CUDA_VERSION >= 7.5.")
   ENDIF ()
 ENDIF ()
 
@@ -368,12 +373,12 @@ GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
 
-ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
-ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
-ASSERT_DEFINED(Kokkos_ENABLE_Serial)
+ASSERT_DEFINED(Kokkos_ENABLE_OPENMP)
+ASSERT_DEFINED(Kokkos_ENABLE_PTHREAD)
+ASSERT_DEFINED(Kokkos_ENABLE_SERIAL)
 
 # We already have a separate Tpetra_ENABLE_CUDA option that we defined
-# above, so we don't have to check Kokkos_ENABLE_Cuda here.
+# above, so we don't have to check Kokkos_ENABLE_CUDA here.
 
 ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 IF (Tpetra_ENABLE_CUDA)
@@ -381,7 +386,7 @@ IF (Tpetra_ENABLE_CUDA)
   # only want CUDA.
   GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)
 ELSE()
-  IF (Kokkos_ENABLE_OpenMP)
+  IF (Kokkos_ENABLE_OPENMP)
     # It takes effort (setting a nondefault compiler flag) to turn
     # on OpenMP, so we assume that if OpenMP is ON, then you must
     # want it as the Node type.
@@ -390,16 +395,16 @@ ELSE()
     # analogous situation with CUDA.
     GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)
   ELSE()
-    IF (Kokkos_ENABLE_Serial)
+    IF (Kokkos_ENABLE_SERIAL)
       GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT ON)
     ELSE()
-      IF (Kokkos_ENABLE_Pthread)
+      IF (Kokkos_ENABLE_PTHREAD)
         GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
       ELSE()
-        MESSAGE(FATAL_ERROR "Tpetra: No Kokkos execution space is enabled.  This message should only come up if you explicitly disabled all the Kokkos execution spaces.  If you don't want Tpetra to use threads, try setting Kokkos_ENABLE_Serial=ON.")
-      ENDIF()  # Kokkos_ENABLE_Pthread
-    ENDIF() # Kokkos_ENABLE_Serial
-  ENDIF() # Kokkos_ENABLE_OpenMP
+        MESSAGE(FATAL_ERROR "Tpetra: No Kokkos execution space is enabled.  This message should only come up if you explicitly disabled all the Kokkos execution spaces.  If you don't want Tpetra to use threads, try setting Kokkos_ENABLE_SERIAL=ON.")
+      ENDIF()  # Kokkos_ENABLE_PTHREAD
+    ENDIF() # Kokkos_ENABLE_SERIAL
+  ENDIF() # Kokkos_ENABLE_OPENMP
 ENDIF() # Tpetra_ENABLE_CUDA
 
 # Don't turn on both Serial and Threads by default.  Prefer Serial,
@@ -432,15 +437,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 GLOBAL_SET(HAVE_TPETRA_SERIAL ${Tpetra_INST_SERIAL})
 IF (Tpetra_INST_SERIAL)
-  IF (NOT Kokkos_ENABLE_Serial)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Serial execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_SERIAL=ON.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, you must enable the Kokkos::Serial execution space by setting Kokkos_ENABLE_Serial=ON.")
+  IF (NOT Kokkos_ENABLE_SERIAL)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Serial execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_SERIAL=ON.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, you must enable the Kokkos::Serial execution space by setting Kokkos_ENABLE_SERIAL=ON.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_SERIAL
   IF (HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosSerialWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_Serial:BOOL=ON and Tpetra_INST_SERIAL:BOOL=ON.")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosSerialWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SERIAL:BOOL=ON and Tpetra_INST_SERIAL:BOOL=ON.")
   ENDIF ()
-  IF (Kokkos_ENABLE_Serial)
-    MESSAGE(STATUS "NOTE: Kokkos::Serial is ON (the CMake option Kokkos_ENABLE_Serial is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, please also set the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If you use the Kokkos::Serial Node type in Tpetra without doing this, you will get link errors!")
+  IF (Kokkos_ENABLE_SERIAL)
+    MESSAGE(STATUS "NOTE: Kokkos::Serial is ON (the CMake option Kokkos_ENABLE_SERIAL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, please also set the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If you use the Kokkos::Serial Node type in Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_SERIAL
 
@@ -456,15 +461,15 @@ IF (Tpetra_INST_OPENMP)
   IF (NOT ${PROJECT_NAME}_ENABLE_OpenMP)
     MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must also enable OpenMP in all of Trilinos by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.")
   ENDIF ()
-  IF (NOT Kokkos_ENABLE_OpenMP)
-    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must enable OpenMP in Kokkos by setting Kokkos_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  You do not normally need to set Kokkos_ENABLE_OpenMP:BOOL=ON explicitly if you have enabled OpenMP in all of Trilinos (by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON).  Thus, this message likely will only appear if you enabled OpenMP in Trilinos, explicitly disabled OpenMP in Kokkos, and explicitly enabled OpenMP in Tpetra.  ")
+  IF (NOT Kokkos_ENABLE_OPENMP)
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must enable OpenMP in Kokkos by setting Kokkos_ENABLE_OPENMP:BOOL=ON.  Capitalization matters.  You do not normally need to set Kokkos_ENABLE_OPENMP:BOOL=ON explicitly if you have enabled OpenMP in all of Trilinos (by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON).  Thus, this message likely will only appear if you enabled OpenMP in Trilinos, explicitly disabled OpenMP in Kokkos, and explicitly enabled OpenMP in Tpetra.  ")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_OPENMP
   IF (HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: The OpenMP Node is disabled, since Tpetra_INST_OPENMP:BOOL=OFF, but you set that as the default Node type.  Please don't do that.  If you want OpenMP in Tpetra, you must set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  If this still does not work, please make sure that you are not disabling OpenMP in Kokkos (by setting Kokkos_ENABLE_OpenMP incorrectly).")
+    MESSAGE(FATAL_ERROR "Tpetra: The OpenMP Node is disabled, since Tpetra_INST_OPENMP:BOOL=OFF, but you set that as the default Node type.  Please don't do that.  If you want OpenMP in Tpetra, you must set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  If this still does not work, please make sure that you are not disabling OpenMP in Kokkos (by setting Kokkos_ENABLE_OPENMP incorrectly).")
   ENDIF()
-  IF (Kokkos_ENABLE_OpenMP)
-    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OpenMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors.  This is not an error unless you actually try using OpenMP in Tpetra.")
+  IF (Kokkos_ENABLE_OPENMP)
+    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OPENMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors.  This is not an error unless you actually try using OpenMP in Tpetra.")
   ENDIF ()
 ENDIF ()
 
@@ -477,18 +482,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 GLOBAL_SET(HAVE_TPETRA_PTHREAD ${Tpetra_INST_PTHREAD})
 IF (Tpetra_INST_PTHREAD)
-  IF (NOT Kokkos_ENABLE_Pthread)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Threads execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_PTHREAD=ON [sic; it is really PTHREAD, not PTHREADS].  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, you must enable the Kokkos::Threads execution space by setting Kokkos_ENABLE_Pthread=ON [again sic].")
+  IF (NOT Kokkos_ENABLE_PTHREAD)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Threads execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_PTHREAD=ON [sic; it is really PTHREAD, not PTHREADS].  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, you must enable the Kokkos::Threads execution space by setting Kokkos_ENABLE_PTHREAD=ON [again sic].")
   ENDIF ()
   IF (Tpetra_INST_OPENMP)
     MESSAGE(WARNING "We do NOT recommend enabling both the Kokkos::Serial and Kokkos::Threads Node types in Tpetra in the same build!  The threads that the Kokkos::Threads execution space creates will interfere with OpenMP's threads, causing performance problems.  You are seeing this warning because both CMake options Tpetra_INST_OPENMP and Tpetra_INST_PTHREAD are ON, which is not the default.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_PTHREAD
   IF (HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_Pthread:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_PTHREAD:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
   ENDIF()
-  IF (Kokkos_ENABLE_Pthread)
-    MESSAGE(STATUS "NOTE: Kokkos::Threads is ON (the CMake option Kokkos_ENABLE_Pthread is ON), but the corresponding Tpetra Node type is disabled.  Note that unlike with other Kokkos execution spaces, Tpetra disables Kokkos::Threads by default, as long as some other Kokkos execution space is enabled.  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, please also set the CMake option Tpetra_INST_PTHREAD:BOOL=ON.  If you use the Kokkos::Threads version of Tpetra without doing this, you will get link errors!  We do NOT recommend using Kokkos::Threads if Kokkos::OpenMP is enabled.")
+  IF (Kokkos_ENABLE_PTHREAD)
+    MESSAGE(STATUS "NOTE: Kokkos::Threads is ON (the CMake option Kokkos_ENABLE_PTHREAD is ON), but the corresponding Tpetra Node type is disabled.  Note that unlike with other Kokkos execution spaces, Tpetra disables Kokkos::Threads by default, as long as some other Kokkos execution space is enabled.  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, please also set the CMake option Tpetra_INST_PTHREAD:BOOL=ON.  If you use the Kokkos::Threads version of Tpetra without doing this, you will get link errors!  We do NOT recommend using Kokkos::Threads if Kokkos::OpenMP is enabled.")
   ENDIF ()
 ENDIF () # Tpetra_INST_PTHREAD
 
@@ -501,15 +506,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 GLOBAL_SET(HAVE_TPETRA_CUDA ${Tpetra_INST_CUDA})
 IF (Tpetra_INST_CUDA)
-  IF (NOT Kokkos_ENABLE_Cuda)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Cuda execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_CUDA=ON.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, you must enable the Kokkos::Cuda execution space by setting Kokkos_ENABLE_Cuda=ON.")
+  IF (NOT Kokkos_ENABLE_CUDA)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Cuda execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_CUDA=ON.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, you must enable the Kokkos::Cuda execution space by setting Kokkos_ENABLE_CUDA=ON.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_CUDA
   IF (HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosCudaWrapperNode is disabled (since Tpetra_INST_CUDA=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_Cuda:BOOL=ON and Tpetra_INST_CUDA:BOOL=ON.  If you are building with a CUDA-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable CUDA support by default in that case.")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosCudaWrapperNode is disabled (since Tpetra_INST_CUDA=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_CUDA:BOOL=ON and Tpetra_INST_CUDA:BOOL=ON.  If you are building with a CUDA-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable CUDA support by default in that case.")
   ENDIF()
-  IF (Kokkos_ENABLE_Cuda)
-    MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_Cuda is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
+  IF (Kokkos_ENABLE_CUDA)
+    MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_CUDA is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_CUDA
 
@@ -555,7 +560,7 @@ MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
 # Fix Github Issue #190 by making sure that users enabled at least one
 # Node type.
 IF(NOT Tpetra_INST_SERIAL AND NOT Tpetra_INST_PTHREAD AND NOT Tpetra_INST_OPENMP AND NOT Tpetra_INST_CUDA)
-  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_Cuda, Kokkos_ENABLE_OpenMP, Kokkos_ENABLE_Serial, Kokkos_ENABLE_Pthread, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, or Tpetra_INST_CUDA.")
+  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_PTHREAD, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, or Tpetra_INST_CUDA.")
 ENDIF()
 
 # ============================================================

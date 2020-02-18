@@ -71,9 +71,9 @@ public:
 
     /** Constructor
 
-    \param[in] input_graph the graph representing the non-zeros of the matrix
-    \param[in] paramlist list of parameters
-    \param[in] compute_now  if @c true, the scheduling is computed in the constructor, otherwise call Isorropia::Epetra::LevelScheduler::schedule when you want to compute the scheduling, defaults to @c false
+    \param input_graph (in) the graph representing the non-zeros of the matrix
+    \param paramlist (in) list of parameters
+    \param compute_now (in) if @c true, the scheduling is computed in the constructor, otherwise call Isorropia::Epetra::LevelScheduler::schedule when you want to compute the scheduling, defaults to @c false
     */
 
   LevelScheduler(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
@@ -86,7 +86,7 @@ public:
   /** Compute the scheduling if it has not already been computed, same effect as
        Isorropia::Epetra::LevelScheduler::compute
 
-    \param[in] force_scheduling if @c true recompute the scheduling even if it has already been computed, defaults to @c false
+    \param force_scheduling (in) if @c true recompute the scheduling even if it has already been computed, defaults to @c false
     */
 
   void schedule(bool force_scheduling=false);
@@ -94,7 +94,7 @@ public:
   /** Compute the scheduling if it has not already been computed, same effect as
        Isorropia::Epetra::LevelScheduler::schedule
 
-    \param[in] force_compute if @c true recompute the scheduling even if it has already been computed, defaults to @c false
+    \param force_compute (in) if @c true recompute the scheduling even if it has already been computed, defaults to @c false
     */
 
   void compute(bool force_compute=false) {

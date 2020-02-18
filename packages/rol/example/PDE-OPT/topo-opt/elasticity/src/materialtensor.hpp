@@ -278,7 +278,7 @@ public:
     int p = fe_->gradN()->dimension(2);
 
     Real z(0);
-    const Real half(0.5), one(1), diff = maxDensity_-minDensity_;
+    const Real half(0.5), one(1), two(2), diff = maxDensity_-minDensity_;
     for (int i=0; i<c; ++i) {
       for (int j=0; j<p; ++j) {
         z = (*Z)(i,j);
@@ -290,7 +290,7 @@ public:
             (*rho)(i,j) = powerSIMP_*diff*std::pow(z, powerSIMP_-one);
           }
           else if (deriv==2) {
-            (*rho)(i,j) = powerSIMP_*(powerSIMP_-one)*diff*std::pow(z, powerSIMP_-one);
+            (*rho)(i,j) = powerSIMP_*(powerSIMP_-one)*diff*std::pow(z, powerSIMP_-two);
           }
         }
         else {

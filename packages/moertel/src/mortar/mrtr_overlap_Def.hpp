@@ -381,6 +381,25 @@ bool MOERTEL::Overlap<IFace>::build_sxim()
   double gap;
   for (int i=0; i<nsnode; ++i)
   {
+
+    {
+      const double * node_norm = snode[i]->Normal();
+
+      double master_normal[3];
+      MOERTEL::Node** nodes = mseg_.Nodes();
+      for (int j=0; j<mseg_.Nnode(); ++j)
+        for (std::size_t k=0; k<3; ++k)
+          master_normal[k] += nodes[j]->Normal()[k];
+
+      double norm1 = sqrt(MOERTEL::dot(master_normal,master_normal,3));
+      for (std::size_t k=0; k<3; ++k)
+        master_normal[k] /= norm1;
+
+      double mag_projection = fabs(MOERTEL::dot(node_norm,master_normal,3));
+
+      if(mag_projection <= Projection_Length_Epsilon)
+        return false;
+    }
     // project node i onto sseg
     projector.ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
 #if 0
@@ -540,6 +559,8 @@ bool MOERTEL::Overlap<IFace>::ComputeOverlap() {
   //  ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
 
   havesxim_ = build_sxim();
+  if (!havesxim_)
+	  return false;
 
   // build outward normal of edges of sseg (in local coords)
   build_normal();
@@ -1435,29 +1456,36 @@ bool MOERTEL::Overlap<IFace>::Triangulation()
       //-----------------
       // 
       // GAH - found by kimliegeois
-      // Moertel occasionally trys to project a slave segment on a master segment which can be perpendicular. 
+      // Moertel occasionally tries to project a slave segment on a master segment which can be perpendicular.
       // Compute the dot product of the normal of both segments and do not do the projection if its absolute value 
       //  is below a tolerance.
-      // FIXME: The below is valid only for planar segments!
 
       {
-
         double xi[2]; 
         xi[0] = xi[1] = 0.;
 
         const double * node_norm = node->Normal();
-        const double * seg_norm = mseg_.BuildNormal(xi);
 
-        double mag_projection = fabs(MOERTEL::dot(node_norm,seg_norm,3));
+        double master_normal[3];
+        MOERTEL::Node** nodes = mseg_.Nodes();
+        for (int j=0; j<mseg_.Nnode(); ++j)
+          for (std::size_t k=0; k<3; ++k)
+            master_normal[k] += nodes[j]->Normal()[k];
+
+        double norm1 = sqrt(MOERTEL::dot(master_normal,master_normal,3));
+        for (std::size_t k=0; k<3; ++k)
+          master_normal[k] /= norm1;
+
+        double mag_projection = fabs(MOERTEL::dot(node_norm,master_normal,3));
 
         if(mag_projection <= Projection_Length_Epsilon)
-
           return false;
-
       }
       //-----------------
 
-      projector.ProjectNodetoSegment_NodalNormal(*node,mseg_,mxi,gap);
+      bool ok = projector.ProjectNodetoSegment_NodalNormal(*node,mseg_,mxi,gap);
+      if (!ok)
+	      return false;
       // create a projected node and set it in node
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*node,mxi,&mseg_);
       node->SetProjectedNode(pnode);

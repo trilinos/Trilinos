@@ -69,7 +69,6 @@ using Teuchos::Comm;
 using Teuchos::outArg;
 using Tpetra::Details::gathervPrint;
 using Tpetra::Details::packCrsGraph;
-using Tpetra::Details::unpackCrsGraphAndCombine;
 using std::endl;
 
 template<class T>
@@ -199,6 +198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   out << "Building second graph" << endl;
   RCP<crs_graph_type> B = rcp(new crs_graph_type(row_map, col_map, A->getNodeNumEntries()));
 
+#if 0
   out << "Calling unpackCrsGraphAndCombine" << endl;
 
   {
@@ -290,7 +290,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
       return; // no point in continuing
     }
   }
-
+#endif // 0
 }
 
 // PackWithError sends intentionally bad inputs to pack/unpack to make sure

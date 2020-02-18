@@ -81,6 +81,8 @@ namespace Iocgns {
     static const size_t CG_CELL_CENTER_FIELD_ID = 1ul << 33;
     static const size_t CG_VERTEX_FIELD_ID      = 1ul << 34;
 
+    static std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel);
+
     static size_t index(const Ioss::Field &field);
 
     static void cgns_error(int cgnsid, const char *file, const char *function, int lineno,

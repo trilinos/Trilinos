@@ -48,12 +48,16 @@ GET_PROPERTY( LA_DIR    GLOBAL PROPERTY LA_DIR  )
 GET_PROPERTY( LAPACK_STRING GLOBAL PROPERTY LAPACK_IMPL )
 GET_PROPERTY( LAPACK_DIR    GLOBAL PROPERTY LAPACK_DIR  )
 
+GET_PROPERTY( BLAS_STRING GLOBAL PROPERTY BLAS_IMPL )
+GET_PROPERTY( BLAS_DIR    GLOBAL PROPERTY BLAS_DIR  )
+
 MESSAGE( "-- ROL has been configured to use the build options:"              )
 MESSAGE( "--   ROL::Ptr           is implemented by ${PTR_STRING}"           )
 MESSAGE( "--   ROL::ParameterList is implemented by ${PARAMETERLIST_STRING}" )
 MESSAGE( "--   ROL::stacktrace    is implemented by ${STACKTRACE_STRING}"    )
 MESSAGE( "--   ROL::LinearAlgebra is implemented by ${LA_STRING}"            )
 MESSAGE( "--   ROL::LAPACK        is implemented by ${LAPACK_STRING}"        )
+MESSAGE( "--   ROL::BLAS          is implemented by ${BLAS_STRING}"          )
 
 INCLUDE_DIRECTORIES( ${PTR_DIR} )
 APPEND_GLOB( HEADERS ${PTR_DIR}/*.hpp )
@@ -69,6 +73,9 @@ APPEND_GLOB( HEADERS ${LA_DIR}/*.hpp )
 
 INCLUDE_DIRECTORIES( ${LAPACK_DIR} )
 APPEND_GLOB( HEADERS ${LAPACK_DIR}/*.hpp )
+
+INCLUDE_DIRECTORIES( ${BLAS_DIR} )
+APPEND_GLOB( HEADERS ${BLAS_DIR}/*.hpp )
 
 #
 # vector headers

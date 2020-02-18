@@ -380,6 +380,21 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_zgc
   COMM mpi serial
   )
 
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_periodic_roundtrip_fpp
+   TEST_0 EXEC io_shell ARGS --compose external ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-fpp.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 EXEC io_shell ARGS --external --compose external self-looping-fpp.cgns self-looping2.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_2 EXEC io_shell ARGS --external self-looping2.cgns self-looping3.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_3 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping3.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi
+  )
+
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_fpp
    TEST_0 EXEC io_shell ARGS --compose external ${CMAKE_CURRENT_SOURCE_DIR}/test/5blocks-struc.cgns 5blocks.cgns
      NUM_MPI_PROCS 1-4

@@ -437,11 +437,7 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
     RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionGrpMats[j]);
     RCP<CrsMatrix> quasiRegionCrs = quasiRegionCrsWrap->getCrsMatrix();
     const LO numRows = Teuchos::as<LO>(quasiRegionCrs->getNodeNumRows());
-    // const size_t numNNZ  = quasiRegionGrpMats[j]->getNodeNumEntries();
-    ArrayRCP<const size_t> rowPtr;
-    ArrayRCP<const LO>     colInd;
-    ArrayRCP<const Scalar> values;
-    quasiRegionCrs->getAllValues(rowPtr, colInd, values);
+
     for (LO row = 0; row < numRows; ++row) { // loop over local rows of composite matrix
       GO rowGID = rowMapPerGrp[j]->getGlobalElement(row);
       std::size_t numEntries = quasiRegionGrpMats[j]->getNumEntriesInLocalRow(row); // number of entries in this row
@@ -458,8 +454,9 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
           commonRegions = findCommonRegions(rowGID, colGID, regionPerGIDWithGhostsData, regionsPerGIDWithGhosts->getMap());
         }
 
-        if (commonRegions.size() > 1) {
-          vals[c] *= (1.0 / static_cast<double>(commonRegions.size()));
+        std::size_t sizeOfCommonRegions = commonRegions.size();
+        if (sizeOfCommonRegions > 1) {
+          vals[c] /= Teuchos::as<double>(sizeOfCommonRegions);
         }
       }
 

@@ -25,12 +25,33 @@ namespace Tempus {
  *
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Backward Euler is simply,
- *   - Solve \f$f(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0\f$ for \f$x_n\f$
+ *   - Solve \f$\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0\f$ for \f$x_n\f$
  *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$
  *
  *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
  *  but have no affect (i.e., no-op).
+ *
+ *  <b> Iteration Matrix, \f$W\f$.</b>
+ *  Recalling that the definition of the iteration matrix, \f$W\f$, is
+ *  \f[
+ *    W = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
+ *      + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n},
+ *  \f]
+ *  where \f$ \alpha \equiv frac{\partial \dot{x}_n(x_n) }{\partial x_n}, \f$
+ *  and \f$ \beta \equiv \frac{\partial x_n}{\partial x_n} = 1\f$, and
+ *  the time derivative for Backward Euler is
+ *  \f[
+ *    \dot{x}_n(x_n) = \frac{x_n - x_{n-1}}{\Delta t},
+ *  \f]
+ *  we can determine that
+ *  \f$ \alpha = \frac{1}{\Delta t} \f$
+ *  and \f$ \beta = 1 \f$, and therefore write
+ *  \f[
+ *    W = \frac{1}{\Delta t}
+ *        \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
+ *      + \frac{\partial \mathcal{F}_n}{\partial x_n}.
+ *  \f]
  */
 template<class Scalar>
 class StepperBackwardEuler :

@@ -3434,15 +3434,27 @@ namespace Tpetra {
     checkSizes (const SrcDistObject& source) override;
 
     void
-    applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
+    applyCrsPadding(
+      const typename crs_graph_type::padding_type& padding,
+      const bool verbose);
 
   private:
     void
-    copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
-                        const size_t numSameIDs,
-                        const LocalOrdinal permuteToLIDs[],
-                        const LocalOrdinal permuteFromLIDs[],
-                        const size_t numPermutes);
+    copyAndPermuteStaticGraph(
+      const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+      const size_t numSameIDs,
+      const LocalOrdinal permuteToLIDs[],
+      const LocalOrdinal permuteFromLIDs[],
+      const size_t numPermutes);
+
+    void
+    copyAndPermuteNonStaticGraph(
+      const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+      const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs_dv,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs_dv,
+      const size_t numPermutes);
+
   protected:
     virtual void
     copyAndPermute
@@ -3470,28 +3482,27 @@ namespace Tpetra {
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
     void
-    unpackAndCombineImpl (const Kokkos::DualView<const local_ordinal_type*,
-                            buffer_device_type>& importLIDs,
-                          const Kokkos::DualView<const char*,
-                            buffer_device_type>& imports,
-                          const Kokkos::DualView<const size_t*,
-                            buffer_device_type>& numPacketsPerLID,
-                          const size_t constantNumPackets,
-                          Distributor& distor,
-                          const CombineMode combineMode);
+    unpackAndCombineImpl(
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& importLIDs,
+      Kokkos::DualView<char*, buffer_device_type> imports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      const size_t constantNumPackets,
+      Distributor& distor,
+      const CombineMode combineMode,
+      const bool verbose);
 
     /// \brief Implementation of unpackAndCombineImpl for when the
     ///   target matrix's structure may change.
     void
-    unpackAndCombineImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
-                                     buffer_device_type>& importLIDs,
-                                   const Kokkos::DualView<const char*,
-                                     buffer_device_type>& imports,
-                                   const Kokkos::DualView<const size_t*,
-                                     buffer_device_type>& numPacketsPerLID,
-                                   const size_t constantNumPackets,
-                                   Distributor& distor,
-                                   const CombineMode combineMode);
+    unpackAndCombineImplNonStatic(
+      const Kokkos::DualView<const local_ordinal_type*,
+        buffer_device_type>& importLIDs,
+      Kokkos::DualView<char*, buffer_device_type> imports,
+      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+      const size_t constantNumPackets,
+      Distributor& distor,
+      const CombineMode combineMode);
 
   public:
     /// \brief Unpack the imported column indices and values, and
@@ -3980,9 +3991,22 @@ namespace Tpetra {
     /// about why we use \c Scalar and not \c impl_scalar_type here
     /// for the input array type.
     void
-    insertGlobalValuesFiltered (const GlobalOrdinal globalRow,
-                                const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                                const Teuchos::ArrayView<const Scalar>& values);
+    insertGlobalValuesFiltered(
+      const GlobalOrdinal globalRow,
+      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+      const Teuchos::ArrayView<const Scalar>& values,
+      const bool debug);
+
+    /// \brief Wrapper for insertGlobalValuesFiltered that prints
+    ///   helpful error messages if insertGlobalValuesFiltered throws.
+    void
+    insertGlobalValuesFilteredChecked(
+      const GlobalOrdinal globalRow,
+      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+      const Teuchos::ArrayView<const Scalar>& values,
+      const char* const prefix,
+      const bool debug,
+      const bool verbose);
 
     /// \brief Combine in the data using the given combine mode.
     ///
@@ -3996,10 +4020,14 @@ namespace Tpetra {
     /// about why we use \c Scalar and not \c impl_scalar_type here
     /// for the input array type.
     void
-    combineGlobalValues (const GlobalOrdinal globalRowIndex,
-                         const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
-                         const Teuchos::ArrayView<const Scalar>& values,
-                         const Tpetra::CombineMode combineMode);
+    combineGlobalValues(
+      const GlobalOrdinal globalRowIndex,
+      const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
+      const Teuchos::ArrayView<const Scalar>& values,
+      const Tpetra::CombineMode combineMode,
+      const char* const prefix,
+      const bool debug,
+      const bool verbose);
 
     /// \brief Combine in the data using the given combine mode.
     ///
@@ -4015,15 +4043,22 @@ namespace Tpetra {
     /// \param cols [in] Input (global) column indices corresponding
     ///   to the above values.
     /// \param combineMode [in] The CombineMode to use.
+    /// \param prefix [in] Prefix for verbose debugging output; must
+    ///   be nonnull if verbose is true.
+    /// \param debug [in] Whether to do debug checking.
+    /// \param verbose [in] Whether to print verbose debugging output.
     ///
     /// \return The number of modified entries.  No error if and only
     ///   if equal to numEnt.
     LocalOrdinal
-    combineGlobalValuesRaw (const LocalOrdinal lclRow,
-                            const LocalOrdinal numEnt,
-                            const impl_scalar_type vals[],
-                            const GlobalOrdinal cols[],
-                            const Tpetra::CombineMode combineMode);
+    combineGlobalValuesRaw(const LocalOrdinal lclRow,
+                           const LocalOrdinal numEnt,
+                           const impl_scalar_type vals[],
+                           const GlobalOrdinal cols[],
+                           const Tpetra::CombineMode combineMode,
+                           const char* const prefix,
+                           const bool debug,
+                           const bool verbose);
 
     /// \brief Transform CrsMatrix entries, using global indices;
     ///   backwards compatibility version that takes
@@ -4150,6 +4185,8 @@ namespace Tpetra {
     /// \param lg [in] Argument passed into \c
     ///   myGraph_->allocateIndices(), if applicable.
     ///
+    /// \param verbose [in] Whether to print verbose debugging output.
+    ///
     /// \pre If the graph (that is, staticGraph_) indices are
     ///   already allocated, then gas must be GraphAlreadyAllocated.
     ///   Otherwise, gas must be GraphNotYetAllocated.  We only
@@ -4157,7 +4194,8 @@ namespace Tpetra {
     ///
     /// \pre If the graph indices are not already allocated, then
     ///   the graph must be owned by the matrix.
-    void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas);
+    void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas,
+                         const bool verbose);
 
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.

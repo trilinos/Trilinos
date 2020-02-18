@@ -118,12 +118,12 @@ int main(int argc, char *argv[]) {
     parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History", solveOutput);
     RealT Re         = parlist->sublist("Problem").get("Reynolds Number",200.0);
 
-    parlist->sublist("Reduced Dynamic Objective").set("State Domain Seed",12321*myRank);
-    parlist->sublist("Reduced Dynamic Objective").set("State Range Seed", 32123*myRank);
-    parlist->sublist("Reduced Dynamic Objective").set("Adjoint Domain Seed",23432*myRank);
-    parlist->sublist("Reduced Dynamic Objective").set("Adjoint Range Seed", 43234*myRank);
-    parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Domain Seed",34543*myRank);
-    parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Range Seed", 54345*myRank);
+    parlist->sublist("Reduced Dynamic Objective").set("State Domain Seed",12321*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("State Range Seed", 32123*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("Adjoint Domain Seed",23432*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("Adjoint Range Seed", 43234*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Domain Seed",34543*(myRank+1));
+    parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Range Seed", 54345*(myRank+1));
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/

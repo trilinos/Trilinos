@@ -83,6 +83,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
   stk_simd_unit 
+  stk_disimd_unit
   stk_simd_docs_tests
   ;
 
@@ -158,6 +159,30 @@ alias stk_simd_headers
 exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd/*.cpp ]
+    /sierra/stk_math//stk_math_headers
+    /tpl/trilinos//kokkoscore
+    /tpl/gtest//gtest
+  : <tag>@sierra-exec-tag
+    <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>intel,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>intel,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>pgi,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>pgi,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>vacpp,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>vacpp,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>cray,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>cray,<runtime-link>shared:<linkflags>-Wl,-E
+    <target-os>linux,<toolset>nvidia,<runtime-link>shared:<linkflags>"-Xlinker --export-dynamic"
+    <target-os>linux,<toolset>nvidia,<runtime-link>shared:<linkflags>"-Xlinker --export-dynamic"
+    <target-os>darwin,<runtime-link>shared:<linkflags>"-Wl,-dynamic"
+  ;
+
+exe stk_disimd_unit
+  :
+    [ glob $(stk_simd-root)/../stk_unit_tests/stk_disimd/*.cpp ]
     /sierra/stk_math//stk_math_headers
     /tpl/trilinos//kokkoscore
     /tpl/gtest//gtest

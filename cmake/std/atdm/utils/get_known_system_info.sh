@@ -51,6 +51,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   ride
   mutrino   # Will be repalced by 'ats1'
   waterman
+  ats2
   cts1
   tlcc2
   sems-rhel7
@@ -99,6 +100,9 @@ elif [[ $realHostname == "mutrino"* ]] ; then
 elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
+elif [[ $realHostname == "vortex"* ]] ; then
+  hostnameMatch=vortex
+  hostnameMatchSystemName=ats2
 # End specifically named systems
 fi
 

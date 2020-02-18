@@ -43,6 +43,8 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
+#include <stk_mesh/base/HostMeshManager.hpp>
+#include <stk_mesh/base/DeviceMeshManager.hpp>
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/baseImpl/MeshModification.hpp"
@@ -510,6 +512,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
     m_modSummary(*this),
     m_meshDiagnosticObserver(std::make_shared<stk::mesh::MeshDiagnosticObserver>(*this)),
     m_sideSetData(*this),
+    m_ngpMeshManager(nullptr),
     m_soloSideIdGenerator(stk::parallel_machine_size(parallel), stk::parallel_machine_rank(parallel), std::numeric_limits<stk::mesh::EntityId>::max()),
     m_supportsLargeIds(false)
 {
@@ -573,6 +576,34 @@ BulkData::~BulkData()
 
   delete m_elemElemGraph;
   delete m_entity_repo;
+
+  delete m_ngpMeshManager;
+}
+
+NgpMesh &
+BulkData::get_ngp_mesh()
+{
+  if (m_ngpMeshManager == nullptr) {
+#ifdef KOKKOS_ENABLE_CUDA
+    m_ngpMeshManager = new DeviceMeshManager(*this);
+#else
+    m_ngpMeshManager = new HostMeshManager(*this);
+#endif
+  }
+
+  update_ngp_mesh();
+
+  return m_ngpMeshManager->get_mesh();
+}
+
+void
+BulkData::update_ngp_mesh()
+{
+  if (m_ngpMeshManager != nullptr) {
+    if (!m_ngpMeshManager->get_mesh().is_up_to_date()) {
+      m_ngpMeshManager->update_mesh();
+    }
+  }
 }
 
 void BulkData::update_deleted_entities_container()
@@ -1399,7 +1430,7 @@ void BulkData::record_entity_deletion(Entity entity)
 {
     const EntityKey key = entity_key(entity);
     set_mesh_index(entity, 0, 0);
-    m_entity_repo->destroy_entity(key, entity);
+    m_entity_repo->destroy_entity(key);
     notifier.notify_local_entities_created_or_deleted(key.rank());
     notifier.notify_local_buckets_changed(key.rank());
     m_meshModification.mark_entity_as_deleted(entity.local_offset());
@@ -1624,8 +1655,9 @@ bool BulkData::in_shared(EntityKey key, int proc) const
 
 bool BulkData::in_shared(Entity entity, int proc) const
 {
-  if (m_entitycomm[entity.local_offset()] != nullptr) {
-    const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
+  const EntityComm* entityComm = m_entitycomm[entity.local_offset()];
+  if (entityComm != nullptr && entityComm->isShared) {
+    const EntityCommInfoVector& vec = entityComm->comm_map;
     EntityCommInfoVector::const_iterator it = vec.begin();
     EntityCommInfoVector::const_iterator end = vec.end();
     
@@ -3430,7 +3462,7 @@ void BulkData::verify_and_filter_add_send(Ghosting & ghosts, const std::vector<E
     }
 }
 
-void BulkData::verify_remove_receive(Ghosting & ghosts, const std::vector<EntityKey> & remove_receive, bool &need_to_change_ghosting, bool &remove_receive_are_part_of_this_ghosting)
+void BulkData::verify_remove_receive(Ghosting & ghosts, const std::vector<Entity> & remove_receive, bool &need_to_change_ghosting, bool &remove_receive_are_part_of_this_ghosting)
 {
     for ( size_t i = 0; remove_receive_are_part_of_this_ghosting && i < remove_receive.size() ; ++i ) {
       remove_receive_are_part_of_this_ghosting = in_receive_ghost( ghosts , remove_receive[i] );
@@ -3443,7 +3475,7 @@ bool BulkData::check_errors_and_determine_if_ghosting_needed_in_parallel(const s
                                         bool remove_receive_are_part_of_this_ghosting,
                                         bool need_to_change_ghosting,
                                         const std::vector<EntityProc> & add_send,
-                                        const std::vector<EntityKey> & remove_receive)
+                                        const std::vector<Entity> & remove_receive)
 {
     const bool ok_mesh  = &ghosts.mesh() == this;
     const bool is_custom_ghost = BulkData::AURA < ghosts.ordinal();
@@ -3473,10 +3505,9 @@ bool BulkData::check_errors_and_determine_if_ghosting_needed_in_parallel(const s
       }
       if ( ! remove_receive_are_part_of_this_ghosting ) {
         msg << " : Not in ghost receive {" ;
-        for ( std::vector<EntityKey>::const_iterator
-              i = remove_receive.begin() ; i != remove_receive.end() ; ++i ) {
-          if ( ! in_receive_ghost( ghosts , *i ) ) {
-            msg << " " << i->id();
+        for (stk::mesh::Entity entity : remove_receive) {
+          if ( ! in_receive_ghost( ghosts , entity ) ) {
+            msg << " " << identifier(entity);
           }
         }
       }
@@ -3490,7 +3521,7 @@ bool BulkData::check_errors_and_determine_if_ghosting_needed_in_parallel(const s
 
 bool BulkData::inputs_ok_and_need_ghosting(Ghosting & ghosts ,
                              const std::vector<EntityProc> & add_send ,
-                             const std::vector<EntityKey> & remove_receive,
+                             const std::vector<Entity> & remove_receive,
                              std::vector<EntityProc> &filtered_add_send)
 {
     bool add_send_is_owned    = true ;
@@ -3510,7 +3541,7 @@ bool BulkData::inputs_ok_and_need_ghosting(Ghosting & ghosts ,
 void BulkData::batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs)
 {
     std::vector<stk::mesh::EntityProc> filtered_add_send;
-    std::vector<stk::mesh::EntityKey> empty_vector;
+    std::vector<stk::mesh::Entity> empty_vector;
 
     if (inputs_ok_and_need_ghosting(ghosting , entitiesAndDestinationProcs , empty_vector, filtered_add_send))
     {
@@ -3535,17 +3566,21 @@ void BulkData::internal_verify_inputs_and_change_ghosting(
   require_ok_to_modify();
 
   std::vector<EntityProc> filtered_add_send;
-  bool needToDoGhosting = inputs_ok_and_need_ghosting(ghosts, add_send , remove_receive, filtered_add_send);
+  std::vector<Entity> remove_receive_entities(remove_receive.size());
+  for(unsigned i=0; i<remove_receive.size(); ++i) {
+    remove_receive_entities[i] = get_entity(remove_receive[i]);
+  }
+  bool needToDoGhosting = inputs_ok_and_need_ghosting(ghosts, add_send , remove_receive_entities, filtered_add_send);
 
   if(needToDoGhosting)
   {
-    internal_change_ghosting( ghosts , filtered_add_send , remove_receive );
+    internal_change_ghosting( ghosts , filtered_add_send , remove_receive_entities );
   }
 }
 
 //----------------------------------------------------------------------
 
-void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& sendGhosts)
+void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& sendGhosts, bool isFullRegen)
 {
     //------------------------------------
     // Push newly ghosted entities to the receivers and update the comm list.
@@ -3561,7 +3596,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
         Entity entity = j->first;
         const int proc = j->second;
 
-        if ( ! in_ghost(ghosting , entity, proc) ) {
+        if ( isFullRegen || !in_ghost(ghosting , entity, proc) ) {
           // Not already being sent , must send it.
           CommBuffer & buf = commSparse.send_buffer( proc );
           buf.pack<unsigned>( entity_rank(entity) );
@@ -3888,6 +3923,107 @@ void BulkData::delete_unneeded_entries_from_the_comm_list()
     m_entity_comm_list.erase( i , m_entity_comm_list.end() );
 }
 
+void BulkData::internal_change_ghosting( Ghosting & ghosting,
+                                         EntityProcMapping& entityProcMapping)
+{
+  //------------------------------------
+  // Copy ghosting lists into more efficiently edited container.
+  // The send and receive lists must be in entity rank-order.
+
+  std::vector<EntityProc> add_send;
+  entityProcMapping.fill_vec(add_send);
+
+  //------------------------------------
+  // Add the specified entities and their closure to entityProcMapping
+
+  impl::StoreInEntityProcMapping siepm(*this, entityProcMapping);
+  impl::OnlyGhosts og(*this);
+  for ( const EntityProc& entityProc : add_send ) {
+      og.proc = entityProc.second;
+      siepm.proc = entityProc.second;
+      impl::VisitClosureGeneral(*this,entityProc.first,siepm,og);
+  }
+
+  entityProcMapping.fill_vec(add_send);
+
+  // Synchronize the send and receive list.
+  // If the send list contains a not-owned entity
+  // inform the owner and receiver to add that entity
+  // to their ghost send and receive lists.
+
+  std::vector<bool> ghostStatus(get_size_of_entity_index_space(), false);
+
+  stk::mesh::impl::comm_sync_aura_send_recv(*this, add_send,
+                                            entityProcMapping, ghostStatus );
+
+  //------------------------------------
+  // Remove the ghost entities that will not remain.
+  // If the last reference to the receive ghost entity then delete it.
+
+  OrdinalVector addParts;
+  OrdinalVector removeParts(1, m_ghost_parts[ghosting.ordinal()]->mesh_meta_data_ordinal());
+  OrdinalVector scratchOrdinalVec, scratchSpace;
+  bool removed = false ;
+
+  std::vector<EntityCommInfo> comm_ghost ;
+  for ( EntityCommListInfoVector::reverse_iterator
+        i = m_entity_comm_list.rbegin() ; i != m_entity_comm_list.rend() ; ++i) {
+
+    const bool is_owner = parallel_owner_rank(i->entity) == parallel_rank() ;
+    const bool remove_recv = ( ! is_owner ) &&
+                             !ghostStatus[i->entity.local_offset()] && in_receive_ghost(ghosting, i->entity);
+
+    if(is_valid(i->entity))
+    {
+      if ( is_owner ) {
+        // Is owner, potentially removing ghost-sends
+        // Have to make a copy
+
+          const PairIterEntityComm ec = internal_entity_comm_map(i->entity, ghosting);
+          comm_ghost.assign( ec.first , ec.second );
+  
+          for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
+            const EntityCommInfo tmp = comm_ghost.back();
+
+            if (!entityProcMapping.find(i->entity, tmp.proc) ) {
+              entity_comm_map_erase(i->key, tmp);
+            }
+            else {
+              entityProcMapping.eraseEntityProc(i->entity, tmp.proc);
+            }
+          }
+      }
+      else if ( remove_recv ) {
+          entity_comm_map_erase(i->key, ghosting);
+          internal_change_entity_parts(i->entity, addParts, removeParts, scratchOrdinalVec, scratchSpace);
+      }
+
+      if ( internal_entity_comm_map(i->entity).empty() ) {
+        removed = true ;
+        i->key = EntityKey(); // No longer communicated
+        if ( remove_recv ) {
+          ThrowRequireMsg( internal_destroy_entity_with_notification( i->entity, remove_recv ),
+                           "P[" << this->parallel_rank() << "]: FAILED attempt to destroy entity: "
+                           << entity_key(i->entity) );
+        }
+      }
+    }
+  }
+
+  // if an entry in the comm_list has the EntityKey() value, it is invalid,
+  // and removed from the comm_list
+
+  if ( removed ) {
+    delete_unneeded_entries_from_the_comm_list();
+  }
+
+  std::set<EntityProc , EntityLess> sendGhosts(EntityLess(*this));
+  entityProcMapping.fill_set(sendGhosts);
+
+  const bool isFullRegen = true;
+  ghost_entities_and_fields(ghosting, sendGhosts, isFullRegen);
+}
+
 void BulkData::internal_change_ghosting(
   Ghosting & ghosting ,
   const std::vector<EntityProc> & add_send ,
@@ -3911,21 +4047,20 @@ void BulkData::internal_change_ghosting(
   // removing all ghosting information and recvGhosts should be left empty.
   if ( !is_full_regen ) {
     generate_ghosting_receive_list(ghosting, remove_receive, recvGhosts, ghostStatus);
+
+    //  Initialize sendGhosts from recvGhosts
+    stk::mesh::impl::send_entity_keys_to_owners(*this , recvGhosts , sendGhosts);
   }
 
-  //  Initialize sendGhosts from recvGhosts
-  stk::mesh::impl::send_entity_keys_to_owners(*this , recvGhosts , sendGhosts);
-
   //------------------------------------
-  // Add the specified entities and their closure to the send ghosting
+  // Add the specified entities and their closure to sendGhosts
 
-  impl::StoreInEntityProcSet sieps(*this,sendGhosts);
+  impl::StoreInEntityProcSet sieps(*this, sendGhosts);
   impl::OnlyGhosts og(*this);
-  for ( std::vector< EntityProc >::const_iterator
-        i = add_send.begin() ; i != add_send.end() ; ++i ) {
-      og.proc = i->second;
-      sieps.proc = i->second;
-      impl::VisitClosureGeneral(*this,i->first,sieps,og);
+  for ( const EntityProc& entityProc : add_send ) {
+      og.proc = entityProc.second;
+      sieps.proc = entityProc.second;
+      impl::VisitClosureGeneral(*this,entityProc.first,sieps,og);
   }
 
   // Synchronize the send and receive list.
@@ -3965,9 +4100,15 @@ void BulkData::internal_change_ghosting(
   
           for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
             const EntityCommInfo tmp = comm_ghost.back();
-  
-            if ( 0 == sendGhosts.count( EntityProc( i->entity , tmp.proc ) ) ) {
+
+            std::set<EntityProc,EntityLess>::iterator iter =
+                sendGhosts.find(EntityProc(i->entity, tmp.proc));
+
+            if ( iter == sendGhosts.end() ) {
               entity_comm_map_erase(i->key, tmp);
+            }
+            else {
+              sendGhosts.erase(iter);
             }
           }
       }
@@ -3995,128 +4136,13 @@ void BulkData::internal_change_ghosting(
     delete_unneeded_entries_from_the_comm_list();
   }
 
-  ghost_entities_and_fields(ghosting, sendGhosts);
-}
-
-void BulkData::internal_change_ghosting(
-  Ghosting & ghosting ,
-  const std::vector<EntityProc> & add_send ,
-  const std::vector<EntityKey> & remove_receive,
-  bool is_full_regen)
-{
-  m_modSummary.track_change_ghosting(ghosting, add_send, remove_receive);
-
-  //------------------------------------
-  // Copy ghosting lists into more efficiently edited container.
-  // The send and receive lists must be in entity rank-order.
-
-  std::set<EntityProc , EntityLess> sendGhosts(EntityLess(*this));
-  std::set<EntityKey>               recvGhosts;
-
-  //------------------------------------
-  // Insert the current ghost receives and then remove from that list.
-
-  // This if-check is an optimization; if doing a full regen
-  // then we are removing all ghosting information and new_recv should
-  // be left empty.
-  if ( !is_full_regen ) {
-    generate_ghosting_receive_list(ghosting, remove_receive, recvGhosts);
-  }
-
-  //  Initialize the new_send from the new_recv
-  stk::mesh::impl::send_entity_keys_to_owners( *this , recvGhosts , sendGhosts );
-
-  //------------------------------------
-  // Add the specified entities and their closure to the send ghosting
-
-  impl::StoreInEntityProcSet sieps(*this,sendGhosts);
-  impl::OnlyGhosts og(*this);
-  for ( std::vector< EntityProc >::const_iterator
-        i = add_send.begin() ; i != add_send.end() ; ++i ) {
-      og.proc = i->second;
-      sieps.proc = i->second;
-      impl::VisitClosureGeneral(*this,i->first,sieps,og);
-  }
-
-  // Synchronize the send and receive list.
-  // If the send list contains a not-owned entity
-  // inform the owner and receiver to add that entity
-  // to their ghost send and receive lists.
-
-  stk::mesh::impl::comm_sync_send_recv( *this , sendGhosts , recvGhosts );
-
-  // The new_send list is now parallel complete and parallel accurate
-  // The new_recv has those ghost entities that are to be kept.
-  //------------------------------------
-  // Remove the ghost entities that will not remain.
-  // If the last reference to the receive ghost entity then delete it.
-
-  OrdinalVector addParts;
-  OrdinalVector removeParts(1, m_ghost_parts[ghosting.ordinal()]->mesh_meta_data_ordinal());
-  OrdinalVector scratchOrdinalVec, scratchSpace;
-  bool removed = false ;
-
-  std::vector<EntityCommInfo> comm_ghost ;
-  for ( EntityCommListInfoVector::reverse_iterator
-        i = m_entity_comm_list.rbegin() ; i != m_entity_comm_list.rend() ; ++i) {
-
-    const bool is_owner = parallel_owner_rank(i->entity) == parallel_rank() ;
-    const bool remove_recv = ( ! is_owner ) &&
-                             0 == recvGhosts.count(i->key);
-
-    if(is_valid(i->entity))
-    {
-      if ( is_owner ) {
-        // Is owner, potentially removing ghost-sends
-        // Have to make a copy
-
-        const PairIterEntityComm ec = internal_entity_comm_map(i->entity, ghosting);
-        comm_ghost.assign( ec.first , ec.second );
-
-        for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
-          const EntityCommInfo tmp = comm_ghost.back();
-
-          if ( 0 == sendGhosts.count( EntityProc( i->entity , tmp.proc ) ) ) {
-            entity_comm_map_erase(i->key, tmp);
-          }
-        }
-      }
-      else if ( remove_recv ) {
-          entity_comm_map_erase(i->key, ghosting);
-          internal_change_entity_parts(i->entity, addParts, removeParts, scratchOrdinalVec, scratchSpace);
-      }
-
-      if ( internal_entity_comm_map(i->entity).empty() ) {
-        removed = true ;
-        i->key = EntityKey(); // No longer communicated
-        if ( remove_recv ) {
-          ThrowRequireMsg( internal_destroy_entity_with_notification( i->entity, remove_recv ),
-                           "P[" << this->parallel_rank() << "]: FAILED attempt to destroy entity: "
-                           << entity_key(i->entity) );
-        }
-      }
-    }
-  }
-
-  // if an entry in the comm_list has the EntityKey() value, it is invalid,
-  // and removed from the comm_list
-
-  if ( removed ) {
-    delete_unneeded_entries_from_the_comm_list();
-  }
-
-  ghost_entities_and_fields(ghosting, sendGhosts);
+  ghost_entities_and_fields(ghosting, sendGhosts, is_full_regen);
 }
 
 //----------------------------------------------------------------------
-
-
-
-
-//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-void BulkData::fill_list_of_entities_to_send_for_aura_ghosting(std::vector<EntityProc> &send)
+void BulkData::fill_list_of_entities_to_send_for_aura_ghosting(EntityProcMapping& send)
 {
     const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
 
@@ -4128,23 +4154,25 @@ void BulkData::fill_list_of_entities_to_send_for_aura_ghosting(std::vector<Entit
     for ( EntityCommListInfoVector::const_iterator
         i = internal_comm_list().begin() ; i != internal_comm_list().end() ; ++i )
     {
-      const EntityRank erank = static_cast<EntityRank>(i->key.rank());
+      if (i->entity_comm && i->entity_comm->isShared) {
+        const EntityRank erank = static_cast<EntityRank>(i->key.rank());
 
-      const PairIterEntityComm shared = internal_entity_comm_map_shared(i->entity);
+        const PairIterEntityComm shared = shared_comm_info_range(i->entity_comm->comm_map);
 
-      for ( size_t j = 0 ; j < shared.size() ; ++j ) {
+        for ( size_t j = 0 ; j < shared.size() ; ++j ) {
 
-        const int share_proc = shared[j].proc ;
+          const int share_proc = shared[j].proc ;
 
-        for (EntityRank k_rank = static_cast<EntityRank>(erank + 1); k_rank < end_rank; ++k_rank)
-        {
-          num_rels = num_connectivity(i->entity, k_rank);
-          rels     = begin(i->entity, k_rank);
-
-          for (int r = 0; r < num_rels; ++r)
+          for (EntityRank k_rank = static_cast<EntityRank>(erank + 1); k_rank < end_rank; ++k_rank)
           {
-            if (is_valid(rels[r])) {
-              stk::mesh::impl::insert_upward_relations(*this, rels[r], erank, share_proc, send);
+            num_rels = num_connectivity(i->entity, k_rank);
+            rels     = begin(i->entity, k_rank);
+
+            for (int r = 0; r < num_rels; ++r)
+            {
+              if (is_valid(rels[r])) {
+                stk::mesh::impl::insert_upward_relations(*this, rels[r], erank, share_proc, send);
+              }
             }
           }
         }
@@ -4156,10 +4184,10 @@ void BulkData::internal_regenerate_aura()
 {
   require_ok_to_modify();
 
-  std::vector<EntityProc> send ;
-  fill_list_of_entities_to_send_for_aura_ghosting(send);
+  EntityProcMapping entityProcMapping(get_size_of_entity_index_space());
+  fill_list_of_entities_to_send_for_aura_ghosting(entityProcMapping);
 
-  internal_change_ghosting( aura_ghosting() , send , std::vector<Entity>(), true /*full regen*/ );
+  internal_change_ghosting(aura_ghosting() , entityProcMapping);
 }
 
 
@@ -4232,17 +4260,11 @@ void BulkData::communicate_entity_modification( const bool shared , std::vector<
   const int p_size = comm.parallel_size();
 
   // Sizing send buffers:
-  const bool local_mod = pack_entity_modification(shared , comm);
+  pack_entity_modification(shared , comm);
 
-  int global_mod_int = 0;
-  int local_mod_int = local_mod ? 1 : 0;
-  stk::all_reduce_max(this->parallel(), &local_mod_int, &global_mod_int, 1);
-  const bool global_mod = global_mod_int == 1 ? true : false;
-
-  // Allocation of send and receive buffers:
-  if ( global_mod )
+  const bool needToSendOrRecv = comm.allocate_buffers();
+  if ( needToSendOrRecv )
   {
-    comm.allocate_buffers();
 
     // Packing send buffers:
     pack_entity_modification(shared , comm);
@@ -4274,7 +4296,6 @@ void BulkData::communicate_entity_modification( const bool shared , std::vector<
   }
 
   std::sort( data.begin() , data.end() );
-
 }
 
 //----------------------------------------------------------------------
@@ -5579,10 +5600,8 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts, const Entit
 
 void pack_and_send_induced_parts_from_sharers_to_owners(stk::mesh::BulkData& bulkData, stk::CommSparse& comm, EntityCommListInfoVector& entity_comm_list)
 {
-    pack_induced_memberships(bulkData, comm, entity_comm_list);
-    comm.allocate_buffers();
-    pack_induced_memberships(bulkData, comm, entity_comm_list);
-    comm.communicate();
+    pack_and_communicate(comm,[&bulkData, &comm, &entity_comm_list]()
+          { pack_induced_memberships(bulkData, comm, entity_comm_list); });
 }
 
 void filter_out_unneeded_induced_parts(stk::mesh::BulkData& bulkData, stk::mesh::Entity entity,
@@ -5609,6 +5628,8 @@ struct PartStorage
 {
    OrdinalVector induced_part_ordinals;
    OrdinalVector removeParts;
+   OrdinalVector scratch;
+   OrdinalVector scratch2;
 };
 
 
@@ -5621,8 +5642,7 @@ void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const Ent
     unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
     filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
 
-    OrdinalVector scratch, scratch2;
-    internal_change_entity_parts(entity, part_storage.induced_part_ordinals, part_storage.removeParts, scratch, scratch2);
+    internal_change_entity_parts(entity, part_storage.induced_part_ordinals, part_storage.removeParts, part_storage.scratch, part_storage.scratch2);
 }
 
 void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector & entitiesNoLongerShared)
@@ -5644,7 +5664,8 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
 #endif
         for(const EntityCommListInfo& info : m_entity_comm_list)
         {
-            bool i_own_this_entity_in_comm_list = parallel_owner_rank(info.entity) == p_rank;
+            bool i_own_this_entity_in_comm_list = is_valid(info.entity) &&
+                                        (parallel_owner_rank(info.entity) == p_rank);
             if( i_own_this_entity_in_comm_list )
             {
                 remove_unneeded_induced_parts(info.entity, info.entity_comm->comm_map, part_storage,  comm);
@@ -7297,22 +7318,16 @@ void BulkData::destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesT
 
 void BulkData::delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing)
 {
-  std::vector<int> shared_procs;
   for ( EntityCommListInfoVector::const_reverse_iterator
         i =  internal_comm_list().rbegin() ;
-        i != internal_comm_list().rend() ; ++i) {
-
+        i != internal_comm_list().rend() ; ++i)
+  {
     Entity entity = i->entity;
-
-    bool entityisValid = is_valid(entity);
-    comm_shared_procs(entity,shared_procs);
-    bool isSharedEntity = !shared_procs.empty();
-    bool isNotInOwnedClosure = !owned_closure(entity);
-    bool entityIsSharedButNotInClosure =  entityisValid && isSharedEntity && isNotInOwnedClosure;
-
-    if ( entityIsSharedButNotInClosure )
-    {
-      destroy_dependent_ghosts( entity, entitiesToRemoveFromSharing );
+    if (is_valid(entity) && !owned_closure(entity)) {
+      if ( in_shared(entity) )
+      {
+        destroy_dependent_ghosts( entity, entitiesToRemoveFromSharing );
+      }
     }
   }
 }

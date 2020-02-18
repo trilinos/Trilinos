@@ -96,6 +96,29 @@ extern char hdf5_access[64];
 
 namespace {
 
+  bool has_decomp_descriptor(int cgns_file_ptr, int base, int zone, int zgc_idx)
+  {
+    bool has_decomp_flag = false;
+    if (cg_goto(cgns_file_ptr, base, "Zone_t", zone, "ZoneGridConnectivity", 0,
+                "GridConnectivity1to1_t", zgc_idx, "end") == CG_OK) {
+      int ndescriptor = 0;
+      cg_ndescriptors(&ndescriptor);
+      if (ndescriptor > 0) {
+        for (int i = 0; i < ndescriptor; i++) {
+          char  name[33];
+          char *text;
+          cg_descriptor_read(i + 1, name, &text);
+          if (strcmp(name, "Decomp") == 0) {
+            has_decomp_flag = true;
+            break;
+          }
+          cg_free(text);
+        }
+      }
+    }
+    return has_decomp_flag;
+  }
+
   template <typename T> void pack(int &idx, std::vector<int> &pack, T *from, int count)
   {
     for (int i = 0; i < count; i++) {
@@ -134,29 +157,6 @@ namespace {
 #endif
   };
 
-  std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel)
-  {
-    int         proc = 0;
-    std::string zname{name};
-
-    if (is_parallel) {
-      // Name should/might be of the form `basename_proc-#`.  Strip
-      // off the `_proc-#` portion and return just the basename.
-      auto tokens = Ioss::tokenize(zname, "_");
-      zname       = tokens[0];
-      if (tokens.size() >= 2) {
-        size_t idx = tokens.size() - 1;
-        if (tokens[idx].substr(0, 5) == "proc-") {
-          auto ptoken = Ioss::tokenize(tokens[idx], "-");
-          proc        = std::stoi(ptoken[1]);
-          idx--;
-          zname = tokens[idx];
-        }
-      }
-    }
-    return std::make_pair(zname, proc);
-  }
-
 #ifdef SEACAS_HAVE_MPI
   void add_zgc_fpp(int cgns_file_ptr, Ioss::StructuredBlock *block,
                    const std::map<std::string, int> &zone_name_map, int myProcessor,
@@ -178,7 +178,12 @@ namespace {
       CGCHECK(cg_1to1_read(cgns_file_ptr, base, db_zone, ii + 1, connectname, donorname,
                            range.data(), donor_range.data(), transform.data()));
 
-      auto        donorname_proc = decompose_name(donorname, isParallel);
+      bool is_decomp = false;
+      if (isParallel) {
+        is_decomp = has_decomp_descriptor(cgns_file_ptr, base, db_zone, ii + 1);
+      }
+
+      auto        donorname_proc = Iocgns::Utils::decompose_name(donorname, isParallel);
       std::string donor_name     = donorname_proc.first;
 
       // Get number of nodes shared with other "previous" zones...
@@ -204,12 +209,13 @@ namespace {
       range_end[1] += offset[1];
       range_end[2] += offset[2];
 
-      auto con_name = decompose_name(connectname, isParallel).first;
+      auto con_name = Iocgns::Utils::decompose_name(connectname, isParallel).first;
       block->m_zoneConnectivity.emplace_back(con_name, zone, donor_name, donor_zone, transform,
                                              range_beg, range_end, donor_beg, donor_end, offset);
 
       block->m_zoneConnectivity.back().m_ownerProcessor = myProcessor;
       block->m_zoneConnectivity.back().m_donorProcessor = donorname_proc.second;
+      block->m_zoneConnectivity.back().m_fromDecomp     = is_decomp;
     }
   }
 
@@ -314,6 +320,23 @@ namespace {
     bool zone_added = false;
     int  nconn      = 0;
     CGCHECK(cg_n1to1(cgns_file_ptr, base, zone, &nconn));
+
+    // See if any of the zgc have a "Decomp" descriptor node.  If so, then
+    // We can unambiguously determine whether a ZGC is from decomp or is
+    // normal inter-zone ZGC. If the descriptor does not exist, then have
+    // to rely on hueristics...
+    bool has_decomp_flag = false;
+    for (int i = 0; i < nconn; i++) {
+      if (has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1)) {
+        has_decomp_flag = true;
+        break;
+      }
+    }
+
+#if IOSS_DEBUG_OUTPUT
+    fmt::print("CGNS DatabaseIO has decomp flag? {}\n", has_decomp_flag);
+#endif
+
     for (int i = 0; i < nconn; i++) {
       char                    connectname[CGNS_MAX_NAME_LENGTH + 1];
       char                    donorname[CGNS_MAX_NAME_LENGTH + 1];
@@ -324,10 +347,21 @@ namespace {
       CGCHECK(cg_1to1_read(cgns_file_ptr, base, zone, i + 1, connectname, donorname, range.data(),
                            donor_range.data(), transform.data()));
 
-      auto        donorname_proc = decompose_name(donorname, true);
+      auto        donorname_proc = Iocgns::Utils::decompose_name(donorname, true);
       std::string donor_name     = donorname_proc.first;
+      auto        donor_proc     = donorname_proc.second;
 
-      if (donor_name == zone_name) {
+      bool is_from_decomp = false;
+      if (has_decomp_flag) {
+        is_from_decomp = has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1);
+      }
+      else {
+        is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor;
+      }
+
+      if (is_from_decomp) {
+        // See if the descriptor named "Decomp" exists as a child of this ZGC.
+        // If so, then
         // Determine which face of the zone on this processor is
         // shared with the other processor...
         int face = find_face(range);
@@ -685,7 +719,7 @@ namespace Iocgns {
       assert(size[7] == 0);
       assert(size[8] == 0);
 
-      auto        name_proc = decompose_name(zname, isParallel);
+      auto        name_proc = Iocgns::Utils::decompose_name(zname, isParallel);
       std::string zone_name = name_proc.first;
       int         proc      = name_proc.second;
       assert(proc == myProcessor);
@@ -979,7 +1013,7 @@ namespace Iocgns {
     char     zone_name[CGNS_MAX_NAME_LENGTH + 1];
     CGCHECKM(cg_zone_read(get_file_pointer(), base, zone, zone_name, size));
 
-    auto        name_proc = decompose_name(zone_name, isParallel);
+    auto        name_proc = Iocgns::Utils::decompose_name(zone_name, isParallel);
     std::string zname     = name_proc.first;
     int         proc      = name_proc.second;
     if (proc != myProcessor) {
@@ -1029,7 +1063,7 @@ namespace Iocgns {
       CGCHECKM(cg_1to1_read(get_file_pointer(), base, zone, i + 1, connectname, donorname,
                             range.data(), donor_range.data(), transform.data()));
 
-      auto        donorname_proc = decompose_name(donorname, isParallel);
+      auto        donorname_proc = Iocgns::Utils::decompose_name(donorname, isParallel);
       std::string donor_name     = donorname_proc.first;
 
       // Get number of nodes shared with other "previous" zones...

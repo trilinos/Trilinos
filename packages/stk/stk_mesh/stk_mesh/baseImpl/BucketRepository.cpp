@@ -186,7 +186,7 @@ Partition *BucketRepository::get_or_create_partition(
   const EntityRank arg_entity_rank ,
   const OrdinalVector &parts)
 {
-  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
+  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
                   "Entity rank " << arg_entity_rank << " is invalid");
 
   ensure_data_structures_sized();

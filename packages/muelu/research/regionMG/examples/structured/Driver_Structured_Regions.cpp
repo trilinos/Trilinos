@@ -169,7 +169,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
   int         smootherIts        = 2;                   clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
   double      smootherDamp       = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
-  double      smootherEigRatio   = 2.0;                 clp.setOption("smootherEigRatio",      &smootherEigRatio,  "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
+  double      smootherChebyEigRatio = 2.0;              clp.setOption("smootherChebyEigRatio", &smootherChebyEigRatio, "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
+  double      smootherChebyBoostFactor = 1.1;           clp.setOption("smootherChebyBoostFactor", &smootherChebyBoostFactor, "boost factor for Chebyshev smoother");
   double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
@@ -220,7 +221,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   smootherParams[0]->set("smoother: type",    smootherType);
   smootherParams[0]->set("smoother: sweeps",  smootherIts);
   smootherParams[0]->set("smoother: damping", smootherDamp);
-  smootherParams[0]->set("smoother: eigRatio", smootherEigRatio);
+  smootherParams[0]->set("smoother: Chebyshev eigRatio", smootherChebyEigRatio);
+  smootherParams[0]->set("smoother: Chebyshev boost factor", smootherChebyBoostFactor);
 
   bool useUnstructured = false;
   Array<LO> unstructuredRanks = Teuchos::fromStringToArray<LO>(unstructured);
@@ -479,7 +481,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
 
-  // In our very particular case we know that a node is at most shared by 4 regions.
+  // In our very particular case we know that a node is at most shared by 4 (8) regions in 2D (3D) problems.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
   // would be appropriate.
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGID
