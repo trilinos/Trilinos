@@ -73,39 +73,41 @@ public:
                        const Ptr<Vector<Real>>          &mul = nullPtr,
                        const bool useSN = false)
     : bnd_(bnd), con_(con), mul_(mul), useSN_(useSN) {
-    xnew_  = x->clone();
-    xprim_ = x->clone();
-    xdual_ = x->dual().clone();
+    if (con_ != nullPtr) {
+      xnew_  = x->clone();
+      xprim_ = x->clone();
+      xdual_ = x->dual().clone();
 
-    dim_ = 0;
-    if (mul_ != nullPtr) {
-      dim_ = mul->dimension();
-      res_ = mul->dual().clone();
-    }
-    if (dim_ == 1 && !useSN_) {
-      mul1_  = static_cast<Real>(0);
-      dlam1_ = static_cast<Real>(2);
-      // con.value(x) = xprim_->dot(x) + b_
-      Real tol(std::sqrt(ROL_EPSILON<Real>()));
-      xprim_->zero();
-      con_->value(*res_,*xprim_,tol);
-      b_ = res_->dot(*res_->basis(0));
-      mul_->setScalar(static_cast<Real>(1));
-      con_->applyAdjointJacobian(*xdual_,*mul_,*x,tol);
-      xprim_->set(xdual_->dual());
-      cdot_ = xprim_->dot(*xprim_);
-    }
-    else {
-      lnew_ = mul->clone();
-      dlam_ = mul->clone();
+      dim_ = 0;
+      if (mul_ != nullPtr) {
+        dim_ = mul->dimension();
+        res_ = mul->dual().clone();
+      }
+      if (dim_ == 1 && !useSN_) {
+        mul1_  = static_cast<Real>(0);
+        dlam1_ = static_cast<Real>(2);
+        // con.value(x) = xprim_->dot(x) + b_
+        Real tol(std::sqrt(ROL_EPSILON<Real>()));
+        xprim_->zero();
+        con_->value(*res_,*xprim_,tol);
+        b_ = res_->dot(*res_->basis(0));
+        mul_->setScalar(static_cast<Real>(1));
+        con_->applyAdjointJacobian(*xdual_,*mul_,*x,tol);
+        xprim_->set(xdual_->dual());
+        cdot_ = xprim_->dot(*xprim_);
+      }
+      else {
+        lnew_ = mul->clone();
+        dlam_ = mul->clone();
 
-      ParameterList list;
-      list.sublist("General").sublist("Krylov").set("Type",               "CG");
-      list.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-6);
-      list.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
-      list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
-      list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
-      krylov_ = KrylovFactory<Real>(list);
+        ParameterList list;
+        list.sublist("General").sublist("Krylov").set("Type",               "CG");
+        list.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-6);
+        list.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
+        list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
+        list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
+        krylov_ = KrylovFactory<Real>(list);
+      }
     }
   }
 
