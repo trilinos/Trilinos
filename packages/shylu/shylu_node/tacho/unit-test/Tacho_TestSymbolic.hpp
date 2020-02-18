@@ -117,9 +117,10 @@ TEST( Symbolic, functions ) {
                                     blk_super_panel_colidx);
 
   size_type_array stree_ptr;
-  ordinal_type_array stree_parent, stree_children, stree_roots;
+  ordinal_type_array stree_level, stree_parent, stree_children, stree_roots;
   SymbolicTools::computeSupernodesAssemblyTree(parent,
                                                supernodes,
+                                               stree_level,
                                                stree_parent,
                                                stree_ptr,
                                                stree_children,

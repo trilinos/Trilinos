@@ -525,16 +525,11 @@ namespace MueLu {
 
       RCP<RAPFactory> rapFact = rcp(new RAPFactory());
       ParameterList rapList = *(rapFact->GetValidParameterList());
-      rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
+      rapList.set("transpose: use implicit", true);
       rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
       rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
       rapFact->SetParameterList(rapList);
 
-      RCP<TransPFactory> transPFactory;
-      if (!parameterList_.get<bool>("transpose: use implicit", false)) {
-        transPFactory = rcp(new TransPFactory());
-        rapFact->SetFactory("R", transPFactory);
-      }
 
       coarseLevel.Request("A", rapFact.get());
 
@@ -1318,8 +1313,11 @@ namespace MueLu {
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
       double dropTol = parameterList_.get("aggregation: drop tol",0.0);
       std::string dropScheme = parameterList_.get("aggregation: drop scheme","classical");
+      std::string distLaplAlgo = parameterList_.get("aggregation: distance laplacian algo","default");
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
       dropFact->SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(dropScheme));
+      if (!useKokkos_)
+        dropFact->SetParameter("aggregation: distance laplacian algo",Teuchos::ParameterEntry(distLaplAlgo));
 
       UncoupledAggFact->SetFactory("Graph", dropFact);
       int minAggSize = parameterList_.get("aggregation: min agg size",2);
@@ -2256,6 +2254,24 @@ namespace MueLu {
     TEUCHOS_ASSERT(D0_Matrix!=Teuchos::null);
     TEUCHOS_ASSERT(Ms_Matrix!=Teuchos::null);
     TEUCHOS_ASSERT(M1_Matrix!=Teuchos::null);
+
+#ifdef HAVE_MUELU_DEBUG
+    TEUCHOS_ASSERT(M1_Matrix->getDomainMap()->isSameAs(*M1_Matrix->getRangeMap()));
+    TEUCHOS_ASSERT(M1_Matrix->getDomainMap()->isSameAs(*M1_Matrix->getRowMap()));
+    TEUCHOS_ASSERT(M1_Matrix->getDomainMap()->isSameAs(*D0_Matrix->getRangeMap()));
+
+    TEUCHOS_ASSERT(Ms_Matrix->getDomainMap()->isSameAs(*Ms_Matrix->getRangeMap()));
+    TEUCHOS_ASSERT(Ms_Matrix->getDomainMap()->isSameAs(*Ms_Matrix->getRowMap()));
+    TEUCHOS_ASSERT(Ms_Matrix->getDomainMap()->isSameAs(*D0_Matrix->getRangeMap()));
+
+    TEUCHOS_ASSERT(D0_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getRowMap()));
+
+    if (!M0inv_Matrix) {
+      TEUCHOS_ASSERT(M0inv_Matrix->getDomainMap()->isSameAs(*M0inv_Matrix->getRowMap()));
+      TEUCHOS_ASSERT(M0inv_Matrix->getDomainMap()->isSameAs(*M0inv_Matrix->getRangeMap()));
+      TEUCHOS_ASSERT(M0inv_Matrix->getDomainMap()->isSameAs(*D0_Matrix->getDomainMap()));
+    }
+#endif
 
     HierarchyH_    = Teuchos::null;
     Hierarchy22_   = Teuchos::null;

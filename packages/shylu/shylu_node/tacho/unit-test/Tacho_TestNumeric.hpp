@@ -89,12 +89,13 @@ TEST( Numeric, constructor ) {
   Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
 
   NumericTools<ValueType,scheduler_type> N(m, a_row_ptr, a_cols,
-                                            d_idx, d_idx,
-                                            S.NumSupernodes(), s_supernodes,
-                                            s_gid_spanel_ptr, s_gid_spanel_colidx,
-                                            s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
-                                            s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
-                                            S.SupernodesTreeRoots());
+                                           d_idx, d_idx,
+                                           S.NumSupernodes(), s_supernodes,
+                                           s_gid_spanel_ptr, s_gid_spanel_colidx,
+                                           s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
+                                           s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
+                                           S.SupernodesTreeLevel(),
+                                           S.SupernodesTreeRoots());
   TEST_END;
 }
 
@@ -120,11 +121,12 @@ TEST( Numeric, Cholesky_Serial ) {
   S.symbolicFactorize();
   
   NumericTools<ValueType,scheduler_type> N(A.NumRows(), A.RowPtr(), A.Cols(), 
-                                            T.PermVector(), T.InvPermVector(),
-                                            S.NumSupernodes(), S.Supernodes(),
-                                            S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
-                                            S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-                                            S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
+                                           T.PermVector(), T.InvPermVector(),
+                                           S.NumSupernodes(), S.Supernodes(),
+                                           S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
+                                           S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
+                                           S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), 
+                                           S.SupernodesTreeLevel(), S.SupernodesTreeRoots());
   N.factorizeCholesky_Serial(A.Values());
   
   CrsMatrixBaseDeviceType F;
@@ -203,14 +205,15 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
   Kokkos::deep_copy(s_snodes_tree_parent   , S.SupernodesTreeParent());
   Kokkos::deep_copy(s_snodes_tree_ptr      , S.SupernodesTreePtr());
   Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
-
+  
   NumericTools<ValueType,scheduler_type> N(A.NumRows(), a_row_ptr, a_cols,
-                                            t_perm, t_peri,
-                                            S.NumSupernodes(), s_supernodes,
-                                            s_gid_spanel_ptr, s_gid_spanel_colidx,
-                                            s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
-                                            s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
-                                            S.SupernodesTreeRoots());
+                                           t_perm, t_peri,
+                                           S.NumSupernodes(), s_supernodes,
+                                           s_gid_spanel_ptr, s_gid_spanel_colidx,
+                                           s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
+                                           s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
+                                           S.SupernodesTreeLevel(),
+                                           S.SupernodesTreeRoots());
   
   N.factorizeCholesky_Parallel(a_values);
   TEST_END;

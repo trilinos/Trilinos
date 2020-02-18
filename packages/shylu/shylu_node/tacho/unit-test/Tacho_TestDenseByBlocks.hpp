@@ -18,9 +18,6 @@
 
 using namespace Tacho;
 
-typedef Kokkos::View<ValueType*,HostDeviceType>   value_type_array_host;
-typedef Kokkos::View<ValueType*,DeviceType> value_type_array;
-
 typedef TaskSchedulerType<typename DeviceType::execution_space> scheduler_type;
 typedef TaskSchedulerType<typename HostDeviceType::execution_space> host_scheduler_type;
 
@@ -48,7 +45,7 @@ TEST( DenseByBlocks, chol ) {
   
   // a  : referece with lapack
   // a1 : byblocks with partitioned matrices
-  Kokkos::DualView<ValueType*,DeviceType> a("a", m*m), a1("a1", m*m);
+  Kokkos::DualView<ValueType*,typename DeviceType::execution_space> a("a", m*m), a1("a1", m*m);
   
   // reference lapack 
   {
@@ -85,7 +82,7 @@ TEST( DenseByBlocks, chol ) {
 
     a1.sync_device();
 
-    Kokkos::DualView<DenseMatrixViewType*,DeviceType> h("h", bm*bm);
+    Kokkos::DualView<DenseMatrixViewType*,typename DeviceType::execution_space> h("h", bm*bm);
     h.modify_host();
 
     DenseMatrixOfBlocksTypeHost H;
@@ -149,7 +146,7 @@ TEST( DenseByBlocks, gemm ) {
 
   // c  : result from reference blas
   // c1 : result from partitioned matrices
-  Kokkos::DualView<ValueType*,DeviceType> a("a", m*k), b("b", k*n), c("c", m*n), c1("c1", m*n);
+  Kokkos::DualView<ValueType*,typename DeviceType::execution_space> a("a", m*k), b("b", k*n), c("c", m*n), c1("c1", m*n);
 
 
   // reference blas
@@ -216,7 +213,7 @@ TEST( DenseByBlocks, gemm ) {
       bn = (n/mb) + (n%mb>0),
       bk = (k/mb) + (k%mb>0);
     
-    Kokkos::DualView<DenseMatrixViewType*,DeviceType> ha("ha", bm*bk), hb("hb", bk*bn), hc("hc", bm*bn);
+    Kokkos::DualView<DenseMatrixViewType*,typename DeviceType::execution_space> ha("ha", bm*bk), hb("hb", bk*bn), hc("hc", bm*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HB, HC;
 
@@ -310,7 +307,7 @@ TEST( DenseByBlocks, herk ) {
 
   // c  : result from reference blas
   // c1 : result from byblocks
-  Kokkos::DualView<ValueType*,DeviceType> a("a", k*n), c("c", n*n), c1("c1", n*n);
+  Kokkos::DualView<ValueType*,typename DeviceType::execution_space> a("a", k*n), c("c", n*n), c1("c1", n*n);
 
   // referece: blas herk
   {
@@ -362,7 +359,7 @@ TEST( DenseByBlocks, herk ) {
       bn = (n/mb) + (n%mb>0),
       bk = (k/mb) + (k%mb>0);
     
-    Kokkos::DualView<DenseMatrixViewType*,DeviceType> ha("ha", bk*bn), hc("hc", bn*bn);
+    Kokkos::DualView<DenseMatrixViewType*,typename DeviceType::execution_space> ha("ha", bk*bn), hc("hc", bn*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HC;
 
@@ -449,7 +446,7 @@ TEST( DenseByBlocks, trsm ) {
 
   // b  : result from reference blas
   // b1 : result from byblocks
-  Kokkos::DualView<ValueType*,DeviceType> a("a", m*m), b("c", m*n), b1("c1", m*n);
+  Kokkos::DualView<ValueType*,typename DeviceType::execution_space> a("a", m*m), b("c", m*n), b1("c1", m*n);
 
   // reference blas
   {
@@ -502,7 +499,7 @@ TEST( DenseByBlocks, trsm ) {
       bm = (m/mb) + (m%mb>0),
       bn = (n/mb) + (n%mb>0);
 
-    Kokkos::DualView<DenseMatrixViewType*,DeviceType> ha("ha", bm*bm), hb("hb", bm*bn);
+    Kokkos::DualView<DenseMatrixViewType*,typename DeviceType::execution_space> ha("ha", bm*bm), hb("hb", bm*bn);
 
     DenseMatrixOfBlocksTypeHost HA, HB;
 

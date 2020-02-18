@@ -177,14 +177,15 @@ int main (int argc, char *argv[]) {
     Kokkos::deep_copy(s_snodes_tree_parent   , S.SupernodesTreeParent());
     Kokkos::deep_copy(s_snodes_tree_ptr      , S.SupernodesTreePtr());
     Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
-    
+
     NumericTools<value_type,scheduler_type> 
       N(A.NumRows(), a_row_ptr, a_cols,
         t_perm, t_peri,
         S.NumSupernodes(), s_supernodes,
         s_gid_spanel_ptr, s_gid_spanel_colidx,
         s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
-        s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
+        s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children, 
+        S.SupernodesTreeLevel(),
         S.SupernodesTreeRoots());
 
     N.setSerialThresholdSize(serial_thres_size);

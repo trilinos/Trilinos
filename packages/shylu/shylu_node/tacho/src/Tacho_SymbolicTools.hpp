@@ -387,6 +387,7 @@ namespace Tacho {
       static void
       computeSupernodesAssemblyTree(const ordinal_type_array &parent,
                                     const ordinal_type_array &supernodes,
+                                    /* */ ordinal_type_array &stree_level,
                                     /* */ ordinal_type_array &stree_parent,
                                     /* */ size_type_array &stree_ptr,
                                     /* */ ordinal_type_array &stree_children,
@@ -452,6 +453,17 @@ namespace Tacho {
               stree_children(stree_ptr(sidpar)+flag(sidpar)++) = sid;
           }
         }
+
+        {
+          // this can be host parallel; but maybe this is too small workload
+          stree_level = ordinal_type_array(do_not_initialize_tag("stree_level"), numSupernodes);
+          for (ordinal_type sid=0;sid<numSupernodes;++sid) {
+            ordinal_type self = sid, level = 0;
+            for (; stree_parent(self) != -1; ++level)
+              self = stree_parent(self);
+            stree_level(sid) = level;
+          }
+        }
       }
 
     private:
@@ -464,7 +476,7 @@ namespace Tacho {
       ordinal_type_array _perm, _peri;
 
       // supernodes output
-      ordinal_type_array _supernodes;      
+      ordinal_type_array _supernodes;
 
       // dof mapping to sparse matrix
       size_type_array _gid_super_panel_ptr;
@@ -480,6 +492,9 @@ namespace Tacho {
 
       // supernode elimination tree (child - parent)
       ordinal_type_array _stree_parent;
+
+      // level information of supernodes
+      ordinal_type_array _stree_level;      
 
       // stat
       struct {
@@ -528,7 +543,7 @@ namespace Tacho {
       
       inline
       ordinal_type_array Supernodes() const { return _supernodes; }
-      
+
       inline 
       size_type_array gidSuperPanelPtr() const { return _gid_super_panel_ptr; }
 
@@ -556,6 +571,9 @@ namespace Tacho {
       inline 
       ordinal_type_array SupernodesTreeRoots() const { return _stree_roots; }
       
+      inline
+      ordinal_type_array SupernodesTreeLevel() const { return _stree_level; }
+
       inline
       void
       symbolicFactorize(const ordinal_type verbose = 0) {
@@ -646,14 +664,16 @@ namespace Tacho {
           // supernode assembly tree
           computeSupernodesAssemblyTree(parent,                                                 
                                         _supernodes,                                             
+                                        _stree_level,
                                         _stree_parent,
-                                        _stree_ptr,                                                 
+                                        _stree_ptr,
                                         _stree_children,
                                         _stree_roots,
                                         work);                        
         }
         t_extra += timer.seconds();
 
+        track_alloc(_stree_level.span()*sizeof(ordinal_type));
         track_alloc(_stree_parent.span()*sizeof(ordinal_type));
         track_alloc(_stree_ptr.span()*sizeof(size_type));
         track_alloc(_stree_children.span()*sizeof(ordinal_type));
@@ -688,10 +708,7 @@ namespace Tacho {
 
           stat.height = 0;
           for (ordinal_type i=0;i<stat.nsupernodes;++i) {
-            ordinal_type self = i, cnt = 0;
-            for (; _stree_parent(self) != -1; ++cnt)
-              self = _stree_parent(self);
-            stat.height = max(stat.height, cnt);
+            stat.height = max(_stree_level(i), stat.height);
           }
 
           stat.nleaves = 0;
