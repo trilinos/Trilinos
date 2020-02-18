@@ -205,7 +205,9 @@ std::vector<std::string> Algorithm_B<Real>::run( Vector<Real>          &x,
   Ptr<Vector<Real>>          xvec = cm.getOptVector();
   Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
   Ptr<Objective<Real>>       xobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
-  return run(*xvec,xvec->dual(),*xobj,*xbnd,*xcon,*xmul,outStream);
+  //return run(*xvec,xvec->dual(),*xobj,*xbnd,*xcon,*xmul,outStream);
+  Ptr<Vector<Real>>          xdual = xvec->dual().clone();
+  return run(*xvec,*xdual,*xobj,*xbnd,*xcon,*xmul,outStream);
 }
 
 template<typename Real>
