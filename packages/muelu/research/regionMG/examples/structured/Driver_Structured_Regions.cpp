@@ -186,6 +186,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool profileSolve = false;                            clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
   int  cacheSize = 0;                                   clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
+  bool useStackedTimer   = false;                       clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -246,7 +247,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 
   comm->barrier();
-  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+  if(useStackedTimer)
+    stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Build Composite Matrix")));
 
@@ -868,9 +872,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<ParameterList> reportParams = rcp(new ParameterList);
   const std::string filter = "";
-  std::ios_base::fmtflags ff(out.flags());
-  TimeMonitor::report(comm.ptr(), out, filter, reportParams);
-  out << std::setiosflags(ff);
+  if (useStackedTimer) {
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(out, comm, options);
+  } else {
+    std::ios_base::fmtflags ff(out.flags());
+    TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+    out << std::setiosflags(ff);
+  }
 
   TimeMonitor::clearCounters();
 
