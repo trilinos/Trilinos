@@ -195,9 +195,9 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       // Run Truncated CG
       flagCG = 0; iterCG = 0;
       gfnormf = zero;
+      tol     = std::min(tol1_,tol2_*gfnorm);
+      stol    = tol; //zero;
       if (gfnorm > zero) {
-        tol   = std::min(tol1_,tol2_*gfnorm);
-        stol  = tol; //zero;
         snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
                        state_->searchSize,*model_,bnd,tol,stol,maxit_,
                        *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
@@ -216,7 +216,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
         snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
         pRed += -q;
 
-        // Model gradient at s = x[i+1] - x[0]
+        // Model gradient at s = (x[i+1]-x[i]) - (x[i]-x[0])
         state_->stepVec->plus(*s);
         gmod->plus(*dwa1); // gmod = H(x[i+1]-x[i]) + H(x[i]-x[0]) + g
         gfree->set(*gmod);
