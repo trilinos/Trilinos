@@ -473,14 +473,14 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
                                       Vector<Real> &p, Vector<Real> &q, Vector<Real> &r,
                                       Vector<Real> &t, Vector<Real> &pwa, Vector<Real> &dwa,
                                       std::ostream &outStream) const {
-  // p = step
-  // q = hessian applied to step p
-  // t = residual
-  // r = preconditioned residual
+  // p = step (primal)
+  // q = hessian applied to step p (dual)
+  // t = gradient (dual)
+  // r = preconditioned gradient (primal)
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   const Real zero(0), one(1), two(2);
-  Real rho(0), tnorm(0), rnorm0(0), kappa(0), beta(0), sigma(0), alpha(0), rtr(0); //, rnorm(0)
-  Real sMs(0), pMp(0), sMp(0);
+  Real rho(0), kappa(0), beta(0), sigma(0), alpha(0);
+  Real rtr(0), tnorm(0), rnorm0(0), sMs(0), pMp(0), sMp(0);
   iter = 0; iflag = 0;
   // Initialize step
   w.zero();
@@ -517,9 +517,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
     applyFreePrecond(r,t,x,model,bnd,tol0,dwa,pwa);
     // Exit if residual tolerance is met
     rtr   = r.dot(t.dual());
-    //rnorm = std::sqrt(std::abs(rtr));
     tnorm = t.norm();
-    //if (rnorm <= stol || tnorm <= tol) {
     if (rtr <= stol*stol || tnorm <= tol) {
       sMs   = sMs + two*alpha*sMp + alpha*alpha*pMp;
       iflag = 0;
