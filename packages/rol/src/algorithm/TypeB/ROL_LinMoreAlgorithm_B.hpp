@@ -143,10 +143,10 @@ private:
 
   // Compute Cauchy point, i.e., the minimizer of q(P(x - alpha*g)-x)
   // subject to the trust region constraint ||P(x - alpha*g)-x|| <= del
-  //   s     -- The Cauchy point upon return
+  //   s     -- The Cauchy step upon return: Primal optimization space vector
   //   alpha -- The step length for the Cauchy point upon return
-  //   x     -- The anchor vector x (unchanged)
-  //   g     -- The (dual) gradient vector g (unchanged)
+  //   x     -- The anchor vector x (unchanged): Primal optimization space vector
+  //   g     -- The (dual) gradient vector g (unchanged): Primal optimization space vector
   //   del   -- The trust region radius (unchanged)
   //   model -- Trust region model
   //   dwa   -- Dual working array, stores Hessian applied to step
@@ -159,9 +159,9 @@ private:
 
   // Perform projected search to determine beta such that
   // q(P(x + beta*s)-x) <= mu0*g'(P(x + beta*s)-x) for mu0 in (0,1)
-  //   x     -- The anchor vector x, upon return x = P(x + beta*s)
-  //   s     -- The direction vector s, upon return s = P(x + beta*s) - x
-  //   g     -- The free components of the gradient vector g (unchanged)
+  //   x     -- The anchor vector x, upon return x = P(x + beta*s): Primal optimization space vector
+  //   s     -- The direction vector s, upon return s = P(x + beta*s) - x: Primal optimization space vector
+  //   g     -- The free components of the gradient vector g (unchanged): Primal optimization space vector
   //   model -- Contains objective and bound constraint information
   //   pwa   -- Primal working array
   //   dwa   -- Dual working array

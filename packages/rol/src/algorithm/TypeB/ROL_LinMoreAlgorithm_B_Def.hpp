@@ -194,25 +194,25 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     for (int i = 0; i < minit_; ++i) {
       // Run Truncated CG
       flagCG = 0; iterCG = 0;
-      tol  = std::min(tol1_,tol2_*gfnorm);
-      stol = tol; //zero;
-      snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
-                     state_->searchSize,*model_,bnd,tol,stol,maxit_,
-                     *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
-      SPiter_ += iterCG;
-      if (verbosity_ > 1) {
-        outStream << "  Computation of CG step"               << std::endl;
-        outStream << "    Current face (i):                 " << i       << std::endl;
-        outStream << "    CG step length:                   " << snorm   << std::endl;
-        outStream << "    Number of CG iterations:          " << iterCG  << std::endl;
-        outStream << "    CG flag:                          " << flagCG  << std::endl;
-        outStream << "    Total number of iterations:       " << SPiter_ << std::endl;
-        outStream << std::endl;
-      }
-
-      // Projected search
       gfnormf = zero;
-      if (iterCG>0) { // Only do projected search if CG step is nonzero
+      if (gfnorm > zero) {
+        tol   = std::min(tol1_,tol2_*gfnorm);
+        stol  = tol; //zero;
+        snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
+                       state_->searchSize,*model_,bnd,tol,stol,maxit_,
+                       *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
+        SPiter_ += iterCG;
+        if (verbosity_ > 1) {
+          outStream << "  Computation of CG step"               << std::endl;
+          outStream << "    Current face (i):                 " << i       << std::endl;
+          outStream << "    CG step length:                   " << snorm   << std::endl;
+          outStream << "    Number of CG iterations:          " << iterCG  << std::endl;
+          outStream << "    CG flag:                          " << flagCG  << std::endl;
+          outStream << "    Total number of iterations:       " << SPiter_ << std::endl;
+          outStream << std::endl;
+        }
+
+        // Projected search
         snorm = dprsrch(x,*s,q,gmod->dual(),*model_,bnd,*pwa1,*dwa1,outStream);
         pRed += -q;
 
@@ -235,7 +235,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       }
 
       // Termination check
-      if (gfnormf <= tol2_*gfnorm) {
+      if (gfnormf <= tol) {
         SPflag_ = 0;
         break;
       }
@@ -420,7 +420,8 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     snorm = dgpstep(pwa,s,x,beta);
     model.hessVec(dwa,pwa,x,tol);
     gs = pwa.dot(g);
-    q  = half * s.dot(dwa.dual()) + gs;
+//    q  = half * s.dot(dwa.dual()) + gs;
+    q  = half * pwa.dot(dwa.dual()) + gs;
     if (q <= mu0_*gs || nsteps > pslim_) {
       search = false;
     }
