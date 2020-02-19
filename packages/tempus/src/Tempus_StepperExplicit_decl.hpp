@@ -46,8 +46,6 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return appModel_;}
 
@@ -60,7 +58,7 @@ public:
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
 
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
@@ -112,6 +110,14 @@ public:
       const Scalar time,
       const Teuchos::RCP<ExplicitODEParameters<Scalar> > & p );
   //@}
+
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    virtual void describe(Teuchos::FancyOStream        & out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
 protected:
 

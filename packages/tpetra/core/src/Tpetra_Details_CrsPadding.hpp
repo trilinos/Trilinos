@@ -220,7 +220,6 @@ namespace Tpetra {
         const GO srcColInds[], // sorted & merged
         const size_t numSrcEnt)
       {
-        using Details::countNumInCommon;
         using std::endl;
         std::unique_ptr<std::string> prefix;
         if (verbose_) {
@@ -273,59 +272,34 @@ namespace Tpetra {
           diffColInds.resize(newLen);
         }
         else {
+          // scratch = union(srcColInds, diffColInds);
+          // diffColInds = difference(scratch, tgtColInds);
+
+          const size_t maxUnionSize = numSrcEnt + oldDiffNumEnt;
           if (verbose_) {
             std::ostringstream os;
             os << *prefix << "oldDiffNumEnt=" << oldDiffNumEnt
-               << "; call countNumInCommon(src,diff)" << endl;
+               << ", maxUnionSize=" << maxUnionSize
+               << "; call set_union(src,diff,union)" << endl;
             std::cerr << os.str();
           }
-          // scratch = union(srcColInds, diffColInds)
-          const size_t unionSize = numSrcEnt + oldDiffNumEnt -
-            countNumInCommon(srcColInds, srcEnd,
-                             diffColInds.begin(),
-                             diffColInds.end());
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << "unionSize=" << unionSize << endl;
-            std::cerr << os.str();
-          }
-          if (scratchColInds_.size() < unionSize) {
-            scratchColInds_.resize(unionSize);
-          }
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << "oldDiffNumEnt=" << oldDiffNumEnt
-               << ", unionSize=" << unionSize << ", call "
-              "set_union(src,diff,union)" << endl;
-            std::cerr << os.str();
+          if (scratchColInds_.size() < maxUnionSize) {
+            scratchColInds_.resize(maxUnionSize);
           }
           auto unionBeg = scratchColInds_.begin();
           auto unionEnd = std::set_union(srcColInds, srcEnd,
              diffColInds.begin(), diffColInds.end(),
              unionBeg);
-          const size_t newUnionLen(unionEnd - unionBeg);
-          TEUCHOS_ASSERT( newUnionLen == unionSize );
+          const size_t unionSize(unionEnd - unionBeg);
+          TEUCHOS_ASSERT( unionSize <= maxUnionSize );
 
           if (verbose_) {
             std::ostringstream os;
             os << *prefix << "oldDiffNumEnt=" << oldDiffNumEnt
-               << ", unionSize=" << unionSize << ", call "
-              "countNumInCommon(union,tgt)" << endl;
+               << ", unionSize=" << unionSize << "; call "
+              "set_difference(union,tgt,diff)" << endl;
             std::cerr << os.str();
           }
-          // diffColInds = difference(scratch, tgtColInds)
-          const size_t unionTgtInCommon =
-            countNumInCommon(unionBeg, unionEnd, tgtColInds, tgtEnd);
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << "oldDiffNumEnt=" << oldDiffNumEnt
-               << ", unionSize=" << unionSize
-               << ", unionTgtInCommon=" << unionTgtInCommon
-               << "; call set_difference" << endl;
-            std::cerr << os.str();
-          }
-          TEUCHOS_ASSERT( unionSize >= unionTgtInCommon );
-
           diffColInds.resize(unionSize);
           auto diffEnd = std::set_difference(unionBeg, unionEnd,
                                              tgtColInds, tgtEnd,

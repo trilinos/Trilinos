@@ -68,7 +68,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperIMEX_RK<double>());
   stepper->setModel(model);
-  stepper->setSolver();
   stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------

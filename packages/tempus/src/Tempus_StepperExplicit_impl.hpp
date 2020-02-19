@@ -26,13 +26,6 @@ void StepperExplicit<Scalar>::setModel(
 
 
 template<class Scalar>
-void StepperExplicit<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  setModel(appModel);
-}
-
-template<class Scalar>
 void StepperExplicit<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
@@ -350,6 +343,35 @@ evaluateExplicitODE(Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot,
   outArgs_.set_f(xDotDot);
 
   appModel_->evalModel(inArgs_, outArgs_);
+}
+
+
+
+template<class Scalar>
+void StepperExplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
+                               const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << "--- StepperExplicit ---\n";
+  out << "  appModel_         = " << appModel_ << std::endl;
+  out << "  inArgs_           = " << inArgs_ << std::endl;
+  out << "  outArgs_          = " << outArgs_ << std::endl;
+  out << "  stepperX_         = " << stepperX_ << std::endl;
+  out << "  stepperXDot_      = " << stepperXDot_ << std::endl;
+  out << "  stepperXDotDot_   = " << stepperXDotDot_ << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperExplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if (appModel_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The application ModelEvaluator is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 
