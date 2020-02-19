@@ -117,7 +117,7 @@ public:
     }
     else {
       if (dim_==1 && !useSN_) {
-        mul1_  = (-b_-xprim_->dot(x))/cdot_;
+        //mul1_  = (-b_-xprim_->dot(x))/cdot_;
         //mul1_  = static_cast<Real>(0);
         dlam1_ = static_cast<Real>(2);
         //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);
@@ -156,14 +156,23 @@ private:
     const Real atol(1e-4*std::sqrt(ROL_EPSILON<Real>())), rtol(1e-2);
     const Real ltol(ROL_EPSILON<Real>());
     const Real zero(0), one(1), two(2), c1(0.1), c2(0.75), c3(0.25);
-    Real lam1(0), lam2(0), lam3(0), r1(0), r2(0), s(0);
-    update_primal_1d(*xnew_,x,lam);
-    Real r = residual_1d(*xnew_);
+    Real lam1(0), lam2(0), lam3(0), r(0), r1(0), r2(0), s(0);
+    // Set residual tolerance to min(atol,rtol*abs(<c,P(y)>+b))
+    update_primal_1d(*xnew_,x,lam1);
+    r = residual_1d(*xnew_);
     if (r == zero) {
+      lam = lam1;
       x.set(*xnew_);
       return;
     }
     const Real ctol = std::min(atol,rtol*std::abs(r));
+    // Compute initial residual
+    update_primal_1d(*xnew_,x,lam);
+    r = residual_1d(*xnew_);
+    if (r == zero) {
+      x.set(*xnew_);
+      return;
+    }
     int cnt = 0, maxit = 1000;
     // Bracketing phase
     if ( r < zero ) {
@@ -323,11 +332,25 @@ private:
   // motivated by Solodov and Svaiter 1999
   void project_nd(Vector<Real> &x, Vector<Real> &lam, Vector<Real> &dlam) const {
     const Real atol(1e-4*std::sqrt(ROL_EPSILON<Real>())), rtol(1e-2);
-    const Real one(1), decr(1e-4), stol(std::sqrt(ROL_EPSILON<Real>()));
+    const Real zero(0), one(1), decr(1e-4), stol(std::sqrt(ROL_EPSILON<Real>()));
     const Real factor(0.5), c1(1e-4), c2(1e-2), half(0.5);
-    update_primal_nd(*xnew_,x,lam);
+    // Compute initial residual at lam = 0 to set relative tolerance
+    dlam.zero();
+    update_primal_nd(*xnew_,x,dlam);
     Real rnorm = residual_nd(*res_,*xnew_);
+    if (rnorm == zero) {
+      lam.set(dlam);
+      x.set(*xnew_);
+      return;
+    }
     const Real ctol = std::min(atol,rtol*rnorm);
+    // Compute initial residual
+    update_primal_nd(*xnew_,x,lam);
+    rnorm = residual_nd(*res_,*xnew_);
+    if (rnorm == zero) {
+      x.set(*xnew_);
+      return;
+    }
     Real alpha(1), tmp(0), mu(0), rho(1), dd(0);
     int cnt = 0, maxit = 1000;
     for (cnt = 0; cnt < maxit; ++cnt) {
