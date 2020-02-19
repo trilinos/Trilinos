@@ -278,6 +278,7 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc,
 
   const int dofsPerNode = regMatrix[0]->GetFixedBlockSize();
   coarseCompOp->SetFixedBlockSize(dofsPerNode);
+  coarseCompOp->setObjectLabel("coarse composite operator");
 
   // Create coarse composite coordinates for repartitioning
   if(makeCompCoords) {
@@ -587,6 +588,7 @@ void createRegionHierarchy(const int maxRegPerProc,
                            const bool keepCoarseCoords)
 {
 #include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
   // This monitor times everything and gets the overall setting cost
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy")));
 
