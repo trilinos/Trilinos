@@ -165,7 +165,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
-    // Compute Cauchy point (TRON notation: xnew = x[1])
+    // Compute Cauchy point (TRON notation: x = x[1])
     snorm = dcauchy(*state_->stepVec,alpha,q,*state_->iterateVec,
                     state_->gradientVec->dual(),state_->searchSize,
                     *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
