@@ -156,16 +156,15 @@ private:
     const Real atol(1e-4*std::sqrt(ROL_EPSILON<Real>())), rtol(1e-2);
     const Real ltol(ROL_EPSILON<Real>());
     const Real zero(0), one(1), two(2), c1(0.1), c2(0.75), c3(0.25);
-    Real lam1(0), lam2(0), lam3(0), r(0), r1(0), r2(0), s(0);
+    Real lam1(0), lam2(0), lam3(0), r(0), r0(0), r1(0), r2(0), s(0);
     // Set residual tolerance to min(atol,rtol*abs(<c,P(y)>+b))
     update_primal_1d(*xnew_,x,lam1);
-    r = residual_1d(*xnew_);
-    if (r == zero) {
+    r0 = residual_1d(*xnew_);
+    if (r0 == zero) {
       lam = lam1;
       x.set(*xnew_);
       return;
     }
-    const Real ctol = std::min(atol,rtol*std::abs(r));
     // Compute initial residual
     update_primal_1d(*xnew_,x,lam);
     r = residual_1d(*xnew_);
@@ -173,6 +172,7 @@ private:
       x.set(*xnew_);
       return;
     }
+    const Real ctol = std::min(atol,rtol*std::max(std::abs(r),std::abs(r0)));
     int cnt = 0, maxit = 1000;
     // Bracketing phase
     if ( r < zero ) {
@@ -337,20 +337,20 @@ private:
     // Compute initial residual at lam = 0 to set relative tolerance
     dlam.zero();
     update_primal_nd(*xnew_,x,dlam);
-    Real rnorm = residual_nd(*res_,*xnew_);
-    if (rnorm == zero) {
+    Real rnorm0 = residual_nd(*res_,*xnew_);
+    if (rnorm0 == zero) {
       lam.set(dlam);
       x.set(*xnew_);
       return;
     }
-    const Real ctol = std::min(atol,rtol*rnorm);
     // Compute initial residual
     update_primal_nd(*xnew_,x,lam);
-    rnorm = residual_nd(*res_,*xnew_);
+    Real rnorm = residual_nd(*res_,*xnew_);
     if (rnorm == zero) {
       x.set(*xnew_);
       return;
     }
+    const Real ctol = std::min(atol,rtol*std::max(rnorm0,rnorm));
     Real alpha(1), tmp(0), mu(0), rho(1), dd(0);
     int cnt = 0, maxit = 1000;
     for (cnt = 0; cnt < maxit; ++cnt) {

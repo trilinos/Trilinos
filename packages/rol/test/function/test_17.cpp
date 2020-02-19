@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 
     e1.set(x1); e1.axpy(static_cast<RealT>(-1),Pz);
     err = e1.norm();
-    *outStream << "  Error in Euclidean Projection: " << err << std::endl;
+    *outStream << "  Error in Scaled Projection:    " << err << std::endl;
 
     e1.set(z); e1.axpy(static_cast<RealT>(-1),x1);
     *outStream << "  ||x*-x||^2 = " << e1.norm() << std::endl;
