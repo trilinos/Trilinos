@@ -324,25 +324,42 @@ public:
     if (stepperType != "General Partitioned IMEX RK") {
       stepper->setTableaus(stepperType);
     } else {
-      RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(
-          stepperPL->sublist("IMEX-RK Explicit Stepper")));
-      auto stepperTemp = createStepper(explicitPL, Teuchos::null);
-      auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
+      if (stepperPL != Teuchos::null) {
+        Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau;
+        Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau;
+        if (stepperPL->isSublist("IMEX-RK Explicit Stepper")) {
+          RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+              new Teuchos::ParameterList(
+                  stepperPL->sublist("IMEX-RK Explicit Stepper")));
+          auto stepperTemp = createStepper(explicitPL, Teuchos::null);
+          auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
                           stepperTemp,true);
-      auto explicitTableau = stepperERK->getTableau();
+          TEUCHOS_TEST_FOR_EXCEPTION(stepperERK == Teuchos::null, std::logic_error,
+              "Error - The explicit component of a general partitioned IMEX RK stepper was not specified as an ExplicitRK stepper");
+          explicitTableau = stepperERK->getTableau();
+        }
 
-      RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(
-          stepperPL->sublist("IMEX-RK Implicit Stepper")));
-      stepperTemp = createStepper(implicitPL, Teuchos::null);
-      auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
-                           stepperTemp,true);
-      auto implicitTableau = stepperDIRK->getTableau();
+        if (stepperPL->isSublist("IMEX-RK Implicit Stepper")) {
+          RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+              new Teuchos::ParameterList(
+                  stepperPL->sublist("IMEX-RK Implicit Stepper")));
+          auto stepperTemp = createStepper(implicitPL, Teuchos::null);
+          auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
+              stepperTemp,true);
+          TEUCHOS_TEST_FOR_EXCEPTION(stepperDIRK == Teuchos::null, std::logic_error,
+              "Error - The implicit component of a general partitioned IMEX RK stepper was not specified as an DIRK stepper");
+          implicitTableau = stepperDIRK->getTableau();
+        }
 
-      stepper->setTableaus(stepperType, explicitTableau, implicitTableau);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          !(explicitTableau!=Teuchos::null && implicitTableau!=Teuchos::null), std::logic_error,
+          "Error - A parameter list was used to setup a general partitioned IMEX RK stepper, but did not "
+          "specify both an explicit and an implicit tableau!\n");
 
-      stepper->setOrder(stepperPL->get<int>("overall order", 1));
+        stepper->setTableaus(stepperType, explicitTableau, implicitTableau);
+
+        stepper->setOrder(stepperPL->get<int>("overall order", 1));
+      }
     }
   }
 
@@ -363,25 +380,41 @@ public:
     if (stepperType != "General IMEX RK") {
       stepper->setTableaus(stepperType);
     } else {
-      RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(
-          stepperPL->sublist("IMEX-RK Explicit Stepper")));
-      auto stepperTemp = createStepper(explicitPL, Teuchos::null);
-      auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
+      if (stepperPL != Teuchos::null) {
+        Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau;
+        Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau;
+        if (stepperPL->isSublist("IMEX-RK Explicit Stepper")) {
+          RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+              new Teuchos::ParameterList(
+                  stepperPL->sublist("IMEX-RK Explicit Stepper")));
+          auto stepperTemp = createStepper(explicitPL, Teuchos::null);
+          auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
                           stepperTemp,true);
-      auto explicitTableau = stepperERK->getTableau();
+          TEUCHOS_TEST_FOR_EXCEPTION(stepperERK == Teuchos::null, std::logic_error,
+              "Error - The explicit component of a general IMEX RK stepper was not specified as an ExplicitRK stepper");
+          explicitTableau = stepperERK->getTableau();
+        }
 
-      RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(
-          stepperPL->sublist("IMEX-RK Implicit Stepper")));
-      stepperTemp = createStepper(implicitPL, Teuchos::null);
-      auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
-                           stepperTemp,true);
-      auto implicitTableau = stepperDIRK->getTableau();
+        if (stepperPL->isSublist("IMEX-RK Implicit Stepper")) {
+          RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+              new Teuchos::ParameterList(
+                  stepperPL->sublist("IMEX-RK Implicit Stepper")));
+          auto stepperTemp = createStepper(implicitPL, Teuchos::null);
+          auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
+              stepperTemp,true);
+          TEUCHOS_TEST_FOR_EXCEPTION(stepperDIRK == Teuchos::null, std::logic_error,
+              "Error - The implicit component of a general IMEX RK stepper was not specified as an DIRK stepper");
+          implicitTableau = stepperDIRK->getTableau();
+        }
 
-      stepper->setTableaus(stepperType, explicitTableau, implicitTableau);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          !(explicitTableau!=Teuchos::null && implicitTableau!=Teuchos::null), std::logic_error,
+          "Error - A parameter list was used to setup a general IMEX RK stepper, but did not "
+          "specify both an explicit and an implicit tableau!\n");
 
-      stepper->setOrder(stepperPL->get<int>("overall order", 1));
+        stepper->setTableaus(stepperType, explicitTableau, implicitTableau);
+        stepper->setOrder(stepperPL->get<int>("overall order", 1));
+      }
     }
   }
 
