@@ -32,6 +32,7 @@ void StepperDIRK<Scalar>::setupDefault()
   this->setZeroInitialGuess(   false);
 
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+  this->setDefaultSolver();
 }
 
 
@@ -54,10 +55,10 @@ void StepperDIRK<Scalar>::setup(
 
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setObserver(obs);
+  this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
 }
@@ -86,7 +87,6 @@ template<class Scalar>
 void StepperDIRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-
   if (this->stepperObserver_ == Teuchos::null)
     this->stepperObserver_  =
       Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
@@ -109,32 +109,13 @@ void StepperDIRK<Scalar>::setObserver(
     *out << " In the future, this will result in a runtime error!" << std::endl;
   }
 
+  this->isInitialized_ = false;
 }
 
 
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( tableau_ == Teuchos::null, std::logic_error,
-    "Error - Need to set the tableau, before calling "
-    "StepperDIRK::initialize()\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
-    std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperDIRK::initialize()\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION( this->solver_ == Teuchos::null,
-    std::logic_error,
-    "Error - Need to set the solver, setSolver(), before calling "
-    "StepperDIRK::initialize()\n");
-
-  this->setObserver();
-
-  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperObserver_ == Teuchos::null,
-    std::logic_error,
-    "Error - StepperRKObserver is null!\n");
-
   // Initialize the stage vectors
   const int numStages = tableau_->numStages();
   stageX_    = this->wrapperModel_->getNominalValues().get_x()->clone_v();
@@ -152,6 +133,8 @@ void StepperDIRK<Scalar>::initialize()
     abs_u  = Thyra::createMember(this->wrapperModel_->get_f_space());
     sc     = Thyra::createMember(this->wrapperModel_->get_f_space());
   }
+
+  StepperImplicit<Scalar>::initialize();
 }
 
 
@@ -175,6 +158,8 @@ template<class Scalar>
 void StepperDIRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperDIRK::takeStep()");
@@ -352,11 +337,52 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperDIRK<Scalar>::describe(
-   Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperDIRK ---\n";
+  out << "  tableau_            = " << tableau_ << std::endl;
+  if (tableau_ != Teuchos::null) tableau_->describe(out, verbLevel);
+  out << "  stepperObserver_    = " << stepperObserver_ << std::endl;
+  out << "  xTilde_             = " << xTilde_ << std::endl;
+  out << "  stageX_             = " << stageX_ << std::endl;
+  out << "  stageXDot_.size()   = " << stageXDot_.size() << std::endl;
+  const int numStages = stageXDot_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageXDot_["<<i<<"] = " << stageXDot_[i] << std::endl;
+  out << "  useEmbedded_        = "
+      << Teuchos::toString(useEmbedded_) << std::endl;
+  out << "  ee_                 = " << ee_ << std::endl;
+  out << "  abs_u0              = " << abs_u0 << std::endl;
+  out << "  abs_u               = " << abs_u << std::endl;
+  out << "  sc                  = " << sc << std::endl;
+  out << "-------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperDIRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  if (tableau_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The tableau is not set!\n";
+  }
+
+  if (stepperObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The observer is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

@@ -49,14 +49,14 @@ namespace Tacho {
     typedef SymbolicTools symbolic_tools_type;
     typedef NumericTools<value_type,scheduler_type> numeric_tools_type;
 
-  private:
+  public:
     enum : int { Cholesky = 1,
                  UtDU = 2,
                  SymLU = 3,
                  LU = 4 };
 
     // ** solver mode
-    bool _transpose;
+    bool _transpose, _trisolve;
     ordinal_type _mode;
 
     // ** problem
@@ -90,7 +90,7 @@ namespace Tacho {
     ordinal_type_array _stree_parent;
 
     // roots of supernodes
-    ordinal_type_array_host _stree_roots;
+    ordinal_type_array_host _stree_level, _stree_roots;
 
     // ** numeric factorization output
     numeric_tools_type _N;
@@ -186,6 +186,9 @@ namespace Tacho {
       }
       TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
     }
+    void setUseTriSolve(const bool trisolve) {
+      _trisolve = trisolve; // this option is not used yet
+    }
 
     ordinal_type_array getPermutationVector() const { return _perm;} 
     ordinal_type_array getInversePermutationVector() const { return _peri; }
@@ -237,6 +240,7 @@ namespace Tacho {
         S.symbolicFactorize(_verbose);
 
         _nsupernodes = S.NumSupernodes();
+        _stree_level = S.SupernodesTreeLevel();
         _stree_roots = S.SupernodesTreeRoots();
 
         _supernodes             = Kokkos::create_mirror_view(exec_memory_space(), S.Supernodes());            
@@ -336,8 +340,8 @@ namespace Tacho {
                                 _nsupernodes, _supernodes,
                                 _gid_super_panel_ptr, _gid_super_panel_colidx,
                                 _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
-                                _stree_parent, _stree_ptr, _stree_children,
-                                _stree_roots);
+                                _stree_parent, _stree_ptr, _stree_children, 
+                                _stree_level, _stree_roots);
         
         if (_serial_thres_size < 0) { // set default values
           _serial_thres_size = 64;

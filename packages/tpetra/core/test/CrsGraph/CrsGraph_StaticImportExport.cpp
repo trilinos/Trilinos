@@ -68,7 +68,6 @@ using Teuchos::Comm;
 using Teuchos::outArg;
 using Tpetra::Details::gathervPrint;
 using Tpetra::Details::packCrsGraph;
-using Tpetra::Details::unpackCrsGraphAndCombine;
 
 // Create and return a simple example CrsMatrix, with row distribution
 // over the given Map.

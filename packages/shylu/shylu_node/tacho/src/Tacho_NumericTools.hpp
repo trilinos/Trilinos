@@ -151,7 +151,7 @@ namespace Tacho {
     ordinal_pair_type_array _sid_block_colidx;
 
     // supernode tree
-    ordinal_type_array_host _stree_roots;
+    ordinal_type_array_host _stree_level, _stree_roots;
 
     // output : factors
     value_type_array _superpanel_buf;
@@ -307,11 +307,13 @@ namespace Tacho {
                  const ordinal_type_array &stree_parent,
                  const    size_type_array &stree_ptr,
                  const ordinal_type_array &stree_children,
+                 const ordinal_type_array_host &stree_level,
                  const ordinal_type_array_host &stree_roots)
     : _m(m), _ap(ap), _aj(aj),
       _perm(perm), _peri(peri),
       _nsupernodes(nsupernodes),
       _gid_colidx(gid_colidx),
+      _stree_level(stree_level),
       _stree_roots(stree_roots) {        
 
       reset_stat();
@@ -343,6 +345,26 @@ namespace Tacho {
       ///
       _sched_solve_capacity = 0;
       _bufpool_solve_capacity = 0;
+    }
+
+    inline 
+    ordinal_type_array getSupernodesTreeLevel() const {
+      return _stree_level;
+    }
+
+    inline
+    supernode_info_type getSupernodesInfo() const {
+      return _info;
+    }
+    
+    inline 
+    ordinal_type_array getPermutationVector() const {
+      return _perm;
+    }
+
+    inline 
+    ordinal_type_array getInversePermutationVector() const {
+      return _perm;
     }
 
     inline

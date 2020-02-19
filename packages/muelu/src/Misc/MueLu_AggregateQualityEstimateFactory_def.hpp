@@ -319,8 +319,8 @@ namespace MueLu {
       MT* vl = NULL;
       MT* vr = NULL;
 
-      const char NO='N';
-      myLapack.GGES(NO,NO,NO,ptr2func,aggSize,
+      const char compute_flag ='N';
+      myLapack.GGES(compute_flag,compute_flag,compute_flag,ptr2func,aggSize,
                     topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
                     alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
                     vr,aggSize,workArray.values(),workArray.length(),bwork,

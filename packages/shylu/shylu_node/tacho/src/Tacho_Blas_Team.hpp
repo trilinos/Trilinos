@@ -20,24 +20,9 @@ namespace Tacho {
                  int m, 
                  const T alpha, 
                  /* */ T *a, int as0) {
-#if 0
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
-              Kokkos::single(Kokkos::PerThread(member), [&]() {              
-                  a[i*as0] = alpha;
-                });
+          Kokkos::parallel_for(Kokkos::TeamVectorRange(member,m),[&](const int &i) {
+              a[i*as0] = alpha;
             });
-#else 
-          const int team_index_range = (m/CudaVectorSize) + (m%CudaVectorSize > 0);
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
-              const int ioff = idx * CudaVectorSize;
-              const int itmp = m - ioff;
-              const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {            
-                  const int i = ioff + ii;
-                  a[i*as0] = alpha;
-                });
-            });
-#endif
         }
         
         template<typename MemberType>
@@ -47,24 +32,9 @@ namespace Tacho {
                    int m, 
                    const T alpha, 
                    /* */ T *a, int as0) {
-#if 0
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
-              Kokkos::single(Kokkos::PerThread(member), [&]() {              
-                  a[i*as0] *= alpha;
-                });
+          Kokkos::parallel_for(Kokkos::TeamVectorRange(member,m),[&](const int &i) {
+              a[i*as0] *= alpha;
             });
-#else 
-          const int team_index_range = (m/CudaVectorSize) + (m%CudaVectorSize > 0);
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
-              const int ioff = idx * CudaVectorSize;
-              const int itmp = m - ioff;
-              const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {            
-                  const int i = ioff + ii;
-                  a[i*as0] *= alpha;
-                });
-            });
-#endif
         }
         
         template<typename MemberType>
@@ -76,13 +46,13 @@ namespace Tacho {
                  /* */ T *a, int as0, int as1) {
           if (as0 == 1 || as0 < as1) 
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {            
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
                     a[i*as0+j*as1] = alpha;
                   });
               });
           else 
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {            
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
                     a[i*as0+j*as1] = alpha;
                   });
               });
@@ -97,13 +67,13 @@ namespace Tacho {
                    /* */ T *a, int as0, int as1) {
           if (as0 == 1 || as0 < as1) 
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {            
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
                     a[i*as0+j*as1] *= alpha;
                   });
               });
           else 
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {            
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
                     a[i*as0+j*as1] *= alpha;
                   });
               });
@@ -117,7 +87,7 @@ namespace Tacho {
                        const T alpha, 
                        /* */ T *a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1-offset),[&](const int &i) {            
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1-offset),[&](const int &i) {
                   a[i*as0+j*as1] = alpha;
                 });
             });
@@ -131,7 +101,7 @@ namespace Tacho {
                          const T alpha, 
                          /* */ T *a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1-offset),[&](const int &i) {            
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1-offset),[&](const int &i) {
                   a[i*as0+j*as1] *= alpha;
                 });
             });
@@ -147,7 +117,7 @@ namespace Tacho {
                        /* */ T *a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
               const int jj = j + offset;
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&](const int &i) {            
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&](const int &i) {
                   a[(i+jj)*as0+j*as1] = alpha;
                 });
             });
@@ -162,7 +132,7 @@ namespace Tacho {
                          /* */ T *a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
               const int jj = j + offset;
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&](const int &i) {            
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&](const int &i) {
                   a[(i+jj)*as0+j*as1] *= alpha;
                 });
             });
@@ -196,13 +166,6 @@ namespace Tacho {
                       t += cj(tA[j*as1])*x[j*xs0];
                     });                  
                   Kokkos::atomic_add(&y[i*ys0], alpha*t);
-                  // probably the above impl is better
-                  // Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(member,n),[&](const int &j, T &val) {
-                  //     val += cj(tA[j*as1])*x[j*xs0];
-                  //   }, t);
-                  // Kokkos::single(Kokkos::PerTeam(member), [&]() {
-                  //     y[i*ys0] += alpha*t;
-                  //   });
                 });
             }
           }
@@ -238,24 +201,9 @@ namespace Tacho {
                 });
             }
 
-#if 0
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,iend),[&](const int &i) {
-                Kokkos::single(Kokkos::PerThread(member), [&]() {              
-                    b0[i*bs0] -= cjA(a01[i*as0]) * local_beta1;
-                  });
+            Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
+                b0[i*bs0] -= cjA(a01[i*as0]) * local_beta1;
               });
-#else 
-            const int team_index_range = (iend/CudaVectorSize) + (iend%CudaVectorSize > 0);
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
-                const int ioff = idx * CudaVectorSize;
-                const int itmp = iend - ioff;
-                const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {            
-                    const int i = ioff + ii;
-                    b0[i*bs0] -= cjA(a01[i*as0]) * local_beta1;
-                  });
-              });
-#endif
           }
         } 
 
@@ -293,24 +241,9 @@ namespace Tacho {
                 });
             }
 
-#if 0
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,iend),[&](const int &i) {
-                Kokkos::single(Kokkos::PerThread(member), [&]() {              
-                    b2[i*bs0] -= a21[i*as0] * local_beta1;
-                  });
+            Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
+                b2[i*bs0] -= a21[i*as0] * local_beta1;
               });
-#else 
-            const int team_index_range = (iend/CudaVectorSize) + (iend%CudaVectorSize > 0);
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
-                const int ioff = idx * CudaVectorSize;
-                const int itmp = iend - ioff;
-                const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {            
-                    const int i = ioff + ii;
-                    b2[i*bs0] -= a21[i*as0] * local_beta1;
-                  });
-              });
-#endif
           }
         }
 
@@ -326,7 +259,7 @@ namespace Tacho {
                   const T beta,
                   /* */ T *C, const int cs0, const int cs1) {
           const T one(1), zero(0);
-
+          
           if      (beta == zero) set  (member, m, n, zero, C, cs0, cs1);
           else if (beta != one ) scale(member, m, n, beta, C, cs0, cs1);
           
@@ -334,29 +267,6 @@ namespace Tacho {
             if (m <= 0 || n <= 0 || k <= 0) return;
             
             member.team_barrier();
-            // {
-            //   constexpr int bm = 8;
-            //   constexpr int bn = 4;
-            //   for (int i=0;i<m;i+=bm) {
-            //     const T *__restrict__ pA = A + i*as0;
-            //     for (int j=0;j<n;j+=bn) {
-            //       const T *__restrict__ pB = B + j*bs1;
-            //       /* */ T *__restrict__ pC = C + i*cs0 + j*cs1; 
-            //       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,min(bm,m-i)),[&](const int &ii) {
-            //           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,min(bn,n-j)),[&](const int &jj) {
-            //               const T 
-            //                 *__restrict__ pAA = pA+ii*as0, 
-            //                 *__restrict__ pBB = pB+jj*bs1;
-
-            //               T cc(0);
-            //               for (int pp=0;pp<k;++pp)
-            //                 cc += cjA(pAA[pp*as1])*cjB(pBB[pp*bs0]);
-            //               pC[ii*cs0+jj*cs1] += alpha*cc;
-            //             });
-            //         });
-            //     }
-            //   }
-            // }
             {
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
                   Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
@@ -474,10 +384,8 @@ namespace Tacho {
               member.team_barrier();
               if (!use_unit_diag) {
                 const T alpha11 = cjA(A[p*as0+p*as1]);
-                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
-                    Kokkos::single(Kokkos::PerThread(member), [&]() {
-                        b1t[j*bs1] /= alpha11;
-                      });
+                Kokkos::parallel_for(Kokkos::TeamVectorRange(member,jend),[&](const int &j) {
+                    b1t[j*bs1] /= alpha11;
                   });
               }
 
@@ -519,10 +427,8 @@ namespace Tacho {
               member.team_barrier();
               if (!use_unit_diag) {
                 const T alpha11 = cjA(A[p*as0+p*as1]);
-                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
-                    Kokkos::single(Kokkos::PerThread(member), [&]() {
-                        b1t[j*bs1] /= alpha11;
-                      });
+                Kokkos::parallel_for(Kokkos::TeamVectorRange(member,jend),[&](const int &j) {
+                    b1t[j*bs1] /= alpha11;
                   });
               }
 

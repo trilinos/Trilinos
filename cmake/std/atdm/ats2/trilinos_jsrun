@@ -2,7 +2,7 @@
 
 # Globals
 DEBUG_SCRIPT="${DEBUG_SCRIPT-:0}"
-ECHO_CMD="${ECHO_CMD=:0}"
+ECHO_CMD="${ECHO_CMD:-1}"
 np_is_one="false"
 orig_args=("$@")
 args=("$@")
@@ -32,8 +32,8 @@ function evaluate_jsrun_command {
   out_file=$(printf "'%s' " "${args[@]}" | md5sum | awk '{print $1".out"}')
 
   if [ "$ECHO_CMD" == "1" ]; then
-    1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
-    1>&2 echo "TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI} AFTER : jsrun " $(printf "'%s' " "${args[@]}")
+    echo "BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
+    echo "AFTER: export TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI}; jsrun " $(printf "'%s' " "${args[@]}")
   fi
 
   # Set retry, assume JSRUN_WRAPPER_NUM_RETRIES is valid if set
