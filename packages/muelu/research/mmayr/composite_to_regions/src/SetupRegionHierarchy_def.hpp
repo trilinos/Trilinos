@@ -587,6 +587,8 @@ void createRegionHierarchy(const int maxRegPerProc,
                            const bool keepCoarseCoords)
 {
 #include "Xpetra_UseShortNames.hpp"
+  // This monitor times everything and gets the overall setting cost
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy")));
 
   using Hierarchy = MueLu::Hierarchy<SC, LO, GO, NO>;
   using Utilities = MueLu::Utilities<SC, LO, GO, NO>;
@@ -598,6 +600,7 @@ void createRegionHierarchy(const int maxRegPerProc,
   // A hierarchy for each group
   std::vector<RCP<Hierarchy> > regGrpHierarchy(maxRegPerProc);
 
+  RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: GrpHierarchy")));
   for (int j = 0; j < maxRegPerProc; j++) {
 
     /* Set number of nodes per processor per dimension
@@ -632,6 +635,8 @@ void createRegionHierarchy(const int maxRegPerProc,
 
   // std::cout << mapComp->getComm()->getRank() << " | Resize containers..." << std::endl;
 
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: ExtractGrpData")));
   // resize Arrays and vectors
   {
     // resize level containers
@@ -720,6 +725,8 @@ void createRegionHierarchy(const int maxRegPerProc,
     levelList.set<Teuchos::Array<RCP<Vector> > >("solution", regSol, "Cached solution vector");
   }
 
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: MakeCoarseLevel")));
   MakeCoarseLevelMaps(maxRegPerGID,
                       compositeToRegionLIDs,
                       regProlong,
@@ -747,6 +754,8 @@ void createRegionHierarchy(const int maxRegPerProc,
 
   // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeSolver ..." << std::endl;
 
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: CreateCoarseSolver")));
   const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
   coarseSolverData->set<RCP<const Map> >("compCoarseRowMap", coarseCompOp->getRowMap());
   if (coarseSolverType == "direct")
@@ -770,6 +779,8 @@ void createRegionHierarchy(const int maxRegPerProc,
 
   // std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
 
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: MakeInterfaceScaling")));
   MakeInterfaceScalingFactors(maxRegPerProc,
                               numLevels,
                               compRowMaps,
@@ -781,6 +792,8 @@ void createRegionHierarchy(const int maxRegPerProc,
   int noCoarseSmoothing = 1;
   if (coarseSolverType == "smoother") noCoarseSmoothing = 0;
 
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: SmootherSetup")));
   for(int levelIdx = 0; levelIdx < numLevels-noCoarseSmoothing; ++levelIdx) {
     smootherSetup(smootherParams[levelIdx], regRowMaps[levelIdx],
                   regMatrices[levelIdx], regInterfaceScalings[levelIdx],
