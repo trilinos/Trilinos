@@ -66,7 +66,7 @@ namespace MueLuTests {
 
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
+    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
     RCP<Aggregates> aggregates = rcp(new Aggregates(*A.getGraph()));    
     RCP<NotayAggregationFactory> NAF;
     std::vector<unsigned> aggStat;
@@ -74,7 +74,7 @@ namespace MueLuTests {
 
     Teuchos::ParameterList params;
     params.set("aggregation: Dirichlet threshold",10);
-    NAF::BuildInitialAggregation(params,*A,*aggregates,aggStat,numUnaggregatedNodes);
+    NAF::BuildInitialAggregation(params,A,*aggregates,aggStat,numUnaggregatedNodes);
     aggregates->print(*out,Teuchos::VERB_EXTREME);
 
 

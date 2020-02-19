@@ -49,6 +49,7 @@
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
@@ -64,12 +65,13 @@
 
 namespace MueLu {
 
-template<class LocalOrdinal = DefaultLocalOrdinal,
+template<class Scalar = DefaultScalar,
+         class LocalOrdinal = DefaultLocalOrdinal,
          class GlobalOrdinal = DefaultGlobalOrdinal,
          class Node = DefaultNode>
 class NotayAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_NOTAYAGGREGATIONFACTORY_SHORT
-#include "MueLu_UseShortNamesOrdinal.hpp"
+#include "MueLu_UseShortNames.hpp"
 
 public:
   //! @name Constructors/Destructors.
@@ -105,7 +107,7 @@ public:
 
 
   void Build_InitialAggregation(const Teuchos::ParameterList& params,
-				const Matrix& A,
+				const RCP<const Matrix>& A,
 				Aggregates& aggregates,
 				std::vector<unsigned>& aggStat,
 				LO& numNonAggregatedNodes) const;

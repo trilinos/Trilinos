@@ -55,16 +55,18 @@
 
 #include "MueLu_NotayAggregationFactory_decl.hpp"
 
-#include "MueLu_Level.hpp"
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_GraphBase.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> NotayAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
@@ -92,8 +94,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void NotayAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "Graph");
     Input(currentLevel, "A");
     Input(currentLevel, "DofsPerNode");
@@ -108,8 +110,8 @@ namespace MueLu {
   }
 
   
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void NotayAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     const ParameterList& pL = GetParameterList();
@@ -148,7 +150,8 @@ namespace MueLu {
     
 
     // Get the party stated
-    Build_InitialAggregation(pL,A,aggregates,aggStat,numNonAggregatedNodes);
+    LO numNonAggregatedNodes;
+    Build_InitialAggregation(pL,A,*aggregates,aggStat,numNonAggregatedNodes);
     
 
       
@@ -161,15 +164,17 @@ namespace MueLu {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void NotayAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build_InitialAggregation(const Teuchos::ParameterList& params,
-											    const Matrix& A,
-											    Aggregates& aggregates,
-											    std::vector<unsigned>& aggStat,
-											    LO& numNonAggregatedNodes) const {
-    FactoryMonitor m(*this, "Build_InitialAggregation", currentLevel);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build_InitialAggregation(const Teuchos::ParameterList& params,
+                                                                                                    const RCP<const Matrix>& A,
+                                                                                                    Aggregates& aggregates,
+                                                                                                    std::vector<unsigned>& aggStat,
+                                                                                                    LO& numNonAggregatedNodes) const {
+    Monitor m(*this, "Build_InitialAggregation");
     using STS = Teuchos::ScalarTraits<Scalar>;
     using MT = typename STS::magnitudeType;
+    using RealValuedVector = Xpetra::Vector<MT,LocalOrdinal,GlobalOrdinal,Node>;
+      
     MT MT_ZERO = Teuchos::ScalarTraits<MT>::zero();
     SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();    
     MT MT_ONE  = Teuchos::ScalarTraits<MT>::one();
@@ -177,12 +182,12 @@ namespace MueLu {
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     LO LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
 
-    const MT kappa = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
+    const MT kappa = STS::magnitude(as<SC>(params.get<double>("aggregation: Dirichlet threshold")));
     const MT kappa_init  = kappa / (kappa - MT_TWO);
     
     LO numRows = aggStat.size();    
     numNonAggregatedNodes = numRows;
-    const int myRank  = graph.GetComm()->getRank();
+    const int myRank  = A->getMap()->getComm()->getRank();
     
     // FIXME: Assumes 1 dof per node
 
@@ -190,10 +195,10 @@ namespace MueLu {
     // Extract diagonal, rowsums, etc
     RCP<Vector> ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
     RCP<Vector> ghostedRowSum = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDeletedRowsum(*A);
-    RCP<Vector> ghostedAbsRowSum = MueLu::Utilities<MT,LO,GO,NO>::GetMatrixOverlappedAbsDeletedRowsum(*A);
+    RCP<RealValuedVector> ghostedAbsRowSum = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedAbsDeletedRowsum(*A);
     const ArrayRCP<const SC> D     = ghostedDiag->getData(0);
     const ArrayRCP<const SC> S     = ghostedRowSum->getData(0);
-    const ArrayRCP<const SC> AbsRs = ghostedAbsRowSum->getData(0);
+    const ArrayRCP<const MT> AbsRs = ghostedAbsRowSum->getData(0);
       
     // Aggregates stuff
     ArrayRCP<LO> vertex2AggId_rcp = aggregates.GetVertex2AggId()->getDataNonConst(0);
@@ -206,7 +211,7 @@ namespace MueLu {
     // 0,1 : Initialize: Flag boundary conditions
     // Modification: We assume symmetry here aij = aji
     
-    for (LO row = 0; row < Teuchos::as<LO>(A.getRowMap()->getNodeNumElements()); ++row) {
+    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
       MT aii = STS::magnitude(D[row]);
       MT rowsum = AbsRs[row];
       
@@ -218,13 +223,9 @@ namespace MueLu {
 
     
     // FIXME: Add ordering here
-    LO current_idx;
-    for (current_idx = 0; current_idx < numRows; current_idx++)
-      if(aggStat[current_idx] == READY)
-	break;
-    
     
     // 2 : Iteration
+    LO current_idx = 0;
     LO aggIndex = LO_ZERO;
     while (numNonAggregatedNodes > 0 && current_idx < numRows) {
       // If we're aggregated already, skip this guy
@@ -232,17 +233,15 @@ namespace MueLu {
         current_idx++;
 
       MT best_mu = MT_ZERO;
-      bool have_buddy = false;
       LO best_idx = LO_INVALID;
       
-      size_t nnz = A.getNumEntriesInLocalRow(current_idx);
+      size_t nnz = A->getNumEntriesInLocalRow(current_idx);
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
-      A.getLocalRowView(row, indices, vals);
+      A->getLocalRowView(current_idx, indices, vals);
 
       MT aii = STS::real(D[current_idx]);
-      MT si  = S[current_idx];
-      MT mu  = MT_ZERO;
+      MT si  = STS::real(S[current_idx]);
       for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
         // Skip aggregated neighbors
         if(aggStat[indices[colID]] != READY) 
@@ -254,15 +253,15 @@ namespace MueLu {
 
 	MT aij = STS::real(vals[colID]);
 	MT ajj = STS::real(D[colID]);
-	MT sj  = S[colID];
+	MT sj  = STS::real(S[colID]);
 	// FIXME: Add isaggregated check
 	if(aii - si + ajj - sj >= MT_ZERO) {
 	  MT mu_top    = MT_TWO / ( MT_ONE / aii + MT_ONE / ajj);
 	  MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - sj) + MT_ONE / (ajj - sj) );
-	  mu = mu_top / mu_bottom;
-	  if (best_idx == LO_INVALID ||  mymu < best_mu) {
-	    best_mu  = my;
-	    best_idx = row;
+	  MT mu = mu_top / mu_bottom;
+	  if (best_idx == LO_INVALID ||  mu < best_mu) {
+	    best_mu  = mu;
+	    best_idx = indices[colID];
 	  }
 	}	
       }// end column for loop
@@ -275,11 +274,11 @@ namespace MueLu {
         vertex2AggId[current_idx] = aggIndex;
         procWinner[current_idx]   = myRank;
 	numNonAggregatedNodes--;
-        agg_index++;
+        aggIndex++;
       }
       else {
         // We have a buddy, so aggregate, either as a singleton or as a pair, depending on mu
-        if(mu <= kappa) { 
+        if(best_mu <= kappa) { 
           LO mybuddy_idx = indices[best_idx];
           aggStat[current_idx] = AGGREGATED;
           aggStat[mybuddy_idx] = AGGREGATED;
@@ -288,14 +287,14 @@ namespace MueLu {
           procWinner[current_idx]   = myRank;
           procWinner[mybuddy_idx]   = myRank;
           numNonAggregatedNodes-=2;
-          agg_index++;
+          aggIndex++;
         }
         else {
           aggStat[current_idx] = ONEPT;
           vertex2AggId[current_idx] = aggIndex;
           procWinner[current_idx]   = myRank;
           numNonAggregatedNodes--;
-          agg_index++;
+          aggIndex++;
         }
       }
     }// end Algorithm 4.2
