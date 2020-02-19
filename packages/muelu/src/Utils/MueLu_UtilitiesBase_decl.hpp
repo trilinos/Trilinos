@@ -364,7 +364,7 @@ namespace MueLu {
 	SC si = Teuchos::ScalarTraits<SC>::zero();
 	
 	for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
-	  if(colID != row) {
+	  if(indices[colID] != row) {
 	    si += vals[colID];
 	  }
 	}
@@ -409,7 +409,7 @@ namespace MueLu {
         MT si = MTS::zero();
 
         for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
-          if(colID != row) {
+          if(indices[colID] != row) {
             si += STS::magnitude(vals[colID]);
           }
         }

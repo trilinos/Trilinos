@@ -63,6 +63,8 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
+#define MUELU_NOTAY_DEBUG_OUTPUT
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -198,6 +200,17 @@ namespace MueLu {
     const ArrayRCP<const SC> S     = ghostedRowSum->getData(0);
     const ArrayRCP<const MT> AbsRs = ghostedAbsRowSum->getData(0);
       
+    printf("D: ");
+    for(int i=0; i<(int)S.size(); i++)
+      printf("%d(%6.1e) ",i,STS::real(S[i]));
+    printf("\n");
+
+    printf("S: ");
+    for(int i=0; i<(int)S.size(); i++)
+      printf("%d(%6.1e) ",i,STS::real(S[i]));
+    printf("\n");
+
+
     // Aggregates stuff
     ArrayRCP<LO> vertex2AggId_rcp = aggregates.GetVertex2AggId()->getDataNonConst(0);
     ArrayRCP<LO> procWinner_rcp   = aggregates.GetProcWinner()  ->getDataNonConst(0);
@@ -216,7 +229,9 @@ namespace MueLu {
       MT rowsum = AbsRs[row];
       
       if(aii >= kappa_init * rowsum) {
-        //        printf("Flagging index %d as dirichlet aii >= kappa*rowsum = %6.4e >= %6.4e %6.4e\n",row,aii,kappa_init,rowsum);
+#ifdef MUELU_NOTAY_DEBUG_OUTPUT
+        printf("Flagging index %d as dirichlet aii >= kappa*rowsum = %6.4e >= %6.4e %6.4e\n",row,aii,kappa_init,rowsum);
+#endif
 	aggStat[row] = IGNORED;
 	numNonAggregatedNodes--;
       }
@@ -242,30 +257,34 @@ namespace MueLu {
 
       MT aii = STS::real(D[current_idx]);
       MT si  = STS::real(S[current_idx]);
-      for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
-        // Skip aggregated neighbors
-        if(aggStat[indices[colID]] != READY) 
+      for (LO colidx = 0; colidx < Teuchos::as<LO>(nnz); colidx++) {
+        // Skip aggregated neighbors, off-rank neighbors, hard zeros and self
+        LO col = indices[colidx];
+        SC val = vals[colidx];
+        if(current_idx == col || aggStat[col] != READY || col > numRows || val == SC_ZERO)
           continue;
+        
 
-        // Skips off-rank neighbors
-        if(indices[colID] > numRows)
-          continue;
-
-	MT aij = STS::real(vals[colID]);
-	MT ajj = STS::real(D[colID]);
-	MT sj  = STS::real(S[colID]);
+	MT aij = STS::real(val);
+	MT ajj = STS::real(D[col]);
+	MT sj  = STS::real(S[col]);
 	if(aii - si + ajj - sj >= MT_ZERO) {
+          // Modification: We assume symmetry here aij = aji
 	  MT mu_top    = MT_TWO / ( MT_ONE / aii + MT_ONE / ajj);
-	  MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - sj) + MT_ONE / (ajj - sj) );
+	  MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - si) + MT_ONE / (ajj - sj) );
 	  MT mu = mu_top / mu_bottom;
 	  if (best_idx == LO_INVALID ||  mu < best_mu) {
 	    best_mu  = mu;
-	    best_idx = indices[colID];
+	    best_idx = col;
 	  }
-          //          printf("[%d] Column SUCCESS %d:  aii - si + ajj - sj = %6.4e - %6.4e + %6.4e - %6.4e = %6.4e\n",current_idx,indices[colID],aii,si,ajj,sj,aii-si+ajj-sj);
+#ifdef MUELU_NOTAY_DEBUG_OUTPUT
+          printf("[%d] Column SUCCESS %d:  aii - si + ajj - sj = %6.4e - %6.4e + %6.4e - %6.4e = %6.4e, mu = %6.4e\n",current_idx,col,aii,si,ajj,sj,aii-si+ajj-sj,mu);
+#endif
 	}	
         else {
-          //          printf("[%d] Column FAILED  %d:  aii - si + ajj - sj = %6.4e - %6.4e + %6.4e - %6.4e = %6.4e\n",current_idx,indices[colID],aii,si,ajj,sj,aii-si+ajj-sj);
+#ifdef MUELU_NOTAY_DEBUG_OUTPUT
+          printf("[%d] Column FAILED  %d:  aii - si + ajj - sj = %6.4e - %6.4e + %6.4e - %6.4e = %6.4e\n",current_idx,col,aii,si,ajj,sj,aii-si+ajj-sj);
+#endif
         }
       }// end column for loop
       
@@ -273,7 +292,9 @@ namespace MueLu {
         // We found no potential node-buddy, so let's just make this a singleton        
         // NOTE: The behavior of what to do if you have no un-aggregated neighbors is not specified in
         // the paper        
-        //        printf("No node buddy found for index %d [agg %d]\n",current_idx,aggIndex);
+#ifdef MUELU_NOTAY_DEBUG_OUTPUT
+        printf("No node buddy found for index %d [agg %d]\n",current_idx,aggIndex);
+#endif
         aggStat[current_idx] = ONEPT;
         vertex2AggId[current_idx] = aggIndex;
         procWinner[current_idx]   = myRank;
@@ -283,7 +304,9 @@ namespace MueLu {
       else {
         // We have a buddy, so aggregate, either as a singleton or as a pair, depending on mu
         if(best_mu <= kappa) { 
-          //          printf("Node buddies (%d,%d) [agg %d]\n",current_idx,best_idx,aggIndex);
+#ifdef MUELU_NOTAY_DEBUG_OUTPUT
+          printf("Node buddies (%d,%d) [agg %d]\n",current_idx,best_idx,aggIndex);
+#endif
           aggStat[current_idx] = AGGREGATED;
           aggStat[best_idx]    = AGGREGATED;
           vertex2AggId[current_idx] = aggIndex;
@@ -294,7 +317,9 @@ namespace MueLu {
           aggIndex++;
         }
         else {
-          //          printf("No buddy found for index %d, but aggregating as singleton [agg %d]\n",current_idx,aggIndex);
+#ifdef MUELU_NOTAY_DEBUG_OUTPUT
+          printf("No buddy found for index %d, but aggregating as singleton [agg %d]\n",current_idx,aggIndex);
+#endif
           aggStat[current_idx] = ONEPT;
           vertex2AggId[current_idx] = aggIndex;
           procWinner[current_idx]   = myRank;
@@ -304,7 +329,7 @@ namespace MueLu {
       }
     }// end Algorithm 4.2
 
-#if 0
+#ifdef MUELU_NOTAY_DEBUG_OUTPUT
     printf("vertex2aggid :");
     for(int i=0; i<(int)vertex2AggId.size(); i++)
       printf("%d(%d) ",i,vertex2AggId[i]);
