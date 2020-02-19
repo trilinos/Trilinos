@@ -67,8 +67,9 @@ namespace MueLuTests {
     using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
-
-    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    int rank = comm->getRank();
+    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16*comm->getSize());
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));    
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
     std::vector<unsigned> aggStat(A->getMap()->getNodeNumElements(),MueLu::READY);
@@ -92,10 +93,10 @@ namespace MueLuTests {
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     TEST_EQUALITY(aggregates->GetNumAggregates(),8);
 
-    // The first point gets picked as a Dirichlet (so it does not get aggregated) 
-    // and the last aggregate is a singleton
+    // On proc 0 gets picked as a Dirichlet (so it does not get aggregated) and the last aggregate is a singleton
+    // All the other ranks wind up with strict pairs
     for(int i=0; i<(int)sizes.size(); i++) {
-      int expected = (i == (int)sizes.size() -1) ? 1 : 2;
+      int expected = (rank == 0 && i == (int)sizes.size() -1) ? 1 : 2;
       TEST_EQUALITY(sizes[i], expected);
     }
 
