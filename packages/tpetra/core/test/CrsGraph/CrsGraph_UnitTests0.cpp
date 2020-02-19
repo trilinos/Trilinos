@@ -35,19 +35,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_CrsGraph.hpp>
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
-#include <Tpetra_TestingUtilities.hpp>
-#include <type_traits> // std::is_same
+#include "Tpetra_TestingUtilities.hpp"
 
-namespace {
+namespace { // (anonymous)
 
   template<class LO, class GO, class NT>
   Tpetra::Details::LocalTriangularStructureResult<LO>
@@ -130,7 +127,6 @@ namespace {
   // UNIT TESTS
   //
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, BadConst, LO, GO , Node )
   {
     using Teuchos::REDUCE_MIN;
@@ -199,42 +195,43 @@ namespace {
     // TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
 
-
-// mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
-// debug build.  The BadGIDs test fails in a release build.
-#ifdef HAVE_TPETRA_DEBUG
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, BadGIDs, LO, GO , Node )
   {
-    using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
-    using map_type = Tpetra::Map<LO, GO, Node>;
+    const bool debug = Tpetra::Details::Behavior::debug("CrsGraph");
+    if (debug) {
+      using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
+      using map_type = Tpetra::Map<LO, GO, Node>;
 
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-    // get a comm
-    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    const int myRank = comm->getRank();
-    // create a Map
-    const size_t numLocal = 10;
-    const GO indexBase = 0;
-    RCP<const map_type> map =
-      rcp (new map_type (INVALID, numLocal, indexBase, comm));
-    {
-      Array<GO> gids(1);
-      gids[0] = myRank*numLocal+numLocal;    // off this node, except on the last proc, where it is off the map
-      // bad gid on the last node (not in domain map), discovered at fillComplete()
-      GRAPH goodgraph(map,1);
-      goodgraph.insertGlobalIndices(map->getMinGlobalIndex(),gids());
-      TEST_THROW( goodgraph.fillComplete(), std::runtime_error );
+      const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+      // get a comm
+      RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+      const int myRank = comm->getRank();
+      // create a Map
+      const size_t numLocal = 10;
+      const GO indexBase = 0;
+      RCP<const map_type> map =
+        rcp (new map_type (INVALID, numLocal, indexBase, comm));
+      {
+        Array<GO> gids(1);
+        // This GID is off process but still in the domain Map on
+        // every process but the last.  On the last process, this GID
+        // is not in the domain Map on ANY process.  This makes
+        // inserting it an error.
+        gids[0] = myRank*numLocal+numLocal;
+        // In debug mode, CrsGraph::fillComplete discovers on the last
+        // process that this GID is bad, because it's not in the
+        // domain Map.
+        GRAPH goodgraph(map,1);
+        goodgraph.insertGlobalIndices(map->getMinGlobalIndex(),gids());
+        TEST_THROW( goodgraph.fillComplete(), std::runtime_error );
+      }
+      // All procs fail if any process fails
+      int globalSuccess_int = -1;
+      reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
     }
-    // All procs fail if any process fails
-    int globalSuccess_int = -1;
-    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-#endif // HAVE_TPETRA_DEBUG
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ExcessAllocation, LO, GO , Node )
   {
     using Teuchos::Comm;
@@ -287,42 +284,6 @@ namespace {
       TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    // Test (GitHub Issue) #2565 fix, while we're at it.
-    //
-    // clts == 0: Don't set "compute local triangular constants"
-    // clts == 1: Set "compute local triangular constants" to false
-    // clts == 2: Set "compute local triangular constants" to true
-    for (int clts : {0, 1, 2}) {
-      // send in a parameterlist, check the defaults
-      RCP<ParameterList> params = parameterList();
-      if (clts == 1) {
-        params->set ("compute local triangular constants", false);
-      }
-      else if (clts == 2) {
-        params->set ("compute local triangular constants", true);
-      }
-
-      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph (map, 3, Tpetra::DynamicProfile);
-      for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
-        graph.insertGlobalIndices (i, tuple<GO> (i));
-      }
-      params->set("Optimize Storage",false);
-      graph.fillComplete(params);
-      TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
-      TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
-      //
-      graph.resumeFill();
-      for (int i=0; i < numLocal; ++i) graph.removeLocalIndices(i);
-      params->set("Optimize Storage",true);
-      graph.fillComplete(params);
-      TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
-      TEST_EQUALITY(graph.getNodeNumEntries(), 0);
-      TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
-      TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
-    }
-#endif
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -335,8 +296,6 @@ namespace {
     TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, insert_remove_LIDs, LO, GO , Node )
   {
     using Teuchos::Comm;
@@ -385,8 +344,6 @@ namespace {
     TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, CopiesAndViews, LO, GO , Node )
   {
     using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
@@ -443,12 +400,8 @@ namespace {
       }
 
       for (int T=0; T<4; ++T) {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : Tpetra::DynamicProfile;
-#else
         if ( (T & 1) != 1 ) continue;
         ProfileType pftype = StaticProfile;
-#endif
         params->set("Optimize Storage",((T & 2) == 2));
         GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
         Array<GO> GCopy(4); Array<LO> LCopy(4);
@@ -497,8 +450,6 @@ namespace {
     }
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, WithStaticProfile, LO, GO , Node )
   {
     using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
@@ -528,8 +479,6 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, EmptyGraphAlloc0, LO, GO , Node )
   {
     using crs_graph_type = Tpetra::CrsGraph<LO, GO, Node>;
@@ -578,7 +527,7 @@ namespace {
 
         RCP<row_graph_type> test_row;
         {
-          // allocate 
+          // allocate
           RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
           // invalid, because none are allocated yet
           TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
@@ -752,8 +701,6 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, EmptyGraphAlloc1, LO, GO , Node )
   {
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
@@ -826,7 +773,6 @@ namespace {
     }
   }
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, DottedDiag, LO, GO , Node )
   {
     using GRAPH = Tpetra::CrsGraph<LO, GO, Node>;
@@ -842,12 +788,8 @@ namespace {
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
 
     for (int T=0; T<4; ++T) {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : Tpetra::DynamicProfile;
-#else
       if ( (T & 1) != 1 ) continue;
       ProfileType pftype = StaticProfile;
-#endif
       RCP<ParameterList> params = parameterList ();
       params->set("Optimize Storage",((T & 2) == 2));
 
@@ -906,8 +848,6 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NonLocals, LO, GO , Node )
   {
     using Teuchos::as;
@@ -947,18 +887,8 @@ namespace {
       }
       Teuchos::OSTab tab1 (out);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      const Tpetra::ProfileType profileTypes[2] =
-        {Tpetra::DynamicProfile, Tpetra::StaticProfile};
-#else
       const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
-#endif
       for (ProfileType pftype : profileTypes) {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        out << "ProfileType: "
-            << (pftype == StaticProfile ? "StaticProfile" : "DynamicProfile")
-            << endl;
-#endif
         Teuchos::OSTab tab2 (out);
         for (bool optimizeStorage : {false, true}) {
           out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
@@ -1060,10 +990,6 @@ namespace {
             // entry on parallel runs, three on serial runs
             ArrayView<const GO> myrow_gbl;
             ngraph.getGlobalRowView (myrowind, myrow_gbl);
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-            TEST_EQUALITY_CONST( myrow_gbl.size(),
-              ( numProcs == 1 && pftype == Tpetra::DynamicProfile ? 3 : 1 ));
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
             // after globalAssemble(), storage should be maxed out
             out << "Calling globalAssemble()" << endl;
@@ -1137,38 +1063,22 @@ namespace {
 // INSTANTIATIONS
 //
 
-// Tests to build and run in both debug and release modes.  We will
-// instantiate them over all enabled local ordinal (LO), global
-// ordinal (GO), and Kokkos Node (NODE) types.
-#define UNIT_TEST_GROUP_DEBUG_AND_RELEASE( LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0,  LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1,  LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation,  LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst,          LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals,         LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag,        LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews,    LO, GO, NODE )
+// Tests to build and run.  We will instantiate them over all enabled
+// LocalOrdinal (LO), GlobalOrdinal (GO), and Node (NODE) types.
+#define UNIT_TEST_GROUP( LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0,   LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1,   LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation,   LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst,           LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals,          LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag,         LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile,  LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews,     LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadGIDs,            LO, GO, NODE )
 
-// mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
-// debug build.  The BadGIDs test fails in a release build.
-#ifdef HAVE_TPETRA_DEBUG
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#define UNIT_TEST_GROUP_DEBUG_ONLY( LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadGIDs, LO, GO, NODE )
+  TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
 
-#else // NOT HAVE_TPETRA_DEBUG
-
-#define UNIT_TEST_GROUP_DEBUG_ONLY( LO, GO, NODE )
-
-#endif // HAVE_TPETRA_DEBUG
-
-
-    TPETRA_ETI_MANGLING_TYPEDEFS()
-
-    TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_AND_RELEASE )
-
-    TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_ONLY )
-
-}
+} // namespace (anonymous)

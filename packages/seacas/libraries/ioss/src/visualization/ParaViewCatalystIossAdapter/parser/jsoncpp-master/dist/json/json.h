@@ -1296,7 +1296,7 @@ namespace Json {
      */
     std::string getFormattedErrorMessages() const;
 
-    /** \brief Returns a vector of structured erros encounted while parsing.
+    /** \brief Returns a vector of structured errors encountered while parsing.
      * \return A (possibly empty) vector of StructuredError objects. Currently
      *         only one error can be returned, but the caller should tolerate
      * multiple

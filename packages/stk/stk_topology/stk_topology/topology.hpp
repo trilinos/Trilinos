@@ -429,6 +429,15 @@ struct topology
     : m_value(topo.m_value)
   {}
 
+  STK_INLINE_FUNCTION
+  stk::topology& operator=(const topology& rhs)
+  {
+    if (&rhs != this) {
+      m_value = rhs.m_value;
+    }
+    return *this;
+  }
+
   //***************************************************************************
   // comparison operator
   //***************************************************************************
@@ -635,11 +644,15 @@ topology create_superelement_topology(int num_nodes)
 std::ostream & operator<<(std::ostream &out, topology::rank_t r);
 std::ostream & operator<<(std::ostream &out, topology t);
 void verbose_print_topology(std::ostream &out, topology t);
+
 bool isTriangleElement (topology topo);
 bool isQuadrilateralElement (topology topo);
 bool isTetrahedronElement (topology topo);
 bool isHexahedronElement (topology topo);
 bool is_solid_element(stk::topology t);
+
+bool is_quad_side(topology topo);
+bool is_tri_side(topology topo);
 
 } //namespace stk
 

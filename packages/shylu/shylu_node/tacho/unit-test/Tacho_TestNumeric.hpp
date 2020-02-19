@@ -27,11 +27,11 @@
 
 using namespace Tacho;
 
-typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
-typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
+typedef CrsMatrixBase<ValueType,HostDeviceType> CrsMatrixBaseHostType;
+typedef CrsMatrixBase<ValueType,DeviceType> CrsMatrixBaseDeviceType;
 
-typedef TaskSchedulerType<DeviceSpaceType> scheduler_type;
-typedef TaskSchedulerType<HostSpaceType> host_scheduler_type;
+typedef TaskSchedulerType<typename DeviceType::execution_space> scheduler_type;
+typedef TaskSchedulerType<typename HostDeviceType::execution_space> host_scheduler_type;
 
 TEST( Numeric, constructor ) {
   TEST_BEGIN;
@@ -51,7 +51,7 @@ TEST( Numeric, constructor ) {
     A.RowPtrEnd(i) = cnt;
   }
 
-  typedef Kokkos::View<ordinal_type*,HostSpaceType> ordinal_type_array;
+  typedef Kokkos::View<ordinal_type*,HostDeviceType> ordinal_type_array;
 
   ordinal_type_array idx("idx", m);
   for (ordinal_type i=0;i<m;++i) idx(i) = i;
@@ -59,7 +59,7 @@ TEST( Numeric, constructor ) {
   SymbolicTools S(m, A.RowPtr(), A.Cols(), idx, idx);
   S.symbolicFactorize();
 
-  typedef typename DeviceSpaceType::memory_space device_memory_space; 
+  typedef typename DeviceType::memory_space device_memory_space; 
 
   auto a_row_ptr              = Kokkos::create_mirror_view(device_memory_space(), A.RowPtr());
   auto a_cols                 = Kokkos::create_mirror_view(device_memory_space(), A.Cols());
@@ -89,12 +89,13 @@ TEST( Numeric, constructor ) {
   Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
 
   NumericTools<ValueType,scheduler_type> N(m, a_row_ptr, a_cols,
-                                            d_idx, d_idx,
-                                            S.NumSupernodes(), s_supernodes,
-                                            s_gid_spanel_ptr, s_gid_spanel_colidx,
-                                            s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
-                                            s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
-                                            S.SupernodesTreeRoots());
+                                           d_idx, d_idx,
+                                           S.NumSupernodes(), s_supernodes,
+                                           s_gid_spanel_ptr, s_gid_spanel_colidx,
+                                           s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
+                                           s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
+                                           S.SupernodesTreeLevel(),
+                                           S.SupernodesTreeRoots());
   TEST_END;
 }
 
@@ -120,11 +121,12 @@ TEST( Numeric, Cholesky_Serial ) {
   S.symbolicFactorize();
   
   NumericTools<ValueType,scheduler_type> N(A.NumRows(), A.RowPtr(), A.Cols(), 
-                                            T.PermVector(), T.InvPermVector(),
-                                            S.NumSupernodes(), S.Supernodes(),
-                                            S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
-                                            S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-                                            S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
+                                           T.PermVector(), T.InvPermVector(),
+                                           S.NumSupernodes(), S.Supernodes(),
+                                           S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
+                                           S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
+                                           S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), 
+                                           S.SupernodesTreeLevel(), S.SupernodesTreeRoots());
   N.factorizeCholesky_Serial(A.Values());
   
   CrsMatrixBaseDeviceType F;
@@ -134,7 +136,7 @@ TEST( Numeric, Cholesky_Serial ) {
   MatrixMarket<ValueType>::write(out, F);
   
   const ordinal_type m = A.NumRows(), n = 2;
-  Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceSpaceType> 
+  Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceType> 
     x("x", m, n), b("b", m, n), t("t", m, n);
   
   Random<ValueType> random;
@@ -170,7 +172,7 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
   SymbolicTools S(A, T);
   S.symbolicFactorize();
 
-  typedef typename DeviceSpaceType::memory_space device_memory_space; 
+  typedef typename DeviceType::memory_space device_memory_space; 
 
   auto a_row_ptr              = Kokkos::create_mirror_view(device_memory_space(), A.RowPtr());
   auto a_cols                 = Kokkos::create_mirror_view(device_memory_space(), A.Cols());
@@ -203,14 +205,15 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
   Kokkos::deep_copy(s_snodes_tree_parent   , S.SupernodesTreeParent());
   Kokkos::deep_copy(s_snodes_tree_ptr      , S.SupernodesTreePtr());
   Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
-
+  
   NumericTools<ValueType,scheduler_type> N(A.NumRows(), a_row_ptr, a_cols,
-                                            t_perm, t_peri,
-                                            S.NumSupernodes(), s_supernodes,
-                                            s_gid_spanel_ptr, s_gid_spanel_colidx,
-                                            s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
-                                            s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
-                                            S.SupernodesTreeRoots());
+                                           t_perm, t_peri,
+                                           S.NumSupernodes(), s_supernodes,
+                                           s_gid_spanel_ptr, s_gid_spanel_colidx,
+                                           s_sid_spanel_ptr, s_sid_spanel_colidx, s_blk_spanel_colidx,
+                                           s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
+                                           S.SupernodesTreeLevel(),
+                                           S.SupernodesTreeRoots());
   
   N.factorizeCholesky_Parallel(a_values);
   TEST_END;

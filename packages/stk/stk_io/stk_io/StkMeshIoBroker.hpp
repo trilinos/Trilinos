@@ -76,8 +76,6 @@ namespace Ioss { class DatabaseIO; }
 namespace stk {
   namespace io {
     
-    static std::string CoordinateFieldName("coordinates");
-
     struct QaRecord
     {
         std::string name;
@@ -149,6 +147,9 @@ namespace stk {
       void set_subset_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_subset_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
+      void set_skin_mesh_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_skin_mesh_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
+
       void set_shared_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_shared_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
@@ -199,6 +200,11 @@ namespace stk {
       void set_auto_load_attributes(bool shouldAutoLoadAttributes)
       {
           m_autoLoadAttributes = shouldAutoLoadAttributes;
+      }
+
+      void set_auto_load_distribution_factor_per_nodeset(bool shouldAutoLoad)
+      {
+          m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
 
       // Create the Ioss::DatabaseIO associated with the specified filename
@@ -657,6 +663,9 @@ namespace stk {
 
       // Returns 4 or 8 based on several hueristics to determine
       // the integer size required for an output database.
+
+      int check_integer_size_requirements_serial();
+      int check_integer_size_requirements_parallel();
       int check_integer_size_requirements();
       void create_surface_to_block_mapping();
 
@@ -728,6 +737,7 @@ namespace stk {
       size_t m_activeMeshIndex;
       SideSetFaceCreationBehavior m_sidesetFaceCreationBehavior;
       bool m_autoLoadAttributes;
+      bool m_autoLoadDistributionFactorPerNodeSet;
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {
@@ -760,6 +770,18 @@ namespace stk {
 						     stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->set_subset_selector(Teuchos::rcpFromRef(my_selector));
+    }
+
+    inline void StkMeshIoBroker::set_skin_mesh_selector(size_t output_file_index,
+						     Teuchos::RCP<stk::mesh::Selector> my_selector) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_skin_mesh_selector(my_selector);
+    }
+
+    inline void StkMeshIoBroker::set_skin_mesh_selector(size_t output_file_index,
+						     stk::mesh::Selector &my_selector) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_skin_mesh_selector(Teuchos::rcpFromRef(my_selector));
     }
 
     inline void StkMeshIoBroker::set_shared_selector(size_t output_file_index,

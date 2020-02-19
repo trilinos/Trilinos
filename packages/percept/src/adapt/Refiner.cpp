@@ -628,10 +628,6 @@
             {
               m_nodeRegistry->initialize();
             }
-          else
-            {
-              m_nodeRegistry->init_entity_repo();
-            }
 
           m_nodeRegistry->init_comm_all();
 
@@ -967,11 +963,6 @@
             m_nodeRegistry->prolongate(m_eMesh.get_coordinates_field());
           }
 
-          {
-            TIMER2(ProlongFields,DoRefine_);
-            m_nodeRegistry->prolongateFields();
-          }
-
 #if defined(STK_BUILT_IN_SIERRA)
           if (m_rbar_names.size())
             m_nodeRegistry->add_rbars(m_rbar_names);
@@ -1011,6 +1002,11 @@
           }
       }
       /***********************/                           TRACE_PRINT("Refiner: fix_side_sets_2...done ");
+
+      {
+        TIMER2(ProlongFields,DoRefine_);
+        m_nodeRegistry->prolongateFields(); // Needed after mod-end so that parts are parallel consistent so that fields are parallel consistent
+      }
 
       REF_LTRACE("doRefine: fix_side_sets...done");
 
@@ -1131,8 +1127,6 @@
       }
       getRefinementInfo().countCurrentNodes(m_eMesh);
       getRefinementInfo().full_stats_after_refine();
-
-      getNodeRegistry().init_entity_repo();
 
       m_nodeRegistry->dumpDB("after doBreak");
 
@@ -1603,8 +1597,8 @@
               double tol = 1.e-4;
               std::string sni = m_eMesh.getProperty("smoother_niter");
               std::string snt = m_eMesh.getProperty("smoother_tol");
-              if (sni.length()) niter = boost::lexical_cast<int>(sni);
-              if (snt.length()) tol = boost::lexical_cast<double>(snt);
+              if (sni.length()) niter = std::stoi(sni);
+              if (snt.length()) tol = std::stod(snt);
 
               if (m_eMesh.getProperty("smoother_type") == "algebraic")
                 {
@@ -2709,14 +2703,8 @@
                 }
 
               //std::cout << "tmp Refiner::set_active_part: child_entities= " << child_entities.size() << " parent_entities= " << parent_entities.size() << std::endl;
-              for (unsigned iv=0; iv < child_entities.size(); iv++)
-                {
-                  eMesh.get_bulk_data()->change_entity_parts( child_entities[iv],   child_parts, parent_parts );
-                }
-              for (unsigned iv=0; iv < parent_entities.size(); iv++)
-                {
-                  eMesh.get_bulk_data()->change_entity_parts( parent_entities[iv],  parent_parts, child_parts );
-                }
+              eMesh.get_bulk_data()->change_entity_parts(child_entities, child_parts, parent_parts);
+              eMesh.get_bulk_data()->change_entity_parts(parent_entities,  parent_parts, child_parts);
             }
         }
 
@@ -2866,9 +2854,9 @@
         {
           const SubDimCell_SDCEntityType& subDimEntity = (*cell_iter).first;
           SubDimCellData& nodeId_elementOwnderId = (*cell_iter).second;
-          stk::mesh::EntityId owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
-          NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-          stk::mesh::EntityRank owning_elementRank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+          stk::mesh::EntityId owning_elementId = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnderId).id();
+          NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnderId);
+          stk::mesh::EntityRank owning_elementRank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnderId).rank();
 
           if (0 && debug) std::cout << "P[" << m_eMesh.get_rank() << "] tmp srk1 subDimEntity.size= " << subDimEntity.size() << " owning_elementId= " << owning_elementId << " nodeIds_onSE.size= " << nodeIds_onSE.size() << std::endl;
           // if (subDimEntity.size() == 1)
@@ -3035,10 +3023,7 @@
                 }
             }
         }
-      for (unsigned ii=0; ii < node_vec.size(); ii++)
-        {
-          m_eMesh.get_bulk_data()->change_entity_parts( node_vec[ii], add_parts, remove_parts );
-        }
+        m_eMesh.get_bulk_data()->change_entity_parts( node_vec, add_parts, remove_parts );
     }
 
   void Refiner::
@@ -3244,7 +3229,7 @@
     const stk::mesh::EntityRank FAMILY_TREE_RANK = static_cast<stk::mesh::EntityRank>(m_eMesh.element_rank() + 1u);
 
     std::vector<stk::mesh::Entity> ftvec;
-    stk::mesh::get_selected_entities(m_eMesh.get_fem_meta_data()->locally_owned_part(), m_eMesh.get_bulk_data()->buckets(FAMILY_TREE_RANK), ftvec);
+    stk::mesh::get_selected_entities(m_eMesh.get_fem_meta_data()->locally_owned_part(), m_eMesh.get_bulk_data()->buckets(FAMILY_TREE_RANK), ftvec, false/*don't sort*/);
     for (auto ft : ftvec)
       {
         delete_ft_nodes(m_eMesh, ft);
@@ -3254,7 +3239,7 @@
       {
         SetOfEntities eset(*m_eMesh.get_bulk_data());
         std::vector<stk::mesh::Entity> evec;
-        stk::mesh::get_selected_entities(m_eMesh.get_fem_meta_data()->locally_owned_part() , m_eMesh.get_bulk_data()->buckets(rank_iter), evec);
+        stk::mesh::get_selected_entities(m_eMesh.get_fem_meta_data()->locally_owned_part() , m_eMesh.get_bulk_data()->buckets(rank_iter), evec, false/*don't sort*/);
         for (auto elem : evec)
           {
             //eset.insert(elem);

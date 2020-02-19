@@ -93,9 +93,10 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
 
   // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
-  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  stepper->getModel()->getNominalValues();
+  auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
+  auto icState = rcp(new Tempus::SolutionState<double>(icX, icXDot));
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);

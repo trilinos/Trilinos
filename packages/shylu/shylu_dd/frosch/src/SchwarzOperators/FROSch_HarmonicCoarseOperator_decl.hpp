@@ -77,12 +77,14 @@ namespace FROSch {
         using CoarseSpacePtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr;
 
         using EntitySetPtr            = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetConstPtr       = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetConstPtr;
 
         using SubdomainSolverPtr      = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
 
         using UN                      = typename SchwarzOperator<SC,LO,GO,NO>::UN;
         using UNVec                   = typename SchwarzOperator<SC,LO,GO,NO>::UNVec;
         using UNVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;
+        using ConstUNVecView          = typename SchwarzOperator<SC,LO,GO,NO>::ConstUNVecView;
 
         using LOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
         using LOVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr;
@@ -91,7 +93,10 @@ namespace FROSch {
         using GOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
         using GOVecView               = typename SchwarzOperator<SC,LO,GO,NO>::GOVecView;
         using GOVec2D                 = typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D;
+        
         using SCVec                   = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
+        using SCVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+        using ConstSCVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
 
     public:
 
@@ -106,7 +111,7 @@ namespace FROSch {
 
         int intializeCoarseMap();
         
-        XMapPtr assembleCoarseMap();
+        int assembleInterfaceCoarseSpace();
 
         int addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap);
 
@@ -114,15 +119,16 @@ namespace FROSch {
                                    UN dimension,
                                    ConstXMapPtr nodesMap,
                                    ConstXMultiVectorPtr nodeList,
-                                   EntitySetPtr interior);
+                                   EntitySetConstPtr interior);
 
         virtual XMultiVectorPtrVecPtr computeTranslations(UN blockId,
-                                                          EntitySetPtr entitySet);
+                                                          EntitySetConstPtr entitySet);
 
         virtual XMultiVectorPtrVecPtr computeRotations(UN blockId,
                                                        UN dimension,
                                                        ConstXMultiVectorPtr nodeList,
-                                                       EntitySetPtr entitySet);
+                                                       EntitySetConstPtr entitySet,
+                                                       UN discardRotations = 0);
 
         virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
                                                   ConstXMapPtr coarseMap,
@@ -134,17 +140,18 @@ namespace FROSch {
 
         SubdomainSolverPtr ExtensionSolver_;
 
-        CoarseSpacePtrVecPtr InterfaceCoarseSpaces_;
+        CoarseSpacePtrVecPtr InterfaceCoarseSpaces_ = CoarseSpacePtrVecPtr(0);
+        CoarseSpacePtr AssembledInterfaceCoarseSpace_;
 
-        UNVecPtr Dimensions_;
-        UNVecPtr DofsPerNode_;
+        UNVecPtr Dimensions_ = UNVecPtr(0);
+        UNVecPtr DofsPerNode_ = UNVecPtr(0);
 
-        LOVecPtr2D GammaDofs_;
-        LOVecPtr2D IDofs_;
+        LOVecPtr2D GammaDofs_ = GammaDofs_(0);
+        LOVecPtr2D IDofs_ = IDofs_(0);
 
-        ConstXMapPtrVecPtr2D DofsMaps_; // notwendig??
+        ConstXMapPtrVecPtr2D DofsMaps_ = DofsMaps_(0); // notwendig??
 
-        UN NumberOfBlocks_;
+        UN NumberOfBlocks_ = 0;
     };
 
 }

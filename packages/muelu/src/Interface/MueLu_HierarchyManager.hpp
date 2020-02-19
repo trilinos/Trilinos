@@ -343,7 +343,11 @@ namespace MueLu {
     template<class T>
     void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
       for (int i = 0; i < data.size(); ++i) {
-        std::string fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
+        std::string fileName;
+        if (H.getObjectLabel() != "")
+          fileName = H.getObjectLabel() + "_" + name + "_" + Teuchos::toString(data[i]) + ".m";
+        else
+          fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
@@ -390,10 +394,6 @@ namespace MueLu {
     // For dumping an IntrepidPCoarsening element-to-node map to disk
     template<class T>
     void WriteFieldContainer(const std::string& fileName, T & fcont,const Map &colMap) const {
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-      typedef Node NO;
-      typedef Xpetra::MultiVector<GO,LO,GO,NO> GOMultiVector;
 
       size_t num_els = (size_t) fcont.extent(0);
       size_t num_vecs =(size_t) fcont.extent(1);

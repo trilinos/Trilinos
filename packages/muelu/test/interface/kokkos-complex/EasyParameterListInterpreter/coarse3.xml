@@ -1,3 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="coarse: type"     type="string" value="ILUT"/>
-</ParameterList>

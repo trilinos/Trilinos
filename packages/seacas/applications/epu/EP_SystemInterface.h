@@ -141,7 +141,7 @@ namespace Excn {
     std::string basename_{};
 
     // Used for a storage area only.  Needed for subcyle and auto-join option
-    // Not directly settable through the user-interface (maybe should be?)
+    // Not directly settable through the user-interFace (maybe should be?)
     mutable std::string outputFilename_{};
 
     int          myRank_{0};

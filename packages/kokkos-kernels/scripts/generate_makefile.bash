@@ -81,6 +81,9 @@ do
     --ldflags*)
       LDFLAGS="${key#*=}"
       ;;
+    --ldlib*)
+      LDLIB="${key#*=}"
+      ;;
     --debug|-dbg)
       KOKKOS_DEBUG=yes
       ;;
@@ -294,6 +297,11 @@ fi
 
 if [ ${#LDFLAGS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} LDFLAGS=\"${LDFLAGS}\""
+fi
+
+if [ ${#LDLIB} -gt 0 ]; then
+  echo "LDLIB: $LDLIB"
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} LDLIB=\"${LDLIB}\""
 fi
 
 if [ ${#GTEST_PATH} -gt 0 ]; then

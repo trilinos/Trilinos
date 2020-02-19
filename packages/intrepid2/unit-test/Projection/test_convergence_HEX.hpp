@@ -89,7 +89,7 @@ namespace Test {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -560,7 +560,7 @@ int ConvergenceHex(const bool verbose) {
       }
       *outStream << "HGRAD Error: " << hgradNorm[iter] <<std::endl;
 
-    } catch (std::exception err) {
+    } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
       errorFlag = -1000;
@@ -770,7 +770,7 @@ int ConvergenceHex(const bool verbose) {
         *outStream << std::endl;
       }
       *outStream << "HCURL Error: " << hcurlNorm[iter] <<std::endl;
-    } catch (std::exception err) {
+    } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
       errorFlag = -1000;
@@ -975,7 +975,7 @@ int ConvergenceHex(const bool verbose) {
       }
       *outStream << "HDIV Error: " << hdivNorm[iter] <<std::endl;
 
-    } catch (std::exception err) {
+    } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
       errorFlag = -1000;
@@ -1122,7 +1122,7 @@ int ConvergenceHex(const bool verbose) {
       }
       *outStream << "HVOL Error: " << hvolNorm[iter] <<std::endl;
 
-    } catch (std::exception err) {
+    } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
       errorFlag = -1000;

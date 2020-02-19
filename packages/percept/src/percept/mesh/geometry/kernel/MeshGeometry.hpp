@@ -15,9 +15,7 @@
 
 #include <percept/mesh/geometry/kernel/GeometryKernel.hpp>
 
-#include <boost/unordered_map.hpp>
-
-#define DEBUG_GEOM_SNAP 0
+#include <unordered_map>
 
 namespace percept {
 
@@ -159,8 +157,7 @@ public:
   const PerceptMesh& m_eMesh;
   //PerceptMesh * m_eMesh_pntr;
   typedef std::pair<int, GeometryHandle> CacheBucketClassifyValueType;
-  typedef boost::unordered_map<const stk::mesh::Bucket *, CacheBucketClassifyValueType > CacheBucketClassifyType;
-//  typedef boost::unordered_map<GeometryHandle, double> MaxDeltaOnGeometryType;
+  typedef std::unordered_map<const stk::mesh::Bucket *, CacheBucketClassifyValueType > CacheBucketClassifyType;
 
   MeshGeometry(const PerceptMesh& eMesh, GeometryKernel* geom, double doCheckMovement=0.0, double doCheckCpuTime=0.0, bool cache_bucket_selectors_is_active=false, bool doPrint=false);
     ~MeshGeometry();

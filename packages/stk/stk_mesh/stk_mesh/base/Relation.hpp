@@ -292,12 +292,6 @@ void get_entities_through_relations(
  */
 void get_entities_through_relations(
   const BulkData& mesh,
-  const Entity* entities_begin ,
-  const Entity* entities_end ,
-        EntityRank              entities_related_rank ,
-        std::vector<Entity> & entities_related );
-void get_entities_through_relations(
-  const BulkData& mesh,
   const std::vector<Entity> & entities ,
         EntityRank             entities_related_rank ,
         std::vector<Entity> & entities_related );
@@ -310,9 +304,6 @@ void induced_part_membership(const BulkData& mesh,
                              OrdinalVector & induced_parts);
 
 //----------------------------------------------------------------------
-
-/** \brief  Print the relation raw_relation_ids and referenced entity's key */
-std::ostream & operator << ( std::ostream & , const Relation & );
 
 /** \} */
 

@@ -12,7 +12,6 @@
 #include <percept/mesh/mod/smoother/MeshSmoother.hpp>
 #include <percept/mesh/mod/smoother/JacobianUtil.hpp>
 #include <percept/math/DenseMatrix.hpp>
-#include <percept/math/Math.hpp>
 
 #include <percept/mesh/geometry/kernel/GeometryKernel.hpp>
 

@@ -195,6 +195,10 @@ ProductRegistry::executable_date()
   return executable_date;
 }
 
+std::string get_version(const std::string& executableName)
+{
+  return executableName + " " + ProductRegistry::version();
+}
 
 } // namespace stk
 

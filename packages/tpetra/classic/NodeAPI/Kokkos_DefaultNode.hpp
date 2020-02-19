@@ -57,24 +57,6 @@ namespace Teuchos {
 
 namespace KokkosClassic {
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-namespace Details {
-  /// \fn getNode
-  /// \brief Create and return a Kokkos Node instance.
-  /// \tparam NodeType The Kokkos Node type.
-  ///
-  /// \warning This function is DEPRECATED.  DO NOT CALL IT.
-  ///   It may return Teuchos::null and/or have no effect.
-  template<class NodeType>
-  Teuchos::RCP<NodeType> TPETRA_DEPRECATED
-  getNode (const Teuchos::RCP<Teuchos::ParameterList>& /* params */ = Teuchos::null)
-  {
-    // Node instances don't do anything any more, but for backward
-    // compatibility, sometimes it helps for them to be nonnull.
-    return Teuchos::rcp (new NodeType);
-  }
-} // namespace Details
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Specify Tpetra's default Node type.
   ///
@@ -98,13 +80,6 @@ namespace Details {
 #    error "No default Kokkos Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
 #endif
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Return a pointer to a default Node instance.
-    ///
-    /// \warning This method is DEPRECATED and will be removed soon.
-    ///   Node instances don't do anything any more.
-    static Teuchos::RCP<DefaultNodeType> TPETRA_DEPRECATED getDefaultNode();
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   };
 
 } // namespace KokkosClassic

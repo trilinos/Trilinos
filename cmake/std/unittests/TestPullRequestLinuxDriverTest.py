@@ -8,7 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import os
-sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 import unittest
@@ -26,6 +26,8 @@ except ImportError:  # pragma nocover
 from argparse import Namespace
 from subprocess import CalledProcessError
 
+if 'MODULESHOME' not in os.environ: # for things like our macs
+    os.environ['MODULESHOME'] = os.getcwd()
 import PullRequestLinuxDriverTest
 
 
@@ -73,7 +75,7 @@ class Test_run(unittest.TestCase):
             m_check_out.return_value='git version 1.10.1'
 
             bad_git_string = 'Git version  should be 2.10 or better - Exiting!'
-            if sys.version_info.major is not 3:
+            if(sys.version_info.major != 3):
                 with self.assertRaisesRegexp(SystemExit, bad_git_string):
                     PullRequestLinuxDriverTest.confirmGitVersion()
             else:
@@ -136,7 +138,7 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
       : This violates Trilinos policy, pull requests into the master branch are restricted.
       : Perhaps you forgot to specify the develop branch as the target in your PR?
 *"""
-            if sys.version_info.major is not 3:
+            if(sys.version_info.major != 3):
                 with self.assertRaisesRegexp(SystemExit, bad_branch_string):
                     PullRequestLinuxDriverTest.run()
             else:
@@ -397,7 +399,7 @@ class Test_setEnviron(unittest.TestCase):
                 self.m_chdir, \
                 self.m_check_out, \
                 self.m_environ:
-            if sys.version_info.major is not 3:
+            if(sys.version_info.major != 3):
                 with self.assertRaisesRegexp(SystemExit, expected_output):
                     PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
             else:
@@ -607,6 +609,29 @@ class Test_setEnviron(unittest.TestCase):
                              test_ENV={'OMP_NUM_THREADS': '2'})
 
 
+    def test_buildEnv_passes_with_gcc_830(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_gcc_8.3.0'
+        expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
+                         mock.call('load', 'sems-env'),
+                         mock.call('load', 'sems-git/2.10.1'),
+                         mock.call('load', 'sems-gcc/8.3.0'),
+                         mock.call('load', 'sems-openmpi/1.10.1'),
+                         mock.call('load', 'sems-python/2.7.9'),
+                         mock.call('load', 'sems-boost/1.66.0/base'),
+                         mock.call('load', 'sems-zlib/1.2.8/base'),
+                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
+                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-parmetis/4.0.3/parallel'),
+                         mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
+                         mock.call('load', 'sems-superlu/4.3/base'),
+                         mock.call('load', 'sems-cmake/3.10.3'),
+                         mock.call('load', 'atdm-env'),
+                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
+                         ]
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
+
     def test_buildEnv_passes_with_intel_1701(self):
         """Find the function"""
         PR_name = 'Trilinos_pullrequest_intel_17.0.1'
@@ -715,8 +740,7 @@ class testCompute_n(unittest.TestCase):
         we should still  run at least one job'''
         m_open =  mock.mock_open(read_data='''MemTotal 32965846 kB''')
         with self.m_environ, \
-            mock.patch('PullRequestLinuxDriverTest.open',
-                       m_open, create=True), \
+            mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
             mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=18):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(10, parallel_level)
@@ -725,8 +749,7 @@ class testCompute_n(unittest.TestCase):
         '''check we match whats on 113-115 and the cloud'''
         m_open =  mock.mock_open(read_data='''MemTotal 65805212 kB''')
         with self.m_environ, \
-            mock.patch('PullRequestLinuxDriverTest.open',
-                       m_open, create=True), \
+            mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
             mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=32):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(20, parallel_level)
@@ -736,8 +759,7 @@ class testCompute_n(unittest.TestCase):
         '''match whats on the 14x series'''
         m_open =  mock.mock_open(read_data='''MemTotal 65805212 kB''')
         with self.m_environ, \
-            mock.patch('PullRequestLinuxDriverTest.open',
-                       m_open, create=True), \
+            mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
             mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=72):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(10, parallel_level)
@@ -747,8 +769,7 @@ class testCompute_n(unittest.TestCase):
         '''match ascic158'''
         m_open = mock.mock_open(read_data='''MemTotal 131610424 kB''')
         with self.m_environ, \
-             mock.patch('PullRequestLinuxDriverTest.open',
-                        m_open, create=True), \
+             mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
              mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=88):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(13, parallel_level)
@@ -758,8 +779,7 @@ class testCompute_n(unittest.TestCase):
         '''this matches ascic166'''
         m_open = mock.mock_open(read_data='''MemTotal 131610424 kB''')
         with self.m_environ, \
-             mock.patch('PullRequestLinuxDriverTest.open',
-                        m_open, create=True), \
+             mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
              mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=80):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(20, parallel_level)
@@ -767,3 +787,5 @@ class testCompute_n(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()  # pragma nocover
+
+

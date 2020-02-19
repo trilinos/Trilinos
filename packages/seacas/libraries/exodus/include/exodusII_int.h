@@ -91,17 +91,6 @@
 extern "C" {
 #endif
 
-/* A format string for outputting size_t ... */
-#if defined(__STDC_VERSION__)
-#if (__STDC_VERSION__ >= 199901L)
-#define ST_ZU "zu"
-#else
-#define ST_ZU "lu"
-#endif
-#else
-#define ST_ZU "lu"
-#endif
-
 /**
  * \defgroup Internal Internal Functions and Defines
  * \internal
@@ -121,7 +110,7 @@ extern "C" {
 #define EX_FILE_ID_MASK (0xffff0000) /**< Must match FILE_ID_MASK in NetCDF nc4internal.h */
 #define EX_GRP_ID_MASK (0x0000ffff)  /**< Must match GRP_ID_MASK in NetCDF nc4internal.h */
 
-void ex__reset_error_status();
+void ex__reset_error_status(void);
 
 #if defined(EXODUS_THREADSAFE)
 #if !defined(exerrval)
@@ -626,6 +615,8 @@ struct ex__file_item
   int     int64_status;
   int     maximum_name_length;
   int     time_varid; /* Store to avoid lookup each timestep */
+  unsigned int
+      compression_algorithm : 2; /**< GZIP/ZLIB, SZIP, more may be supported by NetCDF soon */
   unsigned int
                compression_level : 4; /**< 0 (disabled) to 9 (maximum) compression level; NetCDF-4 only */
   unsigned int user_compute_wordsize : 1; /**< 0 for 4 byte or 1 for 8 byte reals */

@@ -6,6 +6,7 @@
 -->
   <ParameterList name="Problem">
     <Parameter name="Check derivatives"                  type="bool"    value="false"      />
+    <Parameter name="Binary"                             type="bool"    value="false"      />
     <Parameter name="Use state storage"                  type="bool"    value="true"       />
     <!-- Problem Specification -->
     <Parameter name="Example"                            type="string"  value="2D Truss"   />

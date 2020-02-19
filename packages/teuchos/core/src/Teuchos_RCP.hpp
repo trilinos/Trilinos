@@ -282,6 +282,15 @@ RCP<T>::RCP(const RCP<T>& r_ptr)
 
 
 template<class T>
+inline
+RCP<T>::RCP(RCP<T>&& r_ptr)
+  : ptr_(r_ptr.ptr_), node_(std::move(r_ptr.node_))
+{
+  r_ptr.ptr_ = 0;
+}
+
+
+template<class T>
 template<class T2>
 inline
 RCP<T>::RCP(const RCP<T2>& r_ptr)
@@ -306,6 +315,22 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
   reset(); // Force delete first in debug mode!
 #endif
   RCP<T>(r_ptr).swap(*this);
+  return *this;
+}
+
+
+template<class T>
+inline
+RCP<T>& RCP<T>::operator=(RCP<T>&& r_ptr)
+{
+#ifdef TEUCHOS_DEBUG
+  if (this == &r_ptr)
+    return *this;
+  reset(); // Force delete first in debug mode!
+#endif
+  ptr_ = r_ptr.ptr_;
+  node_ = std::move(r_ptr.node_);
+  r_ptr.ptr_ = 0;
   return *this;
 }
 
@@ -400,6 +425,14 @@ inline
 RCP<const T> RCP<T>::getConst() const
 {
   return rcp_implicit_cast<const T>(*this);
+}
+
+
+template<class T>
+inline
+RCP<T>::operator bool() const
+{
+  return (get() != 0);
 }
 
 
@@ -565,14 +598,6 @@ inline
 void RCP<T>::reset(T2* p, bool has_ownership_in)
 {
   *this = rcp(p, has_ownership_in);
-}
-
-
-template<class T>
-inline
-int RCP<T>::count() const
-{
-  return node_.count();
 }
 
 }  // end namespace Teuchos

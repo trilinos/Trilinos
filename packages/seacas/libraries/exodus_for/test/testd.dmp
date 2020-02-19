@@ -78,9 +78,9 @@ variables:
 	char info_records(num_info, len_line) ;
 	char name_glo_var(num_glo_var, len_name) ;
 	double vals_glo_var(time_step, num_glo_var) ;
+	char name_nod_var(num_nod_var, len_name) ;
 	double vals_nod_var1(time_step, num_nodes) ;
 	double vals_nod_var2(time_step, num_nodes) ;
-	char name_nod_var(num_nod_var, len_name) ;
 	char name_elem_var(num_elem_var, len_name) ;
 	double vals_elem_var1eb1(time_step, num_el_in_blk1) ;
 	double vals_elem_var2eb1(time_step, num_el_in_blk1) ;
@@ -211,6 +211,10 @@ data:
   0.18,
   0.2 ;
 
+ name_nod_var =
+  "nod_var0",
+  "nod_var1" ;
+
  vals_nod_var1 =
   1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08,
   1.02, 1.04, 1.06, 1.08, 1.1, 1.12, 1.14, 1.16,
@@ -234,10 +238,6 @@ data:
   2.08, 2.16, 2.24, 2.32, 2.4, 2.48, 2.56, 2.64,
   2.09, 2.18, 2.27, 2.36, 2.45, 2.54, 2.63, 2.72,
   2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8 ;
-
- name_nod_var =
-  "nod_var0",
-  "nod_var1" ;
 
  name_elem_var =
   "ele_var0",

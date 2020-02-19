@@ -177,19 +177,12 @@ ENDIF()
 
 
 # Select appropriate set of input and gold files, add make target for rebase.
-
+file (REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/default)
 ADD_SUBDIRECTORY(default)
 
-IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT OR ${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG)
-  ADD_SUBDIRECTORY(complex)
-ENDIF()
-
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+  file (REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/kokkos)
   ADD_SUBDIRECTORY(kokkos)
-
-  IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT OR ${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG)
-    ADD_SUBDIRECTORY(kokkos-complex)
-  ENDIF()
 ENDIF()
 
 

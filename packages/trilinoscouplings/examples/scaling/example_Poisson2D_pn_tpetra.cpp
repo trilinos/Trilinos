@@ -137,7 +137,6 @@
 // MueLu/Avatar Includes
 #ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
 #  include "MueLu_AvatarInterface.hpp"
-#enduif
 #endif
 
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
@@ -205,8 +204,8 @@ double distance2(const FC & coord, int n1, int n2) {
 /*********************************************************/
 typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
-typedef int local_ordinal_type;
-typedef int global_ordinal_type;
+using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
+using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
@@ -266,7 +265,7 @@ void CreateLinearSystem(int numWorkSets,
                         RCP<Basis<double,FieldContainer<double> > > &myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
                         std::string &msg
@@ -768,6 +767,13 @@ int main(int argc, char *argv[]) {
   double maxmin_ratio    = 0;
   double diag_ratio      = 0;
   double stretch         = 0;
+  double taper           = 0;
+  double skew            = 0;
+
+  double dist1           = 0.0;
+  double dist2           = 0.0;
+  double dist3           = 0.0;
+  double dist4           = 0.0;
  
   int edge = P1_elemToEdge(0, 0);
   int node1 = P1_edgeToNode(edge, 0);
@@ -775,7 +781,18 @@ int main(int argc, char *argv[]) {
   double dist = 0;
   static const int NUM_NODE_PAIRS = 2;
   int diag_nodes1[] = {0, 1};
-  int diag_nodes2[] = {3, 2};
+  int diag_nodes2[] = {2, 3};
+
+  double x0 = 0.0;
+  double x1 = 0.0;
+  double x2 = 0.0;
+  double x3 = 0.0;
+  double y0 = 0.0;
+  double y1 = 0.0;
+  double y2 = 0.0;
+  double y3 = 0.0;
+  double e3 = 0.0;
+  double f3 = 0.0;
 
   // Intialize
   for(int i=0; i<NUM_STATISTICS; i++) {
@@ -835,6 +852,41 @@ int main(int argc, char *argv[]) {
     local_stat_min[4] = std::min(local_stat_min[4], diag_ratio);
     local_stat_sum[4] += diag_ratio;
 
+    // 5 - Inverse Taper
+    int opposite_edges1[2][2] = {{0, 1}, {0, 3}};
+    int opposite_edges2[2][2] = {{2, 3}, {1, 2}};
+    dist1 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges1[0][0]), P1_elemToNode(i, opposite_edges1[0][1]));
+    dist2 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[0][0]), P1_elemToNode(i, opposite_edges2[0][1]));
+    dist3 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges1[1][0]), P1_elemToNode(i, opposite_edges1[1][1]));
+    dist4 = distance2(P1_nodeCoord, P1_elemToNode(i, opposite_edges2[1][0]), P1_elemToNode(i, opposite_edges2[1][1]));
+    taper = std::max(dist1/dist2, dist2/dist1);
+    taper = std::max(taper, dist3/dist4);
+    taper = std::max(taper, dist4/dist3);
+    local_stat_max[5] = std::max(local_stat_max[5], taper);
+    local_stat_min[5] = std::min(local_stat_min[5], taper);
+    local_stat_sum[5] += taper;
+
+
+    // 6 - Skew
+    // See "Quadrilateral and hexagonal shape parameters" - Robinson, J. 1994
+    x0 = P1_nodeCoord(P1_elemToNode(i, 0), 0);
+    x1 = P1_nodeCoord(P1_elemToNode(i, 1), 0);
+    x2 = P1_nodeCoord(P1_elemToNode(i, 2), 0);
+    x3 = P1_nodeCoord(P1_elemToNode(i, 3), 0);
+
+    y0 = P1_nodeCoord(P1_elemToNode(i, 0), 1);
+    y1 = P1_nodeCoord(P1_elemToNode(i, 1), 1);
+    y2 = P1_nodeCoord(P1_elemToNode(i, 2), 1);
+    y3 = P1_nodeCoord(P1_elemToNode(i, 3), 1);
+
+    e3 = 0.25 * (x0-x1+x2-x3);
+    f3 = 0.25 * (-y0-y1+y2+y3);
+    skew = e3 / f3;
+    local_stat_max[6] = std::max(local_stat_max[4], skew);
+    local_stat_min[6] = std::min(local_stat_max[4], skew);
+    local_stat_sum[6] += skew;
+
+
   }
 
 
@@ -866,9 +918,9 @@ int main(int argc, char *argv[]) {
 
   // Only works in serial
   std::vector<bool>Pn_nodeIsOwned(Pn_numNodes,true);
-  std::vector<int>Pn_globalNodeIds(Pn_numNodes);
+  std::vector<global_ordinal_type>Pn_globalNodeIds(Pn_numNodes);
   for(int i=0; i<Pn_numNodes; i++)
-    Pn_globalNodeIds[i]=i;
+    Pn_globalNodeIds[i]=static_cast<global_ordinal_type>(i);
 
   std::vector<double> Pn_nodeCoordx(Pn_numNodes);
   std::vector<double> Pn_nodeCoordy(Pn_numNodes);
@@ -1004,11 +1056,11 @@ int main(int argc, char *argv[]) {
 
   // Build a list of the OWNED global ids...
   // NTS: will need to switch back to long long
-  std::vector<int> Pn_ownedGIDs(Pn_ownedNodes);
+  std::vector<global_ordinal_type> Pn_ownedGIDs(Pn_ownedNodes);
   int oidx=0;
   for(int i=0;i<numNodes;i++)
     if(Pn_nodeIsOwned[i]){
-      Pn_ownedGIDs[oidx]=(int)Pn_globalNodeIds[i];
+      Pn_ownedGIDs[oidx]=(global_ordinal_type)Pn_globalNodeIds[i];
       oidx++;
     }
 
@@ -1016,17 +1068,17 @@ int main(int argc, char *argv[]) {
   int P1_ownedNodes=0;
   for(int i=0;i<P1_numNodes;i++)
     if(P1_nodeIsOwned[i]) P1_ownedNodes++;
-  std::vector<int> P1_ownedGIDs(P1_ownedNodes);
+  std::vector<global_ordinal_type> P1_ownedGIDs(P1_ownedNodes);
   oidx=0;
   for(int i=0;i<P1_numNodes;i++)
     if(P1_nodeIsOwned[i]){
-      P1_ownedGIDs[oidx]=(int)P1_globalNodeIds[i];
+      P1_ownedGIDs[oidx]=(global_ordinal_type)P1_globalNodeIds[i];
       oidx++;
     }
   //TODO JJH 8-June-2016 need to populate edge and elem seed nodes
 
   //seed points for block relaxation
-  ArrayRCP<global_ordinal_type> nodeSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> nodeSeeds(Pn_numNodes,INVALID_LO);
   //unknowns at mesh nodes
   oidx=0;
   for(int i=0;i<P1_numNodes;i++) {
@@ -1038,13 +1090,13 @@ int main(int argc, char *argv[]) {
   int numNodeSeeds = oidx;
 
   //unknowns on edges
-  ArrayRCP<global_ordinal_type> edgeSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> edgeSeeds(Pn_numNodes,INVALID_LO);
   for (size_t i=0; i<Pn_edgeNodes.size(); ++i)
     edgeSeeds[Pn_edgeNodes[i]] = i;
   int numEdgeSeeds = Pn_edgeNodes.size();
 
   //unknowns in cell interiors
-  ArrayRCP<global_ordinal_type> cellSeeds(Pn_numNodes,INVALID_LO);
+  ArrayRCP<int> cellSeeds(Pn_numNodes,INVALID_LO);
   for (size_t i=0; i<Pn_cellNodes.size(); ++i)
     cellSeeds[Pn_cellNodes[i]] = i;
   int numCellSeeds = Pn_cellNodes.size();
@@ -1488,7 +1540,7 @@ int main(int argc, char *argv[]) {
 
   // Import solution onto current processor
   //int numNodesGlobal = globalMapG.NumGlobalElements();
-  RCP<driver_map_type>  solnMap = rcp(new driver_map_type(static_cast<int>(numNodesGlobal), static_cast<int>(numNodesGlobal), 0, Comm));
+  RCP<driver_map_type>  solnMap = rcp(new driver_map_type(static_cast<Tpetra::global_size_t>(numNodesGlobal), static_cast<size_t>(numNodesGlobal), 0, Comm));
   Tpetra::Import<local_ordinal_type, global_ordinal_type, NO> solnImporter(globalMapG,solnMap);
   multivector_type  uCoeff(solnMap,1);
   uCoeff.doImport(*femCoefficients, solnImporter, Tpetra::INSERT);
@@ -2377,7 +2429,7 @@ void CreateLinearSystem(int numWorksets,
                         RCP<Basis<double,FieldContainer<double> > >&myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
                         std::string &msg
@@ -2812,12 +2864,12 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
   A.resumeFill();
 
   for(int i=0; i<N; i++) {
-    int lrid = BCNodes[i];
+    local_ordinal_type lrid = BCNodes[i];
 
     xdata[lrid]=bdata[lrid] = solndata[lrid];
 
     size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);
-    Array<global_ordinal_type> cols(numEntriesInRow);
+    Array<local_ordinal_type> cols(numEntriesInRow);
     Array<scalar_type> vals(numEntriesInRow);
     A.getLocalRowCopy(lrid, cols(), vals(), numEntriesInRow);
     

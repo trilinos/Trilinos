@@ -93,6 +93,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 if (TPL_ENABLE_MPI)
@@ -106,8 +107,8 @@ if (TPL_ENABLE_MPI)
         NUM_MPI_PROCS ${NPROCS}
      TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
   COMM mpi
+  XHOSTTYPE Windows
   )
-endif()
 endif()
 
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
@@ -155,6 +156,7 @@ ELSE()
     COMM mpi serial
     FINAL_PASS_REGULAR_EXPRESSION
   )
+ENDIF()
 ENDIF()
 ENDIF()
 ENDIF()
@@ -288,6 +290,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
      NUM_MPI_PROCS ${NPROCS}
    TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map -dumpmap ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.g
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_single_block
@@ -299,6 +302,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_single_block
      NUM_MPI_PROCS ${NPROCS}
    TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/cube.g cube.g
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
@@ -310,6 +314,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
      NUM_MPI_PROCS ${NPROCS}
    TEST_2 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic -map ${CMAKE_CURRENT_SOURCE_DIR}/test/two-block.g two-block.g
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
@@ -318,6 +323,7 @@ TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_generated.gold exodus_generated.e
   COMM mpi serial
+  XHOSTTYPE Windows
   )
 
 IF ($(TPL_ENABLE_MPI))
@@ -327,6 +333,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
   COMM mpi
+  XHOSTTYPE Windows
   )
 ELSE()
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
@@ -334,6 +341,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
      NOEXEPREFIX NOEXESUFFIX
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
   COMM serial
+  XHOSTTYPE Windows
   )
 ENDIF()
 ENDIF()
@@ -370,6 +378,21 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_zgc
    TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/5blocks-struc.cgns 5blocks2.cgns
      NUM_MPI_PROCS 1
   COMM mpi serial
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_periodic_roundtrip_fpp
+   TEST_0 EXEC io_shell ARGS --compose external ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-fpp.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 EXEC io_shell ARGS --external --compose external self-looping-fpp.cgns self-looping2.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_2 EXEC io_shell ARGS --external self-looping2.cgns self-looping3.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_3 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping3.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi
   )
 
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_fpp

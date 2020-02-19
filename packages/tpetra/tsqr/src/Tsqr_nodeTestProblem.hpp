@@ -34,19 +34,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_nodeTestProblem_hpp
 #define __TSQR_Test_nodeTestProblem_hpp
 
-#include <Tsqr_Random_MatrixGenerator.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include "Tsqr_Random_MatrixGenerator.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <algorithm>
 #include <vector>
-
 
 namespace TSQR {
   namespace Test {

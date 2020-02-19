@@ -68,7 +68,7 @@ namespace StatusTest {
 /*!
 
   This status test returns NOX::StatusTest::Failed if we fail to
-  reduce the norm of \f$F\f$ by a specified tolerance for n
+  reduce the norm of \f$ F\f$ by a specified tolerance for n
   \e consecutive iterations.
   In other words, if
 

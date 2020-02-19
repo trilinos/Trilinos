@@ -246,7 +246,7 @@ void ColoringProblem<Adapter>::createColoringProblem()
   // Select Model based on parameters and InputAdapter type
 
   std::bitset<NUM_MODEL_FLAGS> graphFlags;
-  std::bitset<NUM_MODEL_FLAGS> idFlags;
+  //std::bitset<NUM_MODEL_FLAGS> idFlags;
 
   switch (modelType) {
 

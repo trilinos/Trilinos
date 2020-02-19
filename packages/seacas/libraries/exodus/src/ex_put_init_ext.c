@@ -536,8 +536,8 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
 
   /* Fill the id and status arrays with EX_INVALID_ID */
   {
-    int *invalid_ids = NULL;
-    int  maxset      = model->num_elem_blk;
+    int *  invalid_ids = NULL;
+    size_t maxset      = model->num_elem_blk;
     if (maxset < model->num_edge_blk) {
       maxset = model->num_edge_blk;
     }

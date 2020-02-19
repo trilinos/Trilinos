@@ -12,16 +12,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 # files to install.
 APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 
-# If TBB (Intel's Threading Building Blocks) is enabled, add headers
-# and sources for TBB-enabled shared-memory parallel TSQR to the
-# lists of this subpackage's headers resp. sources.
-IF (${PACKAGE_NAME}_ENABLE_TBB)
-  APPEND_GLOB(HEADERS ${DIR}/TbbTsqr*.hpp)
-  APPEND_GLOB(SOURCES ${DIR}/TbbTsqr*.cpp)
-ENDIF ()
-
-# Add all other headers and sources (those not related to TBB) to the
-# lists of this subpackage's headers resp. sources.
+# Add headers and sources to the lists of this subpackage's headers
+# resp. sources.
 APPEND_GLOB(HEADERS ${DIR}/Tsqr*.hpp)
 APPEND_GLOB(HEADERS ${DIR}/KokkosTSQR*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/Tsqr*.cpp)
@@ -32,3 +24,10 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+#
+# Make a trivial change to this comment if you add / remove a file either to
+# / from this directory, or to / from the 'impl' subdirectory.  That ensures
+# that running "make" will also rerun CMake in order to regenerate Makefiles.
+#
+# Behold: Another such change that I hath wrought, and another.
+#

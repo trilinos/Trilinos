@@ -37,6 +37,7 @@
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
+#include <stk_ngp/NgpSpaces.hpp>
 
 namespace ngp {
 
@@ -67,7 +68,7 @@ struct TeamFunctor
         bucketIds(b),
         functor(f)
     {}
-    typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ngp::ScheduleType>::member_type TeamHandleType;
+    typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ScheduleType>::member_type TeamHandleType;
     STK_FUNCTION
     void operator()(const TeamHandleType& team) const
     {

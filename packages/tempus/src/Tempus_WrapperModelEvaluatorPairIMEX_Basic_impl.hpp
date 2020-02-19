@@ -99,7 +99,7 @@ getNominalValues() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgsSetup<Scalar> inArgs = this->createInArgs();
-  return inArgs;
+  return std::move(inArgs);
 }
 
 template <typename Scalar>
@@ -111,7 +111,7 @@ createInArgs() const
   //MEB::InArgsSetup<Scalar> inArgs(implicitModel_->createInArgs());
   MEB::InArgsSetup<Scalar> inArgs(implicitModel_->getNominalValues());
   inArgs.setModelEvalDescription(this->description());
-  return inArgs;
+  return std::move(inArgs);
 }
 
 template <typename Scalar>
@@ -122,7 +122,7 @@ createOutArgsImpl() const
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::OutArgsSetup<Scalar> outArgs(implicitModel_->createOutArgs());
   outArgs.setModelEvalDescription(this->description());
-  return outArgs;
+  return std::move(outArgs);
 }
 
 template <typename Scalar>

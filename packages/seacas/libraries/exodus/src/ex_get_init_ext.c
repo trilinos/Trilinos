@@ -52,8 +52,8 @@
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
 
 /* Used to reduce repeated code below */
-static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimension_name,
-                                int dimension, int64_t *value)
+static int ex_get_dim_value(int exoid, const char *name, const char *dimension_name, int dimension,
+                            int64_t *value)
 {
   char errmsg[MAX_ERR_LENGTH];
   int  status;

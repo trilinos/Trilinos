@@ -76,44 +76,6 @@ namespace Teuchos {
 
 namespace Tpetra {
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  namespace Details {
-    /// \brief Implementation of ::Tpetra::MultiVector::clone().
-    ///
-    /// \tparam DstMultiVectorType Specialization of
-    ///   ::Tpetra::MultiVector, which is the result of (is returned
-    ///   by) the clone() operation.
-    ///
-    /// \tparam SrcMultiVectorType Specialization of
-    ///   ::Tpetra::MultiVector, which is the source (input) of the
-    ///   clone() operation.
-    ///
-    /// We provide partial specializations for the following cases:
-    /// <ol>
-    /// <li> Source and destination MultiVector types have the same
-    ///      Scalar type, but all their other template parameters
-    ///      might be different. </li>
-    /// <li> Source and destination MultiVector types are the
-    ///      same. </li>
-    /// <li> Source and destination MultiVector types are both Kokkos
-    ///      refactor types (we look at their Node types to determine
-    ///      this), and have the same Scalar types, but all their
-    ///      other template parameters might be different. </li>
-    /// <li> Source and destination MultiVector types are both Kokkos
-    ///      refactor types (we look at their Node types to determine
-    ///      this), and both the same. </li>
-    /// </ol>
-    template<class DstMultiVectorType, class SrcMultiVectorType>
-    struct MultiVectorCloner {
-      typedef DstMultiVectorType dst_mv_type;
-      typedef SrcMultiVectorType src_mv_type;
-
-      static Teuchos::RCP<dst_mv_type>
-      clone (const src_mv_type& X,
-             const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
-    };
-  } // namespace Details
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Copy the contents of the MultiVector \c src into \c dst.
   /// \relatesalso MultiVector
@@ -829,20 +791,6 @@ namespace Tpetra {
     ///   assignment, and move assignment.
     virtual ~MultiVector () = default;
 
-    /// \brief Return a deep copy of this MultiVector, with a
-    ///   different Node type.
-    ///
-    /// \param node2 [in/out] The new Node type.
-    ///
-    /// \warning We prefer that you use Tpetra::deep_copy (see below)
-    ///   rather than this method.  This method will go away at some
-    ///   point.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template <class Node2>
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  TPETRA_DEPRECATED
-    clone (const Teuchos::RCP<Node2>& node2) const;
-#endif
-
     //! Swap contents of \c mv with contents of \c *this.
     void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
 
@@ -1457,29 +1405,6 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst ();
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Get the Kokkos::DualView which implements local storage.
-    ///
-    /// \warning This method is DEPRECATED.  Do not call it any more.
-    ///
-    /// If you want to sync or modify this MultiVector, call methods
-    /// with the same names as in <tt>Kokkos::DualView</tt>:
-    /// <ul>
-    /// <li> <tt>sync_device</tt> </li>
-    /// <li> <tt>sync_host</tt> </li>
-    /// <li> <tt>modify_device</tt> </li>
-    /// <li> <tt>modify_host</tt> </li>
-    /// </ul>
-    ///
-    /// If you want to get a Kokkos::View of this MultiVector's local
-    /// data, call <tt>getLocalViewDevice()</tt> to get a device-side
-    /// View, or <tt>getLocalViewHost()</tt> to get a host-side View.
-    ///
-    /// If you want to create a MultiVector that views this
-    /// MultiVector's local data, but with a different Map, use the
-    /// "offset view" constructor (see above).
-    dual_view_type TPETRA_DEPRECATED getDualView () const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Clear "modified" flags on both host and device sides.
     void clear_sync_state ();
@@ -2050,49 +1975,6 @@ namespace Tpetra {
       }
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Compute Weighted 2-norm (RMS Norm) of each column.
-    ///
-    /// \warning This method has been DEPRECATED.
-    ///
-    /// The results of this method are undefined for scalar types that
-    /// are not floating-point types (e.g., int).
-    void TPETRA_DEPRECATED
-    normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights,
-                  const Teuchos::ArrayView<mag_type>& norms) const;
-
-    /// \brief Compute the weighted 2-norm (RMS Norm) of each column.
-    ///
-    /// \warning This method is DEPRECATED.
-    ///
-    /// The outcome of this routine is undefined for non-floating
-    /// point scalar types (e.g., int).
-    ///
-    /// This method only exists if mag_type and T are different types.
-    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
-    /// and mag_type differ, then this method ensures backwards
-    /// compatibility with the previous interface (that returned norms
-    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType
-    /// rather than as mag_type).  The complicated \c enable_if
-    /// expression just ensures that the method only exists if
-    /// mag_type and T are different types; the method still returns
-    /// \c void, as above.
-    template <typename T>
-    typename std::enable_if< ! (std::is_same<mag_type,T>::value), void >::type
-    TPETRA_DEPRECATED
-    normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights,
-                  const Teuchos::ArrayView<T>& norms) const
-    {
-      typedef typename Teuchos::ArrayView<T>::size_type size_type;
-      const size_type sz = norms.size ();
-      Teuchos::Array<mag_type> theNorms (sz);
-      this->normWeighted (weights, theNorms);
-      for (size_type i = 0; i < sz; ++i) {
-        // If T and mag_type differ, this does an implicit conversion.
-        norms[i] = theNorms[i];
-      }
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Compute mean (average) value of each column.
     ///
@@ -2445,22 +2327,14 @@ namespace Tpetra {
     virtual size_t constantNumberOfPackets () const;
 
     virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
     copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     (const SrcDistObject& sourceObj,
      const size_t numSameIDs,
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs);
 
     virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
     packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     (const SrcDistObject& sourceObj,
      const Kokkos::DualView<
        const local_ordinal_type*,
@@ -2475,11 +2349,7 @@ namespace Tpetra {
      Distributor& /* distor */);
 
     virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
     unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     (const Kokkos::DualView<
        const local_ordinal_type*,
        buffer_device_type>& importLIDs,
@@ -2502,40 +2372,6 @@ namespace Tpetra {
     return X.whichVectors_ ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  namespace Details {
-    template<class DstMultiVectorType,
-             class SrcMultiVectorType>
-    Teuchos::RCP<
-      typename MultiVectorCloner<
-        DstMultiVectorType,
-        SrcMultiVectorType>::dst_mv_type>
-    MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::
-    clone (const src_mv_type& X,
-           const Teuchos::RCP<typename dst_mv_type::node_type>& node2)
-    {
-      using Teuchos::RCP;
-      typedef typename src_mv_type::map_type src_map_type;
-      typedef typename dst_mv_type::map_type dst_map_type;
-      typedef typename dst_mv_type::node_type dst_node_type;
-      typedef typename dst_mv_type::dual_view_type dst_dual_view_type;
-
-      // Clone X's Map to have the new Node type.
-      RCP<const src_map_type> map1 = X.getMap ();
-      RCP<const dst_map_type> map2 = map1.is_null () ?
-        Teuchos::null : map1->template clone<dst_node_type> (node2);
-
-      const size_t lclNumRows = X.getLocalLength ();
-      const size_t numCols = X.getNumVectors ();
-      dst_dual_view_type Y_view ("MV::dual_view", lclNumRows, numCols);
-
-      RCP<dst_mv_type> Y (new dst_mv_type (map2, Y_view));
-      // Let deep_copy do the work for us, to avoid code duplication.
-      ::Tpetra::deep_copy (*Y, X);
-      return Y ;
-    }
-  } // namespace Details
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Specialization of deep_copy for MultiVector objects with
   ///   the same template parameters.

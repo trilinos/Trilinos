@@ -93,7 +93,7 @@ TEST(StkIo, write_stk_mesh_to_file)
         {
             stk::mesh::Part * const part = *i;
 
-            if(NULL != part->attribute<Ioss::GroupingEntity>()) // this means it is an io_part
+            if(stk::io::is_part_io_part(*part)) // this means it is an io_part
             {
                 if(part->primary_entity_rank() == stk::topology::NODE_RANK)
                 {
@@ -170,7 +170,7 @@ TEST(StkIo, write_stk_mesh_to_file)
         {
             stk::mesh::Part * const part = *i;
 
-            if(NULL != part->attribute<Ioss::GroupingEntity>()) // this means it is an io_part
+            if(stk::io::is_part_io_part(*part)) // this means it is an io_part
             {
                 if(part->primary_entity_rank() == stk::topology::ELEMENT_RANK)
                 {

@@ -59,10 +59,10 @@ template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
 void graph_color_symbolic(
     KernelHandle *handle,
     typename KernelHandle::nnz_lno_t num_rows,
-    typename KernelHandle::nnz_lno_t num_cols,
+    typename KernelHandle::nnz_lno_t /* num_cols */,
     lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries,
-    bool is_symmetric = true){
+    bool /* is_symmetric */ = true){
 
   Kokkos::Impl::Timer timer;
 

@@ -49,4 +49,4 @@ namespace Impl {
 }
 }
 
-#endif
+#endif // KOKKOSPARSE_SPMV_TPL_SPEC_DECL_HPP_

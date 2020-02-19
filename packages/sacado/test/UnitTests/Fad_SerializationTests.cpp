@@ -419,27 +419,13 @@ SFAD_SERIALIZATION_TESTS(ELRFad_SFadType, ELRFad_SFad)
 SFAD_SERIALIZATION_TESTS(ELRCacheFad_SFadType, ELRCacheFad_SFad)
 SFAD_SERIALIZATION_TESTS(CacheFad_SFadType, CacheFad_SFad)
 
-FAD_SERIALIZATION_TESTS(Sacado::Fad::DMFad<double>, Fad_DMFad)
 //typedef Sacado::LFad::LogicalSparse<double,int> Fad_LSType;
 //FAD_SERIALIZATION_TESTS(Fad_LSType, LFad_LS)
 
 // DVFad, LFad, Flop
 
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage<double>::defaultPool_ = NULL;
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage< Sacado::Fad::DMFad<double> >::defaultPool_ = NULL;
-
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  Sacado::Fad::MemPoolManager<double> poolManager(100);
-  Sacado::Fad::MemPool *pool = poolManager.getMemoryPool(10);
-  Sacado::Fad::DMFad<double>::setDefaultPool(pool);
-
-  Sacado::Fad::MemPoolManager< Sacado::Fad::DMFad<double> > poolManager2(100);
-  Sacado::Fad::MemPool *pool2 = poolManager2.getMemoryPool(5);
-  Sacado::Fad::DMFad< Sacado::Fad::DMFad<double> >::setDefaultPool(pool2);
 
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }

@@ -143,7 +143,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
     cur_num_maps = ex__get_file_item(exoid, ex__get_counter_list(map_type));
     if (cur_num_maps >= (int)num_maps) {
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: exceeded number of %ss (%" ST_ZU ") specified in file id %d",
+               "ERROR: exceeded number of %ss (%zu) specified in file id %d",
                ex_name_of_object(map_type), num_maps, exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);

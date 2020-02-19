@@ -66,7 +66,7 @@ public:
       attribute. Instances of this interface should not retain a
       reference to the input ParameterList after this method returns.
 
-      \param[in] paramlist List of parameters that the user wants to use.
+      \param paramlist [in] List of parameters that the user wants to use.
   */
   virtual void setParameters(const Teuchos::ParameterList& paramlist) = 0;
 
@@ -118,7 +118,7 @@ public:
 
   /** Return the "property" for a given element that resided locally.
 
-      \param[in] myElem the local ID of the element we want to know
+      \param myElem [in] the local ID of the element we want to know
       the property.
 
       \return property associated to the local element.
@@ -128,7 +128,7 @@ public:
 
   /** Return the number of \b LOCAL elements with the given property.
 
-      \param[in] property Value of the property to consider.
+      \param property [in] Value of the property to consider.
 
       \return Number of \b local elems which have this property.
    */
@@ -138,12 +138,12 @@ public:
   /** Fill user-allocated list (of length len) with the local element
       ids of the LOCAL elements with the given property.
 
-      \param[in] property  Value of the property to consider.
+      \param property [in]  Value of the property to consider.
 
-      \param[out] elementList User allocated array (of size at least
+      \param elementList [out] User allocated array (of size at least
       \c len) of local ID that have the asked property.
 
-      \param[in] len Maximum lenght for the array. If \c len is
+      \param len [in] Maximum lenght for the array. If \c len is
       greater than the result of numElemsWithProperty() for \c
       property, only the first and relevant elements are filled.
 
@@ -158,9 +158,9 @@ public:
   /** Give access of the property array that is owned by the current
       processor.
 
-      \param[out] size Number of elements in the array.
+      \param size [out] Number of elements in the array.
 
-      \param[out] array Pointer to the the properties array inside
+      \param array [out] Pointer to the the properties array inside
                         the object.
 
       \remark This pointer is only significant if the object still exists.
@@ -174,11 +174,11 @@ public:
 
   /** Copy a part of the property array.
 
-      \param[in] len of the array given by the user.
+      \param len [in] of the array given by the user.
 
-      \param[out] size Number of elements in the array.
+      \param size [out] Number of elements in the array.
 
-      \param[out] array Array of properties. Allocated by the user with
+      \param array [out] Array of properties. Allocated by the user with
                         a size of at least @c len elements.
 
       \remark Memory space which is not useful in the array is not

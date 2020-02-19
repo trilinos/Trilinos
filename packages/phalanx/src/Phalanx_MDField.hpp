@@ -59,6 +59,7 @@
 #include "Sacado_mpl_vector.hpp"
 #include "Sacado_mpl_for_each.hpp"
 #include "Sacado_mpl_push_back.hpp"
+#include "Phalanx_DataLayout_DynamicLayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
 namespace PHX {
@@ -247,16 +248,24 @@ namespace PHX {
     using array_type = typename traits::array_type;
     using size_type = typename device_type::size_type;
     using execution_space = typename array_type::execution_space;
-
+#ifdef PHX_DEBUG
+    enum { rank_value = traits::rank }; // for printing in debug mode
+#endif
     typedef Scalar value_type;
     typedef Scalar& reference_type;
 
 
-    // Not allowed - too easy to forget to bind memory!
-    // template<typename...Extents>
-    // MDField(const std::string name,Extents... e)
-    //   : view(name,e...)
-    // {}
+    /// ONLY USE THIS CTOR FOR UNMANAGED FIELDS!!!! It will allocate memory unassociated with the DAG!
+    template<typename...Extents>
+    MDField(const std::string name,const std::string layout_name,Extents... e)
+      : m_view(name,e...)
+#ifdef PHX_DEBUG
+      , m_data_set(true)
+#endif
+    {
+      Teuchos::RCP<PHX::Layout> layout = Teuchos::rcp(new PHX::Layout(layout_name,e...));
+      m_tag = Teuchos::rcp(new PHX::Tag<value_type>(name,layout));
+    }
 
     MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl)
 #ifdef PHX_DEBUG
@@ -307,6 +316,9 @@ namespace PHX {
     KOKKOS_INLINE_FUNCTION
     constexpr size_t size() const {return m_view.size();}
 
+    KOKKOS_INLINE_FUNCTION
+    constexpr size_t span() const {return m_view.span();}
+
     const PHX::FieldTag& fieldTag() const
     {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
@@ -347,6 +359,17 @@ namespace PHX {
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
       return m_view(indices...);
+    }
+
+    template<typename... index_pack>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename PHX::MDFieldReturnType<array_type>::return_type
+    access(const index_pack&... indices) const
+    {
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+      TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
+#endif
+      return m_view.access(indices...);
     }
 
     template<typename iType0>

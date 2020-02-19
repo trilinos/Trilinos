@@ -191,7 +191,7 @@
         {
           const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
           SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-          NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+          NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnderId);
 
           unsigned idx = map_sde_size[subDimEntity.size()];
           if (nodeIds_onSE.size())

@@ -46,6 +46,7 @@
 #define PHX_SCALAR_CONTAINER_BASE_DEF_HPP
 
 #include "Teuchos_Assert.hpp"
+
 // **************************************************************************
 template<typename Traits>
 PHX::EvaluationContainerBase<Traits>::EvaluationContainerBase()
@@ -88,6 +89,13 @@ writeGraphvizFile(const std::string filename,
 				 writeEvaluatedFields, 
 				 writeDependentFields, 
 				 debugRegisteredEvaluators);
+
+  {
+    std::ofstream ofs;
+    std::string ext_filename = filename+".txt";
+    ofs.open(ext_filename.c_str());
+    this->print(ofs);
+  }
 }
     
 // **************************************************************************

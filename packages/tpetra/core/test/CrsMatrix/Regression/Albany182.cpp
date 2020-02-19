@@ -666,13 +666,6 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap = buildOverlappingRowMap<map_type> (out, success, verbose, comm);
 
     RCP<CrsMatrixType> A;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (! staticGraph) {
-      A = rcp (new CrsMatrixType (rowMap, 0));
-      insertIntoOverlappingCrsMatrix (*A);
-    }
-    else 
-#endif
     {
       using Teuchos::rcp_const_cast;
       typedef typename CrsMatrixType::crs_graph_type crs_graph_type;
@@ -1005,24 +998,9 @@ namespace { // (anonymous)
       out << "Target matrix is correct!" << endl;
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    const Tpetra::ProfileType pftypes[2] = {Tpetra::DynamicProfile, Tpetra::StaticProfile};
-#else
     const Tpetra::ProfileType pftypes[1] = {Tpetra::StaticProfile};
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     for (Tpetra::ProfileType profileType : pftypes) {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      out << ">>> Target matrix is {";
-      if (profileType == Tpetra::StaticProfile) {
-        out << "StaticProfile";
-      }
-      else {
-        out << "DynamicProfile";
-      }
-      out << ", locally indexed}" << endl;
-#else
       out << ">>> Target matrix is {StaticProfile, locally indexed}" << endl;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
       Teuchos::OSTab tab2 (out);
 
       const size_t maxNumEntPerRow = 10; // needs to be an upper bound
@@ -1143,11 +1121,7 @@ namespace { // (anonymous)
     out << "testCrsMatrixExport" << endl;
     Teuchos::OSTab tab1 (out);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
-    for (bool staticGraph : {true, false}) 
-#else
     for (bool staticGraph : {true})
-#endif
     {
       out << "Source matrix: staticGraph=" << (staticGraph ? "true" : "false")
           << endl;

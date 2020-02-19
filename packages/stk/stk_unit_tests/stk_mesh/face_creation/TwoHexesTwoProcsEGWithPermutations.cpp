@@ -20,9 +20,15 @@ protected:
         test_that_one_face_exists_after_both_procs_create_face_on_proc_boundary();
     }
 
-    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                               unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
     {
-        set_bulk(new stk::mesh::BulkData(get_meta(), get_comm(), auraOption));
+        set_bulk(new stk::mesh::BulkData(get_meta(), get_comm(), auraOption,
+#ifdef SIERRA_MIGRATION
+                                         false,
+#endif
+                                         nullptr,
+                                         bucketCapacity));
     }
 
     void set_permutations_for_both_procs(const std::vector<std::vector<int>> input_permutations)

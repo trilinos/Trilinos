@@ -21,7 +21,6 @@
 #include <adapt/NodeRegistry.hpp>
 #include <percept/PEnums.hpp>
 
-#include <boost/unordered_set.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
 
 namespace percept {
@@ -166,8 +165,8 @@ namespace percept {
                   int id_start = 0;
                   int id_end = 0;
                   try {
-                    id_start = boost::lexical_cast<int>(id_string_start);
-                    id_end = boost::lexical_cast<int>(id_string_end);
+                    id_start = std::stoi(id_string_start);
+                    id_end = std::stoi(id_string_end);
                   }
                   catch (std::exception& X)
                     {
@@ -195,7 +194,7 @@ namespace percept {
 
                   for (int id=id_start; id <= id_end; id++)
                     {
-                      new_names += plus_or_minus + (boost::lexical_cast<std::string>(id)) + mult + (id == id_end ? "" : ",");
+                      new_names += plus_or_minus + std::to_string(id) + mult + (id == id_end ? "" : ",");
                     }
                   if (!last_one)
                     new_names += ",";
@@ -915,24 +914,22 @@ namespace percept {
     for (iter = map.begin(); iter != map.end(); ++iter)
       {
         const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
-        SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+        SubDimCellData& nodeId_elementOwnerId = (*iter).second;
 
         // tuple storage: SDC_DATA_GLOBAL_NODE_IDS, SDC_DATA_OWNING_ELEMENT_KEY,  SDC_DATA_OWNING_SUBDIM_RANK, SDC_DATA_OWNING_SUBDIM_ORDINAL, SDC_DATA_SPACING
-        NodeIdsOnSubDimEntityType& nodeIds_onSE      = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+        NodeIdsOnSubDimEntityType& nodeIds_onSE      = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
 
-        stk::mesh::EntityKey       owningElementKey  = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>();
+        stk::mesh::EntityKey       owningElementKey  = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId);
         stk::mesh::EntityId        owningElementId   = owningElementKey.id();
         (void)owningElementId;
         stk::mesh::EntityRank      owningElementRank = owningElementKey.rank();
         //VERIFY_OP_ON(owningElementRank, ==, eMesh.element_rank(), "bad owningElementRank");
-        unsigned               owningSubDimRank  = nodeId_elementOwnderId.get<SDC_DATA_OWNING_SUBDIM_RANK>();
-        unsigned               owningSubDimOrd   = nodeId_elementOwnderId.get<SDC_DATA_OWNING_SUBDIM_ORDINAL>();
+        unsigned               owningSubDimRank  = std::get<SDC_DATA_OWNING_SUBDIM_RANK>(nodeId_elementOwnerId);
+        unsigned               owningSubDimOrd   = std::get<SDC_DATA_OWNING_SUBDIM_ORDINAL>(nodeId_elementOwnerId);
         VERIFY_OP_ON(owningSubDimOrd, >, 0, "hmm 2");
         --owningSubDimOrd;
         unsigned owningSubDimSize = subDimEntity.size();
         (void)owningSubDimSize;
-
-        //Double3                    sdcSpacing        = nodeId_elementOwnderId.get<SDC_DATA_SPACING>();
 
         stk::mesh::Entity owningElement = eMesh.get_bulk_data()->get_entity(owningElementKey.rank(), owningElementKey.id());
         if (!eMesh.is_valid(owningElement))
@@ -1033,15 +1030,15 @@ namespace percept {
             VERIFY_OP_ON(eMesh.is_valid(subDimEntity[ii]), ==, true, "bad node in rebuild_node_registry");
           }
         static SubDimCellData empty_SubDimCellData;
-        SubDimCellData* nodeId_elementOwnderId_ptr = nodeRegistry.getFromMapPtr(subDimEntity);
-        SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
-        bool is_empty = nodeId_elementOwnderId_ptr == 0;
+        SubDimCellData* nodeId_elementOwnerId_ptr = nodeRegistry.getFromMapPtr(subDimEntity);
+        SubDimCellData& nodeId_elementOwnerId = (nodeId_elementOwnerId_ptr ? *nodeId_elementOwnerId_ptr : empty_SubDimCellData);
+        bool is_empty = nodeId_elementOwnerId_ptr == 0;
 
         if (is_empty)
           {
-            SubDimCellData data( NodeIdsOnSubDimEntityType(1, stk::mesh::Entity(), nodeRegistry.NR_MARK_NONE),
-                                 owningElementKey, owningSubDimRank, owningSubDimOrd + 1);
-            NodeIdsOnSubDimEntityType& nid_new = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            SubDimCellData data { NodeIdsOnSubDimEntityType(1, stk::mesh::Entity(), nodeRegistry.NR_MARK_NONE),
+                owningElementKey, (unsigned char)owningSubDimRank, (unsigned char)(owningSubDimOrd + 1), {}};
+            NodeIdsOnSubDimEntityType& nid_new = std::get<SDC_DATA_GLOBAL_NODE_IDS>(data);
             nid_new.resize(1);
             nid_new[0] = node;
             nid_new.m_entity_id_vector[0] = eMesh.id(node);
@@ -1051,7 +1048,7 @@ namespace percept {
           }
         else
           {
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(nodeId_elementOwnerId);
             nodeIds_onSE.push_back(node);
             nodeIds_onSE.m_entity_id_vector.push_back(eMesh.id(node));
             nodeIds_onSE.m_mark = static_cast<unsigned>(node_data[NR_FIELD_MARK]);

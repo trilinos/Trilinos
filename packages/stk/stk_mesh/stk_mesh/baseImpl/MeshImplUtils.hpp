@@ -39,6 +39,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/EntityProcMapping.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
@@ -108,7 +109,6 @@ public:
     }
 };
 
-
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureGeneral(
         const BulkData & mesh,
@@ -117,18 +117,20 @@ void VisitClosureGeneral(
         DESIRED_ENTITY & desired_entity)
 {
     if (desired_entity(entity_of_interest)) {
-        do_this(entity_of_interest);
-        if (mesh.is_valid(entity_of_interest)) {
-            EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
-            for (EntityRank rank = stk::topology::NODE_RANK ; rank < entity_of_interest_rank ; ++rank) {
-                size_t num_entities_of_rank = mesh.num_connectivity(entity_of_interest,rank);
-                const Entity * entity_it = mesh.begin(entity_of_interest,rank);
+      do_this(entity_of_interest);
+      if (mesh.is_valid(entity_of_interest)) {
+        EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
+        for (EntityRank rank = stk::topology::NODE_RANK ; rank < entity_of_interest_rank ; ++rank) {
+            unsigned num_entities_of_rank = mesh.num_connectivity(entity_of_interest,rank);
+            if (num_entities_of_rank > 0) {
+              const Entity * entities = mesh.begin(entity_of_interest,rank);
 
-                for (size_t i=0 ; i<num_entities_of_rank ; ++i, ++entity_it) {
-                    VisitClosureGeneral(mesh,*entity_it,do_this,desired_entity);
-                }
+              for (unsigned i=0 ; i<num_entities_of_rank ; ++i) {
+                  VisitClosureGeneral(mesh,entities[i],do_this,desired_entity);
+              }
             }
         }
+      }
     }
 }
 
@@ -169,18 +171,20 @@ struct AlwaysVisit {
 };
 
 struct OnlyVisitOnce {
+    OnlyVisitOnce(const BulkData& mesh_in) : mesh(mesh_in) {}
     bool operator()(Entity entity) {
-        if (already_visited.find(entity) == already_visited.end()) {
+        if (mesh.is_valid(entity) && already_visited.find(entity) == already_visited.end()) {
             already_visited.insert(entity);
             return true;
         }
         return false;
     }
+    const BulkData& mesh;
     std::set<Entity> already_visited;
 };
 
 struct OnlyVisitLocallyOwnedOnce {
-    OnlyVisitLocallyOwnedOnce(const BulkData & mesh_in) : mesh(mesh_in) {}
+    OnlyVisitLocallyOwnedOnce(const BulkData & mesh_in) : mesh(mesh_in), ovo(mesh_in) {}
     bool operator()(Entity entity)
     {
         return ovo(entity) && mesh.bucket(entity).owned();
@@ -190,7 +194,7 @@ struct OnlyVisitLocallyOwnedOnce {
 };
 
 struct OnlyVisitSharedOnce {
-    OnlyVisitSharedOnce(const BulkData & mesh_in) : mesh(mesh_in) {}
+    OnlyVisitSharedOnce(const BulkData & mesh_in) : mesh(mesh_in), ovo(mesh_in) {}
     bool operator()(Entity entity)
     {
         if (ovo(entity) && !mesh.in_shared(mesh.entity_key(entity))) { return true; }
@@ -202,9 +206,9 @@ struct OnlyVisitSharedOnce {
 
 struct OnlyVisitGhostsOnce
 {
-    OnlyVisitGhostsOnce(BulkData & mesh_in) : mesh(mesh_in) {}
+    OnlyVisitGhostsOnce(BulkData & mesh_in) : mesh(mesh_in), ovo(mesh_in) {}
     bool operator()(Entity entity) {
-        if (ovo(entity) && mesh.in_receive_ghost(mesh.entity_key(entity))) { return true; }
+        if (ovo(entity) && mesh.in_receive_ghost(entity)) { return true; }
         return false;
     }
    BulkData & mesh;
@@ -217,7 +221,7 @@ void VisitClosure(
         stk::mesh::Entity entity_of_interest,
         DO_THIS_FOR_ENTITY_IN_CLOSURE & do_this)
 {
-    OnlyVisitOnce ovo;
+    OnlyVisitOnce ovo(mesh);
     VisitClosureGeneral(mesh,entity_of_interest,do_this,ovo);
 }
 
@@ -229,7 +233,7 @@ void VisitClosure(
         const FORWARD_ITERATOR & finish,
         DO_THIS_FOR_ENTITY_IN_CLOSURE & do_this)
 {
-    OnlyVisitOnce ovo;
+    OnlyVisitOnce ovo(mesh);
     VisitClosureGeneral(mesh,start,finish,do_this,ovo);
 }
 
@@ -279,7 +283,7 @@ void VisitUpwardClosure(
         Entity entity_of_interest,
         DO_THIS_FOR_ENTITY_IN_UPWARD_CLOSURE & do_this)
 {
-    OnlyVisitOnce ovo;
+    OnlyVisitOnce ovo(mesh);
     VisitUpwardClosureGeneral(mesh,entity_of_interest,do_this,ovo);
 }
 
@@ -290,7 +294,7 @@ void VisitUpwardClosure(
         const FORWARD_ITERATOR & finish,
         DO_THIS_FOR_ENTITY_IN_UPWARD_CLOSURE & do_this)
 {
-    OnlyVisitOnce ovo;
+    OnlyVisitOnce ovo(mesh);
     VisitUpwardClosureGeneral(mesh,start,finish,do_this,ovo);
 }
 
@@ -328,7 +332,7 @@ void VisitAuraClosure(
         const FORWARD_ITERATOR & finish,
         DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this)
 {
-    OnlyVisitOnce ovo;
+    OnlyVisitOnce ovo(mesh);
     VisitAuraClosureGeneral(mesh,start,finish,do_this,ovo);
 }
 
@@ -338,7 +342,7 @@ void VisitAuraClosure(
         Entity entity_of_interest,
         DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this)
 {
-    OnlyVisitOnce ovo;
+    OnlyVisitOnce ovo(mesh);
     VisitAuraClosureGeneral(mesh,entity_of_interest,do_this,ovo);
 }
 
@@ -408,49 +412,133 @@ bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_node
     return should_connect;
 }
 
+struct StoreInEntityProcMapping {
+    StoreInEntityProcMapping(BulkData & mesh_in, stk::mesh::EntityProcMapping& epm_in)
+    :mesh(mesh_in)
+    ,myMapping(epm_in)
+    {}
+
+    void operator()(Entity entity) {
+      myMapping.addEntityProc(entity, proc);
+    }
+
+    BulkData & mesh;
+    stk::mesh::EntityProcMapping& myMapping;
+    int proc;
+};
+
 struct StoreInEntityProcSet {
     StoreInEntityProcSet(
             BulkData & mesh_in,
             std::set<stk::mesh::EntityProc, stk::mesh::EntityLess> & set_in)
     :mesh(mesh_in)
-    ,myset(set_in) { }
+    ,myset(set_in)
+    ,alreadyGhostedToProc(mesh_in.get_size_of_entity_index_space(), -1) { }
 
     void operator()(Entity entity) {
-      myset.insert(stk::mesh::EntityProc(entity,proc));
+      if (proc != alreadyGhostedToProc[entity.local_offset()]) {
+        alreadyGhostedToProc[entity.local_offset()] = proc;
+        myset.insert(stk::mesh::EntityProc(entity,proc));
+      }
     }
 
     BulkData & mesh;
     std::set<stk::mesh::EntityProc , stk::mesh::EntityLess> & myset;
     int proc;
+    std::vector<int> alreadyGhostedToProc;
 };
 
 struct OnlyGhosts  {
     OnlyGhosts(BulkData & mesh_in) : mesh(mesh_in) {}
     bool operator()(Entity entity) {
-        const bool isValid = mesh.is_valid(entity);
-        const bool iDoNotOwnEntity = proc != mesh.parallel_owner_rank(entity);
-        const bool entityIsShared = mesh.in_shared( mesh.entity_key(entity) , proc );
-        return (isValid && iDoNotOwnEntity && !entityIsShared);
+      if (mesh.is_valid(entity)) {
+        if (proc != mesh.parallel_owner_rank(entity)) {
+          const bool isSharedWithProc = mesh.in_shared(entity, proc);
+          return !isSharedWithProc;
+        }
+      }
+      return false;
     }
     BulkData & mesh;
     int proc;
 };
 
+struct OnlyNewGhosts  {
+    OnlyNewGhosts(const BulkData & mesh_in, const Ghosting& ghosting_in) : mesh(mesh_in), ghosting(ghosting_in) {}
+    bool operator()(Entity entity) {
+      if (mesh.is_valid(entity)) {
+        if (proc != mesh.parallel_owner_rank(entity)) {
+          if (!mesh.in_ghost(ghosting, entity, proc)) {
+            const bool isSharedWithProc = mesh.in_shared(entity, proc);
+            return !isSharedWithProc;
+          }
+        }
+      }
+      return false;
+    }
+    const BulkData& mesh;
+    const Ghosting& ghosting;
+    int proc;
+};
+
+struct OnlyRecvGhosts {
+  OnlyRecvGhosts(const BulkData& mesh_in, const Ghosting& ghost, const std::vector<bool>& status)
+  : mesh(mesh_in), ghosting(ghost), ghostStatus(status) {}
+  bool operator()(Entity entity) {
+    return mesh.is_valid(entity) && mesh.in_receive_ghost(ghosting, entity) && !ghostStatus[entity.local_offset()];
+  }
+  const BulkData& mesh;
+  const Ghosting& ghosting;
+  const std::vector<bool>& ghostStatus;
+};
+
+struct VecPushBack {
+  VecPushBack(std::vector<Entity>& rcvGhosts, std::vector<bool>& status)
+  : recvGhosts(rcvGhosts), ghostStatus(status) {}
+  void operator()(Entity entity) {
+    recvGhosts.push_back(entity);
+    ghostStatus[entity.local_offset()] = true;
+  }
+  std::vector<Entity>& recvGhosts;
+  std::vector<bool>& ghostStatus;
+};
+
 void send_entity_keys_to_owners(
   BulkData & mesh ,
-  const std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs ,
-        std::set< EntityProc , EntityLess > & entitiesToGhostOntoOtherProcessors );
+  const std::set< EntityKey > & recvGhosts ,
+        std::set< EntityProc , EntityLess > & sendGhosts );
+
+void send_entity_keys_to_owners(
+  BulkData & mesh ,
+  const std::vector<Entity> & recvGhosts ,
+        std::set< EntityProc , EntityLess > & sendGhosts);
 
 void comm_sync_send_recv(
   BulkData & mesh ,
   std::set< EntityProc , EntityLess > & new_send ,
   std::set< EntityKey > & new_recv );
 
+void comm_sync_send_recv(
+  BulkData & mesh ,
+  std::set< EntityProc , EntityLess > & new_send ,
+  std::vector<Entity> & new_recv,
+  std::vector<bool>& ghostStatus );
+
+void comm_sync_aura_send_recv(
+  BulkData & mesh ,
+  std::vector<EntityProc> & sendGhosts,
+  EntityProcMapping& entityProcMapping,
+  std::vector<bool>& ghostStatus );
+
 void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
                              const EntityRank rank_of_orig_entity,
-                             const int my_rank,
                              const int share_proc,
                              std::vector<EntityProc>& send);
+
+void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
+                             const EntityRank rank_of_orig_entity,
+                             const int share_proc,
+                             EntityProcMapping& send);
 
 void move_unowned_entities_for_owner_to_ghost(
   stk::mesh::BulkData & mesh ,

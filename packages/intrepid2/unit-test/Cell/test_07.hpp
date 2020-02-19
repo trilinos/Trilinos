@@ -62,7 +62,7 @@ namespace Intrepid2 {
     try {                                                               \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::logic_error &err) {                                      \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
@@ -199,7 +199,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_CHECK_POINT_INCLUSION(offset, false, shards::Wedge<>,         Impl::Wedge<6>);
         }
 
-      } catch (std::logic_error err) {
+      } catch (std::logic_error &err) {
         //============================================================================================//
         // Wrap up test: check if the test broke down unexpectedly due to an exception                //
         //============================================================================================//

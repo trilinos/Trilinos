@@ -56,6 +56,7 @@ class FieldBase
 public:
   STK_FUNCTION FieldBase() = default;
   STK_FUNCTION virtual ~FieldBase() {}
+  virtual void sync_to_host() {}
 };
 
 
@@ -102,13 +103,16 @@ public:
 
     void set_all(const StkMeshAdapter& ngpMesh, const T& value)
     {
-        ngp::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const StkMeshAdapter::MeshIndex& entity) {
-            T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, *entity.bucket, entity.bucketOrd));
-            *fieldPtr = value;
-        });
+      ngp::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const StkMeshAdapter::MeshIndex& entity) {
+                                 T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, *entity.bucket, entity.bucketOrd));
+                                 int numScalars = stk::mesh::field_scalars_per_entity(*field, *entity.bucket);
+                                 for (int i=0; i<numScalars; i++) {
+                                   fieldPtr[i] = value;
+                                 }
+                               });
     }
 
-    void sync_to_host() { }
+    void sync_to_host() override { }
 
     void sync_to_device() { }
 
@@ -192,7 +196,7 @@ public:
 
     unsigned get_ordinal() const { return stkFieldAdapter.get_ordinal(); }
 
-    void sync_to_host() { }
+    void sync_to_host() override { }
 
     void sync_to_device() { }
 
@@ -298,7 +302,7 @@ public:
         Kokkos::deep_copy(deviceFieldExistsOnBucket, hostFieldExistsOnBucket);
     }
 
-    void sync_to_host()
+    void sync_to_host() override
     {
         if (need_sync_to_host()) {
             ProfilingBlock prof("copy_to_host for " + hostField->name());
@@ -563,7 +567,7 @@ public:
     STK_FUNCTION
     unsigned get_ordinal() const { return staticField.get_ordinal(); }
 
-    void sync_to_host()
+    void sync_to_host() override
     {
         if (need_sync_to_host()) {
             copy_device_to_host();

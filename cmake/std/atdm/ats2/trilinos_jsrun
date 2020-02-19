@@ -1,0 +1,181 @@
+#!/bin/bash
+
+# Globals
+DEBUG_SCRIPT="${DEBUG_SCRIPT-:0}"
+ECHO_CMD="${ECHO_CMD:-1}"
+np_is_one="false"
+orig_args=("$@")
+args=("$@")
+
+function debug_print {
+  if [ "$DEBUG_SCRIPT" == "1" ]; then
+    msg="$@"
+    1>&2 echo "$msg"
+  fi
+}
+
+################################################################################
+# @brief: Hack around JSM server error "Error: Remote JSM server is not
+# responding"
+# This function assumes that "args" has been initialized
+# @return void
+################################################################################
+function evaluate_jsrun_command {
+  local jsrun_ret
+  local out_file
+  local retry
+  local grep_status
+
+  # Create process ID specific output file
+  # Instead of attempting to find the test name in $@, let's use
+  # the hash of the test command to avoid race conditions.
+  out_file=$(printf "'%s' " "${args[@]}" | md5sum | awk '{print $1".out"}')
+
+  if [ "$ECHO_CMD" == "1" ]; then
+    echo "BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
+    echo "AFTER: export TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI}; jsrun " $(printf "'%s' " "${args[@]}")
+  fi
+
+  # Set retry, assume JSRUN_WRAPPER_NUM_RETRIES is valid if set
+  if [[ ! "$JSRUN_WRAPPER_NUM_RETRIES" == "" ]]; then
+    retry=${JSRUN_WRAPPER_NUM_RETRIES}
+  else
+    retry=3
+  fi
+  grep_status=0
+
+  # Retry jsrun command until retry is exhausted or JSM server error is not found
+  while [[ $grep_status -eq 0 && $retry -ne 0 ]]; do
+    # Evaluate the command passed in and redirect all output
+    eval jsrun $(printf "'%s' " "${args[@]}") &> $out_file
+    jsrun_ret=$?
+
+    grep 'Error: Remote JSM server is not responding' $out_file &> /dev/null
+    grep_status=$?
+
+    # Sleep for a few seconds before retrying the test.
+    if [[ $grep_status -eq 0 && $retry -ne 1 ]]; then
+      sleep 3
+    fi
+
+    retry=$((retry-1))
+  done
+
+  if [ "$ECHO_CMD" == "1" ]; then
+    echo "out_file=$out_file"
+  fi
+  cat $out_file
+  rm $out_file
+  return $jsrun_ret
+}
+
+# Check if TPETRA_ASSUME_CUDA_AWARE_MPI is set and default to 0 if unset.
+if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]]; then
+  echo "WARNING, you have not set TPETRA_ASSUME_CUDA_AWARE_MPI=0 or 1, defaulting to TPETRA_ASSUME_CUDA_AWARE_MPI=0"
+  export TPETRA_ASSUME_CUDA_AWARE=0
+fi
+
+# Parse input arguments and modify them for jsrun
+for i in "${!args[@]}";
+do
+  arg=${args[${i}]}
+
+  debug_print "Processing arg=$arg"
+
+  # handle the case of seeing the np argument
+  # lets assume -p ## or --np=##
+  if [[ "$arg" =~ ^-p[0-9]+$ ]]; then
+    # np is just the 2nd arg split on 'p'
+    my_np=$(echo "$arg" | cut -f2 -d'p');
+    debug_print "  Case: -p##, with ##=$my_np"
+    if [ "$my_np" == "1" ]; then
+      np_is_one="true";
+      debug_print "  Case: -p##, with ##=$my_np and np=1"
+    fi
+    # we are finished
+    break;
+  # next, -p ##
+  elif [ "$arg" == "-p" ]; then
+    ip1=$(($i+1));
+    my_np=${args[${ip1}]}
+    debug_print "  Case: -p ##, with ##=$my_np"
+    if [ "$my_np" == "1" ]; then
+      np_is_one="true";
+      debug_print "  Case: -p ##, with ##=$my_np and np=1"
+    fi
+    # we are finished
+    break;
+  # next, --np=##
+  elif [[ "$arg" =~ ^--np=[0-9]+$ ]]; then
+    # np is just the 2nd arg split on '='
+    my_np=$(echo "$arg" | cut -f2 -d'=');
+    debug_print "  Case: --np=##, with ##=$my_np"
+    if [ "$my_np" == "1" ]; then
+      np_is_one="true";
+      debug_print "  Case: --np=##, with ##=$my_np and np=1"
+    fi
+    # we are finished
+    break;
+  fi
+done
+
+if [ "$np_is_one" == "true" ]; then
+  added_disable="false"
+  debug_print "NP=1 adding disable_gpu_hooks"
+  # look for an '-M' arg and append disable hooks to the next argument
+  for i in "${!args[@]}";
+  do
+    arg=${args[${i}]}
+    debug_print "arg=$arg"
+    if [ "$arg" == "-M" ]; then
+      debug_print "arg=$arg, found -M, prepending -disable_gpu_hooks"
+      ip1=$(($i+1));
+      # single quotes matter, as the argument to -M needs to be all args originally quoted to it
+      args[${ip1}]="-disable_gpu_hooks ${args[${ip1}]}"
+      debug_print "updated arg = ${args[${ip1}]}"
+      added_disable="true"
+      break
+    fi
+  done
+
+  # did not find -M, so we add it
+  if [ "$added_disable" == "false" ]; then
+    debug_print "NP=1, but we didn't find a -M argument, so adding -M and disabling the gpu_hooks"
+    # prepend the argument
+    args=("-M -disable_gpu_hooks" "${args[@]}")
+  fi
+fi
+
+# I think if np=1 and disable_gpu_hooks is passed, then you aren't supposed to use -gpu
+if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]; then
+  debug_print "TPETRA_ASSUME_CUDA_AWARE_MPI=1 and np>1, adding -M -gpu"
+  added_arg="false"
+
+  # look for an '-M' arg and prepend an arg (this could be a function)
+  for i in "${!args[@]}";
+  do
+    arg=${args[${i}]}
+    debug_print "arg=$arg"
+    if [ "$arg" == "-M" ]; then
+      debug_print "arg=$arg, found -M, prepending -gpu"
+      ip1=$(($i+1));
+      # single quotes matter, as the argument to -M needs to be all args originally quoted to it
+      args[${ip1}]="-gpu ${args[${ip1}]}"
+      added_arg="true"
+      break
+    fi
+  done
+
+  # did not find -M, so we add it
+  if [ "$added_arg" == "false" ]; then
+    debug_print "Didn't find a -M argument, so adding -M and -gpu"
+    # prepend the argument
+    args=("-M -gpu" "${args[@]}")
+  fi
+
+  # Point jsrun to pami
+  args=("-E LD_PRELOAD=$OPAL_PREFIX/lib/pami_451/libpami.so" "${args[@]}")
+fi
+
+evaluate_jsrun_command
+exit $?

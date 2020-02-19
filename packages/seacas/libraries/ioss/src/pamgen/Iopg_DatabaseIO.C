@@ -209,7 +209,7 @@ namespace Iopg {
       }
     }
     else {
-      std::ifstream f(get_filename().c_str());
+      std::ifstream f(get_filename());
       if (!f) {
         std::ostringstream errmsg;
         errmsg << "Error opening file '" << get_filename() << "'.";

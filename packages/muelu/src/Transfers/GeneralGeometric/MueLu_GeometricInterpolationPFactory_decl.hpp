@@ -99,10 +99,12 @@ namespace MueLu{
 
   private:
     void BuildConstantP(RCP<Matrix>& P, RCP<const CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const;
-    void BuildLinearP(RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
+    void BuildLinearP(Level& coarseLevel,
+                      RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
                       RCP<realvaluedmultivector_type>& fineCoordinates,
                       RCP<realvaluedmultivector_type>& ghostCoordinates,
-                      const int numDimensions, RCP<Matrix>& P) const;
+                      const int numDimensions, const bool keepD2,
+                      RCP<Matrix>& P) const;
     void ComputeLinearInterpolationStencil(const int numDimensions, const int numInterpolationPoints,
                                            const Array<Array<real_type> > coord,
                                            Array<real_type>& stencil) const;

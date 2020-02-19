@@ -42,7 +42,7 @@
 
 
 /** \file
-    \brief  Test for checking orientation tools for Hexaedral elements
+    \brief  Test for checking orientation tools for Hexahedral elements
  
     The test considers two hexahedra in the physical space sharing a common face. 
     In order to test significant configurations, we consider 6 mappings of the reference hexahedron
@@ -102,7 +102,7 @@ namespace Test {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::exception err) {                                        \
+    catch (std::exception &err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -456,25 +456,26 @@ int OrientationHex(const bool verbose) {
 
        //Testing Kronecker property of basis functions
        {
+         DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
+         DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
+         DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
          for(ordinal_type i=0; i<numCells; ++i) {
-           DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
-           DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-           DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
            auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
            auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
            basis.getValues(outView, inView);
+         }
 
-           // modify basis values to account for orientations
-           ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-               basisValuesAtDofCoords,
-               elemOrts,
-               &basis);
+         // modify basis values to account for orientations
+         ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                                       basisValuesAtDofCoords,
+                                       elemOrts,
+                                       &basis);
 
-           // transform basis values
-           deep_copy(transformedBasisValuesAtDofCoordsOriented,
-               basisValuesAtDofCoordsOriented);
+         // transform basis values
+         deep_copy(transformedBasisValuesAtDofCoordsOriented,
+                   basisValuesAtDofCoordsOriented);
 
-
+         for(ordinal_type i=0; i<numCells; ++i) {
            for(ordinal_type k=0; k<basisCardinality; ++k) {
              for(ordinal_type j=0; j<basisCardinality; ++j){
                ValueType dofValue = transformedBasisValuesAtDofCoordsOriented(i,k,j) * dofCoeffsPhys(i,j);
@@ -493,7 +494,7 @@ int OrientationHex(const bool verbose) {
          }
        }
 
-       //check function reproducbility
+       //check function reproducibility
        Fun fun;
        DynRankView ConstructWithLabel(funDofs, numCells, basisCardinality);
        DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords);
@@ -555,17 +556,15 @@ int OrientationHex(const bool verbose) {
        //check that fun values at reference points coincide with those computed using basis functions
        DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords);
        DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords);
-       DynRankView basisValuesAtRefCoordsCells("inValues", numCells, basisCardinality, numRefCoords);
 
        DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords);
        basis.getValues(basisValuesAtRefCoords, refPoints);
-       rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
 
        // modify basis values to account for orientations
        ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
-           basisValuesAtRefCoordsCells,
-           elemOrts,
-           &basis);
+                                     basisValuesAtRefCoords,
+                                     elemOrts,
+                                     &basis);
 
        // transform basis values
        deep_copy(transformedBasisValuesAtRefCoordsOriented,
@@ -598,7 +597,7 @@ int OrientationHex(const bool verbose) {
      }
    } while(std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
- } catch (std::exception err) {
+ } catch (std::exception &err) {
    std::cout << " Exeption\n";
    *outStream << err.what() << "\n\n";
    errorFlag = -1000;
@@ -1121,7 +1120,7 @@ int OrientationHex(const bool verbose) {
       }
     } while(std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     std::cout << " Exeption\n";
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
@@ -1544,7 +1543,7 @@ int OrientationHex(const bool verbose) {
       }
     } while(std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
-  } catch (std::exception err) {
+  } catch (std::exception &err) {
     std::cout << " Exeption\n";
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;

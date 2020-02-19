@@ -118,12 +118,12 @@ namespace FROSch {
 
     protected:
 
-        SchwarzOperatorPtrVec OperatorVector_;
+        SchwarzOperatorPtrVec OperatorVector_ = SchwarzOperatorPtrVec(0);
 
         // Temp Vectors for apply()
         mutable XMultiVectorPtr XTmp_;
 
-        BoolVec EnableOperators_;
+        BoolVec EnableOperators_ = BoolVec(0);
     };
 
 }

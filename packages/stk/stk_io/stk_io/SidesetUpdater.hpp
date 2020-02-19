@@ -68,7 +68,9 @@ class SidesetUpdater : public stk::mesh::ModificationObserver
 public:
 
     SidesetUpdater(stk::mesh::BulkData &bulk, stk::mesh::Selector active_selector)
-    : bulkData(bulk), activeSelector(active_selector), internalSidesetWarningHasBeenIssued(false)
+    : bulkData(bulk), activeSelector(active_selector), isActive(true),
+      internalSidesetWarningHasBeenIssued(false),
+      outputStream(nullptr)
     {
     }
 
@@ -109,6 +111,10 @@ public:
 
     void update_sidesets_without_surface_block_mapping(stk::mesh::BulkData &bulk);
 
+    void set_output_stream(std::ostream& ostrm) { outputStream = &ostrm; }
+
+    std::ostream* get_output_stream() { return outputStream; }
+
 private:
     stk::mesh::BulkData &bulkData;
     stk::mesh::Selector activeSelector;
@@ -116,6 +122,7 @@ private:
     bool isActive = true;
     bool internalSidesetWarningHasBeenIssued;
     std::set<const stk::mesh::Part*> sidesetPartsWithDeletedEntries;
+    std::ostream* outputStream;
 };
 
 void toggle_sideset_updaters(stk::mesh::BulkData& bulk, bool flag);

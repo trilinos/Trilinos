@@ -146,12 +146,6 @@ namespace Teuchos
   void LAPACK<int, float>::PORFS(const char& UPLO, const int& n, const int& nrhs, float* A, const int& lda, const float* AF, const int& ldaf, const float* B, const int& ldb, float* X, const int& ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
   { SPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info); }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  void LAPACK<int, float>::POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, float* A, const int& lda, float* AF, const int& ldaf, const char& EQUED, float* S, float* B, const int& ldb, float* X, const int& ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
-  {
-    char EQUED_copy = EQUED; // original passed by value and did not preserve lapack change - this method now deprecated
-    SPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHAR_MACRO(EQUED_copy), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info);
-  }
   void LAPACK<int, float>::POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, float* A, const int& lda, float* AF, const int& ldaf, char* EQUED, float* S, float* B, const int& ldb, float* X, const int& ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
   { SPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHARPTR_MACRO(EQUED), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info); }
 
@@ -298,12 +292,6 @@ namespace Teuchos
   void LAPACK<int,float>::GBRFS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const float* A, const int& lda, const float* AF, const int& ldaf, const int* IPIV, const float* B, const int& ldb, float* X, const int& ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
   { SGBRFS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info); }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  void LAPACK<int,float>::GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, float* A, const int& lda, float* AF, const int& ldaf, int* IPIV, const char& EQUED, float* R, float* C, float* B, const int& ldb, float* X, const int& ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
-  {
-    char EQUED_copy = EQUED; // original passed by value and did not preserve lapack change - this method now deprecated
-    SGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHAR_MACRO(EQUED_copy), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info);
-  }
   void LAPACK<int,float>::GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, float* A, const int& lda, float* AF, const int& ldaf, int* IPIV, char* EQUED, float* R, float* C, float* B, const int& ldb, float* X, const int& ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
   { SGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHARPTR_MACRO(EQUED), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info); }
 
@@ -461,13 +449,6 @@ namespace Teuchos
     STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
 
-  // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes them by ptr
-  void LAPACK<int, float>::TREXC(const char& COMPQ, const int& n, float* T, const int& ldt, float* Q, const int& ldq, const int& ifst, const int& ilst, float* WORK, int* info) const
-  {
-    int ifst_copy = ifst; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ilst_copy = ilst; // original passed by value and did not preserve lapack change - this method now deprecated
-    STREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst_copy, &ilst_copy, WORK, info);
-  }
   void LAPACK<int, float>::TREXC(const char& COMPQ, const int& n, float* T, const int& ldt, float* Q, const int& ldq, int* ifst, int* ilst, float* WORK, int* info) const
   { STREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, ifst, ilst, WORK, info); }
 
@@ -483,13 +464,6 @@ namespace Teuchos
   void LAPACK<int, float>::LARFG( const int& n, float* alpha, float* x, const int& incx, float* tau ) const
   { SLARFG_F77(&n, alpha, x, &incx, tau); }
 
-  // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-  void LAPACK<int, float>::GEBAL(const char& JOBZ, const int& n, float* A, const int& lda, const int& ilo, const int& ihi, float* scale, int* info) const
-  {
-    int ilo_copy = ilo; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ihi_copy = ihi; // original passed by value and did not preserve lapack change - this method now deprecated
-    SGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo_copy, &ihi_copy, scale, info);
-  }
   void LAPACK<int, float>::GEBAL(const char& JOBZ, const int& n, float* A, const int& lda, int* ilo, int* ihi, float* scale, int* info) const
   { SGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, ilo, ihi, scale, info); }
 
@@ -582,11 +556,6 @@ namespace Teuchos
   void LAPACK<int, double>::PORFS(const char& UPLO, const int& n, const int& nrhs, double* A, const int& lda, const double* AF, const int& ldaf, const double* B, const int& ldb, double* X, const int& ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
   { DPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info); }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  void LAPACK<int, double>::POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, double* A, const int& lda, double* AF, const int& ldaf, const char& EQUED, double* S, double* B, const int& ldb, double* X, const int& ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
-  {
-    char EQUED_copy = EQUED; // original passed by value - this deprecated form passed by const char&. Unlike
-    DPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHAR_MACRO(EQUED_copy), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info); }
   void LAPACK<int, double>::POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, double* A, const int& lda, double* AF, const int& ldaf, char* EQUED, double* S, double* B, const int& ldb, double* X, const int& ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
   { DPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHARPTR_MACRO(EQUED), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info); }
 
@@ -723,11 +692,6 @@ namespace Teuchos
   void LAPACK<int,double>::GBRFS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const double* A, const int& lda, const double* AF, const int& ldaf, const int* IPIV, const double* B, const int& ldb, double* X, const int& ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
   { DGBRFS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info); }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  void LAPACK<int,double>::GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, double* A, const int& lda, double* AF, const int& ldaf, int* IPIV, const char& EQUED, double* R, double* C, double* B, const int& ldb, double* X, const int& ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
-  {
-    char EQUED_copy = EQUED; // original passed by value and did not preserve lapack change - this method now deprecated
-    DGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHAR_MACRO(EQUED_copy), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info); }
   void LAPACK<int,double>::GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, double* A, const int& lda, double* AF, const int& ldaf, int* IPIV, char* EQUED, double* R, double* C, double* B, const int& ldb, double* X, const int& ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
   { DGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHARPTR_MACRO(EQUED), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info); }
 
@@ -917,13 +881,6 @@ namespace Teuchos
     DTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
 
-  // deprecated - ifst and ilst were passed by value (changed to const OrdinalType& for api refactor) but lapack can modify them - new version passes them by ptr
-  void LAPACK<int, double>::TREXC(const char& COMPQ, const int& n, double* T, const int& ldt, double* Q, const int& ldq, const int& ifst, const int& ilst, double* WORK, int* info) const
-  {
-    int ifst_copy = ifst; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ilst_copy = ilst; // original passed by value and did not preserve lapack change - this method now deprecated
-    DTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst_copy, &ilst_copy, WORK, info);
-  }
   void LAPACK<int, double>::TREXC(const char& COMPQ, const int& n, double* T, const int& ldt, double* Q, const int& ldq, int* ifst, int* ilst, double* WORK, int* info) const
   {
     DTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, ifst, ilst, WORK, info);
@@ -945,13 +902,6 @@ namespace Teuchos
     DLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
-  // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-  void LAPACK<int, double>::GEBAL(const char& JOBZ, const int& n, double* A, const int& lda, const int& ilo, const int& ihi, double* scale, int* info) const
-  {
-    int ilo_copy = ilo; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ihi_copy = ihi; // original passed by value and did not preserve lapack change - this method now deprecated
-    DGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo_copy, &ihi_copy, scale, info);
-  }
   void LAPACK<int, double>::GEBAL(const char& JOBZ, const int& n, double* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const
   {
     DGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, ilo, ihi, scale, info);
@@ -1061,12 +1011,6 @@ namespace Teuchos
     CPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
   }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  void LAPACK<int, std::complex<float> >::POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, std::complex<float>* AF, const int& ldaf, const char& EQUED, float* S, std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const
-  {
-    char EQUED_copy = EQUED; // original passed by value and did not preserve lapack change - this method now deprecated
-    CPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHAR_MACRO(EQUED_copy), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
-  }
   void LAPACK<int, std::complex<float> >::POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, std::complex<float>* AF, const int& ldaf, char* EQUED, float* S, std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const
   {
     CPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHARPTR_MACRO(EQUED), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
@@ -1242,12 +1186,6 @@ namespace Teuchos
     CGBRFS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
   }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  void LAPACK<int,std::complex<float> >::GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, std::complex<float>* AF, const int& ldaf, int* IPIV, const char& EQUED, float* R, float* C, std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const
-  {
-    char EQUED_copy = EQUED; // original passed by value and did not preserve lapack change - this method now deprecated
-    CGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHAR_MACRO(EQUED_copy), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
-  }
   void LAPACK<int,std::complex<float> >::GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, std::complex<float>* AF, const int& ldaf, int* IPIV, char* EQUED, float* R, float* C, std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const
   {
     CGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHARPTR_MACRO(EQUED), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
@@ -1386,12 +1324,6 @@ namespace Teuchos
     CTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
   }
 
-  // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes them by ptr
-  void LAPACK<int, std::complex<float> >::TREXC(const char& COMPQ, const int& n, std::complex<float>* T, const int& ldt, std::complex<float>* Q, const int& ldq, const int& ifst, const int& ilst, std::complex<float>* WORK, int* info) const
-  {
-    CTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, info);
-  }
-
   void LAPACK<int, std::complex<float> >::TREXC(const char& COMPQ, const int& n, std::complex<float>* T, const int& ldt, std::complex<float>* Q, const int& ldq, int* ifst, int* ilst, std::complex<float>* WORK, int* info) const
   {
     CTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, ifst, ilst, info);
@@ -1409,13 +1341,6 @@ namespace Teuchos
     CLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
-  // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-  void LAPACK<int, std::complex<float> >::GEBAL(const char& JOBZ, const int& n, std::complex<float>* A, const int& lda, const int& ilo, const int& ihi, float* scale, int* info) const
-  {
-    int ilo_copy = ilo; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ihi_copy = ihi; // original passed by value and did not preserve lapack change - this method now deprecated
-    CGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo_copy, &ihi_copy, scale, info);
-  }
   void LAPACK<int, std::complex<float> >::GEBAL(const char& JOBZ, const int& n, std::complex<float>* A, const int& lda, int* ilo, int* ihi, float* scale, int* info) const
   {
     CGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, ilo, ihi, scale, info);
@@ -1507,12 +1432,6 @@ namespace Teuchos
     ZPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
   }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  void LAPACK<int, std::complex<double> >::POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, std::complex<double>* AF, const int& ldaf, const char& EQUED, double* S, std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const
-  {
-    char EQUED_copy = EQUED; // original passed by value and did not preserve lapack change - this method now deprecated
-    ZPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHAR_MACRO(EQUED_copy), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
-  }
   void LAPACK<int, std::complex<double> >::POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, std::complex<double>* AF, const int& ldaf, char* EQUED, double* S, std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const
   {
     ZPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHARPTR_MACRO(EQUED), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
@@ -1691,12 +1610,6 @@ namespace Teuchos
     ZGBRFS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
   }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  void LAPACK<int,std::complex<double> >::GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, std::complex<double>* AF, const int& ldaf, int* IPIV, const char& EQUED, double* R, double* C, std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const
-  {
-    char EQUED_copy = EQUED; // original passed by value and did not preserve lapack change - this method now deprecated
-    ZGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHAR_MACRO(EQUED_copy), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
-  }
   void LAPACK<int,std::complex<double> >::GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, std::complex<double>* AF, const int& ldaf, int* IPIV, char* EQUED, double* R, double* C, std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const
   {
     ZGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHARPTR_MACRO(EQUED), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
@@ -1833,13 +1746,7 @@ namespace Teuchos
     const char& whch = 'A';
     ZTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
   }
-
-  // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes them by ptr
-  void LAPACK<int, std::complex<double> >::TREXC(const char& COMPQ, const int& n, std::complex<double>* T, const int& ldt, std::complex<double>* Q, const int& ldq, const int& ifst, const int& ilst, std::complex<double>* WORK, int* info) const
-  {
-    ZTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, info);
-  }
-
+  
   void LAPACK<int, std::complex<double> >::TREXC(const char& COMPQ, const int& n, std::complex<double>* T, const int& ldt, std::complex<double>* Q, const int& ldq, int* ifst, int* ilst, std::complex<double>* WORK, int* info) const
   {
     ZTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, ifst, ilst, info);
@@ -1856,13 +1763,6 @@ namespace Teuchos
     ZLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
-  // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-  void LAPACK<int, std::complex<double> >::GEBAL(const char& JOBZ, const int& n, std::complex<double>* A, const int& lda, const int& ilo, const int& ihi, double* scale, int* info) const
-  {
-    int ilo_copy = ilo; // original passed by value and did not preserve lapack change - this method now deprecated
-    int ihi_copy = ihi; // original passed by value and did not preserve lapack change - this method now deprecated
-    ZGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo_copy, &ihi_copy, scale, info);
-  }
   void LAPACK<int, std::complex<double> >::GEBAL(const char& JOBZ, const int& n, std::complex<double>* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const
   {
     ZGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, ilo, ihi, scale, info);

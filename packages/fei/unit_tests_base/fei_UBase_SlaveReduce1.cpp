@@ -114,12 +114,12 @@ TEUCHOS_UNIT_TEST(SlaveReduce1, Rijk_de_Rooij )
 							  weights,
 							  rhsValue);
 
-    FEI_COUT << " Initialized Slave constraint with ierr = " << ierr << FEI_ENDL;
+    out << " Initialized Slave constraint with ierr = " << ierr << FEI_ENDL;
 
 	// Initialization is complete
-	if(verbose)FEI_COUT << "Started init_complete"  << FEI_ENDL;
+	if(verbose)out << "Started init_complete"  << FEI_ENDL;
 	TEUCHOS_TEST_EQUALITY(matrixGraph->initComplete(), 0, out, success);
-	if(verbose)FEI_COUT << "Finished init_complete"  << FEI_ENDL;
+	if(verbose)out << "Finished init_complete"  << FEI_ENDL;
 
 
 	// Set up linear system

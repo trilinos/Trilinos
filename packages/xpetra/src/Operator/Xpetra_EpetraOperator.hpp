@@ -156,6 +156,15 @@ namespace Xpetra {
     //! EpetraOperator constructor to wrap a Epetra_Operator object
     EpetraOperator(const Teuchos::RCP<Epetra_Operator> &op) : op_(op) { } //TODO removed const
 
+    //! Compute a residual R = B - (*this) * X
+    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
+                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      R.update(STS::one(),B,STS::zero());
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
+    }
+    
     //@}
 
   private:

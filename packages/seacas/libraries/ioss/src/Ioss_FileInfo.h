@@ -105,6 +105,7 @@ namespace Ioss {
     const std::string tailname() const;  //!< basename() + extension()
     const std::string extension() const; //!< file extension.
     const std::string pathname() const;  //!< directory path, no filename
+    const std::string realpath() const;  //!< canonicalized absolute path
 
     void set_filename(const std::string &name);
     void set_filename(const char *name);
@@ -114,6 +115,12 @@ namespace Ioss {
     bool operator!=(const FileInfo &other) const { return filename_ != other.filename_; }
 
     bool remove_file();
+
+    //! This function is used to create the path to an output directory (or history, restart, etc.)
+    //!  if it does not exist.  Called by all processors. Will throw exception if path does not
+    //!  specify a valid directory or if the path cannot be created.
+    static void create_path(const std::string &filename, MPI_Comm communicator);
+    static void create_path(const std::string &filename);
 
   private:
     std::string filename_{};

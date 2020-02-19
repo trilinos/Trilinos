@@ -63,7 +63,6 @@
 #include <set>
 #include <string>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <tokenize.h>
 #include <utility>
 #include <vector>
@@ -112,8 +111,8 @@ namespace {
   double my_max(double x1, double x2) { return x1 > x2 ? x1 : x2; }
 
   template <typename INT>
-  void calc_bounding_box(size_t ndim, size_t node_count, std::vector<double> coordinates,
-                         std::vector<INT> connectivity, double &xmin, double &ymin, double &zmin,
+  void calc_bounding_box(size_t ndim, size_t node_count, std::vector<double> &coordinates,
+                         std::vector<INT> &connectivity, double &xmin, double &ymin, double &zmin,
                          double &xmax, double &ymax, double &zmax)
   {
     std::vector<int> elem_block_nodes(node_count);
@@ -229,7 +228,12 @@ namespace Ioss {
     if (!is_input()) {
       // Create full path to the output file at this point if it doesn't
       // exist...
-      create_path(DBFilename);
+      if (isParallel) {
+	Ioss::FileInfo::create_path(DBFilename, util().communicator());
+      }
+      else {
+	Ioss::FileInfo::create_path(DBFilename);
+      }
     }
   }
 
@@ -262,9 +266,7 @@ namespace Ioss {
     if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
       properties.erase("FIELD_SUFFIX_SEPARATOR");
     }
-    char tmp[2];
-    tmp[0] = separator;
-    tmp[1] = 0;
+    char tmp[2] = {separator, '\0'};
     properties.add(Property("FIELD_SUFFIX_SEPARATOR", tmp));
     fieldSeparator = separator;
   }
@@ -388,57 +390,6 @@ namespace Ioss {
       exists = static_cast<IfDatabaseExistsBehavior>(properties.get("APPEND_OUTPUT").get_int());
     }
     return exists;
-  }
-
-  void DatabaseIO::create_path(const std::string &filename) const
-  {
-    bool               error_found = false;
-    std::ostringstream errmsg;
-
-    if (myProcessor == 0) {
-      Ioss::FileInfo file      = Ioss::FileInfo(filename);
-      std::string    path      = file.pathname();
-      std::string    path_root = path[0] == '/' ? "/" : "";
-
-      auto comps = tokenize(path, "/");
-      for (const auto &comp : comps) {
-        path_root += comp;
-
-        struct stat st;
-        if (stat(path_root.c_str(), &st) != 0) {
-          const int mode = 0777; // Users umask will be applied to this.
-          if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-            fmt::print(errmsg, "ERROR: Cannot create directory '{}': {}\n", path_root,
-                       std::strerror(errno));
-            error_found = true;
-            break;
-          }
-        }
-        else if (!S_ISDIR(st.st_mode)) {
-          errno = ENOTDIR;
-          fmt::print(errmsg, "ERROR: Path '{}' is not a directory.\n", path_root);
-          error_found = true;
-          break;
-        }
-        path_root += "/";
-      }
-    }
-    else {
-      // Give the other processors something to say in case there is an error.
-      fmt::print(errmsg,
-                 "ERROR: Could not create path. See processor 0 output for more details.\n");
-    }
-
-    // Sync all processors with error status...
-    // All processors but 0 will have error_found=false
-    // Processor 0 will have error_found = true or false depending on path
-    // result.
-    int is_error = error_found ? 1 : 0;
-    error_found  = (util().global_minmax(is_error, Ioss::ParallelUtils::DO_MAX) == 1);
-
-    if (error_found) {
-      IOSS_ERROR(errmsg);
-    }
   }
 
   const std::string &DatabaseIO::decoded_filename() const
@@ -880,8 +831,7 @@ namespace Ioss {
         std::vector<int> entity_processor;
         css->get_field_data("entity_processor", entity_processor);
         proc_node.reserve(entity_processor.size() / 2);
-        size_t j = 0;
-        for (size_t i = 0; i < entity_processor.size(); j++, i += 2) {
+        for (size_t i = 0; i < entity_processor.size(); i += 2) {
           proc_node.emplace_back(entity_processor[i + 1], entity_processor[i]);
         }
       }

@@ -57,9 +57,7 @@
 #include <stk_mesh/base/Field.hpp>                   // for Field
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#if defined(STK_HAVE_BOOSTLIB)
 #include <stk_util/environment/FileUtils.hpp>
-#endif
 #include <stk_util/util/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
 #include <utility>                                   // for pair, make_pair
 #include "Ioss_CodeTypes.h"                          // for NameList
@@ -159,7 +157,8 @@ StkMeshIoBroker::StkMeshIoBroker()
 : m_communicator(MPI_COMM_NULL),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
-  m_autoLoadAttributes(true)
+  m_autoLoadAttributes(true),
+  m_autoLoadDistributionFactorPerNodeSet(true)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -168,7 +167,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
 : m_communicator(comm),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
-  m_autoLoadAttributes(true)
+  m_autoLoadAttributes(true),
+  m_autoLoadDistributionFactorPerNodeSet(true)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -402,8 +402,17 @@ void StkMeshIoBroker::store_attribute_field_ordering()
     const stk::mesh::PartVector& parts = meta_data().get_parts();
     attributeFieldOrderingByPartOrdinal.clear();
     attributeFieldOrderingByPartOrdinal.resize(parts.size());
-    for(const stk::mesh::Part* part : parts)  {
-        const Ioss::GroupingEntity* iossGroupingEntity = part->attribute<Ioss::GroupingEntity>();
+    for(stk::mesh::Part* part : parts)  {
+        auto ioss_region = get_input_io_region().get();
+        if(ioss_region == nullptr) {
+            continue;
+        }
+        Ioss::GroupingEntity* iossGroupingEntity;
+        if(ioss_region == nullptr) {
+            iossGroupingEntity = nullptr;
+        } else {
+            iossGroupingEntity = get_grouping_entity(*ioss_region, *part);
+        }
         if(iossGroupingEntity != nullptr) {
             std::vector<std::string> names = get_ordered_attribute_field_names(*iossGroupingEntity);
             const stk::mesh::FieldVector attrFields = get_fields_by_name(*m_metaData, names);
@@ -455,7 +464,12 @@ void StkMeshIoBroker::create_input_mesh()
     process_nodeblocks(*region,    meta_data());
     process_elementblocks(*region, meta_data());
     process_sidesets(*region,      meta_data());
-    process_nodesets(*region,      meta_data());
+
+    if(m_autoLoadDistributionFactorPerNodeSet) {
+        process_nodesets(*region,  meta_data());
+    } else {
+        process_nodesets_without_distribution_factors(*region, meta_data());
+    }
 
     create_surface_to_block_mapping();
     store_attribute_field_ordering();
@@ -498,9 +512,7 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
     }
 
     std::string out_filename = filename;
-#if defined(STK_HAVE_BOOSTLIB)
     stk::util::filename_substitution(out_filename);
-#endif
     Ioss::Region *input_region = nullptr;
     if (is_index_valid(m_inputFiles, m_activeMeshIndex)) {
         input_region = get_input_io_region().get();
@@ -527,6 +539,7 @@ void StkMeshIoBroker::update_sidesets() {
     if (m_bulkData->was_mesh_modified_since_sideset_creation()) {
         std::vector<std::shared_ptr<SidesetUpdater> > updaters = m_bulkData->get_observer_type<SidesetUpdater>();
         ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+        updaters[0]->set_output_stream(std::cerr);
         std::vector<size_t> values;
         updaters[0]->fill_values_to_reduce(values);
         std::vector<size_t> maxValues(values);
@@ -1159,16 +1172,14 @@ size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, Heartb
                                              const Ioss::PropertyManager &properties, bool openFileImmediately)
 {
     std::string out_filename = filename;
-#if defined(STK_HAVE_BOOSTLIB)
     stk::util::filename_substitution(out_filename);
-#endif
     auto heartbeat = Teuchos::rcp(new impl::Heartbeat(out_filename, hb_type,
                                                       properties, m_communicator, openFileImmediately));
     m_heartbeat.push_back(heartbeat);
     return m_heartbeat.size()-1;
 }
 
-int StkMeshIoBroker::check_integer_size_requirements()
+int StkMeshIoBroker::check_integer_size_requirements_serial()
 {
     // 1. If the INTEGER_SIZE_DB or _API property exists, then use its value no matter what...
     if (m_propertyManager.exists("INTEGER_SIZE_DB")) {
@@ -1197,6 +1208,12 @@ int StkMeshIoBroker::check_integer_size_requirements()
         return 8;
     }
 
+    // 5. Default to 4-byte integers...
+    return 4;
+}
+
+int StkMeshIoBroker::check_integer_size_requirements_parallel()
+{
     // 3. If any entity count exceeds INT_MAX, then use 64-bit integers.
     if ( !Teuchos::is_null(m_bulkData) ) {
         std::vector<size_t> entityCounts;
@@ -1213,14 +1230,10 @@ int StkMeshIoBroker::check_integer_size_requirements()
         const stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(m_bulkData->mesh_meta_data().entity_rank_count());
         bool foundLargeId = false;
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<numRanks; rank++) {
-            stk::mesh::const_entity_iterator beginIter = m_bulkData->begin_entities(rank);
-            stk::mesh::const_entity_iterator endIter = m_bulkData->end_entities(rank);
-            if (std::distance(beginIter, endIter) > 0) {
-                stk::mesh::EntityKey lastKey = (--endIter)->first;
-                if (lastKey.id() > (size_t)std::numeric_limits<int>::max()) {
-                    foundLargeId = true;
-                    break;
-                }
+            stk::mesh::EntityId maxId = stk::mesh::get_max_id_on_local_proc(*m_bulkData, rank);
+            if (maxId > (size_t)std::numeric_limits<int>::max()) {
+                foundLargeId = true;
+                break;
             }
         }
         stk::ParallelMachine comm = m_bulkData->parallel();
@@ -1233,6 +1246,14 @@ int StkMeshIoBroker::check_integer_size_requirements()
 
     // 5. Default to 4-byte integers...
     return 4;
+}
+
+int StkMeshIoBroker::check_integer_size_requirements()
+{
+    int serialSizeRequirement = check_integer_size_requirements_serial();
+    int parallelSizeRequirement = check_integer_size_requirements_parallel();
+
+    return std::max(serialSizeRequirement, parallelSizeRequirement);
 }
 
 void StkMeshIoBroker::set_name_and_version_for_qa_record(size_t outputFileIndex, const std::string &codeName, const std::string &codeVersion)

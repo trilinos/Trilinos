@@ -103,7 +103,8 @@ inline int kk_get_suggested_vector_size(
     break;
   case Exec_CUDA:
 
-    suggested_vector_size_ = nnz / double (nr) + 0.5;
+    if (nr > 0)
+      suggested_vector_size_ = nnz / double (nr) + 0.5;
     if (suggested_vector_size_ < 3){
       suggested_vector_size_ = 2;
     }

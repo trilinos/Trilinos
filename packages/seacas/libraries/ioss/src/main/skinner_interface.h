@@ -38,7 +38,7 @@
 #include <iosfwd>            // for ostream
 #include <string>            // for string
 
-/** \brief A special namespace for the skinner demonstration program interface.
+/** \brief A special namespace for the skinner demonstration program interFace.
  */
 namespace Skinner {
   class Interface
@@ -65,8 +65,8 @@ namespace Skinner {
 
     std::string inputFile_;
     std::string outputFile_;
-    std::string inFiletype_;
-    std::string outFiletype_;
+    std::string inFiletype_{"unknown"};
+    std::string outFiletype_{"unknown"};
 
   public:
     std::string decomp_method;

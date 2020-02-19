@@ -85,9 +85,13 @@ int ex_put_time(int exoid, int time_step, const void *time_value)
 
   EX_FUNC_ENTER();
 
-  ex__check_valid_file_id(exoid, __func__);
+  file = ex__find_file_item(exoid);
+  if (!file) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d.", exoid);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
-  file  = ex__find_file_item(exoid);
   varid = file->time_varid;
   if (varid < 0) {
     /* inquire previously defined variable */

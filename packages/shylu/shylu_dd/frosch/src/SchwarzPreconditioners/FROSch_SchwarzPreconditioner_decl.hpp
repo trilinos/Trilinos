@@ -143,19 +143,21 @@ namespace FROSch {
 
         bool isComputed() const;
 
-
+        virtual void residual(const XMultiVector & X,
+                              const XMultiVector & B,
+                              XMultiVector& R) const;
     protected:
 
         CommPtr MpiComm_;
 
         ParameterListPtr ParameterList_;
 
-        bool UseTranspose_;
-        bool IsInitialized_;
-        bool IsComputed_;
-        bool Verbose_;
+        bool UseTranspose_ = false;
+        bool IsInitialized_ = false;
+        bool IsComputed_ = false;
+        bool Verbose_ = false;
 
-        ConstUN LevelID_;
+        ConstUN LevelID_ = 1;
     };
 
 }

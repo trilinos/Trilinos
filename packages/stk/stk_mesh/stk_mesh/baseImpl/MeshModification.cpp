@@ -69,8 +69,6 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
 
     ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
 
-    m_bulkData.m_entity_repo->clear_all_cache();
-
     if(m_bulkData.parallel_size() > 1)
     {
         // Resolve modification or deletion of shared entities
@@ -80,7 +78,7 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
 
         // Resolve modification or deletion of ghost entities
         // by destroying ghost entities that have been touched.
-        m_bulkData.internal_resolve_ghosted_modify_delete();
+        m_bulkData.internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
         m_bulkData.update_comm_list_based_on_changes_in_comm_map();
 
         // Resolve creation of entities: discover sharing and set unique ownership.
@@ -232,7 +230,7 @@ void MeshModification::internal_resolve_shared_modify_delete(stk::mesh::EntityVe
 
         Entity entity = i->comm_info.entity;
         EntityKey key = i->comm_info.key;
-        int owner = i->comm_info.owner;
+        const int owner = m_bulkData.parallel_owner_rank(entity);
         const bool locally_destroyed = !m_bulkData.is_valid(entity);
         bool remote_owner_destroyed = false;
 

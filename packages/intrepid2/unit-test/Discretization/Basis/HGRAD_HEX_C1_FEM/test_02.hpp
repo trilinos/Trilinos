@@ -628,7 +628,7 @@ namespace Intrepid2 {
 
       }
       // Catch unexpected errors
-      catch (std::logic_error err) {
+      catch (std::logic_error &err) {
             *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << "\n\n";
             *outStream << "-------------------------------------------------------------------------------" << "\n";

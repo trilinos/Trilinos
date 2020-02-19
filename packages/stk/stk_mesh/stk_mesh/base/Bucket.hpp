@@ -44,6 +44,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowAssert, etc
+#include <stk_util/util/StridedArray.hpp>
 #include <string>                       // for string
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
@@ -59,11 +60,6 @@ namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 namespace stk {
 namespace mesh {
-
-namespace utest {
-struct ReversePartition;
-struct SyncToPartitions;
-}
 
 namespace impl {
 class Partition;
@@ -143,7 +139,6 @@ private:
 
   // Entity data
   std::vector<Entity>    m_entities;    // Array of entity handles; will be removed soon
-  std::vector<int>       m_owner_ranks;
 
   impl::Partition    *m_partition;
 
@@ -267,10 +262,7 @@ public:
   /// Entity member functions are moved here:
   ///
 
-  int parallel_owner_rank(size_type ordinal) const
-  {
-    return m_owner_ranks[ordinal];
-  }
+  int parallel_owner_rank(size_type ordinal) const;
 
   void check_size_invariant() const;
 
@@ -357,6 +349,46 @@ public:
   bool has_permutation(EntityRank rank) const;
 
   void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
+
+  /* NGP Bucket methods */
+  using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;
+  using ConnectedEntities = util::StridedArray<const stk::mesh::Entity>;
+  using ConnectedOrdinals = util::StridedArray<const stk::mesh::ConnectivityOrdinal>;
+  using Permutations      = util::StridedArray<const stk::mesh::Permutation>;
+
+  unsigned get_num_nodes_per_entity() const { return topology().num_nodes(); }
+
+  ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
+    return ConnectedEntities(begin(offsetIntoBucket, connectedRank),
+                             num_connectivity(offsetIntoBucket, connectedRank));
+  }
+
+  ConnectedOrdinals get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
+    return ConnectedOrdinals(begin_ordinals(offsetIntoBucket, connectedRank),
+                             num_connectivity(offsetIntoBucket, connectedRank));
+  }
+
+  ConnectedNodes get_nodes(unsigned offsetIntoBucket) const {
+    return get_connected_entities(offsetIntoBucket, stk::topology::NODE_RANK);
+  }
+
+  ConnectedEntities get_edges(unsigned offsetIntoBucket) const {
+    return get_connected_entities(offsetIntoBucket, stk::topology::EDGE_RANK);
+  }
+
+  ConnectedEntities get_faces(unsigned offsetIntoBucket) const {
+    return get_connected_entities(offsetIntoBucket, stk::topology::FACE_RANK);
+  }
+
+  ConnectedEntities get_elements(unsigned offsetIntoBucket) const {
+    return get_connected_entities(offsetIntoBucket, stk::topology::ELEM_RANK);
+  }
+
+  stk::mesh::Entity host_get_entity(unsigned offsetIntoBucket) const {
+    return (*this)[offsetIntoBucket];
+  }
+
+  bool member(stk::mesh::PartOrdinal partOrdinal) const;
 
 protected:
   void change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes);

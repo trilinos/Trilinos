@@ -23,6 +23,7 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -50,6 +51,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -65,6 +67,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -162,6 +165,7 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -189,6 +193,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -204,6 +209,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]
@@ -330,6 +336,7 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -414,6 +421,7 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -441,6 +449,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -456,6 +465,7 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+tentative: constant column sums = 0   [default]
 Nullspace name = Nullspace   [default]
 matrixmatrix: kernel params -> 
  [empty list]

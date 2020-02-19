@@ -51,7 +51,6 @@ cmake \
 -DTrilinos_ENABLE_FEI=ON \
 -DTrilinos_ENABLE_ForTrilinos=ON \
 -DTrilinos_ENABLE_Galeri=ON \
--DTrilinos_ENABLE_GlobiPack=ON \
 -DTrilinos_ENABLE_Ifpack=ON \
 -DTrilinos_ENABLE_Ifpack2=ON \
 -DTrilinos_ENABLE_Intrepid=ON \
@@ -65,7 +64,6 @@ cmake \
 -DTrilinos_ENABLE_MOOCHO=ON \
 -DTrilinos_ENABLE_NOX=ON \
 -DTrilinos_ENABLE_Optika=ON \
--DTrilinos_ENABLE_OptiPack=ON \
 -DTrilinos_ENABLE_Pamgen=ON \
 -DTrilinos_ENABLE_Phalanx=ON \
 -DTrilinos_ENABLE_Pike=ON \
@@ -89,7 +87,6 @@ cmake \
 -DTrilinos_ENABLE_Tpetra=ON \
 -DTrilinos_ENABLE_TriKota=ON \
 -DTrilinos_ENABLE_TrilinosCouplings=ON \
--DTrilinos_ENABLE_Trios=ON \
 -DTrilinos_ENABLE_Triutils=ON \
 -DTrilinos_ENABLE_Zoltan=ON \
 -DTrilinos_ENABLE_Zoltan2=ON \

@@ -92,6 +92,11 @@ using Tpetra::Import;
 
 %}
 
+// Include the NumPy typemaps
+%include "numpy.i"
+%fragment("NumPy_Array_Requirements");
+%fragment("NumPy_Object_to_Array");
+
 // Define shortcuts for the default Tpetra template types
 %inline
 %{
@@ -479,9 +484,6 @@ convertPythonToTpetraVector(PyObject * pyobj,
 
 %}
 
-// Global swig features
-%feature("autodoc", "1");
-
 // SWIG standard library include files
 using std::string;
 %include "stl.i"
@@ -501,7 +503,10 @@ import numpy
 %include "Teuchos_Array.i"
 
 // Include Tpetra documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Tpetra_dox.i"
+#endif
 
 // Include the standard exception handlers
 %include "exception.i"
@@ -605,6 +610,7 @@ import numpy
 ////////////////////////////////////////////////////////////
 // Use %import and forward declarations to prevent SWIG warnings when
 // we %include "Tpetra_ConfigDefs.hpp"
+#pragma SWIG nowarn=305
 %import "Teuchos_config.h"
 %import "Teuchos_ConfigDefs.hpp"
 %import "Teuchos_ENull.hpp"

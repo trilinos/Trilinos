@@ -170,7 +170,9 @@ namespace Intrepid2 {
       typedef typename inputViewType::non_const_value_type input_value_type;
 
       auto out = Kokkos::subview(output, cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-      auto in  = Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      auto in  = (input.rank() == output.rank()) ?
+                 Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL())
+               : Kokkos::subview(input,        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
       // vertex copy (no orientation)
       for (ordinal_type vertId=0;vertId<numVerts;++vertId) {
@@ -276,13 +278,25 @@ namespace Intrepid2 {
                            const BasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( input.rank() != output.rank(), std::invalid_argument,
-                                    ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output rank are not 3.");
-      for (size_type i=0;i<input.rank();++i)
-        INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
-                                      ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimension does not match.");
+      if (input.rank() == output.rank())
+      {
+        for (size_type i=0;i<input.rank();++i)
+          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
+                                        ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimension does not match.");
+      }
+      else if (input.rank() == output.rank() - 1)
+      {
+        for (size_type i=0;i<input.rank();++i)
+          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i+1), std::invalid_argument,
+                                       ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input dimensions must match output dimensions exactly, or else match all but the first dimension (in the case that input does not have a 'cell' dimension).");
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): input and output ranks must either match, or input rank must be one less than that of output.")
+      }
 
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.extent(1)) != basis->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(output.extent(1)) != basis->getCardinality(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
     }
 #endif

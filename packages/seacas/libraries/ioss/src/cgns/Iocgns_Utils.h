@@ -81,6 +81,8 @@ namespace Iocgns {
     static const size_t CG_CELL_CENTER_FIELD_ID = 1ul << 33;
     static const size_t CG_VERTEX_FIELD_ID      = 1ul << 34;
 
+    static std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel);
+
     static size_t index(const Ioss::Field &field);
 
     static void cgns_error(int cgnsid, const char *file, const char *function, int lineno,
@@ -91,6 +93,13 @@ namespace Iocgns {
     static int  get_db_zone(const Ioss::GroupingEntity *entity);
     static void set_field_index(const Ioss::Field &field, size_t index, CG_GridLocation_t location);
     static bool is_cell_field(const Ioss::Field &field);
+
+    template <typename INT>
+    static void map_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
+                                      INT *idata);
+    template <typename INT>
+    static void unmap_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
+                                        INT *idata);
 
     template <typename INT>
     static void map_cgns_face_to_ioss(const Ioss::ElementTopology *parent_topo, size_t num_to_get,

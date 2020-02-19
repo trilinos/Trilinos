@@ -58,6 +58,10 @@
 #define FROSCH_TIMER_STOP(A) A.reset();
 #endif
 
+#ifndef FROSCH_WARNING
+#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
+#endif
+
 #ifndef FROSCH_TEST_OUTPUT
 #define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
 #endif
@@ -265,6 +269,13 @@ namespace FROSch {
         int resetMatrix(ConstXMatrixPtr k,
                         bool reuseInitialize);
 
+        /*! 
+        \brief Computes a residual using the operator
+        */
+        virtual void residual(const XMultiVector & X,
+                              const XMultiVector & B,
+                              XMultiVector& R) const;
+
         //!@}
 
     protected:
@@ -307,10 +318,10 @@ namespace FROSch {
         RCP<Ifpack2::Preconditioner<SC,LO,GO,NO> > Ifpack2Preconditioner_;
 #endif
 
-        bool IsInitialized_;
+        bool IsInitialized_ = false;
 
         //! Flag to indicated whether this subdomain solver has been setup/computed
-        bool IsComputed_;
+        bool IsComputed_ = false;
     };
 
 }

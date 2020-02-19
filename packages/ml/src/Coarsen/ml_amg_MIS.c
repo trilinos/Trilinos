@@ -56,7 +56,11 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    ML_CommInfoOP *mat_comm;
    struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm *aggr_comm;
+   double rowsum_threshold;
 
+#ifdef ML_ROWSUM_DEBUG
+   int num_points_reset_for_rowsum=0;
+#endif
    /* ============================================================= */
    /* get the machine information and matrix references             */
    /* ============================================================= */
@@ -68,6 +72,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    Nrows          = Amatrix->outvec_leng;
    sys_unk_filter = 0;
    mat_comm       = Amatrix->getrow->pre_comm;
+   rowsum_threshold = ml_amg->rowsum_threshold;
 
    /* ============================================================= */
    /* if system AMG (unknown approach) is requested, communicate    */
@@ -102,6 +107,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    {
       printf("ML_AMG_CoarsenMIS : current level = %d\n", ml_amg->cur_level);
       printf("ML_AMG_CoarsenMIS : current eps   = %e\n", epsilon);
+      if(rowsum_threshold > 0.0) 
+        printf("ML_AMG_CoarsenMIS : current rowsum = %e\n", rowsum_threshold);
    }
 
    /* ============================================================= */
@@ -235,6 +242,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    rowptr[0] = 0;
    for (i = 0; i < Nrows; i++)
    {
+     int itmp = total_nnz;
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
                         &rowi_N, 0);
       if ( sys_unk_filter )
@@ -243,20 +251,25 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
             if (sys_info[rowi_col[j]] != sys_info[i]) rowi_val[j] = 0.0;
       }
       diag = 0.0;
-      for (j = 0; j < rowi_N; j++)
+      rowsum = 0.0;
+      for (j = 0; j < rowi_N; j++) {
          if ( rowi_col[j] == i ) diag = rowi_val[j];
+         rowsum+=rowi_val[j];
+      }
+
       rowmax = 0.0;
       if ( diag >= 0. )
       {
-         for (j = 0; j < rowi_N; j++)
-            if (rowi_col[j] != i) rowmax = ML_min(rowmax, rowi_val[j]);
+        for (j = 0; j < rowi_N; j++) 
+          if (rowi_col[j] != i) rowmax = ML_min(rowmax, rowi_val[j]);
       }
       else
       {
-         for (j = 0; j < rowi_N; j++)
-            if (rowi_col[j] != i) rowmax = ML_max(rowmax, rowi_val[j]);
+        for (j = 0; j < rowi_N; j++) 
+          if (rowi_col[j] != i) rowmax = ML_max(rowmax, rowi_val[j]);
       }
       rowmax *= epsilon;
+
       if ( diag >= 0. )
       {
          for (j = 0; j < rowi_N; j++)
@@ -279,8 +292,26 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
             }
          }
       }
+      /* Reaction-diffusion dropping.  If the rowsum is sufficiently than the diagonal, then
+         we should be in a reaction-limited regime at this node and can afford to drop *all* 
+         connections, effectively turning this guy into a Dirichlet unknown.  We trust that
+         the smoother is sufficient for these unknowns - CMS 7/23/19 */
+      if(rowsum_threshold > 0.0 && fabs(rowsum) > fabs(diag) * rowsum_threshold) {
+        column[itmp]=i;
+        values[itmp]=diag;
+        total_nnz = itmp+1;
+#ifdef ML_ROWSUM_DEBUG
+        num_points_reset_for_rowsum++;
+#endif
+      }
+
       rowptr[i+1] = total_nnz;
    }
+#ifdef ML_ROWSUM_DEBUG
+   printf("ML_ROWSUM_DEBUG: # points reset via rowsum = %d\n",num_points_reset_for_rowsum);
+#endif
+
+
    ML_free( rowi_col );
    ML_free( rowi_val );
    dtemp = A_nnz;
@@ -766,7 +797,6 @@ for ( i = 0; i < Nrows; i++ )
       }
    }
 /* #endif */
-
    ML_free( short_list );
    ML_free( short_size );
 
@@ -1454,7 +1484,7 @@ for ( i = 0; i < Nrows; i++ )
    /* ============================================================= */
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
-
+   if ( sort_array != NULL ) ML_free( sort_array );
    if ( offibuffer != NULL ) ML_free( offibuffer );
    if ( offlengths != NULL ) ML_free( offlengths );
    if ( offdbuffer != NULL ) ML_free( offdbuffer );

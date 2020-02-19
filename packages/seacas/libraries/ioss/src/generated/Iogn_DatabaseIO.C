@@ -30,13 +30,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "Ioss_CommSet.h"         // for CommSet
-#include "Ioss_DBUsage.h"         // for DatabaseUsage
-#include "Ioss_DatabaseIO.h"      // for DatabaseIO
-#include "Ioss_ElementBlock.h"    // for ElementBlock
-#include "Ioss_EntityType.h"      // for EntityType, etc
-#include "Ioss_Field.h"           // for Field, etc
-#include "Ioss_GroupingEntity.h"  // for GroupingEntity
+#include "Ioss_CommSet.h"      // for CommSet
+#include "Ioss_DBUsage.h"      // for DatabaseUsage
+#include "Ioss_DatabaseIO.h"   // for DatabaseIO
+#include "Ioss_ElementBlock.h" // for ElementBlock
+#include "Ioss_ElementTopology.h"
+#include "Ioss_EntityType.h"     // for EntityType, etc
+#include "Ioss_Field.h"          // for Field, etc
+#include "Ioss_GroupingEntity.h" // for GroupingEntity
+#include "Ioss_Hex8.h"
 #include "Ioss_IOFactory.h"       // for IOFactory
 #include "Ioss_Map.h"             // for Map, MapContainer
 #include "Ioss_NodeBlock.h"       // for NodeBlock
@@ -453,7 +455,14 @@ namespace Iogn {
 
         if (field.is_type(Ioss::Field::INTEGER)) {
           int *ids = static_cast<int *>(data);
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
           std::copy(nodes.begin(), nodes.end(), ids);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
         }
         else {
           int64_t *ids = static_cast<int64_t *>(data);
@@ -766,8 +775,15 @@ namespace Iogn {
     }
   }
 
+  std::string DatabaseIO::get_sideset_topology() const
+  {
+    return m_generatedMesh->get_sideset_topology();
+  }
+
   void DatabaseIO::get_sidesets()
   {
+    const std::string face_topo = get_sideset_topology();
+
     m_sideset_names.reserve(sidesetCount);
     for (int ifs = 0; ifs < sidesetCount; ifs++) {
       std::string name = Ioss::Utils::encode_entity_name("surface", ifs + 1);
@@ -779,8 +795,8 @@ namespace Iogn {
 
       std::vector<std::string> touching_blocks = m_generatedMesh->sideset_touching_blocks(ifs + 1);
       if (touching_blocks.size() == 1) {
-        std::string ef_block_name  = name + "_quad4";
-        std::string side_topo_name = "quad4";
+        std::string ef_block_name  = name + "_" + face_topo;
+        std::string side_topo_name = face_topo;
         std::string elem_topo_name = "unknown";
         int64_t     number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
 
@@ -791,7 +807,7 @@ namespace Iogn {
         ef_block->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));
 
         std::string storage = "Real[";
-        storage += std::to_string(4);
+        storage += face_topo == "quad4" ? std::to_string(4) : std::to_string(3);
         storage += "]";
         ef_block->field_add(
             Ioss::Field("distribution_factors", Ioss::Field::REAL, storage, Ioss::Field::MESH));
@@ -804,7 +820,7 @@ namespace Iogn {
         for (auto &touching_block : touching_blocks) {
           std::string ef_block_name =
               "surface_" + touching_block + "_edge2_" + std::to_string(ifs + 1);
-          std::string side_topo_name = "quad4";
+          std::string side_topo_name = face_topo;
           std::string elem_topo_name = "unknown";
           int64_t     number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
 
@@ -815,7 +831,7 @@ namespace Iogn {
           ef_block->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));
 
           std::string storage = "Real[";
-          storage += std::to_string(4);
+          storage += face_topo == "quad4" ? std::to_string(4) : std::to_string(3);
           storage += "]";
           ef_block->field_add(
               Ioss::Field("distribution_factors", Ioss::Field::REAL, storage, Ioss::Field::MESH));

@@ -34,13 +34,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#ifndef __Tpetra_TsqrAdaptor_hpp
-#define __Tpetra_TsqrAdaptor_hpp
+#ifndef TPETRA_TSQRADAPTOR_HPP
+#define TPETRA_TSQRADAPTOR_HPP
 
 /// \file Tpetra_TsqrAdaptor.hpp
 /// \brief Adaptor from Tpetra::MultiVector to TSQR
@@ -59,14 +57,13 @@
 #  include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #  include <stdexcept>
 
-
 namespace Tpetra {
 
   /// \class TsqrAdaptor
   /// \brief Adaptor from Tpetra::MultiVector to TSQR
   /// \author Mark Hoemmen
   ///
-  /// \tparam MV A specialization of \c Tpetra::MultiVector.
+  /// \tparam MV A specialization of MultiVector.
   ///
   /// TSQR (Tall Skinny QR factorization) is an orthogonalization
   /// kernel that is as accurate as Householder QR, yet requires only
@@ -82,63 +79,95 @@ namespace Tpetra {
   /// the Kokkos Node type of the multivector.
   ///
   /// \warning The current implementation of this adaptor requires
-  ///   that all Tpetra::MultiVector inputs use the same communicator
-  ///   object (that is, the same Epetra_Comm) and map.
+  ///   that all Tpetra::MultiVector inputs use the same Map.
   template<class MV>
   class TsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
-    typedef typename MV::scalar_type scalar_type;
-    typedef typename MV::local_ordinal_type ordinal_type;
-    typedef typename MV::node_type node_type;
-    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
-    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+    using scalar_type = typename MV::scalar_type;
+    using ordinal_type = typename MV::local_ordinal_type;
+    using dense_matrix_type =
+      Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>;
+    using magnitude_type =
+      typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
 
   private:
-    //typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
-    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
-    typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-    typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
+    using node_tsqr_factory_type =
+      TSQR::NodeTsqrFactory<scalar_type, ordinal_type,
+                            typename MV::device_type>;
+    using node_tsqr_type = TSQR::NodeTsqr<ordinal_type, scalar_type>;
+    using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
+    using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type>;
+
+    TSQR::MatView<ordinal_type, scalar_type>
+    get_mat_view(MV& X)
+    {
+      TEUCHOS_ASSERT( ! tsqr_.is_null() );
+      // FIXME (mfh 18 Oct 2010, 22 Dec 2019) Check Teuchos::Comm<int>
+      // object in Q to make sure it is the same communicator as the
+      // one we are using in our dist_tsqr_type implementation.
+
+      const ordinal_type lclNumRows(X.getLocalLength());
+      const ordinal_type numCols(X.getNumVectors());
+      scalar_type* X_ptr = nullptr;
+      // LAPACK and BLAS functions require "LDA" >= 1, even if the
+      // corresponding matrix dimension is zero.
+      ordinal_type X_stride = 1;
+      if(tsqr_->wants_device_memory()) {
+        X.sync_device();
+        X.modify_device();
+        auto X_view = X.getLocalViewDevice();
+        X_ptr = reinterpret_cast<scalar_type*>(X_view.data());
+        X_stride = static_cast<ordinal_type>(X_view.stride(1));
+        if(X_stride == 0) {
+          X_stride = ordinal_type(1); // see note above
+        }
+      }
+      else {
+        X.sync_host();
+        X.modify_host();
+        auto X_view = X.getLocalViewHost();
+        X_ptr = reinterpret_cast<scalar_type*>(X_view.data());
+        X_stride = static_cast<ordinal_type>(X_view.stride(1));
+        if(X_stride == 0) {
+          X_stride = ordinal_type(1); // see note above
+        }
+      }
+      using mat_view_type = TSQR::MatView<ordinal_type, scalar_type>;
+      return mat_view_type(lclNumRows, numCols, X_ptr, X_stride);
+    }
 
   public:
-    /// \brief Constructor (that accepts a parameter list).
+    /// \brief Constructor that accepts a Teuchos::ParameterList.
     ///
     /// \param plist [in/out] List of parameters for configuring TSQR.
     ///   The specific parameter keys that are read depend on the TSQR
-    ///   implementation.  For details, call \c getValidParameters()
-    ///   and examine the documentation embedded therein.
-    TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-      nodeTsqr_ (new node_tsqr_type),
-      distTsqr_ (new dist_tsqr_type),
-      tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
-      ready_ (false)
+    ///   implementation.  For details, call getValidParameters() and
+    ///   examine the documentation embedded therein.
+    TsqrAdaptor(const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+      nodeTsqr_(node_tsqr_factory_type::getNodeTsqr()),
+      distTsqr_(new dist_tsqr_type),
+      tsqr_(new tsqr_type(nodeTsqr_, distTsqr_))
     {
-      setParameterList (plist);
+      setParameterList(plist);
     }
 
-    //! Constructor (that uses default parameters).
-    TsqrAdaptor () :
-      nodeTsqr_ (new node_tsqr_type),
-      distTsqr_ (new dist_tsqr_type),
-      tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
-      ready_ (false)
+    //! Constructor(that uses default parameters).
+    TsqrAdaptor() :
+      nodeTsqr_(node_tsqr_factory_type::getNodeTsqr()),
+      distTsqr_(new dist_tsqr_type),
+      tsqr_(new tsqr_type(nodeTsqr_, distTsqr_))
     {
-      setParameterList (Teuchos::null);
+      setParameterList(Teuchos::null);
     }
 
     //! Get all valid parameters (with default values) that TSQR understands.
     Teuchos::RCP<const Teuchos::ParameterList>
-    getValidParameters () const
+    getValidParameters() const
     {
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-
-      if (defaultParams_.is_null()) {
-        RCP<ParameterList> params = parameterList ("TSQR implementation");
-        params->set ("NodeTsqr", *(nodeTsqr_->getValidParameters ()));
-        params->set ("DistTsqr", *(distTsqr_->getValidParameters ()));
+      if(defaultParams_.is_null()) {
+        auto params = Teuchos::parameterList("TSQR implementation");
+        params->set("NodeTsqr", *(nodeTsqr_->getValidParameters()));
+        params->set("DistTsqr", *(distTsqr_->getValidParameters()));
         defaultParams_ = params;
       }
       return defaultParams_;
@@ -170,19 +199,15 @@ namespace Tpetra {
     /// long as it is not too large or too small.  The default value
     /// should be fine.
     void
-    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
+      auto params = plist.is_null() ?
+        Teuchos::parameterList(*getValidParameters()) : plist;
       using Teuchos::sublist;
+      nodeTsqr_->setParameterList(sublist(params, "NodeTsqr"));
+      distTsqr_->setParameterList(sublist(params, "DistTsqr"));
 
-      RCP<ParameterList> params = plist.is_null() ?
-        parameterList (*getValidParameters ()) : plist;
-      nodeTsqr_->setParameterList (sublist (params, "NodeTsqr"));
-      distTsqr_->setParameterList (sublist (params, "DistTsqr"));
-
-      this->setMyParamList (params);
+      this->setMyParamList(params);
     }
 
     /// \brief Compute QR factorization [Q,R] = qr(A,0).
@@ -207,39 +232,30 @@ namespace Tpetra {
     ///   instance's constructor.  Otherwise, the result of this
     ///   method is undefined.
     void
-    factorExplicit (MV& A,
-                    MV& Q,
-                    dense_matrix_type& R,
-                    const bool forceNonnegativeDiagonal=false)
+    factorExplicit(MV& A,
+                   MV& Q,
+                   dense_matrix_type& R,
+                   const bool forceNonnegativeDiagonal=false)
     {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (! A.isConstantStride (), std::invalid_argument, "TsqrAdaptor::"
+        (! A.isConstantStride(), std::invalid_argument, "TsqrAdaptor::"
          "factorExplicit: Input MultiVector A must have constant stride.");
       TEUCHOS_TEST_FOR_EXCEPTION
-        (! Q.isConstantStride (), std::invalid_argument, "TsqrAdaptor::"
+        (! Q.isConstantStride(), std::invalid_argument, "TsqrAdaptor::"
          "factorExplicit: Input MultiVector Q must have constant stride.");
-      prepareTsqr (Q); // Finish initializing TSQR.
+      prepareTsqr(Q); // Finish initializing TSQR.
+      TEUCHOS_ASSERT( ! tsqr_.is_null() );
 
-      // FIXME (mfh 16 Jan 2016) Currently, TSQR is a host-only
-      // implementation.
-      A.sync_host ();
-      A.modify_host ();
-      Q.sync_host ();
-      Q.modify_host ();
-      auto A_view = A.template getLocalView<Kokkos::HostSpace> ();
-      auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
-      scalar_type* const A_ptr =
-        reinterpret_cast<scalar_type*> (A_view.data ());
-      scalar_type* const Q_ptr =
-        reinterpret_cast<scalar_type*> (Q_view.data ());
-      const bool contiguousCacheBlocks = false;
-      tsqr_->factorExplicitRaw (A_view.extent (0),
-                                A_view.extent (1),
-                                A_ptr, A.getStride (),
-                                Q_ptr, Q.getStride (),
-                                R.values (), R.stride (),
-                                contiguousCacheBlocks,
-                                forceNonnegativeDiagonal);
+      auto A_view = get_mat_view(A);
+      auto Q_view = get_mat_view(Q);
+      constexpr bool contiguousCacheBlocks = false;
+      tsqr_->factorExplicitRaw(A_view.extent(0),
+                               A_view.extent(1),
+                               A_view.data(), A_view.stride(1),
+                               Q_view.data(), Q_view.stride(1),
+                               R.values(), R.stride(),
+                               contiguousCacheBlocks,
+                               forceNonnegativeDiagonal);
     }
 
     /// \brief Rank-revealing decomposition
@@ -273,29 +289,22 @@ namespace Tpetra {
     ///
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq N\f$.
     int
-    revealRank (MV& Q,
-                dense_matrix_type& R,
-                const magnitude_type& tol)
+    revealRank(MV& Q,
+               dense_matrix_type& R,
+               const magnitude_type& tol)
     {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (! Q.isConstantStride (), std::invalid_argument, "TsqrAdaptor::"
+        (! Q.isConstantStride(), std::invalid_argument, "TsqrAdaptor::"
          "revealRank: Input MultiVector Q must have constant stride.");
-      prepareTsqr (Q); // Finish initializing TSQR.
-      // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> object in Q
-      // to make sure it is the same communicator as the one we are
-      // using in our dist_tsqr_type implementation.
+      prepareTsqr(Q); // Finish initializing TSQR.
 
-      Q.sync_host ();
-      Q.modify_host ();
-      auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
-      scalar_type* const Q_ptr =
-        reinterpret_cast<scalar_type*> (Q_view.data ());
-      const bool contiguousCacheBlocks = false;
-      return tsqr_->revealRankRaw (Q_view.extent (0),
-                                   Q_view.extent (1),
-                                   Q_ptr, Q.getStride (),
-                                   R.values (), R.stride (),
-                                   tol, contiguousCacheBlocks);
+      auto Q_view = get_mat_view(Q);
+      constexpr bool contiguousCacheBlocks = false;
+      return tsqr_->revealRankRaw(Q_view.extent(0),
+                                  Q_view.extent(1),
+                                  Q_view.data(), Q_view.stride(1),
+                                  R.values(), R.stride(),
+                                  tol, contiguousCacheBlocks);
     }
 
   private:
@@ -312,7 +321,7 @@ namespace Tpetra {
     mutable Teuchos::RCP<const Teuchos::ParameterList> defaultParams_;
 
     //! Whether TSQR has been fully initialized.
-    bool ready_;
+    bool ready_ = false;
 
     /// \brief Finish TSQR initialization.
     ///
@@ -335,42 +344,32 @@ namespace Tpetra {
     ///   multivector objects used with this Adaptor instance must
     ///   have the same map, communicator, and Kokkos Node instance.
     void
-    prepareTsqr (const MV& mv)
+    prepareTsqr(const MV& mv)
     {
-      if (! ready_) {
-        prepareDistTsqr (mv);
-        prepareNodeTsqr (mv);
+      if(! ready_) {
+        prepareDistTsqr(mv);
         ready_ = true;
       }
     }
 
-    /// \brief Finish intranode TSQR initialization.
-    ///
-    /// \note It's OK to call this method more than once; it is idempotent.
-    void
-    prepareNodeTsqr (const MV& mv)
-    {
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, mv.getMap()->getNode());
-    }
-
-    /// \brief Finish internode TSQR initialization.
+    /// \brief Finish interprocess TSQR initialization.
     ///
     /// \param mv [in] A valid Tpetra::MultiVector instance whose
     ///   communicator wrapper we will use to prepare TSQR.
     ///
     /// \note It's OK to call this method more than once; it is idempotent.
     void
-    prepareDistTsqr (const MV& mv)
+    prepareDistTsqr(const MV& mv)
     {
       using Teuchos::RCP;
       using Teuchos::rcp_implicit_cast;
-      typedef TSQR::TeuchosMessenger<scalar_type> mess_type;
-      typedef TSQR::MessengerBase<scalar_type> base_mess_type;
+      using mess_type = TSQR::TeuchosMessenger<scalar_type>;
+      using base_mess_type = TSQR::MessengerBase<scalar_type>;
 
-      RCP<const Teuchos::Comm<int> > comm = mv.getMap()->getComm();
-      RCP<mess_type> mess (new mess_type (comm));
-      RCP<base_mess_type> messBase = rcp_implicit_cast<base_mess_type> (mess);
-      distTsqr_->init (messBase);
+      auto comm = mv.getMap()->getComm();
+      RCP<mess_type> mess(new mess_type(comm));
+      auto messBase = rcp_implicit_cast<base_mess_type>(mess);
+      distTsqr_->init(messBase);
     }
   };
 
@@ -378,5 +377,4 @@ namespace Tpetra {
 
 #endif // HAVE_TPETRA_TSQR
 
-#endif // __Tpetra_TsqrAdaptor_hpp
-
+#endif // TPETRA_TSQRADAPTOR_HPP

@@ -880,7 +880,7 @@ stk::mesh::Selector construct_sideset_selector(stk::io::OutputParams &params)
 
 std::string construct_parallel_filename(const std::string &baseFilename, int numSubdomains, int subdomainIndex)
 {
-    int width = std::log10(static_cast<double>(numSubdomains - 1))+1;
+    int width = std::log10(static_cast<double>(numSubdomains))+1;
     std::ostringstream os;
     os << baseFilename << "." << numSubdomains << "." << std::setfill('0') << std::setw(width) << subdomainIndex;
     return os.str();
@@ -888,6 +888,8 @@ std::string construct_parallel_filename(const std::string &baseFilename, int num
 
 std::string construct_filename_for_serial_or_parallel(const std::string &baseFilename, int numSubdomains, int subdomainIndex)
 {
+    ThrowRequire(numSubdomains > 0);
+    ThrowRequire(subdomainIndex >=0 && subdomainIndex<numSubdomains);
     if(numSubdomains == 1)
         return baseFilename;
     return stk::io::construct_parallel_filename(baseFilename, numSubdomains, subdomainIndex);

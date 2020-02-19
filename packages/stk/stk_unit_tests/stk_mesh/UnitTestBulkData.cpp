@@ -43,7 +43,6 @@
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <algorithm>                    // for sort
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
@@ -84,7 +83,6 @@
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_util/parallel/CommSparse.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
@@ -117,10 +115,6 @@ using stk::mesh::EntityRank;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-const EntityRank FACE_RANK = stk::topology::FACE_RANK;
-const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
-
 //====================
 extern int gl_argc;
 extern char** gl_argv;
@@ -132,7 +126,7 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
-    Selector select_owned(MetaData::get(mesh).locally_owned_part());
+    Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
 
     std::vector<size_t> before_count;
     std::vector<size_t> after_count;
@@ -215,7 +209,8 @@ void donate_all_shared_nodes(stk::unit_test_util::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
-    const Selector select_used = MetaData::get(mesh).locally_owned_part() | MetaData::get(mesh).globally_shared_part();
+    const MetaData& meta = mesh.mesh_meta_data();
+    const Selector select_used = meta.locally_owned_part() | meta.globally_shared_part();
 
     std::vector<size_t> before_count;
     std::vector<size_t> after_count;
@@ -2040,7 +2035,7 @@ TEST(BulkData, test_get_entities )
     hf.generate_mesh();
     const stk::mesh::BulkData &mesh = hf.m_bulk_data;
 
-    Selector select_owned(MetaData::get(mesh).locally_owned_part());
+    Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
     const stk::mesh::BucketVector &bucket_ptrs = mesh.get_buckets(stk::topology::NODE_RANK, select_owned);
     stk::mesh::EntityVector entities;
     mesh.get_entities(stk::topology::NODE_RANK, select_owned, entities);
@@ -3154,59 +3149,6 @@ TEST(BulkData, ModificationEnd)
     }
 }
 
-TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
-{
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-
-    if (numProcs != 1){
-        return;
-    }
-
-    const int spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::unit_test_util::BulkDataTester mesh(stkMeshMetaData, communicator);
-    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x1|sideset:xXyYzZ");
-    {
-        stk::io::StkMeshIoBroker exodusFileReader(communicator);
-        exodusFileReader.set_bulk_data(mesh);
-        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-        exodusFileReader.create_input_mesh();
-        exodusFileReader.populate_bulk_data();
-        //int index = exodusFileReader.create_output_mesh("1x1x1.exo", stk::io::WRITE_RESULTS);
-        //exodusFileReader.write_output_mesh(index);
-    }
-    std::vector<Entity> modified_entities;
-    mesh.modification_begin();
-    mesh.modification_end();
-    modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 1));
-    int destProc = 12;
-    mesh.my_set_parallel_owner_rank_but_not_comm_lists(mesh.get_entity(NODE_RANK, 1), destProc);
-
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, destProc));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_MESH_MODIFIED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), CEOUtils::STATE_MESH_UNCHANGED));
-
-    EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 1), CEOUtils::STATE_MESH_MODIFIED));
-
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 11), CEOUtils::STATE_MESH_MODIFIED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 14), CEOUtils::STATE_MESH_MODIFIED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 15), CEOUtils::STATE_MESH_MODIFIED));
-
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 12), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 13), CEOUtils::STATE_MESH_UNCHANGED));
-    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 16), CEOUtils::STATE_MESH_UNCHANGED));
-
-    mesh.state(mesh.get_entity(NODE_RANK, 1));
-}
-
-
 TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -3241,17 +3183,17 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
     }
     mesh.my_resolve_ownership_of_modified_entities(modified_entities);
     if (myRank == 0) {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
     }
     else if (myRank == 1) {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
     }
     else {
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
-        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
     }
 }
 
@@ -4359,7 +4301,7 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
             {
                owner = std::min(owner, procs[j]);
             }
-            bulk.my_fix_up_ownership(shared_modified[i], owner);
+            bulk.my_internal_change_owner_in_comm_data(shared_modified[i], owner);
         }
 
         ASSERT_NO_THROW(bulk.modification_end());

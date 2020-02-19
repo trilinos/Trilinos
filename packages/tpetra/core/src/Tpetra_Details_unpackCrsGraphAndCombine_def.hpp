@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -327,29 +325,37 @@ computeCrsPadding(const NumPackets& num_packets_per_lid,
 ///   local graph
 ///
 /// This is a higher level interface to the UnpackAndCombineFunctor
-template<class LocalOrdinal, class Packet, class RowView,
-         class IndicesView, class BufferDevice>
+template<class LocalOrdinal, class GlobalOrdinal, class Node,
+         class RowView, class IndicesView, class BufferDevice>
 void
 unpackAndCombine
 (const RowView& row_ptrs_beg,
  const RowView& row_ptrs_end,
  IndicesView& indices,
- const Kokkos::View<const Packet*, BufferDevice, Kokkos::MemoryUnmanaged>& imports,
- const Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>& num_packets_per_lid,
- const Kokkos::View<const LocalOrdinal*, BufferDevice, Kokkos::MemoryUnmanaged>& import_lids,
- const bool unpack_pids)
+ const Kokkos::View<const GlobalOrdinal*, BufferDevice,
+   Kokkos::MemoryUnmanaged>& imports,
+ const Kokkos::View<const size_t*, BufferDevice,
+   Kokkos::MemoryUnmanaged>& num_packets_per_lid,
+ const Kokkos::View<const LocalOrdinal*, BufferDevice,
+   Kokkos::MemoryUnmanaged>& import_lids,
+ const typename CrsGraph<LocalOrdinal, GlobalOrdinal,
+   Node>::padding_type& padding,
+ const bool unpack_pids,
+ const int myRank,
+ const bool verbose)
 {
-
   using ImportLidsView =
     Kokkos::View<const LocalOrdinal*, BufferDevice, Kokkos::MemoryUnmanaged>;
   using NumPacketsView =
     Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>;
   using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+  using device_type = typename Node::device_type;  
   using execution_space = typename BufferDevice::execution_space;
   using range_policy =
     Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
   using unpack_functor_type =
-    UnpackAndCombineFunctor<LO, Packet, RowView, IndicesView, BufferDevice>;
+    UnpackAndCombineFunctor<LO, GO, RowView, IndicesView, BufferDevice>;
 
   const char prefix[] =
     "Tpetra::Details::UnpackAndCombineCrsGraphImpl::unpackAndCombine: ";
@@ -360,13 +366,9 @@ unpackAndCombine
     return;
   }
 
-  using device_type = typename IndicesView::device_type;
-
   // Resize row pointers and indices to accommodate incoming data
-  auto padding =
-    computeCrsPadding<NumPacketsView, ImportLidsView, device_type>
-      (num_packets_per_lid, import_lids, unpack_pids);
-  padCrsArrays<RowView, IndicesView, decltype (padding) > (row_ptrs_beg, row_ptrs_end, indices, padding);
+  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding,
+               myRank, verbose);
 
   // Get the offsets
   Kokkos::View<size_t*, device_type> offsets("offsets", num_import_lids+1);
@@ -835,199 +837,6 @@ unpackAndCombineIntoCrsArrays(
 
 } // namespace UnpackAndCombineCrsGraphImpl
 
-/// \brief Unpack the imported column indices and combine into graph.
-///
-/// \tparam LO The type of local indices.  See the
-///   documentation of Map for requirements.
-/// \tparam GO The type of global indices.  See the
-///   documentation of Map for requirements.
-/// \tparam Node The Kokkos Node type.  See the documentation of Map
-///   for requirements.
-///
-/// \param sourceGraph [in] the CrsGraph source
-///
-/// \param imports [in] Input pack buffer
-///
-/// \param numPacketsPerLID [out] Entry k gives the number of bytes
-///   packed for row exportLIDs[k] of the local graph.
-///
-/// \param importLIDs [in] Local indices of the rows to pack.
-///
-/// \param constantNumPackets [out] Setting this to zero tells the caller
-///   to expect a possibly /// different ("nonconstant") number of packets per local index
-///   (i.e., a possibly different number of entries per row).
-///
-/// \param distor [in] The distributor (not used)
-///
-/// \param combineMode [in] the mode to use for combining indices.  This value
-///   is not checked.  Any incoming indices are just inserted in to the graph.
-///   graphs is
-///
-/// This is the public interface to the unpack and combine machinery and
-/// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
-/// copies back in to the Teuchos::ArrayView objects, if needed).  When
-/// CrsGraph migrates fully to adopting Kokkos::DualView objects for its storage
-/// of data, this procedure could be bypassed.
-template<class LO, class GO, class Node>
-void
-unpackCrsGraphAndCombine(
-    CrsGraph<LO, GO, Node>& graph,
-    const Teuchos::ArrayView<const typename CrsGraph<LO,GO,Node>::packet_type>& imports,
-    const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    const Teuchos::ArrayView<const LO>& importLIDs,
-    size_t /* constantNumPackets */,
-    Distributor & /* distor */,
-    CombineMode /* combineMode */)
-{
-
-  TEUCHOS_TEST_FOR_EXCEPTION(!graph.isGloballyIndexed(), std::invalid_argument,
-      "Graph must be globally indexed!");
-
-
-  using Kokkos::View;
-  using UnpackAndCombineCrsGraphImpl::unpackAndCombine;
-  using graph_type = CrsGraph<LO,GO,Node>;
-  using device_type = typename Node::device_type;
-  using buffer_device_type = typename graph_type::buffer_device_type;
-  using execution_space = typename device_type::execution_space;
-  using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
-  using row_ptrs_type = typename graph_type::local_graph_type::row_map_type::non_const_type;
-  using indices_type = typename graph_type::t_GlobalOrdinal_1D;
-
-  // Convert all Teuchos::Array to Kokkos::View.
-
-  buffer_device_type bufferOutputDevice;
-
-  // numPacketsPerLID, importLIDs, and imports are input, so we have to copy
-  // them to device.  Since unpacking is done directly in to the local graph
-  // (lclGraph), no copying needs to be performed after unpacking.
-  auto imports_d =
-    create_mirror_view_from_raw_host_array(bufferOutputDevice,
-        imports.getRawPtr(), imports.size(),
-        true, "imports");
-
-  auto num_packets_per_lid_d =
-    create_mirror_view_from_raw_host_array(bufferOutputDevice,
-        numPacketsPerLID.getRawPtr(), numPacketsPerLID.size(),
-        true, "num_packets_per_lid");
-
-  auto import_lids_d =
-    create_mirror_view_from_raw_host_array(bufferOutputDevice,
-        importLIDs.getRawPtr(), importLIDs.size(),
-        true, "import_lids");
-
-  // We are OK using the protected data directly (k_*) because this function is
-  // a friend of CrsGraph
-  indices_type indices("indices", graph.k_gblInds1D_.extent(0));
-  Kokkos::deep_copy(indices, graph.k_gblInds1D_);
-
-  row_ptrs_type row_ptrs_beg("row_ptrs_beg", graph.k_rowPtrs_.extent(0));
-  Kokkos::deep_copy(row_ptrs_beg, graph.k_rowPtrs_);
-
-  const size_t N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1);
-  row_ptrs_type row_ptrs_end("row_ptrs_end", N);
-
-  bool refill_num_row_entries = false;
-  if (graph.k_numRowEntries_.extent(0) > 0) {
-    // Case 1: Packed storage
-    refill_num_row_entries = true;
-    auto num_row_entries = graph.k_numRowEntries_;
-    Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
-        KOKKOS_LAMBDA(const size_t i){
-          row_ptrs_end(i) = row_ptrs_beg(i) + num_row_entries(i);
-      });
-
-  } else {
-    // mfh If packed storage, don't need row_ptrs_end to be separate allocation;
-    // could just have it alias row_ptrs_beg+1.
-
-      // Case 2: Packed storage
-    Kokkos::parallel_for("Fill end row pointers",
-        range_policy(0, N), KOKKOS_LAMBDA(const size_t i){
-        row_ptrs_end(i) = row_ptrs_beg(i+1);
-    });
-  }
-
-  // Now do the actual unpack!
-  unpackAndCombine<LO, GO, row_ptrs_type, indices_type, buffer_device_type>
-    (row_ptrs_beg, row_ptrs_end, indices, imports_d,
-     num_packets_per_lid_d, import_lids_d, false);
-
-  // mfh Later, permit graph to be locally indexed, and check whether
-  // incoming column indices are in the column Map.  If not, error.
-  if (refill_num_row_entries) {
-    Kokkos::parallel_for("Fill num entries",
-        range_policy(0, N), KOKKOS_LAMBDA(const size_t i){
-        graph.k_numRowEntries_(i) = row_ptrs_end(i) - row_ptrs_beg(i);
-    });
-  }
-  graph.k_rowPtrs_ = row_ptrs_beg;
-  graph.k_gblInds1D_ = indices;
-
-  return;
-}
-
-template<class LO, class GO, class Node>
-void
-unpackCrsGraphAndCombineNew(
-    CrsGraph<LO, GO, Node>& /* sourceGraph */,
-    const Kokkos::DualView<const typename CrsGraph<LO,GO,Node>::packet_type*,
-                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& /* imports */,
-    const Kokkos::DualView<const size_t*,
-                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& /* numPacketsPerLID */,
-    const Kokkos::DualView<const LO*,
-                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& /* importLIDs */,
-    const size_t /* constantNumPackets */,
-    Distributor& /* distor */,
-    const CombineMode /* combineMode */)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "METHOD NOT COMPLETE");
-#if 0
-  using UnpackAndCombineCrsGraphImpl::unpackAndCombine;
-  using Tpetra::Details::castAwayConstDualView;
-  using Kokkos::View;
-  using device_type = typename Node::device_type;
-  using graph_type = CrsGraph<LO, GO, Node>;
-  using packet_type = typename graph_type::packet_type;
-  using local_graph_type = typename graph_type::local_graph_type;
-  using buffer_device_type = typename graph_type::buffer_device_type;
-  using buffer_memory_space = typename buffer_device_type::memory_space;
-  using memory_space = typename device_type::memory_space;
-
-  using row_ptrs_type = typename graph_type::local_graph_type::row_map_type::non_const_type;
-  using execution_space = typename device_type::execution_space;
-  using indices_type =  Kokkos::View<GO*, execution_space>;
-
-  static_assert(std::is_same<device_type, typename local_graph_type::device_type>::value,
-                "Node::device_type and LocalGraph::device_type must be "
-                "the same.");
-
-  {
-    auto numPacketsPerLID_nc = castAwayConstDualView(numPacketsPerLID);
-    numPacketsPerLID_nc.sync_device ();
-  }
-  auto num_packets_per_lid_d = numPacketsPerLID.view_device ();
-
-  TEUCHOS_ASSERT( ! importLIDs.need_sync_device () );
-  auto import_lids_d = importLIDs.view_device ();
-
-  {
-    auto imports_nc = castAwayConstDualView(imports);
-    imports_nc.sync_device ();
-  }
-  auto imports_d = imports.view_device ();
-
-  // Now do the actual unpack!
-  // TJF: Should be grabbed from the Graph
-  indices_type indices;
-  row_ptrs_type row_ptrs_beg;
-  row_ptrs_type row_ptrs_end;
-  unpackAndCombine<LO,packet_type,row_ptrs_type,indices_type,device_type,buffer_device_type>(
-      row_ptrs_beg, row_ptrs_end, indices, imports_d,
-      num_packets_per_lid_d, import_lids_d, false);
-#endif // 0
-}
-
 /// \brief Special version of Tpetra::Details::unpackCrsGraphAndCombine
 ///   that also unpacks owning process ranks.
 ///
@@ -1289,27 +1098,6 @@ unpackAndCombineIntoCrsArrays(
 } // namespace Tpetra
 
 #define TPETRA_DETAILS_UNPACKCRSGRAPHANDCOMBINE_INSTANT( LO, GO, NT ) \
-  template void \
-  Details::unpackCrsGraphAndCombine<LO, GO, NT>( \
-    CrsGraph<LO, GO, NT>&, \
-    const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>&, \
-    const Teuchos::ArrayView<const size_t>&, \
-    const Teuchos::ArrayView<const LO>&, \
-    size_t, \
-    Distributor&, \
-    CombineMode); \
-  template void \
-  Details::unpackCrsGraphAndCombineNew<LO, GO, NT>( \
-    CrsGraph<LO, GO, NT>&, \
-    const Kokkos::DualView<const CrsGraph<LO, GO, NT>::packet_type*, \
-                           CrsGraph<LO, GO, NT>::buffer_device_type>&, \
-    const Kokkos::DualView<const size_t*, \
-                           CrsGraph<LO, GO, NT>::buffer_device_type>&, \
-    const Kokkos::DualView<const LO*, \
-                           CrsGraph<LO, GO, NT>::buffer_device_type>&, \
-    const size_t, \
-    Distributor&, \
-    const CombineMode); \
   template void \
   Details::unpackAndCombineIntoCrsArrays<LO, GO, NT>( \
     const CrsGraph<LO, GO, NT> &, \

@@ -396,6 +396,8 @@ public:
         return *bulk;
     }
 
+    bool is_up_to_date() const { return true; }
+
 private:
     const stk::mesh::BulkData *bulk;
     using StkBucketAdapterVector = std::vector<StkBucketAdapter>;
@@ -590,10 +592,10 @@ public:
     using BucketType        = StaticBucket;
 
     STK_FUNCTION
-    StaticMesh() : bulk(nullptr), spatial_dimension(0) {}
+    StaticMesh() : bulk(nullptr), spatial_dimension(0), synchronizedCount(0) {}
 
     explicit StaticMesh(const stk::mesh::BulkData& b)
-     : bulk(&b), spatial_dimension(b.mesh_meta_data().spatial_dimension())
+     : bulk(&b), spatial_dimension(b.mesh_meta_data().spatial_dimension()), synchronizedCount(b.synchronized_count())
     {
         set_entity_keys(b);
         copy_entity_keys_to_device();
@@ -846,6 +848,11 @@ public:
     const stk::mesh::BulkData &get_bulk_on_host() const
     {
         return *bulk;
+    }
+
+    bool is_up_to_date() const {
+      if(bulk == nullptr) { return false; }
+      return synchronizedCount == bulk->synchronized_count();
     }
 
 private:
@@ -1116,6 +1123,7 @@ private:
     using BucketView = Kokkos::View<StaticBucket*, UVMMemSpace>;
     const stk::mesh::BulkData *bulk;
     unsigned spatial_dimension;
+    unsigned synchronizedCount;
 
     EntityKeyViewType::HostMirror hostEntityKeys;
     EntityKeyViewType entityKeys;

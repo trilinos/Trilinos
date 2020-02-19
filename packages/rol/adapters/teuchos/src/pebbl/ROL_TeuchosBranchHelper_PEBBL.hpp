@@ -64,7 +64,7 @@ private:
   const Real tol_;
   const int method_;
 
-  using BrancHelper_PEBBL<Real>::getVector();
+  using BranchHelper_PEBBL<Real>::getVector;
   Ptr<const Teuchos::SerialDenseVector<Ordinal,Real>> getConstData(const Vector<Real> &x) const {
     return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(*getVector(x)).getVector();
   }

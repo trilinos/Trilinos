@@ -75,9 +75,6 @@
 #include "MueLu_EpetraOperator.hpp"
 #endif
 
-// #ifdef HAVE_MUELU_DEPRECATED_CODE
-// #define OLD_HAVE_MUELU_DEPRECATED_CODE HAVE_MUELU_DEPRECATED_CODE
-// #undef HAVE_MUELU_DEPRECATED_CODE
 // #endif
 
 namespace MueLuTests {
@@ -797,7 +794,4 @@ namespace MueLuTests {
 
 }//namespace MueLuTests
 
-// #ifdef OLD_HAVE_MUELU_DEPRECATED_CODE
-// #define HAVE_MUELU_DEPRECATED_CODE OLD_HAVE_MUELU_DEPRECATED_CODE
-// #undef OLD_HAVE_MUELU_DEPRECATED_CODE
 // #endif

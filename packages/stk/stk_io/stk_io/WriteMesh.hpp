@@ -49,6 +49,10 @@ void write_mesh(const std::string &filename,
                 stk::mesh::BulkData &bulkData,
                 stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
 
+void write_mesh_with_canonical_name(const std::string &filename,
+                                    stk::mesh::BulkData &bulkData,
+                                    stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
+
 void write_mesh_with_large_ids(const std::string &filename,
                 stk::mesh::BulkData &bulkData,
                 stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);

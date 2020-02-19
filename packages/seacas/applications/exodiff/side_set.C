@@ -134,7 +134,7 @@ template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) cons
       }
     }
 
-    if (interface.ssmap_flag) {
+    if (interFace.ssmap_flag) {
       for (size_t i = 0; i < numEntity; i++) {
         sideIndex[i] = i;
         elmts[i]     = elmts[i] * 8 + sides[i];

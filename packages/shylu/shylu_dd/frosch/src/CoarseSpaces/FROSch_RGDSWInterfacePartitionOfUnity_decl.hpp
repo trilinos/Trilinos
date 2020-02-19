@@ -106,13 +106,13 @@ namespace FROSch {
 
     protected:
 
-        bool UseCoarseNodes_;
+        bool UseRoots_ = false;
 
-        EntitySetPtr CoarseNodes_;
+        EntitySetPtr Roots_;
 
-        EntitySetPtrVecPtr EntitySetVector_;
+        EntitySetPtrVecPtr EntitySetVector_ = EntitySetPtrVecPtr(0);
 
-        DistanceFunction DistanceFunction_;
+        DistanceFunction DistanceFunction_ = ConstantDistanceFunction;
     };
 
 }
