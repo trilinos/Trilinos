@@ -92,7 +92,7 @@ private:
   int extlim_;     ///< Maximum number of extrapolation steps for Cauchy point (default: 10)
   Real interpf_;   ///< Backtracking rate for Cauchy point computation (default: 1e-1)
   Real extrapf_;   ///< Extrapolation rate for Cauchy point computation (default: 1e1)
-  Real alphamax_;  ///< Maximum Cauchy point step length (default: 1e10)
+  Real qtol_;      ///< Relative tolerance for computed decrease in Cauchy point computation (default: 1-8)
   Real mu0_;       ///< Sufficient decrease parameter (default: 1e-2)
   Real interpfPS_; ///< Backtracking rate for projected search (default: 0.5)
   int pslim_;      ///< Maximum number of projected search steps (default: 20)

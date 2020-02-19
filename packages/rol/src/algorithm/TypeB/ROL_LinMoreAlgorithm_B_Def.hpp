@@ -74,7 +74,7 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   extlim_    = trlist.sublist("Lin-More").get("Maximum Number of Extrapolation Steps",    10);
   interpf_   = trlist.sublist("Lin-More").get("Cauchy Point Backtracking Rate",           0.1);
   extrapf_   = trlist.sublist("Lin-More").get("Cauchy Point Extrapolation Rate",          10.0);
-  alphamax_  = trlist.sublist("Lin-More").get("Max Cauchy Point Length",                  1e10);
+  qtol_      = trlist.sublist("Lin-More").get("Cauchy Point Decrease Tolerance",          1e-8);
   mu0_       = trlist.sublist("Lin-More").get("Sufficient Decrease Parameter",            1e-2);
   interpfPS_ = trlist.sublist("Lin-More").get("Projected Search Backtracking Rate",       0.5);
   pslim_     = trlist.sublist("Lin-MOre").get("Maximum Number of Projected Search Steps", 20);
@@ -363,14 +363,14 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     Real alphas = alpha;
     Real qs = q;
     dwa1.set(dwa);
-    while (search && alpha < alphamax_) {
+    while (search) {
       alpha *= extrapf_;
       snorm = dgpstep(s,g,x,-alpha);
       if (snorm <= del && cnt < extlim_) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
         q  = half * s.dot(dwa.dual()) + gs;
-        if (q <= mu0_*gs) {
+        if (q <= mu0_*gs && std::abs(q-qs) > qtol_*std::abs(qs)) {
           dwa1.set(dwa);
           search = true;
           alphas = alpha;
