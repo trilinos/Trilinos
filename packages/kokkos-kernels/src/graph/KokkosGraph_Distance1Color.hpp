@@ -74,8 +74,6 @@ void graph_color_symbolic(
 
   gch->set_tictoc(handle->get_verbose());
 
-  //printf("GraphColorHandle's colorView reference count: %d, and label: %s",gch->get_vertex_colors().use_count(),
-  //                                                                         gch->get_vertex_colors().label());
   
   color_view_type colors_out;// = color_view_type("Graph Colors", num_rows);
   if(gch->get_vertex_colors().use_count() > 0){

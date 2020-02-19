@@ -5,25 +5,23 @@
 #include <unordered_map>
 #include <iostream>
 #include <queue>
-#include <unistd.h>
 
-#include <Zoltan2_Algorithm.hpp>
-#include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_ColoringSolution.hpp>
-#include <Zoltan2_Util.hpp>
-#include <Zoltan2_TPLTraits.hpp>
+#include "Zoltan2_Algorithm.hpp"
+#include "Zoltan2_GraphModel.hpp"
+#include "Zoltan2_ColoringSolution.hpp"
+#include "Zoltan2_Util.hpp"
+#include "Zoltan2_TPLTraits.hpp"
 
 #include "Tpetra_Core.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_FEMultiVector.hpp"
 
-#include <KokkosKernels_Handle.hpp>
+#include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosGraph_Distance1ColorHandle.hpp"
 
-#include "zz_rand.h"
 //////////////////////////////////////////////
 //! \file Zoltan2_AlgHybridGMB.hpp
 //! \brief A hybrid version of the framework proposed by Gebremedhin, Manne, 
@@ -36,14 +34,14 @@ class AlgHybridGMB : public Algorithm<Adapter>
 {
   public:
   
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::offset_t offset_t;
-    typedef typename Adapter::scalar_t scalar_t;
-    typedef typename Adapter::base_adapter_t base_adapter_t;
-    typedef Tpetra::Map<lno_t, gno_t> map_t;
-    typedef int femv_scalar_t;
-    typedef Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t> femv_t;
+    using lno_t = typename Adapter::lno_t;
+    using gno_t = typename Adapter::gno_t;
+    using offset_t = typename Adapter::offset_t;
+    using scalar_t = typename Adapter::scalar_t;
+    using base_adapter_t = typename Adapter::base_adapter_t;
+    using map_t = Tpetra::Map<lno_t, gno_t>;
+    using femv_scalar_t = int;
+    using femv_t = Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t>;
     
   private:
 
@@ -59,33 +57,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
                        Teuchos::RCP<femv_t> femv,
                        bool recolor=false){
       
-      //default values are taken from KokkosKernels_TestParameters.hpp
-      
-      int algorithm = pl->get<int>("Hybrid_algorithm",0);
-      int repeat = pl->get<int>("Hybrid_repeat",1); //probably not using this 
-                                                    //until we test performance
-      int chunk_size = pl->get<int>("Hybrid_chunk_size",-1); 
-      int shmemsize = pl->get<int>("Hybrid_shmemsize", 16128);
-      int team_size = pl->get<int>("Hybrid_team_size", -1);
-      int use_dynamic_scheduling = pl->get<int>("Hybrid_use_dynamic_scheduling",
-                                                0);
-      int verbose = pl->get<int>("Hybrid_verbose",0);
 
-      int vector_size = pl->get<int>("Hybrid_vector_size",-1);
-
-      typedef KokkosKernels::Experimental::KokkosKernelsHandle
+      using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle
           <size_t, lno_t, lno_t, ExecutionSpace, TempMemorySpace, 
-           MemorySpace> KernelHandle;
+           MemorySpace>;
       KernelHandle kh;
 
-      kh.set_team_work_size(chunk_size);
-      kh.set_shmem_size(shmemsize);
-      kh.set_suggested_team_size(team_size);
-      kh.set_suggested_vector_size(vector_size);
-       
-      kh.set_dynamic_scheduling(use_dynamic_scheduling);
-      kh.set_verbose(verbose);
-    
       if(recolor){
         kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
       } else {
@@ -100,8 +77,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
       
       KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx, nVtx, 
                                                       offset_view, adjs_view);
-      
-      Kokkos::fence();
       
       numColors = kh.get_graph_coloring_handle()->get_num_colors();
     }
@@ -133,13 +108,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
     //Main entry point for graph coloring
     void color( const RCP<ColoringSolution<Adapter> > &solution ) {
       int rank = comm->getRank(); 
-      Teuchos::RCP<Teuchos::Time>
-             timeReorder(Teuchos::TimeMonitor::getNewTimer("00 REORDER")),
-             timeInterior(Teuchos::TimeMonitor::getNewTimer("01 INTERIOR")),
-             timeBoundary(Teuchos::TimeMonitor::getNewTimer("02 BOUNDARY"));
       //this will color the global graph in a manner similar to Zoltan
       
-      timeReorder->start();
       //get vertex GIDs in a locally indexed array (stolen from Ice-Sheet 
       //interface)
       ArrayView<const gno_t> vtxIDs;
@@ -207,7 +177,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                                             mapWithCopies));
       Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, 
                                                     importer, 1, true));
-      timeReorder->stop();
       //Get color array to fill
       ArrayRCP<int> colors = solution->getColorsRCP();
       for(size_t i=0; i<nVtx; i++){
@@ -220,8 +189,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //taken directly from the Zoltan coloring implementation 
       std::vector<int> rand(finalGIDs.size());
       for(size_t i = 0; i < finalGIDs.size(); i++){
-        Zoltan_Srand((unsigned int) finalGIDs[i], NULL);
-        rand[i] = (int) (((double) Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000);
+        std::srand(finalGIDs[i]);
+        rand[i] = std::rand();
       }
 
       
@@ -229,16 +198,13 @@ class AlgHybridGMB : public Algorithm<Adapter>
       ArrayView<const lno_t> finalAdjs = Teuchos::arrayViewFromVector(finalAdjs_vec);
 
       // call coloring function
-      hybridGMB(nVtx, nInterior, finalAdjs, finalOffsets,colors,femv,finalGIDs,rand,timeInterior,timeBoundary);
+      hybridGMB(nVtx, nInterior, finalAdjs, finalOffsets,colors,femv,finalGIDs,rand);
       
       //copy colors to the output array.
       for(int i = 0; i < colors.size(); i++){
         colors[reorderToLocal[i]] = femv->getData(0)[i];
       }
      
-      //RESULT REPORTING INSTRUMENTATION
-      //Teuchos::TimeMonitor::summarize();
-      Teuchos::TimeMonitor::zeroOutTimers();
       comm->barrier();
     }
      
@@ -246,14 +212,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
                    Teuchos::ArrayView<const offset_t> offsets, 
                    Teuchos::ArrayRCP<int> colors, Teuchos::RCP<femv_t> femv,
                    std::vector<gno_t> reorderGIDs,
-                   std::vector<int> rand,
-                   Teuchos::RCP<Teuchos::Time> timeInterior,
-                   Teuchos::RCP<Teuchos::Time> timeBoundary){
-     Teuchos::RCP<Teuchos::Time> 
-             timeBoundaryComm(Teuchos::TimeMonitor::getNewTimer("03 BOUNDARY-COMM")),
-             timeBoundaryComp(Teuchos::TimeMonitor::getNewTimer("04 BOUNDARY-COMP"));
+                   std::vector<int> rand){
       
-      timeInterior->start();
       //make views out of arrayViews 
       Kokkos::View<offset_t*, Tpetra::Map<>::device_type> host_offsets("Host Offset view", offsets.size());
       for(int i = 0; i < offsets.size(); i++){
@@ -275,16 +235,11 @@ class AlgHybridGMB : public Algorithm<Adapter>
                           Tpetra::Map<>::memory_space>
                  (kokkosVerts, host_adjs, host_offsets, colors, femv);
       
-      timeInterior->stop();
       //set the batch size to a reasonable default
-      timeBoundary->start();
-      timeBoundaryComp->start();
-      int batch_size = pl->get<int>("Hybrid_batch_size",100);
       
-      if(batch_size < 0) batch_size = nVtx;
-      typedef Tpetra::Map<>::device_type device_type;
-      typedef Tpetra::Map<>::execution_space execution_space;
-      typedef Tpetra::Map<>::memory_space memory_space;
+      using device_type = Tpetra::Map<>::device_type;
+      using execution_space = Tpetra::Map<>::execution_space;
+      using memory_space = Tpetra::Map<>::memory_space;
      
       Kokkos::View<offset_t*, Tpetra::Map<>::device_type> dist_degrees("Owned+Ghost degree view",rand.size());
       for(int i = 0; i < adjs.size(); i++){
@@ -326,17 +281,15 @@ class AlgHybridGMB : public Algorithm<Adapter>
       for(size_t i = 0; i < rand.size(); i++){
         host_rand(i) = rand[i];
       }
-      
-      
+      Kokkos::View<gno_t*, device_type> gid_view("GIDs",reorderGIDs.size());
+      for(size_t i = 0; i < reorderGIDs.size(); i++){
+        gid_view(i) = reorderGIDs[i];
+      }
       //bootstrap distributed coloring, add conflicting vertices to the recoloring queue.
       if(comm->getSize() > 1){
-        timeBoundaryComp->stop();
-        timeBoundaryComm->start();
         femv->switchActiveMultiVector();
         femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
         femv->switchActiveMultiVector();
-        timeBoundaryComm->stop();
-        timeBoundaryComp->start();
         //get a subview of the colors:
         Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
         Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
@@ -351,10 +304,17 @@ class AlgHybridGMB : public Algorithm<Adapter>
                 femv_colors(i) = 0;
                 recoloringSize_atomic(0)++;
                 break;
-              }
-              if(host_rand(host_adjs(j)) > host_rand(i)){
+              } else if(host_rand(host_adjs(j)) > host_rand(i)){
                 femv_colors(host_adjs(j)) = 0;
                 recoloringSize_atomic(0)++;
+              } else {
+                if (gid_view(i) >= gid_view(host_adjs(j))){
+                  femv_colors(i) = 0;
+                  recoloringSize_atomic(0)++;
+                } else {
+                  femv_colors(host_adjs(j)) = 0;
+                  recoloringSize_atomic(0)++;
+                }
               }
             }
           }
@@ -383,16 +343,11 @@ class AlgHybridGMB : public Algorithm<Adapter>
                             (femv_colors.size(),dist_adjs,dist_offsets,colors,femv,true);
             
         recoloringSize(0) = 0;
-        timeBoundaryComp->stop();
-        timeBoundaryComm->start();
         //communicate
         femv->switchActiveMultiVector();
         femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
         femv->switchActiveMultiVector();
             
-        timeBoundaryComm->stop();
-        timeBoundaryComp->start();
-        
         //detect conflicts in parallel. For a detected conflict,
         //reset the vertex-to-be-recolored's color to 0, in order to
         //allow KokkosKernels to recolor correctly.
@@ -405,10 +360,17 @@ class AlgHybridGMB : public Algorithm<Adapter>
                 femv_colors(i) = 0;
                 recoloringSize_atomic(0)++;
                 break;
-              }
-              if(host_rand(host_adjs(j)) > host_rand(i)){
+              } else if(host_rand(host_adjs(j)) > host_rand(i)){
                 femv_colors(host_adjs(j)) = 0;
                 recoloringSize_atomic(0)++;
+              } else {
+                if (gid_view(i) >= gid_view(host_adjs(j))){
+                  femv_colors(i) = 0;
+                  recoloringSize_atomic(0)++;
+                } else {
+                  femv_colors(host_adjs(j)) = 0;
+                  recoloringSize_atomic(0)++;
+                }
               }
             }
           }
@@ -427,10 +389,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
         done = !globalDone;
       }
         
-      timeBoundaryComp->stop();
-      timeBoundary->stop();
-      
-      
       //print how many rounds of speculating/correcting happened (this should be the same for all ranks):
       /* RESULT REPORTING INSTRUMENTATION
       if(comm->getRank()==0) printf("did %d rounds of distributed coloring\n", distributedRounds);

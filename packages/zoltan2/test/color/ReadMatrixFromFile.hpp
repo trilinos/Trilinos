@@ -218,16 +218,16 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
 
   //std::cout << globalNumRows << " " << globalNumNonzeros << std::endl;
 
-  global_ordinal_type *rowPtr;
-  global_ordinal_type *colInd;
+  std::unique_ptr<global_ordinal_type> rowPtr;
+  std::unique_ptr<global_ordinal_type> colInd;
 
   if (myRank == rootRank) {
 
-    rowPtr = new global_ordinal_type[globalNumRows+1];
-    colInd = new global_ordinal_type[globalNumNonzeros];
+    rowPtr = std::unique_ptr<global_ordinal_type>(new global_ordinal_type[globalNumRows+1]);
+    colInd = std::unique_ptr<global_ordinal_type>(new global_ordinal_type[globalNumNonzeros]);
 
-    in->read((char*)rowPtr, sizeof(global_ordinal_type)*(globalNumRows+1));
-    in->read((char*)colInd, sizeof(global_ordinal_type)*(globalNumNonzeros));
+    in->read((char*)rowPtr.get(), sizeof(global_ordinal_type)*(globalNumRows+1));
+    in->read((char*)colInd.get(), sizeof(global_ordinal_type)*(globalNumNonzeros));
 
   }
 
@@ -246,7 +246,7 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
   Teuchos::ArrayRCP<global_ordinal_type> myColInd;
   Teuchos::ArrayRCP<scalar_type> myValues;
  
-  distribute<global_ordinal_type, local_ordinal_type, scalar_type, map_type>(myNumEntriesPerRow, myRowPtr, myColInd, myValues, pRowMap, rowPtr, colInd, debug);
+  distribute<global_ordinal_type, local_ordinal_type, scalar_type, map_type>(myNumEntriesPerRow, myRowPtr, myColInd, myValues, pRowMap, rowPtr.get(), colInd.get(), debug);
 
 
 
@@ -297,12 +297,6 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
     pMatrix->fillComplete (pDomainMap, pRangeMap);
   }
   
-  
-  if(myRank == rootRank) {
-    delete [] rowPtr;
-    delete [] colInd;
-  }
-    
   return pMatrix;
 
 }

@@ -111,14 +111,14 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
   return nconflicts;
 }
 
-int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
+int validateDistributedColoring(const SparseMatrix& A, int *color, int rank){
   int nconflicts = 0;
   
-  RCP<const SparseMatrix::map_type> rowMap = A->getRowMap();
-  RCP<const SparseMatrix::map_type> colMap = A->getColMap();
+  RCP<const SparseMatrix::map_type> rowMap = A.getRowMap();
+  RCP<const SparseMatrix::map_type> colMap = A.getColMap();
   Vector R = Vector(rowMap);
   //put the colors in the scalar entries of R.
-  for(size_t i = 0; i < A->getNodeNumRows(); i++){
+  for(size_t i = 0; i < A.getNodeNumRows(); i++){
     R.replaceLocalValue(i,color[i]);
   }
 
@@ -131,16 +131,13 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
 
   // Count conflicts in the graph.
   // Loop over local rows, treat local column indices as edges.
-  size_t n = A->getNodeNumRows();
+  size_t n = A.getNodeNumRows();
   auto colorData = C.getData();
   for (size_t i=0; i<n; i++) {
-    A->getLocalRowView(i, indices, values);
+    A.getLocalRowView(i, indices, values);
     for (Teuchos_Ordinal j = 0; j < indices.size(); j++) {
       if ((indices[j] != i) && (color[i] == colorData[indices[j]])){
         nconflicts++;
-//        std::cout << "Debug: Rank "<< rank <<" found conflict ("
-//                  << rowMap->getGlobalElement(i) << ", " 
-//                  << colMap->getGlobalElement(indices[j]) << ")" << std::endl;
       }
     }
   }
@@ -178,10 +175,6 @@ int checkBalance(zlno_t n, int *color)
       largest = i;
     }
   }
-
-  //std::cout << "Color size[0:2] = " << colorCount[0] << ", " << colorCount[1] << ", " << colorCount[2] << std::endl;
-  //std::cout << "Largest color class = " << largest << " with " << colorCount[largest] << " vertices." << std::endl;
-  //std::cout << "Smallest color class = " << smallest << " with " << colorCount[smallest] << " vertices." << std::endl;
 
   return 0;
 }
@@ -302,31 +295,31 @@ int main(int narg, char** arg)
   if (prepartition != "") {
 
     // Compute new partition of matrix
-    SparseMatrixAdapter *zadapter;
+    std::unique_ptr<SparseMatrixAdapter> zadapter;
     if (prepartition_nonzeros) {
-      zadapter = new SparseMatrixAdapter(Matrix, 1);
+      zadapter = std::unique_ptr<SparseMatrixAdapter>(new SparseMatrixAdapter(Matrix, 1));
       zadapter->setRowWeightIsNumberOfNonZeros(0);
     }
     else {
-      zadapter = new SparseMatrixAdapter(Matrix);
+      zadapter = std::unique_ptr<SparseMatrixAdapter>(new SparseMatrixAdapter(Matrix));
     }
     Teuchos::ParameterList zparams;
     zparams.set("algorithm", "parmetis");
     zparams.set("imbalance_tolerance", 1.05);
     zparams.set("partitioning_approach", "partition");
     Zoltan2::PartitioningProblem<SparseMatrixAdapter> 
-             zproblem(zadapter, &zparams);
+             zproblem(zadapter.get(), &zparams);
     zproblem.solve();
 
     // Print partition characteristics before and after
     typedef Zoltan2::EvaluatePartition<SparseMatrixAdapter> quality_t;
-    quality_t evalbef(zadapter, &zparams, comm, NULL);
+    quality_t evalbef(zadapter.get(), &zparams, comm, NULL);
     if (me == 0) {
       std::cout << "BEFORE PREPARTITION:  Partition statistics:" << std::endl;
       evalbef.printMetrics(std::cout);
     }
 
-    quality_t evalaft(zadapter, &zparams, comm, &zproblem.getSolution());
+    quality_t evalaft(zadapter.get(), &zparams, comm, &zproblem.getSolution());
     if (me == 0) {
       std::cout << "AFTER PREPARTITION:  Partition statistics:" << std::endl;
       evalaft.printMetrics(std::cout);
@@ -337,7 +330,6 @@ int main(int narg, char** arg)
     zadapter->applyPartitioningSolution(*Matrix, newMatrix,
                                        zproblem.getSolution());
     Matrix = newMatrix;
-    delete zadapter;
   }
 
   ////// Specify problem parameters
@@ -360,14 +352,14 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the coloring solution
   size_t checkLength;
-  int *checkColoring = NULL;
+  int *checkColoring = nullptr;
   Zoltan2::ColoringSolution<SparseMatrixAdapter> *soln = problem.getSolution();
 
   if(comm->getRank()==0) std::cout << "Going to get results" << std::endl;
   // Check that the solution is really a coloring
   checkLength = soln->getColorsSize();
   if(checkLength >0) checkColoring = soln->getColors();
-  //checkLength = checkColoring.size();
+  
   if (outputFile != "") {
     std::ofstream colorFile;
 
@@ -396,7 +388,7 @@ int main(int narg, char** arg)
   // Verify that checkColoring is a coloring
   if(colorAlg=="2GL" ||colorAlg == "Hybrid"){
     //need to check a distributed coloring
-    testReturn = validateDistributedColoring(Matrix, checkColoring, me);
+    testReturn = validateDistributedColoring(*Matrix, checkColoring, me);
   } else if (checkLength > 0){
     testReturn = validateColoring(Matrix, checkColoring);
   }

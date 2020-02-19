@@ -6,12 +6,12 @@
 #include <iostream>
 #include <queue>
 
-#include <Zoltan2_Algorithm.hpp>
-#include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_ColoringSolution.hpp>
-#include <Zoltan2_Util.hpp>
-#include <Zoltan2_TPLTraits.hpp>
-#include <Zoltan2_AlltoAll.hpp>
+#include "Zoltan2_Algorithm.hpp"
+#include "Zoltan2_GraphModel.hpp"
+#include "Zoltan2_ColoringSolution.hpp"
+#include "Zoltan2_Util.hpp"
+#include "Zoltan2_TPLTraits.hpp"
+#include "Zoltan2_AlltoAll.hpp"
 
 
 #include "Tpetra_Core.hpp"
@@ -19,12 +19,11 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_FEMultiVector.hpp"
 
-#include <KokkosKernels_Handle.hpp>
+#include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosGraph_Distance1ColorHandle.hpp"
 
-#include "zz_rand.h"
 /////////////////////////////////////////////////
 //! \file Zoltan2_Distance1_2GhostLayer.hpp
 //! \brief A Communication Avoidant Distance-1 Coloring Algorithm
@@ -37,17 +36,17 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
 
   public:
     
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::offset_t offset_t;
-    typedef typename Adapter::scalar_t scalar_t;
-    typedef typename Adapter::base_adapter_t base_adapter_t;
-    typedef Tpetra::Map<lno_t,gno_t> map_t;
-    typedef int femv_scalar_t;
-    typedef Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t> femv_t; 
-    typedef Tpetra::Map<>::device_type device_type;
-    typedef Tpetra::Map<>::execution_space execution_space;
-    typedef Tpetra::Map<>::memory_space memory_space;
+    using lno_t = typename Adapter::lno_t;
+    using gno_t = typename Adapter::gno_t;
+    using offset_t = typename Adapter::offset_t;
+    using scalar_t = typename Adapter::scalar_t;
+    using base_adapter_t = typename Adapter::base_adapter_t;
+    using map_t = Tpetra::Map<lno_t,gno_t>;
+    using femv_scalar_t = int;
+    using femv_t = Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t>; 
+    using device_type = Tpetra::Map<>::device_type;
+    using execution_space = Tpetra::Map<>::execution_space;
+    using memory_space = Tpetra::Map<>::memory_space;
   private:
     
     void buildModel(modelFlag_t &flags);
@@ -191,16 +190,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
     
     //Main entry point for graph coloring
     void color( const RCP<ColoringSolution<Adapter> > &solution){
-      //Timers:
-      // Reorder, timing how long it takes to construct the local graph
-      // Color, how long KokkosKernels takes
-      // Communicate, how long boundary communication takes
-      // Computation, how long boundary computation takes
-      // Boundary, how long the final resolution takes
-      Teuchos::RCP<Teuchos::Time>
-             timeReorder(Teuchos::TimeMonitor::getNewTimer("00 REORDER"));
       //convert from global graph to local graph
-      timeReorder->start();
       ArrayView<const gno_t> vtxIDs;
       ArrayView<StridedData<lno_t, scalar_t> > vwgts;
       size_t nVtx = model->getVertexList(vtxIDs, vwgts);
@@ -283,19 +273,18 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       RCP<const map_t> mapWithCopies = rcp(new map_t(dummy,
                                            Teuchos::arrayViewFromVector(ownedPlusGhosts),
                                            0, comm));
-      typedef Tpetra::Import<lno_t, gno_t> import_t;
+      using import_t = Tpetra::Import<lno_t, gno_t>;
       Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned,
                                                             mapWithCopies));
       Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned,
                                                     importer, 1, true));
-      timeReorder->stop();
       //Create random numbers seeded on global IDs, as in AlgHybridGMB.
       //This may or may not have an effect on this algorithm, but we
       //might as well see.
       std::vector<int> rand(ownedPlusGhosts.size());
       for(size_t i = 0; i < rand.size(); i++){
-        Zoltan_Srand((unsigned int) ownedPlusGhosts[i], NULL);
-        rand[i] = (int) (((double) Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000);
+        std::srand(ownedPlusGhosts[i]);
+        rand[i] = std::rand();
       }
 
       
@@ -304,7 +293,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Teuchos::ArrayView<const offset_t> ghost_offsets = Teuchos::arrayViewFromVector(first_layer_ghost_offsets);
       Teuchos::ArrayView<const lno_t> ghost_adjacencies = Teuchos::arrayViewFromVector(local_ghost_adjs);
       //call the coloring algorithm
-      std::cout<<comm->getRank()<<": Calling coloring function\n";
       twoGhostLayer(nVtx, nVtx+nGhosts, local_adjs_view, offsets, ghost_adjacencies, ghost_offsets,
                     femv, ownedPlusGhosts, globalToLocal, rand);
       
@@ -314,9 +302,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
          colors[i] = femv->getData(0)[i];
       }
 
-      //RESULT REPORTING INSTRUMENTATION
-      //Teuchos::TimeMonitor::summarize();
-      Teuchos::TimeMonitor::zeroOutTimers();  
     }
 
     void twoGhostLayer(const size_t n_local, const size_t n_total,
@@ -329,13 +314,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
                        const std::unordered_map<gno_t,lno_t>& globalToLocal,
                        const std::vector<int>& rand){
       
-      Teuchos::RCP<Teuchos::Time>
-             timeInterior(Teuchos::TimeMonitor::getNewTimer("01 INTERIOR")),
-             timeBoundary(Teuchos::TimeMonitor::getNewTimer("02 BOUNDARY")),
-             timeBoundaryComm(Teuchos::TimeMonitor::getNewTimer("03 BOUNDARY-COMM")),
-             timeBoundaryComp(Teuchos::TimeMonitor::getNewTimer("04 BOUNDARY-COMP"));
-      timeBoundary->start();
-      timeInterior->start();
       Kokkos::View<offset_t*, device_type> host_offsets("Host Offset View", offsets.size());
       Kokkos::View<lno_t*, device_type> host_adjs("Host Adjacencies View", adjs.size());
       for(Teuchos_Ordinal i = 0; i < offsets.size(); i++) host_offsets(i) = offsets[i];
@@ -343,14 +321,11 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
 
       //give the entire local graph to KokkosKernels to color
       this->colorInterior(n_local, host_adjs, host_offsets, femv,false);
-      timeInterior->stop();
 
       //communicate the initial coloring.
-      timeBoundaryComm->start();
       femv->switchActiveMultiVector();
       femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
       femv->switchActiveMultiVector();
-      timeBoundaryComm->stop();
       
       //create the graph structures which allow KokkosKernels to recolor the conflicting vertices
       Kokkos::View<offset_t*, Tpetra::Map<>::device_type> dist_degrees("Owned+Ghost degree view",rand.size());
@@ -383,7 +358,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
 
       
       //we can find all the conflicts with one loop through the ghost vertices.
-      timeBoundaryComp->start();
       
       //this view represents how many conflicts were found
       Kokkos::View<gno_t[1], device_type> recoloringSize("Recoloring Queue Size");
@@ -405,6 +379,9 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Kokkos::View<int*, device_type> rand_view("Random View", rand.size());
       for(size_t i = 0; i < rand.size(); i ++) rand_view(i) = rand[i];
       
+      Kokkos::View<gno_t*, device_type> gid_view("GIDs", gids.size());
+      for(size_t i = 0; i < gids.size(); i++) gid_view(i) = gids[i];
+ 
       //detect conflicts only for ghost vertices
       Kokkos::parallel_for(ghost_offsets.size()-1, KOKKOS_LAMBDA (const int& i){
         lno_t localIdx = i + n_local;
@@ -415,10 +392,17 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
             if(rand_view(localIdx) > rand_view(ghost_adjs_view(j))){
               recoloringSize_atomic(0)++;
               femv_colors(localIdx) = 0;
-            }
-            if(rand_view(ghost_adjs_view(j)) > rand_view(localIdx)){
+            }else if(rand_view(ghost_adjs_view(j)) > rand_view(localIdx)){
               recoloringSize_atomic(0)++;
               femv_colors(ghost_adjs_view(j)) = 0;
+            } else {
+              if (gid_view(localIdx) >= gid_view(ghost_adjs_view(j))){
+                femv_colors(localIdx) = 0;
+                recoloringSize_atomic(0)++;
+              } else {
+                femv_colors(ghost_adjs_view(j)) = 0;
+                recoloringSize_atomic(0)++;
+              }
             }
           }
         }
@@ -447,13 +431,9 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         recoloringSize(0) = 0;
         
         //communicate the new colors
-        timeBoundaryComp->stop();
-        timeBoundaryComm->start();
         femv->switchActiveMultiVector();
         femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
         femv->switchActiveMultiVector();
-        timeBoundaryComm->stop();
-        timeBoundaryComp->start();
 
         //check for further conflicts
         Kokkos::parallel_for(ghost_offsets.size()-1, KOKKOS_LAMBDA (const int& i){
@@ -465,10 +445,17 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
               if(rand_view(localIdx) > rand_view(ghost_adjs_view(j))){
                 recoloringSize_atomic(0)++;
                 femv_colors(localIdx) = 0;
-              }
-              if(rand_view(ghost_adjs_view(j)) > rand_view(localIdx)){
+              }else if(rand_view(ghost_adjs_view(j)) > rand_view(localIdx)){
                 recoloringSize_atomic(0)++;
                 femv_colors(ghost_adjs_view(j)) = 0;
+              } else {
+                if (gid_view(localIdx) >= gid_view(ghost_adjs_view(j))){
+                  femv_colors(localIdx) = 0;
+                  recoloringSize_atomic(0)++;
+                } else {
+                  femv_colors(ghost_adjs_view(j)) = 0;
+                  recoloringSize_atomic(0)++;
+                }
               }
             }
           }
@@ -482,8 +469,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         done = !globalDone;
       
       }//end coloring
-      timeBoundary->stop();
-      timeBoundaryComp->stop();
       
       /*RESULT REPORTING INSTRUMENTATION
       if(comm->getRank()==0) printf("did %d rounds of distributed coloring\n",distributedRounds);
@@ -512,16 +497,10 @@ void AlgDistance1TwoGhostLayer<Adapter>::colorInterior(const size_t nVtx,
                        Kokkos::View<offset_t*, device_type> offset_view,
                        Teuchos::RCP<femv_t> femv,
                        bool recolor=false) {
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
-      <size_t, lno_t, lno_t, execution_space, memory_space, memory_space> KernelHandle;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
+      <size_t, lno_t, lno_t, execution_space, memory_space, memory_space>;
   KernelHandle kh;
   
-  kh.set_team_work_size(-1);
-  kh.set_shmem_size(16128);
-  kh.set_suggested_team_size(-1);
-  kh.set_suggested_vector_size(-1);
-  kh.set_dynamic_scheduling(0);
-  kh.set_verbose(0);
   if(recolor){
     kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
   } else {
@@ -533,8 +512,6 @@ void AlgDistance1TwoGhostLayer<Adapter>::colorInterior(const size_t nVtx,
   
   KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx,nVtx, offset_view, adjs_view);
   
-  Kokkos::fence();
-
   numColors = kh.get_graph_coloring_handle()->get_num_colors();
   
 }//end colorInterior
