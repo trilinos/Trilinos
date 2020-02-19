@@ -128,7 +128,7 @@ std::vector<std::string> Algorithm_B<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &emul,
                                                  std::ostream          &outStream ) {
   proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(x),makePtrFromRef(bnd),
-                                              makePtrFromRef(econ),makePtrFromRef(emul));	
+                                              makePtrFromRef(econ),makePtrFromRef(emul));
   return run(x,g,obj,bnd,outStream);
 }
 
@@ -272,7 +272,7 @@ Ptr<const AlgorithmState<Real>> Algorithm_B<Real>::getState(void) const {
 
 template<typename Real>
 void Algorithm_B<Real>::reset(void) {
-  state_->reset();	
+  state_->reset();
 }
 
 } // namespace ROL
