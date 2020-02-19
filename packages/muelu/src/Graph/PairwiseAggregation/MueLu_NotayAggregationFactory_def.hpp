@@ -157,8 +157,6 @@ namespace MueLu {
       
     
     // DO stuff
-    
-    aggregates->AggregatesCrossProcessors(false);
     Set(currentLevel, "Aggregates", aggregates);
     GetOStream(Statistics0) << aggregates->description() << std::endl;
   }
@@ -210,12 +208,15 @@ namespace MueLu {
 
     // 0,1 : Initialize: Flag boundary conditions
     // Modification: We assume symmetry here aij = aji
+
+    //    printf("numRows = %d, A->getRowMap()->getNodeNumElements() = %d\n",(int)numRows,(int) A->getRowMap()->getNodeNumElements());
     
     for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
       MT aii = STS::magnitude(D[row]);
       MT rowsum = AbsRs[row];
       
       if(aii >= kappa_init * rowsum) {
+        //        printf("Flagging index %d as dirichlet aii >= kappa*rowsum = %6.4e >= %6.4e %6.4e\n",row,aii,kappa_init,rowsum);
 	aggStat[row] = IGNORED;
 	numNonAggregatedNodes--;
       }
@@ -225,12 +226,11 @@ namespace MueLu {
     // FIXME: Add ordering here
     
     // 2 : Iteration
-    LO current_idx = 0;
     LO aggIndex = LO_ZERO;
-    while (numNonAggregatedNodes > 0 && current_idx < numRows) {
+    for(LO current_idx = 0; current_idx < numRows; current_idx++) {
       // If we're aggregated already, skip this guy
       if(aggStat[current_idx] != READY) 
-        current_idx++;
+        continue;
 
       MT best_mu = MT_ZERO;
       LO best_idx = LO_INVALID;
@@ -254,7 +254,6 @@ namespace MueLu {
 	MT aij = STS::real(vals[colID]);
 	MT ajj = STS::real(D[colID]);
 	MT sj  = STS::real(S[colID]);
-	// FIXME: Add isaggregated check
 	if(aii - si + ajj - sj >= MT_ZERO) {
 	  MT mu_top    = MT_TWO / ( MT_ONE / aii + MT_ONE / ajj);
 	  MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - sj) + MT_ONE / (ajj - sj) );
@@ -263,13 +262,18 @@ namespace MueLu {
 	    best_mu  = mu;
 	    best_idx = indices[colID];
 	  }
+          //          printf("[%d] Column SUCCESS %d:  aii - si + ajj - sj = %6.4e - %6.4e + %6.4e - %6.4e = %6.4e\n",current_idx,indices[colID],aii,si,ajj,sj,aii-si+ajj-sj);
 	}	
+        else {
+          //          printf("[%d] Column FAILED  %d:  aii - si + ajj - sj = %6.4e - %6.4e + %6.4e - %6.4e = %6.4e\n",current_idx,indices[colID],aii,si,ajj,sj,aii-si+ajj-sj);
+        }
       }// end column for loop
       
       if(best_idx == LO_INVALID) {
         // We found no potential node-buddy, so let's just make this a singleton        
         // NOTE: The behavior of what to do if you have no un-aggregated neighbors is not specified in
         // the paper        
+        //        printf("No node buddy found for index %d [agg %d]\n",current_idx,aggIndex);
         aggStat[current_idx] = ONEPT;
         vertex2AggId[current_idx] = aggIndex;
         procWinner[current_idx]   = myRank;
@@ -279,17 +283,18 @@ namespace MueLu {
       else {
         // We have a buddy, so aggregate, either as a singleton or as a pair, depending on mu
         if(best_mu <= kappa) { 
-          LO mybuddy_idx = indices[best_idx];
+          //          printf("Node buddies (%d,%d) [agg %d]\n",current_idx,best_idx,aggIndex);
           aggStat[current_idx] = AGGREGATED;
-          aggStat[mybuddy_idx] = AGGREGATED;
+          aggStat[best_idx]    = AGGREGATED;
           vertex2AggId[current_idx] = aggIndex;
-          vertex2AggId[mybuddy_idx] = aggIndex;
+          vertex2AggId[best_idx]    = aggIndex;
           procWinner[current_idx]   = myRank;
-          procWinner[mybuddy_idx]   = myRank;
+          procWinner[best_idx]      = myRank;
           numNonAggregatedNodes-=2;
           aggIndex++;
         }
         else {
+          //          printf("No buddy found for index %d, but aggregating as singleton [agg %d]\n",current_idx,aggIndex);
           aggStat[current_idx] = ONEPT;
           vertex2AggId[current_idx] = aggIndex;
           procWinner[current_idx]   = myRank;
@@ -299,9 +304,17 @@ namespace MueLu {
       }
     }// end Algorithm 4.2
 
+#if 0
+    printf("vertex2aggid :");
+    for(int i=0; i<(int)vertex2AggId.size(); i++)
+      printf("%d(%d) ",i,vertex2AggId[i]);
+    printf("\n");
+#endif
+
     // update aggregate object
     aggregates.SetNumAggregates(aggIndex);
-    
+    aggregates.AggregatesCrossProcessors(false);    
+    aggregates.ComputeAggregateSizes(true/*forceRecompute*/);
   }
 
 

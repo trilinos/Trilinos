@@ -48,6 +48,8 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_NotayAggregationFactory.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_Types.hpp"
 
 namespace MueLuTests {
 
@@ -57,29 +59,45 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    using TST                   = Teuchos::ScalarTraits<SC>;
-    using magnitude_type        = typename TST::magnitudeType;
-    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
-    using real_type             = typename TST::coordinateType;
-    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    //    using TST                   = Teuchos::ScalarTraits<SC>;
+    //    using magnitude_type        = typename TST::magnitudeType;
+    //    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    //    using real_type             = typename TST::coordinateType;
+    //    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
     using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
-    RCP<Aggregates> aggregates = rcp(new Aggregates(*A.getGraph()));    
-    RCP<NotayAggregationFactory> NAF;
-    std::vector<unsigned> aggStat;
+    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
+    RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));    
+    RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
+    std::vector<unsigned> aggStat(A->getMap()->getNodeNumElements(),MueLu::READY);
     LO numUnaggregatedNodes;
 
     Teuchos::ParameterList params;
-    params.set("aggregation: Dirichlet threshold",10);
-    NAF::BuildInitialAggregation(params,A,*aggregates,aggStat,numUnaggregatedNodes);
-    aggregates->print(*out,Teuchos::VERB_EXTREME);
+    params.set("aggregation: Dirichlet threshold",10.0);
+    NAF->Build_InitialAggregation(params,A,*aggregates,aggStat,numUnaggregatedNodes);
 
+    auto v2a = aggregates->GetVertex2AggId()->getData(0);
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+
+#if 0
+    printf("Aggregates: ");
+    for(int i=0; i<(int)v2a.size(); i++)
+      printf("%d(%d) ",i,v2a[i]);
+    printf("\n");
+#endif 
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+    TEST_EQUALITY(aggregates->GetNumAggregates(),8);
+
+    // The first point gets picked as a Dirichlet (so it does not get aggregated) 
+    // and the last aggregate is a singleton
+    for(int i=0; i<(int)sizes.size(); i++) {
+      int expected = (i == (int)sizes.size() -1) ? 1 : 2;
+      TEST_EQUALITY(sizes[i], expected);
+    }
 
   } // InitialAggregation
 
