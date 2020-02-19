@@ -99,7 +99,8 @@ namespace MueLu{
 
   private:
     void BuildConstantP(RCP<Matrix>& P, RCP<const CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const;
-    void BuildLinearP(RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
+    void BuildLinearP(Level& coarseLevel,
+                      RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
                       RCP<realvaluedmultivector_type>& fineCoordinates,
                       RCP<realvaluedmultivector_type>& ghostCoordinates,
                       const int numDimensions, const bool keepD2,

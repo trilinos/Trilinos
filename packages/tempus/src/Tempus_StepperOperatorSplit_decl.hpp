@@ -64,9 +64,6 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel();
 
@@ -158,21 +155,20 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   virtual std::vector<Teuchos::RCP<Stepper<Scalar> > > getStepperList() const
     { return subStepperList_; }
   virtual void setStepperList(std::vector<Teuchos::RCP<Stepper<Scalar> > > sl)
     { subStepperList_ = sl; }
+
   /** \brief Add Stepper to subStepper list.
    *  In most cases, subSteppers cannot use xDotOld (thus the default),
    *  but in some cases, the xDotOld can be used and save compute cycles.
    *  The user can set this when adding to the subStepper list.
    */
   virtual void addStepper(Teuchos::RCP<Stepper<Scalar> > stepper,
-                          bool useFSAL = false)
-  {
-    stepper->setUseFSAL(useFSAL);
-    subStepperList_.push_back(stepper);
-  }
+                          bool useFSAL = false);
 
   virtual void setSubStepperList(
     std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList);

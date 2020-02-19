@@ -80,6 +80,46 @@ namespace Tpetra {
   namespace Details {
     namespace Impl {
 
+      template<class MapIter>
+      void
+      verbosePrintMap(std::ostream& out,
+                      MapIter beg,
+                      MapIter end,
+                      const size_t numEnt,
+                      const char mapName[])
+      {
+        using ::Tpetra::Details::Behavior;
+        using ::Tpetra::Details::verbosePrintArray;
+
+        out << mapName << ": {";
+        const size_t maxNumToPrint =
+          Behavior::verbosePrintCountThreshold();
+        if (maxNumToPrint == 0) {
+          if (numEnt != 0) {
+            out << "...";
+          }
+        }
+        else {
+          const size_t numToPrint = numEnt > maxNumToPrint ?
+            maxNumToPrint : numEnt;
+          size_t count = 0;
+          for (MapIter it = beg; it != end; ++it) {
+            out << "(" << (*it).first << ", ";
+            verbosePrintArray(out, (*it).second, "gblColInds",
+                              maxNumToPrint);
+            out << ")";
+            if (count + size_t(1) < numToPrint) {
+              out << ", ";
+            }
+            ++count;
+          }
+          if (count < numEnt) {
+            out << ", ...";
+          }
+        }
+        out << "}";
+      }
+
       template<class LO, class GO, class Node>
       Teuchos::ArrayView<GO>
       getRowGraphGlobalRow(
@@ -1263,11 +1303,11 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsGraph", "allocateIndices");
+      prefix = this->createPrefix("CrsGraph", tfecfFuncName);
       std::ostringstream os;
-      os << *prefix << "{lg="
+      os << *prefix << "Start: lg="
          << (lg == GlobalIndices ? "GlobalIndices" : "LocalIndices")
-         << ", numRows: " << this->getNodeNumRows() << "}" << endl;
+         << ", numRows: " << this->getNodeNumRows() << endl;
       std::cerr << os.str();
     }
 
@@ -1275,17 +1315,17 @@ namespace Tpetra {
     // called incorrectly, it is our fault.  That's why the tests
     // below throw std::logic_error instead of std::invalid_argument.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isLocallyIndexed () && lg == GlobalIndices, std::logic_error,
-       "The graph is locally indexed, but Tpetra code is calling this method "
-       "with lg=GlobalIndices." << suffix);
+      (isLocallyIndexed () && lg == GlobalIndices, std::logic_error,
+       ": The graph is locally indexed, but Tpetra code is calling "
+       "this method with lg=GlobalIndices." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isGloballyIndexed () && lg == LocalIndices, std::logic_error,
-       "The graph is globally indexed, but Tpetra code is calling this method "
-       "with lg=LocalIndices.  " << suffix);
+      (isGloballyIndexed () && lg == LocalIndices, std::logic_error,
+       ": The graph is globally indexed, but Tpetra code is calling "
+       "this method with lg=LocalIndices." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreAllocated (), std::logic_error, "The graph's indices "
-       "are already allocated, but Tpetra is calling allocateIndices again."
-       << suffix);
+      (indicesAreAllocated (), std::logic_error, ": The graph's "
+       "indices are already allocated, but Tpetra is calling "
+       "allocateIndices again." << suffix);
     const size_t numRows = this->getNodeNumRows ();
 
     //
@@ -1312,7 +1352,7 @@ namespace Tpetra {
       // k_numAllocPerRow_ is a host View, but k_rowPtrs (the thing
       // we want to compute here) lives on device.  That's OK;
       // computeOffsetsFromCounts can handle this case.
-      using ::Tpetra::Details::computeOffsetsFromCounts;
+      using Details::computeOffsetsFromCounts;
 
       // FIXME (mfh 27 Jun 2016) Currently, computeOffsetsFromCounts
       // doesn't attempt to check its input for "invalid" flag
@@ -1332,15 +1372,15 @@ namespace Tpetra {
          "namely Tpetra::Details::OrdinalTraits<size_t>::invalid() = " <<
          Tpetra::Details::OrdinalTraits<size_t>::invalid () << ".");
 
-      using ::Tpetra::Details::computeOffsetsFromConstantCount;
+      using Details::computeOffsetsFromConstantCount;
       computeOffsetsFromConstantCount (k_rowPtrs, this->numAllocForAllRows_);
     }
 
     // "Commit" the resulting row offsets.
     this->k_rowPtrs_ = k_rowPtrs;
 
-    const size_type numInds = ::Tpetra::Details::getEntryOnHost (this->k_rowPtrs_, numRows);
-    // const size_type numInds = static_cast<size_type> (this->k_rowPtrs_(numRows));
+    const size_type numInds =
+      Details::getEntryOnHost(this->k_rowPtrs_, numRows);
     if (lg == LocalIndices) {
       if (verbose) {
         std::ostringstream os;
@@ -1359,7 +1399,7 @@ namespace Tpetra {
       }
       k_gblInds1D_ = gbl_col_inds_type ("Tpetra::CrsGraph::ind", numInds);
     }
-    storageStatus_ = ::Tpetra::Details::STORAGE_1D_UNPACKED;
+    storageStatus_ = Details::STORAGE_1D_UNPACKED;
 
     this->indicesAreLocal_  = (lg == LocalIndices);
     this->indicesAreGlobal_ = (lg == GlobalIndices);
@@ -1404,6 +1444,12 @@ namespace Tpetra {
         (true, std::runtime_error, "At end of allocateIndices, "
          "checkInternalState threw an exception "
          "not a subclass of std::exception.");
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
     }
   }
 
@@ -2197,8 +2243,17 @@ namespace Tpetra {
   checkInternalState () const
   {
     if (debug_) {
+      using std::endl;
       const char tfecfFuncName[] = "checkInternalState: ";
       const char suffix[] = "  Please report this bug to the Tpetra developers.";
+
+      std::unique_ptr<std::string> prefix;
+      if (verbose_) {
+        prefix = this->createPrefix("CrsGraph", "checkInternalState");
+        std::ostringstream os;
+        os << *prefix << "Start" << endl;
+        std::cerr << os.str();
+      }
 
       const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid ();
       //const size_t         STI = Teuchos::OrdinalTraits<size_t>::invalid (); // unused
@@ -2397,6 +2452,12 @@ namespace Tpetra {
            "indices are allocated, and k_rowPtrs_ has nonzero length, but "
            "k_gblInds1D_.extent(0) = " << this->k_gblInds1D_.extent (0)
            << " != actualNumAllocated = " << actualNumAllocated << suffix);
+      }
+
+      if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "Done" << endl;
+        std::cerr << os.str();
       }
     }
   }
@@ -3275,12 +3336,20 @@ namespace Tpetra {
     using Teuchos::REDUCE_MAX;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> crs_graph_type;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef typename Teuchos::Array<GO>::size_type size_type;
+    using std::endl;
+    using crs_graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
+    using size_type = typename Teuchos::Array<GO>::size_type;
     const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
 
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
+      prefix = this->createPrefix("CrsGraph", "globalAssemble");
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
     RCP<const Comm<int> > comm = getComm ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3299,7 +3368,18 @@ namespace Tpetra {
       reduceAll<int, int> (*comm, REDUCE_MAX, iHaveNonlocalRows,
                            outArg (someoneHasNonlocalRows));
       if (someoneHasNonlocalRows == 0) {
-        return; // no process has nonlocal rows, so nothing to do
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix << "Done: No nonlocal rows" << endl;
+          std::cerr << os.str();
+        }
+        return;
+      }
+      else if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "At least 1 process has nonlocal rows"
+           << endl;
+        std::cerr << os.str();
       }
     }
 
@@ -3353,6 +3433,13 @@ namespace Tpetra {
       nonlocalRowMap = rcp (new map_type (INV, myNonlocalGblRows (), indexBase, comm));
     }
 
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "nonlocalRowMap->getIndexBase()="
+         << nonlocalRowMap->getIndexBase() << endl;
+      std::cerr << os.str();
+    }
+
     // 3. Use the column indices for each nonlocal row, as stored in
     //    nonlocals_, to construct a CrsGraph corresponding to
     //    nonlocal rows.  We may use StaticProfile, since we have
@@ -3372,6 +3459,11 @@ namespace Tpetra {
         nonlocalGraph->insertGlobalIndices (gblRow, numEnt, gblCols.data ());
       }
     }
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Built nonlocal graph" << endl;
+      std::cerr << os.str();
+    }
     // There's no need to fill-complete the nonlocals graph.
     // We just use it as a temporary container for the Export.
 
@@ -3385,11 +3477,21 @@ namespace Tpetra {
     const bool origRowMapIsOneToOne = origRowMap->isOneToOne ();
 
     if (origRowMapIsOneToOne) {
+      if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "Original row Map is 1-to-1" << endl;
+        std::cerr << os.str();
+      }
       export_type exportToOrig (nonlocalRowMap, origRowMap);
       this->doExport (*nonlocalGraph, exportToOrig, Tpetra::INSERT);
       // We're done at this point!
     }
     else {
+      if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "Original row Map is NOT 1-to-1" << endl;
+        std::cerr << os.str();
+      }
       // If you ask a Map whether it is one to one, it does some
       // communication and stashes intermediate results for later use
       // by createOneToOne.  Thus, calling createOneToOne doesn't cost
@@ -3402,7 +3504,13 @@ namespace Tpetra {
       // TODO (mfh 09 Sep 2016) Estimate the number of entries in each
       // row, to avoid reallocation during the Export operation.
       crs_graph_type oneToOneGraph (oneToOneRowMap, 0);
+
       // Export from graph of nonlocals into the temp one-to-one graph.
+      if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "Export nonlocal graph" << endl;
+        std::cerr << os.str();
+      }
       oneToOneGraph.doExport (*nonlocalGraph, exportToOneToOne, Tpetra::INSERT);
 
       // We don't need the graph of nonlocals anymore, so get rid of
@@ -3411,6 +3519,11 @@ namespace Tpetra {
 
       // Import from the one-to-one graph to the original graph.
       import_type importToOrig (oneToOneRowMap, origRowMap);
+      if (verbose_) {
+        std::ostringstream os;
+        os << *prefix << "Import nonlocal graph" << endl;
+        std::cerr << os.str();
+      }
       this->doImport (oneToOneGraph, importToOrig, Tpetra::INSERT);
     }
 
@@ -3422,6 +3535,11 @@ namespace Tpetra {
     std::swap (this->nonlocals_, newNonlocals);
 
     checkInternalState ();
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
 
@@ -3545,11 +3663,60 @@ namespace Tpetra {
       globalAssemble ();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numProcs > 1 && this->nonlocals_.size() > 0, std::runtime_error,
-         "The graph's communicator contains only one process, "
-         "but there are nonlocal entries.  "
-         "This probably means that invalid entries were added to the graph.");
+      const size_t numNonlocals = nonlocals_.size();
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Do not need to call globalAssemble; "
+          "assertNoNonlocalInserts="
+           << (assertNoNonlocalInserts ? "true" : "false")
+           << "numProcs=" << numProcs
+           << ", nonlocals_.size()=" << numNonlocals << endl;
+        std::cerr << os.str();
+      }
+      const int lclNeededGlobalAssemble =
+        (numProcs > 1 && numNonlocals != 0) ? 1 : 0;
+      if (lclNeededGlobalAssemble != 0 && verbose) {
+        std::ostringstream os;
+        os << *prefix;
+        Details::Impl::verbosePrintMap(
+          os, nonlocals_.begin(), nonlocals_.end(),
+          nonlocals_.size(), "nonlocals_");
+        std::cerr << os.str() << endl;
+      }
+
+      if (debug_) {
+        auto map = this->getMap();
+        auto comm = map.is_null() ? Teuchos::null : map->getComm();
+        int gblNeededGlobalAssemble = lclNeededGlobalAssemble;
+        if (! comm.is_null()) {
+          using Teuchos::REDUCE_MAX;
+          using Teuchos::reduceAll;
+          reduceAll(*comm, REDUCE_MAX, lclNeededGlobalAssemble,
+                    Teuchos::outArg(gblNeededGlobalAssemble));
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (gblNeededGlobalAssemble != 0, std::runtime_error,
+           "nonlocals_.size()=" << numNonlocals << " != 0 on at "
+           "least one process in the CrsGraph's communicator.  This "
+           "means either that you incorrectly set the "
+           "\"No Nonlocal Changes\" fillComplete parameter to true, "
+           "or that you inserted invalid entries.  "
+           "Rerun with the environment variable TPETRA_VERBOSE="
+           "CrsGraph set to see the entries of nonlocals_ on every "
+           "MPI process (WARNING: lots of output).");
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (lclNeededGlobalAssemble != 0, std::runtime_error,
+           "nonlocals_.size()=" << numNonlocals << " != 0 on the "
+           "calling process.  This means either that you incorrectly "
+           "set the \"No Nonlocal Changes\" fillComplete parameter "
+           "to true, or that you inserted invalid entries.  "
+           "Rerun with the environment "
+           "variable TPETRA_VERBOSE=CrsGraph set to see the entries "
+           "of nonlocals_ on every MPI process (WARNING: lots of "
+           "output).");
+      }
     }
 
     // Set domain and range Map.  This may clear the Import / Export
@@ -4644,7 +4811,17 @@ namespace Tpetra {
   makeColMap (Teuchos::Array<int>& remotePIDs)
   {
     using Details::ProfilingRegion;
+    using std::endl;
+    const char tfecfFuncName[] = "makeColMap";
+
     ProfilingRegion regionSortAndMerge ("Tpetra::CrsGraph::makeColMap");
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
+      prefix = this->createPrefix("CrsGraph", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
 
     // this->colMap_ should be null at this point, but we accept the
     // future possibility that it might not be (esp. if we decide
@@ -4666,7 +4843,6 @@ namespace Tpetra {
       using Teuchos::outArg;
       using Teuchos::REDUCE_MIN;
       using Teuchos::reduceAll;
-      const char tfecfFuncName[] = "makeColMap: ";
 
       std::ostringstream errStrm;
       const int lclErrCode =
@@ -4682,9 +4858,10 @@ namespace Tpetra {
           std::ostringstream os;
           Details::gathervPrint (os, errStrm.str (), *comm);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (true, std::runtime_error, "An error happened on at least one "
-             "(MPI) process in the CrsGraph's communicator.  Here are all "
-             "processes' error messages:" << std::endl << os.str ());
+            (true, std::runtime_error, ": An error happened on at "
+             "least one process in the CrsGraph's communicator.  "
+             "Here are all processes' error messages:" << std::endl
+             << os.str ());
         }
       }
     }
@@ -4698,6 +4875,11 @@ namespace Tpetra {
     this->colMap_ = colMap;
 
     checkInternalState ();
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
 

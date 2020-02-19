@@ -116,6 +116,8 @@ void StepperNewmarkImplicitDForm<Scalar>::setBeta(Scalar beta)
     std::logic_error,
     "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Beta = "
     << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -134,6 +136,8 @@ void StepperNewmarkImplicitDForm<Scalar>::setGamma(Scalar gamma)
     std::logic_error,
     "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Gamma ="
     <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -164,6 +168,8 @@ void StepperNewmarkImplicitDForm<Scalar>::setSchemeName(
        <<"'Linear Acceleration', \n"
        <<"'Central Difference' and 'User Defined'.\n");
   }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -182,6 +188,7 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
   this->setSchemeName(         "Average Acceleration");
 
   this->setObserver();
+  this->setDefaultSolver();
 }
 
 template <class Scalar>
@@ -208,11 +215,10 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
   this->setGamma(              gamma);
 
   this->setObserver(obs);
+  this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
-
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
 }
@@ -230,23 +236,10 @@ StepperNewmarkImplicitDForm<Scalar>::setModel(
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(
       appModel, "Newmark Implicit d-Form"));
   this->wrapperModel_ = wrapperModel;
-  inArgs_ = this->wrapperModel_->getNominalValues();
-  outArgs_ = this->wrapperModel_->createOutArgs();
+
+  this->isInitialized_ = false;
 }
 
-template <class Scalar>
-void
-StepperNewmarkImplicitDForm<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
-    std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperNewmarkImplicitDForm::initialize()\n");
-
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-}
 
 template <class Scalar>
 void
@@ -255,6 +248,8 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkImplicitDForm::takeStep()");
@@ -346,15 +341,15 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
     // create initial guess in NOX solver
     RCP<Thyra::VectorBase<Scalar>> initial_guess = Thyra::createMember(d_pred->space());
-    if ((time == solutionHistory->minTime()) && (this->initial_guess_ != Teuchos::null)) {
-      //if first time step and initial_guess_ is provided, set initial_guess = initial_guess_
+    if ((time == solutionHistory->minTime()) && (this->initialGuess_ != Teuchos::null)) {
+      //if first time step and initialGuess_ is provided, set initial_guess = initialGuess_
       //Throw an exception if initial_guess is not compatible with solution
-      bool is_compatible = (initial_guess->space())->isCompatible(*this->initial_guess_->space());
+      bool is_compatible = (initial_guess->space())->isCompatible(*this->initialGuess_->space());
       TEUCHOS_TEST_FOR_EXCEPTION(
           is_compatible != true, std::logic_error,
             "Error in Tempus::NemwarkImplicitDForm takeStep(): user-provided initial guess'!\n"
             << "for Newton is not compatible with solution vector!\n");
-      Thyra::copy(*this->initial_guess_, initial_guess.ptr());
+      Thyra::copy(*this->initialGuess_, initial_guess.ptr());
     }
     else {
       //Otherwise, set initial guess = diplacement predictor
@@ -425,13 +420,49 @@ template <class Scalar>
 void
 StepperNewmarkImplicitDForm<Scalar>::describe(
     Teuchos::FancyOStream& out,
-    const Teuchos::EVerbosityLevel /* verbLevel */) const {
+    const Teuchos::EVerbosityLevel verbLevel) const {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
+
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperNewmarkImplicitDForm ---\n";
+  out << "  schemeName_ = " << schemeName_ << std::endl;
+  out << "  beta_       = " << beta_       << std::endl;
+  out << "  gamma_      = " << gamma_      << std::endl;
+  out << "-----------------------------------" << std::endl;
 }
+
+
+template<class Scalar>
+bool StepperNewmarkImplicitDForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  //if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if (this->wrapperModel_->getAppModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The application ModelEvaluator is not set!\n";
+  }
+
+  if (this->wrapperModel_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The wrapper ModelEvaluator is not set!\n";
+  }
+
+  if (this->solver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The solver is not set!\n";
+  }
+
+  return isValidSetup;
+}
+
 
 template <class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
