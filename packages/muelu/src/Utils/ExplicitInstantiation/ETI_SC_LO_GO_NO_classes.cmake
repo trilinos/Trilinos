@@ -6,6 +6,7 @@ APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AmalgamationFactory_kokkos-.?if.
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::Amesos2Smoother-.?if.defined[HAVE_MUELU_TPETRA].&&.defined[HAVE_MUELU_AMESOS2] )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AMGXOperator-.?if.defined[HAVE_MUELU_AMGX] )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AlgebraicPermutationStrategy )
+APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::BelosSmoother-.?if.defined[HAVE_MUELU_BELOS] )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::BlackBoxPFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::BlockedCoarseMapFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::BlockedCoordinatesTransferFactory )

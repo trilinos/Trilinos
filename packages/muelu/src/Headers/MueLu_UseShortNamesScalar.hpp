@@ -23,6 +23,9 @@ typedef MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> AMGXOperator
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> AlgebraicPermutationStrategy;
 #endif
+#ifdef MUELU_BELOSSMOOTHER_SHORT
+typedef MueLu::BelosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BelosSmoother;
+#endif
 #ifdef MUELU_BLACKBOXPFACTORY_SHORT
 typedef MueLu::BlackBoxPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlackBoxPFactory;
 #endif
