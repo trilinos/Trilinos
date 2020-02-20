@@ -47,6 +47,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_ReduceLinearConstraint.hpp"
 #include "ROL_ValidParameters.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 
 namespace ROL {
 
@@ -55,11 +56,14 @@ Algorithm_E<Real>::Algorithm_E( void )
   : status_(makePtr<CombinedStatusTest<Real>>()),
     state_(makePtr<AlgorithmState_E<Real>>()) {
   status_->reset();
-  status_->add(makePtr<StatusTest<Real>>());
+  status_->add(makePtr<ConstraintStatusTest<Real>>());
 }
 
 template<typename Real>
-void Algorithm_E<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g, const Vector<Real> &mul) {
+void Algorithm_E<Real>::initialize(const Vector<Real> &x,
+                                   const Vector<Real> &g,
+                                   const Vector<Real> &mul,
+                                   const Vector<Real> &c) {
   if (state_->iterateVec == nullPtr) {
     state_->iterateVec = x.clone();
   }
@@ -76,6 +80,10 @@ void Algorithm_E<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g,
     state_->gradientVec = g.clone();
   }
   state_->gradientVec->set(g);
+  if (state_->constraintVec == nullPtr) {
+    state_->constraintVec = c.clone();
+  }
+  state_->constraintVec->zero();
   if (state_->minIterVec == nullPtr) {
     state_->minIterVec = x.clone();
   }
@@ -99,7 +107,7 @@ std::vector<std::string> Algorithm_E<Real>::run( Vector<Real>     &x,
                                                  Constraint<Real> &con,
                                                  Vector<Real>     &mul,
                                                  std::ostream     &outStream ) {
-  return run(x,x.dual(),obj,outStream);
+  return run(x,x.dual(),obj,con,mul,outStream);
 }
 
 template<typename Real>
@@ -110,7 +118,7 @@ std::vector<std::string> Algorithm_E<Real>::run( Vector<Real>     &x,
                                                  Constraint<Real> &linearcon,
                                                  Vector<Real>     &linearmul,
                                                  std::ostream     &outStream ) {
-  return run(x,x.dual(),obj,linearcon,mul,outStream);
+  return run(x,x.dual(),obj,con,mul,linearcon,linearmul,outStream);
 }
 
 template<typename Real>

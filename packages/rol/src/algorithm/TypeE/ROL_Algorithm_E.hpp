@@ -59,11 +59,13 @@ struct AlgorithmState_E : public AlgorithmState<Real> {
   Real searchSize;
   Ptr<Vector<Real>> stepVec;
   Ptr<Vector<Real>> gradientVec;
+  Ptr<Vector<Real>> constraintVec;
 
   AlgorithmState_E(void)
     : searchSize(1),
       stepVec(nullPtr),
-      gradientVec(nullPtr) {}
+      gradientVec(nullPtr),
+      constraintVec(nullPtr) {}
 
   void reset(void) {
     AlgorithmState<Real>::reset();
@@ -74,6 +76,9 @@ struct AlgorithmState_E : public AlgorithmState<Real> {
     if (gradientVec != nullPtr) {
       gradientVec->zero();
     }
+    if (constraintVec != nullPtr) {
+      constraintVec->zero();
+    }
   }
 };
 
@@ -83,7 +88,10 @@ protected:
   const Ptr<CombinedStatusTest<Real>> status_;
   const Ptr<AlgorithmState_E<Real>>   state_;
 
-  void initialize(const Vector<Real> &x, const Vector<Real> &g, const Vector<Real> &mul); 
+  void initialize(const Vector<Real> &x,
+                  const Vector<Real> &g,
+                  const Vector<Real> &mul,
+                  const Vector<Real> &c); 
 
 public:
 
