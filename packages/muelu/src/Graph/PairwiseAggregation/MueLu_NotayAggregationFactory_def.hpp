@@ -189,8 +189,8 @@ namespace MueLu {
     numNonAggregatedNodes = numRows;
     const int myRank  = A->getMap()->getComm()->getRank();
     
-    // FIXME: Assumes 1 dof per node
-
+    // NOTE: Assumes 1 dof per node.  This constraint is enforced in Build(), and so we're not doing again here.
+    // This should probably be fixed at some point.
 
     // Extract diagonal, rowsums, etc
     RCP<Vector> ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
@@ -200,17 +200,6 @@ namespace MueLu {
     const ArrayRCP<const SC> S     = ghostedRowSum->getData(0);
     const ArrayRCP<const MT> AbsRs = ghostedAbsRowSum->getData(0);
       
-    printf("D: ");
-    for(int i=0; i<(int)S.size(); i++)
-      printf("%d(%6.1e) ",i,STS::real(S[i]));
-    printf("\n");
-
-    printf("S: ");
-    for(int i=0; i<(int)S.size(); i++)
-      printf("%d(%6.1e) ",i,STS::real(S[i]));
-    printf("\n");
-
-
     // Aggregates stuff
     ArrayRCP<LO> vertex2AggId_rcp = aggregates.GetVertex2AggId()->getDataNonConst(0);
     ArrayRCP<LO> procWinner_rcp   = aggregates.GetProcWinner()  ->getDataNonConst(0);
@@ -236,9 +225,8 @@ namespace MueLu {
 	numNonAggregatedNodes--;
       }
     }
-
     
-    // FIXME: Add ordering here
+    // FIXME: Add ordering here or pass it in from Build()
     
     // 2 : Iteration
     LO aggIndex = LO_ZERO;

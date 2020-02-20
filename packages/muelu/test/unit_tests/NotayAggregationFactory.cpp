@@ -118,7 +118,9 @@ namespace MueLuTests {
 
     out << "version: " << MueLu::Version() << std::endl;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+#if 0
     int rank = comm->getRank();
+#endif
     int numproc = comm->getSize();
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
 
