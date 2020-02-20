@@ -160,10 +160,12 @@ public:
   MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
                       const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
-                      const Real mu = 1e1)
+                      const Real mu = 1e1,
+                      const bool updateMultiplier = true,
+                      const bool updatePenalty = true)
     : obj_(obj), con_(con), mu_(mu),
       fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0),
-      updateMultiplier_(true), updatePenalty_(true) {
+      updateMultiplier_(updateMultiplier), updatePenalty_(updatePenalty) {
     initialize(x,con);
   }
 
