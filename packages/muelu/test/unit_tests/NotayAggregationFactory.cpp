@@ -83,7 +83,7 @@ namespace MueLuTests {
     Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
 
 #if 0
-    printf("Aggregates: ");
+    printf("[%d] Aggregates: ",rank);
     for(int i=0; i<(int)v2a.size(); i++)
       printf("%d(%d) ",i,v2a[i]);
     printf("\n");
@@ -118,14 +118,16 @@ namespace MueLuTests {
 
     out << "version: " << MueLu::Version() << std::endl;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    //    int rank = comm->getRank();
+    int rank = comm->getRank();
+    int numproc = comm->getSize();
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
 
     // Do a 2D Star2D Matrix with up/down as a "weak connection"
     Teuchos::ParameterList mp;
     mp.set("matrixType","Star2D");
-    mp.set("nx",(GO)3);
-    mp.set("ny",(GO)3*comm->getSize());
+    const int nx = 3;
+    mp.set("nx",(GO)nx);
+    mp.set("ny",(GO)nx*comm->getSize());
     mp.set("a",2.2); 
     mp.set("b",-0.1);  mp.set("c",-0.1);
     mp.set("d",-1.0); mp.set("e",-1.0);
@@ -142,11 +144,24 @@ namespace MueLuTests {
     NAF->Build_InitialAggregation(params,A,*aggregates,aggStat,numUnaggregatedNodes);
 
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    //    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+    
+    TEST_EQUALITY(numUnaggregatedNodes, 0);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+    //    TEST_EQUALITY(aggregates->GetNumAggregates(),8);
+
+    // For this problem, the four corners will be detected as "Dirichlet" and ignored, this will
+    // generate some number of singletons
+    int expected;
+    for(int i=0; i<(int)sizes.size(); i++) {
+      if(numproc == 1) expected = (i==0) ? 2 : 1;
+      else expected = (i==sizes.size()-1) ? 1 : 2;
+      TEST_EQUALITY(sizes[i], expected);
+    }
 
 #if 1
-    A->describe(out,Teuchos::VERB_EXTREME);
-    printf("Aggregates: ");
+    //    A->describe(out,Teuchos::VERB_EXTREME);
+    printf("[%d] Aggregates: ",rank);
     for(int i=0; i<(int)v2a.size(); i++)
       printf("%d(%d) ",i,v2a[i]);
     printf("\n");
