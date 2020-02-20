@@ -1630,10 +1630,8 @@ namespace Tpetra {
       }
       this->k_values1D_ = k_vals;
 
-      // Whatever graph was before, it's StaticProfile now.
-      myGraph_->pftype_ = StaticProfile;
-      myGraph_->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
-      this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
+      myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
+      this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
     else {
       if (verbose) {
