@@ -177,6 +177,18 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
   return output;
 }
 
+// NEED TO MAKE THIS WORK WITH LINEAR EQUALITIES
+template<typename Real>
+std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>          &x,
+                                                             const Vector<Real>    &g,
+                                                             Objective<Real>       &obj,
+                                                             BoundConstraint<Real> &bnd,
+                                                             Constraint<Real>      &econ,
+                                                             Vector<Real>          &emul,
+                                                             std::ostream          &outStream ) {
+  throw Exception::NotImplemented(">>> MoreauYosidaAlgorithm_B::run : This algorithm cannot solve problems with linear equality constraints!");
+}
+
 template<typename Real>
 std::string MoreauYosidaAlgorithm_B<Real>::printHeader( void ) const {
   std::stringstream hist;

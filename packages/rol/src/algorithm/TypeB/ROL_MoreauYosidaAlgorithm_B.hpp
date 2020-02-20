@@ -95,6 +95,14 @@ public:
                                 BoundConstraint<Real> &bnd,
                                 std::ostream          &outStream = std::cout);
 
+  std::vector<std::string> run( Vector<Real>          &x,
+                                const Vector<Real>    &g,
+                                Objective<Real>       &obj,
+                                BoundConstraint<Real> &bnd,
+                                Constraint<Real>      &econ,
+                                Vector<Real>          &emul,
+                                std::ostream          &outStream = std::cout ) override;
+
   std::string printHeader( void ) const override;
 
   std::string printName( void ) const override;
