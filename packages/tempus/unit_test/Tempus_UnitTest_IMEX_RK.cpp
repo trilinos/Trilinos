@@ -41,6 +41,7 @@ using Tempus::StepperExplicitRK;
 #define CONSTRUCTION
 #define STEPPERFACTORY_CONSTRUCTION
 #define STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST
+#define STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
 
 
 #ifdef CONSTRUCTION
@@ -135,6 +136,27 @@ TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction_General_wo_Parameterlist)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 }
 #endif // STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST
+
+
+#ifdef STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction_General_wo_Parameterlist_Model)
+{
+   // Setup the IMEX Pair ModelEvaluator
+  auto explicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ExplicitModel<double>());
+  auto implicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ImplicitModel<double>());
+  auto model = rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
+                                             explicitModel, implicitModel));
+
+  RCP<StepperFactory<double> > sf = Teuchos::rcp(new StepperFactory<double>());
+
+  auto stepper = sf->createStepper("General IMEX RK");
+  stepper->setModel(model);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+}
+#endif // STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
 
 
 } // namespace Tempus_Test
