@@ -190,8 +190,8 @@ public:
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     obj_->update(x,flag,iter);
     pen_->update(x,flag,iter);
-    isValueComputed_ = false; //(flag ? false : isValueComputed_);
-    isGradientComputed_ = false; //(flag ? false : isGradientComputed_);
+    isValueComputed_ = ((flag || (!flag && iter < 0)) ? false : isValueComputed_);
+    isGradientComputed_ = ((flag || (!flag && iter < 0)) ? false : isGradientComputed_);
   }
 
   void setScaling(const Real fscale, const Real cscale = 1.0) {
