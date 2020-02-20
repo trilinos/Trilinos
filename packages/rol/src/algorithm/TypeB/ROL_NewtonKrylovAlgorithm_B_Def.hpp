@@ -250,6 +250,17 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
 }
 
 template<typename Real>
+std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>          &x,
+                                                             const Vector<Real>    &g,
+                                                             Objective<Real>       &obj,
+                                                             BoundConstraint<Real> &bnd,
+                                                             Constraint<Real>      &econ,
+                                                             Vector<Real>          &emul,
+                                                             std::ostream          &outStream ) {
+  throw Exception::NotImplemented(">>> NewtonKrylovAlgorithm_B::run : This algorithm cannot solve problems with linear equality constraints!");
+}
+
+template<typename Real>
 std::string NewtonKrylovAlgorithm_B<Real>::printHeader( void ) const {
   std::stringstream hist;
   if (verbosity_ > 1) {
