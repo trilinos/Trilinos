@@ -588,7 +588,7 @@ template<typename Real>
 std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
   std::stringstream hist;
   if (verbosity_ > 1) {
-    hist << std::string(109,'-') << std::endl;
+    hist << std::string(114,'-') << std::endl;
     hist << " Lin-More trust-region method status output definitions" << std::endl << std::endl;
     hist << "  iter    - Number of iterates (steps taken)" << std::endl;
     hist << "  value   - Objective function value" << std::endl; 
