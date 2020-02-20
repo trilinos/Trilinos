@@ -93,6 +93,7 @@ SmootherFactory
 SmootherPrototype
 SolverBase
 SteepestDescentSolver
+StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS)
 StructuredAggregationFactory
 StructuredLineDetectionFactory
 SubBlockAFactory

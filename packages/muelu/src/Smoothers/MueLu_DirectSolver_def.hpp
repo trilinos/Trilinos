@@ -57,6 +57,7 @@
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_BelosSmoother.hpp"
+#include "MueLu_StratimikosSmoother.hpp"
 
 namespace MueLu {
 
@@ -115,20 +116,32 @@ namespace MueLu {
     }
     triedBelos_ = true;
 #endif
+#if defined(HAVE_MUELU_STRATIMIKOS)
+    try {
+      sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
+      if (sStratimikos_.is_null())
+        errorStratimikos_ = "Unable to construct Stratimikos smoother";
+    } catch (Exceptions::RuntimeError& e){
+      errorStratimikos_ = e.what();
+    }
+    triedStratimikos_ = true;
+#endif
 
     // Check if we were able to construct at least one solver. In many cases that's all we need, for instance if a user
     // simply wants to use Tpetra only stack, never enables Amesos, and always runs Tpetra objects.
-    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_ && !triedBelos_, Exceptions::RuntimeError, "Unable to construct any direct solver."
-                               "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS) or (BELOS)");
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_ && !triedBelos_ && !triedStratimikos_, Exceptions::RuntimeError, "Unable to construct any direct solver."
+                               "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS) or (BELOS) or (STRATIMIKOS)");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null() && sBelos_.is_null(), Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null() && sBelos_.is_null() && sStratimikos_.is_null(), Exceptions::RuntimeError,
         "Could not enable any direct solver:\n"
         << (triedEpetra_ ? "Epetra mode was disabled due to an error:\n" : "")
         << (triedEpetra_ ? errorEpetra_ : "")
         << (triedTpetra_ ? "Tpetra mode was disabled due to an error:\n" : "")
         << (triedTpetra_ ? errorTpetra_ : "")
         << (triedBelos_ ? "Belos was disabled due to an error:\n" : "")
-        << (triedBelos_ ? errorBelos_ : ""));
+        << (triedBelos_ ? errorBelos_ : "")
+        << (triedStratimikos_ ? "Stratimikos was disabled due to an error:\n" : "")
+        << (triedStratimikos_ ? errorStratimikos_ : ""));
 
     this->SetParameterList(paramList);
   }
@@ -139,12 +152,15 @@ namespace MueLu {
     if (!sEpetra_.is_null()) sEpetra_->SetFactory(varName, factory);
     if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, factory);
     if (!sBelos_.is_null())  sBelos_->SetFactory(varName, factory);
+    if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, factory);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     if (!sBelos_.is_null())
       s_ = sBelos_;
+    else if (!sStratimikos_.is_null())
+      s_ = sStratimikos_;
     else {
       // Decide whether we are running in Epetra or Tpetra mode
       //
@@ -221,10 +237,14 @@ namespace MueLu {
       newSmoo->sTpetra_ = sTpetra_->Copy();
     if (!sBelos_.is_null())
       newSmoo->sBelos_ = sBelos_->Copy();
+    if (!sStratimikos_.is_null())
+      newSmoo->sStratimikos_ = sStratimikos_->Copy();
 
     // Copy the default mode
     if (s_.get() == sBelos_.get())
       newSmoo->s_ = newSmoo->sBelos_;
+    else if (s_.get() == sStratimikos_.get())
+      newSmoo->s_ = newSmoo->sStratimikos_;
     else if (s_.get() == sTpetra_.get())
       newSmoo->s_ = newSmoo->sTpetra_;
     else

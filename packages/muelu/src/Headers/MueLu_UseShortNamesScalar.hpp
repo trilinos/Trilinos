@@ -287,6 +287,9 @@ typedef MueLu::SolverBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> SolverBase;
 #ifdef MUELU_STEEPESTDESCENTSOLVER_SHORT
 typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> SteepestDescentSolver;
 #endif
+#ifdef MUELU_STRATIMIKOSSMOOTHER_SHORT
+typedef MueLu::StratimikosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> StratimikosSmoother;
+#endif
 #ifdef MUELU_STRUCTUREDAGGREGATIONFACTORY_SHORT
 typedef MueLu::StructuredAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredAggregationFactory;
 #endif
