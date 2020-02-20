@@ -47,7 +47,7 @@
 #include "ROL_DescentDirection_U.hpp"
 
 #include "ROL_Types.hpp"
-#include "ROL_Secant.hpp"
+#include "ROL_SecantFactory.hpp"
 
 /** @ingroup step_group
     \class ROL::QuasiNewton_U
