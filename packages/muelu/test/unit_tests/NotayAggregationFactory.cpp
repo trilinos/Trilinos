@@ -148,7 +148,6 @@ namespace MueLuTests {
     
     TEST_EQUALITY(numUnaggregatedNodes, 0);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
-    //    TEST_EQUALITY(aggregates->GetNumAggregates(),8);
 
     // For this problem, the four corners will be detected as "Dirichlet" and ignored, this will
     // generate some number of singletons
@@ -159,16 +158,12 @@ namespace MueLuTests {
       TEST_EQUALITY(sizes[i], expected);
     }
 
-#if 1
-    //    A->describe(out,Teuchos::VERB_EXTREME);
+#if 0
     printf("[%d] Aggregates: ",rank);
     for(int i=0; i<(int)v2a.size(); i++)
       printf("%d(%d) ",i,v2a[i]);
     printf("\n");
 #endif 
-
-    // Dirichlet boundaries get enforced in the whole box, meaning that
-    // the first 
 
   } // InitialAggregation2D
 

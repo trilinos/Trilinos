@@ -63,7 +63,7 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
-#define MUELU_NOTAY_DEBUG_OUTPUT
+//#define MUELU_NOTAY_DEBUG_OUTPUT
 
 namespace MueLu {
 
