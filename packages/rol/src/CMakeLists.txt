@@ -148,6 +148,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
 INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeB
+                    ${DIR}/TypeE
                     ${DIR}/TypeU
                     ${DIR}/TypeU/bundle
                     ${DIR}/TypeU/linesearch
@@ -155,6 +156,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeU/trustregion)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/TypeB/*.hpp
+                    ${DIR}/TypeE/*.hpp
                     ${DIR}/TypeU/*.hpp
                     ${DIR}/TypeU/bundle/*.hpp
                     ${DIR}/TypeU/linesearch/*.hpp
