@@ -633,6 +633,24 @@ public:
       }
   }
 
+  static void checkLocalRowMapMatchesColMap(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A) {
+    RCP<const Map> rowMap = A.getRowMap();
+    RCP<const Map> colMap = A.getColMap();
+    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
+    LO numRows = Teuchos::as<LocalOrdinal>(rowMap->getNodeNumElements());
+    bool fail = false;
+    for (LO rowLID = 0; rowLID < numRows; rowLID++) {
+      GO rowGID = rowMap->getGlobalElement(rowLID);
+      LO colLID = colMap->getLocalElement(rowGID);
+      if (rowLID != colLID) {
+        fail = true;
+        std::cerr << "On rank " << comm->getRank() << ", GID " << rowGID << " is LID " << rowLID << "in the rowmap, but LID " << colLID << " in the column map.\n";
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(fail, Exceptions::RuntimeError,
+                               "Local parts of row and column map do not match!");
+  }
+
 
 };
 

@@ -344,7 +344,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
           double rate = H->GetRate();
 
-          if (abs(rate-goldRate) < 0.02) {
+          if (std::abs(rate-goldRate) < 0.02) {
             out << xmlFile << ": passed (" <<
                 (ret == MueLu::Converged ? "converged, " : "unconverged, ") <<
                 "expected rate = " << goldRate << ", real rate = " << rate <<
@@ -412,7 +412,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
             double rate = status->rate();
 
-            if (abs(rate-goldRate) < 0.02) {
+            if (std::abs(rate-goldRate) < 0.02) {
               out << xmlFile << ": passed (" <<
                   (ret == Belos::Converged ? "converged, " : "unconverged, ") <<
                   "expected rate = " << goldRate << ", real rate = " << rate <<

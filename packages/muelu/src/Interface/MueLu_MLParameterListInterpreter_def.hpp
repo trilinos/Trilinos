@@ -54,6 +54,7 @@
 #endif
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Operator.hpp>
@@ -769,6 +770,10 @@ namespace MueLu {
             << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 
       A.SetFixedBlockSize(blksize_);
+
+#ifdef HAVE_MUELU_DEBUG
+      MatrixUtils::checkLocalRowMapMatchesColMap(A);
+#endif // HAVE_MUELU_DEBUG
 
     } catch (std::bad_cast& e) {
       this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
