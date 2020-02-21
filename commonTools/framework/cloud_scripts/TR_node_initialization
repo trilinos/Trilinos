@@ -1,0 +1,36 @@
+#!/bin/bash
+# scratch space - default of 512M is insufficient for our builds
+dd if=/dev/zero of=/swapfile bs=1024 count=8388608
+chmod 600 /swapfile
+mkswap /swapfile
+echo "/swapfile                                 none                    swap    sw              0 0" >> /etc/fstab
+swapon /swapfile
+
+# these are needed for Jenkins to access the machine
+yum -y install java-1.8.0-openjdk
+mkdir /scratch
+chmod 777 /scratch
+mkdir /scratch/trilinos
+chmod 700 /scratch/trilinos
+chgrp trilinos /scratch/trilinos
+chown trilinos /scratch/trilinos
+
+# lapack and blas - use the static libraries
+yum -y install lapack-static.x86_64
+yum -y install blas-static.x86_64
+
+# setup directory - used to rsync the SEMS tpl mount
+mkdir /projects
+echo "/dev/sdb1                                 /projects               ext4    defaults,nofail 0 0" >> /etc/fstab
+
+# and finally the modules for the sems mount
+# this will not work until the initial rsync
+yum -y install environment-modules.x86_64
+echo "/projects/sems/modulefiles/projects #sems stuff" >> /usr/share/Modules/init/.modulespath
+
+# add the hostname to the hosts file so mpich jobs don't barf
+sed_cmd="s/$/ $HOSTNAME/"
+echo $sed_cmd
+sed "$sed_cmd" -i /etc/hosts
+
+
