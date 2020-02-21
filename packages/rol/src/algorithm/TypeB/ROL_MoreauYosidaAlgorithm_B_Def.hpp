@@ -138,20 +138,7 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
                                                              std::ostream          &outStream ) {
   const Real one(1);
   std::vector<std::string> output;
-  Ptr<Vector<Real>> s   = x.clone(); s->zero();
   Ptr<Vector<Real>> pwa = x.clone();
-
-  // Handle equality constraints
-  Ptr<Vector<Real>> xfeas, c;
-  Ptr<ReduceLinearConstraint<Real>> rlc;
-  Ptr<Objective<Real>> tobj; 
-  if (proj_ != nullPtr) {
-    xfeas = x.clone(); xfeas->set(x);
-    c     = proj_->getMultiplier()->dual().clone();
-    rlc   = makePtr<ReduceLinearConstraint<Real>>(proj_->getLinearConstraint(),xfeas,c);
-    x.set(*rlc->getFeasibleVector());
-  }
-
   // Initialize Moreau-Yosida data
   MoreauYosidaPenalty<Real> myobj(makePtrFromRef(obj),makePtrFromRef(bnd),
                                   x,state_->searchSize,updateMultiplier_,
@@ -159,27 +146,16 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
   initialize(x,g,myobj,bnd,*pwa,outStream);
   Ptr<Algorithm_U<Real>> algo;
 
-  // Handle equality constraints
-  if (hasEcon_) tobj = rlc->transform(staticPtrCast<Objective<Real>>(makePtrFromRef(myobj)));
-  else          tobj = makePtrFromRef(myobj);
-
   // Output
   output.push_back(print(true));
   if (verbosity_ > 0) outStream << print(true);
 
   while (status_->check(*state_)) {
     // Solve augmented Lagrangian subproblem
-    if (!hasEcon_) s->set(x);
     algo = AlgorithmUFactory<Real>(list_);
-    algo->run(*s,*tobj,outStream);
+    if (hasEcon_) algo->run(x,myobj,*proj_->getLinearConstraint(),*proj_->getMultiplier(),outStream);
+    else          algo->run(x,myobj,outStream);
     subproblemIter_ = algo->getState()->iter;
-    if (hasEcon_) {
-      rlc->project(x,*s);
-      x.plus(*rlc->getFeasibleVector());
-    }
-    else {
-      x.set(*s);
-    }
 
     // Compute step
     state_->stepVec->set(x);
