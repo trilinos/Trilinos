@@ -232,6 +232,7 @@ private:
     initialize(x,g);
   }
 
+  using TrustRegionModel<Real>::update;
   void update(Objective<Real> &obj, BoundConstraint<Real> &bnd,
               const Vector<Real> &x, const Vector<Real> &g,
               const Ptr<Secant<Real>> &secant = nullPtr) {

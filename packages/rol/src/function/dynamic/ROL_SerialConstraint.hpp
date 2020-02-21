@@ -103,6 +103,7 @@ public:
   } // solve
 
    
+  using Constraint_SimOpt<Real>::value;
   virtual void value(       Vector<Real>& c, 
                       const Vector<Real>& u, 
                       const Vector<Real>& z, 
@@ -175,6 +176,7 @@ public:
   } // applyInverseJacobian_1
   
  
+  using Constraint_SimOpt<Real>::applyAdjointJacobian_1;
   virtual void applyAdjointJacobian_1(       Vector<Real>& ajv, 
                                        const Vector<Real>& v, 
                                        const Vector<Real>& u, 
@@ -257,6 +259,7 @@ public:
   } // applyJacobian_2
 
  
+  using Constraint_SimOpt<Real>::applyAdjointJacobian_2;
   virtual void applyAdjointJacobian_2(       Vector<Real>& ajv, 
                                        const Vector<Real>& v, 
                                        const Vector<Real>& u, 

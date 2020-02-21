@@ -153,6 +153,7 @@ public:
     }
   }
 
+  using Constraint<Real>::applyAdjointJacobian;
   void applyAdjointJacobian( Vector<Real> &ajv,
                              const Vector<Real> &v,
                              const Vector<Real> &x,
