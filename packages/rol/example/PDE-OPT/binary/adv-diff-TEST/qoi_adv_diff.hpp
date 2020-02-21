@@ -55,9 +55,77 @@ template <class Real>
 class QoI_State_Cost_adv_diff : public QoI<Real> {
 private:
   ROL::Ptr<FE<Real>> fe_;
+  int nsens_;
+  Real sig_;
+  std::vector<std::vector<Real>> pts_;
+  std::vector<Real> vals_;
+
+  Real evaluateSensor(const Real val, const std::vector<Real> &pt, const int isens, const int deriv = 0) const {
+    const Real two(2), pi(M_PI);
+    Real dist(0), s2 = sig_*sig_, nc = std::sqrt(two*pi)*sig_;
+    int d = pt.size();
+    for (int i = 0; i < d; ++i) {
+      dist += std::pow(pt[i]-pts_[isens][i],two);
+    }
+    Real gd = std::exp(-dist/(two*s2))/nc;
+    if (deriv==0) {
+      return gd * std::pow(val-vals_[isens],two);
+    }
+    else if (deriv==1) {
+      return gd * (val-vals_[isens]);
+    }
+    else if (deriv==2) {
+      return gd * val;
+    }
+    else {
+      throw ROL::Exception::NotImplemented(">>> deriv must be 0, 1, or 2!");
+    }
+  }
+
+  void computeSensor(ROL::Ptr<Intrepid::FieldContainer<Real>> &data,
+                     const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u,
+                     const int deriv = 0) const {
+    // GET DIMENSIONS
+    int c = fe_->gradN()->dimension(0);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    std::vector<Real> pt(d);
+    data->initialize(static_cast<Real>(0));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        for ( int k = 0; k < d; ++k) {
+          pt[k] = (*fe_->cubPts())(i,j,k);
+        }
+        // Compute diffusivity kappa
+        for (int l = 0; l < nsens_; ++l) {
+          (*data)(i,j) += evaluateSensor((*u)(i,j),pt,l,deriv);
+        }
+      }
+    }
+  }
 
 public:
-  QoI_State_Cost_adv_diff(const ROL::Ptr<FE<Real>> &fe) : fe_(fe) {}
+  QoI_State_Cost_adv_diff(const ROL::Ptr<FE<Real>> &fe,
+                          ROL::ParameterList &list) : fe_(fe) {
+    std::string filename = list.sublist("Problem").get("Sensor File Name", "sensor.txt");
+    nsens_ = list.sublist("Problem").get("Number of Sensors",200);
+    const int d = fe_->gradN()->dimension(3);
+    sig_   = list.sublist("Problem").get("Sensor Width",1e-2);
+    std::fstream file;
+    file.open(filename.c_str(),std::ios::in);
+    if (file.is_open()) {
+      std::vector<Real> pt(d);
+      pts_.clear(); pts_.resize(nsens_,pt);
+      vals_.clear(); vals_.resize(nsens_);
+      for (int i = 0; i < nsens_; ++i) {
+        for (int j = 0; j < d; ++j) {
+          file >> pts_[i][j];
+        }
+        file >> vals_[i];
+      }
+    }
+    file.close();
+  }
 
   Real value(ROL::Ptr<Intrepid::FieldContainer<Real>> & val,
              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
@@ -66,14 +134,19 @@ public:
     // Get relevant dimensions
     const int c = fe_->gradN()->dimension(0);
     const int p = fe_->gradN()->dimension(2);
-    // Initialize output val
-    val = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
+    // Initialize storage
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valU_eval, data, ones;
+    val       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
+    valU_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    data      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    ones      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     // Evaluate state on FE basis
-    ROL::Ptr<Intrepid::FieldContainer<Real>> valU_eval =
-      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     fe_->evaluateValue(valU_eval, u_coeff);
+    // Compute sensor data
+    computeSensor(data,valU_eval,0);
     // Compute squared L2-norm of diff
-    fe_->computeIntegral(val,valU_eval,valU_eval);
+    ones->initialize(static_cast<Real>(1));
+    fe_->computeIntegral(val,data,ones);
     // Scale by one half
     Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
     return static_cast<Real>(0);
@@ -88,15 +161,18 @@ public:
     const int f = fe_->gradN()->dimension(1);
     const int p = fe_->gradN()->dimension(2);
     // Initialize output grad
-    grad = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valU_eval, data;
+    grad      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
+    valU_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    data      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     // Evaluate state on FE basis
-    ROL::Ptr<Intrepid::FieldContainer<Real>> valU_eval =
-      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     fe_->evaluateValue(valU_eval, u_coeff);
+    // Compute sensor data
+    computeSensor(data,valU_eval,1);
     // Compute gradient of squared L2-norm of diff
     Intrepid::FunctionSpaceTools::integrate<Real>(*grad,
-                                                  *valU_eval,
-                                                  *(fe_->NdetJ()),
+                                                  *data,
+                                                  *fe_->NdetJ(),
                                                   Intrepid::COMP_CPP, false);
   }
 
@@ -122,12 +198,15 @@ public:
     const int c = fe_->gradN()->dimension(0);
     const int f = fe_->gradN()->dimension(1);
     const int p = fe_->gradN()->dimension(2);
-    ROL::Ptr<Intrepid::FieldContainer<Real>> valV_eval =
-      ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    hess = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valV_eval, data;
+    hess      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
+    valV_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    data      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     fe_->evaluateValue(valV_eval, v_coeff);
+    // Compute sensor data
+    computeSensor(data,valV_eval,2);
     Intrepid::FunctionSpaceTools::integrate<Real>(*hess,
-                                                  *valV_eval,
+                                                  *data,
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, false);
   }

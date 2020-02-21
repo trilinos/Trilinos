@@ -117,7 +117,7 @@ public:
     Real controlCost = pl_.sublist("Problem").get("Control Cost", 1.0);
     std::vector<Real> wts = {stateCost, controlCost};
     std::vector<ROL::Ptr<QoI<Real>>> qoi_vec(2,ROL::nullPtr);
-    qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<Real>>(pde_->getFE());
+    qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
     if (costType=="TV") {
       qoi_vec[1] = ROL::makePtr<QoI_TVControl_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
     }

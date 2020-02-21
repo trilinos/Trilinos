@@ -90,7 +90,7 @@ public:
   PDE_adv_diff(Teuchos::ParameterList &parlist) {
     // Finite element fields.
     int basisOrder = parlist.sublist("Problem").get("Order of FE Discretization",1);
-    int cubDegree = parlist.sublist("PDE Poisson").get("Cubature Degree",4);
+    int cubDegree  = parlist.sublist("Problem").get("Cubature Degree",4);
     int probDim    = parlist.sublist("Problem").get("Problem Dimension",2);
     if (probDim == 2) {
       if (basisOrder == 1) {
