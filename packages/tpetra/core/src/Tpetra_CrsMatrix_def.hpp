@@ -145,12 +145,7 @@ namespace Tpetra {
              size_t maxNumEntriesPerRow,
              const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    storageStatus_ (pftype == StaticProfile ?
-                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
-                    ::Tpetra::Details::STORAGE_2D),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
+    dist_object_type (rowMap)
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, size_t, "
       "ProfileType[, RCP<ParameterList>]): ";
@@ -180,25 +175,22 @@ namespace Tpetra {
              const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
              const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    storageStatus_ (pftype == StaticProfile ?
-                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
-                    ::Tpetra::Details::STORAGE_2D),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
+    dist_object_type (rowMap)
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
       "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, numEntPerRowToAlloc,
-                                                pftype, params));
+      using Teuchos::rcp;
+      graph = rcp(new crs_graph_type(rowMap, numEntPerRowToAlloc,
+                                     pftype, params));
     }
-    catch (std::exception &e) {
+    catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
-         "an exception: " << e.what ());
+        (true, std::runtime_error, "CrsGraph constructor "
+         "(RCP<const Map>, ArrayView<const size_t>, "
+         "ProfileType[, RCP<ParameterList>]) threw an exception: "
+         << e.what ());
     }
     // myGraph_ not null means that the matrix owns the graph.  That's
     // different than the const CrsGraph constructor, where the matrix
@@ -217,15 +209,10 @@ namespace Tpetra {
              const size_t maxNumEntPerRow,
              const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    storageStatus_ (pftype == StaticProfile ?
-                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
-                    ::Tpetra::Details::STORAGE_2D),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
+    dist_object_type (rowMap)
   {
-    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
-      "size_t, ProfileType[, RCP<ParameterList>]): ";
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>]): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 #ifdef HAVE_TPETRA_DEBUG
@@ -273,14 +260,10 @@ namespace Tpetra {
              const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
              const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    storageStatus_ (pftype == StaticProfile ?
-                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
-                    ::Tpetra::Details::STORAGE_2D),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
+    dist_object_type (rowMap)
   {
-    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
+    const char tfecfFuncName[] =
+      "CrsMatrix(RCP<const Map>, RCP<const Map>, "
       "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -288,7 +271,7 @@ namespace Tpetra {
                                                 numEntPerRowToAlloc,
                                                 pftype, params));
     }
-    catch (std::exception &e) {
+    catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
          "RCP<const Map>, ArrayView<const size_t>, ProfileType[, "
@@ -310,9 +293,7 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
     dist_object_type (graph->getRowMap ()),
     staticGraph_ (graph),
-    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
+    storageStatus_ (Details::STORAGE_1D_PACKED)
   {
     using std::endl;
     typedef typename local_matrix_type::values_type values_type;
@@ -331,12 +312,12 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (graph.is_null (), std::runtime_error, "Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! graph->isFillComplete (), std::runtime_error, "Input graph is not "
-       "fill complete. You must call fillComplete on the graph before using "
-       "it to construct a CrsMatrix.  Note that calling resumeFill on the "
-       "graph makes it not fill complete, even if you had previously called "
-       "fillComplete.  In that case, you must call fillComplete on the graph "
-       "again.");
+      (! graph->isFillComplete (), std::runtime_error, "Input graph "
+       "is not fill complete. You must call fillComplete on the "
+       "graph before using it to construct a CrsMatrix.  Note that "
+       "calling resumeFill on the graph makes it not fill complete, "
+       "even if you had previously called fillComplete.  In that "
+       "case, you must call fillComplete on the graph again.");
 
     // The graph is fill complete, so it is locally indexed and has a
     // fixed structure.  This means we can allocate the (1-D) array of
@@ -380,21 +361,20 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
     dist_object_type (graph->getRowMap ()),
     staticGraph_ (graph),
-    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
+    storageStatus_ (Details::STORAGE_1D_PACKED)
   {
-    const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>,local_matrix_type::values_type,[, "
-      "RCP<ParameterList>]): ";
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>, "
+      "local_matrix_type::values_type, "
+      "[,RCP<ParameterList>]): ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (graph.is_null (), std::runtime_error, "Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! graph->isFillComplete (), std::runtime_error, "Input graph is not "
-       "fill complete. You must call fillComplete on the graph before using "
-       "it to construct a CrsMatrix.  Note that calling resumeFill on the "
-       "graph makes it not fill complete, even if you had previously called "
-       "fillComplete.  In that case, you must call fillComplete on the graph "
-       "again.");
+      (! graph->isFillComplete (), std::runtime_error, "Input graph "
+       "is not fill complete. You must call fillComplete on the "
+       "graph before using it to construct a CrsMatrix.  Note that "
+       "calling resumeFill on the graph makes it not fill complete, "
+       "even if you had previously called fillComplete.  In that "
+       "case, you must call fillComplete on the graph again.");
 
     // The graph is fill complete, so it is locally indexed and has a
     // fixed structure.  This means we can allocate the (1-D) array of
@@ -426,40 +406,48 @@ namespace Tpetra {
              const typename local_matrix_type::values_type& values,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
+    storageStatus_ (Details::STORAGE_1D_PACKED)
   {
+    using Details::getEntryOnHost;
     using Teuchos::RCP;
+    using std::endl;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, ptr, ind, val[, params]): ";
-    const char suffix[] = ".  Please report this bug to the Tpetra developers.";
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
+    const char suffix[] =
+      ".  Please report this bug to the Tpetra developers.";
+    const bool debug = Details::Behavior::debug("CrsMatrix");
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix(
+        "CrsMatrix", "CrsMatrix(rowMap,colMap,ptr,ind,val[,params])");
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
 
     // Check the user's input.  Note that this might throw only on
     // some processes but not others, causing deadlock.  We prefer
     // deadlock due to exceptions to segfaults, because users can
     // catch exceptions.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (values.extent (0) != columnIndices.extent (0),
-       std::invalid_argument, "Input arrays don't have matching dimensions.  "
-       "values.extent(0) = " << values.extent (0) << " != "
-       "columnIndices.extent(0) = " << columnIndices.extent (0) << ".");
-    if (debug && rowPointers.extent (0) != 0) {
+      (values.extent(0) != columnIndices.extent(0),
+       std::invalid_argument, "values.extent(0)=" << values.extent(0)
+       << " != columnIndices.extent(0) = " << columnIndices.extent(0)
+       << ".");
+    if (debug && rowPointers.extent(0) != 0) {
       const size_t numEnt =
-        ::Tpetra::Details::getEntryOnHost (rowPointers, rowPointers.extent (0) - 1);
+        getEntryOnHost(rowPointers, rowPointers.extent(0) - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numEnt != static_cast<size_t> (columnIndices.extent (0)) ||
-         numEnt != static_cast<size_t> (values.extent (0)),
-         std::invalid_argument, "Last entry of rowPointers says that the matrix"
-         " has " << numEnt << " entr" << (numEnt != 1 ? "ies" : "y") << ", but "
-         "the dimensions of columnIndices and values don't match this.  "
-         "columnIndices.extent(0) = " << columnIndices.extent (0) <<
-         " and values.extent(0) = " << values.extent (0) << ".");
+        (numEnt != size_t(columnIndices.extent(0)) ||
+         numEnt != size_t(values.extent(0)),
+         std::invalid_argument, "Last entry of rowPointers says that "
+         "the matrix has " << numEnt << " entr"
+         << (numEnt != 1 ? "ies" : "y") << ", but the dimensions of "
+         "columnIndices and values don't match this.  "
+         "columnIndices.extent(0)=" << columnIndices.extent (0)
+         << " and values.extent(0)=" << values.extent (0) << ".");
     }
 
     RCP<crs_graph_type> graph;
@@ -524,6 +512,11 @@ namespace Tpetra {
     this->k_values1D_ = newValues;
 
     checkInternalState ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -535,15 +528,13 @@ namespace Tpetra {
              const Teuchos::ArrayRCP<Scalar>& val,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
-    fillComplete_ (false),
-    frobNorm_ (-STM::one ())
+    storageStatus_ (Details::STORAGE_1D_PACKED)
   {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Teuchos::av_reinterpret_cast;
     using Teuchos::RCP;
-    typedef typename local_matrix_type::values_type values_type;
-    typedef impl_scalar_type IST;
+    using values_type = typename local_matrix_type::values_type;
+    using IST = impl_scalar_type;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, ptr, ind, val[, params]): ";
 
@@ -610,9 +601,8 @@ namespace Tpetra {
     lclMatrix_ (std::make_shared<local_multiply_op_type>
                 (std::make_shared<local_matrix_type> (lclMatrix))),
     k_values1D_ (lclMatrix.values),
-    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
-    fillComplete_ (true),
-    frobNorm_ (-STM::one ())
+    storageStatus_ (Details::STORAGE_1D_PACKED),
+    fillComplete_ (true)
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, local_matrix_type[, RCP<ParameterList>]): ";
@@ -677,9 +667,8 @@ namespace Tpetra {
     lclMatrix_ (std::make_shared<local_multiply_op_type>
                 (std::make_shared<local_matrix_type> (lclMatrix))),
     k_values1D_ (lclMatrix.values),
-    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
-    fillComplete_ (true),
-    frobNorm_ (-STM::one ())
+    storageStatus_ (Details::STORAGE_1D_PACKED),
+    fillComplete_ (true)
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, RCP<const Map>, RCP<const Map>, "
@@ -747,9 +736,8 @@ namespace Tpetra {
     lclMatrix_ (std::make_shared<local_multiply_op_type>
                 (std::make_shared<local_matrix_type> (lclMatrix))),
     k_values1D_ (lclMatrix.values),
-    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
-    fillComplete_ (true),
-    frobNorm_ (-STM::one ())
+    storageStatus_ (Details::STORAGE_1D_PACKED),
+    fillComplete_ (true)
   {
     using Teuchos::rcp;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix"
@@ -1818,7 +1806,7 @@ namespace Tpetra {
       // The user requested optimized storage, so we can dump the
       // unpacked 1-D storage, and keep the packed storage.
       k_values1D_ = k_vals;
-      this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
+      this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
     // Build the local sparse matrix object.  At this point, the local
@@ -3791,7 +3779,7 @@ namespace Tpetra {
 
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.
-    this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
+    this->storageStatus_ = Details::STORAGE_1D_PACKED;
 
     checkInternalState ();
   }

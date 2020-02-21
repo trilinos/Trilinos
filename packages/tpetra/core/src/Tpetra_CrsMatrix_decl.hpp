@@ -4495,10 +4495,11 @@ namespace Tpetra {
     /// parameter to fillComplete was false, the matrix may keep
     /// unpacked 1-D storage around and resume it on the next
     /// resumeFill call.
-    ::Tpetra::Details::EStorageStatus storageStatus_;
+    Details::EStorageStatus storageStatus_ =
+      Details::STORAGE_1D_UNPACKED;
 
     //! Whether the matrix is fill complete.
-    bool fillComplete_;
+    bool fillComplete_ = false;
 
     /// \brief Nonlocal data added using insertGlobalValues().
     ///
@@ -4535,7 +4536,7 @@ namespace Tpetra {
     /// The value -1 means that the norm has not yet been computed, or
     /// that the values in the matrix may have changed and the norm
     /// must be recomputed.
-    mutable mag_type frobNorm_;
+    mutable mag_type frobNorm_ = -STM::one();
 
   public:
     // FIXME (mfh 24 Feb 2014) Is it _really_ necessary to make this a
