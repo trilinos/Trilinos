@@ -81,11 +81,13 @@ private:
                   const Vector<Real>        &g,
                   MoreauYosidaPenalty<Real> &myobj,
                   BoundConstraint<Real>     &bnd,
+                  Vector<Real>              &pwa,
                   std::ostream &outStream = std::cout); 
 
   void updateState(const Vector<Real> &x,
                    MoreauYosidaPenalty<Real> &myobj,
-                   BoundConstraint<Real> &bnd);
+                   BoundConstraint<Real> &bnd,
+                   Vector<Real> &pwa);
 public:
 
   MoreauYosidaAlgorithm_B(ParameterList &list);

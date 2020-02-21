@@ -88,6 +88,7 @@ void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>              &x,
                                                const Vector<Real>        &g,
                                                MoreauYosidaPenalty<Real> &myobj,
                                                BoundConstraint<Real>     &bnd,
+                                               Vector<Real>              &pwa,
                                                std::ostream              &outStream) {
   hasEcon_ = true;
   if (proj_ == nullPtr) {
@@ -99,21 +100,28 @@ void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>              &x,
   // Initialize the algorithm state
   state_->nfval = 0;
   state_->ngrad = 0;
-  updateState(x,myobj,bnd);
+  updateState(x,myobj,bnd,pwa);
 }
 
 
 template<typename Real>
 void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real> &x,
                                                 MoreauYosidaPenalty<Real> &myobj,
-                                                BoundConstraint<Real> &bnd) {
+                                                BoundConstraint<Real> &bnd,
+                                                Vector<Real> &pwa) {
+  const Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   // Update objective and constraint.
   myobj.update(x,true,state_->iter);
   // Compute norm of the gradient of the Lagrangian
   state_->value = myobj.value(x, zerotol);
   myobj.gradient(*state_->gradientVec, x, zerotol);
-  gnorm_ = state_->gradientVec->norm();
+  //gnorm_ = state_->gradientVec->norm();
+  pwa.set(x);
+  pwa.axpy(-one,myobj.getGradient()->dual());
+  proj_->project(pwa);
+  pwa.axpy(-one,x);
+  gnorm_ = pwa.norm();
   // Compute constraint violation
   compViolation_ = myobj.testComplementarity(x);
   state_->gnorm = std::max(gnorm_,compViolation_);
@@ -130,7 +138,8 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
                                                              std::ostream          &outStream ) {
   const Real one(1);
   std::vector<std::string> output;
-  Ptr<Vector<Real>> s = x.clone(); s->zero();
+  Ptr<Vector<Real>> s   = x.clone(); s->zero();
+  Ptr<Vector<Real>> pwa = x.clone();
 
   // Handle equality constraints
   Ptr<Vector<Real>> xfeas, c;
@@ -147,7 +156,7 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
   MoreauYosidaPenalty<Real> myobj(makePtrFromRef(obj),makePtrFromRef(bnd),
                                   x,state_->searchSize,updateMultiplier_,
                                   updatePenalty_);
-  initialize(x,g,myobj,bnd,outStream);
+  initialize(x,g,myobj,bnd,*pwa,outStream);
   Ptr<Algorithm_U<Real>> algo;
 
   // Handle equality constraints
@@ -184,7 +193,7 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
     state_->iter++;
 
     // Update state
-    updateState(x,myobj,bnd);
+    updateState(x,myobj,bnd,*pwa);
 
     // Update multipliers
     if (updatePenalty_) {
