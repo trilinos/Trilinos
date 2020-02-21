@@ -71,6 +71,8 @@ private:
   int verbosity_;
   bool printHeader_;
 
+  bool hasEcon_;
+
   using Algorithm_B<Real>::status_;
   using Algorithm_B<Real>::state_;
   using Algorithm_B<Real>::proj_;
@@ -94,14 +96,6 @@ public:
                                 Objective<Real>       &obj,
                                 BoundConstraint<Real> &bnd,
                                 std::ostream          &outStream = std::cout);
-
-  std::vector<std::string> run( Vector<Real>          &x,
-                                const Vector<Real>    &g,
-                                Objective<Real>       &obj,
-                                BoundConstraint<Real> &bnd,
-                                Constraint<Real>      &econ,
-                                Vector<Real>          &emul,
-                                std::ostream          &outStream = std::cout ) override;
 
   std::string printHeader( void ) const override;
 

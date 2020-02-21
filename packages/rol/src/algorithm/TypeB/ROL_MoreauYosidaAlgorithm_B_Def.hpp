@@ -89,8 +89,10 @@ void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>              &x,
                                                MoreauYosidaPenalty<Real> &myobj,
                                                BoundConstraint<Real>     &bnd,
                                                std::ostream              &outStream) {
+  hasEcon_ = true;
   if (proj_ == nullPtr) {
     proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(x),makePtrFromRef(bnd));
+    hasEcon_ = false;
   }
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);
@@ -127,13 +129,30 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
                                                              BoundConstraint<Real> &bnd,
                                                              std::ostream          &outStream ) {
   const Real one(1);
-  // Initialize trust-region data
   std::vector<std::string> output;
+  Ptr<Vector<Real>> s = x.clone(); s->zero();
+
+  // Handle equality constraints
+  Ptr<Vector<Real>> xfeas, c;
+  Ptr<ReduceLinearConstraint<Real>> rlc;
+  Ptr<Objective<Real>> tobj; 
+  if (proj_ != nullPtr) {
+    xfeas = x.clone(); xfeas->set(x);
+    c     = proj_->getMultiplier()->dual().clone();
+    rlc   = makePtr<ReduceLinearConstraint<Real>>(proj_->getLinearConstraint(),xfeas,c);
+    x.set(*rlc->getFeasibleVector());
+  }
+
+  // Initialize Moreau-Yosida data
   MoreauYosidaPenalty<Real> myobj(makePtrFromRef(obj),makePtrFromRef(bnd),
                                   x,state_->searchSize,updateMultiplier_,
                                   updatePenalty_);
   initialize(x,g,myobj,bnd,outStream);
   Ptr<Algorithm_U<Real>> algo;
+
+  // Handle equality constraints
+  if (hasEcon_) tobj = rlc->transform(staticPtrCast<Objective<Real>>(makePtrFromRef(myobj)));
+  else          tobj = makePtrFromRef(myobj);
 
   // Output
   output.push_back(print(true));
@@ -141,9 +160,17 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
 
   while (status_->check(*state_)) {
     // Solve augmented Lagrangian subproblem
+    if (!hasEcon_) s->set(x);
     algo = AlgorithmUFactory<Real>(list_);
-    algo->run(x,myobj,outStream);
+    algo->run(*s,*tobj,outStream);
     subproblemIter_ = algo->getState()->iter;
+    if (hasEcon_) {
+      rlc->project(x,*s);
+      x.plus(*rlc->getFeasibleVector());
+    }
+    else {
+      x.set(*s);
+    }
 
     // Compute step
     state_->stepVec->set(x);
@@ -175,18 +202,6 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
   output.push_back(Algorithm_B<Real>::printExitStatus());
   if (verbosity_ > 0) outStream << Algorithm_B<Real>::printExitStatus();
   return output;
-}
-
-// NEED TO MAKE THIS WORK WITH LINEAR EQUALITIES
-template<typename Real>
-std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>          &x,
-                                                             const Vector<Real>    &g,
-                                                             Objective<Real>       &obj,
-                                                             BoundConstraint<Real> &bnd,
-                                                             Constraint<Real>      &econ,
-                                                             Vector<Real>          &emul,
-                                                             std::ostream          &outStream ) {
-  throw Exception::NotImplemented(">>> MoreauYosidaAlgorithm_B::run : This algorithm cannot solve problems with linear equality constraints!");
 }
 
 template<typename Real>
