@@ -519,19 +519,17 @@ namespace Tpetra {
     operator= (CrsMatrix<Scalar, LocalOrdinal,
                          GlobalOrdinal, Node>&&) = default;
 
-    /// \brief Constructor specifying fixed number of entries for each row.
+    /// \brief Constructor specifying the maximum number of entries
+    ///   that any row on the process can take.
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param maxNumEntriesPerRow [in] Maximum number of matrix
-    ///   entries per row.  If pftype==DynamicProfile, this is only a
-    ///   hint, and you can set this to zero without affecting
-    ///   correctness.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed this number of
-    ///   entries in any row.
+    ///   entries per row.  This is a strict upper bound.  It may
+    ///   differ on different processes.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -546,14 +544,11 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param numEntPerRowToAlloc [in] Maximum number of matrix
-    ///   entries to allocate for each row.  If
-    ///   pftype==DynamicProfile, this is only a hint.  If
-    ///   pftype==StaticProfile, this sets the amount of storage
-    ///   allocated, and you cannot exceed the allocated number of
-    ///   entries for any row.
+    ///   entries to allocate for each row.  This is a strict upper
+    ///   bound.  It may differ on different processes.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -574,15 +569,12 @@ namespace Tpetra {
     /// \param colMap [in] Distribution of columns of the matrix.
     ///   See replaceColMap() for the requirements.
     ///
-    /// \param maxNumEntPerRow [in] Maximum number of matrix
-    ///   entries per row.  If pftype==DynamicProfile, this is only a
-    ///   hint, and you can set this to zero without affecting
-    ///   correctness.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed this number of
-    ///   entries in any row.
+    /// \param maxNumEntPerRow [in] Maximum number of matrix entries
+    ///   per row.  This is a strict upper bound.  It may differ on
+    ///   different processes.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -604,14 +596,11 @@ namespace Tpetra {
     ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRowToAlloc [in] Maximum number of matrix
-    ///   entries to allocate for each row.  If
-    ///   pftype==DynamicProfile, this is only a hint.  If
-    ///   pftype==StaticProfile, this sets the amount of storage
-    ///   allocated, and you cannot exceed the allocated number of
-    ///   entries for any row.
+    ///   entries to allocate for each row.  This is a strict upper
+    ///   bound.  It may differ on different processes.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -4582,23 +4571,25 @@ namespace Tpetra {
     };
   }; // class CrsMatrix
 
-  /** \brief Non-member function to create an empty CrsMatrix given a
-        row map and a non-zero profile.
-
-      \return A dynamically allocated (DynamicProfile) matrix with
-        specified number of nonzeros per row (defaults to zero).
-
-      \relatesalso CrsMatrix
-   */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  /// \brief Create an empty CrsMatrix given a row map and a single
+  ///   integer upper bound on the number of stored entries per row.
+  ///
+  /// \relatesalso CrsMatrix
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
   Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
-                   size_t maxNumEntriesPerRow = 0,
-                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+  createCrsMatrix(
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
+    const size_t maxNumEntriesPerRow = 0,
+    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
-    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
+    using matrix_type =
+      CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-    return Teuchos::rcp (new matrix_type (map, maxNumEntriesPerRow, pftype, params));
+    return Teuchos::rcp(new matrix_type(map, maxNumEntriesPerRow,
+                                        pftype, params));
   }
 
   template<class CrsMatrixType>
