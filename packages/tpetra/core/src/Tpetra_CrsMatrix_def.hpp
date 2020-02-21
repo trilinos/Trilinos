@@ -215,23 +215,16 @@ namespace Tpetra {
       "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>]): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
 
-    if (debug) {
-      // An artifact of debugging something a while back.
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! staticGraph_.is_null (), std::logic_error,
-         "staticGraph_ is not null at the beginning of the constructor."
-         << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! myGraph_.is_null (), std::logic_error,
-         "myGraph_ is not null at the beginning of the constructor."
-         << suffix);
-    }
+    // An artifact of debugging something a while back.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! staticGraph_.is_null (), std::logic_error,
+       "staticGraph_ is not null at the beginning of the constructor."
+       << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! myGraph_.is_null (), std::logic_error,
+       "myGraph_ is not null at the beginning of the constructor."
+       << suffix);
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
@@ -305,7 +298,7 @@ namespace Tpetra {
     if (verbose) {
       prefix = this->createPrefix("CrsMatrix", "CrsMatrix(graph,params)");
       std::ostringstream os;
-      os << *prefix << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
 
@@ -352,6 +345,12 @@ namespace Tpetra {
     k_values1D_ = lclMat->values;
 
     checkInternalState ();
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -608,11 +607,6 @@ namespace Tpetra {
       "RCP<const Map>, local_matrix_type[, RCP<ParameterList>]): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
 
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -642,16 +636,14 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isFillActive (), std::logic_error,
-         "At the end of a CrsMatrix constructor that should produce "
-         "a fillComplete matrix, isFillActive() is true." << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! isFillComplete (), std::logic_error, "At the end of a "
-         "CrsMatrix constructor that should produce a fillComplete "
-         "matrix, isFillComplete() is false." << suffix);
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (isFillActive (), std::logic_error,
+       "At the end of a CrsMatrix constructor that should produce "
+       "a fillComplete matrix, isFillActive() is true." << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! isFillComplete (), std::logic_error, "At the end of a "
+       "CrsMatrix constructor that should produce a fillComplete "
+       "matrix, isFillComplete() is false." << suffix);
     checkInternalState ();
   }
 
@@ -675,11 +667,6 @@ namespace Tpetra {
       "local_matrix_type[, RCP<ParameterList>]): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
 
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -709,16 +696,14 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isFillActive (), std::logic_error,
-         "At the end of a CrsMatrix constructor that should produce "
-         "a fillComplete matrix, isFillActive() is true." << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! isFillComplete (), std::logic_error, "At the end of a "
-         "CrsMatrix constructor that should produce a fillComplete "
-         "matrix, isFillComplete() is false." << suffix);
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (isFillActive (), std::logic_error,
+       "At the end of a CrsMatrix constructor that should produce "
+       "a fillComplete matrix, isFillActive() is true." << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! isFillComplete (), std::logic_error, "At the end of a "
+       "CrsMatrix constructor that should produce a fillComplete "
+       "matrix, isFillComplete() is false." << suffix);
     checkInternalState ();
   }
 
@@ -744,11 +729,6 @@ namespace Tpetra {
       "(lclMat,Map,Map,Map,Map,Import,Export,params): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
 
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -779,16 +759,14 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isFillActive (), std::logic_error,
-         "At the end of a CrsMatrix constructor that should produce "
-         "a fillComplete matrix, isFillActive() is true." << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! isFillComplete (), std::logic_error, "At the end of a "
-         "CrsMatrix constructor that should produce a fillComplete "
-         "matrix, isFillComplete() is false." << suffix);
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (isFillActive (), std::logic_error,
+       "At the end of a CrsMatrix constructor that should produce "
+       "a fillComplete matrix, isFillActive() is true." << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! isFillComplete (), std::logic_error, "At the end of a "
+       "CrsMatrix constructor that should produce a fillComplete "
+       "matrix, isFillComplete() is false." << suffix);
     checkInternalState ();
   }
 
@@ -1091,8 +1069,8 @@ namespace Tpetra {
   allocateValues (ELocalGlobal lg, GraphAllocationStatus gas,
                   const bool verbose)
   {
-    using ::Tpetra::Details::Behavior;
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::Behavior;
+    using Details::ProfilingRegion;
     using std::endl;
     const char tfecfFuncName[] = "allocateValues: ";
     const char suffix[] =
@@ -1103,12 +1081,12 @@ namespace Tpetra {
     if (verbose) {
       prefix = this->createPrefix("CrsMatrix", "allocateValues");
       std::ostringstream os;
-      os << *prefix << "{lg: "
+      os << *prefix << "lg: "
          << (lg == LocalIndices ? "Local" : "Global") << "Indices"
          << ", gas: Graph"
          << (gas == GraphAlreadyAllocated ? "Already" : "NotYet")
          << "Allocated" << endl;
-      std::cerr << os.str ();
+      std::cerr << os.str();
     }
 
     const bool debug = Behavior::debug("CrsMatrix");
@@ -1289,9 +1267,10 @@ namespace Tpetra {
       // fillComplete() only calls fillLocalGraphAndMatrix() if the
       // matrix owns the graph, which means myGraph_ is not null.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (myGraph_.is_null (), std::logic_error, "The nonconst graph (myGraph_) "
-         "is null.  This means that the matrix has a const (a.k.a. \"static\") "
-         "graph.  fillComplete or expertStaticFillComplete should never call "
+        (myGraph_.is_null (), std::logic_error, "The nonconst graph "
+         "(myGraph_) is null.  This means that the matrix has a "
+         "const (a.k.a. \"static\") graph.  fillComplete or "
+         "expertStaticFillComplete should never call "
          "fillLocalGraphAndMatrix in that case." << suffix);
     }
 
@@ -1664,10 +1643,7 @@ namespace Tpetra {
     using row_map_type = typename Graph::local_graph_type::row_map_type;
     using non_const_row_map_type = typename row_map_type::non_const_type;
     using values_type = typename local_matrix_type::values_type;
-#ifdef HAVE_TPETRA_DEBUG
-    // const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
-#endif // HAVE_TPETRA_DEBUG
-    ProfilingRegion regionFLM ("Tpetra::CrsMatrix::fillLocalMatrix");
+    ProfilingRegion regionFLM("Tpetra::CrsMatrix::fillLocalMatrix");
     const size_t lclNumRows = getNodeNumRows();
 
     const bool verbose = Details::Behavior::verbose("CrsMatrix");
@@ -2679,10 +2655,12 @@ namespace Tpetra {
       // Teuchos::ArrayView, and in part because of the data structure
       // used to stash outgoing entries.
       using Teuchos::ArrayView;
-      ArrayView<const GO> inputGblColInds_av (numInputEnt == 0 ? NULL :
-                                              inputGblColInds, numInputEnt);
-      ArrayView<const Scalar> inputVals_av (numInputEnt == 0 ? NULL :
-                                            inputVals, numInputEnt);
+      ArrayView<const GO> inputGblColInds_av(
+        numInputEnt == 0 ? nullptr : inputGblColInds,
+        numInputEnt);
+      ArrayView<const Scalar> inputVals_av(
+        numInputEnt == 0 ? nullptr :
+        inputVals, numInputEnt);
       // gblRow is not in the row Map on the calling process, so stash
       // the given entries away in a separate data structure.
       // globalAssemble() (called during fillComplete()) will exchange
@@ -3577,8 +3555,8 @@ namespace Tpetra {
       const RowInfo rowInfo = staticGraph_->getRowInfo (lclRow);
       if (rowInfo.localRow == Tpetra::Details::OrdinalTraits<size_t>::invalid ()) {
         numEnt = 0; // no valid entries in this row on the calling process
-        val = NULL;
-        ind = NULL;
+        val = nullptr;
+        ind = nullptr;
         // First argument (lclRow) invalid, so make 1 the error code.
         return static_cast<LO> (1);
       }
@@ -3600,7 +3578,7 @@ namespace Tpetra {
                       const LocalOrdinal*& lclColInds,
                       const Scalar*& vals) const
   {
-    const impl_scalar_type* vals_ist = NULL;
+    const impl_scalar_type* vals_ist = nullptr;
     const LocalOrdinal errCode =
       this->getLocalRowView (lclRow, numEnt, vals_ist, lclColInds);
     vals = reinterpret_cast<const Scalar*> (vals_ist);
@@ -4275,10 +4253,10 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "reindexColumns: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      graph == NULL && myGraph_.is_null (), std::invalid_argument,
-      "The input graph is NULL, but the matrix does not own its graph.");
+      graph == nullptr && myGraph_.is_null (), std::invalid_argument,
+      "The input graph is null, but the matrix does not own its graph.");
 
-    crs_graph_type& theGraph = (graph == NULL) ? *myGraph_ : *graph;
+    crs_graph_type& theGraph = (graph == nullptr) ? *myGraph_ : *graph;
     const bool sortGraph = false; // we'll sort graph & matrix together below
     theGraph.reindexColumns (newColMap, newImport, sortGraph);
     if (sortEachRow && theGraph.isLocallyIndexed () && ! theGraph.isSorted ()) {
@@ -5413,7 +5391,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! X.isConstantStride () || ! Y.isConstantStride (),
          std::runtime_error, "X and Y must be constant stride.");
-      // If the two pointers are NULL, then they don't alias one
+      // If the two pointers are null, then they don't alias one
       // another, even though they are equal.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (X_lcl.data () == Y_lcl.data () && X_lcl.data () != nullptr,
@@ -6415,7 +6393,7 @@ namespace Tpetra {
     typedef RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
     const row_matrix_type* srcRowMat =
       dynamic_cast<const row_matrix_type*> (&source);
-    return (srcRowMat != NULL);
+    return (srcRowMat != nullptr);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -8261,14 +8239,28 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::rcp_implicit_cast;
     using Teuchos::sublist;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
-    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+    using std::endl;
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
+    using row_matrix_type =
+      RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using crs_matrix_type =
+      CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    const char errPfx[] = "Tpetra::CrsMatrix::add: ";
+
+    const bool debug = Details::Behavior::debug("CrsMatrix");
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsMatrix", "add");
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
 
     const crs_matrix_type& B = *this; // a convenient abbreviation
-    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
-    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
 
     // If the user didn't supply a domain or range Map, then try to
     // get one from B first (if it has them), then from A (if it has
@@ -8305,52 +8297,58 @@ namespace Tpetra {
       }
     }
 
-#ifdef HAVE_TPETRA_DEBUG
-    // In a debug build, check that A and B have matching domain and
-    // range Maps, if they have domain and range Maps at all.  (If
-    // they aren't fill complete, then they may not yet have them.)
-    if (! A_domainMap.is_null () && ! A_rangeMap.is_null ()) {
-      if (! B_domainMap.is_null () && ! B_rangeMap.is_null ()) {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          ! B_domainMap->isSameAs (*A_domainMap), std::invalid_argument,
-          "Tpetra::CrsMatrix::add: The input RowMatrix A must have a domain Map "
-          "which is the same as (isSameAs) this RowMatrix's domain Map.");
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          ! B_rangeMap->isSameAs (*A_rangeMap), std::invalid_argument,
-          "Tpetra::CrsMatrix::add: The input RowMatrix A must have a range Map "
-          "which is the same as (isSameAs) this RowMatrix's range Map.");
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          ! domainMap.is_null () && ! domainMap->isSameAs (*B_domainMap),
-          std::invalid_argument,
-          "Tpetra::CrsMatrix::add: The input domain Map must be the same as "
-          "(isSameAs) this RowMatrix's domain Map.");
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          ! rangeMap.is_null () && ! rangeMap->isSameAs (*B_rangeMap),
-          std::invalid_argument,
-          "Tpetra::CrsMatrix::add: The input range Map must be the same as "
-          "(isSameAs) this RowMatrix's range Map.");
+    if (debug) {
+      // In debug mode, check that A and B have matching domain and
+      // range Maps, if they have domain and range Maps at all.  (If
+      // they aren't fill complete, then they may not yet have them.)
+      if (! A_domainMap.is_null() && ! A_rangeMap.is_null()) {
+        if (! B_domainMap.is_null() && ! B_rangeMap.is_null()) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! B_domainMap->isSameAs(*A_domainMap),
+             std::invalid_argument,
+             errPfx << "The input RowMatrix A must have a domain Map "
+             "which is the same as (isSameAs) this RowMatrix's "
+             "domain Map.");
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! B_rangeMap->isSameAs(*A_rangeMap), std::invalid_argument,
+             errPfx << "The input RowMatrix A must have a range Map "
+             "which is the same as (isSameAs) this RowMatrix's range "
+             "Map.");
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! domainMap.is_null() &&
+             ! domainMap->isSameAs(*B_domainMap),
+             std::invalid_argument,
+             errPfx << "The input domain Map must be the same as "
+             "(isSameAs) this RowMatrix's domain Map.");
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! rangeMap.is_null() &&
+             ! rangeMap->isSameAs(*B_rangeMap),
+             std::invalid_argument,
+             errPfx << "The input range Map must be the same as "
+             "(isSameAs) this RowMatrix's range Map.");
+        }
+      }
+      else if (! B_domainMap.is_null() && ! B_rangeMap.is_null()) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! domainMap.is_null() &&
+           ! domainMap->isSameAs(*B_domainMap),
+           std::invalid_argument,
+           errPfx << "The input domain Map must be the same as "
+           "(isSameAs) this RowMatrix's domain Map.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! rangeMap.is_null() && ! rangeMap->isSameAs(*B_rangeMap),
+           std::invalid_argument,
+           errPfx << "The input range Map must be the same as "
+           "(isSameAs) this RowMatrix's range Map.");
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (domainMap.is_null() || rangeMap.is_null(),
+           std::invalid_argument, errPfx << "If neither A nor B "
+           "have a domain and range Map, then you must supply a "
+           "nonnull domain and range Map to this method.");
       }
     }
-    else if (! B_domainMap.is_null () && ! B_rangeMap.is_null ()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! domainMap.is_null () && ! domainMap->isSameAs (*B_domainMap),
-        std::invalid_argument,
-        "Tpetra::CrsMatrix::add: The input domain Map must be the same as "
-        "(isSameAs) this RowMatrix's domain Map.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! rangeMap.is_null () && ! rangeMap->isSameAs (*B_rangeMap),
-        std::invalid_argument,
-        "Tpetra::CrsMatrix::add: The input range Map must be the same as "
-        "(isSameAs) this RowMatrix's range Map.");
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        domainMap.is_null () || rangeMap.is_null (), std::invalid_argument,
-        "Tpetra::CrsMatrix::add: If neither A nor B have a domain and range "
-        "Map, then you must supply a nonnull domain and range Map to this "
-        "method.");
-    }
-#endif // HAVE_TPETRA_DEBUG
 
     // What parameters do we pass to C's constructor?  Do we call
     // fillComplete on C after filling it?  And if so, what parameters
@@ -8358,10 +8356,11 @@ namespace Tpetra {
     bool callFillComplete = true;
     RCP<ParameterList> constructorSublist;
     RCP<ParameterList> fillCompleteSublist;
-    if (! params.is_null ()) {
-      callFillComplete = params->get ("Call fillComplete", callFillComplete);
-      constructorSublist = sublist (params, "Constructor parameters");
-      fillCompleteSublist = sublist (params, "fillComplete parameters");
+    if (! params.is_null()) {
+      callFillComplete =
+        params->get("Call fillComplete", callFillComplete);
+      constructorSublist = sublist(params, "Constructor parameters");
+      fillCompleteSublist = sublist(params, "fillComplete parameters");
     }
 
     RCP<const map_type> A_rowMap = A.getRowMap ();
@@ -8409,22 +8408,23 @@ namespace Tpetra {
     else { // the row Maps of A and B are not the same
       // Construct the result matrix C.
       // true: !A_rowMap->isSameAs (*B_rowMap)
-      TEUCHOS_TEST_FOR_EXCEPTION(true,
-                                 std::invalid_argument,
-                                 "Tpetra::CrsMatrix::add: The row maps must be the same for statically "
-                                 "allocated matrices in order to be sure that there is sufficient space "
-                                 "to do the addition");
-
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::invalid_argument, errPfx << "The row maps must "
+         "be the same for statically allocated matrices, to ensure "
+         "that there is sufficient space to do the addition.");
     }
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
-      "Tpetra::RowMatrix::add: C should not be null at this point.  "
-      "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-    //
-    // Compute C = alpha*A + beta*B.
-    //
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (C.is_null (), std::logic_error,
+       errPfx << "C should not be null at this point.  "
+       "Please report this bug to the Tpetra developers.");
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Compute C = alpha*A + beta*B" << endl;
+      std::cerr << os.str ();
+    }
+
     Array<GO> ind;
     Array<Scalar> val;
 
@@ -8473,11 +8473,27 @@ namespace Tpetra {
     }
 
     if (callFillComplete) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Call fillComplete on C" << endl;
+        std::cerr << os.str ();
+      }
       if (fillCompleteSublist.is_null ()) {
         C->fillComplete (theDomainMap, theRangeMap);
       } else {
         C->fillComplete (theDomainMap, theRangeMap, fillCompleteSublist);
       }
+    }
+    else if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Do NOT call fillComplete on C" << endl;
+      std::cerr << os.str ();
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
     }
     return rcp_implicit_cast<row_matrix_type> (C);
   }
@@ -8521,7 +8537,7 @@ namespace Tpetra {
       verbosePrefix =
         this->createPrefix("CrsMatrix", "transferAndFillComplete");
       std::ostringstream os;
-      os << "start" << endl;
+      os << "Start" << endl;
       std::cerr << os.str();
     }
 
@@ -8532,7 +8548,8 @@ namespace Tpetra {
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
 
-    int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+    int mm_optimization_core_count =
+      Behavior::TAFC_OptimizationCoreCount();
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
     bool overrideAllreduce = false;
     if (! params.is_null ()) {
@@ -8589,7 +8606,7 @@ namespace Tpetra {
     const import_type* xferAsImport = dynamic_cast<const import_type*> (&rowTransfer);
     const export_type* xferAsExport = dynamic_cast<const export_type*> (&rowTransfer);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      xferAsImport == NULL && xferAsExport == NULL, std::invalid_argument,
+      xferAsImport == nullptr && xferAsExport == nullptr, std::invalid_argument,
       "Tpetra::CrsMatrix::transferAndFillComplete: The 'rowTransfer' input "
       "argument must be either an Import or an Export, and its template "
       "parameters must match the corresponding template parameters of the "
@@ -8612,16 +8629,16 @@ namespace Tpetra {
         "CrsMatrix.");
 
       TEUCHOS_TEST_FOR_EXCEPTION(
-         ( xferAsImport != NULL || ! xferDomainAsImport.is_null() ) &&
-         (( xferAsImport != NULL &&   xferDomainAsImport.is_null() ) ||
-          ( xferAsImport == NULL && ! xferDomainAsImport.is_null() )), std::invalid_argument,
+         ( xferAsImport != nullptr || ! xferDomainAsImport.is_null() ) &&
+         (( xferAsImport != nullptr &&   xferDomainAsImport.is_null() ) ||
+          ( xferAsImport == nullptr && ! xferDomainAsImport.is_null() )), std::invalid_argument,
          "Tpetra::CrsMatrix::transferAndFillComplete: The 'rowTransfer' and 'domainTransfer' input "
          "arguments must be of the same type (either Import or Export).");
 
       TEUCHOS_TEST_FOR_EXCEPTION(
-         ( xferAsExport != NULL || ! xferDomainAsExport.is_null() ) &&
-         (( xferAsExport != NULL &&   xferDomainAsExport.is_null() ) ||
-          ( xferAsExport == NULL && ! xferDomainAsExport.is_null() )), std::invalid_argument,
+         ( xferAsExport != nullptr || ! xferDomainAsExport.is_null() ) &&
+         (( xferAsExport != nullptr &&   xferDomainAsExport.is_null() ) ||
+          ( xferAsExport == nullptr && ! xferDomainAsExport.is_null() )), std::invalid_argument,
          "Tpetra::CrsMatrix::transferAndFillComplete: The 'rowTransfer' and 'domainTransfer' input "
          "arguments must be of the same type (either Import or Export).");
     } // domainTransfer != null
@@ -8877,16 +8894,16 @@ namespace Tpetra {
       IntVectorType SourceCol_pids (getColMap ());
 
       TargetRow_pids.putScalar (MyPID);
-      if (! reverseMode && xferAsImport != NULL) {
+      if (! reverseMode && xferAsImport != nullptr) {
         SourceRow_pids.doExport (TargetRow_pids, *xferAsImport, INSERT);
       }
-      else if (reverseMode && xferAsExport != NULL) {
+      else if (reverseMode && xferAsExport != nullptr) {
         SourceRow_pids.doExport (TargetRow_pids, *xferAsExport, INSERT);
       }
-      else if (! reverseMode && xferAsExport != NULL) {
+      else if (! reverseMode && xferAsExport != nullptr) {
         SourceRow_pids.doImport (TargetRow_pids, *xferAsExport, INSERT);
       }
-      else if (reverseMode && xferAsImport != NULL) {
+      else if (reverseMode && xferAsImport != nullptr) {
         SourceRow_pids.doImport (TargetRow_pids, *xferAsImport, INSERT);
       }
       else {
@@ -9390,23 +9407,24 @@ namespace Tpetra {
     /***************************************************/
     /**** 5) Sort                                   ****/
     /***************************************************/
-    if ((! reverseMode && xferAsImport != NULL) ||
-        (reverseMode && xferAsExport != NULL)) {
+    if ((! reverseMode && xferAsImport != nullptr) ||
+        (reverseMode && xferAsExport != nullptr)) {
       if (verbose) {
         std::ostringstream os;
-        os << *verbosePrefix << "Calling sortCrsEntries" << std::endl;
+        os << *verbosePrefix << "Calling sortCrsEntries" << endl;
         std::cerr << os.str ();
       }
       Import_Util::sortCrsEntries (CSR_rowptr (),
                                    CSR_colind_LID (),
                                    CSR_vals ());
     }
-    else if ((! reverseMode && xferAsExport != NULL) ||
-             (reverseMode && xferAsImport != NULL)) {
+    else if ((! reverseMode && xferAsExport != nullptr) ||
+             (reverseMode && xferAsImport != nullptr)) {
       if (verbose) {
         std::ostringstream os;
-        os << *verbosePrefix << "Calling sortAndMergeCrsEntries" << std::endl;
-        std::cerr << os.str ();
+        os << *verbosePrefix << "Calling sortAndMergeCrsEntries"
+           << endl;
+        std::cerr << os.str();
       }
       Import_Util::sortAndMergeCrsEntries (CSR_rowptr (),
                                            CSR_colind_LID (),
@@ -9428,7 +9446,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *verbosePrefix << "Calling destMat->setAllValues" << std::endl;
+      os << *verbosePrefix << "Calling destMat->setAllValues" << endl;
       std::cerr << os.str ();
     }
 
@@ -9451,7 +9469,8 @@ namespace Tpetra {
     if (iallreduceRequest.get () != nullptr) {
       if (verbose) {
         std::ostringstream os;
-        os << *verbosePrefix << "Calling iallreduceRequest->wait()" << std::endl;
+        os << *verbosePrefix << "Calling iallreduceRequest->wait()"
+           << endl;
         std::cerr << os.str ();
       }
       iallreduceRequest->wait ();
@@ -9468,7 +9487,7 @@ namespace Tpetra {
 
         if (verbose) {
           std::ostringstream os;
-          os << *verbosePrefix << "Calling getAllValues" << std::endl;
+          os << *verbosePrefix << "Calling getAllValues" << endl;
           std::cerr << os.str ();
         }
 
@@ -9681,7 +9700,7 @@ namespace Tpetra {
 
       if (verbose) {
         std::ostringstream os;
-        os << *verbosePrefix << "Call expertStaticFillComplete" << std::endl;
+        os << *verbosePrefix << "Call expertStaticFillComplete" << endl;
         std::cerr << os.str ();
       }
 
@@ -9703,7 +9722,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *verbosePrefix << "Done!" << std::endl;
+      os << *verbosePrefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
