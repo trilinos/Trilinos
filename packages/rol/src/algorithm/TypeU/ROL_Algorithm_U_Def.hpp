@@ -99,22 +99,22 @@ std::vector<std::string> Algorithm_U<Real>::run( Vector<Real>    &x,
 template<typename Real>
 std::vector<std::string> Algorithm_U<Real>::run( Vector<Real>     &x,
                                                  Objective<Real>  &obj,
-                                                 Constraint<Real> &linearcon,
-                                                 Vector<Real>     &mul,
+                                                 Constraint<Real> &linear_con,
+                                                 Vector<Real>     &linear_mul,
                                                  std::ostream     &outStream ) {
-  return run(x,x.dual(),obj,linearcon,mul,outStream);
+  return run(x,x.dual(),obj,linear_con,linear_mul,linear_mul.dual(),outStream);
 }
 
 template<typename Real>
 std::vector<std::string> Algorithm_U<Real>::run( Vector<Real>       &x,
                                                  const Vector<Real> &g,
                                                  Objective<Real>    &obj,
-                                                 Constraint<Real>   &linearcon,
-                                                 Vector<Real>       &mul,
+                                                 Constraint<Real>   &linear_con,
+                                                 Vector<Real>       &linear_mul,
+                                                 const Vector<Real> &linear_c,
                                                  std::ostream       &outStream ) {
   Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
-  Ptr<Vector<Real>> c = mul.dual().clone();
-  ReduceLinearConstraint<Real> rlc(makePtrFromRef(linearcon),xfeas,c);
+  ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_con),xfeas,makePtrFromRef(linear_c));
   Ptr<Vector<Real>> s = x.clone(); s->zero();
   std::vector<std::string>
     output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),outStream);

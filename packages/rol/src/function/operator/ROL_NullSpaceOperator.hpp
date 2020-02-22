@@ -96,9 +96,9 @@ public:
     }
   }
 
-  NullSpaceOperator(const Ptr<Constraint<Real>> &con,
-                    const Ptr<Vector<Real>> &dom,
-                    const Ptr<Vector<Real>> &ran)
+  NullSpaceOperator(const Ptr<Constraint<Real>>   &con,
+                    const Ptr<const Vector<Real>> &dom,
+                    const Ptr<const Vector<Real>> &ran)
     : NullSpaceOperator(con,*dom,*ran) {}
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {

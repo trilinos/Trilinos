@@ -68,7 +68,7 @@ private:
   Ptr<SimController<Real>>     storage_;
   Ptr<NullSpaceOperator<Real>> nsop_;
 
-  void feasible(const Ptr<Vector<Real>> &c) {
+  void feasible(const Ptr<const Vector<Real>> &c) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     Ptr<Vector<Real>> ran = c->clone();
     lcon_->value(*ran,*x_,tol);
@@ -86,9 +86,9 @@ private:
 public:
   virtual ~ReduceLinearConstraint(void) {}
 
-  ReduceLinearConstraint(const Ptr<Constraint<Real>> &lcon,
-                         const Ptr<Vector<Real>>     &x,
-                         const Ptr<Vector<Real>>     &c)
+  ReduceLinearConstraint(const Ptr<Constraint<Real>>   &lcon,
+                         const Ptr<Vector<Real>>       &x,
+                         const Ptr<const Vector<Real>> &c)
     : lcon_(lcon), x_(x) {
     feasible(c);
     storage_ = makePtr<SimController<Real>>();

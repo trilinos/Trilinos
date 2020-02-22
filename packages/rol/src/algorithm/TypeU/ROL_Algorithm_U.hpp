@@ -110,8 +110,8 @@ public:
   */
   virtual std::vector<std::string> run( Vector<Real>     &x,
                                         Objective<Real>  &obj,
-                                        Constraint<Real> &linearcon,
-                                        Vector<Real>     &mul,
+                                        Constraint<Real> &linear_con,
+                                        Vector<Real>     &linear_mul,
                                         std::ostream     &outStream = std::cout );
 
   /** \brief Run algorithm on unconstrained problems with explicit
@@ -122,8 +122,9 @@ public:
   virtual std::vector<std::string> run( Vector<Real>       &x,
                                         const Vector<Real> &g,
                                         Objective<Real>    &obj,
-                                        Constraint<Real>   &linearcon,
-                                        Vector<Real>       &mul,
+                                        Constraint<Real>   &linear_con,
+                                        Vector<Real>       &linear_mul,
+					const Vector<Real> &linear_c,
                                         std::ostream       &outStream = std::cout );
 
   /** \brief Run algorithm on unconstrained problems (Type-U).

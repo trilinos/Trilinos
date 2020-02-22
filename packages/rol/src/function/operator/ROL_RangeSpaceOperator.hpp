@@ -67,9 +67,9 @@ private:
 
 public:
   virtual ~RangeSpaceOperator() {}
-  RangeSpaceOperator(const Ptr<Constraint<Real>> &con,
-                     const Ptr<Vector<Real>>     &dom,
-                     const Ptr<Vector<Real>>     &ran)
+  RangeSpaceOperator(const Ptr<Constraint<Real>>   &con,
+                     const Ptr<const Vector<Real>> &dom,
+                     const Ptr<const Vector<Real>> &ran)
     : con_(con), x_(dom->clone()) {
     x_->set(*dom);
     b1_  = dom->dual().clone();
