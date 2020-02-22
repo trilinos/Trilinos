@@ -21,6 +21,7 @@
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
+#include "NOX_Thyra.H"
 
 
 #ifdef Tempus_ENABLE_MPI
@@ -141,7 +142,6 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
   stepper->setModel(model);
-  stepper->setSolver();
   stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------

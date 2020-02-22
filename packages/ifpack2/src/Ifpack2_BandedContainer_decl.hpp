@@ -182,23 +182,23 @@ public:
   //@{
 
   //! Set all necessary parameters (super- and sub-diagonal bandwidth)
-  virtual void setParameters (const Teuchos::ParameterList& List);
+  virtual void setParameters (const Teuchos::ParameterList& List) override;
 
   //@}
   //! \name Mathematical functions
   //@{
 
   //! Do all set-up operations that only require matrix structure.
-  virtual void initialize ();
+  virtual void initialize () override;
 
   //! Initialize and compute each block.
-  virtual void compute ();
+  virtual void compute () override;
 
   //! Compute the bandwidth (kl_, ku_) of each block from the input matrix,
   //! unless the bandwidth has already been set through setParameters().
   void computeBandwidth();
 
-  void clearBlocks();
+  void clearBlocks() override;
 
   //@}
   //! \name Miscellaneous methods
@@ -207,20 +207,20 @@ public:
   /// \brief Print information about this object to the given output stream.
   ///
   /// operator<< uses this method.
-  virtual std::ostream& print (std::ostream& os) const;
+  virtual std::ostream& print (std::ostream& os) const override;
 
   //@}
   //! @name Implementation of Teuchos::Describable
   //@{
 
   //! A one-line description of this object.
-  virtual std::string description () const;
+  virtual std::string description () const override;
 
   //! Print the object with some verbosity level to the given FancyOStream.
   virtual void
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+            Teuchos::Describable::verbLevel_default) const override;
 
   //@}
 
@@ -230,7 +230,7 @@ public:
 private:
 
   //! Populate the diagonal blocks
-  void extract();
+  void extract() override;
 
   /// \brief Factor the extracted submatrix.
   ///

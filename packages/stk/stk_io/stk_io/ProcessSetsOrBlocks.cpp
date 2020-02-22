@@ -66,6 +66,11 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   stk::io::default_part_processing(elem_blocks, meta);
 }
 
+void process_nodesets_without_distribution_factors(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
+  stk::io::default_part_processing(node_sets, meta);
+}
 
 void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
@@ -207,7 +212,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
 {
     assert(sset->type() == Ioss::SIDESET);
 
-    const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     Ioss::Region *region = sset->get_database()->get_region();
 //    const std::string universalAlias = region->get_alias("universal_sideset");

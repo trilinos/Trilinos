@@ -567,7 +567,7 @@ public:
   /// \param rows [in/out] The row map (containing the offsets to the
   ///   data in each row).
   /// \param cols [in/out] The column indices.
-  CrsMatrix (const std::string& label,
+  CrsMatrix (const std::string& /* label */,
              const OrdinalType nrows,
              const OrdinalType ncols,
              const size_type annz,
@@ -613,7 +613,7 @@ public:
   /// \param rows [in/out] The row map (containing the offsets to the
   ///   data in each row).
   /// \param cols [in/out] The column indices.
-  CrsMatrix (const std::string& label,
+  CrsMatrix (const std::string& /* label */,
              const OrdinalType& ncols,
              const values_type& vals,
              const staticcrsgraph_type& graph_) :

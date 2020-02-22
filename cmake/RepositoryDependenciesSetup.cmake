@@ -8,7 +8,7 @@ if (TPL_ENABLE_CUDA AND NOT Kokkos_ENABLE_Cuda_Relocatable_Device_Code)
     # ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho so that each reconfigure will
     # show this same note.
   elseif (${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho)
-    message(FATAL_ERROR "ERROR: ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho=ON but TPL_ENABLE_CUDA='${TPL_ENABLE_CUDA}' AND Kokkos_ENABLE_Cuda_Relocatable_Device_Code='${Kokkos_ENABLE_Cuda_Relocatable_Device_Code}' which is not allowed!")
+    message(FATAL_ERROR "ERROR: ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho=ON but TPL_ENABLE_CUDA='${TPL_ENABLE_CUDA}' AND Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE='${Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE}' which is not allowed!")
   endif()
 endif() 
 

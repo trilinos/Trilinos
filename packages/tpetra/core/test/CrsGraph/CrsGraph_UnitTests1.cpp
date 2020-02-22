@@ -35,15 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_TestingUtilities.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_Map.hpp"
 #include <type_traits> // std::is_same
 
 namespace { // (anonymous)

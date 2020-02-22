@@ -1477,8 +1477,8 @@ struct ReduceRowSizeFunctor{
   const size_type min_val;
   ReduceRowSizeFunctor(
       const size_type *rb,const  size_type *re): rowmap_view_begins(rb), rowmap_view_ends(re),
-          min_val((std::numeric_limits<size_type>::lowest())){
-  }
+          min_val(0)
+  {}
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, size_type &max_reduction) const {
     size_type val = rowmap_view_ends[i] - rowmap_view_begins[i] ;
@@ -1521,8 +1521,9 @@ struct ReduceMaxRowFunctor{
   const value_type min_val;
   ReduceMaxRowFunctor(
       view_type rowmap_view_): rowmap_view(rowmap_view_),
-          min_val((std::numeric_limits<value_type>::lowest())){
-  }
+          min_val(0)
+  {}
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, value_type &max_reduction) const {
     value_type val = rowmap_view(i+1) - rowmap_view(i) ;
@@ -1933,6 +1934,16 @@ struct array_sum_reduce
       data[i] += src.data[i];
   }
 };
+
+template<typename InPtr, typename T>
+KOKKOS_INLINE_FUNCTION T* alignPtr(InPtr p)
+{
+  //ugly but computationally free and the "right" way to do this in C++
+  std::uintptr_t ptrVal = reinterpret_cast<std::uintptr_t>(p);
+  //ptrVal + (align - 1) lands inside the next valid aligned scalar_t,
+  //and the mask produces the start of that scalar_t.
+  return reinterpret_cast<T*>((ptrVal + alignof(T) - 1) & (~(alignof(T) - 1)));
+}
 
 }
 }

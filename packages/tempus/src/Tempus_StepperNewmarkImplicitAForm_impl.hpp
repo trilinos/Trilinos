@@ -160,6 +160,8 @@ void StepperNewmarkImplicitAForm<Scalar>::setSchemeName(
        <<"'Linear Acceleration', \n"
        <<"'Central Difference' and 'User Defined'.\n");
   }
+
+  this->isInitialized_ = false;
 }
 
 
@@ -179,6 +181,7 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm() :
   this->setSchemeName(         "Average Acceleration");
 
   this->setObserver();
+  this->setDefaultSolver();
 }
 
 
@@ -206,11 +209,11 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
   this->setGamma(              gamma);
 
   this->setObserver(obs);
+  this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
 
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
 }
@@ -228,20 +231,8 @@ void StepperNewmarkImplicitAForm<Scalar>::setModel(
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                               "Newmark Implicit a-Form"));
   this->wrapperModel_ = wrapperModel;
-}
 
-
-template<class Scalar>
-void StepperNewmarkImplicitAForm<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
-    std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperNewmarkImplicitAForm::initialize()\n");
-
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
+  this->isInitialized_ = false;
 }
 
 
@@ -325,13 +316,13 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
 
     // Compute initial acceleration using initial displacement
     // and initial velocity.
-    if (this->initial_guess_ != Teuchos::null) {
+    if (this->initialGuess_ != Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        !((xDotDot->space())->isCompatible(*this->initial_guess_->space())),
+        !((xDotDot->space())->isCompatible(*this->initialGuess_->space())),
         std::logic_error,
         "Error - User-provided initial guess for Newton is not compatible\n"
         "        with solution vector!\n");
-      Thyra::copy(*this->initial_guess_, xDotDot.ptr());
+      Thyra::copy(*this->initialGuess_, xDotDot.ptr());
     }
     else {
       Thyra::put_scalar(0.0, xDotDot.ptr());
@@ -420,6 +411,8 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkImplicitAForm::takeStep()");
@@ -509,14 +502,49 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::describe(
-   Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModel = " << this->wrapperModel_->description() << std::endl;
+
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperNewmarkImplicitAForm ---\n";
+  out << "  schemeName_ = " << schemeName_ << std::endl;
+  out << "  beta_       = " << beta_       << std::endl;
+  out << "  gamma_      = " << gamma_      << std::endl;
+  out << "-----------------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperNewmarkImplicitAForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  //if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if (this->wrapperModel_->getAppModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The application ModelEvaluator is not set!\n";
+  }
+
+  if (this->wrapperModel_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The wrapper ModelEvaluator is not set!\n";
+  }
+
+  if (this->solver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The solver is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -60,6 +58,7 @@
 #include "Teuchos_Utils.hpp"
 #include <algorithm>
 #include <iterator>
+#include <ostream>
 #include <sstream>
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
@@ -952,6 +951,42 @@ namespace Tpetra {
       os << name << ": {size: " << dv.extent (0)
          << ", sync: {host: " << host << ", dev: " << dev << "}";
       return os.str ();
+    }
+
+    /// \brief Print min(x.size(), maxNumToPrint) entries of x.
+    ///
+    /// \return void, because returning std::ostream& won't work
+    ///   if \c out is an std::ostringstream.
+    template<class ArrayType>
+    void
+    verbosePrintArray(std::ostream& out,
+                      const ArrayType& x,
+                      const char name[],
+                      const size_t maxNumToPrint)
+    {
+      out << name << ": [";
+
+      const size_t numEnt(x.size());
+      if (maxNumToPrint == 0) {
+        if (numEnt != 0) {
+          out << "...";
+        }
+      }
+      else {
+        const size_t numToPrint = numEnt > maxNumToPrint ?
+          maxNumToPrint : numEnt;
+        size_t k = 0;
+        for ( ; k < numToPrint; ++k) {
+          out << x[k];
+          if (k + size_t(1) < numToPrint) {
+            out << ", ";
+          }
+        }
+        if (k < numEnt) {
+          out << ", ...";
+        }
+      }
+      out << "]";
     }
 
   } // namespace Details

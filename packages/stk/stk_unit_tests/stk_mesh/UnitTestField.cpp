@@ -699,7 +699,8 @@ protected:
 class LateFieldFixture : public LateFieldFixtureNoTest, public ::ngp_testing::Test
 {
 protected:
-  virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption, stk::mesh::FieldDataManager * fieldDataManager)
+  void custom_allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                            stk::mesh::FieldDataManager * fieldDataManager)
   {
     if (nullptr == metaData) {
       allocate_meta();
@@ -712,16 +713,16 @@ protected:
                                        fieldDataManager);
   }
 
-  virtual void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption, stk::mesh::FieldDataManager * fieldDataManager)
+  virtual void custom_setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption, stk::mesh::FieldDataManager * fieldDataManager)
   {
-    allocate_bulk(auraOption, fieldDataManager);
+    custom_allocate_bulk(auraOption, fieldDataManager);
     metaData->enable_late_fields();
     stk::io::fill_mesh(meshSpecification, *bulkData);
   }
 
   virtual void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption, stk::mesh::FieldDataManager * fieldDataManager)
   {
-    allocate_bulk(auraOption, fieldDataManager);
+    custom_allocate_bulk(auraOption, fieldDataManager);
     metaData->enable_late_fields();
   }
 
@@ -774,7 +775,7 @@ protected:
 
   template <typename T>
   void setup_add_late_first_field(stk::mesh::EntityRank rank, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     // Note that we still have a nodal coordinates field
 
     stk::mesh::Field<T> & lateField = declare_field<T>("late_field", rank);
@@ -788,7 +789,7 @@ protected:
   void setup_add_late_field(stk::mesh::EntityRank rank, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor(earlyField, 1);
 
     stk::mesh::Field<T> & lateField = declare_field<T>("late_field", rank);
@@ -813,7 +814,7 @@ protected:
 
   template <typename T>
   void setup_performance_of_late_field(stk::mesh::EntityRank rank, int numberOfFields, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
-    setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     for (int i = 0; i < numberOfFields; ++i) {
       stk::mesh::Field<T> & lateField = declare_field<T>("late_field" + std::to_string(i), rank);
       put_field(lateField, get_meta().universal_part());
@@ -845,7 +846,7 @@ protected:
     create_part("block_2", stk::topology::ELEM_RANK);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
 
     stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
     get_bulk().modification_begin();
@@ -871,7 +872,7 @@ protected:
   void setup_add_late_field_multiple_duplicate_put_field(stk::mesh::EntityRank rank, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor(earlyField, 1);
 
     stk::mesh::Field<T> & lateField = declare_field<T>("late_field", rank);
@@ -889,7 +890,7 @@ protected:
     create_part("block_2", stk::topology::ELEM_RANK);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor(earlyField, 1);
 
     stk::mesh::Field<T> & lateField = declare_field<T>("late_field", rank);
@@ -906,7 +907,7 @@ protected:
   void setup_add_two_late_fields_sequential(stk::mesh::EntityRank rank, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor(earlyField, 1);
 
     stk::mesh::Field<T> & lateField1 = declare_field<T>("late_field1", rank);
@@ -926,7 +927,7 @@ protected:
   void setup_add_two_late_fields_interleaved(stk::mesh::EntityRank rank, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor(earlyField, 1);
 
     stk::mesh::Field<T> & lateField1 = declare_field<T>("late_field1", rank);
@@ -947,7 +948,7 @@ protected:
   void setup_add_two_late_fields_out_of_order(stk::mesh::EntityRank rank, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor(earlyField, 1);
 
     stk::mesh::Field<T> & lateField1 = declare_field<T>("late_field1", rank);
@@ -968,7 +969,7 @@ protected:
   void setup_add_two_late_fields_different_type_out_of_order(stk::mesh::EntityRank rank, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
     stk::mesh::Field<T1> & earlyField = declare_field<T1>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor<T1>(earlyField, 1);
 
     stk::mesh::Field<T1> & lateField1    = declare_field<T1>("late_field1", rank);
@@ -989,7 +990,7 @@ protected:
   void setup_add_two_late_fields_different_rank_out_of_order(stk::mesh::EntityRank rank1, stk::mesh::EntityRank rank2, stk::mesh::FieldDataManager * fieldDataManager = nullptr) {
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", stk::topology::ELEM_RANK);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor(earlyField, 1);
 
     stk::mesh::Field<T> & lateField1 = declare_field<T>("late_field1", rank1);
@@ -1013,7 +1014,7 @@ protected:
     create_part("block_2", stk::topology::ELEM_RANK);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, *get_meta().get_part("block_1"));
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
 
     stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
     get_bulk().modification_begin();
@@ -1048,7 +1049,7 @@ protected:
     create_part("block_1", stk::topology::ELEM_RANK, addIoPartAttribute);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
+    custom_setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA, fieldDataManager);
     set_field_values_with_scale_factor(earlyField, 1);
 
     create_part("block_2", stk::topology::ELEM_RANK);

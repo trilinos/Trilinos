@@ -4,6 +4,7 @@
 
 #include<KokkosSparse_spmv.hpp>
 #include<KokkosKernels_TestUtils.hpp>
+#include<KokkosKernels_Test_Structured_Matrix.hpp>
 #include<KokkosKernels_IOUtils.hpp>
 #include<KokkosKernels_Utils.hpp>
 
@@ -14,16 +15,18 @@
 
 namespace Test {
 
-template < class VectorType0, class VectorType1, class AT_Type >
+template < class VectorType0, class VectorType1 >
 struct fSPMV {
-  typedef int value_type;
-  typedef Kokkos::Details::ArithTraits<typename AT_Type::non_const_value_type> AT;
+  using value_type = int;
+  using AT         = Kokkos::ArithTraits<typename VectorType1::non_const_value_type>;
+  using ATM        = Kokkos::ArithTraits<typename AT::mag_type>;
+  using mag_type   = typename AT::mag_type;
 
   VectorType0 expected_y;
   VectorType1 y;
-  double eps;
+  mag_type    eps;
 
-  fSPMV(const VectorType0 & _ex_y, const VectorType1 & _y, const double _eps)
+  fSPMV(const VectorType0 & _ex_y, const VectorType1 & _y, const mag_type _eps)
   : expected_y(_ex_y)
   , y(_y)
   , eps(_eps)
@@ -31,23 +34,31 @@ struct fSPMV {
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const int i, value_type& err ) const {
-    if(AT::abs(expected_y(i)-y(i))>eps) err++;
+
+    const mag_type error = AT::abs(expected_y(i)-y(i))
+      / (AT::abs(expected_y(i)) > ATM::zero() ? AT::abs(expected_y(i)) : ATM::one());
+
+    if(error > eps) {
+      err++;
+      printf("expected_y(%d)=%f, y(%d)=%f\n", i, AT::abs(expected_y(i)), i, AT::abs(y(i)));
+    }
   }
 };
 
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
-    typename y_vector_type::non_const_value_type alpha, typename y_vector_type::non_const_value_type beta){
+                     typename y_vector_type::non_const_value_type alpha,
+                     typename y_vector_type::non_const_value_type beta){
 
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type size_type_view_t;
-  typedef typename graph_t::entries_type lno_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  using graph_t          = typename crsMat_t::StaticCrsGraphType;
+  using size_type_view_t = typename graph_t::row_map_type;
+  using lno_view_t       = typename graph_t::entries_type;
+  using scalar_view_t    = typename crsMat_t::values_type::non_const_type;
 
-  typedef typename size_type_view_t::non_const_value_type size_type;
-  typedef typename lno_view_t::non_const_value_type lno_t;
-  typedef typename scalar_view_t::non_const_value_type scalar_t;
+  using size_type = typename size_type_view_t::non_const_value_type;
+  using lno_t     = typename lno_view_t::non_const_value_type;
+  using scalar_t  = typename scalar_view_t::non_const_value_type;
 
 
   typename scalar_view_t::HostMirror h_values = Kokkos::create_mirror_view(input_mat.values);
@@ -69,7 +80,6 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   KokkosKernels::Impl::safe_device_to_host_deep_copy (y.extent(0), y, h_y);
   Kokkos::fence();
 
-
   lno_t nr = input_mat.numRows();
 
   for (lno_t i = 0; i < nr; ++i){
@@ -89,15 +99,20 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
-    typename y_vector_type::non_const_value_type alpha, typename y_vector_type::non_const_value_type beta){
+                typename y_vector_type::non_const_value_type alpha,
+                typename y_vector_type::non_const_value_type beta) {
   //typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename crsMat_t::execution_space ExecSpace;
-  typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
+  using ExecSpace = typename crsMat_t::execution_space;
+  using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
+  using y_value_type     = typename y_vector_type::non_const_value_type;
+  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_mag_type = typename y_value_trait::mag_type;
 
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename scalar_view_t::value_type ScalarA;
-  double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
-  size_t nr = input_mat.numRows();
+  // y is the quantity being tested here,
+  // so let us use y_value_type to determine
+  // the appropriate tolerance precision.
+  const y_value_mag_type eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
+  const size_t nr = input_mat.numRows();
   y_vector_type expected_y("expected", nr);
   Kokkos::deep_copy(expected_y, y);
   Kokkos::fence();
@@ -106,28 +121,31 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   //KokkosKernels::Impl::print_1Dview(expected_y);
   KokkosSparse::spmv("N", alpha, input_mat, x, beta, y);
   //KokkosKernels::Impl::print_1Dview(y);
-  typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
   int num_errors = 0;
-  Kokkos::parallel_reduce("KokkosSparse::Test::spmv"
-                         ,my_exec_space(0, y.extent(0))
-                         ,fSPMV<y_vector_type, y_vector_type, y_vector_type>(expected_y,y,eps)
-                         ,num_errors);
+  Kokkos::parallel_reduce("KokkosSparse::Test::spmv",
+                          my_exec_space(0, y.extent(0)),
+                          fSPMV<y_vector_type, y_vector_type>(expected_y, y, eps),
+                          num_errors);
   if(num_errors>0) printf("KokkosSparse::Test::spmv: %i errors of %i with params: %lf %lf\n",
-      num_errors,y.extent_int(0),AT::abs(alpha),AT::abs(beta));
+                          num_errors, y.extent_int(0),
+                          y_value_trait::abs(alpha), y_value_trait::abs(beta));
   EXPECT_TRUE(num_errors==0);
 }
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vector_type expected_y,
-    typename y_vector_type::non_const_value_type alpha,
-    typename y_vector_type::non_const_value_type beta, int numMV){
-  //typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename crsMat_t::execution_space ExecSpace;
-  typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
+                   typename y_vector_type::non_const_value_type alpha,
+                   typename y_vector_type::non_const_value_type beta, int numMV) {
+  using ExecSpace = typename crsMat_t::execution_space;
+  using my_exec_space = Kokkos::RangePolicy<ExecSpace>;
+  using y_value_type     = typename y_vector_type::non_const_value_type;
+  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_mag_type = typename y_value_trait::mag_type;
 
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename scalar_view_t::value_type ScalarA;
-  double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
+  // y is the quantity being tested here,
+  // so let us use y_value_type to determine
+  // the appropriate tolerance precision.
+  const y_value_mag_type eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
 
   Kokkos::deep_copy(expected_y, y);
 
@@ -146,17 +164,106 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
 
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);
     int num_errors = 0;
-    Kokkos::parallel_reduce("KokkosSparse::Test::spmv_mv"
-                           ,my_exec_space(0,y_i.extent(0))
-                           ,fSPMV<decltype(y_i), decltype(y_spmv), y_vector_type>(y_i, y_spmv, eps)
-                           ,num_errors);
+    Kokkos::parallel_reduce("KokkosSparse::Test::spmv_mv",
+                            my_exec_space(0,y_i.extent(0)),
+                            fSPMV<decltype(y_i), decltype(y_spmv)>(y_i, y_spmv, eps),
+                            num_errors);
     if(num_errors>0) printf("KokkosSparse::Test::spmv_mv: %i errors of %i for mv %i\n",
-        num_errors,y_i.extent_int(0),i);
+                            num_errors, y_i.extent_int(0), i);
     EXPECT_TRUE(num_errors==0);
   }
 }
 
-}
+  template <typename crsMat_t,
+            typename x_vector_type,
+            typename y_vector_type>
+  void check_spmv_struct(const crsMat_t input_mat,
+                         const int stencil_type,
+                         const Kokkos::View<typename crsMat_t::non_const_ordinal_type*, Kokkos::HostSpace> structure,
+                         x_vector_type x,
+                         y_vector_type y,
+                         typename y_vector_type::non_const_value_type alpha,
+                         typename y_vector_type::non_const_value_type beta) {
+    using ExecSpace     = typename crsMat_t::execution_space;
+    using my_exec_space = Kokkos::RangePolicy<ExecSpace>;
+    using y_value_type     = typename y_vector_type::non_const_value_type;
+    using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+    using y_value_mag_type = typename y_value_trait::mag_type;
+
+    // y is the quantity being tested here,
+    // so let us use y_value_type to determine
+    // the appropriate tolerance precision.
+    const double eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
+    const size_t nr = input_mat.numRows();
+    y_vector_type expected_y("expected", nr);
+    Kokkos::deep_copy(expected_y, y);
+    Kokkos::fence();
+
+    sequential_spmv(input_mat, x, expected_y, alpha, beta);
+    KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure,
+                                            alpha, input_mat, x, beta, y);
+
+    int num_errors = 0;
+    Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_struct",
+                            my_exec_space(0, y.extent(0)),
+                            fSPMV<y_vector_type, y_vector_type>(expected_y,y,eps),
+                            num_errors);
+    if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_struct: %i errors of %i with params: %d %lf %lf\n",
+                            num_errors, y.extent_int(0), stencil_type,
+                            y_value_trait::abs(alpha), y_value_trait::abs(beta));
+    EXPECT_TRUE(num_errors==0);
+  }
+
+  template <typename crsMat_t,
+            typename x_vector_type,
+            typename y_vector_type>
+  void check_spmv_mv_struct(const crsMat_t input_mat,
+                            const int stencil_type,
+                            const Kokkos::View<typename crsMat_t::non_const_ordinal_type*, Kokkos::HostSpace> structure,
+                            x_vector_type x,
+                            y_vector_type y,
+                            y_vector_type expected_y,
+                            typename y_vector_type::non_const_value_type alpha,
+                            typename y_vector_type::non_const_value_type beta,
+                            int numMV) {
+    typedef typename crsMat_t::execution_space ExecSpace;
+    typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
+    using y_value_type     = typename y_vector_type::non_const_value_type;
+    using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+    using y_value_mag_type = typename y_value_trait::mag_type;
+
+    // y is the quantity being tested here,
+    // so let us use y_value_type to determine
+    // the appropriate tolerance precision.
+    const double eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
+    Kokkos::deep_copy(expected_y, y);
+    Kokkos::fence();
+
+    KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure,
+                                            alpha, input_mat, x, beta, y);
+
+    for(int vectorIdx = 0; vectorIdx < numMV; ++vectorIdx) {
+      auto x_i = Kokkos::subview (x, Kokkos::ALL (), vectorIdx);
+      auto y_i = Kokkos::subview (expected_y, Kokkos::ALL (), vectorIdx);
+      Kokkos::fence();
+
+      sequential_spmv(input_mat, x_i, y_i, alpha, beta);
+
+      auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), vectorIdx);
+      int num_errors = 0;
+      Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv_struct",
+                              my_exec_space(0, y.extent(0)),
+                              fSPMV<decltype(y_i), decltype(y_spmv)>(y_i,y_spmv,eps),
+                              num_errors);
+      if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_mv_struct: %i errors of %i with params: %d %lf %lf, in vector %i\n",
+                              num_errors, y.extent_int(0), stencil_type,
+                              y_value_trait::abs(alpha), y_value_trait::abs(beta), vectorIdx);
+      EXPECT_TRUE(num_errors==0);
+    }
+  }
+
+} // namespace Test
+
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spmv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance){
 
@@ -195,7 +302,6 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
   lno_t numCols = numRows;
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
-  //typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
   typedef Kokkos::View<scalar_t**, layout, Device> ViewTypeX;
   typedef Kokkos::View<scalar_t**, layout, Device> ViewTypeY;
@@ -210,8 +316,6 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
 
 
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
-  //lno_t nr = input_mat.numRows();
-  //lno_t nc = input_mat.numCols();
 
   Kokkos::deep_copy(b_y_copy, b_y);
 
@@ -221,6 +325,174 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
   Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, numMV);
 
 
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, class Device>
+void test_spmv_struct_1D(lno_t nx, lno_t leftBC, lno_t rightBC) {
+
+  using crsMat_t      = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type>;
+  using scalar_view_t = typename crsMat_t::values_type::non_const_type;
+  using x_vector_type = scalar_view_t;
+  using y_vector_type = scalar_view_t;
+
+  Kokkos::View<lno_t*, Kokkos::HostSpace> structure("Spmv Structure", 1);
+  structure(0) = nx;
+  Kokkos::View<lno_t*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", 1);
+  mat_structure(0, 0) = nx;
+  if(leftBC  == 1) { mat_structure(0, 1) = 1; }
+  if(rightBC == 1) { mat_structure(0, 2) = 1; }
+
+  crsMat_t input_mat = Test::generate_structured_matrix1D<crsMat_t>(mat_structure);
+
+  lno_t nr = input_mat.numRows();
+  lno_t nc = input_mat.numCols();
+
+  x_vector_type input_x  ("x", nc);
+  y_vector_type output_y ("y", nr);
+
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
+  typedef typename x_vector_type::value_type ScalarX;
+  typedef typename y_vector_type::value_type ScalarY;
+
+  Kokkos::fill_random(input_x,  rand_pool, ScalarX(10));
+  Kokkos::fill_random(output_y, rand_pool, ScalarY(10));
+
+  Test::check_spmv_struct(input_mat, 1, structure, input_x, output_y, 1.0, 0.0);
+  Test::check_spmv_struct(input_mat, 1, structure, input_x, output_y, 0.0, 1.0);
+  Test::check_spmv_struct(input_mat, 1, structure, input_x, output_y, 1.0, 1.0);
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, class Device>
+void test_spmv_struct_2D(lno_t nx, lno_t ny, lno_t horizontalBC, lno_t verticalBC) {
+
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
+  typedef typename crsMat_t::values_type::non_const_type  scalar_view_t;
+  typedef scalar_view_t x_vector_type;
+  typedef scalar_view_t y_vector_type;
+
+  Kokkos::View<lno_t*, Kokkos::HostSpace> structure("Spmv Structure", 2);
+  structure(0) = nx;
+  structure(1) = ny;
+  Kokkos::View<lno_t*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", 2);
+  mat_structure(0, 0) = nx;
+  if(horizontalBC == 1 || horizontalBC == 3) { mat_structure(0, 1) = 1; }
+  if(horizontalBC == 2 || horizontalBC == 3) { mat_structure(0, 2) = 1; }
+  mat_structure(1, 0) = ny;
+  if(verticalBC == 1 || verticalBC == 3) { mat_structure(1, 1) = 1; }
+  if(verticalBC == 2 || verticalBC == 3) { mat_structure(1, 2) = 1; }
+
+  crsMat_t input_mat_FD = Test::generate_structured_matrix2D<crsMat_t>("FD", mat_structure);
+  crsMat_t input_mat_FE = Test::generate_structured_matrix2D<crsMat_t>("FE", mat_structure);
+
+  lno_t nr = input_mat_FD.numRows();
+  lno_t nc = input_mat_FD.numCols();
+
+  x_vector_type input_x ("x", nc);
+  y_vector_type output_y ("y", nr);
+
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
+  typedef typename x_vector_type::value_type ScalarX;
+  typedef typename y_vector_type::value_type ScalarY;
+
+  Kokkos::fill_random(input_x,rand_pool,ScalarX(10));
+  Kokkos::fill_random(output_y,rand_pool,ScalarY(10));
+
+  Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0, 0.0);
+  Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 0.0, 1.0);
+  Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0, 1.0);
+
+  Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 1.0, 0.0);
+  Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 0.0, 1.0);
+  Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 1.0, 1.0);
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, class Device>
+void test_spmv_struct_3D(lno_t nx, lno_t ny, lno_t nz, lno_t horizontal1BC, lno_t horizontal2BC, lno_t verticalBC) {
+
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
+  typedef typename crsMat_t::values_type::non_const_type  scalar_view_t;
+  typedef scalar_view_t x_vector_type;
+  typedef scalar_view_t y_vector_type;
+
+  Kokkos::View<lno_t*, Kokkos::HostSpace> structure("Spmv Structure", 3);
+  structure(0) = nx;
+  structure(1) = ny;
+  structure(2) = nz;
+  Kokkos::View<lno_t*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", 3);
+  mat_structure(0, 0) = nx;
+  if(horizontal1BC == 1 || horizontal1BC == 3) { mat_structure(0, 1) = 1; }
+  if(horizontal1BC == 2 || horizontal1BC == 3) { mat_structure(0, 2) = 1; }
+  mat_structure(1, 0) = ny;
+  if(horizontal2BC == 1 || horizontal2BC == 3) { mat_structure(1, 1) = 1; }
+  if(horizontal2BC == 2 || horizontal2BC == 3) { mat_structure(1, 2) = 1; }
+  mat_structure(2, 0) = nz;
+  if(verticalBC == 1 || verticalBC == 3) { mat_structure(2, 1) = 1; }
+  if(verticalBC == 2 || verticalBC == 3) { mat_structure(2, 2) = 1; }
+
+  crsMat_t input_mat_FD = Test::generate_structured_matrix3D<crsMat_t>("FD", mat_structure);
+  crsMat_t input_mat_FE = Test::generate_structured_matrix3D<crsMat_t>("FE", mat_structure);
+
+  lno_t nr = input_mat_FD.numRows();
+  lno_t nc = input_mat_FD.numCols();
+
+  x_vector_type input_x  ("x", nc);
+  y_vector_type output_y ("y", nr);
+
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
+  typedef typename x_vector_type::value_type ScalarX;
+  typedef typename y_vector_type::value_type ScalarY;
+
+  Kokkos::fill_random(input_x,rand_pool,ScalarX(10));
+  Kokkos::fill_random(output_y,rand_pool,ScalarY(10));
+
+  Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0, 0.0);
+  Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 0.0, 1.0);
+  Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0, 1.0);
+
+  Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 1.0, 0.0);
+  Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 0.0, 1.0);
+  Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 1.0, 1.0);
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, typename layout, class Device>
+void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
+
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
+  typedef Kokkos::View<scalar_t**, layout, Device> x_multivector_type;
+  typedef Kokkos::View<scalar_t**, layout, Device> y_multivector_type;
+
+  Kokkos::View<lno_t*, Kokkos::HostSpace> structure("Spmv Structure", 1);
+  structure(0) = nx;
+  Kokkos::View<lno_t*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", 1);
+  mat_structure(0, 0) = nx;
+  mat_structure(0, 1) = 1;
+  mat_structure(0, 2) = 1;
+
+  crsMat_t input_mat = Test::generate_structured_matrix1D<crsMat_t>(mat_structure);
+
+  lno_t nr = input_mat.numRows();
+  lno_t nc = input_mat.numCols();
+
+  x_multivector_type input_x  ("x", nc, numMV);
+  y_multivector_type output_y ("y", nr, numMV);
+  y_multivector_type output_y_copy ("y_copy", nr, numMV);
+
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
+  typedef typename x_multivector_type::value_type ScalarX;
+  typedef typename y_multivector_type::value_type ScalarY;
+
+  Kokkos::fill_random(input_x,  rand_pool, ScalarX(10));
+  Kokkos::fill_random(output_y, rand_pool, ScalarY(10));
+
+  Kokkos::deep_copy(output_y_copy, output_y);
+
+  Test::check_spmv_mv_struct(input_mat, 1, structure, input_x, output_y, output_y_copy, 1.0, 0.0, numMV);
+  Test::check_spmv_mv_struct(input_mat, 1, structure, input_x, output_y, output_y_copy, 0.0, 1.0, numMV);
+  Test::check_spmv_mv_struct(input_mat, 1, structure, input_x, output_y, output_y_copy, 1.0, 1.0, numMV);
 }
 
 //call it if ordinal int and, scalar float and double are instantiated.
@@ -386,6 +658,25 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
   test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (10000, 10000 * 20, 100, 5, 10); \
 }
 
+#define EXECUTE_TEST_STRUCT(SCALAR, ORDINAL, OFFSET, DEVICE) \
+TEST_F( TestCategory,sparse ## _ ## spmv_struct ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_spmv_struct_1D<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 1, 1);            \
+  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (250, 200, 3, 3);      \
+  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (200, 250, 3, 3);      \
+  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (250, 250, 3, 3);      \
+  test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (40, 40, 40, 3, 3, 3); \
+  test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (25, 40, 50, 3, 3, 3); \
+  test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (40, 50, 25, 3, 3, 3); \
+  test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (50, 24, 40, 3, 3, 3); \
+}
+
+
+#define EXECUTE_TEST_MV_STRUCT(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE) \
+TEST_F( TestCategory,sparse ## _ ## spmv_mv_struct ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## LAYOUT ## _ ## DEVICE ) { \
+  test_spmv_mv_struct_1D<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (10, 1); \
+  test_spmv_mv_struct_1D<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (10, 2); \
+}
+
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   EXECUTE_TEST_ISSUE_101(TestExecSpace)
 #endif
@@ -396,48 +687,56 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int, int, TestExecSpace)
-#endif
+ EXECUTE_TEST_STRUCT(double, int, int, TestExecSpace)
+ #endif
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int64_t, int, TestExecSpace)
+ EXECUTE_TEST_STRUCT(double, int64_t, int, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int, size_t, TestExecSpace)
+ EXECUTE_TEST_STRUCT(double, int, size_t, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
+ EXECUTE_TEST_STRUCT(double, int64_t, size_t, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(float, int, int, TestExecSpace)
+ EXECUTE_TEST_STRUCT(float, int, int, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(float, int64_t, int, TestExecSpace)
+ EXECUTE_TEST_STRUCT(float, int64_t, int, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(float, int, size_t, TestExecSpace)
+ EXECUTE_TEST_STRUCT(float, int, size_t, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
+ EXECUTE_TEST_STRUCT(float, int64_t, size_t, TestExecSpace)
 #endif
 
 
@@ -445,48 +744,56 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
+ EXECUTE_TEST_STRUCT(kokkos_complex_double, int, int, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
+ EXECUTE_TEST_STRUCT(kokkos_complex_double, int64_t, int, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
+ EXECUTE_TEST_STRUCT(kokkos_complex_double, int, size_t, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestExecSpace)
+ EXECUTE_TEST_STRUCT(kokkos_complex_double, int64_t, size_t, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
+ EXECUTE_TEST_STRUCT(kokkos_complex_float, int, int, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
+ EXECUTE_TEST_STRUCT(kokkos_complex_float, int64_t, int, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
+ EXECUTE_TEST_STRUCT(kokkos_complex_float, int, size_t, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
+ EXECUTE_TEST_STRUCT(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
 
@@ -495,48 +802,56 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT)) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(double, int, int, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(double, int, int, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT)) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(double, int64_t, int, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(double, int64_t, int, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(double, int, size_t, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(double, int, size_t, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(double, int64_t, size_t, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(double, int64_t, size_t, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(float, int, int, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(float, int, int, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(float, int64_t, int, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(float, int64_t, int, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(float, int, size_t, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(float, int, size_t, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(float, int64_t, size_t, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(float, int64_t, size_t, LayoutLeft, TestExecSpace)
 #endif
 
 
@@ -544,48 +859,56 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(kokkos_complex_double, int, int, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(kokkos_complex_double, int, int, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(kokkos_complex_double, int64_t, int, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(kokkos_complex_double, int64_t, int, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(kokkos_complex_double, int, size_t, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(kokkos_complex_double, int, size_t, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(kokkos_complex_double, int64_t, size_t, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(kokkos_complex_double, int64_t, size_t, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(kokkos_complex_float, int, int, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(kokkos_complex_float, int, int, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(kokkos_complex_float, int64_t, int, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(kokkos_complex_float, int64_t, int, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(kokkos_complex_float, int, size_t, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(kokkos_complex_float, int, size_t, LayoutLeft, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST_MV(kokkos_complex_float, int64_t, size_t, LayoutLeft, TestExecSpace)
+ EXECUTE_TEST_MV_STRUCT(kokkos_complex_float, int64_t, size_t, LayoutLeft, TestExecSpace)
 #endif
 
 

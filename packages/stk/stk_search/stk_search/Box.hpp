@@ -58,10 +58,13 @@ public:
     return Kokkos::Details::ArithTraits<T>::min();
   }
 
-  KOKKOS_FUNCTION Box( point_type const& x_min_corner = point_type(max(), max(), max()),
-       point_type const& x_max_corner = point_type(min(), min(), min()))
-    : m_min_corner(x_min_corner)
-    , m_max_corner(x_max_corner)
+  KOKKOS_FUNCTION Box()
+  : m_min_corner(max(), max(), max()), m_max_corner(min(), min(), min()) {}
+
+  KOKKOS_FUNCTION Box( point_type const& minCorner,
+                       point_type const& maxCorner)
+    : m_min_corner(minCorner)
+    , m_max_corner(maxCorner)
   {
   }
 

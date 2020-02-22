@@ -75,7 +75,7 @@ namespace Solver {
 /*!
   \brief Nonlinear solver based on a rank-1 tensor method.
 
-  Solves \f$F(x)=0\f$ using a rank-1 tensor method and a linesearch
+  Solves \f$ F(x)=0\f$ using a rank-1 tensor method and a linesearch
   globalization.
 
   At the kth nonlinear iteration, the solver does the following:
@@ -88,7 +88,7 @@ namespace Solver {
       - J_ks_k) / (s_k^Ts_k)^2 \f] and \f[ s_k = s_{k-1} - s_k. \f]
 
   <li>Modifies the step according to a global strategy and updates
-      \f$x\f$ as \f$x_{k+1} = x_k + d(\lambda) \f$ via a linesearch
+      \f$ x\f$ as \f$ x_{k+1} = x_k + d(\lambda) \f$ via a linesearch
       method, where \f$ d(\lambda) \f$ is some function of \f$ \lambda
       \f$.  For instance, the curvilinear step \f$ d_{\lambda T} \f$
       is a function of the linesearch parameter \f$ \lambda \f$ and is

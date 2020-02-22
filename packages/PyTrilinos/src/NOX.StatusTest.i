@@ -66,7 +66,6 @@ NOX.StatusTest provides the following user-level classes:
 %enddef
 
 %module(package      = "PyTrilinos.NOX",
-	autodoc      = "1",
 	implicitconv = "1",
 	docstring    = %nox_statustest_docstring) StatusTest
 
@@ -90,11 +89,11 @@ NOX.StatusTest provides the following user-level classes:
 // Standard exception handling
 %include "exception.i"
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
 // Include NOX documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "NOX_dox.i"
+#endif
 
 // SWIG library include files
 %include "stl.i"

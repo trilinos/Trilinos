@@ -48,6 +48,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixUtils.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -59,6 +60,7 @@
 #include "MueLu_FactoryManager.hpp"
 
 #include "MueLu_AggregationExportFactory.hpp"
+#include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
@@ -937,9 +939,10 @@ namespace MueLu {
       MUELU_KOKKOS_FACTORY_NO_DECL(dropFactory, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       ParameterList dropParams;
       dropParams.set("lightweight wrap", true);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
       if (useKokkos_) {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, dropParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, dropParams);
@@ -979,6 +982,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase3 avoid singletons", bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities",              bool, aggParams);
       aggFactory->SetParameterList(aggParams);
       // make sure that the aggregation factory has all necessary data
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
@@ -1016,6 +1020,22 @@ namespace MueLu {
     MUELU_KOKKOS_FACTORY(coarseMap, CoarseMapFactory, CoarseMapFactory_kokkos);
     coarseMap->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     manager.SetFactory("CoarseMap", coarseMap);
+
+    // Aggregate qualities
+    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, true)) {
+        RCP<Factory> aggQualityFact = rcp(new AggregateQualityEstimateFactory());
+        ParameterList aggQualityParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: good aggregate threshold", double,      aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file output",              bool,        aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: file base",                std::string, aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: check symmetry",           bool,        aggQualityParams);
+        aggQualityFact->SetParameterList(aggQualityParams);
+        manager.SetFactory("AggregateQualities", aggQualityFact);
+
+        assert(aggType == "uncoupled");
+        aggFactory->SetFactory("AggregateQualities", aggQualityFact);
+    }
+
 
     // Tentative P
     MUELU_KOKKOS_FACTORY(Ptent, TentativePFactory, TentativePFactory_kokkos);
@@ -2232,6 +2252,10 @@ namespace MueLu {
             << "You may want to check \"number of equations\" (or \"PDE equations\" for factory style list) parameter." << std::endl;
 
       A.SetFixedBlockSize(blockSize_, dofOffset_);
+
+#ifdef HAVE_MUELU_DEBUG
+      MatrixUtils::checkLocalRowMapMatchesColMap(A);
+#endif // HAVE_MUELU_DEBUG
 
     } catch (std::bad_cast& e) {
       this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;

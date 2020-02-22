@@ -508,26 +508,26 @@ SET(HEADERS ${HEADERS}
   kokkos/Stokhos_Update.hpp
   kokkos/Stokhos_MatrixMarket.hpp
   )
-IF(Kokkos_ENABLE_Serial)
+IF(Kokkos_ENABLE_SERIAL)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)
   SET(HEADERS ${HEADERS}
     kokkos/Serial/Stokhos_Serial_CrsProductTensor.hpp
     )
 ENDIF()
-IF(Kokkos_ENABLE_Pthread)
+IF(Kokkos_ENABLE_PTHREAD)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
   SET(HEADERS ${HEADERS}
     kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
     )
 ENDIF()
-IF(Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_OPENMP)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/OpenMP)
   SET(HEADERS ${HEADERS}
     kokkos/OpenMP/Stokhos_OpenMP_CrsProductTensor.hpp
     kokkos/OpenMP/Stokhos_OpenMP_MKL_CrsMatrix.hpp
     )
 ENDIF()
-IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_CUDA)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
   SET(HEADERS ${HEADERS}
     kokkos/Cuda/Stokhos_Cuda_DeviceProp.hpp
@@ -652,6 +652,9 @@ IF (Stokhos_ENABLE_Sacado)
     LIST(APPEND SACADO_HEADERS
       sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
       sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits.hpp
+      sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits_vector_relops_tmpl.hpp
+      sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits_expr_relops_tmpl.hpp
+      sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits_sfs_relops_tmpl.hpp      
       sacado/kokkos/vector/Sacado_MP_Vector.hpp
       sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
       sacado/kokkos/vector/Sacado_MP_ScalarTraitsImp.hpp
@@ -668,6 +671,8 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
       sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
       sacado/kokkos/vector/Kokkos_Parallel_MP_Vector.hpp
+      sacado/kokkos/vector/KokkosBlas_MP_Vector.hpp
+      sacado/kokkos/vector/KokkosBlas3_gemm_MP_Vector.hpp
       sacado/kokkos/vector/Teuchos_BLAS_MP_Vector.hpp
       sacado/kokkos/vector/Teuchos_LAPACK_MP_Vector.hpp
       sacado/kokkos/vector/Teuchos_SerialQRDenseSolver_MP_Vector.hpp
@@ -898,6 +903,11 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/vector/belos/Belos_SolverManager_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_PseudoBlockCGIter_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_StatusTest_GenResNorm_MP_Vector.hpp
+          sacado/kokkos/vector/belos/Belos_StatusTest_ImpResNorm_MP_Vector.hpp
+          sacado/kokkos/vector/belos/Belos_PseudoBlockGmresIter_MP_Vector.hpp
+          sacado/kokkos/vector/belos/Belos_DGKS_OrthoManager_MP_Vector.hpp
+          sacado/kokkos/vector/belos/Belos_ICGS_OrthoManager_MP_Vector.hpp
+          sacado/kokkos/vector/belos/Belos_IMGS_OrthoManager_MP_Vector.hpp
           )
       ENDIF()
       IF(Stokhos_ENABLE_PCE_Scalar_Type)

@@ -409,6 +409,7 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     auto stepperSC = rcp(new Tempus::StepperSubcycling<double>());
     auto stepperFE = sf->createStepperForwardEuler(explicitModel,Teuchos::null);
     stepperFE->setUseFSAL(false);
+    stepperFE->initialize();
     stepperSC->setSubcyclingStepper(stepperFE);
 
     stepperSC->setSubcyclingMinTimeStep      (0.00001);

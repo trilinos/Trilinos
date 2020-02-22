@@ -24,10 +24,11 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -55,6 +56,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -194,10 +196,11 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -225,6 +228,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -339,10 +343,11 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -370,6 +375,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]

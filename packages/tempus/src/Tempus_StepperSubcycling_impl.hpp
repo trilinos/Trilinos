@@ -218,6 +218,69 @@ void StepperSubcycling<Scalar>::setSubcyclingPrintDtChanges(
 
 
 template<class Scalar>
+Teuchos::RCP<const Stepper<Scalar> >
+StepperSubcycling<Scalar>::getSubcyclingStepper() const
+{ return scIntegrator_->getStepper(); }
+
+
+template<class Scalar>
+Scalar StepperSubcycling<Scalar>::getSubcyclingMinTimeStep() const
+{ return scIntegrator_->getTimeStepControl()->getMinTimeStep(); }
+
+
+template<class Scalar>
+Scalar StepperSubcycling<Scalar>::getSubcyclingInitTimeStep() const
+{ return scIntegrator_->getTimeStepControl()->getInitTimeStep(); }
+
+
+template<class Scalar>
+Scalar StepperSubcycling<Scalar>::getSubcyclingMaxTimeStep() const
+{ return scIntegrator_->getTimeStepControl()->getMaxTimeStep(); }
+
+
+template<class Scalar>
+std::string StepperSubcycling<Scalar>::getSubcyclingStepType() const
+{ return scIntegrator_->getTimeStepControl()->getStepType(); }
+
+
+template<class Scalar>
+int StepperSubcycling<Scalar>::getSubcyclingMaxFailures() const
+{ return scIntegrator_->getTimeStepControl()->getMaxFailures(); }
+
+
+template<class Scalar>
+int StepperSubcycling<Scalar>::getSubcyclingMaxConsecFailures() const
+{ return scIntegrator_->getTimeStepControl()->getMaxConsecFailures(); }
+
+
+template<class Scalar>
+int StepperSubcycling<Scalar>::getSubcyclingScreenOutputIndexInterval() const
+{ return scIntegrator_->getScreenOutputIndexInterval(); }
+
+
+template<class Scalar>
+std::string StepperSubcycling<Scalar>::getSubcyclingScreenOutputIndexList() const
+{ return scIntegrator_->getScreenOutputIndexList(); }
+
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControlStrategy<Scalar> >
+StepperSubcycling<Scalar>::getSubcyclingTimeStepControlStrategy() const
+{ return scIntegrator_->getTimeStepControl()->getTimeStepControlStrategy(); }
+
+
+template<class Scalar>
+Teuchos::RCP<IntegratorObserver<Scalar> >
+StepperSubcycling<Scalar>::getSubcyclingIntegratorObserver() const
+{ return scIntegrator_->getObserver(); }
+
+
+template<class Scalar>
+bool StepperSubcycling<Scalar>::getSubcyclingPrintDtChanges() const
+{ return scIntegrator_->getTimeStepControl()->getPrintDtChanges(); }
+
+
+template<class Scalar>
 void StepperSubcycling<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
@@ -390,7 +453,6 @@ void StepperSubcycling<Scalar>::takeStep(
     scTSC->setInitTime   (currentState->getTime());
     scTSC->setInitIndex  (0);
     scTSC->setFinalTime  (workingState->getTime());
-    scTSC->setMaxTimeStep(workingState->getTimeStep());
 
     auto subcyclingState = currentState->clone();
     subcyclingState->setTimeStep(scTSC->getInitTimeStep());

@@ -42,9 +42,6 @@
 // A simple performance test that computes the derivative of a simple
 // expression using many variants of Fad.
 
-template <>
-Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage<double>::defaultPool_ = NULL;
-
 void FAD::error(const char *msg) {
   std::cout << msg << std::endl;
 }
@@ -143,11 +140,6 @@ int main(int argc, char* argv[]) {
     if(parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL)
       return 1;
 
-    // Memory pool & manager
-    Sacado::Fad::MemPoolManager<double> poolManager(10);
-    Sacado::Fad::MemPool* pool = poolManager.getMemoryPool(nderiv);
-    Sacado::Fad::DMFad<double>::setDefaultPool(pool);
-
     std::cout.setf(std::ios::scientific);
     std::cout.precision(p);
     std::cout << "Times (sec) for nderiv = " << nderiv
@@ -173,9 +165,6 @@ int main(int argc, char* argv[]) {
 
     t = do_time< Sacado::Fad::DFad<double> >(nderiv, nloop);
     std::cout << "DFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
-
-    t = do_time< Sacado::Fad::DMFad<double> >(nderiv, nloop);
-    std::cout << "DMFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
     t = do_time< Sacado::ELRFad::SFad<double,10> >(nderiv, nloop);
     std::cout << "ELRSFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;

@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -53,7 +51,10 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_checkGlobalError.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <typeinfo>
 #include <memory>
 #include <sstream>
@@ -276,36 +277,26 @@ namespace Tpetra {
             const CombineMode CM,
             const bool restrictedMode)
   {
+    using Details::Behavior;
     using std::endl;
     const char modeString[] = "doImport (forward mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
     // runs with large numbers of MPI processes.
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "Proc " << myRank << ": Tpetra::DistObject::doTransfer: ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
+      prefix = this->createPrefix("DistObject", modeString);
       std::ostringstream os;
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, importer, modeString, DoForward, CM, restrictedMode);
+    this->doTransfer (source, importer, modeString, DoForward, CM,
+                      restrictedMode);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Done!" << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
@@ -318,37 +309,26 @@ namespace Tpetra {
             const CombineMode CM,
             const bool restrictedMode)
   {
+    using Details::Behavior;
     using std::endl;
     const char modeString[] = "doExport (forward mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
     // runs with large numbers of MPI processes.
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
+      prefix = this->createPrefix("DistObject", modeString);
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, exporter, modeString, DoForward, CM, restrictedMode);
+    this->doTransfer (source, exporter, modeString, DoForward, CM,
+                      restrictedMode);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
-         << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
@@ -361,37 +341,26 @@ namespace Tpetra {
             const CombineMode CM,
             const bool restrictedMode)
   {
+    using Details::Behavior;
     using std::endl;
     const char modeString[] = "doImport (reverse mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
     // runs with large numbers of MPI processes.
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
+      prefix = this->createPrefix("DistObject", modeString);
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, exporter, modeString, DoReverse, CM, restrictedMode);
+    this->doTransfer (source, exporter, modeString, DoReverse, CM,
+                      restrictedMode);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
-         << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
@@ -404,37 +373,26 @@ namespace Tpetra {
             const CombineMode CM,
             const bool restrictedMode)
   {
+    using Details::Behavior;
     using std::endl;
     const char modeString[] = "doExport (reverse mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
     // runs with large numbers of MPI processes.
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
+      prefix = this->createPrefix("DistObject", modeString);
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, importer, modeString, DoReverse, CM, restrictedMode);
+    this->doTransfer (source, importer, modeString, DoReverse, CM,
+                      restrictedMode);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
-         << endl;
+      os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
   }
@@ -463,23 +421,21 @@ namespace Tpetra {
               const CombineMode CM,
               bool restrictedMode)
   {
-    using ::Tpetra::Details::getDualViewCopyFromArrayView;
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::Behavior;
+    using Details::getDualViewCopyFromArrayView;
+    using Details::ProfilingRegion;
     using std::endl;
+    const char funcName[] = "Tpetra::DistObject::doTransfer";
 
-    ProfilingRegion region_doTransfer ("Tpetra::DistObject::doTransfer");
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    ProfilingRegion region_doTransfer(funcName);
+    const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      auto map = this->getMap ();
-      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
-      const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Tpetra::DistObject::doTransfer: ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-      os << *prefix << "Source type: " << typeid (src).name ()
-         << ", Target type: " << typeid (*this).name () << endl;
-      std::cerr << os.str ();
+      prefix = this->createPrefix("DistObject", "doTransfer");
+      os << *prefix << "Source type: " << Teuchos::typeName(src)
+         << ", Target type: " << Teuchos::typeName(*this) << endl;
+      std::cerr << os.str();
     }
 
     // "Restricted Mode" does two things:
@@ -492,9 +448,9 @@ namespace Tpetra {
 
     // mfh 18 Oct 2017: Set TPETRA_DEBUG to true to enable extra debug
     // checks.  These may communicate more.
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    const bool debug = Behavior::debug("DistObject");
     if (debug) {
-      if (!restrictedMode && revOp == DoForward) {
+      if (! restrictedMode && revOp == DoForward) {
         const bool myMapSameAsTransferTgtMap =
           this->getMap ()->isSameAs (* (transfer.getTargetMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -504,7 +460,7 @@ namespace Tpetra {
            "(in the sense of Tpetra::Map::isSameAs) as the input "
            "Export/Import object's target Map.");
       }
-      else if (!restrictedMode && revOp == DoReverse) {
+      else if (! restrictedMode && revOp == DoReverse) {
         const bool myMapSameAsTransferSrcMap =
           this->getMap ()->isSameAs (* (transfer.getSourceMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -572,37 +528,32 @@ namespace Tpetra {
        "Tpetra::DistObject::" << modeString << ": Transfer object "
        "cannot have permutes in restricted mode.");
 
-const bool useTheNewInterface = true;
-
-    if (useTheNewInterface) {
-      using ::Tpetra::Details::Behavior;
-      // Do we need all communication buffers to live on host?
-      const bool commOnHost = ! Behavior::assumeMpiIsCudaAware ();
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "doTransfer: Use new interface; "
-          "commOnHost=" << (commOnHost ? "true" : "false") << endl;
-        std::cerr << os.str ();
-      }
-
-      using const_lo_dv_type =
-        Kokkos::DualView<const local_ordinal_type*, buffer_device_type>;
-      const_lo_dv_type permToLIDs = (revOp == DoForward) ?
-        transfer.getPermuteToLIDs_dv () :
-        transfer.getPermuteFromLIDs_dv ();
-      const_lo_dv_type permFromLIDs = (revOp == DoForward) ?
-        transfer.getPermuteFromLIDs_dv () :
-        transfer.getPermuteToLIDs_dv ();
-      const_lo_dv_type remoteLIDs = (revOp == DoForward) ?
-        transfer.getRemoteLIDs_dv () :
-        transfer.getExportLIDs_dv ();
-      const_lo_dv_type exportLIDs = (revOp == DoForward) ?
-        transfer.getExportLIDs_dv () :
-        transfer.getRemoteLIDs_dv ();
-      doTransferNew (src, CM, numSameIDs, permToLIDs, permFromLIDs,
-                     remoteLIDs, exportLIDs, distor, revOp, commOnHost,restrictedMode);
+    // Do we need all communication buffers to live on host?
+    const bool commOnHost = ! Behavior::assumeMpiIsCudaAware ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "doTransfer: Use new interface; "
+        "commOnHost=" << (commOnHost ? "true" : "false") << endl;
+      std::cerr << os.str ();
     }
 
+    using const_lo_dv_type =
+      Kokkos::DualView<const local_ordinal_type*, buffer_device_type>;
+    const_lo_dv_type permToLIDs = (revOp == DoForward) ?
+      transfer.getPermuteToLIDs_dv () :
+      transfer.getPermuteFromLIDs_dv ();
+    const_lo_dv_type permFromLIDs = (revOp == DoForward) ?
+      transfer.getPermuteFromLIDs_dv () :
+      transfer.getPermuteToLIDs_dv ();
+    const_lo_dv_type remoteLIDs = (revOp == DoForward) ?
+      transfer.getRemoteLIDs_dv () :
+      transfer.getExportLIDs_dv ();
+    const_lo_dv_type exportLIDs = (revOp == DoForward) ?
+      transfer.getExportLIDs_dv () :
+      transfer.getRemoteLIDs_dv ();
+    doTransferNew (src, CM, numSameIDs, permToLIDs, permFromLIDs,
+                   remoteLIDs, exportLIDs, distor, revOp, commOnHost,
+                   restrictedMode);
 
     if (verbose) {
       std::ostringstream os;
@@ -641,8 +592,9 @@ const bool useTheNewInterface = true;
   reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
                                     const size_t numImportLIDs)
   {
-    using ::Tpetra::Details::reallocDualViewIfNeeded;
+    using Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
+    using ::Tpetra::Details::reallocDualViewIfNeeded;
     using std::endl;
     // If an array is already allocated, and if is at least
     // tooBigFactor times bigger than it needs to be, free it and
@@ -650,34 +602,24 @@ const bool useTheNewInterface = true;
     // Otherwise, take subviews to reduce allocation size.
     constexpr size_t tooBigFactor = 10;
 
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      const int myRank = [&] () {
-        auto map = this->getMap ();
-        if (map.get () == nullptr) {
-          return -1;
-        }
-        auto comm = map->getComm ();
-        if (comm.get () == nullptr) {
-          return -2;
-        }
-        return comm->getRank ();
-      } ();
+      prefix = this->createPrefix("DistObject",
+        "reallocArraysForNumPacketsPerLid");
       std::ostringstream os;
-      os << "Proc " << myRank << ": reallocArraysForNumPacketsPerLid("
-         << numExportLIDs << ", " << numImportLIDs << "): ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-    }
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "before:" << endl
-         << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
-                                               "numExportPacketsPerLID_")
+      os << *prefix
+         << "numExportLIDs: " << numExportLIDs
+         << ", numImportLIDs: " << numImportLIDs
+         << endl;
+      os << *prefix << "DualView status before:" << endl
+         << *prefix
+         << dualViewStatusToString (this->numExportPacketsPerLID_,
+                                    "numExportPacketsPerLID_")
          << endl
-         << *prefix << dualViewStatusToString (this->numImportPacketsPerLID_,
-                                               "numImportPacketsPerLID_")
+         << *prefix
+         << dualViewStatusToString (this->numImportPacketsPerLID_,
+                                    "numImportPacketsPerLID_")
          << endl;
       std::cerr << os.str ();
     }
@@ -703,7 +645,7 @@ const bool useTheNewInterface = true;
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "after:" << endl
+      os << *prefix << "DualView status after:" << endl
          << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
                                                "numExportPacketsPerLID_")
          << endl
@@ -735,9 +677,10 @@ const bool useTheNewInterface = true;
                  const bool commOnHost,
                  const bool restrictedMode)
   {
+    using Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::getArrayViewFromDualView;
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::ProfilingRegion;
     using Kokkos::Compat::getArrayView;
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
@@ -745,25 +688,22 @@ const bool useTheNewInterface = true;
     using std::endl;
     using DT = device_type;
     using DES = typename DT::execution_space;
+    const char funcName[] = "Tpetra::DistObject::doTransferNew";
 
-    ProfilingRegion region_dTN ("Tpetra::DistObject::doTransferNew");
+    ProfilingRegion region_dTN(funcName);
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in favor
     // of Kokkos profiling.
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    const bool debug = Behavior::debug("DistObject");
+    const bool verbose = Behavior::verbose("DistObject");
     // Prefix for verbose output.  Use a pointer, so we don't pay for
     // string construction unless needed.  We set this below.
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      auto map = this->getMap ();
-      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
-      const int myRank = comm.is_null () ? 0 : comm->getRank ();
-      std::ostringstream os;
-      os << "Proc " << myRank << ": Tpetra::CrsMatrix::doTransferNew: ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      prefix = this->createPrefix("DistObject", "doTransferNew");
     }
 
     if (verbose) {
@@ -1227,16 +1167,36 @@ const bool useTheNewInterface = true;
         Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-        // NOTE (mfh 26 Apr 2016) We don't actually need to sync the
-        // input DualViews, but they DO need to be most recently
-        // updated in the same memory space.
-        //
-        // FIXME (mfh 26 Apr 2016) Check that all input DualViews
-        // were most recently updated in the same memory space, and
-        // sync them to the same place (based on commOnHost) if not.
-        this->unpackAndCombine (remoteLIDs, this->imports_,
-                                this->numImportPacketsPerLID_,
-                                constantNumPackets, distor, CM);
+        if (debug) {
+          std::ostringstream lclErrStrm;
+          bool lclSuccess = false;
+          try {
+            this->unpackAndCombine (remoteLIDs, this->imports_,
+                                    this->numImportPacketsPerLID_,
+                                    constantNumPackets, distor, CM);
+            lclSuccess = true;
+          }
+          catch (std::exception& e) {
+            lclErrStrm << "unpackAndCombine threw an exception: "
+                       << endl << e.what();
+          }
+          catch (...) {
+            lclErrStrm << "unpackAndCombine threw an exception "
+              "not a subclass of std::exception.";
+          }
+          const char gblErrMsgHeader[] = "Tpetra::DistObject::"
+            "doTransferNew threw an exception in unpackAndCombine on "
+            "one or more processes in the DistObject's communicator.";
+          auto comm = getMap()->getComm();
+          Details::checkGlobalError(std::cerr, lclSuccess,
+                                    lclErrStrm.str().c_str(),
+                                    gblErrMsgHeader, *comm);
+        }
+        else {
+          this->unpackAndCombine (remoteLIDs, this->imports_,
+                                  this->numImportPacketsPerLID_,
+                                  constantNumPackets, distor, CM);
+        }
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1312,6 +1272,27 @@ const bool useTheNewInterface = true;
 
     RCP<FancyOStream> out = getFancyOStream (rcpFromRef (os));
     this->describe (*out, Teuchos::VERB_DEFAULT);
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::unique_ptr<std::string>
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  createPrefix(const char className[],
+               const char methodName[]) const
+  {
+    int myRank = -1;
+    auto map = this->getMap();
+    if (! map.is_null()) {
+      auto comm = map->getComm();
+      if (! comm.is_null()) {
+        myRank = comm->getRank();
+      }
+    }
+    std::ostringstream pfxStrm;
+    pfxStrm << "Proc " << myRank << ": Tpetra::" << className
+            << "::" << methodName << ": ";
+    return std::unique_ptr<std::string>(
+      new std::string(pfxStrm.str()));
   }
 
   template<class DistObjectType>
