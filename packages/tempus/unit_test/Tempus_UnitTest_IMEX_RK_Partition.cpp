@@ -40,6 +40,8 @@ using Tempus::StepperExplicitRK;
 // Comment out any of the following tests to exclude from build/run.
 #define CONSTRUCTION
 #define STEPPERFACTORY_CONSTRUCTION
+#define STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST
+#define STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
 
 
 #ifdef CONSTRUCTION
@@ -128,6 +130,58 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partition, StepperFactory_Construction)
   testFactoryConstruction("Partitioned IMEX RK SSP2", model);
 }
 #endif // STEPPERFACTORY_CONSTRUCTION
+
+
+#ifdef STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction_General_wo_Parameterlist)
+{
+  // Setup the explicit VanDerPol ModelEvaluator
+  const bool useProductVector = true;
+  auto explicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ExplicitModel<double>(Teuchos::null, useProductVector));
+  auto implicitModel = rcp(new Tempus_Test::VanDerPol_IMEXPart_ImplicitModel<double>());
+
+  // Setup the IMEX Pair ModelEvaluator
+  const int numExplicitBlocks = 1;
+  const int parameterIndex = 4;
+  auto model = rcp(new Tempus::WrapperModelEvaluatorPairPartIMEX_Basic<double>(
+                         explicitModel, implicitModel,
+                         numExplicitBlocks, parameterIndex));
+
+  RCP<StepperFactory<double> > sf = Teuchos::rcp(new StepperFactory<double>());
+
+  auto stepper = sf->createStepper("General Partitioned IMEX RK", model);
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+}
+#endif // STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST
+
+
+#ifdef STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(IMEX_RK, StepperFactory_Construction_General_wo_Parameterlist_Model)
+{
+  // Setup the explicit VanDerPol ModelEvaluator
+  const bool useProductVector = true;
+  auto explicitModel = rcp(new Tempus_Test::VanDerPol_IMEX_ExplicitModel<double>(Teuchos::null, useProductVector));
+  auto implicitModel = rcp(new Tempus_Test::VanDerPol_IMEXPart_ImplicitModel<double>());
+
+  // Setup the IMEX Pair ModelEvaluator
+  const int numExplicitBlocks = 1;
+  const int parameterIndex = 4;
+  auto model = rcp(new Tempus::WrapperModelEvaluatorPairPartIMEX_Basic<double>(
+                         explicitModel, implicitModel,
+                         numExplicitBlocks, parameterIndex));
+
+  RCP<StepperFactory<double> > sf = Teuchos::rcp(new StepperFactory<double>());
+
+  auto stepper = sf->createStepper("General Partitioned IMEX RK");
+  stepper->setModel(model);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+}
+#endif // STEPPERFACTORY_CONSTRUCTION_GENERAL_WO_PARAMETERLIST_MODEL
 
 
 } // namespace Tempus_Test
