@@ -141,6 +141,9 @@
         
 \cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
         
+\cbb{aggregation: pairwise: size}{int}{8}{Target size for pairwise aggregation.  The number
+      of pairwise steps used will be log base-2 of this number.}
+        
 \cbb{aggregate qualities: check symmetry}{bool}{false}{Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.}
         
 \cbb{aggregate qualities: good aggregate threshold}{double}{100.0}{Maximum quality where aggregate is considered acceptable.}

@@ -225,6 +225,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: coarsening rate\" type=\"string\" value=\"{3}\"/>"
   "<Parameter name=\"aggregation: number of spatial dimensions\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"aggregation: coarsening order\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: pairwise: size\" type=\"int\" value=\"8\"/>"
   "<Parameter name=\"aggregate qualities: check symmetry\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregate qualities: good aggregate threshold\" type=\"double\" value=\"100.0\"/>"
   "<Parameter name=\"aggregate qualities: file output\" type=\"bool\" value=\"false\"/>"
@@ -623,6 +624,8 @@ namespace MueLu {
          ("aggregation: number of spatial dimensions","aggregation: number of spatial dimensions")
       
          ("aggregation: coarsening order","aggregation: coarsening order")
+      
+         ("aggregation: pairwise: size","aggregation: pairwise: size")
       
          ("aggregate qualities: check symmetry","aggregate qualities: check symmetry")
       
