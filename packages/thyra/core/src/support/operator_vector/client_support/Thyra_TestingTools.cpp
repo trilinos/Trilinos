@@ -81,20 +81,6 @@ void Thyra::printTestResults(
 }
 
 
-void Thyra::printTestResults(
-  const bool result,
-  const std::string &test_summary,
-  const bool show_all_tests,
-  bool *success,
-  std::ostream *out
-  )
-{
-  using Teuchos::ptr;
-  printTestResults(result, test_summary, show_all_tests,
-    ptr(success), ptr(out));
-}
-
-
 // TestResultsPrinter
 
 
