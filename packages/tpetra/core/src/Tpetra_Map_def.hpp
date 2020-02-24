@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -76,16 +74,18 @@ namespace { // (anonymous)
                       const ExecutionSpace& execSpace,
                       const Teuchos::Comm<int>* const comm)
   {
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    using Tpetra::Details::Behavior;
+
+    const bool debug = Behavior::debug("Map");
     if (debug) {
-      using ::Tpetra::Details::pointerAccessibleFromExecutionSpace;
+      using Tpetra::Details::pointerAccessibleFromExecutionSpace;
       using Teuchos::outArg;
       using Teuchos::REDUCE_MIN;
       using Teuchos::reduceAll;
       using std::endl;
 
       const int myRank = comm == nullptr ? 0 : comm->getRank ();
-      const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+      const bool verbose = Behavior::verbose("Map");
       std::ostringstream lclErrStrm;
       int lclSuccess = 1;
 
@@ -172,49 +172,64 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_MAX;
     using Teuchos::typeName;
+    using std::endl;
     using GO = global_ordinal_type;
     using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
+    const char funcName[] = "Map(gblNumInds,indexBase,comm,LG)";
+    const char exPfx[] =
+      "Tpetra::Map::Map(gblNumInds,indexBase,comm,LG): ";
 
+    const bool debug = Details::Behavior::debug("Map");
+    const bool verbose = Details::Behavior::verbose("Map");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(
+        comm_.getRawPtr(), "Map", funcName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
     Tpetra::Details::initializeKokkos ();
 
-#ifdef HAVE_TPETRA_DEBUG
     // In debug mode only, check whether numGlobalElements and
     // indexBase are the same over all processes in the communicator.
-    {
+    if (debug) {
       GST proc0NumGlobalElements = numGlobalElements;
-      broadcast<int, GST> (*comm_, 0, outArg (proc0NumGlobalElements));
+      broadcast(*comm_, 0, outArg(proc0NumGlobalElements));
       GST minNumGlobalElements = numGlobalElements;
       GST maxNumGlobalElements = numGlobalElements;
-      reduceAll<int, GST> (*comm, REDUCE_MIN, numGlobalElements, outArg (minNumGlobalElements));
-      reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements, outArg (maxNumGlobalElements));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        minNumGlobalElements != maxNumGlobalElements || numGlobalElements != minNumGlobalElements,
-        std::invalid_argument,
-        "Tpetra::Map constructor: All processes must provide the same number "
-        "of global elements.  Process 0 set numGlobalElements = "
-        << proc0NumGlobalElements << ".  The calling process "
-        << comm->getRank () << " set numGlobalElements = " << numGlobalElements
-        << ".  The min and max values over all processes are "
-        << minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
+      reduceAll(*comm, REDUCE_MIN, numGlobalElements,
+                outArg(minNumGlobalElements));
+      reduceAll(*comm, REDUCE_MAX, numGlobalElements,
+                outArg(maxNumGlobalElements));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (minNumGlobalElements != maxNumGlobalElements ||
+         numGlobalElements != minNumGlobalElements,
+         std::invalid_argument, exPfx << "All processes must "
+         "provide the same number of global elements.  Process 0 set "
+         "numGlobalElements="<< proc0NumGlobalElements << ".  The "
+         "calling process " << comm->getRank() << " set "
+         "numGlobalElements=" << numGlobalElements << ".  The min "
+         "and max values over all processes are "
+         << minNumGlobalElements << " resp. " << maxNumGlobalElements
+         << ".");
 
       GO proc0IndexBase = indexBase;
       broadcast<int, GO> (*comm_, 0, outArg (proc0IndexBase));
       GO minIndexBase = indexBase;
       GO maxIndexBase = indexBase;
-      reduceAll<int, GO> (*comm, REDUCE_MIN, indexBase, outArg (minIndexBase));
-      reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        minIndexBase != maxIndexBase || indexBase != minIndexBase,
-        std::invalid_argument,
-        "Tpetra::Map constructor: "
-        "All processes must provide the same indexBase argument.  "
-        "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-        "process " << comm->getRank () << " set indexBase = " << indexBase
-        << ".  The min and max values over all processes are "
-        << minIndexBase << " resp. " << maxIndexBase << ".");
+      reduceAll(*comm, REDUCE_MIN, indexBase, outArg(minIndexBase));
+      reduceAll(*comm, REDUCE_MAX, indexBase, outArg(maxIndexBase));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (minIndexBase != maxIndexBase || indexBase != minIndexBase,
+         std::invalid_argument, exPfx << "All processes must "
+         "provide the same indexBase argument.  Process 0 set "
+         "indexBase=" << proc0IndexBase << ".  The calling process "
+         << comm->getRank() << " set indexBase=" << indexBase
+         << ".  The min and max values over all processes are "
+         << minIndexBase << " resp. " << maxIndexBase << ".");
     }
-#endif // HAVE_TPETRA_DEBUG
 
     // Distribute the elements across the processes in the given
     // communicator so that global IDs (GIDs) are
@@ -235,18 +250,18 @@ namespace Tpetra {
     // later decide to make GST signed.
     TEUCHOS_TEST_FOR_EXCEPTION(
       (numGlobalElements < 1 && numGlobalElements != 0),
-      std::invalid_argument,
-      "Tpetra::Map constructor: numGlobalElements (= "
+      std::invalid_argument, exPfx << "numGlobalElements (= "
       << numGlobalElements << ") must be nonnegative.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numGlobalElements == GSTI, std::invalid_argument,
-      "Tpetra::Map constructor: You provided numGlobalElements = Teuchos::"
-      "OrdinalTraits<Tpetra::global_size_t>::invalid().  This version of the "
-      "constructor requires a valid value of numGlobalElements.  You "
-      "probably mistook this constructor for the \"contiguous nonuniform\" "
-      "constructor, which can compute the global number of elements for you "
-      "if you set numGlobalElements to that value.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (numGlobalElements == GSTI, std::invalid_argument, exPfx <<
+       "You provided numGlobalElements = Teuchos::OrdinalTraits<"
+       "Tpetra::global_size_t>::invalid().  This version of the "
+       "constructor requires a valid value of numGlobalElements.  "
+       "You probably mistook this constructor for the \"contiguous "
+       "nonuniform\" constructor, which can compute the global "
+       "number of elements for you if you set numGlobalElements to "
+       "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid().");
 
     size_t numLocalElements = 0; // will set below
     if (lOrG == GloballyDistributed) {
@@ -305,6 +320,12 @@ namespace Tpetra {
 
     // Create the Directory on demand in getRemoteIndexList().
     //setupDirectory ();
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
 
@@ -326,19 +347,36 @@ namespace Tpetra {
     using Teuchos::REDUCE_MAX;
     using Teuchos::REDUCE_SUM;
     using Teuchos::scan;
+    using std::endl;
     using GO = global_ordinal_type;
     using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
+    const char funcName[] =
+      "Map(gblNumInds,lclNumInds,indexBase,comm)";
+    const char exPfx[] =
+      "Tpetra::Map::Map(gblNumInds,lclNumInds,indexBase,comm): ";
+    const char suffix[] =
+      ".  Please report this bug to the Tpetra developers.";
 
+    const bool debug = Details::Behavior::debug("Map");
+    const bool verbose = Details::Behavior::verbose("Map");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(
+        comm_.getRawPtr(), "Map", funcName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
     Tpetra::Details::initializeKokkos ();
 
-#ifdef HAVE_TPETRA_DEBUG
     // Global sum of numLocalElements over all processes.
     // Keep this for later debug checks.
-    const GST debugGlobalSum =
-      initialNonuniformDebugCheck (numGlobalElements, numLocalElements,
-                                   indexBase, comm);
-#endif // HAVE_TPETRA_DEBUG
+    GST debugGlobalSum {};
+    if (debug) {
+      debugGlobalSum = initialNonuniformDebugCheck(exPfx,
+        numGlobalElements, numLocalElements, indexBase, comm);
+    }
 
     // Distribute the elements across the nodes so that they are
     // - non-overlapping
@@ -357,7 +395,8 @@ namespace Tpetra {
 
     if (numGlobalElements != GSTI) {
       numGlobalElements_ = numGlobalElements; // Use the user's value.
-    } else {
+    }
+    else {
       // Inclusive scan means that the last process has the final sum.
       // Rather than doing a reduceAll to get the sum of
       // numLocalElements, we can just have the last process broadcast
@@ -369,14 +408,13 @@ namespace Tpetra {
       }
       numGlobalElements_ = globalSum;
 
-#ifdef HAVE_TPETRA_DEBUG
-      // No need for an all-reduce here; both come from collectives.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        globalSum != debugGlobalSum, std::logic_error,
-        "Tpetra::Map constructor (contiguous nonuniform): "
-        "globalSum = " << globalSum << " != debugGlobalSum = " << debugGlobalSum
-        << ".  Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
+      if (debug) {
+        // No need for an all-reduce here; both come from collectives.
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (globalSum != debugGlobalSum, std::logic_error, exPfx <<
+           "globalSum = " << globalSum << " != debugGlobalSum = " <<
+           debugGlobalSum << suffix);
+      }
     }
     numLocalElements_ = numLocalElements;
     indexBase_ = indexBase;
@@ -385,13 +423,13 @@ namespace Tpetra {
       indexBase;
     maxAllGID_ = (numGlobalElements_ == 0) ?
       std::numeric_limits<GO>::lowest () :
-      indexBase + static_cast<GO> (numGlobalElements_) - static_cast<GO> (1);
+      indexBase + GO(numGlobalElements_) - GO(1);
     minMyGID_ = (numLocalElements_ == 0) ?
       std::numeric_limits<GO>::max () :
-      indexBase + static_cast<GO> (myOffset);
+      indexBase + GO(myOffset);
     maxMyGID_ = (numLocalElements_ == 0) ?
       std::numeric_limits<GO>::lowest () :
-      indexBase + myOffset + static_cast<GO> (numLocalElements) - static_cast<GO> (1);
+      indexBase + myOffset + GO(numLocalElements) - GO(1);
     firstContiguousGID_ = minMyGID_;
     lastContiguousGID_ = maxMyGID_;
     contiguous_ = true;
@@ -399,17 +437,29 @@ namespace Tpetra {
 
     // Create the Directory on demand in getRemoteIndexList().
     //setupDirectory ();
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  initialNonuniformDebugCheck (const global_size_t numGlobalElements,
-                               const size_t numLocalElements,
-                               const GlobalOrdinal indexBase,
-                               const Teuchos::RCP<const Teuchos::Comm<int> >& comm) const
+  initialNonuniformDebugCheck(
+    const char errorMessagePrefix[],
+    const global_size_t numGlobalElements,
+    const size_t numLocalElements,
+    const global_ordinal_type indexBase,
+    const Teuchos::RCP<const Teuchos::Comm<int>>& comm) const
   {
-#ifdef HAVE_TPETRA_DEBUG
+    const bool debug = Details::Behavior::debug("Map");
+    if (! debug) {
+      return global_size_t(0);
+    }
+
     using Teuchos::broadcast;
     using Teuchos::outArg;
     using Teuchos::ptr;
@@ -417,8 +467,8 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
-    typedef GlobalOrdinal GO;
-    typedef global_size_t GST;
+    using GO = global_ordinal_type;
+    using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     // The user has specified the distribution of indices over the
@@ -443,18 +493,20 @@ namespace Tpetra {
                            outArg (minNumGlobalElements));
       reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements,
                            outArg (maxNumGlobalElements));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        minNumGlobalElements != maxNumGlobalElements ||
-        numGlobalElements != minNumGlobalElements,
-        std::invalid_argument,
-        "Tpetra::Map constructor: All processes must provide the same number "
-        "of global elements.  This is true even if that argument is Teuchos::"
-        "OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
-        "compute the global number of elements.  Process 0 set numGlobalElements"
-        " = " << proc0NumGlobalElements << ".  The calling process "
-        << comm->getRank () << " set numGlobalElements = " << numGlobalElements
-        << ".  The min and max values over all processes are "
-        << minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (minNumGlobalElements != maxNumGlobalElements ||
+         numGlobalElements != minNumGlobalElements,
+         std::invalid_argument, errorMessagePrefix << "All processes "
+         "must provide the same number of global elements, even if "
+         "that argument is "
+         "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() "
+         "(which signals that the Map should compute the global "
+         "number of elements).  Process 0 set numGlobalElements"
+         "=" << proc0NumGlobalElements << ".  The calling process "
+         << comm->getRank() << " set numGlobalElements=" <<
+         numGlobalElements << ".  The min and max values over all "
+         "processes are " << minNumGlobalElements << " resp. " <<
+         maxNumGlobalElements << ".");
 
       GO proc0IndexBase = indexBase;
       broadcast<int, GO> (*comm_, 0, outArg (proc0IndexBase));
@@ -462,49 +514,44 @@ namespace Tpetra {
       GO maxIndexBase = indexBase;
       reduceAll<int, GO> (*comm, REDUCE_MIN, indexBase, outArg (minIndexBase));
       reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        minIndexBase != maxIndexBase || indexBase != minIndexBase,
-        std::invalid_argument,
-        "Tpetra::Map constructor: "
-        "All processes must provide the same indexBase argument.  "
-        "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-        "process " << comm->getRank () << " set indexBase = " << indexBase
-        << ".  The min and max values over all processes are "
-        << minIndexBase << " resp. " << maxIndexBase << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (minIndexBase != maxIndexBase || indexBase != minIndexBase,
+         std::invalid_argument, errorMessagePrefix <<
+         "All processes must provide the same indexBase argument.  "
+         "Process 0 set indexBase = " << proc0IndexBase << ".  The "
+         "calling process " << comm->getRank() << " set indexBase="
+         << indexBase << ".  The min and max values over all "
+         "processes are " << minIndexBase << " resp. " << maxIndexBase
+         << ".");
 
       // Make sure that the sum of numLocalElements over all processes
       // equals numGlobalElements.
       TEUCHOS_TEST_FOR_EXCEPTION
-        (numGlobalElements != GSTI && debugGlobalSum != numGlobalElements,
-         std::invalid_argument, "Tpetra::Map constructor: The sum of each "
-         "process' number of indices over all processes, " << debugGlobalSum
-         << " != numGlobalElements = " << numGlobalElements << ".  If you "
-         "would like this constructor to compute numGlobalElements for you, "
-         "you may set numGlobalElements = "
-         "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.  "
-         "Please note that this is NOT necessarily -1.");
+        (numGlobalElements != GSTI &&
+         debugGlobalSum != numGlobalElements, std::invalid_argument,
+         errorMessagePrefix << "The sum of each process' number of "
+         "indices over all processes, " << debugGlobalSum << ", != "
+         << "numGlobalElements=" << numGlobalElements << ".  If you "
+         "would like this constructor to compute numGlobalElements "
+         "for you, you may set numGlobalElements="
+         "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() "
+         "on input.  Please note that this is NOT necessarily -1.");
     }
-
     return debugGlobalSum;
-#else
-    (void)numGlobalElements;
-    (void)numLocalElements;
-    (void)indexBase;
-    (void)comm;
-    return static_cast<global_size_t> (0);
-#endif // HAVE_TPETRA_DEBUG
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  initWithNonownedHostIndexList (const global_size_t numGlobalElements,
-                                 const Kokkos::View<const GlobalOrdinal*,
-                                   Kokkos::LayoutLeft,
-                                   Kokkos::HostSpace,
-                                   Kokkos::MemoryUnmanaged>& entryList_host,
-                                 const GlobalOrdinal indexBase,
-                                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+  initWithNonownedHostIndexList(
+    const char errorMessagePrefix[],
+    const global_size_t numGlobalElements,
+    const Kokkos::View<const global_ordinal_type*,
+      Kokkos::LayoutLeft,
+      Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged>& entryList_host,
+    const global_ordinal_type indexBase,
+    const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
   {
     using Kokkos::LayoutLeft;
     using Kokkos::subview;
@@ -519,16 +566,16 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
-    using LO = LocalOrdinal;
-    using GO = GlobalOrdinal;
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
     using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
       (! Kokkos::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
+       errorMessagePrefix << "The Kokkos execution space "
+       << Teuchos::TypeNameTraits<execution_space>::name()
        << " has not been initialized.  "
        "Please initialize it before creating a Map.")
 
@@ -543,10 +590,10 @@ namespace Tpetra {
     // of local indices on a process can be stored in a size_t;
     // numLocalElements_ is a size_t, so this variable and that should
     // have the same type.
-    const size_t numLocalElements = static_cast<size_t> (entryList_host.size ());
+    const size_t numLocalElements(entryList_host.size());
 
-    initialNonuniformDebugCheck (numGlobalElements, numLocalElements,
-                                 indexBase, comm);
+    initialNonuniformDebugCheck(errorMessagePrefix, numGlobalElements,
+                                numLocalElements, indexBase, comm);
 
     // NOTE (mfh 20 Feb 2013, 10 Oct 2016) In some sense, this global
     // reduction is redundant, since the directory Map will have to do
@@ -560,9 +607,9 @@ namespace Tpetra {
       numGlobalElements_ = numGlobalElements; // Use the user's value.
     }
     else { // The user wants us to compute the sum.
-      reduceAll<int, GST> (*comm, REDUCE_SUM,
-                           static_cast<GST> (numLocalElements),
-                           outArg (numGlobalElements_));
+      reduceAll(*comm, REDUCE_SUM,
+                static_cast<GST>(numLocalElements),
+                outArg(numGlobalElements_));
     }
 
     // mfh 20 Feb 2013: We've never quite done the right thing for
@@ -789,6 +836,19 @@ namespace Tpetra {
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
+    using std::endl;
+    const char funcName[] =
+      "Map(gblNumInds,indexList,indexListSize,indexBase,comm)";
+
+    const bool verbose = Details::Behavior::verbose("Map");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(
+        comm_.getRawPtr(), "Map", funcName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
     Tpetra::Details::initializeKokkos ();
     checkMapInputArray ("(GST, const GO[], LO, GO, comm)",
                         indexList, static_cast<size_t> (indexListSize),
@@ -802,9 +862,14 @@ namespace Tpetra {
                  Kokkos::LayoutLeft,
                  Kokkos::HostSpace,
                  Kokkos::MemoryUnmanaged> inds (indsRaw, indexListSize);
-    initWithNonownedHostIndexList (numGlobalElements, inds, indexBase, comm);
+    initWithNonownedHostIndexList(funcName, numGlobalElements, inds,
+                                  indexBase, comm);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -816,6 +881,19 @@ namespace Tpetra {
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
+    using std::endl;
+    const char funcName[] =
+      "Map(gblNumInds,entryList(Teuchos::ArrayView),indexBase,comm)";
+
+    const bool verbose = Details::Behavior::verbose("Map");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(
+        comm_.getRawPtr(), "Map", funcName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
     Tpetra::Details::initializeKokkos ();
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
     checkMapInputArray ("(GST, ArrayView, GO, comm)",
@@ -831,7 +909,13 @@ namespace Tpetra {
                  Kokkos::LayoutLeft,
                  Kokkos::HostSpace,
                  Kokkos::MemoryUnmanaged> inds (indsRaw, numLclInds);
-    initWithNonownedHostIndexList (numGlobalElements, inds, indexBase, comm);
+    initWithNonownedHostIndexList(funcName, numGlobalElements, inds,
+                                  indexBase, comm);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -860,11 +944,23 @@ namespace Tpetra {
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
     using Teuchos::typeName;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef global_size_t GST;
+    using std::endl;
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
+    using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
+    const char funcName[] =
+      "Map(gblNumInds,entryList(Kokkos::View),indexBase,comm)";
 
+    const bool verbose = Details::Behavior::verbose("Map");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(
+        comm_.getRawPtr(), "Map", funcName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
     Tpetra::Details::initializeKokkos ();
     checkMapInputArray ("(GST, Kokkos::View, GO, comm)",
                         entryList.data (),
@@ -882,10 +978,10 @@ namespace Tpetra {
     // of local indices on a process can be stored in a size_t;
     // numLocalElements_ is a size_t, so this variable and that should
     // have the same type.
-    const size_t numLocalElements = static_cast<size_t> (entryList.size ());
+    const size_t numLocalElements(entryList.size());
 
-    initialNonuniformDebugCheck (numGlobalElements, numLocalElements,
-                                 indexBase, comm);
+    initialNonuniformDebugCheck(funcName, numGlobalElements,
+                                numLocalElements, indexBase, comm);
 
     // NOTE (mfh 20 Feb 2013, 10 Oct 2016) In some sense, this global
     // reduction is redundant, since the directory Map will have to do
@@ -899,9 +995,9 @@ namespace Tpetra {
       numGlobalElements_ = numGlobalElements; // Use the user's value.
     }
     else { // The user wants us to compute the sum.
-      reduceAll<int, GST> (*comm, REDUCE_SUM,
-                           static_cast<GST> (numLocalElements),
-                           outArg (numGlobalElements_));
+      reduceAll(*comm, REDUCE_SUM,
+                static_cast<GST>(numLocalElements),
+                outArg(numGlobalElements_));
     }
 
     // mfh 20 Feb 2013: We've never quite done the right thing for
@@ -1109,6 +1205,12 @@ namespace Tpetra {
 
     // Create the Directory on demand in getRemoteIndexList().
     //setupDirectory ();
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
 
@@ -1162,7 +1264,6 @@ namespace Tpetra {
     // Tpetra::finalize.
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::isOneToOne () const
@@ -1176,7 +1277,6 @@ namespace Tpetra {
     setupDirectory ();
     return directory_->isOneToOne (*this);
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
@@ -1335,8 +1435,8 @@ namespace Tpetra {
   locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
   {
     using Teuchos::ArrayView;
-    typedef GlobalOrdinal GO;
-    typedef typename ArrayView<const GO>::size_type size_type;
+    using GO = global_ordinal_type;
+    using size_type = typename ArrayView<const GO>::size_type;
 
     // If both Maps are contiguous, we can compare their GID ranges
     // easily by looking at the min and max GID on this process.
@@ -1449,12 +1549,16 @@ namespace Tpetra {
       return false;
     }
 
-    typedef Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space> range_type;
+    using LO = local_ordinal_type;
+    using range_type =
+      Kokkos::RangePolicy<LO, typename node_type::execution_space>;
 
     // Check all elements.
-    LocalOrdinal numDiff = 0;
-    Kokkos::parallel_reduce("isLocallyFitted", range_type(0, numLocalElements1),
-      KOKKOS_LAMBDA(const LocalOrdinal i, LocalOrdinal& diff) {
+    LO numDiff = 0;
+    Kokkos::parallel_reduce(
+      "isLocallyFitted",
+      range_type(0, numLocalElements1),
+      KOKKOS_LAMBDA (const LO i, LO& diff) {
         diff += (lmap1.getGlobalElement(i) != lmap2.getGlobalElement(i));
       }, numDiff);
 
@@ -1559,12 +1663,23 @@ namespace Tpetra {
   typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_type
   Map<LocalOrdinal,GlobalOrdinal,Node>::getMyGlobalIndices () const
   {
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef device_type DT;
+    using std::endl;
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
+    using DT = device_type;
+    using const_lg_view_type = decltype(lgMap_);
+    using lg_view_type = typename const_lg_view_type::non_const_type;
+    const bool debug = Details::Behavior::debug("Map");
+    const bool verbose = Details::Behavior::verbose("Map");
 
-    typedef decltype (lgMap_) const_lg_view_type;
-    typedef typename const_lg_view_type::non_const_type lg_view_type;
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(
+        comm_.getRawPtr(), "Map", "getMyGlobalIndices");
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
 
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global
@@ -1573,22 +1688,38 @@ namespace Tpetra {
       lgMap_.extent (0) == 0 && numLocalElements_ > 0;
 
     if (needToCreateLocalToGlobalMapping) {
-#ifdef HAVE_TEUCHOS_DEBUG
-      // The local-to-global mapping should have been set up already
-      // for a noncontiguous map.
-      TEUCHOS_TEST_FOR_EXCEPTION( ! isContiguous(), std::logic_error,
-        "Tpetra::Map::getNodeElementList: The local-to-global mapping (lgMap_) "
-        "should have been set up already for a noncontiguous Map.  Please report"
-        " this bug to the Tpetra team.");
-#endif // HAVE_TEUCHOS_DEBUG
-
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Need to create lgMap" << endl;
+        std::cerr << os.str();
+      }
+      if (debug) {
+        // The local-to-global mapping should have been set up already
+        // for a noncontiguous map.
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! isContiguous(), std::logic_error,
+           "Tpetra::Map::getMyGlobalIndices: The local-to-global "
+           "mapping (lgMap_) should have been set up already for a "
+           "noncontiguous Map.  Please report this bug to the Tpetra "
+           "developers.");
+      }
       const LO numElts = static_cast<LO> (getNodeNumElements ());
 
       using Kokkos::view_alloc;
       using Kokkos::WithoutInitializing;
       lg_view_type lgMap ("lgMap", numElts);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Fill lgMap" << endl;
+        std::cerr << os.str();
+      }
       FillLgMap<LO, GO, DT> fillIt (lgMap, minMyGID_);
 
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Copy lgMap to lgMapHost" << endl;
+        std::cerr << os.str();
+      }
       auto lgMapHost =
         Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       Kokkos::deep_copy (lgMapHost, lgMap);
@@ -1596,13 +1727,13 @@ namespace Tpetra {
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
       lgMapHost_ = lgMapHost;
-
-      // lgMapHost_ may be a UVM View, so insert a fence to ensure
-      // coherent host access.  We only need to do this once, because
-      // lgMapHost_ is immutable after initialization.
-      execution_space().fence ();
     }
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
     return lgMap_;
   }
 
@@ -1610,7 +1741,7 @@ namespace Tpetra {
   Teuchos::ArrayView<const GlobalOrdinal>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
   {
-    typedef GlobalOrdinal GO; // convenient abbreviation
+    using GO = global_ordinal_type;
 
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global
@@ -1622,9 +1753,10 @@ namespace Tpetra {
     // The third argument forces ArrayView not to try to track memory
     // in a debug build.  We have to use it because the memory does
     // not belong to a Teuchos memory management class.
-    return Teuchos::ArrayView<const GO> (lgMapHostRawPtr,
-                                         lgMapHost_.extent (0),
-                                         Teuchos::RCP_DISABLE_NODE_LOOKUP);
+    return Teuchos::ArrayView<const GO>(
+      lgMapHostRawPtr,
+      lgMapHost_.extent (0),
+      Teuchos::RCP_DISABLE_NODE_LOOKUP);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1662,7 +1794,7 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   localDescribeToString (const Teuchos::EVerbosityLevel vl) const
   {
-    typedef LocalOrdinal LO;
+    using LO = local_ordinal_type;
     using std::endl;
 
     // This preserves current behavior of Map.
@@ -1713,8 +1845,8 @@ namespace Tpetra {
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_HIGH;
     using std::endl;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
     const Teuchos::EVerbosityLevel vl =
       (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
@@ -1783,10 +1915,10 @@ namespace Tpetra {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef global_size_t GST;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef Map<LO, GO, Node> map_type;
+    using GST = global_size_t;
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
+    using map_type = Map<LO, GO, Node>;
 
     // mfh 26 Mar 2013: The lazy way to do this is simply to recreate
     // the Map by calling its ordinary public constructor, using the
@@ -1865,7 +1997,8 @@ namespace Tpetra {
       // 10:   Process 3: origComm->replaceCommWithSubset(subsetComm) threw an exception: /scratch/prj/Trilinos/Trilinos/packages/tpetra/core/src/Tpetra_Details_FixedHashTable_def.hpp:1044:
 
       auto lgMap = this->getMyGlobalIndices ();
-      typedef typename std::decay<decltype (lgMap.extent (0)) >::type size_type;
+      using size_type =
+        typename std::decay<decltype (lgMap.extent (0)) >::type;
       const size_type lclNumInds =
         static_cast<size_type> (this->getNodeNumElements ());
       using Teuchos::TypeNameTraits;
@@ -2004,7 +2137,23 @@ namespace Tpetra {
                       const Teuchos::ArrayView<LocalOrdinal>& LIDs) const
   {
     using Tpetra::Details::OrdinalTraits;
-    typedef Teuchos::ArrayView<int>::size_type size_type;
+    using Details::verbosePrintArray;
+    using std::endl;
+    using size_type = Teuchos::ArrayView<int>::size_type;
+
+    const bool verbose = Details::Behavior::verbose("Map");
+    const size_t maxNumToPrint = verbose ?
+      Details::Behavior::verbosePrintCountThreshold() : size_t(0);
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(comm_.getRawPtr(),
+        "Map", "getRemoteIndexList(GIDs,PIDs,LIDs)");
+      std::ostringstream os;
+      os << *prefix << "Start: ";
+      verbosePrintArray(os, GIDs, "GIDs", maxNumToPrint);
+      os << endl;
+      std::cerr << os.str();
+    }
 
     // Empty Maps (i.e., containing no indices on any processes in the
     // Map's communicator) are perfectly valid.  In that case, if the
@@ -2014,8 +2163,20 @@ namespace Tpetra {
     // Map doesn't own.  SubmapImport test 2 needs this functionality.
     if (getGlobalNumElements () == 0) {
       if (GIDs.size () == 0) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Done; both Map & input are empty" << endl;
+          std::cerr << os.str();
+        }
         return AllIDsPresent; // trivially
-      } else {
+      }
+      else {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Done: Map is empty on all processes, "
+            "so all output PIDs & LIDs are invalid (-1)." << endl;
+          std::cerr << os.str();
+        }
         for (size_type k = 0; k < PIDs.size (); ++k) {
           PIDs[k] = OrdinalTraits<int>::invalid ();
         }
@@ -2029,8 +2190,32 @@ namespace Tpetra {
     // getRemoteIndexList must be called collectively, and Directory
     // initialization is collective too, so it's OK to initialize the
     // Directory on demand.
-    setupDirectory ();
-    return directory_->getDirectoryEntries (*this, GIDs, PIDs, LIDs);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call setupDirectory" << endl;
+      std::cerr << os.str();
+    }
+    setupDirectory();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call directory_->getDirectoryEntries" << endl;
+      std::cerr << os.str();
+    }
+    const Tpetra::LookupStatus retVal =
+      directory_->getDirectoryEntries (*this, GIDs, PIDs, LIDs);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done; getDirectoryEntries returned "
+         << (retVal == IDNotPresent ? "IDNotPresent" : "AllIDsPresent")
+         << "; ";
+      verbosePrintArray(os, PIDs, "PIDs", maxNumToPrint);
+      os << ", ";
+      verbosePrintArray(os, LIDs, "LIDs", maxNumToPrint);
+      os << endl;
+      std::cerr << os.str();
+    }
+    return retVal;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2039,11 +2224,39 @@ namespace Tpetra {
   getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal> & GIDs,
                       const Teuchos::ArrayView<int> & PIDs) const
   {
+    using Details::verbosePrintArray;
+    using std::endl;
+
+    const bool verbose = Details::Behavior::verbose("Map");
+    const size_t maxNumToPrint = verbose ?
+      Details::Behavior::verbosePrintCountThreshold() : size_t(0);
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(comm_.getRawPtr(),
+        "Map", "getRemoteIndexList(GIDs,PIDs)");
+      std::ostringstream os;
+      os << *prefix << "Start: ";
+      verbosePrintArray(os, GIDs, "GIDs", maxNumToPrint);
+      os << endl;
+      std::cerr << os.str();
+    }
+
     if (getGlobalNumElements () == 0) {
       if (GIDs.size () == 0) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Done; both Map & input are empty" << endl;
+          std::cerr << os.str();
+        }
         return AllIDsPresent; // trivially
-      } else {
-        // The Map contains no indices, so all output PIDs are invalid.
+      }
+      else {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Done: Map is empty on all processes, "
+            "so all output PIDs are invalid (-1)." << endl;
+          std::cerr << os.str();
+        }
         for (Teuchos::ArrayView<int>::size_type k = 0; k < PIDs.size (); ++k) {
           PIDs[k] = Tpetra::Details::OrdinalTraits<int>::invalid ();
         }
@@ -2054,8 +2267,30 @@ namespace Tpetra {
     // getRemoteIndexList must be called collectively, and Directory
     // initialization is collective too, so it's OK to initialize the
     // Directory on demand.
-    setupDirectory ();
-    return directory_->getDirectoryEntries (*this, GIDs, PIDs);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call setupDirectory" << endl;
+      std::cerr << os.str();
+    }
+    setupDirectory();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call directory_->getDirectoryEntries" << endl;
+      std::cerr << os.str();
+    }
+    const Tpetra::LookupStatus retVal =
+      directory_->getDirectoryEntries(*this, GIDs, PIDs);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done; getDirectoryEntries returned "
+         << (retVal == IDNotPresent ? "IDNotPresent" : "AllIDsPresent")
+         << "; ";
+      verbosePrintArray(os, PIDs, "PIDs", maxNumToPrint);
+      os << endl;
+      std::cerr << os.str();
+    }
+    return retVal;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2064,13 +2299,26 @@ namespace Tpetra {
     return comm_;
   }
 
-
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
-  bool Map<LocalOrdinal,GlobalOrdinal,Node>::checkIsDist() const {
+  bool
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  checkIsDist() const
+  {
     using Teuchos::as;
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
+    using std::endl;
+
+    const bool verbose = Details::Behavior::verbose("Map");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(
+        comm_.getRawPtr(), "Map", "checkIsDist");
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
 
     bool global = false;
     if (comm_->getSize () > 1) {
@@ -2099,114 +2347,115 @@ namespace Tpetra {
     }
     // If the communicator has only one process, then the Map is not
     // distributed.
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done; global=" << (global ? "true" : "false")
+         << endl;
+      std::cerr << os.str();
+    }
     return global;
   }
 
 } // namespace Tpetra
 
 template <class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal> >
 Tpetra::createLocalMap (const size_t numElements,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef typename ::Tpetra::Map<LO, GO>::node_type NT;
+  using NT = typename ::Tpetra::Map<LO, GO>::node_type;
   return createLocalMapWithNode<LO, GO, NT> (numElements, comm);
 }
 
 template <class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal> >
 Tpetra::createUniformContigMap (const global_size_t numElements,
                                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef typename ::Tpetra::Map<LO, GO>::node_type NT;
+  using NT = typename ::Tpetra::Map<LO, GO>::node_type;
   return createUniformContigMapWithNode<LO, GO, NT> (numElements, comm);
 }
 
-
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 Tpetra::createUniformContigMapWithNode (const global_size_t numElements,
                                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm
 )
 {
   using Teuchos::rcp;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+  using map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   const GlobalOrdinal indexBase = static_cast<GlobalOrdinal> (0);
 
   return rcp (new map_type (numElements, indexBase, comm, GloballyDistributed));
 }
 
-
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 Tpetra::createLocalMapWithNode (const size_t numElements,
                                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm
 )
 {
   using Tpetra::global_size_t;
   using Teuchos::rcp;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  const GlobalOrdinal indexBase = static_cast<GlobalOrdinal> (0);
+  using map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  const GlobalOrdinal indexBase = 0;
   const global_size_t globalNumElts = static_cast<global_size_t> (numElements);
 
   return rcp (new map_type (globalNumElts, indexBase, comm, LocallyReplicated));
 }
 
-
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 Tpetra::createContigMapWithNode (const Tpetra::global_size_t numElements,
                                  const size_t localNumElements,
                                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm
 )
 {
   using Teuchos::rcp;
-  using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
-  const GlobalOrdinal indexBase = static_cast<GlobalOrdinal> (0);
+  using map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  const GlobalOrdinal indexBase = 0;
 
   return rcp (new map_type (numElements, localNumElements, indexBase, comm));
 }
 
 template <class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal> >
 Tpetra::createContigMap (const Tpetra::global_size_t numElements,
                          const size_t localNumElements,
                          const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef typename Tpetra::Map<LocalOrdinal, GlobalOrdinal>::node_type NT;
+  using NT = typename Tpetra::Map<LO, GO>::node_type;
 
   return Tpetra::createContigMapWithNode<LO, GO, NT> (numElements, localNumElements, comm);
 }
 
-
 template <class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal> >
 Tpetra::createNonContigMap(const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
                            const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef typename Tpetra::Map<LocalOrdinal, GlobalOrdinal>::node_type NT;
+  using NT = typename Tpetra::Map<LO, GO>::node_type;
 
   return Tpetra::createNonContigMapWithNode<LO, GO, NT> (elementList, comm);
 }
 
-
-
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 Tpetra::createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
                                     const Teuchos::RCP<const Teuchos::Comm<int> >& comm
 )
 {
   using Teuchos::rcp;
-  using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+  using map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   using GST = Tpetra::global_size_t;
   const GST INV = Tpetra::Details::OrdinalTraits<GST>::invalid ();
   // FIXME (mfh 22 Jul 2016) This is what I found here, but maybe this
@@ -2217,18 +2466,32 @@ Tpetra::createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal
   return rcp (new map_type (INV, elementList, indexBase, comm));
 }
 
-
-
 template<class LO, class GO, class NT>
 Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >
 Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
 {
+  using Details::verbosePrintArray;
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::rcp;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef global_size_t GST;
+  using std::cerr;
+  using std::endl;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+  using GST = global_size_t;
+
+  const bool verbose = Details::Behavior::verbose("Map");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    auto comm = M.is_null() ? Teuchos::null : M->getComm();
+    prefix = Details::createPrefix(
+      comm.getRawPtr(), "createOneToOne(Map)");
+    std::ostringstream os;
+    os << *prefix << "Start" << endl;
+    cerr << os.str();
+  }
+  const size_t maxNumToPrint = verbose ?
+    Details::Behavior::verbosePrintCountThreshold() : size_t(0);
   const GST GINV = Tpetra::Details::OrdinalTraits<GST>::invalid ();
   const int myRank = M->getComm ()->getRank ();
 
@@ -2244,31 +2507,81 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
     // you think it should return, in this special case of a locally
     // replicated contiguous Map.
     const GST numGlobalEntries = M->getGlobalNumElements ();
-    if (M->isContiguous ()) {
+    if (M->isContiguous()) {
       const size_t numLocalEntries =
-        (myRank == 0) ? as<size_t> (numGlobalEntries) : static_cast<size_t> (0);
-      return rcp (new map_type (numGlobalEntries, numLocalEntries,
-                                M->getIndexBase (), M->getComm ()));
+        (myRank == 0) ? as<size_t>(numGlobalEntries) : size_t(0);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Input is locally replicated & contiguous; "
+          "numLocalEntries=" << numLocalEntries << endl;
+        cerr << os.str ();
+      }
+      auto retMap =
+        rcp(new map_type(numGlobalEntries, numLocalEntries,
+                         M->getIndexBase(), M->getComm()));
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Done" << endl;
+        cerr << os.str ();
+      }
+      return retMap;
     }
     else {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Input is locally replicated & noncontiguous"
+           << endl;
+        cerr << os.str ();
+      }
       ArrayView<const GO> myGids =
-        (myRank == 0) ? M->getNodeElementList () : Teuchos::null;
-      return rcp (new map_type (GINV, myGids (), M->getIndexBase (),
-                                M->getComm ()));
+        (myRank == 0) ? M->getNodeElementList() : Teuchos::null;
+      auto retMap =
+        rcp(new map_type(GINV, myGids(), M->getIndexBase(),
+                         M->getComm()));
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Done" << endl;
+        cerr << os.str ();
+      }
+      return retMap;
     }
   }
   else if (M->isContiguous ()) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Input is distributed & contiguous" << endl;
+      cerr << os.str ();
+    }
     // Contiguous, distributed Maps are one-to-one by construction.
     // (Locally replicated Maps can be contiguous.)
     return M;
   }
   else {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Input is distributed & noncontiguous" << endl;
+      cerr << os.str ();
+    }
     Tpetra::Directory<LO, GO, NT> directory;
     const size_t numMyElems = M->getNodeNumElements ();
     ArrayView<const GO> myElems = M->getNodeElementList ();
     Array<int> owner_procs_vec (numMyElems);
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call Directory::getDirectoryEntries: ";
+      verbosePrintArray(os, myElems, "GIDs", maxNumToPrint);
+      os << endl;
+      cerr << os.str();
+    }
     directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "getDirectoryEntries result: ";
+      verbosePrintArray(os, owner_procs_vec, "PIDs", maxNumToPrint);
+      os << endl;
+      cerr << os.str();
+    }
 
     Array<GO> myOwned_vec (numMyElems);
     size_t numMyOwnedElems = 0;
@@ -2282,8 +2595,21 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
     }
     myOwned_vec.resize (numMyOwnedElems);
 
-    return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                              M->getComm ()));
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Create Map: ";
+      verbosePrintArray(os, myOwned_vec, "GIDs", maxNumToPrint);
+      os << endl;
+      cerr << os.str();
+    }
+    auto retMap = rcp(new map_type(GINV, myOwned_vec(),
+                                   M->getIndexBase(), M->getComm()));
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      cerr << os.str();
+    }
+    return retMap;
   }
 }
 
@@ -2292,7 +2618,8 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &M,
                         const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break)
 {
-  using ::Tpetra::Details::Behavior;
+  using Details::Behavior;
+  using Details::verbosePrintArray;
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::RCP;
@@ -2303,41 +2630,33 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
   using map_type = Tpetra::Map<LO, GO, Node>;
-  const char funcPrefix[] = "Tpetra::createOneToOne(Map,TieBreak): ";
 
-  const bool verbose = Behavior::verbose ("Map") ||
-    Behavior::verbose ("Directory");
-  std::unique_ptr<std::string> procPrefix;
+  const bool verbose = Behavior::verbose("Map");
+  std::unique_ptr<std::string> prefix;
   if (verbose) {
+    auto comm = M.is_null() ? Teuchos::null : M->getComm();
+    prefix = Details::createPrefix(
+      comm.getRawPtr(), "createOneToOne(Map,TieBreak)");
     std::ostringstream os;
-    os << "Proc ";
-    if (M.is_null () || M->getComm ().is_null ()) {
-      os << "?";
-    }
-    else {
-      os << M->getComm ()->getRank ();
-    }
-    os << ": ";
-    procPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-    os << funcPrefix << "Start" << endl;
-    cerr << os.str ();
+    os << *prefix << "Start" << endl;
+    cerr << os.str();
   }
+  const size_t maxNumToPrint = verbose ?
+    Behavior::verbosePrintCountThreshold() : size_t(0);
 
   // FIXME (mfh 20 Feb 2013) We should have a bypass for contiguous
   // Maps (which are 1-to-1 by construction).
 
-  //Based off Epetra's one to one.
-
   Tpetra::Directory<LO, GO, Node> directory;
   if (verbose) {
     std::ostringstream os;
-    os << *procPrefix << "Initialize Directory" << endl;
+    os << *prefix << "Initialize Directory" << endl;
     cerr << os.str ();
   }
   directory.initialize (*M, tie_break);
   if (verbose) {
     std::ostringstream os;
-    os << *procPrefix << "Done initializing Directory" << endl;
+    os << *prefix << "Done initializing Directory" << endl;
     cerr << os.str ();
   }
   size_t numMyElems = M->getNodeNumElements ();
@@ -2345,16 +2664,18 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   Array<int> owner_procs_vec (numMyElems);
   if (verbose) {
     std::ostringstream os;
-    os << *procPrefix << "Call Directory::getDirectoryEntries with "
-      "GIDs " << toString (myElems) << endl;
-    cerr << os.str ();
+    os << *prefix << "Call Directory::getDirectoryEntries: ";
+    verbosePrintArray(os, myElems, "GIDs", maxNumToPrint);
+    os << endl;
+    cerr << os.str();
   }
   directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
   if (verbose) {
     std::ostringstream os;
-    os << *procPrefix << "Directory::getDirectoryEntries PIDs "
-      "result: " << toString (owner_procs_vec) << endl;
-    cerr << os.str ();
+    os << *prefix << "getDirectoryEntries result: ";
+    verbosePrintArray(os, owner_procs_vec, "PIDs", maxNumToPrint);
+    os << endl;
+    cerr << os.str();
   }
 
   const int myRank = M->getComm()->getRank();
@@ -2375,17 +2696,18 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
     Tpetra::Details::OrdinalTraits<global_size_t>::invalid ();
   if (verbose) {
     std::ostringstream os;
-    os << *procPrefix << "Create Map with GIDs "
-       << toString (myOwned_vec) << endl;
-    cerr << os.str ();
+    os << *prefix << "Create Map: ";
+    verbosePrintArray(os, myOwned_vec, "GIDs", maxNumToPrint);
+    os << endl;
+    cerr << os.str();
   }
   RCP<const map_type> retMap
     (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
                    M->getComm ()));
   if (verbose) {
     std::ostringstream os;
-    os << *procPrefix << funcPrefix << "Done!" << endl;
-    cerr << os.str ();
+    os << *prefix << "Done" << endl;
+    cerr << os.str();
   }
   return retMap;
 }
