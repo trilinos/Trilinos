@@ -121,12 +121,6 @@ void AugmentedLagrangianAlgorithm_E<Real>::initialize( Vector<Real>             
   alobj.getConstraintVec(*state_->constraintVec,x);
   state_->cnorm = state_->constraintVec->norm();
 
-  // Compute gradient of the lagrangian
-  Ptr<Vector<Real>> gl = g.clone();
-  con.applyAdjointJacobian(*gl,l,x,tol);
-  gl->plus(*state_->gradientVec);
-  state_->gnorm = gl->norm();
-
   // Update evaluation counters
   state_->ncval += alobj.getNumberConstraintEvaluations();
   state_->nfval += alobj.getNumberFunctionEvaluations();
@@ -149,6 +143,10 @@ void AugmentedLagrangianAlgorithm_E<Real>::initialize( Vector<Real>             
       cscale_ = one;
     }
   }
+  alobj.setScaling(fscale_,cscale_);
+
+  // Compute gradient of the lagrangian
+  state_->gnorm = state_->gradientVec->norm()/std::min(fscale_,cscale_);
 
   // Compute initial penalty parameter
   if (useDefaultInitPen_) {
@@ -166,7 +164,6 @@ void AugmentedLagrangianAlgorithm_E<Real>::initialize( Vector<Real>             
                             feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
 
   // Set data
-  alobj.setScaling(fscale_,cscale_);
   alobj.reset(l,state_->searchSize);
 
   if (verbosity_ > 1) {
