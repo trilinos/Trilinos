@@ -118,13 +118,13 @@ def confirmGitVersion():
     """
     """
     git_version_string = subprocess.check_output(['git', '--version'])
-    git_version_number_string = git_version_string[git_version_string.rfind(' '):]
-    major_git_version = int(git_version_number_string[:git_version_number_string.find('.')])
-    minor_git_version = int(git_version_number_string[git_version_number_string.find('.')+1:
-                                                      git_version_number_string.rfind('.')])
+    git_version_number_string = git_version_string[git_version_string.rfind(b' '):]
+    major_git_version = int(git_version_number_string[:git_version_number_string.find(b'.')])
+    minor_git_version = int(git_version_number_string[git_version_number_string.find(b'.')+1:
+                                                      git_version_number_string.rfind(b'.')])
 
-    if major_git_version  <  2 or (major_git_version == 2 and minor_git_version < 10):
-        raise SystemExit("Git version  should be 2.10 or better - Exiting!")
+    if major_git_version  <  3 or (major_git_version == 3 and minor_git_version < 5):
+        raise SystemExit("Git version  should be 3.5 or better - Exiting!")
     else:
         print(git_version_string)
 

@@ -70,38 +70,38 @@ class Test_run(unittest.TestCase):
                                                       'NODE_NAME': 'TEST_NODE_NAME'},
                                          clear=True)
 
+        self.bad_git_string = 'Git version  should be 3.5 or better - Exiting!'
+
+
     def test_verifyGit_fails_with_old_version(self):
         """Check to see that git is in path"""
         with self.m_check_out as m_check_out:
-            m_check_out.return_value='git version 1.10.1'
+            m_check_out.return_value=b'git version 1.10.1'
 
-            bad_git_string = 'Git version  should be 2.10 or better - Exiting!'
-            if(sys.version_info.major != 3):
-                with self.assertRaisesRegexp(SystemExit, bad_git_string):
-                    PullRequestLinuxDriverTest.confirmGitVersion()
-            else:
-                with self.assertRaisesRegex(SystemExit, bad_git_string):
-                    PullRequestLinuxDriverTest.confirmGitVersion()
+            with self.assertRaisesRegex(SystemExit, self.bad_git_string):
+                PullRequestLinuxDriverTest.confirmGitVersion()
 
             m_check_out.assert_called_once_with(['git', '--version'])
 
 
-    def test_verifyGit_passes_with_2_10(self):
+    def test_verifyGit_fails_with_2_10(self):
         """Check to see that git is in path"""
         with self.m_check_out as m_check_out:
-            m_check_out.return_value='git version 2.10.1'
+            m_check_out.return_value=b'git version 2.10.1'
 
-            with self.IOredirect:
+            with self.IOredirect, \
+                 self.assertRaisesRegex(SystemExit, self.bad_git_string):
                 PullRequestLinuxDriverTest.confirmGitVersion()
             m_check_out.assert_called_once_with(['git', '--version'])
 
 
-    def test_verifyGit_passes_with_2_12(self):
+    def test_verifyGit_fails_with_2_12(self):
         """Check to see that git is in path"""
         with self.m_check_out as m_check_out:
-            m_check_out.return_value='git version 2.12.4'
+            m_check_out.return_value=b'git version 2.12.4'
 
-            with self.IOredirect:
+            with self.IOredirect, \
+                 self.assertRaisesRegex(SystemExit, self.bad_git_string):
                 PullRequestLinuxDriverTest.confirmGitVersion()
         m_check_out.assert_called_once_with(['git', '--version'])
 
@@ -109,7 +109,7 @@ class Test_run(unittest.TestCase):
     def test_verifyGit_passes_with_3_x(self):
         """Check to see that git is in path"""
         with self.m_check_out as m_check_out:
-            m_check_out.return_value='git version 3.6.1'
+            m_check_out.return_value=b'git version 3.6.1'
 
             with self.IOredirect:
                 PullRequestLinuxDriverTest.confirmGitVersion()
@@ -139,12 +139,8 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
       : This violates Trilinos policy, pull requests into the master branch are restricted.
       : Perhaps you forgot to specify the develop branch as the target in your PR?
 *"""
-            if(sys.version_info.major != 3):
-                with self.assertRaisesRegexp(SystemExit, bad_branch_string):
-                    PullRequestLinuxDriverTest.run()
-            else:
-                with self.assertRaisesRegex(SystemExit, bad_branch_string):
-                    PullRequestLinuxDriverTest.run()
+            with self.assertRaisesRegex(SystemExit, bad_branch_string):
+                PullRequestLinuxDriverTest.run()
 
 
     def test_verifyTargetBranch_passes_with_master_target_mm_source(self):
@@ -370,7 +366,7 @@ class Test_setEnviron(unittest.TestCase):
         self.IOredirect = mock.patch('sys.stdout', new_callable=StringIO)
         self.m_chdir = mock.patch('os.chdir')
         self.m_check_out = mock.patch('subprocess.check_output',
-                                      return_value='git version 2.10.1')
+                                      return_value=b'git version 3.8.2')
 
         self.m_environ = mock.patch.dict(os.environ, {'JOB_BASE_NAME': self.job_base_name,
                                                      'JOB_NAME': 'TEST_JOB_NAME',
@@ -395,12 +391,8 @@ class Test_setEnviron(unittest.TestCase):
                 self.m_chdir, \
                 self.m_check_out, \
                 self.m_environ:
-            if(sys.version_info.major != 3):
-                with self.assertRaisesRegexp(SystemExit, expected_output):
-                    PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
-            else:
-                with self.assertRaisesRegex(SystemExit, expected_output):
-                    PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
+            with self.assertRaisesRegex(SystemExit, expected_output):
+                PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
 
 
     def buildEnv_passes(self, PR_name, expected_list,
