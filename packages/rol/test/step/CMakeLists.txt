@@ -166,7 +166,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
    )
  
  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-   TypeULineSearch
+   TypeU_LineSearch
    SOURCES test_19.cpp
    ARGS PrintItAll
    NUM_MPI_PROCS 1
@@ -175,7 +175,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
    )
  
  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-   TypeUTrustRegion
+   TypeU_TrustRegion
    SOURCES test_20.cpp
    ARGS PrintItAll
    NUM_MPI_PROCS 1
@@ -184,7 +184,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
    )
  
  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-   TypeUBundle
+   TypeU_Bundle
    SOURCES test_21.cpp
    ARGS PrintItAll
    NUM_MPI_PROCS 1
@@ -193,7 +193,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
    )
  
  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-   TypeUReduceLinearConstraints
+   TypeU_ReduceLinearConstraints
    SOURCES test_22.cpp
    ARGS PrintItAll
    NUM_MPI_PROCS 1
@@ -202,7 +202,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
    )
  
  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-   TypeBProjectedGradient
+   TypeB_ProjectedGradient
    SOURCES test_23.cpp
    ARGS PrintItAll
    NUM_MPI_PROCS 1
@@ -211,7 +211,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
    )
  
  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-   TypeBLinMore
+   TypeB_LinMore
    SOURCES test_24.cpp
    ARGS PrintItAll
    NUM_MPI_PROCS 1
@@ -258,6 +258,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
  TRIBITS_ADD_EXECUTABLE_AND_TEST(
    TypeB_MY
    SOURCES test_29.cpp
+   ARGS PrintItAll
+   NUM_MPI_PROCS 1
+   PASS_REGULAR_EXPRESSION "TEST PASSED"
+   ADD_DIR_TO_NAME
+   )
+ 
+ TRIBITS_ADD_EXECUTABLE_AND_TEST(
+   TypeG_AugmentedLagrangian
+   SOURCES test_30.cpp
    ARGS PrintItAll
    NUM_MPI_PROCS 1
    PASS_REGULAR_EXPRESSION "TEST PASSED"
