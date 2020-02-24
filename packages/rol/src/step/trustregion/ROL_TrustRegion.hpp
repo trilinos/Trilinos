@@ -316,7 +316,6 @@ public:
              (flagTR == TRUSTREGION_FLAG_POSPREDNEG)) { // Step Accepted
       // Perform line search (smoothing) to ensure decrease 
       if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
-        Real tol = std::sqrt(ROL_EPSILON<Real>());
         // Compute new gradient
         xtmp_->set(x); xtmp_->plus(s);
         bnd.project(*xtmp_);
