@@ -263,6 +263,19 @@ namespace Amesos2 {
     /// Return raw pointer from CRS values of matrixA_
     spmtx_vals_t returnValues() const;
 
+    /// Return kokkos view of CRS row pointer of matrixA_
+    template<typename KV>
+    void returnRowPtr_kokkos_view(KV & view) const;
+
+    /// Return kokkos view of CRS column indices of matrixA_
+    template<typename KV>
+    void returnColInd_kokkos_view(KV & view) const;
+
+    /// Return kokkos view of CRS values of matrixA_
+    template<typename KV>
+    void returnValues_kokkos_view(KV & view) const;
+
+
   private:
 
     void help_getCrs(const Teuchos::ArrayView<scalar_t> nzval,

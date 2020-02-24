@@ -97,6 +97,19 @@ struct TypeMap<TachoSolver,std::complex<double> >
   typedef double magnitude_type;
 };
 
+template <>
+struct TypeMap<TachoSolver,Kokkos::complex<float> >
+{
+  typedef Kokkos::complex<float> type;
+  typedef float magnitude_type;
+};
+
+template <>
+struct TypeMap<TachoSolver,Kokkos::complex<double> >
+{
+  typedef Kokkos::complex<double> type;
+  typedef double magnitude_type;
+};
 
 #endif  // HAVE_TEUCHOS_COMPLEX
 
