@@ -61,8 +61,10 @@ class Test_EchoJenkinsVars(unittest.TestCase):
     def test_echoJenkinsVars(self):
         with self.m_environ:
             env_string_io = StringIO()
-            for key in os.environ:
-                print(key + ' = ' + os.environ[key],
+            sorted_env = sorted(os.environ.items(),
+                                key=lambda x: x[0])
+            for item in sorted_env:
+                print(item[0] + ' = ' + item[1],
                       file=env_string_io)
 
         expected_string = '''

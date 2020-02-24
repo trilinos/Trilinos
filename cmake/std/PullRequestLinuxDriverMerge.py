@@ -49,8 +49,11 @@ Environment:
 '''.format(workspace=workspace,
            cwd=os.getcwd()), file=sys.stdout)
 
-    for key in os.environ:
-        print(key +' = ' + os.environ[key])
+    sorted_env = sorted(os.environ.items(),
+                        key=lambda x: x[0])
+
+    for item in sorted_env:
+        print(item[0] +' = ' + item[1])
     print('''
 ================================================================================''',
           file=sys.stdout)
