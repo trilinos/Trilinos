@@ -177,8 +177,9 @@ public:
                                 const Vector<Real>    &g,
                                 Objective<Real>       &obj,
                                 BoundConstraint<Real> &bnd,
-                                Constraint<Real>      &econ,
-                                Vector<Real>          &emul,
+                                Constraint<Real>      &linear_econ,
+                                Vector<Real>          &linear_emul,
+                                const Vector<Real>    &linear_eres,
                                 std::ostream          &outStream = std::cout ) override;
 
   std::string printHeader( void ) const override;

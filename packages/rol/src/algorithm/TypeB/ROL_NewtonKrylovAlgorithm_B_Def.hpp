@@ -254,8 +254,9 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
                                                              const Vector<Real>    &g,
                                                              Objective<Real>       &obj,
                                                              BoundConstraint<Real> &bnd,
-                                                             Constraint<Real>      &econ,
-                                                             Vector<Real>          &emul,
+                                                             Constraint<Real>      &linear_econ,
+                                                             Vector<Real>          &linear_emul,
+                                                             const Vector<Real>    &linear_eres,
                                                              std::ostream          &outStream ) {
   throw Exception::NotImplemented(">>> NewtonKrylovAlgorithm_B::run : This algorithm cannot solve problems with linear equality constraints!");
 }

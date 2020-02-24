@@ -76,9 +76,10 @@ int main(int argc, char *argv[]) {
   try {
 
     std::string filename = "input.xml";
-    
     auto parlist = ROL::getParametersFromXmlFile( filename );
+    parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1e-4);
     parlist->sublist("General").set("Output Level", iprint);
+
     ROL::Ptr<ROL::Algorithm_U<RealT>> algo;
     ROL::Ptr<ROL::Vector<RealT>> e, x, x0;
 

@@ -109,89 +109,6 @@ public:
                                         BoundConstraint<Real> &bnd,
                                         std::ostream          &outStream = std::cout );
 
-  /** \brief Run algorithm on bound constrained problems with explicit
-             linear constraints (Type-B).
-	     This is the primary Type-B with explicit linear
-             constraints interface.
-  */
-  virtual std::vector<std::string> run( Vector<Real>          &x,
-                                        Objective<Real>       &obj,
-                                        BoundConstraint<Real> &bnd,
-                                        Constraint<Real>      &econ,
-                                        Vector<Real>          &emul,
-                                        std::ostream          &outStream = std::cout );
-
-  /** \brief Run algorithm on bound constrained problems with explicit
-             linear constraints (Type-B).
-             This general interface supports the use of dual optimization vector spaces,
-             where the user does not define the dual() method.
-  */
-  virtual std::vector<std::string> run( Vector<Real>          &x,
-                                        const Vector<Real>    &g,
-                                        Objective<Real>       &obj,
-                                        BoundConstraint<Real> &bnd,
-                                        Constraint<Real>      &econ,
-                                        Vector<Real>          &emul,
-                                        std::ostream          &outStream = std::cout );
-
-  /** \brief Run algorithm on bound constrained problems with explicit
-             linear constraints (Type-B).
-	     This is the primary Type-B with explicit linear
-             constraints interface.
-  */
-  virtual std::vector<std::string> run( Vector<Real>          &x,
-                                        Objective<Real>       &obj,
-                                        BoundConstraint<Real> &bnd,
-                                        Constraint<Real>      &icon,
-                                        Vector<Real>          &imul,
-                                        BoundConstraint<Real> &ibnd,
-                                        std::ostream          &outStream = std::cout );
-
-  /** \brief Run algorithm on bound constrained problems with explicit
-             linear constraints (Type-B).
-             This general interface supports the use of dual optimization vector spaces,
-             where the user does not define the dual() method.
-  */
-  virtual std::vector<std::string> run( Vector<Real>          &x,
-                                        const Vector<Real>    &g,
-                                        Objective<Real>       &obj,
-                                        BoundConstraint<Real> &bnd,
-                                        Constraint<Real>      &icon,
-                                        Vector<Real>          &imul,
-                                        BoundConstraint<Real> &ibnd,
-                                        std::ostream       &outStream = std::cout );
-
-  /** \brief Run algorithm on bound constrained problems with explicit
-             linear constraints (Type-B).
-	     This is the primary Type-B with explicit linear
-             constraints interface.
-  */
-  virtual std::vector<std::string> run( Vector<Real>          &x,
-                                        Objective<Real>       &obj,
-                                        BoundConstraint<Real> &bnd,
-                                        Constraint<Real>      &econ,
-                                        Vector<Real>          &emul,
-                                        Constraint<Real>      &icon,
-                                        Vector<Real>          &imul,
-                                        BoundConstraint<Real> &ibnd,
-                                        std::ostream          &outStream = std::cout );
-
-  /** \brief Run algorithm on bound constrained problems with explicit
-             linear constraints (Type-B).
-             This general interface supports the use of dual optimization vector spaces,
-             where the user does not define the dual() method.
-  */
-  virtual std::vector<std::string> run( Vector<Real>          &x,
-                                        const Vector<Real>    &g,
-                                        Objective<Real>       &obj,
-                                        BoundConstraint<Real> &bnd,
-                                        Constraint<Real>      &econ,
-                                        Vector<Real>          &emul,
-                                        Constraint<Real>      &icon,
-                                        Vector<Real>          &imul,
-                                        BoundConstraint<Real> &ibnd,
-                                        std::ostream       &outStream = std::cout );
-
   /** \brief Run algorithm on bound constrained problems (Type-B).
              This general interface supports the use of dual optimization vector spaces,
              where the user does not define the dual() method.
@@ -201,6 +118,93 @@ public:
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &bnd,
                                         std::ostream          &outStream = std::cout) = 0;
+
+  /** \brief Run algorithm on bound constrained problems with explicit
+             linear constraints (Type-B).
+	     This is the primary Type-B with explicit linear
+             constraints interface.
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x,
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        Constraint<Real>      &linear_econ,
+                                        Vector<Real>          &linear_emul,
+                                        std::ostream          &outStream = std::cout );
+
+  /** \brief Run algorithm on bound constrained problems with explicit
+             linear constraints (Type-B).
+             This general interface supports the use of dual optimization vector spaces,
+             where the user does not define the dual() method.
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x,
+                                        const Vector<Real>    &g,
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        Constraint<Real>      &linear_econ,
+                                        Vector<Real>          &linear_emul,
+                                        const Vector<Real>    &linear_eres,
+                                        std::ostream          &outStream = std::cout );
+
+  /** \brief Run algorithm on bound constrained problems with explicit
+             linear constraints (Type-B).
+	     This is the primary Type-B with explicit linear
+             constraints interface.
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x,
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        Constraint<Real>      &linear_icon,
+                                        Vector<Real>          &linear_imul,
+                                        BoundConstraint<Real> &linear_ibnd,
+                                        std::ostream          &outStream = std::cout );
+
+  /** \brief Run algorithm on bound constrained problems with explicit
+             linear constraints (Type-B).
+             This general interface supports the use of dual optimization vector spaces,
+             where the user does not define the dual() method.
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x,
+                                        const Vector<Real>    &g,
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        Constraint<Real>      &linear_icon,
+                                        Vector<Real>          &linear_imul,
+                                        BoundConstraint<Real> &linear_ibnd,
+                                        const Vector<Real>    &linear_ires,
+                                        std::ostream          &outStream = std::cout );
+
+  /** \brief Run algorithm on bound constrained problems with explicit
+             linear constraints (Type-B).
+	     This is the primary Type-B with explicit linear
+             constraints interface.
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x,
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        Constraint<Real>      &linear_econ,
+                                        Vector<Real>          &linear_emul,
+                                        Constraint<Real>      &linear_icon,
+                                        Vector<Real>          &linear_imul,
+                                        BoundConstraint<Real> &linear_ibnd,
+                                        std::ostream          &outStream = std::cout );
+
+  /** \brief Run algorithm on bound constrained problems with explicit
+             linear constraints (Type-B).
+             This general interface supports the use of dual optimization vector spaces,
+             where the user does not define the dual() method.
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x,
+                                        const Vector<Real>    &g,
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        Constraint<Real>      &linear_econ,
+                                        Vector<Real>          &linear_emul,
+                                        const Vector<Real>    &linear_eres,
+                                        Constraint<Real>      &linear_icon,
+                                        Vector<Real>          &linear_imul,
+                                        BoundConstraint<Real> &linear_ibnd,
+                                        const Vector<Real>    &linear_ires,
+                                        std::ostream          &outStream = std::cout );
 
   /** \brief Print iterate header.
   */
