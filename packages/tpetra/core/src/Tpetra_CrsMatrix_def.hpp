@@ -2426,6 +2426,26 @@ namespace Tpetra {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    local_ordinal_type
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceLocalValues(
+    const local_ordinal_type localRow,
+    const Kokkos::View<const local_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
+    const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals) const
+  {
+    using LO = local_ordinal_type;
+    const LO numInputEnt = inputInds.extent(0);
+    if (numInputEnt != inputVals.extent(0)) {
+      return Teuchos::OrdinalTraits<LO>::invalid();
+    }
+    const Scalar* const inVals =
+      reinterpret_cast<const Scalar*>(inputVals.data());
+    return this->replaceLocalValues(localRow, numInputEnt,
+                                    inVals, inputInds.data());
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceLocalValues (const LocalOrdinal localRow,
@@ -2519,6 +2539,32 @@ namespace Tpetra {
     const IST* const inVals = reinterpret_cast<const IST*> (inputVals);
     return this->replaceGlobalValuesImpl (curRowVals.data (), graph, rowInfo,
                                           inputGblColInds, inVals, numEnt);
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    local_ordinal_type
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceGlobalValues(
+    const global_ordinal_type globalRow,
+    const Kokkos::View<const global_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
+    const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals) const
+  {
+    // We use static_assert here to check the template parameters,
+    // rather than std::enable_if (e.g., on the return value, to
+    // enable compilation only if the template parameters match the
+    // desired attributes).  This turns obscure link errors into
+    // clear compilation errors.  It also makes the return value a
+    // lot easier to see.
+    using LO = local_ordinal_type;
+    const LO numInputEnt = static_cast<LO>(inputInds.extent(0));
+    if (static_cast<LO>(inputVals.extent(0)) != numInputEnt) {
+      return Teuchos::OrdinalTraits<LO>::invalid();
+    }
+    const Scalar* const inVals =
+      reinterpret_cast<const Scalar*>(inputVals.data());
+    return this->replaceGlobalValues(globalRow, numInputEnt, inVals,
+                                     inputInds.data());
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3057,16 +3103,36 @@ namespace Tpetra {
                       const Teuchos::ArrayView<const Scalar>& values,
                       const bool atomic) const
   {
-    typedef LocalOrdinal LO;
-
-    const LO numInputEnt = static_cast<LO> (indices.size ());
-    if (static_cast<LO> (values.size ()) != numInputEnt) {
-      return Teuchos::OrdinalTraits<LO>::invalid ();
+    using LO = local_ordinal_type;
+    const LO numInputEnt = static_cast<LO>(indices.size());
+    if (static_cast<LO>(values.size()) != numInputEnt) {
+      return Teuchos::OrdinalTraits<LO>::invalid();
     }
-    const LO* const inputInds = indices.getRawPtr ();
-    const Scalar* const inputVals = values.getRawPtr ();
-    return this->sumIntoLocalValues (localRow, numInputEnt,
-                                     inputVals, inputInds, atomic);
+    const LO* const inputInds = indices.getRawPtr();
+    const scalar_type* const inputVals = values.getRawPtr();
+    return this->sumIntoLocalValues(localRow, numInputEnt,
+                                    inputVals, inputInds, atomic);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    local_ordinal_type
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  sumIntoLocalValues(
+    const local_ordinal_type localRow,
+    const Kokkos::View<const local_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
+    const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals,
+    const bool atomic) const
+  {
+    using LO = local_ordinal_type;
+    const LO numInputEnt = static_cast<LO>(inputInds.extent(0));
+    if (static_cast<LO>(inputVals.extent(0)) != numInputEnt) {
+      return Teuchos::OrdinalTraits<LO>::invalid();
+    }
+    const scalar_type* inVals =
+      reinterpret_cast<const scalar_type*>(inputVals.data());
+    return this->sumIntoLocalValues(localRow, numInputEnt, inVals,
+                                    inputInds.data(), atomic);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
