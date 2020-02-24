@@ -380,7 +380,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   if (fwdStateStepper->getModel() != underlyingModel) {
-    fwdStateStepper->setNonConstModel(underlyingModel);
+    fwdStateStepper->setModel(underlyingModel);
   }
 }
 
@@ -425,7 +425,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   }
 
   if (fwdStateStepper->getModel() != underlyingModel) {
-    fwdStateStepper->setNonConstModel(underlyingModel);
+    fwdStateStepper->setModel(underlyingModel);
   }
 }
 
@@ -988,6 +988,7 @@ setObserver()
     //Set observer in integrator
     fwdStateIntegrator->getObserver()->clearObservers();
     fwdStateIntegrator->setObserver(observer);
+    fwdStateStepper->initialize();
     //Reinitialize everything in integrator class, since we have changed the observer.
     fwdStateIntegrator->initialize();
   }
@@ -1022,6 +1023,7 @@ void Piro::TempusSolver<Scalar>::
 setInitialGuess(Teuchos::RCP< const Thyra::VectorBase<Scalar> > initial_guess) 
 {
    fwdStateStepper->setInitialGuess(initial_guess); 
+   fwdStateStepper->initialize();
 }
 
 #ifdef ALBANY_BUILD

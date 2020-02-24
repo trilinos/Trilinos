@@ -157,7 +157,7 @@ public:
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperObserver_; }
 
-    /// Initialize during construction and after changing input parameters.
+    /// Initialize after construction and changing input parameters.
     virtual void initialize();
 
     /// Set the initial conditions and make them consistent.
@@ -223,6 +223,8 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   /// \name Accessors methods
   //@{
     /** \brief Use embedded if avialable. */
@@ -257,6 +259,7 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;
+
 
   // For Embedded RK
   bool useEmbedded_;

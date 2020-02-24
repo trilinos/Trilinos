@@ -53,6 +53,7 @@ namespace Amesos2 {
 }
 
 #include "Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp"
+#include "Amesos2_KokkosCrsMatrix_MatrixAdapter_decl.hpp"
 
 #ifdef HAVE_AMESOS2_EPETRA
 #  include "Amesos2_EpetraCrsMatrix_MatrixAdapter_decl.hpp"

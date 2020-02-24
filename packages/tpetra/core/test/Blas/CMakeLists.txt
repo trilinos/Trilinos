@@ -12,7 +12,6 @@ TRIBITS_ADD_EXECUTABLE(
   gemm
   SOURCES
     gemm
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )
 

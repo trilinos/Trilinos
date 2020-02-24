@@ -90,6 +90,7 @@ public:
     SerialFunction<Real>::SerialFunction( u_initial, timeStampsPtr ),
     obj_(obj) {}
 
+  using Objective_SimOpt<Real>::value;
   virtual Real value( const Vector<Real>& u, 
                       const Vector<Real>& z, 
                       Real& tol ) override {

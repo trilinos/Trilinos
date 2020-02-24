@@ -109,7 +109,7 @@ namespace Impl {
 //*************************************************************************************
 // A handy macro to switch time monitors in a StackedTimer-compatible way
 #define MUELU_SWITCH_TIME_MONITOR(tm,timername)                                  \
-  {tm=Teuchos::null; tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("timername")));}
+  {tm=Teuchos::null; tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(timername)));}
 
 
 //*************************************************************************************

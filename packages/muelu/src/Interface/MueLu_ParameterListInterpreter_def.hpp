@@ -48,6 +48,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixUtils.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -938,9 +939,10 @@ namespace MueLu {
       MUELU_KOKKOS_FACTORY_NO_DECL(dropFactory, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       ParameterList dropParams;
       dropParams.set("lightweight wrap", true);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
       if (useKokkos_) {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, dropParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, dropParams);
@@ -2250,6 +2252,10 @@ namespace MueLu {
             << "You may want to check \"number of equations\" (or \"PDE equations\" for factory style list) parameter." << std::endl;
 
       A.SetFixedBlockSize(blockSize_, dofOffset_);
+
+#ifdef HAVE_MUELU_DEBUG
+      MatrixUtils::checkLocalRowMapMatchesColMap(A);
+#endif // HAVE_MUELU_DEBUG
 
     } catch (std::bad_cast& e) {
       this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;

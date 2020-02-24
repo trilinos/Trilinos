@@ -68,15 +68,8 @@ void StepperForwardEuler<Scalar>::setObserver(
       Teuchos::rcp_dynamic_cast<StepperForwardEulerObserver<Scalar> >
         (this->stepperObserver_,true);
   }
-}
 
-template<class Scalar>
-void StepperForwardEuler<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    this->appModel_ == Teuchos::null, std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperForwardEuler::initialize()\n");
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -98,6 +91,8 @@ template<class Scalar>
 void StepperForwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperForwardEuler::takeStep()");
@@ -187,11 +182,33 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::describe(
-   Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "appModel_ = " << this->appModel_->description() << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperExplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperForwardEuler ---\n";
+  out << stepperFEObserver_ << std::endl;
+  out << "---------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperForwardEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperExplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  if (stepperFEObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The Forward Euler observer is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

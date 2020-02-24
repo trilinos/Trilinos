@@ -62,7 +62,7 @@ public:
 
   /** \brief Default constructor.
    *
-   *  Requires subsequent setModel(), setSolver() and initialize()
+   *  Requires subsequent setModel() and initialize()
    *  calls before calling takeStep().
   */
   StepperBackwardEuler();
@@ -72,6 +72,7 @@ public:
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -79,18 +80,19 @@ public:
 
   /// \name Basic stepper methods
   //@{
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperBEObserver_; }
+    { return stepperBEObserver_; }
 
     /// Set the predictor
-    void setPredictor(std::string predictorType = "None");
-    void setPredictor(Teuchos::RCP<Stepper<Scalar> > predictorStepper);
-
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
+    void setPredictor(std::string predictorType);
+    void setPredictor(Teuchos::RCP<Stepper<Scalar> > predictorStepper =
+      Teuchos::null);
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -132,6 +134,8 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
   /// \name Implementation of StepperOptimizationInterface
   //@{

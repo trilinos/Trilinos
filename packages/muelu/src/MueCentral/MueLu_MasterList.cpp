@@ -188,6 +188,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
@@ -224,6 +225,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: coarsening rate\" type=\"string\" value=\"{3}\"/>"
   "<Parameter name=\"aggregation: number of spatial dimensions\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"aggregation: coarsening order\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: pairwise: size\" type=\"int\" value=\"8\"/>"
   "<Parameter name=\"aggregate qualities: check symmetry\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregate qualities: good aggregate threshold\" type=\"double\" value=\"100.0\"/>"
   "<Parameter name=\"aggregate qualities: file output\" type=\"bool\" value=\"false\"/>"
@@ -549,6 +551,8 @@ namespace MueLu {
       
          ("aggregation: drop scheme","aggregation: drop scheme")
       
+         ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
+      
          ("aggregation: threshold","aggregation: drop tol")
       
          ("aggregation: min agg size","aggregation: min agg size")
@@ -620,6 +624,8 @@ namespace MueLu {
          ("aggregation: number of spatial dimensions","aggregation: number of spatial dimensions")
       
          ("aggregation: coarsening order","aggregation: coarsening order")
+      
+         ("aggregation: pairwise: size","aggregation: pairwise: size")
       
          ("aggregate qualities: check symmetry","aggregate qualities: check symmetry")
       

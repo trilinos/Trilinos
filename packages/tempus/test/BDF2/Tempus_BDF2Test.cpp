@@ -129,8 +129,6 @@ TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperBDF2<double>());
   stepper->setModel(model);
-  stepper->setSolver();
-  stepper->setStartUpStepper();
   stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
