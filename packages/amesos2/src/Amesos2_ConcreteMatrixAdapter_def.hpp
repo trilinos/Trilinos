@@ -48,5 +48,6 @@
 #include "Amesos2_AbstractConcreteMatrixAdapter_def.hpp"
 
 #include "Amesos2_TpetraCrsMatrix_MatrixAdapter_def.hpp"
+#include "Amesos2_KokkosCrsMatrix_MatrixAdapter_def.hpp"
 
 #endif

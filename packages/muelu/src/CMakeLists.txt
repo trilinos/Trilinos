@@ -27,6 +27,7 @@ INCLUDE_DIRECTORIES(${DIR}/Graph/Containers)
 INCLUDE_DIRECTORIES(${DIR}/Graph/CoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/HybridAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/MatrixTransformation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/PairwiseAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/coupled)
 INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/uncoupled)
@@ -367,6 +368,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/Containers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/CoupledAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/HybridAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/MatrixTransformation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/PairwiseAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation/coupled NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation/uncoupled NOSIERRABJAM)
@@ -444,3 +446,4 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

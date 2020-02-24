@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
-//                  Copyright 2011 Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,20 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_NOTAYAGGREGATIONFACTORY_FWD_HPP
+#define MUELU_NOTAYAGGREGATIONFACTORY_FWD_HPP
 
-#ifndef AMESOS2_TPETRA_CRSMATRIX_MATRIXADAPTER_HPP
-#define AMESOS2_TPETRA_CRSMATRIX_MATRIXADAPTER_HPP
 
-#include "Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp"
-#include "Amesos2_KokkosCrsMatrix_MatrixAdapter_decl.hpp"
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#  include "Amesos2_TpetraCrsMatrix_MatrixAdapter_def.hpp"
-#  include "Amesos2_KokkosCrsMatrix_MatrixAdapter_def.hpp"
+
+
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class NotayAggregationFactory;
+}
+
+#ifndef MUELU_NOTAYAGGREGATIONFACTORY_SHORT
+#define MUELU_NOTAYAGGREGATIONFACTORY_SHORT
 #endif
 
-#endif  // AMESOS2_TPETRA_CRSMATRIX_MATRIXADAPTER_HPP
+
+
+#endif // MUELU_NOTAYAGGREGATIONFACTORY_FWD_HPP

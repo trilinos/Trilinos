@@ -703,6 +703,16 @@
     </parameter>
 
 
+    <parameter>
+      <name>aggregation: pairwise: size</name>
+      <type>int</type>
+      <default>8</default>
+      <description>Target size for pairwise aggregation.  The number
+      of pairwise steps used will be log base-2 of this number.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
   </aggregation>
 
   <aggregate_qualities>

@@ -43,21 +43,82 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AMGXOPERATOR_FWD_HPP
-#define MUELU_AMGXOPERATOR_FWD_HPP
+#ifndef MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_
+#define MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_
+
+
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_AMGX)
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_NotayAggregationFactory_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_Exceptions.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class AMGXOperator;
+
+template<class Scalar = DefaultScalar,
+         class LocalOrdinal = DefaultLocalOrdinal,
+         class GlobalOrdinal = DefaultGlobalOrdinal,
+         class Node = DefaultNode>
+class NotayAggregationFactory : public SingleLevelFactoryBase {
+#undef MUELU_NOTAYAGGREGATIONFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+public:
+  //! @name Constructors/Destructors.
+  //@{
+
+  //! Constructor.
+  NotayAggregationFactory() { };
+
+  //! Destructor.
+  virtual ~NotayAggregationFactory() { }
+
+  RCP<const ParameterList> GetValidParameterList() const;
+
+  //@}
+
+  //! @name Set/get methods.
+  //@{
+
+  // Options shared by all aggregation algorithms
+
+  //! Input
+  //@{
+
+  void DeclareInput(Level &currentLevel) const;
+
+  //@}
+
+  //! @name Build methods.
+  //@{
+
+  /*! @brief Build aggregates. */
+  void Build(Level &currentLevel) const;
+
+
+  void Build_InitialAggregation(const Teuchos::ParameterList& params,
+				const RCP<const Matrix>& A,
+				Aggregates& aggregates,
+				std::vector<unsigned>& aggStat,
+				LO& numNonAggregatedNodes) const;
+
+  
+  //@}
+
+private:
+}; // class NotayAggregationFactory
+
 }
 
-#ifndef MUELU_AMGXOPERATOR_SHORT
-#define MUELU_AMGXOPERATOR_SHORT
-#endif
-
-#endif
-
-#endif // MUELU_AMGXOPERATOR_FWD_HPP
+#define MUELU_NOTAYAGGREGATIONFACTORY_SHORT
+#endif /* MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_ */

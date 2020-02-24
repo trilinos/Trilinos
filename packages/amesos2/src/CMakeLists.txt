@@ -103,6 +103,11 @@ APPEND_SET(HEADERS
   Amesos2_TpetraCrsMatrix_MatrixAdapter.hpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter_def.hpp
+  Amesos2_KokkosCrsMatrix_MatrixAdapter.hpp
+  Amesos2_KokkosCrsMatrix_MatrixAdapter_decl.hpp
+  Amesos2_KokkosCrsMatrix_MatrixAdapter_def.hpp
+  Amesos2_Kokkos_Impl.hpp
+  Amesos2_Kokkos_View_Copy_Assign.hpp
   Amesos2_MatrixAdapter.hpp
   Amesos2_MatrixAdapter_decl.hpp
   Amesos2_MatrixAdapter_def.hpp
@@ -128,6 +133,9 @@ APPEND_SET(HEADERS
   Amesos2_TpetraMultiVecAdapter.hpp
   Amesos2_TpetraMultiVecAdapter_decl.hpp
   Amesos2_TpetraMultiVecAdapter_def.hpp
+  Amesos2_KokkosMultiVecAdapter.hpp
+  Amesos2_KokkosMultiVecAdapter_decl.hpp
+  Amesos2_KokkosMultiVecAdapter_def.hpp
   Amesos2_TypeMap.hpp
   Amesos2_TypeDecl.hpp
   Amesos2_Util.hpp
@@ -149,7 +157,9 @@ APPEND_SET(SOURCES
   Amesos2_Solver.cpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.cpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter.cpp
+  Amesos2_KokkosCrsMatrix_MatrixAdapter.cpp
   Amesos2_TpetraMultiVecAdapter.cpp
+  Amesos2_KokkosMultiVecAdapter.cpp
   Amesos2_Util.cpp
   Amesos2_Version.cpp
   )
