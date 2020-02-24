@@ -109,9 +109,21 @@ public:
   */
   virtual std::vector<std::string> run( Vector<Real>     &x,
                                         Objective<Real>  &obj,
-                                        Constraint<Real> &con,
-                                        Vector<Real>     &mul,
+                                        Constraint<Real> &econ,
+                                        Vector<Real>     &emul,
                                         std::ostream     &outStream = std::cout );
+
+  /** \brief Run algorithm on equality constrained problems (Type-E).
+             This general interface supports the use of dual optimization vector spaces,
+             where the user does not define the dual() method.
+  */
+  virtual std::vector<std::string> run( Vector<Real>       &x,
+                                        const Vector<Real> &g, 
+                                        Objective<Real>    &obj,
+                                        Constraint<Real>   &econ,
+                                        Vector<Real>       &emul,
+                                        const Vector<Real> &eres,
+                                        std::ostream       &outStream = std::cout) = 0;
 
   /** \brief Run algorithm on equality constrained problems with explicit
              linear equality constraints (Type-E).
@@ -120,10 +132,10 @@ public:
   */
   virtual std::vector<std::string> run( Vector<Real>     &x,
                                         Objective<Real>  &obj,
-                                        Constraint<Real> &con,
-                                        Vector<Real>     &mul,
-                                        Constraint<Real> &linearcon,
-                                        Vector<Real>     &linearmul,
+                                        Constraint<Real> &econ,
+                                        Vector<Real>     &emul,
+                                        Constraint<Real> &linear_econ,
+                                        Vector<Real>     &linear_emul,
                                         std::ostream     &outStream = std::cout );
 
   /** \brief Run algorithm on equality constrained problems with explicit
@@ -134,22 +146,13 @@ public:
   virtual std::vector<std::string> run( Vector<Real>       &x,
                                         const Vector<Real> &g,
                                         Objective<Real>    &obj,
-                                        Constraint<Real>   &con,
-                                        Vector<Real>       &mul,
-                                        Constraint<Real>   &linearcon,
-                                        Vector<Real>       &linearmul,
+                                        Constraint<Real>   &econ,
+                                        Vector<Real>       &emul,
+                                        const Vector<Real> &eres,
+                                        Constraint<Real>   &linear_econ,
+                                        Vector<Real>       &linear_emul,
+                                        const Vector<Real> &linear_eres,
                                         std::ostream       &outStream = std::cout );
-
-  /** \brief Run algorithm on equality constrained problems (Type-E).
-             This general interface supports the use of dual optimization vector spaces,
-             where the user does not define the dual() method.
-  */
-  virtual std::vector<std::string> run( Vector<Real>       &x,
-                                        const Vector<Real> &g, 
-                                        Objective<Real>    &obj,
-                                        Constraint<Real>   &con,
-                                        Vector<Real>       &mul,
-                                        std::ostream       &outStream = std::cout) = 0;
 
   /** \brief Print iterate header.
   */

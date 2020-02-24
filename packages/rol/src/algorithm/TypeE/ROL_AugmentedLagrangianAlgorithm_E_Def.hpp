@@ -182,16 +182,17 @@ template<typename Real>
 std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>       &x,
                                                                     const Vector<Real> &g,
                                                                     Objective<Real>    &obj,
-                                                                    Constraint<Real>   &con,
-                                                                    Vector<Real>       &mul,
+                                                                    Constraint<Real>   &econ,
+                                                                    Vector<Real>       &emul,
+                                                                    const Vector<Real> &eres,
                                                                     std::ostream       &outStream ) {
   std::vector<std::string> output;
   const Real one(1), oem2(1e-2);
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   // Initialize augmented Lagrangian data
-  AugmentedLagrangian<Real> alobj(makePtrFromRef(obj),makePtrFromRef(con),mul,
-                                  state_->searchSize,x,mul.dual(),scaleLagrangian_,HessianApprox_);
-  initialize(x,g,mul,mul.dual(),alobj,con,outStream);
+  AugmentedLagrangian<Real> alobj(makePtrFromRef(obj),makePtrFromRef(econ),emul,
+                                  state_->searchSize,x,eres,scaleLagrangian_,HessianApprox_);
+  initialize(x,g,emul,eres,alobj,econ,outStream);
   Ptr<Algorithm_U<Real>> algo;
 
   // Output
@@ -232,7 +233,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
     // Update multipliers
     minPenaltyReciprocal_ = std::min(one/state_->searchSize,minPenaltyLowerBound_);
     if ( cscale_*state_->cnorm < feasTolerance_ ) {
-      mul.axpy(state_->searchSize*cscale_,state_->constraintVec->dual());
+      emul.axpy(state_->searchSize*cscale_,state_->constraintVec->dual());
       if ( algo->getState()->statusFlag == EXITSTATUS_CONVERGED ) {
         optTolerance_  = std::max(oem2*outerOptTolerance_,
                          optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
@@ -241,7 +242,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
                        feasTolerance_*std::pow(minPenaltyReciprocal_,feasIncreaseExponent_));
       // Update Algorithm State
       state_->snorm += state_->searchSize*cscale_*state_->cnorm;
-      state_->lagmultVec->set(mul);
+      state_->lagmultVec->set(emul);
     }
     else {
       state_->searchSize = std::min(penaltyUpdate_*state_->searchSize,maxPenaltyParam_);
@@ -250,7 +251,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
       feasTolerance_     = std::max(oem2*outerFeasTolerance_,
                            feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
     }
-    alobj.reset(mul,state_->searchSize);
+    alobj.reset(emul,state_->searchSize);
 
     // Update Output
     output.push_back(print(printHeader_));

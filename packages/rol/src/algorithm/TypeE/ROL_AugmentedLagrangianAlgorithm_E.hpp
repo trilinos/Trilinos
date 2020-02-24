@@ -112,8 +112,9 @@ public:
   virtual std::vector<std::string> run( Vector<Real>       &x,
                                         const Vector<Real> &g, 
                                         Objective<Real>    &obj,
-                                        Constraint<Real>   &con,
-                                        Vector<Real>       &mul,
+                                        Constraint<Real>   &econ,
+                                        Vector<Real>       &emul,
+                                        const Vector<Real> &eres,
                                         std::ostream       &outStream = std::cout);
 
   virtual std::string printHeader( void ) const override;
