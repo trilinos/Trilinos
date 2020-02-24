@@ -46,6 +46,7 @@
 
 #include "ROL_Algorithm_B.hpp"
 #include "ROL_KrylovFactory.hpp"
+#include "ROL_SecantFactory.hpp"
 
 /** \class ROL::NewtonKrylovAlgorithm_B
     \brief Provides an interface to run the projected secant algorithm.
