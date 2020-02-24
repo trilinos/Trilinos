@@ -2122,10 +2122,6 @@ namespace Tpetra {
         (this->isStorageOptimized () && ! this->indicesAreAllocated (),
          std::logic_error, "Storage is optimized, but indices are not "
          "allocated, not even trivially." << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->storageStatus_ == Details::STORAGE_2D,
-         std::logic_error,
-         "Graph should never have 2D storage");
 
       size_t nodeAllocSize = 0;
       try {

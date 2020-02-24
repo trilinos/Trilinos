@@ -124,7 +124,7 @@ namespace Tpetra {
     ///   a fill-complete state.
     ///
     /// When a CrsGraph or CrsMatrix is <i>not</i> fill complete and
-    /// is allocated, then its data live in one of three storage
+    /// is allocated, then its data live in one of two storage
     /// formats:
     ///
     /// <ol>
@@ -151,7 +151,6 @@ namespace Tpetra {
     /// retain the 1-D unpacked format, and thus retain this enum
     /// value.
     enum EStorageStatus {
-      STORAGE_2D, //<! 2-D storage
       STORAGE_1D_UNPACKED, //<! 1-D "unpacked" storage
       STORAGE_1D_PACKED, //<! 1-D "packed" storage
       STORAGE_UB //<! Invalid value; upper bound on enum values
