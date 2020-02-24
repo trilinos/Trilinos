@@ -64,6 +64,18 @@ TEUCHOS_UNIT_TEST(Behavior, Default)
   bool verbose_default = false;
   bool verb = Tpetra::Details::Behavior::verbose();
   TEUCHOS_TEST_ASSERT(verb==verbose_default, out, success);
+
+  // Print current values of other behaviors. 
+  // Can't test against default since these behaviors may be 
+  // changed by environment variables (in which case, test against
+  // default fails)
+  std::cout << "\n        Cuda-aware MPI?  " 
+            << Tpetra::Details::Behavior::assumeMpiIsCudaAware()
+            << "\n";
+
+  std::cout << "\n        Tpetra Debug?  "
+            << Tpetra::Details::Behavior::debug()
+            << "\n";
 }
 
 TEUCHOS_UNIT_TEST(Behavior, verbosePrintCountThreshold) {
