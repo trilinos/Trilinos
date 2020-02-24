@@ -8,7 +8,7 @@ if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
     if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
         echo -e "Job is CUDA"
         module load git/2.10.1
-        module load python/2.7.12
+        module load python/3.7.3
     else
         echo -e "ERROR: Unable to find matching environment for CUDA job not on Ride."
         exit -1
@@ -16,7 +16,7 @@ if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
 else
     source /projects/sems/modulefiles/utils/sems-modules-init.sh
     module load sems-git/2.10.1
-    module load sems-python/2.7.9
+    module load sems-python/3.5.2
 fi
 
 # Identify the path to this script
