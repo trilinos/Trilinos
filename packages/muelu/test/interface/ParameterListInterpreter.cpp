@@ -102,9 +102,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     useKokkos = true;
   }
 #endif
+  bool compareWithGold = true;
+#ifdef KOKKOS_ENABLE_CUDA
+  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    // Behavior of some algorithms on Cuda is non-deterministic, so we won't check the output.
+    compareWithGold = false;
+#endif
   clp.setOption("kokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
   clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
+  clp.setOption("compareWithGold", "skipCompareWithGold", &compareWithGold, "compare runs against gold files");
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -380,58 +387,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         run_sed("'/RCP/ s/=0x0/=0/g'", baseFile);
 #endif
 
-        // When using the kokkos refactor path, aggregation is non-deterministic
-        // This means that we need to remove most mentions of matrix sizes in the
-        // level smoothers and we also need to remove data from the summary
-        if(useKokkos) {
-          // Defining a couple helpful regex strings
-          const std::string floatRegex   = "[0-9]\\{1,\\}.[0-9]\\{1,\\}";
-          const std::string integerRegex = "[0-9]\\{1,\\}";
-
-          // Catch lines of the MueLu summary (except the first one which is a bit different)
-          std::string stringToReplace = integerRegex + "\\s*"
-            + integerRegex + "\\s*"
-            + integerRegex + "\\s*"
-            + floatRegex + "\\s*"
-            + floatRegex + "\\s*[0-9]";
-          std::string replacementString = "<ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // Catch the first line of the MueLu summary
-          stringToReplace = integerRegex + "\\s*" + integerRegex + "\\s*"
-            + integerRegex + "\\s*" + floatRegex + "\\s*[0-9]";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // Catch the matrix size related informations from Ifpack's output
-          stringToReplace = "Global matrix dimensions: [" + integerRegex + ",\\s*" + integerRegex
-            + "], Global nnz: " + integerRegex;
-          replacementString = "Global matrix dimensions: <ignored>, Global nnz: <ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // Catch operator/smoother complexity output from MueLu
-          stringToReplace = "Operator complexity = " + floatRegex;
-          replacementString = "Operator complexity = <ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-          stringToReplace = "Smoother complexity = " + floatRegex;
-          replacementString = "Smoother complexity = <ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // Finally ignore the Chebyshev eigen value ratio which varies with aggregation
-          stringToReplace = "chebyshev: ratio eigenvalue = " + floatRegex;
-          replacementString = "chebyshev: ratio eigenvalue = <ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // as well as the alpha paramter it sets
-          stringToReplace = "lambdaMax = <ignored>, alpha: " + floatRegex + ", lambdaMin = <ignored>,";
-          replacementString = "lambdaMax = <ignored>, alpha: <ignored>, lambdaMin = <ignored>,";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-        }
-
         // Run comparison (ignoring whitespaces)
         cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".gold_filtered " + baseFile + ".out_filtered";
-        int ret = system(cmd.c_str());
-        if (ret)
+        int ret = 0;
+        if (compareWithGold)
+          ret = system(cmd.c_str());
+        else
+          std::cout << "Skipping comparison with gold file\n";
+        if (ret) {
           failed = true;
+        }
 
         //std::ios_base::fmtflags ff(std::cout.flags());
         //std::cout.precision(2);
