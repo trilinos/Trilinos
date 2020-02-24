@@ -78,7 +78,9 @@ private:
       Ptr<Vector<Real>> xzero = x_->clone(); xzero->zero();
       lcon_->value(*ran,*xzero,tol);
       ran->scale(static_cast<Real>(-1));
+      nsop_->apply(*xzero,*x_,tol);
       rsop.apply(*x_,*ran,tol);
+      x_->plus(*xzero);
       //throw Exception::NotImplemented(">>> ReduceLinearConstraint::feasible : Input x is not feasible!");
     }
   }
@@ -90,9 +92,9 @@ public:
                          const Ptr<Vector<Real>>       &x,
                          const Ptr<const Vector<Real>> &c)
     : lcon_(lcon), x_(x) {
+    nsop_ = makePtr<NullSpaceOperator<Real>>(lcon,x_,c);
     feasible(c);
     storage_ = makePtr<SimController<Real>>();
-    nsop_    = makePtr<NullSpaceOperator<Real>>(lcon,x_,c);
   }
 
   const Ptr<Objective<Real>> transform(const Ptr<Objective<Real>> &obj) const {

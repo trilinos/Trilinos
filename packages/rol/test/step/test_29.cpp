@@ -104,10 +104,10 @@ int main(int argc, char *argv[]) {
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
                << "  x3 = " << data[2] << "  x4 = " << data[3] << std::endl;
-    e1 = (data[0]-static_cast<RealT>(0.0)); //(data[0]-static_cast<RealT>(2.0/3.0));
-    e2 = (data[1]-static_cast<RealT>(0.0)); //(data[1]-static_cast<RealT>(1.0/3.0));
-    e3 = (data[2]-static_cast<RealT>(0.0)); //(data[2]-static_cast<RealT>(1.0/3.0));
-    e4 = (data[3]-static_cast<RealT>(0.0)); //(data[3]-static_cast<RealT>(2.0));
+    e1 = (data[0]-static_cast<RealT>(2.0/3.0));
+    e2 = (data[1]-static_cast<RealT>(1.0/3.0));
+    e3 = (data[2]-static_cast<RealT>(1.0/3.0));
+    e4 = (data[3]-static_cast<RealT>(2.0));
     err = std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4));
     *outStream << "  Max-Error = " << err << std::endl;
     errorFlag += (err > tol ? 1 : 0);
