@@ -22,6 +22,9 @@
 #include "Tacho_TeamFunctor_SolveLowerChol.hpp"
 #include "Tacho_TeamFunctor_SolveUpperChol.hpp"
 
+//#define TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD
+#define TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL
+
 namespace Tacho {
 
   ///
@@ -123,7 +126,7 @@ namespace Tacho {
     struct {
       double t_init, t_mode_classification, t_prepare, t_solve, t_extra;
       double m_used, m_peak;
-      int n_device_problems, n_team_problems;
+      int n_device_problems, n_team_problems, n_kernel_launching;
     } stat;
 
   public:
@@ -189,7 +192,7 @@ namespace Tacho {
       printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
       printf("             peak memory used in solve:                       %10.2f MB\n", stat.m_peak/1024/1024);
       printf("\n");
-      printf("  Compute Mode in Solve\n");
+      printf("  Compute Mode in Solve (nlevel: %d, device cut %d, serial cut %d)\n", _nlevel, _device_level_cut, _team_serial_level_cut);
       printf("             # of subproblems using device functions:         %6d\n", stat.n_device_problems);
       printf("             # of subproblems using team functions:           %6d\n", stat.n_team_problems);
       printf("             total # of subproblems:                          %6d\n", (stat.n_device_problems+stat.n_team_problems));
@@ -221,6 +224,8 @@ namespace Tacho {
       printf("\n");
       printf("  Memory\n");
       printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
+      printf("  Kernels\n");
+      printf("             # of kernel launching:                           %6d\n", stat.n_kernel_launching);
       printf("\n");
     }
 
@@ -818,6 +823,8 @@ namespace Tacho {
       
       Kokkos::Impl::Timer timer;
 
+      stat.n_kernel_launching = 0;
+
       // 0. permute and copy b -> t
       timer.reset();
       applyRowPermutationToDenseMatrix(t, b, _perm);      
@@ -825,21 +832,25 @@ namespace Tacho {
 
       timer.reset();
       { 
+        const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
+
         // this should be considered with average problem sizes in levels
         const ordinal_type half_level = _nlevel/2;
         const ordinal_type team_size_solve[2] = { 64, 16 }, vector_size_solve[2] = { 8, 8};
         const ordinal_type team_size_update[2] = { 128, 32}, vector_size_update[2] = { 1, 1};
         {
           typedef TeamFunctor_SolveLowerChol<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::template SolveTag<variant> > team_policy_solve;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::template UpdateTag<variant> > team_policy_update;
-          // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-          //                            typename functor_type::DummyTag> team_policy_solve;
-          // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-          //                            typename functor_type::DummyTag> team_policy_update;
-          
+#endif          
           functor_type functor(_info, 
                                _compute_mode,
                                _level_sids,
@@ -869,38 +880,53 @@ namespace Tacho {
                 policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
                 policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
               }
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+              const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
+              const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
+#else
+              const auto policy_solve_with_work_property = policy_solve;
+              const auto policy_update_with_work_property = policy_update;
+#endif
               if (lvl < _device_level_cut) {
                 // do nothing
                 //Kokkos::parallel_for("solve lower", policy_solve, functor);
               } else {
-                Kokkos::parallel_for("solve lower", policy_solve, functor);
+                Kokkos::parallel_for("solve lower", 
+                                     policy_solve_with_work_property, 
+                                     functor);
+                ++stat.n_kernel_launching;
               }
               Kokkos::fence();
-
-              Kokkos::parallel_for("update lower", policy_update, functor); 
+              
+              Kokkos::parallel_for("update lower", 
+                                   policy_update_with_work_property, 
+                                   functor); 
+              ++stat.n_kernel_launching;
               Kokkos::fence();
             }
           }
         } // end of lower tri solve
-
+        
         {
           typedef TeamFunctor_SolveUpperChol<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::template SolveTag<variant> > team_policy_solve;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::template UpdateTag<variant> > team_policy_update;
-          // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-          //                            typename functor_type::DummyTag> team_policy_solve;
-          // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-          //                            typename functor_type::DummyTag> team_policy_update;
-
+#endif
           functor_type functor(_info, 
                                _compute_mode,
                                _level_sids,
                                t,
                                _buf_ptr,
                                _buf);
-
+          
           team_policy_solve policy_solve(1,1,1);
           team_policy_update policy_update(1,1,1);
           
@@ -921,14 +947,27 @@ namespace Tacho {
                 policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
                 policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
               }
-              Kokkos::parallel_for("update upper", policy_update, functor);              
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+              const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
+              const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
+#else
+              const auto policy_solve_with_work_property = policy_solve;
+              const auto policy_update_with_work_property = policy_update;
+#endif
+              Kokkos::parallel_for("update upper", 
+                                   policy_update_with_work_property,
+                                   functor);
+              ++stat.n_kernel_launching;
               Kokkos::fence();
 
               if (lvl < _device_level_cut) {
                 // do nothing
                 //Kokkos::parallel_for("solve upper", policy_solve, functor); 
               } else {
-                Kokkos::parallel_for("solve upper", policy_solve, functor); 
+                Kokkos::parallel_for("solve upper", 
+                                     policy_solve_with_work_property,
+                                     functor);
+                ++stat.n_kernel_launching;
               }
               solveUpperOnDevice(pbeg, pend, t);
               Kokkos::fence();

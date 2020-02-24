@@ -17,9 +17,12 @@ namespace Tacho {
 
     typedef SupernodeInfoType supernode_info_type;
     typedef typename supernode_info_type::supernode_type supernode_type;
+    typedef typename supernode_info_type::supernode_type_array supernode_type_array;
 
     typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
     typedef typename supernode_info_type::size_type_array size_type_array;
+
+    typedef typename supernode_info_type::ordinal_pair_type_array ordinal_pair_type_array;
 
     typedef typename supernode_info_type::value_type value_type;
     typedef typename supernode_info_type::value_type_array value_type_array;
@@ -34,15 +37,18 @@ namespace Tacho {
      Algo::External,Algo::Internal>::type GemvAlgoType;
 
   private:
-    supernode_info_type _info;
-    ordinal_type_array _compute_mode, _level_sids;
+    ConstUnmanagedViewType<supernode_type_array> _supernodes;
+    ConstUnmanagedViewType<ordinal_pair_type_array> _sid_block_colidx;
+    ConstUnmanagedViewType<ordinal_type_array> _gid_colidx;
+
+    ConstUnmanagedViewType<ordinal_type_array> _compute_mode, _level_sids;
     ordinal_type _pbeg, _pend;
 
-    value_type_matrix _t;
+    UnmanagedViewType<value_type_matrix> _t;
     ordinal_type _nrhs;
 
-    size_type_array _buf_ptr;
-    value_type_array _buf;
+    UnmanagedViewType<size_type_array> _buf_ptr;
+    UnmanagedViewType<value_type_array> _buf;
 
   public:
     KOKKOS_INLINE_FUNCTION
@@ -56,7 +62,9 @@ namespace Tacho {
                                const size_type_array buf_ptr,
                                const value_type_array buf)
       :
-      _info(info),
+      _supernodes(info.supernodes),
+      _sid_block_colidx(info.sid_block_colidx),
+      _gid_colidx(info.gid_colidx),
       _compute_mode(compute_mode),
       _level_sids(level_sids),
       _t(t),
@@ -78,7 +86,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void solve_var0(MemberType &member, const ordinal_type sid) const {
       const value_type minus_one(-1), zero(0);
-      const auto &s = _info.supernodes(sid);
+      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
@@ -106,7 +114,7 @@ namespace Tacho {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void update_var0(MemberType &member, const ordinal_type sid) const {
-      const auto &s = _info.supernodes(sid);
+      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (n_m > 0) {
@@ -117,8 +125,8 @@ namespace Tacho {
             sbeg = s.sid_col_begin + 1, send = s.sid_col_end - 1;
           for (ordinal_type i=sbeg,ip=0/*is=0*/;i<send;++i) {
             const ordinal_type
-              tbeg = _info.sid_block_colidx(i).second,
-              tend = _info.sid_block_colidx(i+1).second,
+              tbeg = _sid_block_colidx(i).second,
+              tend = _sid_block_colidx(i+1).second,
               tcnt = tend - tbeg;
 
             Kokkos::parallel_for
@@ -127,7 +135,7 @@ namespace Tacho {
                 const ordinal_type it = tbeg+ii;
                 const ordinal_type is = ip+ii;
                 //for (ordinal_type it=tbeg;it<tend;++it,++is) {
-                const ordinal_type row = _info.gid_colidx(s.gid_col_begin + it);
+                const ordinal_type row = _gid_colidx(s.gid_col_begin + it);
                 for (ordinal_type j=0;j<_nrhs;++j)
                   Kokkos::atomic_add(&_t(row,j), bB(is,j));
               });
@@ -144,7 +152,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void solve_var1(MemberType &member, const ordinal_type sid) const {
       const value_type minus_one(-1), one(1), zero(0);
-      const auto &s = _info.supernodes(sid);
+      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
@@ -174,7 +182,7 @@ namespace Tacho {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void update_var1(MemberType &member, const ordinal_type sid) const {
-      const auto &s = _info.supernodes(sid);
+      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
@@ -200,8 +208,8 @@ namespace Tacho {
               sbeg = s.sid_col_begin + 1, send = s.sid_col_end - 1;
             for (ordinal_type i=sbeg,ip=0/*is=0*/;i<send;++i) {
               const ordinal_type
-                tbeg = _info.sid_block_colidx(i).second,
-                tend = _info.sid_block_colidx(i+1).second,
+                tbeg = _sid_block_colidx(i).second,
+                tend = _sid_block_colidx(i+1).second,
                 tcnt = tend - tbeg;
 
               Kokkos::parallel_for
@@ -210,7 +218,7 @@ namespace Tacho {
                   const ordinal_type it = tbeg+ii;
                   const ordinal_type is = ip+ii;
                   //for (ordinal_type it=tbeg;it<tend;++it,++is) {
-                  const ordinal_type row = _info.gid_colidx(s.gid_col_begin + it);
+                  const ordinal_type row = _gid_colidx(s.gid_col_begin + it);
                   for (ordinal_type j=0;j<_nrhs;++j)
                     Kokkos::atomic_add(&_t(row,j), bB(is,j));
                 });
@@ -228,7 +236,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void solve_var2(MemberType &member, const ordinal_type sid) const {
       const value_type one(1), zero(0);
-      const auto &s = _info.supernodes(sid);
+      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n;
         if (m > 0 && n > 0) {
@@ -247,7 +255,7 @@ namespace Tacho {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void update_var2(MemberType &member, const ordinal_type sid) const {
-      const auto &s = _info.supernodes(sid);
+      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
@@ -273,8 +281,8 @@ namespace Tacho {
               sbeg = s.sid_col_begin + 1, send = s.sid_col_end - 1;
             for (ordinal_type i=sbeg,ip=0/*is=0*/;i<send;++i) {
               const ordinal_type
-                tbeg = _info.sid_block_colidx(i).second,
-                tend = _info.sid_block_colidx(i+1).second,
+                tbeg = _sid_block_colidx(i).second,
+                tend = _sid_block_colidx(i+1).second,
                 tcnt = tend - tbeg;
 
               Kokkos::parallel_for
@@ -283,7 +291,7 @@ namespace Tacho {
                   const ordinal_type it = tbeg+ii;
                   const ordinal_type is = ip+ii;
                   //for (ordinal_type it=tbeg;it<tend;++it,++is) {
-                  const ordinal_type row = _info.gid_colidx(s.gid_col_begin + it);
+                  const ordinal_type row = _gid_colidx(s.gid_col_begin + it);
                   for (ordinal_type j=0;j<_nrhs;++j)
                     Kokkos::atomic_add(&_t(row,j), bB(is,j));
                 });
@@ -352,7 +360,7 @@ namespace Tacho {
 // template<typename MemberType>
 // KOKKOS_INLINE_FUNCTION
 // void solve_and_update_recursive_var0(MemberType &member, const ordinal_type sid) const {
-//   const auto &s = _info.supernodes(sid);
+//   const auto &s = _supernodes(sid);
 //   for (ordinal_type i=0;i<s.nchildren;++i)
 //     solve_and_update_recursive(member, s.children[i]);
 

@@ -26,6 +26,11 @@
 
 #include "Tacho_CommandLineParser.hpp"
 
+#define TACHO_ENABLE_PROFILE
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
+#include "cuda_profiler_api.h" 
+#endif
+
 template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
 static const char * scheduler_name = "TaskSchedulerMultiple";
 
@@ -72,6 +77,10 @@ int main (int argc, char *argv[]) {
   if (r_parse) return 0; // print help return
 
   Kokkos::initialize(argc, argv);
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
+  cudaProfilerStop();
+#endif
 
   typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type device_type;
   typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
@@ -229,7 +238,13 @@ int main (int argc, char *argv[]) {
     std::cout << "CholTriSolve:: TriSolve prepare::time = " << t << std::endl;
 
     timer.reset();        
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
+    cudaProfilerStart();
+#endif
     TS.solveCholesky(X, B, W, verbose); 
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
+    cudaProfilerStop();
+#endif
     t = timer.seconds();    
     std::cout << "CholTriSolve:: solve matrix::time = " << t << std::endl;
     TS.release(verbose);
