@@ -47,6 +47,7 @@
 */
 
 #include "ROL_SimpleEqConstrained.hpp"
+#include "ROL_HS42.hpp"
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_AugmentedLagrangianAlgorithm_E.hpp"
 
@@ -83,6 +84,7 @@ int main(int argc, char *argv[]) {
   // *** Test body.
   try {
     // Set up optimization problem
+    *outStream << std::endl << "Simple Equality Constrained Problem" << std::endl << std::endl;
     ROL::Ptr<ROL::Vector<RealT>> x;
     std::vector<ROL::Ptr<ROL::Vector<RealT>>> sol;
     ROL::Ptr<ROL::OptimizationProblem<RealT>> optProb;
@@ -110,6 +112,26 @@ int main(int argc, char *argv[]) {
     *outStream << "Distance from true solution: " << solnErr << "\n";
 
     errorFlag += (solnErr < static_cast<RealT>(1e-6)) ? 0 : 1;
+
+    *outStream << std::endl << "Hock and Schittkowski Problem #42" << std::endl << std::endl;
+    ROL::ZOO::getHS42<RealT> HS42;
+    ROL::Ptr<ROL::Vector<RealT>>     xvec       = HS42.getInitialGuess();
+    ROL::Ptr<ROL::Objective<RealT>>  obj        = HS42.getObjective();
+    ROL::Ptr<ROL::Constraint<RealT>> linear_con = ROL::makePtr<ROL::ZOO::Constraint_HS42a<RealT>>();
+    ROL::Ptr<ROL::Vector<RealT>>     linear_mul = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
+    ROL::Ptr<ROL::Constraint<RealT>> con        = ROL::makePtr<ROL::ZOO::Constraint_HS42b<RealT>>();
+    ROL::Ptr<ROL::Vector<RealT>>     mul        = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
+    ROL::AugmentedLagrangianAlgorithm_E<RealT> algo1(*parlist);
+    algo1.run(*xvec,*obj,*con,*mul,*linear_con,*linear_mul,*outStream);
+
+    error = HS42.getSolution();
+    error->axpy(static_cast<RealT>(-1), *xvec);
+    RealT solnErr1 = error->norm();
+
+    *outStream << "Distance from true solution: " << solnErr1 << "\n";
+
+    errorFlag += (solnErr1 < static_cast<RealT>(1e-6)) ? 0 : 1;
+
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
