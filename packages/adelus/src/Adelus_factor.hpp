@@ -60,7 +60,7 @@
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "BlasWrapper_copy.hpp"
-#include "BlasWrapper_iamax.hpp"
+#include "KokkosBlas1_iamax.hpp"
 #include "KokkosBlas3_gemm.hpp"
 
 extern int myrow;
@@ -367,7 +367,7 @@ void factor(ZDView& ZV,                 // matrix and rhs
         t1 = MPI_Wtime();
 #endif
         auto cur_col_view_1d = subview(ZV,Kokkos::make_pair(cur_col_i, cur_col_i+col_len),cur_col_j);
-        rel_lpivot_row = BlasWrapper::iamax(cur_col_view_1d);
+        rel_lpivot_row = KokkosBlas::iamax(cur_col_view_1d);
 #ifdef GET_TIMING
         iamaxtime += (MPI_Wtime()-t1);
 #endif
