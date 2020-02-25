@@ -103,6 +103,8 @@ public:
       ss << labels_[index_] << "-coord <tol=" << error_ << ">";
       return ss.str();
    }
+
+  int getIndex() const {return index_;}
 };
 
 /** Match coordinates at the same point on a plane
@@ -166,6 +168,9 @@ public:
       ss << labels_[index0_] << labels_[index1_] << "-coord <tol=" << error_ << ">";
       return ss.str();
    }
+
+  int getIndex0() const {return index0_;}
+  int getIndex1() const {return index1_;}
 };
 
 /** Match coordinates at the same point in two planes. This handles quarter symmetry.
@@ -259,6 +264,8 @@ public:
 	ss << "wx-coord <tol=" << error_ << ">";
       return ss.str();
    }
+
+  int getIndex() const {return index0_;}
 };
 
 } // end panzer_stk
