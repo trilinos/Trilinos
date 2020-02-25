@@ -2436,7 +2436,7 @@ namespace Tpetra {
   {
     using LO = local_ordinal_type;
     const LO numInputEnt = inputInds.extent(0);
-    if (numInputEnt != inputVals.extent(0)) {
+    if (numInputEnt != static_cast<LO>(inputVals.extent(0))) {
       return Teuchos::OrdinalTraits<LO>::invalid();
     }
     const Scalar* const inVals =
