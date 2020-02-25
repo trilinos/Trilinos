@@ -261,18 +261,18 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
 
 
 
-//template<typename Real>
-//std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
-//                                                 Objective<Real>       &obj,
-//                                                 BoundConstraint<Real> &bnd,
-//                                                 Constraint<Real>      &econ,
-//                                                 Vector<Real>          &emul,
-//                                                 Constraint<Real>      &linear_econ,
-//                                                 Vector<Real>          &linear_emul,
-//                                                 std::ostream          &outStream ) {
-//  return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),
-//             linear_econ,linear_emul,linear_emul.dual(),outStream);
-//}
+template<typename Real>
+std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
+                                                 Objective<Real>       &obj,
+                                                 BoundConstraint<Real> &bnd,
+                                                 Constraint<Real>      &econ,
+                                                 Vector<Real>          &emul,
+                                                 Constraint<Real>      &linear_econ,
+                                                 Vector<Real>          &linear_emul,
+                                                 std::ostream          &outStream ) {
+  return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),
+             linear_econ,linear_emul,linear_emul.dual(),outStream);
+}
 
 template<typename Real>
 std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
@@ -334,27 +334,21 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
 
 
 
-//template<typename Real>
-//std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
-//                                                 const Vector<Real>    &g,
-//                                                 Objective<Real>       &obj,
-//                                                 BoundConstraint<Real> &bnd,
-//                                                 Constraint<Real>      &econ,
-//                                                 Vector<Real>          &emul,
-//                                                 const Vector<Real>    &eres,
-//                                                 Constraint<Real>      &linear_econ,
-//                                                 Vector<Real>          &linear_emul,
-//                                                 const Vector<Real>    &linear_eres,
-//                                                 std::ostream          &outStream ) {
-//  Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
-//  ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
-//  Ptr<Vector<Real>> s = x.clone(); s->zero();
-//  std::vector<std::string> output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),bnd,
-//                                        *rlc.transform(makePtrFromRef(econ)),emul,eres,outStream);
-//  rlc.project(x,*s);
-//  x.plus(*rlc.getFeasibleVector());
-//  return output;
-//}
+template<typename Real>
+std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
+                                                 const Vector<Real>    &g,
+                                                 Objective<Real>       &obj,
+                                                 BoundConstraint<Real> &bnd,
+                                                 Constraint<Real>      &econ,
+                                                 Vector<Real>          &emul,
+                                                 const Vector<Real>    &eres,
+                                                 Constraint<Real>      &linear_econ,
+                                                 Vector<Real>          &linear_emul,
+                                                 const Vector<Real>    &linear_eres,
+                                                 std::ostream          &outStream ) {
+  proj_ = makePtr<PolyhedralProjection<Real>>(x,g,bnd,linear_econ,linear_emul,linear_eres);
+  return run(x,g,obj,bnd,econ,emul,eres,outStream);
+}
 
 template<typename Real>
 std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,

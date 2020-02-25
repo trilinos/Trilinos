@@ -84,7 +84,7 @@ AugmentedLagrangianAlgorithm_G<Real>::AugmentedLagrangianAlgorithm_G( ParameterL
   verbosity_          = list.sublist("General").get("Output Level", 0);
   printHeader_        = verbosity_ > 2;
   print_              = (verbosity_ > 2 ? true : print_);
-  list_.sublist("General").set("Output Level",(print_ ? 1 : 0));
+  list_.sublist("General").set("Output Level",(print_ ? verbosity_ : 0));
   // Outer iteration tolerances
   outerFeasTolerance_ = list.sublist("Status Test").get("Constraint Tolerance", oem8);
   outerOptTolerance_  = list.sublist("Status Test").get("Gradient Tolerance",   oem8);
@@ -104,8 +104,10 @@ void AugmentedLagrangianAlgorithm_G<Real>::initialize( Vector<Real>             
                                                        BoundConstraint<Real>     &bnd,
                                                        Constraint<Real>          &con,
                                                        std::ostream              &outStream ) {
+  hasPolyProj_ = true;
   if (proj_ == nullPtr) {
     proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    hasPolyProj_ = false;
   }
   proj_->project(x);
 
@@ -212,7 +214,10 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_G<Real>::run( Vector<Real>
     list_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     list_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
     algo = AlgorithmBFactory<Real>(list_);
-    algo->run(x,g,alobj,bnd,outStream);
+    if (hasPolyProj_) algo->run(x,g,alobj,bnd,*proj_->getLinearConstraint(),
+                                *proj_->getMultiplier(),*proj_->getResidual(),
+                                outStream);
+    else              algo->run(x,g,alobj,bnd,outStream);
     subproblemIter_ = algo->getState()->iter;
 
     // Compute step

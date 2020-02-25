@@ -81,7 +81,7 @@ MoreauYosidaAlgorithm_G<Real>::MoreauYosidaAlgorithm_G(ParameterList &list)
   verbosity_    = list.sublist("General").get("Output Level", 0);
   printHeader_  = verbosity_ > 2;
   print_              = (verbosity_ > 2 ? true : print_);
-  list_.sublist("General").set("Output Level",(print_ ? 2 : 0));
+  list_.sublist("General").set("Output Level",(print_ ? verbosity_ : 0));
 }
 
 template<typename Real>
@@ -95,10 +95,10 @@ void MoreauYosidaAlgorithm_G<Real>::initialize(Vector<Real>                &x,
                                                Vector<Real>                &pwa,
                                                Vector<Real>                &dwa,
                                                std::ostream                &outStream) {
-  hasEcon_ = true;
+  hasPolyProj_ = true;
   if (proj_ == nullPtr) {
     proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
-    hasEcon_ = false;
+    hasPolyProj_ = false;
   }
   proj_->project(x);
   // Initialize data
@@ -174,11 +174,11 @@ std::vector<std::string> MoreauYosidaAlgorithm_G<Real>::run( Vector<Real>       
     // Solve augmented Lagrangian subproblem
     algo = AlgorithmEFactory<Real>(list_);
     emul.zero();
-    algo->run(x,g,myobj,econ,emul,eres,outStream);
-    //if (hasEcon_) algo->run(x,g,myobj,econ,emul,eres,
-    //              *proj_->getLinearConstraint(),*proj_->getMultiplier(),
-    //              *proj_->getResidual(),outStream);
-    //else          algo->run(x,g,myobj,econ,emul,eres,outStream);
+    if (hasPolyProj_) algo->run(x,g,myobj,econ,emul,eres,
+                                *proj_->getLinearConstraint(),
+                                *proj_->getMultiplier(),
+                                *proj_->getResidual(),outStream);
+    else              algo->run(x,g,myobj,econ,emul,eres,outStream);
     subproblemIter_ = algo->getState()->iter;
     state_->nfval += algo->getState()->nfval;
     state_->ngrad += algo->getState()->ngrad;

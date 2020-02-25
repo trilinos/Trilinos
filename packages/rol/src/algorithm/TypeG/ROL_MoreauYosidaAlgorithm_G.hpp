@@ -72,7 +72,7 @@ private:
   int verbosity_;
   bool printHeader_;
 
-  bool hasEcon_;
+  bool hasPolyProj_;
 
   using Algorithm_G<Real>::status_;
   using Algorithm_G<Real>::state_;

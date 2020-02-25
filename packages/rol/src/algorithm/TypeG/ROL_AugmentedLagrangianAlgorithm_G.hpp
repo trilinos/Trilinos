@@ -92,6 +92,7 @@ private:
   // Verbosity flag
   int verbosity_;
   bool printHeader_;
+  bool hasPolyProj_;
 
   using Algorithm_G<Real>::state_;
   using Algorithm_G<Real>::status_;
