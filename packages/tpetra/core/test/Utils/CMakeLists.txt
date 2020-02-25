@@ -145,3 +145,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE(
+  createPrefix
+  SOURCES
+    createPrefix
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+# In an MPI build, I'd like at least 2 processes, in order to test
+# that the string prefix for verbose output includes the right rank
+# and doesn't just print 0.
+TRIBITS_ADD_TEST(
+  createPrefix
+  NAME createPrefix_MPI
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+TRIBITS_ADD_TEST(
+  createPrefix
+  NAME createPrefix_no_MPI
+  COMM serial
+  STANDARD_PASS_OUTPUT
+  )

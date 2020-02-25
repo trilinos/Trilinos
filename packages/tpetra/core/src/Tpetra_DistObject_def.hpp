@@ -53,6 +53,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_checkGlobalError.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Util.hpp" // Details::createPrefix
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include <typeinfo>
@@ -1280,27 +1281,20 @@ namespace Tpetra {
   createPrefix(const char className[],
                const char methodName[]) const
   {
-    int myRank = -1;
     auto map = this->getMap();
-    if (! map.is_null()) {
-      auto comm = map->getComm();
-      if (! comm.is_null()) {
-        myRank = comm->getRank();
-      }
-    }
-    std::ostringstream pfxStrm;
-    pfxStrm << "Proc " << myRank << ": Tpetra::" << className
-            << "::" << methodName << ": ";
-    return std::unique_ptr<std::string>(
-      new std::string(pfxStrm.str()));
+    auto comm = map.is_null() ? Teuchos::null : map->getComm();
+    return Details::createPrefix(
+      comm.getRawPtr(), className, methodName);
   }
 
   template<class DistObjectType>
   void
-  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
-                               const Teuchos::RCP<const Map<typename DistObjectType::local_ordinal_type,
-                                                            typename DistObjectType::global_ordinal_type,
-                                                            typename DistObjectType::node_type> >& newMap)
+  removeEmptyProcessesInPlace(
+    Teuchos::RCP<DistObjectType>& input,
+    const Teuchos::RCP<const Map<
+      typename DistObjectType::local_ordinal_type,
+      typename DistObjectType::global_ordinal_type,
+      typename DistObjectType::node_type>>& newMap)
   {
     input->removeEmptyProcessesInPlace (newMap);
     if (newMap.is_null ()) { // my process is excluded
