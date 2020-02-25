@@ -57,7 +57,7 @@
     \brief Provides the interface to evaluate the augmented Lagrangian.
 
     This class implements the augmented Lagrangian functional for use with
-    ROL::AugmentedLagrangianStep.  Given a function
+    ROL::AugmentedLagrangianAlgorithm.  Given a function
     \f$f:\mathcal{X}\to\mathbb{R}\f$ and an equality constraint
     \f$c:\mathcal{X}\to\mathcal{C}\f$, the augmented Lagrangian functional is
     \f[
