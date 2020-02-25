@@ -63,12 +63,6 @@ private:
   Ptr<Vector<Real>> xnew_, xdual_, xprim_, mul_, lnew_, dlam_, res_;
   Real b_, mul1_, dlam1_, cdot_;
 
-  void initialize(const Ptr<const Vector<Real>>    &xprim,
-                  const Ptr<const Vector<Real>>    &xdual,
-                  const Ptr<const Vector<Real>>    &mul,
-                  const Ptr<const Vector<Real>>    &res) {
-  }
-
 public:
   virtual ~PolyhedralProjection() {}
 
@@ -123,7 +117,7 @@ public:
     }
     else {
       if (dim_==1 && !useSN_) {
-        //mul1_  = (-b_-xprim_->dot(x))/cdot_;
+        mul1_  = (-b_-xprim_->dot(x))/cdot_;
         //mul1_  = static_cast<Real>(0);
         dlam1_ = static_cast<Real>(2);
         //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);

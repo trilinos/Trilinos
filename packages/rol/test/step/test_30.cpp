@@ -163,7 +163,6 @@ int main(int argc, char *argv[]) {
     errorFlag += (err > tol ? 1 : 0);
 
     *outStream << std::endl << "Hock and Schittkowski Problem #63" << std::endl << std::endl;
-    list.sublist("Step").sublist("Augmented Lagrangian").set("Level of Hessian Approximation",1);
     ROL::ZOO::getHS63<RealT> HS63;
     obj  = HS63.getObjective();
     sol  = HS63.getInitialGuess();
