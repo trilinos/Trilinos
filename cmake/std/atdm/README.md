@@ -1067,9 +1067,28 @@ CTest runs everything using the `jsrun` command. You must run jsrun from a
 compute node which can be acquired using the above bsub command.
 
 Once you're on a compute node, you can run ctest. For example:
+
 ```bash
 $ ctest -j4
 ```
+
+By set the mode for CUDA-aware MPI, set the env var:
+
+```bash
+$ export TPETRA_ASSUME_CUDA_AWARE_MPI=0
+$ ctest -j4
+```
+
+or
+
+```bash
+$ export TPETRA_ASSUME_CUDA_AWARE_MPI=1
+$ ctest -j4
+```
+
+before running `ctest`.  Otherwise, if `TPETRA_ASSUME_CUDA_AWARE_MPI` is not
+set in the env, Tpetra will use a default setting determined at configure
+time.
 
 **NOTES:**
 - Do NOT do `module purge` before loading the environment. Simply start off with

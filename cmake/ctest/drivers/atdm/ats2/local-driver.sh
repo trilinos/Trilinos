@@ -16,6 +16,8 @@ source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
 set -x
 
+export TPETRA_ASSUME_CUDA_AWARE_MPI=0
+
 atdm_run_script_on_compute_node \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh \
   $PWD/ctest-s-driver.out \

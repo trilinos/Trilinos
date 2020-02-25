@@ -186,8 +186,6 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   export KOKKOS_NUM_DEVICES=4
 
   # CTEST Settings
-  # TPETRA_ASSUME_CUDA_AWARE_MPI is used by cmake/std/atdm/ats2/trilinos_jsrun
-  export TPETRA_ASSUME_CUDA_AWARE_MPI=0
   # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by cmake/ctest/driver/atdm/ats2/local-driver.sh
   export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=1
 
