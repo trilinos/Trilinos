@@ -250,9 +250,13 @@ std::string MoreauYosidaAlgorithm_B<Real>::print( const bool print_header ) cons
     hist << std::setw(15) << std::left << state_->value;
     hist << std::setw(15) << std::left << gnorm_;
     hist << std::setw(15) << std::left << compViolation_;
-    hist << std::setw(15) << std::left << " ";
+    hist << std::setw(15) << std::left << "---";
     hist << std::scientific << std::setprecision(2);
     hist << std::setw(10) << std::left << state_->searchSize;
+    hist << std::scientific << std::setprecision(6);
+    hist << std::setw(8) << std::left << state_->nfval;
+    hist << std::setw(8) << std::left << state_->ngrad;
+    hist << std::setw(8) << std::left << "---";
     hist << "\n";
   }
   else {

@@ -422,6 +422,13 @@ std::string BundleAlgorithm_U<Real>::print(const bool print_header) const {
       hist << std::setw(6) << std::left << state_->iter;
       hist << std::setw(15) << std::left << state_->value;
       hist << std::setw(15) << std::left << state_->gnorm;
+      hist << std::setw(15) << std::left << "---";
+      hist << std::setw(10) << std::left << state_->nfval;
+      hist << std::setw(10) << std::left << state_->ngrad;
+      hist << std::setw(15) << std::left << "---";
+      hist << std::setw(15) << std::left << "---";
+      hist << std::setw(15) << std::left << state_->searchSize;
+      hist << std::setw(10) << std::left << "---";
       hist << std::endl;
     }
     if ( step_flag_==1 && state_->iter > 0 ) {

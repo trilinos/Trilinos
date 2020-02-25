@@ -237,6 +237,16 @@ std::string LineSearchAlgorithm_U<Real>::print(const bool print_header) const {
     hist << std::setw(6)  << std::left << state_->iter;
     hist << std::setw(15) << std::left << state_->value;
     hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(10) << std::left << state_->nfval;
+    hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << "---";
+    hist << std::setw(10) << std::left << "---";
+    if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
+      hist << std::setw(10) << std::left << "---";
+      hist << std::setw(10) << std::left << "---";
+    }
     hist << std::endl;
   }
   else {
