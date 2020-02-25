@@ -254,6 +254,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
     output.push_back(print(printHeader_));
     if (verbosity_ > 0) outStream << print(printHeader_);
   }
+  emul.scale(cscale_);
   output.push_back(Algorithm_E<Real>::printExitStatus());
   if (verbosity_ > 0) outStream << Algorithm_E<Real>::printExitStatus();
   return output;
