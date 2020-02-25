@@ -30,6 +30,7 @@ import argparse
 import os
 import re
 import sys
+from textwrap import dedent
 
 import subprocess
 from multiprocessing import cpu_count
@@ -133,6 +134,7 @@ def confirmGitVersion():
 
 
 def setBuildEnviron(arguments):
+
     moduleMap = {'Trilinos_pullrequest_gcc_4.8.4':
                      ['sems-env',
                      'sems-git/2.10.1',
@@ -431,9 +433,15 @@ def get_memory_info():
         #         windows or OSX systems that don't have that file.
         #         The nearest OSX equivalent would be to run vm_stat and parse
         #         the output but this isn't a 100% analog.
-        with open('/proc/meminfo') as f_ptr:
-            meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in f_ptr.readlines())
-        mem_kb = meminfo['MemTotal']
+        try:
+            with open('/proc/meminfo') as f_ptr:
+                meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in f_ptr.readlines())
+            mem_kb = meminfo['MemTotal']
+        except IOError:
+            raise IOError(dedent('''\
+                                 Import psutil failed and /proc/meminfo not found.
+                                 Testing cannot proceed because we can't determine system information.
+                                 '''))
 
     output = {}
     output["mem_kb"] = mem_kb
