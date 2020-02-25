@@ -184,9 +184,9 @@ public:
     val *= fscale_;
     // Compute penalty term
     const Real half(0.5);
-    val += cscale_*getConstraintVec(x,tol)->dot(multiplier_->dual());
-    val += half*penaltyParameter_*cscale_*cscale_
-               *getConstraintVec(x,tol)->dot(*getConstraintVec(x,tol));
+    primConVector_->set(multiplier_->dual());
+    primConVector_->axpy(half*cscale_*penaltyParameter_,*getConstraintVec(x,tol));
+    val += cscale_*getConstraintVec(x,tol)->dot(*primConVector_);
     // Scale augmented Lagrangian
     if (scaleLagrangian_) {
       val /= penaltyParameter_;
