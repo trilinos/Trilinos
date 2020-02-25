@@ -58,6 +58,7 @@ class MoreauYosidaAlgorithm_B : public Algorithm_B<Real> {
 private:
   Real compViolation_;
   Real gnorm_;
+  Real maxPenalty_;
   Real tau_;
   bool print_;
   bool updatePenalty_;

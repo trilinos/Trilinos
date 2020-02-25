@@ -56,58 +56,64 @@ class PolyhedralProjection {
 private:
   const Ptr<BoundConstraint<Real>> bnd_;
   const Ptr<Constraint<Real>>      con_;
-  const Ptr<Vector<Real>>          mul_;
   const bool                       useSN_;
 
   int dim_;
   Ptr<Krylov<Real>> krylov_;
-  Ptr<Vector<Real>> xnew_, xdual_, xprim_, lnew_, dlam_, res_;
+  Ptr<Vector<Real>> xnew_, xdual_, xprim_, mul_, lnew_, dlam_, res_;
   Real b_, mul1_, dlam1_, cdot_;
+
+  void initialize(const Ptr<const Vector<Real>>    &xprim,
+                  const Ptr<const Vector<Real>>    &xdual,
+                  const Ptr<const Vector<Real>>    &mul,
+                  const Ptr<const Vector<Real>>    &res) {
+  }
 
 public:
   virtual ~PolyhedralProjection() {}
 
-  PolyhedralProjection(const Ptr<const Vector<Real>>    &x,
-                       const Ptr<BoundConstraint<Real>> &bnd,
-                       const Ptr<Constraint<Real>>      &con = nullPtr,
-                       const Ptr<Vector<Real>>          &mul = nullPtr,
+  PolyhedralProjection(BoundConstraint<Real> &bnd)
+    : bnd_(makePtrFromRef(bnd)), con_(nullPtr), useSN_(false) {}
+
+  PolyhedralProjection(const Vector<Real>    &xprim,
+                       const Vector<Real>    &xdual,
+                       BoundConstraint<Real> &bnd,
+                       Constraint<Real>      &con,
+                       const Vector<Real>    &mul,
+                       const Vector<Real>    &res,
                        const bool useSN = false)
-    : bnd_(bnd), con_(con), mul_(mul), useSN_(useSN) {
-    if (con_ != nullPtr) {
-      xnew_  = x->clone();
-      xprim_ = x->clone();
-      xdual_ = x->dual().clone();
+    : bnd_(makePtrFromRef(bnd)), con_(makePtrFromRef(con)), useSN_(useSN) {
+    xnew_  = xprim.clone();
+    xprim_ = xprim.clone();
+    xdual_ = xdual.clone();
 
-      dim_ = 0;
-      if (mul_ != nullPtr) {
-        dim_ = mul->dimension();
-        res_ = mul->dual().clone();
-      }
-      if (dim_ == 1 && !useSN_) {
-        mul1_  = static_cast<Real>(0);
-        dlam1_ = static_cast<Real>(2);
-        // con.value(x) = xprim_->dot(x) + b_
-        Real tol(std::sqrt(ROL_EPSILON<Real>()));
-        xprim_->zero();
-        con_->value(*res_,*xprim_,tol);
-        b_ = res_->dot(*res_->basis(0));
-        mul_->setScalar(static_cast<Real>(1));
-        con_->applyAdjointJacobian(*xdual_,*mul_,*x,tol);
-        xprim_->set(xdual_->dual());
-        cdot_ = xprim_->dot(*xprim_);
-      }
-      else {
-        lnew_ = mul->clone();
-        dlam_ = mul->clone();
+    dim_ = mul.dimension();
+    mul_ = mul.clone();
+    res_ = res.clone();
+    if (dim_ == 1 && !useSN_) {
+      mul1_  = static_cast<Real>(0);
+      dlam1_ = static_cast<Real>(2);
+      // con.value(x) = xprim_->dot(x) + b_
+      Real tol(std::sqrt(ROL_EPSILON<Real>()));
+      xprim_->zero();
+      con_->value(*res_,*xprim_,tol);
+      b_ = res_->dot(*res_->basis(0));
+      mul_->setScalar(static_cast<Real>(1));
+      con_->applyAdjointJacobian(*xdual_,*mul_,xprim,tol);
+      xprim_->set(xdual_->dual());
+      cdot_ = xprim_->dot(*xprim_);
+    }
+    else {
+      lnew_ = mul.clone();
+      dlam_ = mul.clone();
 
-        ParameterList list;
-        list.sublist("General").sublist("Krylov").set("Type",               "CG");
-        list.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-6);
-        list.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
-        list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
-        list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
-        krylov_ = KrylovFactory<Real>(list);
-      }
+      ParameterList list;
+      list.sublist("General").sublist("Krylov").set("Type",               "CG");
+      list.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-6);
+      list.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
+      list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
+      list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
+      krylov_ = KrylovFactory<Real>(list);
     }
   }
 
@@ -138,6 +144,10 @@ public:
 
   const Ptr<Vector<Real>> getMultiplier(void) const {
     return mul_;
+  }
+
+  const Ptr<Vector<Real>> getResidual(void) const {
+    return res_;
   }
 
 private:

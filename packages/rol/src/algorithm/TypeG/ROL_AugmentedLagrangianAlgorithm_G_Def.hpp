@@ -105,7 +105,7 @@ void AugmentedLagrangianAlgorithm_G<Real>::initialize( Vector<Real>             
                                                        Constraint<Real>          &con,
                                                        std::ostream              &outStream ) {
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(x),makePtrFromRef(bnd));
+    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
   }
   proj_->project(x);
 

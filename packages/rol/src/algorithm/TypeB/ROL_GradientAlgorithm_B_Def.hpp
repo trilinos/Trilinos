@@ -76,7 +76,7 @@ void GradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
                                            std::ostream &outStream) {
   const Real one(1);
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(x),makePtrFromRef(bnd));
+    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
   }
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);

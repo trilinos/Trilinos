@@ -57,9 +57,10 @@ MoreauYosidaAlgorithm_B<Real>::MoreauYosidaAlgorithm_B(ParameterList &list)
   status_->add(makePtr<StatusTest<Real>>(list));
 
   // Parse parameters
-  Real ten(10), oem6(1.e-6), oem8(1.e-8);
+  Real ten(10), oem6(1.e-6), oem8(1.e-8), oe8(1e8);
   ParameterList& steplist = list.sublist("Step").sublist("Moreau-Yosida Penalty");
   state_->searchSize = steplist.get("Initial Penalty Parameter",           ten);
+  maxPenalty_        = steplist.get("Maximum Penalty Parameter",           oe8);
   tau_               = steplist.get("Penalty Parameter Growth Factor",     ten);
   updatePenalty_     = steplist.get("Update Penalty",                      true);
   updateMultiplier_  = steplist.get("Update Multiplier",                   true);
@@ -92,7 +93,7 @@ void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>              &x,
                                                std::ostream              &outStream) {
   hasEcon_ = true;
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(x),makePtrFromRef(bnd));
+    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
     hasEcon_ = false;
   }
   // Initialize data
@@ -153,8 +154,10 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
   while (status_->check(*state_)) {
     // Solve augmented Lagrangian subproblem
     algo = AlgorithmUFactory<Real>(list_);
-    if (hasEcon_) algo->run(x,myobj,*proj_->getLinearConstraint(),*proj_->getMultiplier(),outStream);
-    else          algo->run(x,myobj,outStream);
+    if (hasEcon_) algo->run(x,g,myobj,*proj_->getLinearConstraint(),
+                            *proj_->getMultiplier(),*proj_->getResidual(),
+                            outStream);
+    else          algo->run(x,g,myobj,outStream);
     subproblemIter_ = algo->getState()->iter;
 
     // Compute step
@@ -174,6 +177,7 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
     // Update multipliers
     if (updatePenalty_) {
       state_->searchSize *= tau_;
+      state_->searchSize  = std::min(state_->searchSize,maxPenalty_);
     }
     myobj.updateMultipliers(state_->searchSize,x);
 

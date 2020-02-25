@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>> u0 = x.clone(); u0->setScalar(static_cast<RealT>(1));
     ROL::Ptr<ROL::Bounds<RealT>> bnd0 = ROL::makePtr<ROL::Bounds<RealT>>(l0,u0);
 
-    ROL::PolyhedralProjection<RealT> pp0(ROL::makePtrFromRef(x),bnd0,con,ROL::makePtrFromRef(r));
+    ROL::PolyhedralProjection<RealT> pp0(x,x.dual(),*bnd0,*con,r,r.dual());
     pp0.project(Px);
  
     ROL::Ptr<std::vector<RealT>> x0ptr = ROL::makePtr<std::vector<RealT>>(2);
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>> u1 = z.clone(); u1->setScalar(static_cast<RealT>(1));
     ROL::Ptr<ROL::Bounds<RealT>> bnd1 = ROL::makePtr<ROL::Bounds<RealT>>(l1,u1);
 
-    ROL::PolyhedralProjection<RealT> pp1(ROL::makePtrFromRef(z),bnd1,con,ROL::makePtrFromRef(r));
+    ROL::PolyhedralProjection<RealT> pp1(z,z.dual(),*bnd1,*con,r,r.dual());
     pp1.project(Pz);
 
     ROL::Ptr<std::vector<RealT>> e1ptr = ROL::makePtr<std::vector<RealT>>(2);

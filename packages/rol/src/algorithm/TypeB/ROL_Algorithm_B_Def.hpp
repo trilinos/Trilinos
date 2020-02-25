@@ -128,8 +128,7 @@ std::vector<std::string> Algorithm_B<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &linear_emul,
                                                  const Vector<Real>    &linear_eres,
                                                  std::ostream          &outStream ) {
-  proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(x),makePtrFromRef(bnd),
-                                              makePtrFromRef(linear_econ),makePtrFromRef(linear_emul));
+  proj_ = makePtr<PolyhedralProjection<Real>>(x,g,bnd,linear_econ,linear_emul,linear_eres);
   return run(x,g,obj,bnd,outStream);
 }
 

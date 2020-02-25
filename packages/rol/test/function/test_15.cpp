@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
     c   = mul->dual().clone();
 
-    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(sol,bnd,con,lam);
+    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(*sol,sol->dual(),*bnd,*con,*lam,*c);
     proj->project(*x);
 
     con->value(*c,*x,tol);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
     u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
     c   = mul->dual().clone();
 
-    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(sol,bnd,con,lam);
+    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(*sol,sol->dual(),*bnd,*con,*lam,*c);
     proj->project(*x);
 
     con->value(*c,*x,tol);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
     c   = mul->dual().clone();
 
-    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(sol,bnd,con,lam);
+    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(*sol,sol->dual(),*bnd,*con,*lam,*c);
     proj->project(*x);
 
     con->value(*c,*x,tol);

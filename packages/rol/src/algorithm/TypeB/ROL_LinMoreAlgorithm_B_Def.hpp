@@ -102,7 +102,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   const Real one(1);
   hasEcon_ = true;
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(x),makePtrFromRef(bnd));
+    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
     hasEcon_ = false;
   }
   // Initialize data
