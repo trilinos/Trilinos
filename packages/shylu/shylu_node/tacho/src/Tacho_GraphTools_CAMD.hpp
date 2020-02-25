@@ -25,7 +25,7 @@
 typedef UF_long SuiteSparse_long;
 #endif
 
-#if defined (TACHO_HAVE_TRILINOS_SS) || defined(TACHO_HAVE_SUITESPARSE)
+#if defined (TACHO_HAVE_TRILINOS_SS) //|| defined(TACHO_HAVE_SUITESPARSE)
 
 namespace Tacho {
 
