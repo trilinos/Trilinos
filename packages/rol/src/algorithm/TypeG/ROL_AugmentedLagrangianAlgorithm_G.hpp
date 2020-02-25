@@ -45,7 +45,7 @@
 #define ROL_AUGMENTEDLAGRANGIANALGORITHM_G_H
 
 #include "ROL_Algorithm_G.hpp"
-#include "ROL_AugmentedLagrangian.hpp"
+#include "ROL_AugmentedLagrangianObjective.hpp"
 
 /** \class ROL::AugmentedLagrangianAlgorithm_G
     \brief Provides an interface to run equality constrained optimization algorithms
@@ -98,14 +98,14 @@ private:
   using Algorithm_G<Real>::status_;
   using Algorithm_G<Real>::proj_;
 
-  void initialize(Vector<Real>              &x,
-                  const Vector<Real>        &g,
-                  const Vector<Real>        &l,
-                  const Vector<Real>        &c,
-                  AugmentedLagrangian<Real> &alobj,
-                  BoundConstraint<Real>     &bnd,
-                  Constraint<Real>          &con,
-                  std::ostream              &outStream = std::cout);
+  void initialize(Vector<Real>                       &x,
+                  const Vector<Real>                 &g,
+                  const Vector<Real>                 &l,
+                  const Vector<Real>                 &c,
+                  AugmentedLagrangianObjective<Real> &alobj,
+                  BoundConstraint<Real>              &bnd,
+                  Constraint<Real>                   &con,
+                  std::ostream                       &outStream = std::cout);
 
 public:
 

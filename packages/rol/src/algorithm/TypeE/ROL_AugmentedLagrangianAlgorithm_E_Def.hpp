@@ -96,13 +96,13 @@ AugmentedLagrangianAlgorithm_E<Real>::AugmentedLagrangianAlgorithm_E( ParameterL
 }
 
 template<typename Real>
-void AugmentedLagrangianAlgorithm_E<Real>::initialize( Vector<Real>              &x,
-                                                       const Vector<Real>        &g,
-                                                       const Vector<Real>        &l,
-                                                       const Vector<Real>        &c,
-                                                       AugmentedLagrangian<Real> &alobj,
-                                                       Constraint<Real>          &con,
-                                                       std::ostream              &outStream ) {
+void AugmentedLagrangianAlgorithm_E<Real>::initialize( Vector<Real>                       &x,
+                                                       const Vector<Real>                 &g,
+                                                       const Vector<Real>                 &l,
+                                                       const Vector<Real>                 &c,
+                                                       AugmentedLagrangianObjective<Real> &alobj,
+                                                       Constraint<Real>                   &con,
+                                                       std::ostream                       &outStream ) {
   const Real one(1), TOL(1.e-2);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   Algorithm_E<Real>::initialize(x,g,l,c);
@@ -114,11 +114,11 @@ void AugmentedLagrangianAlgorithm_E<Real>::initialize( Vector<Real>             
 
   // Compute objective value
   alobj.update(x,true,state_->iter);
-  state_->value = alobj.getObjectiveValue(x);
+  state_->value = alobj.getObjectiveValue(x,tol);
   alobj.gradient(*state_->gradientVec,x,tol);
 
   // Compute constraint violation
-  alobj.getConstraintVec(*state_->constraintVec,x);
+  state_->constraintVec->set(*alobj.getConstraintVec(x,tol));
   state_->cnorm = state_->constraintVec->norm();
 
   // Update evaluation counters
@@ -128,7 +128,7 @@ void AugmentedLagrangianAlgorithm_E<Real>::initialize( Vector<Real>             
 
   // Compute problem scaling
   if (useDefaultScaling_) {
-    fscale_ = one/std::max(one,alobj.getObjectiveGradient(x)->norm());
+    fscale_ = one/std::max(one,alobj.getObjectiveGradient(x,tol)->norm());
     try {
       Ptr<Vector<Real>> ji = x.clone();
       Real maxji(0), normji(0);
@@ -187,8 +187,9 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
   const Real one(1), oem2(1e-2);
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   // Initialize augmented Lagrangian data
-  AugmentedLagrangian<Real> alobj(makePtrFromRef(obj),makePtrFromRef(econ),emul,
-                                  state_->searchSize,x,eres,scaleLagrangian_,HessianApprox_);
+  AugmentedLagrangianObjective<Real> alobj(makePtrFromRef(obj),makePtrFromRef(econ),
+                                           state_->searchSize,g,eres,emul,
+                                           scaleLagrangian_,HessianApprox_);
   initialize(x,g,emul,eres,alobj,econ,outStream);
   Ptr<Algorithm_U<Real>> algo;
 
@@ -212,8 +213,8 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
     // Update iteration information
     state_->iter++;
     state_->iterateVec->set(x);
-    state_->value = alobj.getObjectiveValue(x);
-    alobj.getConstraintVec(*state_->constraintVec,x);
+    state_->value = alobj.getObjectiveValue(x,tol);
+    state_->constraintVec->set(*alobj.getConstraintVec(x,tol));
     state_->cnorm = state_->constraintVec->norm();
     alobj.gradient(*state_->gradientVec,x,tol);
     if (scaleLagrangian_) {
