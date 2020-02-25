@@ -45,6 +45,7 @@
 #define ROL_ALGORITHM_G_DEF_H
 
 #include "ROL_SlacklessObjective.hpp"
+#include "ROL_SlacklessConstraint.hpp"
 #include "ROL_ConstraintManager.hpp"
 #include "ROL_ReduceLinearConstraint.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
@@ -287,19 +288,19 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
              linear_econ,linear_emul,linear_emul.dual(),outStream);
 }
 
-//template<typename Real>
-//std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
-//                                                 Objective<Real>       &obj,
-//                                                 BoundConstraint<Real> &bnd,
-//                                                 Constraint<Real>      &icon,
-//                                                 Vector<Real>          &imul,
-//                                                 BoundConstraint<Real> &ibnd,
-//                                                 Constraint<Real>      &linear_econ,
-//                                                 Vector<Real>          &linear_emul,
-//                                                 std::ostream          &outStream ) {
-//  return run(x,x.dual(),obj,bnd,icon,imul,ibnd,imul.dual(),
-//             linear_econ,linear_emul,linear_emul.dual(),outStream);
-//}
+template<typename Real>
+std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
+                                                 Objective<Real>       &obj,
+                                                 BoundConstraint<Real> &bnd,
+                                                 Constraint<Real>      &icon,
+                                                 Vector<Real>          &imul,
+                                                 BoundConstraint<Real> &ibnd,
+                                                 Constraint<Real>      &linear_econ,
+                                                 Vector<Real>          &linear_emul,
+                                                 std::ostream          &outStream ) {
+  return run(x,x.dual(),obj,bnd,icon,imul,ibnd,imul.dual(),
+             linear_econ,linear_emul,linear_emul.dual(),outStream);
+}
 
 template<typename Real>
 std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
@@ -372,28 +373,31 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
   return output;
 }
 
-//template<typename Real>
-//std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
-//                                                 const Vector<Real>    &g,
-//                                                 Objective<Real>       &obj,
-//                                                 BoundConstraint<Real> &bnd,
-//                                                 Constraint<Real>      &icon,
-//                                                 Vector<Real>          &imul,
-//                                                 BoundConstraint<Real> &ibnd,
-//                                                 const Vector<Real>    &ires,
-//                                                 Constraint<Real>      &linear_econ,
-//                                                 Vector<Real>          &linear_emul,
-//                                                 const Vector<Real>    &linear_eres,
-//                                                 std::ostream          &outStream ) {
-//  Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
-//  ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
-//  Ptr<Vector<Real>> s = x.clone(); s->zero();
-//  std::vector<std::string> output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),bnd,
-//                                        *rlc.transform(makePtrFromRef(icon)),imul,ibnd,ires,outStream);
-//  rlc.project(x,*s);
-//  x.plus(*rlc.getFeasibleVector());
-//  return output;
-//}
+template<typename Real>
+std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
+                                                 const Vector<Real>    &g,
+                                                 Objective<Real>       &obj,
+                                                 BoundConstraint<Real> &bnd,
+                                                 Constraint<Real>      &icon,
+                                                 Vector<Real>          &imul,
+                                                 BoundConstraint<Real> &ibnd,
+                                                 const Vector<Real>    &ires,
+                                                 Constraint<Real>      &linear_econ,
+                                                 Vector<Real>          &linear_emul,
+                                                 const Vector<Real>    &linear_eres,
+                                                 std::ostream          &outStream ) {
+  ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
+                             makePtrFromRef(x), makePtrFromRef(bnd));
+  Ptr<Vector<Real>>          xvec = cm.getOptVector();
+  Ptr<Constraint<Real>>      econ = cm.getConstraint();
+  Ptr<Vector<Real>>          emul = cm.getMultiplier();
+  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
+  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
+  Ptr<Constraint<Real>>      scon = makePtr<SlacklessConstraint<Real>>(makePtrFromRef(linear_econ));
+  Ptr<Vector<Real>>         xdual = xvec->dual().clone();
+  Ptr<Vector<Real>>          eres = emul->dual().clone();
+  return run(*xvec,*xdual,*sobj,*xbnd,*econ,*emul,*eres,*scon,linear_emul,linear_eres,outStream);
+}
 
 template<typename Real>
 std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,

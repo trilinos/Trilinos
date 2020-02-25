@@ -76,7 +76,8 @@ int main(int argc, char *argv[]) {
 
     ROL::ParameterList list;
     list.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Iteration Limit",20);
-    list.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type","Moreau Yosida");
+    list.sublist("Step").sublist("Augmented Lagrangian").set("Use Default Problem Scaling",false);
+    list.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type","Trust Region");
     list.sublist("Status Test").set("Gradient Tolerance",1e-8);
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
     list.sublist("Status Test").set("Step Tolerance",1e-12);
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>>     sol, emul, imul;
     ROL::Ptr<ROL::Objective<RealT>>  obj;
     ROL::Ptr<ROL::Constraint<RealT>> econ, icon;
-    ROL::Ptr<ROL::BoundConstraint<RealT>> ibnd;
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd, ibnd;
     ROL::Ptr<ROL::AugmentedLagrangianAlgorithm_G<RealT>> algo;
     std::vector<RealT> data;
     RealT e1, e2, err;
@@ -137,18 +138,42 @@ int main(int argc, char *argv[]) {
     *outStream << "  Max-Error = " << err << std::endl;
     errorFlag += (err > tol ? 1 : 0);
 
+    *outStream << std::endl << "Hock and Schittkowski Problem #32" << std::endl << std::endl;
+    ROL::ZOO::getHS32<RealT> HS32a;
+    obj  = HS32a.getObjective();
+    bnd  = HS32a.getBoundConstraint();
+    sol  = HS32a.getInitialGuess();
+    econ = HS32a.getEqualityConstraint();
+    emul = HS32a.getEqualityMultiplier();
+    icon = HS32a.getInequalityConstraint();
+    imul = HS32a.getInequalityMultiplier();
+    ibnd = HS32a.getSlackBoundConstraint();
+
+    algo = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
+    algo->run(*sol,*obj,*bnd,*icon,*imul,*ibnd,*econ,*emul,*outStream);
+
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x3 = " << data[2] << std::endl;
+    e1 = (data[0]-static_cast<RealT>(0));
+    e2 = (data[1]-static_cast<RealT>(0));
+    e3 = (data[2]-static_cast<RealT>(1));
+    err = std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3));
+    *outStream << "  Max-Error = " << err << std::endl;
+    errorFlag += (err > tol ? 1 : 0);
+
     *outStream << std::endl << "Hock and Schittkowski Problem #63" << std::endl << std::endl;
     ROL::ZOO::getHS63<RealT> HS63;
     obj  = HS63.getObjective();
     sol  = HS63.getInitialGuess();
-    ibnd = HS63.getBoundConstraint();
+    bnd  = HS63.getBoundConstraint();
     econ = ROL::makePtr<ROL::ZOO::Constraint_HS63b<RealT>>();
     emul = ROL::makePtr<ROL::StdVector<RealT>>(1);
     icon = ROL::makePtr<ROL::ZOO::Constraint_HS63a<RealT>>();
     imul = ROL::makePtr<ROL::StdVector<RealT>>(1);
 
     algo = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
-    algo->run(*sol,*obj,*ibnd,*econ,*emul,*icon,*imul,*outStream);
+    algo->run(*sol,*obj,*bnd,*econ,*emul,*icon,*imul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
