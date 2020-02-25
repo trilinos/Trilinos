@@ -44,8 +44,8 @@
 //@HEADER
 */
 
-#ifndef __PCOMMHPP__
-#define __PCOMMHPP__
+#ifndef __ADELUS_PCOMM_HPP__
+#define __ADELUS_PCOMM_HPP__
 
 namespace Adelus {
 

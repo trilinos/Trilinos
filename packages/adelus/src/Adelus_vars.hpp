@@ -44,10 +44,9 @@
 //@HEADER
 */
 
-#ifndef __VARS_HPP__
-#define __VARS_HPP__
+#ifndef __ADELUS_VARS_HPP__
+#define __ADELUS_VARS_HPP__
 
-//#include "defines.h"
 
 namespace Adelus {
 	

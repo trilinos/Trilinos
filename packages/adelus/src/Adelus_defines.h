@@ -44,8 +44,8 @@
 //@HEADER
 */
 
-#ifndef __DEFINESH__
-#define __DEFINESH__
+#ifndef __ADELUS_DEFINES_H__
+#define __ADELUS_DEFINES_H__
 
 
 #undef CBLAS

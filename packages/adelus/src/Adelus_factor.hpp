@@ -44,20 +44,18 @@
 //@HEADER
 */
 
-#ifndef __FACTOR_HPP__
-#define __FACTOR_HPP__
+#ifndef __ADELUS_FACTOR_HPP__
+#define __ADELUS_FACTOR_HPP__
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
 
-#include "defines.h"
-//#include "BLAS_prototypes_cpp.hpp"
-
-#include "macros.h"
-#include "pcomm.hpp"
-#include "mytime.hpp"
+#include "Adelus_defines.h"
+#include "Adelus_macros.h"
+#include "Adelus_pcomm.hpp"
+#include "Adelus_mytime.hpp"
 
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas1_scal.hpp"

@@ -47,8 +47,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <mpi.h>
-#include "defines.h"
-#include "macros.h"
+#include "Adelus_defines.h"
+#include "Adelus_macros.h"
 
 #define DEBUG1 0
 

@@ -44,12 +44,12 @@
 //@HEADER
 */
 
-#ifndef __MYTIME_HPP__
-#define __MYTIME_HPP__
+#ifndef __ADELUS_MYTIME_HPP__
+#define __ADELUS_MYTIME_HPP__
 
 #include <stdio.h>
 #include <mpi.h>
-#include "defines.h"
+#include "Adelus_defines.h"
 
 namespace Adelus {
 

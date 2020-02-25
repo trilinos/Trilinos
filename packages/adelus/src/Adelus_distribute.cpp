@@ -70,7 +70,7 @@ jdkotul@sandia.gov
                my_col   --- my subblock of the matrix
                                                                      */
 #include <mpi.h>
-#include "distribute.hpp"
+#include "Adelus_distribute.hpp"
 
 namespace Adelus {
 

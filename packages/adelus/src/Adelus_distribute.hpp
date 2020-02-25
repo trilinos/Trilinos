@@ -70,8 +70,8 @@ jdkotul@sandia.gov
                my_col   --- my subblock of the matrix
                                                                      */
 
-#ifndef __DISTRIBUTE_HPP__
-#define __DISTRIBUTE_HPP__
+#ifndef __ADELUS_DISTRIBUTE_HPP__
+#define __ADELUS_DISTRIBUTE_HPP__
 
 #include <mpi.h>
 

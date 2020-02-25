@@ -44,16 +44,16 @@
 //@HEADER
 */
 
-#ifndef __PERM1_HPP__
-#define __PERM1_HPP__
+#ifndef __ADELUS_PERM1_HPP__
+#define __ADELUS_PERM1_HPP__
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include "defines.h"
-#include "macros.h"
-#include "mytime.hpp"
+#include "Adelus_defines.h"
+#include "Adelus_macros.h"
+#include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
 
 #define PERMTYPE ((1 << 5) + (1 << 4))

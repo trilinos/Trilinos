@@ -44,23 +44,22 @@
 //@HEADER
 */
 
-#ifndef __XLUSOLVE_HPP__
-#define __XLUSOLVE_HPP__
+#ifndef __ADELUS_XLUSOLVE_HPP__
+#define __ADELUS_XLUSOLVE_HPP__
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "defines.h"
+#include "Adelus_defines.h"
 #include "mpi.h"
-#include "vars.hpp"
-#include "macros.h"
-#include "block.h"
-#include "solve.hpp"
-#include "factor.hpp"
-#include "perm1.hpp"
-#include "pcomm.hpp"
-#include "mytime.hpp"
-
+#include "Adelus_vars.hpp"
+#include "Adelus_macros.h"
+#include "Adelus_block.h"
+#include "Adelus_solve.hpp"
+#include "Adelus_factor.hpp"
+#include "Adelus_perm1.hpp"
+#include "Adelus_pcomm.hpp"
+#include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace Adelus {

@@ -47,8 +47,8 @@
 /* Set Block size for matrix update -- for the matrix matrix multiply
  depends on the processor  */
 
-#ifndef __BLOCKH__
-#define __BLOCKH__
+#ifndef __ADELUS_BLOCK_H__
+#define __ADELUS_BLOCK_H__
 
 #define DEFBLKSZ  64         /*  For  general 32 bit machines  */
 
