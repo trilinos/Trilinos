@@ -47,6 +47,7 @@
 
 #include "ROL_HS14.hpp"
 #include "ROL_HS32.hpp"
+#include "ROL_HS63.hpp"
 #include "ROL_MoreauYosidaAlgorithm_G.hpp"
 
 #include "ROL_Stream.hpp"
@@ -135,6 +136,29 @@ int main(int argc, char *argv[]) {
     err = std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3));
     *outStream << "  Max-Error = " << err << std::endl;
     errorFlag += (err > tol ? 1 : 0);
+
+    *outStream << std::endl << "Hock and Schittkowski Problem #63" << std::endl << std::endl;
+    ROL::ZOO::getHS63<RealT> HS63;
+    obj  = HS63.getObjective();
+    sol  = HS63.getInitialGuess();
+    ibnd = HS63.getBoundConstraint();
+    econ = ROL::makePtr<ROL::ZOO::Constraint_HS63b<RealT>>();
+    emul = ROL::makePtr<ROL::StdVector<RealT>>(1);
+    icon = ROL::makePtr<ROL::ZOO::Constraint_HS63a<RealT>>();
+    imul = ROL::makePtr<ROL::StdVector<RealT>>(1);
+
+    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo->run(*sol,*obj,*ibnd,*econ,*emul,*icon,*imul,*outStream);
+
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x3 = " << data[2] << std::endl;
+    e1 = (data[0]-static_cast<RealT>(3.512118414));
+    e2 = (data[1]-static_cast<RealT>(0.2169881741));
+    e3 = (data[2]-static_cast<RealT>(3.552174034));
+    err = std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3));
+    *outStream << "  Max-Error = " << err << std::endl;
+    errorFlag += (err > 1e3*tol ? 1 : 0);
   }
   
   catch (std::logic_error& err) {

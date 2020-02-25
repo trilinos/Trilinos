@@ -84,6 +84,7 @@
 #include "ROL_HS52.hpp"
 #include "ROL_HS53.hpp"
 #include "ROL_HS55.hpp"
+#include "ROL_HS63.hpp"
 #include "ROL_BVP.hpp"
 #include "ROL_ParaboloidCircle.hpp"
 #include "ROL_SimpleEqConstrained.hpp"
@@ -136,6 +137,7 @@ namespace ROL {
       \arg    HS52                      describe
       \arg    HS53                      describe
       \arg    HS55                      describe
+      \arg    HS63                      describe
       \arg    BVP                       describe
       \arg    PARABOLOIDCIRCLE          describe
       \arg    SIMPLEEQCONSTRAINED       describe
@@ -183,6 +185,7 @@ namespace ROL {
     TESTOPTPROBLEM_HS52,
     TESTOPTPROBLEM_HS53,
     TESTOPTPROBLEM_HS55,
+    TESTOPTPROBLEM_HS63,
     TESTOPTPROBLEM_BVP,
     TESTOPTPROBLEM_PARABOLOIDCIRCLE,
     TESTOPTPROBLEM_SIMPLEEQCONSTRAINED,
@@ -234,6 +237,7 @@ namespace ROL {
       case TESTOPTPROBLEM_HS52:                retString = "Hock and Schittkowski Test Problem #52"; break;
       case TESTOPTPROBLEM_HS53:                retString = "Hock and Schittkowski Test Problem #53"; break;
       case TESTOPTPROBLEM_HS55:                retString = "Hock and Schittkowski Test Problem #55"; break;
+      case TESTOPTPROBLEM_HS63:                retString = "Hock and Schittkowski Test Problem #63"; break;
       case TESTOPTPROBLEM_BVP:                 retString = "Boundary Value Problem";                 break;
       case TESTOPTPROBLEM_PARABOLOIDCIRCLE:    retString = "Paraboloid Circle";                      break;
       case TESTOPTPROBLEM_SIMPLEEQCONSTRAINED: retString = "Simple Equality Constrained";            break;
@@ -291,6 +295,7 @@ namespace ROL {
             (to == TESTOPTPROBLEM_HS52)                ||
             (to == TESTOPTPROBLEM_HS53)                ||
             (to == TESTOPTPROBLEM_HS55)                ||
+            (to == TESTOPTPROBLEM_HS63)                ||
             (to == TESTOPTPROBLEM_BVP)                 ||
             (to == TESTOPTPROBLEM_PARABOLOIDCIRCLE)    ||
             (to == TESTOPTPROBLEM_SIMPLEEQCONSTRAINED) ||
@@ -375,6 +380,7 @@ namespace ROL {
       case TESTOPTPROBLEM_HS52:                tp = makePtr<ZOO::getHS52<Real>>();                break;
       case TESTOPTPROBLEM_HS53:                tp = makePtr<ZOO::getHS53<Real>>();                break;
       case TESTOPTPROBLEM_HS55:                tp = makePtr<ZOO::getHS55<Real>>();                break;
+      case TESTOPTPROBLEM_HS63:                tp = makePtr<ZOO::getHS63<Real>>();                break;
       case TESTOPTPROBLEM_BVP:                 tp = makePtr<ZOO::getBVP<Real>>();                 break;
       case TESTOPTPROBLEM_PARABOLOIDCIRCLE:    tp = makePtr<ZOO::getParaboloidCircle<Real>>();    break;
       case TESTOPTPROBLEM_SIMPLEEQCONSTRAINED: tp = makePtr<ZOO::getSimpleEqConstrained<Real>>(); break;
