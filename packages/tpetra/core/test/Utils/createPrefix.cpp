@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
@@ -34,39 +35,74 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
+*/
 
-#ifndef TPETRA_DETAILS_ASSUMEMPIISCUDAAWARE_HPP
-#define TPETRA_DETAILS_ASSUMEMPIISCUDAAWARE_HPP
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_Util.hpp"
+#include <sstream>
 
-// Forward declarations cause build errors, depending on what other
-// header files get included first.  Thus, we must include the header
-// file here.
-#include <ostream>
+namespace { // (anonymous)
 
-namespace Tpetra {
-namespace Details {
+  TEUCHOS_UNIT_TEST( TpetraUtil, CreatePrefix )
+  {
+    using Tpetra::TestingUtilities::getDefaultComm;
+    using Tpetra::Details::createPrefix;
+    using std::endl;
 
-/// \brief Whether to assume that MPI is CUDA aware.
-///
-/// See Trilinos GitHub issues #1571 and #1088 to learn what it means
-/// for an MPI implementation to be "CUDA aware," and why this matters
-/// for performance.
-///
-/// \param out [out] If not NULL, print human-readable output to
-///   <tt>*out</tt>, describing what this function is doing.  Users
-///   are responsible for managing output with multiple MPI processes
-///   (e.g., only make this non-NULL on Process 0).
-///
-/// \return Whether to assume that the MPI implementation that
-///   Trilinos uses is CUDA aware.
-bool
-assumeMpiIsCudaAware (std::ostream* out);
+    out << "Test Tpetra::Details::createPrefix" << endl;
+    Teuchos::OSTab tab1 (out);
 
-} // namespace Details
-} // namespace Tpetra
+    auto comm = getDefaultComm();
+    TEST_ASSERT( comm.getRawPtr() != nullptr );
+    const int myRank = comm->getRank();
 
-#endif // TPETRA_DETAILS_ASSUMEMPIISCUDAAWARE_HPP
+    {
+      // This overload takes any integer and any string.
+      std::unique_ptr<std::string> pfx =
+        createPrefix(418, "HI FOLKS");
+      TEST_ASSERT( pfx.get() != nullptr );
+      std::ostringstream os;
+      os << "Proc 418: HI FOLKS: ";
+      TEST_EQUALITY( *pfx, os.str() );
+    }
+
+    {
+      std::unique_ptr<std::string> pfx =
+        createPrefix(comm.getRawPtr(), "myFunc");
+      TEST_ASSERT( pfx.get() != nullptr );
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Tpetra::myFunc: ";
+      TEST_EQUALITY( *pfx, os.str() );
+    }
+
+    {
+      std::unique_ptr<std::string> pfx =
+        createPrefix(nullptr, "myFunc");
+      TEST_ASSERT( pfx.get() != nullptr );
+      std::ostringstream os;
+      os << "Proc -1: Tpetra::myFunc: ";
+      TEST_EQUALITY( *pfx, os.str() );
+    }
+
+    {
+      std::unique_ptr<std::string> pfx =
+        createPrefix(comm.getRawPtr(), "MyClass", "myMethod");
+      TEST_ASSERT( pfx.get() != nullptr );
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Tpetra::MyClass::myMethod: ";
+      TEST_EQUALITY( *pfx, os.str() );
+    }
+
+    {
+      std::unique_ptr<std::string> pfx =
+        createPrefix(nullptr, "MyClass", "myMethod");
+      TEST_ASSERT( pfx.get() != nullptr );
+      std::ostringstream os;
+      os << "Proc -1: Tpetra::MyClass::myMethod: ";
+      TEST_EQUALITY( *pfx, os.str() );
+    }
+  }
+
+} // namespace (anonymous)

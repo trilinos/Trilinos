@@ -79,7 +79,6 @@ public:
   Real integrateCDF(const Real input) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Arcsine): Arcsine integrateCDF not implemented!");
-    return ((input < 0.5*(a_+b_)) ? 0.0 : input);
   }
 
   Real invertCDF(const Real input) const {

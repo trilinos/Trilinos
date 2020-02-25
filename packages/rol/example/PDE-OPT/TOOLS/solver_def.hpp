@@ -73,7 +73,7 @@
 template<class Real>
 void Solver<Real>::setA(ROL::Ptr<Tpetra::CrsMatrix<>> &A) {
   if (useDirectSolver_) { // using Amesos2 direct solver
-firstSolve_ = true;
+//firstSolve_ = true;
     if (firstSolve_) { // construct solver object
       try {
         solver_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<>>(directSolver_, A);

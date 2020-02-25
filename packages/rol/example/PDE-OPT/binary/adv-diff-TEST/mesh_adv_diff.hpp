@@ -41,59 +41,68 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_CONSTRAINT_STATE_H
-#define ROL_CONSTRAINT_STATE_H
-
-#include "ROL_Constraint_SimOpt.hpp"
-
-namespace ROL {
+#include "../../TOOLS/meshmanager.hpp"
 
 template <class Real>
-class Constraint_State : public Constraint<Real> {
+class MeshManager_adv_diff : public MeshManager_Rectangle<Real> {
+
 private:
-  const ROL::Ptr<Constraint_SimOpt<Real> > con_;
-  const ROL::Ptr<const Vector<Real> > z_;
 
-public:
-  Constraint_State(const ROL::Ptr<Constraint_SimOpt<Real> > &con,
-                   const ROL::Ptr<const Vector<Real> > &z) : con_(con), z_(z) {}
+  int nx_;
+  int ny_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int>>>>  meshSideSets_;
 
-  void value(Vector<Real> &c,const Vector<Real> &u,Real &tol) {
-    con_->value(c,u,*z_,tol);
+public: 
+
+  MeshManager_adv_diff(Teuchos::ParameterList &parlist) : MeshManager_Rectangle<Real>(parlist)
+  {
+    nx_ = parlist.sublist("Geometry").get("NX", 3);
+    ny_ = parlist.sublist("Geometry").get("NY", 3);
+    computeSideSets();
   }
 
-  void applyJacobian(Vector<Real> &jv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
-    con_->applyJacobian_1(jv,v,u,*z_,tol);
+
+  void computeSideSets() {
+
+    int numSideSets = 2;
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int>>>>(numSideSets);
+
+    // Dirichlet
+    (*meshSideSets_)[0].resize(4);
+    (*meshSideSets_)[0][0].resize(nx_);
+    (*meshSideSets_)[0][1].resize(0);
+    (*meshSideSets_)[0][2].resize(nx_);
+    (*meshSideSets_)[0][3].resize(ny_);
+    // Neumann
+    (*meshSideSets_)[1].resize(4);
+    (*meshSideSets_)[1][0].resize(0);
+    (*meshSideSets_)[1][1].resize(ny_);
+    (*meshSideSets_)[1][2].resize(0);
+    (*meshSideSets_)[1][3].resize(0);
+    
+    for (int i=0; i<nx_; ++i) {
+      (*meshSideSets_)[0][0][i] = i;
+    }
+    for (int i=0; i<ny_; ++i) {
+      (*meshSideSets_)[1][1][i] = (i+1)*nx_-1;
+    }
+    for (int i=0; i<nx_; ++i) {
+      (*meshSideSets_)[0][2][i] = i + nx_*(ny_-1);
+    }
+    for (int i=0; i<ny_; ++i) {
+      (*meshSideSets_)[0][3][i] = i*nx_;
+    }
+
+  } // computeSideSets
+
+  ROL::Ptr<std::vector<std::vector<std::vector<int>>>> getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
+    if (verbose) {
+      outStream << "Mesh_stoch_adv_diff: getSideSets called" << std::endl;
+      outStream << "Mesh_stoch_adv_diff: numSideSets = "     << meshSideSets_->size() << std::endl;
+    }
+    return meshSideSets_;
   }
-
-  using Constraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(Vector<Real> &ajv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
-    con_->applyAdjointJacobian_1(ajv,v,u,*z_,tol);
-  }
-
-  void applyAdjointHessian(Vector<Real> &ahwv,const Vector<Real> &w,const Vector<Real> &v,const Vector<Real> &u,Real &tol) {
-    con_->applyAdjointHessian_11(ahwv,w,v,u,*z_,tol);
-  }
-
-  void update( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
-    con_->update_1(u,flag,iter);
-    //con_->update(u,*z_,flag,iter);
-  }
-
-  void applyPreconditioner(Vector<Real> &pv,const Vector<Real> &v,const Vector<Real> &u,const Vector<Real> &g,Real &tol) {
-    ROL::Ptr<Vector<Real> > ijv = u.clone();
-    con_->applyInverseJacobian_1(*ijv,v,u,*z_,tol);
-    con_->applyInverseAdjointJacobian_1(pv,ijv->dual(),u,*z_,tol);
-  }
-
-  // Definitions for parametrized (stochastic) equality constraints
-  void setParameter(const std::vector<Real> &param) {
-    con_->setParameter(param);
-    Constraint<Real>::setParameter(param);
-  }
-
-}; // class Constraint_State
-
-} // namespace ROL
-
-#endif
+  
+}; // MeshManager_stoch_adv_diff
