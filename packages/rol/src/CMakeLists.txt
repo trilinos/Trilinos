@@ -151,6 +151,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeE
                     ${DIR}/TypeG
                     ${DIR}/TypeU
+                    ${DIR}/TypeG/moreauyosida
                     ${DIR}/TypeU/bundle
                     ${DIR}/TypeU/linesearch
                     ${DIR}/TypeU/linesearch/descent
@@ -160,6 +161,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/TypeE/*.hpp
                     ${DIR}/TypeG/*.hpp
                     ${DIR}/TypeU/*.hpp
+                    ${DIR}/TypeG/moreauyosida/*.hpp
                     ${DIR}/TypeU/bundle/*.hpp
                     ${DIR}/TypeU/linesearch/*.hpp
                     ${DIR}/TypeU/linesearch/descent/*.hpp
