@@ -288,20 +288,20 @@ public:
                                         Vector<Real>          &linear_emul,
                                         std::ostream          &outStream = std::cout );
 
-//  /** \brief Run algorithm on general constrained problems (Type-G).
-//             This is the primary Type-G interface.
-//  */
-//  virtual std::vector<std::string> run( Vector<Real>          &x,
-//                                        Objective<Real>       &obj,
-//                                        BoundConstraint<Real> &bnd,
-//                                        Constraint<Real>      &econ,
-//                                        Vector<Real>          &emul,
-//                                        Constraint<Real>      &icon,
-//                                        Vector<Real>          &imul,
-//                                        BoundConstraint<Real> &ibnd,
-//                                        Constraint<Real>      &linear_econ,
-//                                        Vector<Real>          &linear_emul,
-//                                        std::ostream          &outStream = std::cout );
+  /** \brief Run algorithm on general constrained problems (Type-G).
+             This is the primary Type-G interface.
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x,
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        Constraint<Real>      &econ,
+                                        Vector<Real>          &emul,
+                                        Constraint<Real>      &icon,
+                                        Vector<Real>          &imul,
+                                        BoundConstraint<Real> &ibnd,
+                                        Constraint<Real>      &linear_econ,
+                                        Vector<Real>          &linear_emul,
+                                        std::ostream          &outStream = std::cout );
 
 
 
@@ -370,24 +370,24 @@ public:
                                         const Vector<Real>    &linear_eres,
                                         std::ostream          &outStream = std::cout );
 
-//  /** \brief Run algorithm on general constrained problems (Type-G).
-//             This is the primary Type-G interface.
-//  */
-//  virtual std::vector<std::string> run( Vector<Real>          &x,
-//                                        const Vector<Real>    &g, 
-//                                        Objective<Real>       &obj,
-//                                        BoundConstraint<Real> &bnd,
-//                                        Constraint<Real>      &econ,
-//                                        Vector<Real>          &emul,
-//                                        const Vector<Real>    &eres,
-//                                        Constraint<Real>      &icon,
-//                                        Vector<Real>          &imul,
-//                                        BoundConstraint<Real> &ibnd,
-//                                        const Vector<Real>    &ires,
-//                                        Constraint<Real>      &linear_econ,
-//                                        Vector<Real>          &linear_emul,
-//                                        const Vector<Real>    &linear_eres,
-//                                        std::ostream          &outStream = std::cout );
+  /** \brief Run algorithm on general constrained problems (Type-G).
+             This is the primary Type-G interface.
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x,
+                                        const Vector<Real>    &g, 
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        Constraint<Real>      &econ,
+                                        Vector<Real>          &emul,
+                                        const Vector<Real>    &eres,
+                                        Constraint<Real>      &icon,
+                                        Vector<Real>          &imul,
+                                        BoundConstraint<Real> &ibnd,
+                                        const Vector<Real>    &ires,
+                                        Constraint<Real>      &linear_econ,
+                                        Vector<Real>          &linear_emul,
+                                        const Vector<Real>    &linear_eres,
+                                        std::ostream          &outStream = std::cout );
 
 
 
