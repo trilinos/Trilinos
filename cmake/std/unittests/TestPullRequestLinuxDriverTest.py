@@ -769,7 +769,7 @@ class testCompute_n(unittest.TestCase):
         mem_gb   = mem_kb / (1024**2)
 
         mem_info = {"mem_kb": mem_kb, "mem_gb": mem_gb}
-        m_open   = mock.mock_open(read_data=f"MemTotal ${mem_kb} kB")
+        m_open   = mock.mock_open(read_data="MemTotal %s kB"%(mem_kb))
 
         with self.m_environ, \
             mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
