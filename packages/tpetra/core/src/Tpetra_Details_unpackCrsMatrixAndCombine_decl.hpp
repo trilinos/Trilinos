@@ -138,16 +138,17 @@ unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                              const Kokkos::DualView<const char*,
-                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& imports,
-                              const Kokkos::DualView<const size_t*,
-                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
-                              const Kokkos::DualView<const LO*,
-                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
-                              const size_t constantNumPackets,
-                              Distributor & distor,
-                              const CombineMode combineMode);
+unpackCrsMatrixAndCombineNew(
+  const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+  Kokkos::DualView<char*,
+    typename DistObject<char, LO, GO, NT>::buffer_device_type> imports,
+  Kokkos::DualView<size_t*,
+    typename DistObject<char, LO, GO, NT>::buffer_device_type> numPacketsPerLID,
+  const Kokkos::DualView<const LO*,
+    typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
+  const size_t constantNumPackets,
+  Distributor& distor,
+  const CombineMode combineMode);
 
 /// \brief Special version of Tpetra::Details::unpackCrsMatrixAndCombine
 ///   that also unpacks owning process ranks.

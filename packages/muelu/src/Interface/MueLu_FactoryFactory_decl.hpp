@@ -67,6 +67,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Exceptions.hpp"
 
+#include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BlackBoxPFactory.hpp"
@@ -102,6 +103,7 @@
 #include "MueLu_MapTransferFactory.hpp"
 #include "MueLu_MatrixAnalysisFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_NullspacePresmoothFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
@@ -223,6 +225,7 @@ namespace MueLu {
       }
 
       // TODO: see how Teko handles this (=> register factories).
+      if (factoryName == "AggregateQualityEstimateFactory")       return Build2<AggregateQualityEstimateFactory>       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AggregationExportFactory")              return Build2<AggregationExportFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AmalgamationFactory")                   return Build2<AmalgamationFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedCoarseMapFactory")               return Build2<BlockedCoarseMapFactory>               (paramList, factoryMapIn, factoryManagersIn);
@@ -250,6 +253,7 @@ namespace MueLu {
       if (factoryName == "MultiVectorTransferFactory")            return Build2<MultiVectorTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NoFactory")                             return MueLu::NoFactory::getRCP();
       if (factoryName == "NoSmoother")                            return rcp(new SmootherFactory(Teuchos::null));
+      if (factoryName == "NotayAggregationFactory")               return Build2<NotayAggregationFactory>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory")                      return Build2<NullspaceFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspacePresmoothFactory")             return Build2<NullspacePresmoothFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "PatternFactory")                        return Build2<PatternFactory>                        (paramList, factoryMapIn, factoryManagersIn);

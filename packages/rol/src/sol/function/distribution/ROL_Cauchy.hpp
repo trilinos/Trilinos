@@ -85,7 +85,6 @@ public:
   Real moment(const size_t m) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Cauchy): Cauchy moments are undefined!");
-    return 0.;
   }
 
   Real lowerBound(void) const {

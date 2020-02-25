@@ -116,7 +116,7 @@ namespace LOCA {
        * \f[
        *     \sigma = w^H J+i\omega M v/n
        * \f]
-       * for any vectors \f$a\f$ and \f$b\f$ in \f$\mathbb{C}^n\f$.  Using
+       * for any vectors \f$ a\f$ and \f$ b\f$ in \f$\mathbb{C}^n\f$.  Using
        * these relationships, it is easy to show
        * \f[
        *     \begin{split}
@@ -130,12 +130,12 @@ namespace LOCA {
        * <ul>
        * <li> "Update Null Vectors Every Continuation Step"  --
        *    [bool] (default: true) -
-       *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
-       *    \f$a = w\f$ and \f$b = v\f$ every continuation step
+       *    Flag indicating whether to update \f$ a\f$ and \f$ b\f$ vectors via
+       *    \f$ a = w\f$ and \f$ b = v\f$ every continuation step
        * <li> "Update Null Vectors Every Nonlinear Iteration"  --
        *    [bool] (default: false) -
-       *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
-       *    \f$a = w\f$ and \f$b = v\f$ every nonlinear iteration
+       *    Flag indicating whether to update \f$ a\f$ and \f$ b\f$ vectors via
+       *    \f$ a = w\f$ and \f$ b = v\f$ every nonlinear iteration
        * </ul>
        */
       class Constraint :
@@ -237,8 +237,8 @@ namespace LOCA {
     //! Compute derivative of constraints w.r.t. supplied parameters.
     /*!
      * The first column of \c dgdp should be filled with the constraint
-     * residuals \f$g\f$ if \c isValidG is \c false.  If \c isValidG is
-     * \c true, then the \c dgdp contains \f$g\f$ on input.
+     * residuals \f$ g\f$ if \c isValidG is \c false.  If \c isValidG is
+     * \c true, then the \c dgdp contains \f$ g\f$ on input.
      */
     virtual NOX::Abstract::Group::ReturnType
     computeDP(const std::vector<int>& paramIDs,
@@ -268,8 +268,8 @@ namespace LOCA {
     //! Perform any postprocessing after a continuation step finishes.
     /*!
      * The \c stepStatus argument indicates whether the step was
-     * successful.  Here we update the \f$a\f$ and \f$b\f$ vectors to
-     * \f$w\f$ and \f$v\f$ respectively if requested.
+     * successful.  Here we update the \f$ a\f$ and \f$ b\f$ vectors to
+     * \f$ w\f$ and \f$ v\f$ respectively if requested.
      */
     virtual void
     postProcessContinuationStep(
@@ -297,13 +297,13 @@ namespace LOCA {
     //! Bifurcation parameter list
     Teuchos::RCP<Teuchos::ParameterList> hopfParams;
 
-    //! Pointer to base group that defines \f$F\f$
+    //! Pointer to base group that defines \f$ F\f$
     Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup> grpPtr;
 
-    //! Vector for \f$a\f$
+    //! Vector for \f$ a\f$
     Teuchos::RCP<NOX::Abstract::MultiVector> a_vector;
 
-    //! Vector for \f$b\f$
+    //! Vector for \f$ b\f$
     Teuchos::RCP<NOX::Abstract::MultiVector> b_vector;
 
     //! Stores left null vector
@@ -348,13 +348,13 @@ namespace LOCA {
     double omega;
 
     /*!
-     * \brief Flag indicating whether to update \f$a\f$ and \f$b\f$
+     * \brief Flag indicating whether to update \f$ a\f$ and \f$ b\f$
      * every continuation step.
      */
     bool updateVectorsEveryContinuationStep;
 
     /*!
-     * \brief Flag indicating whether to update \f$a\f$ and \f$b\f$
+     * \brief Flag indicating whether to update \f$ a\f$ and \f$ b\f$
      * every nonlinear iteration.
      */
     bool updateVectorsEveryIteration;

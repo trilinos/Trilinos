@@ -95,6 +95,9 @@ protected:
 
     void test_decomp()
     {
+        // Make sure all procs have written their files before p0 tries to read them
+        MPI_Barrier(get_comm());
+
         test_subdomain_files();
         test_decomp_is_balanced();
     }

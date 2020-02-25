@@ -631,7 +631,7 @@ FAD_UNARYOP_MACRO(sinh,
                   std::sinh(v))
 FAD_UNARYOP_MACRO(tanh,
                   TanhOp,
-                  a = scalar_type(1.0)/(std::cosh(v)*std::cosh(v)),
+                  a = scalar_type(1.0)-std::tanh(v)*std::tanh(v),
                   std::tanh(v))
 FAD_UNARYOP_MACRO(acosh,
                   ACoshOp,

@@ -457,7 +457,7 @@ mult_test_results multiply_test_autofc(
 #endif
 
 
-  RCP<Matrix_t> diffMatrix = 
+  RCP<Matrix_t> diffMatrix =
     Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(), C->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
@@ -550,8 +550,8 @@ mult_test_results multiply_RAP_test_autofc(
 #endif
 
 
-  RCP<Matrix_t> diffMatrix = 
-    Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap(), 
+  RCP<Matrix_t> diffMatrix =
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap(),
                                          Ac->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedAc, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
@@ -601,7 +601,7 @@ mult_test_results multiply_RAP_reuse_test(
   SC one = Teuchos::ScalarTraits<SC>::one();
 
   // First cut
-  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC1);  
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC1);
 
   if(!Ac->getDomainMap()->isSameAs(*computedC1->getDomainMap())) throw std::runtime_error("Domain map mismatch");
   if(!Ac->getRangeMap()->isSameAs(*computedC1->getRangeMap())) throw std::runtime_error("Range map mismatch");
@@ -610,10 +610,10 @@ mult_test_results multiply_RAP_reuse_test(
   RCP<Matrix_t> computedC2 = rcp( new Matrix_t(computedC1->getCrsGraph()) );
   computedC2->fillComplete(computedC2->getDomainMap(), computedC2->getRangeMap());
   computedC2->resumeFill();
-  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2);  
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2);
 
   // Only check the second "reuse" matrix
-  RCP<Matrix_t> diffMatrix = 
+  RCP<Matrix_t> diffMatrix =
     Tpetra::createCrsMatrix<SC,LO,GO,NT>(map, Ac->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
@@ -623,7 +623,7 @@ mult_test_results multiply_RAP_reuse_test(
   results.compNorm = diffMatrix->getFrobeniusNorm ();
   results.epsilon  = results.compNorm/results.cNorm;
 
-  if(results.epsilon > 1e-3) {    
+  if(results.epsilon > 1e-3) {
     if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
   }
 
@@ -698,9 +698,11 @@ mult_test_results multiply_reuse_test(
 
   // diffMatrix = computedC2 - computedC1
   SC one = Teuchos::ScalarTraits<SC>::one();
-  RCP<Matrix_t> diffMatrix = 
+  RCP<Matrix_t> diffMatrix =
     Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(),
                                          computedC2->getGlobalMaxNumRowEntries());
+
+  Kokkos::fence();
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -744,7 +746,7 @@ mult_test_results jacobi_test(
   Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
-  RCP<Matrix_t> C2; 
+  RCP<Matrix_t> C2;
   bool done=false;
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
@@ -771,7 +773,7 @@ mult_test_results jacobi_test(
 
       Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
       AB->leftScale(Dinv);
-      C2 = rcp(new Matrix_t(B->getRowMap(), 
+      C2 = rcp(new Matrix_t(B->getRowMap(),
                             B->getGlobalMaxNumRowEntries() + AB->getGlobalMaxNumRowEntries())); // upper bound
       Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C2);
       if(!C2->isFillComplete()) C2->fillComplete(C->getDomainMap(),C->getRangeMap());
@@ -837,7 +839,7 @@ mult_test_results jacobi_reuse_test(
 
   // diffMatrix = computedC2 - computedC1
 
-  RCP<Matrix_t> diffMatrix = 
+  RCP<Matrix_t> diffMatrix =
     Tpetra::createCrsMatrix<SC,LO,GO,NT>(computedC1->getRowMap(),
                                          computedC1->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
@@ -931,42 +933,62 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     RCP<Matrix_t> A, B, C, D;
 
     if (A_file != ""){
-      if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "")
+      if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "") {
+        out << "Attempt to read sparse matrix file \"" << A_file
+            << "\"" << endl;
         A = Reader<Matrix_t>::readSparseFile (A_file, comm);
+      }
       else {
         RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (A_domainmap_file, comm);
         RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (A_rangemap_file, comm);
         RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (A_rowmap_file, comm);
         RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (A_colmap_file, comm);
+        out << "Attempt to read sparse matrix file \""
+            << A_file << "\"" << endl;
         A = Reader<Matrix_t>::readSparseFile (A_file, rowmap, colmap, domainmap, rangemap);
       }
     }
-    if (B_domainmap_file == "" || B_rangemap_file == "" || B_rowmap_file == "" || B_colmap_file == "")
+    if (B_domainmap_file == "" || B_rangemap_file == "" || B_rowmap_file == "" || B_colmap_file == "") {
+      out << "Attempt to read sparse matrix file \"" << B_file
+          << "\"" << endl;
       B = Reader<Matrix_t>::readSparseFile (B_file, comm);
+    }
     else {
       RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (B_domainmap_file, comm);
       RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (B_rangemap_file, comm);
       RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (B_rowmap_file, comm);
       RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (B_colmap_file, comm);
+      out << "Attempt to read sparse matrix file \"" << B_file
+          << "\"" << endl;
       B = Reader<Matrix_t>::readSparseFile (B_file, rowmap, colmap, domainmap, rangemap);
     }
-    if (C_domainmap_file == "" || C_rangemap_file == "" || C_rowmap_file == "" || C_colmap_file == "")
+    if (C_domainmap_file == "" || C_rangemap_file == "" || C_rowmap_file == "" || C_colmap_file == "") {
+      out << "Attempt to read sparse matrix file \"" << C_file
+          << "\"" << endl;
       C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    }
     else {
       RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (C_domainmap_file, comm);
       RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (C_rangemap_file, comm);
       RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (C_rowmap_file, comm);
       RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (C_colmap_file, comm);
+      out << "Attempt to read sparse matrix file \"" << C_file
+          << "\"" << endl;
       C = Reader<Matrix_t>::readSparseFile (C_file, rowmap, colmap, domainmap, rangemap);
     }
     if (D_file != "") {
-      if (D_domainmap_file == "" || D_rangemap_file == "" || D_rowmap_file == "" || D_colmap_file == "")
+      if (D_domainmap_file == "" || D_rangemap_file == "" || D_rowmap_file == "" || D_colmap_file == "") {
+        out << "Attempt to read sparse matrix file \"" << D_file
+            << "\"" << endl;
         D = Reader<Matrix_t>::readSparseFile (D_file, comm);
+      }
       else {
         RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (D_domainmap_file, comm);
         RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (D_rangemap_file, comm);
         RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (D_rowmap_file, comm);
         RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (D_colmap_file, comm);
+        out << "Attempt to read sparse matrix file \"" << D_file
+            << "\"" << endl;
         D = Reader<Matrix_t>::readSparseFile (D_file, rowmap, colmap, domainmap, rangemap);
       }
     }
@@ -1312,8 +1334,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   bTransTest->fillComplete(bTransDomainMap, bTransRangeMap);
 
   newOut << "Create and fill bTrans" << endl;
-  RCP<Matrix_t> bTrans = 
-    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 
+  RCP<Matrix_t> bTrans =
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap,
                                          bTransTest->getGlobalMaxNumRowEntries());
 
   newOut << "Compute identity * transpose(bTrans)" << endl;

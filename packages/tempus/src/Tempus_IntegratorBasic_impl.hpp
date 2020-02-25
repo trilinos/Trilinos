@@ -103,7 +103,7 @@ void IntegratorBasic<Scalar>::setStepper(
     std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
 
     RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
-    stepper_ = sf->createStepper(stepperPL, models);
+    stepper_ = sf->createMultiSteppers(stepperPL, models);
   } else {
     stepper_->createSubSteppers(models);
   }

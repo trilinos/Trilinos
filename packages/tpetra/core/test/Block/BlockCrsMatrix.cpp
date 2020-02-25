@@ -2463,7 +2463,10 @@ namespace {
     else {
       out << normStr.str() << std::endl;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(relativeError[0]>5e-8, std::runtime_error, "BlockCrsMatrix matvec does not produce same result as CrsMatrix matvec.");
+
+    const magnitude_type tol =
+      magnitude_type(10.0) * Teuchos::ScalarTraits<magnitude_type>::eps();
+    TEUCHOS_TEST_FOR_EXCEPTION(relativeError[0] > tol, std::runtime_error, "BlockCrsMatrix matvec does not produce same result as CrsMatrix matvec.");
   }
 
 

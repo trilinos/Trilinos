@@ -6,3 +6,4 @@ tag: 2.7.00     date: 05/24/2018  master: 6e8e97a9    develop: 692114a6
 tag: 2.7.24     date: 11/05/2018  master: 1a7b524b    develop: fab89e37
 tag: 2.8.00     date: 02/05/2019  master: a6e05e06    develop: 6a790321
 tag: 2.9.00     date: 06/24/2019  master: 4ee5f3c6    develop: 094da30c
+tag: 2.9.99     date: 01/31/2020  master: d86db111    release-candidate-3.0: cf24ab90

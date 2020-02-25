@@ -11,7 +11,7 @@ SET(LIBRARIES shyluchol)
 # Dense Matrix Objects
 # ====================
 
-IF(Kokkos_ENABLE_Pthread)
+IF(Kokkos_ENABLE_PTHREAD)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDenseMatrixBase_Pthreads
     NOEXEPREFIX
@@ -26,7 +26,7 @@ IF(Kokkos_ENABLE_Pthread)
   )
 ENDIF()
 
-IF(Kokkos_ENABLE_Cuda)
+IF(Kokkos_ENABLE_CUDA)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDenseMatrixBase_Cuda
     NOEXEPREFIX
@@ -38,7 +38,7 @@ ENDIF()
 # Dense Linear Algebra
 # ====================
 
-IF(Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_OPENMP)
 IF(TPL_ENABLE_MKL)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDenseGemmMKL_OpenMP
@@ -49,7 +49,7 @@ IF(TPL_ENABLE_MKL)
 ENDIF()
 ENDIF()
 
-IF(Kokkos_ENABLE_Pthread)
+IF(Kokkos_ENABLE_PTHREAD)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDenseGemmByBlocks_Pthreads
     NOEXEPREFIX
@@ -67,7 +67,7 @@ ENDIF()
 # Crs Matrix Objects
 # ==================
 
-IF(Kokkos_ENABLE_Pthread)
+IF(Kokkos_ENABLE_PTHREAD)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleCrsMatrixBase_Pthreads
     NOEXEPREFIX
@@ -91,7 +91,7 @@ ENDIF()
 # Graph Tools
 # ===========
 
-IF(Kokkos_ENABLE_Pthread)
+IF(Kokkos_ENABLE_PTHREAD)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleGraphTools_Pthreads
     NOEXEPREFIX
@@ -104,7 +104,7 @@ ENDIF()
 # # Do not compile if Scotch is not enabled
 # IF(TPL_ENABLE_Scotch)
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     chol_performance_device_cuda
 #     NOEXEPREFIX
@@ -121,7 +121,7 @@ ENDIF()
 # # Symbolic Factorization
 # # ======================
 
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     symbolic_factor_serial
 #     NOEXEPREFIX
@@ -130,7 +130,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     symbolic_factor_pthread
 #     NOEXEPREFIX
@@ -144,7 +144,7 @@ ENDIF()
 # # Sparse Chol
 # # ============
 
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     chol_unblocked_serial
 #     NOEXEPREFIX
@@ -167,7 +167,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     chol_unblocked_pthread
 #     NOEXEPREFIX
@@ -186,7 +186,7 @@ ENDIF()
 # # Triangular solve
 # # ================
 
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     tri_solve_unblocked_serial
 #     NOEXEPREFIX
@@ -209,7 +209,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     tri_solve_unblocked_pthread
 #     NOEXEPREFIX
@@ -228,7 +228,7 @@ ENDIF()
 # # Benchmark
 # # ==========
 
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     stat_by_blocks_serial
 #     NOEXEPREFIX
@@ -237,7 +237,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     chol_performance_pthread
 #     NOEXEPREFIX
@@ -308,7 +308,7 @@ ENDIF()
 
 # # Pardiso
 # # =======
-# IF(Kokkos_ENABLE_OpenMP)
+# IF(Kokkos_ENABLE_OPENMP)
 # IF(TPL_ENABLE_MKL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     pardiso_chol_performance_openmp
@@ -321,7 +321,7 @@ ENDIF()
 
 # # Complete Cholesky
 # # =================
-# IF(Kokkos_ENABLE_Serial)
+# IF(Kokkos_ENABLE_SERIAL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     chol_direct_plain_serial
 #     NOEXEPREFIX
@@ -330,7 +330,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     chol_direct_plain_pthread
 #     NOEXEPREFIX
@@ -362,7 +362,7 @@ ENDIF()
 
 # # Dense Linear Algebra
 # # ====================
-# IF(Kokkos_ENABLE_Pthread)
+# IF(Kokkos_ENABLE_PTHREAD)
 #   TRIBITS_ADD_EXECUTABLE(
 #     dense_gemm_by_blocks_pthread
 #     NOEXEPREFIX
@@ -385,7 +385,7 @@ ENDIF()
 #   )
 # ENDIF()
 
-# IF(Kokkos_ENABLE_OpenMP)
+# IF(Kokkos_ENABLE_OPENMP)
 # IF(TPL_ENABLE_MKL)
 #   TRIBITS_ADD_EXECUTABLE(
 #     dense_gemm_mkl_openmp

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 # Change above to '/usr/bin/python -3' for python 3.x porting warnings
 """
@@ -59,7 +59,8 @@ class Cleaner(object):
         """Do the actual cleanup
              basically just os.unlink()
         """
-        shutil.rmtree(self.args.dir)
+        if os.path.isdir(self.args.dir):
+            shutil.rmtree(self.args.dir)
 
     def clean_space_by_date(self):
         if last_clean_date() < clean_reference_date():

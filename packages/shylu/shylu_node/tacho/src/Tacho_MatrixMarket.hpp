@@ -67,15 +67,15 @@ namespace Tacho {
     struct MatrixMarket {
 
       /// \brief matrix market reader
-      template<typename ExecSpaceType>
+      template<typename DeviceType>
       static void
       read(const std::string &filename, 
-           CrsMatrixBase<ValueType,ExecSpaceType> &A,
+           CrsMatrixBase<ValueType,DeviceType> &A,
            const ordinal_type verbose = 0) {
         static_assert(Kokkos::Impl::MemorySpaceAccess< 
                       Kokkos::HostSpace, 
-                      typename ExecSpaceType::memory_space >::assignable, 
-                      "ExecSpaceType is not assignable from HostSpace" );
+                      typename DeviceType::memory_space >::assignable, 
+                      "DeviceType is not assignable from HostSpace" );
         
         typedef ArithTraits<ValueType> arith_traits;
         Kokkos::Impl::Timer timer;
@@ -139,9 +139,9 @@ namespace Tacho {
         }
 
         // change mm to crs
-        Kokkos::View<size_type*,   ExecSpaceType> ap("ap", m+1);
-        Kokkos::View<ordinal_type*,ExecSpaceType> aj("aj", nnz);
-        Kokkos::View<value_type*,  ExecSpaceType> ax("ax", nnz);
+        Kokkos::View<size_type*,   DeviceType> ap("ap", m+1);
+        Kokkos::View<ordinal_type*,DeviceType> aj("aj", nnz);
+        Kokkos::View<value_type*,  DeviceType> ax("ax", nnz);
         {
           ordinal_type icnt = 0;
           size_type jcnt = 0;
@@ -192,17 +192,17 @@ namespace Tacho {
       }
 
       /// \brief matrix marker writer
-      template<typename ExecSpaceType, 
+      template<typename DeviceType,
                typename uplo=void>
       static void
       write(std::ofstream &file,
-            const CrsMatrixBase<ValueType,ExecSpaceType> &A,
+            const CrsMatrixBase<ValueType,DeviceType> &A,
             const std::string comment = "%% Tacho::MatrixMarket::Export") {
         static_assert(Kokkos::Impl::MemorySpaceAccess< 
                       Kokkos::HostSpace, 
-                      typename ExecSpaceType::memory_space
+                      typename DeviceType::memory_space
                       >::assignable, 
-                      "ExecSpaceType is not assignable from HostSpace" );
+                      "DeviceType is not assignable from HostSpace" );
 
         typedef ArithTraits<ValueType> arith_traits;
         typedef ValueType value_type;

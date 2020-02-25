@@ -144,8 +144,6 @@ namespace Teuchos
     void PORFS(const char& UPLO, const OrdinalType& n, const OrdinalType& nrhs, const ScalarType* A, const OrdinalType& lda, const ScalarType* AF, const OrdinalType& ldaf, const ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
 
     //! Uses the Cholesky factorization to compute the solution to a real system of linear equations \c A*X=B, where \c A is symmetric positive definite.  System can be equilibrated by POEQU and iteratively refined by PORFS, if requested.
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void POSVX(const char& FACT, const char& UPLO, const OrdinalType& n, const OrdinalType& nrhs, ScalarType* A, const OrdinalType& lda, ScalarType* AF, const OrdinalType& ldaf, const char& EQUED, ScalarType* S, ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
     void POSVX(const char& FACT, const char& UPLO, const OrdinalType& n, const OrdinalType& nrhs, ScalarType* A, const OrdinalType& lda, ScalarType* AF, const OrdinalType& ldaf, char* EQUED, ScalarType* S, ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
     //@}
 
@@ -291,8 +289,6 @@ namespace Teuchos
 
     //! Uses the LU factorization to compute the solution to a real system of linear equations \c A*X=B, returning error bounds on the solution and a condition estimate.
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void GESVX(const char& FACT, const char& TRANS, const OrdinalType& n, const OrdinalType& nrhs, ScalarType* A, const OrdinalType& lda, ScalarType* AF, const OrdinalType& ldaf, OrdinalType* IPIV, const char& EQUED, ScalarType* R, ScalarType* C, ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
     void GESVX(const char& FACT, const char& TRANS, const OrdinalType& n, const OrdinalType& nrhs, ScalarType* A, const OrdinalType& lda, ScalarType* AF, const OrdinalType& ldaf, OrdinalType* IPIV, char* EQUED, ScalarType* R, ScalarType* C, ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
 
     /*! \brief Reduces a real symmetric matrix \c A to tridiagonal form by orthogonal similarity transformations.
@@ -500,8 +496,6 @@ namespace Teuchos
     /*! Reorders the Schur factorization of a matrix \c T via unitary similarity transformations so that the diagonal element of \c T with row index \c ifst is moved to row \c ilst. If \c ScalarType is \c float or \c double, then \c T should be in real Schur form and the operation affects the diagonal block referenced by \c ifst.
       \note This method will ignore the WORK vector when ScalarType is \c std::complex<float> or \c std::complex<double>.
     */
-    // deprecated - ifst and ilst were passed by value (changed to const OrdinalType& for api refactor) but lapack can modify them - new version passes them by ptr
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const OrdinalType& n, ScalarType* T, const OrdinalType& ldt, ScalarType* Q, const OrdinalType& ldq, const OrdinalType& ifst, const OrdinalType& ilst, ScalarType* WORK, OrdinalType* info) const;
     void TREXC(const char& COMPQ, const OrdinalType& n, ScalarType* T, const OrdinalType& ldt, ScalarType* Q, const OrdinalType& ldq, OrdinalType* ifst, OrdinalType* ilst, ScalarType* WORK, OrdinalType* info) const;
 
     /*! Computes some or all of the right and/or left eigenvectors of a pair of real matrices ( \c S, \c P ), where \c S is a quasi-triangular matrix and \c P is upper triangular.
@@ -528,8 +522,6 @@ namespace Teuchos
 
     //! Balances a general matrix A, through similarity transformations to make the rows and columns as close in norm as possible.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const OrdinalType& n, ScalarType* A, const OrdinalType& lda, const OrdinalType& ilo, const OrdinalType& ihi, MagnitudeType* scale, OrdinalType* info) const;
     void GEBAL(const char& JOBZ, const OrdinalType& n, ScalarType* A, const OrdinalType& lda, OrdinalType* ilo, OrdinalType* ihi, MagnitudeType* scale, OrdinalType* info) const;
 
     //! Forms the left or right eigenvectors of a general matrix that has been balanced by GEBAL by backward transformation of the computed eigenvectors \c V.
@@ -674,12 +666,6 @@ namespace Teuchos
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  template<typename OrdinalType, typename ScalarType>
-  TEUCHOS_DEPRECATED void LAPACK<OrdinalType, ScalarType>::POSVX(const char& FACT, const char& UPLO, const OrdinalType& n, const OrdinalType& nrhs, ScalarType* A, const OrdinalType& lda, ScalarType* AF, const OrdinalType& ldaf, const char& EQUED, ScalarType* S, ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    UndefinedLAPACKRoutine<ScalarType>::notDefined();
-  }
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POSVX(const char& FACT, const char& UPLO, const OrdinalType& n, const OrdinalType& nrhs, ScalarType* A, const OrdinalType& lda, ScalarType* AF, const OrdinalType& ldaf, char* EQUED, ScalarType* S, ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
@@ -1124,12 +1110,6 @@ namespace Teuchos
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
-  // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-  template<typename OrdinalType, typename ScalarType>
-  TEUCHOS_DEPRECATED void LAPACK<OrdinalType,ScalarType>::GESVX(const char& FACT, const char& TRANS, const OrdinalType& n, const OrdinalType& nrhs, ScalarType* A, const OrdinalType& lda, ScalarType* AF, const OrdinalType& ldaf, OrdinalType* IPIV, const char& EQUED, ScalarType* R, ScalarType* C, ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    UndefinedLAPACKRoutine<ScalarType>::notDefined();
-  }
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GESVX(const char& FACT, const char& TRANS, const OrdinalType& n, const OrdinalType& nrhs, ScalarType* A, const OrdinalType& lda, ScalarType* AF, const OrdinalType& ldaf, OrdinalType* IPIV, char* EQUED, ScalarType* R, ScalarType* C, ScalarType* B, const OrdinalType& ldb, ScalarType* X, const OrdinalType& ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
@@ -1431,8 +1411,6 @@ namespace Teuchos
     void POEQU(const int& n, const float* A, const int& lda, float* S, float* scond, float* amax, int* info) const;
     void PORFS(const char& UPLO, const int& n, const int& nrhs, float* A, const int& lda, const float* AF, const int& ldaf, const float* B, const int& ldb, float* X, const int& ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, float* A, const int& lda, float* AF, const int& ldaf, const char& EQUED, float* S, float* B, const int& ldb, float* X, const int& ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
     void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, float* A, const int& lda, float* AF, const int& ldaf, char* EQUED, float* S, float* B, const int& ldb, float* X, const int& ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
 
     // General Linear System Routines
@@ -1484,8 +1462,6 @@ namespace Teuchos
     void GBEQU(const int& m, const int& n, const int& kl, const int& ku, const float* A, const int& lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
     void GBRFS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const float* A, const int& lda, const float* AF, const int& ldaf, const int* IPIV, const float* B, const int& ldb, float* X, const int& ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, float* A, const int& lda, float* AF, const int& ldaf, int* IPIV, const char& EQUED, float* R, float* C, float* B, const int& ldb, float* X, const int& ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
     void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, float* A, const int& lda, float* AF, const int& ldaf, int* IPIV, char* EQUED, float* R, float* C, float* B, const int& ldb, float* X, const int& ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
 
     void SYTRD(const char& UPLO, const int& n, float* A, const int& lda, float* D, float* E, float* TAU, float* WORK, const int& lwork, int* info) const;
@@ -1535,8 +1511,6 @@ namespace Teuchos
     void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const float* T, const int& ldt, float* VL, const int& ldvl, float* VR, const int& ldvr, const int& mm, int* m, float* WORK, int* info) const;
     void TREVC(const char& SIDE, const int& n, const float* T, const int& ldt, float* VL, const int& ldvl, float* VR, const int& ldvr, const int& mm, int* m, float* WORK, float* RWORK, int* info) const;
 
-    // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes them by ptr
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const int& n, float* T, const int& ldt, float* Q, const int& ldq, const int& ifst, const int& ilst, float* WORK, int* info) const;
     void TREXC(const char& COMPQ, const int& n, float* T, const int& ldt, float* Q, const int& ldq, int* ifst, int* ilst, float* WORK, int* info) const;
 
     void TGEVC(const char& SIDE, const char& HOWMNY, const int* SELECT, const int& n, float* S, const int& lds, float* P, const int& ldp, float* VL, const int& ldvl, float* VR, const int& ldvr, const int& mm, int* M, float* WORK, int* info) const;
@@ -1547,8 +1521,6 @@ namespace Teuchos
 
     // Matrix balancing routines.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const int& n, float* A, const int& lda, const int& ilo, const int& ihi, float* scale, int* info) const;
     void GEBAL(const char& JOBZ, const int& n, float* A, const int& lda, int* ilo, int* ihi, float* scale, int* info) const;
 
     void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const float* scale, const int& m, float* V, const int& ldv, int* info) const;
@@ -1589,8 +1561,6 @@ namespace Teuchos
     void POEQU(const int& n, const double* A, const int& lda, double* S, double* scond, double* amax, int* info) const;
     void PORFS(const char& UPLO, const int& n, const int& nrhs, double* A, const int& lda, const double* AF, const int& ldaf, const double* B, const int& ldb, double* X, const int& ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, double* A, const int& lda, double* AF, const int& ldaf, const char& EQUED, double* S, double* B, const int& ldb, double* X, const int& ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
     void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, double* A, const int& lda, double* AF, const int& ldaf, char* EQUED, double* S, double* B, const int& ldb, double* X, const int& ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
 
     // General linear system routines
@@ -1639,8 +1609,6 @@ namespace Teuchos
     void GBEQU(const int& m, const int& n, const int& kl, const int& ku, const double* A, const int& lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
     void GBRFS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const double* A, const int& lda, const double* AF, const int& ldaf, const int* IPIV, const double* B, const int& ldb, double* X, const int& ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, double* A, const int& lda, double* AF, const int& ldaf, int* IPIV, const char& EQUED, double* R, double* C, double* B, const int& ldb, double* X, const int& ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
     void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, double* A, const int& lda, double* AF, const int& ldaf, int* IPIV, char* EQUED, double* R, double* C, double* B, const int& ldb, double* X, const int& ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
 
     void SYTRD(const char& UPLO, const int& n, double* A, const int& lda, double* D, double* E, double* TAU, double* WORK, const int& lwork, int* info) const;
@@ -1691,8 +1659,6 @@ namespace Teuchos
     void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const double* T, const int& ldt, double* VL, const int& ldvl, double* VR, const int& ldvr, const int& mm, int* m, double* WORK, int* info) const;
     void TREVC(const char& SIDE, const int& n, const double* T, const int& ldt, double* VL, const int& ldvl, double* VR, const int& ldvr, const int& mm, int* m, double* WORK, double* RWORK, int* info) const;
 
-    // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const int& n, double* T, const int& ldt, double* Q, const int& ldq, const int& ifst, const int& ilst, double* WORK, int* info) const;
     void TREXC(const char& COMPQ, const int& n, double* T, const int& ldt, double* Q, const int& ldq, int* ifst, int* ilst, double* WORK, int* info) const;
 
     void TGEVC(const char& SIDE, const char& HOWMNY, const int* SELECT, const int& n, double* S, const int& lds, double* P, const int& ldp, double* VL, const int& ldvl, double* VR, const int& ldvr, const int& mm, int* M, double* WORK, int* info) const;
@@ -1703,8 +1669,6 @@ namespace Teuchos
 
     // Matrix balancing routines.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const int& n, double* A, const int& lda, const int& ilo, const int& ihi, double* scale, int* info) const;
     void GEBAL(const char& JOBZ, const int& n, double* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const;
 
     void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const double* scale, const int& m, double* V, const int& ldv, int* info) const;
@@ -1747,8 +1711,6 @@ namespace Teuchos
     void POEQU(const int& n, const std::complex<float>* A, const int& lda, float* S, float* scond, float* amax, int* info) const;
     void PORFS(const char& UPLO, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, const std::complex<float>* AF, const int& ldaf, const std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, std::complex<float>* AF, const int& ldaf, const char& EQUED, float* S, std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
     void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, std::complex<float>* AF, const int& ldaf, char* EQUED, float* S, std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
 
     // General Linear System Routines
@@ -1798,8 +1760,6 @@ namespace Teuchos
     void GBEQU(const int& m, const int& n, const int& kl, const int& ku, const std::complex<float>* A, const int& lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
     void GBRFS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const std::complex<float>* A, const int& lda, const std::complex<float>* AF, const int& ldaf, const int* IPIV, const std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, std::complex<float>* AF, const int& ldaf, int* IPIV, const char& EQUED, float* R, float* C, std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
     void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, std::complex<float>* A, const int& lda, std::complex<float>* AF, const int& ldaf, int* IPIV, char* EQUED, float* R, float* C, std::complex<float>* B, const int& ldb, std::complex<float>* X, const int& ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
 
     void GEHRD(const int& n, const int& ilo, const int& ihi, std::complex<float>* A, const int& lda, std::complex<float>* TAU, std::complex<float>* WORK, const int& lwork, int* info) const;
@@ -1833,8 +1793,6 @@ namespace Teuchos
     void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const std::complex<float>* T, const int& ldt, std::complex<float>* VL, const int& ldvl, std::complex<float>* VR, const int& ldvr, const int& mm, int* m, std::complex<float>* WORK, float* RWORK, int* info) const;
     void TREVC(const char& SIDE, const int& n, const std::complex<float>* T, const int& ldt, std::complex<float>* VL, const int& ldvl, std::complex<float>* VR, const int& ldvr, const int& mm, int* m, std::complex<float>* WORK, float* RWORK, int* info) const;
 
-    // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) - new form passed by int * for consistency with float and double versions
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const int& n, std::complex<float>* T, const int& ldt, std::complex<float>* Q, const int& ldq, const int& ifst, const int& ilst, std::complex<float>* WORK, int* info) const;
     void TREXC(const char& COMPQ, const int& n, std::complex<float>* T, const int& ldt, std::complex<float>* Q, const int& ldq, int* ifst, int* ilst, std::complex<float>* WORK, int* info) const;
 
     // Rotation/reflection generators
@@ -1843,8 +1801,6 @@ namespace Teuchos
 
     // Matrix balancing routines.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const int& n, std::complex<float>* A, const int& lda, const int& ilo, const int& ihi, float* scale, int* info) const;
     void GEBAL(const char& JOBZ, const int& n, std::complex<float>* A, const int& lda, int* ilo, int* ihi, float* scale, int* info) const;
 
     void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const float* scale, const int& m, std::complex<float>* V, const int& ldv, int* info) const;
@@ -1881,8 +1837,6 @@ namespace Teuchos
     void POEQU(const int& n, const std::complex<double>* A, const int& lda, double* S, double* scond, double* amax, int* info) const;
     void PORFS(const char& UPLO, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, const std::complex<double>* AF, const int& ldaf, const std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, std::complex<double>* AF, const int& ldaf, const char& EQUED, double* S, std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
     void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, std::complex<double>* AF, const int& ldaf, char* EQUED, double* S, std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
 
     // General Linear System Routines
@@ -1933,8 +1887,6 @@ namespace Teuchos
     void GBEQU(const int& m, const int& n, const int& kl, const int& ku, const std::complex<double>* A, const int& lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
     void GBRFS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const std::complex<double>* A, const int& lda, const std::complex<double>* AF, const int& ldaf, const int* IPIV, const std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
 
-    // deprecated - EQUED was passed by value (changed to const char& for api refactor) but lapack can modify it - new version passes by ptr
-    TEUCHOS_DEPRECATED void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, std::complex<double>* AF, const int& ldaf, int* IPIV, const char& EQUED, double* R, double* C, std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
     void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, std::complex<double>* A, const int& lda, std::complex<double>* AF, const int& ldaf, int* IPIV, char* EQUED, double* R, double* C, std::complex<double>* B, const int& ldb, std::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
 
     void GEHRD(const int& n, const int& ilo, const int& ihi, std::complex<double>* A, const int& lda, std::complex<double>* TAU, std::complex<double>* WORK, const int& lwork, int* info) const;
@@ -1967,8 +1919,6 @@ namespace Teuchos
     void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const std::complex<double>* T, const int& ldt, std::complex<double>* VL, const int& ldvl, std::complex<double>* VR, const int& ldvr, const int& mm, int* m, std::complex<double>* WORK, double* RWORK, int* info) const;
     void TREVC(const char& SIDE, const int& n, const std::complex<double>* T, const int& ldt, std::complex<double>* VL, const int& ldvl, std::complex<double>* VR, const int& ldvr, const int& mm, int* m, std::complex<double>* WORK, double* RWORK, int* info) const;
 
-    // deprecated - ifst and ilst were passed by value (changed to const int& for api refactor) - new form passed by int * for consistency with float and double versions
-    TEUCHOS_DEPRECATED void TREXC(const char& COMPQ, const int& n, std::complex<double>* T, const int& ldt, std::complex<double>* Q, const int& ldq, const int& ifst, const int& ilst, std::complex<double>* WORK, int* info) const;
     void TREXC(const char& COMPQ, const int& n, std::complex<double>* T, const int& ldt, std::complex<double>* Q, const int& ldq, int* ifst, int* ilst, std::complex<double>* WORK, int* info) const;
 
     // Rotation/reflection generators
@@ -1977,8 +1927,6 @@ namespace Teuchos
 
     // Matrix balancing routines.
 
-    // deprecated - ilo and ihi were passed by value (changed to const int& for api refactor) but lapack can modify them - new version passes by ptr
-    TEUCHOS_DEPRECATED void GEBAL(const char& JOBZ, const int& n, std::complex<double>* A, const int& lda, const int& ilo, const int& ihi, double* scale, int* info) const;
     void GEBAL(const char& JOBZ, const int& n, std::complex<double>* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const;
 
     void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const double* scale, const int& m, std::complex<double>* V, const int& ldv, int* info) const;

@@ -39,11 +39,20 @@
 // ************************************************************************
 //@HEADER
 //
+// This driver tests variations of Hybrid GMRES using the Belos GMRES 
+// Polynomial solver manager.  One can specify an 'outer solver'
+// to which the GMRES Polynomial is applied as a preconditioner.  
+// If the 'outer solver' string is empty, the polynomial will be applied
+// alone.
+//
+// Alternately, one can apply the GMRES polynomial without the 'outer
+// solver' functionality by using the BelosTpetraOperator interface.
+// See the FGMRES test driver for an example of its use.  
+//
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // The right-hand-side corresponds to a randomly generated solution.
 // The initial guesses are all set to zero.
 //
-// NOTE: No preconditioner is used in this case.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -93,19 +102,19 @@ int main(int argc, char *argv[]) {
     // Get test parameters from command-line processor
     //
     bool proc_verbose = false;
-    bool userandomrhs = false;
-    int frequency = -1;        // frequency of status test output.
-    int blocksize = 1;         // blocksize
-    int numrhs = 1;            // number of right-hand sides to solve for
-    int maxiters = -1;         // maximum number of iterations allowed per linear system
-    int maxdegree = 25;        // maximum degree of polynomial
-    int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
-    int maxrestarts = 15;      // number of restarts allowed
-    std::string outersolver("Block Gmres");
-    std::string polytype("Arnoldi");
-    std::string filename("bcsstk14.hb");
-    MT tol = 1.0e-5;           // relative residual tolerance
-    MT polytol = tol/10;       // relative residual tolerance for polynomial construction
+    bool userandomrhs = false;                // use linear problem RHS or random RHS to generate poly
+    int frequency = -1;                       // frequency of status test output.
+    int blocksize = 1;                        // blocksize
+    int numrhs = 1;                           // number of right-hand sides to solve for
+    int maxiters = -1;                        // maximum number of iterations allowed per linear system
+    int maxdegree = 25;                       // maximum degree of polynomial
+    int maxsubspace = 50;                     // maximum number of blocks the solver can use for the subspace
+    int maxrestarts = 15;                     // number of restarts allowed
+    std::string outersolver("Block Gmres");   // name of outer solver
+    std::string polytype("Roots");            // polynomial configuration.  
+    std::string filename("bcsstk14.hb");      // name of matrix file
+    MT tol = 1.0e-5;                          // relative residual tolerance
+    MT polytol = tol/10;                      // relative residual tolerance for polynomial construction
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -113,7 +122,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
     cmdp.setOption("outersolver",&outersolver,"Name of outer solver to be used with GMRES poly");
-    cmdp.setOption("poly-type",&polytype,"Name of the polynomial to be generated.");
+    cmdp.setOption("poly-type",&polytype,"Name of the polynomial to be generated. Arnoldi, Gmres, or Roots.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
     cmdp.setOption("poly-tol",&polytol,"Relative residual tolerance used to construct the GMRES polynomial.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
@@ -160,6 +169,8 @@ int main(int argc, char *argv[]) {
       maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
     }
     //
+    //
+    //Parameter list used by the outer solver:
     ParameterList belosList;
     belosList.set( "Num Blocks", maxsubspace);             // Maximum number of blocks in Krylov factorization
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
@@ -174,18 +185,29 @@ int main(int argc, char *argv[]) {
     }
     belosList.set( "Verbosity", verbosity );
 
+    // Parameter list used by the GMRES Polynomial (inner) solver
     ParameterList polyList;
     polyList.set( "Polynomial Type", polytype );          // Type of polynomial to be generated
     polyList.set( "Maximum Degree", maxdegree );          // Maximum degree of the GMRES polynomial
     polyList.set( "Polynomial Tolerance", polytol );      // Polynomial convergence tolerance requested
     polyList.set( "Verbosity", verbosity );               // Verbosity for polynomial construction
     polyList.set( "Random RHS", userandomrhs );           // Use RHS from linear system or random vector
+                                                          // to generate the polynomial.
+                                                          
+    //
+    // Pass the outer solver name and parameters to the polynomial solver manager.
+    //
     if ( outersolver != "" ) {
       polyList.set( "Outer Solver", outersolver );
       polyList.set( "Outer Solver Params", belosList );
     }
+
     //
-    // Construct an unpreconditioned linear problem instance.
+    // Construct an unpreconditioned linear problem instance. 
+    //
+    // The polynomial preconditioning will be handled by the solver manager.
+    // One could pass another preconditioner such as ILU to the linear problem
+    // to be used in combination with the polynomial preconditioner.
     //
     Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
     problem.setInitResVec( B );
@@ -197,7 +219,8 @@ int main(int argc, char *argv[]) {
     }
     //
     // *******************************************************************
-    // *************Start the block Gmres iteration***********************
+    // *************Start the Hybrid Gmres iteration***********************
+    // ********* Using the GMRES Poly Solver Manager *********************
     // *******************************************************************
     //
     Belos::GmresPolySolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(polyList) );
@@ -214,10 +237,12 @@ int main(int argc, char *argv[]) {
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
+
     //
     // Perform solve
     //
     Belos::ReturnType ret = solver.solve();
+
     //
     // Compute actual residuals.
     //

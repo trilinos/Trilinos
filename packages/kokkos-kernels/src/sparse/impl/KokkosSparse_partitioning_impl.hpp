@@ -256,7 +256,7 @@ struct RCM
   {
     typedef Kokkos::View<nnz_lno_t**, MyTempMemorySpace, Kokkos::MemoryTraits<0>> WorkView;
 
-    BfsFunctor(WorkView& workQueue_, WorkView& scratch_, nnz_view_t& visit_, const_lno_row_view_t& rowmap_, const_lno_nnz_view_t& colinds_, single_view_t& numLevels_, nnz_view_t threadNeighborCounts_, nnz_lno_t start_, nnz_lno_t numRows_)
+    BfsFunctor(const WorkView& workQueue_, const WorkView& scratch_, const nnz_view_t& visit_, const const_lno_row_view_t& rowmap_, const const_lno_nnz_view_t& colinds_, const single_view_t& numLevels_, const nnz_view_t& threadNeighborCounts_, nnz_lno_t start_, nnz_lno_t numRows_)
       : workQueue(workQueue_), scratch(scratch_), visit(visit_), rowmap(rowmap_), colinds(colinds_), numLevels(numLevels_), threadNeighborCounts(threadNeighborCounts_), start(start_), numRows(numRows_)
     {}
 
@@ -310,7 +310,7 @@ struct RCM
             {
               nnz_lno_t col = colinds(j);
               //use atomic here to guarantee neighbors are added to neighborList exactly once
-              if(Kokkos::atomic_compare_exchange_strong<nnz_lno_t>(&visit(col), NOT_VISITED, QUEUED))
+              if(col < numRows && Kokkos::atomic_compare_exchange_strong<nnz_lno_t>(&visit(col), NOT_VISITED, QUEUED))
               {
                 //this thread is the first to see that col needs to be queued
                 neighborList(neiCount) = col;
@@ -394,9 +394,9 @@ struct RCM
     nnz_lno_t numRows;
   };
 
-  //parallel breadth-first search, producing level structure in (xadj, adj) form:
-  //xadj(level) gives index in adj where level begins
-  //also return the total number of levels
+  //Parallel breadth-first search, producing level structure in (xadj, adj) form:
+  //xadj(level) gives index in adj where level begins.
+  //Returns the total number of levels, and sets xadj, adj and maxDeg.
   nnz_lno_t parallel_bfs(nnz_lno_t start, nnz_view_t& xadj, nnz_view_t& adj, nnz_lno_t& maxDeg, nnz_lno_t nthreads)
   {
     //need to know maximum degree to allocate scratch space for threads
@@ -426,9 +426,11 @@ struct RCM
   {
     typedef Kokkos::View<offset_t*, MyTempMemorySpace, Kokkos::MemoryTraits<0u>> ScoreView;
 
-    CuthillMcKeeFunctor(nnz_lno_t numLevels_, nnz_lno_t maxDegree_, const_lno_row_view_t& rowmap_, const_lno_nnz_view_t& colinds_, ScoreView& scores_, ScoreView& scoresAux_, nnz_view_t& visit_, nnz_view_t& xadj_, nnz_view_t& adj_, nnz_view_t& adjAux_)
+    CuthillMcKeeFunctor(nnz_lno_t numLevels_, nnz_lno_t maxDegree_, const const_lno_row_view_t& rowmap_, const const_lno_nnz_view_t& colinds_, const ScoreView& scores_, const ScoreView& scoresAux_, const nnz_view_t& visit_, const nnz_view_t& xadj_, const nnz_view_t& adj_, const nnz_view_t& adjAux_)
       : numLevels(numLevels_), maxDegree(maxDegree_), rowmap(rowmap_), colinds(colinds_), scores(scores_), scoresAux(scoresAux_), visit(visit_), xadj(xadj_), adj(adj_), adjAux(adjAux_)
-    {}
+    {
+      numRows = rowmap.extent(0) - 1;
+    }
 
     KOKKOS_INLINE_FUNCTION void operator()(const team_member_t mem) const
     {
@@ -455,9 +457,12 @@ struct RCM
           for(offset_t j = rowStart; j < rowEnd; j++)
           {
             nnz_lno_t neighbor = colinds(j);
-            nnz_lno_t neighborVisit = visit(neighbor);
-            if(neighborVisit < minNeighbor)
-              minNeighbor = neighborVisit;
+            if(neighbor < numRows)
+            {
+              nnz_lno_t neighborVisit = visit(neighbor);
+              if(neighborVisit < minNeighbor)
+                minNeighbor = neighborVisit;
+            }
           }
           scores(i) = ((offset_t) minNeighbor * (maxDegree + 1)) + (rowmap(process + 1) - rowmap(process));
         }
@@ -480,6 +485,7 @@ struct RCM
       }
     }
 
+    nnz_lno_t numRows;
     nnz_lno_t numLevels;
     nnz_lno_t maxDegree;
     const_lno_row_view_t rowmap;
@@ -497,7 +503,7 @@ struct RCM
   //Does the reversing in "reverse Cuthill-McKee")
   struct OrderReverseFunctor
   {
-    OrderReverseFunctor(nnz_view_t& visit_, nnz_lno_t numRows_)
+    OrderReverseFunctor(const nnz_view_t& visit_, nnz_lno_t numRows_)
       : visit(visit_), numRows(numRows_)
     {}
 
@@ -549,7 +555,7 @@ struct RCM
   struct MinDegreeRowFunctor
   {
     typedef typename Reducer::value_type Value;
-    MinDegreeRowFunctor(const_lno_row_view_t& rowmap_) : rowmap(rowmap_) {}
+    MinDegreeRowFunctor(const const_lno_row_view_t& rowmap_) : rowmap(rowmap_) {}
     KOKKOS_INLINE_FUNCTION void operator()(const size_type i, Value& lval) const
     {
       size_type ideg = rowmap(i + 1) - rowmap(i);
@@ -565,7 +571,7 @@ struct RCM
   //parallel-for functor that assigns a cluster given a envelope-reduced reordering (like RCM)
   struct OrderToClusterFunctor
   {
-    OrderToClusterFunctor(const nnz_view_t& ordering_, nnz_view_t vertClusters_, nnz_lno_t clusterSize_)
+    OrderToClusterFunctor(const nnz_view_t& ordering_, const nnz_view_t& vertClusters_, nnz_lno_t clusterSize_)
       : ordering(ordering_), vertClusters(vertClusters_), clusterSize(clusterSize_)
     {}
 
@@ -588,28 +594,6 @@ struct RCM
     Kokkos::parallel_reduce(range_policy_t(0, numRows),
         MinDegreeRowFunctor<MinLocReducer>(rowmap), MinLocReducer(v));
     return v.loc;
-  }
-
-  size_type countBlockDiagEntries(nnz_view_t labels, nnz_lno_t blockSize)
-  {
-    auto labelsHost = Kokkos::create_mirror_view(labels);
-    Kokkos::deep_copy(labelsHost, labels);
-    auto rowmapHost = Kokkos::create_mirror_view(rowmap);
-    Kokkos::deep_copy(rowmapHost, rowmap);
-    auto colindsHost = Kokkos::create_mirror_view(colinds);
-    Kokkos::deep_copy(colindsHost, colinds);
-    size_type num = 0;
-    for(nnz_lno_t row = 0; row < numRows; row++)
-    {
-      nnz_lno_t rowLabel = labelsHost(row);
-      for(size_type j = rowmapHost(row); j < rowmapHost(row + 1); j++)
-      {
-        nnz_lno_t colLabel = labelsHost(colindsHost(j));
-        if(rowLabel / blockSize == colLabel / blockSize)
-          num++;
-      }
-    }
-    return num;
   }
 
   nnz_view_t cuthill_mckee()
@@ -670,7 +654,7 @@ struct BalloonClustering
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
 
-  BalloonClustering(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
+  BalloonClustering(size_type numRows_, const lno_row_view_t& rowmap_, const lno_nnz_view_t& colinds_)
     : numRows(numRows_), rowmap(rowmap_), colinds(colinds_), randPool(0xDEADBEEF)
   {}
 
@@ -688,7 +672,7 @@ struct BalloonClustering
 
   struct BalloonFunctor 
   {
-    BalloonFunctor(nnz_view_t& vertClusters_, nnz_view_t& clusterCounts_, nnz_view_t& distances_, lno_row_view_t& row_map_, lno_nnz_view_t& col_inds_, float_view_t pressure_, nnz_lno_t clusterSize_, RandPool& randPool_)
+    BalloonFunctor(const nnz_view_t& vertClusters_, const nnz_view_t& clusterCounts_, const nnz_view_t& distances_, const lno_row_view_t& row_map_, const lno_nnz_view_t& col_inds_, const float_view_t& pressure_, nnz_lno_t clusterSize_, RandPool& randPool_)
       : vertClusters(vertClusters_), clusterCounts(clusterCounts_), distances(distances_), row_map(row_map_), col_inds(col_inds_), pressure(pressure_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), vertLocks(numRows), randPool(randPool_)
     {
       numClusters = (numRows + clusterSize - 1) / clusterSize;
@@ -738,7 +722,7 @@ struct BalloonClustering
       for(size_type j = row_map(i); j < row_map(i + 1); j++)
       {
         nnz_lno_t nei = col_inds(j);
-        if(nei != i && vertClusters(nei) == cluster)
+        if(nei < numRows && nei != i && vertClusters(nei) == cluster)
         {
           //while we're at it, minimize distance to root as in Djikstra's
           if(distances(nei) + 1 < distances(i))
@@ -767,7 +751,7 @@ struct BalloonClustering
       {
         nnz_lno_t nei = col_inds(j);
         //to annex another vertex, it must be a non-root in a different cluster
-        if(nei != i && vertClusters(nei) != cluster && pressure(nei) < weakestPressure && distances(nei) != 0)
+        if(nei < numRows && nei != i && vertClusters(nei) != cluster && pressure(nei) < weakestPressure && distances(nei) != 0)
         {
           weakNei = nei;
           weakestPressure = pressure(nei);

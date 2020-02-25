@@ -529,7 +529,7 @@ namespace KokkosSparse{
       struct BuildCrossClusterMaskFunctor
       {
         BuildCrossClusterMaskFunctor(Rowmap& rowmap_, Colinds& colinds_, nnz_view_t& clusterOffsets_, nnz_view_t& clusterVerts_, nnz_view_t& vertClusters_, bitset_t& mask_)
-          : rowmap(rowmap_), colinds(colinds_), clusterOffsets(clusterOffsets_), clusterVerts(clusterVerts_), vertClusters(vertClusters_), mask(mask_)
+          : numRows(rowmap_.extent(0) - 1), rowmap(rowmap_), colinds(colinds_), clusterOffsets(clusterOffsets_), clusterVerts(clusterVerts_), vertClusters(vertClusters_), mask(mask_)
         {}
 
         //Used a fixed-size hash set in shared memory
@@ -600,6 +600,9 @@ namespace KokkosSparse{
                 [&] (const nnz_lno_t j)
                 {
                   nnz_lno_t nei = colinds(rowmap(row) + j);
+                  //Remote neighbors are not included
+                  if(nei >= numRows)
+                    return;
                   nnz_lno_t neiCluster = vertClusters(nei);
                   if(neiCluster != cluster)
                   {
@@ -622,6 +625,7 @@ namespace KokkosSparse{
           return tableSize() * sizeof(int);
         }
 
+        nnz_lno_t numRows;
         Rowmap rowmap;
         Colinds colinds;
         nnz_view_t clusterOffsets;
@@ -776,21 +780,10 @@ namespace KokkosSparse{
           raw_sym_xadj = raw_rowmap_t(sym_xadj.data(), sym_xadj.extent(0));
           raw_sym_adj = raw_colinds_t(sym_adj.data(), sym_adj.extent(0));
         }
-        bool onCuda = false;
-#ifdef KOKKOS_ENABLE_CUDA
-        onCuda = std::is_same<MyExecSpace, Kokkos::Cuda>::value;
-#endif
         nnz_view_t vertClusters;
         auto clusterAlgo = gsHandle->get_clustering_algo();
         if(clusterAlgo == CLUSTER_DEFAULT)
-        {
-          //Use CM if > 50 entries per row, otherwise balloon clustering.
-          //CM is quite fast on CPUs if the level sets fan out quickly, otherwise slow and non-scalable.
-          if(!onCuda && (raw_sym_adj.extent(0) / num_rows > 50))
-            clusterAlgo = CLUSTER_CUTHILL_MCKEE;
-          else
-            clusterAlgo = CLUSTER_BALLOON;
-        }
+          clusterAlgo = CLUSTER_BALLOON;
         switch(clusterAlgo)
         {
           case CLUSTER_CUTHILL_MCKEE:

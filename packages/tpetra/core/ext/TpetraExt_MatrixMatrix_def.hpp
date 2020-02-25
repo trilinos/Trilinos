@@ -392,7 +392,7 @@ void Jacobi(Scalar omega,
 
   //Now import any needed remote rows and populate the Aview struct.
   RCP<const import_type> dummyImporter;
-  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, false, label,importParams1);
+  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label,importParams1);
 
   // We will also need local access to all rows of B that correspond to the
   // column-map of op(A).
@@ -769,7 +769,7 @@ add (const Scalar& alpha,
     //Handle this case now
     //(without interfering with collective operations, since it's possible for
     //some ranks to have 0 local rows and others not).
-    rowptrs = row_ptrs_array("C rowptrs", 1);
+    rowptrs = row_ptrs_array("C rowptrs", 0);
   }
   auto Acolmap = Aprime->getColMap();
   auto Bcolmap = Bprime->getColMap();
@@ -783,7 +783,7 @@ add (const Scalar& alpha,
     //use kernel that converts col indices in both A and B to common domain map before adding
     auto AlocalColmap = Acolmap->getLocalMap();
     auto BlocalColmap = Bcolmap->getLocalMap();
-    global_col_inds_array globalColinds("", 0);
+    global_col_inds_array globalColinds;
     if (debug) {
       std::ostringstream os;
       os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
@@ -2019,6 +2019,8 @@ void mult_A_B_reuse(
       }
     });
 
+  Kokkos::fence();
+
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::mult_A_B_reuse_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
@@ -2322,6 +2324,8 @@ void jacobi_A_B_newmatrix(
 
       }
     });
+
+  Kokkos::fence();
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -2667,6 +2671,8 @@ void jacobi_A_B_reuse(
   MM = Teuchos::null;
 #endif
 
+  Kokkos::fence();
+
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::jacobi_A_B_reuse_kernel_wrapper(omega,Dinv,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
@@ -2889,9 +2895,11 @@ void import_and_extract_views(
   Aview.colMap       = A.getColMap();
   Aview.domainMap    = A.getDomainMap();
   Aview.importColMap = null;
+  RCP<const map_type> rowMap = A.getRowMap();
+  const int numProcs = rowMap->getComm()->getSize();
 
-  // Short circuit if the user swears there are no remotes
-  if (userAssertsThereAreNoRemotes)
+  // Short circuit if the user swears there are no remotes (or if we're in serial)
+  if (userAssertsThereAreNoRemotes || numProcs < 2)
     return;
 
   RCP<const import_type> importer;
@@ -2906,13 +2914,16 @@ void import_and_extract_views(
 
     // Mark each row in targetMap as local or remote, and go ahead and get a view
     // for the local rows
-    RCP<const map_type> rowMap = A.getRowMap(), remoteRowMap;
+    RCP<const map_type> remoteRowMap;
     size_t numRemote = 0;
     int mode = 0;
     if (!prototypeImporter.is_null() &&
         prototypeImporter->getSourceMap()->isSameAs(*rowMap)     &&
         prototypeImporter->getTargetMap()->isSameAs(*targetMap)) {
       // We have a valid prototype importer --- ask it for the remotes
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      TimeMonitor MM2 = *TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap-Mode1"));
+#endif
       ArrayView<const LO> remoteLIDs = prototypeImporter->getRemoteLIDs();
       numRemote = prototypeImporter->getNumRemoteIDs();
 
@@ -2926,6 +2937,9 @@ void import_and_extract_views(
 
     } else if (prototypeImporter.is_null()) {
       // No prototype importer --- count the remotes the hard way
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      TimeMonitor MM2 = *TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap-Mode2"));
+#endif
       ArrayView<const GO> rows    = targetMap->getNodeElementList();
       size_t              numRows = targetMap->getNodeNumElements();
 
@@ -2945,8 +2959,6 @@ void import_and_extract_views(
       // PrototypeImporter is bad.  But if we're in serial that's OK.
       mode = 3;
     }
-
-    const int numProcs = rowMap->getComm()->getSize();
 
     if (numProcs < 2) {
       TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,

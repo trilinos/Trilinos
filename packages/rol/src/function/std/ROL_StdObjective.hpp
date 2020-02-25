@@ -58,13 +58,19 @@ namespace ROL {
 
 template <class Real>
 class StdObjective : public virtual Objective<Real> {
+private:
+  Real sgn(const Real x) const {
+    const Real zero(0), one(1);
+    return (x < zero ? -one : one);
+  }
+
 public:
   virtual void update( const std::vector<Real> &x, bool flag = true, int iter = -1 ) {}
 
   using Objective<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
-    update(*(xs.getVector()),flag,true);
+    update(*(xs.getVector()),flag,iter);
   }
 
   virtual Real value( const std::vector<Real> &x, Real &tol ) = 0;
@@ -76,20 +82,28 @@ public:
   }
 
   virtual void gradient( std::vector<Real> &g, const std::vector<Real> &x, Real &tol ) {
-    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-      ">>> ERROR (ROL::StdObjective): gradient not implemented!");
+    const unsigned size = x.size();
+    std::vector<Real> y; y.assign(x.begin(),x.end());
+    const Real cbrteps = std::cbrt(ROL::ROL_EPSILON<Real>()), one(1);
+    Real h(1), xi(0);
+    const Real val = value(x,tol);
+    for (unsigned i = 0; i < size; ++i) {
+      xi   = x[i];
+      h    = cbrteps * std::max(std::abs(xi),one) * sgn(xi);
+      y[i] = xi + h;
+      h    = y[i] - xi;
+      update(y);
+      g[i] = (value(y,tol) - val)/h;
+      y[i] = xi;
+    }
+    update(x);
   }
 
   using Objective<Real>::gradient;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     StdVector<Real> gs = dynamic_cast<StdVector<Real>&>(g);
     const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
-    try {
-      gradient(*(gs.getVector()),*(xs.getVector()),tol);
-    }
-    catch (std::exception &e) {
-      Objective<Real>::gradient(g,x,tol);
-    }
+    gradient(*(gs.getVector()),*(xs.getVector()),tol);
   }
 
   virtual Real dirDeriv( const std::vector<Real> &x, const std::vector<Real> &d, Real &tol ) {

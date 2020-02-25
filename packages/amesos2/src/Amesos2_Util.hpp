@@ -429,6 +429,7 @@ namespace Amesos2 {
         }
       }
     };
+
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
 
     /**
@@ -517,6 +518,81 @@ namespace Amesos2 {
       }
     };
 
+    template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct get_cxs_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering=ARBITRARY,
+                         typename KV_GO::value_type indexBase = 0)
+      {
+        typedef typename Matrix::local_ordinal_t lo_t;
+        typedef typename Matrix::global_ordinal_t go_t;
+        typedef typename Matrix::global_size_t gs_t;
+        typedef typename Matrix::node_t node_t;
+
+        const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
+          = getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
+                                                      Op::get_dimension(mat),
+                                                      mat->getComm(),
+                                                      indexBase,
+                                                      Op::getMapFromMatrix(mat) //getMap must be the map returned, NOT rowmap or colmap
+                                                      );
+        typename Matrix::global_size_t nnz_temp = 0; // only setting because Cuda gives warning used before unset
+        Op::template apply_kokkos_view<KV_S, KV_GO, KV_GS>(mat, nzvals,
+          indices, pointers, nnz_temp, Teuchos::ptrInArg(*map), distribution, ordering);
+        nnz = Teuchos::as<typename KV_GS::value_type>(nnz_temp);
+      }
+
+      /**
+       * Basic function overload that uses the matrix's row/col map as
+       * returned by Op::getMap().
+       */
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         EDistribution distribution, // Does this one need a distribution argument??
+                         EStorage_Ordering ordering=ARBITRARY)
+      {
+        const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                             typename Matrix::global_ordinal_t,
+                                             typename Matrix::node_t> > map
+          = Op::getMap(mat);
+        typename Matrix::global_size_t nnz_temp;
+        Op::template apply_kokkos_view<KV_S, KV_GO, KV_GS>(mat, nzvals,
+          indices, pointers, nnz_temp, map, distribution, ordering);
+        nnz = Teuchos::as<typename KV_GS::value_type>(nnz_temp);
+      }
+
+      /**
+       * Function overload that takes an explicit map to use for the
+       * representation's distribution.
+       */
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                             typename Matrix::global_ordinal_t,
+                                             typename Matrix::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering=ARBITRARY)
+      {
+        typename Matrix::global_size_t nnz_temp;
+        Op::template apply_kokkos_view<KV_S, KV_GO, KV_GS>(mat, nzvals,
+          indices, pointers, nnz_temp, map, distribution, ordering);
+        nnz = Teuchos::as<typename KV_GS::value_type>(nnz_temp);
+      }
+    };
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     /*
      * These two function-like classes are meant to be used as the \c
@@ -539,6 +615,23 @@ namespace Amesos2 {
       {
         mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering, distribution);
         //mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering);
+      }
+
+      template<typename KV_S, typename KV_GO, typename KV_GS>
+      static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
+                        KV_S& nzvals,
+                        KV_GO& colind,
+                        KV_GS& rowptr,
+                        typename Matrix::global_size_t& nnz,
+                        const Teuchos::Ptr<
+                          const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                            typename Matrix::global_ordinal_t,
+                                            typename Matrix::node_t> > map,
+                        EDistribution distribution,
+                        EStorage_Ordering ordering)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "Refactor in progress. For Tacho this is not expected to be called.");
       }
 
       static
@@ -584,6 +677,23 @@ namespace Amesos2 {
       {
         mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering, distribution);
         //mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering);
+      }
+
+      template<typename KV_S, typename KV_GO, typename KV_GS>
+      static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
+                        KV_S& nzvals,
+                        KV_GO& colind,
+                        KV_GS& rowptr,
+                        typename Matrix::global_size_t& nnz,
+                        const Teuchos::Ptr<
+                          const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                            typename Matrix::global_ordinal_t,
+                                            typename Matrix::node_t> > map,
+                        EDistribution distribution,
+                        EStorage_Ordering ordering)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "Kokkos adapter is not expecting multiple ranks to be used yet.");
       }
 
       static
@@ -654,6 +764,10 @@ namespace Amesos2 {
     struct get_ccs_helper : get_cxs_helper<Matrix,S,GO,GS,get_ccs_func<Matrix> >
     {};
 
+    template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS>
+    struct get_ccs_helper_kokkos_view : get_cxs_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,get_ccs_func<Matrix> >
+    {};
+
     /**
      * \brief Similar to get_ccs_helper , but used to get a CRS
      * representation of the given matrix.
@@ -665,6 +779,9 @@ namespace Amesos2 {
     struct get_crs_helper : get_cxs_helper<Matrix,S,GO,GS,get_crs_func<Matrix> >
     {};
 
+    template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS>
+    struct get_crs_helper_kokkos_view : get_cxs_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,get_crs_func<Matrix> >
+    {};
     /* End Matrix/MultiVector Utilities */
 
 

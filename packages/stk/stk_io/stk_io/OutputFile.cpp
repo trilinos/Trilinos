@@ -147,6 +147,7 @@ void OutputFile::setup_output_params(OutputParams &params) const
     params.set_output_selector(stk::topology::NODE_RANK, m_outputSelector[stk::topology::NODE_RANK].get());
     params.set_output_selector(stk::topology::EDGE_RANK, m_outputSelector[stk::topology::EDGE_RANK].get());
     params.set_output_selector(stk::topology::FACE_RANK, m_outputSelector[stk::topology::FACE_RANK].get());
+    params.set_skin_mesh_selector(m_skinMeshSelector.get());
     params.set_output_selector(stk::topology::ELEM_RANK, m_outputSelector[stk::topology::ELEM_RANK].get());
     params.set_sort_stk_parts_by_name(sort_stk_parts_by_name);
     params.set_use_nodeset_for_block_node_fields(m_useNodesetForBlockNodesFields);
@@ -155,7 +156,6 @@ void OutputFile::setup_output_params(OutputParams &params) const
     params.set_use_part_id_for_output(m_usePartIdForOutput);
     params.set_has_ghosting(m_hasGhosting);
     params.set_has_adaptivity(m_hasAdaptivity);
-    params.set_is_skin_mesh(m_isSkinMesh);
     params.set_additional_attribute_fields(m_additionalAttributeFields);
     params.set_is_restart(m_dbPurpose == stk::io::WRITE_RESTART);
 }
@@ -233,7 +233,7 @@ std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::
     } else if(type == Ioss::NODESET) {
         part_type = stk::topology::NODE_RANK;
     } else if(type == Ioss::ELEMENTBLOCK) {
-        part_type = stk::topology::ELEMENT_RANK;
+        part_type = params.has_skin_mesh_selector() ? meta.side_rank() : stk::topology::ELEMENT_RANK;
     } else if(type == Ioss::SIDESET) {
         part = meta.get_part(name);
         ThrowRequireMsg(nullptr != part, "Could not find a sideset with name: " + name);
@@ -743,6 +743,14 @@ void OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<st
     m_outputSelector[rank] = my_selector;
 }
 
+void OutputFile::set_skin_mesh_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+{
+    ThrowErrorMsgIf(m_meshDefined,
+                    "ERROR: On region named " << m_region->name() <<
+                    " the subset_selector cannot be changed after the mesh has already been written.");
+    m_skinMeshSelector = my_selector;
+}
+
 bool OutputFile::use_nodeset_for_block_nodes_fields() const
 {
     return m_useNodesetForBlockNodesFields;
@@ -817,12 +825,7 @@ void OutputFile::has_adaptivity(bool hasAdaptivity)
 
 bool OutputFile::is_skin_mesh() const
 {
-    return m_isSkinMesh;
-}
-
-void OutputFile::is_skin_mesh(bool skinMesh)
-{
-    m_isSkinMesh = skinMesh;
+    return m_skinMeshSelector.get() != nullptr;
 }
 
 } // namespace impl

@@ -69,6 +69,7 @@ public:
     con_->applyJacobian(jv,*v0,*x0,tol);
   }
 
+  using Constraint<Real>::applyAdjointJacobian;
   void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
     ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
     ROL::Ptr<Vector<Real> > ajv0 = dynamic_cast<RiskVector<Real>&>(ajv).getVector();

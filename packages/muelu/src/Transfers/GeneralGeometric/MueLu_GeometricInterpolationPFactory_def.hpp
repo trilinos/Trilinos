@@ -86,7 +86,8 @@ namespace MueLu {
                                                  "Number of spacial dimensions in the problem.");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null,
                                                  "Number of nodes per spatial dimension on the coarse grid.");
-    validParamList->set<bool>                   ("keep coarse coords", false, "Flag to keep coordinates for special coarse grid solve");
+    validParamList->set<bool>                   ("keep coarse coords",           false, "Flag to keep coordinates for special coarse grid solve");
+    validParamList->set<bool>                   ("interp: remove small entries", true, "Remove small interpolation coeficient from prolongator to reduce fill-in on coarse level");
 
     return validParamList;
   }
@@ -135,6 +136,7 @@ namespace MueLu {
 
     // Get inputs from the parameter list
     const ParameterList& pL = GetParameterList();
+    const bool removeSmallEntries     = pL.get<bool>("interp: remove small entries");
     const bool buildCoarseCoordinates = pL.get<bool>("interp: build coarse coordinates");
     const int interpolationOrder      = pL.get<int> ("interp: interpolation order");
     const int numDimensions           = Get<int>(fineLevel, "numDimensions");
@@ -206,8 +208,8 @@ namespace MueLu {
                                                              ghostCoordMap);
       ghostCoordinates->doImport(*coarseCoordinates, *ghostImporter, Xpetra::INSERT);
 
-      SubFactoryMonitor sfm(*this, "BuildLinearP", coarseLevel);
-      BuildLinearP(A, prolongatorGraph, fineCoordinates, ghostCoordinates, numDimensions, P);
+      BuildLinearP(coarseLevel, A, prolongatorGraph, fineCoordinates,
+                   ghostCoordinates, numDimensions, removeSmallEntries, P);
     }
 
     *out << "The prolongator matrix has been built." << std::endl;
@@ -271,10 +273,12 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeometricInterpolationPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildLinearP(RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
+  BuildLinearP(Level& coarseLevel,
+               RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
                RCP<realvaluedmultivector_type>& fineCoordinates,
                RCP<realvaluedmultivector_type>& ghostCoordinates,
-               const int numDimensions, RCP<Matrix>& P) const {
+               const int numDimensions, const bool removeSmallEntries,
+               RCP<Matrix>& P) const {
 
     // Set debug outputs based on environment variable
     RCP<Teuchos::FancyOStream> out;
@@ -285,93 +289,150 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    *out << "Entering BuildLinearP" << std::endl;
-
-    // Extract coordinates for interpolation stencil calculations
-    const LO numFineNodes  = fineCoordinates->getLocalLength();
-    const LO numGhostNodes = ghostCoordinates->getLocalLength();
-    Array<ArrayRCP<const real_type> > fineCoords(3);
-    Array<ArrayRCP<const real_type> > ghostCoords(3);
-    const real_type realZero = Teuchos::as<real_type>(0.0);
-    ArrayRCP<real_type> fineZero(numFineNodes, realZero);
-    ArrayRCP<real_type> ghostZero(numGhostNodes, realZero);
-    for(int dim = 0; dim < 3; ++dim) {
-      if(dim < numDimensions) {
-        fineCoords[dim]  = fineCoordinates->getData(dim);
-        ghostCoords[dim] = ghostCoordinates->getData(dim);
-      } else {
-        fineCoords[dim]  = fineZero;
-        ghostCoords[dim] = ghostZero;
-      }
-    }
-
-    *out << "Coordinates extracted from the multivectors!" << std::endl;
-
     // Compute 2^numDimensions using bit logic to avoid round-off errors
     const int numInterpolationPoints = 1 << numDimensions;
     const int dofsPerNode = A->GetFixedBlockSize();
-
-    std::vector<size_t> strideInfo(1);
-    strideInfo[0] = dofsPerNode;
-    RCP<const StridedMap> stridedDomainMap =
-      StridedMapFactory::Build(prolongatorGraph->getDomainMap(), strideInfo);
-
-    *out << "The maps of P have been computed" << std::endl;
 
     RCP<ParameterList> dummyList = rcp(new ParameterList());
     P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
     PCrs->resumeFill(); // The Epetra matrix is considered filled at this point.
 
-    LO interpolationNodeIdx = 0, rowIdx = 0;
-    ArrayView<const LO> colIndices;
-    Array<SC> values;
-    Array<Array<real_type> > coords(numInterpolationPoints + 1);
-    Array<real_type> stencil(numInterpolationPoints);
-    for(LO nodeIdx = 0; nodeIdx < numFineNodes; ++nodeIdx) {
-      if(PCrs->getNumEntriesInLocalRow(nodeIdx*dofsPerNode) == 1) {
-        values.resize(1);
-        values[0] = 1.0;
-        for(LO dof = 0; dof < dofsPerNode; ++dof) {
-          rowIdx = nodeIdx*dofsPerNode + dof;
-          prolongatorGraph->getLocalRowView(rowIdx, colIndices);
-          PCrs->replaceLocalValues(rowIdx, colIndices, values());
-        }
-      } else {
-        // Extract the coordinates associated with the current node
-        // and the neighboring coarse nodes
-        coords[0].resize(3);
-        for(int dim = 0; dim < 3; ++dim) {
-          coords[0][dim] = fineCoords[dim][nodeIdx];
-        }
-        prolongatorGraph->getLocalRowView(nodeIdx*dofsPerNode, colIndices);
-        for(int interpolationIdx=0; interpolationIdx < numInterpolationPoints; ++interpolationIdx) {
-          coords[interpolationIdx + 1].resize(3);
-          interpolationNodeIdx = colIndices[interpolationIdx] / dofsPerNode;
-          for(int dim = 0; dim < 3; ++dim) {
-            coords[interpolationIdx + 1][dim] = ghostCoords[dim][interpolationNodeIdx];
-          }
-        }
-        ComputeLinearInterpolationStencil(numDimensions, numInterpolationPoints, coords, stencil);
-        values.resize(numInterpolationPoints);
-        for(LO valueIdx = 0; valueIdx < numInterpolationPoints; ++valueIdx) {
-          values[valueIdx] = Teuchos::as<SC>(stencil[valueIdx]);
-        }
+    {
+      *out << "Entering BuildLinearP" << std::endl;
+      SubFactoryMonitor sfm(*this, "BuildLinearP", coarseLevel);
 
-        // Set values in all the rows corresponding to nodeIdx
-        for(LO dof = 0; dof < dofsPerNode; ++dof) {
-          rowIdx = nodeIdx*dofsPerNode + dof;
-          prolongatorGraph->getLocalRowView(rowIdx, colIndices);
-          PCrs->replaceLocalValues(rowIdx, colIndices, values());
+      // Extract coordinates for interpolation stencil calculations
+      const LO numFineNodes  = fineCoordinates->getLocalLength();
+      const LO numGhostNodes = ghostCoordinates->getLocalLength();
+      Array<ArrayRCP<const real_type> > fineCoords(3);
+      Array<ArrayRCP<const real_type> > ghostCoords(3);
+      const real_type realZero = Teuchos::as<real_type>(0.0);
+      ArrayRCP<real_type> fineZero(numFineNodes, realZero);
+      ArrayRCP<real_type> ghostZero(numGhostNodes, realZero);
+      for(int dim = 0; dim < 3; ++dim) {
+        if(dim < numDimensions) {
+          fineCoords[dim]  = fineCoordinates->getData(dim);
+          ghostCoords[dim] = ghostCoordinates->getData(dim);
+        } else {
+          fineCoords[dim]  = fineZero;
+          ghostCoords[dim] = ghostZero;
         }
       }
+
+      *out << "Coordinates extracted from the multivectors!" << std::endl;
+
+      { // Construct the linear interpolation prolongator
+        LO interpolationNodeIdx = 0, rowIdx = 0;
+        ArrayView<const LO> colIndices;
+        Array<SC> values;
+        Array<Array<real_type> > coords(numInterpolationPoints + 1);
+        Array<real_type> stencil(numInterpolationPoints);
+        for(LO nodeIdx = 0; nodeIdx < numFineNodes; ++nodeIdx) {
+          if(PCrs->getNumEntriesInLocalRow(nodeIdx*dofsPerNode) == 1) {
+            values.resize(1);
+            values[0] = 1.0;
+            for(LO dof = 0; dof < dofsPerNode; ++dof) {
+              rowIdx = nodeIdx*dofsPerNode + dof;
+              prolongatorGraph->getLocalRowView(rowIdx, colIndices);
+              PCrs->replaceLocalValues(rowIdx, colIndices, values());
+            }
+          } else {
+            // Extract the coordinates associated with the current node
+            // and the neighboring coarse nodes
+            coords[0].resize(3);
+            for(int dim = 0; dim < 3; ++dim) {
+              coords[0][dim] = fineCoords[dim][nodeIdx];
+            }
+            prolongatorGraph->getLocalRowView(nodeIdx*dofsPerNode, colIndices);
+            for(int interpolationIdx=0; interpolationIdx < numInterpolationPoints; ++interpolationIdx) {
+              coords[interpolationIdx + 1].resize(3);
+              interpolationNodeIdx = colIndices[interpolationIdx] / dofsPerNode;
+              for(int dim = 0; dim < 3; ++dim) {
+                coords[interpolationIdx + 1][dim] = ghostCoords[dim][interpolationNodeIdx];
+              }
+            }
+            RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Compute Linear Interpolation")));
+            ComputeLinearInterpolationStencil(numDimensions, numInterpolationPoints, coords, stencil);
+            tm = Teuchos::null;
+            values.resize(numInterpolationPoints);
+            for(LO valueIdx = 0; valueIdx < numInterpolationPoints; ++valueIdx) {
+              values[valueIdx] = Teuchos::as<SC>(stencil[valueIdx]);
+            }
+
+            // Set values in all the rows corresponding to nodeIdx
+            for(LO dof = 0; dof < dofsPerNode; ++dof) {
+              rowIdx = nodeIdx*dofsPerNode + dof;
+              prolongatorGraph->getLocalRowView(rowIdx, colIndices);
+              PCrs->replaceLocalValues(rowIdx, colIndices, values());
+            }
+          } // Check for Coarse vs. Fine point
+        } // Loop over fine nodes
+      } // Construct the linear interpolation prolongator
+
+      *out << "The calculation of the interpolation stencils has completed." << std::endl;
+
+      PCrs->fillComplete();
     }
 
-    *out << "The calculation of the interpolation stencils has completed." << std::endl;
+    *out << "All values in P have been set and fillComplete has been performed." << std::endl;
 
-    PCrs->fillComplete();
+    // Note lbv Jan 29 2019: this should be handle at aggregation level
+    // if the user really does not want potential d2 neighbors on coarse grid
+    // that way we would avoid a new graph construction...
 
-    *out << "All values in P have been set and expertStaticFillComplete has been performed." << std::endl;
+    // Check if we want to remove small entries from P
+    // to reduce stencil growth on next level.
+    if(removeSmallEntries) {
+      *out << "Entering remove small entries" << std::endl;
+      SubFactoryMonitor sfm(*this, "remove small entries", coarseLevel);
+
+      ArrayRCP<const size_t> rowptrOrig;
+      ArrayRCP<const LO>     colindOrig;
+      ArrayRCP<const Scalar> valuesOrig;
+      PCrs->getAllValues(rowptrOrig, colindOrig, valuesOrig);
+
+      const size_t numRows = static_cast<size_t>(rowptrOrig.size() - 1);
+      ArrayRCP<size_t> rowPtr(numRows + 1);
+      ArrayRCP<size_t> nnzOnRows(numRows);
+      rowPtr[0] = 0;
+      size_t countRemovedEntries = 0;
+      for(size_t rowIdx = 0; rowIdx < numRows; ++rowIdx) {
+        for(size_t entryIdx = rowptrOrig[rowIdx]; entryIdx < rowptrOrig[rowIdx + 1]; ++entryIdx) {
+          if(Teuchos::ScalarTraits<Scalar>::magnitude(valuesOrig[entryIdx]) < 1e-6) {++countRemovedEntries;}
+        }
+        rowPtr[rowIdx + 1] = rowptrOrig[rowIdx + 1] - countRemovedEntries;
+        nnzOnRows[rowIdx] = rowPtr[rowIdx + 1] - rowPtr[rowIdx];
+      }
+      GetOStream(Statistics1) << "interp: number of small entries removed= " << countRemovedEntries << " / " << rowptrOrig[numRows] << std::endl;
+
+      size_t countKeptEntries = 0;
+      ArrayRCP<LO> colInd(rowPtr[numRows]);
+      ArrayRCP<SC> values(rowPtr[numRows]);
+      for(size_t entryIdx = 0; entryIdx < rowptrOrig[numRows]; ++entryIdx) {
+        if(Teuchos::ScalarTraits<Scalar>::magnitude(valuesOrig[entryIdx]) > 1e-6) {
+          colInd[countKeptEntries] = colindOrig[entryIdx];
+          values[countKeptEntries] = valuesOrig[entryIdx];
+          ++countKeptEntries;
+        }
+      }
+
+      P = rcp(new CrsMatrixWrap(prolongatorGraph->getRowMap(),
+                                prolongatorGraph->getColMap(),
+                                nnzOnRows));
+      RCP<CrsMatrix> PCrsSqueezed = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+      PCrsSqueezed->resumeFill(); // The Epetra matrix is considered filled at this point.
+      PCrsSqueezed->setAllValues(rowPtr, colInd, values);
+      PCrsSqueezed->expertStaticFillComplete(prolongatorGraph->getDomainMap(),
+                                             prolongatorGraph->getRangeMap());
+    }
+
+    std::vector<size_t> strideInfo(1);
+    strideInfo[0] = dofsPerNode;
+    RCP<const StridedMap> stridedDomainMap =
+      StridedMapFactory::Build(prolongatorGraph->getDomainMap(), strideInfo);
+
+    *out << "The strided maps of P have been computed" << std::endl;
 
     // set StridingInformation of P
     if (A->IsView("stridedMaps") == true) {

@@ -117,6 +117,7 @@ namespace MueLu {
     const bool doTranspose       = true;
     const bool doFillComplete    = true;
     const bool doOptimizeStorage = true;
+    RCP<Matrix> Ac;
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       std::ostringstream levelstr;
@@ -128,7 +129,7 @@ namespace MueLu {
 
       const Teuchos::ParameterList& pL = GetParameterList();
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
-      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP, Ac;
+      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP;
 
       bool isEpetra = A->getRowMap()->lib() == Xpetra::UseEpetra;
 #ifdef KOKKOS_ENABLE_CUDA
@@ -308,6 +309,10 @@ namespace MueLu {
 
 
     }
+
+#ifdef HAVE_MUELU_DEBUG
+    MatrixUtils::checkLocalRowMapMatchesColMap(*Ac);
+#endif // HAVE_MUELU_DEBUG
 
     if (transferFacts_.begin() != transferFacts_.end()) {
       SubFactoryMonitor m(*this, "Projections", coarseLevel);

@@ -9,13 +9,7 @@
 #ifndef Tempus_StepperImplicit_impl_hpp
 #define Tempus_StepperImplicit_impl_hpp
 
-// Tempus
-//#include "Tempus_Stepper.hpp"
-//#include "Tempus_TimeDerivative.hpp"
-
 // Thrya
-//#include "Thyra_VectorBase.hpp"
-//#include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"
 
 
@@ -29,14 +23,12 @@ void StepperImplicit<Scalar>::setModel(
   validImplicitODE_DAE(appModel);
   wrapperModel_ =
     Teuchos::rcp(new WrapperModelEvaluatorBasic<Scalar>(appModel));
-}
 
+  TEUCHOS_TEST_FOR_EXCEPTION(solver_ == Teuchos::null, std::logic_error,
+    "Error - Solver is not set!\n");
+  solver_->setModel(wrapperModel_);
 
-template<class Scalar>
-void StepperImplicit<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
+  this->isInitialized_ = false;
 }
 
 
@@ -51,13 +43,6 @@ void StepperImplicit<Scalar>::setInitialConditions(
   TEUCHOS_TEST_FOR_EXCEPTION(numStates < 1, std::logic_error,
     "Error - setInitialConditions() needs at least one SolutionState\n"
     "        to set the initial condition.  Number of States = " << numStates);
-
-  if (numStates > 1) {
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"StepperImplicit::setInitialConditions()");
-    *out << "Warning -- SolutionHistory has more than one state!\n"
-         << "Setting the initial conditions on the currentState.\n"<<std::endl;
-  }
 
   RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
   RCP<Thyra::VectorBase<Scalar> > x = initialState->getX();
@@ -110,28 +95,12 @@ void StepperImplicit<Scalar>::setInitialConditions(
   std::string icConsistency = this->getICConsistency();
   if (icConsistency == "None") {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
-      if (initialState->getXDot() == Teuchos::null) {
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,
-          "StepperImplicit::setInitialConditions()");
-        *out << "Warning -- Requested IC consistency of 'None' but\n"
-             << "           initialState does not have an xDot.\n"
-             << "           Setting a 'Zero' xDot!\n" << std::endl;
-
+      if (initialState->getXDot() == Teuchos::null)
         Thyra::assign(this->getStepperXDot(initialState).ptr(), Scalar(0.0));
-      }
     }
     else if (this->getOrderODE() == SECOND_ORDER_ODE) {
-      if (initialState->getXDotDot() == Teuchos::null) {
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,
-          "StepperImplicit::setInitialConditions()");
-        *out << "Warning -- Requested IC consistency of 'None' but\n"
-             << "           initialState does not have an xDotDot.\n"
-             << "           Setting a 'Zero' xDotDot!\n" << std::endl;
-
+      if (initialState->getXDotDot() == Teuchos::null)
         Thyra::assign(this->getStepperXDotDot(initialState).ptr(), Scalar(0.0));
-      }
     }
   }
   else if (icConsistency == "Zero") {
@@ -219,7 +188,7 @@ void StepperImplicit<Scalar>::setInitialConditions(
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"StepperImplicit::setInitialConditions()");
-      *out << "Warning -- Failed consistency check but continuing!\n"
+      *out << "Info -- Failed consistency check but continuing!\n"
          << "  ||f(x,xDot,t)||/||x|| > eps" << std::endl
          << "  ||f(x,xDot,t)||       = " << Thyra::norm(*f) << std::endl
          << "  ||x||                 = " << Thyra::norm(*x) << std::endl
@@ -231,22 +200,32 @@ void StepperImplicit<Scalar>::setInitialConditions(
 
 
 template<class Scalar>
+void StepperImplicit<Scalar>::setDefaultSolver()
+{
+  solver_ = rcp(new Thyra::NOXNonlinearSolver());
+  auto solverPL = Tempus::defaultSolverParameters();
+  auto subPL = sublist(solverPL, "NOX");
+  solver_->setParameterList(subPL);
+
+  if (wrapperModel_ != Teuchos::null) solver_->setModel(wrapperModel_);
+
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
 void StepperImplicit<Scalar>::setSolver(
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
 {
-  if (solver == Teuchos::null) {
-    solver = rcp(new Thyra::NOXNonlinearSolver());
-    solver->setParameterList(defaultSolverParameters());
-  }
+  TEUCHOS_TEST_FOR_EXCEPTION(solver == Teuchos::null, std::logic_error,
+    "Error - Can not set the solver to Teuchos::null.\n");
 
   solver_ = solver;
+  if (wrapperModel_ != Teuchos::null) solver_->setModel(wrapperModel_);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(wrapperModel_ == Teuchos::null, std::logic_error,
-       "Error - ModelEvaluator is unset!  Should call setModel() first.\n");
-
-  solver_->setModel(wrapperModel_);
-
+  this->isInitialized_ = false;
 }
+
 
 template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
@@ -366,6 +345,52 @@ StepperImplicit<Scalar>::evaluateImplicitODE(
   wrapperModel_->setForSolve(Teuchos::null,inArgs,outArgs,p->evaluationType_);
 
   wrapperModel_->evalModel(inArgs, outArgs);
+}
+
+
+template<class Scalar>
+void StepperImplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
+                               const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << "--- StepperImplicit ---\n";
+  out << "  wrapperModel_     = " << wrapperModel_ << std::endl;
+  out << "  solver_           = " << solver_ << std::endl;
+  out << "  initialGuess_     = " << initialGuess_ << std::endl;
+  out << "  zeroInitialGuess_ = "
+      << Teuchos::toString(zeroInitialGuess_) << std::endl;
+  out << "  stepperXDot_      = " << stepperXDot_ << std::endl;
+  out << "  stepperXDotDot_   = " << stepperXDotDot_ << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperImplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if (wrapperModel_->getAppModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The application ModelEvaluator is not set!\n";
+  }
+
+  if (wrapperModel_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The wrapper ModelEvaluator is not set!\n";
+  }
+
+  if (solver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The solver is not set!\n";
+  }
+
+  if (solver_ != Teuchos::null) {
+    if (solver_->getModel() == Teuchos::null) {
+      isValidSetup = false;
+      out << "The solver's ModelEvaluator is not set!\n";
+    }
+  }
+
+  return isValidSetup;
 }
 
 

@@ -22,10 +22,11 @@ namespace Tacho {
     struct TaskFunctor_FactorizeCholByBlocksPanel {
     public:
       typedef SchedulerType scheduler_type;
-      typedef typename scheduler_type::execution_space exec_space;
       typedef typename scheduler_type::member_type member_type;
 
-      typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+
+      typedef Kokkos::MemoryPool<device_type> memory_pool_type;
 
       typedef int value_type; // functor return type
       typedef Kokkos::BasicFuture<int,scheduler_type> future_type;

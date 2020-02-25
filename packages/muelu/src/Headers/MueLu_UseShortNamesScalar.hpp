@@ -5,6 +5,9 @@
 #ifdef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregationExportFactory;
 #endif
+#ifdef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
+typedef MueLu::AggregateQualityEstimateFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregateQualityEstimateFactory;
+#endif
 #ifdef MUELU_AMALGAMATIONFACTORY_SHORT
 typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AmalgamationFactory;
 #endif
@@ -169,6 +172,9 @@ typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MergedSmoo
 #endif
 #ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorTransferFactory;
+#endif
+#ifdef MUELU_NOTAYAGGREGATIONFACTORY_SHORT
+typedef MueLu::NotayAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NotayAggregationFactory;
 #endif
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 typedef MueLu::NullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspaceFactory;

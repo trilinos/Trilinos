@@ -65,6 +65,12 @@ LOCA.LAPACK supports the following classes:
 #include "PyTrilinos_LOCA_Headers.hpp"
 %}
 
+// Include LOCA documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+#endif
+
 // Ignore/renames
 %rename(Print) *::print() const;
 %ignore *::operator=;
