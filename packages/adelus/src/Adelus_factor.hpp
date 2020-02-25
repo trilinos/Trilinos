@@ -367,7 +367,7 @@ void factor(ZDView& ZV,                 // matrix and rhs
         t1 = MPI_Wtime();
 #endif
         auto cur_col_view_1d = subview(ZV,Kokkos::make_pair(cur_col_i, cur_col_i+col_len),cur_col_j);
-        rel_lpivot_row = KokkosBlas::iamax(cur_col_view_1d);
+        rel_lpivot_row = KokkosBlas::iamax(cur_col_view_1d)-1;
 #ifdef GET_TIMING
         iamaxtime += (MPI_Wtime()-t1);
 #endif
