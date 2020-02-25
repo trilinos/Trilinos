@@ -72,6 +72,7 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   // Algorithm-Specific Parameters
   minit_     = trlist.sublist("Lin-More").get("Maximum Number of Minor Iterations",       10);
   extlim_    = trlist.sublist("Lin-More").get("Maximum Number of Extrapolation Steps",    10);
+  intlim_    = trlist.sublist("Lin-More").get("Maximum Number of Interpolation Steps",    10);
   interpf_   = trlist.sublist("Lin-More").get("Cauchy Point Backtracking Rate",           0.1);
   extrapf_   = trlist.sublist("Lin-More").get("Cauchy Point Extrapolation Rate",          10.0);
   qtol_      = trlist.sublist("Lin-More").get("Cauchy Point Decrease Tolerance",          1e-8);
@@ -354,8 +355,9 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
         q  = half * s.dot(dwa.dual()) + gs;
-        search = (q > mu0_*gs);
+        search = (q > mu0_*gs) && (cnt < intlim_);
       }
+      cnt++;
     }
   }
   else {
