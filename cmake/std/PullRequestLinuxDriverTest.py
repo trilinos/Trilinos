@@ -415,6 +415,8 @@ def getCDashTrack():
 def get_memory_info():
     """
     Get memory information
+
+    Returns dictionary : ["mem_gb": <Gigabytes of Memory>, "mem_kb": <Kilobytes of Memory>]
     """
     mem_kb = None
 
@@ -584,6 +586,7 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
                            'package_subproject_list.cmake'])
 
     return return_value
+
 
 
 if __name__ == '__main__':  # pragma nocover
