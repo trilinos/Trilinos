@@ -59,7 +59,6 @@ namespace Tacho {
                              size_t(x.extent(1)) != size_t(b.extent(1)), std::logic_error,
                              "A,x and b dimensions are not compatible");
     typedef ValueType value_type;
-    typedef DeviceType device_type;
     typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
     typedef typename host_device_type::memory_space host_memory_space;
 
