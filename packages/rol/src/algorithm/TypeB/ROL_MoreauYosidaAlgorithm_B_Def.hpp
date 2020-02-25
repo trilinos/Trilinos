@@ -81,7 +81,7 @@ MoreauYosidaAlgorithm_B<Real>::MoreauYosidaAlgorithm_B(ParameterList &list)
   verbosity_    = list.sublist("General").get("Output Level", 0);
   printHeader_  = verbosity_ > 2;
   print_              = (verbosity_ > 2 ? true : print_);
-  list_.sublist("General").set("Output Level",(print_ ? 1 : 0));
+  list_.sublist("General").set("Output Level",(print_ ? verbosity_ : 0));
 }
 
 template<typename Real>

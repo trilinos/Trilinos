@@ -84,7 +84,7 @@ AugmentedLagrangianAlgorithm_E<Real>::AugmentedLagrangianAlgorithm_E( ParameterL
   verbosity_          = list.sublist("General").get("Output Level", 0);
   printHeader_        = verbosity_ > 2;
   print_              = (verbosity_ > 2 ? true : print_);
-  list_.sublist("General").set("Output Level",(print_ ? 1 : 0));
+  list_.sublist("General").set("Output Level",(print_ ? verbosity_ : 0));
   // Outer iteration tolerances
   outerFeasTolerance_ = list.sublist("Status Test").get("Constraint Tolerance", oem8);
   outerOptTolerance_  = list.sublist("Status Test").get("Gradient Tolerance",   oem8);
