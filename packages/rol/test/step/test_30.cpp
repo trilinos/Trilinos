@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
 
     ROL::ParameterList list;
     list.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Iteration Limit",20);
+    list.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type","Moreau Yosida");
     list.sublist("Status Test").set("Gradient Tolerance",1e-8);
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
     list.sublist("Status Test").set("Step Tolerance",1e-12);
