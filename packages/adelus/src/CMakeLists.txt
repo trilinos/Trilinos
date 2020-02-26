@@ -55,24 +55,22 @@ IF (TPL_ENABLE_MPI)
   #
 
   APPEND_SET(HEADERS
-    block.h
-    distribute.hpp
-    factor.hpp
-    pcomm.hpp
-    perm1.hpp
-    solve.hpp
-    vars.hpp
-    xlu_solve.hpp
+    Adelus_block.h
+    Adelus_distribute.hpp
+    Adelus_factor.hpp
+    Adelus_pcomm.hpp
+    Adelus_perm1.hpp
+    Adelus_solve.hpp
+    Adelus_vars.hpp
+    Adelus_xlu_solve.hpp
     Adelus.hpp
     BlasWrapper_copy_spec.hpp
     BlasWrapper_copy.hpp
-    BlasWrapper_iamax_spec.hpp
-    BlasWrapper_iamax.hpp
     )
 
   APPEND_SET(SOURCES
-    pcomm.cpp
-    distribute.cpp
+    Adelus_pcomm.cpp
+    Adelus_distribute.cpp
     )
 
   #
@@ -80,9 +78,9 @@ IF (TPL_ENABLE_MPI)
   #
 
   APPEND_SET(HEADERS
-    defines.h
-    macros.h
-    mytime.hpp
+    Adelus_defines.h
+    Adelus_macros.h
+    Adelus_mytime.hpp
     )
 
 ENDIF()
