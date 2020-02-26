@@ -3,7 +3,9 @@
 
 #include "Teuchos_StackedTimer.hpp"
 #include <limits>
+#include <ctime>
 #include <algorithm>
+#include <fstream>
 #include <sstream>
 
 namespace Teuchos {
@@ -566,6 +568,46 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
   return total_time;
 }
 
+double
+StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, double parent_time)
+{
+  // NOTE: If you change the outputting format or logic in this
+  // function, you must make a corresponding change to the function
+  // computeColumnWidthsForAlignment() or the alignments will be
+  // incorrect if the user requests aligned output!
+
+  double total_time = 0.0;
+
+  for (int i=0; i<flat_names_.size(); ++i ) {
+    if (printed[i])
+      continue;
+    int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
+    if ( level != print_level)
+      continue;
+    auto split_names = getPrefix(flat_names_[i]);
+    if ( prefix != split_names.first)
+      continue;
+    // Output the indentation level
+    for (int l=0; l<level; ++l) {
+      os << "   ";
+    }
+    os << "<timing name=\"" << split_names.second << "\" value=\"" << sum_[i]/active_[i] << "\"/>\n";
+    printed[i] = true;
+    double sub_time = printLevelXML(flat_names_[i], level+1, os, printed, sum_[i]/active_[i]);
+    for (int l=0; l<level; ++l) {
+      os << "   ";
+    }
+    // Print Remainder
+    if (sub_time > 0 ) {
+      for (int l=0; l<=level; ++l)
+        os << "   ";
+      os << "<timing name=\"Remainder\" value=\"" << (sum_[i]/active_[i] - sub_time) << "\"/>\n";
+    }
+    total_time += sum_[i]/active_[i];
+  }
+  return total_time;
+}
+
 void
 StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options) {
   flatten();
@@ -598,6 +640,46 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
     std::vector<bool> printed(flat_names_.size(), false);
     printLevel("", 0, os, printed, 0., options);
   }
+}
+
+std::string
+StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+  char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
+  if(!rawWatchrDir)
+    return "";
+  std::string watchrDir = rawWatchrDir;
+  if(!watchrDir.length())
+  {
+    //Output directory has not been set, so don't produce output.
+    return "";
+  }
+  std::string timestamp;
+  std::string datestamp;
+  {
+    char buf[256];
+    time_t t;
+    struct tm* tstruct;
+    time(&t);
+    tstruct = gmtime(&t);
+    strftime(buf, 256, "%FT%H:%M:%S", tstruct);
+    timestamp = buf;
+    strftime(buf, 256, "%Y_%m_%d", tstruct);
+    datestamp = buf;
+  }
+  flatten();
+  merge(comm);
+  OutputOptions defaultOptions;
+  collectRemoteData(comm, defaultOptions);
+  std::string fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
+  std::ofstream os(fullFile);
+  os << "<?xml version=\"1.0\"?>\n";
+  os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+  if (rank(*comm) == 0 ) {
+    std::vector<bool> printed(flat_names_.size(), false);
+    printLevelXML("", 0, os, printed, 0.);
+    return fullFile;
+  }
+  return "";
 }
 
 void StackedTimer::enableVerbose(const bool enable_verbose)

@@ -612,6 +612,13 @@ public:
    */
   void report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
+  /**
+   * Dump all the data from all the MPI ranks to a Watchr-formatted XML file
+   * @param [in] name - Name of performance test
+   * @param [in] comm - Teuchos comm pointer
+   * @return The complete filename, or empty string if no output was produced.
+   */
+  std::string reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
   // If set to true, print timer start/stop to verbose ostream.
   void enableVerbose(const bool enable_verbose);
@@ -700,6 +707,11 @@ protected:
     */
   double printLevel(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed,
                     double parent_time, const OutputOptions &options);
+
+   /**
+    * Recursive call to print a level of timer data, in Watchr XML format.
+    */
+  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time);
 
 };  //StackedTimer
 
