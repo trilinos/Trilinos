@@ -519,19 +519,17 @@ namespace Tpetra {
     operator= (CrsMatrix<Scalar, LocalOrdinal,
                          GlobalOrdinal, Node>&&) = default;
 
-    /// \brief Constructor specifying fixed number of entries for each row.
+    /// \brief Constructor specifying the maximum number of entries
+    ///   that any row on the process can take.
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param maxNumEntriesPerRow [in] Maximum number of matrix
-    ///   entries per row.  If pftype==DynamicProfile, this is only a
-    ///   hint, and you can set this to zero without affecting
-    ///   correctness.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed this number of
-    ///   entries in any row.
+    ///   entries per row.  This is a strict upper bound.  It may
+    ///   differ on different processes.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -546,14 +544,11 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param numEntPerRowToAlloc [in] Maximum number of matrix
-    ///   entries to allocate for each row.  If
-    ///   pftype==DynamicProfile, this is only a hint.  If
-    ///   pftype==StaticProfile, this sets the amount of storage
-    ///   allocated, and you cannot exceed the allocated number of
-    ///   entries for any row.
+    ///   entries to allocate for each row.  This is a strict upper
+    ///   bound.  It may differ on different processes.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -574,15 +569,12 @@ namespace Tpetra {
     /// \param colMap [in] Distribution of columns of the matrix.
     ///   See replaceColMap() for the requirements.
     ///
-    /// \param maxNumEntPerRow [in] Maximum number of matrix
-    ///   entries per row.  If pftype==DynamicProfile, this is only a
-    ///   hint, and you can set this to zero without affecting
-    ///   correctness.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed this number of
-    ///   entries in any row.
+    /// \param maxNumEntPerRow [in] Maximum number of matrix entries
+    ///   per row.  This is a strict upper bound.  It may differ on
+    ///   different processes.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -604,14 +596,11 @@ namespace Tpetra {
     ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRowToAlloc [in] Maximum number of matrix
-    ///   entries to allocate for each row.  If
-    ///   pftype==DynamicProfile, this is only a hint.  If
-    ///   pftype==StaticProfile, this sets the amount of storage
-    ///   allocated, and you cannot exceed the allocated number of
-    ///   entries for any row.
+    ///   entries to allocate for each row.  This is a strict upper
+    ///   bound.  It may differ on different processes.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -1073,63 +1062,21 @@ namespace Tpetra {
     /// <li> <tt>! isFillActive ()</tt> </li>
     /// <li> <tt> inputInds.extent (0) != inputVals.extent (0)</tt> </li>
     /// </ul>
-    template<class GlobalIndicesViewType,
-             class ImplScalarViewType>
-    LocalOrdinal
-    replaceGlobalValues (const GlobalOrdinal globalRow,
-                         const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
-                         const typename UnmanagedView<ImplScalarViewType>::type& inputVals) const
-    {
-      // We use static_assert here to check the template parameters,
-      // rather than std::enable_if (e.g., on the return value, to
-      // enable compilation only if the template parameters match the
-      // desired attributes).  This turns obscure link errors into
-      // clear compilation errors.  It also makes the return value a
-      // lot easier to see.
-      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value,
-                     "First template parameter GlobalIndicesViewType must be "
-                     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<ImplScalarViewType>::value,
-                     "Second template parameter ImplScalarViewType must be a "
-                     "Kokkos::View.");
-      static_assert (static_cast<int> (GlobalIndicesViewType::rank) == 1,
-                     "First template parameter GlobalIndicesViewType must "
-                     "have rank 1.");
-      static_assert (static_cast<int> (ImplScalarViewType::rank) == 1,
-                     "Second template parameter ImplScalarViewType must have "
-                     "rank 1.");
-      static_assert (std::is_same<
-                       typename GlobalIndicesViewType::non_const_value_type,
-                       global_ordinal_type>::value,
-                     "First template parameter GlobalIndicesViewType must "
-                     "contain values of type global_ordinal_type.");
-      static_assert (std::is_same<
-                       typename ImplScalarViewType::non_const_value_type,
-                       impl_scalar_type>::value,
-                     "Second template parameter ImplScalarViewType must "
-                     "contain values of type impl_scalar_type.");
-      typedef LocalOrdinal LO;
-      const LO numInputEnt = inputInds.extent (0);
-      if (static_cast<LO> (inputVals.extent (0)) != numInputEnt) {
-        return Teuchos::OrdinalTraits<LO>::invalid ();
-      }
-      const Scalar* const inVals =
-        reinterpret_cast<const Scalar*> (inputVals.data ());
-      return this->replaceGlobalValues (globalRow, numInputEnt, inVals,
-                                        inputInds.data ());
-    }
+    local_ordinal_type
+    replaceGlobalValues(
+      const global_ordinal_type globalRow,
+      const Kokkos::View<const global_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
+      const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals) const;
 
-    /// \brief Backwards compatibility version of replaceGlobalValues
-    ///   (see above), that takes Teuchos::ArrayView (host pointers)
-    ///   instead of Kokkos::View.
+    /// \brief Overload of replaceGlobalValues (see above), that takes
+    ///   Teuchos::ArrayView (host pointers) instead of Kokkos::View.
     LocalOrdinal
     replaceGlobalValues (const GlobalOrdinal globalRow,
                          const Teuchos::ArrayView<const GlobalOrdinal>& cols,
                          const Teuchos::ArrayView<const Scalar>& vals) const;
 
-    /// \brief Epetra compatibility version of replaceGlobalValues
-    ///   (see above), that takes raw pointers instead of
-    ///   Kokkos::View.
+    /// \brief Overload of replaceGlobalValues (see above), that takes
+    ///   raw pointers instead of Kokkos::View.
     ///
     /// This version of the method takes the same arguments in the
     /// same order as Epetra_CrsMatrix::ReplaceGlobalValues.
@@ -1203,52 +1150,11 @@ namespace Tpetra {
     ///   <li> <tt>! hasColMap ()</tt> </li>
     ///   <li> <tt> cols.extent (0) != vals.extent (0)</tt> </li>
     ///   </ul>
-    template<class LocalIndicesViewType,
-             class ImplScalarViewType>
-    LocalOrdinal
-    replaceLocalValues (const LocalOrdinal localRow,
-                        const typename UnmanagedView<LocalIndicesViewType>::type& inputInds,
-                        const typename UnmanagedView<ImplScalarViewType>::type& inputVals) const
-    {
-      // We use static_assert here to check the template parameters,
-      // rather than std::enable_if (e.g., on the return value, to
-      // enable compilation only if the template parameters match the
-      // desired attributes).  This turns obscure link errors into
-      // clear compilation errors.  It also makes the return value a
-      // lot easier to see.
-      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
-                     "First template parameter LocalIndicesViewType must be "
-                     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<ImplScalarViewType>::value,
-                     "Second template parameter ImplScalarViewType must be a "
-                     "Kokkos::View.");
-      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
-                     "First template parameter LocalIndicesViewType must "
-                     "have rank 1.");
-      static_assert (static_cast<int> (ImplScalarViewType::rank) == 1,
-                     "Second template parameter ImplScalarViewType must have "
-                     "rank 1.");
-      static_assert (std::is_same<
-                       typename LocalIndicesViewType::non_const_value_type,
-                       local_ordinal_type>::value,
-                     "First template parameter LocalIndicesViewType must "
-                     "contain values of type local_ordinal_type.");
-      static_assert (std::is_same<
-                       typename ImplScalarViewType::non_const_value_type,
-                       impl_scalar_type>::value,
-                     "Second template parameter ImplScalarViewType must "
-                     "contain values of type impl_scalar_type.");
-
-      typedef LocalOrdinal LO;
-      const LO numInputEnt = inputInds.extent (0);
-      if (numInputEnt != inputVals.extent (0)) {
-        return Teuchos::OrdinalTraits<LO>::invalid ();
-      }
-      const Scalar* const inVals =
-        reinterpret_cast<const Scalar*> (inputVals.data ());
-      return this->replaceLocalValues (localRow, numInputEnt,
-                                       inVals, inputInds.data ());
-    }
+    local_ordinal_type
+    replaceLocalValues(
+      const local_ordinal_type localRow,
+      const Kokkos::View<const local_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
+      const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals) const;
 
     /// \brief Backwards compatibility version of replaceLocalValues
     ///   (see above), that takes Teuchos::ArrayView (host pointers)
@@ -1456,53 +1362,12 @@ namespace Tpetra {
     ///
     /// This method has the same preconditions and return value
     /// meaning as replaceLocalValues() (which see).
-    template<class LocalIndicesViewType,
-             class ImplScalarViewType>
-    LocalOrdinal
-    sumIntoLocalValues (const LocalOrdinal localRow,
-                        const typename UnmanagedView<LocalIndicesViewType>::type& inputInds,
-                        const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
-                        const bool atomic = useAtomicUpdatesByDefault) const
-    {
-      // We use static_assert here to check the template parameters,
-      // rather than std::enable_if (e.g., on the return value, to
-      // enable compilation only if the template parameters match the
-      // desired attributes).  This turns obscure link errors into
-      // clear compilation errors.  It also makes the return value a
-      // lot easier to see.
-      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
-                     "First template parameter LocalIndicesViewType must be "
-                     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<ImplScalarViewType>::value,
-                     "Second template parameter ImplScalarViewType must be a "
-                     "Kokkos::View.");
-      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
-                     "First template parameter LocalIndicesViewType must "
-                     "have rank 1.");
-      static_assert (static_cast<int> (ImplScalarViewType::rank) == 1,
-                     "Second template parameter ImplScalarViewType must have "
-                     "rank 1.");
-      static_assert (std::is_same<
-                       typename LocalIndicesViewType::non_const_value_type,
-                       local_ordinal_type>::value,
-                     "First template parameter LocalIndicesViewType must "
-                     "contain values of type local_ordinal_type.");
-      static_assert (std::is_same<
-                       typename ImplScalarViewType::non_const_value_type,
-                       impl_scalar_type>::value,
-                     "Second template parameter ImplScalarViewType must "
-                     "contain values of type impl_scalar_type.");
-      typedef LocalOrdinal LO;
-      const LO numInputEnt = inputInds.extent (0);
-      if (static_cast<LO> (inputVals.extent (0)) != numInputEnt) {
-        return Teuchos::OrdinalTraits<LO>::invalid ();
-      }
-      return this->sumIntoLocalValues (localRow,
-                                       numInputEnt,
-                                       reinterpret_cast<const Scalar*> (inputVals.data ()),
-                                       inputInds.data (),
-                                       atomic);
-    }
+    local_ordinal_type
+    sumIntoLocalValues(
+      const local_ordinal_type localRow,
+      const Kokkos::View<const local_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
+      const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals,
+      const bool atomic = useAtomicUpdatesByDefault) const;
 
     /// \brief Sum into one or more sparse matrix entries, using local
     ///   row and column indices.
@@ -4506,10 +4371,11 @@ namespace Tpetra {
     /// parameter to fillComplete was false, the matrix may keep
     /// unpacked 1-D storage around and resume it on the next
     /// resumeFill call.
-    ::Tpetra::Details::EStorageStatus storageStatus_;
+    Details::EStorageStatus storageStatus_ =
+      Details::STORAGE_1D_UNPACKED;
 
     //! Whether the matrix is fill complete.
-    bool fillComplete_;
+    bool fillComplete_ = false;
 
     /// \brief Nonlocal data added using insertGlobalValues().
     ///
@@ -4546,7 +4412,7 @@ namespace Tpetra {
     /// The value -1 means that the norm has not yet been computed, or
     /// that the values in the matrix may have changed and the norm
     /// must be recomputed.
-    mutable mag_type frobNorm_;
+    mutable mag_type frobNorm_ = -STM::one();
 
   public:
     // FIXME (mfh 24 Feb 2014) Is it _really_ necessary to make this a
@@ -4582,23 +4448,25 @@ namespace Tpetra {
     };
   }; // class CrsMatrix
 
-  /** \brief Non-member function to create an empty CrsMatrix given a
-        row map and a non-zero profile.
-
-      \return A dynamically allocated (DynamicProfile) matrix with
-        specified number of nonzeros per row (defaults to zero).
-
-      \relatesalso CrsMatrix
-   */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  /// \brief Create an empty CrsMatrix given a row map and a single
+  ///   integer upper bound on the number of stored entries per row.
+  ///
+  /// \relatesalso CrsMatrix
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
   Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
-                   size_t maxNumEntriesPerRow = 0,
-                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+  createCrsMatrix(
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
+    const size_t maxNumEntriesPerRow = 0,
+    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
-    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
+    using matrix_type =
+      CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-    return Teuchos::rcp (new matrix_type (map, maxNumEntriesPerRow, pftype, params));
+    return Teuchos::rcp(new matrix_type(map, maxNumEntriesPerRow,
+                                        pftype, params));
   }
 
   template<class CrsMatrixType>

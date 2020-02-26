@@ -65,6 +65,7 @@
 #include "Amesos2_MatrixAdapter_decl.hpp"
 #include "Amesos2_MatrixTraits.hpp"
 #include "Amesos2_Util.hpp"
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp"
 
 namespace Amesos2 {
 
@@ -179,6 +180,27 @@ namespace Amesos2 {
     typename super_t::spmtx_idx_t  getSparseColInd() const;
 
     typename super_t::spmtx_vals_t getSparseValues() const;
+
+    template<class KV>
+    void getSparseRowPtr_kokkos_view(KV & view) const {
+      Kokkos::View<typename super_t::spmtx_ptr_t, Kokkos::HostSpace> src(
+        getSparseRowPtr(), getGlobalNumRows_impl()+1);
+      deep_copy_or_assign_view(view, src);
+    }
+
+    template<class KV>
+    void getSparseColInd_kokkos_view(KV & view) const {
+      Kokkos::View<typename super_t::spmtx_idx_t, Kokkos::HostSpace> src(
+        getSparseColInd(), getGlobalNNZ_impl());
+      deep_copy_or_assign_view(view, src);
+    }
+
+    template<class KV>
+    void getSparseValues_kokkos_view(KV & view) const {
+      Kokkos::View<typename super_t::spmtx_vals_t, Kokkos::HostSpace> src(
+        getSparseValues(), getGlobalNNZ_impl());
+      deep_copy_or_assign_view(view, src);
+    }
 
   };
 

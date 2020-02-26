@@ -146,6 +146,8 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
   /// \name Accessors methods
   //@{
     /** \brief Use embedded if avialable. */
@@ -174,8 +176,8 @@ protected:
 
   Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
 
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >     stageXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >                   stageX_;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
 
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >          stepperObserver_;
 

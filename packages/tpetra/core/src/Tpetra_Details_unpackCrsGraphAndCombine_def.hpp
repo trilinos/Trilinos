@@ -293,32 +293,6 @@ class UnpackAndCombineFunctor {
 
 };
 
-template<class NumPackets, class ImportLids, class Device>
-Kokkos::UnorderedMap<typename ImportLids::non_const_value_type,
-                     typename NumPackets::non_const_value_type,
-                     Device>
-computeCrsPadding(const NumPackets& num_packets_per_lid,
-                  const ImportLids& import_lids,
-                  const bool unpack_pids)
-{
-  // Create a mapping of {LID: extra space needed} to rapidly look up which LIDs
-  // need additional padding.
-  using key_type = typename ImportLids::non_const_value_type;
-  using val_type = typename NumPackets::non_const_value_type;
-  Kokkos::UnorderedMap<key_type, val_type, Device> padding(import_lids.size());
-  auto policy = Kokkos::RangePolicy<typename Device::execution_space>(0, import_lids.size());
-  Kokkos::parallel_for("Fill padding", policy,
-      KOKKOS_LAMBDA(typename ImportLids::size_type i) {
-        auto how_much_padding = (unpack_pids) ? num_packets_per_lid(i)/2
-                                              : num_packets_per_lid(i);
-        padding.insert(import_lids(i), how_much_padding);
-      }
-    );
-    TEUCHOS_TEST_FOR_EXCEPTION(padding.failed_insert(), std::runtime_error,
-      "computeCrsPadding: failed to insert one or more indices in to padding map");
-  return padding;
-}
-
 /// \brief Perform the unpack operation for the graph
 ///
 /// \tparam LocalGraph the specialization of the KokkosSparse::CrsGraph
@@ -350,7 +324,7 @@ unpackAndCombine
     Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>;
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
-  using device_type = typename Node::device_type;  
+  using device_type = typename Node::device_type;
   using execution_space = typename BufferDevice::execution_space;
   using range_policy =
     Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;

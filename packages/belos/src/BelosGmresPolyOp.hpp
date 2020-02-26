@@ -763,7 +763,10 @@ namespace Belos {
     std::vector<int> extra (dim_);
     int totalExtra = 0;
     for(int i=0; i<dim_; ++i){
-      extra[i] = ceil((log10(pof[i])-MagnitudeType(4.0))/MagnitudeType(14.0));
+      if (pof[i] > MCT::zero())
+        extra[i] = ceil((log10(pof[i])-MagnitudeType(4.0))/MagnitudeType(14.0));
+      else
+        extra[i] = 0;
       if(extra[i] > 0){
         totalExtra += extra[i];
       }
@@ -864,7 +867,12 @@ namespace Belos {
         {
           a = thetaN(i,0) - sorted(k,0);
           b = thetaN(i,1) - sorted(k,1);
-          prod(i) = prod(i) + log10(sqrt(a*a + b*b));
+          if (a*a + b*b > MCT::zero())
+            prod(i) = prod(i) + log10(hypot(a,b));
+          else {
+            prod(i) = -std::numeric_limits<MagnitudeType>::infinity();
+            break;
+          }
         }
       }
       

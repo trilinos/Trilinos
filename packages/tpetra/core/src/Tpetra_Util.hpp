@@ -58,6 +58,7 @@
 #include "Teuchos_Utils.hpp"
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <ostream>
 #include <sstream>
 
@@ -989,43 +990,34 @@ namespace Tpetra {
       out << "]";
     }
 
-    /// \brief Given two sorted and merged ranges, return the number
-    ///   of elements they have in common.
-    template<class SourceIterator,
-             class TargetIterator>
-    size_t
-    countNumInCommon(SourceIterator srcBeg,
-                     SourceIterator srcEnd,
-                     TargetIterator tgtBeg,
-                     TargetIterator tgtEnd)
-    {
-      size_t numInCommon = 0;
+    /// \brief Create string prefix for each line of verbose output.
+    ///
+    /// \return "Proc ${myRank}: ${prefix}: " (using Python notation).
+    std::unique_ptr<std::string>
+    createPrefix(const int myRank,
+                 const char prefix[]);
 
-      auto srcIter = srcBeg;
-      auto tgtIter = tgtBeg;
-      while (srcIter != srcEnd && tgtIter != tgtEnd) {
-        tgtIter = std::lower_bound(tgtIter, tgtEnd, *srcIter);
-        if (tgtIter == tgtEnd) {
-          break;
-        }
-        if (*tgtIter == *srcIter) {
-          ++numInCommon;
-          ++srcIter;
-          ++tgtIter;
-        }
+    /// \brief Create string prefix for each line of verbose output,
+    ///   for a Tpetra function (not a class or instance method).
+    ///
+    /// \param comm [in] May be null; if not, the communicator from
+    ///   which to draw the (MPI) process rank.
+    ///
+    /// \param functionName [in] Name of the function.
+    std::unique_ptr<std::string>
+    createPrefix(const Teuchos::Comm<int>* comm,
+                 const char functionName[]);
 
-        srcIter = std::lower_bound(srcIter, srcEnd, *tgtIter);
-        if (srcIter == srcEnd) {
-          break;
-        }
-        if (*srcIter == *tgtIter) {
-          ++numInCommon;
-          ++tgtIter;
-          ++srcIter;
-        }
-      }
-      return numInCommon;
-    }
+    /// \brief Create string prefix for each line of verbose output,
+    ///   for a method of a Tpetra class.
+    ///
+    /// \param className [in] Name of the class.
+    ///
+    /// \param methodName [in] Name of the (class or instance) method.
+    std::unique_ptr<std::string>
+    createPrefix(const Teuchos::Comm<int>*,
+                 const char className[],
+                 const char methodName[]);
 
   } // namespace Details
 } // namespace Tpetra

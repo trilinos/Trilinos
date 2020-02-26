@@ -63,6 +63,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace {
 
@@ -244,6 +245,7 @@ namespace {
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
     typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
     // get a comm and node
     RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -299,8 +301,8 @@ namespace {
         Teuchos::ArrayView< const Scalar > values;
         A->getLocalRowView(map->getLocalElement(MyGlobalElements[i]), indices, values);
         TEST_EQUALITY(indices.size(), 2);
-        TEST_EQUALITY(values[0], 0.0);
-        TEST_EQUALITY(values[1], 0.0);
+        TEST_EQUALITY(values[0], ZERO);
+        TEST_EQUALITY(values[1], ZERO);
       }
       else if (MyGlobalElements[i] == NumGlobalElements - 1) {
         if(map->isNodeGlobalElement(MyGlobalElements[i])) {
@@ -334,6 +336,8 @@ namespace {
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
     typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
 
     // get a comm and node
     RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -389,8 +393,8 @@ namespace {
         Teuchos::ArrayView< const Scalar > values;
         A->getLocalRowView(map->getLocalElement(MyGlobalElements[i]), indices, values);
         TEST_EQUALITY(indices.size(), 2);
-        TEST_EQUALITY(values[0], 0.0);
-        TEST_EQUALITY(values[1], -1.0);
+        TEST_EQUALITY(values[0], ZERO);
+        TEST_EQUALITY(values[1], -ONE);
       }
       else if (MyGlobalElements[i] == NumGlobalElements - 1) {
         if(map->isNodeGlobalElement(MyGlobalElements[i])) {
@@ -603,6 +607,8 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
     typedef Teuchos::ScalarTraits<MT> STM;
+    const Scalar ONE = STS::one();
+    const Scalar FIVE = ONE + ONE + ONE + ONE + ONE;
 
     out << "Tpetra replaceLocalValues test" << endl;
 
@@ -681,7 +687,7 @@ namespace {
 
         if (numEntOut == static_cast<size_t> (1)) {
           TEST_EQUALITY( ind[0], 0 );
-          TEST_EQUALITY( val[0], 5.0 );
+          TEST_EQUALITY( val[0], FIVE );
         }
       }
     }
@@ -712,7 +718,7 @@ namespace {
 
         if (numEntOut == static_cast<size_t> (1)) {
           TEST_EQUALITY( ind[0], 0 );
-          TEST_EQUALITY( val[0], 5.0 );
+          TEST_EQUALITY( val[0], FIVE );
         }
       }
     }
@@ -752,12 +758,12 @@ namespace {
       TEST_ASSERT( outData.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) );
       if (outData.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) &&
           outData.size () > static_cast<size_type> (0)) {
-        TEST_EQUALITY( outData[0], 5.0 );
+        TEST_EQUALITY( outData[0], FIVE );
       }
       if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
-        for (size_type k = 1; k < static_cast<size_type>(rangeMap->getNodeNumElements()); ++k) {
-          if (!(outData[k] == 1.0)) {
+        for (size_t k = 1; k < size_t(rangeMap->getNodeNumElements()); ++k) {
+          if (outData[k] != ONE) {
             allOnes = false;
           }
         }
@@ -771,12 +777,12 @@ namespace {
       TEST_ASSERT( outDataNonConst.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) );
       if (outDataNonConst.size() == static_cast<size_type>(rangeMap->getNodeNumElements()) &&
           outDataNonConst.size () > static_cast<size_type> (0)) {
-        TEST_EQUALITY( outDataNonConst[0], 5.0 );
+        TEST_EQUALITY( outDataNonConst[0], FIVE );
       }
       if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
         for (size_type k = 1; k < static_cast<size_type>(rangeMap->getNodeNumElements()); ++k) {
-          if (!(outDataNonConst[k] == 1.0)) {
+          if (outDataNonConst[k] != ONE) {
             allOnes = false;
           }
         }
@@ -802,6 +808,7 @@ namespace {
 
     vec_sol->update(-1.0,*vectest,1.0);
 
+    // FIXME (mfh 23 Feb 2020) Tolerance should depend on Scalar here.
     TEUCHOS_TEST_COMPARE(vec_sol->norm2(), <, 1e-16, out, success);
 
     // Make sure that all processes got this far.
@@ -1228,6 +1235,9 @@ namespace {
     //typedef typename local_matrix_type::size_type size_type;
     typedef typename local_matrix_type::value_type value_type;
     typedef typename local_matrix_type::ordinal_type ordinal_type;
+    using STS = Teuchos::ScalarTraits<Scalar>;
+    const Scalar ONE = STS::one();
+    using mag_type = typename STS::magnitudeType;
 
     // get a comm and node
     RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -1272,7 +1282,7 @@ namespace {
         LO       cc = rowview.colidx (c);
         TEST_EQUALITY(rowview.length, 1);
         TEST_EQUALITY(cc, r);
-        TEST_EQUALITY(vv, 1.0);
+        TEST_EQUALITY(vv, ONE);
       }
     }
 
@@ -1280,7 +1290,7 @@ namespace {
     Teuchos::ArrayView< const Scalar > values;
     A->getLocalRowView(0, indices, values);
     TEST_EQUALITY(indices.size(), 1);
-    TEST_EQUALITY(values[0], 1.0);
+    TEST_EQUALITY(values[0], ONE);
 
     /////////////////////////////////////////
 
@@ -1291,7 +1301,11 @@ namespace {
 
     A->getLocalRowView(0, indices, values);
     TEST_EQUALITY(indices.size(), 1);
-    TEST_EQUALITY(values[0], 42.0);  // changes in the view also changes matrix values
+
+    // NOTE (mfh 23 Feb 2020) You can't always convert double to
+    // Scalar directly; e.g., with Scalar=complex<float>.
+    const Scalar FORTY_TWO = Scalar(mag_type(42.0));
+    TEST_EQUALITY(values[0], FORTY_TWO);  // changes in the view also changes matrix values
 
     A->resumeFill();
     A->setAllToScalar(-123.4);
@@ -1310,7 +1324,10 @@ namespace {
         LO       cc = rowview.colidx (c);
         TEST_EQUALITY(rowview.length, 1);
         TEST_EQUALITY(cc, r);
-        TEST_EQUALITY(vv, -123.4);
+        // NOTE (mfh 23 Feb 2020) You can't always convert double to
+        // Scalar directly; e.g., with Scalar=complex<float>.
+        const Scalar expected_vv = Scalar(mag_type(-123.4));
+        TEST_EQUALITY(vv, expected_vv);
       }
     }
 #endif
@@ -1494,11 +1511,15 @@ namespace {
       Teuchos::ArrayView<const LO> indices;
       Teuchos::ArrayView<const Scalar> vals;
       mat->getLocalRowView(row, indices, vals);
-      for(size_t col = 0; col < static_cast<size_t>(indices.size()); col++) {
+      for(size_t col = 0; col < size_t(indices.size()); col++) {
+        using STS = Teuchos::ScalarTraits<Scalar>;
+        const Scalar ONE = STS::one();
+        const Scalar TWO = ONE + ONE;
+
         if(grid == colMap->getGlobalElement(indices[col])) {
-          TEST_EQUALITY(vals[col],2.0);
+          TEST_EQUALITY(vals[col], TWO);
         } else {
-          TEST_EQUALITY(vals[col],-1.0);
+          TEST_EQUALITY(vals[col], -ONE);
         }
       }
     }
@@ -1578,4 +1599,3 @@ UNIT_TEST_GROUP_ORDINAL_KOKKOS( double, int, LongLong, EpetraNode )
 #endif
 
 }
-

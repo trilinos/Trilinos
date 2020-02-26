@@ -479,7 +479,6 @@ public:
     else {
       throw Exception::NotImplemented(">>> ROL::RiskVector::getStatisticVector: Component must be 0 or 1!");
     }
-    return ROL::nullPtr;
   }
 
   ROL::Ptr<StdVector<Real>> 
@@ -493,7 +492,6 @@ public:
     else {
       throw Exception::NotImplemented(">>> ROL::RiskVector::getStatistic: Component must be 0 or 1!");
     }
-    return ROL::nullPtr;
   }
 
   ROL::Ptr<const Vector<Real> > getVector(void) const {
