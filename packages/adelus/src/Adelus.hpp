@@ -47,9 +47,9 @@
 #pragma once
 
 #include <Kokkos_View.hpp>
-#include <defines.h>
-#include <xlu_solve.hpp>
-#include <distribute.hpp>
+#include <Adelus_defines.h>
+#include <Adelus_xlu_solve.hpp>
+#include <Adelus_distribute.hpp>
 #include <mpi.h>
 
 //! Adelus: An Obect-Oriented Interface to a Dense LU Solver.
