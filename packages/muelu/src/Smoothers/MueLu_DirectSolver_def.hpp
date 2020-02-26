@@ -56,6 +56,8 @@
 
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_BelosSmoother.hpp"
+#include "MueLu_StratimikosSmoother.hpp"
 
 namespace MueLu {
 
@@ -71,6 +73,7 @@ namespace MueLu {
     // obtain a state: they contain RCP to smoother prototypes.
     sEpetra_ = Teuchos::null;
     sTpetra_ = Teuchos::null;
+    sBelos_ = Teuchos::null;
 
     ParameterList paramList = paramListIn;
 
@@ -85,6 +88,8 @@ namespace MueLu {
     } catch (Exceptions::RuntimeError& e) {
       errorTpetra_ = e.what();
     } catch (Exceptions::BadCast& e) {
+      errorTpetra_ = e.what();
+    } catch (Teuchos::Exceptions::InvalidParameterName& e) {
       errorTpetra_ = e.what();
     }
     triedTpetra_ = true;
@@ -101,18 +106,42 @@ namespace MueLu {
     }
     triedEpetra_ = true;
 #endif
+#if defined(HAVE_MUELU_BELOS)
+    try {
+      sBelos_ = rcp(new BelosSmoother(type_, paramList));
+      if (sBelos_.is_null())
+        errorBelos_ = "Unable to construct Belos solver";
+    } catch (Exceptions::RuntimeError& e) {
+      errorBelos_ = e.what();
+    }
+    triedBelos_ = true;
+#endif
+#if defined(HAVE_MUELU_STRATIMIKOS)
+    try {
+      sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
+      if (sStratimikos_.is_null())
+        errorStratimikos_ = "Unable to construct Stratimikos smoother";
+    } catch (Exceptions::RuntimeError& e){
+      errorStratimikos_ = e.what();
+    }
+    triedStratimikos_ = true;
+#endif
 
     // Check if we were able to construct at least one solver. In many cases that's all we need, for instance if a user
     // simply wants to use Tpetra only stack, never enables Amesos, and always runs Tpetra objects.
-    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_, Exceptions::RuntimeError, "Unable to construct any direct solver."
-                               "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_ && !triedBelos_ && !triedStratimikos_, Exceptions::RuntimeError, "Unable to construct any direct solver."
+                               "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS) or (BELOS) or (STRATIMIKOS)");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null(), Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null() && sBelos_.is_null() && sStratimikos_.is_null(), Exceptions::RuntimeError,
         "Could not enable any direct solver:\n"
         << (triedEpetra_ ? "Epetra mode was disabled due to an error:\n" : "")
         << (triedEpetra_ ? errorEpetra_ : "")
         << (triedTpetra_ ? "Tpetra mode was disabled due to an error:\n" : "")
-        << (triedTpetra_ ? errorTpetra_ : ""));
+        << (triedTpetra_ ? errorTpetra_ : "")
+        << (triedBelos_ ? "Belos was disabled due to an error:\n" : "")
+        << (triedBelos_ ? errorBelos_ : "")
+        << (triedStratimikos_ ? "Stratimikos was disabled due to an error:\n" : "")
+        << (triedStratimikos_ ? errorStratimikos_ : ""));
 
     this->SetParameterList(paramList);
   }
@@ -122,44 +151,52 @@ namespace MueLu {
     // We need to propagate SetFactory to proper place
     if (!sEpetra_.is_null()) sEpetra_->SetFactory(varName, factory);
     if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, factory);
+    if (!sBelos_.is_null())  sBelos_->SetFactory(varName, factory);
+    if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, factory);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
-    // Decide whether we are running in Epetra or Tpetra mode
-    //
-    // Theoretically, we could make this decision in the constructor, and create only
-    // one of the smoothers. But we want to be able to reuse, so one can imagine a scenario
-    // where one first runs hierarchy with tpetra matrix, and then with epetra.
-    bool useTpetra = (currentLevel.lib() == Xpetra::UseTpetra);
-    s_ = (useTpetra ? sTpetra_ : sEpetra_);
-    if (s_.is_null()) {
-      if (useTpetra) {
+    if (!sBelos_.is_null())
+      s_ = sBelos_;
+    else if (!sStratimikos_.is_null())
+      s_ = sStratimikos_;
+    else {
+      // Decide whether we are running in Epetra or Tpetra mode
+      //
+      // Theoretically, we could make this decision in the constructor, and create only
+      // one of the smoothers. But we want to be able to reuse, so one can imagine a scenario
+      // where one first runs hierarchy with tpetra matrix, and then with epetra.
+      bool useTpetra = (currentLevel.lib() == Xpetra::UseTpetra);
+      s_ = (useTpetra ? sTpetra_ : sEpetra_);
+      if (s_.is_null()) {
+        if (useTpetra) {
 #if not defined(HAVE_MUELU_AMESOS2)
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-            "Error: running in Tpetra mode, but MueLu with Amesos2 was disabled during the configure stage.\n"
-            "Please make sure that:\n"
-            "  - Amesos2 is enabled (Trilinos_ENABLE_Amesos2=ON),\n"
-            "  - Amesos2 is available for MueLu to use (MueLu_ENABLE_Amesos2=ON)\n");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                                     "Error: running in Tpetra mode, but MueLu with Amesos2 was disabled during the configure stage.\n"
+                                     "Please make sure that:\n"
+                                     "  - Amesos2 is enabled (Trilinos_ENABLE_Amesos2=ON),\n"
+                                     "  - Amesos2 is available for MueLu to use (MueLu_ENABLE_Amesos2=ON)\n");
 #else
-        if (triedTpetra_)
-          this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n" << errorTpetra_ << std::endl;
+          if (triedTpetra_)
+            this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n" << errorTpetra_ << std::endl;
 #endif
-      }
-      if (!useTpetra) {
+        }
+        if (!useTpetra) {
 #if not defined(HAVE_MUELU_AMESOS)
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-            "Error: running in Epetra mode, but MueLu with Amesos was disabled during the configure stage.\n"
-            "Please make sure that:\n"
-            "  - Amesos is enabled (you can do that with Trilinos_ENABLE_Amesos=ON),\n"
-            "  - Amesos is available for MueLu to use (MueLu_ENABLE_Amesos=ON)\n");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                                     "Error: running in Epetra mode, but MueLu with Amesos was disabled during the configure stage.\n"
+                                     "Please make sure that:\n"
+                                     "  - Amesos is enabled (you can do that with Trilinos_ENABLE_Amesos=ON),\n"
+                                     "  - Amesos is available for MueLu to use (MueLu_ENABLE_Amesos=ON)\n");
 #else
-        if (triedEpetra_)
-          this->GetOStream(Errors) << "Epetra mode was disabled due to an error:\n" << errorEpetra_ << std::endl;
+          if (triedEpetra_)
+            this->GetOStream(Errors) << "Epetra mode was disabled due to an error:\n" << errorEpetra_ << std::endl;
 #endif
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                                   "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-          "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
     }
 
     s_->DeclareInput(currentLevel);
@@ -198,9 +235,20 @@ namespace MueLu {
       newSmoo->sEpetra_ = sEpetra_->Copy();
     if (!sTpetra_.is_null())
       newSmoo->sTpetra_ = sTpetra_->Copy();
+    if (!sBelos_.is_null())
+      newSmoo->sBelos_ = sBelos_->Copy();
+    if (!sStratimikos_.is_null())
+      newSmoo->sStratimikos_ = sStratimikos_->Copy();
 
     // Copy the default mode
-    newSmoo->s_ = (s_.get() == sTpetra_.get() ? newSmoo->sTpetra_ : newSmoo->sEpetra_);
+    if (s_.get() == sBelos_.get())
+      newSmoo->s_ = newSmoo->sBelos_;
+    else if (s_.get() == sStratimikos_.get())
+      newSmoo->s_ = newSmoo->sStratimikos_;
+    else if (s_.get() == sTpetra_.get())
+      newSmoo->s_ = newSmoo->sTpetra_;
+    else
+      newSmoo->s_ = newSmoo->sEpetra_;
     newSmoo->SetParameterList(this->GetParameterList());
 
     return newSmoo;
