@@ -48,7 +48,7 @@
 #include "ROL_HS14.hpp"
 #include "ROL_HS32.hpp"
 #include "ROL_HS63.hpp"
-#include "ROL_MoreauYosidaAlgorithm_G.hpp"
+#include "ROL_InteriorPointAlgorithm_G.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -75,11 +75,13 @@ int main(int argc, char *argv[]) {
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
 
     ROL::ParameterList list;
-    list.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Iteration Limit",200);
+    list.sublist("Step").sublist("Interior Point").sublist("Subproblem").set("Iteration Limit",200);
+    list.sublist("Step").sublist("Interior Point").set("Barrier Penalty Reduction Factor",0.1);
+    list.sublist("Step").sublist("Interior Point").sublist("Subproblem").set("Print History",false);
     list.sublist("Step").sublist("Augmented Lagrangian").set("Use Default Problem Scaling",false);
-    list.sublist("Status Test").set("Gradient Tolerance",1e-8);
-    list.sublist("Status Test").set("Constraint Tolerance",1e-8);
-    list.sublist("Status Test").set("Step Tolerance",1e-12);
+    list.sublist("Status Test").set("Gradient Tolerance",1e-10);
+    list.sublist("Status Test").set("Constraint Tolerance",1e-10);
+    list.sublist("Status Test").set("Step Tolerance",1e-14);
     list.sublist("Status Test").set("Iteration Limit", 250);
     list.sublist("Step").set("Type","Trust Region");
     list.sublist("General").set("Output Level",iprint);
@@ -88,7 +90,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT>>  obj;
     ROL::Ptr<ROL::Constraint<RealT>> econ, icon;
     ROL::Ptr<ROL::BoundConstraint<RealT>> bnd, ibnd;
-    ROL::Ptr<ROL::MoreauYosidaAlgorithm_G<RealT>> algo;
+    ROL::Ptr<ROL::InteriorPointAlgorithm_G<RealT>> algo;
     std::vector<RealT> data;
     RealT e1, e2, err;
 
@@ -102,7 +104,7 @@ int main(int argc, char *argv[]) {
     imul = HS14.getInequalityMultiplier();
     ibnd = HS14.getSlackBoundConstraint();
 
-    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo = ROL::makePtr<ROL::InteriorPointAlgorithm_G<RealT>>(list);
     algo->run(*sol,*obj,*icon,*imul,*ibnd,*econ,*emul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
     e2 = (data[1]-static_cast<RealT>(0.25*(std::sqrt(7.0)+1.0)));
     err = std::max(std::abs(e1),std::abs(e2));
     *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+    errorFlag += (err > 1e3*tol ? 1 : 0);
 
     RealT e3;
     *outStream << std::endl << "Hock and Schittkowski Problem #32" << std::endl << std::endl;
@@ -124,7 +126,7 @@ int main(int argc, char *argv[]) {
     imul = HS32.getInequalityMultiplier();
     ibnd = HS32.getSlackBoundConstraint();
 
-    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo = ROL::makePtr<ROL::InteriorPointAlgorithm_G<RealT>>(list);
     algo->run(*sol,*obj,*icon,*imul,*ibnd,*econ,*emul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -135,7 +137,7 @@ int main(int argc, char *argv[]) {
     e3 = (data[2]-static_cast<RealT>(2));
     err = std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3));
     *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+    errorFlag += (err > 1e3*tol ? 1 : 0);
 
     *outStream << std::endl << "Hock and Schittkowski Problem #32" << std::endl << std::endl;
     ROL::ZOO::getHS32<RealT> HS32a;
@@ -148,7 +150,7 @@ int main(int argc, char *argv[]) {
     imul = HS32a.getInequalityMultiplier();
     ibnd = HS32a.getSlackBoundConstraint();
 
-    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo = ROL::makePtr<ROL::InteriorPointAlgorithm_G<RealT>>(list);
     algo->run(*sol,*obj,*bnd,*icon,*imul,*ibnd,*econ,*emul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -159,7 +161,7 @@ int main(int argc, char *argv[]) {
     e3 = (data[2]-static_cast<RealT>(1));
     err = std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3));
     *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+    errorFlag += (err > 1e6*tol ? 1 : 0);
 
     *outStream << std::endl << "Hock and Schittkowski Problem #63" << std::endl << std::endl;
     ROL::ZOO::getHS63<RealT> HS63;
@@ -171,7 +173,7 @@ int main(int argc, char *argv[]) {
     icon = ROL::makePtr<ROL::ZOO::Constraint_HS63a<RealT>>();
     imul = ROL::makePtr<ROL::StdVector<RealT>>(1);
 
-    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo = ROL::makePtr<ROL::InteriorPointAlgorithm_G<RealT>>(list);
     algo->run(*sol,*obj,*bnd,*econ,*emul,*icon,*imul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
