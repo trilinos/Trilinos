@@ -48,6 +48,7 @@
 #include "ROL_NewtonKrylovAlgorithm_B.hpp"
 #include "ROL_LinMoreAlgorithm_B.hpp"
 #include "ROL_MoreauYosidaAlgorithm_B.hpp"
+#include "ROL_InteriorPointAlgorithm_B.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -58,22 +59,25 @@ namespace ROL {
     \arg    ALGORITHM_B_LINESEARCH     describe
     \arg    ALGORITHM_B_TRUSTREGION    describe
     \arg    ALGORITHM_B_MOREAUYOSIDA   describe
+    \arg    ALGORITHM_B_INTERIORPOINT  describe
  */
 enum EAlgorithmB{
   ALGORITHM_B_LINESEARCH = 0,
   ALGORITHM_B_TRUSTREGION,
   ALGORITHM_B_MOREAUYOSIDA,
+  ALGORITHM_B_INTERIORPOINT,
   ALGORITHM_B_LAST
 };
 
 inline std::string EAlgorithmBToString(EAlgorithmB alg) {
   std::string retString;
   switch(alg) {
-    case ALGORITHM_B_LINESEARCH:   retString = "Line Search";       break;
-    case ALGORITHM_B_TRUSTREGION:  retString = "Trust Region";      break;
-    case ALGORITHM_B_MOREAUYOSIDA: retString = "Moreau-Yosida";     break;
-    case ALGORITHM_B_LAST:         retString = "Last Type (Dummy)"; break;
-    default:                       retString = "INVALID EAlgorithmB";
+    case ALGORITHM_B_LINESEARCH:    retString = "Line Search";       break;
+    case ALGORITHM_B_TRUSTREGION:   retString = "Trust Region";      break;
+    case ALGORITHM_B_MOREAUYOSIDA:  retString = "Moreau-Yosida";     break;
+    case ALGORITHM_B_INTERIORPOINT: retString = "Interior Point";    break;
+    case ALGORITHM_B_LAST:          retString = "Last Type (Dummy)"; break;
+    default:                        retString = "INVALID EAlgorithmB";
   }
   return retString;
 }
@@ -84,9 +88,10 @@ inline std::string EAlgorithmBToString(EAlgorithmB alg) {
     \return 1 if the argument is a valid AlgorithmB; 0 otherwise.
   */
 inline int isValidAlgorithmB(EAlgorithmB alg){
-  return( (alg == ALGORITHM_B_LINESEARCH)   ||
-          (alg == ALGORITHM_B_TRUSTREGION)  ||
-          (alg == ALGORITHM_B_MOREAUYOSIDA) ||
+  return( (alg == ALGORITHM_B_LINESEARCH)    ||
+          (alg == ALGORITHM_B_TRUSTREGION)   ||
+          (alg == ALGORITHM_B_MOREAUYOSIDA)  ||
+          (alg == ALGORITHM_B_INTERIORPOINT) ||
           (alg == ALGORITHM_B_LAST)
         );
 }
@@ -132,9 +137,10 @@ inline Ptr<Algorithm_B<Real>> AlgorithmBFactory(ParameterList &parlist) {
         return makePtr<NewtonKrylovAlgorithm_B<Real>>(parlist);
       else
         return makePtr<GradientAlgorithm_B<Real>>(parlist);
-    case ALGORITHM_B_TRUSTREGION:  return makePtr<LinMoreAlgorithm_B<Real>>(parlist);
-    case ALGORITHM_B_MOREAUYOSIDA: return makePtr<MoreauYosidaAlgorithm_B<Real>>(parlist);
-    default:                       return nullPtr;
+    case ALGORITHM_B_TRUSTREGION:   return makePtr<LinMoreAlgorithm_B<Real>>(parlist);
+    case ALGORITHM_B_MOREAUYOSIDA:  return makePtr<MoreauYosidaAlgorithm_B<Real>>(parlist);
+    case ALGORITHM_B_INTERIORPOINT: return makePtr<InteriorPointAlgorithm_B<Real>>(parlist);
+    default:                        return nullPtr;
   }
 }
 } // namespace ROL
