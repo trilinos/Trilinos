@@ -576,6 +576,9 @@ StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream &
   // computeColumnWidthsForAlignment() or the alignments will be
   // incorrect if the user requests aligned output!
 
+  //Adding an extra indent level, since the <performance-report> is at indent 0
+  int indent = 4 * (print_level + 1);
+
   double total_time = 0.0;
 
   for (int i=0; i<flat_names_.size(); ++i ) {
@@ -588,20 +591,27 @@ StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream &
     if ( prefix != split_names.first)
       continue;
     // Output the indentation level
-    for (int l=0; l<level; ++l) {
-      os << "   ";
-    }
-    os << "<timing name=\"" << split_names.second << "\" value=\"" << sum_[i]/active_[i] << "\"/>\n";
+    for (int j = 0; j < indent; j++)
+      os << " ";
+    bool leaf = split_names.first.length() > 0;
+    os << "<timing name=\"" << split_names.second << "\" value=\"" << sum_[i]/active_[i] << "\"";
+    if(leaf)
+      os << "/>\n";
+    else
+      os << ">\n";
     printed[i] = true;
-    double sub_time = printLevelXML(flat_names_[i], level+1, os, printed, sum_[i]/active_[i]);
-    for (int l=0; l<level; ++l) {
-      os << "   ";
-    }
+    double sub_time = printLevelXML(flat_names_[i], print_level+1, os, printed, sum_[i]/active_[i]);
     // Print Remainder
     if (sub_time > 0 ) {
-      for (int l=0; l<=level; ++l)
-        os << "   ";
+      for (int j = 0; j < indent + 4; j++)
+        os << " ";
       os << "<timing name=\"Remainder\" value=\"" << (sum_[i]/active_[i] - sub_time) << "\"/>\n";
+    }
+    if(!leaf)
+    {
+      for (int j = 0; j < indent; j++)
+        os << " ";
+      os << "</timing>\n";
     }
     total_time += sum_[i]/active_[i];
   }
@@ -670,13 +680,14 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
   merge(comm);
   OutputOptions defaultOptions;
   collectRemoteData(comm, defaultOptions);
-  std::string fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
-  std::ofstream os(fullFile);
-  os << "<?xml version=\"1.0\"?>\n";
-  os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
   if (rank(*comm) == 0 ) {
     std::vector<bool> printed(flat_names_.size(), false);
-    printLevelXML("", 0, os, printed, 0.);
+    std::string fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
+    std::ofstream os(fullFile);
+    os << "<?xml version=\"1.0\"?>\n";
+    os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    printLevelXML("", 0, os, printed, 0.0);
+    os << "</performance-report>\n";
     return fullFile;
   }
   return "";
