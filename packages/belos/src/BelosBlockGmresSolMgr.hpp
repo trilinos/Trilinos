@@ -58,6 +58,9 @@
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosIMGSOrthoManager.hpp"
+#ifdef HAVE_BELOS_TSQR
+#include <BelosTsqrOrthoManager.hpp>
+#endif
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestImpResNorm.hpp"
@@ -580,9 +583,15 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+#ifdef HAVE_BELOS_TSQR
+    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS" && tempOrthoType != "TSQR",
+                        std::invalid_argument,
+                        "Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\", or \"TSQR\".");
+#else
     TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS",
                         std::invalid_argument,
                         "Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
+#endif
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
       params_->set("Orthogonalization", orthoType_);
@@ -602,6 +611,11 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
       else if (orthoType_=="IMGS") {
         ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
       }
+#ifdef HAVE_BELOS_TSQR
+      else if (orthoType_=="TSQR") {
+        ortho_ = Teuchos::rcp ( new TsqrMatOrthoManager<ScalarType,MV,OP> ( label_ ) );
+      }
+#endif
     }
   }
 
@@ -784,6 +798,11 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
     else if (orthoType_=="IMGS") {
       ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
     }
+#ifdef HAVE_BELOS_TSQR
+    else if (orthoType_=="TSQR") {
+      ortho_ = Teuchos::rcp( new TsqrMatOrthoManager<ScalarType,MV,OP> ( label_ ) );
+    }
+#endif
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
         "Belos::BlockGmresSolMgr(): Invalid orthogonalization type.");
