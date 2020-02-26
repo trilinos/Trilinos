@@ -58,7 +58,10 @@
 
 namespace Ifpack2 {
 
-//! \c true if the specified preconditioner type supports nonsymmetric matrices, else false.
+//! Transform to canonical form of preconditioner name.
+std::string canonicalize(const std::string& precType);
+
+//! \C true if the specified preconditioner type supports nonsymmetric matrices, else false.
 bool supportsUnsymmetric (const std::string& prec_type);
 
 /*!
@@ -190,6 +193,20 @@ public:
     }
     Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
     return factory.create (precType, A, overlap);
+  }
+
+  template<class MatrixType>
+  static
+  bool
+  isSupported (const std::string& precType)
+  {
+    typedef typename MatrixType::scalar_type SC;
+    typedef typename MatrixType::local_ordinal_type LO;
+    typedef typename MatrixType::global_ordinal_type GO;
+    typedef typename MatrixType::node_type NT;
+
+    Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
+    return factory.isSupported (precType);
   }
 
   /// \brief Clones a preconditioner for a different node type from an
