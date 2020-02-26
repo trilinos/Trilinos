@@ -46,7 +46,7 @@
 
 
 namespace FROSch {
-    
+
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -103,48 +103,19 @@ namespace FROSch {
                 for (UN j=0; j<PartitionOfUnity_[i]->getNumVectors(); j++) {
                     XMultiVectorPtr tmpBasisJ = MultiVectorFactory<SC,LO,GO,NO>::Build(nullspaceBasisMap,NullspaceBasis_->getNumVectors());
                     tmpBasisJ->elementWiseMultiply(ScalarTraits<SC>::one(),*PartitionOfUnity_[i]->getVector(j),*NullspaceBasis_,ScalarTraits<SC>::one());
-                    if (ParameterList_->get("Orthogonalize",true)) {
-                        tmpBasis[i][j] = ModifiedGramSchmidt(tmpBasisJ.getConst());
-                    } else {
-                        tmpBasis[i][j] = tmpBasisJ;
-                    }
+                    tmpBasis[i][j] = tmpBasisJ;
                 }
             } else {
                 FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getNodeNumElements()==0,"PartitionOfUnityMaps_[i]->getNodeNumElements()!=0");
             }
         }
 
-        // Determine Number of Basisfunctions per Entity
-        UNVecPtr maxNV(PartitionOfUnity_.size());
-        for (UN i=0; i<PartitionOfUnity_.size(); i++) {
-            UN maxNVLocal = 0;
-            if (!PartitionOfUnityMaps_[i].is_null()) {
-                if (!PartitionOfUnity_[i].is_null()) {
-                    for (UN j=0; j<tmpBasis[i].size(); j++) {
-                        maxNVLocal = std::max(maxNVLocal,(UN) tmpBasis[i][j]->getNumVectors());
-                    }
-                }
-                reduceAll(*MpiComm_,REDUCE_MAX,maxNVLocal,ptr(&maxNV[i]));
-            }
-        }
-
-        if (!ParameterList_->get("Number of Basisfunctions per Entity","MaxAll").compare("MaxAll")) {
-            UNVecPtr::iterator max = std::max_element(maxNV.begin(),maxNV.end());
-            for (UN i=0; i<maxNV.size(); i++) {
-                maxNV[i] = *max;
-            }
-        } else if (!ParameterList_->get("Number of Basisfunctions per Entity","MaxAll").compare("MaxEntityType")) {
-
-        } else {
-            FROSCH_ASSERT(false,"Number of Basisfunctions per Entity type is unknown.");
-        } // Testen!!!!!!!!!!!!!!!!!!!!!!!! AUSGABE IMPLEMENTIEREN!!!!!!
-
         // Kann man das schöner machen?
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnityMaps_[i].is_null()) {
                 if (!PartitionOfUnity_[i].is_null()) {
                     ConstXMapPtr partitionOfUnityMap_i = PartitionOfUnity_[i]->getMap();
-                    for (UN j=0; j<maxNV[i]; j++) {
+                    for (UN j=0; j<NullspaceBasis_->getNumVectors(); j++) {
                         XMultiVectorPtr entityBasis = MultiVectorFactory<SC,LO,GO,NO >::Build(partitionOfUnityMap_i,PartitionOfUnity_[i]->getNumVectors());
                         entityBasis->scale(ScalarTraits<SC>::zero());
                         for (UN k=0; k<PartitionOfUnity_[i]->getNumVectors(); k++) {
@@ -155,7 +126,7 @@ namespace FROSch {
                         LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i],null,entityBasis);
                     }
                 } else {
-                    for (UN j=0; j<maxNV[i]; j++) {
+                    for (UN j=0; j<NullspaceBasis_->getNumVectors(); j++) {
                         LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i]);
                     }
                 }

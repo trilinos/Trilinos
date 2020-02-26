@@ -98,11 +98,18 @@ namespace FROSch {
 
         BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
+        //Detect linear dependencies
+        if (!this->ParameterList_->get("Skip Orthogonalization",false)) {FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST3.2.1.7.1\n");
+            LOVecPtr linearDependentVectors = detectLinearDependencies(indicesGammaDofsAll(),this->K_->getRowMap(),this->K_->getRangeMap(),repeatedMap,this->ParameterList_->get("Threshold Phi",1.e-8));
+            // std::cout << this->MpiComm_->getRank() << " " << linearDependentVectors.size() << std::endl;
+            AssembledInterfaceCoarseSpace_->zeroOutBasisVectors(linearDependentVectors()); //FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST3.2.1.7.3\n");
+        }
+
         // Build the saddle point harmonic extensions
         XMultiVectorPtr localCoarseSpaceBasis;
         if (AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()) {
-            localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap(),indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
-            
+            localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
+
             coarseSpace->addSubspace(AssembledInterfaceCoarseSpace_->getBasisMap(),AssembledInterfaceCoarseSpace_->getBasisMapUnique(),localCoarseSpaceBasis);
         } else {
             FROSCH_NOTIFICATION("FROSch::HarmonicCoarseOperator",this->Verbose_,"The Coarse Space is empty. No extensions are computed.");
@@ -324,18 +331,18 @@ namespace FROSch {
             // Compute values for the first node to check if rotation is constant
             x = nodeList->getData(0)[entitySet->getEntity(i)->getLocalNodeID(0)];
             y = nodeList->getData(1)[entitySet->getEntity(i)->getLocalNodeID(0)];
-            
+
             rx0[0] = y;
             ry0[0] = -x;
             if (dimension == 3) {
                 z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(0)];
-                
+
                 rz0[0] = 0;
-                
+
                 rx0[1] = -z;
                 ry0[1] = 0;
                 rz0[1] = x;
-                
+
                 rx0[2] = 0;
                 ry0[2] = z;
                 rz0[2] = -y;
@@ -347,21 +354,21 @@ namespace FROSch {
                 ////////////////
                 // Rotation 1 //
                 ////////////////
-                rx = y; 
+                rx = y;
                 ry = -x;
                 rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                 rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
-                
+
                 // Compute difference (Euclidean norm of error to constant function)
                 errx[0] += (rx0[0]-rx)*(rx0[0]-rx);
                 erry[0] += (ry0[0]-ry)*(ry0[0]-ry);
-                
+
                 if (dimension == 3) {
                     z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(j)];
-                    
+
                     rz = 0;
                     rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
-                    
+
                     // Compute difference (Euclidean norm of error to constant function)
                     errz[0] += (rz0[0]-rz)*(rz0[0]-rz);
 
@@ -374,7 +381,7 @@ namespace FROSch {
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
                     rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
-                    
+
                     // Compute difference (Euclidean norm of error to constant function)
                     errx[1] += (rx0[1]-rx)*(rx0[1]-rx);
                     erry[1] += (ry0[1]-ry)*(ry0[1]-ry);
@@ -389,14 +396,14 @@ namespace FROSch {
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
                     rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
-                    
+
                     // Compute difference (Euclidean norm of error to constant function)
                     errx[2] += (rx0[2]-rx)*(rx0[2]-rx);
                     erry[2] += (ry0[2]-ry)*(ry0[2]-ry);
                     errz[2] += (rz0[2]-rz)*(rz0[2]-rz);
                 }
             }
-            
+
             // If error to constant function is almost zero => scale rotation with zero
             SC err;
             UN numZeroRotations = 0;
@@ -444,21 +451,101 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::LOVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::detectLinearDependencies(GOVecView indicesGammaDofsAll,
+                                                                                                                         ConstXMapPtr rowMap,
+                                                                                                                         ConstXMapPtr rangeMap,
+                                                                                                                         ConstXMapPtr repeatedMap,
+                                                                                                                         SC treshold)
+    {
+        FROSCH_TIMER_START_LEVELID(detectLinearDependenciesTime,"HarmonicCoarseOperator::detectLinearDependencies");
+
+        //Construct matrix phiGamma
+        XMatrixPtr phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+
+        LO iD;
+        SC valueTmp;
+        for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); i++) {
+            GOVec indices;
+            SCVec values;
+            for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
+                valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
+                if (fabs(valueTmp)>treshold) {
+                    indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
+                    values.push_back(valueTmp);
+                }
+            }
+            iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(indicesGammaDofsAll[i]));
+
+            if (iD!=-1) {
+                phiGamma->insertGlobalValues(iD,indices(),values());
+            }
+        }
+        phiGamma->fillComplete(AssembledInterfaceCoarseSpace_->getBasisMapUnique(),rangeMap);
+
+        //Compute Phi^T * Phi
+        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
+        XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); //phiTPhi->describe(*fancy,VERB_EXTREME);AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
+
+        // Extract local part of the matrix
+        ConstXMatrixPtr repeatedPhiTPhi = ExtractLocalSubdomainMatrix(phiTPhi.getConst(),AssembledInterfaceCoarseSpace_->getBasisMap());
+        //Communicate matrix to the repeated map
+        // repeatedPhiTPhi = MatrixFactory<SC,LO,GO,NO>::Build(AssembledInterfaceCoarseSpace_->getBasisMap());
+        // XExportPtr exporter = ExportFactory<LO,GO,NO>::Build(rowMap,repeatedMap);
+        // repeatedPhiTPhi->doExport(*phiTPhi,*exporter,INSERT);
+
+        UN numRows = repeatedPhiTPhi->getRowMap()->getNodeNumElements();
+        TSerialDenseMatrixPtr denseRepeatedPhiTPhi(new SerialDenseMatrix<LO,SC>(numRows,repeatedPhiTPhi->getColMap()->getNodeNumElements()));
+        for (UN i=0; i<numRows; i++) {
+            ConstLOVecView indices;
+            ConstSCVecView values;
+            repeatedPhiTPhi->getLocalRowView(i,indices,values);
+            for (UN j=0; j<indices.size(); j++) {
+                (*denseRepeatedPhiTPhi)(i,indices[j]) = values[j];
+            }
+        }
+
+        //Compute local QR factorization
+        TSerialQRDenseSolverPtr qRSolver(new SerialQRDenseSolver<LO,SC>());
+        qRSolver->setMatrix(denseRepeatedPhiTPhi);
+        qRSolver->factor();
+        qRSolver->formQ();
+        qRSolver->formR();
+
+        //Find rows of R approx. zero
+        TSerialDenseMatrixPtr r = qRSolver->getR();
+        LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+        LO tmp = 0;
+        for (LO i=0; i<r->numRows(); i++) {
+            SC normRow = 0.0;
+            for (LO j=0; j<r->numCols(); j++) {
+                normRow += (*r)(i,j)*(*r)(i,j);
+            }
+            if (std::sqrt(normRow)<treshold) {
+                linearDependentVectors[tmp] = i;
+                tmp++;
+            }
+        }
+
+        linearDependentVectors.resize(tmp);
+
+        return linearDependentVectors;
+    }
+
+    template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeExtensions(ConstXMapPtr localMap,
-                                                                                                                         ConstXMapPtr coarseMap,
                                                                                                                          GOVecView indicesGammaDofsAll,
                                                                                                                          GOVecView indicesIDofsAll,
                                                                                                                          XMatrixPtr kII,
                                                                                                                          XMatrixPtr kIGamma)
     {
         FROSCH_TIMER_START_LEVELID(computeExtensionsTime,"HarmonicCoarseOperator::computeExtensions");
-        //this->Phi_ = MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
-        XMultiVectorPtr mVPhi = MultiVectorFactory<SC,LO,GO,NO>::Build(localMap,coarseMap->getNodeNumElements());
-        XMultiVectorPtr mVtmp = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
-        XMultiVectorPtr mVPhiI = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
+        //this->Phi_ = MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),AssembledInterfaceCoarseSpace_->getBasisMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+        XMultiVectorPtr mVPhi = MultiVectorFactory<SC,LO,GO,NO>::Build(localMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+        XMultiVectorPtr mVtmp = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+        XMultiVectorPtr mVPhiI = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
 
         //Build mVPhiGamma
-        XMultiVectorPtr mVPhiGamma = MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),coarseMap->getNodeNumElements());
+        XMultiVectorPtr mVPhiGamma = MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
         if (AssembledInterfaceCoarseSpace_->hasAssembledBasis()) {
             for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); i++) {
                 ConstSCVecPtr assembledInterfaceCoarseSpaceData = AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i);

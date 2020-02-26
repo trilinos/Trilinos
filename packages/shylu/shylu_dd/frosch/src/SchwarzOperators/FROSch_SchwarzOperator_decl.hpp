@@ -48,6 +48,8 @@
 
 #include <Teuchos_DefaultSerialComm.hpp>
 
+#include <Teuchos_SerialQRDenseSolver.hpp>
+
 #include <ShyLU_DDFROSch_config.h>
 
 #include <FROSch_DDInterface_def.hpp>
@@ -111,6 +113,10 @@ namespace FROSch {
         using XExportPtrVecPtr                  = ArrayRCP<XExportPtr>;
 
         using ParameterListPtr                  = RCP<ParameterList>;
+
+        using TSerialDenseMatrixPtr             = RCP<SerialDenseMatrix<LO,SC> >;
+
+        using TSerialQRDenseSolverPtr           = RCP<SerialQRDenseSolver<LO,SC> >;
 
         using DDInterfacePtr                    = RCP<DDInterface<SC,LO,GO,NO> >;
 
@@ -206,7 +212,7 @@ namespace FROSch {
 
         int resetMatrix(ConstXMatrixPtr &k);
 
-      
+
         virtual void residual(const XMultiVector & X,
                               const XMultiVector & B,
                               XMultiVector& R) const;
