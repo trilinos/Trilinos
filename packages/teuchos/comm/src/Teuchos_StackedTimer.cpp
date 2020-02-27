@@ -1,5 +1,41 @@
-// @HEADER BEGIN
-// @HEADER END
+// @HEADER
+// ***********************************************************************
+//
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ***********************************************************************
+// @HEADER
 
 #include "Teuchos_StackedTimer.hpp"
 #include <limits>
@@ -652,6 +688,22 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
   }
 }
 
+void
+StackedTimer::reportXML(std::ostream &os, const std::string& datestamp, const std::string& timestamp, Teuchos::RCP<const Teuchos::Comm<int> > comm)
+{
+  flatten();
+  merge(comm);
+  OutputOptions defaultOptions;
+  collectRemoteData(comm, defaultOptions);
+  if (rank(*comm) == 0 ) {
+    std::vector<bool> printed(flat_names_.size(), false);
+    os << "<?xml version=\"1.0\"?>\n";
+    os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    printLevelXML("", 0, os, printed, 0.0);
+    os << "</performance-report>\n";
+  }
+}
+
 std::string
 StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
@@ -663,34 +715,29 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
     //Output directory has not been set, so don't produce output.
     return "";
   }
-  std::string timestamp;
   std::string datestamp;
+  std::string timestamp;
   {
     char buf[256];
     time_t t;
     struct tm* tstruct;
     time(&t);
     tstruct = gmtime(&t);
-    strftime(buf, 256, "%FT%H:%M:%S", tstruct);
-    timestamp = buf;
     strftime(buf, 256, "%Y_%m_%d", tstruct);
     datestamp = buf;
+    strftime(buf, 256, "%FT%H:%M:%S", tstruct);
+    timestamp = buf;
   }
-  flatten();
-  merge(comm);
-  OutputOptions defaultOptions;
-  collectRemoteData(comm, defaultOptions);
-  if (rank(*comm) == 0 ) {
-    std::vector<bool> printed(flat_names_.size(), false);
-    std::string fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
-    std::ofstream os(fullFile);
-    os << "<?xml version=\"1.0\"?>\n";
-    os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
-    printLevelXML("", 0, os, printed, 0.0);
-    os << "</performance-report>\n";
-    return fullFile;
+  std::ofstream os;
+  std::string fullFile = "";
+  //only open the file on rank 0, since
+  //reportXML() will only write to it on rank 0.
+  if(rank(*comm) == 0) {
+    fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
+    os = std::ofstream(fullFile);
   }
-  return "";
+  reportXML(os, datestamp, timestamp, comm);
+  return fullFile;
 }
 
 void StackedTimer::enableVerbose(const bool enable_verbose)
