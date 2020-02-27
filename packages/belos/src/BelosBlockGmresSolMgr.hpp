@@ -55,12 +55,7 @@
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
 #include "BelosBlockFGmresIter.hpp"
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
-#ifdef HAVE_BELOS_TSQR
-#include <BelosTsqrOrthoManager.hpp>
-#endif
+#include "BelosOrthoManagerFactory.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestImpResNorm.hpp"
@@ -596,26 +591,17 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
       orthoType_ = tempOrthoType;
       params_->set("Orthogonalization", orthoType_);
       // Create orthogonalization manager
-      if (orthoType_=="DGKS") {
-        if (orthoKappa_ <= 0) {
-          ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-        }
-        else {
-          ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-          Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-        }
+      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+      Teuchos::RCP<Belos::OutputManager<ScalarType>> outputOrtho;   // can be null
+      Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+      if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+        paramsOrtho->set ("depTol", orthoKappa_ );
       }
-      else if (orthoType_=="ICGS") {
-        ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-      else if (orthoType_=="IMGS") {
-        ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-#ifdef HAVE_BELOS_TSQR
-      else if (orthoType_=="TSQR") {
-        ortho_ = Teuchos::rcp ( new TsqrMatOrthoManager<ScalarType,MV,OP> ( label_ ) );
-      }
-#endif
+
+      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, outputOrtho, "Belos", paramsOrtho);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (ortho_.get () == nullptr, std::runtime_error, "BlockGmres: Failed to "
+         "create (Mat)OrthoManager of type \"" << orthoType_ << "\".");
     }
   }
 
@@ -783,30 +769,17 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null) {
     params_->set("Orthogonalization", orthoType_);
-    if (orthoType_=="DGKS") {
-      if (orthoKappa_ <= 0) {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-      else {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-      }
+    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Teuchos::RCP<Belos::OutputManager<ScalarType>> outputOrtho;   // can be null
+    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+    if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho->set ("depTol", orthoKappa_ );
     }
-    else if (orthoType_=="ICGS") {
-      ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    }
-    else if (orthoType_=="IMGS") {
-      ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    }
-#ifdef HAVE_BELOS_TSQR
-    else if (orthoType_=="TSQR") {
-      ortho_ = Teuchos::rcp( new TsqrMatOrthoManager<ScalarType,MV,OP> ( label_ ) );
-    }
-#endif
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
-        "Belos::BlockGmresSolMgr(): Invalid orthogonalization type.");
-    }
+
+    ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, outputOrtho, "Belos", paramsOrtho);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (ortho_.get () == nullptr, std::runtime_error, "BlockGmres: Failed to "
+       "create (Mat)OrthoManager of type \"" << orthoType_ << "\".");
   }
 
   // Create the timer if we need to.
