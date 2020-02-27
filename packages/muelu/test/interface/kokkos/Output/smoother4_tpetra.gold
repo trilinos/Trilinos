@@ -151,14 +151,14 @@ presmoother ->
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = <ignored>
-Smoother complexity = <ignored>
+Operator complexity = 1.44
+Smoother complexity = 0.00
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
-  <ignored>  
-  <ignored>  
-  <ignored>  
+  0  9999  29995  3.00                  1  
+  1  3333  9997   3.00     3.00         1  
+  2  1111  3331   3.00     3.00         1  
 
 Smoother (level 0) pre  : no smoother
 Smoother (level 0) post : no smoother

@@ -16,6 +16,9 @@ source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
 set -x
 
+# Allow default setting for TPETRA_ASSUME_CUDA_AWARE_MPI=0 in trilinos_jsrun
+unset TPETRA_ASSUME_CUDA_AWARE_MPI
+
 atdm_run_script_on_compute_node \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh \
   $PWD/ctest-s-driver.out \
@@ -29,8 +32,6 @@ if [ "${Trilinos_CTEST_RUN_CUDA_AWARE_MPI}" == "1" ]; then
   export TPETRA_ASSUME_CUDA_AWARE_MPI=1
   export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
   export CTEST_DO_UPDATES=OFF
-  export CTEST_DO_CONFIGURE=OFF
-  export CTEST_DO_BUILD=OFF
   atdm_run_script_on_compute_node \
     $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh \
     $PWD/ctest-s-driver-cuda-aware-mpi.out \

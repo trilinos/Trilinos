@@ -55,6 +55,7 @@
 
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -65,6 +66,15 @@
 // put these into test_same_as and test_is_compatible
 
 namespace {
+
+  bool mapDebugChecksEnabled()
+  {
+#ifdef HAVE_XPETRA_TPETRA
+    return Tpetra::Details::Behavior::debug("Map");
+#else
+    return false;
+#endif // HAVE_XPETRA_TPETRA
+  }
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -337,33 +347,85 @@ namespace {
 #endif
   }
 
-  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
+  // This test exercises Tpetra's debug-mode checks.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, invalidConstructor1, M, LO, GO, N )
   {
-#ifdef HAVE_TPETRA_DEBUG
-    // create a comm
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using std::endl;
+
+    if (! mapDebugChecksEnabled()) {
+      return;
+    }
+    int lclSuccess = 1;
+    int gblSuccess = 0;
+
+    const Xpetra::global_size_t GSTI =
+      Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+
+    const int totalNumTests = numImages > 1 ? 4 : 1;
+    int numPassedTests = 0;
+
     // bad constructor calls: (num global elements, index base)
     TEST_THROW(M map(GSTI,0,comm), std::invalid_argument);
-    if (numImages > 1) {
-      TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
-      TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Test " << (numPassedTests+1) << " of "
+          << totalNumTests << " passed" << endl;
     }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#endif // HAVE_TPETRA_DEBUG
+    ++numPassedTests;
+
+    if (numImages == 1) {
+      return;
+    }
+
+    TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument);
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Test " << (numPassedTests+1) << " of "
+          << totalNumTests << " passed" << endl;
+    }
+    ++numPassedTests;
+
+    TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Test " << (numPassedTests+1) << " of "
+          << totalNumTests << " passed" << endl;
+    }
+    ++numPassedTests;
+
+    TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Test " << (numPassedTests+1) << " of "
+          << totalNumTests << " passed" << endl;
+    }
+    ++numPassedTests;
   }
 
-  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
+  // This test exercises Tpetra's debug-mode checks.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, invalidConstructor2, M, LO, GO, N )
   {
-#ifdef HAVE_TPETRA_DEBUG
+    if (! mapDebugChecksEnabled()) {
+      return;
+    }
+
     // create a comm
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -380,7 +442,6 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#endif // HAVE_TPETRA_DEBUG
   }
 
 #if 0 // failing for epetra. Epetra does not throw

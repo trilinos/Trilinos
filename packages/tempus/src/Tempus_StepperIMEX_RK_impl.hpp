@@ -655,7 +655,11 @@ void StepperIMEX_RK<Scalar>::describe(
 
   out << "--- StepperIMEX_RK_Partition ---\n";
   out << "  explicitTableau_   = " << explicitTableau_ << std::endl;
-  out << "  implicitTableau_   = " << explicitTableau_ << std::endl;
+  if (verbLevel == Teuchos::VERB_HIGH)
+   explicitTableau_->describe(out, verbLevel);
+  out << "  implicitTableau_   = " << implicitTableau_ << std::endl;
+  if (verbLevel == Teuchos::VERB_HIGH)
+   implicitTableau_->describe(out, verbLevel);
   out << "  xTilde_            = " << xTilde_  << std::endl;
   out << "  stageX_            = " << stageX_  << std::endl;
   out << "  stageF_.size()     = " << stageF_.size() << std::endl;

@@ -72,7 +72,9 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> stepperPL,
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
   {
-    std::string stepperType = stepperPL->get<std::string>("Stepper Type");
+    std::string stepperType = "Operator Split";
+    if (stepperPL != Teuchos::null)
+      stepperType = stepperPL->get<std::string>("Stepper Type");
     return this->createStepper(models, stepperType, stepperPL);
   }
 
@@ -84,25 +86,27 @@ public:
     Teuchos::RCP<Stepper<Scalar> > stepper,
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
-    auto stepperType =
-      stepperPL->get<std::string>("Stepper Type", stepper->getStepperType());
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      stepperType != stepper->getStepperType() ,std::runtime_error,
-      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
-      "  does not match type for stepper Stepper (='"
-      + stepper->getStepperType() + "').");
-    stepper->setStepperType(stepperType);
+    if (stepperPL != Teuchos::null) {
+      auto stepperType =
+        stepperPL->get<std::string>("Stepper Type", stepper->getStepperType());
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        stepperType != stepper->getStepperType() ,std::runtime_error,
+        "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
+        "  does not match type for stepper Stepper (='"
+        + stepper->getStepperType() + "').");
+      stepper->setStepperType(stepperType);
 
-    stepper->setUseFSAL(
-      stepperPL->get<bool>("Use FSAL", stepper->getUseFSALDefault()));
+      stepper->setUseFSAL(
+        stepperPL->get<bool>("Use FSAL", stepper->getUseFSALDefault()));
 
-    stepper->setICConsistency(
-      stepperPL->get<std::string>("Initial Condition Consistency",
-                                  stepper->getICConsistencyDefault()));
+      stepper->setICConsistency(
+        stepperPL->get<std::string>("Initial Condition Consistency",
+                                    stepper->getICConsistencyDefault()));
 
-    stepper->setICConsistencyCheck(
-      stepperPL->get<bool>("Initial Condition Consistency Check",
-                           stepper->getICConsistencyCheckDefault()));
+      stepper->setICConsistencyCheck(
+        stepperPL->get<bool>("Initial Condition Consistency Check",
+                             stepper->getICConsistencyCheckDefault()));
+    }
   }
 
 
@@ -324,25 +328,42 @@ public:
     if (stepperType != "General Partitioned IMEX RK") {
       stepper->setTableaus(stepperType);
     } else {
-      RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(
-          stepperPL->sublist("IMEX-RK Explicit Stepper")));
-      auto stepperTemp = createStepper(explicitPL, Teuchos::null);
-      auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
+      if (stepperPL != Teuchos::null) {
+        Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau;
+        Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau;
+        if (stepperPL->isSublist("IMEX-RK Explicit Stepper")) {
+          RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+              new Teuchos::ParameterList(
+                  stepperPL->sublist("IMEX-RK Explicit Stepper")));
+          auto stepperTemp = createStepper(explicitPL, Teuchos::null);
+          auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
                           stepperTemp,true);
-      auto explicitTableau = stepperERK->getTableau();
+          TEUCHOS_TEST_FOR_EXCEPTION(stepperERK == Teuchos::null, std::logic_error,
+              "Error - The explicit component of a general partitioned IMEX RK stepper was not specified as an ExplicitRK stepper");
+          explicitTableau = stepperERK->getTableau();
+        }
 
-      RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(
-          stepperPL->sublist("IMEX-RK Implicit Stepper")));
-      stepperTemp = createStepper(implicitPL, Teuchos::null);
-      auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
-                           stepperTemp,true);
-      auto implicitTableau = stepperDIRK->getTableau();
+        if (stepperPL->isSublist("IMEX-RK Implicit Stepper")) {
+          RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+              new Teuchos::ParameterList(
+                  stepperPL->sublist("IMEX-RK Implicit Stepper")));
+          auto stepperTemp = createStepper(implicitPL, Teuchos::null);
+          auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
+              stepperTemp,true);
+          TEUCHOS_TEST_FOR_EXCEPTION(stepperDIRK == Teuchos::null, std::logic_error,
+              "Error - The implicit component of a general partitioned IMEX RK stepper was not specified as an DIRK stepper");
+          implicitTableau = stepperDIRK->getTableau();
+        }
 
-      stepper->setTableaus(stepperType, explicitTableau, implicitTableau);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          !(explicitTableau!=Teuchos::null && implicitTableau!=Teuchos::null), std::logic_error,
+          "Error - A parameter list was used to setup a general partitioned IMEX RK stepper, but did not "
+          "specify both an explicit and an implicit tableau!\n");
 
-      stepper->setOrder(stepperPL->get<int>("overall order", 1));
+        stepper->setTableaus(stepperType, explicitTableau, implicitTableau);
+
+        stepper->setOrder(stepperPL->get<int>("overall order", 1));
+      }
     }
   }
 
@@ -363,25 +384,41 @@ public:
     if (stepperType != "General IMEX RK") {
       stepper->setTableaus(stepperType);
     } else {
-      RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(
-          stepperPL->sublist("IMEX-RK Explicit Stepper")));
-      auto stepperTemp = createStepper(explicitPL, Teuchos::null);
-      auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
+      if (stepperPL != Teuchos::null) {
+        Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau;
+        Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau;
+        if (stepperPL->isSublist("IMEX-RK Explicit Stepper")) {
+          RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+              new Teuchos::ParameterList(
+                  stepperPL->sublist("IMEX-RK Explicit Stepper")));
+          auto stepperTemp = createStepper(explicitPL, Teuchos::null);
+          auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
                           stepperTemp,true);
-      auto explicitTableau = stepperERK->getTableau();
+          TEUCHOS_TEST_FOR_EXCEPTION(stepperERK == Teuchos::null, std::logic_error,
+              "Error - The explicit component of a general IMEX RK stepper was not specified as an ExplicitRK stepper");
+          explicitTableau = stepperERK->getTableau();
+        }
 
-      RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(
-          stepperPL->sublist("IMEX-RK Implicit Stepper")));
-      stepperTemp = createStepper(implicitPL, Teuchos::null);
-      auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
-                           stepperTemp,true);
-      auto implicitTableau = stepperDIRK->getTableau();
+        if (stepperPL->isSublist("IMEX-RK Implicit Stepper")) {
+          RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+              new Teuchos::ParameterList(
+                  stepperPL->sublist("IMEX-RK Implicit Stepper")));
+          auto stepperTemp = createStepper(implicitPL, Teuchos::null);
+          auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
+              stepperTemp,true);
+          TEUCHOS_TEST_FOR_EXCEPTION(stepperDIRK == Teuchos::null, std::logic_error,
+              "Error - The implicit component of a general IMEX RK stepper was not specified as an DIRK stepper");
+          implicitTableau = stepperDIRK->getTableau();
+        }
 
-      stepper->setTableaus(stepperType, explicitTableau, implicitTableau);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          !(explicitTableau!=Teuchos::null && implicitTableau!=Teuchos::null), std::logic_error,
+          "Error - A parameter list was used to setup a general IMEX RK stepper, but did not "
+          "specify both an explicit and an implicit tableau!\n");
 
-      stepper->setOrder(stepperPL->get<int>("overall order", 1));
+        stepper->setTableaus(stepperType, explicitTableau, implicitTableau);
+        stepper->setOrder(stepperPL->get<int>("overall order", 1));
+      }
     }
   }
 
@@ -1459,56 +1496,58 @@ private:
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
-    using Teuchos::RCP;
-    using Teuchos::ParameterList;
+    if (stepperPL != Teuchos::null) {
+      using Teuchos::RCP;
+      using Teuchos::ParameterList;
 
-    // Parse Stepper List String
-    std::vector<std::string> stepperListStr;
-    stepperListStr.clear();
-    std::string str = stepperPL->get<std::string>("Stepper List");
-    std::string delimiters(",");
-    // Skip delimiters at the beginning
-    std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-    // Find the first delimiter
-    std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-    while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
-      std::string token = str.substr(lastPos,pos-lastPos);
-      // Strip single quotes
-      std::string::size_type beg = token.find_first_of("'") + 1;
-      std::string::size_type end = token.find_last_of ("'");
-      stepperListStr.push_back(token.substr(beg,end-beg));
+      // Parse Stepper List String
+      std::vector<std::string> stepperListStr;
+      stepperListStr.clear();
+      std::string str = stepperPL->get<std::string>("Stepper List");
+      std::string delimiters(",");
+      // Skip delimiters at the beginning
+      std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+      // Find the first delimiter
+      std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+      while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+        std::string token = str.substr(lastPos,pos-lastPos);
+        // Strip single quotes
+        std::string::size_type beg = token.find_first_of("'") + 1;
+        std::string::size_type end = token.find_last_of ("'");
+        stepperListStr.push_back(token.substr(beg,end-beg));
 
-      lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
-      pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(stepperListStr.size() != appModels.size(),
-      std::logic_error, "Error - Number of models and Steppers do not match!\n"
-      << "  There are " << appModels.size() << " models.\n"
-      << "  There are " << stepperListStr.size() << " steppers.\n"
-      << "    " << str << "\n");
-
-    typename
-      std::vector<RCP<const Thyra::ModelEvaluator<Scalar> > >::iterator
-        aMI = appModels.begin();
-    typename std::vector<std::string>::iterator sLSI = stepperListStr.begin();
-
-    for (; aMI<appModels.end() || sLSI<stepperListStr.end(); aMI++, sLSI++) {
-      RCP<ParameterList> subStepperPL = Teuchos::sublist(stepperPL,*sLSI,true);
-      bool useFSAL = subStepperPL->template get<bool>("Use FSAL",false);
-      auto subStepper = createStepper(subStepperPL, *aMI);
-      if (useFSAL) {
-        Teuchos::RCP<Teuchos::FancyOStream> out =
-          Teuchos::VerboseObjectBase::getDefaultOStream();
-        Teuchos::OSTab ostab(out,1,"StepperFactory::createSubSteppers()");
-        *out << "Warning -- subStepper = '"
-             << subStepper->getStepperType() << "' has \n"
-             << "  subStepper->getUseFSAL() = " << useFSAL << ".\n"
-             << "  subSteppers usually can not use the FSAL priniciple with\n"
-             << "  operator splitting.  Proceeding with it set to true.\n"
-             << std::endl;
+        lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
+        pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
       }
-      stepper->addStepper(subStepper, useFSAL);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(stepperListStr.size() != appModels.size(),
+        std::logic_error, "Error - Number of models and Steppers do not match!\n"
+        << "  There are " << appModels.size() << " models.\n"
+        << "  There are " << stepperListStr.size() << " steppers.\n"
+        << "    " << str << "\n");
+
+      typename
+        std::vector<RCP<const Thyra::ModelEvaluator<Scalar> > >::iterator
+          aMI = appModels.begin();
+      typename std::vector<std::string>::iterator sLSI = stepperListStr.begin();
+
+      for (; aMI<appModels.end() || sLSI<stepperListStr.end(); aMI++, sLSI++) {
+        RCP<ParameterList> subStepperPL = Teuchos::sublist(stepperPL,*sLSI,true);
+        bool useFSAL = subStepperPL->template get<bool>("Use FSAL",false);
+        auto subStepper = createStepper(subStepperPL, *aMI);
+        if (useFSAL) {
+          Teuchos::RCP<Teuchos::FancyOStream> out =
+            Teuchos::VerboseObjectBase::getDefaultOStream();
+          Teuchos::OSTab ostab(out,1,"StepperFactory::createSubSteppers()");
+          *out << "Warning -- subStepper = '"
+               << subStepper->getStepperType() << "' has \n"
+               << "  subStepper->getUseFSAL() = " << useFSAL << ".\n"
+               << "  subSteppers usually can not use the FSAL priniciple with\n"
+               << "  operator splitting.  Proceeding with it set to true.\n"
+               << std::endl;
+        }
+        stepper->addStepper(subStepper, useFSAL);
+      }
     }
   }
 

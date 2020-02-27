@@ -5,6 +5,7 @@ AmalgamationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
+BelosSmoother - #if defined(HAVE_MUELU_BELOS)
 BlackBoxPFactory
 BlockedCoarseMapFactory
 BlockedCoordinatesTransferFactory
@@ -55,6 +56,7 @@ MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
 MultiVectorTransferFactory
+NotayAggregationFactory
 NullspaceFactory
 NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 NullspacePresmoothFactory
@@ -92,6 +94,7 @@ SmootherFactory
 SmootherPrototype
 SolverBase
 SteepestDescentSolver
+StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS)
 StructuredAggregationFactory
 StructuredLineDetectionFactory
 SubBlockAFactory
