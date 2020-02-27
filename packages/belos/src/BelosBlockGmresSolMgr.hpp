@@ -583,13 +583,12 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
       params_->set("Orthogonalization", orthoType_);
       // Create orthogonalization manager
       Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
-      Teuchos::RCP<Belos::OutputManager<ScalarType>> outputOrtho;   // can be null
       Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
       if (orthoType_=="DGKS" && orthoKappa_ > 0) {
         paramsOrtho->set ("depTol", orthoKappa_ );
       }
 
-      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, outputOrtho, "Belos", paramsOrtho);
+      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, "Belos", paramsOrtho);
       TEUCHOS_TEST_FOR_EXCEPTION
         (ortho_.get () == nullptr, std::runtime_error, "BlockGmres: Failed to "
          "create (Mat)OrthoManager of type \"" << orthoType_ << "\".");
@@ -761,13 +760,12 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   if (ortho_ == Teuchos::null) {
     params_->set("Orthogonalization", orthoType_);
     Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
-    Teuchos::RCP<Belos::OutputManager<ScalarType>> outputOrtho;   // can be null
     Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
       paramsOrtho->set ("depTol", orthoKappa_ );
     }
 
-    ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, outputOrtho, "Belos", paramsOrtho);
+    ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, "Belos", paramsOrtho);
   }
 
   // Create the timer if we need to.
