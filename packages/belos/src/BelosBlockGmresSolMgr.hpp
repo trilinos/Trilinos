@@ -768,9 +768,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
     }
 
     ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, outputOrtho, "Belos", paramsOrtho);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (ortho_.get () == nullptr, std::runtime_error, "BlockGmres: Failed to "
-       "create (Mat)OrthoManager of type \"" << orthoType_ << "\".");
   }
 
   // Create the timer if we need to.
