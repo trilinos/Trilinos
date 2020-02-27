@@ -104,6 +104,27 @@ void Algorithm_G<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 }
 
 template<typename Real>
+std::vector<std::string> Algorithm_G<Real>::run( NewOptimizationProblem<Real> &problem,
+                                                 std::ostream                 &outStream ) {
+  if (problem.getProblemType() == TYPE_EB) {
+    proj_ = problem.getPolyhedralProjection();
+    std::vector<std::string> output = run(*problem.getPrimalOptimizationVector(),
+                                          *problem.getDualOptimizationVector(),
+                                          *problem.getObjective(),
+                                          *problem.getBoundConstraint(),
+                                          *problem.getConstraint(),
+                                          *problem.getMultiplierVector(),
+                                          *problem.getResidualVector(),
+                                          outStream);
+    problem.finalizeIteration();
+    return output;
+  }
+  else {
+    throw Exception::NotImplemented(">>> ROL::Algorithm_G::run : Optimization problem is not Type G!");
+  }
+}
+
+template<typename Real>
 std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Objective<Real>       &obj,
                                                  BoundConstraint<Real> &bnd,

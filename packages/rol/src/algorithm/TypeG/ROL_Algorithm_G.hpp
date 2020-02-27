@@ -49,6 +49,7 @@
 #include "ROL_Constraint.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_PolyhedralProjection.hpp"
+#include "ROL_NewOptimizationProblem.hpp"
 
 /** \class ROL::Algorithm_G
     \brief Provides an interface to run general constrained optimization algorithms.
@@ -106,6 +107,12 @@ public:
 
   void setStatusTest(const Ptr<StatusTest<Real>> &status,
                      const bool combineStatus = false);
+
+  /** \brief Run algorithm on general constrained problems (Type-G).
+             This is the primary Type-G interface.
+  */
+  virtual std::vector<std::string> run( NewOptimizationProblem<Real> &problem,
+                                        std::ostream                 &outStream = std::cout );
 
   /** \brief Run algorithm on general constrained problems (Type-G).
              This is the primary Type-G interface.

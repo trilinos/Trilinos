@@ -102,6 +102,25 @@ void Algorithm_E<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 }
 
 template<typename Real>
+std::vector<std::string> Algorithm_E<Real>::run( NewOptimizationProblem<Real> &problem,
+                                                 std::ostream     &outStream ) {
+  if (problem.getProblemType() == TYPE_E) {
+    std::vector<std::string> output = run(*problem.getPrimalOptimizationVector(),
+                                          *problem.getDualOptimizationVector(),
+                                          *problem.getObjective(),
+                                          *problem.getConstraint(),
+                                          *problem.getMultiplierVector(),
+                                          *problem.getResidualVector(),
+                                          outStream);
+    problem.finalizeIteration();
+    return output;
+  }
+  else {
+    throw Exception::NotImplemented(">>> ROL::Algorithm_E::run : Optimization problem is not Type E!");
+  }
+}
+
+template<typename Real>
 std::vector<std::string> Algorithm_E<Real>::run( Vector<Real>     &x,
                                                  Objective<Real>  &obj,
                                                  Constraint<Real> &econ,

@@ -90,6 +90,22 @@ void Algorithm_U<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 }
 
 template<typename Real>
+std::vector<std::string> Algorithm_U<Real>::run( NewOptimizationProblem<Real> &problem,
+                                                 std::ostream                 &outStream ) {
+  if (problem.getProblemType() == TYPE_U) {
+    std::vector<std::string> output = run(*problem.getPrimalOptimizationVector(),
+                                          *problem.getDualOptimizationVector(),
+                                          *problem.getObjective(),
+                                          outStream);
+    problem.finalizeIteration();
+    return output;
+  }
+  else {
+    throw Exception::NotImplemented(">>> ROL::Algorithm_U::run : Optimization problem is not Type U!");
+  }
+}
+
+template<typename Real>
 std::vector<std::string> Algorithm_U<Real>::run( Vector<Real>    &x,
                                                  Objective<Real> &obj,
                                                  std::ostream    &outStream ) {

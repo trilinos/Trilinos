@@ -47,6 +47,7 @@
 #include "ROL_CombinedStatusTest.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
+#include "ROL_NewOptimizationProblem.hpp"
 
 /** \class ROL::Algorithm_E
     \brief Provides an interface to run unconstrained optimization algorithms.
@@ -103,6 +104,12 @@ public:
 
   void setStatusTest(const Ptr<StatusTest<Real>> &status,
                      const bool combineStatus = false);
+
+  /** \brief Run algorithm on equality constrained problems (Type-E).
+             This is the primary Type-E interface.
+  */
+  virtual std::vector<std::string> run( NewOptimizationProblem<Real> &problem,
+                                        std::ostream                 &outStream = std::cout );
 
   /** \brief Run algorithm on equality constrained problems (Type-E).
              This is the primary Type-E interface.

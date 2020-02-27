@@ -67,7 +67,10 @@ public:
   virtual ~PolyhedralProjection() {}
 
   PolyhedralProjection(BoundConstraint<Real> &bnd)
-    : bnd_(makePtrFromRef(bnd)), con_(nullPtr), useSN_(false) {}
+    : PolyhedralProjection(makePtrFromRef(bnd)) {}
+
+  PolyhedralProjection(const Ptr<BoundConstraint<Real>> &bnd)
+    : bnd_(bnd), con_(nullPtr), useSN_(false) {}
 
   PolyhedralProjection(const Vector<Real>    &xprim,
                        const Vector<Real>    &xdual,
@@ -75,8 +78,17 @@ public:
                        Constraint<Real>      &con,
                        const Vector<Real>    &mul,
                        const Vector<Real>    &res,
-                       const bool useSN = false)
-    : bnd_(makePtrFromRef(bnd)), con_(makePtrFromRef(con)), useSN_(useSN) {
+                       bool                   useSN = false)
+    : PolyhedralProjection(xprim,xdual,makePtrFromRef(bnd),makePtrFromRef(con),mul,res,useSN) {}
+
+  PolyhedralProjection(const Vector<Real>               &xprim,
+                       const Vector<Real>               &xdual,
+                       const Ptr<BoundConstraint<Real>> &bnd,
+                       const Ptr<Constraint<Real>>      &con,
+                       const Vector<Real>               &mul,
+                       const Vector<Real>               &res,
+                       bool                              useSN = false)
+    : bnd_(bnd), con_(con), useSN_(useSN) {
     xnew_  = xprim.clone();
     xprim_ = xprim.clone();
     xdual_ = xdual.clone();

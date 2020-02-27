@@ -49,6 +49,7 @@
 #include "ROL_Constraint.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_PolyhedralProjection.hpp"
+#include "ROL_NewOptimizationProblem.hpp"
 
 /** \class ROL::Algorithm_B
     \brief Provides an interface to run bound constrained optimization algorithms.
@@ -100,6 +101,12 @@ public:
 
   void setStatusTest(const Ptr<StatusTest<Real>> &status,
                      const bool combineStatus = false);
+
+  /** \brief Run algorithm on bound constrained problems (Type-B).
+             This is the primary Type-B interface.
+  */
+  virtual std::vector<std::string> run( NewOptimizationProblem<Real> &problem,
+                                        std::ostream                 &outStream = std::cout );
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
              This is the primary Type-B interface.

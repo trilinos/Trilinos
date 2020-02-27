@@ -102,6 +102,24 @@ void Algorithm_B<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 }
 
 template<typename Real>
+std::vector<std::string> Algorithm_B<Real>::run( NewOptimizationProblem<Real> &problem,
+                                                 std::ostream                 &outStream ) {
+  if (problem.getProblemType() == TYPE_B) {
+    proj_ = problem.getPolyhedralProjection();
+    std::vector<std::string> output = run(*problem.getPrimalOptimizationVector(),
+                                          *problem.getDualOptimizationVector(),
+                                          *problem.getObjective(),
+                                          *problem.getBoundConstraint(),
+                                          outStream);
+    problem.finalizeIteration();
+    return output;
+  }
+  else {
+    throw Exception::NotImplemented(">>> ROL::Algorithm_B::run : Optimization problem is not Type B!");
+  }
+}
+
+template<typename Real>
 std::vector<std::string> Algorithm_B<Real>::run( Vector<Real>          &x,
                                                  Objective<Real>       &obj,
                                                  BoundConstraint<Real> &bnd,
