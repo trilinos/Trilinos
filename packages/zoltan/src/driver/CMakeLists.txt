@@ -97,5 +97,12 @@ IF (${PACKAGE_NAME}_ENABLE_CPPDRIVER)
     COMM serial mpi
     )
 
+TRIBITS_ADD_EXECUTABLE(
+  infer
+  NOEXEPREFIX
+  SOURCES infer.cpp
+  COMM serial mpi
+  )
+
 ENDIF()
 
