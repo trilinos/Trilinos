@@ -80,6 +80,9 @@ typedef MueLu::IsolatedNodeAggregationAlgorithm_kokkos<LocalOrdinal,GlobalOrdina
 #ifdef MUELU_ISORROPIAINTERFACE_SHORT
 typedef MueLu::IsorropiaInterface<LocalOrdinal,GlobalOrdinal,Node> IsorropiaInterface;
 #endif
+#ifdef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
+typedef MueLu::InterfaceMappingTransferFactory<LocalOrdinal,GlobalOrdinal,Node> InterfaceMappingTransferFactory;
+#endif
 #ifdef MUELU_LWGRAPH_SHORT
 typedef MueLu::LWGraph<LocalOrdinal,GlobalOrdinal,Node> LWGraph;
 #endif
