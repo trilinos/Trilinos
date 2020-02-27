@@ -578,15 +578,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-#ifdef HAVE_BELOS_TSQR
-    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS" && tempOrthoType != "TSQR",
-                        std::invalid_argument,
-                        "Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\", or \"TSQR\".");
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS",
-                        std::invalid_argument,
-                        "Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
-#endif
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
       params_->set("Orthogonalization", orthoType_);
