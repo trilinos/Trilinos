@@ -574,47 +574,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
     }
   }
 
-
-  // Check if the orthogonalization changed.
-  if (params->isParameter("Orthogonalization")) {
-    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    if (tempOrthoType != orthoType_) {
-      orthoType_ = tempOrthoType;
-      params_->set("Orthogonalization", orthoType_);
-      // Create orthogonalization manager
-      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
-      Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
-      if (orthoType_=="DGKS" && orthoKappa_ > 0) {
-        paramsOrtho->set ("depTol", orthoKappa_ );
-      }
-
-      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, "Belos", paramsOrtho);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (ortho_.get () == nullptr, std::runtime_error, "BlockGmres: Failed to "
-         "create (Mat)OrthoManager of type \"" << orthoType_ << "\".");
-    }
-  }
-
-  // Check which orthogonalization constant to use.
-  if (params->isParameter("Orthogonalization Constant")) {
-    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
-      orthoKappa_ = params->get ("Orthogonalization Constant",
-                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
-    }
-    else {
-      orthoKappa_ = params->get ("Orthogonalization Constant",
-                                 DefaultSolverParameters::orthoKappa);
-    }
-
-    // Update parameter in our list.
-    params_->set("Orthogonalization Constant",orthoKappa_);
-    if (orthoType_=="DGKS") {
-      if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-      }
-    }
-  }
-
   // Check for a change in verbosity level
   if (params->isParameter("Verbosity")) {
     if (Teuchos::isParameterType<int>(*params,"Verbosity")) {
@@ -669,6 +628,46 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   // Create output manager if we need to.
   if (printer_ == Teuchos::null) {
     printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+  }
+
+  // Check if the orthogonalization changed.
+  if (params->isParameter("Orthogonalization")) {
+    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    if (tempOrthoType != orthoType_) {
+      orthoType_ = tempOrthoType;
+      params_->set("Orthogonalization", orthoType_);
+      // Create orthogonalization manager
+      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+      Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+      if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+        paramsOrtho->set ("depTol", orthoKappa_ );
+      }
+
+      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, "Belos", paramsOrtho);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (ortho_.get () == nullptr, std::runtime_error, "BlockGmres: Failed to "
+         "create (Mat)OrthoManager of type \"" << orthoType_ << "\".");
+    }
+  }
+
+  // Check which orthogonalization constant to use.
+  if (params->isParameter("Orthogonalization Constant")) {
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
+    }
+    else {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 DefaultSolverParameters::orthoKappa);
+    }
+
+    // Update parameter in our list.
+    params_->set("Orthogonalization Constant",orthoKappa_);
+    if (orthoType_=="DGKS") {
+      if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+      }
+    }
   }
 
   // Check for convergence tolerance
