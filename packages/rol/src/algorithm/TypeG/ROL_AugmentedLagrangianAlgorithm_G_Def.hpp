@@ -180,9 +180,10 @@ void AugmentedLagrangianAlgorithm_G<Real>::initialize( Vector<Real>             
 
   if (verbosity_ > 1) {
     outStream << std::endl;
-    outStream << "Augmented Lagrangian Initialize" << std::endl;
-    outStream << "Objective Scaling:  " << fscale_ << std::endl;
-    outStream << "Constraint Scaling: " << cscale_ << std::endl;
+    outStream << "Augmented Lagrangian Initialize"            << std::endl;
+    outStream << "Objective Scaling:  " << fscale_            << std::endl;
+    outStream << "Constraint Scaling: " << cscale_            << std::endl;
+    outStream << "Penalty Parameter:  " << state_->searchSize << std::endl;
     outStream << std::endl;
   }
 }
