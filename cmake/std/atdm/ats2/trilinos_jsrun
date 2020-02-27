@@ -72,7 +72,7 @@ function evaluate_jsrun_command {
 # Check if TPETRA_ASSUME_CUDA_AWARE_MPI is set and default to 0 if unset.
 if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]]; then
   echo "WARNING, you have not set TPETRA_ASSUME_CUDA_AWARE_MPI=0 or 1, defaulting to TPETRA_ASSUME_CUDA_AWARE_MPI=0"
-  export TPETRA_ASSUME_CUDA_AWARE=0
+  export TPETRA_ASSUME_CUDA_AWARE_MPI=0
 fi
 
 # Parse input arguments and modify them for jsrun

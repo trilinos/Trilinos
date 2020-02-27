@@ -29,8 +29,10 @@ from subprocess import CalledProcessError
 import PullRequestLinuxDriverMerge
 
 
+
 class Test_header(unittest.TestCase):
     '''Test that we can properly echo the header information'''
+
     def test_writeHeader(self):
         with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
             PullRequestLinuxDriverMerge.write_header()
@@ -43,9 +45,9 @@ class Test_header(unittest.TestCase):
                          m_stdout.getvalue())
 
 
+
 class Test_EchoJenkinsVars(unittest.TestCase):
     '''Test that the Jenkins environment is echoed properly'''
-
 
     def setUp(self):
         self.m_environ = mock.patch.dict(os.environ, {'JOB_BASE_NAME':'TEST_JOB_BASE_NAME',
@@ -89,6 +91,7 @@ Environment:
         self.assertEqual(expected_string, m_stdout.getvalue())
 
 
+
 class Test_parsing(unittest.TestCase):
     '''Finally given a decent parser I want to now pass
        all parameters and check them'''
@@ -124,6 +127,7 @@ class Test_parsing(unittest.TestCase):
             args = PullRequestLinuxDriverMerge.parseArgs()
         self.assertEqual(test_namespace, args)
 
+
     def test_parseInsufficientArgs_fails(self):
         test_namespace = Namespace()
         setattr(test_namespace, 'sourceRepo', '/dev/null/source/Trilinos.git')
@@ -149,9 +153,11 @@ sourceBranch, targetRepo, targetBranch, sourceSHA, workspaceDir
         self.assertEqual(expected_output, m_stderr.getvalue())
 
 
+
 class Test_mergeBranch(unittest.TestCase):
     '''Verify that we call the correct sequence to merge the source branch/SHA
        into the target branch'''
+
     def test_mergeBranch_without_source_remote(self):
         with mock.patch('subprocess.check_output',
                         side_effect=['origin /dev/null/target/Trilinos',
@@ -311,8 +317,10 @@ class Test_mergeBranch(unittest.TestCase):
                          m_stdout.getvalue())
 
 
+
 class Test_run(unittest.TestCase):
     '''This is the main function that ties everything together in order'''
+
     def test_run(self):
         with mock.patch('PullRequestLinuxDriverMerge.parseArgs') as m_parser, \
             mock.patch('os.chdir') as m_chdir, \
@@ -338,6 +346,7 @@ class Test_run(unittest.TestCase):
         with mock.patch('PullRequestLinuxDriverMerge.parseArgs',
                         side_effect=SystemExit(2)):
             self.assertFalse(PullRequestLinuxDriverMerge.run())
+
 
     def test_run_fails_on_bad_fetch(self):
         with mock.patch('subprocess.check_output',
@@ -376,6 +385,8 @@ class Test_run(unittest.TestCase):
             mock.patch('os.chdir'):
             self.assertFalse(PullRequestLinuxDriverMerge.run())
         self.assertTrue(m_stdout.getvalue().endswith(expected_string))
+
+
 
 
 if __name__ == '__main__':
