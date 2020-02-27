@@ -75,11 +75,11 @@ template<typename Real>
 class NewConstraintManager {
 private:
   Ptr<Constraint<Real>>      con_;
-  Ptr<Vector<Real>>          l_;
-  Ptr<Vector<Real>>          r_;
-  Ptr<Constraint<Real>>      lcon_;
-  Ptr<Vector<Real>>          ll_;
-  Ptr<Vector<Real>>          lr_;
+  Ptr<Vector<Real>>          mul_;
+  Ptr<Vector<Real>>          res_;
+  Ptr<Constraint<Real>>      linear_con_;
+  Ptr<Vector<Real>>          linear_mul_;
+  Ptr<Vector<Real>>          linear_res_;
   Ptr<Vector<Real>>          xprim_;
   Ptr<Vector<Real>>          xdual_;
   Ptr<BoundConstraint<Real>> bnd_;

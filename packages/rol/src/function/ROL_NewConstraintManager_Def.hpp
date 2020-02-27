@@ -117,19 +117,19 @@ void NewConstraintManager<Real>::initialize(const std::map<std::string,Constrain
   if ( !isNull_ ) {
     if ( cnt_con > 1 || hasInequality_ ) {
       con_ = makePtr<Constraint_Partitioned<Real>>(cvec_,isInequality_);
-      l_   = makePtr<PartitionedVector<Real>>(lvec_);
-      r_   = makePtr<PartitionedVector<Real>>(rvec_);
+      mul_ = makePtr<PartitionedVector<Real>>(lvec_);
+      res_ = makePtr<PartitionedVector<Real>>(rvec_);
     }
     else {
       con_ = cvec_[0];
-      l_   = lvec_[0];
-      r_   = rvec_[0];
+      mul_ = lvec_[0];
+      res_ = rvec_[0];
     }
   }
   else {
     con_ = nullPtr;
-    l_   = nullPtr;
-    r_   = nullPtr;
+    mul_ = nullPtr;
+    res_ = nullPtr;
   }
   // Create partitioned optimization vector and bound constraint
   if ( hasInequality_ ) {
@@ -239,32 +239,32 @@ void NewConstraintManager<Real>::initialize(const std::map<std::string,Constrain
   if ( !isNull_ ) {
     if ( cnt_con > 1 || hasInequality_ ) {
       con_  = makePtr<Constraint_Partitioned<Real>>(cvec_,isInequality_);
-      l_    = makePtr<PartitionedVector<Real>>(lvec_);
-      r_    = makePtr<PartitionedVector<Real>>(rvec_);
+      mul_  = makePtr<PartitionedVector<Real>>(lvec_);
+      res_  = makePtr<PartitionedVector<Real>>(rvec_);
     }
     else {
       con_  = cvec_[0];
-      l_    = lvec_[0];
-      r_    = rvec_[0];
+      mul_  = lvec_[0];
+      res_  = rvec_[0];
     }
     if ( cnt_lcon > 1 || hasInequality_ ) {
-      lcon_ = makePtr<Constraint_Partitioned<Real>>(lcvec_,isLinearInequality_);
-      ll_   = makePtr<PartitionedVector<Real>>(lvec_);
-      lr_   = makePtr<PartitionedVector<Real>>(rvec_);
+      linear_con_ = makePtr<Constraint_Partitioned<Real>>(lcvec_,isLinearInequality_,cnt_con);
+      linear_mul_ = makePtr<PartitionedVector<Real>>(lvec_);
+      linear_res_ = makePtr<PartitionedVector<Real>>(rvec_);
     }
     else {
-      lcon_ = lcvec_[0];
-      ll_   = llvec_[0];
-      lr_   = lrvec_[0];
+      linear_con_ = lcvec_[0];
+      linear_mul_ = llvec_[0];
+      linear_res_ = lrvec_[0];
     }
   }
   else {
     con_  = nullPtr;
-    l_    = nullPtr;
-    r_    = nullPtr;
-    lcon_ = nullPtr;
-    ll_   = nullPtr;
-    lr_   = nullPtr;
+    mul_  = nullPtr;
+    res_  = nullPtr;
+    linear_con_ = nullPtr;
+    linear_mul_ = nullPtr;
+    linear_res_ = nullPtr;
   }
   // Create partitioned optimization vector and bound constraint
   if ( hasInequality_ ) {
@@ -305,27 +305,27 @@ const Ptr<Constraint<Real>> NewConstraintManager<Real>::getConstraint(void) cons
 
 template<typename Real>
 const Ptr<Vector<Real>> NewConstraintManager<Real>::getMultiplier(void) const {
-  return l_;
+  return mul_;
 }
 
 template<typename Real>
 const Ptr<Vector<Real>> NewConstraintManager<Real>::getResidual(void) const {
-  return r_;
+  return res_;
 }
 
 template<typename Real>
 const Ptr<Constraint<Real>> NewConstraintManager<Real>::getLinearConstraint(void) const {
-  return lcon_;
+  return linear_con_;
 }
 
 template<typename Real>
 const Ptr<Vector<Real>> NewConstraintManager<Real>::getLinearMultiplier(void) const {
-  return ll_;
+  return linear_mul_;
 }
 
 template<typename Real>
 const Ptr<Vector<Real>> NewConstraintManager<Real>::getLinearResidual(void) const {
-  return lr_;
+  return linear_res_;
 }
 
 template<typename Real>
