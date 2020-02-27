@@ -55,11 +55,12 @@ namespace ROL {
 template<class Real>
 class Constraint_Partitioned : public Constraint<Real> {
 private:
-  std::vector<ROL::Ptr<Constraint<Real> > > cvec_;
-  std::vector<bool> isInequality_;      // Label whether cvec_[i] is inequality
-  ROL::Ptr<Vector<Real> > scratch_; // Scratch vector for intermediate computation
-  int  ncval_;                          // Number of constraint evaluations
-  bool initialized_;                    // Is scratch vector initialized?
+  std::vector<Ptr<Constraint<Real>>> cvec_;
+  std::vector<bool> isInequality_; // Label whether cvec_[i] is inequality
+  const int offset_;               // Offset for slack variables
+  Ptr<Vector<Real>> scratch_;      // Scratch vector for intermediate computation
+  int  ncval_;                     // Number of constraint evaluations
+  bool initialized_;               // Is scratch vector initialized?
 
   Vector<Real>& getOpt( Vector<Real> &xs ) {
     try {
@@ -79,27 +80,29 @@ private:
     }
   }
 
-  Vector<Real>& getSlack( Vector<Real> &xs, const int ind ) {
+  Vector<Real>& getSlack( Vector<Real> &xs, int ind ) {
     return *dynamic_cast<PartitionedVector<Real>&>(xs).get(ind);
   }
 
-  const Vector<Real>& getSlack( const Vector<Real> &xs, const int ind ) {
+  const Vector<Real>& getSlack( const Vector<Real> &xs, int ind ) {
     return *dynamic_cast<const PartitionedVector<Real>&>(xs).get(ind);
   }
   
 
 public:
-  Constraint_Partitioned(const std::vector<ROL::Ptr<Constraint<Real> > > &cvec,
-                         bool isInequality = false)
-   : cvec_(cvec),
-     scratch_(ROL::nullPtr), ncval_(0), initialized_(false) {
+  Constraint_Partitioned(const std::vector<Ptr<Constraint<Real>>> &cvec,
+                         bool isInequality = false,
+                         int offset = 0)
+   : cvec_(cvec), offset_(offset),
+     scratch_(nullPtr), ncval_(0), initialized_(false) {
     isInequality_.clear(); isInequality_.resize(cvec.size(),isInequality);
   }
 
-  Constraint_Partitioned(const std::vector<ROL::Ptr<Constraint<Real> > > &cvec,
-                         const std::vector<bool>                             &isInequality)
-   : cvec_(cvec), isInequality_(isInequality),
-     scratch_(ROL::nullPtr), ncval_(0), initialized_(false) {}
+  Constraint_Partitioned(const std::vector<Ptr<Constraint<Real>>> &cvec,
+                         std::vector<bool> isInequality,
+                         int offset = 0)
+   : cvec_(cvec), isInequality_(isInequality), offset_(offset),
+     scratch_(nullPtr), ncval_(0), initialized_(false) {}
 
   int getNumberConstraintEvaluations(void) const {
     return ncval_;
@@ -124,7 +127,7 @@ public:
       = dynamic_cast<PartitionedVector<Real>&>(c);
 
     const int ncon = static_cast<int>(cvec_.size());
-    int cnt = 1;
+    int cnt = offset_+1;
     for (int i = 0; i < ncon; ++i) {
       cvec_[i]->value(*cpv.get(i), getOpt(x), tol);
       if (isInequality_[i]) {
@@ -143,7 +146,7 @@ public:
       = dynamic_cast<PartitionedVector<Real>&>(jv);
 
     const int ncon = static_cast<int>(cvec_.size());
-    int cnt = 1;
+    int cnt = offset_+1;
     for (int i = 0; i < ncon; ++i) {
       cvec_[i]->applyJacobian(*jvpv.get(i), getOpt(v), getOpt(x), tol);
       if (isInequality_[i]) {
@@ -167,7 +170,7 @@ public:
       = dynamic_cast<const PartitionedVector<Real>&>(v);
 
     const int ncon = static_cast<int>(cvec_.size());
-    int cnt = 1;
+    int cnt = offset_+1;
     getOpt(ajv).zero();
     for (int i = 0; i < ncon; ++i) {
       scratch_->zero();
@@ -195,10 +198,10 @@ public:
       = dynamic_cast<const PartitionedVector<Real>&>(u);
 
     const int ncon = static_cast<int>(cvec_.size());
-    int cnt = 1;
+    int cnt = offset_+1;
     getOpt(ahuv).zero();
     for (int i = 0; i < ncon; ++i) {
-      ROL::Ptr<const Vector<Real> > ui = upv.get(i);
+      Ptr<const Vector<Real>> ui = upv.get(i);
       scratch_->zero();
       cvec_[i]->applyAdjointHessian(*scratch_, *ui, getOpt(v), getOpt(x), tol);
       getOpt(ahuv).plus(*scratch_);
