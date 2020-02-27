@@ -605,14 +605,9 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
 }
 
 double
-StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, double parent_time)
+StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time)
 {
-  // NOTE: If you change the outputting format or logic in this
-  // function, you must make a corresponding change to the function
-  // computeColumnWidthsForAlignment() or the alignments will be
-  // incorrect if the user requests aligned output!
-
-  //Adding an extra indent level, since the <performance-report> is at indent 0
+  //Adding an extra indent level, since the <performance-report> header is at indent 0
   int indent = 4 * (print_level + 1);
 
   double total_time = 0.0;
@@ -728,15 +723,21 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
     strftime(buf, 256, "%FT%H:%M:%S", tstruct);
     timestamp = buf;
   }
-  std::ofstream os;
-  std::string fullFile = "";
-  //only open the file on rank 0, since
-  //reportXML() will only write to it on rank 0.
+  flatten();
+  merge(comm);
+  OutputOptions defaultOptions;
+  collectRemoteData(comm, defaultOptions);
+  std::string fullFile;
+  //only open the file on rank 0
   if(rank(*comm) == 0) {
     fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
-    os = std::ofstream(fullFile);
+    std::ofstream os = std::ofstream(fullFile);
+    std::vector<bool> printed(flat_names_.size(), false);
+    os << "<?xml version=\"1.0\"?>\n";
+    os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    printLevelXML("", 0, os, printed, 0.0);
+    os << "</performance-report>\n";
   }
-  reportXML(os, datestamp, timestamp, comm);
   return fullFile;
 }
 
