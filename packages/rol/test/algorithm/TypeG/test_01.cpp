@@ -78,11 +78,11 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Iteration Limit",20);
     list.sublist("Step").sublist("Augmented Lagrangian").set("Use Default Problem Scaling",false);
     list.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type","Trust Region");
+    //list.sublist("Step").sublist("Augmented Lagrangian").set("Print Intermediate Optimization History",true);
     list.sublist("Status Test").set("Gradient Tolerance",1e-8);
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
     list.sublist("Status Test").set("Step Tolerance",1e-12);
     list.sublist("Status Test").set("Iteration Limit", 250);
-    list.sublist("Step").set("Type","Line Search");
     list.sublist("General").set("Output Level",iprint);
 
     ROL::Ptr<ROL::Vector<RealT>>     sol, emul, imul;
