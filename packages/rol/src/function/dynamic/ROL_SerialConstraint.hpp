@@ -102,6 +102,17 @@ public:
 
   } // solve
 
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) override {
+    auto& up = partition(u);
+    auto& zp = partition(z);
+
+    if( !getSkipInitialCondition() )
+      con_->update( getInitialCondition(), up[0], zp[0], ts(0) );
+
+    for( size_type k=1; k<numTimeSteps(); ++k )
+      con_->update( up[k-1], up[k], zp[k], ts(k) );
+  }
+
    
   using Constraint_SimOpt<Real>::value;
   virtual void value(       Vector<Real>& c, 
