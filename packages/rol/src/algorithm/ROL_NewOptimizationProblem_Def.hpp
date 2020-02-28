@@ -44,6 +44,8 @@
 #ifndef ROL_NEWOPTIMIZATIONPROBLEM_DEF_HPP
 #define ROL_NEWOPTIMIZATIONPROBLEM_DEF_HPP
 
+#include <iostream>
+
 namespace ROL {
 
 template<typename Real>
@@ -102,9 +104,15 @@ void NewOptimizationProblem<Real>::addConstraint(std::string                  na
     if (reset) {
       INPUT_con_.clear();
     }
-    INPUT_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(econ,emul,eres)));
-    hasEquality_ = true;
-    cnt_econ_++;
+    auto it = INPUT_con_.find(name);
+    if (it == INPUT_con_.end()) {
+      INPUT_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(econ,emul,eres)));
+      hasEquality_ = true;
+      cnt_econ_++;
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Constraint names must be distinct!");
+    }
   }
   else {
     throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add constraint after problem is finalized!");
@@ -122,9 +130,15 @@ void NewOptimizationProblem<Real>::addConstraint(std::string                    
     if (reset) {
       INPUT_con_.clear();
     }
-    INPUT_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(icon,imul,ires,ibnd)));
-    hasInequality_ = true;
-    cnt_icon_++;
+    auto it = INPUT_con_.find(name);
+    if (it == INPUT_con_.end()) {
+      INPUT_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(icon,imul,ires,ibnd)));
+      hasInequality_ = true;
+      cnt_icon_++;
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Constraint names must be distinct!");
+    }
   }
   else {
     throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add constraint after problem is finalized!");
@@ -166,9 +180,15 @@ void NewOptimizationProblem<Real>::addLinearConstraint(std::string              
     if (reset) {
       INPUT_linear_con_.clear();
     }
-    INPUT_linear_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)));
-    hasLinearEquality_ = true;
-    cnt_linear_econ_++;
+    auto it = INPUT_linear_con_.find(name);
+    if (it == INPUT_linear_con_.end()) {
+      INPUT_linear_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)));
+      hasLinearEquality_ = true;
+      cnt_linear_econ_++;
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Linear constraint names must be distinct!");
+    }
   }
   else {
     throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add linear constraint after problem is finalized!");
@@ -186,9 +206,15 @@ void NewOptimizationProblem<Real>::addLinearConstraint(std::string              
     if (reset) {
       INPUT_linear_con_.clear();
     }
-    INPUT_linear_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)));
-    hasLinearInequality_ = true;
-    cnt_linear_icon_++;
+    auto it = INPUT_linear_con_.find(name);
+    if (it == INPUT_linear_con_.end()) {
+      INPUT_linear_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)));
+      hasLinearInequality_ = true;
+      cnt_linear_icon_++;
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Linear constraint names must be distinct!");
+    }
   }
   else {
     throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add linear constraint after problem is finalized!");
@@ -366,7 +392,6 @@ void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToSt
     }
     isFinalized_ = true;
     if (printToStream) {
-      //std::ios_base_fmtflags state(outStream.flags());
       outStream << std::endl;
       outStream << "  ROL::NewOptimizationProblem::finalize" << std::endl;
       outStream << "    Problem Summary:" << std::endl;
@@ -442,7 +467,6 @@ void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToSt
         }
       }
       outStream << std::endl;
-      //outStream.flags(state);
     }
   }
   else {
@@ -507,6 +531,48 @@ template<typename Real>
 EProblem NewOptimizationProblem<Real>::getProblemType(void) {
   finalize();
   return problemType_;
+}
+
+template<typename Real>
+bool NewOptimizationProblem<Real>::checkLinearity(bool printToStream, std::ostream &outStream) const {
+  std::ios_base::fmtflags state(outStream.flags());
+  if (printToStream) {
+    outStream << std::setprecision(8) << std::scientific;
+    outStream << std::endl;
+    outStream << "  ROL::NewOptimizationProblem::checkLinearity" << std::endl;
+  }
+  const Real one(1), eps(1e-2*std::sqrt(ROL_EPSILON<Real>()));
+  Real tol(std::sqrt(ROL_EPSILON<Real>())), cxnorm(0), err(0);
+  bool isLinear = true;
+  Ptr<Vector<Real>> x = INPUT_xprim_->clone(); x->randomize();
+  Ptr<Vector<Real>> y = INPUT_xprim_->clone(); y->randomize();
+  Ptr<Vector<Real>> cx, cy;
+  for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
+    cx = it->second.residual->clone();
+    cy = it->second.residual->clone();
+    it->second.constraint->value(*cx,*x,tol);
+    it->second.constraint->value(*cy,*y,tol);
+    cxnorm = cx->norm();
+    cx->axpy(-one,*cy);
+    it->second.constraint->applyJacobian(*cy,*x,*x,tol);
+    cx->axpy(-one,*cy);
+    it->second.constraint->applyJacobian(*cy,*y,*y,tol);
+    cx->plus(*cy);
+    err = cx->norm();
+    isLinear = (err > eps*cxnorm ? false : isLinear);
+    if (printToStream) {
+      outStream << "    Constraint " << it->first;
+      outStream << ":  || (c(x)-c(y)) - (c'(x)x-c'(y)y) || = " << err << std::endl;
+      if (err > eps*cxnorm) {
+        outStream << "      Constraint " << it->first << " may not be linear!" << std::endl;
+      }
+    }
+  }
+  if (printToStream) {
+    outStream << std::endl;
+  }
+  outStream.flags(state);
+  return isLinear;
 }
 
 template<typename Real>

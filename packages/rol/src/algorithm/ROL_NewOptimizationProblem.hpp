@@ -141,7 +141,7 @@ public:
   EProblem                              getProblemType(void);
 
   /* Finalize and edit methods */
-  // bool checkLinearity(bool printToStream = false, std::ostream &outStream = std::cout) const;
+  bool checkLinearity(bool printToStream = false, std::ostream &outStream = std::cout) const;
   void finalize(bool lumpConstraints = false, bool printToStream = false,
                 std::ostream &outStream = std::cout);
   void edit(void);
