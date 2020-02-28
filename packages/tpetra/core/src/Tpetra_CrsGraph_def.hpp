@@ -5138,9 +5138,6 @@ namespace Tpetra {
     using execution_space = typename device_type::execution_space;
     using row_ptrs_type =
       typename local_graph_type::row_map_type::non_const_type;
-    using indices_type = t_GlobalOrdinal_1D;
-    using local_indices_type =
-      typename local_graph_type::entries_type::non_const_type;
     using range_policy =
       Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
     const char tfecfFuncName[] = "applyCrsPadding";
