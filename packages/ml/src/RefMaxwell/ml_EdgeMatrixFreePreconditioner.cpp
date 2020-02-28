@@ -452,7 +452,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
   if (InvDiagonal_) {delete InvDiagonal_; InvDiagonal_=0;}
   if (CoarsePC) {delete CoarsePC; CoarsePC=0;}
   if (CoarseMatrix) {delete CoarseMatrix; CoarseMatrix=0;}
-  if (CoarseNullspace_) {delete CoarseNullspace_; CoarseNullspace_=0;}
+  if (CoarseNullspace_) {delete [] CoarseNullspace_; CoarseNullspace_=0;}
   if (CoarseMat_ML) {ML_Operator_Destroy(&CoarseMat_ML);CoarseMat_ML=0;}
   if (CoarseMap_) {delete CoarseMap_; CoarseMap_=0;}
 #ifdef HAVE_ML_IFPACK
