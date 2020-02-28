@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
-    problem->finalize();
+    problem->finalize(false,true,*outStream);
     algoU = ROL::makePtr<ROL::TrustRegionAlgorithm_U<RealT>>(list);
     algoU->run(*problem,*outStream);
 
@@ -139,8 +139,8 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
-    problem->addLinearEqualityConstraint("linear_econ1",econ,el);
-    problem->finalize();
+    problem->addLinearConstraint("linear_econ1",econ,el);
+    problem->finalize(false,true,*outStream);
     algoU = ROL::makePtr<ROL::TrustRegionAlgorithm_U<RealT>>(list);
     algoU->run(*problem,*outStream);
 
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
     x->set(*sol);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
     problem->addBoundConstraint(bnd);
-    problem->finalize();
+    problem->finalize(false,true,*outStream);
     algoB = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
     algoB->run(*problem,*outStream);
 
@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
     x->set(*sol); il->set(*imul);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
     problem->addBoundConstraint(bnd);
-    problem->addLinearInequalityConstraint("linear_icon1",icon,il,ibnd);
-    problem->finalize();
+    problem->addLinearConstraint("linear_icon1",icon,il,ibnd);
+    problem->finalize(false,true,*outStream);
     algoB = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
     algoB->run(*problem,*outStream);
 
@@ -214,8 +214,8 @@ int main(int argc, char *argv[]) {
     x->set(*sol); el->set(*emul);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
     problem->addBoundConstraint(bnd);
-    problem->addLinearEqualityConstraint("linear_econ1",econ,el);
-    problem->finalize();
+    problem->addLinearConstraint("linear_econ1",econ,el);
+    problem->finalize(false,true,*outStream);
     algoB = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
     algoB->run(*problem,*outStream);
 
@@ -244,9 +244,9 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
-    problem->addEqualityConstraint("econ1",econ,el);
-    problem->addLinearEqualityConstraint("linear_econ1",icon,il);
-    problem->finalize(true);
+    problem->addConstraint("econ1",econ,el);
+    problem->addLinearConstraint("linear_econ1",icon,il);
+    problem->finalize(true,true,*outStream);
     algoE = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_E<RealT>>(list);
     algoE->run(*problem,*outStream);
 
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
-    problem->finalize();
+    problem->finalize(false,true,*outStream);
     algoE = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_E<RealT>>(list);
     algoE->run(*problem,*outStream);
 
@@ -293,9 +293,9 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
-    problem->addEqualityConstraint("econ1",econ,el);
-    problem->addInequalityConstraint("icon1",icon,il,ibnd);
-    problem->finalize();
+    problem->addConstraint("econ1",econ,el);
+    problem->addConstraint("icon1",icon,il,ibnd);
+    problem->finalize(false,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -309,9 +309,9 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
-    problem->removeEqualityConstraint("econ1");
-    problem->addLinearEqualityConstraint("linear_econ1",econ,el);
-    problem->finalize();
+    problem->removeConstraint("econ1");
+    problem->addLinearConstraint("linear_econ1",econ,el);
+    problem->finalize(false,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
-    problem->finalize(true);
+    problem->finalize(true,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -354,9 +354,9 @@ int main(int argc, char *argv[]) {
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
     problem->addBoundConstraint(bnd);
-    problem->addEqualityConstraint("econ1",econ,el);
-    problem->addInequalityConstraint("icon1",icon,il,ibnd);
-    problem->finalize();
+    problem->addConstraint("econ1",econ,el);
+    problem->addConstraint("icon1",icon,il,ibnd);
+    problem->finalize(false,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -372,9 +372,9 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
-    problem->removeEqualityConstraint("econ1");
-    problem->addLinearEqualityConstraint("linear_econ1",econ,el);
-    problem->finalize();
+    problem->removeConstraint("econ1");
+    problem->addLinearConstraint("linear_econ1",econ,el);
+    problem->finalize(false,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
-    problem->finalize(true);
+    problem->finalize(true,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
     problem->removeBoundConstraint();
-    problem->finalize();
+    problem->finalize(false,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
-    problem->finalize(true);
+    problem->finalize(true,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -453,9 +453,9 @@ int main(int argc, char *argv[]) {
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
     problem->addBoundConstraint(bnd);
-    problem->addEqualityConstraint("econ1",econ,el);
-    problem->addEqualityConstraint("econ2",icon,il);
-    problem->finalize();
+    problem->addConstraint("econ1",econ,el);
+    problem->addConstraint("econ2",icon,il);
+    problem->finalize(false,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -471,9 +471,9 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
-    problem->removeEqualityConstraint("econ2");
-    problem->addLinearEqualityConstraint("linear_econ1",icon,il);
-    problem->finalize();
+    problem->removeConstraint("econ2");
+    problem->addLinearConstraint("linear_econ1",icon,il);
+    problem->finalize(false,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 
@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol); el->set(*emul); il->set(*imul);
     problem->edit();
-    problem->finalize(true);
+    problem->finalize(true,true,*outStream);
     algoG = ROL::makePtr<ROL::AugmentedLagrangianAlgorithm_G<RealT>>(list);
     algoG->run(*problem,*outStream);
 

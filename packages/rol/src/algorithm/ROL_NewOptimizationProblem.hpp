@@ -65,15 +65,17 @@ private:
   bool hasInequality_;
   bool hasLinearEquality_;
   bool hasLinearInequality_;
+  unsigned cnt_econ_;
+  unsigned cnt_icon_;
+  unsigned cnt_linear_econ_;
+  unsigned cnt_linear_icon_;
 
   Ptr<Objective<Real>>                       INPUT_obj_;
   Ptr<Vector<Real>>                          INPUT_xprim_;
   Ptr<Vector<Real>>                          INPUT_xdual_;
   Ptr<BoundConstraint<Real>>                 INPUT_bnd_;
-  std::map<std::string,ConstraintData<Real>> INPUT_econ_;
-  std::map<std::string,ConstraintData<Real>> INPUT_icon_;
-  std::map<std::string,ConstraintData<Real>> INPUT_linear_econ_;
-  std::map<std::string,ConstraintData<Real>> INPUT_linear_icon_;
+  std::map<std::string,ConstraintData<Real>> INPUT_con_;
+  std::map<std::string,ConstraintData<Real>> INPUT_linear_con_;
 
   Ptr<Objective<Real>>            obj_;
   Ptr<Vector<Real>>               xprim_;
@@ -101,35 +103,31 @@ public:
   void addBoundConstraint(const Ptr<BoundConstraint<Real>> &bnd);
   void removeBoundConstraint(void);
 
-  void addEqualityConstraint(std::string                  name,
-                             const Ptr<Constraint<Real>> &econ,
-                             const Ptr<Vector<Real>>     &emul,
-                             const Ptr<Vector<Real>>     &eres = nullPtr,
-                             bool                         reset = false);
-  void removeEqualityConstraint(std::string name);
+  void addConstraint(std::string                  name,
+                     const Ptr<Constraint<Real>> &econ,
+                     const Ptr<Vector<Real>>     &emul,
+                     const Ptr<Vector<Real>>     &eres = nullPtr,
+                     bool                         reset = false);
+  void addConstraint(std::string                       name,
+                     const Ptr<Constraint<Real>>      &icon,
+                     const Ptr<Vector<Real>>          &imul,
+                     const Ptr<BoundConstraint<Real>> &ibnd,
+                     const Ptr<Vector<Real>>          &ires = nullPtr,
+                     bool                              reset = false);
+  void removeConstraint(std::string name);
 
-  void addInequalityConstraint(std::string                       name,
-                               const Ptr<Constraint<Real>>      &icon,
-                               const Ptr<Vector<Real>>          &imul,
-                               const Ptr<BoundConstraint<Real>> &ibnd,
-                               const Ptr<Vector<Real>>          &ires = nullPtr,
-                               bool                              reset = false);
-  void removeInequalityConstraint(std::string name);
-
-  void addLinearEqualityConstraint(std::string                  name,
-                                   const Ptr<Constraint<Real>> &linear_econ,
-                                   const Ptr<Vector<Real>>     &linear_emul,
-                                   const Ptr<Vector<Real>>     &linear_eres = nullPtr,
-                                   bool                         reset = false);
-  void removeLinearEqualityConstraint(std::string name);
-
-  void addLinearInequalityConstraint(std::string                       name,
-                                     const Ptr<Constraint<Real>>      &linear_icon,
-                                     const Ptr<Vector<Real>>          &linear_imul,
-                                     const Ptr<BoundConstraint<Real>> &linear_ibnd,
-                                     const Ptr<Vector<Real>>          &linear_ires = nullPtr,
-                                     bool                              reset = false);
-  void removeLinearInequalityConstraint(std::string name);
+  void addLinearConstraint(std::string                  name,
+                           const Ptr<Constraint<Real>> &linear_econ,
+                           const Ptr<Vector<Real>>     &linear_emul,
+                           const Ptr<Vector<Real>>     &linear_eres = nullPtr,
+                           bool                         reset = false);
+  void addLinearConstraint(std::string                       name,
+                           const Ptr<Constraint<Real>>      &linear_icon,
+                           const Ptr<Vector<Real>>          &linear_imul,
+                           const Ptr<BoundConstraint<Real>> &linear_ibnd,
+                           const Ptr<Vector<Real>>          &linear_ires = nullPtr,
+                           bool                              reset = false);
+  void removeLinearConstraint(std::string name);
 
   /* Get methods */
   const Ptr<Objective<Real>>            getObjective(void);
@@ -143,7 +141,9 @@ public:
   EProblem                              getProblemType(void);
 
   /* Finalize and edit methods */
-  void finalize(bool lumpConstraints = false);
+  // bool checkLinearity(bool printToStream = false, std::ostream &outStream = std::cout) const;
+  void finalize(bool lumpConstraints = false, bool printToStream = false,
+                std::ostream &outStream = std::cout);
   void edit(void);
   void finalizeIteration(void);
 

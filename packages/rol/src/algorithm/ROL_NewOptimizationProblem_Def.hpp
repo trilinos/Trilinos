@@ -53,6 +53,7 @@ NewOptimizationProblem<Real>::NewOptimizationProblem(const Ptr<Objective<Real>> 
   : isFinalized_(false), hasBounds_(false),
     hasEquality_(false), hasInequality_(false),
     hasLinearEquality_(false), hasLinearInequality_(false),
+    cnt_econ_(0), cnt_icon_(0), cnt_linear_econ_(0), cnt_linear_icon_(0),
     obj_(nullPtr), xprim_(nullPtr), xdual_(nullPtr), bnd_(nullPtr),
     con_(nullPtr), mul_(nullPtr), res_(nullPtr), proj_(nullPtr),
     problemType_(TYPE_U) {
@@ -65,10 +66,8 @@ NewOptimizationProblem<Real>::NewOptimizationProblem(const Ptr<Objective<Real>> 
     INPUT_xdual_ = g;
   }
   INPUT_bnd_ = nullPtr;
-  INPUT_econ_.clear();
-  INPUT_icon_.clear();
-  INPUT_linear_econ_.clear();
-  INPUT_linear_icon_.clear();
+  INPUT_con_.clear();
+  INPUT_linear_con_.clear();
 }
 
 template<typename Real>
@@ -94,135 +93,125 @@ void NewOptimizationProblem<Real>::removeBoundConstraint(void) {
 }
 
 template<typename Real>
-void NewOptimizationProblem<Real>::addEqualityConstraint(std::string                  name,
-                                                         const Ptr<Constraint<Real>> &econ,
-                                                         const Ptr<Vector<Real>>     &emul,
-                                                         const Ptr<Vector<Real>>     &eres,
-                                                         bool                         reset) {
+void NewOptimizationProblem<Real>::addConstraint(std::string                  name,
+                                                 const Ptr<Constraint<Real>> &econ,
+                                                 const Ptr<Vector<Real>>     &emul,
+                                                 const Ptr<Vector<Real>>     &eres,
+                                                 bool                         reset) {
   if (!isFinalized_) {
-    if (!hasEquality_ || reset) {
-      INPUT_econ_.clear();
+    if (reset) {
+      INPUT_con_.clear();
     }
-    INPUT_econ_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(econ,emul,eres)));
+    INPUT_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(econ,emul,eres)));
     hasEquality_ = true;
+    cnt_econ_++;
   }
   else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add equality after problem is finalized!");
+    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add constraint after problem is finalized!");
   }
 }
 
 template<typename Real>
-void NewOptimizationProblem<Real>::removeEqualityConstraint(std::string name) {
+void NewOptimizationProblem<Real>::addConstraint(std::string                       name,
+                                                 const Ptr<Constraint<Real>>      &icon,
+                                                 const Ptr<Vector<Real>>          &imul,
+                                                 const Ptr<BoundConstraint<Real>> &ibnd,
+                                                 const Ptr<Vector<Real>>          &ires,
+                                                 bool                              reset) {
   if (!isFinalized_) {
-    auto it = INPUT_econ_.find(name);
-    if (it!=INPUT_econ_.end()) {
-      INPUT_econ_.erase(it);
+    if (reset) {
+      INPUT_con_.clear();
     }
-    if (INPUT_econ_.empty()) {
+    INPUT_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(icon,imul,ires,ibnd)));
+    hasInequality_ = true;
+    cnt_icon_++;
+  }
+  else {
+    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add constraint after problem is finalized!");
+  }
+}
+
+template<typename Real>
+void NewOptimizationProblem<Real>::removeConstraint(std::string name) {
+  if (!isFinalized_) {
+    auto it = INPUT_con_.find(name);
+    if (it!=INPUT_con_.end()) {
+      if (it->second.bounds==nullPtr) {
+        cnt_econ_--;
+      }
+      else {
+        cnt_icon_--;
+      }
+      INPUT_con_.erase(it);
+    }
+    if (cnt_econ_==0) {
       hasEquality_ = false;
     }
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot remove equality after problem is finalized!");
-  }
-}
-
-template<typename Real>
-void NewOptimizationProblem<Real>::addInequalityConstraint(std::string                       name,
-                                                           const Ptr<Constraint<Real>>      &icon,
-                                                           const Ptr<Vector<Real>>          &imul,
-                                                           const Ptr<BoundConstraint<Real>> &ibnd,
-                                                           const Ptr<Vector<Real>>          &ires,
-                                                           bool                              reset) {
-  if (!isFinalized_) {
-    if (!hasInequality_ || reset) {
-      INPUT_icon_.clear();
-    }
-    INPUT_icon_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(icon,imul,ires,ibnd)));
-    hasInequality_ = true;
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add inequality after problem is finalized!");
-  }
-}
-
-template<typename Real>
-void NewOptimizationProblem<Real>::removeInequalityConstraint(std::string name) {
-  if (!isFinalized_) {
-    auto it = INPUT_icon_.find(name);
-    if (it!=INPUT_icon_.end()) {
-      INPUT_icon_.erase(it);
-    }
-    if (INPUT_icon_.empty()) {
+    if (cnt_icon_==0) {
       hasInequality_ = false;
     }
   }
   else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot remove inequality after problem is finalized!");
+    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot remove constraint after problem is finalized!");
   }
 }
 
 template<typename Real>
-void NewOptimizationProblem<Real>::addLinearEqualityConstraint(std::string                  name,
-                                                               const Ptr<Constraint<Real>> &linear_econ,
-                                                               const Ptr<Vector<Real>>     &linear_emul,
-                                                               const Ptr<Vector<Real>>     &linear_eres,
-                                                               bool                         reset) {
+void NewOptimizationProblem<Real>::addLinearConstraint(std::string                  name,
+                                                       const Ptr<Constraint<Real>> &linear_econ,
+                                                       const Ptr<Vector<Real>>     &linear_emul,
+                                                       const Ptr<Vector<Real>>     &linear_eres,
+                                                       bool                         reset) {
   if (!isFinalized_) {
-    if (!hasLinearEquality_ || reset) {
-      INPUT_linear_econ_.clear();
+    if (reset) {
+      INPUT_linear_con_.clear();
     }
-    INPUT_linear_econ_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)));
+    INPUT_linear_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)));
     hasLinearEquality_ = true;
+    cnt_linear_econ_++;
   }
   else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add linear equality after problem is finalized!");
+    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add linear constraint after problem is finalized!");
   }
 }
 
 template<typename Real>
-void NewOptimizationProblem<Real>::removeLinearEqualityConstraint(std::string name) {
+void NewOptimizationProblem<Real>::addLinearConstraint(std::string                       name,
+                                                       const Ptr<Constraint<Real>>      &linear_icon,
+                                                       const Ptr<Vector<Real>>          &linear_imul,
+                                                       const Ptr<BoundConstraint<Real>> &linear_ibnd,
+                                                       const Ptr<Vector<Real>>          &linear_ires,
+                                                       bool                              reset) {
   if (!isFinalized_) {
-    auto it = INPUT_linear_econ_.find(name);
-    if (it!=INPUT_linear_econ_.end()) {
-      INPUT_linear_econ_.erase(it);
+    if (reset) {
+      INPUT_linear_con_.clear();
     }
-    if (INPUT_linear_econ_.empty()) {
+    INPUT_linear_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)));
+    hasLinearInequality_ = true;
+    cnt_linear_icon_++;
+  }
+  else {
+    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add linear constraint after problem is finalized!");
+  }
+}
+
+template<typename Real>
+void NewOptimizationProblem<Real>::removeLinearConstraint(std::string name) {
+  if (!isFinalized_) {
+    auto it = INPUT_linear_con_.find(name);
+    if (it!=INPUT_linear_con_.end()) {
+      if (it->second.bounds==nullPtr) {
+        cnt_linear_econ_--;
+      }
+      else {
+        cnt_linear_icon_--;
+      }
+      INPUT_linear_con_.erase(it);
+    }
+    if (cnt_linear_econ_==0) {
       hasLinearEquality_ = false;
     }
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot remove linear equality after problem is finalized!");
-  }
-}
-
-template<typename Real>
-void NewOptimizationProblem<Real>::addLinearInequalityConstraint(std::string                       name,
-                                                                 const Ptr<Constraint<Real>>      &linear_icon,
-                                                                 const Ptr<Vector<Real>>          &linear_imul,
-                                                                 const Ptr<BoundConstraint<Real>> &linear_ibnd,
-                                                                 const Ptr<Vector<Real>>          &linear_ires,
-                                                                 bool                              reset) {
-  if (!isFinalized_) {
-    if (!hasLinearInequality_ || reset) {
-      INPUT_linear_icon_.clear();
-    }
-    INPUT_linear_icon_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)));
-    hasLinearInequality_ = true;
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot add linear inequality after problem is finalized!");
-  }
-}
-
-template<typename Real>
-void NewOptimizationProblem<Real>::removeLinearInequalityConstraint(std::string name) {
-  if (!isFinalized_) {
-    auto it = INPUT_linear_icon_.find(name);
-    if (it!=INPUT_linear_icon_.end()) {
-      INPUT_linear_icon_.erase(it);
-    }
-    if (INPUT_linear_icon_.empty()) {
+    if (cnt_linear_icon_==0) {
       hasLinearInequality_ = false;
     }
   }
@@ -232,57 +221,23 @@ void NewOptimizationProblem<Real>::removeLinearInequalityConstraint(std::string 
 }
 
 template<typename Real>
-void NewOptimizationProblem<Real>::finalize(bool lumpConstraints) {
+void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream) {
   if (!isFinalized_) {
-    int cnt = 0, lcnt = 0;
     std::map<std::string,ConstraintData<Real>> con, lcon, icon;
     bool hasEquality         = hasEquality_;
     bool hasLinearEquality   = hasLinearEquality_;
     bool hasInequality       = hasInequality_;
     bool hasLinearInequality = hasLinearInequality_;
-    if (hasEquality_) {
-      for (auto it = INPUT_econ_.begin(); it != INPUT_econ_.end(); ++it) { 
-        con.insert(std::pair<std::string,ConstraintData<Real>>(std::to_string(cnt),it->second));
-        cnt++;
-      }
+    con.insert(INPUT_con_.begin(),INPUT_con_.end());
+    if (lumpConstraints) {
+      con.insert(INPUT_linear_con_.begin(),INPUT_linear_con_.end());
+      hasEquality = (hasLinearEquality ? true : hasEquality);
+      hasInequality = (hasLinearInequality ? true : hasInequality);
+      hasLinearEquality = false;
+      hasLinearInequality = false;
     }
-    if (hasLinearEquality_) {
-      for (auto it = INPUT_linear_econ_.begin(); it != INPUT_linear_econ_.end(); ++it) { 
-        if (lumpConstraints) {
-          con.insert(std::pair<std::string,ConstraintData<Real>>(std::to_string(cnt),it->second));
-          cnt++;
-        }
-        else {
-          lcon.insert(std::pair<std::string,ConstraintData<Real>>(std::to_string(lcnt),it->second));
-          lcnt++;
-        }
-      }
-      if (lumpConstraints) {
-        hasEquality = true;
-        hasLinearEquality = false;
-      }
-    }
-    if (hasInequality_) {
-      for (auto it = INPUT_icon_.begin(); it != INPUT_icon_.end(); ++it) { 
-        con.insert(std::pair<std::string,ConstraintData<Real>>(std::to_string(cnt),it->second));
-        cnt++;
-      }
-    }
-    if (hasLinearInequality_) {
-      for (auto it = INPUT_linear_icon_.begin(); it != INPUT_linear_icon_.end(); ++it) { 
-        if (lumpConstraints) {
-          con.insert(std::pair<std::string,ConstraintData<Real>>(std::to_string(cnt),it->second));
-          cnt++;
-        }
-        else {
-          lcon.insert(std::pair<std::string,ConstraintData<Real>>(std::to_string(lcnt),it->second));
-          lcnt++;
-        }
-      }
-      if (lumpConstraints) {
-        hasInequality = true;
-        hasLinearInequality = false;
-      }
+    else {
+      lcon.insert(INPUT_linear_con_.begin(),INPUT_linear_con_.end());
     }
     // Transform optimization problem
     //std::cout << hasBounds_ << "  " << hasEquality << "  " << hasInequality << "  " << hasLinearEquality << "  " << hasLinearInequality << std::endl;
@@ -410,6 +365,93 @@ void NewOptimizationProblem<Real>::finalize(bool lumpConstraints) {
       }
     }
     isFinalized_ = true;
+    if (printToStream) {
+      //std::ios_base_fmtflags state(outStream.flags());
+      outStream << std::endl;
+      outStream << "  ROL::NewOptimizationProblem::finalize" << std::endl;
+      outStream << "    Problem Summary:" << std::endl;
+      outStream << "      Has Bound Constraint? .............. " << (hasBounds_ ? "yes" : "no") << std::endl;
+      outStream << "      Has Equality Constraint? ........... " << (hasEquality ? "yes" : "no") << std::endl; 
+      if (hasEquality) {
+        int cnt = 0;
+	for (auto it = con.begin(); it != con.end(); ++it) {
+          if (it->second.bounds==nullPtr) {
+            if (cnt==0) {
+              outStream << "        Names: ........................... ";
+	      cnt++;
+	    }
+	    else {
+              outStream << "                                           ";
+	    }
+            outStream << it->first << std::endl;
+	  }
+	}
+        outStream << "        Total: ........................... " << cnt_econ_+(lumpConstraints ? cnt_linear_econ_ : 0) << std::endl; 
+      }
+      outStream << "      Has Inequality Constraint? ......... " << (hasInequality ? "yes" : "no") << std::endl; 
+      if (hasInequality) {
+        int cnt = 0;
+	for (auto it = con.begin(); it != con.end(); ++it) {
+          if (it->second.bounds!=nullPtr) {
+            if (cnt==0) {
+              outStream << "        Names: ........................... ";
+	      cnt++;
+	    }
+	    else {
+              outStream << "                                           ";
+	    }
+            outStream << it->first << std::endl;
+	  }
+	}
+        outStream << "        Total: ........................... " << cnt_icon_+(lumpConstraints ? cnt_linear_icon_ : 0) << std::endl; 
+      }
+      if (!lumpConstraints) {
+        outStream << "      Has Linear Equality Constraint? .... " << (hasLinearEquality ? "yes" : "no") << std::endl;
+        if (hasLinearEquality) {
+          int cnt = 0;
+	  for (auto it = lcon.begin(); it != lcon.end(); ++it) {
+            if (it->second.bounds==nullPtr) {
+              if (cnt==0) {
+                outStream << "        Names: ........................... ";
+		cnt++;
+	      }
+	      else {
+                outStream << "                                           ";
+	      }
+              outStream << it->first << std::endl;
+	    }
+	  }
+          outStream << "        Total: ........................... " << cnt_linear_econ_ << std::endl; 
+        }
+        outStream << "      Has Linear Inequality Constraint? .. " << (hasLinearInequality ? "yes" : "no") << std::endl;
+        if (hasLinearInequality) {
+          int cnt = 0;
+	  for (auto it = lcon.begin(); it != lcon.end(); ++it) {
+            if (it->second.bounds!=nullPtr) {
+              if (cnt==0) {
+                outStream << "        Names: ........................... ";
+		cnt++;
+	      }
+	      else {
+                outStream << "                                           ";
+	      }
+              outStream << it->first << std::endl;
+	    }
+	  }
+          outStream << "        Total: ........................... " << cnt_linear_icon_ << std::endl; 
+        }
+      }
+      outStream << std::endl;
+      //outStream.flags(state);
+    }
+  }
+  else {
+    if (printToStream) {
+      outStream << std::endl;
+      outStream << "  ROL::NewOptimizationProblem::finalize" << std::endl;
+      outStream << "    Problem already finalized!" << std::endl;
+      outStream << std::endl;
+    }
   }
 }
 
