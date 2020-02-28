@@ -131,7 +131,10 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     // Check if we need to output in the next timestep based on
     // outputTimes_ or "Output Time Interval".
     Scalar reltol = 1.0e-6;
-    const Scalar endTime = lastTime+dt+getMinTimeStep();
+    Scalar endTime = lastTime+dt+getMinTimeStep();
+    // getMinTimeStep() = dt for constant time step
+    // so we can't add it on here
+    if (getStepType() == "Constant") endTime = lastTime+dt;
     bool checkOutput = false;
     Scalar oTime = getInitTime();
     for (size_t i=0; i < outputTimes_.size(); ++i) {
