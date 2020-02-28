@@ -204,6 +204,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     EpetraExt::RowMatrixToMatrixMarketFile("P2.dat",*P_epetra, "P", "P", true);
   }
 
+#if 0    
   /* Get aggregate information for nullspace */
   // NOTE: Should list the aggregate id for each row
   int * aggr_info;
@@ -212,12 +213,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     ML_Aggregate_Get_AggrMap(MLAggr,0,&aggr_info);
     for(int i=0; i<TMT_Matrix_->NumMyRows(); i++)
       dofs_per_agg[ aggr_info[i] ] ++;
-    
+
+
     printf("DEBUG CMS: dofs_per_agg: ");
     for(int i=0; i<NumAggregates; i++)
       printf("%d ",dofs_per_agg[i]);
     printf("\n");
   }
+#endif
 
   /* Create wrapper to do abs(T) */
   // NTS: Assume D0 has already been reindexed by now.
