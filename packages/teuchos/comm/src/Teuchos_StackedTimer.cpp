@@ -701,7 +701,7 @@ StackedTimer::reportXML(std::ostream &os, const std::string& datestamp, const st
 
 std::string
 StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
-  char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
+  const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
   if(!rawWatchrDir)
     return "";
   std::string watchrDir = rawWatchrDir;
