@@ -731,7 +731,7 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
   //only open the file on rank 0
   if(rank(*comm) == 0) {
     fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
-    std::ofstream os = std::ofstream(fullFile);
+    std::ofstream os(fullFile);
     std::vector<bool> printed(flat_names_.size(), false);
     os << "<?xml version=\"1.0\"?>\n";
     os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
