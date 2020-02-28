@@ -334,6 +334,99 @@ namespace MueLu {
     }
 
 
+    /*! @brief Extract Overlapped Matrix Deleted Rowsum
+
+    Returns overlapped Matrix deleted Rowsum in ArrayRCP.
+
+    The local overlapped deleted Rowsum has an entry for each index in A's column map.
+    NOTE -- it's assumed that A has been fillComplete'd.
+    */
+    static RCP<Vector> GetMatrixOverlappedDeletedRowsum(const Matrix& A) {
+      RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
+      using STS = typename Teuchos::ScalarTraits<Scalar>;
+      using LO  = LocalOrdinal;
+      using SC  = Scalar;
+
+      // Undo block map (if we have one)
+      RCP<const BlockedMap> browMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rowMap);
+      if(!browMap.is_null()) rowMap = browMap->getMap();
+
+      RCP<Vector> local = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
+      RCP<Vector> ghosted = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap,true);
+      ArrayRCP<Scalar>   localVals = local->getDataNonConst(0);
+
+      for (LO row = 0; row < Teuchos::as<LO>(A.getRowMap()->getNodeNumElements()); ++row) {
+	size_t nnz = A.getNumEntriesInLocalRow(row);
+	ArrayView<const LO> indices;
+	ArrayView<const SC> vals;
+	A.getLocalRowView(row, indices, vals);
+	
+	SC si = Teuchos::ScalarTraits<SC>::zero();
+	
+	for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+	  if(indices[colID] != row) {
+	    si += vals[colID];
+	  }
+	}
+	localVals[row] = si;
+      }
+
+      RCP< const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer;
+      importer = A.getCrsGraph()->getImporter();
+      if (importer == Teuchos::null) {
+        importer = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap);
+      }
+      ghosted->doImport(*local, *(importer), Xpetra::INSERT);
+      return ghosted;
+    }
+
+
+
+    static RCP<Xpetra::Vector<Magnitude,LocalOrdinal,GlobalOrdinal,Node> >
+    GetMatrixOverlappedAbsDeletedRowsum(const Matrix& A) {
+      RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
+      using STS = typename Teuchos::ScalarTraits<Scalar>;
+      using MTS = typename Teuchos::ScalarTraits<Magnitude>;
+      using MT  = Magnitude;      
+      using LO  = LocalOrdinal;
+      using SC  = Scalar;
+      using RealValuedVector = Xpetra::Vector<Magnitude,LocalOrdinal,GlobalOrdinal,Node>;
+
+      // Undo block map (if we have one)
+      RCP<const BlockedMap> browMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rowMap);
+      if(!browMap.is_null()) rowMap = browMap->getMap();
+
+      RCP<RealValuedVector> local = Xpetra::VectorFactory<MT,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
+      RCP<RealValuedVector> ghosted = Xpetra::VectorFactory<MT,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap,true);
+      ArrayRCP<MT>   localVals = local->getDataNonConst(0);
+
+      for (LO row = 0; row < Teuchos::as<LO>(A.getRowMap()->getNodeNumElements()); ++row) {
+        size_t nnz = A.getNumEntriesInLocalRow(row);
+        ArrayView<const LO> indices;
+        ArrayView<const SC> vals;
+        A.getLocalRowView(row, indices, vals);
+
+        MT si = MTS::zero();
+
+        for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+          if(indices[colID] != row) {
+            si += STS::magnitude(vals[colID]);
+          }
+        }
+        localVals[row] = si;
+      }
+
+      RCP< const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer;
+      importer = A.getCrsGraph()->getImporter();
+      if (importer == Teuchos::null) {
+        importer = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap);
+      }
+      ghosted->doImport(*local, *(importer), Xpetra::INSERT);
+      return ghosted;
+    }
+
+    
+
     // TODO: should NOT return an Array. Definition must be changed to:
     // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
     // or

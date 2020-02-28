@@ -171,10 +171,9 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   # CUDA Settings
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
-  export TMPDIR=/tmp/$(whoami)
-  if [[ ! -d ${TMPDIR} ]] ; then
-    echo "Creating ${TMPDIR} for nvcc wrapper!"
-    mkdir ${TMPDIR}
+  if [[ ! -d /tmp/${USER} ]] ; then
+    echo "Creating /tmp/${USER} for nvcc wrapper!"
+    mkdir /tmp/${USER}
   fi
   # ATDM Settings
   export ATDM_CONFIG_USE_CUDA=ON
@@ -187,8 +186,6 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   export KOKKOS_NUM_DEVICES=4
 
   # CTEST Settings
-  # TPETRA_ASSUME_CUDA_AWARE_MPI is used by cmake/std/atdm/ats2/trilinos_jsrun
-  export TPETRA_ASSUME_CUDA_AWARE_MPI=0
   # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by cmake/ctest/driver/atdm/ats2/local-driver.sh
   export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=1
 

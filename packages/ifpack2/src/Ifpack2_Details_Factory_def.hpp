@@ -43,6 +43,7 @@
 #ifndef IFPACK2_DETAILS_FACTORY_DEF_HPP
 #define IFPACK2_DETAILS_FACTORY_DEF_HPP
 
+#include "Ifpack2_Factory.hpp"
 #include "Ifpack2_Details_OneLevelFactory.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
@@ -64,13 +65,7 @@ create (const std::string& precType,
   RCP<prec_type> prec;
 
   // precTypeUpper is the upper-case version of precType.
-  std::string precTypeUpper (precType);
-  if (precTypeUpper.size () > 0) {
-    std::locale locale;
-    for (size_t k = 0; k < precTypeUpper.size (); ++k) {
-      precTypeUpper[k] = std::toupper<char> (precTypeUpper[k], locale);
-    }
-  }
+  std::string precTypeUpper = canonicalize(precType);
 
   if (precTypeUpper == "SCHWARZ") {
     // Discussion related to Bug 5987: The line of code below will
@@ -187,6 +182,31 @@ create (const std::string& precType,
     "Return value is null right before return.  This should never happen.  "
     "Please report this bug to the Ifpack2 developers.");
   return prec;
+}
+
+
+template<class SC, class LO, class GO, class NT>
+bool
+Factory<SC, LO, GO, NT>::
+isSupported (const std::string& precType)
+{
+  // precTypeUpper is the upper-case version of precType.
+  std::string precTypeUpper = canonicalize(precType);
+
+  std::vector<std::string> supportedNames = {
+    "SCHWARZ",
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+    "SUPPORTGRAPH"
+#endif
+  };
+  auto it = std::find(std::begin(supportedNames), std::end(supportedNames), precTypeUpper);
+
+  if (it != std::end(supportedNames)) {
+    return true;
+  } else {
+    Details::OneLevelFactory<row_matrix_type> factory;
+    return factory.isSupported (precType);
+  }
 }
 
 } // namespace Details

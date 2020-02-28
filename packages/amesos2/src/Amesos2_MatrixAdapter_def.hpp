@@ -142,14 +142,18 @@ namespace Amesos2 {
   typename MatrixAdapter<Matrix>::global_size_t
   MatrixAdapter<Matrix>::getRowIndexBase() const
   {
-    return row_map_->getIndexBase();
+    // Kokkos adapter is for serial only testing right now and will not
+    // create row_map_
+    return (row_map_ != Teuchos::null) ? row_map_->getIndexBase() : 0;
   }
 
   template < class Matrix >
   typename MatrixAdapter<Matrix>::global_size_t
   MatrixAdapter<Matrix>::getColumnIndexBase() const
   {
-    return col_map_->getIndexBase();
+    // Kokkos adapter is for serial only testing right now and will not
+    // create col_map_
+    return (col_map_ != Teuchos::null) ? col_map_->getIndexBase() : 0;
   }
 
   template < class Matrix >
@@ -218,6 +222,26 @@ namespace Amesos2 {
     return static_cast<const adapter_t*>(this)->getSparseValues();
   }
 
+  template < class Matrix >
+  template < class KV >
+  void MatrixAdapter<Matrix>::returnRowPtr_kokkos_view(KV & view) const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseRowPtr_kokkos_view(view);
+  }
+
+  template < class Matrix >
+  template < class KV >
+  void MatrixAdapter<Matrix>::returnColInd_kokkos_view(KV & view) const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseColInd_kokkos_view(view);
+  }
+
+  template < class Matrix >
+  template < class KV >
+  void MatrixAdapter<Matrix>::returnValues_kokkos_view(KV & view) const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseValues_kokkos_view(view);
+  }
 
   /******************************
    * Private method definitions *

@@ -59,10 +59,10 @@
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
-#include "Kokkos_UnorderedMap.hpp"
 
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <functional> // std::function
@@ -123,17 +123,11 @@ namespace Tpetra {
     /// \brief Status of the graph's or matrix's storage, when not in
     ///   a fill-complete state.
     ///
-    /// When a CrsGraph or CrsMatrix is <i>not</i> fill complete, its
-    /// data live in one of three storage formats:
+    /// When a CrsGraph or CrsMatrix is <i>not</i> fill complete and
+    /// is allocated, then its data live in one of two storage
+    /// formats:
     ///
     /// <ol>
-    /// <li> "2-D storage": The graph stores column indices as "array
-    ///   of arrays," and the matrix stores values as "array of
-    ///   arrays."  The graph <i>must</i> have k_numRowEntries_
-    ///   allocated.  This only ever exists if the graph was created
-    ///   with DynamicProfile.  A matrix with 2-D storage must own its
-    ///   graph, and the graph must have 2-D storage. </li>
-    ///
     /// <li> "Unpacked 1-D storage": The graph uses a row offsets
     ///   array, and stores column indices in a single array.  The
     ///   matrix also stores values in a single array.  "Unpacked"
@@ -151,16 +145,12 @@ namespace Tpetra {
     ///   constant ("static") graph, this must be true. </li>
     /// </ol>
     ///
-    /// With respect to the Kokkos refactor version of Tpetra, "2-D
-    /// storage" should be considered a legacy option.
-    ///
     /// The phrase "When not in a fill-complete state" is important.
     /// When the graph is fill complete, it <i>always</i> uses 1-D
     /// "packed" storage.  However, if storage is "not optimized," we
-    /// retain the 1-D unpacked or 2-D format, and thus retain this
-    /// enum value.
+    /// retain the 1-D unpacked format, and thus retain this enum
+    /// value.
     enum EStorageStatus {
-      STORAGE_2D, //<! 2-D storage
       STORAGE_1D_UNPACKED, //<! 1-D "unpacked" storage
       STORAGE_1D_PACKED, //<! 1-D "packed" storage
       STORAGE_UB //<! Invalid value; upper bound on enum values
@@ -284,14 +274,10 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param maxNumEntriesPerRow [in] Maximum number of graph
-    ///   entries per row.  If pftype==DynamicProfile, this is only a
-    ///   hint, and you can set this to zero without affecting
-    ///   correctness.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed this number of
-    ///   entries in any row.
+    ///   entries per row.  This is a strict upper bound.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -307,13 +293,10 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
-    ///   allocate for each row.  If pftype==DynamicProfile, this is
-    ///   only a hint.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed the allocated
-    ///   number of entries for any row.
+    ///   allocate for each row.  This is a strict upper bound.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -330,13 +313,10 @@ namespace Tpetra {
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
-    ///   allocate for each row.  If pftype==DynamicProfile, this is
-    ///   only a hint.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed the allocated
-    ///   number of entries for any row.
+    ///   allocate for each row.  This is a strict upper bound.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -357,14 +337,10 @@ namespace Tpetra {
     ///   See replaceColMap() for the requirements.
     ///
     /// \param maxNumEntriesPerRow [in] Maximum number of graph
-    ///   entries per row.  If pftype==DynamicProfile, this is only a
-    ///   hint, and you can set this to zero without affecting
-    ///   correctness.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed this number of
-    ///   entries in any row.
+    ///   entries per row.  This is a strict upper bound.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -383,13 +359,10 @@ namespace Tpetra {
     ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
-    ///   allocate for each row.  If pftype==DynamicProfile, this is
-    ///   only a hint.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed the allocated
-    ///   number of entries for any row.
+    ///   allocate for each row.  This is a strict upper bound.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -409,13 +382,10 @@ namespace Tpetra {
     ///   See replaceColMap() for the requirements.
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
-    ///   allocate for each row.  If pftype==DynamicProfile, this is
-    ///   only a hint.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed the allocated
-    ///   number of entries for any row.
+    ///   allocate for each row.  This is a strict upper bound.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param pftype [in] If you specify this, then this must always
+    ///   be StaticProfile.  No other values exist or are permitted.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -2192,30 +2162,34 @@ namespace Tpetra {
     /// \brief Local number of (populated) diagonal entries.
     ///
     /// Computed in computeLocalConstants(); only valid when isFillComplete().
-    size_t nodeNumDiags_;
+    size_t nodeNumDiags_ = Teuchos::OrdinalTraits<size_t>::invalid();
 
     /// \brief Local maximum of the number of entries in each row.
     ///
-    /// Computed in computeLocalConstants(); only valid when isFillComplete().
-    size_t nodeMaxNumRowEntries_;
+    /// Computed in computeLocalConstants; only valid when
+    ///   isFillComplete() is true.
+    size_t nodeMaxNumRowEntries_ =
+      Teuchos::OrdinalTraits<size_t>::invalid();
 
     /// \brief Global number of entries in the graph.
     ///
-    /// Only valid when isFillComplete().
-    global_size_t globalNumEntries_;
+    /// Only valid when isFillComplete() is true.
+    global_size_t globalNumEntries_ =
+      Teuchos::OrdinalTraits<global_size_t>::invalid();
 
     /// \brief Global number of (populated) diagonal entries.
     ///
-    /// Computed in computeGlobalConstants(); only valid when isFillComplete().
-    global_size_t globalNumDiags_;
+    /// Computed in computeGlobalConstants; only valid when
+    ///   isFillComplete() is true.
+    global_size_t globalNumDiags_ =
+      Teuchos::OrdinalTraits<global_size_t>::invalid();
 
     /// \brief Global maximum of the number of entries in each row.
     ///
-    /// Computed in computeGlobalConstants(); only valid when isFillComplete().
-    global_size_t globalMaxNumRowEntries_;
-
-    //! Whether the graph was allocated with static or dynamic profile.
-    ProfileType pftype_;
+    /// Computed in computeGlobalConstants(); only valid when
+    ///   isFillComplete() is true.
+    global_size_t globalMaxNumRowEntries_ =
+      Teuchos::OrdinalTraits<global_size_t>::invalid();
 
     /// \brief The maximum number of entries to allow in each locally
     ///   owned row, per row.
@@ -2256,7 +2230,7 @@ namespace Tpetra {
     /// obsolete.
     size_t numAllocForAllRows_;
 
-    //! \name 1-D storage (StaticProfile) data structures
+    //! \name Graph data structures (packed and unpacked storage).
     //@{
 
     /// \brief Local column indices for all rows.
@@ -2264,7 +2238,6 @@ namespace Tpetra {
     /// This is only allocated if
     ///
     ///   - The calling process has a nonzero number of entries
-    ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is locally indexed
     typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
 
@@ -2276,15 +2249,14 @@ namespace Tpetra {
     /// This is only allocated if
     ///
     ///   - The calling process has a nonzero number of entries
-    ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is globally indexed
     t_GlobalOrdinal_1D k_gblInds1D_;
 
     /// \brief Row offsets for "1-D" storage.
     ///
-    /// This is only allocated if "1-D" (StaticProfile) storage is
-    /// active.  In that case, if beg = k_rowPtrs_(i_lcl) and end =
-    /// k_rowPtrs_(i_lcl+1) for local row index i_lcl, then
+    /// This is only allocated if "1-D" storage is active.  In that
+    /// case, if beg = k_rowPtrs_(i_lcl) and end = k_rowPtrs_(i_lcl+1)
+    /// for local row index i_lcl, then
     ///
     ///   - if the graph is locally indexed, k_lclInds1D_(beg:end-1)
     ///     (inclusive range) is the space for any local column
@@ -2298,27 +2270,10 @@ namespace Tpetra {
     /// space."  If the graph's storage is packed, then there is no
     /// extra space, and the k_numRowEntries_ array is invalid.
     ///
-    /// Both the k_rowPtrs_ and k_numRowEntries_ arrays are not
-    /// allocated if the graph has 2-D (DynamicProfile) storage.
-    ///
     /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
     typename local_graph_type::row_map_type::const_type k_rowPtrs_;
-
-    //@}
-    /// \name 2-D storage (DynamicProfile) data structures
-    ///
-    /// 2-D storage exists only if the graph was allocated with
-    /// DynamicProfile.  All of these data structures exist in host
-    /// memory.  Currently, NONE of them are thread safe, let alone
-    /// thread scalable.  These data structures only exist to support
-    /// legacy use cases.  At some point, we may add a thread-scalable
-    /// intermediate level of "dynamicity" between 2-D storage and 1-D
-    /// storage (StaticProfile), which bounds the <i>total</i> number
-    /// of entries allowed per process, but does <i>not</i> otherwise
-    /// bound the number of entries per row.
-    //@{
 
     /// \brief The type of k_numRowEntries_ (see below).
     ///
@@ -2356,28 +2311,29 @@ namespace Tpetra {
     /// When the graph is fill complete, it <i>always</i> uses 1-D
     /// "packed" storage.  However, if the "Optimize Storage"
     /// parameter to fillComplete was false, the graph may keep
-    /// unpacked 1-D or 2-D storage around and resume it on the next
+    /// unpacked 1-D storage around and resume it on the next
     /// resumeFill call.
-    ::Tpetra::Details::EStorageStatus storageStatus_;
+    Details::EStorageStatus storageStatus_ =
+      Details::STORAGE_1D_UNPACKED;
 
-    bool indicesAreAllocated_;
-    bool indicesAreLocal_;
-    bool indicesAreGlobal_;
-    bool fillComplete_;
+    bool indicesAreAllocated_ = false;
+    bool indicesAreLocal_ = false;
+    bool indicesAreGlobal_ = false;
+    bool fillComplete_ = false;
 
     //! Whether the graph is locally lower triangular.
-    bool lowerTriangular_;
+    bool lowerTriangular_ = false;
     //! Whether the graph is locally upper triangular.
-    bool upperTriangular_;
+    bool upperTriangular_ = false;
     //! Whether the graph's indices are sorted in each row, on this process.
-    bool indicesAreSorted_;
+    bool indicesAreSorted_ = true;
     /// \brief Whether the graph's indices are non-redundant (merged)
     ///   in each row, on this process.
-    bool noRedundancies_;
+    bool noRedundancies_ = true;
     //! Whether this process has computed local constants.
-    bool haveLocalConstants_;
+    bool haveLocalConstants_ = false;
     //! Whether all processes have computed global constants.
-    bool haveGlobalConstants_;
+    bool haveGlobalConstants_ = false;
 
     typedef typename std::map<global_ordinal_type, std::vector<global_ordinal_type> > nonlocals_type;
 
@@ -2398,7 +2354,7 @@ namespace Tpetra {
     /// This is \c true by default, which means "sort remote GIDs."
     /// If you don't want to sort (for compatibility with Epetra),
     /// call sortGhostColumnGIDsWithinProcessBlock(false).
-    bool sortGhostsAssociatedWithEachProcessor_;
+    bool sortGhostsAssociatedWithEachProcessor_ = true;
 
   private:
     //! Get initial value of debug_ for this object.
@@ -2422,22 +2378,28 @@ namespace Tpetra {
   /// \brief Nonmember function to create an empty CrsGraph given a
   ///   row Map and the max number of entries allowed locally per row.
   ///
-  /// \return A dynamically allocated (DynamicProfile) graph with
-  ///   specified number of nonzeros per row (defaults to zero).
+  /// \return A graph with at most the specified number of nonzeros
+  ///   per row (defaults to zero).
+  ///
   /// \relatesalso CrsGraph
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
-  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
-                  size_t maxNumEntriesPerRow = 0,
-                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+  createCrsGraph(
+    const Teuchos::RCP<
+      const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
+    size_t maxNumEntriesPerRow = 0,
+    const Teuchos::RCP<Teuchos::ParameterList>& params =
+      Teuchos::null)
   {
     using Teuchos::rcp;
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
+    using graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
     const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-    return rcp (new graph_type (map, maxNumEntriesPerRow, pftype, params));
+    return rcp(new graph_type(map, maxNumEntriesPerRow,
+                              pftype, params));
   }
 
-  /// \brief Nonmember CrsGraph constructor that fuses Import and fillComplete().
+  /// \brief Nonmember CrsGraph constructor that fuses Import and
+  ///   fillComplete().
   /// \relatesalso CrsGraph
   /// \tparam CrsGraphType A specialization of CrsGraph.
   ///

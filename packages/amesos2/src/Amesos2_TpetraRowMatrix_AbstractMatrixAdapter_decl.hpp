@@ -52,6 +52,7 @@
 
 #include "Amesos2_AbstractConcreteMatrixAdapter.hpp"
 #include "Amesos2_Util.hpp"
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp"
 
 namespace Amesos2 {
 
@@ -179,6 +180,21 @@ namespace Amesos2 {
     typename super_t::spmtx_idx_t  getSparseColInd() const;
 
     typename super_t::spmtx_vals_t getSparseValues() const;
+
+    template<class KV>
+    void getSparseRowPtr_kokkos_view(KV & view) const {
+      deep_copy_or_assign_view(view, this->mat_->getLocalMatrix().graph.row_map);
+    }
+
+    template<class KV>
+    void  getSparseColInd_kokkos_view(KV & view) const {
+      deep_copy_or_assign_view(view, this->mat_->getLocalMatrix().graph.entries);
+    }
+
+    template<class KV>
+    void getSparseValues_kokkos_view(KV & view) const {
+      deep_copy_or_assign_view(view, this->mat_->getLocalMatrix().values);
+    }
 
   };
 

@@ -279,12 +279,8 @@ namespace Tpetra {
   Distributor::
   createPrefix(const char methodName[]) const
   {
-    const int myRank = comm_.is_null() ? -1 : comm_->getRank();
-    std::ostringstream pfxStrm;
-    pfxStrm << "Proc " << myRank << ": Tpetra::Distributor::"
-            << methodName << ": ";
-    return std::unique_ptr<std::string>(
-      new std::string(pfxStrm.str()));
+    return Details::createPrefix(
+      comm_.getRawPtr(), "Distributor", methodName);
   }
 
   void
