@@ -231,8 +231,8 @@ void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToSt
     con.insert(INPUT_con_.begin(),INPUT_con_.end());
     if (lumpConstraints) {
       con.insert(INPUT_linear_con_.begin(),INPUT_linear_con_.end());
-      hasEquality = (hasLinearEquality ? true : hasEquality);
-      hasInequality = (hasLinearInequality ? true : hasInequality);
+      hasEquality = (hasEquality || hasLinearEquality);
+      hasInequality = (hasInequality || hasLinearInequality);
       hasLinearEquality = false;
       hasLinearInequality = false;
     }
