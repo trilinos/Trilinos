@@ -4353,6 +4353,17 @@ namespace Tpetra {
       LocalCrsMatrixOperator<scalar_type,
                              scalar_type,
                              device_type>;
+  private:
+    static std::shared_ptr<local_multiply_op_type>
+    makeLocalOperator(
+      const typename local_matrix_type::values_type& val,
+      const local_graph_type& lclGraph,
+      const size_t numCols);
+
+    static std::shared_ptr<local_multiply_op_type>
+    makeLocalOperator(const local_matrix_type& lclMatrix);
+
+  protected:
     //! The local sparse matrix, wrapped in a multiply operator.
     std::shared_ptr<local_multiply_op_type> lclMatrix_;
 
