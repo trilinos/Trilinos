@@ -347,28 +347,18 @@ namespace Tpetra {
     const size_t numCols = graph->getColMap()->getNodeNumElements();
     auto lclGraph = graph->getLocalGraph();
     const size_t numEnt = lclGraph.entries.extent(0);
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Allocate values: " << numEnt << endl;
-      std::cerr << os.str();
-    }
-    values_type val("Tpetra::CrsMatrix::val", numEnt);
-    lclMatrix_ = makeLocalOperator(val, lclGraph, numCols);
-
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Assign k_values1D_: old="
-         << k_values1D_.extent(0) << ", new="
-         << val.extent(0) << endl;
-      std::cerr << os.str ();
+      os << *prefix << "Allocate k_values1D_: old="
+         << k_values1D_.extent(0) << ", new=" << numEnt << endl;
+      std::cerr << os.str();
     }
-    k_values1D_ = val;
-
-    checkInternalState ();
-
+    k_values1D_ = values_type("Tpetra::CrsMatrix::val", numEnt);
+    lclMatrix_ = makeLocalOperator(k_values1D_, lclGraph, numCols);
+    checkInternalState();
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -378,18 +368,18 @@ namespace Tpetra {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
-             const typename local_matrix_type::values_type& values,
-             const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
-    dist_object_type (graph->getRowMap ()),
-    staticGraph_ (graph),
-    storageStatus_ (Details::STORAGE_1D_PACKED)
+  CrsMatrix(const Teuchos::RCP<const crs_graph_type>& graph,
+            const typename local_matrix_type::values_type& values,
+            const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
+    dist_object_type(graph->getRowMap()),
+    staticGraph_(graph),
+    k_values1D_(values),
+    storageStatus_(Details::STORAGE_1D_PACKED)
   {
-    const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>, "
-      "local_matrix_type::values_type, "
-      "[,RCP<ParameterList>]): ";
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>,"
+      "local_matrix_type::values_type,[RCP<ParameterList>]): ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (graph.is_null (), std::runtime_error, "Input graph is null.");
+      (graph.is_null(), std::runtime_error, "Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! graph->isFillComplete (), std::runtime_error, "Input graph "
        "is not fill complete. You must call fillComplete on the "
@@ -399,21 +389,13 @@ namespace Tpetra {
        "case, you must call fillComplete on the graph again.");
 
     // The graph is fill complete, so it is locally indexed and has a
-    // fixed structure.  This means we can allocate the (1-D) array of
-    // values and build the local matrix right now.  Note that the
-    // local matrix's number of columns comes from the column Map, not
-    // the domain Map.
-
+    // fixed structure.  This means we can build the local matrix
+    // right now.  Note that the local matrix's number of columns
+    // comes from the column Map, not the domain Map.
     const size_t numCols = graph->getColMap()->getNodeNumElements();
     const local_graph_type lclGraph = graph->getLocalGraph();
     lclMatrix_ = makeLocalOperator(values, lclGraph, numCols);
-
-    // FIXME (22 Jun 2016) I would very much like to get rid of
-    // k_values1D_ at some point.  I find it confusing to have all
-    // these extra references lying around.
-    k_values1D_ = values;
-
-    checkInternalState ();
+    checkInternalState();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -425,7 +407,8 @@ namespace Tpetra {
             const typename local_matrix_type::values_type& values,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type(rowMap),
-    storageStatus_(Details::STORAGE_1D_PACKED),
+    k_values1D_(values),
+    storageStatus_(Details::STORAGE_1D_PACKED)
   {
     using Details::getEntryOnHost;
     using Teuchos::RCP;
@@ -584,15 +567,9 @@ namespace Tpetra {
 
     const size_t numCols =
       staticGraph_->getColMap()->getNodeNumElements();
-    values_type valIn =
-      getKokkosViewDeepCopy<device_type>(av_reinterpret_cast<IST>(val()));
-    lclMatrix_ = makeLocalOperator(valIn, lclGraph, numCols);
-
-    // FIXME (22 Jun 2016) I would very much like to get rid of
-    // k_values1D_ at some point.  I find it confusing to have all
-    // these extra references lying around.
-    this->k_values1D_ = valIn;
-
+    k_values1D_ = getKokkosViewDeepCopy<device_type>(
+      av_reinterpret_cast<IST>(val()));
+    lclMatrix_ = makeLocalOperator(k_values1D_, lclGraph, numCols);
     checkInternalState();
   }
 
