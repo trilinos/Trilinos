@@ -140,6 +140,32 @@ struct AbsMax {
 namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::shared_ptr<
+    typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+      local_multiply_op_type>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  makeLocalOperator(
+    const typename local_matrix_type::values_type& val,
+    const local_graph_type& lclGraph,
+    const size_t numCols)
+  {
+    auto lclMat = std::make_shared<local_matrix_type>(
+      "Tpetra::CrsMatrix::lclMatrix_", numCols, val, lclGraph);
+    return std::make_shared<local_multiply_op_type>(lclMat);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::shared_ptr<
+    typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+      local_multiply_op_type>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  makeLocalOperator(const local_matrix_type& lclMatrix)
+  {
+    return makeLocalOperator(lclMatrix.values, lclMatrix.graph,
+                             lclMatrix.numCols());
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              size_t maxNumEntriesPerRow,
@@ -289,7 +315,7 @@ namespace Tpetra {
     storageStatus_ (Details::STORAGE_1D_PACKED)
   {
     using std::endl;
-    typedef typename local_matrix_type::values_type values_type;
+    using values_type = typename local_matrix_type::values_type;
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>[, "
       "RCP<ParameterList>]): ";
     const bool verbose = Details::Behavior::verbose("CrsMatrix");
@@ -303,7 +329,7 @@ namespace Tpetra {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (graph.is_null (), std::runtime_error, "Input graph is null.");
+      (graph.is_null(), std::runtime_error, "Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! graph->isFillComplete (), std::runtime_error, "Input graph "
        "is not fill complete. You must call fillComplete on the "
@@ -318,19 +344,16 @@ namespace Tpetra {
     // local matrix's number of columns comes from the column Map, not
     // the domain Map.
 
-    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-    auto lclGraph = graph->getLocalGraph ();
-    const size_t numEnt = lclGraph.entries.extent (0);
+    const size_t numCols = graph->getColMap()->getNodeNumElements();
+    auto lclGraph = graph->getLocalGraph();
+    const size_t numEnt = lclGraph.entries.extent(0);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate values: " << numEnt << endl;
-      std::cerr << os.str ();
+      std::cerr << os.str();
     }
-    values_type val ("Tpetra::CrsMatrix::val", numEnt);
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, val, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    values_type val("Tpetra::CrsMatrix::val", numEnt);
+    lclMatrix_ = makeLocalOperator(val, lclGraph, numCols);
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
@@ -339,10 +362,10 @@ namespace Tpetra {
       std::ostringstream os;
       os << *prefix << "Assign k_values1D_: old="
          << k_values1D_.extent(0) << ", new="
-         << lclMat->values.extent(0) << endl;
+         << val.extent(0) << endl;
       std::cerr << os.str ();
     }
-    k_values1D_ = lclMat->values;
+    k_values1D_ = val;
 
     checkInternalState ();
 
@@ -381,31 +404,28 @@ namespace Tpetra {
     // local matrix's number of columns comes from the column Map, not
     // the domain Map.
 
-    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-    auto lclGraph = graph->getLocalGraph ();
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    const size_t numCols = graph->getColMap()->getNodeNumElements();
+    const local_graph_type lclGraph = graph->getLocalGraph();
+    lclMatrix_ = makeLocalOperator(values, lclGraph, numCols);
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    k_values1D_ = lclMat->values;
+    k_values1D_ = values;
 
     checkInternalState ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-             const Teuchos::RCP<const map_type>& colMap,
-             const typename local_matrix_type::row_map_type& rowPointers,
-             const typename local_graph_type::entries_type::non_const_type& columnIndices,
-             const typename local_matrix_type::values_type& values,
-             const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    storageStatus_ (Details::STORAGE_1D_PACKED)
+  CrsMatrix(const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const typename local_matrix_type::row_map_type& rowPointers,
+            const typename local_graph_type::entries_type::non_const_type& columnIndices,
+            const typename local_matrix_type::values_type& values,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type(rowMap),
+    storageStatus_(Details::STORAGE_1D_PACKED),
   {
     using Details::getEntryOnHost;
     using Teuchos::RCP;
@@ -465,18 +485,18 @@ namespace Tpetra {
     // deep-copies or shallow-copies the input, but the dimensions
     // have to be right.  That's how we tell whether the CrsGraph has
     // a local graph.
-    auto lclGraph = graph->getLocalGraph ();
+    const local_graph_type lclGraph = graph->getLocalGraph();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (lclGraph.row_map.extent (0) != rowPointers.extent (0) ||
-       lclGraph.entries.extent (0) != columnIndices.extent (0),
+      (lclGraph.row_map.extent(0) != rowPointers.extent(0) ||
+       lclGraph.entries.extent(0) != columnIndices.extent(0),
        std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, "
        "ind[, params]) did not set the local graph correctly." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (lclGraph.entries.extent (0) != values.extent (0),
+      (lclGraph.entries.extent(0) != values.extent(0),
        std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, ind[, "
        "params]) did not set the local graph correctly.  "
-       "lclGraph.entries.extent(0) = " << lclGraph.entries.extent (0)
-       << " != values.extent(0) = " << values.extent (0) << suffix);
+       "lclGraph.entries.extent(0) = " << lclGraph.entries.extent(0)
+       << " != values.extent(0) = " << values.extent(0) << suffix);
 
     // myGraph_ not null means that the matrix owns the graph.  This
     // is true because the column indices come in as nonconst,
@@ -491,24 +511,13 @@ namespace Tpetra {
     // Note that the local matrix's number of columns comes from the
     // column Map, not the domain Map.
 
-    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
-
-    auto newValues = lclMat->values;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (newValues.extent (0) != values.extent (0),
-       std::logic_error, "Local matrix's constructor did not set the "
-       "values correctly.  newValues.extent(0) = " <<
-       newValues.extent (0) << " != values.extent(0) = " <<
-       values.extent (0) << suffix);
+    const size_t numCols = graph->getColMap()->getNodeNumElements();
+    lclMatrix_ = makeLocalOperator(values, lclGraph, numCols);
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = newValues;
+    this->k_values1D_ = values;
 
     checkInternalState ();
     if (verbose) {
@@ -574,34 +583,30 @@ namespace Tpetra {
        "Please report this bug to the Tpetra developers.");
 
     const size_t numCols =
-      staticGraph_->getColMap ()->getNodeNumElements ();
+      staticGraph_->getColMap()->getNodeNumElements();
     values_type valIn =
-      getKokkosViewDeepCopy<device_type> (av_reinterpret_cast<IST> (val ()));
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, valIn, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+      getKokkosViewDeepCopy<device_type>(av_reinterpret_cast<IST>(val()));
+    lclMatrix_ = makeLocalOperator(valIn, lclGraph, numCols);
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = lclMat->values;
+    this->k_values1D_ = valIn;
 
-    checkInternalState ();
+    checkInternalState();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-             const Teuchos::RCP<const map_type>& colMap,
-             const local_matrix_type& lclMatrix,
-             const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    lclMatrix_ (std::make_shared<local_multiply_op_type>
-                (std::make_shared<local_matrix_type> (lclMatrix))),
-    k_values1D_ (lclMatrix.values),
-    storageStatus_ (Details::STORAGE_1D_PACKED),
-    fillComplete_ (true)
+  CrsMatrix(const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const local_matrix_type& lclMatrix,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type(rowMap),
+    lclMatrix_(makeLocalOperator(lclMatrix)),
+    k_values1D_(lclMatrix.values),
+    storageStatus_(Details::STORAGE_1D_PACKED),
+    fillComplete_(true)
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, local_matrix_type[, RCP<ParameterList>]): ";
@@ -649,18 +654,17 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const local_matrix_type& lclMatrix,
-             const Teuchos::RCP<const map_type>& rowMap,
-             const Teuchos::RCP<const map_type>& colMap,
-             const Teuchos::RCP<const map_type>& domainMap,
-             const Teuchos::RCP<const map_type>& rangeMap,
-             const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    lclMatrix_ (std::make_shared<local_multiply_op_type>
-                (std::make_shared<local_matrix_type> (lclMatrix))),
-    k_values1D_ (lclMatrix.values),
-    storageStatus_ (Details::STORAGE_1D_PACKED),
-    fillComplete_ (true)
+  CrsMatrix(const local_matrix_type& lclMatrix,
+            const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::RCP<const map_type>& domainMap,
+            const Teuchos::RCP<const map_type>& rangeMap,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type(rowMap),
+    lclMatrix_(makeLocalOperator(lclMatrix)),
+    k_values1D_(lclMatrix.values),
+    storageStatus_(Details::STORAGE_1D_PACKED),
+    fillComplete_(true)
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, RCP<const Map>, RCP<const Map>, "
@@ -709,20 +713,19 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const local_matrix_type& lclMatrix,
-             const Teuchos::RCP<const map_type>& rowMap,
-             const Teuchos::RCP<const map_type>& colMap,
-             const Teuchos::RCP<const map_type>& domainMap,
-             const Teuchos::RCP<const map_type>& rangeMap,
-             const Teuchos::RCP<const import_type>& importer,
-             const Teuchos::RCP<const export_type>& exporter,
-             const Teuchos::RCP<Teuchos::ParameterList>& params) :
-    dist_object_type (rowMap),
-    lclMatrix_ (std::make_shared<local_multiply_op_type>
-                (std::make_shared<local_matrix_type> (lclMatrix))),
-    k_values1D_ (lclMatrix.values),
-    storageStatus_ (Details::STORAGE_1D_PACKED),
-    fillComplete_ (true)
+  CrsMatrix(const local_matrix_type& lclMatrix,
+            const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::RCP<const map_type>& domainMap,
+            const Teuchos::RCP<const map_type>& rangeMap,
+            const Teuchos::RCP<const import_type>& importer,
+            const Teuchos::RCP<const export_type>& exporter,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type(rowMap),
+    lclMatrix_(makeLocalOperator(lclMatrix)),
+    k_values1D_(lclMatrix.values),
+    storageStatus_(Details::STORAGE_1D_PACKED),
+    fillComplete_(true)
   {
     using Teuchos::rcp;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix"
@@ -1232,8 +1235,8 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   fillLocalGraphAndMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
-    using ::Tpetra::Details::computeOffsetsFromCounts;
-    using ::Tpetra::Details::getEntryOnHost;
+    using Details::computeOffsetsFromCounts;
+    using Details::getEntryOnHost;
     using Kokkos::create_mirror_view;
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
@@ -1618,13 +1621,11 @@ namespace Tpetra {
     // Tpetra::CrsGraph to have a protected method that accepts k_inds
     // and k_ptrs, and creates the local graph lclGraph_.
     myGraph_->lclGraph_ =
-      typename Graph::local_graph_type (k_inds, k_ptrs_const);
+      typename Graph::local_graph_type(k_inds, k_ptrs_const);
 
-    // Make the local matrix, using the local graph and vals array.
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", getNodeNumCols (),
-       k_vals, myGraph_->lclGraph_);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    // Make the local matrix, using the local graph and values array.
+    lclMatrix_ = makeLocalOperator(k_vals, myGraph_->lclGraph_,
+                                   getNodeNumCols());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1632,7 +1633,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   fillLocalMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::ProfilingRegion;
     using Kokkos::create_mirror_view;
     using Teuchos::ArrayRCP;
     using Teuchos::Array;
@@ -1789,11 +1790,9 @@ namespace Tpetra {
     // matrix certainly has a column Map.  Remember that the local
     // matrix's number of columns comes from the column Map, not the
     // domain Map.
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_",
-       getColMap ()->getNodeNumElements (),
-       k_vals, staticGraph_->getLocalGraph ());
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    const auto lclGraph = staticGraph_->getLocalGraph();
+    const size_t numCols = getColMap()->getNodeNumElements();
+    lclMatrix_ = makeLocalOperator(k_vals, lclGraph, numCols);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3778,54 +3777,60 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
-                const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                const typename local_matrix_type::values_type& values)
+  setAllValues(
+    const typename local_matrix_type::row_map_type& rowPointers,
+    const typename local_graph_type::entries_type::non_const_type& columnIndices,
+    const typename local_matrix_type::values_type& values)
   {
     const char tfecfFuncName[] = "setAllValues: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (columnIndices.size () != values.size (), std::invalid_argument,
-       "columnIndices.size() = " << columnIndices.size () << " != values.size()"
-       " = " << values.size () << ".");
+      (columnIndices.size() != values.size(), std::invalid_argument,
+       "columnIndices.size() = " << columnIndices.size() << " != "
+       "values.size() = " << values.size() << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (myGraph_.is_null (), std::runtime_error, "myGraph_ must not be null.");
-
+      (myGraph_.is_null(), std::runtime_error, "myGraph_ must not "
+       "be null.");
     try {
-      myGraph_->setAllIndices (rowPointers, columnIndices);
+      myGraph_->setAllIndices(rowPointers, columnIndices);
     }
-    catch (std::exception &e) {
+    catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "myGraph_->setAllIndices() threw an "
-         "exception: " << e.what ());
+        (true, std::runtime_error, "myGraph_->setAllIndices() threw "
+         "an exception: " << e.what ());
     }
+    catch (...) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "myGraph_->setAllIndices() threw "
+         "an exception not a subclass of std::exception.");
+    }
+
     // Make sure that myGraph_ now has a local graph.  It may not be
     // fillComplete yet, so it's important to check.  We don't care
     // whether setAllIndices() did a shallow copy or a deep copy, so a
     // good way to check is to compare dimensions.
-    auto lclGraph = myGraph_->getLocalGraph ();
-    const size_t numEnt = lclGraph.entries.extent (0);
+    const local_graph_type lclGraph = myGraph_->getLocalGraph();
+    const size_t numEnt = lclGraph.entries.extent(0);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (lclGraph.row_map.extent (0) != rowPointers.extent (0) ||
-       numEnt != static_cast<size_t> (columnIndices.extent (0)),
-       std::logic_error, "myGraph_->setAllIndices() did not correctly create "
-       "local graph.  Please report this bug to the Tpetra developers.");
+      (lclGraph.row_map.extent(0) != rowPointers.extent(0) ||
+       numEnt != size_t(columnIndices.extent(0)),
+       std::logic_error, "myGraph_->setAllIndices() did not "
+       "correctly create the local graph.  "
+       "Please report this bug to the Tpetra developers.");
 
-    const size_t numCols = myGraph_->getColMap ()->getNodeNumElements ();
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    const size_t numCols =
+      myGraph_->getColMap()->getNodeNumElements();
+    lclMatrix_ = makeLocalOperator(values, lclGraph, numCols);
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    k_values1D_ = lclMat->values;
+    k_values1D_ = values;
 
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.
     this->storageStatus_ = Details::STORAGE_1D_PACKED;
 
-    checkInternalState ();
+    checkInternalState();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
