@@ -78,6 +78,27 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="kokkos">
+        <ParameterList name="run_serial_double_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_double_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_double_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="solver_params">
         <Parameter name="useGPU" type="int" value="1"/>
       </ParameterList>
