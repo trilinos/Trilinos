@@ -318,10 +318,6 @@ unpackAndCombine
  const int myRank,
  const bool verbose)
 {
-  using ImportLidsView =
-    Kokkos::View<const LocalOrdinal*, BufferDevice, Kokkos::MemoryUnmanaged>;
-  using NumPacketsView =
-    Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>;
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
   using device_type = typename Node::device_type;
