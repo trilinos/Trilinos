@@ -259,7 +259,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   // NOTE: If we're normalizing aggregates we're going to exploit the fact that Psparse
   // is (a) not smoothed and (b) normalized.  This will enable us to get a plausible nullspace later on
   bool normalize_aggregates=MLAggr && List_.get("edge matrix free: normalize aggregates",false);
-  
+  if(verbose_ && !Comm_->MyPID() && normalize_aggregates) printf("EMFP: Normalizing aggregates\n");
+
   for(int i=0;i<Prolongator_->NumMyRows();i++){
     Psparse->ExtractMyRowView(i,ne1,vals1,idx1);
     nonzeros=0;
@@ -273,7 +274,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 
         if(idx2[j*dim+k]==-1) printf("[%d] ERROR: idx1[j]=%d / idx1[j]*dim+k=%d does not have a GID!\n",Comm_->MyPID(),idx1[j],idx1[j]*dim+k);
         if(vals1[j]==0 ) vals2[j*dim+k]=0;
-        else vals2[j*dim+k]= normalize_aggregates ? (nullspace[k][i] / vals1[j] / 2.0) : (nullspace[k][i] / nonzeros);
+        else vals2[j*dim+k]= normalize_aggregates ? (nullspace[k][i] * vals1[j] / 2.0) : (nullspace[k][i] / nonzeros);
       }/*end for*/
     }/*end for*/
     Prolongator_->InsertGlobalValues(EdgeRangeMap_->GID(i),dim*ne1,vals2,idx2);
@@ -286,6 +287,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   /* Build the coarse nullspace (only works if we're normalizing aggregates) */
   bool build_coarse_nullspace= normalize_aggregates && List_.get("edge matrix free: explicit coarse nullspace",false);
   if(build_coarse_nullspace) {    
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Using explicit nullspace\n");
     int Ncoarse = Prolongator_->DomainMap().NumMyElements();
     CoarseNullspace_ = new double[Ncoarse*dim];
     memset(CoarseNullspace_,0,Ncoarse*dim*sizeof(double));
