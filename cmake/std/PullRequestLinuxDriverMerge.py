@@ -90,7 +90,7 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     sourceSHA     = sourceSHA.strip()
 
     remote_list = subprocess.check_output(['git', 'remote', '-v'])
-    if 'source_remote' in remote_list:
+    if b'source_remote' in remote_list:
         print('git remote exists, removing it', file=sys.stdout)
         subprocess.check_call(['git', 'remote', 'rm', 'source_remote'])
     subprocess.check_call(['git', 'remote', 'add', 'source_remote',
@@ -120,7 +120,7 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     actual_source_SHA = subprocess.check_output(['git', 'rev-parse',
                                                  'source_remote/' + source_branch])
 
-    actual_source_SHA = actual_source_SHA.strip()
+    actual_source_SHA = actual_source_SHA.decode().strip()
 
     if actual_source_SHA != sourceSHA:
         print('The SHA ({source_sha}) for the last commit on branch {source_branch}'.format(source_sha=actual_source_SHA,

@@ -8,8 +8,9 @@ source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 module load sems-gcc/4.9.3
 module load sems-git/2.10.1
+module unload sems-python
 module load sems-boost/1.63.0/base
-module swap sems-python/3.5.2
+module swap sems-python sems-python/3.5.2
 module load sems-zlib/1.2.8/base
 module load sems-hdf5/1.8.12/base
 module load sems-netcdf/4.4.1/exo

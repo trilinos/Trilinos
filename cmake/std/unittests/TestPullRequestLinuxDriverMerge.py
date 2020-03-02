@@ -156,9 +156,9 @@ class Test_mergeBranch(unittest.TestCase):
        into the target branch'''
     def test_mergeBranch_without_source_remote(self):
         with mock.patch('subprocess.check_output',
-                        side_effect=['origin /dev/null/target/Trilinos',
-                                      'df324ae']) as m_check_out, \
-            mock.patch('subprocess.check_call') as m_check_call:
+                        side_effect=[b'origin /dev/null/target/Trilinos',
+                                     b'df324ae']) as m_check_out, \
+             mock.patch('subprocess.check_call') as m_check_call:
             PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
                                                                   'dev',
                                                                   'null',
@@ -191,8 +191,8 @@ class Test_mergeBranch(unittest.TestCase):
 
     def test_mergeBranch_with_source_remote(self):
         with mock.patch('subprocess.check_output',
-                        side_effect=['''origin /dev/null/target/Trilinos
-    source_remote /dev/null/source12/Trilinos.git''', 'df324ae']) as m_check_out, \
+                        side_effect=[b'''origin /dev/null/target/Trilinos
+    source_remote /dev/null/source12/Trilinos.git''', b'df324ae']) as m_check_out, \
             mock.patch('subprocess.check_call') as m_check_call, \
             mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
             PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
@@ -230,8 +230,8 @@ class Test_mergeBranch(unittest.TestCase):
 
     def test_mergeBranch_fails_on_source_fetch(self):
         with mock.patch('subprocess.check_output',
-                        side_effect=['origin /dev/null/target/Trilinos',
-                                      'df324ae']) as m_check_out, \
+                        side_effect=[b'origin /dev/null/target/Trilinos',
+                                     b'df324ae']) as m_check_out, \
             mock.patch('subprocess.check_call',
                        side_effect=[None,
                                     CalledProcessError(-1, 'cmd'),
@@ -273,30 +273,19 @@ class Test_mergeBranch(unittest.TestCase):
 
     def test_mergeBranch_fails_on_SHA_mismatch(self):
         with mock.patch('subprocess.check_output',
-                        side_effect=['origin /dev/null/target/Trilinos',
-                                      'df324ae']) as m_check_out, \
+                        side_effect=[b'origin /dev/null/target/Trilinos',
+                                     b'df324ae']) as m_check_out, \
             mock.patch('subprocess.check_call') as m_check_call, \
             mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
-            if sys.version_info.major != 3:
-                with self.assertRaisesRegexp(SystemExit, '-1'):
-                    PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
-                                                                          'dev',
-                                                                          'null',
-                                                                          'source',
-                                                                          'Trilinos.git'),
-                                                            'neverland',
-                                                            'fake_develop',
-                                                            'foobar')
-            else:
-                with self.assertRaisesRegex(SystemExit, '-1'):
-                    PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
-                                                                          'dev',
-                                                                          'null',
-                                                                          'source',
-                                                                          'Trilinos.git'),
-                                                             'neverland',
-                                                             'fake_develop',
-                                                             'foobar')
+            with self.assertRaisesRegex(SystemExit, '-1'):
+                PullRequestLinuxDriverMerge.merge_branch(os.path.join(os.path.sep,
+                                                                      'dev',
+                                                                      'null',
+                                                                      'source',
+                                                                      'Trilinos.git'),
+                                                         'neverland',
+                                                         'fake_develop',
+                                                         'foobar')
         m_check_out.assert_has_calls([mock.call(['git', 'remote', '-v']),
                                       mock.call(['git', 'rev-parse',
                                                  'source_remote/neverland'])])
@@ -343,17 +332,17 @@ class Test_run(unittest.TestCase):
 
     def test_run_fails_on_bad_fetch(self):
         with mock.patch('subprocess.check_output',
-                        side_effect=['origin /dev/null/target/Trilinos',
-                                      'df324ae']), \
-            mock.patch('subprocess.check_call',
-                       side_effect=[None,
-                                    CalledProcessError(-1, 'cmd'),
-                                    CalledProcessError(-2, 'cmd'),
-                                    CalledProcessError(-3, 'cmd')]), \
-            mock.patch('PullRequestLinuxDriverMerge.parseArgs'), \
-            mock.patch('sys.stdout', new_callable=StringIO), \
-            mock.patch('os.path.join'), \
-            mock.patch('os.chdir'):
+                        side_effect=[b'origin /dev/null/target/Trilinos',
+                                     b'df324ae']), \
+             mock.patch('subprocess.check_call',
+                        side_effect=[None,
+                                     CalledProcessError(-1, 'cmd'),
+                                     CalledProcessError(-2, 'cmd'),
+                                     CalledProcessError(-3, 'cmd')]), \
+             mock.patch('PullRequestLinuxDriverMerge.parseArgs'), \
+             mock.patch('sys.stdout', new_callable=StringIO), \
+             mock.patch('os.path.join'), \
+             mock.patch('os.chdir'):
             self.assertFalse(PullRequestLinuxDriverMerge.run())
 
 
@@ -368,14 +357,14 @@ class Test_run(unittest.TestCase):
   from command test_cmd
   output None\n'''
         with mock.patch('subprocess.check_output',
-                        side_effect=['origin /dev/null/target/Trilinos',
-                                      'df324ae']), \
-            mock.patch('subprocess.check_call',
-                       side_effect=CalledProcessError(-1, 'test_cmd')), \
-            mock.patch('PullRequestLinuxDriverMerge.parseArgs'), \
-            mock.patch('sys.stdout', new_callable=StringIO) as m_stdout, \
-            mock.patch('os.path.join'), \
-            mock.patch('os.chdir'):
+                        side_effect=[b'origin /dev/null/target/Trilinos',
+                                     b'df324ae']), \
+             mock.patch('subprocess.check_call',
+                        side_effect=CalledProcessError(-1, 'test_cmd')), \
+             mock.patch('PullRequestLinuxDriverMerge.parseArgs'), \
+             mock.patch('sys.stdout', new_callable=StringIO) as m_stdout, \
+             mock.patch('os.path.join'), \
+             mock.patch('os.chdir'):
             self.assertFalse(PullRequestLinuxDriverMerge.run())
         self.assertTrue(m_stdout.getvalue().endswith(expected_string))
 
