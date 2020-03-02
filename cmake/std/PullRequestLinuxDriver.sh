@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # set -x  # echo commands
 
-#    make  sure we have a newer version of git/python
+# make sure we have a newer version of git/python
+# this level or above is needed  by the scripts
 cuda_regex=".*(_cuda_).*"
 ride_regex=".*(ride).*"
 if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then

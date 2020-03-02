@@ -9,7 +9,15 @@ source /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-gcc/7.2.0
 module load sems-openmpi/1.10.1
 module load sems-git/2.10.1
+
+## In each of the cases where we load boost, we unload python so the
+## boost module does not complain - it otherwise does keep the python
+## we loaded earlier, but the message is just a trouble ticket
+## waiting to happen. We then promptly have to reset is as boost will
+## load python 2.7.9 and our scripts will fail.
+module unload sems-python
 module load sems-boost/1.63.0/base
+
 module load sems-zlib/1.2.8/base
 module load sems-hdf5/1.8.12/parallel
 module load sems-netcdf/4.4.1/exo_parallel

@@ -70,7 +70,7 @@ class Test_run(unittest.TestCase):
                                                       'NODE_NAME': 'TEST_NODE_NAME'},
                                          clear=True)
 
-        self.bad_git_string = 'Git version  should be 3.5 or better - Exiting!'
+        self.bad_git_string = 'Git version  should be 2.10 or better - Exiting!'
 
 
     def test_verifyGit_fails_with_old_version(self):
@@ -84,36 +84,14 @@ class Test_run(unittest.TestCase):
             m_check_out.assert_called_once_with(['git', '--version'])
 
 
-    def test_verifyGit_fails_with_2_10(self):
+    def test_verifyGit_passes_with_2_10(self):
         """Check to see that git is in path"""
         with self.m_check_out as m_check_out:
             m_check_out.return_value=b'git version 2.10.1'
 
-            with self.IOredirect, \
-                 self.assertRaisesRegex(SystemExit, self.bad_git_string):
-                PullRequestLinuxDriverTest.confirmGitVersion()
-            m_check_out.assert_called_once_with(['git', '--version'])
-
-
-    def test_verifyGit_fails_with_2_12(self):
-        """Check to see that git is in path"""
-        with self.m_check_out as m_check_out:
-            m_check_out.return_value=b'git version 2.12.4'
-
-            with self.IOredirect, \
-                 self.assertRaisesRegex(SystemExit, self.bad_git_string):
-                PullRequestLinuxDriverTest.confirmGitVersion()
-        m_check_out.assert_called_once_with(['git', '--version'])
-
-
-    def test_verifyGit_passes_with_3_x(self):
-        """Check to see that git is in path"""
-        with self.m_check_out as m_check_out:
-            m_check_out.return_value=b'git version 3.6.1'
-
             with self.IOredirect:
                 PullRequestLinuxDriverTest.confirmGitVersion()
-        m_check_out.assert_called_once_with(['git', '--version'])
+            m_check_out.assert_called_once_with(['git', '--version'])
 
 
     def test_verifyTargetBranch_fails_with_master_target_non_mm_source(self):

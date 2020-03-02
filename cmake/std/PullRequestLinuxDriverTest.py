@@ -123,8 +123,8 @@ def confirmGitVersion():
     minor_git_version = int(git_version_number_string[git_version_number_string.find(b'.')+1:
                                                       git_version_number_string.rfind(b'.')])
 
-    if major_git_version  <  3 or (major_git_version == 3 and minor_git_version < 5):
-        raise SystemExit("Git version  should be 3.5 or better - Exiting!")
+    if major_git_version  <  2 or (major_git_version == 2 and minor_git_version < 10):
+        raise SystemExit("Git version  should be 2.10 or better - Exiting!")
     else:
         print(git_version_string)
 
@@ -133,6 +133,11 @@ def confirmGitVersion():
 
 
 def setBuildEnviron(arguments):
+## In each of the cases where we load boost, we unload python so the
+## boost module does not complain - it otherwise does keep the python
+## we loaded earlier, but the message is just a trouble ticket
+## waiting to happen. We then promptly have to reset is as boost will
+## load python 2.7.9 and our scripts will fail.
     moduleMap = {'Trilinos_pullrequest_gcc_4.8.4':
                      ['sems-env',
                       'sems-git/2.10.1',
