@@ -61,6 +61,13 @@ IF (TACHO_HAVE_KOKKOS_TASK)
     SOURCES Tacho_ExampleCholTriSolve.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholLevelSet
+    TARGET_DEFINES 
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholLevelSet.cpp
+    COMM serial mpi
+  )
 
   #
   # Solver

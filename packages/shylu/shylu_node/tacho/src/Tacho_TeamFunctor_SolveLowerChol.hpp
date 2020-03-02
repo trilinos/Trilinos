@@ -59,7 +59,6 @@ namespace Tacho {
                                const ordinal_type_array &compute_mode,
                                const ordinal_type_array &level_sids,
                                const value_type_matrix t,
-                               const size_type_array buf_ptr,
                                const value_type_array buf)
       :
       _supernodes(info.supernodes),
@@ -69,7 +68,6 @@ namespace Tacho {
       _level_sids(level_sids),
       _t(t),
       _nrhs(t.extent(1)),
-      _buf_ptr(buf_ptr),
       _buf(buf)
     {}
 
@@ -79,14 +77,18 @@ namespace Tacho {
       _pbeg = pbeg; _pend = pend;
     }
 
+    inline 
+    void setBufferPtr(const size_type_array &buf_ptr) {
+      _buf_ptr = buf_ptr;
+    }
+
     ///
     /// Algorithm Variant 0: trsv - gemv
     ///
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void solve_var0(MemberType &member, const ordinal_type sid) const {
+    void solve_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
       const value_type minus_one(-1), zero(0);
-      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
@@ -100,7 +102,6 @@ namespace Tacho {
             ::invoke(member, Diag::NonUnit(), AL, tT);
 
           if (n_m > 0) {
-            value_type *bptr = _buf.data() + _buf_ptr(sid);
             // update
             UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
             UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
@@ -113,12 +114,10 @@ namespace Tacho {
 
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void update_var0(MemberType &member, const ordinal_type sid) const {
-      const auto &s = _supernodes(sid);
+    void update_var0(MemberType &member, const supernode_type &s, value_type *bptr) const { 
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (n_m > 0) {
-          value_type *bptr = _buf.data() + _buf_ptr(sid);
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
           // update
           const ordinal_type
@@ -150,13 +149,12 @@ namespace Tacho {
     ///
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void solve_var1(MemberType &member, const ordinal_type sid) const {
+    void solve_var1(MemberType &member, const supernode_type &s, value_type *bptr) const { 
       const value_type minus_one(-1), one(1), zero(0);
-      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
-          value_type *aptr = s.buf, *bptr = _buf.data() + _buf_ptr(sid);
+          value_type *aptr = s.buf;
 
           UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
           UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
@@ -181,12 +179,10 @@ namespace Tacho {
 
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void update_var1(MemberType &member, const ordinal_type sid) const {
-      const auto &s = _supernodes(sid);
+    void update_var1(MemberType &member, const supernode_type &s, value_type *bptr) const { 
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
-          value_type *bptr = _buf.data() + _buf_ptr(sid);
           UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
           auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
 
@@ -234,13 +230,12 @@ namespace Tacho {
     ///
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void solve_var2(MemberType &member, const ordinal_type sid) const {
+    void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const { 
       const value_type one(1), zero(0);
-      const auto &s = _supernodes(sid);
       {
         const ordinal_type m = s.m, n = s.n;
         if (m > 0 && n > 0) {
-          value_type *aptr = s.buf, *bptr = _buf.data() + _buf_ptr(sid);
+          value_type *aptr = s.buf;
           UnmanagedViewType<value_type_matrix> A(aptr, m, n); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> t(bptr, n, _nrhs); bptr += n*_nrhs;
           UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
@@ -254,12 +249,10 @@ namespace Tacho {
 
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void update_var2(MemberType &member, const ordinal_type sid) const {
-      const auto &s = _supernodes(sid);
+    void update_var2(MemberType &member, const supernode_type &s, value_type *bptr) const { 
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
-          value_type *bptr = _buf.data() + _buf_ptr(sid) + n*_nrhs;
           UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
           auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
 
@@ -314,9 +307,11 @@ namespace Tacho {
       const ordinal_type mode = _compute_mode(sid);
       if (p < _pend && mode == 1) {
         typedef SolveTag<Var> solve_tag_type;
-        if      (solve_tag_type::variant == 0) solve_var0(member, sid);
-        else if (solve_tag_type::variant == 1) solve_var1(member, sid);
-        else if (solve_tag_type::variant == 2) solve_var2(member, sid);
+        const supernode_type &s = _supernodes(sid);        
+        value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
+        if      (solve_tag_type::variant == 0) solve_var0(member, s, bptr);
+        else if (solve_tag_type::variant == 1) solve_var1(member, s, bptr);
+        else if (solve_tag_type::variant == 2) solve_var2(member, s, bptr);
         else printf("Error: abort\n");
       } if (mode == -1) {
         printf("Error: abort\n");
@@ -332,9 +327,11 @@ namespace Tacho {
       if (p < _pend) {
         const ordinal_type sid = _level_sids(p);
         typedef UpdateTag<Var> update_tag_type;
-        if      (update_tag_type::variant == 0) update_var0(member, sid);
-        else if (update_tag_type::variant == 1) update_var1(member, sid);
-        else if (update_tag_type::variant == 2) update_var2(member, sid);
+        const supernode_type &s = _supernodes(sid);        
+        value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
+        if      (update_tag_type::variant == 0) update_var0(member, s, bptr);
+        else if (update_tag_type::variant == 1) update_var1(member, s, bptr);
+        else if (update_tag_type::variant == 2) update_var2(member, s, bptr);
         else printf("Error: abort\n");
       } else {
         // skip

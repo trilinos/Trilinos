@@ -36,16 +36,28 @@ namespace Tacho {
               });
             member.team_barrier();
             const auto alpha = arith_traits::real(*alpha11);
+            Kokkos::parallel_for(Kokkos::TeamVectorRange(member,jend),[&](const int &j) {
+                a12t[j*as1] /= alpha;
+              });
+            member.team_barrier();
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
-                Kokkos::single(Kokkos::PerThread(member), [&] () {
-                    a12t[j*as1] /= alpha;
-                  });
                 const T aa = arith_traits::conj(a12t[j*as1]);
                 Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1),[&](const int &i) {
                     const T bb = a12t[i*as1];
                     A22[i*as0+j*as1] -= aa*bb;
                   });
               });
+            //member.team_barrier();
+            // Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
+            //     Kokkos::single(Kokkos::PerThread(member), [&] () {
+            //         a12t[j*as1] /= alpha;
+            //       });
+            //     const T aa = arith_traits::conj(a12t[j*as1]);
+            //     Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1),[&](const int &i) {
+            //         const T bb = a12t[i*as1];
+            //         A22[i*as0+j*as1] -= aa*bb;
+            //       });
+            //   });
           }
         }
 

@@ -32,6 +32,7 @@
 
 #if defined(KOKKOS_ENABLE_CUDA) 
 #include "cublas_v2.h"
+#include "cusolverDn.h"
 #endif
 
 /// \file Tacho_Util.hpp
