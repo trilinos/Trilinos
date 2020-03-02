@@ -35,8 +35,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
@@ -100,7 +98,7 @@ namespace { // (anonymous)
       for (int i = 0; i < size; ++i) {
         const output_value_type expected_val =
           static_cast<output_value_type> (i+1);
-        const output_value_type actual_val = y_h(i);        
+        const output_value_type actual_val = y_h(i);
         TEST_EQUALITY( actual_val, expected_val );
       }
     }
@@ -194,7 +192,7 @@ namespace { // (anonymous)
     out << "OutputValueType: " << outputValueName << std::endl
         << "InputValueType: " << inputValueName << std::endl;
     Teuchos::OSTab tab1 (out);
-    
+
     testRank1CopyConvert<OutputValueType, OutputArrayLayout, OutputDeviceType,
                          InputValueType, InputArrayLayout, InputDeviceType>
       (success, out);
