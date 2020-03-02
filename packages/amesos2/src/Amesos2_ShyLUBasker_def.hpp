@@ -99,7 +99,11 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.amd_dom       = BASKER_TRUE;
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   num_threads = Kokkos::OpenMP::max_hardware_threads();
+#else
+  num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
+#endif
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
 		     std::runtime_error,
