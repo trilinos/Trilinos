@@ -5392,7 +5392,7 @@ namespace Tpetra {
     //
     // Y.modify_device ();
 
-    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    const bool debug = Details::Behavior::debug ();
     if (debug) {
       const char tfecfFuncName[] = "localApply: ";
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -6115,7 +6115,7 @@ namespace Tpetra {
       (new output_matrix_type (this->getCrsGraph ()));
     // Copy old values into new values.  impl_scalar_type and T may
     // differ, so we can't use Kokkos::deep_copy.
-    using ::Tpetra::Details::copyConvert;
+    using Details::copyConvert;
     copyConvert (newMatrix->lclMatrix_->getLocalMatrix ().values,
                  this->lclMatrix_->getLocalMatrix ().values);
     // Since newmat has a static (const) graph, the graph already has

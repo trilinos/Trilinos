@@ -311,7 +311,7 @@ FUNCTION(TPETRA_PROCESS_ALL_LGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
       FOREACH(LO ${LOCALORDINAL_TYPES})
         TPETRA_MANGLE_TEMPLATE_PARAMETER(LO_MANGLED "${LO}")
         TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
-        
+
         TPETRA_PROCESS_ONE_LGN_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
           "${CLASS_NAME}" "${CLASS_MACRO_NAME}"
           "${LO_MANGLED}" "${GO_MANGLED}" "${NT_MANGLED}"
@@ -768,5 +768,5 @@ SET_PROPERTY(
 # / from this directory, or to / from the 'impl' subdirectory.  That ensures
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
-# Here's another change, another, and another.
+# Here's yet another change.
 #
