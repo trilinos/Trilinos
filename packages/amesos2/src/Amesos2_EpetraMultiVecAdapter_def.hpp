@@ -256,7 +256,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
 }
 
 void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
-  Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> & host_view,
+  Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> & host_view,
   size_t lda,
   Teuchos::Ptr<
     const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
@@ -278,7 +278,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
   #endif
 
     // First make a host view
-    host_view = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial>(
+    host_view = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>(
       Kokkos::ViewAllocateWithoutInitializing("get1dCopy_kokkos_view"),
       local_length, num_vecs);
 
@@ -402,7 +402,7 @@ MultiVecAdapter<Epetra_MultiVector>::put1dData(
 
 void
 MultiVecAdapter<Epetra_MultiVector>::put1dData_kokkos_view_host(
-  Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> & host_new_data,
+  Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> & host_new_data,
   size_t lda,
   Teuchos::Ptr<
     const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,

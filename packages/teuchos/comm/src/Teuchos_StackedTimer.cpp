@@ -1,9 +1,47 @@
-// @HEADER BEGIN
-// @HEADER END
+// @HEADER
+// ***********************************************************************
+//
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ***********************************************************************
+// @HEADER
 
 #include "Teuchos_StackedTimer.hpp"
 #include <limits>
+#include <ctime>
 #include <algorithm>
+#include <fstream>
 #include <sstream>
 
 namespace Teuchos {
@@ -566,6 +604,51 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
   return total_time;
 }
 
+double
+StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time)
+{
+  //Adding an extra indent level, since the <performance-report> header is at indent 0
+  int indent = 4 * (print_level + 1);
+
+  double total_time = 0.0;
+
+  for (int i=0; i<flat_names_.size(); ++i ) {
+    if (printed[i])
+      continue;
+    int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
+    if ( level != print_level)
+      continue;
+    auto split_names = getPrefix(flat_names_[i]);
+    if ( prefix != split_names.first)
+      continue;
+    // Output the indentation level
+    for (int j = 0; j < indent; j++)
+      os << " ";
+    bool leaf = split_names.first.length() > 0;
+    os << "<timing name=\"" << split_names.second << "\" value=\"" << sum_[i]/active_[i] << "\"";
+    if(leaf)
+      os << "/>\n";
+    else
+      os << ">\n";
+    printed[i] = true;
+    double sub_time = printLevelXML(flat_names_[i], print_level+1, os, printed, sum_[i]/active_[i]);
+    // Print Remainder
+    if (sub_time > 0 ) {
+      for (int j = 0; j < indent + 4; j++)
+        os << " ";
+      os << "<timing name=\"Remainder\" value=\"" << (sum_[i]/active_[i] - sub_time) << "\"/>\n";
+    }
+    if(!leaf)
+    {
+      for (int j = 0; j < indent; j++)
+        os << " ";
+      os << "</timing>\n";
+    }
+    total_time += sum_[i]/active_[i];
+  }
+  return total_time;
+}
+
 void
 StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options) {
   flatten();
@@ -598,6 +681,64 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
     std::vector<bool> printed(flat_names_.size(), false);
     printLevel("", 0, os, printed, 0., options);
   }
+}
+
+void
+StackedTimer::reportXML(std::ostream &os, const std::string& datestamp, const std::string& timestamp, Teuchos::RCP<const Teuchos::Comm<int> > comm)
+{
+  flatten();
+  merge(comm);
+  OutputOptions defaultOptions;
+  collectRemoteData(comm, defaultOptions);
+  if (rank(*comm) == 0 ) {
+    std::vector<bool> printed(flat_names_.size(), false);
+    os << "<?xml version=\"1.0\"?>\n";
+    os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    printLevelXML("", 0, os, printed, 0.0);
+    os << "</performance-report>\n";
+  }
+}
+
+std::string
+StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+  const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
+  if(!rawWatchrDir)
+    return "";
+  std::string watchrDir = rawWatchrDir;
+  if(!watchrDir.length())
+  {
+    //Output directory has not been set, so don't produce output.
+    return "";
+  }
+  std::string datestamp;
+  std::string timestamp;
+  {
+    char buf[256];
+    time_t t;
+    struct tm* tstruct;
+    time(&t);
+    tstruct = gmtime(&t);
+    strftime(buf, 256, "%Y_%m_%d", tstruct);
+    datestamp = buf;
+    strftime(buf, 256, "%FT%H:%M:%S", tstruct);
+    timestamp = buf;
+  }
+  flatten();
+  merge(comm);
+  OutputOptions defaultOptions;
+  collectRemoteData(comm, defaultOptions);
+  std::string fullFile;
+  //only open the file on rank 0
+  if(rank(*comm) == 0) {
+    fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
+    std::ofstream os(fullFile);
+    std::vector<bool> printed(flat_names_.size(), false);
+    os << "<?xml version=\"1.0\"?>\n";
+    os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    printLevelXML("", 0, os, printed, 0.0);
+    os << "</performance-report>\n";
+  }
+  return fullFile;
 }
 
 void StackedTimer::enableVerbose(const bool enable_verbose)

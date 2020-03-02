@@ -1,8 +1,9 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -34,39 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
+#ifndef MUELU_STRATIMIKOSSMOOTHER_FWD_HPP
+#define MUELU_STRATIMIKOSSMOOTHER_FWD_HPP
 
-#ifndef TPETRA_DETAILS_ASSUMEMPIISCUDAAWARE_HPP
-#define TPETRA_DETAILS_ASSUMEMPIISCUDAAWARE_HPP
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_STRATIMIKOS)
 
-// Forward declarations cause build errors, depending on what other
-// header files get included first.  Thus, we must include the header
-// file here.
-#include <ostream>
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class StratimikosSmoother;
+}
 
-namespace Tpetra {
-namespace Details {
+#ifndef MUELU_STRATIMIKOSSMOOTHER_SHORT
+#define MUELU_STRATIMIKOSSMOOTHER_SHORT
+#endif
 
-/// \brief Whether to assume that MPI is CUDA aware.
-///
-/// See Trilinos GitHub issues #1571 and #1088 to learn what it means
-/// for an MPI implementation to be "CUDA aware," and why this matters
-/// for performance.
-///
-/// \param out [out] If not NULL, print human-readable output to
-///   <tt>*out</tt>, describing what this function is doing.  Users
-///   are responsible for managing output with multiple MPI processes
-///   (e.g., only make this non-NULL on Process 0).
-///
-/// \return Whether to assume that the MPI implementation that
-///   Trilinos uses is CUDA aware.
-bool
-assumeMpiIsCudaAware (std::ostream* out);
+#endif
 
-} // namespace Details
-} // namespace Tpetra
-
-#endif // TPETRA_DETAILS_ASSUMEMPIISCUDAAWARE_HPP
+#endif // MUELU_STRATIMIKOSSMOOTHER_FWD_HPP

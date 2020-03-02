@@ -192,13 +192,13 @@ namespace Amesos2 {
                       global_ordinal_t,
                       node_t> > distribution_map,
                     EDistribution distribution) const {
-      Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Serial> host_new_data;
+      Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> host_new_data;
       get1dCopy_kokkos_view_host(host_new_data, lda, distribution_map, distribution);
       deep_copy_or_assign_view(A, host_new_data);
     }
 
     void get1dCopy_kokkos_view_host(
-                    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> & new_data,
+                    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> & new_data,
                     size_t lda,
                     Teuchos::Ptr<
                       const Tpetra::Map<local_ordinal_t,
@@ -253,7 +253,7 @@ namespace Amesos2 {
                       global_ordinal_t,
                       node_t> > source_map,
                     EDistribution distribution ) {
-      Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> host_new_data(
+      Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> host_new_data(
         Kokkos::ViewAllocateWithoutInitializing("host_new_data"),
         new_data.extent(0), new_data.extent(1));
       Kokkos::deep_copy(host_new_data, new_data);
@@ -261,7 +261,7 @@ namespace Amesos2 {
     }
 
     void put1dData_kokkos_view_host(
-                    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::Serial> & new_data,
+                    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> & new_data,
                     size_t lda,
                     Teuchos::Ptr<
                     const Tpetra::Map<local_ordinal_t,

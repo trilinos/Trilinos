@@ -908,7 +908,7 @@ namespace Tpetra {
     std::unique_ptr<std::string>
     createPrefix(const char className[],
                  const char methodName[]) const;
-    
+
     /// \brief Buffer into which packed data are imported (received
     ///   from other processes).
     ///

@@ -1,8 +1,9 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -34,40 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
+#ifndef MUELU_BELOSSMOOTHER_FWD_HPP
+#define MUELU_BELOSSMOOTHER_FWD_HPP
 
-#ifndef TPETRA_DETAILS_GETENTRYONHOST_HPP
-#define TPETRA_DETAILS_GETENTRYONHOST_HPP
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_BELOS)
 
-/// \file Tpetra_Details_getEntryOnHost.hpp
-/// \brief Declaration and definition of
-///   Tpetra::Details::getEntryOnHost.
-/// \warning The contents of this file are implementation details of
-///   Tpetra.  We make no promises of backwards compatibility.
-
-#include "TpetraCore_config.h"
-#include "Kokkos_Core.hpp"
-
-namespace Tpetra {
-namespace Details {
-
-template<class ViewType,
-         class IndexType>
-typename ViewType::non_const_value_type
-getEntryOnHost (const ViewType& x,
-                const IndexType ind)
-{
-  static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
-  // Get a 0-D subview of the entry of the array, and copy to host scalar.
-  typename ViewType::non_const_value_type val;
-  Kokkos::deep_copy(val, Kokkos::subview(x, ind));
-  return val;
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class BelosSmoother;
 }
 
-} // namespace Details
-} // namespace Tpetra
+#ifndef MUELU_BELOSSMOOTHER_SHORT
+#define MUELU_BELOSSMOOTHER_SHORT
+#endif
 
-#endif // TPETRA_DETAILS_GETENTRYONHOST_HPP
+#endif
+
+#endif // MUELU_BELOSSMOOTHER_FWD_HPP

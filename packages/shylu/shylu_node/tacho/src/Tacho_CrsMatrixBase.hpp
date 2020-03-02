@@ -372,10 +372,9 @@ namespace Tacho {
                                    const CrsMatrixType &B,
                                    const OrdinalTypeArray &p,
                                    const OrdinalTypeArray &ip) {
-    const ordinal_type m = A.NumRows(), n = A.NumCols();
+    const ordinal_type m = A.NumRows(); //, n = A.NumCols();
     typedef typename CrsMatrixType::exec_space exec_space;
     typedef typename CrsMatrixType::exec_memory_space exec_memory_space;
-    typedef typename CrsMatrixType::ordinal_type_array ordinal_type_array;
 
     /// temporary matrix with the same structure
     auto ap = A.RowPtr();
