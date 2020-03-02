@@ -966,6 +966,9 @@ namespace MueLu {
 
     const size_t numElements = rowElements.size();
 
+    if (colElements.size() < rowElements.size())
+      return false;
+
     bool goodMap = true;
     for (size_t i = 0; i < numElements; i++)
       if (rowElements[i] != colElements[i]) {
