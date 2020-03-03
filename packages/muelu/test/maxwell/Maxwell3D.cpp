@@ -289,6 +289,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       xml = "Maxwell_complex.xml";
                                                         clp.setOption("xml",                   &xml,               "xml file with solver parameters");
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+    int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", material_file = "", Ms_file="";
@@ -468,7 +469,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
-      belosParams->set("Maximum Iterations", 100);
+      belosParams->set("Maximum Iterations", maxIts);
       belosParams->set("Convergence Tolerance",tol);
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
@@ -563,6 +564,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string precType          = "MueLu-RefMaxwell"; clp.setOption("precType",              &precType,          "preconditioner to use (MueLu-RefMaxwell|ML-RefMaxwell|none)");
     std::string xml               = "";                 clp.setOption("xml",                   &xml,               "xml file with solver parameters (default: \"Maxwell.xml\")");
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+    int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
 
@@ -762,7 +764,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
-      belosParams->set("Maximum Iterations", 100);
+      belosParams->set("Maximum Iterations", maxIts);
       belosParams->set("Convergence Tolerance",tol);
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
@@ -794,7 +796,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       SList.set("Linear Solver Type","Belos");
       SList.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", belosSolverType);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Output Frequency",1);
-      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Maximum Iterations",100);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Maximum Iterations",maxIts);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Convergence Tolerance",tol);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Output Style",1);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Verbosity",33);
