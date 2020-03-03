@@ -68,7 +68,14 @@ RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, Globa
   validParamList->set<RCP<const FactoryBase>>("A", null, "Generating factory of A");
   validParamList->set<RCP<const FactoryBase>>("Aggregates", null, "Generating factory of the Aggregates (for block 0,0)");
 
-  validParamList->set<LocalOrdinal>("number of DOFs per node", Teuchos::ScalarTraits<LocalOrdinal>::one(), "Number of DOFs per node");
+  validParamList->set<LocalOrdinal>("number of DOFs per dual node", Teuchos::ScalarTraits<LocalOrdinal>::one(), "Number of DOFs per dual node");
+
+  /*
+    DualNodeID2PrimalNodeID represents the mapping between the Dual Node IDs to the Primal Node IDs.
+    This map makes one assumption: the number of dof per dual node is a constant which has to be set in 
+    parameter list.
+  */
+  validParamList->set<RCP<std::map<LocalOrdinal, LocalOrdinal>>>("DualNodeID2PrimalNodeID", null, "");
 
   return validParamList;
 }
@@ -79,44 +86,62 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Dec
   Input(currentLevel, "A");
   Input(currentLevel, "Aggregates");
 
-  currentLevel.DeclareInput("Lagr2Dof", NoFactory::get(), this);
+  if (currentLevel.GetLevelID() != 0)
+    currentLevel.DeclareInput("DualNodeID2PrimalNodeID", NoFactory::get());
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
 {
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
   typedef Aggregates<LocalOrdinal, GlobalOrdinal, Node> Aggregates;
+  typedef std::map<LocalOrdinal, LocalOrdinal> Dual2Primal_type;
+
+  const char prefix[] = "MueLu::InterfaceAggregationFactory::Build: ";
+  const ParameterList &pL = GetParameterList();
+
   FactoryMonitor m(*this, "Build", currentLevel);
 
   RCP<Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
-  RCP<Aggregates> aggs00 = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
+  RCP<Aggregates> aggs00 = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
   ArrayRCP<LocalOrdinal> vertex2AggIdInput = aggs00->GetVertex2AggId()->getDataNonConst(0);
+
   ArrayRCP<LocalOrdinal> procWinnerInput = aggs00->GetProcWinner()->getDataNonConst(0);
 
-  RCP<std::map<GlobalOrdinal, GlobalOrdinal>> lagr2dof = currentLevel.Get<RCP<std::map<GlobalOrdinal, GlobalOrdinal>>>("Lagr2Dof", NoFactory::get());
+  RCP<Dual2Primal_type> lagr2dof;
+  if (currentLevel.GetLevelID() == 0)
+  {
+    lagr2dof = pL.get<RCP<Dual2Primal_type>>("DualNodeID2PrimalNodeID");
 
-  RCP<const Map> aggDomainMap = A->getDomainMap();
+    TEUCHOS_TEST_FOR_EXCEPTION(lagr2dof.is_null(), std::runtime_error, prefix << " MueLu requires a DualNodeID2PrimalNodeID map.");
+  }
+  else
+    lagr2dof = currentLevel.Get<RCP<Dual2Primal_type>>("DualNodeID2PrimalNodeID", NoFactory::get());
+
+  const LocalOrdinal nDOFPerDualNode = pL.get<LocalOrdinal>("number of DOFs per dual node");
+
   RCP<const Map> aggRangeMap = A->getRangeMap();
-  const size_t myRank = A->getRangeMap()->getComm()->getRank();
+  const size_t myRank = aggRangeMap->getComm()->getRank();
+
+  LocalOrdinal globalNumDualNodes = aggRangeMap->getGlobalNumElements() / nDOFPerDualNode;
+  LocalOrdinal numDualNodes = aggRangeMap->getNodeNumElements() / nDOFPerDualNode;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numDualNodes != LocalOrdinal(lagr2dof->size()), std::runtime_error, prefix << " MueLu requires the range map and the DualNodeID2PrimalNodeID map to be compatible.");
 
   RCP<const Map> aggVertexMap;
 
-  if (aggDomainMap->getGlobalNumElements() == lagr2dof->size()) // True if one dof per node
-    aggVertexMap = aggDomainMap;
+  if (nDOFPerDualNode == 1)
+    aggVertexMap = aggRangeMap;
   else
   {
-    size_t n_dof_per_lag = (aggDomainMap->getGlobalNumElements()) / lagr2dof->size();
-    LocalOrdinal numVertices = lagr2dof->size();
-    GlobalOrdinal indexBase = aggDomainMap->getIndexBase();
-    auto comm = aggDomainMap->getComm();
-    std::vector<GlobalOrdinal> myVertices = {};
+    GlobalOrdinal indexBase = aggRangeMap->getIndexBase();
+    auto comm = aggRangeMap->getComm();
+    std::vector<GlobalOrdinal> myDualNodes = {};
 
-    for (size_t i = 0; i < aggDomainMap->getNodeNumElements(); i += n_dof_per_lag)
-      myVertices.push_back((aggDomainMap->getGlobalElement(i) - indexBase) / n_dof_per_lag + indexBase);
+    for (size_t i = 0; i < aggRangeMap->getNodeNumElements(); i += nDOFPerDualNode)
+      myDualNodes.push_back((aggRangeMap->getGlobalElement(i) - indexBase) / nDOFPerDualNode + indexBase);
 
-    aggVertexMap = rcp(new const Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numVertices, myVertices, indexBase, comm));
+    aggVertexMap = rcp(new const Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(globalNumDualNodes, myDualNodes, indexBase, comm));
   }
 
   RCP<Aggregates> aggregates = rcp(new Aggregates(aggVertexMap));
@@ -126,18 +151,19 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   ArrayRCP<LocalOrdinal> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
   ArrayRCP<LocalOrdinal> procWinner = aggregates->GetProcWinner()->getDataNonConst(0);
 
-  RCP<std::map<GlobalOrdinal, GlobalOrdinal>> coarseLagr2Dof = rcp(new std::map<GlobalOrdinal, GlobalOrdinal>());
-  RCP<std::map<GlobalOrdinal, GlobalOrdinal>> coarseDof2Lagr = rcp(new std::map<GlobalOrdinal, GlobalOrdinal>());
+  RCP<Dual2Primal_type> coarseLagr2Dof = rcp(new Dual2Primal_type());
+  RCP<Dual2Primal_type> coarseDof2Lagr = rcp(new Dual2Primal_type());
 
   LocalOrdinal numAggId = 0;
 
-  LocalOrdinal n_local_lag_nodes = lagr2dof->size();
-
   // Loop over the local "nodes" of the block 11
-  for (LocalOrdinal local_lag_node_id = 0; local_lag_node_id < n_local_lag_nodes; ++local_lag_node_id)
+  for (LocalOrdinal localDualNodeID = 0; localDualNodeID < numDualNodes; ++localDualNodeID)
   {
-    // Find the aggregate of block 00 associated with the current node of the block 11
-    auto currentAggIdInput = vertex2AggIdInput[(*lagr2dof)[local_lag_node_id]];
+    // Get local ID of the primal node associated to the current dual node
+    LocalOrdinal localPrimalNodeID = (*lagr2dof)[localDualNodeID];
+
+    // Find the aggregate of block 00 associated with the current primal node
+    LocalOrdinal currentAggIdInput = vertex2AggIdInput[localPrimalNodeID];
 
     // Test if the current aggregate of block 00 has no associated aggregate of block 11
     if (coarseDof2Lagr->count(currentAggIdInput) == 0)
@@ -149,14 +175,14 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     }
 
     // Fill the block 11 aggregate information
-    vertex2AggId[local_lag_node_id] = (*coarseDof2Lagr)[currentAggIdInput];
-    procWinner[local_lag_node_id] = myRank;
+    vertex2AggId[localDualNodeID] = (*coarseDof2Lagr)[currentAggIdInput];
+    procWinner[localDualNodeID] = myRank;
   }
 
   aggregates->SetNumAggregates(numAggId);
   Set(currentLevel, "Aggregates", aggregates);
 
-  currentLevel.Set<RCP<std::map<GlobalOrdinal, GlobalOrdinal>>>("CoarseLagr2Dof", coarseLagr2Dof, NoFactory::get());
+  currentLevel.Set<RCP<Dual2Primal_type>>("CoarseDualNodeID2PrimalNodeID", coarseLagr2Dof, NoFactory::get());
 
   GetOStream(Statistics1) << aggregates->description() << std::endl;
 }

@@ -65,14 +65,14 @@ class InterfaceMappingTransferFactory : public TwoLevelFactoryBase
 #include "MueLu_UseShortNamesOrdinal.hpp"
 public:
     //! Constructor.
-    InterfaceMappingTransferFactory();
+    explicit InterfaceMappingTransferFactory();
 
     //! Destructor.
     virtual ~InterfaceMappingTransferFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+    RCP<const ParameterList> GetValidParameterList() const override;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const override;
+    void Build(Level &fineLevel, Level &coarseLevel) const override;
 };
 
 } // namespace MueLu

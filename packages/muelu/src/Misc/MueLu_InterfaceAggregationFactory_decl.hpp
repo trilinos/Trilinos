@@ -57,7 +57,7 @@ namespace MueLu
 
 /*!
     @class InterfaceAggregationFactory class.
-    @brief Factory for building aggregates for block sharing a same physical interface.
+    @brief Factory for building aggregates for Lagrange multipliers.
 */
 
   template <class Scalar = DefaultScalar,
@@ -74,19 +74,19 @@ public:
   //@{
 
   //! Constructor.
-  InterfaceAggregationFactory();
+  explicit InterfaceAggregationFactory();
 
   //! Destructor.
   virtual ~InterfaceAggregationFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const override;
 
   //@}
 
   //! Input
   //@{
 
-  void DeclareInput(Level &currentLevel) const;
+  void DeclareInput(Level &currentLevel) const override;
 
   //@}
 
@@ -94,11 +94,9 @@ public:
   //@{
 
   /*! @brief Build aggregates. */
-  void Build(Level &currentLevel) const;
+  void Build(Level &currentLevel) const override;
 
   //@}
-
-private:
 };
 
 } // namespace MueLu

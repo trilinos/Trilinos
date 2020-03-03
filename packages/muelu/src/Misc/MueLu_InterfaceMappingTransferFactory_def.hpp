@@ -21,15 +21,15 @@ RCP<const ParameterList> InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrd
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const
 {
-    fineLevel.DeclareInput("CoarseLagr2Dof", NoFactory::get(), this);
+    fineLevel.DeclareInput("CoarseDualNodeID2PrimalNodeID", NoFactory::get());
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const
 {
     Monitor m(*this, "Interface Mapping transfer factory");
-    RCP<std::map<GlobalOrdinal, GlobalOrdinal>> coarseLagr2Dof = fineLevel.Get<RCP<std::map<GlobalOrdinal, GlobalOrdinal>>>("CoarseLagr2Dof", NoFactory::get());
-    coarseLevel.Set<RCP<std::map<GlobalOrdinal, GlobalOrdinal>>>("Lagr2Dof", coarseLagr2Dof, NoFactory::get());
+    RCP<std::map<LocalOrdinal, LocalOrdinal>> coarseLagr2Dof = fineLevel.Get<RCP<std::map<LocalOrdinal, LocalOrdinal>>>("CoarseDualNodeID2PrimalNodeID", NoFactory::get());
+    coarseLevel.Set<RCP<std::map<LocalOrdinal, LocalOrdinal>>>("DualNodeID2PrimalNodeID", coarseLagr2Dof, NoFactory::get());
 }
 
 } // namespace MueLu
