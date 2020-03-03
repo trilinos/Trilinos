@@ -44,72 +44,19 @@
 //
 // @HEADER
 
-#include <unistd.h>
-#include <iostream>
-#include <fstream>
-
-// Teuchos
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-// Tpetra
-#include <Tpetra_Map.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <MatrixMarket_Tpetra.hpp>
-
-// Xpetra
-#include <Xpetra_Map.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_Parameters.hpp>
-
 // MueLu
 #include <MueLu_ConfigDefs.hpp>
-#include <MueLu_Memory.hpp>
-#include <MueLu_Hierarchy.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
-#include <MueLu_PgPFactory.hpp>
-#include <MueLu_GenericRFactory.hpp>
-#include <MueLu_SaPFactory.hpp>
-#include <MueLu_TransPFactory.hpp>
-#include <MueLu_TrilinosSmoother.hpp>
-#include <MueLu_Utilities.hpp>
-#include <MueLu_Exceptions.hpp>
-#include <MueLu_Aggregates.hpp>
-#include <MueLu_CoalesceDropFactory.hpp>
-#include <MueLu_PreDropFunctionConstVal.hpp>
-#include <MueLu_NullspaceFactory.hpp>
-#include <MueLu_TentativePFactory.hpp>
-#include <MueLu_SmootherFactory.hpp>
-#include <MueLu_DirectSolver.hpp>
-#include <MueLu_SubBlockAFactory.hpp>
-#include <MueLu_BlockedGaussSeidelSmoother.hpp>
-#include <MueLu_BraessSarazinSmoother.hpp>
-#include <MueLu_SchurComplementFactory.hpp>
-#include <MueLu_Utilities.hpp>
-#include <MueLu_TopSmootherFactory.hpp>
-#include <MueLu_HierarchyUtils.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 
-#include "BelosStatusTestCombo.hpp"
+// Teuchos
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
+// Belos
+#include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosStatusTestCombo.hpp>
 #include <BelosXpetraStatusTestGenResSubNorm.hpp>
-
 #include <BelosXpetraAdapter.hpp>
 #include <BelosMueLuAdapter.hpp>
-
-#include "BelosPseudoBlockGmresSolMgr.hpp"
-
-#include <Xpetra_IO.hpp>
 
 template <typename GlobalOrdinal>
 void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> &lagr2Dof)
@@ -167,11 +114,6 @@ int main(int argc, char *argv[])
   RCP<const Comm<int>> comm = DefaultComm<int>::getComm();
   RCP<FancyOStream> out = fancyOStream(rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
-  *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
-
-  // Timing
-  Time myTime("global");
-  TimeMonitor MM(myTime);
 
   GO globalPrimalNumDofs = 1599;
   GO globalDualNumDofs = 100;
@@ -180,7 +122,7 @@ int main(int argc, char *argv[])
   int nDualDofsPerNode = 1;
 
   std::map<GO, GO> lagr2Dof;
-  std::map<GO, GO> myLagr2Dof;
+  std::map<LO, LO> myLagr2Dof;
   read_Lagr2Dof<GO>("Lagr2Dof.txt", lagr2Dof);
 
   // Construct the blocked map in Thyra mode
@@ -206,17 +148,18 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < numMyPrimalDofs; ++i)
     myDofs[i] = myPrimalDofs[i];
 
-  size_t current_i = 0;
+  LO current_i = 0;
   for (auto i = lagr2Dof.begin(); i != lagr2Dof.end(); ++i)
     if (primalMap->isNodeGlobalElement(nPrimalDofsPerNode * (i->second)))
     {
       for (int j = 0; j < nDualDofsPerNode; ++j)
       {
-        myDualDofs[current_i] = (i->first) * nDualDofsPerNode + j;
-        myDofs[numMyPrimalDofs + current_i] = globalPrimalNumDofs + (i->first) * nDualDofsPerNode + j;
-        ++current_i;
+        myDualDofs[nDualDofsPerNode * current_i + j] = (i->first) * nDualDofsPerNode + j;
+        myDofs[numMyPrimalDofs + nDualDofsPerNode * current_i + j] = globalPrimalNumDofs + (i->first) * nDualDofsPerNode + j;
       }
-      myLagr2Dof[i->first] = i->second;
+      GO primalDof = nPrimalDofsPerNode * (i->second);
+      myLagr2Dof[current_i] = primalMap->getLocalElement(primalDof) / nPrimalDofsPerNode;
+      ++current_i;
     }
 
   RCP<const tpetra_map_type> dualMap = rcp(new tpetra_map_type(globalDualNumDofs, myDualDofs, indexBase, comm));
@@ -254,11 +197,15 @@ int main(int argc, char *argv[])
   // Create the preconditioner
   std::string xmlFile = "myXML.xml";
 
-  ParameterListInterpreter mueLuFactory(xmlFile, *comm);
+  RCP<ParameterList> params = Teuchos::getParametersFromXmlFile(xmlFile);
+  RCP<ParameterList> paramsF, paramsI;
+  paramsF = sublist(params, "Factories");
+  paramsI = sublist(paramsF, "myInterfaceAggs2");
+  paramsI->set<RCP<std::map<LO, LO>>>("DualNodeID2PrimalNodeID", rcpFromRef(myLagr2Dof));
+
+  ParameterListInterpreter mueLuFactory(*params, comm);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
   H->GetLevel(0)->Set("A", rcp_dynamic_cast<xpetra_matrix_type>(blockedMatrix));
-
-  H->GetLevel(0)->template Set<RCP<std::map<GO, GO>>>("Lagr2Dof", rcpFromRef(myLagr2Dof));
   H->IsPreconditioner(true);
   H->SetDefaultVerbLevel(MueLu::Extreme);
   mueLuFactory.SetupHierarchy(*H);
