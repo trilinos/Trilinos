@@ -1,5 +1,4 @@
-/*
-//@HEADER
+/*@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
@@ -41,52 +40,22 @@
 //@HEADER
 */
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Factory_decl.hpp"
-
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-#  include "Ifpack2_Factory_def.hpp"
-#  include "Ifpack2_ExplicitInstantiationHelpers.hpp"
-#  include "Ifpack2_ETIHelperMacros.h"
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#include "Ifpack2_Utilities.hpp"
 
 namespace Ifpack2 {
+namespace Details {
 
-
-bool supportsUnsymmetric (const std::string& prec_type)
-{
-  bool result = false;
-  if (prec_type == "RELAXATION" ||
-      prec_type == "CHEBYSHEV"  ||
-      prec_type == "DIAGONAL"   ||
-      prec_type == "RILUK"      ||
-      prec_type == "RBILUK"     ||
-      prec_type == "ILUT"       ||
-      prec_type == "SCHWARZ"    ||
-      prec_type == "KRYLOV")
-  {
-    result = true;
+  std::string canonicalize(const std::string& precType) {
+    // precTypeUpper is the upper-case version of precType.
+    std::string precTypeUpper (precType);
+    if (precTypeUpper.size () > 0) {
+      std::locale locale;
+      for (size_t k = 0; k < precTypeUpper.size (); ++k) {
+        precTypeUpper[k] = std::toupper<char> (precTypeUpper[k], locale);
+      }
+    }
+    return precTypeUpper;
   }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "Ifpack2::supportsUnsymmetric: "
-      "Unrecognized preconditioner type prec_type = \"" << prec_type
-      << "\"");
-  }
-  return result;
-}
 
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
-// We can't use the usual IFPACK2_* class macro here because
-// OneLevelFactory is not a templated class; its methods are.
-#define LCLINST(S, LO, GO)
-
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
-
-  IFPACK2_INSTANTIATE_SLG_REAL( LCLINST )
-
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
+} // namespace Details
 } // namespace Ifpack2
-
