@@ -1007,7 +1007,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     // Construct Tpetra::CrsGraph objects.
     overlappedGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
-    ownedGraph = rcp (new sparse_graph_type (globalMapG, 0));
+    ownedGraph = rcp (new sparse_graph_type (globalMapG, 200));
 
     // Define desired workset size and count how many worksets
     // there are on this process's mesh block.
