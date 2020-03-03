@@ -13,8 +13,10 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
+#include "Tempus_Types.hpp"
 #include "Tempus_TimeStepControl.hpp"
 
+#include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include <fstream>
@@ -30,12 +32,8 @@ using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
 
-// Comment out any of the following tests to exclude from build/run.
-#define SETOUTPUTTIMES
-#define SETANDGETOUTPUTINDICESANDINTERVALS
 
 
-#ifdef SETOUTPUTTIMES
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(TimeStepControl, setOutputTimes)
@@ -109,13 +107,12 @@ TEUCHOS_UNIT_TEST(TimeStepControl, setOutputTimes)
   //tscPL = tsc->getParameterList();
   //std::cout << "tscPL = \n" << *tscPL << std::endl;
 }
-#endif // SETOUTPUTTIMES
 
 
-#ifdef SETANDGETOUTPUTINDICESANDINTERVALS
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(TimeStepControl, getOutputIndicesandIntervals){
+TEUCHOS_UNIT_TEST(TimeStepControl, getOutputIndicesandIntervals)
+{
   auto tsc = rcp(new Tempus::TimeStepControl<double>());
   int setOutputTimeIndex = 17;
   double setOutputTimeInterval = 1.101001000100001e-7;
@@ -128,7 +125,64 @@ TEUCHOS_UNIT_TEST(TimeStepControl, getOutputIndicesandIntervals){
   TEST_COMPARE(getOutputTimeInterval, ==, setOutputTimeInterval);
   TEST_COMPARE(getOutputTimeIndex, ==, setOutputTimeIndex);
 }
-#endif // SETANDGETOUTPUTINDICESANDINTERVALS
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
+{
+  // Setup the SolutionHistory --------------------------------
+  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =model->getNominalValues();
+  auto icSolution =rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
+  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->addState(icState);
+  double dt = 0.9;
+  solutionHistory->getCurrentState()->setTimeStep(dt);
+
+  // Setup the TimeStepControl --------------------------------
+  auto tsc = rcp(new Tempus::TimeStepControl<double>());
+  std::vector<double> outputTimes;
+  double outputTime = 0.8;
+  outputTimes.push_back(outputTime);
+  tsc->setOutputTimes(outputTimes);
+  tsc->setOutputExactly(true);
+  Tempus::Status status = Tempus::Status::WORKING;
+
+  // Set dt to hit outputTime for first timestep.
+  // If last step is PASSED (i.e., WS is null), then initWorkingState()
+  //   * Deep Copy CS to WS (maybe new RCP; may recycle old RCP for WS).
+  solutionHistory->initWorkingState();
+  // Need to reset local RCPs for WS and CS after initialize.
+  auto currentState = solutionHistory->getCurrentState();
+  auto workingState = solutionHistory->getWorkingState();
+
+  tsc->getNextTimeStep(solutionHistory, status);
+  double timeNM1 = currentState->getTime();
+  double timeN   = workingState->getTime();
+  TEST_COMPARE(timeN, ==, outputTime);
+  //TEST_COMPARE( std::abs(timeN-outputTime)/outputTime, <, 1.0e-15);
+
+  // ** Successful timestep !! ** //
+  workingState->setSolutionStatus(Tempus::Status::PASSED);
+  // If workingState PASSED, then RCP CS = RCP WS and RCP WS = null.
+  solutionHistory->promoteWorkingState();
+
+  // Set dt to timestep before output for second timestep.
+  solutionHistory->initWorkingState();
+  // Set local RCPs for WS and CS after initialize.
+  currentState = solutionHistory->getCurrentState();
+  workingState = solutionHistory->getWorkingState();
+
+  tsc->getNextTimeStep(solutionHistory, status);
+  timeNM1 = currentState->getTime();
+  timeN   = workingState->getTime();
+  TEST_COMPARE( (timeNM1 + dt), ==, timeN);
+
+  double dtN = workingState->getTimeStep();
+  TEST_COMPARE( dt, ==, dtN);
+}
 
 
 } // namespace Tempus_Test
