@@ -6,6 +6,8 @@
 /// \brief BLAS hermitian rank-k update
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "Tacho_Blas_External.hpp"
+
 namespace Tacho {
   
   template<typename ArgUplo, typename ArgTrans>
@@ -53,44 +55,27 @@ namespace Tacho {
 
       int r_val(0);
       if (n > 0 && k > 0) {
-        if      (std::is_same<value_type,float>::value) 
-          r_val = cublasSsyrk(handle, 
-                              ArgUplo::cublas_param,
-                              std::is_same<ArgTrans,Trans::ConjTranspose>::value ?
-                              Trans::Transpose::cublas_param : ArgTrans::cublas_param,
-                              n, k, 
-                              (const float*)&alpha,
-                              (const float*)A.data(), A.stride_1(),
-                              (const float*)&beta,
-                              (      float*)C.data(), C.stride_1());
-        else if (std::is_same<value_type,double>::value)
-          r_val = cublasDsyrk(handle, 
-                              ArgUplo::cublas_param,
-                              std::is_same<ArgTrans,Trans::ConjTranspose>::value ?
-                              Trans::Transpose::cublas_param : ArgTrans::cublas_param,
-                              n, k, 
-                              (const double*)&alpha,
-                              (const double*)A.data(), A.stride_1(),
-                              (const double*)&beta,
-                              (      double*)C.data(), C.stride_1());
-        else if (std::is_same<value_type,Kokkos::complex<float> >::value) 
-          r_val = cublasCherk(handle, 
-                              ArgUplo::cublas_param,
-                              ArgTrans::cublas_param,
-                              n, k, 
-                              (const float*)&alpha,
-                              (const cuComplex*)A.data(), A.stride_1(),
-                              (const float*)&beta,
-                              (      cuComplex*)C.data(), C.stride_1());
-        else if (std::is_same<value_type,Kokkos::complex<double> >::value) 
-          r_val = cublasZherk(handle, 
-                              ArgUplo::cublas_param,
-                              ArgTrans::cublas_param,
-                              n, k, 
-                              (const double*)&alpha,
-                              (const cuDoubleComplex*)A.data(), A.stride_1(),
-                              (const double*)&beta,
-                              (      cuDoubleComplex*)C.data(), C.stride_1());
+        if      (std::is_same<value_type,float>::value || 
+                 std::is_same<value_type,double>::value)
+          r_val = Blas<value_type>::herk(handle, 
+                                         ArgUplo::cublas_param,
+                                         std::is_same<ArgTrans,Trans::ConjTranspose>::value ?
+                                         Trans::Transpose::cublas_param : ArgTrans::cublas_param,
+                                         n, k, 
+                                         alpha,
+                                         A.data(), A.stride_1(),
+                                         beta,
+                                         C.data(), C.stride_1());
+        else if (std::is_same<value_type,Kokkos::complex<float> >::value || 
+                 std::is_same<value_type,Kokkos::complex<double> >::value)
+          r_val = Blas<value_type>::herk(handle,
+                                         ArgUplo::cublas_param,
+                                         ArgTrans::cublas_param,
+                                         n, k, 
+                                         alpha,
+                                         A.data(), A.stride_1(),
+                                         beta,
+                                         C.data(), C.stride_1());
       }
       return r_val;
     }

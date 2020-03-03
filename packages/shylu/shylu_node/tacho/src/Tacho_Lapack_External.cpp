@@ -66,169 +66,314 @@ namespace Tacho {
 #define F77_FUNC_CSYTRF F77_BLAS_MANGLE(csytrf,CSYTRF)
 #define F77_FUNC_ZSYTRF F77_BLAS_MANGLE(zsytrf,ZSYTRF)
 
-    template<>
-    void 
-    Lapack<float>::potrf(const char uplo,
-                         const int m,
-                         float *a, const int lda,
-                         int *info) {
-      F77_FUNC_SPOTRF(&uplo,
-                      &m,
-                      a, &lda,
-                      info);
-    }
-    template<>
-    void 
-    Lapack<float>::sytrf(const char uplo,
-                         const int m,
-                         float *a, const int lda,
-                         int *ipiv,
-                         float *work, int lwork,
-                         int *info) {
-      F77_FUNC_SSYTRF(&uplo,
-                      &m,
-                      a, &lda,
-                      ipiv,
-                      work, &lwork,
-                      info);
-    }
+  template<>
+  int 
+  Lapack<float>::potrf(const char uplo,
+                       const int m,
+                       float *a, const int lda,
+                       int *info) {
+    F77_FUNC_SPOTRF(&uplo,
+                    &m,
+                    a, &lda,
+                    info);
+  }
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  int 
+  Lapack<float>::potrf_buffersize(cusolverDnHandle_t handle,
+                                  const cublasFillMode_t uplo,
+                                  const int m,
+                                  float *a, const int lda,
+                                  int *lwork) {
+    const int r_val = cusolverDnSpotrf_bufferSize(handle,
+                                                  uplo,
+                                                  m, 
+                                                  a, lda,
+                                                  lwork);
+    return r_val;
+  }
+
+  template<>
+  int 
+  Lapack<float>::potrf(cusolverDnHandle_t handle,
+                       const cublasFillMode_t uplo,
+                       const int m,
+                       float *a, const int lda,
+                       float *w, const int lwork,
+                       int *dev) {
+    const int r_val = cusolverDnSpotrf(handle,
+                                       uplo,
+                                       m, 
+                                       a, lda,
+                                       w, lwork,
+                                       dev);
+    return r_val;
+  }
+#endif
+
+  template<>
+  int 
+  Lapack<float>::sytrf(const char uplo,
+                       const int m,
+                       float *a, const int lda,
+                       int *ipiv,
+                       float *work, int lwork,
+                       int *info) {
+    F77_FUNC_SSYTRF(&uplo,
+                    &m,
+                    a, &lda,
+                    ipiv,
+                    work, &lwork,
+                    info);
+    return 0;
+  }
     
-    template<>
-    void
-    Lapack<double>::potrf(const char uplo,
-                          const int m,
-                          double *a, const int lda,
-                          int *info) {
-      F77_FUNC_DPOTRF(&uplo,
-                      &m,
-                      a, &lda,
-                      info);
-    }
-    template<>
-    void 
-    Lapack<double>::sytrf(const char uplo,
-                          const int m,
-                          double *a, const int lda,
-                          int *ipiv,
-                          double *work, int lwork,
-                          int *info) {
-      F77_FUNC_DSYTRF(&uplo,
-                      &m,
-                      a, &lda,
-                      ipiv,
-                      work, &lwork,
-                      info);
-    }
+  template<>
+  int
+  Lapack<double>::potrf(const char uplo,
+                        const int m,
+                        double *a, const int lda,
+                        int *info) {
+    F77_FUNC_DPOTRF(&uplo,
+                    &m,
+                    a, &lda,
+                    info);
+    return 0;
+  }
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  int 
+  Lapack<double>::potrf_buffersize(cusolverDnHandle_t handle,
+                                   const cublasFillMode_t uplo,
+                                   const int m,
+                                   double *a, const int lda,
+                                   int *lwork) {
+    const int r_val = cusolverDnDpotrf_bufferSize(handle,
+                                                  uplo,
+                                                  m, 
+                                                  a, lda,
+                                                  lwork);
+    return r_val;
+  }
 
-    template<>
-    void 
-    Lapack<Kokkos::complex<float> >::potrf(const char uplo,
-                                           const int m,
-                                           Kokkos::complex<float> *a, const int lda,
-                                           int *info) {
-      F77_FUNC_CPOTRF(&uplo,
-                      &m,
-                      a, &lda,
-                      info);
-    }
-    
-    template<>
-    void 
-    Lapack<Kokkos::complex<float> >::sytrf(const char uplo,
-                                           const int m,
-                                           Kokkos::complex<float> *a, const int lda,
-                                           int *ipiv,
-                                           Kokkos::complex<float> *work, int lwork,
-                                           int *info) {
-      F77_FUNC_CSYTRF(&uplo,
-                      &m,
-                      a, &lda,
-                      ipiv,
-                      work, &lwork,
-                      info);
-    }
+  template<>
+  int 
+  Lapack<double>::potrf(cusolverDnHandle_t handle,
+                        const cublasFillMode_t uplo,
+                        const int m,
+                        double *a, const int lda,
+                        double *w, const int lwork,
+                        int *dev) {
+    const int r_val = cusolverDnDpotrf(handle,
+                                       uplo,
+                                       m, 
+                                       a, lda,
+                                       w, lwork,
+                                       dev);
+    return r_val;
+  }
+#endif
 
-    template<>
-    void 
-    Lapack<Kokkos::complex<double> >::potrf(const char uplo,
-                                            const int m,
-                                            Kokkos::complex<double> *a, const int lda,
-                                            int *info) {
-      F77_FUNC_ZPOTRF(&uplo,
-                      &m,
-                      a, &lda,
-                      info);
-    }
-    template<>
-    void 
-    Lapack<Kokkos::complex<double> >::sytrf(const char uplo,
-                                            const int m,
-                                            Kokkos::complex<double> *a, const int lda,
-                                            int *ipiv,
-                                            Kokkos::complex<double>* work, int lwork,
-                                            int *info) {
-      F77_FUNC_ZSYTRF(&uplo,
-                      &m,
-                      a, &lda,
-                      ipiv,
-                      work, &lwork,
-                      info);
-    }
+  template<>
+  int 
+  Lapack<double>::sytrf(const char uplo,
+                        const int m,
+                        double *a, const int lda,
+                        int *ipiv,
+                        double *work, int lwork,
+                        int *info) {
+    F77_FUNC_DSYTRF(&uplo,
+                    &m,
+                    a, &lda,
+                    ipiv,
+                    work, &lwork,
+                    info);
+    return 0;
+  }
 
-    template<>
-    void 
-    Lapack<std::complex<float> >::potrf(const char uplo,
-                                        const int m,
-                                        std::complex<float> *a, const int lda,
-                                        int *info) {
-      F77_FUNC_CPOTRF(&uplo,
-                      &m,
-                      (Kokkos::complex<float>*)a, &lda,
-                      info);
-    }
-    
-    template<>
-    void 
-    Lapack<std::complex<float> >::sytrf(const char uplo,
-                                        const int m,
-                                        std::complex<float> *a, const int lda,
-                                        int *ipiv,
-                                        std::complex<float> *work, int lwork,
-                                        int *info) {
-      F77_FUNC_CSYTRF(&uplo,
-                      &m,
-                      (Kokkos::complex<float>*)a, &lda,
-                      ipiv,
-                      (Kokkos::complex<float>*)work, &lwork,
-                      info);
-    }
-
-    template<>
-    void 
-    Lapack<std::complex<double> >::potrf(const char uplo,
+  template<>
+  int 
+  Lapack<Kokkos::complex<float> >::potrf(const char uplo,
                                          const int m,
-                                         std::complex<double> *a, const int lda,
+                                         Kokkos::complex<float> *a, const int lda,
                                          int *info) {
-      F77_FUNC_ZPOTRF(&uplo,
-                      &m,
-                      (Kokkos::complex<double>*)a, &lda,
-                      info);
-    }
-    template<>
-    void 
-    Lapack<std::complex<double> >::sytrf(const char uplo,
+    F77_FUNC_CPOTRF(&uplo,
+                    &m,
+                    a, &lda,
+                    info);
+    return 0;
+  }
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  int 
+  Lapack<Kokkos::complex<float> >::potrf_buffersize(cusolverDnHandle_t handle,
+                                                    const cublasFillMode_t uplo,
+                                                    const int m,
+                                                    Kokkos::complex<float> *a, const int lda,
+                                                    int *lwork) {
+    const int r_val = cusolverDnCpotrf_bufferSize(handle,
+                                                  uplo,
+                                                  m, 
+                                                  (cuComplex*)a, lda,
+                                                  lwork);
+    return r_val;
+  }
+
+  template<>
+  int 
+  Lapack<Kokkos::complex<float> >::potrf(cusolverDnHandle_t handle,
+                                         const cublasFillMode_t uplo,
                                          const int m,
-                                         std::complex<double> *a, const int lda,
+                                         Kokkos::complex<float> *a, const int lda,
+                                         Kokkos::complex<float> *w, const int lwork,
+                                         int *dev) {
+    const int r_val = cusolverDnCpotrf(handle,
+                                       uplo,
+                                       m, 
+                                       (cuComplex*)a, lda,
+                                       (cuComplex*)w, lwork,
+                                       dev);
+    return r_val;
+  }
+#endif
+    
+  template<>
+  int 
+  Lapack<Kokkos::complex<float> >::sytrf(const char uplo,
+                                         const int m,
+                                         Kokkos::complex<float> *a, const int lda,
                                          int *ipiv,
-                                         std::complex<double>* work, int lwork,
+                                         Kokkos::complex<float> *work, int lwork,
                                          int *info) {
-      F77_FUNC_ZSYTRF(&uplo,
-                      &m,
-                      (Kokkos::complex<double>*)a, &lda,
-                      ipiv,
-                      (Kokkos::complex<double>*)work, &lwork,
-                      info);
-    }
+    F77_FUNC_CSYTRF(&uplo,
+                    &m,
+                    a, &lda,
+                    ipiv,
+                    work, &lwork,
+                    info);
+    return 0;
+  }
+
+  template<>
+  int 
+  Lapack<Kokkos::complex<double> >::potrf(const char uplo,
+                                          const int m,
+                                          Kokkos::complex<double> *a, const int lda,
+                                          int *info) {
+    F77_FUNC_ZPOTRF(&uplo,
+                    &m,
+                    a, &lda,
+                    info);
+    return 0;
+  }
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  int 
+  Lapack<Kokkos::complex<double> >::potrf_buffersize(cusolverDnHandle_t handle,
+                                                     const cublasFillMode_t uplo,
+                                                     const int m,
+                                                     Kokkos::complex<double> *a, const int lda,
+                                                     int *lwork) {
+    const int r_val = cusolverDnZpotrf_bufferSize(handle,
+                                                  uplo,
+                                                  m, 
+                                                  (cuDoubleComplex*)a, lda,
+                                                  lwork);
+    return r_val;
+  }
+
+  template<>
+  int 
+  Lapack<Kokkos::complex<double> >::potrf(cusolverDnHandle_t handle,
+                                          const cublasFillMode_t uplo,
+                                          const int m,
+                                          Kokkos::complex<double> *a, const int lda,
+                                          Kokkos::complex<double> *w, const int lwork,
+                                          int *dev) {
+    const int r_val = cusolverDnZpotrf(handle,
+                                       uplo,
+                                       m, 
+                                       (cuDoubleComplex*)a, lda,
+                                       (cuDoubleComplex*)w, lwork,
+                                       dev);
+    return r_val;
+  }
+#endif
+
+  template<>
+  int 
+  Lapack<Kokkos::complex<double> >::sytrf(const char uplo,
+                                          const int m,
+                                          Kokkos::complex<double> *a, const int lda,
+                                          int *ipiv,
+                                          Kokkos::complex<double>* work, int lwork,
+                                          int *info) {
+    F77_FUNC_ZSYTRF(&uplo,
+                    &m,
+                    a, &lda,
+                    ipiv,
+                    work, &lwork,
+                    info);
+    return 0;
+  }
+
+  template<>
+  int 
+  Lapack<std::complex<float> >::potrf(const char uplo,
+                                      const int m,
+                                      std::complex<float> *a, const int lda,
+                                      int *info) {
+    F77_FUNC_CPOTRF(&uplo,
+                    &m,
+                    (Kokkos::complex<float>*)a, &lda,
+                    info);
+    return 0;
+  }
     
+  template<>
+  int 
+  Lapack<std::complex<float> >::sytrf(const char uplo,
+                                      const int m,
+                                      std::complex<float> *a, const int lda,
+                                      int *ipiv,
+                                      std::complex<float> *work, int lwork,
+                                      int *info) {
+    F77_FUNC_CSYTRF(&uplo,
+                    &m,
+                    (Kokkos::complex<float>*)a, &lda,
+                    ipiv,
+                    (Kokkos::complex<float>*)work, &lwork,
+                    info);
+    return 0;
+  }
+
+  template<>
+  int 
+  Lapack<std::complex<double> >::potrf(const char uplo,
+                                       const int m,
+                                       std::complex<double> *a, const int lda,
+                                       int *info) {
+    F77_FUNC_ZPOTRF(&uplo,
+                    &m,
+                    (Kokkos::complex<double>*)a, &lda,
+                    info);
+    return 0;
+  }
+  template<>
+  int 
+  Lapack<std::complex<double> >::sytrf(const char uplo,
+                                       const int m,
+                                       std::complex<double> *a, const int lda,
+                                       int *ipiv,
+                                       std::complex<double>* work, int lwork,
+                                       int *info) {
+    F77_FUNC_ZSYTRF(&uplo,
+                    &m,
+                    (Kokkos::complex<double>*)a, &lda,
+                    ipiv,
+                    (Kokkos::complex<double>*)work, &lwork,
+                    info);
+    return 0;
+  }
 
 }

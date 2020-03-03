@@ -46,34 +46,12 @@ namespace Tacho {
           int *devInfo = (int*)W.data();
           value_type *workspace = W.data() + 1;
           int lwork = (W.span()-1)*sizeof(work_value_type);
-          if      (std::is_same<value_type,float>::value) 
-            r_val = cusolverDnSpotrf(handle, 
-                                     ArgUplo::cublas_param,
-                                     m, 
-                                     (float*)A.data(), A.stride_1(),
-                                     (float*)workspace, lwork,
-                                     devInfo);
-          else if (std::is_same<value_type,double>::value) 
-            r_val = cusolverDnDpotrf(handle, 
-                                     ArgUplo::cublas_param,
-                                     m, 
-                                     (double*)A.data(), A.stride_1(),
-                                     (double*)workspace, lwork,
-                                     devInfo);
-          else if (std::is_same<value_type,Kokkos::complex<float> >::value) 
-            r_val = cusolverDnCpotrf(handle, 
-                                     ArgUplo::cublas_param,
-                                     m, 
-                                     (cuComplex*)A.data(), A.stride_1(),
-                                     (cuComplex*)workspace, lwork,
-                                     devInfo);
-          else if (std::is_same<value_type,Kokkos::complex<double> >::value) 
-            r_val = cusolverDnZpotrf(handle, 
-                                     ArgUplo::cublas_param,
-                                     m, 
-                                     (cuDoubleComplex*)A.data(), A.stride_1(),
-                                     (cuDoubleComplex*)workspace, lwork,
-                                     devInfo);
+          r_val = Lapack<value_type>::potrf(handle,
+                                            ArgUplo::cublas_param,
+                                            m, 
+                                            A.data(), A.stride_1(),
+                                            workspace, lwork,
+                                            devInfo);
         }
         return r_val;
       }
@@ -89,32 +67,12 @@ namespace Tacho {
           m = A.extent(0);
 
         int r_val(0);
-        if (m > 0) {
-          if      (std::is_same<value_type,float>::value) 
-            r_val = cusolverDnSpotrf_bufferSize(handle, 
-                                                ArgUplo::cublas_param,
-                                                m, 
-                                                (float*)A.data(), A.stride_1(),
-                                                lwork);
-          else if (std::is_same<value_type,double>::value) 
-            r_val = cusolverDnDpotrf_bufferSize(handle, 
-                                                ArgUplo::cublas_param,
-                                                m, 
-                                                (double*)A.data(), A.stride_1(),
-                                                lwork);
-          else if (std::is_same<value_type,Kokkos::complex<float> >::value) 
-            r_val = cusolverDnCpotrf_bufferSize(handle, 
-                                                ArgUplo::cublas_param,
-                                                m, 
-                                                (cuComplex*)A.data(), A.stride_1(),
-                                                lwork);
-          else if (std::is_same<value_type,Kokkos::complex<double> >::value) 
-            r_val = cusolverDnZpotrf_bufferSize(handle, 
-                                                ArgUplo::cublas_param,
-                                                m, 
-                                                (cuDoubleComplex*)A.data(), A.stride_1(),
-                                                lwork);
-        }
+        if (m > 0) 
+          r_val = Lapack<value_type>::potrf_buffersize(handle,
+                                                       ArgUplo::cublas_param,
+                                                       m, 
+                                                       A.data(), A.stride_1(),
+                                                       lwork);
         return r_val;
       }
 #endif

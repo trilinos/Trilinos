@@ -55,46 +55,15 @@ namespace Tacho {
         
         int r_val(0);
         if (m > 0 && n > 0) 
-          if (std::is_same<value_type,float>::value) 
-            r_val = cublasStrsm(handle, 
-                                ArgSide::cublas_param,
-                                ArgUplo::cublas_param, 
-                                ArgTransA::cublas_param, 
-                                diagA.cublas_param,
-                                m, n,
-                                (const float*)&alpha,
-                                (const float*)A.data(), A.stride_1(),
-                                (float*)B.data(), B.stride_1()); 
-          else if (std::is_same<value_type,double>::value) 
-            r_val = cublasDtrsm(handle, 
-                                ArgSide::cublas_param,
-                                ArgUplo::cublas_param, 
-                                ArgTransA::cublas_param, 
-                                diagA.cublas_param,
-                                m, n,
-                                (const double*)&alpha,
-                                (const double*)A.data(), A.stride_1(),
-                                (double*)B.data(), B.stride_1()); 
-          else if (std::is_same<value_type,Kokkos::complex<float> >::value) 
-            r_val = cublasCtrsm(handle, 
-                                ArgSide::cublas_param,
-                                ArgUplo::cublas_param, 
-                                ArgTransA::cublas_param, 
-                                diagA.cublas_param,
-                                m, n,
-                                (const cuComplex*)&alpha,
-                                (const cuComplex*)A.data(), A.stride_1(),
-                                (cuComplex*)B.data(), B.stride_1()); 
-          else if (std::is_same<value_type,Kokkos::complex<double> >::value) 
-            r_val = cublasZtrsm(handle, 
-                                ArgSide::cublas_param,
-                                ArgUplo::cublas_param, 
-                                ArgTransA::cublas_param, 
-                                diagA.cublas_param,
-                                m, n,
-                                (const cuDoubleComplex*)&alpha,
-                                (const cuDoubleComplex*)A.data(), A.stride_1(),
-                                (cuDoubleComplex*)B.data(), B.stride_1()); 
+          Blas<value_type>::trsm(handle,
+                                 ArgSide::cublas_param,
+                                 ArgUplo::cublas_param, 
+                                 ArgTransA::cublas_param, 
+                                 diagA.cublas_param,
+                                 m, n,
+                                 alpha,
+                                 A.data(), A.stride_1(),
+                                 B.data(), B.stride_1()); 
         return r_val;
       }
 #endif      
