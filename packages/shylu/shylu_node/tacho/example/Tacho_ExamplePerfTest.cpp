@@ -96,11 +96,11 @@ int main (int argc, char *argv[]) {
   
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; 
+  int r_val = 0;
 
+#if !defined(KOKKOS_ENABLE_CUDA)
   Kokkos::initialize(argc, argv);
   Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
-
-  int r_val = 0;
 
   {
     /// basic typedef
@@ -496,6 +496,9 @@ int main (int argc, char *argv[]) {
 
   }
   Kokkos::finalize();
+#else
+  std::cout << "PerfTest is not instanciated when CUDA is enabled\n";
+#endif
   return r_val;
 }
 

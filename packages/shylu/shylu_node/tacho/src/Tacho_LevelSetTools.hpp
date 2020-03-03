@@ -139,6 +139,7 @@ namespace Tacho {
     // cuda stream
 #if defined(KOKKOS_ENABLE_CUDA)
     int _nstreams;
+    bool _is_cublas_created, _is_cusolver_dn_created;
     cublasHandle_t _handle_blas;
     cusolverDnHandle_t _handle_lapack;
     typedef std::vector<cudaStream_t> cuda_stream_array_host;
@@ -412,8 +413,12 @@ namespace Tacho {
       /// cuda library initialize
       ///
 #if defined(KOKKOS_ENABLE_CUDA)
-      _status = cublasCreate(&_handle_blas); checkDeviceBlasStatus("cublasCreate");
-      _status = cusolverDnCreate(&_handle_lapack); checkDeviceLapackStatus("cusolverDnCreate");
+      if (!_is_cublas_created) {
+        _status = cublasCreate(&_handle_blas); checkDeviceBlasStatus("cublasCreate"); _is_cublas_created = true;
+      }
+      if (!_is_cusolver_dn_created) {
+        _status = cusolverDnCreate(&_handle_lapack); checkDeviceLapackStatus("cusolverDnCreate"); _is_cusolver_dn_created = true;
+      }
 #endif
       stat.t_init = timer.seconds();
 
@@ -532,7 +537,12 @@ namespace Tacho {
       _h_stree_level(N.getSupernodesTreeLevel()),
       _nstreams(0),
       _max_nrhs(max_nrhs) 
-    {}
+    {
+#if defined(KOKKOS_ENABLE_CUDA)
+      _is_cublas_created = 0;
+      _is_cusolver_dn_created = 0;
+#endif
+    }
 
     virtual~LevelSetTools() {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -541,8 +551,13 @@ namespace Tacho {
         _status = cudaStreamDestroy(_cuda_streams[i]); checkDeviceStatus("cudaStreamDestroy");
       }
       _cuda_streams.clear();
-      _status = cusolverDnDestroy(_handle_lapack); checkDeviceLapackStatus("cusolverDnDestroy");
-      _status = cublasDestroy(_handle_blas); checkDeviceBlasStatus("cublasDestroy");
+      
+      if (_is_cublas_created) {
+        _status = cusolverDnDestroy(_handle_lapack); checkDeviceLapackStatus("cusolverDnDestroy");
+      }
+      if (_is_cusolver_dn_created) {
+        _status = cublasDestroy(_handle_blas); checkDeviceBlasStatus("cublasDestroy");
+      }
 #endif
     }
 
@@ -1034,7 +1049,7 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: TriSolveTools (ParallelSolve: %3d)\n", nrhs);
+        printf("Summary: LevelSetTools (ParallelSolve: %3d)\n", nrhs);
         printf("===========================================\n");
         print_stat_solve();
       }

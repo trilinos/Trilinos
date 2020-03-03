@@ -94,6 +94,13 @@ namespace tacho {
       }
       {
         timer.reset();
+        const int max_nrhs = 1;
+        m_Solver.initialize(max_nrhs);
+        const double t = timer.seconds();
+        std::cout << "ExternalInterface:: initialize time " << t << std::endl;
+      }
+      {
+        timer.reset();
 	m_Solver.factorize(ax);
         const double t = timer.seconds();
         std::cout << "ExternalInterface:: factorize time " << t << std::endl;

@@ -26,9 +26,14 @@
 
 #include "Tacho_CommandLineParser.hpp"
 
-#define TACHO_ENABLE_PROFILE
+//#define TACHO_ENABLE_PROFILE
 #if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
 #include "cuda_profiler_api.h" 
+#endif
+
+//#define TACHO_ENABLE_MPI_TEST
+#if defined(TACHO_ENABLE_MPI_TEST)
+#include "mpi.h"
 #endif
 
 template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
@@ -56,6 +61,19 @@ int main (int argc, char *argv[]) {
   opts.set_option<int>("device-level-cut", "tree cut level to force device function", &device_level_cut);
   opts.set_option<int>("device-factor-thres", "device function is used above this threshold in factorization", &device_factor_thres);
   opts.set_option<int>("device-solve-thres", "device function is used above this threshold in solve", &device_solve_thres);
+
+#if defined(TACHO_ENABLE_MPI_TEST)
+  int nrank, irank;
+  MPI_Init(&argc, &argv);
+  const auto comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &irank);
+  MPI_Comm_size(comm, &nrank);
+
+  std::vector<double> t_all(nrank, double(0));
+  auto is_root = [irank]()->bool { return irank == 0; };
+#else
+  auto is_root = []()->bool { return true; };
+#endif
 
 #if !defined (KOKKOS_ENABLE_CUDA)
   // override serial flag
@@ -93,8 +111,8 @@ int main (int argc, char *argv[]) {
     
     Kokkos::Impl::Timer timer;
     double t = 0.0;
-
-    std::cout << "CholLevelSet:: import input file = " << file << std::endl;
+    
+    if (is_root()) std::cout << "CholLevelSet:: import input file = " << file << std::endl;
     CrsMatrixBaseTypeHost A;
     timer.reset();
     {
@@ -110,9 +128,9 @@ int main (int argc, char *argv[]) {
     }
     Tacho::Graph G(A);
     t = timer.seconds();
-    std::cout << "CholLevelSet:: import input file::time = " << t << std::endl;
+    if (is_root()) std::cout << "CholLevelSet:: import input file::time = " << t << std::endl;
 
-    std::cout << "CholLevelSet:: analyze matrix" << std::endl;
+    if (is_root()) std::cout << "CholLevelSet:: analyze matrix" << std::endl;
     timer.reset();
 #if   defined(TACHO_HAVE_METIS)
     Tacho::GraphTools_Metis T(G);
@@ -126,7 +144,7 @@ int main (int argc, char *argv[]) {
     Tacho::SymbolicTools S(A, T);
     S.symbolicFactorize(verbose);
     t = timer.seconds();
-    std::cout << "CholLevelSet:: analyze matrix::time = " << t << std::endl;
+    if (is_root()) std::cout << "CholLevelSet:: analyze matrix::time = " << t << std::endl;
 
     typedef typename device_type::memory_space device_memory_space; 
     
@@ -177,7 +195,8 @@ int main (int argc, char *argv[]) {
     L.initialize(device_level_cut, device_factor_thres, device_solve_thres, verbose);
     L.createStream(nstreams);
 
-    std::cout << "CholLevelSet:: factorize matrix" << std::endl;
+
+    if (is_root()) std::cout << "CholLevelSet:: factorize matrix" << std::endl;
 #if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
     cudaProfilerStart();
 #endif
@@ -187,8 +206,25 @@ int main (int argc, char *argv[]) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
     cudaProfilerStop();
 #endif
-    std::cout << "CholLevelSet:: factorize matrix::time = " << t << std::endl;
-    
+    if (is_root()) std::cout << "CholLevelSet:: factorize matrix::time = " << t << std::endl;
+
+#if defined(TACHO_ENABLE_MPI_TEST)
+    {
+      MPI_Gather(&t, 1, MPI_DOUBLE, t_all.data(), 1, MPI_DOUBLE, 0, comm); 
+      
+      if (is_root()) {
+        double t_min(1000000), t_max(0), t_avg(0);
+        for (int i=0;i<nrank;++i) {
+          t_min = std::min(t_min, t_all[i]);
+          t_max = std::max(t_max, t_all[i]);
+          t_avg += t_all[i];
+        }
+        t_avg /= double(nrank);
+        std::cout << "CholLevelSet:: factorize matrix::time (min, max, avg) = " << t_min << ", " << t_max << ", " << t_avg << "\n";  
+      }
+    }
+#endif
+
     DenseMatrixBaseType 
       B("B", A.NumRows(), nrhs), 
       X("X", A.NumRows(), nrhs), 
@@ -202,30 +238,55 @@ int main (int argc, char *argv[]) {
     ///
     /// solve via level set
     ///
-    std::cout << "CholLevelSet:: solve matrix via LevelSetTools" << std::endl;
+    if (is_root()) std::cout << "CholLevelSet:: solve matrix via LevelSetTools" << std::endl;
 
     timer.reset();        
 #if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
     cudaProfilerStart();
 #endif
-    L.solveCholesky(X, B, W, verbose); 
+    constexpr int niter = 10;
+    for (int i=0;i<niter;++i) 
+      L.solveCholesky(X, B, W, verbose); 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
     cudaProfilerStop();
 #endif
     t = timer.seconds();    
-    std::cout << "CholLevelSet:: solve matrix::time = " << t << std::endl;
+    if (is_root()) std::cout << "CholLevelSet:: solve matrix::time = " << t << std::endl;
     L.release(verbose);
+
+#if defined(TACHO_ENABLE_MPI_TEST)
+    {
+      MPI_Gather(&t, 1, MPI_DOUBLE, t_all.data(), 1, MPI_DOUBLE, 0, comm); 
+      
+      if (is_root()) {
+        double t_min(1000000), t_max(0), t_avg(0);
+        for (int i=0;i<nrank;++i) {
+          t_min = std::min(t_min, t_all[i]);
+          t_max = std::max(t_max, t_all[i]);
+          t_avg += t_all[i];
+        }
+        t_avg /= double(nrank*niter);
+        t_min /= double(niter);
+        t_max /= double(niter);
+        std::cout << "CholLevelSet:: solve matrix::time (min, max, avg) = " << t_min << ", " << t_max << ", " << t_avg << "\n";  
+      }
+    }
+#endif
 
     CrsMatrixBaseType AA;
     AA.createMirror(A);
     AA.copy(A);
 
     const double res = Tacho::computeRelativeResidual(AA, X, B);
-    std::cout << "CholLevelSet:: residual = " << res << std::endl;
+    if (is_root()) std::cout << "CholLevelSet:: residual = " << res << std::endl;
 
     N.release(verbose);
   }
   Kokkos::finalize();
+
+#if defined(TACHO_ENABLE_MPI_TEST)
+  MPI_Finalize();
+#endif
 
   return r_val;
 }

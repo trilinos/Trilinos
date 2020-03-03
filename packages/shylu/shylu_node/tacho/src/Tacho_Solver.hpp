@@ -48,6 +48,7 @@ namespace Tacho {
 
     typedef SymbolicTools symbolic_tools_type;
     typedef NumericTools<value_type,scheduler_type> numeric_tools_type;
+    typedef LevelSetTools<value_type,scheduler_type> levelset_tools_type;
 
   public:
     enum : int { Cholesky = 1,
@@ -56,7 +57,7 @@ namespace Tacho {
                  LU = 4 };
 
     // ** solver mode
-    bool _transpose, _trisolve;
+    bool _transpose;
     ordinal_type _mode;
 
     // ** problem
@@ -95,16 +96,28 @@ namespace Tacho {
     // ** numeric factorization output
     numeric_tools_type _N;
 
+    // ** level set interface
+    levelset_tools_type _L;
+
     // small dense matrix
     value_type_matrix_host _U;
 
     // ** options
     ordinal_type _verbose;              // print
     ordinal_type _small_problem_thres;  // smaller than this, use lapack
-    ordinal_type _serial_thres_size;    // serialization threshold size
+    
+    // ** tasking options
+    ordinal_type _serial_thres_size;    // serialization threshold size    
     ordinal_type _mb;                   // block size for byblocks algorithms
     ordinal_type _nb;                   // panel size for panel algorithms
     ordinal_type _front_update_mode;    // front update mode 0 - lock, 1 - atomic
+
+    // ** levelset options
+    bool         _levelset;             // use level set code instead of tasking
+    ordinal_type _device_level_cut;     // above this level, matrices are computed on device
+    ordinal_type _device_factor_thres;  // bigger than this threshold, device function is used
+    ordinal_type _device_solve_thres;   // bigger than this threshold, device function is used
+    ordinal_type _nstreams;             // on cuda, multi streams are used
 
     // parallelism and memory constraint is made via this parameter
     ordinal_type _max_num_superblocks;  // # of superblocks in the memoyrpool
@@ -120,30 +133,23 @@ namespace Tacho {
         _mb(-1),
         _nb(-1),
         _front_update_mode(-1),
+        _levelset(0),
+        _device_level_cut(0),
+        _device_factor_thres(64),
+        _device_solve_thres(128),
+        _nstreams(8),
         _max_num_superblocks(-1) {}
 
     Solver(const Solver &b) = default;
 
+    ///
+    /// common options
+    ///
     void setVerbose(const ordinal_type verbose = 1) {
       _verbose = verbose;
     }
     void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024) {
       _small_problem_thres = small_problem_thres;
-    }
-    void setSerialThresholdsize(const ordinal_type serial_thres_size = -1) {
-      _serial_thres_size = serial_thres_size;
-    }
-    void setBlocksize(const ordinal_type mb = -1) {
-      _mb = mb;
-    }
-    void setPanelsize(const ordinal_type nb = -1) {
-      _nb = nb;
-    }
-    void setFrontUpdateMode(const ordinal_type front_update_mode = 1) {
-      _front_update_mode = front_update_mode;
-    }
-    void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {
-      _max_num_superblocks = max_num_superblocks;
     }
     void setTransposeSolve(const bool transpose) {
       _transpose = transpose; // this option is not used yet
@@ -186,12 +192,50 @@ namespace Tacho {
       }
       TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
     }
-    void setUseTriSolve(const bool trisolve) {
-      _trisolve = trisolve; // this option is not used yet
+
+    ///
+    /// tasking options
+    ///
+    void setSerialThresholdsize(const ordinal_type serial_thres_size = -1) {
+      _serial_thres_size = serial_thres_size;
+    }
+    void setBlocksize(const ordinal_type mb = -1) {
+      _mb = mb;
+    }
+    void setPanelsize(const ordinal_type nb = -1) {
+      _nb = nb;
+    }
+    void setFrontUpdateMode(const ordinal_type front_update_mode = 1) {
+      _front_update_mode = front_update_mode;
+    }
+    void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {
+      _max_num_superblocks = max_num_superblocks;
     }
 
+    ///
+    /// Level set tools options
+    ///
+    void setLevelSetScheduling(const bool levelset) {
+      _levelset = levelset; // this option is not used yet
+    }
+    void setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut) {
+      _device_level_cut = device_level_cut;
+    }
+    void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
+                                                  const ordinal_type device_solve_thres) {
+      _device_factor_thres = device_factor_thres;
+      _device_solve_thres = device_solve_thres;
+    }
+    void setLevelSetOptionNumStreams(const ordinal_type nstreams) {
+      _nstreams = nstreams;
+    }
+
+    ///
+    /// get interface
+    ///
     ordinal_type_array getPermutationVector() const { return _perm;} 
     ordinal_type_array getInversePermutationVector() const { return _peri; }
+
 
     // internal only
     int analyze(const ordinal_type m,
@@ -299,12 +343,53 @@ namespace Tacho {
       return analyze(_m, _h_ap, _h_aj, _h_perm, _h_peri);
     }
 
+    int initialize(const ordinal_type max_nrhs) {
+      if (_verbose) {
+        printf("TachoSolver: Initialize\n");
+        printf("=======================\n");
+      }
+      ///
+      /// initialize numeric tools
+      ///
+      _N = numeric_tools_type(_m, _ap, _aj,
+                              _perm, _peri,
+                              _nsupernodes, _supernodes,
+                              _gid_super_panel_ptr, _gid_super_panel_colidx,
+                              _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
+                              _stree_parent, _stree_ptr, _stree_children, 
+                              _stree_level, _stree_roots);
+      
+      if (_serial_thres_size < 0) { // set default values
+        _serial_thres_size = 64;
+      }
+      _N.setSerialThresholdSize(_serial_thres_size);
+      
+      if (_max_num_superblocks < 0) { // set default values
+        _max_num_superblocks = 16;
+      }
+      _N.setMaxNumberOfSuperblocks(_max_num_superblocks);
+      
+      if (_front_update_mode < 0) { // set default values
+        _front_update_mode = 1; // atomic is default
+      }
+      _N.setFrontUpdateMode(_front_update_mode);
+      _N.printMemoryStat(_verbose);
+
+      ///
+      /// initialize levelset tools
+      ///
+      if (_levelset) {
+        _L = levelset_tools_type(_N, max_nrhs);
+        _L.initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
+        _L.createStream(_nstreams);
+      }
+    }
+    
     int factorize(const value_type_array &ax) {
       if (_verbose) {
         printf("TachoSolver: Factorize\n");
         printf("======================\n");
       }
-
       if (_m < _small_problem_thres) {
         Kokkos::Impl::Timer timer;
 
@@ -335,28 +420,6 @@ namespace Tacho {
           printf("\n");
         }
       } else {
-        _N = numeric_tools_type(_m, _ap, _aj,
-                                _perm, _peri,
-                                _nsupernodes, _supernodes,
-                                _gid_super_panel_ptr, _gid_super_panel_colidx,
-                                _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
-                                _stree_parent, _stree_ptr, _stree_children, 
-                                _stree_level, _stree_roots);
-        
-        if (_serial_thres_size < 0) { // set default values
-          _serial_thres_size = 64;
-        }
-        _N.setSerialThresholdSize(_serial_thres_size);
-
-        if (_max_num_superblocks < 0) { // set default values
-          _max_num_superblocks = 16;
-        }
-        _N.setMaxNumberOfSuperblocks(_max_num_superblocks);
-
-        if (_front_update_mode < 0) { // set default values
-          _front_update_mode = 1; // atomic is default
-        }
-        _N.setFrontUpdateMode(_front_update_mode);
 
 #if !defined (KOKKOS_ENABLE_CUDA)
   #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
@@ -365,9 +428,8 @@ namespace Tacho {
         const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
   #endif
 #endif
-        
-        if (false) {
-          // do nothing
+        if (_levelset) {
+          _L.factorizeCholesky(ax, _verbose);
         } 
 #if !defined (KOKKOS_ENABLE_CUDA)
         else if (nthreads == 1) {
@@ -475,7 +537,8 @@ namespace Tacho {
         auto tt = Kokkos::subview(t, 
                                   Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
                                   Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
-        if (false) {
+        if (_levelset) {
+          _L.solveCholesky(x, b, tt, _verbose);
         } 
 #if !defined (KOKKOS_ENABLE_CUDA)
         else if (nthreads == 1) {
@@ -544,8 +607,12 @@ namespace Tacho {
         printf("TachoSolver: Release\n");
         printf("====================\n");
       }
-      _N.release(_verbose);
 
+      if (_levelset) {
+        _L.release(_verbose);
+      }
+
+      _N.release(_verbose);
       {
         _transpose = false;
         _mode = 0;

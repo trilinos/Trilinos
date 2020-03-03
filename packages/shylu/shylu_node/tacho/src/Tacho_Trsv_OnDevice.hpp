@@ -47,14 +47,38 @@ namespace Tacho {
         int r_val(0); 
         if (m > 0 && n > 0) {
           for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
+            if (std::is_same<value_type,float>::value) 
+              r_val = cublasStrsv(handle, 
+                                  ArgUplo::cublas_param,
+                                  ArgTransA::cublas_param,
+                                  diagA.cublas_param,
+                                  m, 
+                                  (const float*)A.data(), A.stride_1(),
+                                  (float*)(B.data() + offsB), B.stride_0()); 
             if (std::is_same<value_type,double>::value) 
               r_val = cublasDtrsv(handle, 
                                   ArgUplo::cublas_param,
                                   ArgTransA::cublas_param,
                                   diagA.cublas_param,
                                   m, 
-                                  A.data(), A.stride_1(),
-                                  (B.data() + offsB), B.stride_0()); 
+                                  (const double*)A.data(), A.stride_1(),
+                                  (double*)(B.data() + offsB), B.stride_0()); 
+            if (std::is_same<value_type,Kokkos::complex<float> >::value) 
+              r_val = cublasCtrsv(handle, 
+                                  ArgUplo::cublas_param,
+                                  ArgTransA::cublas_param,
+                                  diagA.cublas_param,
+                                  m, 
+                                  (const cuComplex*)A.data(), A.stride_1(),
+                                  (cuComplex*)(B.data() + offsB), B.stride_0()); 
+            if (std::is_same<value_type,Kokkos::complex<double> >::value) 
+              r_val = cublasZtrsv(handle, 
+                                  ArgUplo::cublas_param,
+                                  ArgTransA::cublas_param,
+                                  diagA.cublas_param,
+                                  m, 
+                                  (const cuDoubleComplex*)A.data(), A.stride_1(),
+                                  (cuDoubleComplex*)(B.data() + offsB), B.stride_0()); 
           }
         }
         return r_val;

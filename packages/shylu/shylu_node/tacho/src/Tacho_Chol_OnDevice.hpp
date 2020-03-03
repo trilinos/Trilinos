@@ -90,13 +90,30 @@ namespace Tacho {
 
         int r_val(0);
         if (m > 0) {
-          if (std::is_same<value_type,double>::value) {
+          if      (std::is_same<value_type,float>::value) 
+            r_val = cusolverDnSpotrf_bufferSize(handle, 
+                                                ArgUplo::cublas_param,
+                                                m, 
+                                                (float*)A.data(), A.stride_1(),
+                                                lwork);
+          else if (std::is_same<value_type,double>::value) 
             r_val = cusolverDnDpotrf_bufferSize(handle, 
                                                 ArgUplo::cublas_param,
                                                 m, 
-                                                A.data(), A.stride_1(),
+                                                (double*)A.data(), A.stride_1(),
                                                 lwork);
-          }
+          else if (std::is_same<value_type,Kokkos::complex<float> >::value) 
+            r_val = cusolverDnCpotrf_bufferSize(handle, 
+                                                ArgUplo::cublas_param,
+                                                m, 
+                                                (cuComplex*)A.data(), A.stride_1(),
+                                                lwork);
+          else if (std::is_same<value_type,Kokkos::complex<double> >::value) 
+            r_val = cusolverDnZpotrf_bufferSize(handle, 
+                                                ArgUplo::cublas_param,
+                                                m, 
+                                                (cuDoubleComplex*)A.data(), A.stride_1(),
+                                                lwork);
         }
         return r_val;
       }

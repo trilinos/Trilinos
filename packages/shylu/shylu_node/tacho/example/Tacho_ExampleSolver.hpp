@@ -41,6 +41,15 @@ int driver (int argc, char *argv[]) {
   int small_problem_thres = 1024;
   int mb = -1;
   int nb = -1;
+#if defined(KOKKOS_ENABLE_CUDA)
+  int levelset = 1;
+#else
+  int levelset = 0;
+#endif
+  int device_level_cut = 0;
+  int device_factor_thres = 64;
+  int device_solve_thres = 128;
+  int nstreams = 8;
 
   Tacho::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
 
@@ -54,6 +63,11 @@ int driver (int argc, char *argv[]) {
   opts.set_option<int>("small-problem-thres", "LAPACK is used smaller than this thres", &small_problem_thres);
   opts.set_option<int>("mb", "Internal block size", &mb);
   opts.set_option<int>("nb", "Internal panel size", &nb);
+  opts.set_option<int>("levelset", "Enable levelset scheduling", &levelset);
+  opts.set_option<int>("device-level-cut", "Device function is used above this level", &device_level_cut);
+  opts.set_option<int>("device-factor-thres", "Device function is used above this subproblem size", &device_factor_thres);
+  opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
+  opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
@@ -116,12 +130,22 @@ int driver (int argc, char *argv[]) {
     ///   A.setExternalMatrix(nrows, ncols, nnzm ap, aj, ax);
     ///  
     Tacho::Solver<value_type,scheduler_type> solver;
+
+    /// common options
     solver.setMatrixType(sym, posdef);
-    solver.setVerbose(verbose);
-    solver.setMaxNumberOfSuperblocks(max_num_superblocks);
     solver.setSmallProblemThresholdsize(small_problem_thres);
+    solver.setVerbose(verbose);
+
+    /// tasking options
+    solver.setMaxNumberOfSuperblocks(max_num_superblocks);
     solver.setBlocksize(mb);
     solver.setPanelsize(nb);
+
+    /// level setoptions
+    solver.setLevelSetScheduling(levelset);
+    solver.setLevelSetOptionDeviceLevelCut(device_level_cut);
+    solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
+    solver.setLevelSetOptionNumStreams(nstreams);
 
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
     Kokkos::deep_copy(values_on_device, A.Values());
@@ -130,7 +154,10 @@ int driver (int argc, char *argv[]) {
     solver.analyze(A.NumRows(),
                    A.RowPtr(),
                    A.Cols());
-    
+
+    /// create numeric tools and levelset tools
+    solver.initialize(nrhs);
+
     /// symbolic structure can be reused
     solver.factorize(values_on_device);
     
