@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "${Trilinos_TRACK}" == "" ] ; then
-  export Trilinos_TRACK=Experimental
+  export Trilinos_TRACK=ATDM
 fi
 
 if [ "${SALLOC_CTEST_TIME_LIMIT_MINUTES}" == "" ] ; then
