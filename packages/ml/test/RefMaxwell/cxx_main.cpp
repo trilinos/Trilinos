@@ -385,6 +385,9 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   List_Material_And_Aux.sublist("refmaxwell: 22list").set("aggregation: material: enable",true);
   List_Material_And_Aux.sublist("refmaxwell: 22list").set("material coordinates",material_ptr);
 
+  Teuchos::ParameterList List_AggNorm = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
+  List_AggNorm.sublist("refmaxwell: 11list").set("edge matrix free: normalize aggregates",true);
+  List_AggNorm.sublist("refmaxwell: 11list").set("edge matrix free: explicit coarse nullspace",true);
 
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
@@ -472,6 +475,12 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 21 ***\n");
   rpc_test_additive_newconstructor(Comm,List_Material_And_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ aggregate normalization */
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 22 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_AggNorm,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
 
   delete M0; delete M1e;
   delete D0e;delete Se;

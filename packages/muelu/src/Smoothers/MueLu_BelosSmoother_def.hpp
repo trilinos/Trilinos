@@ -52,14 +52,13 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include <Tpetra_RowMatrix.hpp>
-
-#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMultiVector.hpp>
+#endif
 
 #include "MueLu_BelosSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
