@@ -165,7 +165,7 @@ random_normal();
 ///
 /// Fill all levels of AD to specified constant.
 ///
-using std::enable_if<
+using std::enable_if;
 using std::is_same;
 using Sacado::ScalarType;
 
