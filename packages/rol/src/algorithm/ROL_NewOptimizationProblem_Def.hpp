@@ -534,36 +534,43 @@ EProblem NewOptimizationProblem<Real>::getProblemType(void) {
 }
 
 template<typename Real>
-bool NewOptimizationProblem<Real>::checkLinearity(bool printToStream, std::ostream &outStream) const {
+Real NewOptimizationProblem<Real>::checkLinearity(bool printToStream, std::ostream &outStream) const {
   std::ios_base::fmtflags state(outStream.flags());
   if (printToStream) {
     outStream << std::setprecision(8) << std::scientific;
     outStream << std::endl;
     outStream << "  ROL::NewOptimizationProblem::checkLinearity" << std::endl;
   }
-  const Real one(1), eps(1e-2*std::sqrt(ROL_EPSILON<Real>()));
-  Real tol(std::sqrt(ROL_EPSILON<Real>())), cxnorm(0), err(0);
-  bool isLinear = true;
-  Ptr<Vector<Real>> x = INPUT_xprim_->clone(); x->randomize();
-  Ptr<Vector<Real>> y = INPUT_xprim_->clone(); y->randomize();
-  Ptr<Vector<Real>> cx, cy;
+  const Real one(1), two(2), eps(1e-2*std::sqrt(ROL_EPSILON<Real>()));
+  Real tol(std::sqrt(ROL_EPSILON<Real>())), cnorm(0), err(0), maxerr(0);
+  Ptr<Vector<Real>> x  = INPUT_xprim_->clone(); x->randomize(-one,one);
+  Ptr<Vector<Real>> y  = INPUT_xprim_->clone(); y->randomize(-one,one);
+  Ptr<Vector<Real>> z  = INPUT_xprim_->clone(); z->zero();
+  Ptr<Vector<Real>> xy = INPUT_xprim_->clone();
+  Real alpha = two*static_cast<Real>(rand())/static_cast<Real>(RAND_MAX)-one;
+  xy->set(*x); xy->axpy(alpha,*y);
+  Ptr<Vector<Real>> c1, c2;
   for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
-    cx = it->second.residual->clone();
-    cy = it->second.residual->clone();
-    it->second.constraint->value(*cx,*x,tol);
-    it->second.constraint->value(*cy,*y,tol);
-    cxnorm = cx->norm();
-    cx->axpy(-one,*cy);
-    it->second.constraint->applyJacobian(*cy,*x,*x,tol);
-    cx->axpy(-one,*cy);
-    it->second.constraint->applyJacobian(*cy,*y,*y,tol);
-    cx->plus(*cy);
-    err = cx->norm();
-    isLinear = (err > eps*cxnorm ? false : isLinear);
+    c1 = it->second.residual->clone();
+    c2 = it->second.residual->clone();
+    it->second.constraint->update(*xy,true);
+    it->second.constraint->value(*c1,*xy,tol);
+    cnorm = c1->norm();
+    it->second.constraint->update(*x,true);
+    it->second.constraint->value(*c2,*x,tol);
+    c1->axpy(-one,*c2);
+    it->second.constraint->update(*y,true);
+    it->second.constraint->value(*c2,*y,tol);
+    c1->axpy(-alpha,*c2);
+    it->second.constraint->update(*z,true);
+    it->second.constraint->value(*c2,*z,tol);
+    c1->axpy(alpha,*c2);
+    err = c1->norm();
+    maxerr = std::max(err,maxerr);
     if (printToStream) {
       outStream << "    Constraint " << it->first;
-      outStream << ":  || (c(x)-c(y)) - (c'(x)x-c'(y)y) || = " << err << std::endl;
-      if (err > eps*cxnorm) {
+      outStream << ":  ||c(x+alpha*y) - (c(x)+alpha*(c(y)-c(0)))|| = " << err << std::endl;
+      if (err > eps*cnorm) {
         outStream << "      Constraint " << it->first << " may not be linear!" << std::endl;
       }
     }
@@ -572,7 +579,7 @@ bool NewOptimizationProblem<Real>::checkLinearity(bool printToStream, std::ostre
     outStream << std::endl;
   }
   outStream.flags(state);
-  return isLinear;
+  return maxerr;
 }
 
 template<typename Real>
