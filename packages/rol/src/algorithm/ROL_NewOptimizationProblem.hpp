@@ -247,6 +247,28 @@ public:
   */
   Real checkLinearity(bool printToStream = false, std::ostream &outStream = std::cout) const;
 
+  /** \brief Run vector checks for user-supplied vectors.
+
+      @param[in]     printToStream   determines whether to print to the supplied std::ostream
+      @param[in,out] outStream       user supplied std::ostream
+  */
+  void checkVectors(bool printToStream = false, std::ostream &outStream = std::cout) const;
+
+  /** \brief Run derivative checks for user-supplied objective function and constraints.
+
+      @param[in]     printToStream   determines whether to print to the supplied std::ostream
+      @param[in,out] outStream       user supplied std::ostream
+  */
+  void checkDerivatives(bool printToStream = false, std::ostream &outStream = std::cout) const;
+
+  /** \brief Run vector, linearity and derivative checks for user-supplied
+             vectors, objective function and constraints.
+
+      @param[in]     printToStream   determines whether to print to the supplied std::ostream
+      @param[in,out] outStream       user supplied std::ostream
+  */
+  void check(bool printToStream = false, std::ostream &outStream = std::cout) const;
+
   /***************************************************************************/
   /*** Finalize and edit methods *********************************************/
   /***************************************************************************/

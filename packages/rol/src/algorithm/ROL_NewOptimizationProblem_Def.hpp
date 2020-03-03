@@ -583,6 +583,115 @@ Real NewOptimizationProblem<Real>::checkLinearity(bool printToStream, std::ostre
 }
 
 template<typename Real>
+void NewOptimizationProblem<Real>::checkVectors(bool printToStream, std::ostream &outStream) const {
+  const Real one(1);
+  Ptr<Vector<Real>> x, y;
+  // Primal optimization space vector
+  x = INPUT_xprim_->clone(); x->randomize(-one,one);
+  y = INPUT_xprim_->clone(); y->randomize(-one,one);
+  if (printToStream) {
+    outStream << std::endl << "  Check primal optimization space vector" << std::endl;
+  }
+  INPUT_xprim_->checkVector(*x,*y,printToStream,outStream);
+
+  // Dual optimization space vector
+  x = INPUT_xdual_->clone(); x->randomize(-one,one);
+  y = INPUT_xdual_->clone(); y->randomize(-one,one);
+  if (printToStream) {
+    outStream << std::endl << "  Check dual optimization space vector" << std::endl;
+  }
+  INPUT_xdual_->checkVector(*x,*y,printToStream,outStream);
+  
+  // Check constraint space vectors
+  for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
+    // Primal constraint space vector
+    x = it->second.residual->clone(); x->randomize(-one,one);
+    y = it->second.residual->clone(); y->randomize(-one,one);
+    if (printToStream) {
+      outStream << std::endl << "  " << it->first << ": Check primal constraint space vector" << std::endl;
+    }
+    it->second.residual->checkVector(*x,*y,printToStream,outStream);
+
+    // Dual optimization space vector
+    x = it->second.multiplier->clone(); x->randomize(-one,one);
+    y = it->second.multiplier->clone(); y->randomize(-one,one);
+    if (printToStream) {
+      outStream << std::endl << "  " << it->first << ": Check dual constraint space vector" << std::endl;
+    }
+    it->second.multiplier->checkVector(*x,*y,printToStream,outStream);
+  }
+  
+  // Check constraint space vectors
+  for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
+    // Primal constraint space vector
+    x = it->second.residual->clone(); x->randomize(-one,one);
+    y = it->second.residual->clone(); y->randomize(-one,one);
+    if (printToStream) {
+      outStream << std::endl << "  " << it->first << ": Check primal linear constraint space vector" << std::endl;
+    }
+    it->second.residual->checkVector(*x,*y,printToStream,outStream);
+
+    // Dual optimization space vector
+    x = it->second.multiplier->clone(); x->randomize(-one,one);
+    y = it->second.multiplier->clone(); y->randomize(-one,one);
+    if (printToStream) {
+      outStream << std::endl << "  " << it->first << ": Check dual linear constraint space vector" << std::endl;
+    }
+    it->second.multiplier->checkVector(*x,*y,printToStream,outStream);
+  }
+}
+
+template<typename Real>
+void NewOptimizationProblem<Real>::checkDerivatives(bool printToStream, std::ostream &outStream) const {
+  const Real one(1);
+  Ptr<Vector<Real>> x, d, v, g, c, w;
+  // Objective check
+  x = INPUT_xprim_->clone(); x->randomize(-one,one);
+  d = INPUT_xprim_->clone(); d->randomize(-one,one);
+  v = INPUT_xprim_->clone(); v->randomize(-one,one);
+  g = INPUT_xdual_->clone(); g->randomize(-one,one);
+  if (printToStream) {
+    outStream << std::endl << "  Check objective function" << std::endl << std::endl;
+  }
+  INPUT_obj_->checkGradient(*x,*g,*d,printToStream,outStream);
+  INPUT_obj_->checkHessVec(*x,*g,*d,printToStream,outStream);
+  INPUT_obj_->checkHessSym(*x,*g,*d,*v,printToStream,outStream);
+  
+  // Constraint check
+  for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
+    c = it->second.residual->clone();   c->randomize(-one,one);
+    w = it->second.multiplier->clone(); w->randomize(-one,one);
+    if (printToStream) {
+      outStream << std::endl << "  " << it->first << ": Check constraint function" << std::endl << std::endl;
+    }
+    it->second.constraint->checkApplyJacobian(*x,*v,*c,printToStream,outStream);
+    it->second.constraint->checkAdjointConsistencyJacobian(*w,*v,*x,printToStream,outStream);
+    it->second.constraint->checkApplyAdjointHessian(*x,*w,*v,*g,printToStream,outStream);
+  }
+  
+  // Linear constraint check
+  for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
+    c = it->second.residual->clone();   c->randomize(-one,one);
+    w = it->second.multiplier->clone(); w->randomize(-one,one);
+    if (printToStream) {
+      outStream << std::endl << "  " << it->first << ": Check constraint function" << std::endl << std::endl;
+    }
+    it->second.constraint->checkApplyJacobian(*x,*v,*c,printToStream,outStream);
+    it->second.constraint->checkAdjointConsistencyJacobian(*w,*v,*x,printToStream,outStream);
+    it->second.constraint->checkApplyAdjointHessian(*x,*w,*v,*g,printToStream,outStream);
+  }
+}
+
+template<typename Real>
+void NewOptimizationProblem<Real>::check(bool printToStream, std::ostream &outStream) const {
+  checkVectors(printToStream,outStream);
+  if (hasLinearEquality_ || hasLinearInequality_) {
+    checkLinearity(printToStream,outStream);
+  }
+  checkDerivatives(printToStream,outStream);
+}
+
+template<typename Real>
 void NewOptimizationProblem<Real>::edit(void) {
   isFinalized_ = false;
   rlc_  = nullPtr;
