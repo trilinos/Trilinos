@@ -200,11 +200,14 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     // Adjust time step to hit final time or correct for small
     // numerical differences.
-    if ((lastTime + dt > getFinalTime() ) ||
-        (std::abs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
-      if (printDtChanges_) *out << changeDT(iStep, dt, getFinalTime() - lastTime,
-        "Adjusting dt to hit final time.");
-      dt = getFinalTime() - lastTime;
+    if (getStepType() == "Variable") {
+      if ((lastTime + dt > getFinalTime() ) ||
+          (std::abs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
+        if (printDtChanges_)
+          *out << changeDT(iStep, dt, getFinalTime() - lastTime,
+                           "Adjusting dt to hit final time.");
+        dt = getFinalTime() - lastTime;
+      }
     }
 
     // Check for negative time step.
@@ -219,16 +222,19 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       << getFinalTime() << "]\n"
       "    T + dt = " << lastTime <<" + "<< dt <<" = " << lastTime + dt <<"\n");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (lastTime + dt > getFinalTime()), std::out_of_range,
-      "Error - Time step move time OUT OF time range.\n"
-      "    [timeMin, timeMax] = [" << getInitTime() << ", "
-      << getFinalTime() << "]\n"
-      "    T + dt = " << lastTime <<" + "<< dt <<" = " << lastTime + dt <<"\n");
+    if (getStepType() == "Variable") {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        (lastTime + dt > getFinalTime()), std::out_of_range,
+        "Error - Time step move time OUT OF time range.\n"
+        "    [timeMin, timeMax] = [" << getInitTime() << ", "
+        << getFinalTime() << "]\n"
+        "    T + dt = " << lastTime <<" + "
+        << dt <<" = " << lastTime + dt <<"\n");
+    }
 
     workingState->setOrder(order);
     workingState->setTimeStep(dt);
-    workingState->setTime(lastTime + dt);
+    if (getStepType() == "Variable") workingState->setTime(lastTime + dt);
     workingState->setOutput(output);
   }
   return;

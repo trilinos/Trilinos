@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
+  timeStepControl->setStepType ("Variable");
   timeStepControl->setInitIndex(0);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);

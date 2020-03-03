@@ -148,6 +148,7 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
   outputTimes.push_back(outputTime);
   tsc->setOutputTimes(outputTimes);
   tsc->setOutputExactly(true);
+  tsc->setStepType("Variable");
   Tempus::Status status = Tempus::Status::WORKING;
 
   // Set dt to hit outputTime for first timestep.
@@ -163,9 +164,11 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
   double timeN   = workingState->getTime();
   TEST_COMPARE(timeN, ==, outputTime);
   //TEST_COMPARE( std::abs(timeN-outputTime)/outputTime, <, 1.0e-15);
+  TEST_COMPARE(workingState->getOutput(), ==, true);
 
   // ** Successful timestep !! ** //
   workingState->setSolutionStatus(Tempus::Status::PASSED);
+
   // If workingState PASSED, then RCP CS = RCP WS and RCP WS = null.
   solutionHistory->promoteWorkingState();
 
@@ -182,6 +185,54 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
 
   double dtN = workingState->getTimeStep();
   TEST_COMPARE( dt, ==, dtN);
+
+  TEST_COMPARE(workingState->getOutput(), ==, false);
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeStepControl, ConstantTimeStep_Roundoff)
+{
+  // Setup the SolutionHistory --------------------------------
+  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =model->getNominalValues();
+  auto icSolution =rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
+  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->addState(icState);
+  double dt = 1.0e-04;
+  solutionHistory->getCurrentState()->setTimeStep(dt);
+
+  // Setup the TimeStepControl --------------------------------
+  auto tsc = rcp(new Tempus::TimeStepControl<double>());
+  std::vector<double> outputTimes;
+  double outputTime = 0.8;
+  outputTimes.push_back(outputTime);
+  tsc->setOutputTimes(outputTimes);
+  tsc->setOutputExactly(true);
+  tsc->setStepType("Constant");
+  tsc->setTimeStepControlStrategy();
+  tsc->setMinOrder(1);
+  tsc->setMaxOrder(1);
+  tsc->setInitTimeStep(dt);
+  Tempus::Status status = Tempus::Status::WORKING;
+
+
+  // Take 10000 timesteps.
+  for (int i=0; i < 10000; ++i) {
+    solutionHistory->initWorkingState();
+    tsc->getNextTimeStep(solutionHistory, status);
+
+    // ** Successful timestep !! ** //
+    solutionHistory->getWorkingState()->setSolutionStatus(Tempus::Status::PASSED);
+
+    solutionHistory->promoteWorkingState();
+  }
+
+  auto currentState = solutionHistory->getCurrentState();
+  double time = currentState->getTime();
+  TEST_COMPARE( std::abs(time-1.0), <, 1.0e-15);
 }
 
 

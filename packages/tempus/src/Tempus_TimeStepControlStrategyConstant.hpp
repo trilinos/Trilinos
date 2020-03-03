@@ -129,6 +129,13 @@ public:
      // update order and dt
      workingState->setOrder(order);
      workingState->setTimeStep(dt);
+
+     // Set time from initial time, dt, and index to avoid numerical roundoff.
+     Scalar initTime = tsc.getInitTime();
+     int initIndex   = tsc.getInitIndex();
+     int index       = workingState->getIndex();
+     Scalar time     = (index-initIndex)*dt + initTime;
+     workingState->setTime(time);
   }
 
 };
