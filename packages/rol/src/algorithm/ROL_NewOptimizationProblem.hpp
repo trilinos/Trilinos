@@ -45,7 +45,7 @@
 #define ROL_NEWOPTIMIZATIONPROBLEM_HPP
 
 #include <utility>
-#include <map>
+#include <unordered_map>
 
 #include "ROL_Ptr.hpp"
 #include "ROL_Types.hpp"
@@ -70,12 +70,12 @@ private:
   unsigned cnt_linear_econ_;
   unsigned cnt_linear_icon_;
 
-  Ptr<Objective<Real>>                       INPUT_obj_;
-  Ptr<Vector<Real>>                          INPUT_xprim_;
-  Ptr<Vector<Real>>                          INPUT_xdual_;
-  Ptr<BoundConstraint<Real>>                 INPUT_bnd_;
-  std::map<std::string,ConstraintData<Real>> INPUT_con_;
-  std::map<std::string,ConstraintData<Real>> INPUT_linear_con_;
+  Ptr<Objective<Real>>                                 INPUT_obj_;
+  Ptr<Vector<Real>>                                    INPUT_xprim_;
+  Ptr<Vector<Real>>                                    INPUT_xdual_;
+  Ptr<BoundConstraint<Real>>                           INPUT_bnd_;
+  std::unordered_map<std::string,ConstraintData<Real>> INPUT_con_;
+  std::unordered_map<std::string,ConstraintData<Real>> INPUT_linear_con_;
 
   Ptr<Objective<Real>>            obj_;
   Ptr<Vector<Real>>               xprim_;

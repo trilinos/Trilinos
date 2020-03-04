@@ -106,7 +106,7 @@ void NewOptimizationProblem<Real>::addConstraint(std::string                  na
     }
     auto it = INPUT_con_.find(name);
     if (it == INPUT_con_.end()) {
-      INPUT_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(econ,emul,eres)));
+      INPUT_con_.insert({name,ConstraintData<Real>(econ,emul,eres)});
       hasEquality_ = true;
       cnt_econ_++;
     }
@@ -132,7 +132,7 @@ void NewOptimizationProblem<Real>::addConstraint(std::string                    
     }
     auto it = INPUT_con_.find(name);
     if (it == INPUT_con_.end()) {
-      INPUT_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(icon,imul,ires,ibnd)));
+      INPUT_con_.insert({name,ConstraintData<Real>(icon,imul,ires,ibnd)});
       hasInequality_ = true;
       cnt_icon_++;
     }
@@ -182,7 +182,7 @@ void NewOptimizationProblem<Real>::addLinearConstraint(std::string              
     }
     auto it = INPUT_linear_con_.find(name);
     if (it == INPUT_linear_con_.end()) {
-      INPUT_linear_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)));
+      INPUT_linear_con_.insert({name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)});
       hasLinearEquality_ = true;
       cnt_linear_econ_++;
     }
@@ -208,7 +208,7 @@ void NewOptimizationProblem<Real>::addLinearConstraint(std::string              
     }
     auto it = INPUT_linear_con_.find(name);
     if (it == INPUT_linear_con_.end()) {
-      INPUT_linear_con_.insert(std::pair<std::string,ConstraintData<Real>>(name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)));
+      INPUT_linear_con_.insert({name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)});
       hasLinearInequality_ = true;
       cnt_linear_icon_++;
     }
@@ -249,7 +249,7 @@ void NewOptimizationProblem<Real>::removeLinearConstraint(std::string name) {
 template<typename Real>
 void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream) {
   if (!isFinalized_) {
-    std::map<std::string,ConstraintData<Real>> con, lcon, icon;
+    std::unordered_map<std::string,ConstraintData<Real>> con, lcon, icon;
     bool hasEquality         = hasEquality_;
     bool hasLinearEquality   = hasLinearEquality_;
     bool hasInequality       = hasInequality_;

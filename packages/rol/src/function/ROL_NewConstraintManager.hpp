@@ -46,6 +46,7 @@
 
 #include "ROL_Constraint_Partitioned.hpp"
 #include "ROL_BoundConstraint_Partitioned.hpp"
+#include <unordered_map>
 
 /** @ingroup func_group
     \class ROL::NewConstraintManager
@@ -104,30 +105,30 @@ private:
                                const Ptr<Vector<Real>>          &s,
                                const Ptr<Vector<Real>>          &x) const;
 
-  void initialize(const std::map<std::string,ConstraintData<Real>> &input_con,
-                  const Ptr<Vector<Real>>                          &xprim,
-                  const Ptr<Vector<Real>>                          &xdual,
-                  const Ptr<BoundConstraint<Real>>                 &bnd);
+  void initialize(const std::unordered_map<std::string,ConstraintData<Real>> &input_con,
+                  const Ptr<Vector<Real>>                                    &xprim,
+                  const Ptr<Vector<Real>>                                    &xdual,
+                  const Ptr<BoundConstraint<Real>>                           &bnd);
 
-  void initialize(const std::map<std::string,ConstraintData<Real>> &input_con,
-                  const std::map<std::string,ConstraintData<Real>> &input_lcon,
-                  const Ptr<Vector<Real>>                          &xprim,
-                  const Ptr<Vector<Real>>                          &xdual,
-                  const Ptr<BoundConstraint<Real>>                 &bnd);
+  void initialize(const std::unordered_map<std::string,ConstraintData<Real>> &input_con,
+                  const std::unordered_map<std::string,ConstraintData<Real>> &input_lcon,
+                  const Ptr<Vector<Real>>                                    &xprim,
+                  const Ptr<Vector<Real>>                                    &xdual,
+                  const Ptr<BoundConstraint<Real>>                           &bnd);
 
 public:
   virtual ~NewConstraintManager(void) {}
 
-  NewConstraintManager(const std::map<std::string,ConstraintData<Real>> &con,
-                       const Ptr<Vector<Real>>                          &xprim,
-                       const Ptr<Vector<Real>>                          &xdual,
-                       const Ptr<BoundConstraint<Real>>                 &bnd = nullPtr);
+  NewConstraintManager(const std::unordered_map<std::string,ConstraintData<Real>> &con,
+                       const Ptr<Vector<Real>>                                    &xprim,
+                       const Ptr<Vector<Real>>                                    &xdual,
+                       const Ptr<BoundConstraint<Real>>                           &bnd = nullPtr);
 
-  NewConstraintManager(const std::map<std::string,ConstraintData<Real>> &con,
-                       const std::map<std::string,ConstraintData<Real>> &linear_con,
-                       const Ptr<Vector<Real>>                          &xprim,
-                       const Ptr<Vector<Real>>                          &xdual,
-                       const Ptr<BoundConstraint<Real>>                 &bnd = nullPtr);
+  NewConstraintManager(const std::unordered_map<std::string,ConstraintData<Real>> &con,
+                       const std::unordered_map<std::string,ConstraintData<Real>> &linear_con,
+                       const Ptr<Vector<Real>>                                    &xprim,
+                       const Ptr<Vector<Real>>                                    &xdual,
+                       const Ptr<BoundConstraint<Real>>                           &bnd = nullPtr);
 
   const Ptr<Constraint<Real>>      getConstraint(void) const;
   const Ptr<Vector<Real>>          getMultiplier(void) const;

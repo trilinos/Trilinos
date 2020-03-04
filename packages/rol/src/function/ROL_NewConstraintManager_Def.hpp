@@ -58,10 +58,10 @@ void NewConstraintManager<Real>::initializeSlackVariable(const Ptr<Constraint<Re
 }
 
 template<typename Real>
-void NewConstraintManager<Real>::initialize(const std::map<std::string,ConstraintData<Real>> &input_con,
-                                            const Ptr<Vector<Real>>                          &xprim,
-                                            const Ptr<Vector<Real>>                          &xdual,
-                                            const Ptr<BoundConstraint<Real>>                 &bnd) {
+void NewConstraintManager<Real>::initialize(const std::unordered_map<std::string,ConstraintData<Real>> &input_con,
+                                            const Ptr<Vector<Real>>                                    &xprim,
+                                            const Ptr<Vector<Real>>                                    &xdual,
+                                            const Ptr<BoundConstraint<Real>>                           &bnd) {
   // If bnd is null, then make a null BoundConstraint
   Ptr<BoundConstraint<Real>> bnd0;
   if ( bnd == nullPtr ) {
@@ -145,11 +145,11 @@ void NewConstraintManager<Real>::initialize(const std::map<std::string,Constrain
 }
 
 template<typename Real>
-void NewConstraintManager<Real>::initialize(const std::map<std::string,ConstraintData<Real>> &input_con,
-                                            const std::map<std::string,ConstraintData<Real>> &input_lcon,
-                                            const Ptr<Vector<Real>>                          &xprim,
-                                            const Ptr<Vector<Real>>                          &xdual,
-                                            const Ptr<BoundConstraint<Real>>                 &bnd) {
+void NewConstraintManager<Real>::initialize(const std::unordered_map<std::string,ConstraintData<Real>> &input_con,
+                                            const std::unordered_map<std::string,ConstraintData<Real>> &input_lcon,
+                                            const Ptr<Vector<Real>>                                    &xprim,
+                                            const Ptr<Vector<Real>>                                    &xdual,
+                                            const Ptr<BoundConstraint<Real>>                           &bnd) {
   // If bnd is null, then make a null BoundConstraint
   Ptr<BoundConstraint<Real>> bnd0;
   if ( bnd == nullPtr ) {
@@ -280,20 +280,20 @@ void NewConstraintManager<Real>::initialize(const std::map<std::string,Constrain
 }
 
 template<typename Real>
-NewConstraintManager<Real>::NewConstraintManager(const std::map<std::string,ConstraintData<Real>> &con,
-                                                 const Ptr<Vector<Real>>                          &xprim,
-                                                 const Ptr<Vector<Real>>                          &xdual,
-                                                 const Ptr<BoundConstraint<Real>>                 &bnd)
+NewConstraintManager<Real>::NewConstraintManager(const std::unordered_map<std::string,ConstraintData<Real>> &con,
+                                                 const Ptr<Vector<Real>>                                    &xprim,
+                                                 const Ptr<Vector<Real>>                                    &xdual,
+                                                 const Ptr<BoundConstraint<Real>>                           &bnd)
   : isNull_(true), hasInequality_(false) {
   initialize(con,xprim,xdual,bnd);
 }
 
 template<typename Real>
-NewConstraintManager<Real>::NewConstraintManager(const std::map<std::string,ConstraintData<Real>> &con,
-                                                 const std::map<std::string,ConstraintData<Real>> &linear_con,
-                                                 const Ptr<Vector<Real>>                          &xprim,
-                                                 const Ptr<Vector<Real>>                          &xdual,
-                                                 const Ptr<BoundConstraint<Real>>                 &bnd)
+NewConstraintManager<Real>::NewConstraintManager(const std::unordered_map<std::string,ConstraintData<Real>> &con,
+                                                 const std::unordered_map<std::string,ConstraintData<Real>> &linear_con,
+                                                 const Ptr<Vector<Real>>                                    &xprim,
+                                                 const Ptr<Vector<Real>>                                    &xdual,
+                                                 const Ptr<BoundConstraint<Real>>                           &bnd)
   : isNull_(true), hasInequality_(false) {
   initialize(con,linear_con,xprim,xdual,bnd);
 }
