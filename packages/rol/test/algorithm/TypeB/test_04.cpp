@@ -96,25 +96,19 @@ int main(int argc, char *argv[]) {
       ROL::GetTestProblem<RealT>(problem,x0,z,prob);
       if (problem->getProblemType() == ROL::TYPE_B) {
         if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
-          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
-          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e-4);
           parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
         }
         else if ( prob == ROL::TESTOPTPROBLEM_HS25 ) {
-          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",1.e3);
-          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
           parlist->sublist("Status Test").set("Gradient Tolerance",1.e-8);
         }
         else {
-          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
-          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
           parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
         }
         *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
 
         // Get Dimension of Problem
         int dim = x0->dimension();
-        parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+        parlist->sublist("General").sublist("Krylov").set("Iteration Limit", dim);
 
         // Error Vector
         ROL::Ptr<ROL::Vector<RealT>> e = problem->getSolutionVector()->clone();
@@ -147,25 +141,19 @@ int main(int argc, char *argv[]) {
       ROL::GetTestProblem<RealT>(problem,x0,z,prob);
       if (problem->getProblemType() == ROL::TYPE_B) {
         if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
-          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
-          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e-4);
           parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
         }
         else if ( prob == ROL::TESTOPTPROBLEM_HS25 ) {
-          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",1.e3);
-          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
           parlist->sublist("Status Test").set("Gradient Tolerance",1.e-8);
         }
         else {
-          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
-          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
           parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
         }
         *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
 
         // Get Dimension of Problem
         int dim = x0->dimension();
-        parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+        parlist->sublist("General").sublist("Krylov").set("Iteration Limit", dim);
 
         // Error Vector
         ROL::Ptr<ROL::Vector<RealT>> e = problem->getSolutionVector()->clone();
