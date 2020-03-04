@@ -603,14 +603,14 @@ Xpetra_randomize()
 #if 0
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename dev_execution_space::memory_space,
+    typename Kokkos::Impl::if_c<std::is_same<typename dev_execution_space::memory_space,
                                                       typename TargetDeviceType::memory_space>::value,
                                 typename dual_view_type::t_dev_um,
                                 typename dual_view_type::t_host_um>::type
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getLocalView() const
     {
-        if(Kokkos::Impl::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
+        if(std::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
         {
             return getHostLocalView();
         }
