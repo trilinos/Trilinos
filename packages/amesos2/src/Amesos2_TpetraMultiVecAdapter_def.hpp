@@ -552,22 +552,19 @@ namespace Amesos2 {
       }
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
-        // Fix the type if necessary
-        Kokkos::View<Scalar**, Kokkos::LayoutLeft, typename KV::execution_space>
-          fix_type_kokkos_new_data;
-        // This wouldn't compile for cuda complex on white - but ok on my local setup
-        // Tpetra is built std::complex and the View is Kokkos::complex which
-        // causes the problem. Here we want to be std::complex to send back to the Tpetra MV.
-        // Won't work ...
-        // deep_copy_or_assign_view(fix_type_kokkos_new_data, kokkos_new_data);
-
-        // So instead we call a special version of this method which checks if
-        // the src is Kokkos::complex type and force casts to std::complex.
-        // Otherwise it just calls above deep_copy_or_assign_view
-        deep_copy_or_assign_view_make_src_std_complex(fix_type_kokkos_new_data, kokkos_new_data);
+#ifdef HAVE_TEUCHOS_COMPLEX
+        // For complex we want to build the MV in std::complex but the views
+        // use Kokkos::complex. Force cast to resolve without an extra copy.
+        // For non-complex we don't casst because it's not necessary and we
+        // can preserve better testing of the pipeline. TODO. Can we improve
+        // this to remove cast, without loss of efficiency. Needs discussion.
+        auto pData = reinterpret_cast<Scalar*>(kokkos_new_data.data());
+#else
+        auto pData = kokkos_new_data.data();
+#endif
 
         const multivec_t source_mv (srcMap, Teuchos::ArrayView<const scalar_t>(
-          fix_type_kokkos_new_data.data(), fix_type_kokkos_new_data.size()), lda, num_vecs);
+          pData, kokkos_new_data.size()), lda, num_vecs);
         mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
       }
       else {
