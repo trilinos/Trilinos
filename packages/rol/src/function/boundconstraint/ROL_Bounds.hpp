@@ -208,7 +208,7 @@ public:
 
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if (BoundConstraint<Real>::isUpperActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,min_diff_));
+      Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
 
       mask_->set(*x_up_);
       mask_->axpy(-one,x);
@@ -220,7 +220,7 @@ public:
 
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     if (BoundConstraint<Real>::isUpperActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,min_diff_));
+      Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
 
       mask_->set(*x_up_);
       mask_->axpy(-one,x);
@@ -234,7 +234,7 @@ public:
 
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if (BoundConstraint<Real>::isLowerActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,min_diff_));
+      Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
 
       mask_->set(x);
       mask_->axpy(-one,*x_lo_);
@@ -246,7 +246,7 @@ public:
 
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     if (BoundConstraint<Real>::isLowerActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,min_diff_));
+      Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
 
       mask_->set(x);
       mask_->axpy(-one,*x_lo_);
