@@ -20,12 +20,6 @@ ENDIF()
 #
 IF (${PACKAGE_NAME}_ENABLE_Belos)
 
-  ASSERT_DEFINED(Belos_ENABLE_Xpetra)
-
-  IF (NOT Belos_ENABLE_Xpetra)
-    MESSAGE(FATAL_ERROR "MueLu requires the Belos Xpetra adapters in order to work with Belos. Please set \"Belos_ENABLE_Xpetra:BOOL=ON\"")
-  ENDIF ()
-
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
 
   APPEND_SET(HEADERS

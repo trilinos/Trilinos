@@ -53,7 +53,6 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #ifdef HAVE_XPETRA_TPETRA
@@ -81,10 +80,6 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
     Belos::SolverFactory<Scalar,tMV,tOP> tFactory;
     solverSupported = solverSupported || tFactory.isSupported(type);
-#endif
-#ifdef HAVE_MUELU_EPETRA
-    Belos::SolverFactory<Scalar,eMV,eOP> eFactory;
-    solverSupported = solverSupported || eFactory.isSupported(type);
 #endif
     // if (!solverSupported) {
     //   Teuchos::Array<std::string> supportedSolverNames = factory.supportedSolverNames();
@@ -144,15 +139,7 @@ namespace MueLu {
       tSolver_->setProblem(tBelosProblem_);
 #endif
     } else {
-#ifdef HAVE_MUELU_EPETRA
-      eBelosProblem_ = rcp(new Belos::LinearProblem<Scalar, eMV, eOP>());
-      RCP<eOP> eA = Utilities::Op2NonConstEpetraCrs(A_);
-      eBelosProblem_->setOperator(eA);
-
-      Belos::SolverFactory<SC, eMV, eOP> solverFactory;
-      eSolver_ = solverFactory.create(type_, rcpFromRef(const_cast<ParameterList&>(this->GetParameterList())));
-      eSolver_->setProblem(eBelosProblem_);
-#endif
+      TEUCHOS_ASSERT(false);
     }
   }
 
@@ -188,31 +175,7 @@ namespace MueLu {
       }
 #endif
     } else {
-#ifdef HAVE_MUELU_EPETRA
-    if (InitialGuessIsZero) {
-      X.putScalar(0.0);
-
-      RCP<Epetra_MultiVector>       epX = rcpFromRef(Utilities::MV2NonConstEpetraMV(X));
-      RCP<const Epetra_MultiVector> epB = rcpFromRef(Utilities::MV2EpetraMV(B));
-
-      eBelosProblem_->setInitResVec(epB);
-      eBelosProblem_->setProblem(epX, epB);
-      eSolver_->solve();
-
-    } else {
-      RCP<MultiVector> Residual   = Utilities::Residual(*A_, X, B);
-      RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
-
-      RCP<Epetra_MultiVector>       epX = rcpFromRef(Utilities::MV2NonConstEpetraMV(*Correction));
-      RCP<const Epetra_MultiVector> epB = rcpFromRef(Utilities::MV2EpetraMV(*Residual));
-
-      eBelosProblem_->setInitResVec(epB);
-      eBelosProblem_->setProblem(epX, epB);
-      eSolver_->solve();
-
-      X.update(1.0, *Correction, 1.0);
-    }
-#endif
+      TEUCHOS_ASSERT(false);
     }
 
   }
@@ -231,10 +194,6 @@ namespace MueLu {
       if (A_->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef MUELU_HAVE_TPETRA
         out << tSolver_->description();
-#endif
-      } else {
-#ifdef MUELU_HAVE_EPETRA
-        out << eSolver_->description();
 #endif
       }
     } else {
@@ -260,12 +219,6 @@ namespace MueLu {
         out << *tSolver_ << std::endl;
       }
 #endif
-#ifdef MUELU_HAVE_EPETRA
-      if (eSolver_ != Teuchos::null) {
-        Teuchos::OSTab tab2(out);
-        out << *eSolver_ << std::endl;
-      }
-#endif
     }
 
     if (verbLevel & Debug) {
@@ -274,12 +227,6 @@ namespace MueLu {
         out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
              << "-" << std::endl
              << "RCP<solver_>: " << tSolver_ << std::endl;
-#endif
-      } else {
-#ifdef MUELU_HAVE_EPETRA
-        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
-             << "-" << std::endl
-             << "RCP<solver_>: " << eSolver_ << std::endl;
 #endif
       }
     }
