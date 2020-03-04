@@ -4,6 +4,7 @@
 #include <impl/Kokkos_Timer.hpp>
 
 #include "Tacho.hpp"
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
 
 #if defined (KOKKOS_ENABLE_CUDA)

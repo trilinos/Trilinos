@@ -5,7 +5,7 @@
 /// \brief BLAS wrapper
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Tacho_Util.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Tacho {
 

@@ -5,8 +5,7 @@
 /// \brief BLAS wrapper
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "ShyLU_NodeTacho_config.h"
-#include "Tacho_Util.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Tacho {
 

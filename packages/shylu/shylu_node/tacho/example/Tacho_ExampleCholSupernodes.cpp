@@ -32,16 +32,7 @@
 using namespace Tacho;
 
 /// select a kokkos task scheudler
-/// - DeprecatedTaskScheduler, DeprecatedTaskSchedulerMultiple
 /// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
-#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
-static const char * scheduler_name = "DeprecatedTaskScheduler";
-#endif
-#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
-template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
-static const char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
-#endif
 #if defined(TACHO_USE_TASKSCHEDULER)
 template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
 static const char * scheduler_name = "TaskScheduler";
