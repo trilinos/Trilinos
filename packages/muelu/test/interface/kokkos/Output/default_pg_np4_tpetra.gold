@@ -202,7 +202,7 @@ Cycle type          = V
 level  rows  nnz    nnz/row  c ratio  procs
   0  9999  29995  3.00                  4  
   1  3335  10015  3.00     3.00         4  
-  2  1112  3346   3.01     3.00         4  
+  2  1112  3340   3.00     3.00         4  
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
