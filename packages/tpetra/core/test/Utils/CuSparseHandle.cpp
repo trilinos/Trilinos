@@ -41,6 +41,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Details_CuSparseHandle_fwd.hpp"
+#include "Tpetra_Details_CuSparseVector_fwd.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
 
@@ -85,10 +86,68 @@ namespace { // (anonymous)
       }
       (void) cudaStreamDestroy(stream);
     }
-#endif // NOT KOKKOS_ENABLE_CUDA
+#endif
   }
 
-  TEUCHOS_UNIT_TEST( Utils, CuSparseHandle )
+  void
+  testCuSparseVector(bool& success, Teuchos::FancyOStream& out)
+  {
+#if ! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRACORE_CUSPARSE)
+    out << "Running this test requires enabling CUDA in Kokkos, "
+      "and enabling the CUSPARSE TPL in Tpetra." << std::endl;
+    TEUCHOS_ASSERT( false );
+#else
+    using Tpetra::Details::CuSparseHandle;
+    using Tpetra::Details::CuSparseVector;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+
+    // Don't do cuSPARSE things unless a cuSPARSE handle is active.
+    Kokkos::Cuda execSpace1;
+    std::shared_ptr<CuSparseHandle> h1 =
+      Tpetra::Details::getCuSparseHandle(execSpace1);
+    TEST_ASSERT( h1.get() != nullptr );
+    if (! success) {
+      return;
+    }
+
+    for (int64_t numRows : {0, 11}) {
+      {
+        Kokkos::View<float*, Kokkos::CudaSpace> x_c_f
+          (view_alloc("x_c_f", WithoutInitializing), numRows);
+        auto vec =
+          Tpetra::Details::getCuSparseVector(x_c_f.data(), numRows);
+        TEST_ASSERT( vec.get() != nullptr );
+      }
+      {
+        Kokkos::View<float*, Kokkos::CudaUVMSpace> x_u_f
+          (view_alloc("x_u_f", WithoutInitializing), numRows);
+        auto vec =
+          Tpetra::Details::getCuSparseVector(x_u_f.data(), numRows);
+        TEST_ASSERT( vec.get() != nullptr );
+      }
+      {
+        Kokkos::View<double*, Kokkos::CudaSpace> x_c_d
+          (view_alloc("x_c_d", WithoutInitializing), numRows);
+        auto vec =
+          Tpetra::Details::getCuSparseVector(x_c_d.data(), numRows);
+        TEST_ASSERT( vec.get() != nullptr );
+      }
+      {
+        Kokkos::View<double*, Kokkos::CudaUVMSpace> x_u_d
+          (view_alloc("x_u_d", WithoutInitializing), numRows);
+        auto vec =
+          Tpetra::Details::getCuSparseVector(x_u_d.data(), numRows);
+        TEST_ASSERT( vec.get() != nullptr );
+      }
+    }
+#endif
+  }
+
+  void
+  runTest(bool& success,
+          Teuchos::FancyOStream& out,
+          std::function<void(bool&, Teuchos::FancyOStream&)> testFunction)
   {
     // Replace 'out' with cerr in verbose mode.  This lets us diagnose
     // crashes, since the Teuchos unit test framework normally
@@ -105,7 +164,17 @@ namespace { // (anonymous)
       myOutPtr = rcpFromRef(out);
     }
     FancyOStream& myOut = *myOutPtr;
-    testCuSparseHandle(success, myOut);
+    testFunction(success, myOut);
+  }
+
+  TEUCHOS_UNIT_TEST( Utils, CuSparseHandle )
+  {
+    runTest(success, out, testCuSparseHandle);
+  }
+
+  TEUCHOS_UNIT_TEST( Utils, CuSparseVector )
+  {
+    runTest(success, out, testCuSparseVector);
   }
 
 } // namespace (anonymous)
