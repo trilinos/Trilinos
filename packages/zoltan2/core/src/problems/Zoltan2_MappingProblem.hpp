@@ -65,7 +65,7 @@ namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
 
-/*! \brief MappingProblem enables mapping of a partition (either 
+/*! \brief MappingProblem enables mapping of a partition (either
  *  computed or input) to MPI ranks.
  *
  *  The MappingProblem is the core of the Zoltan2 mappin API.
@@ -78,7 +78,7 @@ namespace Zoltan2{
  *  is to be partitioned.
  */
 
-template<typename Adapter, 
+template<typename Adapter,
          typename MachineRep =   // Default MachineRep type
                   MachineRepresentation<typename Adapter::scalar_t,
                                         typename Adapter::part_t> >
@@ -104,9 +104,9 @@ public:
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &ucomm_,
-                 partsoln_t *partition_ = NULL, 
-                 MachineRep *machine_ = NULL) : 
-    Problem<Adapter>(A_, p_, ucomm_) 
+                 partsoln_t *partition_ = NULL,
+                 MachineRep *machine_ = NULL) :
+    Problem<Adapter>(A_, p_, ucomm_)
   {
     HELLO;
     createMappingProblem(partition_, machine_);
@@ -115,9 +115,9 @@ public:
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor that takes an MPI communicator
    */
-  MappingProblem(Adapter *A_, Teuchos::ParameterList *p_, 
+  MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
                  MPI_Comm mpicomm_,
-                 partsoln_t *partition_ = NULL, 
+                 partsoln_t *partition_ = NULL,
                  MachineRep *machine_   = NULL) :
   MappingProblem(A_, p_,
                  rcp<const Comm<int> >(
@@ -138,19 +138,19 @@ public:
   //          the previous solution, even though the parameters
   //          may have been changed.
   //
-  //  For the sake of performance, we ask the caller to set 
+  //  For the sake of performance, we ask the caller to set
   //  \c updateInputData
-  //  to false if he/she is computing a new solution using the same 
-  //  input data, but different problem parameters, than that which was 
+  //  to false if he/she is computing a new solution using the same
+  //  input data, but different problem parameters, than that which was
   //  used to compute the most recent solution.
-  
-  void solve(bool updateInputData=true); 
+
+  void solve(bool updateInputData=true);
 
   /*! \brief Set up validators specific to this Problem
   */
   static void getValidParameters(ParameterList & pl)
   {
-    MachineRepresentation <typename Adapter::scalar_t, 
+    MachineRepresentation <typename Adapter::scalar_t,
         typename Adapter::part_t>::getValidParameters(pl);
     RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
@@ -197,7 +197,7 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////
-//  createMappingProblem 
+//  createMappingProblem
 //  Method with common functionality for creating a MappingProblem.
 //  Individual constructors do appropriate conversions of input, etc.
 //  This method does everything that all constructors must do.
@@ -241,7 +241,7 @@ void MappingProblem<Adapter, MachineRep>::createMappingProblem(
   }
 
   // Save pointer to user's machine.  If not provided, create one.
-  if (machine_) 
+  if (machine_)
     machine = Teuchos::rcp(machine_, false);
   else {
     try {
@@ -261,7 +261,7 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
 
 
   // Determine which algorithm to use based on defaults and parameters.
-  std::string algName("block");  
+  std::string algName("block");
 
   Teuchos::ParameterList pl = this->env_->getParametersNonConst();
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("mapping_algorithm");
@@ -290,41 +290,49 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
     else if (algName == "geometric") {
 
       bool is_input_distributed = true;
-      const Teuchos::ParameterEntry *pe_input_adapter = 
+      const Teuchos::ParameterEntry *pe_input_adapter =
         pl.getEntryPtr("distributed_input_adapter");
-      if (pe_input_adapter) 
+      if (pe_input_adapter)
         is_input_distributed = pe_input_adapter->getValue<bool>(&is_input_distributed);
 
 
       int ranks_per_node = 1;
       pe_input_adapter = pl.getEntryPtr("ranks_per_node");
-      if (pe_input_adapter) 
+      if (pe_input_adapter)
         ranks_per_node = pe_input_adapter->getValue<int>(&ranks_per_node);
 
       bool divide_prime_first = false;
       pe_input_adapter = pl.getEntryPtr("divide_prime_first");
-      if (pe_input_adapter) 
+      if (pe_input_adapter)
         divide_prime_first = pe_input_adapter->getValue<bool>(&divide_prime_first);
 
       bool reduce_best_mapping = true;
       pe_input_adapter = pl.getEntryPtr("reduce_best_mapping");
-      if (pe_input_adapter) 
+      if (pe_input_adapter)
         reduce_best_mapping = pe_input_adapter->getValue<bool>(&reduce_best_mapping);
-      
-      this->algorithm_ = 
+
+      this->algorithm_ =
             rcp(new CoordinateTaskMapper<Adapter,part_t>(this->comm_,
-                                                         machine, 
+                                                         machine,
                                                          this->inputAdapter_,
                                                          partition,
                                                          this->envConst_,
-                                                         is_input_distributed, 
-                                                         ranks_per_node, 
-                                                         divide_prime_first, 
+                                                         is_input_distributed,
+                                                         ranks_per_node,
+                                                         divide_prime_first,
                                                          reduce_best_mapping));
 
       this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
 
       this->algorithm_->map(this->soln);
+    }
+    else if (algName == "hier") {
+
+//        this->algorithm_ = NULL;
+
+//        this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
+
+//        this->algorithm_->map(this->soln);
     }
     else {
       // Add other mapping methods here
@@ -345,7 +353,7 @@ MappingProblem(
   partitioningSolution
   MachineRepresentation=NULL
 // KDD Don't know how to properly template MachineRepresentation.  Proper types
-// KDD probably depend on how it is to be used.  I imagine MJ needs 
+// KDD probably depend on how it is to be used.  I imagine MJ needs
 // KDD pcoord_t to be scalar_t, right?  But how does user know that at the
 // KDD time he calls this constructor?
 )
@@ -403,7 +411,7 @@ MappingProblem(
 }
 
 
-// In general, the applyPartitioningSolution method should take an 
+// In general, the applyPartitioningSolution method should take an
 // optional MappingSolution.
 
 // Should MappingSolution provide a re-numbered communicator reflecting the new mapping?

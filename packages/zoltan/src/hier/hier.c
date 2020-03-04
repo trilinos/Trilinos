@@ -284,7 +284,7 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
   char msg[256];
   int part_weight_dim = hpp->origzz->Obj_Weight_Dim;
 
-  printf("\n\nBEGIN of SET_PART_SIZES\n\n");
+//  printf("\n\nBEGIN of SET_PART_SIZES\n\n");
   
   /* when this is called, hpp->num_parts contains the number of
      parts to be computed at this level, and hpp->part_to_compute
@@ -292,7 +292,7 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
      level, hpp->hier_comm is a communicator for all procs participating
      at this level. */
 
-  if (1 || hpp->output_level >= HIER_DEBUG_ALL) {
+  if (hpp->output_level >= HIER_DEBUG_ALL) {
     printf("[%d] set_hier_part_sizes at level %d, computing %d parts\n",
            hpp->origzz->Proc, hpp->level, hpp->num_parts);
   }
@@ -316,7 +316,7 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
     my_level_part_sizes[i] = 0;
   }
 
-  printf("\nPart_WD: %d\n", part_weight_dim);
+//  printf("\nPart_WD: %d\n", part_weight_dim);
 
 
   /* put in my part_sizes for the part I'll be computing */
@@ -360,11 +360,11 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
     wgt_idx[i] = i%part_weight_dim;
 
 
-      printf("[%d] i: %d, part ids: %d, wgt_idx: %d\n", hpp->origzz->Proc,
-             i, part_ids[i], wgt_idx[i]);
+//      printf("[%d] i: %d, part ids: %d, wgt_idx: %d\n", hpp->origzz->Proc,
+//             i, part_ids[i], wgt_idx[i]);
   }
 
-  if (1 || hpp->output_level >= HIER_DEBUG_ALL) {
+  if (hpp->output_level >= HIER_DEBUG_ALL) {
     for (i=0; i<hpp->num_parts * part_weight_dim; i++) {
       printf("[%d] setting part_size[%d] to %.3f\n", hpp->origzz->Proc,
              i, level_part_sizes[i]);
@@ -1147,7 +1147,7 @@ static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
     hpp->spec->my_part[i] = result.rem;
   }
 
-  if (1 || hpp->output_level >= HIER_DEBUG_LIST){
+  if (hpp->output_level >= HIER_DEBUG_LIST){
     MPI_Barrier(MPI_COMM_WORLD);
     for (i=0; i < zz->Num_Proc; i++){
       if (i == zz->Proc){
@@ -1585,6 +1585,8 @@ int Zoltan_Hier(
     if (da_rank == 0) {
       printf("\n\n\n----\nREACHED LEVEL %d\n----\n\n\n", hpp.level);
     }
+    MPI_Barrier(zz->Communicator);
+
 
 //    printf("\nRank: %d Reached in barrier, level: %d \n", da_rank, hpp.level); 
 //    MPI_Barrier(zz->Communicator);
@@ -1648,7 +1650,7 @@ int Zoltan_Hier(
 
       hpp.hierzz->Current_Hier_Level = hpp.level;
 
-      printf("HIER: Proc %d HIERCHECK numparts > 1\n", zz->Proc);
+//      printf("HIER: Proc %d HIERCHECK numparts > 1\n", zz->Proc);
 
 
       // mpirun -np 5, zoltan
@@ -1673,7 +1675,7 @@ int Zoltan_Hier(
       /* remapping does not make sense for internal steps, only at the end */
       hpp.hierzz->LB.Remap_Flag = 0;
 
-      printf("HIER: Proc %d HIERCHECK Enter PartMethod, level %d in\n", zz->Proc, hpp.level);
+//      printf("HIER: Proc %d HIERCHECK Enter PartMethod, level %d in\n", zz->Proc, hpp.level);
       
       /* let the application specify any balancing params for this level */
       zz->Get_Hier_Method(zz->Get_Hier_Method_Data, hpp.level,
@@ -1753,7 +1755,7 @@ int Zoltan_Hier(
 
       /* call partitioning method to compute the part at this level */
 
-      printf("\nRank: %d, About to Partition, level: %d\n", hpp.hierzz->Proc, hpp.level);
+//      printf("\nRank: %d, About to Partition, level: %d\n", hpp.hierzz->Proc, hpp.level);
 //      if (zz->Communicator == NULL) {
 //        printf("\nRank: %d, comm is nulllllll", hpp.hierzz->Proc);
 //      }
@@ -1777,14 +1779,14 @@ int Zoltan_Hier(
         timePartition += timeEnd - timeStart;
       }
       if (hpp.hierzz->Group_Count) {
-        printf("\nRank: %d, freeeeing group count\n", zz->Proc);
+//        printf("\nRank: %d, freeeeing group count\n", zz->Proc);
         ZOLTAN_FREE(&hpp.hierzz->Group_Count);
       }
 
     }
     else{
 
-      printf("HIER: Proc %d HIERCHECK ELSEEE NUMPARTS <= 1\n", zz->Proc);
+//      printf("HIER: Proc %d HIERCHECK ELSEEE NUMPARTS <= 1\n", zz->Proc);
 
       hpp.hierzz = Zoltan_Create(hpp.hier_comm);
       hpp.hierzz->Current_Hier_Level = hpp.level;
@@ -1818,7 +1820,7 @@ int Zoltan_Hier(
       
 //      used = newheap - oldheap;
 
-      printf("HIER: Proc %d HIERCHECK MIGRATE\n", zz->Proc);
+//      printf("HIER: Proc %d HIERCHECK MIGRATE\n", zz->Proc);
      
       ierr = migrate_to_next_subgroups(&hpp,
                                        hier_num_export_objs, hier_export_lids,
@@ -1842,10 +1844,10 @@ int Zoltan_Hier(
         timeEnd = Zoltan_Time(zz->Timer);
         timeMigDown += timeEnd - timeStart;
       }
-      printf("\nRank: %d, Exiting level %d thing\n", zz->Proc, hpp.level);
+//      printf("\nRank: %d, Exiting level %d thing\n", zz->Proc, hpp.level);
     }
     else{
-      printf("HIER: Proc %d HIERCHECK 2nd else and migrate\n", zz->Proc);
+//      printf("HIER: Proc %d HIERCHECK 2nd else and migrate\n", zz->Proc);
       
       if (hpp.use_timers) {
         MPI_Barrier(hpp.hier_comm);
@@ -1890,7 +1892,7 @@ int Zoltan_Hier(
       ZOLTAN_HIER_ERROR(ierr, "Zoltan_LB_Free_Part returned error.");
     }
 
-    printf("\nRank: %d, Ending the!! Level: %d\n", zz->Proc, hpp.level);
+//    printf("\nRank: %d, Ending the!! Level: %d\n", zz->Proc, hpp.level);
    
 //    if (zz->Group_Count != NULL) {
 //    if (zz->Group_Count) {

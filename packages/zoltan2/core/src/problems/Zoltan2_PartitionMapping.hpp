@@ -84,7 +84,7 @@ public:
   const part_t *solution_parts;
 
 
-/*! \brief Constructor 
+/*! \brief Constructor
  *  Constructor builds the map from parts to ranks.
  *  KDDKDD WILL NEED THE SOLUTION FOR INTELLIGENT MAPPING
  *  KDDKDD BUT MAY WANT TO SET PART SIZES BASED ON CAPABILITY OF A RANK.
@@ -183,7 +183,7 @@ public:
    *
    */
   // TODO:  KDDKDD Decide whether information should be avail for any process
-  // TODO:  KDDKDD (requiring more storage or a directory) or only for the 
+  // TODO:  KDDKDD (requiring more storage or a directory) or only for the
   // TODO:  KDDKDD local process.
   // TODO:  KDDKDD Could require O(nprocs) storage
   virtual void getPartsForProc(int procId, part_t &numParts, part_t *&parts)

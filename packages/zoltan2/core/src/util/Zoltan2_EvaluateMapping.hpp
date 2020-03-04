@@ -120,18 +120,38 @@ public:
   /*! \brief Constructor where communicator is Teuchos default.
       \param ia the problem input adapter
       \param p the parameter list
-      \param soln  the solution
+      \param soln  the mapping solution
       \param graphModel the graph model
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
   EvaluateMapping(
-    const Adapter *ia, 
+    const Adapter *ia,
     ParameterList *p,
     const RCP<const Comm<int> > &ucomm_,
     const MappingSolution<Adapter> *soln,
     const MachineRep *machine_ ,
-    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel= Teuchos::null):
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel = Teuchos::null):
+      EvaluatePartition<Adapter>(ia, p, ucomm_, soln, false, graphModel),
+      machine(Teuchos::rcp(machine_, false)){
+    this->sharedConstructor(ia, p, ucomm_, soln, graphModel);
+  }
+
+  /*! \brief Constructor where communicator is Teuchos default.
+      \param ia the problem input adapter
+      \param p the parameter list
+      \param soln  a partitioning solution
+      \param graphModel the graph model
+      The constructor does global communication to compute the metrics.
+      The rest of the  methods are local.
+   */
+  EvaluateMapping(
+    const Adapter *ia,
+    ParameterList *p,
+    const RCP<const Comm<int> > &ucomm_,
+    const PartitioningSolution<Adapter> *soln,
+    const MachineRep *machine_ ,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel = Teuchos::null):
       EvaluatePartition<Adapter>(ia, p, ucomm_, soln, false, graphModel),
       machine(Teuchos::rcp(machine_, false)){
     this->sharedConstructor(ia, p, ucomm_, soln, graphModel);

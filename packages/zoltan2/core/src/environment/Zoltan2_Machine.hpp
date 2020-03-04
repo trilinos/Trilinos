@@ -56,7 +56,7 @@ public:
      *  set the machine coordinate xyz of the current process
      *  return true if current process' coordinates are available
      */
-    bool getMyMachineCoordinate(pcoord_t *xyz) const { 
+    bool getMyMachineCoordinate(pcoord_t *xyz) const {
       return false;  // Coordinates not available in this machine
     }
 
@@ -77,16 +77,16 @@ public:
     }
 
     /*! \brief getProcDim function
-     *  set the coordinates of all ranks 
+     *  set the coordinates of all ranks
      *  allCoords[i][j], i=0,...,getMachineDim(), j=0,...,getNumRanks(),
      *  is the i-th dimensional coordinate for rank j.
      *  return true if coordinates are available for all ranks
      */
-    bool getAllMachineCoordinatesView(pcoord_t **allCoords) const { 
+    bool getAllMachineCoordinatesView(pcoord_t **allCoords) const {
       return false;  // Coordinates not available in this machine
     }
 
-    /*! \brief getNumRanks function 
+    /*! \brief getNumRanks function
      *  return the number of ranks.
      */
     int getNumRanks() const { return numRanks; }
@@ -98,14 +98,14 @@ public:
 
     /*! \brief getHopCount function
      *  set hops between rank1 and rank2
-     *  return true if coordinates are available 
+     *  return true if coordinates are available
      */
     virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
       return false;
     }
 
     /*! \brief getNumUniqueGroups function
-     *  return the number of unique Dragonfly network groups in provided 
+     *  return the number of unique Dragonfly network groups in provided
      *  allocation.
      *
      *  Equals the length of group_count member data, if available,
@@ -118,14 +118,14 @@ public:
     /*! \brief getGroupCount function
      *  return the number of ranks in each group (RCA X-dim, e.g. first dim)
      *
-     *  Ex, 4 ranks with coord (3, 1, 1) and 8 ranks with coord (5, 2, 4), 
+     *  Ex, 4 ranks with coord (3, 1, 1) and 8 ranks with coord (5, 2, 4),
      *  will produce
-     *  grp_count = [0, 0, 0, 4, 0, 8, 0, ...] 
+     *  grp_count = [0, 0, 0, 4, 0, 8, 0, ...]
      *  which is trimmed and returned as
      *  grp_count = [4, 8]
      *
      *
-     *  (Currently only for Zoltan2_MachineDragonflyRCA, and used for 
+     *  (Currently only for Zoltan2_MachineDragonflyRCA, and used for
      *  MultiJagged's first cut in "algorithms/partition/Zoltan2_TaskMapper.hpp"
      *  thru "problems/Zoltan2_MappingProblem.hpp".
      *  return true if group_count is available
@@ -133,7 +133,7 @@ public:
     virtual bool getGroupCount(part_t *grp_count) const {
       return false;
     }
-    
+
     virtual bool getGroupCount2(std::vector<part_t> &grp_count) const {
       return false;
     }
