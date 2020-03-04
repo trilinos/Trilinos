@@ -347,10 +347,11 @@ class Test_setEnviron(unittest.TestCase):
                                       return_value=b'git version 3.8.2')
 
         self.m_environ = mock.patch.dict(os.environ, {'JOB_BASE_NAME': self.job_base_name,
-                                                     'JOB_NAME': 'TEST_JOB_NAME',
-                                                     'WORKSPACE': self.jenkins_workspace,
-                                                     'NODE_NAME': 'TEST_NODE_NAME',
-                                                     'PATH': '/fake/path',},
+                                                      'JOB_NAME': 'TEST_JOB_NAME',
+                                                      'WORKSPACE': self.jenkins_workspace,
+                                                      'NODE_NAME': 'TEST_NODE_NAME',
+                                                      'PATH': '/fake/path',
+                                                      'PYTHONHOME': '/some/python/path'},
                                          clear=True)
         self.arguments = Namespace()
         setattr(self.arguments, 'sourceBranch', self.source_branch)
@@ -408,47 +409,9 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'sems-gcc/7.2.0'),
                          mock.call('load', 'sems-python/3.5.2'),
                          mock.call('load', 'sems-cmake/3.10.3'),
-                         mock.call('load', 'atdm-env'),
-                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
+                         mock.call('load', 'sems-ninja_fortran/1.8.2'),
                          ]
-        expected_env = {'PYTHONPATH':
-                            os.path.join(os.path.sep,
-                                         'projects',
-                                         'sierra',
-                                         'linux_rh7',
-                                         'install',
-                                         'Python',
-                                         'extras',
-                                         'lib',
-                                         'python3.6',
-                                         'site-packages'),
-                        'MANPATH':
-                            os.path.join(os.path.sep,
-                                         'projects',
-                                         'sierra',
-                                         'linux_rh7',
-                                         'install',
-                                         'Python',
-                                         '3.6.3',
-                                         'share',
-                                         'man'),
-                        'PATH': [os.path.join(os.path.sep,
-                                              'projects',
-                                              'sierra',
-                                              'linux_rh7',
-                                              'install',
-                                              'Python',
-                                              '3.6.3',
-                                              'bin'),
-                                 os.path.join(os.path.sep,
-                                              'projects',
-                                              'sierra',
-                                              'linux_rh7',
-                                              'install',
-                                              'Python',
-                                              'extras'
-                                              'bin'),
-                                 '/fake/path']}
+        expected_env = {}
 
         self.buildEnv_passes(PR_name, expected_list, expected_env)
 

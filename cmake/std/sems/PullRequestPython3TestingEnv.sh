@@ -1,29 +1,13 @@
 # This script can be used to load the appropriate environment for the
-# GCC 7.2.0 Pull Request testing build on a Linux machine that has access to
+# Python 3 Pull Request testing build on a Linux machine that has access to
 # the SEMS NFS mount.
 
-# usage: $ source PullRequestGCC7.2.0TestingEnv.sh
+# usage: $ source PullRequestPython3TestingEnv.sh
 
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
-module load sems-gcc/7.2.0
-module load sems-openmpi/1.10.1
 module load sems-git/2.10.1
-
-## In each of the cases where we load boost, we unload python so the
-## boost module does not complain - it otherwise does keep the python
-## we loaded earlier, but the message is just a trouble ticket
-## waiting to happen. We then promptly have to reset is as boost will
-## load python 2.7.9 and our scripts will fail.
-module unload sems-python
-module load sems-boost/1.63.0/base
-
-module load sems-zlib/1.2.8/base
-module load sems-hdf5/1.8.12/parallel
-module load sems-netcdf/4.4.1/exo_parallel
-module load sems-parmetis/4.0.3/parallel
-module load sems-scotch/6.0.3/nopthread_64bit_parallel
-module load sems-superlu/4.3/base
+module load sems-gcc/7.2.0
 
 # Load the SEMS CMake Module
 # - One of the SEMS modules will load CMake 3.4.x also,
@@ -33,9 +17,8 @@ module load sems-cmake/3.10.3
 
 module load sems-ninja_fortran/1.8.2
 
-# we will have implicitly gotten the sems python (2) from
-# the boost module above for whatever reason - reset it
-# to the one we are testing.
-module swap sems-python/3.5.2
+# the one we are testing.
+module load sems-python/3.5.2
 
+# this is due to some scripts in tribits calling python2
 unset PYTHONHOME

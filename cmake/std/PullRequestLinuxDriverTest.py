@@ -175,8 +175,7 @@ def setBuildEnviron(arguments):
                       'sems-gcc/7.2.0',
                       'sems-python/3.5.2',
                       'sems-cmake/3.10.3',
-                      'atdm-env',
-                      'atdm-ninja_fortran/1.7.2'],
+                      'sems-ninja_fortran/1.8.2'],
                 'Trilinos_pullrequest_gcc_7.2.0':
                      ['sems-env',
                       'sems-git/2.10.1',
@@ -239,43 +238,7 @@ def setBuildEnviron(arguments):
                   'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
                       {'OMP_NUM_THREADS': '2'},
                  'Trilinos_pullrequest_python_3':
-                      {'PYTHONPATH':
-                           os.path.join(os.path.sep,
-                                        'projects',
-                                        'sierra',
-                                        'linux_rh7',
-                                        'install',
-                                        'Python',
-                                        'extras',
-                                        'lib',
-                                        'python3.6',
-                                        'site-packages'),
-                       'MANPATH':
-                           os.path.join(os.path.sep,
-                                        'projects',
-                                        'sierra',
-                                        'linux_rh7',
-                                        'install',
-                                        'Python',
-                                        '3.6.3',
-                                        'share',
-                                        'man'),
-                       'PATH': os.path.join(os.path.sep,
-                                            'projects',
-                                            'sierra',
-                                            'linux_rh7',
-                                            'install',
-                                            'Python',
-                                            '3.6.3',
-                                            'bin') + os.pathsep +
-                               os.path.join(os.path.sep,
-                                            'projects',
-                                            'sierra',
-                                            'linux_rh7',
-                                            'install',
-                                            'Python',
-                                            'extras'
-                                            'bin')},
+                      {'PYTHONHOME': None},
                  'Trilinos_pullrequest_gcc_7.2.0':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
                        'OMP_NUM_THREADS': '2'},
@@ -342,8 +305,11 @@ def setBuildEnviron(arguments):
 
     for key, value in l_environMap.items():
         if key in os.environ:
-            # we are assuming these are paths to be prepended
-            os.environ[key] = value + os.pathsep + os.environ[key]
+            if l_environMap[key] is None:
+                del os.environ[key]
+            else:
+                # we are assuming these are paths to be prepended
+                os.environ[key] = value + os.pathsep + os.environ[key]
         else:
             os.environ[key] = value
 
