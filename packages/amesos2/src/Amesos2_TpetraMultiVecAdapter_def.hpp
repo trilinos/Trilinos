@@ -553,11 +553,7 @@ namespace Amesos2 {
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
 #ifdef HAVE_TEUCHOS_COMPLEX
-        // For complex we want to build the MV in std::complex but the views
-        // use Kokkos::complex. Force cast to resolve without an extra copy.
-        // For non-complex we don't casst because it's not necessary and we
-        // can preserve better testing of the pipeline. TODO. Can we improve
-        // this to remove cast, without loss of efficiency. Needs discussion.
+        // for complex, cast Kokkos::complex back to std::complex
         auto pData = reinterpret_cast<Scalar*>(kokkos_new_data.data());
 #else
         auto pData = kokkos_new_data.data();

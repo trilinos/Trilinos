@@ -124,6 +124,12 @@
 /* Defined if you want to enable amesos2-MUMPS */
 #cmakedefine HAVE_AMESOS2_MUMPS
 
+/* Defined if you want to enable amesos2-cuSOLVER */
+#cmakedefine HAVE_AMESOS2_CUSOLVER
+
+/* Defined if you want to enable amesos2-Metis */
+#cmakedefine HAVE_AMESOS2_METIS
+
 /* For experimental Basker in ShyLU*/
 #cmakedefine HAVE_AMESOS2_KOKKOS
 
