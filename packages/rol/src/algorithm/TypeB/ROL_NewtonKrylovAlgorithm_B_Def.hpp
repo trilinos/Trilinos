@@ -281,8 +281,8 @@ std::string NewtonKrylovAlgorithm_B<Real>::printHeader( void ) const {
     hist << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
     hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
     hist << "  ls_#fval - Number of the times the objective function was evaluated during the line search" << std::endl;
-    hist << "  iterCG   - Number of Truncated CG iterations" << std::endl << std::endl;
-    hist << "  flagGC   - Trust-Region Truncated CG flag" << std::endl;
+    hist << "  iterCG   - Number of Krylov iterations" << std::endl << std::endl;
+    hist << "  flagGC   - Krylov flag" << std::endl;
     for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
       hist << "    " << NumberToString(flag) << " - "
            << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;

@@ -84,24 +84,25 @@ private:
 
   class HessianPNK : public LinearOperator<Real> {
   private:
-    const Ptr<Objective<Real>> obj_;
+    const Ptr<Objective<Real>>       obj_;
     const Ptr<BoundConstraint<Real>> bnd_;
-    const Ptr<const Vector<Real>> x_;
-    const Ptr<const Vector<Real>> g_;
-    const Real eps_;
-    const Ptr<Secant<Real>> secant_;
-    const bool useSecant_;
-    Ptr<Vector<Real>> v_;
+    const Ptr<const Vector<Real>>    x_;
+    const Ptr<const Vector<Real>>    g_;
+    const Real                       eps_;
+    const Ptr<Secant<Real>>          secant_;
+    const bool                       useSecant_;
+    const Ptr<Vector<Real>>          v_;
   public:
-    HessianPNK(const Ptr<Objective<Real>> &obj,
+    HessianPNK(const Ptr<Objective<Real>>       &obj,
                const Ptr<BoundConstraint<Real>> &bnd,
-               const Ptr<const Vector<Real>> &x,
-               const Ptr<const Vector<Real>> &g,
-               const Real eps,
-               const Ptr<Secant<Real>> &secant,
-               const bool useSecant,
-               Ptr<Vector<Real>> &pwa)
-      : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps), secant_(secant), useSecant_(useSecant), v_(pwa) {}
+               const Ptr<const Vector<Real>>    &x,
+               const Ptr<const Vector<Real>>    &g,
+               Real                              eps,
+               const Ptr<Secant<Real>>          &secant,
+               bool                              useSecant,
+               const Ptr<Vector<Real>>          &pwa)
+      : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps),
+        secant_(secant), useSecant_(useSecant), v_(pwa) {}
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       v_->set(v);
       bnd_->pruneActive(*v_,*g_,*x_,eps_);
@@ -116,24 +117,25 @@ private:
 
   class PrecondPNK : public LinearOperator<Real> {
   private:
-    const Ptr<Objective<Real>> obj_;
+    const Ptr<Objective<Real>>       obj_;
     const Ptr<BoundConstraint<Real>> bnd_;
-    const Ptr<const Vector<Real>> x_;
-    const Ptr<const Vector<Real>> g_;
-    const Real eps_;
-    const Ptr<Secant<Real>> secant_;
-    const bool useSecant_;
-    Ptr<Vector<Real>> v_;
+    const Ptr<const Vector<Real>>    x_;
+    const Ptr<const Vector<Real>>    g_;
+    const Real                       eps_;
+    const Ptr<Secant<Real>>          secant_;
+    const bool                       useSecant_;
+    const Ptr<Vector<Real>>          v_;
   public:
-    PrecondPNK(const Ptr<Objective<Real>> &obj,
+    PrecondPNK(const Ptr<Objective<Real>>       &obj,
                const Ptr<BoundConstraint<Real>> &bnd,
-               const Ptr<const Vector<Real>> &x,
-               const Ptr<const Vector<Real>> &g,
-               Real eps,
-               const Ptr<Secant<Real>> &secant,
-               const bool useSecant,
-               Ptr<Vector<Real>> &dwa)
-      : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps), secant_(secant), useSecant_(useSecant), v_(dwa) {}
+               const Ptr<const Vector<Real>>    &x,
+               const Ptr<const Vector<Real>>    &g,
+               Real                              eps,
+               const Ptr<Secant<Real>>          &secant,
+               bool                              useSecant,
+               const Ptr<Vector<Real>>          &dwa)
+      : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps),
+        secant_(secant), useSecant_(useSecant), v_(dwa) {}
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       Hv.set(v.dual()); 
     }
