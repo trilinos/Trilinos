@@ -232,6 +232,7 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
+  typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
 
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
@@ -245,13 +246,17 @@ private:
 #endif
     SLU::SuperLUStat_t stat;
 
-    Teuchos::Array<magnitude_type> berr; ///< backward error bounds
-    Teuchos::Array<magnitude_type> ferr; ///<  forward error bounds
-    Teuchos::Array<int> perm_r;
-    Teuchos::Array<int> perm_c;
-    Teuchos::Array<int> etree;
-    Teuchos::Array<magnitude_type> R;
-    Teuchos::Array<magnitude_type> C;
+
+
+    typedef Kokkos::View<magnitude_type*, HostExecSpaceType>    host_mag_array;
+    typedef Kokkos::View<int*, HostExecSpaceType>               host_int_array;
+    host_mag_array berr; ///< backward error bounds
+    host_mag_array ferr; ///<  forward error bounds
+    host_int_array perm_r;
+    host_int_array perm_c;
+    host_int_array etree;
+    host_mag_array R;
+    host_mag_array C;
 
     char equed;
     bool rowequ, colequ;        // flags what type of equilibration
@@ -261,18 +266,28 @@ private:
     int panel_size;
   } data_;
 
+  typedef Kokkos::View<int*, HostExecSpaceType>            host_size_type_array;
+  typedef Kokkos::View<int*, HostExecSpaceType>         host_ordinal_type_array;
+  typedef Kokkos::View<slu_type*, HostExecSpaceType>      host_value_type_array;
+
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for SuperLU
-  Teuchos::Array<slu_type> nzvals_;
+  host_value_type_array host_nzvals_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<int> rowind_;
+  host_size_type_array host_rows_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<int> colptr_;
+  host_ordinal_type_array host_col_ptr_view_;
+
+  typedef typename Kokkos::View<slu_type**, Kokkos::LayoutLeft, HostExecSpaceType>
+    host_solve_array_t;
 
   /// Persisting 1D store for X
-  Teuchos::Array<slu_type> xvals_;  int ldx_;
+  mutable host_solve_array_t xValues_;
+  int ldx_;
+
   /// Persisting 1D store for B
-  Teuchos::Array<slu_type> bvals_;  int ldb_;
+  mutable host_solve_array_t bValues_;
+  int ldb_;
 
   /* Note: In the above, must use "Amesos2::Superlu" rather than
    * "Superlu" because otherwise the compiler references the
@@ -312,15 +327,19 @@ private:
 template <>
 struct solver_traits<Superlu> {
 #ifdef HAVE_TEUCHOS_COMPLEX
-  typedef Meta::make_list6<float,
-                           double,
-                           std::complex<float>,
-                           std::complex<double>,
-                           SLU::C::complex,
-                           SLU::Z::doublecomplex> supported_scalars;
+  typedef Meta::make_list6<float, double,
+                           std::complex<float>, std::complex<double>,
+                           Kokkos::complex<float>, Kokkos::complex<double>>
+                           supported_scalars;
 #else
   typedef Meta::make_list2<float, double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<Superlu,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2

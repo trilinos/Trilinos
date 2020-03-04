@@ -79,6 +79,19 @@ namespace SLU {
 #include "slu_util.h"
 #include "superlu_enum_consts.h"
 
+  #ifdef HAVE_TEUCHOS_COMPLEX
+    namespace C {
+      #undef __SUPERLU_SCOMPLEX     // TODO #undef after include as well?
+      #undef SCOMPLEX_INCLUDE
+      #include "slu_scomplex.h"     // single-precision complex data type definitions
+    }
+
+    namespace Z {
+      #undef __SUPERLU_DCOMPLEX     // TODO #undef after include as well?
+      #undef DCOMPLEX_INCLUDE
+      #include "slu_dcomplex.h"     // double-precision complex data type definitions
+    }
+  #endif  // HAVE_TEUCHOS_COMPLEX
 
     namespace S {               // single-precision real definitions
 
@@ -724,11 +737,8 @@ namespace Amesos2 {
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-  /* The specializations for Teuchos::as<> for SLU::complex and
-   * SLU::doublecomplex are provided in Amesos2_Superlu_Type.hpp
-   */
   template <>
-  struct FunctionMap<Superlu,SLU::C::complex>
+  struct FunctionMap<Superlu, Kokkos::complex<float>>
   {
 #ifdef HAVE_AMESOS2_SUPERLU5_API
     typedef typename SLU::C::GlobalLU_t GlobalLU_type;
@@ -805,10 +815,11 @@ namespace Amesos2 {
     }
 
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      SLU::C::complex* nzval, int* rowind, int* colptr,
+				      void * nzval, int* rowind, int* colptr,
 				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::C::cCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
+      SLU::C::complex * slu_nzval = reinterpret_cast<SLU::C::complex*>(nzval);
+      SLU::C::cCreate_CompCol_Matrix(A, m, n, nnz, slu_nzval, rowind, colptr,
 				     stype, dtype, mtype);
     }
 
@@ -821,10 +832,11 @@ namespace Amesos2 {
     }
 
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-				    SLU::C::complex* x, int ldx, SLU::Stype_t stype,
+				    void * x, int ldx, SLU::Stype_t stype,
 				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::C::cCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
+      SLU::C::complex * slu_x = reinterpret_cast<SLU::C::complex*>(x);
+      SLU::C::cCreate_Dense_Matrix(X, m, n, slu_x, ldx, stype, dtype, mtype);
     }
 
     static void gsequ(SLU::SuperMatrix* A, float* R, float* C,
@@ -842,7 +854,7 @@ namespace Amesos2 {
 
 
   template <>
-  struct FunctionMap<Superlu,SLU::Z::doublecomplex>
+  struct FunctionMap<Superlu,Kokkos::complex<double>>
   {
 #ifdef HAVE_AMESOS2_SUPERLU5_API
     typedef typename SLU::Z::GlobalLU_t GlobalLU_type;
@@ -919,10 +931,11 @@ namespace Amesos2 {
     }
 
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-				      SLU::Z::doublecomplex* nzval, int* rowind, int* colptr,
+				      void * nzval, int* rowind, int* colptr,
 				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::Z::zCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
+      SLU::Z::doublecomplex * slu_nzval = reinterpret_cast<SLU::Z::doublecomplex *>(nzval);
+      SLU::Z::zCreate_CompCol_Matrix(A, m, n, nnz, slu_nzval, rowind, colptr,
 				     stype, dtype, mtype);
 
       TEUCHOS_TEST_FOR_EXCEPTION( A == NULL,
@@ -944,10 +957,11 @@ namespace Amesos2 {
     }
 
     static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-				    SLU::Z::doublecomplex* x, int ldx, SLU::Stype_t stype,
+				    void * x, int ldx, SLU::Stype_t stype,
 				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
-      SLU::Z::zCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
+      SLU::Z::doublecomplex * slu_x = reinterpret_cast<SLU::Z::doublecomplex *>(x);
+      SLU::Z::zCreate_Dense_Matrix(X, m, n, slu_x, ldx, stype, dtype, mtype);
     }
 
     static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
