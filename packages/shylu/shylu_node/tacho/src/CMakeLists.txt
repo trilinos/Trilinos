@@ -35,14 +35,14 @@ SET(HEADERS_PUBLIC "")
 SET(HEADERS_PRIVATE "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS_PUBLIC *.hpp)
+FILE(GLOB HEADERS_PUBLIC *.hpp impl/*.hpp)
 LIST( APPEND HEADERS_PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
 
 
 APPEND_SET(SOURCES
-  Tacho_Util.cpp
-  Tacho_Blas_External.cpp
-  Tacho_Lapack_External.cpp
+  impl/Tacho_Util.cpp
+  impl/Tacho_Blas_External.cpp
+  impl/Tacho_Lapack_External.cpp
   eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_Cuda.cpp
   eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_OpenMP.cpp
   eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_Serial.cpp

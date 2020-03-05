@@ -1,18 +1,8 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho_Util.hpp"
-#include "Tacho_DenseMatrixView.hpp"
-#include "Tacho_DenseFlopCount.hpp"
-
-#include "Tacho_Chol_ByBlocks.hpp"
-#include "Tacho_Gemm_ByBlocks.hpp"
-#include "Tacho_Herk_ByBlocks.hpp"
-#include "Tacho_Trsm_ByBlocks.hpp"
-
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp" 
 
 #ifdef TACHO_HAVE_MKL

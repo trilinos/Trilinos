@@ -43,22 +43,36 @@ void testTachoSolver(int numRows,
   std::vector<int> tachoParams(tacho::INDEX_LENGTH);
   tachoParams[tacho::USEDEFAULTSOLVERPARAMETERS] = 0;
   tachoParams[tacho::VERBOSITY] = 0;
+  tachoParams[tacho::SMALLPROBLEMTHRESHOLDSIZE] = 1024;
   
 #if defined (KOKKOS_ENABLE_CUDA)
-  tachoParams[tacho::MAXNUMSUPERBLOCKS] = 32;
-  tachoParams[tacho::BLOCKSIZE] = 64;
-  tachoParams[tacho::PANELSIZE] = 32;
+  tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = 32;
+  tachoParams[tacho::TASKING_OPTION_BLOCKSIZE] = 64;
+  tachoParams[tacho::TASKING_OPTION_PANELSIZE] = 32;
+
+  tachoParams[tacho::LEVELSET_OPTION_SCHEDULING] = 1;
+  tachoParams[tacho::LEVELSET_OPTION_MAX_NRHS] = 1;
+  tachoParams[tacho::LEVELSET_OPTION_DEVICE_LEVEL_CUT] = 0;
+  tachoParams[tacho::LEVELSET_OPTION_DEVICE_FACTOR_THRES] = 64;
+  tachoParams[tacho::LEVELSET_OPTION_DEVICE_SOLVE_THRES] = 128;
+  tachoParams[tacho::LEVELSET_OPTION_NSTREAMS] = 8;
 #else
 #  ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   tachoParams[tacho::MAXNUMSUPERBLOCKS] = tacho::host_space::thread_pool_size(0)/2;
 #  else
   tachoParams[tacho::MAXNUMSUPERBLOCKS] = tacho::host_space::impl_thread_pool_size(0)/2;
 #  endif
-  tachoParams[tacho::BLOCKSIZE] = 256;
-  tachoParams[tacho::PANELSIZE] = 128;
-#endif
+  tachoParams[tacho::TASKING_OPTION_BLOCKSIZE] = 256;
+  tachoParams[tacho::TASKING_OPTION_PANELSIZE] = 128;
 
-  tachoParams[tacho::SMALLPROBLEMTHRESHOLDSIZE] = 1024;
+  tachoParams[tacho::LEVELSET_OPTION_SCHEDULING] = 0;
+  // the following options are not used and set dummy values
+  tachoParams[tacho::LEVELSET_OPTION_MAX_NRHS] = -1;
+  tachoParams[tacho::LEVELSET_OPTION_DEVICE_LEVEL_CUT] = 0;
+  tachoParams[tacho::LEVELSET_OPTION_DEVICE_FACTOR_THRES] = 0;
+  tachoParams[tacho::LEVELSET_OPTION_DEVICE_SOLVE_THRES] = 0;
+  tachoParams[tacho::LEVELSET_OPTION_NSTREAMS] = 0;
+#endif
 
   ///
   /// Tacho solver analyze + factorize (fence is required)

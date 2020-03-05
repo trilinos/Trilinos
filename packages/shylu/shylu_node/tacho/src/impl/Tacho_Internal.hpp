@@ -23,7 +23,6 @@
 #include "Tacho_Graph.hpp"
 #include "Tacho_GraphTools_CAMD.hpp"        
 #include "Tacho_GraphTools_Metis.hpp"       
-//#include "Tacho_GraphTools_MetisMT.hpp"       
 #include "Tacho_GraphTools_Scotch.hpp"      
 
 #include "Tacho_SupernodeInfo.hpp"
@@ -77,6 +76,7 @@
 
 #include "Tacho_NumericTools.hpp"
 #include "Tacho_LevelSetTools.hpp"
+#include "Tacho_TriSolveTools.hpp"
 
 // Do not include this. 
 // In a gcc (4.9.x), this causes some multiple definition link error with gcc headers.

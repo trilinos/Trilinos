@@ -1,25 +1,26 @@
+#include "Kokkos_Random.hpp"
+
 #include "Tacho_Solver.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
 #include "Tacho_MatrixMarket.hpp"
 #include "Tacho_CommandLineParser.hpp" 
-
-#include "Kokkos_Random.hpp"
 
 using ordinal_type = Tacho::ordinal_type;
 
 /// select a kokkos task scheudler
 /// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
-//#if defined(TACHO_USE_TASKSCHEDULER)
-//template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
-//static const char * scheduler_name = "TaskScheduler";
-// #endif
-// #if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
-//template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
-//static const char * scheduler_name = "TaskSchedulerMultiple";
-// #endif
-// #if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
+#if defined(TACHO_USE_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
+static const char * scheduler_name = "TaskScheduler";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
+static const char * scheduler_name = "TaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
 template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
 static const char * scheduler_name = "ChaseLevTaskScheduler";
-// #endif
+#endif
 
 template<typename value_type>
 int driver (int argc, char *argv[]) {

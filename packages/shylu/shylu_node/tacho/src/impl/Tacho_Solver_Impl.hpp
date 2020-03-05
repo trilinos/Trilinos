@@ -23,6 +23,7 @@ namespace Tacho {
       _nb(-1),
       _front_update_mode(-1),
       _levelset(0),
+      _max_nrhs(1),
       _device_level_cut(0),
       _device_factor_thres(64),
       _device_solve_thres(128),
@@ -146,7 +147,14 @@ namespace Tacho {
   void 
   Solver<VT,ST>
   ::setLevelSetScheduling(const bool levelset) {
-    _levelset = levelset; // this option is not used yet
+    _levelset = levelset; 
+  }
+
+  template<typename VT, typename ST>  
+  void 
+  Solver<VT,ST>
+  ::setLevelSetOptionMaxNrhs(const ordinal_type max_nrhs) {
+    _max_nrhs = max_nrhs; 
   }
 
   template<typename VT, typename ST>  
@@ -296,6 +304,7 @@ namespace Tacho {
       printf("TachoSolver: Initialize\n");
       printf("=======================\n");
     }
+
     ///
     /// initialize numeric tools
     ///
@@ -327,7 +336,8 @@ namespace Tacho {
     /// initialize levelset tools
     ///
     if (_levelset) {
-      _L = new levelset_tools_type(*_N, max_nrhs);
+      _max_nrhs = std::max(max_nrhs, _max_nrhs);
+      _L = new levelset_tools_type(*_N, _max_nrhs);
       _L->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
       _L->createStream(_nstreams);
     }

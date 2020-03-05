@@ -1,9 +1,6 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho.hpp"
 #include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
 

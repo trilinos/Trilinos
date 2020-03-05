@@ -1,29 +1,8 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho_Util.hpp"
-#include "Tacho_CrsMatrixBase.hpp"
-#include "Tacho_MatrixMarket.hpp"
-
-#include "Tacho_Graph.hpp"
-#include "Tacho_SymbolicTools.hpp"
-
-#if defined(TACHO_HAVE_SCOTCH)
-#include "Tacho_GraphTools_Scotch.hpp"
-#endif
-
-#if defined(TACHO_HAVE_METIS)
-#include "Tacho_GraphTools_Metis.hpp"
-#endif
-
-#include "Tacho_GraphTools_CAMD.hpp"
-
-#include "Tacho_NumericTools.hpp"
-#include "Tacho_TriSolveTools.hpp"
-
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
 
 #define TACHO_ENABLE_PROFILE
