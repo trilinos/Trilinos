@@ -7,6 +7,7 @@
 #include "impl/Kokkos_Timer.hpp"
 
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <memory>
