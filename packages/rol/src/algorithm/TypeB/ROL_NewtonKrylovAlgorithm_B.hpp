@@ -176,6 +176,9 @@ public:
                                 BoundConstraint<Real> &bnd,
                                 std::ostream          &outStream = std::cout);
 
+  std::vector<std::string> run( NewOptimizationProblem<Real> &problem,
+                                std::ostream                 &outStream = std::cout ) override;
+
   std::vector<std::string> run( Vector<Real>          &x,
                                 const Vector<Real>    &g,
                                 Objective<Real>       &obj,

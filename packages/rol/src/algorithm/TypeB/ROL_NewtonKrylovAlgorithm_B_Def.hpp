@@ -250,6 +250,17 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
 }
 
 template<typename Real>
+std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( NewOptimizationProblem<Real> &problem,
+                                                             std::ostream                 &outStream ) {
+  if (problem.getPolyhedralProjection() == nullPtr) {
+    return Algorithm_B<Real>::run(problem,outStream);
+  }
+  else {
+    throw Exception::NotImplemented(">>> NewtonKrylovAlgorithm_B::run : This algorithm cannot solve problems with linear equality constraints!");
+  }
+}
+
+template<typename Real>
 std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>          &x,
                                                              const Vector<Real>    &g,
                                                              Objective<Real>       &obj,
