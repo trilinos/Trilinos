@@ -16,6 +16,8 @@ namespace Tacho {
     : _m(0), _nnz(0),
       _ap(), _h_ap(),_aj(), _h_aj(),
       _perm(), _h_perm(), _peri(), _h_peri(),
+      _N(nullptr),
+      _L(nullptr),
       _verbose(0),
       _small_problem_thres(1024),
       _serial_thres_size(-1),
@@ -28,9 +30,7 @@ namespace Tacho {
       _device_factor_thres(64),
       _device_solve_thres(128),
       _nstreams(8),
-      _max_num_superblocks(-1),
-      _N(nullptr),
-      _L(nullptr) {}
+      _max_num_superblocks(-1) {}
   
   template<typename VT, typename ST>
   Solver<VT,ST>

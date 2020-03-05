@@ -422,8 +422,8 @@ namespace Tacho {
         _peri(N.getInversePermutationVector()),
         _info(N.getSupernodesInfo()),
         _h_stree_level(N.getSupernodesTreeLevel()),
-        _nstreams(0),
-        _max_nrhs(max_nrhs)
+        _max_nrhs(max_nrhs),
+        _nstreams(0)
     {}
 
     TriSolveTools(// input permutation

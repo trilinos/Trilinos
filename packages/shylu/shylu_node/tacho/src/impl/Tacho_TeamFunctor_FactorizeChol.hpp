@@ -144,7 +144,7 @@ namespace Tacho {
       const ordinal_type *s_colidx = sbeg < send ? &info.gid_colidx(cur.gid_col_begin + srcbeg) : NULL;
       
       // loop over target
-      const size_type s2tsize = srcsize*sizeof(ordinal_type)*member.team_size();
+      //const size_type s2tsize = srcsize*sizeof(ordinal_type)*member.team_size();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
           ordinal_type *s2t = ((ordinal_type*)(buf)) + member.team_rank()*srcsize;
           const auto &s = info.supernodes(info.sid_block_colidx(i).first);
