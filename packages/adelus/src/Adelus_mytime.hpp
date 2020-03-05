@@ -62,44 +62,11 @@ double get_seconds(double start)
   return (time);
 }
 
-/*
-** Exchange and calculate average timing information
-**
-** secs:        number of ticks for this processor
-** type:        type of message to collect
-*/
-
-//double timing(double secs, int type)
-//{
-//
-//    extern int me;		/* current processor number */
-//    extern int nprocs_cube;
-//    double avgtime;
-//
-//
-//    struct {
-//      double val;
-//      int proc;
-//    } max_in, max_out;
-//
-//    max_in.val = secs;
-//    max_in.proc = me;
-//    MPI_Allreduce(&max_in,&max_out,1,MPI_DOUBLE_INT,MPI_MAXLOC,MPI_COMM_WORLD);
-//
-//    MPI_Allreduce(&secs,&avgtime,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-//    avgtime /= nprocs_cube;
-//
-//    if (me == 0) {
-//	fprintf(stderr, "%.4f (avg), %.4f (max on processor %d).\n",
-//		avgtime, max_out.val, max_out.proc);
-//    }
-//
-//    return avgtime;
-//}
+// Exchange and calculate max, min, and average timing information
 
 void showtime(const char *label, double *value)
 {
-  extern int me;		/* current processor number */
+  extern int me;		// current processor rank
   extern int nprocs_cube;
   
   double avgtime;

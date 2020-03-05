@@ -50,10 +50,10 @@
 
 #define grow_to_lrow(R) ( (R/nprocs_col)  )
 
-/* #define col_owner(C)  (((C)%nprocs_row) + (me - me%nprocs_row)) */
+// #define col_owner(C)  (((C)%nprocs_row) + (me - me%nprocs_row))
 #define col_owner(C)  ( proc_num(mesh_row(me) , (C)%nprocs_row) )
 
-/* #define row_owner(R)  ((((R)%nprocs_col)*nprocs_row) + (me%nprocs_row)) */
+// #define row_owner(R)  ((((R)%nprocs_col)*nprocs_row) + (me%nprocs_row))
 #define row_owner(R)  ( proc_num((R)%nprocs_col , mesh_col(me)) )
 
 #define owner(R, C)   ((((R)%nprocs_col)*nprocs_row) + ((C)%nprocs_row))

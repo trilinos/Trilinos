@@ -54,7 +54,7 @@
 
 namespace Adelus {
 
-/*  define variables to avoid compiler error    */
+//  define variables to avoid compiler error
 
 int one = 1;
 double d_one = 1.;
@@ -108,8 +108,8 @@ void initcomm(){
   if (col_id < 0) col_id += nprocs_row;
   ringpre4 = proc_num(my_row_id,col_id);
 
-  /* calculate first power of two bigger or equal to the number of rows,
-     and low order one bit in own name*/
+  // calculate first power of two bigger or equal to the number of rows,
+  //   and low order one bit in own name
 
   for (hbit = 1; nprocs_col > hbit ; hbit = hbit << 1);
 
@@ -123,18 +123,5 @@ void initcomm(){
   printf("In initcomm, node %d: my_col_id = %d, my_row_id = %d, hbit = %d, rmbit = %d, ringnext = %d, ringprev = %d\n",me,my_col_id,my_row_id,hbit,rmbit,ringnext,ringprev);
 #endif
 }
-
-//double
-//max_all(double buf, int type)
-//{
-//
-//    double maxval;
-//
-//    maxval = buf;
-//
-//    MPI_Allreduce(&buf,&maxval,1,MPI_DATA_TYPE,MPI_MAX,MPI_COMM_WORLD);
-//
-//    return maxval;
-//}
 
 }//namespace Adelus

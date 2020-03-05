@@ -49,16 +49,7 @@
 
 namespace Adelus {
 
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
-
 void initcomm(  );
-//double max_all(double , int );
-
-//#ifdef __cplusplus
-//}
-//#endif
 
 }//namespace Adelus
 

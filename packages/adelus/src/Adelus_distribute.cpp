@@ -44,54 +44,51 @@
 //@HEADER
 */
 
-/*  Code to distribute the matrix for a parallel solve  */
+//  Code to distribute the matrix for a parallel solve
 
-/*
-Author:
+//Author:
+//
+//Joseph D. Kotulski
+//Sandia National Labs
+//(505)-845-7955
+//jdkotul@sandia.gov
 
-Joseph D. Kotulski
-Sandia National Labs
-(505)-845-7955
-jdkotul@sandia.gov
+//  Variables  INPUT
+//             nprocsr --- number of processors assigned to a row
+//             ncols   --- number of columns(=rows) for the matrix
+//             nrhs    --- number of right hand sides
+//
+//             OUTPUT
+//             my_rows  --- number of rows of the total matrix I own
+//             my_cols  --- number of columns of the total matrix I own
+//             my_first_row --- global number of my first row
+//             my_first_col --- global number of my first column
+//             my_rhs   --- number of right hand sides that I own
+//             my_row   --- my subblock of the matrix
+//             my_col   --- my subblock of the matrix
 
-*/
-/*  Variables  INPUT
-               nprocsr --- number of processors assigned to a row
-               ncols   --- number of columns(=rows) for the matrix
-               nrhs    --- number of right hand sides
-
-               OUTPUT
-               my_rows  --- number of rows of the total matrix I own
-               my_cols  --- number of columns of the total matrix I own
-               my_first_row --- global number of my first row
-               my_first_col --- global number of my first column
-               my_rhs   --- number of right hand sides that I own
-               my_row   --- my subblock of the matrix
-               my_col   --- my subblock of the matrix
-                                                                     */
 #include <mpi.h>
 #include "Adelus_distribute.hpp"
 
 namespace Adelus {
 
-void distmat_(
-                int *nprocsr,
-                int *ncols,
-                int *nrhs_,
-                int *my_rows_,
-                int *my_cols_,
-                int *my_first_row_,
-                int *my_first_col_,
-                int *my_rhs_,
-                int *my_row,
-                int *my_col)
+void distmat_( int *nprocsr,
+               int *ncols,
+               int *nrhs_,
+               int *my_rows_,
+               int *my_cols_,
+               int *my_first_row_,
+               int *my_first_col_,
+               int *my_rhs_,
+               int *my_row,
+               int *my_col )
 {
 
     int rank,nprocs;
     int nprocs_col_, nrows;
     int nprocs_row_;
 
-/*  Determine who I am and the number of processors that are being used    */
+    //  Determine who I am and the number of processors that are being used
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
@@ -103,7 +100,7 @@ void distmat_(
 
     nprocs_col_ = nprocs/(*nprocsr) ;
 
-    /* Distribute the rows and columns   */
+    // Distribute the rows and columns
 
     *my_row = rank/(*nprocsr);
     *my_col = rank %(nprocs_row_);
@@ -130,7 +127,7 @@ void distmat_(
     if (*my_col < *ncols % (*nprocsr))
         ++(*my_cols_);
 
-    /* Distribute the RHS per processor */
+    // Distribute the RHS per processor
 
     *my_rhs_ = *nrhs_ / *nprocsr;
     if (*my_col < *nrhs_ % (*nprocsr)) ++(*my_rhs_);

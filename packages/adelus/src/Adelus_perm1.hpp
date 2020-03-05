@@ -60,13 +60,13 @@
 
 #define IBM_MPI_WRKAROUND
 
-extern int me;	               /* processor id information */
-extern int nprocs_row;         /* num of procs to which a row is assigned */
-extern int nprocs_col;         /* num of procs to which a col is assigned */
-extern int nrows_matrix;       /* number of rows in the matrix */
-extern int ncols_matrix;       /* number of cols in the matrix */
-extern int my_rows;            /* num of rows I own */
-extern int my_cols;            /* num of cols I own */
+extern int me;	               // processor id information
+extern int nprocs_row;         // num of procs to which a row is assigned
+extern int nprocs_col;         // num of procs to which a col is assigned
+extern int nrows_matrix;       // number of rows in the matrix
+extern int ncols_matrix;       // number of cols in the matrix
+extern int my_rows;            // num of rows I own
+extern int my_cols;            // num of cols I own
 extern int myrow;
 extern int mycol;
 extern MPI_Comm col_comm;
@@ -75,7 +75,7 @@ namespace Adelus {
 
 #ifndef IBM_MPI_WRKAROUND
 
-  /*  Customized zcopy  */
+  //  Customized copy
   template<class XView, class YView>
   void zcopy_wr_local_index(int N, XView& X, YView& Y, int lidx) {
     Kokkos::parallel_for(Kokkos::RangePolicy<typename XView::device_type::execution_space>(0,N+1), KOKKOS_LAMBDA (const int i) {
@@ -86,7 +86,7 @@ namespace Adelus {
     });
   }
   
-  /*  Customized zcopy  */
+  //  Customized zcopy
   template<class XView, class YView>
   void zcopy_ld_local_index(int N, XView& X, YView& Y) {
     Kokkos::parallel_for(Kokkos::RangePolicy<typename XView::device_type::execution_space>(0,N), KOKKOS_LAMBDA (const int i) {
@@ -99,8 +99,8 @@ namespace Adelus {
     });
   }
   
-  /*  Permutes -- unwraps the torus-wrap for the solution
-      using the communication buffer             */
+  //  Permutes -- unwraps the torus-wrap for the solution
+  //              using the communication buffer
   template<class ZDView>
   inline
   void perm1_(ZDView& ZV, int *num_my_rhs) {
@@ -120,8 +120,7 @@ namespace Adelus {
     int col_offset, row_offset;
     int ncols_proc1, ncols_proc2, nprocs_row1;
     int nrows_proc1, nrows_proc2, nprocs_col1;
-  
-    //int change_count;
+
     int change_nosend;
     int change_send;
     int next, next_s;
@@ -142,10 +141,11 @@ namespace Adelus {
   #endif
   
     my_rhs_=*num_my_rhs;
-    
+
+    typedef typename ZDView::value_type value_type;
     typedef typename ZDView::device_type::execution_space execution_space;
     typedef typename ZDView::device_type::memory_space memory_space;
-    typedef Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, memory_space>  ViewVectorType;
+    typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, memory_space>  ViewVectorType;
   					 
     ViewVectorType temp_s     ( "temp_s", (my_rhs_ + 1) );
     ViewVectorType rhs_temp   ( "rhs_temp", (my_rows*(my_rhs_+1)) );
@@ -174,15 +174,14 @@ namespace Adelus {
   #ifdef PRINT_STATUS
       printf("Rank %i -- perm1_() Begin permutation, execution_space %s, memory_space %s\n",me,typeid(execution_space).name(),typeid(memory_space).name());
   #endif
-  
-      /* XCOPY(num,(vec),one,rhs_temp,one);  */
+
       for (i=0; i<my_rows; i++) {
         global_index = my_first_row + i*nprocs_col;
-        /* break down global index using torus wrap in row direction */
+        // break down global index using torus wrap in row direction
         dest = global_index%nprocs_row;
         local_index = global_index/nprocs_row;
   
-        /* rebuild global index using block in row direction */
+        // rebuild global index using block in row direction
         if (dest < nprocs_row1) {
           global_index = dest*ncols_proc1 + local_index;
         } else {
@@ -190,7 +189,7 @@ namespace Adelus {
                          + local_index;
         }
   
-        /* break down global index using blocks in the column direction */
+        // break down global index using blocks in the column direction
         if (global_index < col_offset) {
           dest = global_index/nrows_proc1;
           local_index = global_index%nrows_proc1;
@@ -204,21 +203,14 @@ namespace Adelus {
   
         if ((local_index != i) || (dest != me)) {
   
-          /* Check if I need to send the data or just change position */
+          // Check if I need to send the data or just change position
   
           if( dest == me ) {
-  
-           //XCOPY(my_rhs_, ptr1, my_rows, (my_rhs_temp + next), one);
-           //cblas_zcopy(my_rhs_, ptr1, my_rows, (my_rhs_temp + next), one);             
+
            auto sub_ZV          = subview(ZV,          ptr1_idx, Kokkos::ALL());
            auto sub_my_rhs_temp = subview(my_rhs_temp, Kokkos::make_pair(next, next+(my_rhs_ + 1)));     				
            zcopy_wr_local_index(my_rhs_, sub_ZV, sub_my_rhs_temp, local_index);
-  
-  //#ifdef COMPLEX
-  //         (*(my_rhs_temp+ next + my_rhs_)).r = local_index + 0.1;
-  //#else
-  //         *(my_rhs_temp+ next + my_rhs_) = local_index + 0.1;
-  //#endif
+
             change_nosend++;
   
             next = change_nosend * (my_rhs_ + 1);
@@ -229,25 +221,13 @@ namespace Adelus {
   
             bytes = (my_rhs_ + 1)*sizeof(DATA_TYPE);
   
-            //MPI_Irecv( (char *)(rhs_temp +next_s),bytes,MPI_CHAR,MPI_ANY_SOURCE,
-            //      MPI_ANY_TAG,MPI_COMM_WORLD,&msgrequest);
             MPI_Irecv( (char *)(reinterpret_cast<DATA_TYPE *>(rhs_temp.data())+next_s),bytes,MPI_CHAR,MPI_ANY_SOURCE,
                   MPI_ANY_TAG,MPI_COMM_WORLD,&msgrequest);
-  
-           //XCOPY(my_rhs_, ptr1, my_rows, temp_s, one);
-           //cblas_zcopy(my_rhs_, ptr1, my_rows, temp_s, one);
+
            auto sub_ZV = subview(ZV, ptr1_idx, Kokkos::ALL());     				
            zcopy_wr_local_index(my_rhs_, sub_ZV, temp_s, local_index);
   
-  //#ifdef COMPLEX
-  //         (*(temp_s+my_rhs_)).r = local_index + 0.1;
-  //#else
-  //         *(temp_s+my_rhs_) = local_index + 0.1;
-  //#endif
-  
            type = PERMTYPE+change_send;
-           //MPI_Send((char *) temp_s,bytes,MPI_CHAR,dest,
-           //        type,MPI_COMM_WORLD);
            MPI_Send((char *)(reinterpret_cast<DATA_TYPE *>(temp_s.data())),bytes,MPI_CHAR,dest,
                    type,MPI_COMM_WORLD);
            change_send++;
@@ -262,18 +242,11 @@ namespace Adelus {
         ptr1_idx++;
       }
   
-      /* Unpack changes from other processors  */
+      // Unpack changes from other processors
   
       next_s = 0;
       inc = 0;
       for (i = 0; i < change_send; i++) {
-  //#ifdef COMPLEX
-  //      local_index = (*(rhs_temp+next_s+my_rhs_)).r;
-  //#else
-  //      local_index = *(rhs_temp +next_s+my_rhs_);
-  //#endif
-        //XCOPY(my_rhs_,(rhs_temp + next_s),one,(vec+local_index),my_rows);
-        //cblas_zcopy(my_rhs_,(rhs_temp + next_s),one,(vec+local_index),my_rows);
         auto sub_rhs_temp = subview(rhs_temp, Kokkos::make_pair(next_s, next_s+(my_rhs_ + 1)));     				
         zcopy_ld_local_index(my_rhs_, sub_rhs_temp, ZV);
   
@@ -281,17 +254,10 @@ namespace Adelus {
         next_s = inc * (my_rhs_+1);
       }
   
-      /* Unpack my changes */
+      // Unpack my changes
       next = 0;
       inc = 0;
       for (i = 0; i < change_nosend; i++) {
-  //#ifdef COMPLEX
-  //      local_index = (*(my_rhs_temp+next+my_rhs_)).r;
-  //#else
-  //      local_index = *(my_rhs_temp+next+my_rhs_);
-  //#endif
-        //XCOPY(my_rhs_,(my_rhs_temp + next),one,(vec+local_index),my_rows);
-        //cblas_zcopy(my_rhs_,(my_rhs_temp + next),one,(vec+local_index),my_rows);
         auto sub_my_rhs_temp = subview(my_rhs_temp, Kokkos::make_pair(next, next+(my_rhs_ + 1)));     				
         zcopy_ld_local_index(my_rhs_, sub_my_rhs_temp, ZV);
         inc++;
@@ -310,99 +276,111 @@ namespace Adelus {
 
 #else//define IBM_MPI_WRKAROUND
 
-/*  Customized copy  */
-template<class XView, class YView>
-void zcopy_wr_global_index(int N, XView& X, YView& Y, int idx) {
-  Kokkos::parallel_for(Kokkos::RangePolicy<typename XView::device_type::execution_space>(0,N), KOKKOS_LAMBDA (const int i) {
-    Y(idx,i) = X(i);
-  });
-}
-
-/*  Permutes -- unwraps the torus-wrap for the solution
-    using the communication buffer             */
-template<class ZDView>
-inline
-void perm1_(ZDView& ZV, int *num_my_rhs) {
-
-  int i;
-  int my_rhs_;
-
-  int dest, global_index, local_index;
-
-  int row_offset;
-  int ncols_proc1, ncols_proc2, nprocs_row1;
-  int ptr1_idx, myfirstrow;
-
-#ifdef GET_TIMING
-  double t2;
-  double totalpermtime;
-#endif
-
-#ifdef GET_TIMING
-  t2 = MPI_Wtime();
-#endif
-
-  my_rhs_=*num_my_rhs;
+  //  Customized copy
+  template<class XView, class YView>
+  void zcopy_wr_global_index(int N, XView& X, YView& Y, int idx) {
+    Kokkos::parallel_for(Kokkos::RangePolicy<typename XView::device_type::execution_space>(0,N), KOKKOS_LAMBDA (const int i) {
+      Y(idx,i) = X(i);
+    });
+  }
   
-  typedef typename ZDView::device_type::execution_space execution_space;
-  typedef typename ZDView::device_type::memory_space memory_space;
-  typedef Kokkos::View<Kokkos::complex<double>**, Kokkos::LayoutLeft, memory_space> ViewMatrixType;
+  //  Permutes -- unwraps the torus-wrap for the solution
+  //              using the communication buffer
+  template<class ZDView>
+  inline
+  void perm1_(ZDView& ZV, int *num_my_rhs) {
+  
+    int i;
+    int my_rhs_;
+  
+    int dest, global_index, local_index;
+  
+    int row_offset;
+    int ncols_proc1, ncols_proc2, nprocs_row1;
+    int ptr1_idx, myfirstrow;
+  
+  #ifdef GET_TIMING
+    double t2;
+    double totalpermtime;
+  #endif
+  
+  #ifdef GET_TIMING
+    t2 = MPI_Wtime();
+  #endif
+  
+    my_rhs_=*num_my_rhs;
 
-  if (my_rhs_ > 0) {
-
-    ViewMatrixType rhs_temp ( "rhs_temp", nrows_matrix, my_rhs_ );//allocate full-size RHS vectors 
-    Kokkos::deep_copy(rhs_temp, 0);//initialize with 0s
-
-    ncols_proc1 = ncols_matrix/nprocs_row;
-    ncols_proc2 = ncols_proc1;
-    if (ncols_matrix%nprocs_row > 0) ncols_proc1++;
-    nprocs_row1 = (ncols_matrix%nprocs_row);
-    row_offset = ncols_proc1 * nprocs_row1;
-
-    myfirstrow = myrow * (nrows_matrix / nprocs_col) + 1;
-    myfirstrow = ( myrow > (nrows_matrix%nprocs_col) ) ? myfirstrow + (nrows_matrix%nprocs_col) :
-                                                         myfirstrow + myrow;
-														 
-    ptr1_idx = 0;
-
-#ifdef PRINT_STATUS
-    printf("Rank %i -- perm1_() Begin permutation, execution_space %s, memory_space %s\n",me,typeid(execution_space).name(),typeid(memory_space).name());
-#endif
-
-    for (i=0; i<my_rows; i++) {
-      global_index = my_first_row + i*nprocs_col;
-
-      /* break down global index using torus wrap in row direction */
-      dest = global_index%nprocs_row;
-      local_index = global_index/nprocs_row;
-
-      /* rebuild global index using block in row direction */
-      if (dest < nprocs_row1) {
-        global_index = dest*ncols_proc1 + local_index;
-      } else {
-        global_index = row_offset + (dest-nprocs_row1)*ncols_proc2 + local_index;
+    typedef typename ZDView::value_type value_type;
+    typedef typename ZDView::device_type::execution_space execution_space;
+    typedef typename ZDView::device_type::memory_space memory_space;
+    typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewMatrixType;
+  
+    if (my_rhs_ > 0) {
+  
+      ViewMatrixType rhs_temp ( "rhs_temp", nrows_matrix, my_rhs_ );//allocate full-size RHS vectors 
+      Kokkos::deep_copy(rhs_temp, 0);//initialize with 0s
+  
+      ncols_proc1 = ncols_matrix/nprocs_row;
+      ncols_proc2 = ncols_proc1;
+      if (ncols_matrix%nprocs_row > 0) ncols_proc1++;
+      nprocs_row1 = (ncols_matrix%nprocs_row);
+      row_offset = ncols_proc1 * nprocs_row1;
+  
+      myfirstrow = myrow * (nrows_matrix / nprocs_col) + 1;
+      myfirstrow = ( myrow > (nrows_matrix%nprocs_col) ) ? myfirstrow + (nrows_matrix%nprocs_col) :
+                                                           myfirstrow + myrow;
+  														 
+      ptr1_idx = 0;
+  
+  #ifdef PRINT_STATUS
+      printf("Rank %i -- perm1_() Begin permutation, execution_space %s, memory_space %s\n",me,typeid(execution_space).name(),typeid(memory_space).name());
+  #endif
+  
+      for (i=0; i<my_rows; i++) {
+        global_index = my_first_row + i*nprocs_col;
+  
+        /* break down global index using torus wrap in row direction */
+        dest = global_index%nprocs_row;
+        local_index = global_index/nprocs_row;
+  
+        /* rebuild global index using block in row direction */
+        if (dest < nprocs_row1) {
+          global_index = dest*ncols_proc1 + local_index;
+        } else {
+          global_index = row_offset + (dest-nprocs_row1)*ncols_proc2 + local_index;
+        }
+  
+        auto sub_ZV = subview(ZV, ptr1_idx, Kokkos::ALL());
+        zcopy_wr_global_index(my_rhs_, sub_ZV, rhs_temp, global_index);
+  
+        ptr1_idx++;
       }
 
-      auto sub_ZV = subview(ZV, ptr1_idx, Kokkos::ALL());
-      zcopy_wr_global_index(my_rhs_, sub_ZV, rhs_temp, global_index);
-
-      ptr1_idx++;
+#ifdef ZCPLX
+      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_DOUBLE_COMPLEX, MPI_SUM, col_comm);
+#endif
+#ifdef DREAL
+      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_DOUBLE, MPI_SUM, col_comm);
+#endif
+#ifdef SCPLX
+      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_COMPLEX, MPI_SUM, col_comm);
+#endif
+#ifdef SREAL  
+      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_FLOAT, MPI_SUM, col_comm);
+#endif
+  
+      Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)), 
+                         subview(rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
+  
     }
-
-    MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_DOUBLE_COMPLEX, MPI_SUM, col_comm);
-
-    Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)), 
-                       subview(rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
-
+  
+  #ifdef GET_TIMING
+    totalpermtime = MPI_Wtime() - t2;
+  #endif
+  #ifdef GET_TIMING
+    showtime("Total time in perm",&totalpermtime);
+  #endif
   }
-
-#ifdef GET_TIMING
-  totalpermtime = MPI_Wtime() - t2;
-#endif
-#ifdef GET_TIMING
-  showtime("Total time in perm",&totalpermtime);
-#endif
-}
 
 #endif
 

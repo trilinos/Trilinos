@@ -60,52 +60,33 @@
 
 extern int me;
 
-extern int ncols_matrix;       /* number of cols in the matrix */
+extern int ncols_matrix;  // number of cols in the matrix
 
-extern int nprocs_col;		/* num of procs to which a col is assigned */
-extern int nprocs_row;		/* num of procs to which a row is assigned */
+extern int nprocs_col;    // num of procs to which a col is assigned
+extern int nprocs_row;    // num of procs to which a row is assigned
 
-extern int my_first_col;        /* proc position in a col */
-extern int my_first_row;	/* proc position in a row */
+extern int my_first_col;  // proc position in a col
+extern int my_first_row;  // proc position in a row
 
-extern int my_rows;		/* num of rows I own */
-extern int my_cols;            /* num of cols I own */
+extern int my_rows;       // num of rows I own
+extern int my_cols;       // num of cols I own
 
-extern int nrhs;                /* number of right hand sides */
-extern int my_rhs;              /* number of right hand sides that I own */
-
-//extern int rhs_blksz;
+extern int nrhs;          // number of right hand sides
+extern int my_rhs;        // number of right hand sides that I own
 
 extern MPI_Comm col_comm;
 
 
 #define SOSTATUSINT 32768
 
-/*  Previous message tags  
-#define SOCOLTYPE (1<<26)
-#define SOROWTYPE (1<<27)
-#define SOHSTYPE (SOCOLTYPE + SOROWTYPE)
-#define PERMTYPE ((1 << 25) + (1 << 26))
-
-*/
-
-/* New message tags  */
-
+// Message tags
 #define SOCOLTYPE (1<<14)
 #define SOROWTYPE (1<<15)
 #define SOHSTYPE (SOCOLTYPE + SOROWTYPE)
-//#define PERMTYPE ((1 << 14) + (1 << 15))
 
 namespace Adelus {
 
-/*  Customized elimination on the rhs that I own */	
-//diag_mag = ABS_VAL(*(ptr2+end_row-1));
-//for (j1=0; j1<n_rhs_this; j1++) {
-//  ptr3 = rhs + j1*my_rows + end_row - 1;
-//  ptr4 = row1 + j1;
-//  DIVIDE(*ptr3,*(ptr2+end_row-1),diag_mag,*ptr4);
-//  *ptr3 = *ptr4;
-//}	  
+//  Customized elimination on the rhs that I own	
 template<class ZDView, class RView>
 void elimination_rhs(int N, ZDView& ptr3, ZDView& ptr2, RView& ptr4, int act_col) {
 #ifdef KOKKOS_ENABLE_CUDA
@@ -134,42 +115,28 @@ void back_solve6(ZDView& ZV)
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
 #endif
 
-  int  j;                      /* loop counters */
+  int  j;         // loop counters
+  int end_row;    // row num to end column operations
+  int bytes[16];  // number of bytes in messages
+  int root;       // root processor for fanout
+  int type[16];   // mesage type for messages
+  int dest[16];   // dest for message sends
 
-  int end_row;                  /* row num to end column operations */
+  int one = 1;
 
-  //DATA_TYPE *ptr2;             /* running ptrs into mat and update cols */
-  //DATA_TYPE *ptr3, *ptr4;       /* running ptrs to diagonal and pivot rows */
-  //DATA_TYPE *ptr5;              /* running ptr into matrix */
-
-  int bytes[16];                /* number of bytes in messages */
-  int root;                     /* root processor for fanout */
-  int type[16];                 /* mesage type for messages */
-  int dest[16];                 /* dest for message sends */
-
-  int one = 1;                  /* constant for the daxpy routines */
-
-  //DATA_TYPE d_one = CONST_ONE;  /* constant for the daxpy routines */
-  //DATA_TYPE d_min_one = CONST_MINUS_ONE; /* constant for the daxpy routines */
-  value_type d_one = 1.0;/* constant for the daxpy routines */
-  value_type d_min_one = -1.0;/* constant for the daxpy routines */
+  value_type d_one = 1.0;
+  value_type d_min_one = -1.0;
   
-  int /*j1,*/ j2;
+  int j2;
 
-  //double diag_mag;              /* magnitude of matrix diagonal */
-
-  int n_rhs_this;               /* num rhs that I currently own */
-
-  //char transA = 'N';            /* all dgemm's don't transpose matrix A  */
-  //char transB = 'N';            /* nor transpose matrix B */
-
-  int col_offset;               /* which processor starts the pipeline */
-  int my_pos;                   /* my position in the new linup */
-  int extra;                    /* extra loop to realign data after pipeline */
-  int act_col;                  /* act this column (that I own) */
-  int on_col;                   /* on this collection of rhs's */
-  int global_col;               /* global col number for act_col */
-  int max_bytes;                /* max number of bytes of rhs I can receive */
+  int n_rhs_this; // num rhs that I currently own
+  int col_offset; // which processor starts the pipeline
+  int my_pos;     // my position in the new linup
+  int extra;      // extra loop to realign data after pipeline
+  int act_col;    // act this column (that I own)
+  int on_col;     // on this collection of rhs's
+  int global_col; // global col number for act_col
+  int max_bytes;  // max number of bytes of rhs I can receive
 
   int my_col_id, my_row_id, id_temp;
   int dest_right, dest_left;
@@ -188,18 +155,11 @@ void back_solve6(ZDView& ZV)
   MPI_Request msgrequest;
   MPI_Status msgstatus;
 
-  //DATA_TYPE *fseg;
-  //DATA_TYPE *rhs;
-  //DATA_TYPE *row1;
-  //fseg =  reinterpret_cast<DATA_TYPE *>(ZV.data());
-  //rhs  =  reinterpret_cast<DATA_TYPE *>(ZV.data()+my_rows*my_cols);
-  //row1 =  reinterpret_cast<DATA_TYPE *>(row1_view.data());
-
 #ifdef GET_TIMING
   t2 = MPI_Wtime();
 #endif
 
-  /* set the block size for backsolve */
+  // find left, right destination procs
 
   my_col_id = mesh_col(me);
   my_row_id = mesh_row(me);
@@ -212,11 +172,10 @@ void back_solve6(ZDView& ZV)
   if (id_temp < 0) id_temp = nprocs_row-1;
   dest_left = proc_num(my_row_id,id_temp);
 
-  /* set j2 to be first column in last group of columns */
-  //rhs_blksz=1;
-  max_bytes = nrhs/nprocs_row;                     //printf("Rank %i -- back_solve6() max_bytes (1st) %d\n",me, max_bytes);
-  if (nrhs%nprocs_row > 0) max_bytes++;            //printf("Rank %i -- back_solve6() max_bytes (2nd) %d\n",me, max_bytes);
-  max_bytes = max_bytes*sizeof(DATA_TYPE)*my_rows; //printf("Rank %i -- back_solve6() max_bytes (3rd) %d\n",me, max_bytes);
+  // set j2 to be first column in last group of columns
+  max_bytes = nrhs/nprocs_row;
+  if (nrhs%nprocs_row > 0) max_bytes++; 
+  max_bytes = max_bytes*sizeof(DATA_TYPE)*my_rows;
 
 #ifdef GET_TIMING
   allocviewtime=eliminaterhstime=bcastrowtime=updrhstime=sendrhstime=recvrhstime=copyrhstime=0.0;
@@ -225,16 +184,10 @@ void back_solve6(ZDView& ZV)
 #endif
 #endif
 
-  //DATA_TYPE *row2 = (DATA_TYPE *) malloc( max_bytes);
-  //if (row2 == NULL) {
-  // fprintf(stderr, "Node %d: Out of memory\n", me);
-  // exit(-1);
-  //}
-
 #ifdef GET_TIMING
   t1 = MPI_Wtime();
 #endif
-  ViewMatrixType row1( "row1", one, nrhs );   /* row1: diagonal row (temp variables) */
+  ViewMatrixType row1( "row1", one, nrhs );   // row1: diagonal row (temp variables)
   ViewMatrixType row2( "row2", my_rows, max_bytes/sizeof(DATA_TYPE)/my_rows );
 
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
@@ -275,13 +228,10 @@ void back_solve6(ZDView& ZV)
 
         end_row = global_col/nprocs_col;
         if (my_first_row <= global_col%nprocs_col) ++end_row;
-
-        //ptr5 = fseg + act_col*my_rows;
                  
-        /* do an elimination step on the rhs that I own */
+        // do an elimination step on the rhs that I own
 
-        //ptr2 = ptr5;
-        auto ptr2_view = subview(ZV, end_row-1, Kokkos::ALL());//*(ptr2+end_row-1)
+        auto ptr2_view = subview(ZV, end_row-1, Kokkos::ALL());
 
         root = row_owner(global_col);
 
@@ -289,13 +239,6 @@ void back_solve6(ZDView& ZV)
 #ifdef GET_TIMING
           t1 = MPI_Wtime();
 #endif
-          //diag_mag = ABS_VAL(*(ptr2+end_row-1));
-          //for (j1=0; j1<n_rhs_this; j1++) {
-          //  ptr3 = rhs + j1*my_rows + end_row - 1;
-          //  ptr4 = reinterpret_cast<DATA_TYPE *>(row1.data()) + j1;
-          //  DIVIDE(*ptr3,*(ptr2+end_row-1),diag_mag,*ptr4);
-          //  *ptr3 = *ptr4;
-          //}
           auto ptr3_view = subview(ZV, end_row-1, Kokkos::make_pair(my_cols, my_cols+n_rhs_this));
           elimination_rhs(n_rhs_this, ptr3_view, ptr2_view, row1, act_col);//note: row1 = ptr4
           end_row--;
@@ -326,7 +269,7 @@ void back_solve6(ZDView& ZV)
 //#else //CUDA-aware MPI -- Note: Looks like MPI_Bcast is still working well with device (cuda) pointers (and faster than using cuda host pinned memory)
         MPI_Bcast(reinterpret_cast<char *>(row1.data()), bytes[0], MPI_CHAR, mesh_row(root), col_comm);		
 //#endif
-        /* added this barrier for CPLANT operation  */
+        // added this barrier for CPLANT operation
 
         MPI_Barrier(col_comm);
 #ifdef GET_TIMING
@@ -346,16 +289,6 @@ void back_solve6(ZDView& ZV)
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
 #endif
-       /* Changed XGEMM_ to XGEMM   removed all &   */
-
-        //XGEMM_(&transA, &transB, &end_row, &n_rhs_this, &one, &d_min_one,
-        //       ptr5, &my_rows,
-        //       row1, &one, &d_one,
-        //       rhs, &my_rows);
-        //XGEMM_(&transA, &transB, &end_row, &n_rhs_this, &one, &d_min_one,
-        //       reinterpret_cast<DATA_TYPE *>(ZV.data()+my_rows*act_col), &my_rows,
-        //       reinterpret_cast<DATA_TYPE *>(row1.data()), &one, &d_one,
-        //       reinterpret_cast<DATA_TYPE *>(ZV.data()+my_rows*my_cols), &my_rows);
 
         auto A_view = subview(ZV, Kokkos::make_pair(0, end_row), Kokkos::make_pair(act_col, act_col+one));
         auto C_view = subview(ZV, Kokkos::make_pair(0, end_row), Kokkos::make_pair(my_cols, my_cols+n_rhs_this));
@@ -379,7 +312,6 @@ void back_solve6(ZDView& ZV)
         bytes[0] = max_bytes;
         type[0]  = SOROWTYPE+j;
 
-        //MPI_Irecv((char *) row2, bytes[0], MPI_CHAR, MPI_ANY_SOURCE,type[0],MPI_COMM_WORLD,&msgrequest);
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
         MPI_Irecv(reinterpret_cast<char *>(h_row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], MPI_COMM_WORLD, &msgrequest);
 #else //CUDA-aware MPI
@@ -405,7 +337,6 @@ void back_solve6(ZDView& ZV)
         bytes[1] = n_rhs_this * sizeof(DATA_TYPE) * my_rows;
         type[1]  = SOROWTYPE+j;
 
-        //MPI_Send((char *) rhs, bytes[1], MPI_CHAR, dest[1], type[1],MPI_COMM_WORLD);
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
         MPI_Send(reinterpret_cast<char *>(h_rhs.data()), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
 #else //CUDA-aware MPI
@@ -438,11 +369,7 @@ void back_solve6(ZDView& ZV)
 #endif
         // Copy row2 -> rhs
         blas_length = n_rhs_this*my_rows;
-        //XCOPY(blas_length,row2,one,rhs,one);
-        //XCOPY(blas_length,reinterpret_cast<DATA_TYPE *>(row2.data()),one,reinterpret_cast<DATA_TYPE *>(ZV.data()+my_rows*my_cols),one);
-        //deep_copy(subview(ZV,   Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols+n_rhs_this)),
-        //          subview(row2, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)));//deep_copy is slower than BLAS XCOPY
-#ifdef KOKKOS_ENABLE_CUDA//Use memcpy for now
+#ifdef KOKKOS_ENABLE_CUDA//Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
         cudaMemcpy(reinterpret_cast<DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<DATA_TYPE *>(row2.data()), blas_length*sizeof(DATA_TYPE), cudaMemcpyDeviceToDevice);
 #else
         memcpy(reinterpret_cast<DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<DATA_TYPE *>(row2.data()), blas_length*sizeof(DATA_TYPE));
@@ -458,7 +385,7 @@ void back_solve6(ZDView& ZV)
       }
     }
   }
-  /* free(row2);  */
+
 #ifdef GET_TIMING
   totalsolvetime = MPI_Wtime() - t2;
 #endif
@@ -478,55 +405,5 @@ void back_solve6(ZDView& ZV)
 }
 
 }//namespace Adelus
-//void collect_vector(DATA_TYPE *vec)
-//{
-//  int j, k;
-//
-//  int start_col;
-//  int end_row;
-//
-//  int bytes;
-//  int dest;
-//  int type;
-//
-//  MPI_Status msgstatus;
-//
-//  for (j=0; j<ncols_matrix; j++) {
-//    if (me == col_owner(j)) {
-//      start_col = (j) / nprocs_row;
-//      if (my_first_col < (j)%nprocs_row) ++start_col;
-//
-//      if (j%rhs_blksz == 0) {
-//        for (k=0; k<rhs_blksz; k++) {
-//          end_row = (j+k)/nprocs_col;
-//          if (my_first_row <= (j+k)%nprocs_col) ++end_row;
-//          if (j+k < ncols_matrix) {
-//            if (me == row_owner(j+k)) {
-//              dest = col_owner(0);
-//              if (me != dest) {
-//                bytes = sizeof(DATA_TYPE);
-//                type = PERMTYPE + j + k;
-//                MPI_Send((vec+end_row-1),bytes,MPI_BYTE,
-//                   dest,type,MPI_COMM_WORLD);
-//              }
-//            }
-//          }
-//        }
-//      }
-//    }
-//    if (me == col_owner(0)) {
-//      if (me == row_owner(j)) {
-//        end_row = (j)/nprocs_col;
-//        if (my_first_row <= (j)%nprocs_col) ++end_row;
-//        dest = col_owner((j/rhs_blksz)*rhs_blksz);
-//        if (me != dest) {
-//          bytes = sizeof(DATA_TYPE);
-//          type = PERMTYPE + j;
-//          MPI_Recv((vec+end_row-1),bytes,MPI_BYTE,dest,
-//                   type,MPI_COMM_WORLD,&msgstatus);
-//        }
-//      }
-//    }
-//  }
-//}
+
 #endif

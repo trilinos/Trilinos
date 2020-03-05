@@ -64,7 +64,7 @@
 #define MPI_DATA_TYPE2 MPI_FLOAT_INT
 #endif
 
-/*  ------------------ Define Data Types -------------------------- */
+//  ------------------ Define Data Types --------------------------
 #ifdef ZCPLX
     typedef struct {
       double r;
@@ -100,7 +100,7 @@
 #endif
 
 
-/*  ------------------ Define Constants and Operations ------------ */
+//  ------------------ Define Constants and Operations ------------
 
 #ifdef ZCPLX
 
@@ -128,7 +128,6 @@
 
 #endif
 
-
 #ifdef DREAL
 
 #define ADELUS_CONST_ONE 1.0
@@ -153,51 +152,6 @@
 #define ADELUS_MULTIPLY(X,Y,Z) (Z)=(X)*(Y)
 #define ADELUS_DIVIDE(X,Y,W,Z) (Z)=(X)/(Y)
 
-#endif
-
-/*  ------------------- Define BLAS prototype definitions ------------  */
-
-#ifdef ZCPLX
-//#include "zblassp.h"
-#define XGEMM_  zgemm_
-#define XGEMMS_ zgemm_
-#define XGEMM  zgemm
-#define XLU_SOLVE_ zlusolve_
-#define X_SOLVE_ zsolve_
-#define X_FACTOR_ zfactor_
-#define X_PERMUTE_ zpermute_
-#endif
-
-#ifdef SCPLX
-//#include "cblassp.h"
-#define XGEMM_  cgemm_
-#define XGEMM  cgemm
-#define XLU_SOLVE_ clusolve_
-#define X_SOLVE_ csolve_
-#define X_FACTOR_ cfactor_
-#define X_PERMUTE_ cpermute_
-#endif
-
-#ifdef DREAL
-//#include "dblassp.h"
-#define XGEMM_  dgemm_
-#define XGEMM  dgemm
-#define XGEMMS_ dgemm_
-#define XLU_SOLVE_ dlusolve_
-#define X_SOLVE_ dsolve_
-#define X_FACTOR_ dfactor_
-#define X_PERMUTE_ dpermute_
-#endif
-
-#ifdef SREAL
-//#include "sblassp.h"
-#define XGEMM_  sgemm_
-#define XGEMM  sgemm
-#define XGEMMS_  sgemm_
-#define XLU_SOLVE_ slusolve_
-#define X_SOLVE_ ssolve_
-#define X_FACTOR_ sfactor_
-#define X_PERMUTE_ spermute_
 #endif
 
 #endif
