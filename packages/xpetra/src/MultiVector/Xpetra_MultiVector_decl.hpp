@@ -329,12 +329,12 @@ class MultiVector
     /// \warning Be aware that the view on the multivector data is non-persisting, i.e.
     ///          only valid as long as the multivector does not run of scope!
     template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename dev_execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
+    typename Kokkos::Impl::if_c<std::is_same<typename dev_execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
                                 typename dual_view_type::t_dev_um,
                                 typename dual_view_type::t_host_um>::type
     getLocalView() const
     {
-        if(Kokkos::Impl::is_same<
+        if(std::is_same<
                       typename host_execution_space::memory_space,
                       typename TargetDeviceType::memory_space
            >::value) 

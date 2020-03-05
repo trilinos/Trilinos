@@ -7903,7 +7903,6 @@ namespace Tpetra {
     const bool verbose)
   {
     using std::endl;
-    using LO = local_ordinal_type;
     const char tfecfFuncName[] = "unpackAndCombineImpl";
     std::unique_ptr<std::string> prefix;
     if (verbose) {

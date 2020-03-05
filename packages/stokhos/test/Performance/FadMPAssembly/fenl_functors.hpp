@@ -175,7 +175,7 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
                     Kokkos::Example::FENL::DeviceConfig& dev_config_bc ) {
     static const unsigned VectorSize = StorageType::static_size;
 #if defined( KOKKOS_ENABLE_CUDA )
-    enum { is_cuda = Kokkos::Impl::is_same< execution_space, Kokkos::Cuda >::value };
+    enum { is_cuda = std::is_same< execution_space, Kokkos::Cuda >::value };
 #else
     enum { is_cuda = false };
 #endif /* #if defined( KOKKOS_ENABLE_CUDA ) */

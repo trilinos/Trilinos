@@ -30,11 +30,11 @@ namespace Tacho {
            DenseExecViewTypeB &B,
            const ScalarType beta,
            DenseExecViewTypeC &C) {
-    // static_assert( Kokkos::Impl::is_same<
+    // static_assert( std::is_same<
     //                typename DenseMatrixTypeA::space_type,
     //                typename DenseMatrixTypeB::space_type
     //                >::value && 
-    //                Kokkos::Impl::is_same<
+    //                std::is_same<
     //                typename DenseMatrixTypeB::space_type,
     //                typename DenseMatrixTypeC::space_type
     //                >::value,

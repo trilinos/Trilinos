@@ -58,7 +58,7 @@ namespace Details {
 
 #if defined( KOKKOS_ENABLE_CUDA )
   template< class D >
-  struct device_is_cuda : public Kokkos::Impl::is_same<D,Kokkos::Cuda> {};
+  struct device_is_cuda : public std::is_same<D,Kokkos::Cuda> {};
 #else
   template< class D >
   struct device_is_cuda : public Kokkos::Impl::false_type {};
