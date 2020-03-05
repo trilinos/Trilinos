@@ -234,20 +234,24 @@ def setBuildEnviron(arguments):
                       ('openblas/0.2.20/gcc/7.2.0', 'netlib/3.8.0/gcc/7.2.0')]}
 
     environMap = {'Trilinos_pullrequest_gcc_4.8.4':
-                      {'OMP_NUM_THREADS': '2'},
+                      {'OMP_NUM_THREADS': '2',
+                       'PYTHONHOME': None},
                   'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
                       {'OMP_NUM_THREADS': '2'},
                  'Trilinos_pullrequest_python_3':
                       {'PYTHONHOME': None},
                  'Trilinos_pullrequest_gcc_7.2.0':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
-                       'OMP_NUM_THREADS': '2'},
+                       'OMP_NUM_THREADS': '2',
+                       'PYTHONHOME': None},
                  'Trilinos_pullrequest_gcc_8.3.0':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
-                       'OMP_NUM_THREADS': '2'},
+                       'OMP_NUM_THREADS': '2',
+                       'PYTHONHOME': None},
                  'Trilinos_pullrequest_intel_17.0.1':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
-                       'OMP_NUM_THREADS': '2'},
+                       'OMP_NUM_THREADS': '2',
+                       'PYTHONHOME': None},
                  'Trilinos_pullrequest_cuda_9.2':
                       {'OMPI_CXX':
                        os.path.join(os.environ['WORKSPACE'],
@@ -275,7 +279,7 @@ def setBuildEnviron(arguments):
                                             'install',
                                             'white-ride',
                                             'ninja-1.8.2',
-                                            'bin')} }
+                                            'bin') } }
 
     try:
         moduleList = moduleMap[arguments.job_base_name]
