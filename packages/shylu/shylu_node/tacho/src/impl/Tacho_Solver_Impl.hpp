@@ -308,38 +308,42 @@ namespace Tacho {
     ///
     /// initialize numeric tools
     ///
-    _N = new numeric_tools_type(_m, _ap, _aj,
-                                _perm, _peri,
-                                _nsupernodes, _supernodes,
-                                _gid_super_panel_ptr, _gid_super_panel_colidx,
-                                _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
-                                _stree_parent, _stree_ptr, _stree_children, 
-                                _stree_level, _stree_roots);
-    
-    if (_serial_thres_size < 0) { // set default values
-      _serial_thres_size = 64;
-    }
-    _N->setSerialThresholdSize(_serial_thres_size);
+    if (_m < _small_problem_thres) {
+      //_U = value_type_matrix_host("U", _m, _m);
+    } else {
+      _N = new numeric_tools_type(_m, _ap, _aj,
+                                  _perm, _peri,
+                                  _nsupernodes, _supernodes,
+                                  _gid_super_panel_ptr, _gid_super_panel_colidx,
+                                  _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
+                                  _stree_parent, _stree_ptr, _stree_children, 
+                                  _stree_level, _stree_roots);
       
-    if (_max_num_superblocks < 0) { // set default values
-      _max_num_superblocks = 16;
-    }
-    _N->setMaxNumberOfSuperblocks(_max_num_superblocks);
+      if (_serial_thres_size < 0) { // set default values
+        _serial_thres_size = 64;
+      }
+      _N->setSerialThresholdSize(_serial_thres_size);
       
-    if (_front_update_mode < 0) { // set default values
-      _front_update_mode = 1; // atomic is default
-    }
-    _N->setFrontUpdateMode(_front_update_mode);
-    _N->printMemoryStat(_verbose);
+      if (_max_num_superblocks < 0) { // set default values
+        _max_num_superblocks = 16;
+      }
+      _N->setMaxNumberOfSuperblocks(_max_num_superblocks);
+      
+      if (_front_update_mode < 0) { // set default values
+        _front_update_mode = 1; // atomic is default
+      }
+      _N->setFrontUpdateMode(_front_update_mode);
+      _N->printMemoryStat(_verbose);
 
-    ///
-    /// initialize levelset tools
-    ///
-    if (_levelset) {
-      _max_nrhs = std::max(max_nrhs, _max_nrhs);
-      _L = new levelset_tools_type(*_N, _max_nrhs);
-      _L->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
-      _L->createStream(_nstreams);
+      ///
+      /// initialize levelset tools
+      ///
+      if (_levelset) {
+        _max_nrhs = std::max(max_nrhs, _max_nrhs);
+        _L = new levelset_tools_type(*_N, _max_nrhs);
+        _L->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
+        _L->createStream(_nstreams);
+      }
     }
     return 0;
   }
