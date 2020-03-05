@@ -22,8 +22,8 @@ namespace Tacho {
         
       value_type *value;
         
-      KOKKOS_INLINE_FUNCTION SuperNodeInfoInitReducer() = default;
-      KOKKOS_INLINE_FUNCTION SuperNodeInfoInitReducer(const SuperNodeInfoInitReducer &b) = default;
+      KOKKOS_INLINE_FUNCTION SuperNodeInfoInitReducer() : value() {} //= default;
+      KOKKOS_INLINE_FUNCTION SuperNodeInfoInitReducer(const SuperNodeInfoInitReducer &b) : value(b.value) {} //= default;
       KOKKOS_INLINE_FUNCTION SuperNodeInfoInitReducer(value_type &val) : value(&val) {}
         
       KOKKOS_INLINE_FUNCTION void join(value_type &dst, value_type &src) const {
@@ -166,10 +166,22 @@ namespace Tacho {
       UnmanagedViewType<value_type_matrix> x;
 
       KOKKOS_INLINE_FUNCTION
-      SupernodeInfo() = default;
+      SupernodeInfo() 
+        :
+        supernodes(), gid_colidx(), sid_block_colidx(),
+        max_nchildren(), max_supernode_size(), max_schur_size(),
+        front_update_mode(), serial_thres_size(),
+        x() {}
+      //= default;
 
       KOKKOS_INLINE_FUNCTION
-      SupernodeInfo(const SupernodeInfo &b) = default;
+      SupernodeInfo(const SupernodeInfo &b) 
+        :
+        supernodes(b.supernodes), gid_colidx(b.gid_colidx), sid_block_colidx(b.sid_block_colidx),
+        max_nchildren(b.max_nchildren), max_supernode_size(b.max_supernode_size), max_schur_size(b.max_schur_size),
+        front_update_mode(b.front_update_mode), serial_thres_size(b.serial_thres_size),
+        x(b.x) {}
+      //= default;
 
       static 
       inline

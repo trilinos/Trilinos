@@ -32,7 +32,10 @@
 
 #if defined(KOKKOS_ENABLE_CUDA) 
 #include "cublas_v2.h"
+#include "cusolverDn.h"
 #endif
+
+#include "Tacho.hpp"
 
 /// \file Tacho_Util.hpp
 /// \brief Utility functions and constant integer class like an enum class.
@@ -65,7 +68,6 @@ namespace Tacho {
     throw x(msg);                                                       \
   }
 
-
 #if defined( KOKKOS_ENABLE_ASM )
 #if defined( __amd64 )  || defined( __amd64__ ) ||      \
   defined( __x86_64 ) || defined( __x86_64__ )
@@ -79,34 +81,6 @@ namespace Tacho {
 #endif
 #else
 #define KOKKOS_IMPL_PAUSE
-#endif
-
-
-  ///
-  /// print execution spaces
-  ///
-  template<typename SpT>
-  void printExecSpaceConfiguration(std::string name, const bool detail = false) {
-    TACHO_TEST_FOR_EXCEPTION(!Kokkos::Impl::is_space<SpT>::value,
-                             std::logic_error,
-                             "SpT is not Kokkos execution space.");
-    std::cout << std::setw(16) << name << "::  ";
-    SpT::print_configuration(std::cout, detail);
-  }
-
-  ///
-  /// default ordinal and size type
-  ///
-
-#if defined( TACHO_USE_INT_INT )
-  typedef int ordinal_type;
-  typedef int size_type;
-#elif defined( TACHO_USE_INT_SIZE_T )
-  typedef int ordinal_type;
-  typedef size_t size_type;
-#else
-  typedef int ordinal_type;
-  typedef size_t size_type;
 #endif
 
   ///
@@ -196,39 +170,6 @@ namespace Tacho {
     static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
   };
 
-  ///
-  /// Coo : Sparse coordinate format; (i, j, val).
-  ///
-  template<typename ValueType>
-  struct Coo {
-    typedef ValueType value_type;
-
-    ordinal_type i,j;
-    value_type val;
-
-    Coo() = default;
-    Coo(const ordinal_type ii,
-        const ordinal_type jj,
-        const value_type vval)
-      : i(ii), j(jj), val(vval) {}
-    Coo(const Coo& b) = default;
-
-    /// \brief Compare "less" index i and j only.
-    bool operator<(const Coo &y) const {
-      const auto r_val = (this->i - y.i);
-      return (r_val == 0 ? this->j < y.j : r_val < 0);
-    }
-
-    /// \brief Compare "equality" only index i and j.
-    bool operator==(const Coo &y) const {
-      return (this->i == y.i) && (this->j == y.j);
-    }
-
-    /// \brief Compare "in-equality" only index i and j.
-    bool operator!=(const Coo &y) const {
-      return !(*this == y);
-    }
-  };
 
   ///
   /// util
@@ -587,29 +528,7 @@ namespace Tacho {
   template <typename ViewType>
   using ConstUnmanagedViewType = ConstViewType<UnmanagedViewType<ViewType> >;
 
-  template<typename ExecSpace>
-  struct UseThisDevice {
-    using default_exec_space = Kokkos::DefaultExecutionSpace;
-    using default_memory_space = typename default_exec_space::memory_space;
-    using device_type = Kokkos::Device<default_exec_space,default_memory_space>;
-  };
-
-  /// until kokkos dual view issue is resolved, we follow the default space in Trilinos (uvm)
-#if defined(KOKKOS_ENABLE_CUDA)
-  template<>
-  struct UseThisDevice<Kokkos::Cuda> { using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; };
-#endif
-#if defined(KOKKOS_ENABLE_OPENMP)
-  template<>
-  struct UseThisDevice<Kokkos::OpenMP> { using device_type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; };
-#endif
-#if defined(KOKKOS_ENABLE_SERIAL)
-  template<>
-  struct UseThisDevice<Kokkos::Serial> { using device_type = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>; };
-#endif
-
   using do_not_initialize_tag = Kokkos::ViewAllocateWithoutInitializing; 
-
 }
 
 #endif

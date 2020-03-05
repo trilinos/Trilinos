@@ -24,6 +24,7 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/impl)
 #-----------------------------------------------------------------------------
 
 SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
@@ -34,20 +35,56 @@ SET(HEADERS_PUBLIC "")
 SET(HEADERS_PRIVATE "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS_PUBLIC *.hpp)
+FILE(GLOB HEADERS_PUBLIC *.hpp impl/*.hpp)
 LIST( APPEND HEADERS_PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
 
 
 APPEND_SET(SOURCES
-  Tacho_Util.cpp
-  Tacho_Blas_External.cpp
-  Tacho_Lapack_External.cpp
+  impl/Tacho_Util.cpp
+  impl/Tacho_Blas_External.cpp
+  impl/Tacho_Lapack_External.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_Cuda.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_OpenMP.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_Serial.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_float_Cuda.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_float_OpenMP.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_float_Serial.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_double_Cuda.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_double_OpenMP.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_double_Serial.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_Cuda.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_OpenMP.cpp
+  eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_double_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_double_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_double_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_float_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_float_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_float_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_double_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_double_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_double_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_float_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_float_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_float_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_float_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_float_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_float_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_double_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_double_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_double_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_Serial.cpp
 )
 
 #-----------------------------------------------------------------------------
 
 TRIBITS_ADD_LIBRARY(
-    shylu_nodetacho
+    tacho
     HEADERS ${HEADERS_PUBLIC}
     NOINSTALLHEADERS ${HEADERS_PRIVATE}
     SOURCES ${SOURCES}
