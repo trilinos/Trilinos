@@ -873,7 +873,9 @@ namespace Tacho {
 
       timer.reset();
       { 
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
         const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
+#endif
 
         // this should be considered with average problem sizes in levels
         const ordinal_type half_level = _nlevel/2;

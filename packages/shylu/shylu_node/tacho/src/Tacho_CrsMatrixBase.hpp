@@ -271,9 +271,9 @@ namespace Tacho {
 
       if (detail) {
         const int w = 10;
-        if ( (_ap.size() >  _m  ) && 
-             (_aj.size() >= _nnz) &&
-             (_ax.size() >= _nnz) ) {
+        if ( (ordinal_type(_ap.size()) >  _m  ) && 
+             (size_type(_aj.size()) >= _nnz) &&
+             (size_type(_ax.size()) >= _nnz) ) {
           os << std::setw(w) <<  "Row" << "  " 
              << std::setw(w) <<  "Col" << "  " 
              << std::setw(w) <<  "Val" << std::endl;

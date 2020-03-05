@@ -1,4 +1,4 @@
-#include "Tacho.hpp"
+#include "Tacho_Internal.hpp"
 #include "Tacho_Solver.hpp"
 
 #include "Tacho_CommandLineParser.hpp"

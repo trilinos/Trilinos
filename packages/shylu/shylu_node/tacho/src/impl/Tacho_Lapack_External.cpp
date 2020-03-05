@@ -76,6 +76,7 @@ namespace Tacho {
                     &m,
                     a, &lda,
                     info);
+    return 0;
   }
 #if defined(KOKKOS_ENABLE_CUDA)
   template<>
