@@ -97,7 +97,7 @@ private:
     const Real                       eps_;
     const Ptr<Secant<Real>>          secant_;
     const bool                       useSecant_;
-    const Ptr<Vector<Real>>          v_;
+    const Ptr<Vector<Real>>          pwa_;
   public:
     HessianPDAS(const Ptr<Objective<Real>>       &obj,
                 const Ptr<BoundConstraint<Real>> &bnd,
@@ -108,12 +108,12 @@ private:
                 bool                              useSecant,
                 const Ptr<Vector<Real>>          &pwa)
       : obj_(obj), bnd_(bnd), x_(x), xlam_(xlam), eps_(eps),
-        secant_(secant), useSecant_(useSecant), v_(pwa) {}
+        secant_(secant), useSecant_(useSecant), pwa_(pwa) {}
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
-      v_->set(v);
-      bnd_->pruneActive(*v_,*xlam_,eps_);
-      if (!useSecant_) obj_->hessVec(Hv,*v_,*x_,tol);
-      else             secant_->applyB(Hv,*v_);
+      pwa_->set(v);
+      bnd_->pruneActive(*pwa_,*xlam_,eps_);
+      if (!useSecant_) obj_->hessVec(Hv,*pwa_,*x_,tol);
+      else             secant_->applyB(Hv,*pwa_);
       bnd_->pruneActive(Hv,*xlam_,eps_);
     }
   };
@@ -127,7 +127,7 @@ private:
     const Real                       eps_;
     const Ptr<Secant<Real>>          secant_;
     const bool                       useSecant_;
-    const Ptr<Vector<Real>>          v_;
+    const Ptr<Vector<Real>>          dwa_;
   public:
     PrecondPDAS(const Ptr<Objective<Real>>       &obj,
                 const Ptr<BoundConstraint<Real>> &bnd,
@@ -138,16 +138,19 @@ private:
                 bool                              useSecant,
                 const Ptr<Vector<Real>>          &dwa)
       : obj_(obj), bnd_(bnd), x_(x), xlam_(xlam), eps_(eps),
-        secant_(secant), useSecant_(useSecant), v_(dwa) {}
+        secant_(secant), useSecant_(useSecant), dwa_(dwa) {}
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       Hv.set(v.dual()); 
     }
     void applyInverse(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
-      v_->set(v);
-      bnd_->pruneActive(*v_,*xlam_,eps_);
-      if ( useSecant_ ) secant_->applyH(Hv,*v_);
-      else              obj_->precond(Hv,*v_,*x_,tol);
+      dwa_->set(v);
+      bnd_->pruneActive(*dwa_,*xlam_,eps_);
+      if ( useSecant_ ) secant_->applyH(Hv,*dwa_);
+      else              obj_->precond(Hv,*dwa_,*x_,tol);
       bnd_->pruneActive(Hv,*xlam_,eps_);
+      dwa_->set(v);
+      bnd_->pruneInactive(*dwa_,*xlam_,eps_);
+      Hv.plus(dwa_->dual());
     }
   };
 
@@ -198,7 +201,7 @@ private:
     const Real                       eps_;
     const Ptr<Secant<Real>>          secant_;
     const bool                       useSecant_;
-    const Ptr<Vector<Real>>          v_;
+    const Ptr<Vector<Real>>          dwa_;
   public:
     PrecondPDAS_Poly(const Ptr<Objective<Real>>       &obj,
                      const Ptr<BoundConstraint<Real>> &bnd,
@@ -209,17 +212,22 @@ private:
                      bool                              useSecant,
                      const Ptr<Vector<Real>>          &dwa)
       : obj_(obj), bnd_(bnd), x_(x), xlam_(xlam), eps_(eps),
-        secant_(secant), useSecant_(useSecant), v_(dwa) {}
+        secant_(secant), useSecant_(useSecant), dwa_(dwa) {}
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       Hv.set(v.dual()); 
     }
     void applyInverse(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
-      Hv.set(v);
-      //v_->set(v);
-      //bnd_->pruneActive(*v_,*xlam_,eps_);
-      //if ( useSecant_ ) secant_->applyH(Hv,*v_);
-      //else              obj_->precond(Hv,*v_,*x_,tol);
-      //bnd_->pruneActive(Hv,*xlam_,eps_);
+      PartitionedVector<Real> &Hvp = dynamic_cast<PartitionedVector<Real>&>(Hv);
+      const PartitionedVector<Real> &vp = dynamic_cast<const PartitionedVector<Real>&>(v);
+      dwa_->set(*vp.get(0));
+      bnd_->pruneActive(*dwa_,*xlam_,eps_);
+      if ( useSecant_ ) secant_->applyH(*Hvp.get(0),*dwa_);
+      else              obj_->precond(*Hvp.get(0),*dwa_,*x_,tol);
+      bnd_->pruneActive(*Hvp.get(0),*xlam_,eps_);
+      dwa_->set(*vp.get(0));
+      bnd_->pruneInactive(*dwa_,*xlam_,eps_);
+      Hvp.get(0)->plus(dwa_->dual());
+      Hvp.get(1)->set(vp.get(1)->dual());
     }
   };
 

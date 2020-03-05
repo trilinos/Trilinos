@@ -50,7 +50,7 @@ template<typename Real>
 PrimalDualActiveSetAlgorithm_B<Real>::PrimalDualActiveSetAlgorithm_B(ParameterList           &list,
                                                                      const Ptr<Secant<Real>> &secant)
   : secant_(secant), esec_(SECANT_USERDEFINED),
-    neps_(-ROL_EPSILON<Real>()), itol_(ROL_EPSILON<Real>()), hasPoly_(true) {
+    neps_(-ROL_EPSILON<Real>()), itol_(std::sqrt(ROL_EPSILON<Real>())), hasPoly_(true) {
   // Set status test
   status_->reset();
   status_->add(makePtr<StatusTest<Real>>(list));
@@ -136,7 +136,7 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
   // Initialize PDAS data
   initialize(x,g,obj,bnd,outStream);
   Ptr<Vector<Real>> xlam   = x.clone(), xtmp = x.clone(), As = x.clone();
-  Ptr<Vector<Real>> lambda = g.clone(), gtmp = g.clone();
+  Ptr<Vector<Real>> lambda = x.clone(), gtmp = g.clone();
   Ptr<Vector<Real>> pwa    = x.clone(), dwa  = g.clone();
   Ptr<Vector<Real>> mu, b, r;
   if (hasPoly_) {
@@ -144,7 +144,7 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
     b   = proj_->getResidual()->clone();
     r   = proj_->getResidual()->clone();
   }
-  lambda->set(*state_->gradientVec);
+  lambda->set(state_->gradientVec->dual());
   lambda->scale(-one);
   Real xnorm(0), snorm(0), rnorm(0), tol(std::sqrt(ROL_EPSILON<Real>()));
 
@@ -164,8 +164,8 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
       /********************************************************************/
       // MODIFY ITERATE VECTOR TO CHECK ACTIVE SET
       /********************************************************************/
-      xlam->set(x);                            // xlam = x0
-      xlam->axpy(scale_,lambda->dual());       // xlam = x0 + c*lambda
+      xlam->set(x);                              // xlam = x0
+      xlam->axpy(scale_,*lambda);                // xlam = x0 + c*lambda
       /********************************************************************/
       // PROJECT x ONTO PRIMAL DUAL FEASIBLE SET
       /********************************************************************/
@@ -183,7 +183,6 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
       /********************************************************************/
       // APPLY HESSIAN TO ACTIVE COMPONENTS OF s AND REMOVE INACTIVE
       /********************************************************************/
-      itol_ = std::sqrt(ROL_EPSILON<Real>());
       if ( useSecantHessVec_ && secant_ != nullPtr ) { // gtmp = H*As
         secant_->applyB(*gtmp,*As);
       }
@@ -207,7 +206,7 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
       else {
         rnorm = gtmp->norm();
       }
-      if ( rnorm > zero ) {             
+      if ( rnorm > zero ) {
         if (hasPoly_) {
           // Initialize Hessian and preconditioner
           hessian = makePtr<HessianPDAS_Poly>(makePtrFromRef(obj),makePtrFromRef(bnd),
@@ -231,8 +230,12 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
       }
       state_->stepVec->plus(*As);                          // s = Is + As
       /********************************************************************/
-      // UPDATE MULTIPLIER 
+      // UPDATE STEP AND MULTIPLIER 
       /********************************************************************/
+      x.set(*state_->iterateVec);
+      x.plus(*state_->stepVec);
+      snorm = state_->stepVec->norm();
+      // Compute gradient of Lagrangian for QP
       if ( useSecantHessVec_ && secant_ != nullPtr ) {
         secant_->applyB(*gtmp,*state_->stepVec);
       }
@@ -241,23 +244,19 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
       }
       if (hasPoly_) {
         proj_->getLinearConstraint()->applyAdjointJacobian(*dwa,*mu,*state_->iterateVec,tol);
-        gtmp->plus(*dwa);                     // IHAs = H*As + J'*mu
+        gtmp->plus(*dwa);
       }
       gtmp->plus(*state_->gradientVec);
       gtmp->scale(-one);
-      lambda->set(*gtmp);
-      bnd.pruneInactive(*lambda,*xlam,neps_);
-      /********************************************************************/
-      // UPDATE STEP 
-      /********************************************************************/
-      x.set(*state_->iterateVec);
-      x.plus(*state_->stepVec);
+      lambda->set(gtmp->dual());
       // Compute criticality measure  
       xtmp->set(x);
-      xtmp->plus(gtmp->dual());
+      xtmp->plus(*lambda);
       bnd.project(*xtmp);
       xtmp->axpy(-one,x);
-      snorm = state_->stepVec->norm();
+      // Update multiplier
+      bnd.pruneInactive(*lambda,*xlam,neps_);
+      // Check stopping conditions
       if ( xtmp->norm() < gtol_*state_->gnorm ) {
         flag_ = 0;
         break;

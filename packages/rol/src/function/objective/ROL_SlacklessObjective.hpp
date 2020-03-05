@@ -109,8 +109,15 @@ public:
   }
 
   void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    zeroSlack(Pv);
     obj_->precond( *getOpt(Pv), *getOpt(v), *getOpt(x), tol );
+    // Set slack components
+    //zeroSlack(Pv);
+    PartitionedVector<Real> &Pvp = dynamic_cast<PartitionedVector<Real>&>(Pv);
+    const PartitionedVector<Real> &vp = dynamic_cast<const PartitionedVector<Real>&>(v);
+    const int nvec = static_cast<int>(vp.numVectors());
+    for (int i = 1; i < nvec; ++i) {
+      Pvp.get(i)->set(vp.get(i)->dual());
+    }
   }
 
 // Definitions for parametrized (stochastic) objective functions
