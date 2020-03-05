@@ -58,6 +58,12 @@ public:
   using handle_type = matrix_type*;
 #endif
 
+#ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+  using algorithm_t = cusparseSpMVAlg_t;
+#else
+  using algorithm_t = cusparseAlgMode_t;
+#endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+
   CuSparseMatrix() = delete;
   CuSparseMatrix(const CuSparseMatrix&) = delete;
   CuSparseMatrix& operator= (const CuSparseMatrix&) = delete;
@@ -75,14 +81,41 @@ public:
 
   handle_type getHandle() const;
 
+#ifndef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
   cusparseMatDescr_t getDescr() const;
+#endif // NOT HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+
+  cudaDataType getValueType() const;
+
+  // Some algorithms may not work for things other than
+  // CUSPARSE_OPERATION_NON_TRANSPOSE, so we need to use the operation
+  // to pick the algorithm.
+  algorithm_t getAlgorithm(const cusparseOperation_t op) const;
+
+  void*
+  reallocBufferIfNeededAndGetBuffer(const size_t minNeededBufSize);
 
 private:
   static void freeHandle(handle_type handle);
+
+#ifndef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
   static void freeDescr(cusparseMatDescr_t descr);
+#endif // NOT HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+
+  static void freeBuffer(void* buffer);
 
   handle_type handle_ {nullptr};
+
+#ifndef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
   cusparseMatDescr_t descr_ {nullptr};
+#endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+
+#ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+  cudaDataType valueType_ = CUDA_R_64F;
+#endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+
+  void* buffer_ {nullptr};
+  size_t bufSize_ = 0;
 };
 
 } // namespace Details
