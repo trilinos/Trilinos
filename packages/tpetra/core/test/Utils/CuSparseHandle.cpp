@@ -41,6 +41,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Details_CuSparseHandle_fwd.hpp"
+#include "Tpetra_Details_CuSparseMatrix_fwd.hpp"
 #include "Tpetra_Details_CuSparseVector_fwd.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
@@ -145,6 +146,58 @@ namespace { // (anonymous)
   }
 
   void
+  testCuSparseMatrix(bool& success, Teuchos::FancyOStream& out)
+  {
+#if ! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRACORE_CUSPARSE)
+    out << "Running this test requires enabling CUDA in Kokkos, "
+      "and enabling the CUSPARSE TPL in Tpetra." << std::endl;
+    TEUCHOS_ASSERT( false );
+#else
+    using Tpetra::Details::CuSparseHandle;
+    using Tpetra::Details::CuSparseMatrix;
+    using Tpetra::Details::getCuSparseMatrix;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+    using LO = Tpetra::Details::DefaultTypes::local_ordinal_type;
+
+    // Don't do cuSPARSE things unless a cuSPARSE handle is active.
+    Kokkos::Cuda execSpace1;
+    std::shared_ptr<CuSparseHandle> h1 =
+      Tpetra::Details::getCuSparseHandle(execSpace1);
+    TEST_ASSERT( h1.get() != nullptr );
+    if (! success) {
+      return;
+    }
+
+    using memory_space = Kokkos::CudaUVMSpace;
+    for (int64_t numRows : {0, 1, 11}) {
+      Kokkos::View<LO*, memory_space> ptr("ptr", numRows+1);
+      for(int64_t numEntries : {0, 32}) {
+        Kokkos::View<LO*, memory_space> ind
+          (view_alloc("ind", WithoutInitializing), numEntries);
+        Kokkos::View<float*, memory_space> val_f
+          (view_alloc("val_f", WithoutInitializing), numEntries);
+        Kokkos::View<double*, memory_space> val_d
+          (view_alloc("val_d", WithoutInitializing), numEntries);
+
+        for (int64_t numCols : {0, 1, 5, 13}) {
+          const int64_t numEnt = (numRows == 0 || numCols == 0) ?
+            int64_t(0) : numEntries;
+          auto mat_f = getCuSparseMatrix(numRows, numCols, numEnt,
+                                         ptr.data(), ind.data(),
+                                         val_f.data());
+          TEST_ASSERT( mat_f.get() != nullptr );
+          auto mat_d = getCuSparseMatrix(numRows, numCols, numEnt,
+                                         ptr.data(), ind.data(),
+                                         val_d.data());
+          TEST_ASSERT( mat_d.get() != nullptr );
+        }
+      }
+    }
+#endif
+  }
+
+  void
   runTest(bool& success,
           Teuchos::FancyOStream& out,
           std::function<void(bool&, Teuchos::FancyOStream&)> testFunction)
@@ -175,6 +228,11 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST( Utils, CuSparseVector )
   {
     runTest(success, out, testCuSparseVector);
+  }
+
+  TEUCHOS_UNIT_TEST( Utils, CuSparseMatrix )
+  {
+    runTest(success, out, testCuSparseMatrix);
   }
 
 } // namespace (anonymous)
