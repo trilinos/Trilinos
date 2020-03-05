@@ -448,23 +448,20 @@ int Ifpack_Hypre::SetCoordinates(Hypre_Chooser chooser, Teuchos::RCP<Epetra_Mult
   IFPACK_CHK_ERR(((*coords)(2))->ExtractView(&zPtr));
 
   MPI_Comm comm = GetMpiComm();
-  int ilower = GloballyContiguousRowMap_->MinMyGID();
-  int iupper = GloballyContiguousRowMap_->MaxMyGID();
+  int NumEntries = coords->MyLength();
+  int * indices= coords->Map().MyGlobalElements();
 
-  int NumEntries = iupper-ilower+1;
-  std::vector<int> indices; indices.resize(NumEntries);
+  int ilower = coords->Map().MinMyGID();
+  int iupper = coords->Map().MaxMyGID();
 
-  int k = 0;
-  for(int i = ilower; i <= iupper; i++){
-    indices[k] = i;
-    k++;
-  }
+  if( NumEntries != iupper-ilower+1) 
+    std::cout<<"Ifpack_Hypre::SetCoordinates(): Error on rank "<<Comm().MyPID()<<": MyLength = "<<coords->MyLength()<<" GID range = ["<<ilower<<","<<iupper<<"]"<<std::endl;
 
   IFPACK_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &xHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(xHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(xHypre_));
 
-  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(xHypre_,NumEntries,&indices[0],xPtr));
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(xHypre_,NumEntries,indices,xPtr));
   IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(xHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(xHypre_, (void**) &xPar_));
 
@@ -472,7 +469,7 @@ int Ifpack_Hypre::SetCoordinates(Hypre_Chooser chooser, Teuchos::RCP<Epetra_Mult
   IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(yHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(yHypre_));
 
-  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(yHypre_,NumEntries,&indices[0],yPtr));
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(yHypre_,NumEntries,indices,yPtr));
   IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(yHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(yHypre_, (void**) &yPar_));
 
@@ -480,7 +477,7 @@ int Ifpack_Hypre::SetCoordinates(Hypre_Chooser chooser, Teuchos::RCP<Epetra_Mult
   IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(zHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(zHypre_));
 
-  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(zHypre_,NumEntries,&indices[0],zPtr));
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(zHypre_,NumEntries,indices,zPtr));
   IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(zHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(zHypre_, (void**) &zPar_));
 
