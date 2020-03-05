@@ -139,10 +139,12 @@ int main(int argc, char *argv[]) {
   std::string file = "test.mtx";
   int niter = 1;
   bool verbose = true;
+  bool sanitize = false;
 
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("niter", "# of solver iterations", &niter);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
@@ -163,7 +165,7 @@ int main(int argc, char *argv[]) {
         return -1;
       }
     }
-    Tacho::MatrixMarket<double>::read(file, A, verbose);
+    Tacho::MatrixMarket<double>::read(file, A, sanitize, verbose);
 
     int numRows = A.NumRows(), *rowBegin = A.RowPtr().data(), *columns = A.Cols().data();
     double *values = A.Values().data();

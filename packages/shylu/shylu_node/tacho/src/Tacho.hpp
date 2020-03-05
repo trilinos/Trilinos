@@ -10,9 +10,11 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #include <memory>
 #include <string>
 #include <stdexcept>
+#include <vector>
 
 /// \file Tacho.hpp
 /// \brief Header to be included by users

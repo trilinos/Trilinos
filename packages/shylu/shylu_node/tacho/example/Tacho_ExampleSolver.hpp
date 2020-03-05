@@ -27,6 +27,7 @@ int driver (int argc, char *argv[]) {
   int nthreads = 1;
   int max_num_superblocks = 4;
   bool verbose = true;
+  bool sanitize = false;
   std::string file = "test.mtx";
   int nrhs = 1;
   int sym = 3;
@@ -49,6 +50,7 @@ int driver (int argc, char *argv[]) {
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<int>("max-num-superblocks", "Max number of superblocks", &max_num_superblocks);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("symmetric", "Symmetric type: 0 - unsym, 1 - structure sym, 2 - symmetric, 3 - hermitian", &sym);
@@ -99,7 +101,7 @@ int driver (int argc, char *argv[]) {
           return -1;
         }
       }
-      Tacho::MatrixMarket<value_type>::read(file, A, verbose);
+      Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     }
     
     ///

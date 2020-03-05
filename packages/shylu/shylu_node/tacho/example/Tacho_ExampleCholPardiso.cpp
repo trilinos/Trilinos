@@ -16,11 +16,13 @@ int main (int argc, char *argv[]) {
 
   int nthreads = 1;
   bool verbose = true;
+  bool sanitize = false;
   std::string file_input = "test.mtx";
   int nrhs = 1;
 
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file_input);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
 
@@ -75,7 +77,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      MatrixMarket<value_type>::read(file_input, A);
+      MatrixMarket<value_type>::read(file_input, A, sanitize, verbose);
       
       // somehow pardiso does not like symmetric full matrix (store only half)
       Asym.createConfTo(A);

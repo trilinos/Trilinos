@@ -24,6 +24,7 @@ int main (int argc, char *argv[]) {
   bool serial = false;
   int nthreads = 1;
   bool verbose = true;
+  bool sanitize = false;
   std::string file = "test.mtx";
   int nrhs = 1;
   int device_level_cut = 0;
@@ -34,6 +35,7 @@ int main (int argc, char *argv[]) {
   opts.set_option<bool>("serial", "Flag to use serial algorithm", &serial);
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("nstreams", "# of streams used in level set factorization and solve", &nstreams);
@@ -103,7 +105,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      Tacho::MatrixMarket<value_type>::read(file, A);
+      Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     }
     Tacho::Graph G(A);
     t = timer.seconds();

@@ -40,6 +40,7 @@ int main (int argc, char *argv[]) {
   int nthreads = 1; 
 
   bool verbose = true;
+  bool sanitize = false;
   std::string file = "test.mtx";
   int nrhs = 1;
   int niter_solve = 50;
@@ -62,6 +63,7 @@ int main (int argc, char *argv[]) {
 
   // common testing environment
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("niter-solve", "Number of solve iterations for timing", &niter_solve);
@@ -119,7 +121,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      Tacho::MatrixMarket<value_type>::read(file, A, verbose);
+      Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     }
 
     DenseMultiVectorType

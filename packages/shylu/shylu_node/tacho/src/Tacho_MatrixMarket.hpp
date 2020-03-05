@@ -44,77 +44,77 @@ namespace Tacho {
     }
   };
     
-  template<typename ValueType>
+  
+  template<typename T>
   inline
-  typename std::enable_if<std::is_same<ValueType,double>::value ||
-  std::is_same<ValueType,float>::value>::type
-  impl_read_value_from_file(std::ifstream &file,
-                            ordinal_type &row,
-                            ordinal_type &col,
-                            ValueType &val) {
-    file >> row >> col >> val;
-  }  
-
-  template<typename ValueType>
-  inline
-  typename std::enable_if<std::is_same<ValueType,Kokkos::complex<double> >::value || std::is_same<ValueType,Kokkos::complex<float> >::value>::type
-  impl_conj_val(ValueType &val, ValueType &conj_val) {
+  typename std::enable_if<std::is_same<T,Kokkos::complex<double> >::value || std::is_same<T,Kokkos::complex<float> >::value>::type
+  impl_conj_val(T &val, T &conj_val) {
     conj_val = Kokkos::conj(val);
   }
 
-  template<typename ValueType>
+  template<typename T>
   inline
-  typename std::enable_if<std::is_same<ValueType,double>::value || std::is_same<ValueType,float>::value>::type
-  impl_conj_val(ValueType &val, ValueType &conj_val) {
+  typename std::enable_if<std::is_same<T,double>::value || std::is_same<T,float>::value>::type
+  impl_conj_val(T &val, T &conj_val) {
     conj_val = val;
   }
 
-  template<typename ValueType>
+  template<typename T>
   inline
-  typename std::enable_if<std::is_same<ValueType,Kokkos::complex<double> >::value>::type
+  typename std::enable_if<std::is_same<T,Kokkos::complex<double> >::value || std::is_same<T,Kokkos::complex<float> >::value>::type
+  impl_is_zero(T &val, bool &is_zero) {
+    is_zero = Kokkos::abs(val) < std::numeric_limits<typename T::value_type>::epsilon();
+  }
+
+  template<typename T>
+  inline
+  typename std::enable_if<std::is_same<T,double>::value || std::is_same<T,float>::value>::type
+  impl_is_zero(T &val, bool &is_zero) {
+    is_zero = std::abs(val) < std::numeric_limits<T>::epsilon();
+  }
+
+  template<typename T>
+  inline
+  typename std::enable_if<std::is_same<T,double>::value || std::is_same<T,float>::value>::type
   impl_read_value_from_file(std::ifstream &file,
                             ordinal_type &row,
                             ordinal_type &col,
-                            ValueType &val) {
-    double r, i;
-    file >> row >> col >> r >> i;
-    val = ValueType(r, i);
+                            T &val) {
+    file >> row >> col >> val;
   }
 
-  template<typename ValueType>
+  template<typename T>
   inline
-  typename std::enable_if<std::is_same<ValueType,Kokkos::complex<float> >::value>::type
+  typename std::enable_if<std::is_same<T,Kokkos::complex<double> >::value || std::is_same<T,Kokkos::complex<float> >::value>::type
   impl_read_value_from_file(std::ifstream &file,
                             ordinal_type &row,
                             ordinal_type &col,
-                            ValueType &val) {
-    float r, i;
+                            T &val) {
+    typename T::value_type r, i;
     file >> row >> col >> r >> i;
-    val = ValueType(r, i);
+    val = T(r, i);
   }
 
-  template<typename ValueType>
+  template<typename T>
   inline
-  typename std::enable_if<std::is_same<ValueType,double>::value ||
-  std::is_same<ValueType,float>::value>::type
+  typename std::enable_if<std::is_same<T,double>::value || std::is_same<T,float>::value>::type
   impl_write_value_to_file(std::ofstream &file,
                            const ordinal_type row,
                            const ordinal_type col,
-                           const ValueType val,
+                           const T val,
                            const ordinal_type w = 10) {
     file << std::setw(w) << row << "  "
          << std::setw(w) << col << "  "
          << std::setw(w) << val << std::endl;
   }  
 
-  template<typename ValueType>
+  template<typename T>
   inline
-  typename std::enable_if<std::is_same<ValueType,Kokkos::complex<double> >::value ||
-  std::is_same<ValueType,Kokkos::complex<float> >::value>::type
+  typename std::enable_if<std::is_same<T,Kokkos::complex<double> >::value || std::is_same<T,Kokkos::complex<float> >::value>::type
   impl_write_value_to_file(std::ofstream &file,
                            const ordinal_type row,
                            const ordinal_type col,
-                           const ValueType val,
+                           const T val,
                            const ordinal_type w = 10) {
     file << std::setw(w) << row << "  "
          << std::setw(w) << col << "  "
@@ -130,6 +130,7 @@ namespace Tacho {
     static void
     read(const std::string &filename, 
          CrsMatrixBase<ValueType,DeviceType> &A,
+         const ordinal_type sanitize = 0,
          const ordinal_type verbose = 0) {
       static_assert(Kokkos::Impl::MemorySpaceAccess< 
                     Kokkos::HostSpace, 
@@ -145,7 +146,7 @@ namespace Tacho {
 
       // reading mm header
       ordinal_type m, n;
-      size_type nnz;
+      size_type nnz, nnz_input;
       bool symmetry = false, hermitian = false; //, cmplx = false;
       {
         std::string header;
@@ -174,7 +175,8 @@ namespace Tacho {
       typedef Coo<value_type> ijv_type;
       std::vector<ijv_type> mm;
       {
-        mm.reserve(nnz*(symmetry ? 2 : 1));
+        std::vector<ijv_type> mm_org;
+        mm_org.reserve(nnz*(symmetry ? 2 : 1));
         for (size_type i=0;i<nnz;++i) {
           ordinal_type row, col;
           value_type val;
@@ -184,16 +186,31 @@ namespace Tacho {
           row -= mm_base;
           col -= mm_base;
 
-          mm.push_back(ijv_type(row, col, val));
+          mm_org.push_back(ijv_type(row, col, val));
           if (symmetry && row != col) {
             value_type conj_val; impl_conj_val(val, conj_val);
-            mm.push_back(ijv_type(col, row, hermitian ? conj_val : val));
+            mm_org.push_back(ijv_type(col, row, hermitian ? conj_val : val));
           }
         }
-        std::sort(mm.begin(), mm.end(), std::less<ijv_type>());
+        std::sort(mm_org.begin(), mm_org.end(), std::less<ijv_type>());
 
-        // update nnz
-        nnz = mm.size();
+        // update nnz (this is the nnz from input matrix)
+        nnz = mm_org.size();
+        nnz_input = nnz;
+
+        // copy to mm
+        mm.reserve(nnz);
+        if (sanitize) {
+          for (size_type i=0;i<nnz;++i) {
+            bool is_zero; impl_is_zero(mm_org[i].val, is_zero);
+            if (!is_zero) mm.push_back(mm_org[i]);
+          }
+          nnz = mm.size();
+        } else {
+          for (size_type i=0;i<nnz;++i) 
+            mm.push_back(mm_org[i]);
+          nnz = mm.size();
+        }
       }
 
       // change mm to crs
@@ -244,7 +261,8 @@ namespace Tacho {
         printf("  Sparse Matrix (%s) \n", (symmetry ? "symmetric" : "non-symmetric"));
         printf("             number of rows:                                  %10d\n", m);
         printf("             number of cols:                                  %10d\n", n);
-        printf("             number of nonzeros:                              %10d\n", ordinal_type(nnz));
+        printf("             number of nonzeros from input:                   %10d\n", ordinal_type(nnz_input));
+        printf("             number of nonzeros after sanitized:              %10d\n", ordinal_type(nnz));
         printf("\n");
       }
     }

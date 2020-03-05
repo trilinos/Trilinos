@@ -33,6 +33,7 @@ int main (int argc, char *argv[]) {
   bool serial = false;
   int nthreads = 1;
   bool verbose = true;
+  bool sanitize = false;
   std::string file = "test.mtx";
   int nrhs = 1;
   int serial_thres_size = -1; // 32 is better
@@ -42,6 +43,7 @@ int main (int argc, char *argv[]) {
   opts.set_option<bool>("serial", "Flag to use serial algorithm", &serial);
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("serial-thres", "Serialization threshold size", &serial_thres_size);
@@ -93,7 +95,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      MatrixMarket<value_type>::read(file, A);
+      MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     }
     Graph G(A);
     t = timer.seconds();
