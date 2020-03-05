@@ -5290,8 +5290,7 @@ namespace Tpetra {
       return comm.is_null() ? -1 : comm->getRank();
     } ();
     std::unique_ptr<padding_type> padding(
-      new padding_type(padding_type::create_from_sames_and_permutes,
-                       myRank, numSameIDs,
+      new padding_type(myRank, numSameIDs,
                        permuteFromLIDs.extent(0)));
 
     // We're accessing data on host, so make sure all device
@@ -5477,8 +5476,7 @@ namespace Tpetra {
       return comm.is_null() ? -1 : comm->getRank();
     } ();
     std::unique_ptr<padding_type> padding(
-      new padding_type(padding_type::create_from_imports,
-                       myRank, numImports));
+      new padding_type(myRank, numImports));
     Kokkos::fence(); // Make sure device sees changes made by host
     if (imports.need_sync_host()) {
       imports.sync_host();
@@ -5575,8 +5573,7 @@ namespace Tpetra {
       return comm.is_null() ? -1 : comm->getRank();
     } ();
     std::unique_ptr<padding_type> padding(
-      new padding_type(padding_type::create_from_imports,
-      myRank, numImports));
+      new padding_type(myRank, numImports));
     Kokkos::fence(); // Make sure host sees changes made by device
     if (imports.need_sync_host()) {
       imports.sync_host();
