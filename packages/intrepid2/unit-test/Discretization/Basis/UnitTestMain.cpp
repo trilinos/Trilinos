@@ -1,9 +1,8 @@
-/*
-//@HEADER
-// ***********************************************************************
+// @HEADER
+// ************************************************************************
 //
-//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -35,58 +34,36 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
+//                    Mauro Perego  (mperego@sandia.gov), or
+//                    Nate Roberts  (nvrober@sandia.gov)
 //
-// ***********************************************************************
-//@HEADER
-*/
+// ************************************************************************
+// @HEADER
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Factory_decl.hpp"
+/** \file   UnitTestMain.cpp
+    \brief  Main for Teuchos unit tests.
+ */
 
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-#  include "Ifpack2_Factory_def.hpp"
-#  include "Ifpack2_ExplicitInstantiationHelpers.hpp"
-#  include "Ifpack2_ETIHelperMacros.h"
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-namespace Ifpack2 {
+#include "Teuchos_StackedTimer.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
+#include "Kokkos_Core.hpp"
 
-bool supportsUnsymmetric (const std::string& prec_type)
+#include <fstream>
+
+int main( int argc, char* argv[] )
 {
-  bool result = false;
-  if (prec_type == "RELAXATION" ||
-      prec_type == "CHEBYSHEV"  ||
-      prec_type == "DIAGONAL"   ||
-      prec_type == "RILUK"      ||
-      prec_type == "RBILUK"     ||
-      prec_type == "ILUT"       ||
-      prec_type == "SCHWARZ"    ||
-      prec_type == "KRYLOV")
-  {
-    result = true;
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "Ifpack2::supportsUnsymmetric: "
-      "Unrecognized preconditioner type prec_type = \"" << prec_type
-      << "\"");
-  }
+  // Note that the dtor for GlobalMPISession will call Kokkos::finalize_all() but does not call Kokkos::initialize()...
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Kokkos::initialize(argc,argv);
+  Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
+  
+  int result = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+  
   return result;
 }
-
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
-// We can't use the usual IFPACK2_* class macro here because
-// OneLevelFactory is not a templated class; its methods are.
-#define LCLINST(S, LO, GO)
-
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
-
-  IFPACK2_INSTANTIATE_SLG_REAL( LCLINST )
-
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
-} // namespace Ifpack2
-

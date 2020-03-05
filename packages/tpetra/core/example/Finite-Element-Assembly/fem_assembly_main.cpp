@@ -117,6 +117,9 @@ int main (int argc, char *argv[])
     StackedTimer::OutputOptions timeReportOpts;
     timeReportOpts.print_warnings = false;
     timer->report(std::cout, comm, timeReportOpts);
+    auto xmlOut = timer->reportWatchrXML("FE_Assembly" + std::to_string(comm->getSize()), comm);
+    if(xmlOut.length())
+      std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
   }
 
   // This tells the Trilinos test framework that the test passed.
