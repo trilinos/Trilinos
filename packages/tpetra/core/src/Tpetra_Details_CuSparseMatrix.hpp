@@ -75,8 +75,14 @@ public:
 
   handle_type getHandle() const;
 
+  cusparseMatDescr_t getDescr() const;
+
 private:
+  static void freeHandle(handle_type handle);
+  static void freeDescr(cusparseMatDescr_t descr);
+
   handle_type handle_ {nullptr};
+  cusparseMatDescr_t descr_ {nullptr};
 };
 
 } // namespace Details
