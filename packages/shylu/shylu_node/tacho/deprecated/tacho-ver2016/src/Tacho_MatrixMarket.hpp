@@ -21,7 +21,7 @@ namespace Tacho {
     template<typename CrsMatrixType>
     static void
     read(CrsMatrixType &A, std::ifstream &file) {
-      // static_assert( Kokkos::Impl::is_same<
+      // static_assert( std::is_same<
       //                typename CrsMatrixType::space_type,
       //                Kokkos::HostSpace
       //                >::value,

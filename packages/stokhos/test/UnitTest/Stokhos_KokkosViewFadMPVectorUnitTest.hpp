@@ -90,7 +90,7 @@ checkVectorView(const ViewType& v,
 
   // For static, layout left, sacado dimension becomes first dimension
   // instead of last
-  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+  bool is_right = std::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right || !view_type::is_contiguous) {
     num_rows = h_a.extent(0);

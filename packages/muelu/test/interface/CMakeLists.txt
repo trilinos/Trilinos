@@ -41,6 +41,13 @@ ENDIF()
 # Tests
 #
 
+# Run the ParameterListInterpreter test with a single thread to avoid non-deterministic behavior
+IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
+  SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD " --kokkos-threads=1")
+ELSE()
+  SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD "")
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
   # Test that demangling is enabled, otherwise the test would fail even is they are logically correct.
@@ -53,10 +60,12 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos AND
         HAVE_MUELU_INST_DOUBLE_INT_INT)
 
+      string(CONCAT TEST_ARGS "--linAlgebra=Epetra" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
+
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterEpetra"
-        ARGS "--linAlgebra=Epetra"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         COMM mpi serial
@@ -64,7 +73,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterEpetra"
-        ARGS "--linAlgebra=Epetra"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 4
         COMM mpi
@@ -73,7 +82,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         CreateOperator
         NAME "CreateOperatorEpetra"
-        ARGS "--linAlgebra=Epetra"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         COMM mpi serial
@@ -81,17 +90,19 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         CreateOperator
         NAME "CreateOperatorEpetra"
-        ARGS "--linAlgebra=Epetra"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 4
         COMM mpi
         )
+
+      string(CONCAT TEST_ARGS "--linAlgebra=Epetra --heavytests" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
 
       # This test only runs on the dashboard, not at checkin.
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterEpetraHeavy"
-        ARGS "--linAlgebra=Epetra --heavytests"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         COMM mpi serial
@@ -102,7 +113,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterEpetraHeavy"
-        ARGS "--linAlgebra=Epetra --heavytests"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 4
         COMM mpi
@@ -113,10 +124,12 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
     IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
+      string(CONCAT TEST_ARGS "--linAlgebra=Tpetra" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
+
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterTpetra"
-        ARGS "--linAlgebra=Tpetra"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         COMM mpi serial
@@ -124,7 +137,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterTpetra"
-        ARGS "--linAlgebra=Tpetra"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 4
         COMM mpi
@@ -133,7 +146,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         CreateOperator
         NAME "CreateOperatorTpetra"
-        ARGS "--linAlgebra=Tpetra"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         COMM mpi serial
@@ -141,17 +154,19 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         CreateOperator
         NAME "CreateOperatorTpetra"
-        ARGS "--linAlgebra=Tpetra"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 4
         COMM mpi
         )
+
+      string(CONCAT TEST_ARGS "--linAlgebra=Tpetra --heavytests" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
 
       # This test only runs on the dashboard, not at checkin.
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterTpetraHeavy"
-        ARGS "--linAlgebra=Tpetra --heavytests"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         COMM mpi serial
@@ -162,7 +177,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterTpetraHeavy"
-        ARGS "--linAlgebra=Tpetra --heavytests"
+        ARGS ${TEST_ARGS}
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 4
         COMM mpi
