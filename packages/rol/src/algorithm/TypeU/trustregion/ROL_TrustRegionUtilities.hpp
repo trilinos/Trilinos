@@ -65,6 +65,7 @@ enum ETRFlag {
   NPOSPREDPOS,
   NPOSPREDNEG,
   TRNAN,
+  QMINSUFDEC,
   UNDEFINED 
 };
 
@@ -85,6 +86,9 @@ inline std::string ETRFlagToString(ETRFlag trf) {
       break;
     case TRNAN:
       retString = "Actual and/or predicted reduction is a NaN";
+      break;
+    case QMINSUFDEC:
+      retString = "Subproblem solution did not produce sufficient decrease";
       break;
     default:
       retString = "INVALID ETRFlag";       
