@@ -3,8 +3,10 @@
 
 #include "TpetraCore_config.h"
 #ifdef HAVE_TPETRACORE_CUSPARSE
-
+#include "Tpetra_Details_CuSparseHandle_fwd.hpp"
+#include "Tpetra_Details_CuSparseVector_fwd.hpp"
 #include "Tpetra_Details_DefaultTypes.hpp"
+#include "Teuchos_BLAS_types.hpp"
 #include <memory>
 
 namespace Tpetra {
@@ -64,6 +66,30 @@ getCuSparseMatrix(const int64_t numRows,
                   DefaultTypes::local_ordinal_type* ptr,
                   DefaultTypes::local_ordinal_type* ind,
                   double* val);
+
+/// \fn cuSparseMatrixVectorMultiply
+/// \brief Compute y = alpha*A*x + beta*y, for the sparse matrix A,
+///   dense vectors x and y, and scalars alpha and beta.
+
+void
+cuSparseMatrixVectorMultiply(
+  CuSparseHandle& handle,
+  const Teuchos::ETransp operation,
+  const double alpha,
+  CuSparseMatrix& matrix,
+  CuSparseVector& x,
+  const double beta,
+  CuSparseVector& y);
+
+void
+cuSparseMatrixVectorMultiply(
+  CuSparseHandle& handle,
+  const Teuchos::ETransp operation,
+  const float alpha,
+  CuSparseMatrix& matrix,
+  CuSparseVector& x,
+  const float beta,
+  CuSparseVector& y);
 
 } // namespace Details
 } // namespace Tpetra
