@@ -81,22 +81,22 @@ private:
 
   class UpperBinding : public Elementwise::BinaryFunction<Real> {
     public:
-    UpperBinding(Real offset) : offset_(offset) {}
+    UpperBinding(Real xeps, Real geps) : xeps_(xeps), geps_(geps) {}
     Real apply( const Real &x, const Real &y ) const {
-      return ((y < 0 && x <= offset_) ? 0 : 1);
+      return ((y < -geps_ && x <= xeps_) ? 0 : 1);
     }
     private:
-    Real offset_;
+    Real xeps_, geps_;
   };
 
   class LowerBinding : public Elementwise::BinaryFunction<Real> {
     public:
-    LowerBinding(Real offset) : offset_(offset) {}
+    LowerBinding(Real xeps, Real geps) : xeps_(xeps), geps_(geps) {}
     Real apply( const Real &x, const Real &y ) const {
-      return ((y > 0 && x <= offset_) ? 0 : 1);
+      return ((y > geps_ && x <= xeps_) ? 0 : 1);
     }
     private:
-    Real offset_;
+    Real xeps_, geps_;
   };
 
   class PruneBinding : public Elementwise::BinaryFunction<Real> {
@@ -206,7 +206,7 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if (BoundConstraint<Real>::isUpperActivated()) {
       Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
 
@@ -218,21 +218,21 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if (BoundConstraint<Real>::isUpperActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
+      Real one(1), epsn(std::min(scale_*xeps,static_cast<Real>(0.1)*min_diff_));
 
       mask_->set(*x_up_);
       mask_->axpy(-one,x);
 
-      UpperBinding op(epsn);
+      UpperBinding op(epsn,geps);
       mask_->applyBinary(op,g);
 
       v.applyBinary(prune_,*mask_);
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if (BoundConstraint<Real>::isLowerActivated()) {
       Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
 
@@ -244,14 +244,14 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if (BoundConstraint<Real>::isLowerActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
+      Real one(1), epsn(std::min(scale_*xeps,static_cast<Real>(0.1)*min_diff_));
 
       mask_->set(x);
       mask_->axpy(-one,*x_lo_);
 
-      LowerBinding op(epsn);
+      LowerBinding op(epsn,geps);
       mask_->applyBinary(op,g);
 
       v.applyBinary(prune_,*mask_);

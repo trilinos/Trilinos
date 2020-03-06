@@ -128,7 +128,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
                                                            Objective<Real>       &obj,
                                                            BoundConstraint<Real> &bnd,
                                                            std::ostream          &outStream ) {
-  const Real one(1);
+  const Real one(1), xeps(ROL_EPSILON<Real>());
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
   Real gfnorm(0), gfnormf(0), tol(0), stol(0), eps(0);
   Real ftrial(0), fnew(0), pRed(0), rho(1), alpha(1), lambda(1);
@@ -146,7 +146,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
 
   // Compute initial free gradient
   gfree->set(*state_->gradientVec);
-  bnd.pruneActive(*gfree,*state_->gradientVec,x,eps);
+  bnd.pruneActive(*gfree,*state_->gradientVec,x,xeps,eps);
   gfnorm = gfree->norm();
 
   // Initial tolerances
@@ -205,15 +205,6 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
       obj.update(x,false,state_->iter);
       // Decrease trust-region radius
       state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
-      //if (rho < zero && TRflag_ != TRUtils::TRNAN) {
-      //  // Negative reduction, interpolate to find new trust-region radius
-      //  state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
-      //    state_->snorm,pRed,state_->value,ftrial,state_->searchSize,gamma0_,gamma1_,eta2_,
-      //    outStream,verbosity_>1);
-      //}
-      //else { // Shrink trust-region radius
-      //  state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
-      //}
     }
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) {
@@ -265,7 +256,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
         obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
         // Compute free gradient
         gfree->set(*state_->gradientVec);
-        bnd.pruneActive(*gfree,*state_->gradientVec,x,eps);
+        bnd.pruneActive(*gfree,*state_->gradientVec,x,xeps,eps);
         gfnorm = gfree->norm();
         // Compute criticality measure
         pwa1->set(x);
@@ -434,14 +425,15 @@ void KelleySachsAlgorithm_B<Real>::applyFreeHessian(Vector<Real> &hv,
                                                     Real &tol,
                                                     Vector<Real> &pwa,
                                                     Vector<Real> &dwa) const {
+  const Real xeps(ROL_EPSILON<Real>());
   pwa.set(v);
-  bnd.pruneActive(pwa,g,x,eps);
+  bnd.pruneActive(pwa,g,x,xeps,eps);
   model.hessVec(hv,pwa,x,tol); nhess_++;
-  bnd.pruneActive(hv,x,eps);
+  bnd.pruneActive(hv,g,x,xeps,eps);
   pwa.set(v);
-  bnd.pruneInactive(pwa,g,x,eps);
+  bnd.pruneInactive(pwa,g,x,xeps,eps);
   dwa.set(pwa.dual());
-  bnd.pruneInactive(dwa,g,x,eps);
+  bnd.pruneInactive(dwa,g,x,xeps,eps);
   hv.plus(dwa);
 }
 
@@ -456,14 +448,15 @@ void KelleySachsAlgorithm_B<Real>::applyFreePrecond(Vector<Real> &hv,
                                                     Real &tol,
                                                     Vector<Real> &pwa,
                                                     Vector<Real> &dwa) const {
+  const Real xeps(ROL_EPSILON<Real>());
   dwa.set(v);
-  bnd.pruneActive(dwa,g,x,eps);
+  bnd.pruneActive(dwa,g,x,xeps,eps);
   model.precond(hv,dwa,x,tol);
-  bnd.pruneActive(hv,g,x,eps);
+  bnd.pruneActive(hv,g,x,xeps,eps);
   dwa.set(v);
-  bnd.pruneInactive(dwa,g,x,eps);
+  bnd.pruneInactive(dwa,g,x,xeps,eps);
   pwa.set(dwa.dual());
-  bnd.pruneInactive(pwa,g,x,eps);
+  bnd.pruneInactive(pwa,g,x,xeps,eps);
   hv.plus(pwa);
 }
 

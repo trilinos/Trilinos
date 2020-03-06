@@ -72,8 +72,8 @@ namespace ROL {
 template <class Real>
 class BoundConstraint_SimOpt : public BoundConstraint<Real> {
 private:
-  ROL::Ptr<BoundConstraint<Real> > bnd1_;
-  ROL::Ptr<BoundConstraint<Real> > bnd2_;
+  Ptr<BoundConstraint<Real>> bnd1_;
+  Ptr<BoundConstraint<Real>> bnd2_;
 
 public:
   ~BoundConstraint_SimOpt() {}
@@ -82,8 +82,8 @@ public:
 
       The default constructor automatically turns the constraints on.
   */
-  BoundConstraint_SimOpt(const ROL::Ptr<BoundConstraint<Real> > &bnd1,
-                         const ROL::Ptr<BoundConstraint<Real> > &bnd2)
+  BoundConstraint_SimOpt(const Ptr<BoundConstraint<Real>> &bnd1,
+                         const Ptr<BoundConstraint<Real>> &bnd2)
     : bnd1_(bnd1), bnd2_(bnd2) {
     if ( bnd1_->isActivated() || bnd2_->isActivated() ) {
       BoundConstraint<Real>::activate();
@@ -101,8 +101,8 @@ public:
           @param[in]      iter   is the outer algorithm iterations count.
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(x));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
       bnd1_->update(*(xs.get_1()),flag,iter);
     }
@@ -120,15 +120,15 @@ public:
        @param[in,out]      x is the optimization variable.
   */
   void project( Vector<Real> &x ) {
-    ROL::Vector_SimOpt<Real> &xs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<ROL::Vector<Real>&>(x));
+    Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(
+      dynamic_cast<Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > x1 = xs.get_1()->clone(); x1->set(*(xs.get_1()));
+      Ptr<Vector<Real>> x1 = xs.get_1()->clone(); x1->set(*(xs.get_1()));
       bnd1_->project(*x1);
       xs.set_1(*x1);
     }
     if ( bnd2_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > x2 = xs.get_2()->clone(); x2->set(*(xs.get_2()));
+      Ptr<Vector<Real>> x2 = xs.get_2()->clone(); x2->set(*(xs.get_2()));
       bnd2_->project(*x2);
       xs.set_2(*x2);
     }
@@ -145,15 +145,15 @@ public:
        @param[in,out]      x is the optimization variable.
   */
   void projectInterior( Vector<Real> &x ) {
-    ROL::Vector_SimOpt<Real> &xs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<ROL::Vector<Real>&>(x));
+    Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(
+      dynamic_cast<Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > x1 = xs.get_1()->clone(); x1->set(*(xs.get_1()));
+      Ptr<Vector<Real>> x1 = xs.get_1()->clone(); x1->set(*(xs.get_1()));
       bnd1_->projectInterior(*x1);
       xs.set_1(*x1);
     }
     if ( bnd2_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > x2 = xs.get_2()->clone(); x2->set(*(xs.get_2()));
+      Ptr<Vector<Real>> x2 = xs.get_2()->clone(); x2->set(*(xs.get_2()));
       bnd2_->projectInterior(*x2);
       xs.set_2(*x2);
     }
@@ -166,10 +166,10 @@ public:
       to the components of \f$x\f$ that are active at the lower bound are nonnegative.
   */
   bool checkMultipliers( const Vector<Real> &l, const Vector<Real> &x ) {
-    const ROL::Vector_SimOpt<Real> &ls = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(l));
-    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(x));
+    const Vector_SimOpt<Real> &ls = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(l));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     bool nn1 = true;
     if ( bnd1_->isActivated() ) {
       nn1 = bnd1_->checkMultipliers(*(ls.get_1()),*(xs.get_1()));
@@ -192,18 +192,18 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<ROL::Vector<Real>&>(v));
-    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(x));
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
+      dynamic_cast<Vector<Real>&>(v));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
+      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
       bnd1_->pruneUpperActive(*v1,*(xs.get_1()),eps);
       vs.set_1(*v1);
     }
     if ( bnd2_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
+      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
       bnd2_->pruneUpperActive(*v2,*(xs.get_2()),eps);
       vs.set_2(*v2);
     }
@@ -222,21 +222,21 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<ROL::Vector<Real>&>(v));
-    const ROL::Vector_SimOpt<Real> &gs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(g));
-    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(x));
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
+      dynamic_cast<Vector<Real>&>(v));
+    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(g));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneUpperActive(*v1,*(gs.get_1()),*(xs.get_1()),eps);
+      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
+      bnd1_->pruneUpperActive(*v1,*(gs.get_1()),*(xs.get_1()),xeps,geps);
       vs.set_1(*v1);
     }
     if ( bnd2_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneUpperActive(*v2,*(gs.get_2()),*(xs.get_2()),eps);
+      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
+      bnd2_->pruneUpperActive(*v2,*(gs.get_2()),*(xs.get_2()),xeps,geps);
       vs.set_2(*v2);
     }
   }
@@ -252,18 +252,18 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<ROL::Vector<Real>&>(v));
-    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(x));
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
+      dynamic_cast<Vector<Real>&>(v));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
+      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
       bnd1_->pruneLowerActive(*v1,*(xs.get_1()),eps);
       vs.set_1(*v1);
     }
     if ( bnd2_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
+      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
       bnd2_->pruneLowerActive(*v2,*(xs.get_2()),eps);
       vs.set_2(*v2);
     }
@@ -282,37 +282,37 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<ROL::Vector<Real>&>(v));
-    const ROL::Vector_SimOpt<Real> &gs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(g));
-    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(x));
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
+      dynamic_cast<Vector<Real>&>(v));
+    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(g));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneLowerActive(*v1,*(gs.get_1()),*(xs.get_1()),eps);
+      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
+      bnd1_->pruneLowerActive(*v1,*(gs.get_1()),*(xs.get_1()),xeps,geps);
       vs.set_1(*v1);
     }
     if ( bnd2_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneLowerActive(*v2,*(gs.get_2()),*(xs.get_2()),eps);
+      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
+      bnd2_->pruneLowerActive(*v2,*(gs.get_2()),*(xs.get_2()),xeps,geps);
       vs.set_2(*v2);
     }
   }
  
-  const ROL::Ptr<const Vector<Real>> getLowerBound( void ) const {
-    const ROL::Ptr<const Vector<Real>> l1 = bnd1_->getLowerBound();
-    const ROL::Ptr<const Vector<Real>> l2 = bnd2_->getLowerBound();
-    return ROL::makePtr<Vector_SimOpt<Real>>( ROL::constPtrCast<Vector<Real>>(l1),
-                                                 ROL::constPtrCast<Vector<Real>>(l2) );
+  const Ptr<const Vector<Real>> getLowerBound( void ) const {
+    const Ptr<const Vector<Real>> l1 = bnd1_->getLowerBound();
+    const Ptr<const Vector<Real>> l2 = bnd2_->getLowerBound();
+    return makePtr<Vector_SimOpt<Real>>( constPtrCast<Vector<Real>>(l1),
+                                                 constPtrCast<Vector<Real>>(l2) );
   }
 
-  const ROL::Ptr<const Vector<Real>> getUpperBound(void) const {
-    const ROL::Ptr<const Vector<Real>> u1 = bnd1_->getUpperBound();
-    const ROL::Ptr<const Vector<Real>> u2 = bnd2_->getUpperBound();
-    return ROL::makePtr<Vector_SimOpt<Real>>( ROL::constPtrCast<Vector<Real>>(u1),
-                                                 ROL::constPtrCast<Vector<Real>>(u2) );
+  const Ptr<const Vector<Real>> getUpperBound(void) const {
+    const Ptr<const Vector<Real>> u1 = bnd1_->getUpperBound();
+    const Ptr<const Vector<Real>> u2 = bnd2_->getUpperBound();
+    return makePtr<Vector_SimOpt<Real>>( constPtrCast<Vector<Real>>(u1),
+                                                 constPtrCast<Vector<Real>>(u2) );
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.
@@ -326,18 +326,18 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<ROL::Vector<Real>&>(v));
-    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
-      dynamic_cast<const ROL::Vector<Real>&>(x));
+  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
+      dynamic_cast<Vector<Real>&>(v));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
+      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
       bnd1_->pruneActive(*v1,*(xs.get_1()),eps);
       vs.set_1(*v1);
     }
     if ( bnd2_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
+      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
       bnd2_->pruneActive(*v2,*(xs.get_2()),eps);
       vs.set_2(*v2);
     }
@@ -355,18 +355,18 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(v);
-    const ROL::Vector_SimOpt<Real> &gs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(g);
-    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(x);
+  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
     if ( bnd1_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneActive(*v1,*(gs.get_1()),*(xs.get_1()),eps);
+      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
+      bnd1_->pruneActive(*v1,*(gs.get_1()),*(xs.get_1()),xeps,geps);
       vs.set_1(*v1);
     }
     if ( bnd2_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneActive(*v2,*(gs.get_2()),*(xs.get_2()),eps);
+      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
+      bnd2_->pruneActive(*v2,*(gs.get_2()),*(xs.get_2()),xeps,geps);
       vs.set_2(*v2);
     }
   }
@@ -377,7 +377,7 @@ public:
       @param[in]    v   is the vector to be checked.
   */
   bool isFeasible( const Vector<Real> &v ) { 
-    const ROL::Vector_SimOpt<Real> &vs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
     return (bnd1_->isFeasible(*(vs.get_1()))) && (bnd2_->isFeasible(*(vs.get_2())));
   }
 

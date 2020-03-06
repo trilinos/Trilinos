@@ -73,8 +73,8 @@ class BoundConstraint {
 private:
   bool Lactivated_; ///< Flag that determines whether or not the lower bounds are being used.
   bool Uactivated_; ///< Flag that determines whether or not the upper bounds are being used.
-  Ptr<Vector<Real> > lower_;
-  Ptr<Vector<Real> > upper_;
+  Ptr<Vector<Real>> lower_;
+  Ptr<Vector<Real>> upper_;
   bool hasSetScalar_;
 
 public:
@@ -143,13 +143,13 @@ public:
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^+_\epsilon(x)\f$.  Here,
       the upper \f$\epsilon\f$-active set is defined as
       \f[
-         \mathcal{A}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon\,\}.
+         \mathcal{A}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) \ge b(\xi)-\epsilon\,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if (isUpperActivated()) {
       throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
     }
@@ -160,15 +160,16 @@ public:
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^+_\epsilon(x)\f$.  Here,
       the upper \f$\epsilon\f$-binding set is defined as
       \f[
-         \mathcal{B}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon,\;
-                g(\xi) < 0 \,\}.
+         \mathcal{B}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) \ge b(\xi)-\epsilon_x,\;
+                g(\xi) < -\epsilon_g \,\}.
       \f]
-      @param[out]      v   is the variable to be pruned.
-      @param[in]       g   is the negative search direction.
-      @param[in]       x   is the current optimization variable.
-      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+      @param[out]      v    is the variable to be pruned.
+      @param[in]       g    is the negative search direction.
+      @param[in]       x    is the current optimization variable.
+      @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
+      @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if (isUpperActivated()) {
       throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
     }
@@ -179,13 +180,13 @@ public:
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^-_\epsilon(x)\f$.  Here,
       the lower \f$\epsilon\f$-active set is defined as
       \f[
-         \mathcal{A}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon\,\}.
+         \mathcal{A}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) \le a(\xi)+\epsilon\,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if (isLowerActivated()) {
       throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
     }
@@ -196,15 +197,16 @@ public:
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^-_\epsilon(x)\f$.  Here,
       the lower \f$\epsilon\f$-binding set is defined as
       \f[
-         \mathcal{B}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon,\;
+         \mathcal{B}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) \le a(\xi)+\epsilon,\;
                 g(\xi) > 0 \,\}.
       \f]
-      @param[out]      v   is the variable to be pruned.
-      @param[in]       g   is the negative search direction.
-      @param[in]       x   is the current optimization variable.
-      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+      @param[out]      v    is the variable to be pruned.
+      @param[in]       g    is the negative search direction.
+      @param[in]       x    is the current optimization variable.
+      @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
+      @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if (isLowerActivated()) {
       throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
     }
@@ -214,7 +216,7 @@ public:
   // QUERY FUNCTIONS (VIRTUAL AND NONVIRTUAL)
 
   /** \brief Return the ref count pointer to the lower bound vector */
-  virtual const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
+  virtual const Ptr<const Vector<Real>> getLowerBound( void ) const {
     if (hasSetScalar_) {
       return lower_;
     }
@@ -222,7 +224,7 @@ public:
   }
 
   /** \brief Return the ref count pointer to the upper bound vector */
-  virtual const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
+  virtual const Ptr<const Vector<Real>> getUpperBound( void ) const {
     if (hasSetScalar_) {
       return upper_;
     }
@@ -329,7 +331,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if (isActivated()) {
       pruneUpperActive(v,x,eps);
       pruneLowerActive(v,x,eps);
@@ -343,15 +345,16 @@ public:
       \f[
          \mathcal{B}^+_\epsilon(x) = \mathcal{B}^+_\epsilon(x)\cap\mathcal{B}^-_\epsilon(x).
       \f]
-      @param[out]      v   is the variable to be pruned.
-      @param[in]       g   is the negative search direction.
-      @param[in]       x   is the current optimization variable.
-      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+      @param[out]      v    is the variable to be pruned.
+      @param[in]       g    is the negative search direction.
+      @param[in]       x    is the current optimization variable.
+      @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
+      @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if (isActivated()) {
-      pruneUpperActive(v,g,x,eps);
-      pruneLowerActive(v,g,x,eps);
+      pruneUpperActive(v,g,x,xeps,geps);
+      pruneLowerActive(v,g,x,xeps,geps);
     }
   }
 
@@ -362,10 +365,10 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if (isLowerActivated()) {
       const Real one(1);
-      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
+      Ptr<Vector<Real>> tmp = v.clone(); 
       tmp->set(v);
       pruneLowerActive(*tmp,x,eps);
       v.axpy(-one,*tmp);
@@ -379,10 +382,10 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) { 
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) { 
     if (isUpperActivated()) {
       const Real one(1);
-      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
+      Ptr<Vector<Real>> tmp = v.clone(); 
       tmp->set(v);
       pruneUpperActive(*tmp,x,eps);
       v.axpy(-one,*tmp);
@@ -392,17 +395,18 @@ public:
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\Xi\setminus\mathcal{B}_\epsilon(x)\f$.  
-      @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
-      @param[in]       g   is the negative search direction.
-      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+      @param[out]      v    is the variable to be pruned.
+      @param[in]       x    is the current optimization variable.
+      @param[in]       g    is the negative search direction.
+      @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
+      @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) { 
     if (isLowerActivated()) {
       const Real one(1);
-      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
+      Ptr<Vector<Real>> tmp = v.clone(); 
       tmp->set(v);
-      pruneLowerActive(*tmp,g,x,eps);
+      pruneLowerActive(*tmp,g,x,xeps,geps);
       v.axpy(-one,*tmp);
     }
   }
@@ -410,17 +414,18 @@ public:
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\Xi\setminus\mathcal{B}_\epsilon(x)\f$.  
-      @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
-      @param[in]       g   is the negative search direction.
-      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+      @param[out]      v    is the variable to be pruned.
+      @param[in]       x    is the current optimization variable.
+      @param[in]       g    is the negative search direction.
+      @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
+      @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) { 
     if (isUpperActivated()) {
       const Real one(1);
-      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
+      Ptr<Vector<Real>> tmp = v.clone(); 
       tmp->set(v);
-      pruneUpperActive(*tmp,g,x,eps);
+      pruneUpperActive(*tmp,g,x,xeps,geps);
       v.axpy(-one,*tmp);
     }
   }
@@ -432,10 +437,10 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) { 
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) { 
     if (isActivated()) {
       const Real one(1);
-      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
+      Ptr<Vector<Real>> tmp = v.clone(); 
       tmp->set(v);
       pruneActive(*tmp,x,eps);
       v.axpy(-one,*tmp);
@@ -445,17 +450,18 @@ public:
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\Xi\setminus\mathcal{B}_\epsilon(x)\f$.  
-      @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
-      @param[in]       g   is the negative search direction.
-      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+      @param[out]      v    is the variable to be pruned.
+      @param[in]       x    is the current optimization variable.
+      @param[in]       g    is the negative search direction.
+      @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
+      @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) { 
     if (isActivated()) {
       const Real one(1);
-      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
+      Ptr<Vector<Real>> tmp = v.clone(); 
       tmp->set(v);
-      pruneActive(*tmp,g,x,eps);
+      pruneActive(*tmp,g,x,xeps,geps);
       v.axpy(-one,*tmp);
     }
   }
@@ -468,7 +474,7 @@ public:
   */
   void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) {
     if (isActivated()) {
-      ROL::Ptr<Vector<Real> > tmp = g.clone();
+      Ptr<Vector<Real>> tmp = g.clone();
       tmp->set(g);
       pruneActive(g,*tmp,x);
     }

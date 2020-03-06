@@ -145,15 +145,15 @@ int main(int argc, char *argv[]) {
     vp->set(*yp);
     vsp->set(*yp);
 
-    bc.pruneUpperActive(*vp,*yp,0);      
-    sbc.pruneUpperActive(*vsp,*yp,0);      
+    bc.pruneUpperActive(*vp,*yp,0.0);
+    sbc.pruneUpperActive(*vsp,*yp,0.0);
     vp->axpy(-1.0,*vsp);
 
     *outStream << "Testing BoundConstraint::pruneUpperActive() without gradient . . . ";
 
     if(vp->norm() > errtol) {
       *outStream << "failed." << std::endl;
-      ++errorFlag; 
+      ++errorFlag;
     }
     else *outStream << "passed." << std::endl;
 
@@ -161,8 +161,8 @@ int main(int argc, char *argv[]) {
     vp->set(*yp);
     vsp->set(*yp);
 
-    bc.pruneLowerActive(*vp,*yp,0);      
-    sbc.pruneLowerActive(*vsp,*yp,0);      
+    bc.pruneLowerActive(*vp,*yp,0.0);
+    sbc.pruneLowerActive(*vsp,*yp,0.0);
 
     vp->axpy(-1.0,*vsp);
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 
     if(vp->norm() > errtol) {
       *outStream << "failed." << std::endl;
-      ++errorFlag; 
+      ++errorFlag;
     }
     else *outStream << "passed." << std::endl;
 
@@ -179,8 +179,8 @@ int main(int argc, char *argv[]) {
     vp->set(*yp);
     vsp->set(*yp);
 
-    bc.pruneUpperActive(*vp,*yp,*g1p,0);      
-    sbc.pruneUpperActive(*vsp,*yp,*g1p,0);      
+    bc.pruneUpperActive(*vp,*yp,*g1p,0.0);
+    sbc.pruneUpperActive(*vsp,*yp,*g1p,0.0);
 
     vp->axpy(-1.0,*vsp);
 
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 
     if(vp->norm() > errtol) {
       *outStream << "failed." << std::endl;
-      ++errorFlag; 
+      ++errorFlag;
     }
     else *outStream << "passed." << std::endl;
      
@@ -196,8 +196,8 @@ int main(int argc, char *argv[]) {
     vp->set(*yp);
     vsp->set(*yp);
 
-    bc.pruneLowerActive(*vp,*yp,*g1p,0);      
-    sbc.pruneLowerActive(*vsp,*yp,*g1p,0);      
+    bc.pruneLowerActive(*vp,*yp,*g1p,0.0);
+    sbc.pruneLowerActive(*vsp,*yp,*g1p,0.0);
 
     vp->axpy(-1.0,*vsp);
 
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 
     if(vp->norm() > errtol) {
       *outStream << "failed." << std::endl;
-      ++errorFlag; 
+      ++errorFlag;
     }
     else *outStream << "passed." << std::endl;
 
@@ -214,8 +214,8 @@ int main(int argc, char *argv[]) {
     vp->set(*yp);
     vsp->set(*yp);
 
-    bc.pruneUpperActive(*vp,*yp,*g2p,0);      
-    sbc.pruneUpperActive(*vsp,*yp,*g2p,0);      
+    bc.pruneUpperActive(*vp,*yp,*g2p,0.0);
+    sbc.pruneUpperActive(*vsp,*yp,*g2p,0.0);
 
     vp->axpy(-1.0,*vsp);
 
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
 
     if(vp->norm() > errtol) {
       *outStream << "failed." << std::endl;
-      ++errorFlag; 
+      ++errorFlag;
     }
     else *outStream << "passed." << std::endl;
      
@@ -231,8 +231,8 @@ int main(int argc, char *argv[]) {
     vp->set(*yp);
     vsp->set(*yp);
 
-    bc.pruneLowerActive(*vp,*yp,*g2p,0);      
-    sbc.pruneLowerActive(*vsp,*yp,*g2p,0);      
+    bc.pruneLowerActive(*vp,*yp,*g2p,0.0);
+    sbc.pruneLowerActive(*vsp,*yp,*g2p,0.0);
 
     vp->axpy(-1.0,*vsp);
 
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
 
     if(vp->norm() > errtol) {
       *outStream << "failed." << std::endl;
-      ++errorFlag; 
+      ++errorFlag;
     }
     else *outStream << "passed." << std::endl;
 
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
   else
     std::cout << "End Result: TEST PASSED\n";
 
-  return 0;  
+  return 0; 
 
 }
 

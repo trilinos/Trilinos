@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
 
     parlist->sublist("General").sublist("Secant").set("Use as Hessian",false);
     parlist->sublist("General").sublist("Secant").set("Use as Preconditioner",true);
+    parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",1.0);
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       // Get Objective Function
       ROL::Ptr<ROL::Vector<RealT>> x0;
