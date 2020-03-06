@@ -400,6 +400,10 @@ namespace MueLu {
             GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
           }
         }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Xpetra::global_size_t>(BCrowcount_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements(), Exceptions::RuntimeError,
+                                 "All edges are detected as boundary edges!");
+
       if (dump_matrices_) {
         GetOStream(Runtime0) << "Dumping BCrows, BCcols" << std::endl;
         std::ofstream outBCrows("BCrows.m");
