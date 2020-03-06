@@ -1,6 +1,12 @@
 IF(Kokkos_ENABLE_OPENMP)
 
     TRIBITS_ADD_EXECUTABLE(
+        simple_test_check
+        NOEXEPREFIX
+        SOURCES simple_test_check.cpp
+     )
+
+    TRIBITS_ADD_EXECUTABLE(
         basker_test
         NOEXEPREFIX
         SOURCES basker_test.cpp
@@ -8,20 +14,20 @@ IF(Kokkos_ENABLE_OPENMP)
 
      TRIBITS_ADD_EXECUTABLE(
         basker_test_inc
-	NOEXEPREFIX
-	SOURCES basker_test_inc.cpp 
+        NOEXEPREFIX
+        SOURCES basker_test_inc.cpp
      )
 
      TRIBITS_ADD_EXECUTABLE(
         basker_amesos2_interface_test
-	NOEXEPREFIX
-	SOURCES amesos2_interface_test.cpp test_util.hpp
+        NOEXEPREFIX
+        SOURCES amesos2_interface_test.cpp test_util.hpp
      )
      
      TRIBITS_ADD_EXECUTABLE(
         basker_amesos2_interface_coverage_test
-	NOEXEPREFIX
-	SOURCES amesos2_interface_coverage_test.cpp test_util.hpp
+        NOEXEPREFIX
+        SOURCES amesos2_interface_coverage_test.cpp test_util.hpp
      )
          
      ##Single threaded test
@@ -85,4 +91,4 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files
         DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-                
+
