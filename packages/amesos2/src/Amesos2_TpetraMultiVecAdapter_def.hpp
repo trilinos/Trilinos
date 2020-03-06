@@ -267,7 +267,6 @@ namespace Amesos2 {
     // Special case when number vectors == 1 and single MPI process
     if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
       if(mv_->isConstantStride()) {
-        mv_->sync_device(); // no testing of this right now - since UVM on
         deep_copy_or_assign_view(kokkos_view, mv_->getLocalViewDevice());
       }
       else {
@@ -308,7 +307,6 @@ namespace Amesos2 {
       }
       else {
         if(redist_mv.isConstantStride()) {
-          redist_mv.sync_device(); // no testing of this right now - since UVM on
           deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
         }
         else {
@@ -530,7 +528,23 @@ namespace Amesos2 {
 
       // If this is the optimized path then kokkos_new_data will be the dst
       auto mv_view_to_modify_2d = mv_->getLocalViewDevice();
+
+      #ifdef HAVE_TEUCHOS_FLOAT
+      // To remove this and make it use the optimized deep_copy_or_assign_view,
+      // need to resolve the put_type setup for Klu2 and Basker which is
+      // handling float in an awkward way. The current effect of this check
+      // is to make the put not completely optimized for float builds.
+      // This is related to #7158. The problem here was that we are assuming
+      // that the vector we did a 'get' on is the same one we will do 'put' with
+      // but the added put_type for float breaks that assumption. In that case,
+      // the code here may assign when in fact we need a copy back to the MV.
+      // If this code does assign it's not doing anything to the MV because it's
+      // assuming we were solving directly to it from the original 'get'.
+      // TODO: Make put_type go away and get rid of these special checks for float.
+      deep_copy(mv_view_to_modify_2d, kokkos_new_data);
+      #else
       deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
+      #endif
     }
     else {
 

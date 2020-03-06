@@ -378,13 +378,6 @@ KLU2<Matrix,Vector>::solve_impl(
         }
       }
     } // end root_
-
-    /* Update X's global values */
-    {
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
-#endif
-    } // end Timer scope
   } //end else
 
   // This conversion exists only for the situation where the Tpetra adapter

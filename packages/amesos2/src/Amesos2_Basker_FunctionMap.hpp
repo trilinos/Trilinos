@@ -64,20 +64,24 @@
 
 namespace Amesos2 {
 
-  /* ==================== Specializations ====================
-   *
-   * \cond Basker_function_specializations
-   */
+  template <>
+  struct FunctionMap<Basker,double>
+  {
+    static double * convert_scalar(double * pData) {
+      return pData; // no conversion necessary
+    }
+  };
 
-  /**
-   * \brief Pass function calls to Basker based on data type.
+#ifdef HAVE_TEUCHOS_COMPLEX
+  template <>
+  struct FunctionMap<Basker,Kokkos::complex<double>>
+  {
+    static std::complex<double> * convert_scalar(Kokkos::complex<double> * pData) {
+      return reinterpret_cast<std::complex<double> *>(pData);
+    }
+  };
 
-   */
-  // TODO : Do we need the specializations for Basker ??
-
-
-  /* \endcond Basker_function_specializations */
-
+#endif // HAVE_TEUCHOS_COMPLEX
 
 } // end namespace Amesos2
 
