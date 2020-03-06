@@ -474,6 +474,9 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
       belosParams->set("Output Style",Belos::Brief);
+      belosParams->set("Implicit Residual Scaling","None");
+      belosParams->set("Explicit Residual Test",true);
+      belosParams->set("Explicit Residual Scaling","None");
       solver = factory->create(belosSolverType,belosParams);
 
       comm->barrier();
@@ -770,6 +773,9 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       belosParams->set("Output Frequency",1);
       belosParams->set("Output Style",Belos::Brief);
       belosParams->set("Implicit Residual Scaling","None");
+      belosParams->set("Explicit Residual Test",true);
+      belosParams->set("Explicit Residual Scaling","None");
+
       solver = factory->create(belosSolverType,belosParams);
 
       comm->barrier();
@@ -800,6 +806,9 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Convergence Tolerance",tol);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Output Style",1);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Verbosity",33);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Implicit Residual Scaling","None");
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Explicit Residual Test",true);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Explicit Residual Scaling","None");
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("VerboseObject").set("Verbosity Level", "medium");
       SList.set("Preconditioner Type","MueLuRefMaxwell");
       params.set("parameterlist: syntax","muelu");
