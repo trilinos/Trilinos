@@ -99,7 +99,7 @@ struct MV_V_Dot_Functor
                    "MV_V_Dot_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
                    "MV_V_Dot_Functor: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+    static_assert (std::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_V_Dot_Functor: R is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -218,7 +218,7 @@ struct MV_Dot_Right_FunctorVector
                    "MV_Dot_Right_FunctorVector: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "MV_Dot_Right_FunctorVector: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+    static_assert (std::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Dot_Right_FunctorVector: R is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -326,7 +326,7 @@ struct MV_Dot_Right_FunctorUnroll
                    "MV_Dot_Right_FunctorUnroll: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "MV_Dot_Right_FunctorUnroll: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+    static_assert (std::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Dot_Right_FunctorUnroll: R is const.  "
                    "It must be nonconst, because it is an output argument "

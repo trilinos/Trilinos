@@ -165,7 +165,7 @@ public:
     }
 
 #if defined( KOKKOS_ENABLE_SERIAL )
-    if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
+    if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
       return;
@@ -173,7 +173,7 @@ public:
 #endif
 
 #if defined( KOKKOS_ENABLE_THREADS )
-    if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
+    if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
       return;
@@ -181,14 +181,14 @@ public:
 #endif
 
 #if defined( KOKKOS_ENABLE_OPENMP )
-    if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+    if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
     }
 #endif
 
 #if defined( KOKKOS_ENABLE_CUDA )
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+    if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
 
       this->suggested_vector_size = nnz / double (nr) + 0.5;
 
@@ -214,7 +214,7 @@ public:
 #endif
 
 #if defined( KOKKOS_ENABLE_QTHREAD)
-    if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+    if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
     }

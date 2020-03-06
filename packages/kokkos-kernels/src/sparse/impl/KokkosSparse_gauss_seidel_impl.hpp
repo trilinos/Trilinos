@@ -738,7 +738,7 @@ namespace KokkosSparse{
 
 
 #if defined( KOKKOS_ENABLE_CUDA )
-        if (Kokkos::Impl::is_same<Kokkos::Cuda, MyExecSpace >::value){
+        if (std::is_same<Kokkos::Cuda, MyExecSpace >::value){
           for (nnz_lno_t i = 0; i < numColors; ++i){
             nnz_lno_t color_index_begin = h_color_xadj(i);
             nnz_lno_t color_index_end = h_color_xadj(i + 1);

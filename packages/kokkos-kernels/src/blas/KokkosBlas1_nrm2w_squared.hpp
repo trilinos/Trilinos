@@ -105,7 +105,7 @@ nrm2w_squared (const RV& R, const XMV& X, const XMV& W,
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrm2w_squared: "
                  "X is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+  static_assert (std::is_same<typename RV::value_type,
                  typename RV::non_const_value_type>::value,
                  "KokkosBlas::nrm2w_squared: R is const.  "
                  "It must be nonconst, because it is an output argument "
@@ -114,7 +114,7 @@ nrm2w_squared (const RV& R, const XMV& X, const XMV& W,
                  ((RV::rank == 1) && (XMV::rank == 2)), "KokkosBlas::nrm2w_squared: "
                  "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
   typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+  static_assert (std::is_same<typename RV::value_type,
                  mag_type>::value,
                  "KokkosBlas::nrm2w: R must have the magnitude type of"
                  "the xvectors value_type it is an output argument "

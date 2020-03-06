@@ -154,7 +154,7 @@ struct Mult<YMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "Mult<rank 2>::mult: A is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                    "Mult<rank 2>::mult: X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+    static_assert (std::is_same<typename YMV::value_type,
                      typename YMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Mult<rank 2>::mult: Y is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -211,7 +211,7 @@ struct Mult<YV, AV, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                    "Mult<rank 1>::mult: X is not a Kokkos::View.");
     // XV must be nonconst (else it can't be an output argument).
-    static_assert (Kokkos::Impl::is_same<typename YV::value_type,
+    static_assert (std::is_same<typename YV::value_type,
                      typename YV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Mult<rank 1>::mult: Y is const.  "
                    "It must be nonconst, because it is an output argument "

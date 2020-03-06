@@ -159,7 +159,7 @@ class GraphColorDistance2Handle
         this->set_defaults(this->coloring_algorithm_type);
 
         // Throw an error if PersistentMemSpace != TempMemSpace since we don't support them being different (for now).
-        if(!Kokkos::Impl::is_same<PersistentMemorySpace, TemporaryMemorySpace>::value)
+        if(!std::is_same<PersistentMemorySpace, TemporaryMemorySpace>::value)
         {
             std::string message = "Distance-2 Graph Coloring Handle does not currently support different mem spaces";
             Kokkos::Impl::throw_runtime_exception(message);
@@ -211,7 +211,7 @@ class GraphColorDistance2Handle
     void choose_default_algorithm()
     {
 #if defined(KOKKOS_ENABLE_SERIAL)
-        if(Kokkos::Impl::is_same<Kokkos::Serial, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::Serial, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_SERIAL;
 #ifdef VERBOSE
@@ -221,7 +221,7 @@ class GraphColorDistance2Handle
 #endif
 
 #if defined(KOKKOS_ENABLE_THREADS)
-        if(Kokkos::Impl::is_same<Kokkos::Threads, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::Threads, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_VB_BIT;
 #ifdef VERBOSE
@@ -231,7 +231,7 @@ class GraphColorDistance2Handle
 #endif
 
 #if defined(KOKKOS_ENABLE_OPENMP)
-        if(Kokkos::Impl::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_VB_BIT;
 #ifdef VERBOSE
@@ -241,7 +241,7 @@ class GraphColorDistance2Handle
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
-        if(Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::Cuda, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_VB_BIT;
 #ifdef VERBOSE
@@ -251,7 +251,7 @@ class GraphColorDistance2Handle
 #endif
 
 #if defined(KOKKOS_ENABLE_QTHREAD)
-        if(Kokkos::Impl::is_same<Kokkos::Qthread, ExecutionSpace>::value)
+        if(std::is_same<Kokkos::Qthread, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_VB_BIT;
 #ifdef VERBOSE

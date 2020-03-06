@@ -94,7 +94,7 @@ trsv (const char uplo[],
                  "KokkosBlas::trsv: The ranks of b and x do not match.");
   static_assert (BMV::rank == 1 || BMV::rank == 2,
                  "KokkosBlas::trsv: b and x must both either have rank 1, or rank 2.");
-  static_assert (Kokkos::Impl::is_same<typename XMV::value_type,
+  static_assert (std::is_same<typename XMV::value_type,
                  typename XMV::non_const_value_type>::value,
                  "KokkosBlas::trsv: The output x must be nonconst.");
 

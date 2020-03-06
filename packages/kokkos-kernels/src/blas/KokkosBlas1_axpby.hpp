@@ -64,7 +64,7 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
                  "X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::axpby: "
                  "Y is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+  static_assert (std::is_same<typename YMV::value_type,
                  typename YMV::non_const_value_type>::value,
                  "KokkosBlas::axpby: Y is const.  It must be nonconst, "
                  "because it is an output argument "

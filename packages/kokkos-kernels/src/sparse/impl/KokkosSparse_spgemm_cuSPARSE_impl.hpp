@@ -85,16 +85,16 @@ namespace Impl{
 
 
     //TODO this is not correct, check memory space.
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
+    if (std::is_same<Kokkos::Cuda, device1 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
+    if (std::is_same<Kokkos::Cuda, device2 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
 
-    if (Kokkos::Impl::is_same<idx, int>::value){
+    if (std::is_same<idx, int>::value){
 
       const idx *a_xadj = (int *)row_mapA.data();
       const idx *b_xadj = (int *)row_mapB.data();
@@ -197,22 +197,22 @@ namespace Impl{
     typedef typename ain_nonzero_value_view_type::device_type device3;
 
 
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
+    if (std::is_same<Kokkos::Cuda, device1 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
+    if (std::is_same<Kokkos::Cuda, device2 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
+    if (std::is_same<Kokkos::Cuda, device3 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
 
 
 
-    if (Kokkos::Impl::is_same<idx, int>::value){
+    if (std::is_same<idx, int>::value){
       int *a_xadj = (int *)row_mapA.data();
       int *b_xadj = (int *)row_mapB.data();
       int *c_xadj = (int *)row_mapC.data();
@@ -231,7 +231,7 @@ namespace Impl{
       value_type *b_ew = (value_type *)valuesB.data();
       value_type *c_ew = (value_type *)valuesC.data();
 
-      if (Kokkos::Impl::is_same<value_type, float>::value){
+      if (std::is_same<value_type, float>::value){
         cusparseScsrgemm(
             h->handle,
             h->transA,
@@ -254,7 +254,7 @@ namespace Impl{
             c_xadj,
             c_adj);
       }
-      else if (Kokkos::Impl::is_same<value_type, double>::value){
+      else if (std::is_same<value_type, double>::value){
         cusparseDcsrgemm(
             h->handle,
             h->transA,

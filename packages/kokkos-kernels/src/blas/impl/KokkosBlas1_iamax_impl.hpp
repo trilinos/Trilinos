@@ -76,7 +76,7 @@ struct V_Iamax_Functor
     static_assert (Kokkos::Impl::is_view<XV>::value,
                    "KokkosBlas::Impl::V_Iamax_Functor: "
                    "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+    static_assert (std::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_Iamax_Functor: R is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -148,7 +148,7 @@ struct MV_Iamax_FunctorVector
     static_assert (Kokkos::Impl::is_view<XMV>::value,
                    "KokkosBlas::Impl::MV_Iamax_FunctorVector: "
                    "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+    static_assert (std::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Iamax_FunctorVector: "
                    "R is const.  It must be nonconst, because it is an output "

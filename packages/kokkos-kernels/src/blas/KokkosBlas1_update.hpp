@@ -70,7 +70,7 @@ update (const typename XMV::non_const_value_type& alpha, const XMV& X,
                  "Y is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::update: "
                  "Z is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
+  static_assert (std::is_same<typename ZMV::value_type,
                  typename ZMV::non_const_value_type>::value,
                  "KokkosBlas::update: Z is const.  "
                  "It must be nonconst, because it is an output argument "

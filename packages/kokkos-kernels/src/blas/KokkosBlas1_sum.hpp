@@ -103,7 +103,7 @@ sum (const RV& R, const XMV& X,
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::sum: "
                  "X is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+  static_assert (std::is_same<typename RV::value_type,
                  typename RV::non_const_value_type>::value,
                  "KokkosBlas::sum: R is const.  "
                  "It must be nonconst, because it is an output argument "

@@ -109,9 +109,9 @@ namespace Impl{
     typedef typename viennacl::compressed_matrix<value_type>::handle_type it;
     typedef typename viennacl::compressed_matrix<value_type>::value_type vt;
 
-    if ((Kokkos::Impl::is_same<idx, int>::value && Kokkos::Impl::is_same<typename KernelHandle::size_type, int>::value )||
-        (Kokkos::Impl::is_same<idx, unsigned int>::value && Kokkos::Impl::is_same<typename KernelHandle::size_type, unsigned int>::value ) ||
-        (Kokkos::Impl::is_same<idx, it>::value && Kokkos::Impl::is_same<typename KernelHandle::size_type, it>::value )
+    if ((std::is_same<idx, int>::value && std::is_same<typename KernelHandle::size_type, int>::value )||
+        (std::is_same<idx, unsigned int>::value && std::is_same<typename KernelHandle::size_type, unsigned int>::value ) ||
+        (std::is_same<idx, it>::value && std::is_same<typename KernelHandle::size_type, it>::value )
         ){
 
       unsigned int * a_xadj = (unsigned int *)row_mapA.data();

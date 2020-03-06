@@ -61,7 +61,7 @@ mult (typename YMV::const_value_type& gamma,
                  "Y is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<AV>::value, "KokkosBlas::mult: "
                  "A is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+  static_assert (std::is_same<typename YMV::value_type,
                    typename YMV::non_const_value_type>::value,
                  "KokkosBlas::mult: Y is const.  "
                  "It must be nonconst, because it is an output argument "

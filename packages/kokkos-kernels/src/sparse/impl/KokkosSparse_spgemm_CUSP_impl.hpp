@@ -104,15 +104,15 @@ void CUSP_apply(
   typedef typename ain_nonzero_index_view_type::device_type device2;
   typedef typename ain_nonzero_value_view_type::device_type device3;
 
-  if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
+  if (std::is_same<Kokkos::Cuda, device1 >::value){
     throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
     //return;
   }
-  if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
+  if (std::is_same<Kokkos::Cuda, device2 >::value){
     throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
     //return;
   }
-  if (Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
+  if (std::is_same<Kokkos::Cuda, device3 >::value){
     throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
     //return;
   }

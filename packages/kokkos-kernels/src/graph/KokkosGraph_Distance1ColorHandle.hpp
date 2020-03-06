@@ -233,7 +233,7 @@ private:
   void choose_default_algorithm()
   {
 #if defined( KOKKOS_ENABLE_SERIAL )
-    if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
+    if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_SERIAL;
 #ifdef VERBOSE
       std::cout << "Serial Execution Space, Default Algorithm: COLORING_VB" << std::endl;
@@ -242,7 +242,7 @@ private:
 #endif
 
 #if defined( KOKKOS_ENABLE_THREADS )
-    if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
+    if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
       std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_VB" << std::endl;
@@ -251,7 +251,7 @@ private:
 #endif
 
 #if defined( KOKKOS_ENABLE_OPENMP )
-    if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+    if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
       std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_VB" << std::endl;
@@ -260,7 +260,7 @@ private:
 #endif
 
 #if defined( KOKKOS_ENABLE_CUDA )
-    if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+    if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
       std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
@@ -269,7 +269,7 @@ private:
 #endif
 
 #if defined( KOKKOS_ENABLE_QTHREAD)
-    if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+    if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
       std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
@@ -499,7 +499,7 @@ private:
 
       if ( false
 #if defined( KOKKOS_ENABLE_CUDA )
-          || Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value
+          || std::is_same<Kokkos::Cuda, ExecutionSpace >::value
 #endif
          )
       {

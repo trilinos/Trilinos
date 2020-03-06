@@ -149,7 +149,7 @@ struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "Update<rank 2>::update: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
                    "Update<rank 2>::update: Z is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
+    static_assert (std::is_same<typename ZMV::value_type,
                      typename ZMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Update<rank 2>::update: Z is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -247,7 +247,7 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::"
                    "Update<rank 1>::update: Z is not a Kokkos::View.");
     // ZV must be nonconst (else it can't be an output argument).
-    static_assert (Kokkos::Impl::is_same<typename ZV::value_type,
+    static_assert (std::is_same<typename ZV::value_type,
                      typename ZV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Update<rank 1>::update: Z is const.  "
                    "It must be nonconst, because it is an output argument "

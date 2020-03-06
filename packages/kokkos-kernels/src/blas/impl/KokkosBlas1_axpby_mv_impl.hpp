@@ -94,7 +94,7 @@ struct Axpby_MV_Functor
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "Axpby_MV_Functor: Y is not a Kokkos::View.");
     // YMV must be nonconst (else it can't be an output argument).
-    static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+    static_assert (std::is_same<typename YMV::value_type,
                    typename YMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Axpby_MV_Functor: Y is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -328,7 +328,7 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
                    "Axpby_MV_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "Axpby_MV_Functor: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+    static_assert (std::is_same<typename YMV::value_type,
                    typename YMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Axpby_MV_Functor: Y is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -545,7 +545,7 @@ struct Axpby_MV_Unroll_Functor
                    "Axpby_MV_Unroll_Functor: b is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "Axpby_MV_Unroll_Functor: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+    static_assert (std::is_same<typename YMV::value_type,
                    typename YMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: Y is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -766,7 +766,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                    "Axpby_MV_Unroll_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "Axpby_MV_Unroll_Functor: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+    static_assert (std::is_same<typename YMV::value_type,
                    typename YMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: Y is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -980,7 +980,7 @@ Axpby_MV_Unrolled (const AV& av, const XMV& x,
                  "Axpby_MV_Unrolled: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                  "Axpby_MV_Unrolled: Y is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+  static_assert (std::is_same<typename YMV::value_type,
                    typename YMV::non_const_value_type>::value,
                  "KokkosBlas::Impl::Axpby_MV_Unrolled: Y is const.  "
                  "It must be nonconst, because it is an output argument "
@@ -1118,7 +1118,7 @@ Axpby_MV_Generic (const AV& av, const XMV& x,
                  "Axpby_MV_Generic: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                  "Axpby_MV_Generic: Y is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+  static_assert (std::is_same<typename YMV::value_type,
                    typename YMV::non_const_value_type>::value,
                  "KokkosBlas::Impl::Axpby_MV_Generic: Y is const.  "
                  "It must be nonconst, because it is an output argument "
@@ -1258,7 +1258,7 @@ Axpby_MV_Invoke_Left {
                  "Axpby_MV_Invoke_Left: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                  "Axpby_MV_Invoke_Left: Y is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+  static_assert (std::is_same<typename YMV::value_type,
                  typename YMV::non_const_value_type>::value,
                  "KokkosBlas::Impl::Axpby_MV_Invoke_Left: Y is const.  "
                  "It must be nonconst, because it is an output argument "
@@ -1337,7 +1337,7 @@ static void run(const AV& av, const XMV& x,
                  "Axpby_MV_Invoke_Right: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                  "Axpby_MV_Invoke_Right: Y is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+  static_assert (std::is_same<typename YMV::value_type,
                  typename YMV::non_const_value_type>::value,
                  "KokkosBlas::Impl::Axpby_MV_Invoke_Right: Y is const.  "
                  "It must be nonconst, because it is an output argument "

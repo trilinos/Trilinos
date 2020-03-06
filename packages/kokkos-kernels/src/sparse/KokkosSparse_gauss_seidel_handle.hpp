@@ -280,7 +280,7 @@ namespace KokkosSparse{
      */
     void choose_default_algorithm(){
 #if defined( KOKKOS_ENABLE_SERIAL )
-      if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
+      if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
         this->algorithm_type = GS_PERMUTED;
 #ifdef VERBOSE
         std::cout << "Serial Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
@@ -289,7 +289,7 @@ namespace KokkosSparse{
 #endif
 
 #if defined( KOKKOS_ENABLE_THREADS )
-      if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
+      if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
         this->algorithm_type = GS_PERMUTED;
 #ifdef VERBOSE
         std::cout << "PTHREAD Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
@@ -298,7 +298,7 @@ namespace KokkosSparse{
 #endif
 
 #if defined( KOKKOS_ENABLE_OPENMP )
-      if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+      if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
         this->algorithm_type = GS_PERMUTED;
 #ifdef VERBOSE
         std::cout << "OpenMP Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
@@ -307,7 +307,7 @@ namespace KokkosSparse{
 #endif
 
 #if defined( KOKKOS_ENABLE_CUDA )
-      if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+      if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
         this->algorithm_type = GS_TEAM;
 #ifdef VERBOSE
         std::cout << "Cuda Execution Space, Default Algorithm: GS_TEAM" << std::endl;
@@ -316,7 +316,7 @@ namespace KokkosSparse{
 #endif
 
 #if defined( KOKKOS_ENABLE_QTHREAD)
-      if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+      if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
         this->algorithm_type = GS_PERMUTED;
 #ifdef VERBOSE
         std::cout << "Qthread Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
@@ -568,27 +568,27 @@ namespace KokkosSparse{
     {
       bool return_value = false;
 #if defined( KOKKOS_ENABLE_SERIAL )
-      if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value) {
+      if (std::is_same< Kokkos::Serial , ExecutionSpace >::value) {
         return_value = false;
       }
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
-      if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
+      if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
         return_value = false;
       }
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
-      if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+      if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
         return_value = false;
       }
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
-      if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+      if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
         return_value = true;
       }
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
-      if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+      if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
         return_value = false;
       }
 #endif

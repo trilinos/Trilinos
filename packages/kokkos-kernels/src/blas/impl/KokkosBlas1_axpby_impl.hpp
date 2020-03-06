@@ -97,7 +97,7 @@ struct Axpby_Functor {
                    "Axpby_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
                    "Axpby_Functor: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename YV::value_type,
+    static_assert (std::is_same<typename YV::value_type,
                    typename YV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Axpby_Functor: Y is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -231,7 +231,7 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
                    "Axpby_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
                    "Axpby_Functor: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename YV::value_type,
+    static_assert (std::is_same<typename YV::value_type,
                    typename YV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Axpby_Functor: R is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -336,7 +336,7 @@ Axpby_Generic (const AV& av, const XV& x,
                  "Axpby_Generic: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
                  "Axpby_Generic: Y is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename YV::value_type,
+  static_assert (std::is_same<typename YV::value_type,
                    typename YV::non_const_value_type>::value,
                  "KokkosBlas::Impl::Axpby_Generic: Y is const.  "
                  "It must be nonconst, because it is an output argument "
