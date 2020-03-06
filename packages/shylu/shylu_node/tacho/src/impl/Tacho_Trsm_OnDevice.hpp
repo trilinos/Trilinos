@@ -55,16 +55,15 @@ namespace Tacho {
         
         int r_val(0);
         if (m > 0 && n > 0) 
-          if (std::is_same<value_type,double>::value) 
-            r_val = cublasDtrsm(handle, 
-                                ArgSide::cublas_param,
-                                ArgUplo::cublas_param, 
-                                ArgTransA::cublas_param, 
-                                diagA.cublas_param,
-                                m, n,
-                                &alpha,
-                                A.data(), A.stride_1(),
-                                B.data(), B.stride_1()); 
+          Blas<value_type>::trsm(handle,
+                                 ArgSide::cublas_param,
+                                 ArgUplo::cublas_param, 
+                                 ArgTransA::cublas_param, 
+                                 diagA.cublas_param,
+                                 m, n,
+                                 alpha,
+                                 A.data(), A.stride_1(),
+                                 B.data(), B.stride_1()); 
         return r_val;
       }
 #endif      

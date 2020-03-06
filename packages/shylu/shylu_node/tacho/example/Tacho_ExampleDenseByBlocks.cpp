@@ -1,18 +1,8 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho_Util.hpp"
-#include "Tacho_DenseMatrixView.hpp"
-#include "Tacho_DenseFlopCount.hpp"
-
-#include "Tacho_Chol_ByBlocks.hpp"
-#include "Tacho_Gemm_ByBlocks.hpp"
-#include "Tacho_Herk_ByBlocks.hpp"
-#include "Tacho_Trsm_ByBlocks.hpp"
-
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp" 
 
 #ifdef TACHO_HAVE_MKL
@@ -29,16 +19,7 @@ using namespace Tacho;
   printf("\n");                                                         
 
 /// select a kokkos task scheudler
-/// - DeprecatedTaskScheduler, DeprecatedTaskSchedulerMultiple
 /// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
-#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
-static const char * scheduler_name = "DeprecatedTaskScheduler";
-#endif
-#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
-template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
-static const char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
-#endif
 #if defined(TACHO_USE_TASKSCHEDULER)
 template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
 static const char * scheduler_name = "TaskScheduler";

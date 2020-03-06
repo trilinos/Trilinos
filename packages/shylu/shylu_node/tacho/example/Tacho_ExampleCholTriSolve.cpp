@@ -1,30 +1,14 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho_Util.hpp"
-#include "Tacho_CrsMatrixBase.hpp"
-#include "Tacho_MatrixMarket.hpp"
-
-#include "Tacho_Graph.hpp"
-#include "Tacho_SymbolicTools.hpp"
-
-#if defined(TACHO_HAVE_SCOTCH)
-#include "Tacho_GraphTools_Scotch.hpp"
-#endif
-
-#if defined(TACHO_HAVE_METIS)
-#include "Tacho_GraphTools_Metis.hpp"
-#endif
-
-#include "Tacho_GraphTools_CAMD.hpp"
-
-#include "Tacho_NumericTools.hpp"
-#include "Tacho_TriSolveTools.hpp"
-
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
+
+#define TACHO_ENABLE_PROFILE
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
+#include "cuda_profiler_api.h" 
+#endif
 
 template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
 static const char * scheduler_name = "TaskSchedulerMultiple";
@@ -35,6 +19,7 @@ int main (int argc, char *argv[]) {
   bool serial = false;
   int nthreads = 1;
   bool verbose = true;
+  bool sanitize = false;
   std::string file = "test.mtx";
   int max_num_superblocks = 4;
   int nrhs = 1;
@@ -49,6 +34,7 @@ int main (int argc, char *argv[]) {
   opts.set_option<bool>("serial", "Flag to use serial algorithm", &serial);
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("max-num-superblocks", "Max number of superblocks", &max_num_superblocks);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
@@ -72,6 +58,10 @@ int main (int argc, char *argv[]) {
   if (r_parse) return 0; // print help return
 
   Kokkos::initialize(argc, argv);
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
+  cudaProfilerStop();
+#endif
 
   typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type device_type;
   typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
@@ -104,7 +94,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      Tacho::MatrixMarket<value_type>::read(file, A);
+      Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     }
     Tacho::Graph G(A);
     t = timer.seconds();
@@ -218,10 +208,7 @@ int main (int argc, char *argv[]) {
     constexpr int variant = 0;
 #endif
     Tacho::TriSolveTools<value_type,scheduler_type,variant> 
-      TS(t_perm, t_peri,
-         N.getSupernodesInfo(),
-         S.SupernodesTreeLevel(),
-         nrhs);
+      TS(N, nrhs);
     TS.initialize(device_level_cut, device_function_thres, verbose);
     TS.createStream(nstreams_solve);
     TS.prepareSolve(nstreams_prepare, verbose); 
@@ -229,7 +216,13 @@ int main (int argc, char *argv[]) {
     std::cout << "CholTriSolve:: TriSolve prepare::time = " << t << std::endl;
 
     timer.reset();        
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
+    cudaProfilerStart();
+#endif
     TS.solveCholesky(X, B, W, verbose); 
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_ENABLE_PROFILE)
+    cudaProfilerStop();
+#endif
     t = timer.seconds();    
     std::cout << "CholTriSolve:: solve matrix::time = " << t << std::endl;
     TS.release(verbose);
