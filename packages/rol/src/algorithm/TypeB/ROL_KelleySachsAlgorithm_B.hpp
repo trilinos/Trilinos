@@ -63,12 +63,12 @@ private:
 
   // TRUST REGION PARAMETERS
   Real delMax_; ///< Maximum trust-region radius (default: 1e8)
-  Real eta0_;   ///< Step acceptance threshold (default: 1e-4)
-  Real eta1_;   ///< Radius decrease threshold (default: 0.25)
-  Real eta2_;   ///< Radius increase threshold (default: 0.75)
+  Real eta0_;   ///< Step acceptance threshold (default: 0.05)
+  Real eta1_;   ///< Radius decrease threshold (default: 0.05)
+  Real eta2_;   ///< Radius increase threshold (default: 0.9)
   Real gamma0_; ///< Radius decrease rate (negative rho) (default: 0.0625)
-  Real gamma1_; ///< Radius decrease rate (positive rho) (default: 0.5)
-  Real gamma2_; ///< Radius increase rate (default: 2)
+  Real gamma1_; ///< Radius decrease rate (positive rho) (default: 0.25)
+  Real gamma2_; ///< Radius increase rate (default: 2.5)
   Real TRsafe_; ///< Safeguard size for numerically evaluating ratio (default: 1e2)
   Real eps_;    ///< Safeguard for numerically evaluating ratio
 
@@ -83,16 +83,15 @@ private:
   bool useSecantHessVec_; ///< Flag to use secant as Hessian (default: false)
 
   // TRUNCATED CG INFORMATION
+  int maxit_; ///< Maximum number of CG iterations (default: 20)
   Real tol1_; ///< Absolute tolerance for truncated CG (default: 1e-4)
   Real tol2_; ///< Relative tolerance for truncated CG (default: 1e-2)
-  int maxit_; ///< Maximum number of CG iterations (default: 20)
 
   // ALGORITHM SPECIFIC PARAMETERS
   int minit_;   ///< Maximum number of minor (subproblem solve) iterations (default: 10)
   Real mu0_;    ///< Sufficient decrease parameter (default: 1e-2)
   Real mu1_;    ///< Sufficient decrease parameter postsmoothing (default: 0.9999)
   Real eps0_;   ///< Epsilon binding set tolerance (default: 1e-3)
-  Real tol0_;   ///< CG tolerance (default: 1e-1)
   Real beta_;   ///< Projected search backtracking rate (default: 1e-2)
   Real alpha0_; ///< Initial step size for projected search (default: 1)
 

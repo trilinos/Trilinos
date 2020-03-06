@@ -74,7 +74,6 @@ KelleySachsAlgorithm_B<Real>::KelleySachsAlgorithm_B(ParameterList &list,
   mu0_    = trlist.sublist("Kelley-Sachs").get("Sufficient Decrease Parameter",          1e-4);
   mu1_    = trlist.sublist("Kelley-Sachs").get("Post-Smoothing Decrease Parameter",      0.9999);
   eps0_   = trlist.sublist("Kelley-Sachs").get("Binding Set Tolerance",                  1e-3);
-  tol0_   = trlist.sublist("Kelley-Sachs").get("Initial CG Tolerance",                   1e-1);
   beta_   = trlist.sublist("Kelley-Sachs").get("Post-Smoothing Backtracking Rate",       1e-2);
   alpha0_ = trlist.sublist("Kelley-Sachs").get("Initial Post-Smoothing Step Size",       1.0);
   // Output Parameters
@@ -130,10 +129,10 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
                                                            BoundConstraint<Real> &bnd,
                                                            std::ostream          &outStream ) {
   const Real one(1);
-  Real ftol = std::sqrt(ROL_EPSILON<Real>()), tol1(1e-2);
+  Real ftol = std::sqrt(ROL_EPSILON<Real>());
   Real gfnorm(0), gfnormf(0), tol(0), stol(0), eps(0);
   Real ftrial(0), fnew(0), pRed(0), rho(1), alpha(1), lambda(1);
-  int rflag(0), cnt(0);
+  int cnt(0);
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
@@ -145,19 +144,17 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
   output.push_back(print(true));
   if (verbosity_ > 0) outStream << print(true);
 
-  // Initial tolerances
-  rflag = 0;
-  eps   = std::min(eps0_,std::sqrt(state_->gnorm));
-  tol   = tol1*std::min(tol0_,std::sqrt(state_->gnorm));
-
   // Compute initial free gradient
   gfree->set(*state_->gradientVec);
   bnd.pruneActive(*gfree,*state_->gradientVec,x,eps);
   gfnorm = gfree->norm();
-  stol = tol*gfnorm;
+
+  // Initial tolerances
+  eps  = std::min(eps0_,std::sqrt(state_->gnorm));
+  tol  = tol2_*std::sqrt(state_->gnorm);
+  stol = std::min(tol1_,tol*gfnorm);
 
   while (status_->check(*state_)) {
-    rflag = 1; // HACK TO FORCE STEP ACCEPTANCE
     // Build trust-region model
     model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
 
@@ -204,89 +201,85 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
       state_->stepVec->set(x);
       state_->stepVec->axpy(-one,*state_->iterateVec);
       state_->snorm = state_->stepVec->norm();
-      rflag = 1;
       x.set(*state_->iterateVec);
       obj.update(x,false,state_->iter);
       // Decrease trust-region radius
-      state_->searchSize = gamma1_*state_->searchSize;
+      state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
+      //if (rho < zero && TRflag_ != TRUtils::TRNAN) {
+      //  // Negative reduction, interpolate to find new trust-region radius
+      //  state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
+      //    state_->snorm,pRed,state_->value,ftrial,state_->searchSize,gamma0_,gamma1_,eta2_,
+      //    outStream,verbosity_>1);
+      //}
+      //else { // Shrink trust-region radius
+      //  state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
+      //}
     }
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) {
-      if (rho >= eta2_ && rflag == 0 && state_->searchSize != delMax_) {
-        state_->stepVec->set(x);
-        state_->stepVec->axpy(-one,*state_->iterateVec);
-        state_->snorm = state_->stepVec->norm();
-        x.set(*state_->iterateVec);
-        obj.update(x,false,state_->iter);
+      if (rho >= eta0_ && rho < eta1_) {
+        // Decrease trust-region radius
+        state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
+      }
+      else if (rho >= eta2_) {
         // Increase trust-region radius
         state_->searchSize = std::min(delMax_,gamma2_*state_->searchSize);
       }
-      else {
-        if (rho >= eta0_ && rho < eta1_) {
-          // Decrease trust-region radius
-          state_->searchSize = gamma1_*state_->searchSize;
-        }
-        else if (rho >= eta2_) { // HACK TO FORCE TRUST REGION RADIUS GROWTH
-          // Increase trust-region radius
-          state_->searchSize = std::min(delMax_,gamma2_*state_->searchSize);
-        }
-        // Projected search
-        cnt = 0;
-        alpha = one;
-        obj.gradient(*dwa1,x,ftol); state_->ngrad++;
-        pwa2->set(dwa1->dual());
+      // Projected search
+      cnt = 0;
+      alpha = one;
+      obj.gradient(*dwa1,x,ftol); state_->ngrad++;
+      pwa2->set(dwa1->dual());
+      pwa1->set(x); pwa1->axpy(-alpha/alpha0_,*pwa2);
+      bnd.project(*pwa1);
+      obj.update(*pwa1,false);
+      fnew = obj.value(*pwa1,ftol); state_->nfval++;
+      while ((fnew-ftrial) >= mu1_*(state_->value-ftrial)) {
+        alpha *= beta_;
         pwa1->set(x); pwa1->axpy(-alpha/alpha0_,*pwa2);
         bnd.project(*pwa1);
         obj.update(*pwa1,false);
         fnew = obj.value(*pwa1,ftol); state_->nfval++;
-        while ((fnew-ftrial) >= mu1_*(state_->value-ftrial)) {
-          alpha *= beta_;
-          pwa1->set(x); pwa1->axpy(-alpha/alpha0_,*pwa2);
-          bnd.project(*pwa1);
-          obj.update(*pwa1,false);
-          fnew = obj.value(*pwa1,ftol); state_->nfval++;
-          if ( cnt >= minit_ ) break;
-          cnt++;
-        }
-        state_->stepVec->set(*pwa1);
-        state_->stepVec->axpy(-one,*state_->iterateVec);
-        state_->snorm = state_->stepVec->norm();
-        // Store objective function and iteration information
-        if (std::isnan(fnew)) {
-          TRflag_ = TRUtils::TRNAN;
-          rho     = -one;
-          x.set(*state_->iterateVec);
-          obj.update(x,false,state_->iter);
-          // Decrease trust-region radius
-          state_->searchSize = gamma1_*state_->searchSize;
-        }
-        else {
-          // Update objective function information
-          x.set(*pwa1);
-          state_->iterateVec->set(x);
-          state_->value = fnew;
-          dwa1->set(*state_->gradientVec);
-          obj.update(x,true,state_->iter);
-          obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
-          // Compute free gradient
-          gfree->set(*state_->gradientVec);
-          bnd.pruneActive(*gfree,*state_->gradientVec,x,eps);
-          gfnorm = gfree->norm();
-          stol = tol*gfnorm;
-          // Compute criticality measure
-          pwa1->set(x);
-          pwa1->axpy(-one,state_->gradientVec->dual());
-          bnd.project(*pwa1);
-          pwa1->axpy(-one,x);
-          state_->gnorm = pwa1->norm();
-          // Update secant information in trust-region model
-          model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
-                         state_->snorm,state_->iter);
-          // Update tolerances
-          rflag = 0;
-          eps   = std::min(eps0_,std::sqrt(state_->gnorm));
-          tol   = tol1*std::min(tol0_,std::sqrt(state_->gnorm));
-        }
+        if ( cnt >= minit_ ) break;
+        cnt++;
+      }
+      state_->stepVec->set(*pwa1);
+      state_->stepVec->axpy(-one,*state_->iterateVec);
+      state_->snorm = state_->stepVec->norm();
+      // Store objective function and iteration information
+      if (std::isnan(fnew)) {
+        TRflag_ = TRUtils::TRNAN;
+        rho     = -one;
+        x.set(*state_->iterateVec);
+        obj.update(x,false,state_->iter);
+        // Decrease trust-region radius
+        state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
+      }
+      else {
+        // Update objective function information
+        x.set(*pwa1);
+        state_->iterateVec->set(x);
+        state_->value = fnew;
+        dwa1->set(*state_->gradientVec);
+        obj.update(x,true,state_->iter);
+        obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
+        // Compute free gradient
+        gfree->set(*state_->gradientVec);
+        bnd.pruneActive(*gfree,*state_->gradientVec,x,eps);
+        gfnorm = gfree->norm();
+        // Compute criticality measure
+        pwa1->set(x);
+        pwa1->axpy(-one,state_->gradientVec->dual());
+        bnd.project(*pwa1);
+        pwa1->axpy(-one,x);
+        state_->gnorm = pwa1->norm();
+        // Update secant information in trust-region model
+        model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
+                       state_->snorm,state_->iter);
+        // Update tolerances
+        eps  = std::min(eps0_,std::sqrt(state_->gnorm));
+        tol  = tol2_*std::sqrt(state_->gnorm);
+        stol = std::min(tol1_,tol*gfnorm);
       }
     }
 
@@ -572,3 +565,175 @@ std::string KelleySachsAlgorithm_B<Real>::print( const bool print_header ) const
 } // namespace ROL
 
 #endif
+
+// ORIGINAL KELLEY-SACHS ALGORITHM
+//template<typename Real>
+//std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>          &x,
+//                                                           const Vector<Real>    &g, 
+//                                                           Objective<Real>       &obj,
+//                                                           BoundConstraint<Real> &bnd,
+//                                                           std::ostream          &outStream ) {
+//  const Real one(1);
+//  Real ftol = std::sqrt(ROL_EPSILON<Real>()), tol1(1e-2);
+//  Real gfnorm(0), gfnormf(0), tol(0), stol(0), eps(0);
+//  Real ftrial(0), fnew(0), pRed(0), rho(1), alpha(1), lambda(1);
+//  int rflag(0), cnt(0);
+//  // Initialize trust-region data
+//  std::vector<std::string> output;
+//  initialize(x,g,obj,bnd,outStream);
+//  Ptr<Vector<Real>> s = x.clone(), gfree = g.clone();
+//  Ptr<Vector<Real>> pwa1 = x.clone(), pwa2 = x.clone(), pwa3 = x.clone();
+//  Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone(), dwa3 = g.clone();
+//
+//  // Output
+//  output.push_back(print(true));
+//  if (verbosity_ > 0) outStream << print(true);
+//
+//  // Initial tolerances
+//  rflag = 0;
+//  eps   = std::min(eps0_,std::sqrt(state_->gnorm));
+//  tol   = tol1*std::min(tol0_,std::sqrt(state_->gnorm));
+//
+//  // Compute initial free gradient
+//  gfree->set(*state_->gradientVec);
+//  bnd.pruneActive(*gfree,*state_->gradientVec,x,eps);
+//  gfnorm = gfree->norm();
+//  stol = tol*gfnorm;
+//
+//  while (status_->check(*state_)) {
+//    // Build trust-region model
+//    model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
+//
+//    /**** SOLVE TRUST-REGION SUBPROBLEM ****/
+//    pRed = trpcg(*s,SPflag_,SPiter_,*gfree,x,*state_->gradientVec,
+//                 state_->searchSize,*model_,bnd,eps,stol,maxit_,
+//                 *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
+//    x.plus(*s);
+//    bnd.project(x);
+//
+//    // Compute trial objective value
+//    obj.update(x,false);
+//    ftrial = obj.value(x,ftol); state_->nfval++;
+//
+//    // Compute ratio of acutal and predicted reduction
+//    TRflag_ = TRUtils::SUCCESS;
+//    TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+//
+//    // Check sufficient decrease
+//    if ( rho >= eta0_ ) {
+//      lambda = std::min(one, state_->searchSize/gfnorm);
+//      // Compute Scaled Measure || x - P( x - lam * PI(g) ) ||
+//      pwa1->set(*state_->iterateVec);
+//      pwa1->axpy(-lambda,gfree->dual());
+//      bnd.project(*pwa1);
+//      pwa1->axpy(-one,*state_->iterateVec);
+//      gfnormf = pwa1->norm();
+//      // Sufficient decrease?
+//      if (state_->value-ftrial < mu0_*gfnormf*state_->gnorm) {
+//        TRflag_ = TRUtils::QMINSUFDEC;
+//      }
+//      if ( verbosity_ > 1 ) {
+//        outStream << "    Norm of projected free gradient:         " << gfnormf                    << std::endl;
+//        outStream << "    Decrease lower bound (constraints):      " << mu0_*gfnormf*state_->gnorm << std::endl;
+//        outStream << "    Trust-region flag (constraints):         " << TRflag_                    << std::endl;
+//        outStream << std::endl;
+//      }
+//    }
+//
+//    // Update algorithm state
+//    state_->iter++;
+//    // Accept/reject step and update trust region radius
+//    if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS) || (TRflag_ >= 2)) {
+//      state_->stepVec->set(x);
+//      state_->stepVec->axpy(-one,*state_->iterateVec);
+//      state_->snorm = state_->stepVec->norm();
+//      rflag = 1;
+//      x.set(*state_->iterateVec);
+//      obj.update(x,false,state_->iter);
+//      // Decrease trust-region radius
+//      state_->searchSize = gamma1_*state_->searchSize;
+//    }
+//    else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
+//             || (TRflag_ == TRUtils::POSPREDNEG)) {
+//      if (rho >= eta2_ && rflag == 0 && state_->searchSize != delMax_) {
+//        state_->stepVec->set(x);
+//        state_->stepVec->axpy(-one,*state_->iterateVec);
+//        state_->snorm = state_->stepVec->norm();
+//        x.set(*state_->iterateVec);
+//        obj.update(x,false,state_->iter);
+//        // Increase trust-region radius
+//        state_->searchSize = std::min(delMax_,gamma2_*state_->searchSize);
+//      }
+//      else {
+//        if (rho >= eta0_ && rho < eta1_) {
+//          // Decrease trust-region radius
+//          state_->searchSize = gamma1_*state_->searchSize;
+//        }
+//        // Projected search
+//        cnt = 0;
+//        alpha = one;
+//        obj.gradient(*dwa1,x,ftol); state_->ngrad++;
+//        pwa2->set(dwa1->dual());
+//        pwa1->set(x); pwa1->axpy(-alpha/alpha0_,*pwa2);
+//        bnd.project(*pwa1);
+//        obj.update(*pwa1,false);
+//        fnew = obj.value(*pwa1,ftol); state_->nfval++;
+//        while ((fnew-ftrial) >= mu1_*(state_->value-ftrial)) {
+//          alpha *= beta_;
+//          pwa1->set(x); pwa1->axpy(-alpha/alpha0_,*pwa2);
+//          bnd.project(*pwa1);
+//          obj.update(*pwa1,false);
+//          fnew = obj.value(*pwa1,ftol); state_->nfval++;
+//          if ( cnt >= minit_ ) break;
+//          cnt++;
+//        }
+//        state_->stepVec->set(*pwa1);
+//        state_->stepVec->axpy(-one,*state_->iterateVec);
+//        state_->snorm = state_->stepVec->norm();
+//        // Store objective function and iteration information
+//        if (std::isnan(fnew)) {
+//          TRflag_ = TRUtils::TRNAN;
+//          rho     = -one;
+//          x.set(*state_->iterateVec);
+//          obj.update(x,false,state_->iter);
+//          // Decrease trust-region radius
+//          state_->searchSize = gamma1_*state_->searchSize;
+//        }
+//        else {
+//          // Update objective function information
+//          x.set(*pwa1);
+//          state_->iterateVec->set(x);
+//          state_->value = fnew;
+//          dwa1->set(*state_->gradientVec);
+//          obj.update(x,true,state_->iter);
+//          obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
+//          // Compute free gradient
+//          gfree->set(*state_->gradientVec);
+//          bnd.pruneActive(*gfree,*state_->gradientVec,x,eps);
+//          gfnorm = gfree->norm();
+//          stol = tol*gfnorm;
+//          // Compute criticality measure
+//          pwa1->set(x);
+//          pwa1->axpy(-one,state_->gradientVec->dual());
+//          bnd.project(*pwa1);
+//          pwa1->axpy(-one,x);
+//          state_->gnorm = pwa1->norm();
+//          // Update secant information in trust-region model
+//          model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
+//                         state_->snorm,state_->iter);
+//          // Update tolerances
+//          rflag = 0;
+//          eps   = std::min(eps0_,std::sqrt(state_->gnorm));
+//          tol   = tol1*std::min(tol0_,std::sqrt(state_->gnorm));
+//        }
+//      }
+//    }
+//
+//    // Update Output
+//    output.push_back(print(printHeader_));
+//    if (verbosity_ > 0) outStream << print(printHeader_);
+//  }
+//  output.push_back(Algorithm_B<Real>::printExitStatus());
+//  if (verbosity_ > 0) outStream << Algorithm_B<Real>::printExitStatus();
+//  return output;
+//}
