@@ -94,8 +94,7 @@ def parse_args():
 
 
 def print_input_variables(arguments):
-    print("\n==========================================================================================",
-        file=sys.stdout)
+    print("\n" + "="*90, file=sys.stdout)
     print("Jenkins Input Variables:", file=sys.stdout)
     print("- JOB_BASE_NAME: {job_base_name}".format(
         job_base_name=arguments.job_base_name),
@@ -103,8 +102,7 @@ def print_input_variables(arguments):
     print("- WORKSPACE    : {workspace}".format(
         workspace=arguments.workspaceDir),
           file=sys.stdout)
-    print("\n==========================================================================================",
-        file=sys.stdout)
+    print("\n" + "="*90, file=sys.stdout)
     print("Parameters:", file=sys.stdout)
     print("- TRILINOS_SOURCE_REPO  : {source_repo}".format(
         source_repo=arguments.sourceRepo),
@@ -124,8 +122,7 @@ def print_input_variables(arguments):
     print("- BUILD_NUMBER          : {num}".format(
         num=arguments.job_number),
           file=sys.stdout)
-    print("\n==========================================================================================",
-        file=sys.stdout)
+    print("\n" + "="*90, file=sys.stdout)
 
 
 def confirmGitVersion():
