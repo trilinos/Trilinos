@@ -1408,12 +1408,13 @@ std::string Thyra::toString(ModelEvaluatorBase::EInArgsMembers arg)
       return "IN_ARG_step_size";
     case ModelEvaluatorBase::IN_ARG_stage_number:
       return "IN_ARG_stage_number";
-#ifdef TEUCHOS_DEBUG
     default:
+#ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
+#else
+      return ""; // Will never be executed!
 #endif
   }
-  return ""; // Will never be executed!
 }
 
 
@@ -1435,12 +1436,13 @@ std::string Thyra::toString(ModelEvaluatorBase::EOutArgsMembers arg)
       return "OUT_ARG_W_prec";
     case ModelEvaluatorBase::OUT_ARG_f_poly:
       return "OUT_ARG_f_poly";
-#ifdef TEUCHOS_DEBUG
     default:
+#ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
+#else
+      return ""; // Will never be executed!
 #endif
   }
-  return ""; // Will never be executed!
 }
 
 
@@ -1454,12 +1456,13 @@ std::string Thyra::toString(
       return "DERIV_MV_BY_COL";
     case ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW:
       return "DERIV_TRANS_MV_BY_ROW";
-#ifdef TEUCHOS_DEBUG
     default:
+#ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
+#else
+      return ""; // Should never execute this!
 #endif
   }
-  return ""; // Should never execute this!
 }
 
 
@@ -1474,12 +1477,13 @@ Thyra::getOtherDerivativeMultiVectorOrientation(
       return ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW;
     case ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW:
       return ModelEvaluatorBase::DERIV_MV_BY_COL;
-#ifdef TEUCHOS_DEBUG
     default:
+#ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
+#else
+      return ModelEvaluatorBase::DERIV_MV_BY_COL; // Should never execute this!
 #endif
   }
-  return ModelEvaluatorBase::DERIV_MV_BY_COL; // Should never execute this!
 }
 
 
