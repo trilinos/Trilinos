@@ -44,6 +44,7 @@
 #define IFPACK2_DETAILS_ONELEVELFACTORY_DEF_HPP
 
 #include "Ifpack2_Factory.hpp"
+#include "Ifpack2_Utilities.hpp"
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_Details_DenseSolver.hpp"
 #include "Ifpack2_Diagonal.hpp"

@@ -185,7 +185,7 @@ namespace Tacho {
       const int maxBufSizeInBytes = std::max(bufSizeInBytes.first, bufSizeInBytes.second);
       const int bufsize = maxBufSizeInBytes > 0 ? maxBufSizeInBytes/sizeof(double) : 32;
       
-      if (bufsize > _buf.extent(0)) 
+      if (bufsize > int(_buf.extent(0))) 
         _buf = value_type_array(do_not_initialize_tag("buf"), bufsize);
 
       _status = cusparseDcsrsv2_analysis(_handle.first,

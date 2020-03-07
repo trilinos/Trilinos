@@ -1006,7 +1006,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Build matrix graph: 0-Total", graph_total);
 
     // Construct Tpetra::CrsGraph objects.
-    overlappedGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
+    overlappedGraph = rcp (new sparse_graph_type (overlappedMapG, 200));
     ownedGraph = rcp (new sparse_graph_type (globalMapG, 0));
 
     // Define desired workset size and count how many worksets

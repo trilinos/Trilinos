@@ -340,7 +340,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void
     mirror(const CrsMatrixBase<value_type,ordinal_type,size_type,SpT> &b) {
-      if (Kokkos::Impl::is_same<SpT,space_type>::value) {
+      if (std::is_same<SpT,space_type>::value) {
         // when the space is same, everything is shallow copy
         // setLabel(b._label);
         _m        = b._m;

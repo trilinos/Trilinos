@@ -6,4 +6,5 @@ export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
   intel-debug-openmp-KNL
   intel-opt-openmp-HSW
   intel-opt-openmp-KNL
+  intel-complex-openmp-opt-KNL
   )

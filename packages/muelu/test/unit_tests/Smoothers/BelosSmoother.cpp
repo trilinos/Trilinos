@@ -61,9 +61,12 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-    BelosSmoother smoother("Block CG", Teuchos::ParameterList());
-    testApplyNoSetup(smoother, out, success);
+      BelosSmoother smoother("Block CG", Teuchos::ParameterList());
+      testApplyNoSetup(smoother, out, success);
+
+    }
 
   }
 
@@ -73,18 +76,19 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-    Teuchos::ParameterList paramList;
-    paramList.set("Maximum Iterations", 10);
-    BelosSmoother smoother("Block CG", paramList);
+      Teuchos::ParameterList paramList;
+      paramList.set("Maximum Iterations", 10);
+      BelosSmoother smoother("Block CG", paramList);
 
 
-    typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 1.2856486930664495771e-01;
-    TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e-12);
-
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 1.2856486930664495771e-01;
+      TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e-12);
+    }
 
   } // Block CG
 

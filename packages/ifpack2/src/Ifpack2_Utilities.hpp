@@ -95,6 +95,10 @@ namespace Details {
   }
 
 
+  //! Transform to canonical form of preconditioner name.
+  std::string canonicalize(const std::string& precType);
+
+
 }// namespace Details
 
 }// namespace Ifpack2
