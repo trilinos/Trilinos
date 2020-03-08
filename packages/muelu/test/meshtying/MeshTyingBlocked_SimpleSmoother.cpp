@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   RCP<ParameterList> paramsF, paramsI;
   paramsF = sublist(params, "Factories");
   paramsI = sublist(paramsF, "myInterfaceAggs2");
-  paramsI->set<RCP<std::map<LO, LO>>>("DualNodeID2PrimalNodeID", rcpFromRef(myLagr2Dof));
+  paramsI->set<RCP<std::map<LO, LO>>>("DualNodeID2PrimalNodeID - level 0", rcpFromRef(myLagr2Dof));
 
   ParameterListInterpreter mueLuFactory(*params, comm);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();

@@ -51,6 +51,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
+#include "Xpetra_MapFactory.hpp"
 
 namespace MueLu
 {
@@ -67,16 +68,16 @@ RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, Globa
 
   validParamList->set<RCP<const FactoryBase>>("A", null, "Generating factory of A");
   validParamList->set<RCP<const FactoryBase>>("Aggregates", null, "Generating factory of the Aggregates (for block 0,0)");
+  validParamList->set<RCP<const FactoryBase>>("DualNodeID2PrimalNodeID", null, "Generating factory of the DualNodeID2PrimalNodeID map");
 
   validParamList->set<LocalOrdinal>("number of DOFs per dual node", Teuchos::ScalarTraits<LocalOrdinal>::one(), "Number of DOFs per dual node");
 
   /*
     DualNodeID2PrimalNodeID represents the mapping between the Dual Node IDs to the Primal Node IDs.
-    This map makes one assumption: the number of dof per dual node is a constant which has to be set in 
-    parameter list.
+    This map makes one assumption: the number of dof per dual node is a constant and has to be set in 
+    the parameter list as "number of DOFs per dual node".
   */
-  validParamList->set<RCP<std::map<LocalOrdinal, LocalOrdinal>>>("DualNodeID2PrimalNodeID", null, "");
-
+  validParamList->set<RCP<std::map<LocalOrdinal, LocalOrdinal>>>("DualNodeID2PrimalNodeID - level 0", null, "");
   return validParamList;
 }
 
@@ -87,7 +88,9 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Dec
   Input(currentLevel, "Aggregates");
 
   if (currentLevel.GetLevelID() != 0)
-    currentLevel.DeclareInput("DualNodeID2PrimalNodeID", NoFactory::get());
+  {
+    Input(currentLevel, "DualNodeID2PrimalNodeID");
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -96,6 +99,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Aggregates<LocalOrdinal, GlobalOrdinal, Node> Aggregates;
   typedef std::map<LocalOrdinal, LocalOrdinal> Dual2Primal_type;
+  typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
 
   const char prefix[] = "MueLu::InterfaceAggregationFactory::Build: ";
   const ParameterList &pL = GetParameterList();
@@ -109,14 +113,17 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   ArrayRCP<LocalOrdinal> procWinnerInput = aggs00->GetProcWinner()->getDataNonConst(0);
 
   RCP<Dual2Primal_type> lagr2dof;
+
   if (currentLevel.GetLevelID() == 0)
   {
-    lagr2dof = pL.get<RCP<Dual2Primal_type>>("DualNodeID2PrimalNodeID");
+    lagr2dof = pL.get<RCP<Dual2Primal_type>>("DualNodeID2PrimalNodeID - level 0");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(lagr2dof.is_null(), std::runtime_error, prefix << " MueLu requires a DualNodeID2PrimalNodeID map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(lagr2dof.is_null(), std::runtime_error, prefix << " MueLu requires a provided DualNodeID2PrimalNodeID map on the finest level.");
   }
   else
-    lagr2dof = currentLevel.Get<RCP<Dual2Primal_type>>("DualNodeID2PrimalNodeID", NoFactory::get());
+  {
+    lagr2dof = Get<RCP<Dual2Primal_type>>(currentLevel, "DualNodeID2PrimalNodeID");
+  }
 
   const LocalOrdinal nDOFPerDualNode = pL.get<LocalOrdinal>("number of DOFs per dual node");
 
@@ -141,7 +148,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     for (size_t i = 0; i < aggRangeMap->getNodeNumElements(); i += nDOFPerDualNode)
       myDualNodes.push_back((aggRangeMap->getGlobalElement(i) - indexBase) / nDOFPerDualNode + indexBase);
 
-    aggVertexMap = rcp(new const Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(globalNumDualNodes, myDualNodes, indexBase, comm));
+    aggVertexMap = MapFactory::Build(aggRangeMap->lib(), globalNumDualNodes, myDualNodes, indexBase, comm);
   }
 
   RCP<Aggregates> aggregates = rcp(new Aggregates(aggVertexMap));
@@ -181,9 +188,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   aggregates->SetNumAggregates(numAggId);
   Set(currentLevel, "Aggregates", aggregates);
-
-  currentLevel.Set<RCP<Dual2Primal_type>>("CoarseDualNodeID2PrimalNodeID", coarseLagr2Dof, NoFactory::get());
-
+  Set(currentLevel, "CoarseDualNodeID2PrimalNodeID", coarseLagr2Dof);
   GetOStream(Statistics1) << aggregates->description() << std::endl;
 }
 } //namespace MueLu
