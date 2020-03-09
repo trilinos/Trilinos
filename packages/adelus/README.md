@@ -1,0 +1,273 @@
+// ************************************************************************
+//
+//                        Adelus v. 1.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of NTESS nor the names of the contributors may be
+// used to endorse or promote products derived from this software without
+// specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY EXPRESS OR IMPLIED
+// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+// IN NO EVENT SHALL NTESS OR THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Vinh Dang (vqdang@sandia.gov)
+//                    Joseph Kotulski (jdkotul@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+
+# Adelus
+
+## Overall Description
+
+ This package performs LU factorization with partial pivoting and solves a dense
+matrix equation on a distributed computer system using MPI for message passing.
+The code was ported from Pliris, which runs on CPUs only. The code uses Kokkos
+and Kokkos Kernels libraries to achieve performance portability on heterogeneous
+architectures equipped with CPUs and accelerated hardware such as GPUs.
+
+ The matrix is torus-wrap mapped onto the processors of the parallel machines
+(either CPUs or GPUs). Each processor contains portions of the matrix and the
+right hand sides determined by a distribution function to optimally load balance
+the computation and communication during the LU factorization of the matrix.
+Each processor handles its own workload through Kokkos Kernels BLAS routines
+optimized for multi-threaded CPUs and massively parallel GPUs. Furthermore, CUDA-
+aware MPI is exploited on GPU architectures which allows direct communication
+from GPU memory.
+
+### Relation to MPI Process Topology
+
+```
+ Example: 6 processes
+        nprocsr =3  (Number of processes for a row)
+        Process id in the box below.
+
+
+          0      1      2      < --- my_col
+       ------ ------ ------
+       |    | |    | |    |
+       |  0 | |  1 | |  2 |    < --- my_row = 0 for these processes
+       |    | |    | |    |
+       ------ ------ ------
+       |    | |    | |    |
+       |  3 | |  4 | |  5 |    < --- my_row = 1 for these processes
+       |    | |    | |    |
+       ------ ------ ------
+
+    For an 1000 x 1000 matrix
+
+      Process id           0        1       2      3     4     5
+      my_rows             334      333     333    334   333   333
+      my_cols             500      500     500    500   500   500
+      my_first_row         1       335     668     1    335   668
+      my_first_col         1        1       1     501   501   501
+
+      Note: The fortran convention is assumed ie matrix begins with index 1.
+```
+
+### Directory Organization
+
+We organize the directories as follows:
+
+1. Public interfaces to the solver and the distribution function live in the 
+```src/``` subdirectory (```adelus/src```):
+
+2. Implementations of the phases of the solver (i.e. factor, solve, permutation)  
+and other utility functions also locate in the ```src/``` subdirectory
+
+3. A correctness test is in the ```test/``` subdirectory
+
+4. A simple example that generates a random matrix and a right-hand-side to
+    exercise the solver is in the ```example/``` subdirectory
+
+
+## Configuring, Building, and Installing Adelus
+
+ This section explains how to build and install Adelus. Adelus mostly consists of
+header files. Only a few functions contained in .cpp files have to be compiled
+into object files outside of the application's source code. It should be noted that
+a C++11 compliant compiler is needed to build Adelus. Since Adelus is distributed
+within Trilinos, and uses Kokkos and Kokkos Kernels extensively, Trilinos' CMake
+build system is preferred. To enable Adelus when building Trilinos, set the CMake
+option ```Trilinos_ENABLE_Adelus```. Trilinos' build system lets packages express
+dependencies on other packages or external libraries. Adelus has a required dependency
+on Kokkos and Kokkos Kernels, Trilinos will enable Kokkos and Kokkos Kernels
+automatically. Following the Kokkos and Kokkos Kernels style, Adelus's
+features are controlled via CMake options in the form of ```Adelus_ENABLE_OPTION```
+A list of Adelus options can be found below.
+
+* ```Adelus_ENABLE_ZCPLX```
+  * Whether to enable double precision complex functionality
+  * ```BOOL``` Default: ON
+* ```Adelus_ENABLE_SCPLX```
+  * Whether to enable single precision complex functionality
+  * ```BOOL``` Default: OFF
+* ```Adelus_ENABLE_DREAL```
+  * Whether to enable double precision functionality
+  * ```BOOL``` Default: OFF
+* ```Adelus_ENABLE_SREAL```
+  * Whether to enable single precision functionality
+  * ```BOOL``` Default: OFF
+* ```Adelus_ENABLE_TIMING```
+  * Whether to enable timing
+  * ```BOOL``` Default: OFF
+* ```Adelus_ENABLE_CUDAHOSTPINNED```
+  * Whether to use Cuda Host Pinned memory for MPI
+  * ```BOOL``` Default: OFF
+* ```Adelus_ENABLE_USEDEEPCOPY```
+  * Whether to Use Kokkos::deep_copy for BLAS copy
+  * ```BOOL``` Default: OFF
+* ```Adelus_ENABLE_PRINTSTATUS```
+  * Whether to enable status prints
+  * ```BOOL``` Default: OFF
+
+ We refer readers to Trilinos', Kokkos' and Kokkos Kernels' documentation for
+further details of building Trilinos, Kokkos and Kokkos Kernels .
+
+ Below is an example of a Trilinos build script enabling Adelus, (and Kokkos and
+Kokkos Kernels) with CUDA back-end (NVIDIA Volta generation CC 7.0) and OpenMP host
+back-end to perform comparison between the CUDA code and the more classical MPI
+version of the code.
+
+### Configure
+
+```
+export LD_LIBRARY_PATH
+export TRILINOS_HOME=/your/Trilinos/home/directory
+export CXX=${TRILINOS_HOME}/Trilinos/packages/kokkos/bin/nvcc_wrapper
+export CUDA_LAUNCH_BLOCKING=1
+export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+export OMPI_CXX=${TRILINOS_HOME}/Trilinos/packages/kokkos/bin/nvcc_wrapper
+export LLNL_USE_OMPI_VARS="Y"
+export NVCC_WRAPPER_DEFAULT_COMPILER=`which g++`
+
+INSTALL_LOCATION=${TRILINOS_HOME}/install-trilinos
+
+cmake \
+\
+-D CMAKE_INSTALL_PREFIX:PATH="${INSTALL_LOCATION}" \
+-D CMAKE_CXX_COMPILER:FILEPATH="`which ${CXX}`" \
+-D CMAKE_C_COMPILER:FILEPATH="`which mpicc`" \
+-D CMAKE_Fortran_COMPILER:FILEPATH="`which mpif77`" \
+-D CMAKE_CXX_FLAGS="-O3 -g -Wall -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow -I${MPI_ROOT}/include" \
+-D CMAKE_C_FLAGS="-O3 -g" \
+-D CMAKE_Fortran_FLAGS="-g" \
+\
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D TPL_ENABLE_Matio:BOOL=OFF \
+-D TPL_ENABLE_X11:BOOL=OFF \
+-D TPL_ENABLE_BLAS:BOOL=ON \
+-D TPL_ENABLE_CUDA:BOOL=ON \
+-D BLAS_INCLUDE_DIRS="${BLAS_HEADER_DIR}" \
+-D BLAS_LIBRARY_DIRS="${BLAS_LIB_DIR}" \
+-D BLAS_LIBRARY_NAMES="blas_lib_name" \
+\
+-D MPI_BASE_DIR="${MPI_ROOT}" \
+\
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_CXX11:BOOL=ON \
+-D Trilinos_ENABLE_Kokkos:BOOL=ON \
+-D Trilinos_ENABLE_Adelus:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+-D Trilinos_ENABLE_COMPLEX_DOUBLE:BOOL=ON \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="-lmpi_ibm -fopenmp" \
+\
+-D Kokkos_ENABLE_SERIAL:BOOL=OFF \
+-D Kokkos_ENABLE_OPENMP:BOOL=ON \
+-D Kokkos_ENABLE_PTHREAD:BOOL=OFF \
+-D Kokkos_ENABLE_CUDA:BOOL=ON \
+-D Kokkos_ENABLE_CUDA_UVM:BOOL=OFF \
+-D Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON \
+-D Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=ON \
+-D Kokkos_ENABLE_TESTS:BOOL=OFF \
+-D Kokkos_ARCH_POWER9=ON \
+-D Kokkos_ARCH_VOLTA70=ON \
+\
+-D Adelus_ENABLE_ZCPLX:BOOL=ON \
+-D Adelus_ENABLE_TIMING:BOOL=ON \
+-D Adelus_ENABLE_CUDAHOSTPINNED:BOOL=OFF \
+-D Adelus_ENABLE_PRINTSTATUS:BOOL=ON \
+\
+${TRILINOS_HOME}/Trilinos
+```
+
+### Build
+
+```
+make -j N 
+```
+
+### Install
+
+```
+make -j N install
+```
+
+## Using Adelus Test Driver
+
+ This is an example that drives Adelus to solve for a dense linear system with
+one RHS vector:
+
+1. Determine the matrix and RHS vector distribution on each MPI process using
+the ```Adelus::GetDistribution``` utility function.
+
+2. Once the portions of matrix and RHS vectors are computed on each process,
+the solver can be called. In this example, the portion of matrix on each MPI
+process and the reference solution vector are randomly generated. Then, the
+assigned RHS vectors on MPI processes can be computed.
+
+3. Launch Adelus using ```Adelus::FactorSolve```, or ```Adelus::FactorSolve_devPtr```,
+or ```Adelus::FactorSolve_hostPtr```.
+
+4. Gather results.
+
+5. Compare the returned solution vector with the reference vector.
+
+### Compile with Makefile
+
+```
+make -j
+```
+
+### Compile with CMake
+
+Make a ```cmakebuild``` directory, and then run the command:
+
+```
+cmake -DTrilinos_DIR={trilinos_install_path}/include ..
+```
+
+from the ```cmakebuild``` directory.
+
+##### [LICENSE](https://github.com/vqd8a/Trilinos/tree/add_adelus/packages/adelus/LICENSE)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+Adelus is licensed under standard 3-clause BSD terms of use. For
+specifics, please refer to the LICENSE file contained in the
+repository or distribution.  Under the terms of Contract DE-NA0003525 with NTESS,
+the U.S. Government retains certain rights in this software.
