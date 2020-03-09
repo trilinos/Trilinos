@@ -165,12 +165,13 @@ CuSparseMatrix::getAlgorithm(const cusparseOperation_t op) const {
   }
 }
 
+#ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
 void*
 CuSparseMatrix::
 reallocBufferIfNeededAndGetBuffer(const size_t minNeededBufSize)
 {
   // FIXME (mfh 05 Mar 2020) Hack, since cusparseCsrmvEx_bufferSize
-  // claims a buffer size of -1 even though its status is
+  // might claim a buffer size of -1 even though its status is
   // CUSPARSE_STATUS_SUCCESS.  cuSPARSE requires the buffer to have
   // correct alignment.  We're only calling cuSPARSE for float and
   // double, but it's no more expensive to allocate a tiny bit more
@@ -198,6 +199,14 @@ reallocBufferIfNeededAndGetBuffer(const size_t minNeededBufSize)
   }
   return buffer_;
 }
+#else
+void*
+CuSparseMatrix::
+reallocBufferIfNeededAndGetBuffer(const size_t /* minNeededBufSize */)
+{
+  return reallocBufferIfNeededAndGetBuffer(16);
+}
+#endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
 
 namespace Impl {
 template<class Scalar>
