@@ -189,7 +189,9 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  localOperatorFillComplete(local_multiply_op_type& op)
+  localOperatorFillComplete(
+    local_multiply_op_type& op,
+    const crs_graph_type& globalGraph)
   {
     using IST = impl_scalar_type;
     using subclass_op_type =
@@ -197,6 +199,10 @@ namespace Tpetra {
 
     auto* opSub = dynamic_cast<subclass_op_type*>(&op);
     if (opSub != nullptr) {
+      const auto minNumEntPerRow = globalGraph.nodeMinNumRowEntries_;
+      const auto maxNumEntPerRow = globalGraph.nodeMaxNumRowEntries_;
+      opSub->setMinMaxNumberOfEntriesPerRow(minNumEntPerRow,
+                                            maxNumEntPerRow);
       opSub->fillComplete();
     }
   }
@@ -644,8 +650,9 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
+    TEUCHOS_ASSERT( graph.get() != nullptr );
     TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
-    localOperatorFillComplete(*lclMatrix_);
+    localOperatorFillComplete(*lclMatrix_, *graph);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
        "At the end of a CrsMatrix constructor that should produce "
@@ -705,8 +712,9 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
+    TEUCHOS_ASSERT( graph.get() != nullptr );
     TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
-    localOperatorFillComplete(*lclMatrix_);
+    localOperatorFillComplete(*lclMatrix_, *graph);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
        "At the end of a CrsMatrix constructor that should produce "
@@ -769,8 +777,9 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
+    TEUCHOS_ASSERT( graph.get() != nullptr );
     TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
-    localOperatorFillComplete(*lclMatrix_);
+    localOperatorFillComplete(*lclMatrix_, *graph);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
        "At the end of a CrsMatrix constructor that should produce "
@@ -4918,7 +4927,7 @@ namespace Tpetra {
 
     fillComplete_ = true;
     TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
-    localOperatorFillComplete(*lclMatrix_);
+    localOperatorFillComplete(*lclMatrix_, this->getCrsGraphRef());
     checkInternalState();
   }
 
@@ -4974,7 +4983,7 @@ namespace Tpetra {
     // Now we're fill complete!
     fillComplete_ = true;
     TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
-    localOperatorFillComplete(*lclMatrix_);
+    localOperatorFillComplete(*lclMatrix_, this->getCrsGraphRef());
 
     // Sanity checks at the end.
 #ifdef HAVE_TPETRA_DEBUG
