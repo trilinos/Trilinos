@@ -37,24 +37,27 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_LOCALCRSMATRIXOPERATOR_FWD_HPP
-#define TPETRA_LOCALCRSMATRIXOPERATOR_FWD_HPP
+#ifndef TPETRA_DETAILS_LOCALCRSMATRIXOPERATORWITHSETUP_FWD_HPP
+#define TPETRA_DETAILS_LOCALCRSMATRIXOPERATORWITHSETUP_FWD_HPP
 
 #include "Tpetra_Details_DefaultTypes.hpp"
 
-/// \file Tpetra_LocalOperator_fwd.hpp
-/// \brief Forward declaration of Tpetra::LocalCrsMatrixOperator
+/// \file Tpetra_Details_LocalCrsMatrixOperatorWithSetup_fwd.hpp
+/// \brief Forward declaration of
+///   Tpetra::Details::LocalCrsMatrixOperatorWithSetup
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
+namespace Details {
 template<class MultiVectorScalar =
            ::Tpetra::Details::DefaultTypes::scalar_type,
          class MatrixScalar =
            ::Tpetra::Details::DefaultTypes::scalar_type,
          class Device =
            ::Tpetra::Details::DefaultTypes::node_type::device_type>
-class LocalCrsMatrixOperator;
+class LocalCrsMatrixOperatorWithSetup;
+} // namespace Details
 } // namespace Tpetra
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_LOCALCRSMATRIXOPERATOR_FWD_HPP
+#endif // TPETRA_DETAILS_LOCALCRSMATRIXOPERATORWITHSETUP_FWD_HPP

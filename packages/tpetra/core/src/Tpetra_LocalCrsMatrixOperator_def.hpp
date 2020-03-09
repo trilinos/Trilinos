@@ -119,6 +119,6 @@ getLocalMatrix () const
 // MatrixScalar, which is what CrsMatrix needs.
 
 #define TPETRA_LOCALCRSMATRIXOPERATOR_INSTANT(SC,NT) \
-  template class LocalCrsMatrixOperator< SC, SC, NT::device_type >;
+  template class LocalCrsMatrixOperator< Kokkos::ArithTraits<SC>::val_type, Kokkos::ArithTraits<SC>::val_type, NT::device_type >;
 
 #endif // TPETRA_LOCALCRSMATRIXOPERATOR_DEF_HPP

@@ -48,6 +48,7 @@
 /// for you).  If you only want the declaration of Tpetra::CrsMatrix,
 /// include "Tpetra_CrsMatrix_decl.hpp".
 
+#include "Tpetra_Details_LocalCrsMatrixOperatorWithSetup.hpp"
 #include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
@@ -151,7 +152,10 @@ namespace Tpetra {
   {
     auto lclMat = std::make_shared<local_matrix_type>(
       "Tpetra::CrsMatrix::lclMatrix_", numCols, val, lclGraph);
-    return std::make_shared<local_multiply_op_type>(lclMat);
+    using IST = impl_scalar_type;
+    using subclass_op_type =
+      Details::LocalCrsMatrixOperatorWithSetup<IST, IST, device_type>;
+    return std::make_shared<subclass_op_type>(lclMat);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -496,12 +500,6 @@ namespace Tpetra {
 
     const size_t numCols = graph->getColMap()->getNodeNumElements();
     lclMatrix_ = makeLocalOperator(values, lclGraph, numCols);
-
-    // FIXME (22 Jun 2016) I would very much like to get rid of
-    // k_values1D_ at some point.  I find it confusing to have all
-    // these extra references lying around.
-    this->k_values1D_ = values;
-
     checkInternalState ();
     if (verbose) {
       std::ostringstream os;
