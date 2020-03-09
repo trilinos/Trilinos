@@ -4378,8 +4378,10 @@ namespace Tpetra {
     /// \pre <tt>fillComplete_</tt> is <tt>true</tt>.
     ///
     /// \param op [in/out] The local operator.
+    /// \param globalGraph [in] The global matrix's global graph.
     static void
-    localOperatorFillComplete(local_multiply_op_type& op);
+    localOperatorFillComplete(local_multiply_op_type& op,
+                              const crs_graph_type& globalGraph);
 
   protected:
     //! The local sparse matrix, wrapped in a multiply operator.
