@@ -52,7 +52,17 @@ from GPU memory.
 We organize the directories as follows:
 
 1. Public interfaces to the solver and the distribution function live in the 
-```src/``` subdirectory (```adelus/src```).
+```src/``` subdirectory (```adelus/src```):
+
+* ```Adelus::GetDistribution()```: gives the distribution information that is required
+by the dense solver
+
+* ```Adelus::FactorSolve()```: factors and solves the dense matrix in which the matrix
+and rhs are packed in Kokkos View
+
+* ```Adelus::FactorSolve_devPtr()```: matrix and rhs are packed and passed as device pointer
+
+* ```Adelus::FactorSolve_hostPtr()```: matrix and rhs are packed and passed as host pointer
 
 2. Implementations of the phases of the solver (i.e. factor, solve, permutation)  
 and other utility functions also locate in the ```src/``` subdirectory.
