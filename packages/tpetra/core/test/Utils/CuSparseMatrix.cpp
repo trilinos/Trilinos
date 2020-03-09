@@ -60,6 +60,7 @@ namespace { // (anonymous)
 #else
     using Tpetra::Details::CuSparseHandle;
     using Tpetra::Details::CuSparseMatrix;
+    using Tpetra::Details::CuSparseMatrixVectorMultiplyAlgorithm;
     using Tpetra::Details::getCuSparseMatrix;
     using Tpetra::Details::getCuSparseVector;
     using Tpetra::Details::cuSparseMatrixVectorMultiply;
@@ -81,86 +82,96 @@ namespace { // (anonymous)
     }
 
     using memory_space = Kokkos::CudaUVMSpace;
-    for (int64_t numRows : {0, 1, 11}) {
-      out << "numRows: " << numRows << endl;
-      Teuchos::OSTab tab2(out);
 
-      Kokkos::View<float*, memory_space> y_f_k("y_f", numRows);
-      auto y_f = getCuSparseVector(y_f_k.data(), numRows);
+    for (const auto alg :
+           {CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT,
+            CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED}) {
+      out << "Test alg="
+          << (alg == CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT
+              ? "DEFAULT" : "LOAD_BALANCED") << endl;
+      Teuchos::OSTab tab1_1(out);
 
-      Kokkos::View<double*, memory_space> y_d_k("y_d", numRows);
-      auto y_d = getCuSparseVector(y_d_k.data(), numRows);
+      for (int64_t numRows : {0, 1, 11}) {
+        out << "numRows: " << numRows << endl;
+        Teuchos::OSTab tab2(out);
 
-      Kokkos::View<LO*, memory_space> ptr("ptr", numRows+1);
-      for(int64_t numEntries : {0, 32}) {
-        out << "numEntries: " << numEntries << endl;
-        Teuchos::OSTab tab3(out);
+        Kokkos::View<float*, memory_space> y_f_k("y_f", numRows);
+        auto y_f = getCuSparseVector(y_f_k.data(), numRows);
 
-        Kokkos::View<LO*, memory_space> ind("ind", numEntries);
-        Kokkos::View<float*, memory_space> val_f
-          ("val_f", numEntries);
-        Kokkos::View<double*, memory_space> val_d
-          ("val_d", numEntries);
+        Kokkos::View<double*, memory_space> y_d_k("y_d", numRows);
+        auto y_d = getCuSparseVector(y_d_k.data(), numRows);
 
-        for (int64_t numCols : {0, 1, 5, 13}) {
-          const int64_t numEnt = (numRows == 0 || numCols == 0) ?
-            int64_t(0) : numEntries;
-          out << "numCols: " << numCols << ", numEnt: " << numEnt
-              << endl;
-          Teuchos::OSTab tab4(out);
+        Kokkos::View<LO*, memory_space> ptr("ptr", numRows+1);
+        for(int64_t numEntries : {0, 32}) {
+          out << "numEntries: " << numEntries << endl;
+          Teuchos::OSTab tab3(out);
 
-          Kokkos::View<float*, memory_space> x_f_k("x_f", numCols);
-          auto x_f = getCuSparseVector(x_f_k.data(), numCols);
+          Kokkos::View<LO*, memory_space> ind("ind", numEntries);
+          Kokkos::View<float*, memory_space> val_f
+            ("val_f", numEntries);
+          Kokkos::View<double*, memory_space> val_d
+            ("val_d", numEntries);
 
-          Kokkos::View<double*, memory_space> x_d_k("x_d", numCols);
-          auto x_d = getCuSparseVector(x_d_k.data(), numCols);
+          for (int64_t numCols : {0, 1, 5, 13}) {
+            const int64_t numEnt = (numRows == 0 || numCols == 0) ?
+              int64_t(0) : numEntries;
+            out << "numCols: " << numCols << ", numEnt: " << numEnt
+                << endl;
+            Teuchos::OSTab tab4(out);
 
-          out << "Call getCuSparseMatrix (float)" << endl;
-          auto mat_f = getCuSparseMatrix(numRows, numCols, numEnt,
-                                         ptr.data(), ind.data(),
-                                         val_f.data());
-          out << "Test result of getCuSparseMatrix (float)" << endl;
-          TEST_ASSERT( mat_f.get() != nullptr );
-          if (mat_f.get() != nullptr) {
-            cusparseMatDescr_t descr_f = mat_f->getDescr();
-            out << "mat_f->getDescr() returned" << endl;
-            TEST_ASSERT( cusparseGetMatType(descr_f) ==
-                         CUSPARSE_MATRIX_TYPE_GENERAL );
-            TEST_ASSERT( cusparseGetMatDiagType(descr_f) ==
-                         CUSPARSE_DIAG_TYPE_NON_UNIT );
-            TEST_ASSERT( cusparseGetMatIndexBase(descr_f) ==
-                         CUSPARSE_INDEX_BASE_ZERO );
+            Kokkos::View<float*, memory_space> x_f_k("x_f", numCols);
+            auto x_f = getCuSparseVector(x_f_k.data(), numCols);
 
-            out << "Call cuSparseMatrixVectorMultiply (float)" << endl;
-            const float alpha_f (1.2);
-            const float beta_f (2.3);
-            cuSparseMatrixVectorMultiply(*h1, Teuchos::NO_TRANS,
-                                         alpha_f, *mat_f, *x_f,
-                                         beta_f, *y_f);
-          }
+            Kokkos::View<double*, memory_space> x_d_k("x_d", numCols);
+            auto x_d = getCuSparseVector(x_d_k.data(), numCols);
 
-          out << "Call getCuSparseMatrix (double)" << endl;
-          auto mat_d = getCuSparseMatrix(numRows, numCols, numEnt,
-                                         ptr.data(), ind.data(),
-                                         val_d.data());
-          out << "Test result of getCuSparseMatrix (double)" << endl;
-          TEST_ASSERT( mat_d.get() != nullptr );
-          if (mat_d.get() != nullptr) {
-            cusparseMatDescr_t descr_d = mat_d->getDescr();
-            out << "mat_d->getDescr() returned" << endl;
-            TEST_ASSERT( cusparseGetMatType(descr_d) ==
-                         CUSPARSE_MATRIX_TYPE_GENERAL );
-            TEST_ASSERT( cusparseGetMatDiagType(descr_d) ==
-                         CUSPARSE_DIAG_TYPE_NON_UNIT );
-            TEST_ASSERT( cusparseGetMatIndexBase(descr_d) ==
-                         CUSPARSE_INDEX_BASE_ZERO );
+            out << "Call getCuSparseMatrix (float)" << endl;
+            auto mat_f = getCuSparseMatrix(numRows, numCols, numEnt,
+                                           ptr.data(), ind.data(),
+                                           val_f.data(), alg);
+            out << "Test result of getCuSparseMatrix (float)" << endl;
+            TEST_ASSERT( mat_f.get() != nullptr );
+            if (mat_f.get() != nullptr) {
+              cusparseMatDescr_t descr_f = mat_f->getDescr();
+              out << "mat_f->getDescr() returned" << endl;
+              TEST_ASSERT( cusparseGetMatType(descr_f) ==
+                           CUSPARSE_MATRIX_TYPE_GENERAL );
+              TEST_ASSERT( cusparseGetMatDiagType(descr_f) ==
+                           CUSPARSE_DIAG_TYPE_NON_UNIT );
+              TEST_ASSERT( cusparseGetMatIndexBase(descr_f) ==
+                           CUSPARSE_INDEX_BASE_ZERO );
 
-            out << "Call cuSparseMatrixVectorMultiply (double)" << endl;
-            const float alpha_d (1.2);
-            const float beta_d (2.3);
-            cuSparseMatrixVectorMultiply(*h1, Teuchos::NO_TRANS,
-                                         alpha_d, *mat_d, *x_d,
-                                         beta_d, *y_d);
+              out << "Call cuSparseMatrixVectorMultiply (float)" << endl;
+              const float alpha_f (1.2);
+              const float beta_f (2.3);
+              cuSparseMatrixVectorMultiply(*h1, Teuchos::NO_TRANS,
+                                           alpha_f, *mat_f, *x_f,
+                                           beta_f, *y_f);
+            }
+
+            out << "Call getCuSparseMatrix (double)" << endl;
+            auto mat_d = getCuSparseMatrix(numRows, numCols, numEnt,
+                                           ptr.data(), ind.data(),
+                                           val_d.data(), alg);
+            out << "Test result of getCuSparseMatrix (double)" << endl;
+            TEST_ASSERT( mat_d.get() != nullptr );
+            if (mat_d.get() != nullptr) {
+              cusparseMatDescr_t descr_d = mat_d->getDescr();
+              out << "mat_d->getDescr() returned" << endl;
+              TEST_ASSERT( cusparseGetMatType(descr_d) ==
+                           CUSPARSE_MATRIX_TYPE_GENERAL );
+              TEST_ASSERT( cusparseGetMatDiagType(descr_d) ==
+                           CUSPARSE_DIAG_TYPE_NON_UNIT );
+              TEST_ASSERT( cusparseGetMatIndexBase(descr_d) ==
+                           CUSPARSE_INDEX_BASE_ZERO );
+
+              out << "Call cuSparseMatrixVectorMultiply (double)" << endl;
+              const float alpha_d (1.2);
+              const float beta_d (2.3);
+              cuSparseMatrixVectorMultiply(*h1, Teuchos::NO_TRANS,
+                                           alpha_d, *mat_d, *x_d,
+                                           beta_d, *y_d);
+            }
           }
         }
       }

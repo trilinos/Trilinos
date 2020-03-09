@@ -155,10 +155,12 @@ namespace { // (anonymous)
 #else
     using Tpetra::Details::CuSparseHandle;
     using Tpetra::Details::CuSparseMatrix;
+    using Tpetra::Details::CuSparseMatrixVectorMultiplyAlgorithm;
     using Tpetra::Details::getCuSparseMatrix;
     using Kokkos::view_alloc;
     using Kokkos::WithoutInitializing;
     using LO = Tpetra::Details::DefaultTypes::local_ordinal_type;
+    using memory_space = Kokkos::CudaUVMSpace;
 
     // Don't do cuSPARSE things unless a cuSPARSE handle is active.
     Kokkos::Cuda execSpace1;
@@ -169,28 +171,31 @@ namespace { // (anonymous)
       return;
     }
 
-    using memory_space = Kokkos::CudaUVMSpace;
-    for (int64_t numRows : {0, 1, 11}) {
-      Kokkos::View<LO*, memory_space> ptr("ptr", numRows+1);
-      for(int64_t numEntries : {0, 32}) {
-        Kokkos::View<LO*, memory_space> ind
-          (view_alloc("ind", WithoutInitializing), numEntries);
-        Kokkos::View<float*, memory_space> val_f
-          (view_alloc("val_f", WithoutInitializing), numEntries);
-        Kokkos::View<double*, memory_space> val_d
-          (view_alloc("val_d", WithoutInitializing), numEntries);
+    for (const auto alg :
+           {CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT,
+            CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED}) {
+      for (int64_t numRows : {0, 1, 11}) {
+        Kokkos::View<LO*, memory_space> ptr("ptr", numRows+1);
+        for(int64_t numEntries : {0, 32}) {
+          Kokkos::View<LO*, memory_space> ind
+            (view_alloc("ind", WithoutInitializing), numEntries);
+          Kokkos::View<float*, memory_space> val_f
+            (view_alloc("val_f", WithoutInitializing), numEntries);
+          Kokkos::View<double*, memory_space> val_d
+            (view_alloc("val_d", WithoutInitializing), numEntries);
 
-        for (int64_t numCols : {0, 1, 5, 13}) {
-          const int64_t numEnt = (numRows == 0 || numCols == 0) ?
-            int64_t(0) : numEntries;
-          auto mat_f = getCuSparseMatrix(numRows, numCols, numEnt,
-                                         ptr.data(), ind.data(),
-                                         val_f.data());
-          TEST_ASSERT( mat_f.get() != nullptr );
-          auto mat_d = getCuSparseMatrix(numRows, numCols, numEnt,
-                                         ptr.data(), ind.data(),
-                                         val_d.data());
-          TEST_ASSERT( mat_d.get() != nullptr );
+          for (int64_t numCols : {0, 1, 5, 13}) {
+            const int64_t numEnt = (numRows == 0 || numCols == 0) ?
+              int64_t(0) : numEntries;
+            auto mat_f = getCuSparseMatrix(numRows, numCols, numEnt,
+                                           ptr.data(), ind.data(),
+                                           val_f.data(), alg);
+            TEST_ASSERT( mat_f.get() != nullptr );
+            auto mat_d = getCuSparseMatrix(numRows, numCols, numEnt,
+                                           ptr.data(), ind.data(),
+                                           val_d.data(), alg);
+            TEST_ASSERT( mat_d.get() != nullptr );
+          }
         }
       }
     }

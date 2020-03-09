@@ -23,6 +23,12 @@ namespace Details {
 ///   downstream code.
 class CuSparseMatrix;
 
+//! What algorithm cuSPARSE should use.
+enum class CuSparseMatrixVectorMultiplyAlgorithm {
+  DEFAULT,      //!< The default algorithm
+  LOAD_BALANCED //!< A load-balanced, but possibly slower algorithm
+};
+
 namespace Impl {
 
 /// \brief Delete the CuSparseMatrix.
@@ -57,7 +63,8 @@ getCuSparseMatrix(const int64_t numRows,
                   const int64_t numEntries,
                   DefaultTypes::local_ordinal_type* ptr,
                   DefaultTypes::local_ordinal_type* ind,
-                  float* val);
+                  float* val,
+                  const CuSparseMatrixVectorMultiplyAlgorithm alg);
 
 std::unique_ptr<CuSparseMatrix, decltype(&Impl::deleteCuSparseMatrix)>
 getCuSparseMatrix(const int64_t numRows,
@@ -65,7 +72,8 @@ getCuSparseMatrix(const int64_t numRows,
                   const int64_t numEntries,
                   DefaultTypes::local_ordinal_type* ptr,
                   DefaultTypes::local_ordinal_type* ind,
-                  double* val);
+                  double* val,
+                  const CuSparseMatrixVectorMultiplyAlgorithm alg);
 
 /// \fn cuSparseMatrixVectorMultiply
 /// \brief Compute y = alpha*A*x + beta*y, for the sparse matrix A,
