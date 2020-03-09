@@ -38,7 +38,7 @@ LINK = ${CXX}
 OBJ = $(notdir $(SRC:.cpp=.o))
 LIB =
 
-OPTS=-DZCPLX -DGET_TIMING -DKKVIEW_API -DPRINT_STATUS
+OPTS=-DKKVIEW_API
 
 $(warning $(OBJ) $(EXE) $(sort $(dir $(SRC))))
 
