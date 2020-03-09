@@ -272,8 +272,10 @@ namespace Tacho {
     inline
     void
     print_stat_memory() {
-      printf("  Memory\n"); // better get zero leak
-      printf("             leak (or not tracked) memory:                    %10.2f MB\n", stat.m_used/1024/1024);
+      printf("  Memory\n");
+      printf("             memory used now:                                 %10.2f MB\n", stat.m_used/1024/1024);
+      printf("             peak memory used:                                %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("\n");
     }
       
   public:
@@ -346,14 +348,24 @@ namespace Tacho {
       _bufpool_solve_capacity = 0;
     }
 
-    inline 
-    ordinal_type_array getSupernodesTreeLevel() const {
-      return _stree_level;
+    inline
+    ordinal_type getNumRows() const {
+      return _m;
     }
 
     inline
-    supernode_info_type getSupernodesInfo() const {
-      return _info;
+    ordinal_type getNumCols() const {
+      return _m;
+    }
+
+    inline
+    size_type_array getRowPtr() const {
+      return _ap;
+    }
+
+    inline
+    ordinal_type_array getCols() const {
+      return _aj;
     }
     
     inline 
@@ -363,7 +375,17 @@ namespace Tacho {
 
     inline 
     ordinal_type_array getInversePermutationVector() const {
-      return _perm;
+      return _peri;
+    }
+
+    inline 
+    ordinal_type_array_host getSupernodesTreeLevel() const {
+      return _stree_level;
+    }
+
+    inline
+    supernode_info_type getSupernodesInfo() const {
+      return _info;
     }
 
     inline
@@ -422,6 +444,17 @@ namespace Tacho {
     ordinal_type
     getMaxSchurSize() const {
       return _info.max_schur_size;
+    }
+
+    inline
+    void
+    printMemoryStat(const ordinal_type verbose = 0) {
+      if (verbose) {
+        printf("Summary: NumericTools (Memory)\n");
+        printf("==============================\n");
+          
+        print_stat_memory();
+      }
     }
 
     ///

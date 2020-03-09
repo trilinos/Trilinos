@@ -22,6 +22,9 @@
 #include "Tacho_TeamFunctor_SolveLowerChol.hpp"
 #include "Tacho_TeamFunctor_SolveUpperChol.hpp"
 
+//#define TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD
+//#define TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL
+
 namespace Tacho {
 
   ///
@@ -97,11 +100,15 @@ namespace Tacho {
     // level sids on device
     ordinal_type_array _level_sids;
 
+    // buf level pointer
+    ordinal_type_array_host _h_buf_level_ptr;
+
     // workspace for right hand side
-    ordinal_type _max_nrhs;
     size_type_array_host _h_buf_ptr;
     size_type_array _buf_ptr;
     value_type_array _buf;
+
+    ordinal_type _max_nrhs;
 
     // common for host and cuda
     int _status;
@@ -114,7 +121,7 @@ namespace Tacho {
     typedef std::vector<cudaStream_t> cuda_stream_array_host;
     cuda_stream_array_host _cuda_streams;
 #else 
-    int _handle; // dummy handle for convenience
+    int _nstreams, _handle; // dummy handle for convenience
 #endif
 
     ///
@@ -123,7 +130,7 @@ namespace Tacho {
     struct {
       double t_init, t_mode_classification, t_prepare, t_solve, t_extra;
       double m_used, m_peak;
-      int n_device_problems, n_team_problems;
+      int n_device_problems, n_team_problems, n_kernel_launching;
     } stat;
 
   public:
@@ -189,7 +196,7 @@ namespace Tacho {
       printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
       printf("             peak memory used in solve:                       %10.2f MB\n", stat.m_peak/1024/1024);
       printf("\n");
-      printf("  Compute Mode in Solve\n");
+      printf("  Compute Mode in Solve (nlevel: %d, device cut %d, serial cut %d)\n", _nlevel, _device_level_cut, _team_serial_level_cut);
       printf("             # of subproblems using device functions:         %6d\n", stat.n_device_problems);
       printf("             # of subproblems using team functions:           %6d\n", stat.n_team_problems);
       printf("             total # of subproblems:                          %6d\n", (stat.n_device_problems+stat.n_team_problems));
@@ -221,14 +228,18 @@ namespace Tacho {
       printf("\n");
       printf("  Memory\n");
       printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
+      printf("  Kernels\n");
+      printf("             # of kernel launching:                           %6d\n", stat.n_kernel_launching);
       printf("\n");
     }
 
     inline
     void
     print_stat_memory() {
-      printf("  Memory\n"); // better get zero leak
-      printf("             leak (or not tracked) memory:                    %10.2f MB\n", stat.m_used/1024/1024);
+      printf("  Memory\n");
+      printf("             memory used now:                                 %10.2f MB\n", stat.m_used/1024/1024);
+      printf("             peak memory used:                                %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("\n");
     }
 
     inline
@@ -236,6 +247,7 @@ namespace Tacho {
     initialize(const ordinal_type device_level_cut,
                const ordinal_type device_function_thres,
                const ordinal_type verbose = 0) {
+      reset_stat();
       stat.n_device_problems = 0;
       stat.n_team_problems = 0;
 
@@ -284,27 +296,45 @@ namespace Tacho {
       Kokkos::deep_copy(_level_sids, _h_level_sids);
       track_alloc(_level_sids.span()*sizeof(ordinal_type));
 
-      // create workspace; this might needs to be created in prepare
-      _h_buf_ptr = size_type_array_host(do_not_initialize_tag("h_buf_ptr"), _nsupernodes+1);
+      // work space of levels
+      _h_buf_level_ptr = ordinal_type_array_host(do_not_initialize_tag("h_buf_factor_level_ptr"), _nlevel+1);
       {
-        _h_buf_ptr(0) = 0;
-        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-          const auto s = _h_supernodes(sid); 
-          // anticipating other algorithms, consider tT, tB and bT, bB space
-          size_type bufsize(0);
-          if      (variant == 0) bufsize = (s.n-s.m)*_max_nrhs;
-          else if (variant == 1) bufsize = s.n*_max_nrhs;
-          else if (variant == 2) bufsize = 2*s.n*_max_nrhs;
-          _h_buf_ptr(sid+1) = bufsize;
+        _h_buf_level_ptr(0) = 0;
+        for (ordinal_type i=0;i<_nlevel;++i) {
+          const ordinal_type pbeg = _h_level_ptr(i), pend = _h_level_ptr(i+1);
+          _h_buf_level_ptr(i+1) = (pend - pbeg + 1) + _h_buf_level_ptr(i);
         }
-        for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
-          _h_buf_ptr(sid+1) += _h_buf_ptr(sid);
       }
+
+      // create workspace
+      size_type max_bufsize(0);
+      _h_buf_ptr = size_type_array_host(do_not_initialize_tag("h_buf_ptr"), _h_buf_level_ptr(_nlevel));
+      {
+        for (ordinal_type i=0;i<_nlevel;++i) {
+          const ordinal_type lbeg = _h_buf_level_ptr(i);
+          const ordinal_type pbeg = _h_level_ptr(i), pend = _h_level_ptr(i+1); 
+          _h_buf_ptr(lbeg) = 0;
+          for (ordinal_type p=pbeg,k=(lbeg+1);p<pend;++p,++k) { 
+            const ordinal_type sid = _h_level_sids(p);
+            const auto s = _h_supernodes(sid); 
+
+            // anticipating other algorithms, consider tT, tB and bT, bB space
+            size_type bufsize(0);
+            if      (variant == 0) bufsize = (s.n-s.m)*_max_nrhs;
+            else if (variant == 1) bufsize = s.n*_max_nrhs;
+            else if (variant == 2) bufsize = 2*s.n*_max_nrhs;
+            _h_buf_ptr(k) = bufsize + _h_buf_ptr(k-1);
+          }
+          const ordinal_type last_idx = lbeg+pend-pbeg;
+          max_bufsize = max(max_bufsize, _h_buf_ptr(last_idx));
+        }
+      }
+
       _buf_ptr = Kokkos::create_mirror_view(exec_memory_space(), _h_buf_ptr);
       Kokkos::deep_copy(_buf_ptr, _h_buf_ptr);
       track_alloc(_buf_ptr.span()*sizeof(size_type));
 
-      _buf = value_type_array(do_not_initialize_tag("buf"), _h_buf_ptr(_nsupernodes));
+      _buf = value_type_array(do_not_initialize_tag("buf"), max_bufsize);
       track_alloc(_buf.span()*sizeof(value_type));
 
       // cuda stream setup
@@ -386,13 +416,23 @@ namespace Tacho {
     
     TriSolveTools(const TriSolveTools &b) = default;
 
+    TriSolveTools(const NumericTools<value_type,scheduler_type> &N,
+                  const ordinal_type max_nrhs = 1)
+      : _perm(N.getPermutationVector()),
+        _peri(N.getInversePermutationVector()),
+        _info(N.getSupernodesInfo()),
+        _h_stree_level(N.getSupernodesTreeLevel()),
+        _max_nrhs(max_nrhs),
+        _nstreams(0)
+    {}
+
     TriSolveTools(// input permutation
                   const ordinal_type_array &perm,
                   const ordinal_type_array &peri,
                   // supernodes
                   const supernode_info_type &info,
                   const ordinal_type_array_host &h_stree_level,
-                  const ordinal_type max_nrhs)
+                  const ordinal_type max_nrhs = 1)
       : _perm(perm), _peri(peri),
         _info(info),
         _h_stree_level(h_stree_level),
@@ -494,6 +534,7 @@ namespace Tacho {
     void
     solveLowerOnDeviceVar0(const ordinal_type pbeg, 
                            const ordinal_type pend,
+                           const size_type_array_host &h_buf_ptr,
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), zero(0);
@@ -521,7 +562,7 @@ namespace Tacho {
 
               if (n_m > 0) {
                 // solve offdiag
-                value_type *bptr = _buf.data()+_h_buf_ptr(sid);
+                value_type *bptr = _buf.data()+h_buf_ptr(p-pbeg);
                 UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n_m;
                 UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
                 _status = Gemv<Trans::ConjTranspose,Algo::OnDevice>
@@ -537,6 +578,7 @@ namespace Tacho {
     void
     solveLowerOnDeviceVar1(const ordinal_type pbeg, 
                            const ordinal_type pend,
+                           const size_type_array_host &h_buf_ptr,
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1), zero(0);
@@ -554,7 +596,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf, *bptr = _buf.data() + _h_buf_ptr(sid);
+              value_type *aptr = s.buf, *bptr = _buf.data() + h_buf_ptr(p-pbeg);
 
               UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
               UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);              
@@ -582,15 +624,17 @@ namespace Tacho {
     void
     solveLowerOnDevice(const ordinal_type pbeg, 
                        const ordinal_type pend,
+                       const size_type_array_host &h_buf_ptr,
                        const value_type_matrix &t) {
-      if (variant == 0) solveLowerOnDeviceVar0(pbeg, pend, t); 
-      if (variant == 1) solveLowerOnDeviceVar1(pbeg, pend, t); 
+      if (variant == 0) solveLowerOnDeviceVar0(pbeg, pend, h_buf_ptr, t); 
+      if (variant == 1) solveLowerOnDeviceVar1(pbeg, pend, h_buf_ptr, t); 
     }
     
     inline
     void
     solveUpperOnDeviceVar0(const ordinal_type pbeg,
                            const ordinal_type pend,
+                           const size_type_array_host &h_buf_ptr,
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1);
@@ -608,7 +652,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf, *bptr = _buf.data()+_h_buf_ptr(sid);; 
+              value_type *aptr = s.buf, *bptr = _buf.data()+h_buf_ptr(p-pbeg);; 
               const UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
               const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs); 
 
@@ -632,6 +676,7 @@ namespace Tacho {
     void
     solveUpperOnDeviceVar1(const ordinal_type pbeg,
                            const ordinal_type pend,
+                           const size_type_array_host &h_buf_ptr,
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1), zero(0);
@@ -654,7 +699,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf, *bptr = _buf.data()+_h_buf_ptr(sid);; 
+              value_type *aptr = s.buf, *bptr = _buf.data()+h_buf_ptr(p-pbeg);; 
               const UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
               const UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
               auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
@@ -694,9 +739,10 @@ namespace Tacho {
     void
     solveUpperOnDevice(const ordinal_type pbeg,
                        const ordinal_type pend,
+                       const size_type_array_host &h_buf_ptr,
                        const value_type_matrix &t) {
-      if (variant == 0) solveUpperOnDeviceVar0(pbeg, pend, t); 
-      if (variant == 1) solveUpperOnDeviceVar1(pbeg, pend, t); 
+      if (variant == 0) solveUpperOnDeviceVar0(pbeg, pend, h_buf_ptr, t); 
+      if (variant == 1) solveUpperOnDeviceVar1(pbeg, pend, h_buf_ptr, t); 
     }
 
     /// 
@@ -818,6 +864,8 @@ namespace Tacho {
       
       Kokkos::Impl::Timer timer;
 
+      stat.n_kernel_launching = 0;
+
       // 0. permute and copy b -> t
       timer.reset();
       applyRowPermutationToDenseMatrix(t, b, _perm);      
@@ -825,26 +873,31 @@ namespace Tacho {
 
       timer.reset();
       { 
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+        const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
+#endif
+
         // this should be considered with average problem sizes in levels
         const ordinal_type half_level = _nlevel/2;
         const ordinal_type team_size_solve[2] = { 64, 16 }, vector_size_solve[2] = { 8, 8};
         const ordinal_type team_size_update[2] = { 128, 32}, vector_size_update[2] = { 1, 1};
         {
           typedef TeamFunctor_SolveLowerChol<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::template SolveTag<variant> > team_policy_solve;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::template UpdateTag<variant> > team_policy_update;
-          // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-          //                            typename functor_type::DummyTag> team_policy_solve;
-          // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-          //                            typename functor_type::DummyTag> team_policy_update;
-          
+#endif          
           functor_type functor(_info, 
                                _compute_mode,
                                _level_sids,
                                t,
-                               _buf_ptr,
                                _buf);
 
           team_policy_solve policy_solve(1,1,1);
@@ -857,10 +910,12 @@ namespace Tacho {
                 pbeg = _h_level_ptr(lvl), 
                 pend = _h_level_ptr(lvl+1),
                 pcnt = pend - pbeg;
-              
-              solveLowerOnDevice(pbeg, pend, t); 
-              
+
+              const range_type range_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
+
+              const auto buf_ptr = Kokkos::subview(_buf_ptr, range_buf_ptr);
               functor.setRange(pbeg, pend);
+              functor.setBufferPtr(buf_ptr);
               if (is_host) {
                 policy_solve  = team_policy_solve(pcnt, 1, 1);
                 policy_update = team_policy_update(pcnt, 1, 1);
@@ -869,38 +924,54 @@ namespace Tacho {
                 policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
                 policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
               }
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+              const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
+              const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
+#else
+              const auto policy_solve_with_work_property = policy_solve;
+              const auto policy_update_with_work_property = policy_update;
+#endif
               if (lvl < _device_level_cut) {
                 // do nothing
                 //Kokkos::parallel_for("solve lower", policy_solve, functor);
               } else {
-                Kokkos::parallel_for("solve lower", policy_solve, functor);
+                Kokkos::parallel_for("solve lower", 
+                                     policy_solve_with_work_property, 
+                                     functor);
+                ++stat.n_kernel_launching;
               }
+              const auto h_buf_ptr = Kokkos::subview(_h_buf_ptr, range_buf_ptr);              
+              solveLowerOnDevice(pbeg, pend, h_buf_ptr, t); 
               Kokkos::fence();
-
-              Kokkos::parallel_for("update lower", policy_update, functor); 
+              
+              Kokkos::parallel_for("update lower", 
+                                   policy_update_with_work_property, 
+                                   functor); 
+              ++stat.n_kernel_launching;
               Kokkos::fence();
             }
           }
         } // end of lower tri solve
-
+        
         {
           typedef TeamFunctor_SolveUpperChol<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::template SolveTag<variant> > team_policy_solve;
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::template UpdateTag<variant> > team_policy_update;
-          // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-          //                            typename functor_type::DummyTag> team_policy_solve;
-          // typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-          //                            typename functor_type::DummyTag> team_policy_update;
-
+#endif
           functor_type functor(_info, 
                                _compute_mode,
                                _level_sids,
                                t,
-                               _buf_ptr,
                                _buf);
-
+          
           team_policy_solve policy_solve(1,1,1);
           team_policy_update policy_update(1,1,1);
           
@@ -912,7 +983,10 @@ namespace Tacho {
                 pend = _h_level_ptr(lvl+1),
                 pcnt = pend - pbeg;
               
+              const range_type range_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
+              const auto buf_ptr = Kokkos::subview(_buf_ptr, range_buf_ptr);
               functor.setRange(pbeg, pend);
+              functor.setBufferPtr(buf_ptr);
               if (is_host) {
                 policy_solve  = team_policy_solve(pcnt, 1, 1);
                 policy_update = team_policy_update(pcnt, 1, 1);
@@ -921,16 +995,31 @@ namespace Tacho {
                 policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
                 policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
               }
-              Kokkos::parallel_for("update upper", policy_update, functor);              
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+              const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
+              const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
+#else
+              const auto policy_solve_with_work_property = policy_solve;
+              const auto policy_update_with_work_property = policy_update;
+#endif
+              Kokkos::parallel_for("update upper", 
+                                   policy_update_with_work_property,
+                                   functor);
+              ++stat.n_kernel_launching;
               Kokkos::fence();
 
               if (lvl < _device_level_cut) {
                 // do nothing
                 //Kokkos::parallel_for("solve upper", policy_solve, functor); 
               } else {
-                Kokkos::parallel_for("solve upper", policy_solve, functor); 
+                Kokkos::parallel_for("solve upper", 
+                                     policy_solve_with_work_property,
+                                     functor);
+                ++stat.n_kernel_launching;
               }
-              solveUpperOnDevice(pbeg, pend, t);
+
+              const auto h_buf_ptr = Kokkos::subview(_h_buf_ptr, range_buf_ptr);
+              solveUpperOnDevice(pbeg, pend, h_buf_ptr, t);
               Kokkos::fence();
             }
           }

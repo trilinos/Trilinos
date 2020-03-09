@@ -588,7 +588,7 @@ public:
     {
         bool all = true;
         for (std::size_t i = 0; i < size; ++i) {
-            all && (this->get(i) == m2.get(i));
+            all = all && (this->get(i) == m2.get(i));
         }
         return all;
     }

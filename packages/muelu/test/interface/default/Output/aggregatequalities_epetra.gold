@@ -16,10 +16,11 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.05, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.05, blocksize = 1
 aggregation: drop tol = 0.05
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
@@ -121,10 +122,11 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "distance laplacian": threshold = 0.05, blocksize = 1
+algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.05, blocksize = 1
 aggregation: drop tol = 0.05
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries

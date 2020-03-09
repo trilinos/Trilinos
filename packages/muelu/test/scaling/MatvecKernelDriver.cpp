@@ -698,7 +698,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     double * mkl_ydouble = nullptr;
     mkl_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 
-    if(Kokkos::Impl::is_same<Scalar,double>::value) {
+    if(std::is_same<Scalar,double>::value) {
       mkl_sparse_d_create_csr(&mkl_A,
                               SPARSE_INDEX_BASE_ZERO,
                               At->getNodeNumRows(),

@@ -6,6 +6,8 @@
 /// \brief BLAS triangular solve matrix
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "Tacho_Blas_External.hpp"
+
 namespace Tacho {
   
     template<typename ArgUplo, typename ArgTransA>
@@ -46,16 +48,14 @@ namespace Tacho {
         const ordinal_type m = B.extent(0), n = B.extent(1);
         int r_val(0); 
         if (m > 0 && n > 0) {
-          for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
-            if (std::is_same<value_type,double>::value) 
-              r_val = cublasDtrsv(handle, 
-                                  ArgUplo::cublas_param,
-                                  ArgTransA::cublas_param,
-                                  diagA.cublas_param,
-                                  m, 
-                                  A.data(), A.stride_1(),
-                                  (B.data() + offsB), B.stride_0()); 
-          }
+          for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1())
+            r_val = Blas<value_type>::trsv(handle,
+                                           ArgUplo::cublas_param,
+                                           ArgTransA::cublas_param,
+                                           diagA.cublas_param,
+                                           m, 
+                                           A.data(), A.stride_1(),
+                                           (B.data() + offsB), B.stride_0()); 
         }
         return r_val;
       }

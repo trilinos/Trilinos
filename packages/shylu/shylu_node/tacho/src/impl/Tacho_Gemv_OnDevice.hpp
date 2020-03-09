@@ -6,6 +6,8 @@
 /// \brief BLAS general matrix matrix multiplication
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "Tacho_Blas_External.hpp"
+
 namespace Tacho {
 
     template<typename ArgTrans>
@@ -61,15 +63,14 @@ namespace Tacho {
         int r_val(0);
         if (m > 0 && n > 0 && k > 0) {
           for (ordinal_type p=0,offsB=0,offsC=0;p<k;++p,offsB+=B.stride_1(),offsC+=C.stride_1()) {
-            if (std::is_same<value_type,double>::value) 
-              r_val = cublasDgemv(handle, 
-                                  ArgTrans::cublas_param,
-                                  m, n,
-                                  &alpha,
-                                  A.data(), A.stride_1(),
-                                  (B.data() + offsB), B.stride_0(),
-                                  &beta,
-                                  (C.data() + offsC), C.stride_0());
+            r_val = Blas<value_type>::gemv(handle, 
+                                           ArgTrans::cublas_param,
+                                           m, n,                                   
+                                           alpha,
+                                           A.data(), A.stride_1(),
+                                           (B.data() + offsB), B.stride_0(),
+                                           beta,
+                                           (C.data() + offsC), C.stride_0());
           }
         }
         return r_val;
