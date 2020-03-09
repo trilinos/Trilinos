@@ -170,6 +170,38 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  localOperatorResumeFill(local_multiply_op_type* op)
+  {
+    using IST = impl_scalar_type;
+    using subclass_op_type =
+      Details::LocalCrsMatrixOperatorWithSetup<IST, IST, device_type>;
+
+    if (op != nullptr) {
+      auto* opSub = dynamic_cast<subclass_op_type*>(op);
+      if (opSub != nullptr) {
+        opSub->resumeFill();
+      }
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  localOperatorFillComplete(local_multiply_op_type& op)
+  {
+    using IST = impl_scalar_type;
+    using subclass_op_type =
+      Details::LocalCrsMatrixOperatorWithSetup<IST, IST, device_type>;
+
+    auto* opSub = dynamic_cast<subclass_op_type*>(&op);
+    if (opSub != nullptr) {
+      opSub->fillComplete();
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              size_t maxNumEntriesPerRow,
@@ -612,6 +644,8 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
+    TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
+    localOperatorFillComplete(*lclMatrix_);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
        "At the end of a CrsMatrix constructor that should produce "
@@ -671,6 +705,8 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
+    TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
+    localOperatorFillComplete(*lclMatrix_);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
        "At the end of a CrsMatrix constructor that should produce "
@@ -733,6 +769,8 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
+    TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
+    localOperatorFillComplete(*lclMatrix_);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
        "At the end of a CrsMatrix constructor that should produce "
@@ -4621,6 +4659,7 @@ namespace Tpetra {
     }
     clearGlobalConstants ();
     fillComplete_ = false;
+    localOperatorResumeFill(lclMatrix_.get());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4874,10 +4913,13 @@ namespace Tpetra {
       this->computeGlobalConstants ();
     }
 
-    // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
+    // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter
+    // no longer used.
 
-    this->fillComplete_ = true; // Now we're fill complete!
-    this->checkInternalState ();
+    fillComplete_ = true;
+    TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
+    localOperatorFillComplete(*lclMatrix_);
+    checkInternalState();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4931,6 +4973,8 @@ namespace Tpetra {
 
     // Now we're fill complete!
     fillComplete_ = true;
+    TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
+    localOperatorFillComplete(*lclMatrix_);
 
     // Sanity checks at the end.
 #ifdef HAVE_TPETRA_DEBUG
@@ -6155,6 +6199,39 @@ namespace Tpetra {
          staticGraph_->getNodeNumRows() > 0 &&
          k_values1D_.extent (0) == 0,
          std::logic_error, err);
+
+      using IST = impl_scalar_type;
+      using subclass_op_type =
+        Details::LocalCrsMatrixOperatorWithSetup<
+          IST, IST, device_type>;
+      if (fillComplete_) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (lclMatrix_.get() == nullptr, std::logic_error,
+           err << "  Specifically, fillComplete_ is true but "
+           "lclMatrix_ is null.");
+        if (lclMatrix_.get() != nullptr) {
+          subclass_op_type* opSub =
+            dynamic_cast<subclass_op_type*>(lclMatrix_.get());
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (opSub != nullptr && ! opSub->isFillComplete(),
+             std::logic_error, err << "  Specifically, fillComplete_ "
+             "is true, lclMatrix_ is nonnull, lclMatrix_ is a "
+             "LocalCrsMatrixOperatorWithSetup, but lclMatrix_ is not "
+             "fill complete.");
+        }
+      }
+      else { // ! fillComplete_
+        if (lclMatrix_.get() != nullptr) {
+          subclass_op_type* opSub =
+            dynamic_cast<subclass_op_type*>(lclMatrix_.get());
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (opSub != nullptr && opSub->isFillComplete(),
+             std::logic_error, err << "  Specifically, fillComplete_ "
+             "is false, lclMatrix_ is nonnull, lclMatrix_ is a "
+             "LocalCrsMatrixOperatorWithSetup, but lclMatrix_ is "
+             "fill complete.");
+        }
+      }
     }
   }
 

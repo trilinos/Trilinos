@@ -102,7 +102,9 @@ namespace Details {
     ///
     /// After creating this object, you are not allowed to change the
     /// matrix's allocations or modify its graph structure.
-    virtual void resumeFill() {}
+    virtual void resumeFill() {
+      fillComplete_ = false;
+    }
 
     /// \brief Tell this object that you are done modifying the values
     ///   in the matrix for now, and are ready to use the base class
@@ -110,7 +112,15 @@ namespace Details {
     ///
     /// After creating this object, you are not allowed to change the
     /// matrix's allocations or modify its graph structure.
-    virtual void fillComplete() {}
+    virtual void fillComplete() {
+      fillComplete_ = true;
+    }
+
+    /// \brief Whether the object is in the "is fill complete" state.
+    ///   If not, then it is in the "is fill resumed" state.
+    virtual bool isFillComplete() const {
+      return fillComplete_;
+    }
 
     /// \brief Tell this object the minimum and maximum number of
     ///   matrix entries per row in the sparse matrix given to its
@@ -124,6 +134,9 @@ namespace Details {
     setMinMaxNumberOfEntriesPerRow(const LO /* minNumEnt */,
                                    const LO /* maxNumEnt */)
     {}
+
+  private:
+    bool fillComplete_ = false;
   };
 
 } // namespace Details

@@ -4354,14 +4354,32 @@ namespace Tpetra {
                              impl_scalar_type,
                              device_type>;
   private:
+    //! Create the result to assign to lclMatrix_.
     static std::shared_ptr<local_multiply_op_type>
     makeLocalOperator(
       const typename local_matrix_type::values_type& val,
       const local_graph_type& lclGraph,
       const size_t numCols);
 
+    //! Create the result to assign to lclMatrix_.
     static std::shared_ptr<local_multiply_op_type>
     makeLocalOperator(const local_matrix_type& lclMatrix);
+
+    /// \brief Call resumeFill on op, if applicable.
+    ///
+    /// \pre <tt>fillComplete_</tt> is <tt>false</tt>.
+    ///
+    /// \param op [in/out] The local operator; may be null.
+    static void
+    localOperatorResumeFill(local_multiply_op_type* op);
+
+    /// \brief Call fillComplete on op, if applicable.
+    ///
+    /// \pre <tt>fillComplete_</tt> is <tt>true</tt>.
+    ///
+    /// \param op [in/out] The local operator.
+    static void
+    localOperatorFillComplete(local_multiply_op_type& op);
 
   protected:
     //! The local sparse matrix, wrapped in a multiply operator.
