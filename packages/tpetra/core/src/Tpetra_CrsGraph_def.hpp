@@ -252,6 +252,7 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
+    , pftype_ (pftype)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
   {
     const char tfecfFuncName[] =
@@ -934,7 +935,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodeMaxNumRowEntries () const
   {
-    return nodeMaxNumRowEntries_;
+    return static_cast<size_t>(nodeMaxNumRowEntries_);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2116,8 +2117,8 @@ namespace Tpetra {
          "some of them are marked as invalid." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->haveGlobalConstants_ &&
-         (this->globalNumEntries_ < this->getNodeNumEntries () ||
-          this->globalMaxNumRowEntries_ < this->nodeMaxNumRowEntries_),
+         (globalNumEntries_ < this->getNodeNumEntries () ||
+          globalMaxNumRowEntries_ < global_size_t(nodeMaxNumRowEntries_)),
          std::logic_error, "Graph claims to have global constants, and "
          "all of the values of the global constants are valid, but "
          "some of the local constants are greater than "
@@ -4296,9 +4297,9 @@ namespace Tpetra {
     // all-reduces, using their previously computed values.
     if (! this->haveGlobalConstants_) {
       const Teuchos::Comm<int>& comm = * (this->getComm ());
-      // Promote all the nodeNum* and nodeMaxNum* quantities from
-      // size_t to global_size_t, when doing the all-reduces for
-      // globalNum* / globalMaxNum* results.
+      // Promote all the nodeNum* and nodeMaxNum* quantities to
+      // global_size_t, when doing the all-reduces for globalNum* /
+      // globalMaxNum* results.
       //
       // FIXME (mfh 07 May 2013) Unfortunately, we either have to do
       // this in two all-reduces (one for the sum and the other for
@@ -4332,10 +4333,11 @@ namespace Tpetra {
         gbl[1] :
         Teuchos::OrdinalTraits<GST>::invalid ();
 
-      const GST lclMaxNumRowEnt = static_cast<GST> (this->nodeMaxNumRowEntries_);
-      reduceAll<int, GST> (comm, Teuchos::REDUCE_MAX, lclMaxNumRowEnt,
-                           outArg (this->globalMaxNumRowEntries_));
-      this->haveGlobalConstants_ = true;
+      const GST lclMaxNumRowEnt =
+        static_cast<GST>(nodeMaxNumRowEntries_);
+      reduceAll(comm, Teuchos::REDUCE_MAX, lclMaxNumRowEnt,
+                outArg(this->globalMaxNumRowEntries_));
+      haveGlobalConstants_ = true;
     }
   }
 
@@ -4345,10 +4347,11 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   computeLocalConstants (const bool computeLocalTriangularConstants)
   {
-    using ::Tpetra::Details::determineLocalTriangularStructure;
-    using ::Tpetra::Details::ProfilingRegion;
+    using Details::determineLocalTriangularStructure;
+    using LO = local_ordinal_type;
 
-    ProfilingRegion regionCLC ("Tpetra::CrsGraph::computeLocalConstants");
+    Details::ProfilingRegion regionCLC(
+      "Tpetra::CrsGraph::computeLocalConstants");
     if (this->haveLocalConstants_) {
       return;
     }
@@ -4356,9 +4359,11 @@ namespace Tpetra {
     // Reset local properties
     this->lowerTriangular_ = false;
     this->upperTriangular_ = false;
+    this->nodeMinNumRowEntries_ =
+      Teuchos::OrdinalTraits<local_ordinal_type>::invalid ();
     this->nodeMaxNumRowEntries_ =
-      Teuchos::OrdinalTraits<size_t>::invalid();
-    this->nodeNumDiags_ = Teuchos::OrdinalTraits<size_t>::invalid();
+      Teuchos::OrdinalTraits<local_ordinal_type>::invalid ();
+    this->nodeNumDiags_ = Teuchos::OrdinalTraits<size_t>::invalid ();
 
     if (computeLocalTriangularConstants) {
       const bool hasRowAndColumnMaps =
@@ -4374,21 +4379,32 @@ namespace Tpetra {
 
         // mfh 01 May 2018: See GitHub Issue #2658.
         constexpr bool ignoreMapsForTriStruct = true;
-        auto result =
-          determineLocalTriangularStructure (this->lclGraph_, lclRowMap,
-                                             lclColMap, ignoreMapsForTriStruct);
+        auto result = determineLocalTriangularStructure(
+          this->lclGraph_, lclRowMap, lclColMap,
+          ignoreMapsForTriStruct);
         this->lowerTriangular_ = result.couldBeLowerTriangular;
         this->upperTriangular_ = result.couldBeUpperTriangular;
-        this->nodeMaxNumRowEntries_ = result.maxNumRowEnt;
         this->nodeNumDiags_ = result.diagCount;
+
+        auto ptr = this->lclGraph_.row_map;
+        const LO lclNumRows = ptr.extent(0) == 0 ? LO(0) :
+          LO(ptr.extent(0) - 1);
+        const Kokkos::pair<LO, LO> lclMinMaxNumRowEnt =
+          Details::minMaxNumRowEntries(
+            "Tpetra::CrsGraph: lcl minMaxNumRowEnt",
+            ptr, lclNumRows);
+        TEUCHOS_ASSERT( lclMinMaxNumRowEnt.second ==
+                        LO(result.maxNumRowEnt) );
+        this->nodeMinNumRowEntries_ = lclMinMaxNumRowEnt.first;
+        this->nodeMaxNumRowEntries_ = lclMinMaxNumRowEnt.second;
       }
       else {
+        this->nodeMinNumRowEntries_ = 0;
         this->nodeMaxNumRowEntries_ = 0;
         this->nodeNumDiags_ = 0;
       }
     }
     else {
-      using LO = local_ordinal_type;
       // Make sure that the GPU can see any updates made on host.
       // This code only reads the local graph, so we don't need a
       // fence afterwards.
@@ -4401,10 +4417,10 @@ namespace Tpetra {
 
       using Details::minMaxNumRowEntries;
       const Kokkos::pair<LO, LO> lclMinMaxNumRowEnt =
-        minMaxNumRowEntries("Tpetra::CrsGraph: nodeMaxNumRowEntries",
+        minMaxNumRowEntries("Tpetra::CrsGraph: lcl minMaxNumRowEnt",
                             ptr, lclNumRows);
-      this->nodeMaxNumRowEntries_ =
-        static_cast<size_t>(lclMinMaxNumRowEnt.second);
+      this->nodeMinNumRowEntries_ = lclMinMaxNumRowEnt.first;
+      this->nodeMaxNumRowEntries_ = lclMinMaxNumRowEnt.second;
     }
     this->haveLocalConstants_ = true;
   }
@@ -4430,7 +4446,10 @@ namespace Tpetra {
     typedef Kokkos::View<GO*, typename lcl_col_inds_type::array_layout,
       device_type> gbl_col_inds_type;
     const char tfecfFuncName[] = "makeIndicesLocal: ";
-    ProfilingRegion regionMakeIndicesLocal ("Tpetra::CrsGraph::makeIndicesLocal");
+    const char suffix[] =
+      "  Please report this bug to the Tpetra developers.";
+    ProfilingRegion regionMakeIndicesLocal(
+      "Tpetra::CrsGraph::makeIndicesLocal");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -4443,14 +4462,14 @@ namespace Tpetra {
     // These are somewhat global properties, so it's safe to have
     // exception checks for them, rather than returning an error code.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! this->hasColMap (), std::logic_error, "The graph does not have a "
-       "column Map yet.  This method should never be called in that case.  "
-       "Please report this bug to the Tpetra developers.");
+      (! this->hasColMap(), std::logic_error, "The graph does not "
+       "have a column Map yet.  This method should never be called "
+       "in that case." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->getColMap ().is_null (), std::logic_error, "The graph claims "
-       "that it has a column Map, because hasColMap() returns true.  However, "
-       "the result of getColMap() is null.  This should never happen.  Please "
-       "report this bug to the Tpetra developers.");
+      (this->getColMap().is_null(), std::logic_error, "The graph "
+       "claims that it has a column Map, because hasColMap() returns "
+       "true.  However, the result of getColMap() is null.  This "
+       "should never happen." << suffix);
 
     // Return value 1: The number of column indices (counting
     // duplicates) that could not be converted to local indices,
@@ -4482,13 +4501,13 @@ namespace Tpetra {
       else {
         if (k_rowPtrs_.extent (0) == 0) {
           errStrm << "k_rowPtrs_.extent(0) == 0.  This should never "
-            "happen here.  Please report this bug to the Tpetra developers."
-            << endl;
+            "happen here." << suffix << endl;
           // Need to return early.
           return std::make_pair (Tpetra::Details::OrdinalTraits<size_t>::invalid (),
                                  errStrm.str ());
         }
-        const auto numEnt = ::Tpetra::Details::getEntryOnHost (k_rowPtrs_, lclNumRows);
+        const auto numEnt =
+          Details::getEntryOnHost(k_rowPtrs_, lclNumRows);
 
         // mfh 17 Dec 2016: We don't need initial zero-fill of
         // k_lclInds1D_, because we will fill it below anyway.
@@ -4886,9 +4905,12 @@ namespace Tpetra {
         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
           if (myImageID == imageCtr) {
             out << "Node ID = " << imageCtr << std::endl
-                << "Node number of entries = " << this->getNodeNumEntries () << std::endl
-                << "Node number of diagonals = " << nodeNumDiags_ << std::endl
-                << "Node max number of entries = " << nodeMaxNumRowEntries_ << std::endl;
+                << "Node number of entries = "
+                << this->getNodeNumEntries () << std::endl
+                << "Node number of diagonals = " << nodeNumDiags_
+                << std::endl
+                << "Node max number of entries = "
+                << nodeMaxNumRowEntries_ << std::endl;
             if (! indicesAreAllocated ()) {
               out << "Indices are not allocated." << std::endl;
             }
@@ -7549,6 +7571,7 @@ namespace Tpetra {
     std::swap(graph.lclGraph_, this->lclGraph_);
 
     std::swap(graph.nodeNumDiags_, this->nodeNumDiags_);
+    std::swap(graph.nodeMinNumRowEntries_, this->nodeMinNumRowEntries_);
     std::swap(graph.nodeMaxNumRowEntries_, this->nodeMaxNumRowEntries_);
 
     std::swap(graph.globalNumEntries_, this->globalNumEntries_);
@@ -7620,6 +7643,7 @@ namespace Tpetra {
     output = this->domainMap_->isSameAs( *(graph.domainMap_) ) ? output : false;
 
     output = this->nodeNumDiags_ == graph.nodeNumDiags_ ? output : false;
+    output = this->nodeMinNumRowEntries_ == graph.nodeMinNumRowEntries_ ? output : false;
     output = this->nodeMaxNumRowEntries_ == graph.nodeMaxNumRowEntries_ ? output : false;
 
     output = this->globalNumEntries_ == graph.globalNumEntries_ ? output : false;
