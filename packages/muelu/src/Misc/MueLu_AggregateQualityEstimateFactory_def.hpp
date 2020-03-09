@@ -209,7 +209,7 @@ namespace MueLu {
     // we store all the local vertices in a single array in blocks corresponding
     // to aggregates. (This array is aggSortedVertices.) We then store a second
     // array (aggsToIndices) whose k-th element stores the index of the first
-    // vertex in aggregate k in the array aggSortedVertices.      
+    // vertex in aggregate k in the array aggSortedVertices.
 
     ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
     ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
@@ -358,17 +358,30 @@ namespace MueLu {
     LO num_bad_aggs = 0;
     MT worst_agg = 0.0;
 
+    MT mean_worst_agg = 0.0;
+    MT mean_good_agg  = 0.0;
+
     for (size_t i=0;i<agg_qualities->getLocalLength();++i) {
 
-      if (data[i] > good_agg_thresh) num_bad_aggs++;
+      if (data[i] > good_agg_thresh) {
+        num_bad_aggs++;
+        mean_worst_agg += data[i];
+      }
+      else {
+        mean_good_agg += data[i];
+      }
       worst_agg = std::max(worst_agg, data[i]);
 
     }
 
+    if (num_bad_aggs > 0) mean_worst_agg /= num_bad_aggs;
+    mean_good_aggs /= agg_qualities->getLocalLength() - num_bad_aggs;
+
     if (num_bad_aggs == 0) {
-      GetOStream(Statistics1) << "All aggregates passed the quality measure. Worst aggregate had quality " << worst_agg << std::endl;
+      GetOStream(Statistics1) << "All aggregates passed the quality measure. Worst aggregate had quality " << worst_agg << ". Mean aggregate quality " << mean_good_agg << "." << std::endl;
     } else {
-      GetOStream(Statistics1) << num_bad_aggs << " out of " << agg_qualities->getLocalLength() << " did not pass the quality measure. Worst aggregate had quality " << worst_agg << std::endl;
+      GetOStream(Statistics1) << num_bad_aggs << " out of " << agg_qualities->getLocalLength() << " did not pass the quality measure. Worst aggregate had quality " << worst_agg << ". "
+                              << "Mean bad aggregate quality " << mean_worst_agg << ". Mean good aggregate quality " << mean_good_agg << "." << std::endl;
     }
 
     if (pL.get<bool>("aggregate qualities: file output")) {
