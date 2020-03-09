@@ -657,8 +657,10 @@ namespace Tpetra {
     const Teuchos::RCP<const crs_matrix_type> matrix_;
 
     //! Implementation of local sparse matrix-vector multiply.
-    LocalCrsMatrixOperator<Scalar, MatScalar, typename
-                           crs_matrix_type::device_type> localMultiply_;
+    LocalCrsMatrixOperator<
+      typename Kokkos::ArithTraits<Scalar>::val_type,
+      typename Kokkos::ArithTraits<MatScalar>::val_type,
+      typename crs_matrix_type::device_type> localMultiply_;
 
     /// \brief Column Map MultiVector used in apply().
     ///

@@ -4350,8 +4350,8 @@ namespace Tpetra {
     //@}
 
     using local_multiply_op_type =
-      LocalCrsMatrixOperator<scalar_type,
-                             scalar_type,
+      LocalCrsMatrixOperator<impl_scalar_type,
+                             impl_scalar_type,
                              device_type>;
   private:
     static std::shared_ptr<local_multiply_op_type>
