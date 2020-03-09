@@ -52,31 +52,30 @@ from GPU memory.
 We organize the directories as follows:
 
 1. Public interfaces to the solver and the distribution function live in the 
-```src/``` subdirectory (```adelus/src```):
+```src/``` subdirectory (```adelus/src```).
 
 2. Implementations of the phases of the solver (i.e. factor, solve, permutation)  
-and other utility functions also locate in the ```src/``` subdirectory
+and other utility functions also locate in the ```src/``` subdirectory.
 
-3. A correctness test is in the ```test/``` subdirectory
+3. A correctness test is in the ```test/``` subdirectory.
 
 4. A simple example that generates a random matrix and a right-hand-side to
-    exercise the solver is in the ```example/``` subdirectory
+    exercise the solver is in the ```example/``` subdirectory.
 
 
 ## Configuring, Building, and Installing Adelus
 
- This section explains how to build and install Adelus. Adelus mostly consists of
-header files. Only a few functions contained in .cpp files have to be compiled
-into object files outside of the application's source code. It should be noted that
-a C++11 compliant compiler is needed to build Adelus. Since Adelus is distributed
-within Trilinos, and uses Kokkos and Kokkos Kernels extensively, Trilinos' CMake
-build system is preferred. To enable Adelus when building Trilinos, set the CMake
-option ```Trilinos_ENABLE_Adelus```. Trilinos' build system lets packages express
-dependencies on other packages or external libraries. Adelus has a required dependency
-on Kokkos and Kokkos Kernels, Trilinos will enable Kokkos and Kokkos Kernels
-automatically. Following the Kokkos and Kokkos Kernels style, Adelus's
-features are controlled via CMake options in the form of ```Adelus_ENABLE_OPTION```
-A list of Adelus options can be found below.
+ Adelus mostly consists of header files. Only a few functions contained in .cpp files
+have to be compiled into object files outside of the application's source code. It
+should be noted that a C++11 compliant compiler is needed to build Adelus. Since
+Adelus is distributed within Trilinos, and uses Kokkos and Kokkos Kernels extensively,
+Trilinos' CMake build system is preferred. To enable Adelus when building Trilinos,
+set the CMake option ```Trilinos_ENABLE_Adelus```. Trilinos' build system lets packages
+express dependencies on other packages or external libraries. Adelus has a required
+dependency on Kokkos and Kokkos Kernels, Trilinos will enable Kokkos and Kokkos Kernels
+automatically. Following the Kokkos and Kokkos Kernels style, Adelus's features are
+controlled via CMake options in the form of ```Adelus_ENABLE_OPTION```. A list of Adelus
+options can be found below.
 
 * ```Adelus_ENABLE_ZCPLX```
   * Whether to enable double precision complex functionality
@@ -103,10 +102,10 @@ A list of Adelus options can be found below.
   * Whether to enable status prints
   * ```BOOL``` Default: OFF
 
- We refer readers to Trilinos', Kokkos' and Kokkos Kernels' documentation for
-further details of building Trilinos, Kokkos and Kokkos Kernels .
+ We refer readers to Trilinos', Kokkos' and Kokkos Kernels' documentations for
+further details of building Trilinos, Kokkos and Kokkos Kernels.
 
- Below is an example of a Trilinos build script enabling Adelus, (and Kokkos and
+ Below is an example of a Trilinos build script enabling Adelus (and Kokkos and
 Kokkos Kernels) with CUDA back-end (NVIDIA Volta generation CC 7.0) and OpenMP host
 back-end to perform comparison between the CUDA code and the more classical MPI
 version of the code.
@@ -230,4 +229,4 @@ specifics, please refer to the LICENSE file contained in the
 repository or distribution.  Under the terms of Contract DE-NA0003525 with NTESS,
 the U.S. Government retains certain rights in this software.
 
-Questions? Contact Vinh Dang (vqdang@sandia.gov), Joseph Kotulski (jdkotul@sandia.gov), Siva Rajamanickam (srajama@sandia.gov)
+Any questions can be directed to: Vinh Dang (vqdang@sandia.gov), Joseph Kotulski (jdkotul@sandia.gov), Siva Rajamanickam (srajama@sandia.gov)
