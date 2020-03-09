@@ -49,6 +49,7 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Kokkos_Core.hpp"
 #include <limits>
 #include <type_traits>
