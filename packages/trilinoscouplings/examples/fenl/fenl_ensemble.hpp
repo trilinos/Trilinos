@@ -128,7 +128,7 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
                     KokkosSparse::DeviceConfig& dev_config_gath,
                     KokkosSparse::DeviceConfig& dev_config_bc ) {
     static const unsigned VectorSize = StorageType::static_size;
-    if ( Kokkos::Impl::is_same< execution_space, Kokkos::Cuda >::value ) {
+    if ( std::is_same< execution_space, Kokkos::Cuda >::value ) {
       dev_config_elem = KokkosSparse::DeviceConfig( 0 , VectorSize , 64/VectorSize  );
       dev_config_gath = KokkosSparse::DeviceConfig( 0 , VectorSize , 128/VectorSize );
       dev_config_bc   = KokkosSparse::DeviceConfig( 0 , VectorSize , 256/VectorSize );

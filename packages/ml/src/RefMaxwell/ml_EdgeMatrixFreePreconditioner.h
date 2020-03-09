@@ -193,6 +193,9 @@ namespace ML_Epetra
     //! Level 2+ Preconditioner
     MultiLevelPreconditioner * CoarsePC;
 
+    //! Coarse nullspace (slung in consecutive ML ordering)
+    double *CoarseNullspace_;
+
 #ifdef HAVE_ML_IFPACK
     //! Ifpack Chebyshev Smoother
     Epetra_Operator* Smoother_;

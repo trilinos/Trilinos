@@ -737,6 +737,16 @@ namespace panzer {
        Teuchos::RCP<const panzer_stk::PeriodicBC_MatcherBase> pMatch 
              = panzer_stk::buildPeriodicBC_Matcher("top","bottom",matcher);
 
+       TEST_EQUALITY(pMatch->getLeftSidesetName(),std::string("top"));
+       TEST_EQUALITY(pMatch->getRightSidesetName(),std::string("bottom"));
+       const auto* check_cast_coord = pMatch->getAs<panzer_stk::PeriodicBC_Matcher<panzer_stk::CoordMatcher>>();
+       const auto* check_cast_plane = pMatch->getAs<panzer_stk::PeriodicBC_Matcher<panzer_stk::PlaneMatcher>>();
+       const auto* check_cast_wedge = pMatch->getAs<panzer_stk::PeriodicBC_Matcher<panzer_stk::WedgeMatcher>>();
+       TEST_ASSERT(check_cast_coord != nullptr);
+       TEST_ASSERT(check_cast_plane == nullptr);
+       TEST_ASSERT(check_cast_wedge == nullptr);
+       TEST_EQUALITY(check_cast_coord->getMatcher().getIndex(),0);
+
        RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds = pMatch->getMatchedPair(*mesh);
 
        // for testing purposes!

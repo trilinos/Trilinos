@@ -62,6 +62,14 @@
 #include "MueLu_Ifpack2Smoother.hpp"
 #endif
 
+#if defined(HAVE_MUELU_BELOS)
+#include "MueLu_BelosSmoother_fwd.hpp"
+#endif
+
+#if defined(HAVE_MUELU_BELOS)
+#include "MueLu_StratimikosSmoother_fwd.hpp"
+#endif
+
 // Note: TrilinosSmoother is a SmootherPrototype that cannot be turned into a smoother using Setup().
 //       When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
 //       The clone can be used as a smoother after calling Setup().
@@ -190,13 +198,13 @@ namespace MueLu {
     //
 
     //! Smoother
-    RCP<SmootherPrototype> sEpetra_, sTpetra_;
+    RCP<SmootherPrototype> sEpetra_, sTpetra_, sBelos_, sStratimikos_;
     mutable
       RCP<SmootherPrototype> s_;
 
     // Records for the case if something goes wrong
-    bool        triedEpetra_, triedTpetra_;
-    std::string errorEpetra_, errorTpetra_;
+    bool        triedEpetra_, triedTpetra_, triedBelos_, triedStratimikos_;
+    std::string errorEpetra_, errorTpetra_, errorBelos_, errorStratimikos_;
 
   }; // class TrilinosSmoother
 

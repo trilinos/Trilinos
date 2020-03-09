@@ -58,9 +58,6 @@
 
 namespace Ifpack2 {
 
-//! Transform to canonical form of preconditioner name.
-std::string canonicalize(const std::string& precType);
-
 //! \C true if the specified preconditioner type supports nonsymmetric matrices, else false.
 bool supportsUnsymmetric (const std::string& prec_type);
 

@@ -654,7 +654,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits.hpp
       sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits_vector_relops_tmpl.hpp
       sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits_expr_relops_tmpl.hpp
-      sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits_sfs_relops_tmpl.hpp      
+      sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits_sfs_relops_tmpl.hpp
       sacado/kokkos/vector/Sacado_MP_Vector.hpp
       sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
       sacado/kokkos/vector/Sacado_MP_ScalarTraitsImp.hpp
@@ -676,6 +676,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Teuchos_BLAS_MP_Vector.hpp
       sacado/kokkos/vector/Teuchos_LAPACK_MP_Vector.hpp
       sacado/kokkos/vector/Teuchos_SerialQRDenseSolver_MP_Vector.hpp
+      ${CMAKE_CURRENT_BINARY_DIR}/Stokhos_Ensemble_Sizes.hpp
       )
     LIST(APPEND SACADO_SOURCES
       sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp

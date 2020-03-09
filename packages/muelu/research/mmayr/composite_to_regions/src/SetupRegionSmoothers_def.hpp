@@ -87,12 +87,12 @@ std::map<std::string, int> getListOfValidSmootherTypes()
   return smootherTypes;
 }
 
-/*! \brief Perform setup for point-relaxation smoothers
+/*! \brief Compute inverse of diagonal of the operator
  *
  * Computes the inverse of the diagonal in region format and with interface scaling
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
+void computeInverseDiagonal(RCP<Teuchos::ParameterList> params,
                  const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
                  const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
                  const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp) ///< row importer in region layout [in]
@@ -121,7 +121,7 @@ void relaxationSmootherSetup(RCP<Teuchos::ParameterList> params,
     diagReg[j]->reciprocal(*diagReg[j]);
   }
 
-  params->set<Teuchos::Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal", diagReg);
+  params->set<Teuchos::Array<RCP<Vector> > >("smoothers: inverse diagonal", diagReg);
 }
 
 /*! \brief Do Jacobi smoothing
@@ -151,7 +151,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
 
   const int maxIter    = smootherParams->get<int>   ("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
-  Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
+  Array<RCP<Vector> > diag_inv = smootherParams->get<Array<RCP<Vector> > >("smoothers: inverse diagonal");
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, revisedRowMapPerGrp);
@@ -209,7 +209,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
   // Extract user-given and pre-computed data from paremter list
   const int maxIter = smootherParams->get<int>("smoother: sweeps");
   const double damping = smootherParams->get<double>("smoother: damping");
-  Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("relaxation smoothers: inverse diagonal");
+  Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("smoothers: inverse diagonal");
 
   Array<RCP<Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, revisedRowMapPerGrp);
@@ -318,7 +318,7 @@ powerMethod(RCP<Teuchos::ParameterList> params,
   // Get max number of regions per proc
   const int maxRegPerProc = regionGrpMats.size();
 
-  Teuchos::Array<RCP<Vector> > diagInv = params->get<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal");
+  Teuchos::Array<RCP<Vector> > diag_inv = params->get<Teuchos::Array<RCP<Vector> > >("smoothers: inverse diagonal");
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const SC SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
   SC lambdaMax = SC_ZERO;
@@ -346,7 +346,7 @@ powerMethod(RCP<Teuchos::ParameterList> params,
 
     // Scale by inverse of diagonal
     for (int j = 0; j < maxRegPerProc; j++){
-      regY[j]->elementWiseMultiply(SC_ONE, *diagInv[j], *regY[j], SC_ZERO);
+      regY[j]->elementWiseMultiply(SC_ONE, *diag_inv[j], *regY[j], SC_ZERO);
     }
 
     RQ_top = dotProd(regY, regX, rowImportPerGrp);
@@ -367,10 +367,9 @@ powerMethod(RCP<Teuchos::ParameterList> params,
   return lambdaMax;
 } // powerMethod
 
-/*! \brief performs Chebyshev setup
+/*! \brief Performs Chebyshev specific setup
  *
- * 1. Recover true diagonal value and compute its reciprocal
- * 2. Use power method to estimate lambdaMx
+ * Use power method to estimate lambdaMx
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void chebyshevSetup(RCP<Teuchos::ParameterList> params,
@@ -381,24 +380,6 @@ void chebyshevSetup(RCP<Teuchos::ParameterList> params,
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Region Chebyshev Setup")));
-
-  const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
-
-  // Get max number of regions per proc
-  const int maxRegPerProc = regionGrpMats.size();
-
-  // extract diagonal from region matrices, recover true diagonal values, invert diagonal
-  Teuchos::Array<RCP<Vector> > diag(maxRegPerProc);
-  for (int j = 0; j < maxRegPerProc; j++) {
-    // extract inverse of diagonal from matrix
-    diag[j] = VectorFactory::Build(regionGrpMats[j]->getRowMap(), true);
-    regionGrpMats[j]->getLocalDiagCopy(*diag[j]);
-    diag[j]->elementWiseMultiply(SC_ONE, *diag[j], *regionInterfaceScaling[j], SC_ZERO); // ToDo Does it work to pass in diag[j], but also return into the same variable?
-    diag[j]->reciprocal(*diag[j]);
-  }
-
-  params->set<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal", diag);
 
   // Calculate lambdaMax
   Scalar lambdaMax = 1;
@@ -414,7 +395,7 @@ void chebyshevSetup(RCP<Teuchos::ParameterList> params,
 /*! \brief The textbook Chebyshev algorithm from Ifpack2 translated into the region format
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void chebyshevIterate(RCP<Teuchos::ParameterList> params,
+void chebyshevIterate(RCP<Teuchos::ParameterList> smootherParams,
                       Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regX, ///< left-hand side (or solution)
                       const Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regB, ///< right-hand side (or residual)
                       const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats, ///< matrices in true region layout
@@ -431,11 +412,11 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> params,
   const int maxRegPerProc = regX.size();
 
   // Extract input data from parameter list
-  const int maxIter = params->get<int>("smoother: sweeps");
-  const Scalar eigRatio = params->get<double>("smoother: Chebyshev eigRatio");
-  const Scalar lambdaMax = params->get<Scalar>("chebyshev: lambda max");
-  const Scalar boostFactor = params->get<double>("smoother: Chebyshev boost factor");
-  Teuchos::Array<RCP<Vector> > diag_inv = params->get<Teuchos::Array<RCP<Vector> > >("chebyshev: inverse diagonal");
+  const int maxIter = smootherParams->get<int>("smoother: sweeps");
+  const Scalar eigRatio = smootherParams->get<double>("smoother: Chebyshev eigRatio");
+  const Scalar lambdaMax = smootherParams->get<Scalar>("chebyshev: lambda max");
+  const Scalar boostFactor = smootherParams->get<double>("smoother: Chebyshev boost factor");
+  Teuchos::Array<RCP<Vector> > diag_inv = smootherParams->get<Teuchos::Array<RCP<Vector> > >("smoothers: inverse diagonal");
 
   // Define some constants for convenience
   const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
@@ -531,11 +512,12 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
   case 1: // Jacobi
   case 2: // Gauss-Seidel
   {
-    relaxationSmootherSetup(params, revisedRowMapPerGrp, regionGrpMats, rowImportPerGrp);
+    computeInverseDiagonal(params, revisedRowMapPerGrp, regionGrpMats, rowImportPerGrp);
     break;
   }
   case 3: // Chebyshev
   {
+    computeInverseDiagonal(params, revisedRowMapPerGrp, regionGrpMats, rowImportPerGrp);
     chebyshevSetup(params, regionGrpMats, regionInterfaceScaling, revisedRowMapPerGrp, rowImportPerGrp);
     break;
   }

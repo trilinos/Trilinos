@@ -88,7 +88,7 @@ checkVectorView(const ViewType& v,
 
   // For static, layout left, sacado dimension becomes first dimension
   // instead of last
-  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+  bool is_right = std::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right) {
     num_rows = h_a.extent(0);
@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
   host_view_type h_v = Kokkos::create_mirror_view(v);
   host_array_type h_a = h_v;
 
-  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+  bool is_right = std::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right) {
     for (size_type i=0; i<num_rows; ++i)
@@ -338,7 +338,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_HostArray, Storage, 
   ViewType v("view", num_rows, num_cols);
   host_array_type h_a = Kokkos::create_mirror_view(v);
 
-  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+  bool is_right = std::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right) {
     for (size_type i=0; i<num_rows; ++i)
@@ -400,7 +400,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
   host_view_type h_v = Kokkos::create_mirror_view(v);
   host_array_type h_a = h_v;
 
-  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+  bool is_right = std::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right) {
     for (size_type i=0; i<num_rows; ++i)

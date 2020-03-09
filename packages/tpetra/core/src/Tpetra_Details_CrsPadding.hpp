@@ -28,20 +28,13 @@ namespace Tpetra {
       };
 
     public:
-      struct create_from_sames_and_permutes_tag {};
-      static constexpr create_from_sames_and_permutes_tag
-        create_from_sames_and_permutes {};
-      CrsPadding(create_from_sames_and_permutes_tag /* tag */,
-                 const int myRank,
+      CrsPadding(const int myRank,
                  const size_t /* numSameIDs */,
                  const size_t /* numPermutes */)
         : myRank_(myRank)
       {}
 
-      struct create_from_imports_tag {};
-      static constexpr create_from_imports_tag create_from_imports {};
-      CrsPadding(create_from_imports_tag /* tag */,
-                 const int myRank,
+      CrsPadding(const int myRank,
                  const size_t /* numImports */)
         : myRank_(myRank)
       {}

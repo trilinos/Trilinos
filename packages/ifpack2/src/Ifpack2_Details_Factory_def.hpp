@@ -44,6 +44,7 @@
 #define IFPACK2_DETAILS_FACTORY_DEF_HPP
 
 #include "Ifpack2_Factory.hpp"
+#include "Ifpack2_Utilities.hpp"
 #include "Ifpack2_Details_OneLevelFactory.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
