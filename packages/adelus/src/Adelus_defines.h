@@ -47,11 +47,11 @@
 #ifndef __ADELUS_DEFINES_H__
 #define __ADELUS_DEFINES_H__
 
+#include "Adelus_config.h"
 
 #undef CBLAS
 #undef DEBUG
 #define  OVERLAP
-//#undef  PRINT_STATUS
 #undef   TIMING0
 
 

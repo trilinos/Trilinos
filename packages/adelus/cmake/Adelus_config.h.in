@@ -1,4 +1,5 @@
-/* src/Adelus_config.h.in.  Generated from configure.ac by autoheader.  */
+#ifndef ADELUS_CONFIG_H
+#define ADELUS_CONFIG_H
 
 /* Define if you want to build export makefiles. */
 #cmakedefine HAVE_EXPORT_MAKEFILES
@@ -38,3 +39,29 @@
 
 /* Define to rpl_malloc if the replacement function should be used. */
 #cmakedefine malloc
+
+/* Whether to enable double precision complex functionality */
+#cmakedefine ZCPLX
+
+/* Whether to enable single precision complex functionality */
+#cmakedefine SCPLX
+
+/* Whether to enable double precision functionality */
+#cmakedefine DREAL
+
+/* Whether to enable single precision functionality */
+#cmakedefine SREAL
+
+/* Whether to enable timing */
+#cmakedefine GET_TIMING
+
+/* Whether to use Cuda Host Pinned memory for MPI */
+#cmakedefine CUDA_HOST_PINNED_MPI
+
+/* Whether to use Kokkos::deep_copy for BLAS copy */
+#cmakedefine USE_DEEPCOPY
+
+/* Whether to enable status prints */
+#cmakedefine PRINT_STATUS
+
+#endif // ADELUS_CONFIG_H

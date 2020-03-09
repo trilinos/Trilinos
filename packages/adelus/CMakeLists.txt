@@ -10,6 +10,15 @@ TRIBITS_PACKAGE(Adelus)
 # B) Set up package-specific options
 #
 
+#If no options are specified set ZCPLX as the default
+IF(NOT ${PACKAGE_NAME}_ENABLE_ZCPLX AND
+   NOT ${PACKAGE_NAME}_ENABLE_SCPLX AND
+   NOT ${PACKAGE_NAME}_ENABLE_SREAL AND
+   NOT ${PACKAGE_NAME}_ENABLE_DREAL)
+
+  SET(${PACKAGE_NAME}_ENABLE_ZCPLX ON)
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ZCPLX
   ZCPLX
   "Enable double precision complex functionality."
@@ -53,15 +62,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PRINTSTATUS
 #
 # C) Add the libraries, tests, and examples
 #
-
-#If no options are specified set DREAL as the default
-IF(NOT ${PACKAGE_NAME}_ENABLE_ZCPLX AND
-   NOT ${PACKAGE_NAME}_ENABLE_SCPLX AND
-   NOT ${PACKAGE_NAME}_ENABLE_SREAL AND
-   NOT ${PACKAGE_NAME}_ENABLE_DREAL)
-
-  SET(${PACKAGE_NAME}_ENABLE_ZCPLX ON)
-ENDIF()
 
 ADD_SUBDIRECTORY(src)
 
