@@ -1971,11 +1971,13 @@ namespace Tpetra {
     /// <li> lowerTriangular_ </li>
     /// <li> upperTriangular_ </li>
     /// <li> nodeNumDiags_ </li>
+    /// <li> nodeMinNumRowEntries_ </li>
     /// <li> nodeMaxNumRowEntries_ </li>
     /// </ul>
     ///
     /// Always compute the following:
     /// <ul>
+    /// <li> nodeMinNumRowEntries_ </li>
     /// <li> nodeMaxNumRowEntries_ </li>
     /// </ul>
     ///
@@ -2164,12 +2166,26 @@ namespace Tpetra {
     /// Computed in computeLocalConstants(); only valid when isFillComplete().
     size_t nodeNumDiags_ = Teuchos::OrdinalTraits<size_t>::invalid();
 
-    /// \brief Local maximum of the number of entries in each row.
+    /// \brief Min number of entries in any row on this process.
     ///
     /// Computed in computeLocalConstants; only valid when
-    ///   isFillComplete() is true.
-    size_t nodeMaxNumRowEntries_ =
-      Teuchos::OrdinalTraits<size_t>::invalid();
+    /// isFillComplete() is true.
+    ///
+    /// \note local_ordinal_type must be able to express the number of
+    ///   entries in any one row of the sparse graph or matrix.  (The
+    ///   column Map must have at least as many entries on this
+    ///   process as the max number of entries in any row on this
+    ///   process.)  The total number of entries over all the rows on
+    ///   a process need not fit in local_ordinal_type, though.
+    local_ordinal_type nodeMinNumRowEntries_ =
+      Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
+
+    /// \brief Max number of entries in any row on this process.
+    ///
+    /// Computed in computeLocalConstants; only valid when
+    /// isFillComplete() is true.
+    local_ordinal_type nodeMaxNumRowEntries_ =
+      Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
 
     /// \brief Global number of entries in the graph.
     ///
