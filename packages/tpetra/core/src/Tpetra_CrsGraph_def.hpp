@@ -56,6 +56,7 @@
 #include "Tpetra_Details_makeColMap.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
+#include "Tpetra_Details_minMaxNumRowEntries.hpp"
 #include "Tpetra_Details_crsUtils.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -227,55 +228,6 @@ namespace Tpetra {
       typedef ConvertColumnIndicesFromGlobalToLocal<LO, GO, DT, OffsetType, NumEntType> impl_type;
       return impl_type::run (lclColInds, gblColInds, ptr, lclColMap, numRowEnt);
     }
-
-    template<class ViewType, class LO>
-    class MaxDifference {
-    public:
-      MaxDifference (const ViewType& ptr) : ptr_ (ptr) {}
-
-      KOKKOS_INLINE_FUNCTION void init (LO& dst) const {
-        dst = 0;
-      }
-
-      KOKKOS_INLINE_FUNCTION void
-      join (volatile LO& dst, const volatile LO& src) const
-      {
-        dst = (src > dst) ? src : dst;
-      }
-
-      KOKKOS_INLINE_FUNCTION void
-      operator () (const LO lclRow, LO& maxNumEnt) const
-      {
-        const LO numEnt = static_cast<LO> (ptr_(lclRow+1) - ptr_(lclRow));
-        maxNumEnt = (numEnt > maxNumEnt) ? numEnt : maxNumEnt;
-      }
-    private:
-      typename ViewType::const_type ptr_;
-    };
-
-    template<class ViewType, class LO>
-    typename ViewType::non_const_value_type
-    maxDifference (const char kernelLabel[],
-                   const ViewType& ptr,
-                   const LO lclNumRows)
-    {
-      if (lclNumRows == 0) {
-        // mfh 07 May 2018: Weirdly, I need this special case,
-        // otherwise I get the wrong answer.
-        return static_cast<LO> (0);
-      }
-      else {
-        using execution_space = typename ViewType::execution_space;
-        using range_type = Kokkos::RangePolicy<execution_space, LO>;
-        LO theMaxNumEnt {0};
-        Kokkos::parallel_reduce (kernelLabel,
-                                 range_type (0, lclNumRows),
-                                 MaxDifference<ViewType, LO> (ptr),
-                                 theMaxNumEnt);
-        return theMaxNumEnt;
-      }
-    }
-
   } // namespace Details
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4447,10 +4399,12 @@ namespace Tpetra {
         static_cast<LO> (0) :
         (static_cast<LO> (ptr.extent(0)) - static_cast<LO> (1));
 
-      const LO lclMaxNumRowEnt =
-        ::Tpetra::Details::maxDifference ("Tpetra::CrsGraph: nodeMaxNumRowEntries",
-                                ptr, lclNumRows);
-      this->nodeMaxNumRowEntries_ = static_cast<size_t> (lclMaxNumRowEnt);
+      using Details::minMaxNumRowEntries;
+      const Kokkos::pair<LO, LO> lclMinMaxNumRowEnt =
+        minMaxNumRowEntries("Tpetra::CrsGraph: nodeMaxNumRowEntries",
+                            ptr, lclNumRows);
+      this->nodeMaxNumRowEntries_ =
+        static_cast<size_t>(lclMinMaxNumRowEnt.second);
     }
     this->haveLocalConstants_ = true;
   }
