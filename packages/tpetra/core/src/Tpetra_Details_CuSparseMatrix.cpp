@@ -1,11 +1,13 @@
 #include "Tpetra_Details_CuSparseMatrix.hpp"
 
 #ifdef HAVE_TPETRACORE_CUSPARSE
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_CuSparseHandle.hpp"
 #include "Tpetra_Details_CuSparseVector.hpp"
 #include "Kokkos_Core.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TestForException.hpp"
+#include <sstream>
 #include <stdexcept>
 
 namespace Tpetra {
@@ -37,10 +39,12 @@ CuSparseMatrix(const int64_t numRows,
                local_ordinal_type* ptr,
                local_ordinal_type* ind,
                void* val,
-               const cudaDataType valueType)
+               const cudaDataType valueType,
+               const CuSparseMatrixVectorMultiplyAlgorithm alg) :
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
-  : valueType_(valueType)
+  valueType_(valueType),
 #endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+  alg_(alg)
 {
   cusparseStatus_t status;
 
@@ -149,18 +153,19 @@ CuSparseMatrix::getValueType() const {
 
 CuSparseMatrix::algorithm_t
 CuSparseMatrix::getAlgorithm(const cusparseOperation_t op) const {
-  if (op == CUSPARSE_OPERATION_NON_TRANSPOSE) {
-#ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
-    return CUSPARSE_CSRMV_ALG2; // merge path
-#else
-    return CUSPARSE_ALG_MERGE_PATH;
-#endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
-  }
-  else {
+  if (alg_ == CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT ||
+      op != CUSPARSE_OPERATION_NON_TRANSPOSE) {
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
     return CUSPARSE_MV_ALG_DEFAULT;
 #else
     return CUSPARSE_ALG_NAIVE;
+#endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+  }
+  else {
+#ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+    return CUSPARSE_CSRMV_ALG2; // merge path
+#else
+    return CUSPARSE_ALG_MERGE_PATH;
 #endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
   }
 }
@@ -202,9 +207,42 @@ reallocBufferIfNeededAndGetBuffer(const size_t minNeededBufSize)
 #else
 void*
 CuSparseMatrix::
-reallocBufferIfNeededAndGetBuffer(const size_t /* minNeededBufSize */)
+reallocBufferIfNeededAndGetBuffer(const size_t minNeededBufSize)
 {
-  return reallocBufferIfNeededAndGetBuffer(16);
+  using std::endl;
+  const bool verbose = Details::Behavior::verbose();
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::Details::CuSparseMatrix::reallocBufferIfNeededAndGetBuffer: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start: minNeededBufSize=" << minNeededBufSize << endl;
+    std::cerr << os.str();
+  }
+
+  // NOTE (mfh 09 Mar 2020) cusparseCsrmvEx_bufferSize doesn't
+  // actually use the buffer, but cuSPARSE's documentation claims that
+  // cusparseCsrmvEx needs the buffer to have correct alignment for
+  // the matrix's value type.  We're only calling cuSPARSE for float
+  // and double, but it's no more expensive to allocate a tiny bit
+  // more for cuComplexDouble alignment.
+  constexpr size_t requiredBufSize = 16;
+
+  if (buffer_ == nullptr) {
+    const cudaError_t status = cudaMalloc(&buffer_, requiredBufSize);
+    if (status != cudaSuccess) {
+      const std::string statusStr = status == cudaErrorInvalidValue ?
+        "cudaErrorInvalidValue" :
+        (status == cudaErrorMemoryAllocation ?
+         "cudaErrorMemoryAllocation" :
+         "UNKNOWN");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::runtime_error, "cudaMalloc(&buffer_, "
+         << minNeededBufSize << ") returned status=" << statusStr
+         << ".");
+    }
+  }
+  return buffer_;
 }
 #endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
 
@@ -216,11 +254,12 @@ getCuSparseMatrixGeneric(const int64_t numRows,
                          const int64_t numEntries,
                          DefaultTypes::local_ordinal_type* ptr,
                          DefaultTypes::local_ordinal_type* ind,
-                         Scalar* val)
+                         Scalar* val,
+                         const CuSparseMatrixVectorMultiplyAlgorithm alg)
 {
   const auto valueType = getCudaDataType(val);
   return {new CuSparseMatrix(numRows, numCols, numEntries,
-                             ptr, ind, val, valueType),
+                             ptr, ind, val, valueType, alg),
           &Impl::deleteCuSparseMatrix};
 }
 
@@ -249,6 +288,17 @@ cuSparseMatrixVectorMultiplyGeneric(
   const Scalar beta,
   CuSparseVector& y)
 {
+  using std::endl;
+  const bool verbose = Details::Behavior::verbose();
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::Details::cuSparseMatrixVectorMultiplyGeneric: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+
   cusparseHandle_t rawHandle = handle.getHandle();
   cusparseOperation_t rawOp = getCuSparseOperation(operation);
   auto rawMatrix = matrix.getHandle();
@@ -258,13 +308,28 @@ cuSparseMatrixVectorMultiplyGeneric(
   size_t minNeededBufSize = 0;
   cusparseStatus_t status;
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call cusparseSpMV_bufferSize" << endl;
+    std::cerr << os.str();
+  }
   status =
     cusparseSpMV_bufferSize(rawHandle, rawOp, &alpha, rawMatrix,
                             x.getHandle(), &beta, y.getHandle(),
                             valType, alg, &minNeededBufSize);
   TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Buffer size: " << minNeededBufSize << endl;
+    std::cerr << os.str();
+  }
   void* buf =
     matrix.reallocBufferIfNeededAndGetBuffer(minNeededBufSize);
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call cusparseSpMV" << endl;
+    std::cerr << os.str();
+  }
   status =
     cusparseSpMV(rawHandle, rawOp, &alpha, rawMatrix, x.getHandle(),
                  &beta, y.getHandle(), valType, alg, buf);
@@ -284,16 +349,31 @@ cuSparseMatrixVectorMultiplyGeneric(
   // change, consider making execType=CUDA_R_64F when Scalar=float.
   cudaDataType execType = valType;
 
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call cusparseCsrmvEx_bufferSize" << endl;
+    std::cerr << os.str();
+  }
   status = cusparseCsrmvEx_bufferSize
-    (rawHandle, matrix.getAlgorithm(rawOp), rawOp, m, n, nnz,
+    (rawHandle, alg, rawOp, m, n, nnz,
      &alpha, valType, descrA, val, valType, ptr, ind,
      x.getHandle()->values, valType, &beta, valType,
      y.getHandle()->values, valType, execType, &minNeededBufSize);
   TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Buffer size: " << minNeededBufSize << endl;
+    std::cerr << os.str();
+  }
   void* buf =
     matrix.reallocBufferIfNeededAndGetBuffer(minNeededBufSize);
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call cusparseCsrmvEx" << endl;
+    std::cerr << os.str();
+  }
   status =
-    cusparseCsrmvEx(rawHandle, matrix.getAlgorithm(rawOp), rawOp,
+    cusparseCsrmvEx(rawHandle, alg, rawOp,
                     m, n, nnz, &alpha, valType, descrA, val, valType,
                     ptr, ind, x.getHandle()->values, valType,
                     &beta, valType, y.getHandle()->values, valType,
@@ -311,10 +391,11 @@ getCuSparseMatrix(const int64_t numRows,
                   const int64_t numEntries,
                   DefaultTypes::local_ordinal_type* ptr,
                   DefaultTypes::local_ordinal_type* ind,
-                  float* val)
+                  float* val,
+                  const CuSparseMatrixVectorMultiplyAlgorithm alg)
 {
   return Impl::getCuSparseMatrixGeneric<float>
-    (numRows, numCols, numEntries, ptr, ind, val);
+    (numRows, numCols, numEntries, ptr, ind, val, alg);
 }
 
 std::unique_ptr<CuSparseMatrix, decltype(&Impl::deleteCuSparseMatrix)>
@@ -323,10 +404,11 @@ getCuSparseMatrix(const int64_t numRows,
                   const int64_t numEntries,
                   DefaultTypes::local_ordinal_type* ptr,
                   DefaultTypes::local_ordinal_type* ind,
-                  double* val)
+                  double* val,
+                  const CuSparseMatrixVectorMultiplyAlgorithm alg)
 {
   return Impl::getCuSparseMatrixGeneric<double>
-    (numRows, numCols, numEntries, ptr, ind, val);
+    (numRows, numCols, numEntries, ptr, ind, val, alg);
 }
 
 void

@@ -76,7 +76,8 @@ public:
                  local_ordinal_type* ptr,
                  local_ordinal_type* ind,
                  void* val,
-                 const cudaDataType valueType);
+                 const cudaDataType valueType,
+                 const CuSparseMatrixVectorMultiplyAlgorithm alg);
   ~CuSparseMatrix();
 
   handle_type getHandle() const;
@@ -116,6 +117,8 @@ private:
 
   void* buffer_ {nullptr};
   size_t bufSize_ = 0;
+  CuSparseMatrixVectorMultiplyAlgorithm alg_ =
+    CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT;
 };
 
 } // namespace Details
