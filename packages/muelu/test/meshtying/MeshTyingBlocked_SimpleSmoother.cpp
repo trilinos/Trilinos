@@ -118,20 +118,31 @@ int main(int argc, char *argv[])
   GO globalPrimalNumDofs = 1599;
   GO globalDualNumDofs = 100;
   GO globalNumDofs = globalPrimalNumDofs + globalDualNumDofs; // used for the maps
-  int nPrimalDofsPerNode = 3;
-  int nDualDofsPerNode = 1;
+  size_t nPrimalDofsPerNode = 3;
+  const GO globalPrimalNumNodes = globalPrimalNumDofs / nPrimalDofsPerNode;
+  size_t nDualDofsPerNode = 1;
 
   std::map<GO, GO> lagr2Dof;
   std::map<LO, LO> myLagr2Dof;
   read_Lagr2Dof<GO>("Lagr2Dof.txt", lagr2Dof);
 
   // Construct the blocked map in Thyra mode
+  RCP<const tpetra_map_type> primalNodeMap = Tpetra::createUniformContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(globalPrimalNumNodes, comm);
+  GO indexBase = primalNodeMap->getIndexBase();
+  ArrayView<const GO> myPrimalNodes = primalNodeMap->getNodeElementList();
 
-  RCP<const tpetra_map_type> primalMap = Tpetra::createUniformContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(globalPrimalNumDofs, comm);
-  GO indexBase = primalMap->getIndexBase();
-  ArrayView<const GO> myPrimalDofs = primalMap->getNodeElementList();
+  const size_t numMyPrimalNodes = primalNodeMap->getNodeNumElements();
+  const size_t numMyPrimalDofs = numMyPrimalNodes * nPrimalDofsPerNode;
 
-  const size_t numMyPrimalDofs = primalMap->getNodeNumElements();
+  Array<GO> myPrimalDofs(numMyPrimalDofs);
+
+  LO current_i = 0;
+  for (size_t i = 0; i < numMyPrimalNodes; ++i)
+    for (size_t j = 0; j < nPrimalDofsPerNode; ++j)
+      myPrimalDofs[current_i++] = myPrimalNodes[i] * nPrimalDofsPerNode + j;
+
+  RCP<const tpetra_map_type> primalMap = rcp(new tpetra_map_type(globalPrimalNumDofs, myPrimalDofs, indexBase, comm));
+
   size_t numMyDualDofs = 0;
 
   for (auto i = lagr2Dof.begin(); i != lagr2Dof.end(); ++i)
@@ -148,11 +159,11 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < numMyPrimalDofs; ++i)
     myDofs[i] = myPrimalDofs[i];
 
-  LO current_i = 0;
+  current_i = 0;
   for (auto i = lagr2Dof.begin(); i != lagr2Dof.end(); ++i)
     if (primalMap->isNodeGlobalElement(nPrimalDofsPerNode * (i->second)))
     {
-      for (int j = 0; j < nDualDofsPerNode; ++j)
+      for (size_t j = 0; j < nDualDofsPerNode; ++j)
       {
         myDualDofs[nDualDofsPerNode * current_i + j] = (i->first) * nDualDofsPerNode + j;
         myDofs[numMyPrimalDofs + nDualDofsPerNode * current_i + j] = globalPrimalNumDofs + (i->first) * nDualDofsPerNode + j;
