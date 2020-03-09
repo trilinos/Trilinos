@@ -521,11 +521,7 @@ namespace Tpetra {
     dist_object_type (rowMap),
     storageStatus_ (Details::STORAGE_1D_PACKED)
   {
-    using Kokkos::Compat::getKokkosViewDeepCopy;
-    using Teuchos::av_reinterpret_cast;
     using Teuchos::RCP;
-    using values_type = typename local_matrix_type::values_type;
-    using IST = impl_scalar_type;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, ptr, ind, val[, params]): ";
 
@@ -567,8 +563,8 @@ namespace Tpetra {
 
     const size_t numCols =
       staticGraph_->getColMap()->getNodeNumElements();
-    k_values1D_ = getKokkosViewDeepCopy<device_type>(
-      av_reinterpret_cast<IST>(val()));
+    k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<device_type>(
+      Teuchos::av_reinterpret_cast<impl_scalar_type>(val()));
     lclMatrix_ = makeLocalOperator(k_values1D_, lclGraph, numCols);
     checkInternalState();
   }
