@@ -44,7 +44,7 @@ from GPU memory.
       my_first_row         1       335     668     1    335   668
       my_first_col         1        1       1     501   501   501
 
-      Note: The fortran convention is assumed ie matrix begins with index 1.
+      Note: The fortran convention is assumed the matrix begins with index 1.
 ```
 
 ### Directory Organization
