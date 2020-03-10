@@ -62,6 +62,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
 #include "Tpetra_Details_leftScaleLocalCrsMatrix.hpp"
+#include "Tpetra_Details_LocalCuSparseCrsMatrixOperator.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_ScalarViewTraits.hpp"
@@ -154,7 +155,7 @@ namespace Tpetra {
       "Tpetra::CrsMatrix::lclMatrix_", numCols, val, lclGraph);
     using IST = impl_scalar_type;
     using subclass_op_type =
-      Details::LocalCrsMatrixOperatorWithSetup<IST, IST, device_type>;
+      Details::LocalCuSparseCrsMatrixOperator<IST, IST, device_type>;
     return std::make_shared<subclass_op_type>(lclMat);
   }
 
