@@ -158,6 +158,7 @@ apply(Kokkos::View<const Scalar**, array_layout,
 
 // full specializations begin here
 
+#ifdef HAVE_TPETRA_INST_FLOAT
 LocalCuSparseCrsMatrixOperator<
   float, float,
   Kokkos::Device<Kokkos::Cuda, Kokkos::Cuda::memory_space>>::
@@ -166,7 +167,9 @@ LocalCuSparseCrsMatrixOperator(
   const std::shared_ptr<local_matrix_type>& A)
   : base_type(execSpace, A)
 {}
+#endif // HAVE_TPETRA_INST_FLOAT
 
+#ifdef HAVE_TPETRA_INST_DOUBLE
 LocalCuSparseCrsMatrixOperator<
   double, double,
   Kokkos::Device<Kokkos::Cuda, Kokkos::Cuda::memory_space>>::
@@ -175,6 +178,7 @@ LocalCuSparseCrsMatrixOperator(
   const std::shared_ptr<local_matrix_type>& A)
   : base_type(execSpace, A)
 {}
+#endif // HAVE_TPETRA_INST_DOUBLE
 
 } // namespace Details
 } // namespace Tpetra
