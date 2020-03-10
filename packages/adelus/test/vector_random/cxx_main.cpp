@@ -113,6 +113,8 @@ int main(int argc, char *argv[])
 
   double rhs_nrm, m_nrm;
 
+  int result;
+
   // Enroll into MPI
 
   MPI_Init(&argc,&argv);                             /* starts MPI */
@@ -384,18 +386,23 @@ int main(int argc, char *argv[])
 
     std::cout << "   Threshold = " << eps*1e4  << std::endl;
 
-    if ( m_nrm/rhs_nrm  > (eps*1e4))
+    if ( m_nrm/rhs_nrm  > (eps*1e4)) {
       std::cout << " ****    Solution Fails   ****" <<  std::endl;
-    else
+      result = 1;
+    }
+    else {
       std::cout << " ****   Solution Passes   ****" << std::endl;
-
+      result = 0;
+    }
     std::cout <<  "======================================" << std::endl;
   }
+
+  MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   }
   Kokkos::finalize();
 
   MPI_Finalize() ;
 
-  return (0);
+  return (result);
 }
