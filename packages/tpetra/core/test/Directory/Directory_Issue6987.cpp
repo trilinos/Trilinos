@@ -38,7 +38,7 @@
 // ************************************************************************
 // @HEADER
 */
-
+#include <numeric>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_MultiVector.hpp>
@@ -89,48 +89,53 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Directory, AllMinGIDs, SC, LO, GO)
   const size_t num_vecs = 1;
 
   const size_t num_non_zero = 5;
-  const int non_empty_rank = num_procs - 1;
+  //const int non_empty_rank = num_procs - 1;
   const SC expected_value = Teuchos::as<SC>(5.0);
-
-  Teuchos::RCP<vector_type> vec1;
-  Teuchos::RCP<map_type> map1;
+  std::vector<int> non_empty_ranks(num_procs);
+  std::iota(non_empty_ranks.begin(), non_empty_ranks.end(), 0);
+  for (auto && non_empty_rank : non_empty_ranks)
   {
-    const auto num_global_elements = Teuchos::as<Tpetra::global_size_t>(num_non_zero);
-    const size_t num_local_elements = (my_rank == non_empty_rank) ? num_non_zero : 0;
-    map1 = Teuchos::rcp(new map_type(num_global_elements, num_local_elements, index_base, comm));
-    vec1 = Teuchos::rcp(new vector_type(map1, num_vecs, true));
-    if (my_rank == non_empty_rank) vec1->putScalar(expected_value);
-  }
 
-  Teuchos::RCP<vector_type> vec2;
-  Teuchos::RCP<const map_type> map2;
-  {
-    map2 = Tpetra::createLocalMap<LO,GO>(num_non_zero, comm);
-    vec2 = Teuchos::rcp(new vector_type(map2, num_vecs, true));
-  }
+    Teuchos::RCP<vector_type> vec1;
+    Teuchos::RCP<map_type> map1;
+    {
+      const auto num_global_elements = Teuchos::as<Tpetra::global_size_t>(num_non_zero);
+      const size_t num_local_elements = (my_rank == non_empty_rank) ? num_non_zero : 0;
+      map1 = Teuchos::rcp(new map_type(num_global_elements, num_local_elements, index_base, comm));
+      vec1 = Teuchos::rcp(new vector_type(map1, num_vecs, true));
+      if (my_rank == non_empty_rank) vec1->putScalar(expected_value);
+    }
 
-  auto import = import_type(map1, map2);
-  vec2->doImport(*vec1, import, Tpetra::INSERT);
+    Teuchos::RCP<vector_type> vec2;
+    Teuchos::RCP<const map_type> map2;
+    {
+      map2 = Tpetra::createLocalMap<LO,GO>(num_non_zero, comm);
+      vec2 = Teuchos::rcp(new vector_type(map2, num_vecs, true));
+    }
 
-  auto data = vec2->getData(0);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    data.size() != num_non_zero,
-    std::logic_error,
-    "Vector data.size should be " << num_non_zero << " but is " << data.size()
-  );
+    auto import = import_type(map1, map2);
+    vec2->doImport(*vec1, import, Tpetra::INSERT);
 
-  std::vector<size_t> bad;
-  for (size_t i=0; i<num_non_zero; i++)
-  {
-    if (data[0] != expected_value) bad.push_back(i);
-  }
+    auto data = vec2->getData(0);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      data.size() != num_non_zero,
+      std::logic_error,
+      "Vector data.size should be " << num_non_zero << " but is " << data.size()
+    );
 
-  if (bad.size() > 0)
-  {
-    out << "The following vector entries are incorrect after import:\n";
-    for (auto && i : bad)
-      out << "data[" << i << "] = " << data[i] << " != " << expected_value << "\n";
-    TEST_ASSERT(false);
+    std::vector<size_t> bad;
+    for (size_t i=0; i<num_non_zero; i++)
+    {
+      if (data[0] != expected_value) bad.push_back(i);
+    }
+
+    if (bad.size() > 0)
+    {
+      out << "The following vector entries are incorrect after import:\n";
+      for (auto && i : bad)
+        out << "data[" << i << "] = " << data[i] << " != " << expected_value << "\n";
+      TEST_ASSERT(false);
+    }
   }
 }
 
