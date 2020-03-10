@@ -80,11 +80,11 @@ namespace MueLu {
 #undef SET_VALID_ENTRY
 
 
-   
+
     /*
     validParamList->getEntry("aggregation: ordering").setValidator(
 	  rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random", "cuthill-mckee"), "aggregation: ordering")));
-    */    
+    */
 
     // general variables needed in AggregationFactory
     validParamList->set< RCP<const FactoryBase> >("A",           null, "Generating factory of the matrix");
@@ -92,7 +92,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
     validParamList->set< RCP<const FactoryBase> >("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
 
-    
+
     return validParamList;
   }
 
@@ -108,10 +108,10 @@ namespace MueLu {
         Input(currentLevel, "AggregateQualities");
     }
 
-    
+
   }
 
-  
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
@@ -143,21 +143,21 @@ namespace MueLu {
     const int DofsPerNode =  Get<int>(currentLevel,"DofsPerNode");
     TEUCHOS_TEST_FOR_EXCEPTION(DofsPerNode != 1, Exceptions::RuntimeError,
 			       "Pairwise only supports one dof per node");
-    
+
     // This follows the paper:
     // Notay, "Aggregation-based algebraic multigrid for convection-diffusion equations", SISC 34(3), pp. A2288-2316.
 
 
     // FIXME: Do the ordering
-    
+
 
     // Get the party stated
     LO numNonAggregatedNodes;
-    Build_InitialAggregation(pL,A,*aggregates,aggStat,numNonAggregatedNodes);
-    
+    Build_InitialAggregation(pL, A, *aggregates, aggStat, numNonAggregatedNodes);
 
-      
-    
+
+
+
     // DO stuff
     Set(currentLevel, "Aggregates", aggregates);
     GetOStream(Statistics0) << aggregates->description() << std::endl;
@@ -165,18 +165,28 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build_InitialAggregation(const Teuchos::ParameterList& params,
-                                                                                                    const RCP<const Matrix>& A,
-                                                                                                    Aggregates& aggregates,
-                                                                                                    std::vector<unsigned>& aggStat,
-                                                                                                    LO& numNonAggregatedNodes) const {
+  void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Build_InitialAggregation(const Teuchos::ParameterList& params,
+                           const RCP<const Matrix>& A,
+                           Aggregates& aggregates,
+                           std::vector<unsigned>& aggStat,
+                           LO& numNonAggregatedNodes) const {
+
     Monitor m(*this, "Build_InitialAggregation");
     using STS = Teuchos::ScalarTraits<Scalar>;
-    using MT = typename STS::magnitudeType;
+    using MT  = typename STS::magnitudeType;
     using RealValuedVector = Xpetra::Vector<MT,LocalOrdinal,GlobalOrdinal,Node>;
-      
+
+    RCP<Teuchos::FancyOStream> out;
+    if(const char* dbg = std::getenv("MUELU_PAIRWISEAGGREGATION_DEBUG")) {
+      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setShowAllFrontMatter(false).setShowProcRank(true);
+    } else {
+      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+    }
+
+    SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
     MT MT_ZERO = Teuchos::ScalarTraits<MT>::zero();
-    SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();    
     MT MT_ONE  = Teuchos::ScalarTraits<MT>::one();
     MT MT_TWO  = MT_ONE + MT_ONE;
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -184,11 +194,11 @@ namespace MueLu {
 
     const MT kappa = STS::magnitude(as<SC>(params.get<double>("aggregation: Dirichlet threshold")));
     const MT kappa_init  = kappa / (kappa - MT_TWO);
-    
-    LO numRows = aggStat.size();    
+
+    LO numRows = aggStat.size();
     numNonAggregatedNodes = numRows;
     const int myRank  = A->getMap()->getComm()->getRank();
-    
+
     // NOTE: Assumes 1 dof per node.  This constraint is enforced in Build(), and so we're not doing again here.
     // This should probably be fixed at some point.
 
@@ -199,45 +209,44 @@ namespace MueLu {
     const ArrayRCP<const SC> D     = ghostedDiag->getData(0);
     const ArrayRCP<const SC> S     = ghostedRowSum->getData(0);
     const ArrayRCP<const MT> AbsRs = ghostedAbsRowSum->getData(0);
-      
+
     // Aggregates stuff
     ArrayRCP<LO> vertex2AggId_rcp = aggregates.GetVertex2AggId()->getDataNonConst(0);
     ArrayRCP<LO> procWinner_rcp   = aggregates.GetProcWinner()  ->getDataNonConst(0);
     ArrayView<LO> vertex2AggId    = vertex2AggId_rcp();
     ArrayView<LO> procWinner      = procWinner_rcp();
-     
+
     // Algorithm 4.2
 
     // 0,1 : Initialize: Flag boundary conditions
     // Modification: We assume symmetry here aij = aji
 
     //    printf("numRows = %d, A->getRowMap()->getNodeNumElements() = %d\n",(int)numRows,(int) A->getRowMap()->getNodeNumElements());
-    
+
     for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
       MT aii = STS::magnitude(D[row]);
       MT rowsum = AbsRs[row];
-      
+
       if(aii >= kappa_init * rowsum) {
-#ifdef MUELU_NOTAY_DEBUG_OUTPUT
-        printf("Flagging index %d as dirichlet aii >= kappa*rowsum = %6.4e >= %6.4e %6.4e\n",row,aii,kappa_init,rowsum);
-#endif
+        out << "Flagging index " << row << "as dirichlet "
+          "aii >= kappa*rowsum = " << aii << " >= " << kappa_init << " " << rowsum << std::endl;
 	aggStat[row] = IGNORED;
 	numNonAggregatedNodes--;
       }
     }
-    
+
     // FIXME: Add ordering here or pass it in from Build()
-    
+
     // 2 : Iteration
     LO aggIndex = LO_ZERO;
     for(LO current_idx = 0; current_idx < numRows; current_idx++) {
       // If we're aggregated already, skip this guy
-      if(aggStat[current_idx] != READY) 
+      if(aggStat[current_idx] != READY)
         continue;
 
       MT best_mu = MT_ZERO;
       LO best_idx = LO_INVALID;
-      
+
       size_t nnz = A->getNumEntriesInLocalRow(current_idx);
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
@@ -251,7 +260,7 @@ namespace MueLu {
         SC val = vals[colidx];
         if(current_idx == col || aggStat[col] != READY || col > numRows || val == SC_ZERO)
           continue;
-        
+
 
 	MT aij = STS::real(val);
 	MT ajj = STS::real(D[col]);
@@ -265,24 +274,24 @@ namespace MueLu {
 	    best_mu  = mu;
 	    best_idx = col;
 	  }
-#ifdef MUELU_NOTAY_DEBUG_OUTPUT
-          printf("[%d] Column SUCCESS %d:  aii - si + ajj - sj = %6.4e - %6.4e + %6.4e - %6.4e = %6.4e, mu = %6.4e\n",current_idx,col,aii,si,ajj,sj,aii-si+ajj-sj,mu);
-#endif
-	}	
+          out << "[" << current_idx << "] Column SUCCESS " << col << ": "
+              << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
+              << " = " << aii - si + ajj - sj << ", mu = " << mu << std::endl;
+	}
         else {
-#ifdef MUELU_NOTAY_DEBUG_OUTPUT
-          printf("[%d] Column FAILED  %d:  aii - si + ajj - sj = %6.4e - %6.4e + %6.4e - %6.4e = %6.4e\n",current_idx,col,aii,si,ajj,sj,aii-si+ajj-sj);
-#endif
+          out << "[" << current_idx << "] Column FAILED " << col << ": "
+              << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
+              << " = " << aii - si + ajj - sj << std::endl;
         }
       }// end column for loop
-      
+
       if(best_idx == LO_INVALID) {
-        // We found no potential node-buddy, so let's just make this a singleton        
+        out << "No node buddy found for index " << current_idx
+            << " [agg " << aggIndex << "]\n" << std::endl;
+        // We found no potential node-buddy, so let's just make this a singleton
         // NOTE: The behavior of what to do if you have no un-aggregated neighbors is not specified in
-        // the paper        
-#ifdef MUELU_NOTAY_DEBUG_OUTPUT
-        printf("No node buddy found for index %d [agg %d]\n",current_idx,aggIndex);
-#endif
+        // the paper
+
         aggStat[current_idx] = ONEPT;
         vertex2AggId[current_idx] = aggIndex;
         procWinner[current_idx]   = myRank;
@@ -291,10 +300,9 @@ namespace MueLu {
       }
       else {
         // We have a buddy, so aggregate, either as a singleton or as a pair, depending on mu
-        if(best_mu <= kappa) { 
-#ifdef MUELU_NOTAY_DEBUG_OUTPUT
-          printf("Node buddies (%d,%d) [agg %d]\n",current_idx,best_idx,aggIndex);
-#endif
+        if(best_mu <= kappa) {
+          out << "Node buddies (" << current_idx << "," << best_idx << ") [agg " << aggIndex << "]" << std::endl;
+
           aggStat[current_idx] = AGGREGATED;
           aggStat[best_idx]    = AGGREGATED;
           vertex2AggId[current_idx] = aggIndex;
@@ -305,9 +313,9 @@ namespace MueLu {
           aggIndex++;
         }
         else {
-#ifdef MUELU_NOTAY_DEBUG_OUTPUT
-          printf("No buddy found for index %d, but aggregating as singleton [agg %d]\n",current_idx,aggIndex);
-#endif
+          out << "No buddy found for index " << current_idx << ","
+            " but aggregating as singleton [agg " << aggIndex << "]" << std::endl;
+
           aggStat[current_idx] = ONEPT;
           vertex2AggId[current_idx] = aggIndex;
           procWinner[current_idx]   = myRank;
@@ -317,16 +325,15 @@ namespace MueLu {
       }
     }// end Algorithm 4.2
 
-#ifdef MUELU_NOTAY_DEBUG_OUTPUT
-    printf("vertex2aggid :");
-    for(int i=0; i<(int)vertex2AggId.size(); i++)
-      printf("%d(%d) ",i,vertex2AggId[i]);
-    printf("\n");
-#endif
+    out << "vertex2aggid :";
+    for(int i = 0; i < static_cast<int>(vertex2AggId.size()); ++i) {
+      out << i << "(" << vertex2AggId[i] << ")";
+    }
+    out << std::endl;
 
     // update aggregate object
     aggregates.SetNumAggregates(aggIndex);
-    aggregates.AggregatesCrossProcessors(false);    
+    aggregates.AggregatesCrossProcessors(false);
     aggregates.ComputeAggregateSizes(true/*forceRecompute*/);
   }
 

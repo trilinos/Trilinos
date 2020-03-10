@@ -112,7 +112,7 @@ public:
 				std::vector<unsigned>& aggStat,
 				LO& numNonAggregatedNodes) const;
 
-  
+
   //@}
 
 private:
