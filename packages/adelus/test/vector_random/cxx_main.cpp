@@ -138,9 +138,10 @@ int main(int argc, char *argv[])
         // argv[3] should be #procs per node
         buf[2] = atoi(argv[3]);
       }
-      else
+      else {
         // default is 1, but sqrt(p) would be better
         buf[1] = 1; buf[2] = 1;
+      }
     }
     else {
       // Input Data about matrix and distribution
