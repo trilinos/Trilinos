@@ -235,12 +235,14 @@ namespace FROSch {
 
                 PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
 
+                interface = interior;
+
                 // Construct Interface and Interior index sets
-                this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
+                this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getNumNodes());
                 this->IDofs_[blockId] = LOVecPtr(0);
                 for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
-                    for (UN i=0; i<interior->getNumNodes(); i++) {
-                        this->GammaDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
+                    for (UN i=0; i<interface->getNumNodes(); i++) {
+                        this->GammaDofs_[blockId][interface->getGammaDofID(i,k)] = interface->getLocalDofID(i,k);
                     }
                 }
 
@@ -248,7 +250,7 @@ namespace FROSch {
             } else {
                 interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
                 interfacePartitionOfUnity->sortInterface(this->K_,nodeList);
-                
+
                 // Construct Interface and Interior index sets
                 this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getNumNodes());
                 this->IDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
@@ -260,8 +262,8 @@ namespace FROSch {
                         this->IDofs_[blockId][interior->getGammaDofID(i,k)] = interior->getLocalDofID(i,k);
                     }
                 }
-                
-                interfacePartitionOfUnity->computePartitionOfUnity(nodeList);                
+
+                interfacePartitionOfUnity->computePartitionOfUnity(nodeList);
                 PartitionOfUnity_ = interfacePartitionOfUnity;
             }
 

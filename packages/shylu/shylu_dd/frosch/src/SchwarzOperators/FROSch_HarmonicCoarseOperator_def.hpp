@@ -99,10 +99,10 @@ namespace FROSch {
         BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
         //Detect linear dependencies
-        if (!this->ParameterList_->get("Skip Orthogonalization",false)) {FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST3.2.1.7.1\n");
+        if (!this->ParameterList_->get("Skip Orthogonalization",false)) {
             LOVecPtr linearDependentVectors = detectLinearDependencies(indicesGammaDofsAll(),this->K_->getRowMap(),this->K_->getRangeMap(),repeatedMap,this->ParameterList_->get("Threshold Phi",1.e-8));
             // std::cout << this->MpiComm_->getRank() << " " << linearDependentVectors.size() << std::endl;
-            AssembledInterfaceCoarseSpace_->zeroOutBasisVectors(linearDependentVectors()); //FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST3.2.1.7.3\n");
+            AssembledInterfaceCoarseSpace_->zeroOutBasisVectors(linearDependentVectors());
         }
 
         // Build the saddle point harmonic extensions
@@ -458,76 +458,81 @@ namespace FROSch {
                                                                                                                          SC treshold)
     {
         FROSCH_TIMER_START_LEVELID(detectLinearDependenciesTime,"HarmonicCoarseOperator::detectLinearDependencies");
+        LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); //if (this->Verbose_) std::cout << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors() << " " << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength() << " " << indicesGammaDofsAll.size() << std::endl;
+        if (AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors()>0 && AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength()>0) {
+            //Construct matrix phiGamma
+            XMatrixPtr phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
 
-        //Construct matrix phiGamma
-        XMatrixPtr phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+            LO iD;
+            SC valueTmp;
+            for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); i++) {
+                GOVec indices;
+                SCVec values;
+                for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
+                    valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
+                    if (fabs(valueTmp)>treshold) {
+                        indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
+                        values.push_back(valueTmp);
+                    }
+                }
+                iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(indicesGammaDofsAll[i]));
 
-        LO iD;
-        SC valueTmp;
-        for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); i++) {
-            GOVec indices;
-            SCVec values;
-            for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
-                valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
-                if (fabs(valueTmp)>treshold) {
-                    indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
-                    values.push_back(valueTmp);
+                if (iD!=-1) {
+                    phiGamma->insertGlobalValues(iD,indices(),values());
                 }
             }
-            iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(indicesGammaDofsAll[i]));
+            phiGamma->fillComplete(AssembledInterfaceCoarseSpace_->getBasisMapUnique(),rangeMap);
 
-            if (iD!=-1) {
-                phiGamma->insertGlobalValues(iD,indices(),values());
+            //Compute Phi^T * Phi
+            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
+            XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); phiGamma->describe(*fancy,VERB_EXTREME);//phiTPhi->describe(*fancy,VERB_EXTREME);AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
+
+            // Extract local part of the matrix
+            ConstXMatrixPtr repeatedPhiTPhi = ExtractLocalSubdomainMatrix(phiTPhi.getConst(),AssembledInterfaceCoarseSpace_->getBasisMap());
+            //Communicate matrix to the repeated map
+            // repeatedPhiTPhi = MatrixFactory<SC,LO,GO,NO>::Build(AssembledInterfaceCoarseSpace_->getBasisMap());
+            // XExportPtr exporter = ExportFactory<LO,GO,NO>::Build(rowMap,repeatedMap);
+            // repeatedPhiTPhi->doExport(*phiTPhi,*exporter,INSERT);
+
+            UN numRows = repeatedPhiTPhi->getRowMap()->getNodeNumElements();
+            TSerialDenseMatrixPtr denseRepeatedPhiTPhi(new SerialDenseMatrix<LO,SC>(numRows,repeatedPhiTPhi->getColMap()->getNodeNumElements()));
+            for (UN i=0; i<numRows; i++) {
+                ConstLOVecView indices;
+                ConstSCVecView values;
+                repeatedPhiTPhi->getLocalRowView(i,indices,values);
+                for (UN j=0; j<indices.size(); j++) {
+                    (*denseRepeatedPhiTPhi)(i,indices[j]) = values[j];
+                }
             }
+            // for (LO i=0; i<denseRepeatedPhiTPhi->numRows(); i++) {
+            //     for (LO j=0; j<denseRepeatedPhiTPhi->numCols(); j++) {
+            //         std::cout << (*denseRepeatedPhiTPhi)(i,j) << " ";
+            //     }
+            //     std::cout << std::endl;
+            // }
+
+            //Compute local QR factorization
+            TSerialQRDenseSolverPtr qRSolver(new SerialQRDenseSolver<LO,SC>());
+            qRSolver->setMatrix(denseRepeatedPhiTPhi);
+            qRSolver->factor();
+            qRSolver->formQ();
+            qRSolver->formR();
+
+            //Find rows of R approx. zero
+            TSerialDenseMatrixPtr r = qRSolver->getR();
+            LO tmp = 0;
+            for (LO i=0; i<r->numRows(); i++) {
+                SC normRow = 0.0;
+                for (LO j=0; j<r->numCols(); j++) {
+                    normRow += (*r)(i,j)*(*r)(i,j);
+                }
+                if (std::sqrt(normRow)<treshold) {
+                    linearDependentVectors[tmp] = i;
+                    tmp++;
+                }
+            }
+            linearDependentVectors.resize(tmp);
         }
-        phiGamma->fillComplete(AssembledInterfaceCoarseSpace_->getBasisMapUnique(),rangeMap);
-
-        //Compute Phi^T * Phi
-        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
-        XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); //phiTPhi->describe(*fancy,VERB_EXTREME);AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
-
-        // Extract local part of the matrix
-        ConstXMatrixPtr repeatedPhiTPhi = ExtractLocalSubdomainMatrix(phiTPhi.getConst(),AssembledInterfaceCoarseSpace_->getBasisMap());
-        //Communicate matrix to the repeated map
-        // repeatedPhiTPhi = MatrixFactory<SC,LO,GO,NO>::Build(AssembledInterfaceCoarseSpace_->getBasisMap());
-        // XExportPtr exporter = ExportFactory<LO,GO,NO>::Build(rowMap,repeatedMap);
-        // repeatedPhiTPhi->doExport(*phiTPhi,*exporter,INSERT);
-
-        UN numRows = repeatedPhiTPhi->getRowMap()->getNodeNumElements();
-        TSerialDenseMatrixPtr denseRepeatedPhiTPhi(new SerialDenseMatrix<LO,SC>(numRows,repeatedPhiTPhi->getColMap()->getNodeNumElements()));
-        for (UN i=0; i<numRows; i++) {
-            ConstLOVecView indices;
-            ConstSCVecView values;
-            repeatedPhiTPhi->getLocalRowView(i,indices,values);
-            for (UN j=0; j<indices.size(); j++) {
-                (*denseRepeatedPhiTPhi)(i,indices[j]) = values[j];
-            }
-        }
-
-        //Compute local QR factorization
-        TSerialQRDenseSolverPtr qRSolver(new SerialQRDenseSolver<LO,SC>());
-        qRSolver->setMatrix(denseRepeatedPhiTPhi);
-        qRSolver->factor();
-        qRSolver->formQ();
-        qRSolver->formR();
-
-        //Find rows of R approx. zero
-        TSerialDenseMatrixPtr r = qRSolver->getR();
-        LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
-        LO tmp = 0;
-        for (LO i=0; i<r->numRows(); i++) {
-            SC normRow = 0.0;
-            for (LO j=0; j<r->numCols(); j++) {
-                normRow += (*r)(i,j)*(*r)(i,j);
-            }
-            if (std::sqrt(normRow)<treshold) {
-                linearDependentVectors[tmp] = i;
-                tmp++;
-            }
-        }
-
-        linearDependentVectors.resize(tmp);
-
         return linearDependentVectors;
     }
 
