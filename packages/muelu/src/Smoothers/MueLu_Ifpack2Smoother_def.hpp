@@ -89,6 +89,21 @@ namespace MueLu {
   Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap)
     : type_(type), overlap_(overlap)
   {
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
+    bool isSupported = Ifpack2::Factory::isSupported<tRowMatrix>(type_) || (type_ == "LINESMOOTHING_TRIDI_RELAXATION"        ||
+                                                                            type_ == "LINESMOOTHING_TRIDI RELAXATION"        ||
+                                                                            type_ == "LINESMOOTHING_TRIDIRELAXATION"         ||
+                                                                            type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION"  ||
+                                                                            type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION"  ||
+                                                                            type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION"   ||
+                                                                            type_ == "LINESMOOTHING_BANDED_RELAXATION"       ||
+                                                                            type_ == "LINESMOOTHING_BANDED RELAXATION"       ||
+                                                                            type_ == "LINESMOOTHING_BANDEDRELAXATION"        ||
+                                                                            type_ == "LINESMOOTHING_BLOCK_RELAXATION"        ||
+                                                                            type_ == "LINESMOOTHING_BLOCK RELAXATION"        ||
+                                                                            type_ == "LINESMOOTHING_BLOCKRELAXATION"         ||
+                                                                            type_ == "TOPOLOGICAL");
+    TEUCHOS_TEST_FOR_EXCEPTION(!isSupported, Exceptions::RuntimeError, "Ifpack2 does not provide the smoother '" << type_ << "'.");
     SetParameterList(paramList);
   }
 

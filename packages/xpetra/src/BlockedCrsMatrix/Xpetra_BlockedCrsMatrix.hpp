@@ -190,7 +190,7 @@ namespace Xpetra {
             Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
                             Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(const_op);
             subRangeMaps[r] = xop->getRangeMap();
-	    if(r!=c) is_diagonal_ = false;
+            if(r!=c) is_diagonal_ = false;
             break;
           }
         }
@@ -493,7 +493,7 @@ namespace Xpetra {
         for (size_t c = 0; c < Cols(); ++c) {
           if(getMatrix(r,c) != Teuchos::null) {
             Teuchos::RCP<Matrix> Ablock = getMatrix(r,c);
-	    if(r!=c) is_diagonal_ = false;
+            if(r!=c) is_diagonal_ = false;
             if (Ablock != Teuchos::null && !Ablock->isFillComplete())
               Ablock->fillComplete(getDomainMap(c, bDomainThyraMode_), getRangeMap(r, bRangeThyraMode_), params);
           }
@@ -621,25 +621,26 @@ namespace Xpetra {
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInLocalRow");
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getNumEntriesInLocalRow(localRow);
-      }
-      else if(is_diagonal_){
-	GlobalOrdinal gid = this->getRowMap()->getGlobalElement(localRow);
-	size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
-	return getMatrix(row,row)->getNumEntriesInLocalRow(getMatrix(row,row)->getRowMap()->getLocalElement(gid));
-      }
-      throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow() not supported by BlockedCrsMatrix");
+      GlobalOrdinal gid = this->getRowMap()->getGlobalElement(localRow);
+      size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
+      LocalOrdinal lid = getBlockedRangeMap()->getMap(row)->getLocalElement(gid);
+      size_t numEntriesInLocalRow = 0;
+      for (size_t col = 0; col < Cols(); ++col)
+        if (!getMatrix(row,col).is_null())
+          numEntriesInLocalRow += getMatrix(row,col)->getNumEntriesInLocalRow(lid);
+      return numEntriesInLocalRow;
     }
 
     //! Returns the current number of entries in the specified (locally owned) global row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInGlobalRow");
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getNumEntriesInGlobalRow(globalRow);
-      }
-      throw Xpetra::Exceptions::RuntimeError("getNumEntriesInGlobalRow not supported by this BlockedCrsMatrix");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInGlobalRow");      
+      size_t row = getBlockedRangeMap()->getMapIndexForGID(globalRow);
+      size_t numEntriesInGlobalRow = 0;
+      for (size_t col = 0; col < Cols(); ++col)
+        if (!getMatrix(row,col).is_null())
+          numEntriesInGlobalRow += getMatrix(row,col)->getNumEntriesInGlobalRow(globalRow);
+      return numEntriesInGlobalRow;
     }
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
@@ -778,10 +779,10 @@ namespace Xpetra {
         return;
       }
       else if(is_diagonal_) {
-	GlobalOrdinal gid = this->getRowMap()->getGlobalElement(LocalRow);
-	size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
-	getMatrix(row,row)->getLocalRowView(getMatrix(row,row)->getRowMap()->getLocalElement(gid),indices,values);
-	return;
+        GlobalOrdinal gid = this->getRowMap()->getGlobalElement(LocalRow);
+        size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
+        getMatrix(row,row)->getLocalRowView(getMatrix(row,row)->getRowMap()->getLocalElement(gid),indices,values);
+        return;
       }
       throw Xpetra::Exceptions::RuntimeError("getLocalRowView not supported by BlockedCrsMatrix");
     }
@@ -1368,7 +1369,12 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Xpetra::Exceptions::RuntimeError,
                                  "BlockedCrsMatrix::Merge: BlockMatrix must be fill-completed." );
 
-      RCP<Matrix> sparse = MatrixFactory::Build(getRangeMapExtractor()->getFullMap(), 33);
+      LocalOrdinal lclNumRows = getFullRangeMap()->getNodeNumElements();
+      Teuchos::ArrayRCP<size_t> numEntPerRow (lclNumRows);
+      for (LocalOrdinal lclRow = 0; lclRow < lclNumRows; ++lclRow)
+        numEntPerRow[lclRow] = getNumEntriesInLocalRow(lclRow);
+
+      RCP<Matrix> sparse = MatrixFactory::Build(getFullRangeMap(), numEntPerRow);
 
       if(bRangeThyraMode_ == false) {
         // Xpetra mode
@@ -1458,7 +1464,7 @@ namespace Xpetra {
         }
       }
 
-      sparse->fillComplete(getDomainMap(), getRangeMap());
+      sparse->fillComplete(getFullDomainMap(), getFullRangeMap());
 
       TEUCHOS_TEST_FOR_EXCEPTION(sparse->getNodeNumEntries() != getNodeNumEntries(), Xpetra::Exceptions::RuntimeError,
                                  "BlockedCrsMatrix::Merge: Local number of entries of merged matrix does not coincide with local number of entries of blocked operator." );
@@ -1501,7 +1507,7 @@ namespace Xpetra {
                   MultiVector & R) const {
       using STS = Teuchos::ScalarTraits<Scalar>;
       R.update(STS::one(),B,STS::zero());
-      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());      
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());
     }
     
   private:

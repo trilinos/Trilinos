@@ -68,7 +68,6 @@
 #include "Sacado_ELRCacheFad_SFadTraits.hpp"
 #include "Sacado_ELRCacheFad_SLFadTraits.hpp"
 #ifndef __CUDACC__
-#include "Sacado_Fad_DMFadTraits.hpp"
 #include "Sacado_Fad_DVFadTraits.hpp"
 #include "Sacado_LFad_LogicalSparseTraits.hpp"
 #include "Sacado_ScalarFlopCounterTraits.hpp"
@@ -113,8 +112,6 @@
 #ifndef __CUDACC__
 
 // Standard forward AD classes
-#include "Sacado_Fad_MemPoolManager.hpp"
-#include "Sacado_Fad_DMFad.hpp"
 #include "Sacado_Fad_DVFad.hpp"
 #include "Sacado_Fad_Vector.hpp"
 #include "Sacado_LFad_LogicalSparse.hpp"

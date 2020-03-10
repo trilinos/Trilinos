@@ -22,6 +22,8 @@ struct CommandLineOptions {
   int maxNumIters {100};
   int restartLength {30};
   int stepSize {1};
+  bool useCholQR {false};
+  bool useCholQR2 {false};
   bool computeRitzValues {true};
   bool zeroInitialGuess {true};
   bool verbose {true};
@@ -53,6 +55,10 @@ TEUCHOS_STATIC_SETUP()
                  "\"Num Blocks\".");
   clp.setOption ("stepSize", &commandLineOptions.stepSize,
                  "Step size; only applies to algorithms that take it.");
+  clp.setOption ("useCholQR", "noCholQR", &commandLineOptions.useCholQR,
+                 "Whether to use CholQR");
+  clp.setOption ("useCholQR2", "noCholQR2", &commandLineOptions.useCholQR2,
+                 "Whether to use CholQR2");
   clp.setOption ("computeRitzValues", "noRitzValues", &commandLineOptions.computeRitzValues,
                  "Whether to compute Ritz values");
   clp.setOption ("zeroInitialGuess", "nonzeroInitialGuess",
@@ -226,8 +232,12 @@ testSolver (Teuchos::FancyOStream& out,
   params->set ("Verbosity", verbose ? 1 : 0);
   params->set ("Maximum Iterations", commandLineOptions.maxNumIters);
   params->set ("Num Blocks", commandLineOptions.restartLength);
-  params->set ("Step Size", commandLineOptions.stepSize);
-  params->set ("Compute Ritz Values", commandLineOptions.computeRitzValues);
+  if (solverName == "TPETRA GMRES S-STEP") {
+    params->set ("Step Size", commandLineOptions.stepSize);
+    params->set ("Compute Ritz Values", commandLineOptions.computeRitzValues);
+    params->set ("CholeskyQR",  commandLineOptions.useCholQR);
+    params->set ("CholeskyQR2", commandLineOptions.useCholQR2);
+  }
   try {
     solver->setParameters (params);
   }
@@ -302,6 +312,8 @@ testSolver (Teuchos::FancyOStream& out,
     TEST_ASSERT( relResNorm <= tol );
   }
   myOut << endl;
+
+  Teuchos::TimeMonitor::summarize();
 }
 
 TEUCHOS_UNIT_TEST( TpetraNativeSolvers, Diagonal )

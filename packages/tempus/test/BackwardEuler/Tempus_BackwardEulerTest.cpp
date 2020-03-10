@@ -132,7 +132,6 @@ TEUCHOS_UNIT_TEST(BackwardEuler, ConstructingFromDefaults)
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperBackwardEuler<double>());
   stepper->setModel(model);
-  stepper->setSolver();
   stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------

@@ -34,6 +34,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -61,6 +62,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -185,6 +187,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -212,6 +215,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -369,6 +373,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -396,6 +401,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]
@@ -520,6 +526,7 @@ algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: distance laplacian algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
@@ -547,6 +554,7 @@ aggregation: allow user-specified singletons = 0   [default]
 aggregation: use interface aggregation = 0   [default]
 aggregation: error on nodes with no on-rank neighbors = 0   [default]
 aggregation: phase3 avoid singletons = 0   [default]
+aggregation: compute aggregate qualities = 0   [default]
 OnePt aggregate map name =    [default]
 OnePt aggregate map factory =    [default]
 Interface aggregate map name =    [default]

@@ -30,6 +30,7 @@ import argparse
 import os
 import re
 import sys
+from textwrap import dedent
 
 import subprocess
 from multiprocessing import cpu_count
@@ -133,6 +134,7 @@ def confirmGitVersion():
 
 
 def setBuildEnviron(arguments):
+
     moduleMap = {'Trilinos_pullrequest_gcc_4.8.4':
                      ['sems-env',
                      'sems-git/2.10.1',
@@ -184,6 +186,22 @@ def setBuildEnviron(arguments):
                      'sems-openmpi/1.10.1',
                      'sems-python/2.7.9',
                      'sems-boost/1.63.0/base',
+                     'sems-zlib/1.2.8/base',
+                     'sems-hdf5/1.8.12/parallel',
+                     'sems-netcdf/4.4.1/exo_parallel',
+                     'sems-parmetis/4.0.3/parallel',
+                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
+                     'sems-superlu/4.3/base',
+                     'sems-cmake/3.10.3',
+                     'atdm-env',
+                     'atdm-ninja_fortran/1.7.2'],
+                'Trilinos_pullrequest_gcc_8.3.0':
+                     ['sems-env',
+                     'sems-git/2.10.1',
+                     'sems-gcc/8.3.0',
+                     'sems-openmpi/1.10.1',
+                     'sems-python/2.7.9',
+                     'sems-boost/1.66.0/base',
                      'sems-zlib/1.2.8/base',
                      'sems-hdf5/1.8.12/parallel',
                      'sems-netcdf/4.4.1/exo_parallel',
@@ -299,6 +317,9 @@ def setBuildEnviron(arguments):
                  'Trilinos_pullrequest_gcc_7.2.0':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
                        'OMP_NUM_THREADS': '2'},
+                 'Trilinos_pullrequest_gcc_8.3.0':
+                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
+                       'OMP_NUM_THREADS': '2'},
                  'Trilinos_pullrequest_intel_17.0.1':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
                        'OMP_NUM_THREADS': '2'},
@@ -396,6 +417,8 @@ def getCDashTrack():
 def get_memory_info():
     """
     Get memory information
+
+    Returns dictionary : ["mem_gb": <Gigabytes of Memory>, "mem_kb": <Kilobytes of Memory>]
     """
     mem_kb = None
 
@@ -410,9 +433,15 @@ def get_memory_info():
         #         windows or OSX systems that don't have that file.
         #         The nearest OSX equivalent would be to run vm_stat and parse
         #         the output but this isn't a 100% analog.
-        with open('/proc/meminfo') as f_ptr:
-            meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in f_ptr.readlines())
-        mem_kb = meminfo['MemTotal']
+        try:
+            with open('/proc/meminfo') as f_ptr:
+                meminfo = dict((i.split()[0].rstrip(':'), int(i.split()[1])) for i in f_ptr.readlines())
+            mem_kb = meminfo['MemTotal']
+        except IOError:
+            raise IOError(dedent('''\
+                                 Import psutil failed and /proc/meminfo not found.
+                                 Testing cannot proceed because we can't determine system information.
+                                 '''))
 
     output = {}
     output["mem_kb"] = mem_kb
@@ -495,6 +524,7 @@ config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4Testing
               'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
               'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
               'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
+              'Trilinos_pullrequest_gcc_8.3.0': 'PullRequestLinuxGCC8.3.0TestingSettings.cmake',
               'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
               'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
               'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
@@ -564,6 +594,7 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
                            'package_subproject_list.cmake'])
 
     return return_value
+
 
 
 if __name__ == '__main__':  # pragma nocover

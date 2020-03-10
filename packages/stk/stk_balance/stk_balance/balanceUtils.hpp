@@ -145,6 +145,11 @@ public:
     virtual std::string getSpiderConnectivityCountFieldName() const;
     virtual const stk::mesh::Field<int> * getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
     virtual bool useLocalIds() const;
+
+    virtual bool useNodeBalancer() const;
+    virtual double getNodeBalancerTargetLoadBalance() const;
+    virtual unsigned getNodeBalancerMaxIterations() const;
+
 };
 
 class BasicGeometricSettings : public BalanceSettings
@@ -160,15 +165,18 @@ public:
     {}
 
     GraphCreationSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch, const std::string& decompMethod, double multiplierVWSearch)
-                           : mToleranceForFaceSearch(faceSearchTol),
-                             mToleranceForParticleSearch(particleSearchTol),
-                             edgeWeightForSearch (edgeWeightSearch),
-                             method(decompMethod),
-                             vertexWeightMultiplierForVertexInSearch(multiplierVWSearch),
-                             m_UseConstantToleranceForFaceSearch(true),
-                             m_shouldFixSpiders(false),
-                             m_spiderConnectivityCountField(nullptr),
-                             m_includeSearchResultInGraph(true)
+      : mToleranceForFaceSearch(faceSearchTol),
+        mToleranceForParticleSearch(particleSearchTol),
+        edgeWeightForSearch (edgeWeightSearch),
+        method(decompMethod),
+        vertexWeightMultiplierForVertexInSearch(multiplierVWSearch),
+        m_UseConstantToleranceForFaceSearch(true),
+        m_shouldFixSpiders(false),
+        m_spiderConnectivityCountField(nullptr),
+        m_includeSearchResultInGraph(true),
+        m_useNodeBalancer(false),
+        m_nodeBalancerTargetLoadBalance(1.0),
+        m_nodeBalancerMaxIterations(5)
     {}
 
     virtual ~GraphCreationSettings() = default;
@@ -210,6 +218,14 @@ public:
     virtual bool shouldFixSpiders() const override;
     virtual const stk::mesh::Field<int> * getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
 
+    virtual void setUseNodeBalancer(bool useBalancer);
+    virtual void setNodeBalancerTargetLoadBalance(double targetLoadBalance);
+    virtual void setNodeBalancerMaxIterations(unsigned maxIterations);
+
+    virtual bool useNodeBalancer() const override;
+    virtual double getNodeBalancerTargetLoadBalance() const override;
+    virtual unsigned getNodeBalancerMaxIterations() const override;
+
 protected:
     int getConnectionTableIndex(stk::topology elementTopology) const;
     int getEdgeWeightTableIndex(stk::topology elementTopology) const;
@@ -223,6 +239,9 @@ protected:
     mutable const stk::mesh::Field<int> * m_spiderConnectivityCountField;
     std::shared_ptr<stk::balance::FaceSearchTolerance> m_faceSearchToleranceFunction;
     bool m_includeSearchResultInGraph;
+    bool m_useNodeBalancer;
+    double m_nodeBalancerTargetLoadBalance;
+    unsigned m_nodeBalancerMaxIterations;
 };
 
 class GraphCreationSettingsWithCustomTolerances : public GraphCreationSettings
@@ -237,6 +256,20 @@ public:
 
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
     virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return true; }
+};
+
+class StkBalanceSettings : public GraphCreationSettings
+{
+public:
+    StkBalanceSettings()
+      : GraphCreationSettings()
+    {}
+
+    ~StkBalanceSettings() = default;
+
+    std::string getCoordinateFieldName() const override {
+      return "balance_coordinates";
+    }
 };
 
 class BasicZoltan2Settings : public GraphCreationSettings

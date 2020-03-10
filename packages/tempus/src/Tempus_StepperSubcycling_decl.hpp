@@ -117,7 +117,7 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  /// \name Functions to set the subcycling stepper.
+  /// \name Functions to set the subcycling stepper values.
   //@{
     virtual void setSubcyclingStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
     virtual void setSubcyclingMinTimeStep(Scalar MinTimeStep);
@@ -135,8 +135,23 @@ public:
     virtual void setSubcyclingPrintDtChanges(bool printDtChanges);
   //@}
 
-  // Temporary until 5908 branch is committed.
-  bool isInitialized_ = false;
+  /// \name Functions to get the subcycling stepper values.
+  //@{
+    virtual Teuchos::RCP<const Stepper<Scalar> > getSubcyclingStepper() const;
+    virtual Scalar getSubcyclingMinTimeStep() const;
+    virtual Scalar getSubcyclingInitTimeStep() const;
+    virtual Scalar getSubcyclingMaxTimeStep() const;
+    virtual std::string getSubcyclingStepType() const;
+    virtual int getSubcyclingMaxFailures() const;
+    virtual int getSubcyclingMaxConsecFailures() const;
+    virtual int getSubcyclingScreenOutputIndexInterval() const;
+    virtual std::string getSubcyclingScreenOutputIndexList() const;
+    virtual Teuchos::RCP<TimeStepControlStrategy<Scalar> >
+      getSubcyclingTimeStepControlStrategy() const;
+    virtual Teuchos::RCP<IntegratorObserver<Scalar> >
+      getSubcyclingIntegratorObserver() const;
+    virtual bool getSubcyclingPrintDtChanges() const;
+  //@}
 
 protected:
 

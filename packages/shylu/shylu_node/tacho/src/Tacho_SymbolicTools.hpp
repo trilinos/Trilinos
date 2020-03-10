@@ -10,9 +10,12 @@ namespace Tacho {
 
     class SymbolicTools {
     public:
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
-      typedef Kokkos::View<size_type*,host_exec_space> size_type_array;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+      typedef typename host_device_type::execution_space host_space;
+      typedef typename host_device_type::memory_space host_memory_space;
+
+      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
+      typedef Kokkos::View<size_type*,host_device_type> size_type_array;
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
@@ -128,7 +131,7 @@ namespace Tacho {
         }
 
         // prefix scan
-        up = size_type_array("up", m+1);
+        up = size_type_array(do_not_initialize_tag("up"), m+1); up(0) = size_type();
         for (ordinal_type i=0;i<m;++i)
           up(i+1) = up(i) + upper_row_cnt(i);
         
@@ -205,7 +208,7 @@ namespace Tacho {
           flag(k) = true; // supernodes begin
 
           for (ordinal_type i=0;i<m;++i) k += flag(i);
-          supernodes = ordinal_type_array("supernodes", k+1);
+          supernodes = ordinal_type_array(do_not_initialize_tag("supernodes"), k+1);
           
           // record supernodes 
           k = 0;
@@ -317,8 +320,8 @@ namespace Tacho {
         const ordinal_type_array null_ordinal_type_array;
 
         /// count the # of associated columns to all supernodes
-        gid_super_panel_ptr = size_type_array("gid_super_panel_ptr", numSupernodes+1);
-        sid_super_panel_ptr= size_type_array("sid_super_panel_ptr", numSupernodes+1);
+        gid_super_panel_ptr = size_type_array(do_not_initialize_tag("gid_super_panel_ptr"), numSupernodes+1); gid_super_panel_ptr(0) = size_type();
+        sid_super_panel_ptr = size_type_array(do_not_initialize_tag("sid_super_panel_ptr"), numSupernodes+1); sid_super_panel_ptr(0) = size_type();
 
         for (ordinal_type sid=0;sid<numSupernodes;++sid) {
           const ordinal_type sbeg = supernodes(sid), send = supernodes(sid+1);
@@ -384,6 +387,7 @@ namespace Tacho {
       static void
       computeSupernodesAssemblyTree(const ordinal_type_array &parent,
                                     const ordinal_type_array &supernodes,
+                                    /* */ ordinal_type_array &stree_level,
                                     /* */ ordinal_type_array &stree_parent,
                                     /* */ size_type_array &stree_ptr,
                                     /* */ ordinal_type_array &stree_children,
@@ -427,12 +431,12 @@ namespace Tacho {
             else
               ++flag(stree_parent(sid));
           }
-          stree_roots = ordinal_type_array("stree_roots", cnt);
+          stree_roots = ordinal_type_array(do_not_initialize_tag("stree_roots"), cnt);
         }
 
         // prefix scan
         {
-          stree_ptr = size_type_array("stree_ptr", numSupernodes + 1);
+          stree_ptr = size_type_array(do_not_initialize_tag("stree_ptr"), numSupernodes + 1); stree_ptr(0) = size_type();
           for (ordinal_type sid=0;sid<numSupernodes;++sid)
             stree_ptr(sid+1) = stree_ptr(sid) + flag(sid); 
         }
@@ -440,13 +444,24 @@ namespace Tacho {
         {
           clear_array(numSupernodes, flag);
           ordinal_type cnt = 0;
-          stree_children = ordinal_type_array("stree_children", stree_ptr(numSupernodes));
+          stree_children = ordinal_type_array(do_not_initialize_tag("stree_children"), stree_ptr(numSupernodes));
           for (ordinal_type sid=0;sid<numSupernodes;++sid) {
             const ordinal_type sidpar = stree_parent(sid);                       
             if (sidpar == -1) 
               stree_roots(cnt++) = sid;
             else
               stree_children(stree_ptr(sidpar)+flag(sidpar)++) = sid;
+          }
+        }
+
+        {
+          // this can be host parallel; but maybe this is too small workload
+          stree_level = ordinal_type_array(do_not_initialize_tag("stree_level"), numSupernodes);
+          for (ordinal_type sid=0;sid<numSupernodes;++sid) {
+            ordinal_type self = sid, level = 0;
+            for (; stree_parent(self) != -1; ++level)
+              self = stree_parent(self);
+            stree_level(sid) = level;
           }
         }
       }
@@ -461,7 +476,7 @@ namespace Tacho {
       ordinal_type_array _perm, _peri;
 
       // supernodes output
-      ordinal_type_array _supernodes;      
+      ordinal_type_array _supernodes;
 
       // dof mapping to sparse matrix
       size_type_array _gid_super_panel_ptr;
@@ -477,6 +492,9 @@ namespace Tacho {
 
       // supernode elimination tree (child - parent)
       ordinal_type_array _stree_parent;
+
+      // level information of supernodes
+      ordinal_type_array _stree_level;      
 
       // stat
       struct {
@@ -509,10 +527,10 @@ namespace Tacho {
                     GraphToolType &G) {
         _m = A.NumRows();
         
-        _ap   = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), A.RowPtr());
-        _aj   = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), A.Cols());
-        _perm = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), G.PermVector());
-        _peri = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), G.InvPermVector());
+        _ap   = Kokkos::create_mirror_view(host_memory_space(), A.RowPtr());
+        _aj   = Kokkos::create_mirror_view(host_memory_space(), A.Cols());
+        _perm = Kokkos::create_mirror_view(host_memory_space(), G.PermVector());
+        _peri = Kokkos::create_mirror_view(host_memory_space(), G.InvPermVector());
 
         Kokkos::deep_copy(_ap, A.RowPtr());
         Kokkos::deep_copy(_aj, A.Cols());
@@ -525,7 +543,7 @@ namespace Tacho {
       
       inline
       ordinal_type_array Supernodes() const { return _supernodes; }
-      
+
       inline 
       size_type_array gidSuperPanelPtr() const { return _gid_super_panel_ptr; }
 
@@ -554,6 +572,9 @@ namespace Tacho {
       ordinal_type_array SupernodesTreeRoots() const { return _stree_roots; }
       
       inline
+      ordinal_type_array SupernodesTreeLevel() const { return _stree_level; }
+
+      inline
       void
       symbolicFactorize(const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
@@ -572,8 +593,8 @@ namespace Tacho {
 
         // compute elimination tree
         timer.reset();
-        ordinal_type_array work("work", _m*4); 
-        ordinal_type_array parent("parent", _m); 
+        ordinal_type_array work(do_not_initialize_tag("work"), _m*4); 
+        ordinal_type_array parent(do_not_initialize_tag("parent"), _m); 
 
         track_alloc(work.span()*sizeof(ordinal_type));
         track_alloc(parent.span()*sizeof(ordinal_type));
@@ -643,14 +664,16 @@ namespace Tacho {
           // supernode assembly tree
           computeSupernodesAssemblyTree(parent,                                                 
                                         _supernodes,                                             
+                                        _stree_level,
                                         _stree_parent,
-                                        _stree_ptr,                                                 
+                                        _stree_ptr,
                                         _stree_children,
                                         _stree_roots,
                                         work);                        
         }
         t_extra += timer.seconds();
 
+        track_alloc(_stree_level.span()*sizeof(ordinal_type));
         track_alloc(_stree_parent.span()*sizeof(ordinal_type));
         track_alloc(_stree_ptr.span()*sizeof(size_type));
         track_alloc(_stree_children.span()*sizeof(ordinal_type));
@@ -685,10 +708,7 @@ namespace Tacho {
 
           stat.height = 0;
           for (ordinal_type i=0;i<stat.nsupernodes;++i) {
-            ordinal_type self = i, cnt = 0;
-            for (; _stree_parent(self) != -1; ++cnt)
-              self = _stree_parent(self);
-            stat.height = max(stat.height, cnt);
+            stat.height = max(_stree_level(i), stat.height);
           }
 
           stat.nleaves = 0;

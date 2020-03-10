@@ -184,7 +184,7 @@ TEST(MeshImplUtils, visit_closure_trivial)
     EntityVector ev;
     StoreInVector<EntityVector> siv(ev);
     VisitClosure(mesh, entity, siv);
-    EXPECT_EQ( 1u, ev.size() );
+    EXPECT_EQ( 0u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_closure_nominal)
@@ -307,7 +307,7 @@ TEST(MeshImplUtils, visit_upward_closure_trivial)
     EntityVector ev;
     StoreInVector<EntityVector> siv(ev);
     VisitUpwardClosure(mesh, entity, siv);
-    EXPECT_EQ( 1u, ev.size() );
+    EXPECT_EQ( 0u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_upward_closure_nominal)
@@ -420,7 +420,7 @@ TEST(MeshImplUtils, visit_aura_closure_trivial)
     StoreInVector<EntityVector> siv(ev);
     Entity entity = Entity();
     VisitAuraClosure(mesh,entity,siv);
-    EXPECT_EQ( 1u, ev.size() );
+    EXPECT_EQ( 0u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_of_element)

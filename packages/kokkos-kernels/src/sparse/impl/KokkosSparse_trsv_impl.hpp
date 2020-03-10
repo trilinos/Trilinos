@@ -138,7 +138,7 @@ lowerTriSolveCsr (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current row r
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(r, j) /= A_rr;
+      X(r, j) = X(r, j) / A_rr;
     }
   } // for each row r
 }
@@ -250,7 +250,7 @@ upperTriSolveCsr (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current row r
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(r, j) /= A_rr;
+      X(r, j) = X(r, j) / A_rr;
     }
   } // for each row r
 
@@ -272,7 +272,7 @@ upperTriSolveCsr (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current row r
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(r, j) /= A_rr;
+      X(r, j) = X(r, j) / A_rr;
     }
   } // last iteration: r = 0
 }
@@ -395,7 +395,7 @@ upperTriSolveCsc (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current column c
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(c, j) /= A_cc;
+      X(c, j) = X(c, j) / A_cc;
     }
   } // for each column c
 
@@ -421,7 +421,7 @@ upperTriSolveCsc (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current column c
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(c, j) /= A_cc;
+      X(c, j) = X(c, j) / A_cc;
     }
   }
 }
@@ -584,7 +584,7 @@ upperTriSolveCscConj (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current column c
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(c, j) /= A_cc;
+      X(c, j) = X(c, j) / A_cc;
     }
   } // for each column c
 
@@ -610,7 +610,7 @@ upperTriSolveCscConj (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current column c
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(c, j) /= A_cc;
+      X(c, j) = X(c, j) / A_cc;
     }
   }
 }
@@ -662,7 +662,7 @@ lowerTriSolveCsc (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current column c
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(c, j) /= A_cc;
+      X(c, j) = X(c, j) / A_cc;
     }
   } // for each column c
 }
@@ -754,7 +754,7 @@ lowerTriSolveCscConj (RangeMultiVectorType X,
       }
     } // for each entry A_rc in the current column c
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
-      X(c, j) /= A_cc;
+      X(c, j) = X(c, j) / A_cc;
     }
   } // for each column c
 }

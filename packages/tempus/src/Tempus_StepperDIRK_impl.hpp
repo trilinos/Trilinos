@@ -32,6 +32,7 @@ void StepperDIRK<Scalar>::setupDefault()
   this->setZeroInitialGuess(   false);
 
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
+  this->setDefaultSolver();
 }
 
 
@@ -54,10 +55,10 @@ void StepperDIRK<Scalar>::setup(
 
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setObserver(obs);
+  this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
 }
@@ -86,7 +87,6 @@ template<class Scalar>
 void StepperDIRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-
   if (this->stepperObserver_ == Teuchos::null)
     this->stepperObserver_  =
       Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
@@ -109,32 +109,13 @@ void StepperDIRK<Scalar>::setObserver(
     *out << " In the future, this will result in a runtime error!" << std::endl;
   }
 
+  this->isInitialized_ = false;
 }
 
 
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( tableau_ == Teuchos::null, std::logic_error,
-    "Error - Need to set the tableau, before calling "
-    "StepperDIRK::initialize()\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
-    std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperDIRK::initialize()\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION( this->solver_ == Teuchos::null,
-    std::logic_error,
-    "Error - Need to set the solver, setSolver(), before calling "
-    "StepperDIRK::initialize()\n");
-
-  this->setObserver();
-
-  TEUCHOS_TEST_FOR_EXCEPTION( this->stepperObserver_ == Teuchos::null,
-    std::logic_error,
-    "Error - StepperRKObserver is null!\n");
-
   // Initialize the stage vectors
   const int numStages = tableau_->numStages();
   stageX_    = this->wrapperModel_->getNominalValues().get_x()->clone_v();
@@ -152,6 +133,8 @@ void StepperDIRK<Scalar>::initialize()
     abs_u  = Thyra::createMember(this->wrapperModel_->get_f_space());
     sc     = Thyra::createMember(this->wrapperModel_->get_f_space());
   }
+
+  StepperImplicit<Scalar>::initialize();
 }
 
 
@@ -175,6 +158,8 @@ template<class Scalar>
 void StepperDIRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperDIRK::takeStep()");
@@ -206,75 +191,77 @@ void StepperDIRK<Scalar>::takeStep(
     bool pass = true;
     Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
-        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
-        // ???: is it a good idea to leave this (no-op) here?
-        this->stepperObserver_
-            ->observeBeforeImplicitExplicitly(solutionHistory, *this);
+      // ???: is it a good idea to leave this (no-op) here?
+      this->stepperObserver_
+          ->observeBeforeImplicitExplicitly(solutionHistory, *this);
 
-      if ( i == 0 && this->getUseFSAL() &&
-           workingState->getNConsecutiveFailures() == 0 ) {
+      // Check if stageXDot_[i] is needed.
+      bool isNeeded = false;
+      for (int k=i+1; k<numStages; ++k) if (A(k,i) != 0.0) isNeeded = true;
+      if (b(i) != 0.0) isNeeded = true;
+      if (tableau_->isEmbedded() && this->getUseEmbedded() &&
+          tableau_->bstar()(i) != 0.0)
+        isNeeded = true;
+      if (isNeeded == false) {
+        assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+        continue;
+      }
 
-        RCP<Thyra::VectorBase<Scalar> > tmp = stageXDot_[0];
-        stageXDot_[0] = stageXDot_.back();
-        stageXDot_.back() = tmp;
-
-      } else {
-
-        Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
-        for (int j=0; j < i; ++j) {
-          if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-            Thyra::Vp_StV(xTilde_.ptr(), dt*A(i,j), *(stageXDot_[j]));
-          }
-        }
-
-        Scalar ts = time + c(i)*dt;
-        if (A(i,i) == Teuchos::ScalarTraits<Scalar>::zero()) {
-          // Explicit stage for the ImplicitODE_DAE
-          bool isNeeded = false;
-          for (int k=i+1; k<numStages; ++k) if (A(k,i) != 0.0) isNeeded = true;
-          if (b(i) != 0.0) isNeeded = true;
-          if (isNeeded == false) {
-            // stageXDot_[i] is not needed.
-            assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-          } else {
-            typedef Thyra::ModelEvaluatorBase MEB;
-            MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
-            MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
-            inArgs.set_x(xTilde_);
-            if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
-            if (inArgs.supports(MEB::IN_ARG_x_dot))
-              inArgs.set_x_dot(Teuchos::null);
-            outArgs.set_f(stageXDot_[i]);
-
-            this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-            this->wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
-          }
-        } else {
-          // Implicit stage for the ImplicitODE_DAE
-          const Scalar alpha = 1.0/(dt*A(i,i));
-          const Scalar beta  = 1.0;
-
-          // Setup TimeDerivative
-          Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
-            Teuchos::rcp(new StepperDIRKTimeDerivative<Scalar>(
-              alpha,xTilde_.getConst()));
-
-          auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
-            timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
-
-          this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
-
-          sStatus = this->solveImplicitODE(stageX_, stageXDot_[i], ts, p);
-
-          if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass=false;
-
-          this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
-
-          timeDer->compute(stageX_, stageXDot_[i]);
+      Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
+      for (int j=0; j < i; ++j) {
+        if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
+          Thyra::Vp_StV(xTilde_.ptr(), dt*A(i,j), *(stageXDot_[j]));
         }
       }
 
+      Scalar ts = time + c(i)*dt;
+      if (A(i,i) == Teuchos::ScalarTraits<Scalar>::zero()) {
+        // Explicit stage for the ImplicitODE_DAE
+        if (i == 0 && this->getUseFSAL() &&
+            workingState->getNConsecutiveFailures() == 0) {
+          // Reuse last evaluation for first step
+          RCP<Thyra::VectorBase<Scalar> > tmp = stageXDot_[0];
+          stageXDot_[0] = stageXDot_.back();
+          stageXDot_.back() = tmp;
+        } else {
+          // Calculate explicit stage
+          typedef Thyra::ModelEvaluatorBase MEB;
+          MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
+          MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+          inArgs.set_x(xTilde_);
+          if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
+          if (inArgs.supports(MEB::IN_ARG_x_dot))
+            inArgs.set_x_dot(Teuchos::null);
+          outArgs.set_f(stageXDot_[i]);
+
+          this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
+          this->wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
+        }
+      } else {
+        // Implicit stage for the ImplicitODE_DAE
+        const Scalar alpha = 1.0/(dt*A(i,i));
+        const Scalar beta  = 1.0;
+
+        // Setup TimeDerivative
+        Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
+          Teuchos::rcp(new StepperDIRKTimeDerivative<Scalar>(
+            alpha,xTilde_.getConst()));
+
+        auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+          timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
+
+        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+
+        sStatus = this->solveImplicitODE(stageX_, stageXDot_[i], ts, p);
+
+        if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass=false;
+
+        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+
+        timeDer->compute(stageX_, stageXDot_[i]);
+      }
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 
@@ -350,11 +337,52 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperDIRK<Scalar>::describe(
-   Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperDIRK ---\n";
+  out << "  tableau_            = " << tableau_ << std::endl;
+  if (tableau_ != Teuchos::null) tableau_->describe(out, verbLevel);
+  out << "  stepperObserver_    = " << stepperObserver_ << std::endl;
+  out << "  xTilde_             = " << xTilde_ << std::endl;
+  out << "  stageX_             = " << stageX_ << std::endl;
+  out << "  stageXDot_.size()   = " << stageXDot_.size() << std::endl;
+  const int numStages = stageXDot_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageXDot_["<<i<<"] = " << stageXDot_[i] << std::endl;
+  out << "  useEmbedded_        = "
+      << Teuchos::toString(useEmbedded_) << std::endl;
+  out << "  ee_                 = " << ee_ << std::endl;
+  out << "  abs_u0              = " << abs_u0 << std::endl;
+  out << "  abs_u               = " << abs_u << std::endl;
+  out << "  sc                  = " << sc << std::endl;
+  out << "-------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperDIRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
+  if (tableau_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The tableau is not set!\n";
+  }
+
+  if (stepperObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The observer is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

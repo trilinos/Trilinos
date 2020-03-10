@@ -60,6 +60,8 @@
           
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
           
+\cbb{aggregation: compute aggregate qualities}{bool}{false}{Whether to compute aggregate quality estimates.}
+          
 \cbb{aggregation: brick x size}{int}{2}{Number of points for x axis in "brick" aggregation (limited to 3).}
           
 \cbb{aggregation: brick y size}{int}{2}{Number of points for y axis in "brick" aggregation (limited to 3).}
@@ -97,6 +99,14 @@
 \cbb{aggregation: number of spatial dimensions}{int}{3}{The number of spatial dimensions in the problem.}
           
 \cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
+          
+\cbb{aggregate qualities: check symmetry}{bool}{false}{Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.}
+          
+\cbb{aggregate qualities: good aggregate threshold}{double}{100.0}{Maximum quality where aggregate is considered acceptable.}
+          
+\cbb{aggregate qualities: file output}{bool}{false}{Whether to output files containing the aggregate qualities.}
+          
+\cbb{aggregate qualities: file base}{string}{agg_qualities}{Base of filename for aggregate quality output.}
           
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter

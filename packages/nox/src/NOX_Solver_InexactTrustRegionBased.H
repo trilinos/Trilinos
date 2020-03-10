@@ -86,7 +86,7 @@ Our goal is to solve: \f$ F(x) = 0, \f$ where \f$ F:\Re^n \rightarrow
 \min f(x) \equiv \frac{1}{2} \|F(x)\|^2_2.
 \f$
 
-The trust region subproblem (TRSP) at iteration \f$k\f$ is given by
+The trust region subproblem (TRSP) at iteration \f$ k\f$ is given by
 
 &nbsp;&nbsp;
 \f$
@@ -101,7 +101,7 @@ where
 <li>\f$ f_k = f(x_k) = \frac{1}{2} \|F(x_k)\|^2_2 \f$,
 <li>\f$ g_k = \nabla f(x_k) = J(x_k)^T F(x_k) \f$,
 <li>\f$ B_k =  J(x_k)^T J(x_k) \approx \nabla^2 f(x_k) \f$,
-<li>\f$ J(x_k)\f$ is the Jacobian of \f$F\f$ at \f$x_k\f$, and
+<li>\f$ J(x_k)\f$ is the Jacobian of \f$ F\f$ at \f$ x_k\f$, and
 <li>\f$ \Delta_k \f$ is the trust region radius.
 </ul>
 
@@ -115,9 +115,9 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
 An iteration consists of the following steps.
 
 <ul>
-<li> Compute Newton-like direction: \f$n\f$
+<li> Compute Newton-like direction: \f$ n\f$
 
-<li> Compute Cauchy-like direction: \f$c\f$
+<li> Compute Cauchy-like direction: \f$ c\f$
 
 <li> If this is the first iteration, initialize \f$\Delta\f$ as
      follows: If \f$\|n\|_2 < \Delta_{\min}\f$, then \f$\Delta = 2
@@ -128,15 +128,15 @@ An iteration consists of the following steps.
 <li> While \f$\rho < \rho_{\min}\f$ and \f$\Delta > \Delta_{\min}\f$, do the following.
 
      <ul>
-     <li> Compute the direction \f$d\f$ as follows:
+     <li> Compute the direction \f$ d\f$ as follows:
 
           <ul>
 
           <li> If \f$\|n\|_2 < \Delta\f$, then take a Newton step by
-               setting \f$d = n\f$
+               setting \f$ d = n\f$
 
       <li> Otherwise if \f$\|c\|_2 > \Delta\f$, then take a Cauchy
-               step by setting \f$d =
+               step by setting \f$ d =
                \displaystyle\frac{\Delta}{\|c\|_2} c\f$
 
       <li> Otherwise, take a Dog Leg step by setting
@@ -145,19 +145,19 @@ An iteration consists of the following steps.
            \gamma = \displaystyle\frac
            {-c^T a + \sqrt{ (c^Ta)^2 - (c^Tc - \Delta^2) a^Ta}}{a^Ta}
            \f$
-           with \f$a = n-c\f$.
+           with \f$ a = n-c\f$.
 
           </ul>
 
-     <li> Set \f$x_{\rm new} = x + d\f$ and calculate \f$f_{\rm new}\f$
+     <li> Set \f$ x_{\rm new} = x + d\f$ and calculate \f$ f_{\rm new}\f$
 
-     <li> If \f$f_{\rm new} \geq f\f$, then \f$\rho = -1\f$ Otherwise
+     <li> If \f$ f_{\rm new} \geq f\f$, then \f$\rho = -1\f$ Otherwise
       \f$ \rho = \displaystyle \frac {f - f_{\rm new}} {| d^T J F
       + \frac{1}{2} (J d)^T (J d)|} \f$
 
      </ul>
 
-<li> Update the solution: \f$x = x_{\rm new}\f$
+<li> Update the solution: \f$ x = x_{\rm new}\f$
 
 <li> Update trust region:
 

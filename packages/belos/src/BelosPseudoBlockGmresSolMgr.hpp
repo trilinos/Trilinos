@@ -366,6 +366,9 @@ namespace Belos {
     ///   call this method immediately after calling \c solve().
     bool isLOADetected() const override { return loaDetected_; }
 
+    //! Return the residual status test
+    const StatusTestResNorm<ScalarType,MV,OP> *
+    getResidualStatusTest() const { return impConvTest_.getRawPtr(); }
     //@}
 
     //! @name Set methods

@@ -9,23 +9,23 @@
 #include "Tacho_Util.hpp"
 #include "Tacho_Graph.hpp"
 
-#if defined (TACHO_HAVE_SUITESPARSE)
+// #if defined (TACHO_HAVE_SUITESPARSE)
 // TPL SuiteSparse
-#include "camd.h"
-#define TACHO_SUITESPARSE(run) run
-#define TRILINOS_CAMD_CONTROL CAMD_CONTROL 
-#define TRILINOS_CAMD_INFO CAMD_INFO
-#define TRILINOS_CAMD_STATUS CAMD_STATUS
-#define TRILINOS_CAMD_OK CAMD_OK
+// #include "camd.h"
+// #define TACHO_SUITESPARSE(run) run
+// #define TRILINOS_CAMD_CONTROL CAMD_CONTROL 
+// #define TRILINOS_CAMD_INFO CAMD_INFO
+// #define TRILINOS_CAMD_STATUS CAMD_STATUS
+// #define TRILINOS_CAMD_OK CAMD_OK
  
-#elif defined (TACHO_HAVE_TRILINOS_SS)
+#if defined (TACHO_HAVE_TRILINOS_SS)
 // Trilinos SuiteSparse
 #include "trilinos_camd.h"
 #define TACHO_SUITESPARSE(run) trilinos_ ## run
 typedef UF_long SuiteSparse_long;
 #endif
 
-#if defined (TACHO_HAVE_TRILINOS_SS) || defined(TACHO_HAVE_SUITESPARSE)
+#if defined (TACHO_HAVE_TRILINOS_SS) //|| defined(TACHO_HAVE_SUITESPARSE)
 
 namespace Tacho {
 

@@ -136,48 +136,6 @@ namespace MueLu {
 
     // Do a quick check if we need to modify the matrix
     RCP<const Map> rowMap = A->getRowMap();
-    if (rowMap->getGlobalNumElements() != as<size_t>((rowMap->getMaxAllGlobalIndex() - rowMap->getMinAllGlobalIndex())+1)) {
-      // If our system is non-conventional, here is the place where we try to fix it
-      // One example is: if our maps contain a gap in them, for instance GIDs
-      // are [0,..., 100, 10000, ..., 10010], then Amesos2 breaks down.
-      //
-      // The approach we take is to construct a second system with maps
-      // replaced by their continuous versions.
-      //
-      // FIXME: for the moment, this functionality works for selected limited scenarios
-      this->GetOStream(Runtime1) << "MueLu::Amesos2Smoother::Setup(): using system transformation" << std::endl;
-
-      TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getComm()->getSize() > 1, Exceptions::RuntimeError,
-        "MueLu::Amesos2Smoother::Setup Fixing coarse matrix for Amesos2 for multiple processors has not been implemented yet.");
-      TEUCHOS_TEST_FOR_EXCEPTION(!rowMap->isSameAs(*A->getColMap()), Exceptions::RuntimeError,
-        "MueLu::Amesos2Smoother::Setup Fixing coarse matrix for Amesos2 when row map is different from column map has not been implemented yet.");
-
-      RCP<CrsMatrixWrap> Acrs = rcp_dynamic_cast<CrsMatrixWrap>(A);
-      TEUCHOS_TEST_FOR_EXCEPTION(Acrs.is_null(), Exceptions::RuntimeError,
-        "MueLu::Amesos2Smoother::Setup Fixing coarse matrix for Amesos2 when matrix is not a Crs matrix has not been implemented yet.");
-
-      useTransformation_ = true;
-
-      ArrayRCP<const size_t> rowPointers;
-      ArrayRCP<const LO>     colIndices;
-      ArrayRCP<const SC>     values;
-      Acrs->getCrsMatrix()->getAllValues(rowPointers, colIndices, values);
-
-      // Create new map
-      RCP<Map>       map     = MapFactory::Build(rowMap->lib(), rowMap->getGlobalNumElements(), 0, rowMap->getComm());
-      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(map, map, 0));
-      RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
-
-      using Teuchos::arcp_const_cast;
-      newAcrs->setAllValues(arcp_const_cast<size_t>(rowPointers), arcp_const_cast<LO>(colIndices), arcp_const_cast<SC>(values));
-      newAcrs->expertStaticFillComplete(map, map);
-
-      A.swap(newA);
-
-      X_ = MultiVectorFactory::Build(map, 1);
-      B_ = MultiVectorFactory::Build(map, 1);
-    }
-
     RCP<Matrix> factorA;
     Teuchos::ParameterList pL = this->GetParameterList();
     if (pL.get<bool>("fix nullspace")) {
@@ -279,6 +237,11 @@ namespace MueLu {
 
     prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
+    if (rowMap->getGlobalNumElements() != as<size_t>((rowMap->getMaxAllGlobalIndex() - rowMap->getMinAllGlobalIndex())+1)) {
+      auto amesos2_params = Teuchos::rcp(new Teuchos::ParameterList("Amesos2"));
+      amesos2_params->sublist(prec_->name()).set("IsContiguous", false, "Are GIDs Contiguous");
+      prec_->setParameters(amesos2_params);
+    }
 
     SmootherPrototype::IsSetup(true);
   }

@@ -55,6 +55,7 @@
 
 #include <type_traits>
 #include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
+#include "Amesos2_Kokkos_View_Copy_Assign.hpp"
 
 
 namespace Amesos2 {
@@ -215,6 +216,102 @@ namespace Amesos2 {
             Kokkos::deep_copy (umavj, X_lcl_j_1d);
           }
         }
+      }
+    }
+  }
+
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
+  template <typename KV>
+  void
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::get1dCopy_kokkos_view(KV& kokkos_view,
+                                   size_t lda,
+                                   Teuchos::Ptr<
+                                     const Tpetra::Map<LocalOrdinal,
+                                                       GlobalOrdinal,
+                                                       Node> > distribution_map,
+                                                       EDistribution distribution) const
+  {
+    using Teuchos::as;
+    using Teuchos::RCP;
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    const size_t num_vecs = getGlobalNumVectors ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      distribution_map.getRawPtr () == NULL, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: distribution_map argument is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      mv_.is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: mv_ is null.");
+    // Check mv_ before getMap(), because the latter calls mv_->getMap().
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getMap ().is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: this->getMap() returns null.");
+
+#ifdef HAVE_AMESOS2_DEBUG
+    const size_t requested_vector_length = distribution_map->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      lda < requested_vector_length, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: On process " <<
+      distribution_map->getComm ()->getRank () << " of the distribution Map's "
+      "communicator, the given stride lda = " << lda << " is not large enough "
+      "for the local vector length " << requested_vector_length << ".");
+
+    // Note do not check size since deep_copy_or_assign_view below will allocate
+    // if necessary - but may just assign ptrs.
+#endif // HAVE_AMESOS2_DEBUG
+
+    // Special case when number vectors == 1 and single MPI process
+    if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
+      if(mv_->isConstantStride()) {
+        mv_->sync_device(); // no testing of this right now - since UVM on
+        deep_copy_or_assign_view(kokkos_view, mv_->getLocalViewDevice());
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Resolve handling for non-constant stride.");
+      }
+    }
+    else {
+
+      // (Re)compute the Export object if necessary.  If not, then we
+      // don't need to clone distribution_map; we can instead just get
+      // the previously cloned target Map from the Export object.
+      RCP<const map_type> distMap;
+      if (exporter_.is_null () ||
+          ! exporter_->getSourceMap ()->isSameAs (* (this->getMap ())) ||
+          ! exporter_->getTargetMap ()->isSameAs (* distribution_map)) {
+        // Since we're caching the Export object, and since the Export
+        // needs to keep the distribution Map, we have to make a copy of
+        // the latter in order to ensure that it will stick around past
+        // the scope of this function call.  (Ptr is not reference
+        // counted.)
+        distMap = rcp(new map_type(*distribution_map));
+        // (Re)create the Export object.
+        exporter_ = rcp (new export_type (this->getMap (), distMap));
+      }
+      else {
+        distMap = exporter_->getTargetMap ();
+      }
+
+      multivec_t redist_mv (distMap, num_vecs);
+
+      // Redistribute the input (multi)vector.
+      redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
+
+      if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        if(redist_mv.isConstantStride()) {
+          redist_mv.sync_device(); // no testing of this right now - since UVM on
+          deep_copy_or_assign_view(kokkos_view, redist_mv.getLocalViewDevice());
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter non-constant stride not imlemented.");
+        }
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter CONTIGUOUS_AND_ROOTED path not implemented for get1dCopy_kokkos_view().");
       }
     }
   }
@@ -393,6 +490,92 @@ namespace Amesos2 {
 
   }
 
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node>
+  template <typename KV>
+  void
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::put1dData_kokkos_view(KV& kokkos_new_data,
+                                   size_t lda,
+                                   Teuchos::Ptr<
+                                     const Tpetra::Map<LocalOrdinal,
+                                                       GlobalOrdinal,
+                                                       Node> > source_map,
+                                                       EDistribution distribution )
+  {
+    using Teuchos::RCP;
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      source_map.getRawPtr () == NULL, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::put1dData_kokkos_view: source_map argument is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      mv_.is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::put1dData_kokkos_view: the internal MultiVector mv_ is null.");
+    // getMap() calls mv_->getMap(), so test first whether mv_ is null.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getMap ().is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::put1dData_kokkos_view: this->getMap() returns null.");
+
+    const size_t num_vecs = getGlobalNumVectors ();
+
+    // Special case when number vectors == 1 and single MPI process
+    if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
+
+      // num_vecs = 1; stride does not matter
+
+      // If this is the optimized path then kokkos_new_data will be the dst
+      auto mv_view_to_modify_2d = mv_->getLocalViewDevice();
+      deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
+    }
+    else {
+
+      // (Re)compute the Import object if necessary.  If not, then we
+      // don't need to clone source_map; we can instead just get the
+      // previously cloned source Map from the Import object.
+      RCP<const map_type> srcMap;
+      if (importer_.is_null () ||
+          ! importer_->getSourceMap ()->isSameAs (* source_map) ||
+          ! importer_->getTargetMap ()->isSameAs (* (this->getMap ()))) {
+
+        // Since we're caching the Import object, and since the Import
+        // needs to keep the source Map, we have to make a copy of the
+        // latter in order to ensure that it will stick around past the
+        // scope of this function call.  (Ptr is not reference counted.)
+        srcMap = rcp(new map_type(*source_map));
+        importer_ = rcp (new import_type (srcMap, this->getMap ()));
+      }
+      else {
+        srcMap = importer_->getSourceMap ();
+      }
+
+      if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+        // Fix the type if necessary
+        Kokkos::View<Scalar**, Kokkos::LayoutLeft, typename KV::execution_space>
+          fix_type_kokkos_new_data;
+        // This wouldn't compile for cuda complex on white - but ok on my local setup
+        // Tpetra is built std::complex and the View is Kokkos::complex which
+        // causes the problem. Here we want to be std::complex to send back to the Tpetra MV.
+        // Won't work ...
+        // deep_copy_or_assign_view(fix_type_kokkos_new_data, kokkos_new_data);
+
+        // So instead we call a special version of this method which checks if
+        // the src is Kokkos::complex type and force casts to std::complex.
+        // Otherwise it just calls above deep_copy_or_assign_view
+        deep_copy_or_assign_view_make_src_std_complex(fix_type_kokkos_new_data, kokkos_new_data);
+
+        const multivec_t source_mv (srcMap, Teuchos::ArrayView<const scalar_t>(
+          fix_type_kokkos_new_data.data(), fix_type_kokkos_new_data.size()), lda, num_vecs);
+        mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter CONTIGUOUS_AND_ROOTED not implemented for put1dData_kokkos_view.");
+      }
+    }
+
+  }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   std::string

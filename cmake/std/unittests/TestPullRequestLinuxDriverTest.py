@@ -8,8 +8,9 @@ import sys
 sys.dont_write_bytecode = True
 
 import os
-sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from textwrap import dedent
 
 import unittest
 
@@ -23,14 +24,20 @@ try:
 except ImportError:  # pragma nocover
     import unittest.mock as mock
 
+
 from argparse import Namespace
 from subprocess import CalledProcessError
+
+if 'MODULESHOME' not in os.environ: # for things like our macs
+    os.environ['MODULESHOME'] = os.getcwd()
 
 import PullRequestLinuxDriverTest
 
 
+
 class Test_run(unittest.TestCase):
     """Does the run script exist?"""
+
     def setUp(self):
         self.source_branch = 'incoming_branch'
         self.source_url = '/dev/null/source/Trilinos.git'
@@ -66,6 +73,7 @@ class Test_run(unittest.TestCase):
                                                      'WORKSPACE': self.jenkins_workspace,
                                                      'NODE_NAME': 'TEST_NODE_NAME'},
                                          clear=True)
+
 
     def test_verifyGit_fails_with_old_version(self):
         """Check to see that git is in path"""
@@ -215,8 +223,8 @@ Set CWD = /dev/null/workspace
         with self.m_environ:
             env_string_io = StringIO()
             for key in os.environ:
-                print(key + ' = ' + os.environ[key],
-                      file=env_string_io)
+                print(key + ' = ' + os.environ[key], file=env_string_io)
+
         expected_out = """
 ==========================================================================================
 Jenkins Input Variables:
@@ -250,8 +258,8 @@ Set CWD = /dev/null/workspace
                 self.m_environ, \
                 mock.patch('PullRequestLinuxDriverTest.createPackageEnables'), \
                 mock.patch('PullRequestLinuxDriverTest.setBuildEnviron'), \
-                mock.patch('PullRequestLinuxDriverTest.getCDashTrack',
-                           return_value='testTrack'):
+                mock.patch('PullRequestLinuxDriverTest.compute_n', return_value=20), \
+                mock.patch('PullRequestLinuxDriverTest.getCDashTrack', return_value='testTrack'):
             PullRequestLinuxDriverTest.run()
 
         self.assertEqual(expected_out, m_output.getvalue())
@@ -266,6 +274,7 @@ Set CWD = /dev/null/workspace
                                         '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
                                         '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
+
 
 
 class Test_createPackageEnables(unittest.TestCase):
@@ -300,6 +309,7 @@ ENDMACRO()
 ''')
             f_out.write("PR_ENABLE_BOOL(Trilinos_ENABLE_FooPackageBar ON)")
 
+
     def test_call_success(self):
         expected_output = '''Enabled packages:
 -- Setting Trilinos_ENABLE_FooPackageBar = ON
@@ -321,6 +331,7 @@ ENDMACRO()
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
 
+
     def test_call_python2(self):
         expected_output = '''Enabled packages:
 -- Setting Trilinos_ENABLE_TrilinosFrameworkTests = ON
@@ -336,6 +347,7 @@ ENDMACRO()
         m_out.assert_not_called()
         self.assertEqual(expected_output, m_stdout.getvalue())
         os.unlink('packageEnables.cmake')
+
 
     def test_call_failure(self):
         expected_output = '''There was an issue generating packageEnables.cmake.  The error code was: 39
@@ -355,6 +367,7 @@ ENDMACRO()
                                                     self.target_branch),
                                        'HEAD', 'packageEnables.cmake'])
         self.assertEqual(expected_output, m_stdout.getvalue())
+
 
 
 class Test_setEnviron(unittest.TestCase):
@@ -388,6 +401,7 @@ class Test_setEnviron(unittest.TestCase):
         setattr(self.arguments, 'job_base_name', self.job_base_name)
         setattr(self.arguments, 'github_pr_number', self.github_pr_number)
         setattr(self.arguments, 'workspaceDir', self.jenkins_workspace)
+
 
     def test_buildEnv_fails_with_unknown(self):
         """Find the function"""
@@ -607,6 +621,30 @@ class Test_setEnviron(unittest.TestCase):
                              test_ENV={'OMP_NUM_THREADS': '2'})
 
 
+    def test_buildEnv_passes_with_gcc_830(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_gcc_8.3.0'
+        expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
+                         mock.call('load', 'sems-env'),
+                         mock.call('load', 'sems-git/2.10.1'),
+                         mock.call('load', 'sems-gcc/8.3.0'),
+                         mock.call('load', 'sems-openmpi/1.10.1'),
+                         mock.call('load', 'sems-python/2.7.9'),
+                         mock.call('load', 'sems-boost/1.66.0/base'),
+                         mock.call('load', 'sems-zlib/1.2.8/base'),
+                         mock.call('load', 'sems-hdf5/1.8.12/parallel'),
+                         mock.call('load', 'sems-netcdf/4.4.1/exo_parallel'),
+                         mock.call('load', 'sems-parmetis/4.0.3/parallel'),
+                         mock.call('load', 'sems-scotch/6.0.3/nopthread_64bit_parallel'),
+                         mock.call('load', 'sems-superlu/4.3/base'),
+                         mock.call('load', 'sems-cmake/3.10.3'),
+                         mock.call('load', 'atdm-env'),
+                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
+                         ]
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
+
+
     def test_buildEnv_passes_with_intel_1701(self):
         """Find the function"""
         PR_name = 'Trilinos_pullrequest_intel_17.0.1'
@@ -671,6 +709,7 @@ class Test_setEnviron(unittest.TestCase):
         self.buildEnv_passes(PR_name, expected_list, test_ENV=expected_env)
 
 
+
 class Test_GetCDashTrack(unittest.TestCase):
     """use the default or override from environment"""
 
@@ -702,13 +741,16 @@ class Test_GetCDashTrack(unittest.TestCase):
         self.assertEqual(expected_output, m_output.getvalue())
 
 
+
 class testCompute_n(unittest.TestCase):
     '''How many processors will we use based on memory limits'''
+
 
     def setUp(self):
         self.m_environ = mock.patch.dict(os.environ,
                                          {'JENKINS_JOB_WEIGHT': '29'},
                                          clear=True)
+
 
     def test_over_weight(self):
         '''if the jenkins job weight is set higher than the  machines nprocs
@@ -720,44 +762,58 @@ class testCompute_n(unittest.TestCase):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
         self.assertEqual(10, parallel_level)
 
-    def test_32p_64g(self):
-        '''check we match whats on 113-115 and the cloud'''
-        m_open =  mock.mock_open(read_data='''MemTotal 65805212 kB''')
+
+    def helper_call_compute_n(self, num_cpu, mem_kb, expected_cpu_count):
+        """
+        """
+        mem_gb   = mem_kb / (1024**2)
+
+        mem_info = {"mem_kb": mem_kb, "mem_gb": mem_gb}
+        m_open   = mock.mock_open(read_data="MemTotal %s kB"%(mem_kb))
+
         with self.m_environ, \
             mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
-            mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=32):
+            mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=num_cpu), \
+            mock.patch('PullRequestLinuxDriverTest.get_memory_info', return_value=mem_info):
             parallel_level = PullRequestLinuxDriverTest.compute_n()
-        self.assertEqual(20, parallel_level)
+        self.assertEqual(expected_cpu_count, parallel_level)
+
+
+    def test_32p_64g(self):
+        '''check we match whats on 113-115 and the cloud'''
+        num_cpu  = 32
+        mem_kb   = 65805212
+        expected_cpu_count = 20
+
+        self.helper_call_compute_n(num_cpu, mem_kb, expected_cpu_count)
 
 
     def test_72p_64g(self):
         '''match whats on the 14x series'''
-        m_open =  mock.mock_open(read_data='''MemTotal 65805212 kB''')
-        with self.m_environ, \
-            mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
-            mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=72):
-            parallel_level = PullRequestLinuxDriverTest.compute_n()
-        self.assertEqual(10, parallel_level)
+        num_cpu  = 72
+        mem_kb   = 65805212
+        expected_cpu_count = 10
+
+        self.helper_call_compute_n(num_cpu, mem_kb, expected_cpu_count)
 
 
     def test_88p_128g(self):
         '''match ascic158'''
-        m_open = mock.mock_open(read_data='''MemTotal 131610424 kB''')
-        with self.m_environ, \
-             mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
-             mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=88):
-            parallel_level = PullRequestLinuxDriverTest.compute_n()
-        self.assertEqual(13, parallel_level)
+        num_cpu  = 88
+        mem_kb   = 131610424
+        expected_cpu_count = 13
+
+        self.helper_call_compute_n(num_cpu, mem_kb, expected_cpu_count)
 
 
     def test_80p_128g(self):
         '''this matches ascic166'''
-        m_open = mock.mock_open(read_data='''MemTotal 131610424 kB''')
-        with self.m_environ, \
-             mock.patch('PullRequestLinuxDriverTest.open', m_open, create=True), \
-             mock.patch('PullRequestLinuxDriverTest.cpu_count', return_value=80):
-            parallel_level = PullRequestLinuxDriverTest.compute_n()
-        self.assertEqual(20, parallel_level)
+        num_cpu  = 80
+        mem_kb   = 131610424
+        expected_cpu_count = 20
+
+        self.helper_call_compute_n(num_cpu, mem_kb, expected_cpu_count)
+
 
 
 if __name__ == '__main__':

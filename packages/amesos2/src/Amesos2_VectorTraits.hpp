@@ -83,6 +83,20 @@ namespace Amesos2 {
     typedef typename multivector_type::impl_scalar_type  ptr_scalar_type; // TODO Make this a pointer
   };
 
+  template < typename Scalar,
+             typename ExecutionSpace >
+  struct VectorTraits<
+    Kokkos::View<Scalar**,Kokkos::LayoutLeft,ExecutionSpace> > {
+    typedef Scalar scalar_t;
+    typedef int local_ordinal_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+    typedef Tpetra::Map<>::node_type node_t;
+
+    typedef Kokkos::View<Scalar**,Kokkos::LayoutLeft,ExecutionSpace>  multivector_type;
+    typedef Scalar  ptr_scalar_type; // TODO Make this a pointer
+  };
+
+
 #ifdef HAVE_AMESOS2_EPETRA
 
   template <>
