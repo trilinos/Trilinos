@@ -101,6 +101,17 @@ fi
 export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 # NOTE: Use as many build processes and there are cores by default.
 
+if [[ "${SEMS_MODULEFILES_ROOT}" == "" ]] ; then
+  if [[ -d /projects/sems/modulefiles ]] ; then
+    echo "NOTE: SEMS modules not defined, loading their definition!"
+    module use /projects/sems/modulefiles/projects
+    export SEMS_MODULEFILES_ROOT=/projects/sems/modulefiles
+  else
+    echo "ERROR: The SEMS modules are not defined and default location does not exist!"
+    return
+  fi
+fi
+
 module purge
 module load sems-env
 module load sems-git/2.10.1

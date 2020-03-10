@@ -890,6 +890,18 @@ the env var:
 $ export ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE=<some-url>
 ```
 
+NOTE: If the SEMS modules are not already defined in the current shell
+(i.e. the environment variable `SEMS_MODULEFILES_ROOT` is empty), then the
+`atdm/load-env.sh` script for this 'sems-rhel7' system will attempt to define
+the SEMS modules by running:
+
+```
+$ module use /projects/sems/modulefiles/projects
+$ export SEMS_MODULEFILES_ROOT=/projects/sems/modulefiles
+```
+
+if that directory exists.
+
 
 ### Spack RHEL Environment
 
