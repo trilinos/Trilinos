@@ -62,12 +62,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Directory, AllMinGIDs, SC, LO, GO)
    * and summarized here
    *
    * Map::myMinGID_ is the minimum GID held by a map on its owning process. For
-   * a map that has no entries on a process, its value is left uninitialized.
+   * a map that has no entries on a process, its value is std::numeric_limits<GO>::max()
    *
    * Directory::allMinGIDs_ array holds the minimum GID on each participating
    * process. This array is used, eg, in the directory's getEntriesImpl method.
-   * For ranks whose maps are empty allMinGIDs_[rank] is uninitialized and any
-   * work using it triggers undefined behavior.
+   * For ranks whose maps are empty allMinGIDs_[rank] is std::numeric_limits<GO>::max()
+   * and any work using it violates the assumptions of the search algorithm that assumes
+   * the GIDs are uniformly distributed and monotonically increasing
    *
    * @rppawlo discovered this in a simple test wherein a map was empty on every
    * process except the last. That map is used to build a MultiVector and then
