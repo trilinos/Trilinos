@@ -27,8 +27,17 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/pebbl/src/function)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    example_01
+    RelaxedBinary
     SOURCES example_01.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SumUpRounding
+    SOURCES example_02.cpp
     ARGS PrintItAll
     NUM_MPI_PROCS 4
     PASS_REGULAR_EXPRESSION "TEST PASSED"
