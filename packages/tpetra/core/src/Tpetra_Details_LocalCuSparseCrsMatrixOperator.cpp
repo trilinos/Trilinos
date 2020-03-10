@@ -44,6 +44,8 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
 #include "Teuchos_Assert.hpp"
+#include "KokkosBlas1_axpby.hpp"
+#include "KokkosBlas1_scal.hpp"
 
 namespace Tpetra {
 namespace Details {
@@ -95,6 +97,11 @@ fillComplete()
     const int64_t numEnt = numRows == 0 || numCols == 0 ?
       int64_t(0) : static_cast<int64_t>(A.nnz());
 
+    if (numEnt == 0) {
+      matrix_.reset();
+      return;
+    }
+
     using LO = DefaultTypes::local_ordinal_type;
 
     using Kokkos::view_alloc;
@@ -144,15 +151,26 @@ apply(Kokkos::View<const Scalar**, array_layout,
   using size_type = Kokkos::Cuda::memory_space::size_type;
   const size_type numCols = X.extent(1);
   TEUCHOS_ASSERT( Y.extent(1) == numCols );
-  for (size_type col = 0; col < numCols; ++col) {
-    auto X_col = Kokkos::subview(X, Kokkos::ALL(), col);
-    auto Y_col = Kokkos::subview(Y, Kokkos::ALL(), col);
-    auto X_col_cuda = getCuSparseVector(
-      const_cast<Scalar*>(X_col.data()), X_col.extent(0));
-    auto Y_col_cuda = getCuSparseVector(
-      Y_col.data(), Y_col.extent(0));
-    cuSparseMatrixVectorMultiply(*handle_, mode, alpha, *matrix_,
-                                 *X_col_cuda, beta, *Y_col_cuda);
+
+  if (matrix_.get() == nullptr) {
+    if (beta == Scalar{}) {
+      Kokkos::deep_copy(Y, Scalar{});
+    }
+    else { // beta != 0
+      KokkosBlas::scal(Y, beta, Y);
+    }
+  }
+  else {
+    for (size_type col = 0; col < numCols; ++col) {
+      auto X_col = Kokkos::subview(X, Kokkos::ALL(), col);
+      auto Y_col = Kokkos::subview(Y, Kokkos::ALL(), col);
+      auto X_col_cuda = getCuSparseVector(
+        const_cast<Scalar*>(X_col.data()), X_col.extent(0));
+      auto Y_col_cuda = getCuSparseVector(
+        Y_col.data(), Y_col.extent(0));
+      cuSparseMatrixVectorMultiply(*handle_, mode, alpha, *matrix_,
+                                   *X_col_cuda, beta, *Y_col_cuda);
+    }
   }
 }
 
