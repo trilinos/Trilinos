@@ -57,7 +57,6 @@
 #include <KokkosBlas1_nrm2.hpp>
 #include <KokkosBlas2_gemv.hpp>
 #include <Adelus.hpp>
-//#include "flops.h"
 
 #ifdef DREAL
 #define MPI_VALUE_TYPE MPI_DOUBLE 
@@ -87,6 +86,7 @@ int main(int argc, char *argv[])
   int  my_col;
   int  matrix_size;
   int  nprocs_per_row;
+  int  nptile = 1; // number of processors per node
 
   double mflops;
 
@@ -135,10 +135,12 @@ int main(int argc, char *argv[])
       if (argc > 2) {
         // argv[2] should be #procs per row
         buf[1] = atoi(argv[2]);
+        // argv[3] should be #procs per node
+        buf[2] = atoi(argv[3]);
       }
       else
         // default is 1, but sqrt(p) would be better
-        buf[1] = 1;
+        buf[1] = 1; buf[2] = 1;
     }
     else {
       // Input Data about matrix and distribution
@@ -151,9 +153,14 @@ int main(int argc, char *argv[])
         std::cout << "Enter number of processors to which each row is assigned "  << std::endl;
         std::cin >> buf[1];
       }
+      if (buf[2] < 0) {
+        std::cout << "Enter number of processors per node "  << std::endl;
+        std::cin >> buf[2];
+      }
     }
     std::cout << " Matrix Size "<< buf[0] <<"\n";
     std::cout << " Processors in a row  " <<  buf[1] << "\n";
+    std::cout << " Processors in a node  " <<  buf[2] << "\n";
   }
 
   /* Send the initilization data to each processor    */
@@ -166,6 +173,8 @@ int main(int argc, char *argv[])
   matrix_size = buf[0];
 
   nprocs_per_row  = buf[1];
+
+  nptile = buf[2];
 
   // Example for 1 RHS
 
@@ -205,7 +214,19 @@ int main(int argc, char *argv[])
        << "    my_col  " << my_col << std::endl;
 
   // Adelus example using the Kokkos Views
+#ifdef KOKKOS_ENABLE_CUDA
+  int gpu_count;
+  cudaGetDeviceCount ( &gpu_count );
+  Kokkos::InitArguments args;
+  args.num_threads = 0;
+  args.num_numa    = 0;
+  args.device_id   = rank%nptile;
+  std::cout << "   Processor  " << rank << " (" << processor_name << "), GPU: " 
+            << args.device_id << "/" << gpu_count << std::endl;
+  Kokkos::initialize( args );
+#else
   Kokkos::initialize( argc, argv );
+#endif
   {
   //  Local size -- myrows  * (mycols + myrhs)
   
