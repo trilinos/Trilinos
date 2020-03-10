@@ -156,7 +156,8 @@ namespace Tpetra {
     using IST = impl_scalar_type;
     using subclass_op_type =
       Details::LocalCuSparseCrsMatrixOperator<IST, IST, device_type>;
-    return std::make_shared<subclass_op_type>(lclMat);
+    return std::make_shared<subclass_op_type>(
+      execution_space(), lclMat);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

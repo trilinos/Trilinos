@@ -64,7 +64,7 @@ class LocalCuSparseCrsMatrixOperator :
 {
 private:
   using base_type =
-    LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>;
+    LocalCrsMatrixOperatorWithSetup<MultiVectorScalar, MatrixScalar, Device>;
 
 public:
   using execution_space = typename Device::execution_space;
