@@ -60,6 +60,8 @@
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_Utilities.hpp"
 
+#include <vector>
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -333,8 +335,7 @@ namespace MueLu {
       for (int i=LO_ZERO;i<aggSize;++i) {
         // NOTE: In theory, the eigenvalues should be nearly real
         //TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
-        maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
-
+        maxEigenVal = std::max(maxEigenVal, fabs(alpha_real[i]/beta[i]));
       }
 
       (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE)*maxEigenVal;
@@ -358,30 +359,31 @@ namespace MueLu {
     LO num_bad_aggs = 0;
     MT worst_agg = 0.0;
 
-    MT mean_worst_agg = 0.0;
+    MT mean_bad_agg = 0.0;
     MT mean_good_agg  = 0.0;
+
 
     for (size_t i=0;i<agg_qualities->getLocalLength();++i) {
 
       if (data[i] > good_agg_thresh) {
         num_bad_aggs++;
-        mean_worst_agg += data[i];
+        mean_bad_agg += data[i];
       }
       else {
         mean_good_agg += data[i];
       }
       worst_agg = std::max(worst_agg, data[i]);
-
     }
 
-    if (num_bad_aggs > 0) mean_worst_agg /= num_bad_aggs;
-    mean_good_aggs /= agg_qualities->getLocalLength() - num_bad_aggs;
+
+    if (num_bad_aggs > 0) mean_bad_agg /= num_bad_aggs;
+    mean_good_agg /= agg_qualities->getLocalLength() - num_bad_aggs;
 
     if (num_bad_aggs == 0) {
       GetOStream(Statistics1) << "All aggregates passed the quality measure. Worst aggregate had quality " << worst_agg << ". Mean aggregate quality " << mean_good_agg << "." << std::endl;
     } else {
       GetOStream(Statistics1) << num_bad_aggs << " out of " << agg_qualities->getLocalLength() << " did not pass the quality measure. Worst aggregate had quality " << worst_agg << ". "
-                              << "Mean bad aggregate quality " << mean_worst_agg << ". Mean good aggregate quality " << mean_good_agg << "." << std::endl;
+                              << "Mean bad aggregate quality " << mean_bad_agg << ". Mean good aggregate quality " << mean_good_agg << "." << std::endl;
     }
 
     if (pL.get<bool>("aggregate qualities: file output")) {
@@ -389,9 +391,40 @@ namespace MueLu {
       Xpetra::IO<magnitudeType,LO,GO,Node>::Write(filename, *agg_qualities);
     }
 
+    if (true) {
+      const auto n = size_t(agg_qualities->getLocalLength());
+
+      std::vector<double> tmp;
+      tmp.reserve(n);
+
+      for (size_t i=0u; i<n; ++i) {
+        tmp.push_back(data[i]);
+      }
+
+      std::sort(tmp.begin(), tmp.end());
+
+      double percents[] = { 0.0, 0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99, 0.995, 0.998, 0.999, 1.0 };
+
+      printf("DJS AGG QUALITY HEADER: | LEVEL | TOTAL |");
+      for (auto percent : percents) {
+        printf (" %2.1f%% |", 100.0*percent );
+      }
+      printf("\n");
+
+      printf("DJS AGG QUALITY: | LEVEL | %ld |"
+            , n
+            );
+
+      for (auto percent : percents) {
+        size_t i = size_t(n*percent);
+        i = i < n ? i : n-1u;
+        i = i > 0u ? i : 0u;
+        printf(" %0.2f |", tmp[i]);
+      }
+      printf("\n");
+
+    }
   }
-
-
 
 } // namespace MueLu
 
