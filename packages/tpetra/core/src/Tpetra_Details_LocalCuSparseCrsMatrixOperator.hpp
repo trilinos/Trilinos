@@ -152,6 +152,8 @@ private:
   Kokkos::View<LO*, device_type> ptr_;
 };
 
+#ifdef HAVE_TPETRA_INST_FLOAT
+
 //! Full specialization that uses cuSPARSE for Scalar=float.
 template<>
 class LocalCuSparseCrsMatrixOperator<float, float,
@@ -173,6 +175,10 @@ public:
   ~LocalCuSparseCrsMatrixOperator() override = default;
 };
 
+#endif // HAVE_TPETRA_INST_FLOAT
+
+#ifdef HAVE_TPETRA_INST_DOUBLE
+
 //! Full specialization that uses cuSPARSE for Scalar=double.
 template<>
 class LocalCuSparseCrsMatrixOperator<double, double,
@@ -193,6 +199,8 @@ public:
     const std::shared_ptr<local_matrix_type>& A);
   ~LocalCuSparseCrsMatrixOperator() override = default;
 };
+
+#endif // HAVE_TPETRA_INST_DOUBLE
 
 #endif // HAVE_TPETRACORE_CUSPARSE
 
