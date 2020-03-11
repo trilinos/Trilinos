@@ -450,8 +450,8 @@ namespace Tpetra {
         return res;
       }
 
-      const int i0 = as<GO>(std::distance(allMinGIDs_.begin(), it));
-      const global_size_t nOverP = map.getGlobalNumElements () / (numProcs - i0);
+      const auto i0 = as<GO>(std::distance(allMinGIDs_.begin(), it));
+      const global_size_t nOverP = map.getGlobalNumElements () / as<global_size_t>(numProcs - i0);
 
       // Map is distributed but contiguous.
       typename ArrayView<int>::iterator procIter = nodeIDs.begin();
