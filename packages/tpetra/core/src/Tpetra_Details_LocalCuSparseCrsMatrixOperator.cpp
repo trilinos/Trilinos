@@ -90,6 +90,28 @@ void
 LocalCuSparseCrsMatrixOperatorRealBase<Scalar>::
 fillComplete()
 {
+  using std::endl;
+  const char funcName[] = "Tpetra::Details::"
+    "LocalCuSparseCrsMatrixOperatorRealBase::fillComplete";
+
+  const bool debug = Details::Behavior::debug("cuSPARSE");
+  const bool verbose = Details::Behavior::verbose("cuSPARSE");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << funcName << ": ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+  if (debug) {
+    const cudaError_t lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
+       << funcName << ", CUDA is in an erroneous state \""
+       << cudaGetErrorName(lastErr) << "\".");
+  }
+
   if (! this->isFillComplete()) {
     auto A = this->getLocalMatrix();
     const int64_t numRows = static_cast<int64_t>(A.numRows());
@@ -113,6 +135,19 @@ fillComplete()
     // structure is fixed after first fillComplete.
 
     auto newPtrLen = A.graph.row_map.extent(0);
+    if (debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (A.graph.entries.extent(0) != A.values.extent(0),
+         std::logic_error, "A.graph.entries.extent(0)="
+         << A.graph.entries.extent(0) << " != A.values.extent(0)="
+         << A.values.extent(0) << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (newPtrLen == 0 && A.graph.entries.extent(0) != 0,
+         std::logic_error, "A.graph.row_map.extent(0)=0, but "
+         "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
+         << " != 0.");
+    }
+
     if (newPtrLen != ptr_.extent(0)) {
       // Free memory before (re)allocating; this may reduce the
       // high-water memory mark.
@@ -122,7 +157,26 @@ fillComplete()
                    WithoutInitializing),
         newPtrLen);
       Details::copyOffsets(ptr_, A.graph.row_map);
+      if (debug) {
+        const cudaError_t lastErr = cudaGetLastError();
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (lastErr != cudaSuccess, std::runtime_error, "In "
+           << funcName << ", after calling copyOffsets, CUDA is in "
+           "an erroneous state \"" << cudaGetErrorName(lastErr)
+           << "\".");
+      }
     }
+
+    if (debug && newPtrLen != 0) {
+      LO nnz = 0;
+      Kokkos::deep_copy(nnz, Kokkos::subview(ptr_, numRows));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (nnz != A.graph.entries.extent(0), std::logic_error,
+         "ptr_[numRows=" << numRows << "]=" << nnz << " != "
+         "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
+         << ".");
+    }
+
     LO* ptr = ptr_.data();
     LO* ind = const_cast<LO*>(A.graph.entries.data());
     Scalar* val = const_cast<Scalar*>(A.values.data());
@@ -134,6 +188,19 @@ fillComplete()
     matrix_ = getCuSparseMatrix(numRows, numCols, numEnt,
                                 ptr, ind, val, alg);
     base_type::fillComplete();
+  }
+
+  if (debug) {
+    const cudaError_t lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On exit of "
+       << funcName << ", CUDA is in an erroneous state \""
+       << cudaGetErrorName(lastErr) << "\".");
+  }
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
   }
 }
 
@@ -148,6 +215,33 @@ apply(Kokkos::View<const Scalar**, array_layout,
       const Scalar alpha,
       const Scalar beta) const
 {
+  using std::endl;
+  const bool debug = Details::Behavior::debug("cuSPARSE");
+  const bool verbose = Details::Behavior::verbose("cuSPARSE");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::Details::"
+      "LocalCuSparseCrsMatrixOperatorRealBase::apply: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+  if (debug) {
+    const cudaError_t lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
+       "Tpetra::Details::LocalCuSparseCrsMatrixOperatorRealBase::"
+       "apply, CUDA is in an erroneous state \""
+       << cudaGetErrorName(lastErr) << "\".");
+  }
+
+  if (! this->isFillComplete()) {
+    using this_type = LocalCuSparseCrsMatrixOperatorRealBase<Scalar>;
+    this_type& thisRef = const_cast<this_type&>(*this);
+    thisRef.fillComplete(); // evil hack
+  }
+
   using size_type = Kokkos::Cuda::memory_space::size_type;
   const size_type numCols = X.extent(1);
   TEUCHOS_ASSERT( Y.extent(1) == numCols );
@@ -171,6 +265,20 @@ apply(Kokkos::View<const Scalar**, array_layout,
       cuSparseMatrixVectorMultiply(*handle_, mode, alpha, *matrix_,
                                    *X_col_cuda, beta, *Y_col_cuda);
     }
+  }
+
+  if (debug) {
+    const cudaError_t lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On exit of "
+       "Tpetra::Details::LocalCuSparseCrsMatrixOperatorRealBase::"
+       "apply, CUDA is in an erroneous state \""
+       << cudaGetErrorName(lastErr) << "\".");
+  }
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
   }
 }
 

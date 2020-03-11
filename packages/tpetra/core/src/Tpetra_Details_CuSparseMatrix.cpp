@@ -10,9 +10,55 @@
 #include <sstream>
 #include <stdexcept>
 
+#define TPETRA_DETAILS_CUSPARSE_CHECK_STATUS( status ) \
+  TEUCHOS_TEST_FOR_EXCEPTION \
+    (status != CUSPARSE_STATUS_SUCCESS, std::runtime_error, \
+     "cuSPARSE call returned status = " \
+     << Impl::cuSparseStatusString(status) << ".");
+
 namespace Tpetra {
 namespace Details {
 namespace Impl {
+
+std::string cuSparseStatusString(cusparseStatus_t status)
+{
+  if (status == CUSPARSE_STATUS_SUCCESS) {
+    return "CUSPARSE_STATUS_SUCCESS";
+  }
+  else if (status == CUSPARSE_STATUS_NOT_INITIALIZED) {
+    return "CUSPARSE_STATUS_NOT_INITIALIZED";
+  }
+  else if (status == CUSPARSE_STATUS_ALLOC_FAILED) {
+    return "CUSPARSE_STATUS_ALLOC_FAILED";
+  }
+  else if (status == CUSPARSE_STATUS_INVALID_VALUE) {
+    return "CUSPARSE_STATUS_INVALID_VALUE";
+  }
+  else if (status == CUSPARSE_STATUS_ARCH_MISMATCH) {
+    return "CUSPARSE_STATUS_ARCH_MISMATCH";
+  }
+  else if (status == CUSPARSE_STATUS_EXECUTION_FAILED) {
+    return "CUSPARSE_STATUS_EXECUTION_FAILED";
+  }
+  else if (status == CUSPARSE_STATUS_INTERNAL_ERROR) {
+    return "CUSPARSE_STATUS_INTERNAL_ERROR";
+  }
+  else if (status == CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED) {
+    return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+  }
+#ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+  else if (status == CUSPARSE_STATUS_NOT_SUPPORTED) {
+    return "CUSPARSE_STATUS_MAPPING_ERROR";
+  }
+#else
+  else if (status == CUSPARSE_STATUS_MAPPING_ERROR) {
+    return "CUSPARSE_STATUS_MAPPING_ERROR";
+  }
+#endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+  else {
+    return "UNKNOWN (this is bad)";
+  }
+}
 
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
 cusparseIndexType_t getIndexType(const int32_t*) {
@@ -46,8 +92,27 @@ CuSparseMatrix(const int64_t numRows,
 #endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
   alg_(alg)
 {
-  cusparseStatus_t status;
+  using std::endl;
 
+  const bool debug = Details::Behavior::debug("cuSPARSE");
+  const bool verbose = Details::Behavior::verbose("cuSPARSE");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::Details::CuSparseMatrix::CuSparseMatrix: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+  if (debug) {
+    const cudaError_t lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
+       "Tpetra::Details::CuSparseMatrix's constructor, CUDA is in an "
+       "erroneous state \"" << cudaGetErrorName(lastErr) << "\".");
+  }
+
+  cusparseStatus_t status;
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
   const cusparseIndexType_t csrRowOffsetsType =
     Impl::getIndexType(ptr);
@@ -91,6 +156,12 @@ CuSparseMatrix(const int64_t numRows,
     throw;
   }
 #endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 void
@@ -210,14 +281,24 @@ CuSparseMatrix::
 reallocBufferIfNeededAndGetBuffer(const size_t minNeededBufSize)
 {
   using std::endl;
-  const bool verbose = Details::Behavior::verbose();
+  const bool debug = Details::Behavior::debug("cuSPARSE");
+  const bool verbose = Details::Behavior::verbose("cuSPARSE");
   std::unique_ptr<std::string> prefix;
   if (verbose) {
     std::ostringstream os;
-    os << "Tpetra::Details::CuSparseMatrix::reallocBufferIfNeededAndGetBuffer: ";
+    os << "Tpetra::Details::CuSparseMatrix::"
+      "reallocBufferIfNeededAndGetBuffer: ";
     prefix = std::unique_ptr<std::string>(new std::string(os.str()));
     os << "Start: minNeededBufSize=" << minNeededBufSize << endl;
     std::cerr << os.str();
+  }
+  if (debug) {
+    const cudaError_t lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
+       "Tpetra::Details::CuSparseMatrix::"
+       "reallocBufferIfNeededAndGetBuffer, CUDA is in an "
+       "erroneous state \"" << cudaGetErrorName(lastErr) << "\".");
   }
 
   // NOTE (mfh 09 Mar 2020) cusparseCsrmvEx_bufferSize doesn't
@@ -289,7 +370,8 @@ cuSparseMatrixVectorMultiplyGeneric(
   CuSparseVector& y)
 {
   using std::endl;
-  const bool verbose = Details::Behavior::verbose();
+  const bool debug = Details::Behavior::debug("cuSPARSE");
+  const bool verbose = Details::Behavior::verbose("cuSPARSE");
   std::unique_ptr<std::string> prefix;
   if (verbose) {
     std::ostringstream os;
@@ -297,6 +379,14 @@ cuSparseMatrixVectorMultiplyGeneric(
     prefix = std::unique_ptr<std::string>(new std::string(os.str()));
     os << "Start" << endl;
     std::cerr << os.str();
+  }
+  if (debug) {
+    const cudaError_t lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
+       "Tpetra::Details::cuSparseMatrixVectorMultiplyGeneric, CUDA "
+       "is in an erroneous state \"" << cudaGetErrorName(lastErr)
+       << "\".");
   }
 
   cusparseHandle_t rawHandle = handle.getHandle();
@@ -333,6 +423,8 @@ cuSparseMatrixVectorMultiplyGeneric(
   status =
     cusparseSpMV(rawHandle, rawOp, &alpha, rawMatrix, x.getHandle(),
                  &beta, y.getHandle(), valType, alg, buf);
+  TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+
 #else
   cusparseMatDescr_t descrA = matrix.getDescr();
   const int m = rawMatrix->numRows;
@@ -341,6 +433,44 @@ cuSparseMatrixVectorMultiplyGeneric(
   const Scalar* val = reinterpret_cast<const Scalar*>(rawMatrix->val);
   const int* ptr = reinterpret_cast<const int*>(rawMatrix->ptr);
   const int* ind = reinterpret_cast<const int*>(rawMatrix->ind);
+
+  if (verbose) {
+    cusparsePointerMode_t ptrMode;
+    status = cusparseGetPointerMode(rawHandle, &ptrMode);
+    TPETRA_DETAILS_CUSPARSE_CHECK_STATUS( status );
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "cuSPARSE pointer mode: ";
+      if (ptrMode == CUSPARSE_POINTER_MODE_HOST) {
+        os << "CUSPARSE_POINTER_MODE_HOST";
+      }
+      else if (ptrMode == CUSPARSE_POINTER_MODE_DEVICE) {
+        os << "CUSPARSE_POINTER_MODE_DEVICE";
+      }
+      else {
+        os << "UNKNOWN (this is bad)";
+      }
+      os << endl << *prefix << "m=" << m << ", n=" << n
+         << ", nnz=" << nnz << ", x.getHandle()->size="
+         << x.getHandle()->size << ", y.getHandle()->size="
+         << y.getHandle()->size << endl;
+      std::cerr << os.str();
+    }
+  }
+
+  TEUCHOS_ASSERT( descrA != nullptr );
+  TEUCHOS_ASSERT( rawHandle != nullptr );
+  if (m != 0 && n != 0 && nnz != 0) {
+    TEUCHOS_ASSERT( val != nullptr );
+    TEUCHOS_ASSERT( ptr != nullptr );
+    TEUCHOS_ASSERT( ind != nullptr );
+  }
+  if (m != 0 && nnz != 0) {
+    TEUCHOS_ASSERT( y.getHandle()->values != nullptr );
+  }
+  if (n != 0 && nnz != 0) {
+    TEUCHOS_ASSERT( x.getHandle()->values != nullptr );
+  }
 
   // This is the "data type used for computation."  CUDA 10.1 doesn't
   // currently support this being different than val's or x's
@@ -359,7 +489,7 @@ cuSparseMatrixVectorMultiplyGeneric(
      &alpha, valType, descrA, val, valType, ptr, ind,
      x.getHandle()->values, valType, &beta, valType,
      y.getHandle()->values, valType, execType, &minNeededBufSize);
-  TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+  TPETRA_DETAILS_CUSPARSE_CHECK_STATUS( status );
   if (verbose) {
     std::ostringstream os;
     os << *prefix << "Buffer size: " << minNeededBufSize << endl;
@@ -378,9 +508,22 @@ cuSparseMatrixVectorMultiplyGeneric(
                     ptr, ind, x.getHandle()->values, valType,
                     &beta, valType, y.getHandle()->values, valType,
                     execType, buf);
+  TPETRA_DETAILS_CUSPARSE_CHECK_STATUS( status );
 #endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
 
-  TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+  if (debug) {
+    const cudaError_t lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
+       "Tpetra::Details::cuSparseMatrixVectorMultiplyGeneric, CUDA "
+       "is in an erroneous state \"" << cudaGetErrorName(lastErr)
+       << "\".");
+  }
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 } // namespace Impl
