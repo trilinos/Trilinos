@@ -184,6 +184,7 @@ namespace Tpetra {
       auto* opSub = dynamic_cast<subclass_op_type*>(op);
       if (opSub != nullptr) {
         opSub->resumeFill();
+        TEUCHOS_ASSERT( ! opSub->isFillComplete() );
       }
     }
   }
@@ -206,6 +207,7 @@ namespace Tpetra {
       opSub->setMinMaxNumberOfEntriesPerRow(minNumEntPerRow,
                                             maxNumEntPerRow);
       opSub->fillComplete();
+      TEUCHOS_ASSERT( ! opSub->isFillComplete() );
     }
   }
 
@@ -218,7 +220,7 @@ namespace Tpetra {
     dist_object_type (rowMap)
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, size_t, "
-      "ProfileType[, RCP<ParameterList>]): ";
+      "ProfileType[, RCP<ParameterList>])";
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, maxNumEntriesPerRow,
@@ -226,7 +228,7 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+        (true, std::runtime_error, ": CrsGraph constructor (RCP<const Map>, "
          "size_t, ProfileType[, RCP<ParameterList>]) threw an exception: "
          << e.what ());
     }
@@ -236,7 +238,7 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = myGraph_;
     resumeFill (params);
-    checkInternalState ();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -248,7 +250,7 @@ namespace Tpetra {
     dist_object_type (rowMap)
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
-      "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+      "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>])";
     Teuchos::RCP<crs_graph_type> graph;
     try {
       using Teuchos::rcp;
@@ -257,7 +259,7 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor "
+        (true, std::runtime_error, ": CrsGraph constructor "
          "(RCP<const Map>, ArrayView<const size_t>, "
          "ProfileType[, RCP<ParameterList>]) threw an exception: "
          << e.what ());
@@ -268,7 +270,7 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
     resumeFill (params);
-    checkInternalState ();
+    checkInternalState(tfecfFuncName);
   }
 
 
@@ -282,18 +284,18 @@ namespace Tpetra {
     dist_object_type (rowMap)
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>]): ";
+      "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>])";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
     // An artifact of debugging something a while back.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! staticGraph_.is_null (), std::logic_error,
-       "staticGraph_ is not null at the beginning of the constructor."
+       ": staticGraph_ is not null at the beginning of the constructor."
        << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! myGraph_.is_null (), std::logic_error,
-       "myGraph_ is not null at the beginning of the constructor."
+       ": myGraph_ is not null at the beginning of the constructor."
        << suffix);
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -303,7 +305,7 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+        (true, std::runtime_error, ": CrsGraph constructor (RCP<const Map>, "
          "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>]) threw an "
          "exception: " << e.what ());
     }
@@ -313,7 +315,7 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = myGraph_;
     resumeFill (params);
-    checkInternalState ();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -327,7 +329,7 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] =
       "CrsMatrix(RCP<const Map>, RCP<const Map>, "
-      "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+      "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>])";
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
@@ -336,7 +338,7 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+        (true, std::runtime_error, ": CrsGraph constructor (RCP<const Map>, "
          "RCP<const Map>, ArrayView<const size_t>, ProfileType[, "
          "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
@@ -346,7 +348,7 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
     resumeFill (params);
-    checkInternalState ();
+    checkInternalState(tfecfFuncName);
   }
 
 
@@ -361,21 +363,21 @@ namespace Tpetra {
     using std::endl;
     using values_type = typename local_matrix_type::values_type;
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>[, "
-      "RCP<ParameterList>]): ";
+      "RCP<ParameterList>])";
     const bool verbose = Details::Behavior::verbose("CrsMatrix");
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsMatrix", "CrsMatrix(graph,params)");
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
       std::ostringstream os;
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (graph.is_null(), std::runtime_error, "Input graph is null.");
+      (graph.is_null(), std::runtime_error, ": Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! graph->isFillComplete (), std::runtime_error, "Input graph "
+      (! graph->isFillComplete (), std::runtime_error, ": Input graph "
        "is not fill complete. You must call fillComplete on the "
        "graph before using it to construct a CrsMatrix.  Note that "
        "calling resumeFill on the graph makes it not fill complete, "
@@ -402,7 +404,7 @@ namespace Tpetra {
     }
     k_values1D_ = values_type("Tpetra::CrsMatrix::val", numEnt);
     lclMatrix_ = makeLocalOperator(k_values1D_, lclGraph, numCols);
-    checkInternalState();
+    checkInternalState(tfecfFuncName);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -421,11 +423,11 @@ namespace Tpetra {
     storageStatus_(Details::STORAGE_1D_PACKED)
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>,"
-      "local_matrix_type::values_type,[RCP<ParameterList>]): ";
+      "local_matrix_type::values_type[,RCP<ParameterList>])";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (graph.is_null(), std::runtime_error, "Input graph is null.");
+      (graph.is_null(), std::runtime_error, ": Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! graph->isFillComplete (), std::runtime_error, "Input graph "
+      (! graph->isFillComplete (), std::runtime_error, ": Input graph "
        "is not fill complete. You must call fillComplete on the "
        "graph before using it to construct a CrsMatrix.  Note that "
        "calling resumeFill on the graph makes it not fill complete, "
@@ -439,7 +441,7 @@ namespace Tpetra {
     const size_t numCols = graph->getColMap()->getNodeNumElements();
     const local_graph_type lclGraph = graph->getLocalGraph();
     lclMatrix_ = makeLocalOperator(values, lclGraph, numCols);
-    checkInternalState();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -458,7 +460,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using std::endl;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, ptr, ind, val[, params]): ";
+      "RCP<const Map>, ptr, ind, val[, params])";
     const char suffix[] =
       ".  Please report this bug to the Tpetra developers.";
     const bool debug = Details::Behavior::debug("CrsMatrix");
@@ -479,7 +481,7 @@ namespace Tpetra {
     // catch exceptions.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (values.extent(0) != columnIndices.extent(0),
-       std::invalid_argument, "values.extent(0)=" << values.extent(0)
+       std::invalid_argument, ": values.extent(0)=" << values.extent(0)
        << " != columnIndices.extent(0) = " << columnIndices.extent(0)
        << ".");
     if (debug && rowPointers.extent(0) != 0) {
@@ -487,12 +489,12 @@ namespace Tpetra {
         getEntryOnHost(rowPointers, rowPointers.extent(0) - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numEnt != size_t(columnIndices.extent(0)) ||
-         numEnt != size_t(values.extent(0)),
-         std::invalid_argument, "Last entry of rowPointers says that "
-         "the matrix has " << numEnt << " entr"
-         << (numEnt != 1 ? "ies" : "y") << ", but the dimensions of "
-         "columnIndices and values don't match this.  "
-         "columnIndices.extent(0)=" << columnIndices.extent (0)
+         numEnt != size_t(values.extent(0)), std::invalid_argument,
+         ": Last entry of rowPointers says that the matrix has "
+         << numEnt << " entr" << (numEnt != 1 ? "ies" : "y")
+         << ", but the dimensions of columnIndices and values don't "
+         "match this.  columnIndices.extent(0)="
+         << columnIndices.extent(0)
          << " and values.extent(0)=" << values.extent (0) << ".");
     }
 
@@ -503,7 +505,7 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+        (true, std::runtime_error, ": CrsGraph constructor (RCP<const Map>, "
          "RCP<const Map>, ptr, ind[, params]) threw an exception: "
          << e.what ());
     }
@@ -516,11 +518,11 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (lclGraph.row_map.extent(0) != rowPointers.extent(0) ||
        lclGraph.entries.extent(0) != columnIndices.extent(0),
-       std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, "
+       std::logic_error, ": CrsGraph's constructor (rowMap, colMap, ptr, "
        "ind[, params]) did not set the local graph correctly." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (lclGraph.entries.extent(0) != values.extent(0),
-       std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, ind[, "
+       std::logic_error, ": CrsGraph's constructor (rowMap, colMap, ptr, ind[, "
        "params]) did not set the local graph correctly.  "
        "lclGraph.entries.extent(0) = " << lclGraph.entries.extent(0)
        << " != values.extent(0) = " << values.extent(0) << suffix);
@@ -540,7 +542,7 @@ namespace Tpetra {
 
     const size_t numCols = graph->getColMap()->getNodeNumElements();
     lclMatrix_ = makeLocalOperator(values, lclGraph, numCols);
-    checkInternalState ();
+    checkInternalState(tfecfFuncName);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -561,7 +563,7 @@ namespace Tpetra {
   {
     using Teuchos::RCP;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, ptr, ind, val[, params]): ";
+      "RCP<const Map>, ptr, ind, val[, params])";
 
     RCP<crs_graph_type> graph;
     try {
@@ -570,7 +572,7 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+        (true, std::runtime_error, ": CrsGraph constructor (RCP<const Map>, "
          "RCP<const Map>, ArrayRCP<size_t>, ArrayRCP<LocalOrdinal>[, "
          "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
@@ -595,7 +597,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (size_t (lclGraph.row_map.extent (0)) != size_t (ptr.size ()) ||
        size_t (lclGraph.entries.extent (0)) != size_t (ind.size ()),
-       std::logic_error, "CrsGraph's constructor (rowMap, colMap, "
+       std::logic_error, ": CrsGraph's constructor (rowMap, colMap, "
        "ptr, ind[, params]) did not set the local graph correctly.  "
        "Please report this bug to the Tpetra developers.");
 
@@ -604,7 +606,7 @@ namespace Tpetra {
     k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<device_type>(
       Teuchos::av_reinterpret_cast<impl_scalar_type>(val()));
     lclMatrix_ = makeLocalOperator(k_values1D_, lclGraph, numCols);
-    checkInternalState();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -620,7 +622,7 @@ namespace Tpetra {
     fillComplete_(true)
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, local_matrix_type[, RCP<ParameterList>]): ";
+      "RCP<const Map>, local_matrix_type[, RCP<ParameterList>])";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
@@ -631,12 +633,12 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+        (true, std::runtime_error, ": CrsGraph constructor (RCP<const Map>, "
          "RCP<const Map>, local_graph_type[, RCP<ParameterList>]) threw an "
          "exception: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (!graph->isFillComplete (), std::logic_error, "CrsGraph constructor (RCP"
+      (!graph->isFillComplete (), std::logic_error, ": CrsGraph constructor (RCP"
        "<const Map>, RCP<const Map>, local_graph_type[, RCP<ParameterList>]) "
        "did not produce a fill-complete graph.  Please report this bug to the "
        "Tpetra developers.");
@@ -657,13 +659,13 @@ namespace Tpetra {
     localOperatorFillComplete(*lclMatrix_, *graph);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
-       "At the end of a CrsMatrix constructor that should produce "
+       ": At the end of a CrsMatrix constructor that should produce "
        "a fillComplete matrix, isFillActive() is true." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! isFillComplete (), std::logic_error, "At the end of a "
+      (! isFillComplete (), std::logic_error, ": At the end of a "
        "CrsMatrix constructor that should produce a fillComplete "
        "matrix, isFillComplete() is false." << suffix);
-    checkInternalState ();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -680,9 +682,8 @@ namespace Tpetra {
     storageStatus_(Details::STORAGE_1D_PACKED),
     fillComplete_(true)
   {
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, RCP<const Map>, RCP<const Map>, "
-      "local_matrix_type[, RCP<ParameterList>]): ";
+    const char tfecfFuncName[] =
+      "CrsMatrix(rowMap,colMap,domMap,ranMap[,params])";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
@@ -693,12 +694,12 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+        (true, std::runtime_error, ": CrsGraph constructor (RCP<const Map>, "
          "RCP<const Map>, RCP<const Map>, RCP<const Map>, local_graph_type[, "
          "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! graph->isFillComplete (), std::logic_error, "CrsGraph "
+      (! graph->isFillComplete (), std::logic_error, ": CrsGraph "
        "constructor (RCP<const Map>, RCP<const Map>, RCP<const Map>, "
        "RCP<const Map>, local_graph_type[, RCP<ParameterList>]) did "
        "not produce a fillComplete graph." << suffix);
@@ -719,13 +720,13 @@ namespace Tpetra {
     localOperatorFillComplete(*lclMatrix_, *graph);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
-       "At the end of a CrsMatrix constructor that should produce "
+       ": At the end of a CrsMatrix constructor that should produce "
        "a fillComplete matrix, isFillActive() is true." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! isFillComplete (), std::logic_error, "At the end of a "
+      (! isFillComplete (), std::logic_error, ": At the end of a "
        "CrsMatrix constructor that should produce a fillComplete "
        "matrix, isFillComplete() is false." << suffix);
-    checkInternalState ();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -745,8 +746,8 @@ namespace Tpetra {
     fillComplete_(true)
   {
     using Teuchos::rcp;
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix"
-      "(lclMat,Map,Map,Map,Map,Import,Export,params): ";
+    const char tfecfFuncName[] = "CrsMatrix"
+      "(lclMat,rowMap,colMap,domMap,ranMap,Import,Export,params)";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
@@ -758,12 +759,12 @@ namespace Tpetra {
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "CrsGraph constructor "
+        (true, std::runtime_error, ": CrsGraph constructor "
          "(local_graph_type, Map, Map, Map, Map, Import, Export, "
          "params) threw: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (!graph->isFillComplete (), std::logic_error, "CrsGraph "
+      (!graph->isFillComplete (), std::logic_error, ": CrsGraph "
        "constructor (local_graph_type, Map, Map, Map, Map, Import, "
        "Export, params) did not produce a fill-complete graph.  "
        "Please report this bug to the Tpetra developers.");
@@ -784,13 +785,13 @@ namespace Tpetra {
     localOperatorFillComplete(*lclMatrix_, *graph);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
-       "At the end of a CrsMatrix constructor that should produce "
+       ": At the end of a CrsMatrix constructor that should produce "
        "a fillComplete matrix, isFillActive() is true." << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! isFillComplete (), std::logic_error, "At the end of a "
+      (! isFillComplete (), std::logic_error, ": At the end of a "
        "CrsMatrix constructor that should produce a fillComplete "
        "matrix, isFillComplete() is false." << suffix);
-    checkInternalState ();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3802,25 +3803,25 @@ namespace Tpetra {
     const typename local_graph_type::entries_type::non_const_type& columnIndices,
     const typename local_matrix_type::values_type& values)
   {
-    const char tfecfFuncName[] = "setAllValues: ";
+    const char tfecfFuncName[] = "setAllValues";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (columnIndices.size() != values.size(), std::invalid_argument,
        "columnIndices.size() = " << columnIndices.size() << " != "
        "values.size() = " << values.size() << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (myGraph_.is_null(), std::runtime_error, "myGraph_ must not "
+      (myGraph_.is_null(), std::runtime_error, ": myGraph_ must not "
        "be null.");
     try {
       myGraph_->setAllIndices(rowPointers, columnIndices);
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "myGraph_->setAllIndices() threw "
+        (true, std::runtime_error, ": myGraph_->setAllIndices() threw "
          "an exception: " << e.what ());
     }
     catch (...) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "myGraph_->setAllIndices() threw "
+        (true, std::runtime_error, ": myGraph_->setAllIndices() threw "
          "an exception not a subclass of std::exception.");
     }
 
@@ -3833,7 +3834,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (lclGraph.row_map.extent(0) != rowPointers.extent(0) ||
        numEnt != size_t(columnIndices.extent(0)),
-       std::logic_error, "myGraph_->setAllIndices() did not "
+       std::logic_error, ": myGraph_->setAllIndices() did not "
        "correctly create the local graph.  "
        "Please report this bug to the Tpetra developers.");
 
@@ -3850,7 +3851,7 @@ namespace Tpetra {
     // way to indicate any extra space at the end of each row.
     this->storageStatus_ = Details::STORAGE_1D_PACKED;
 
-    checkInternalState();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4748,13 +4749,13 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using std::endl;
-    const char tfecfFuncName[] = "fillComplete: ";
+    const char tfecfFuncName[] = "fillComplete(domMap,ranMap[,params])";
     ProfilingRegion regionFillComplete
       ("Tpetra::CrsMatrix::fillComplete");
     const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsMatrix", "fillComplete(dom,ran,p)");
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
       std::ostringstream os;
       os << *prefix << endl;
       std::cerr << os.str ();
@@ -4762,7 +4763,7 @@ namespace Tpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->isFillActive () || this->isFillComplete (), std::runtime_error,
-       "Matrix fill state must be active (isFillActive() "
+       ": Matrix fill state must be active (isFillActive() "
        "must be true) before you may call fillComplete().");
     const int numProcs = this->getComm ()->getSize ();
 
@@ -4811,7 +4812,7 @@ namespace Tpetra {
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numProcs == 1 && nonlocals_.size() > 0,
-         std::runtime_error, "Cannot have nonlocal entries on a serial run.  "
+         std::runtime_error, ": Cannot have nonlocal entries on a serial run.  "
          "An invalid entry (i.e., with row index not in the row Map) must have "
          "been submitted to the CrsMatrix.");
     }
@@ -4848,14 +4849,14 @@ namespace Tpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! domainMapsMatch, std::runtime_error,
-         "The CrsMatrix's domain Map does not match the graph's domain Map.  "
+         ": The CrsMatrix's domain Map does not match the graph's domain Map.  "
          "The graph cannot be changed because it was given to the CrsMatrix "
          "constructor as const.  You can fix this by passing in the graph's "
          "domain Map and range Map to the matrix's fillComplete call.");
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! rangeMapsMatch, std::runtime_error,
-         "The CrsMatrix's range Map does not match the graph's range Map.  "
+         ": The CrsMatrix's range Map does not match the graph's range Map.  "
          "The graph cannot be changed because it was given to the CrsMatrix "
          "constructor as const.  You can fix this by passing in the graph's "
          "domain Map and range Map to the matrix's fillComplete call.");
@@ -4889,7 +4890,7 @@ namespace Tpetra {
       // have the opportunity to communicate that error state.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (makeIndicesLocalResult.first != 0, std::runtime_error,
-         makeIndicesLocalResult.second);
+         std::string(": ") + makeIndicesLocalResult.second);
 
       const bool sorted = this->myGraph_->isSorted ();
       const bool merged = this->myGraph_->isMerged ();
@@ -4915,7 +4916,7 @@ namespace Tpetra {
         this->myGraph_->computeLocalConstants (computeLocalTriangularConstants);
       }
       this->myGraph_->fillComplete_ = true;
-      this->myGraph_->checkInternalState ();
+      this->myGraph_->checkInternalState();
     }
 
     const bool callComputeGlobalConstants = params.get () == nullptr ||
@@ -4930,7 +4931,7 @@ namespace Tpetra {
     fillComplete_ = true;
     TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
     localOperatorFillComplete(*lclMatrix_, this->getCrsGraphRef());
-    checkInternalState();
+    checkInternalState(tfecfFuncName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4942,6 +4943,8 @@ namespace Tpetra {
                             const Teuchos::RCP<const export_type>& exporter,
                             const Teuchos::RCP<Teuchos::ParameterList> &params)
   {
+    const char tfecfFuncName[] = "expertStaticFillComplete";
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     std::string label;
     if(!params.is_null())
@@ -4952,12 +4955,11 @@ namespace Tpetra {
     Teuchos::TimeMonitor all(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-all")));
 #endif
 
-    const char tfecfFuncName[] = "expertStaticFillComplete: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
-      std::runtime_error, "Matrix fill state must be active (isFillActive() "
+      std::runtime_error, ": Matrix fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      myGraph_.is_null (), std::logic_error, "myGraph_ is null.  This is not allowed.");
+      myGraph_.is_null (), std::logic_error, ": myGraph_ is null.  This is not allowed.");
 
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -5001,7 +5003,7 @@ namespace Tpetra {
     Teuchos::TimeMonitor cIS(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cIS")));
 #endif
 
-    checkInternalState();
+    checkInternalState(tfecfFuncName);
     }
   }
 
@@ -6179,37 +6181,44 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  checkInternalState () const
+  checkInternalState(const char context[]) const
   {
     const bool debug = ::Tpetra::Details::Behavior::debug ("CrsGraph");
     if (debug) {
       const char tfecfFuncName[] = "checkInternalState: ";
-      const char err[] = "Internal state is not consistent.  "
-        "Please report this bug to the Tpetra developers.";
+      auto err = [&] () {
+        std::ostringstream os;
+        os << "(context: \"" << context << "\") Inconsistent "
+          "internal state.  Please report this bug to the Tpetra "
+          "developers.";
+        return os.str();
+      };
 
       // This version of the graph (RCP<const crs_graph_type>) must
       // always be nonnull.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (staticGraph_.is_null (), std::logic_error, err);
+        (staticGraph_.is_null (), std::logic_error, err()
+         << "  staticGraph_ is null.");
       // myGraph == null means that the matrix has a const ("static")
       // graph.  Otherwise, the matrix has a dynamic graph (it owns its
       // graph).
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! myGraph_.is_null () && myGraph_ != staticGraph_,
-         std::logic_error, err);
+         std::logic_error, err() << "  myGraph_ is not null, but "
+         "myGraph_ != staticGraph_.");
       // if matrix is fill complete, then graph must be fill complete
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (isFillComplete () && ! staticGraph_->isFillComplete (),
-         std::logic_error, err << "  Specifically, the matrix is fill complete, "
+         std::logic_error, err() << "  CrsMatrix is fill complete, "
          "but its graph is NOT fill complete.");
-      // if values are allocated and they are non-zero in number, then
-      // one of the allocations should be present
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (staticGraph_->indicesAreAllocated () &&
          staticGraph_->getNodeAllocationSize() > 0 &&
          staticGraph_->getNodeNumRows() > 0 &&
          k_values1D_.extent (0) == 0,
-         std::logic_error, err);
+         std::logic_error, err() << "  If values are allocated and "
+         "they are nonzero in number, then one of the allocations "
+         "should be present.");
 
       using IST = impl_scalar_type;
       using subclass_op_type =
@@ -6218,14 +6227,14 @@ namespace Tpetra {
       if (fillComplete_) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (lclMatrix_.get() == nullptr, std::logic_error,
-           err << "  Specifically, fillComplete_ is true but "
-           "lclMatrix_ is null.");
+           err() << "  The CrsMatrix is fill complete (fillComplete_ "
+           " is true), but lclMatrix_ is null.");
         if (lclMatrix_.get() != nullptr) {
           subclass_op_type* opSub =
             dynamic_cast<subclass_op_type*>(lclMatrix_.get());
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (opSub != nullptr && ! opSub->isFillComplete(),
-             std::logic_error, err << "  Specifically, fillComplete_ "
+             std::logic_error, err() << "  fillComplete_ "
              "is true, lclMatrix_ is nonnull, lclMatrix_ is a "
              "LocalCrsMatrixOperatorWithSetup, but lclMatrix_ is not "
              "fill complete.");
@@ -6237,8 +6246,8 @@ namespace Tpetra {
             dynamic_cast<subclass_op_type*>(lclMatrix_.get());
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (opSub != nullptr && opSub->isFillComplete(),
-             std::logic_error, err << "  Specifically, fillComplete_ "
-             "is false, lclMatrix_ is nonnull, lclMatrix_ is a "
+             std::logic_error, err() << "  fillComplete_ is false, "
+             "lclMatrix_ is nonnull, lclMatrix_ is a "
              "LocalCrsMatrixOperatorWithSetup, but lclMatrix_ is "
              "fill complete.");
         }

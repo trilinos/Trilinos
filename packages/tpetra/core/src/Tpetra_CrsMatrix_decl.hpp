@@ -4330,8 +4330,10 @@ namespace Tpetra {
     /// (that is, if the matrix <i>does</i> own the graph).
     void fillLocalGraphAndMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-    //! Check that this object's state is sane; throw if it's not.
-    void checkInternalState () const;
+    /// \brief Check that this object's state is sane; throw if it's not.
+    ///
+    /// \param context [in] Where I am; the context of this call.
+    void checkInternalState(const char context[]) const;
 
     /// \name (Global) graph pointers
     ///
