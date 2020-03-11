@@ -6,11 +6,14 @@ The class may be used as code in a python program or the executable can be used
 as a standalone program.
 """
 
+from __future__ import print_function
+
 import re
 import sys
 import os
 import copy
 import getopt
+
 
 version = sys.version_info[0] + sys.version_info[1]/10.0
 if version < 2.7:
