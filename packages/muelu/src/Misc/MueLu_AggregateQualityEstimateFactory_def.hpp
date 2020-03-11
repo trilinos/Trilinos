@@ -89,6 +89,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregate qualities: file output");
     SET_VALID_ENTRY("aggregate qualities: file base");
     SET_VALID_ENTRY("aggregate qualities: check symmetry");
+    SET_VALID_ENTRY("aggregate qualities: percentiles");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -391,7 +392,7 @@ namespace MueLu {
       Xpetra::IO<magnitudeType,LO,GO,Node>::Write(filename, *agg_qualities);
     }
 
-    if (true) {
+    {
       const auto n = size_t(agg_qualities->getLocalLength());
 
       std::vector<double> tmp;
@@ -403,16 +404,16 @@ namespace MueLu {
 
       std::sort(tmp.begin(), tmp.end());
 
-      double percents[] = { 0.0, 0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99, 0.995, 0.998, 0.999, 1.0 };
+      Teuchos::ArrayView<const double> percents = pL.get<Teuchos::Array<double> >("aggregate qualities: percentiles");
 
-      printf("DJS AGG QUALITY HEADER: | LEVEL | TOTAL |");
+      printf("AGG QUALITY HEADER     : | LEVEL |  TOTAL  |");
       for (auto percent : percents) {
         printf (" %2.1f%% |", 100.0*percent );
       }
       printf("\n");
 
-      printf("DJS AGG QUALITY: | LEVEL | %ld |"
-            , n
+      printf("AGG QUALITY PERCENTILES: | %5d | %7ld |"
+             ,  level.GetLevelID(), n
             );
 
       for (auto percent : percents) {
