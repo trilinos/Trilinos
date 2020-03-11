@@ -122,7 +122,7 @@ void StepperDIRK<Scalar>::initialize()
 {
   // Initialize the stage vectors
   const int numStages = tableau_->numStages();
-  stageX_    = this->wrapperModel_->getNominalValues().get_x()->clone_v();
+  this->stageX_    = this->wrapperModel_->getNominalValues().get_x()->clone_v();
   stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
     stageXDot_[i] = Thyra::createMember(this->wrapperModel_->get_f_space());
@@ -189,7 +189,7 @@ void StepperDIRK<Scalar>::takeStep(
 
     // Reset non-zero initial guess.
     if ( this->getResetInitialGuess() && (!this->getZeroInitialGuess()) )
-      Thyra::assign(stageX_.ptr(), *(currentState->getX()));
+      Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
 
     // Compute stage solutions
     bool pass = true;
@@ -259,13 +259,13 @@ void StepperDIRK<Scalar>::takeStep(
 
         this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
-        sStatus = this->solveImplicitODE(stageX_, stageXDot_[i], ts, p);
+        sStatus = this->solveImplicitODE(this->stageX_, stageXDot_[i], ts, p);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass=false;
 
         this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
-        timeDer->compute(stageX_, stageXDot_[i]);
+        timeDer->compute(this->stageX_, stageXDot_[i]);
       }
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
@@ -354,7 +354,7 @@ void StepperDIRK<Scalar>::describe(
   if (tableau_ != Teuchos::null) tableau_->describe(out, verbLevel);
   out << "  stepperObserver_    = " << stepperObserver_ << std::endl;
   out << "  xTilde_             = " << xTilde_ << std::endl;
-  out << "  stageX_             = " << stageX_ << std::endl;
+  out << "  stageX_             = " << this->stageX_ << std::endl;
   out << "  stageXDot_.size()   = " << stageXDot_.size() << std::endl;
   const int numStages = stageXDot_.size();
   for (int i=0; i<numStages; ++i)

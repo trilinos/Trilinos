@@ -125,8 +125,6 @@ public:
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
 
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStageX() {return stageX_;}
-
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
     virtual bool isExplicitImplicit() const
@@ -179,7 +177,6 @@ protected:
   Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
 
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >          stepperObserver_;
 

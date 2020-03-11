@@ -197,7 +197,7 @@ void StepperExplicitRK<Scalar>::initialize()
 
   // Initialize the stage vectors
   int numStages = tableau_->numStages();
-  stageX_ = Thyra::createMember(this->appModel_->get_f_space());
+  this->stageX_ = Thyra::createMember(this->appModel_->get_f_space());
   stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
     stageXDot_[i] = Thyra::createMember(this->appModel_->get_f_space());
@@ -281,10 +281,10 @@ void StepperExplicitRK<Scalar>::takeStep(
 
       } else {
 
-        Thyra::assign(stageX_.ptr(), *(currentState->getX()));
+        Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
         for (int j=0; j < i; ++j) {
           if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-            Thyra::Vp_StV(stageX_.ptr(), dt*A(i,j), *stageXDot_[j]);
+            Thyra::Vp_StV(this->stageX_.ptr(), dt*A(i,j), *stageXDot_[j]);
           }
         }
         const Scalar ts = time + c(i)*dt;
@@ -296,7 +296,7 @@ void StepperExplicitRK<Scalar>::takeStep(
         auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
 
         // Evaluate xDot = f(x,t).
-        this->evaluateExplicitODE(stageXDot_[i], stageX_, ts, p);
+        this->evaluateExplicitODE(stageXDot_[i], this->stageX_, ts, p);
       }
 
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
@@ -389,7 +389,7 @@ void StepperExplicitRK<Scalar>::describe(
   if (tableau_ != Teuchos::null) tableau_->describe(out, verbLevel);
   out << "  tableau_           = " << tableau_ << std::endl;
   out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
-  out << "  stageX_            = " << stageX_ << std::endl;
+  out << "  stageX_            = " << this->stageX_ << std::endl;
   out << "  stageXDot_.size()  = " << stageXDot_.size() << std::endl;
   const int numStages = stageXDot_.size();
   for (int i=0; i<numStages; ++i)

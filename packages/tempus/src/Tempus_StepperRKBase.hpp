@@ -9,6 +9,9 @@
 #ifndef Tempus_StepperRKBase_hpp
 #define Tempus_StepperRKBase_hpp
 
+#include "Thyra_VectorBase.hpp"
+#include "Tempus_config.hpp"
+
 
 namespace Tempus {
 
@@ -25,9 +28,12 @@ public:
 
   virtual void setStageNumber(int s) { stageNumber_ = s; }
 
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStageX() {return stageX_;}
+
 protected:
 
   int stageNumber_;    //< The Runge-Kutta stage number.
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
 };
 
 } // namespace Tempus
