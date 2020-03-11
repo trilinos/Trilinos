@@ -440,14 +440,7 @@ namespace Tpetra {
         allMinGIDs_.end()-1,
         [](GO const gid) { return gid != std::numeric_limits<GO>::max(); }
       );
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        it == allMinGIDs_.end()-1,
-        std::logic_error,
-        "Every min GID in the map is std::numeric_limits<GO>::max()!"
-      );
-#endif // HAVE_TPETRA_DEBUG
-      const GO i0 = std::distance(allMinGIDs_.begin(), it);
+      const auto i0 = static_cast<GO>(std::distance(allMinGIDs_.begin(), it));
       const global_size_t nOverP = map.getGlobalNumElements () / (numProcs - i0);
 
       // Map is distributed but contiguous.
