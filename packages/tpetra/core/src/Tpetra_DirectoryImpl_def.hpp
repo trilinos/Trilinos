@@ -440,7 +440,17 @@ namespace Tpetra {
         allMinGIDs_.end()-1,
         [](GO const gid) { return gid != std::numeric_limits<GO>::max(); }
       );
-      const auto i0 = static_cast<GO>(std::distance(allMinGIDs_.begin(), it));
+
+      if (it == allMinGIDs_.end()-1) {
+        // No entries have been assigned on this process
+        res = (globalIDs.size() > 0) ? IDNotPresent : AllIDsPresent;
+        std::fill(nodeIDs.begin(), nodeIDs.end(), -1);
+        if (computeLIDs)
+          std::fill(localIDs.begin(), localIDs.end(), LINVALID);
+        return res;
+      }
+
+      const int i0 = as<GO>(std::distance(allMinGIDs_.begin(), it));
       const global_size_t nOverP = map.getGlobalNumElements () / (numProcs - i0);
 
       // Map is distributed but contiguous.
