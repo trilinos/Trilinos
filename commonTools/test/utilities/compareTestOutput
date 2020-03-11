@@ -16,8 +16,8 @@ import getopt
 
 
 version = sys.version_info[0] + sys.version_info[1]/10.0
-if version < 2.7:
-    sys.exit("python 2.7 or greater required!")
+if version < 2.6:
+    sys.exit("python 2.6 or greater required!")
 
 
 class CompareRule:
