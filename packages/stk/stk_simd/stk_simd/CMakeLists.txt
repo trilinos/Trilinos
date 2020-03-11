@@ -43,6 +43,8 @@
 # B) Define the header and source files (and directories)
 #
 
+ADD_COMPILE_DEFINITIONS(STK_VOLATILE_SIMD)
+
 ADD_SUBDIRECTORY(disimd)
 ADD_SUBDIRECTORY(avx)
 ADD_SUBDIRECTORY(avx512)
