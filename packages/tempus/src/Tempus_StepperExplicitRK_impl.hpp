@@ -25,6 +25,8 @@ void StepperExplicitRK<Scalar>::setupDefault()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setUseEmbedded(        this->getUseEmbeddedDefault());
 
+  this->setStageNumber(0);
+
   this->setObserver(Teuchos::rcp(new StepperRKObserver<Scalar>()));
 }
 
@@ -42,6 +44,8 @@ void StepperExplicitRK<Scalar>::setup(
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
+
+  this->setStageNumber(0);
 
   this->stepperObserver_ =
     Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
@@ -258,6 +262,7 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i=0; i < numStages; ++i) {
+        this->setStageNumber(i);
         this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
         // ???: is it a good idea to leave this (no-op) here?
