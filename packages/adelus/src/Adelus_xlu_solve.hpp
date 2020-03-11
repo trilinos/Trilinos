@@ -69,7 +69,9 @@ inline
 void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, double *secs)
 {
   typedef typename ZDView::value_type value_type;
+#ifdef PRINT_STATUS
   typedef typename ZDView::device_type::execution_space execution_space;
+#endif
   typedef typename ZDView::device_type::memory_space memory_space;
 
   double run_secs;              // time (in secs) during which the prog ran

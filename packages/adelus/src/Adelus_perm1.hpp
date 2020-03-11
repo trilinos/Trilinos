@@ -311,7 +311,9 @@ namespace Adelus {
     my_rhs_=*num_my_rhs;
 
     typedef typename ZDView::value_type value_type;
+  #ifdef PRINT_STATUS
     typedef typename ZDView::device_type::execution_space execution_space;
+  #endif
     typedef typename ZDView::device_type::memory_space memory_space;
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewMatrixType;
   

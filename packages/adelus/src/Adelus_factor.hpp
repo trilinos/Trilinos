@@ -102,9 +102,10 @@ void factor(ZDView& ZV,                    // matrix and rhs
             ViewIntType1D& pivot_vec_view) // vector storing list of pivot rows
 {
   typedef typename ZDView::value_type value_type;
+#ifdef PRINT_STATUS
   typedef typename ZDView::device_type::execution_space execution_space;
   typedef typename ZDView::device_type::memory_space memory_space;
-
+#endif
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
   typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View1DHostPinnType;//CudaHostPinnedSpace
 #endif
