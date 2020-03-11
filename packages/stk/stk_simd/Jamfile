@@ -44,6 +44,8 @@ project votd
     <define>STK_BUILT_IN_SIERRA
     <include>$(stk_simd-root)
     <define>USE_STK_SIMD_AUTO
+    <define>STK_KOKKOS_SIMD
+    <define>STK_VOLATILE_SIMD
     <architecture>fat_x86:<define>USE_STK_SIMD_SSE
     <architecture>generic_x86:<define>USE_STK_SIMD_SSE
     <architecture>nehalem:<define>USE_STK_SIMD_SSE
@@ -58,6 +60,8 @@ project votd
   : usage-requirements
     <include>$(stk_simd-root)
     <define>USE_STK_SIMD_AUTO
+    <define>STK_KOKKOS_SIMD
+    <define>STK_VOLATILE_SIMD
     <architecture>fat_x86:<define>USE_STK_SIMD_SSE
     <architecture>generic_x86:<define>USE_STK_SIMD_SSE
     <architecture>nehalem:<define>USE_STK_SIMD_SSE
