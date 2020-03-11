@@ -31,7 +31,7 @@ void StepperDIRK<Scalar>::setupDefault()
   this->setUseEmbedded(        this->getUseEmbeddedDefault());
   this->setZeroInitialGuess(   false);
 
-  this->setStageNumber(0);
+  this->setStageNumber(-1);
 
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setDefaultSolver();
@@ -55,7 +55,7 @@ void StepperDIRK<Scalar>::setup(
   this->setUseEmbedded(        useEmbedded);
   this->setZeroInitialGuess(   zeroInitialGuess);
 
-  this->setStageNumber(0);
+  this->setStageNumber(-1);
 
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setObserver(obs);
@@ -320,6 +320,8 @@ void StepperDIRK<Scalar>::takeStep(
     workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
+  // reset the stage number
+  this->setStageNumber(-1);
   return;
 }
 
