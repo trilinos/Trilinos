@@ -45,7 +45,7 @@
 // @HEADER
 #ifndef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_DEF_HPP
 #define MUELU_AGGREGATEQUALITYESTIMATEFACTORY_DEF_HPP
-
+#include <iomanip>
 #include "MueLu_AggregateQualityEstimateFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"
@@ -431,10 +431,10 @@ namespace MueLu {
     {
       const auto n = size_t(agg_qualities->getLocalLength());
 
-      std::vector<double> tmp;
+      std::vector<MT> tmp;
       tmp.reserve(n);
 
-      for (size_t i=0u; i<n; ++i) {
+      for (size_t i=0; i<n; ++i) {
         tmp.push_back(data[i]);
       }
 
@@ -442,23 +442,20 @@ namespace MueLu {
 
       Teuchos::ArrayView<const double> percents = pL.get<Teuchos::Array<double> >("aggregate qualities: percentiles");
 
-      printf("AGG QUALITY HEADER     : | LEVEL |  TOTAL  |");
+      GetOStream(Statistics1) << "AGG QUALITY HEADER     : | LEVEL |  TOTAL  |";
       for (auto percent : percents) {
-        printf (" %2.1f%% |", 100.0*percent );
+        GetOStream(Statistics1) << std::fixed << std::setprecision(4) <<100.0*percent << "% |";
       }
-      printf("\n");
+      GetOStream(Statistics1) << std::endl;
 
-      printf("AGG QUALITY PERCENTILES: | %5d | %7ld |"
-             ,  level.GetLevelID(), n
-            );
-
+      GetOStream(Statistics1) << "AGG QUALITY PERCENTILES: | " << level.GetLevelID() << " | " << n << "|";
       for (auto percent : percents) {
         size_t i = size_t(n*percent);
         i = i < n ? i : n-1u;
         i = i > 0u ? i : 0u;
-        printf(" %0.2f |", tmp[i]);
+        GetOStream(Statistics1) << std::fixed <<std::setprecision(4) << tmp[i] << " |";
       }
-      printf("\n");
+      GetOStream(Statistics1) << std::endl;
 
     }
   }
