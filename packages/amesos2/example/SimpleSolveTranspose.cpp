@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     // Solve A \ B
     // Create solver interface to Superlu with Amesos2 factory method
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("ShyLUBasker", A, X, B);
-    *fos << "\nAmesos2: Solver description:  " << solver->description() << endl;
+    *fos << "\nAmesos2: Solver description:  " << solver->description() << std::endl;
 
     Teuchos::ParameterList amesos2_params("Amesos2");
     amesos2_params.sublist("ShyLUBasker").set("num_threads", 1, "Num threads == 1 by default");
