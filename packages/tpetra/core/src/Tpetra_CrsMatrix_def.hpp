@@ -207,7 +207,7 @@ namespace Tpetra {
       opSub->setMinMaxNumberOfEntriesPerRow(minNumEntPerRow,
                                             maxNumEntPerRow);
       opSub->fillComplete();
-      TEUCHOS_ASSERT( ! opSub->isFillComplete() );
+      TEUCHOS_ASSERT( opSub->isFillComplete() );
     }
   }
 

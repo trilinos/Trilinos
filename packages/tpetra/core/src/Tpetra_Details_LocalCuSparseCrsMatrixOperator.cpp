@@ -121,72 +121,72 @@ fillComplete()
 
     if (numEnt == 0) {
       matrix_.reset();
-      return;
     }
+    else {
+      using LO = DefaultTypes::local_ordinal_type;
 
-    using LO = DefaultTypes::local_ordinal_type;
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
 
-    using Kokkos::view_alloc;
-    using Kokkos::WithoutInitializing;
+      // NOTE (mfh 09 Mar 2020) I'm assuming that if ptr_ has the
+      // right length, then we don't need to copy it again.  This ties
+      // in with Tpetra::CrsMatrix's assumption that the matrix's
+      // graph structure is fixed after first fillComplete.
 
-    // NOTE (mfh 09 Mar 2020) I'm assuming that if ptr_ has the right
-    // length, then we don't need to copy it again.  This ties in with
-    // Tpetra::CrsMatrix's assumption that the matrix's graph
-    // structure is fixed after first fillComplete.
-
-    auto newPtrLen = A.graph.row_map.extent(0);
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (A.graph.entries.extent(0) != A.values.extent(0),
-         std::logic_error, "A.graph.entries.extent(0)="
-         << A.graph.entries.extent(0) << " != A.values.extent(0)="
-         << A.values.extent(0) << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (newPtrLen == 0 && A.graph.entries.extent(0) != 0,
-         std::logic_error, "A.graph.row_map.extent(0)=0, but "
-         "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
-         << " != 0.");
-    }
-
-    if (newPtrLen != ptr_.extent(0)) {
-      // Free memory before (re)allocating; this may reduce the
-      // high-water memory mark.
-      ptr_ = Kokkos::View<LO*, device_type>();
-      ptr_ = Kokkos::View<LO*, device_type>(
-        view_alloc("Tpetra::CrsMatrix cuSPARSE row offsets",
-                   WithoutInitializing),
-        newPtrLen);
-      Details::copyOffsets(ptr_, A.graph.row_map);
+      auto newPtrLen = A.graph.row_map.extent(0);
       if (debug) {
-        const cudaError_t lastErr = cudaGetLastError();
         TEUCHOS_TEST_FOR_EXCEPTION
-          (lastErr != cudaSuccess, std::runtime_error, "In "
-           << funcName << ", after calling copyOffsets, CUDA is in "
-           "an erroneous state \"" << cudaGetErrorName(lastErr)
-           << "\".");
+          (A.graph.entries.extent(0) != A.values.extent(0),
+           std::logic_error, "A.graph.entries.extent(0)="
+           << A.graph.entries.extent(0) << " != A.values.extent(0)="
+           << A.values.extent(0) << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (newPtrLen == 0 && A.graph.entries.extent(0) != 0,
+           std::logic_error, "A.graph.row_map.extent(0)=0, but "
+           "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
+           << " != 0.");
       }
+
+      if (newPtrLen != ptr_.extent(0)) {
+        // Free memory before (re)allocating; this may reduce the
+        // high-water memory mark.
+        ptr_ = Kokkos::View<LO*, device_type>();
+        ptr_ = Kokkos::View<LO*, device_type>(
+          view_alloc("Tpetra::CrsMatrix cuSPARSE row offsets",
+                     WithoutInitializing),
+          newPtrLen);
+        Details::copyOffsets(ptr_, A.graph.row_map);
+        if (debug) {
+          const cudaError_t lastErr = cudaGetLastError();
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (lastErr != cudaSuccess, std::runtime_error, "In "
+             << funcName << ", after calling copyOffsets, CUDA is in "
+             "an erroneous state \"" << cudaGetErrorName(lastErr)
+             << "\".");
+        }
+      }
+
+      if (debug && newPtrLen != 0) {
+        LO nnz = 0;
+        Kokkos::deep_copy(nnz, Kokkos::subview(ptr_, numRows));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (nnz != A.graph.entries.extent(0), std::logic_error,
+           "ptr_[numRows=" << numRows << "]=" << nnz << " != "
+           "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
+           << ".");
+      }
+
+      LO* ptr = ptr_.data();
+      LO* ind = const_cast<LO*>(A.graph.entries.data());
+      Scalar* val = const_cast<Scalar*>(A.values.data());
+
+      // FIXME (mfh 09 Mar 2020) Replace this with the logic to pick the
+      // right algorithm.  For now, we just want to test merge path.
+      const CuSparseMatrixVectorMultiplyAlgorithm alg =
+        CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED;
+      matrix_ = getCuSparseMatrix(numRows, numCols, numEnt,
+                                  ptr, ind, val, alg);
     }
-
-    if (debug && newPtrLen != 0) {
-      LO nnz = 0;
-      Kokkos::deep_copy(nnz, Kokkos::subview(ptr_, numRows));
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (nnz != A.graph.entries.extent(0), std::logic_error,
-         "ptr_[numRows=" << numRows << "]=" << nnz << " != "
-         "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
-         << ".");
-    }
-
-    LO* ptr = ptr_.data();
-    LO* ind = const_cast<LO*>(A.graph.entries.data());
-    Scalar* val = const_cast<Scalar*>(A.values.data());
-
-    // FIXME (mfh 09 Mar 2020) Replace this with the logic to pick the
-    // right algorithm.  For now, we just want to test merge path.
-    const CuSparseMatrixVectorMultiplyAlgorithm alg =
-      CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED;
-    matrix_ = getCuSparseMatrix(numRows, numCols, numEnt,
-                                ptr, ind, val, alg);
     base_type::fillComplete();
   }
 
