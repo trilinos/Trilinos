@@ -310,7 +310,6 @@ public:
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getStageX() {return stageX_;};
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageF() {return stageF_;};
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageG() {return stageG_;};
   Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;};
@@ -355,7 +354,6 @@ protected:
 
   Scalar order_;
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageF_;
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageG_;
 

@@ -32,7 +32,7 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
-  this->setStageNumber(0);
+  this->setStageNumber(-1);
 
   this->setTableaus("Partitioned IMEX RK SSP2");
   this->setObserver();
@@ -60,7 +60,7 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setZeroInitialGuess(   zeroInitialGuess);
 
-  this->setStageNumber(0);
+  this->setStageNumber(-1);
 
   this->setExplicitTableau(explicitTableau);
   this->setImplicitTableau(implicitTableau);
@@ -674,6 +674,8 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
+  // reset the stage number
+  this->setStageNumber(-1);
   return;
 }
 
