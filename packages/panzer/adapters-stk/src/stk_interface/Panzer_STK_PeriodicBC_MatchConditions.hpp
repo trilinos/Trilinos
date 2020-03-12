@@ -274,25 +274,33 @@ class WedgeMatcher {
   /// Set to true if a 3D problem, set to false if 2D
   bool is_three_d_;
 public:
-  enum class MirrorPlane {
-     XZ_PLANE,
-     YZ_PLANE
+  enum class MirrorPlane : int {
+     XZ_PLANE=0,
+     YZ_PLANE=1
   };
-  WedgeMatcher(int index0) : error_(1e-8),index0_(index0),is_three_d_(true) {}
-  WedgeMatcher(int index0,double error) : error_(error),index0_(index0),is_three_d_(true) {}
-  WedgeMatcher(int index0,const std::vector<std::string> & params )
-    : error_(1e-8),index0_(index0),is_three_d_(true)
+  WedgeMatcher(MirrorPlane mp,const std::vector<std::string> & params )
+    : error_(1e-8),index0_(0),is_three_d_(true)
   {
-    for (const auto& p : params)
-      if (p == "2D")
+    if (mp == MirrorPlane::XZ_PLANE)
+      index0_ = 1;
+    else // YZ_PLANE
+      index0_ = 0;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(params.size() > 2,std::logic_error,"WedgeMatcher can only have one or two option parameters (tolerance and dimension)!");
+
+    // read in string, get double
+    if (params.size() > 0)
+      error_ = std::stod(params[0]);
+
+    if (params.size() > 1) {
+      if (params[1] == "2D")
         is_three_d_ = false;
-  }
-  WedgeMatcher(int index0,double error,const std::vector<std::string> & params )
-    : error_(error),index0_(index0),is_three_d_(true)
-  {
-    for (const auto& p : params)
-      if (p == "2D")
-        is_three_d_ = false;
+      else if (params[1] == "3D")
+        is_three_d_ = true;
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: WedgeMatcher::parsParams() - the second params must be iether \"2D\" or \"3D\", param=" << params[1] << "\n");
+      }
+    }
   }
   WedgeMatcher(const WedgeMatcher & cm) = default;
 

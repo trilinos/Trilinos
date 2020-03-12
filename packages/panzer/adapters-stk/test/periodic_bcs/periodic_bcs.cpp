@@ -1733,22 +1733,24 @@ namespace panzer {
     // Wedge in 2D
     RCP<WedgeMatcher> wm;
     std::vector<std::string> params;
+    params.push_back("1.0e-8");
     params.push_back("2D");
-    wm = rcp(new WedgeMatcher(1,params));
+    wm = rcp(new WedgeMatcher(WedgeMatcher::MirrorPlane::XZ_PLANE,params));
     TEST_ASSERT(wm->getMirrorPlane() == WedgeMatcher::MirrorPlane::XZ_PLANE);
     TEST_ASSERT(!wm->isThreeD());
     TEST_EQUALITY(wm->getIndex(),1);
-    wm = rcp(new WedgeMatcher(0,params));
+    wm = rcp(new WedgeMatcher(WedgeMatcher::MirrorPlane::YZ_PLANE,params));
     TEST_ASSERT(wm->getMirrorPlane() == WedgeMatcher::MirrorPlane::YZ_PLANE);
     TEST_ASSERT(!wm->isThreeD());
     TEST_EQUALITY(wm->getIndex(),0);
 
     // Wedge in 3D
-    wm = rcp(new WedgeMatcher(1));
+    params[1] = "3D";
+    wm = rcp(new WedgeMatcher(WedgeMatcher::MirrorPlane::XZ_PLANE,params));
     TEST_ASSERT(wm->getMirrorPlane() == WedgeMatcher::MirrorPlane::XZ_PLANE);
     TEST_ASSERT(wm->isThreeD());
     TEST_EQUALITY(wm->getIndex(),1);
-    wm = rcp(new WedgeMatcher(0));
+    wm = rcp(new WedgeMatcher(WedgeMatcher::MirrorPlane::YZ_PLANE,params));
     TEST_ASSERT(wm->getMirrorPlane() == WedgeMatcher::MirrorPlane::YZ_PLANE);
     TEST_ASSERT(wm->isThreeD());
     TEST_EQUALITY(wm->getIndex(),0);
