@@ -31,6 +31,8 @@ void StepperDIRK<Scalar>::setupDefault()
   this->setUseEmbedded(        this->getUseEmbeddedDefault());
   this->setZeroInitialGuess(   false);
 
+  this->setStageNumber(0);
+
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setDefaultSolver();
 }
@@ -52,6 +54,8 @@ void StepperDIRK<Scalar>::setup(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
   this->setZeroInitialGuess(   zeroInitialGuess);
+
+  this->setStageNumber(0);
 
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setObserver(obs);
@@ -191,6 +195,7 @@ void StepperDIRK<Scalar>::takeStep(
     bool pass = true;
     Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
+      this->setStageNumber(i);
       this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
       // ???: is it a good idea to leave this (no-op) here?

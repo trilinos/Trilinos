@@ -32,6 +32,8 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
+  this->setStageNumber(0);
+
   this->setTableaus("IMEX RK SSP2");
   this->setObserver();
   this->setDefaultSolver();
@@ -57,6 +59,8 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setZeroInitialGuess(   zeroInitialGuess);
+
+  this->setStageNumber(0);
 
   this->setExplicitTableau(explicitTableau);
   this->setImplicitTableau(implicitTableau);
@@ -554,6 +558,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
+      this->setStageNumber(i);
       this->stepperObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j = 0; j < i; ++j) {

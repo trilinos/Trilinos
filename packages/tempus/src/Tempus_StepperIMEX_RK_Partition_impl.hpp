@@ -32,6 +32,8 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
+  this->setStageNumber(0);
+
   this->setTableaus("Partitioned IMEX RK SSP2");
   this->setObserver();
   this->setDefaultSolver();
@@ -57,6 +59,8 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setZeroInitialGuess(   zeroInitialGuess);
+
+  this->setStageNumber(0);
 
   this->setExplicitTableau(explicitTableau);
   this->setImplicitTableau(implicitTableau);
@@ -568,6 +572,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
+      this->setStageNumber(i);
       this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
       Thyra::assign(stageY.ptr(),
