@@ -62,7 +62,7 @@ PeriodicBC_Parser::getMatchers() const
 
 void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
 {
-   if(not pl->isParameter(countStr_)) {
+   if(!pl->isParameter(countStr_)) {
       bool validEntry = false;
       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
         !validEntry, Teuchos::Exceptions::InvalidParameterName,
@@ -372,32 +372,32 @@ PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
    }
 
    if(s_matcher=="wx-coord") {
-     panzer_stk::WedgeMatcher matcher(1,params);
+     panzer_stk::WedgeMatcher matcher(WedgeMatcher::MirrorPlane::XZ_PLANE,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
    if(s_matcher=="wy-coord") {
-     panzer_stk::WedgeMatcher matcher(0,params);
+     panzer_stk::WedgeMatcher matcher(WedgeMatcher::MirrorPlane::YZ_PLANE,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
    if(s_matcher=="wx-edge") {
-     panzer_stk::WedgeMatcher matcher(1,params);
+     panzer_stk::WedgeMatcher matcher(WedgeMatcher::MirrorPlane::XZ_PLANE,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
    if(s_matcher=="wy-edge") {
-     panzer_stk::WedgeMatcher matcher(0,params);
+     panzer_stk::WedgeMatcher matcher(WedgeMatcher::MirrorPlane::YZ_PLANE,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
    if(s_matcher=="wx-face") {
-     panzer_stk::WedgeMatcher matcher(1,params);
+     panzer_stk::WedgeMatcher matcher(WedgeMatcher::MirrorPlane::XZ_PLANE,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
    }
 
    if(s_matcher=="wy-face") {
-     panzer_stk::WedgeMatcher matcher(0,params);
+     panzer_stk::WedgeMatcher matcher(WedgeMatcher::MirrorPlane::YZ_PLANE,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
    }
 
