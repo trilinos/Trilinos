@@ -49,18 +49,21 @@
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
+
+#include <Xpetra_Matrix.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_GraphBase.hpp"
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
+
 #include "MueLu_NotayAggregationFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
@@ -106,11 +109,30 @@ public:
   void Build(Level &currentLevel) const;
 
 
-  void Build_InitialAggregation(const Teuchos::ParameterList& params,
-				const RCP<const Matrix>& A,
-				Aggregates& aggregates,
-				std::vector<unsigned>& aggStat,
-				LO& numNonAggregatedNodes) const;
+  void BuildInitialAggregates(const Teuchos::ParameterList& params,
+                              const RCP<const Matrix>& A,
+                              Aggregates& aggregates,
+                              std::vector<unsigned>& aggStat,
+                              LO& numNonAggregatedNodes,
+                              LO& numDirichletNodes) const;
+
+
+  void BuildIntermediateProlongator(const LO numRows,
+                                    const LO numDirichletNodes,
+                                    const RCP<Aggregates>& aggregates,
+                                    typename Matrix::local_matrix_type& intermediateP) const;
+
+  void BuildCoarseLocalMatrix(const typename Matrix::local_matrix_type& A,
+                              const typename Matrix::local_matrix_type& intermediateP,
+                              typename Matrix::local_matrix_type& coarseA) const;
+
+  void localSpGEMM(const typename Matrix::local_matrix_type& A,
+                   const typename Matrix::local_matrix_type& B,
+                   const std::string matrixLabel,
+                   typename Matrix::local_matrix_type& C) const;
+
+  std::string printLocalMatrix(const std::string& matrixLabel,
+                               const typename Matrix::local_matrix_type& A) const;
 
 
   //@}
