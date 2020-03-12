@@ -1664,7 +1664,7 @@ void performance_test_driver_poly( const int pdeg ,
       test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
         var_degree , nGrid , nIter , symmetric );
 
-    // const bool Pack = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
+    // const bool Pack = std::is_same<Device,Kokkos::Cuda>::value;
     // const std::vector<double> perf_coo_tensor =
     //   test_product_tensor_matrix<Scalar,Stokhos::CooProductTensor<Scalar,Device,Pack>,Device>(
     //     var_degree , nGrid , nIter , symmetric );
@@ -1676,7 +1676,7 @@ void performance_test_driver_poly( const int pdeg ,
     std::vector<double> perf_original_mat_free_block;
 #if defined(HAVE_STOKHOS_KOKKOSLINALG)
 #if defined( KOKKOS_ENABLE_CUDA )
-    enum { is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value };
+    enum { is_cuda = std::is_same<Device,Kokkos::Cuda>::value };
 #else
     enum { is_cuda = false };
 #endif
@@ -1726,7 +1726,7 @@ void performance_test_driver_poly_deg( const int nvar ,
                                        const bool symmetric )
 {
   bool do_flat_sparse =
-    Kokkos::Impl::is_same<typename Device::memory_space,Kokkos::HostSpace>::value ;
+    std::is_same<typename Device::memory_space,Kokkos::HostSpace>::value ;
 
   std::cout.precision(8);
 

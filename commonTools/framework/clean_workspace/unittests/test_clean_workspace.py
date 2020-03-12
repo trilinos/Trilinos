@@ -113,16 +113,30 @@ class TestParseArgs(unittest.TestCase):
 
 class TestForceCleanSpace(unittest.TestCase):
 
-    def test_calls(self):
+    def test_calls_with_dir(self):
         """This function does the final cleanup  so its just os.unlink"""
         test_args = Namespace()
         setattr(test_args, 'dir', os.path.join(os.path.sep, 'dev', 'null'))
         setattr(test_args, 'force_clean', True)
         cleanerInst = Cleaner()
         cleanerInst.args = test_args
-        with mock.patch('shutil.rmtree') as m_unlink:
+        with mock.patch('shutil.rmtree') as m_unlink, \
+             mock.patch('os.path.isdir', return_value=True):
             cleanerInst.force_clean_space()
         m_unlink.assert_called_once_with(test_args.dir)
+
+
+    def test_no_call_without_dir(self):
+        """This function does the final cleanup  so its just os.unlink"""
+        test_args = Namespace()
+        setattr(test_args, 'dir', os.path.join(os.path.sep, 'dev', 'null'))
+        setattr(test_args, 'force_clean', True)
+        cleanerInst = Cleaner()
+        cleanerInst.args = test_args
+        with mock.patch('shutil.rmtree') as m_unlink, \
+             mock.patch('os.path.isdir', return_value=False):
+            cleanerInst.force_clean_space()
+        m_unlink.assert_not_called()
 
 
 class TestCleanSpaceByDate(unittest.TestCase):

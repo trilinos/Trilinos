@@ -10,6 +10,7 @@
 #define Tempus_StepperDIRK_decl_hpp
 
 #include "Tempus_config.hpp"
+#include "Tempus_StepperRKBase.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
@@ -142,7 +143,8 @@ namespace Tempus {
  *  \f]
  */
 template<class Scalar>
-class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
+class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>,
+                    virtual public Tempus::StepperRKBase<Scalar>
 {
 public:
 

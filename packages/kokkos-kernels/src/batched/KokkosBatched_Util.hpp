@@ -24,9 +24,7 @@
 
 #include "KokkosKernels_config.h"
 
-namespace KokkosBatched {
-
-  // TPL macros
+// TPL macros
 #if defined (KOKKOSKERNELS_ENABLE_TPL_MKL) 
 #define __KOKKOSBATCHED_INTEL_MKL__ 1
 #include "mkl_version.h"
@@ -37,6 +35,8 @@ namespace KokkosBatched {
   //#include "mkl_types.h"
 #endif
 #endif
+
+namespace KokkosBatched {
 
 #if defined (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 #define __KOKKOSKERNELS_NVIDIA_CUBLAS__ 1

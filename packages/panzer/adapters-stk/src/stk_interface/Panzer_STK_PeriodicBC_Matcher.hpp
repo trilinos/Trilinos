@@ -162,6 +162,16 @@ public:
      * boundary condition.
      */
    virtual std::string getType() const = 0;
+
+   /// Returns the sideset name for the left side.
+   virtual std::string getLeftSidesetName() const = 0;
+
+   /// Returns the sideset name for the right side.
+   virtual std::string getRightSidesetName() const = 0;
+
+  /// Attempts to cast the underlying matcher to type T. Returns nullptr if cast fails.
+  template<typename T>
+  const T* getAs() const {return dynamic_cast<const T*>(this);}
 };
 
 /** Default implementation class for the periodic boundary conditions.
@@ -208,9 +218,16 @@ public:
    }
 
    std::string getType() const 
-   { 
-      return type_;
-   }
+   {return type_;}
+
+   std::string getLeftSidesetName() const
+   {return left_;}
+
+   std::string getRightSidesetName() const
+   {return right_;}
+
+   const Matcher& getMatcher() const
+   {return matcher_;}
 
 private:
    PeriodicBC_Matcher(); // hidden!

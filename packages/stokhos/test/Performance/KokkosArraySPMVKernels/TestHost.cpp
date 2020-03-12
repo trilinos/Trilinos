@@ -143,12 +143,12 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   std::string name = "Host";
 #ifdef KOKKOS_ENABLE_THREADS
   Kokkos::Threads::print_configuration( std::cout );
-  if (Kokkos::Impl::is_same<Device,Kokkos::Threads>::value)
+  if (std::is_same<Device,Kokkos::Threads>::value)
     name = "Threads";
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
   Kokkos::OpenMP::print_configuration( std::cout );
-  if (Kokkos::Impl::is_same<Device,Kokkos::OpenMP>::value)
+  if (std::is_same<Device,Kokkos::OpenMP>::value)
     name = "OpenMP";
 #endif
   std::cout << std::endl << "\"" << name << " Performance with "

@@ -1,85 +1,81 @@
 #ifndef __TACHO_HPP__
 #define __TACHO_HPP__
 
+#include "ShyLU_NodeTacho_config.h" 
+
+#include "Kokkos_Core.hpp"
+#include "impl/Kokkos_Timer.hpp"
+
+#include <cstddef>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <limits>
+#include <memory>
+#include <string>
+#include <stdexcept>
+#include <vector>
+
 /// \file Tacho.hpp
-/// \brief Main header file
+/// \brief Header to be included by users
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "ShyLU_NodeTacho_config.h"
+namespace Tacho {
 
-#include <Kokkos_Core.hpp>
-#include <Kokkos_Random.hpp>
-#include <Kokkos_DualView.hpp>
-#include <impl/Kokkos_Timer.hpp>
+  ///
+  /// default ordinal and size type
+  ///
 
-#include "Tacho_Util.hpp"
-#include "Tacho_Partition.hpp"
+#if defined( TACHO_USE_INT_INT )
+  typedef int ordinal_type;
+  typedef int size_type;
+#elif defined( TACHO_USE_INT_SIZE_T )
+  typedef int ordinal_type;
+  typedef size_t size_type;
+#else
+  typedef int ordinal_type;
+  typedef size_t size_type;
+#endif
 
-#include "Tacho_CrsMatrixBase.hpp"
-#include "Tacho_DenseMatrixView.hpp"
+  ///
+  /// default device type used in tacho
+  ///
+  template<typename ExecSpace>
+  struct UseThisDevice {
+    using default_exec_space = Kokkos::DefaultExecutionSpace;
+    using default_memory_space = typename default_exec_space::memory_space;
+    using device_type = Kokkos::Device<default_exec_space,default_memory_space>;
+  };
 
-#include "Tacho_MatrixMarket.hpp"           
+  /// until kokkos dual view issue is resolved, we follow the default space in Trilinos (uvm)
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  struct UseThisDevice<Kokkos::Cuda> { using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; };
+#endif
+#if defined(KOKKOS_ENABLE_OPENMP)
+  template<>
+  struct UseThisDevice<Kokkos::OpenMP> { using device_type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; };
+#endif
+#if defined(KOKKOS_ENABLE_SERIAL)
+  template<>
+  struct UseThisDevice<Kokkos::Serial> { using device_type = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>; };
+#endif
 
-#include "Tacho_Graph.hpp"
-#include "Tacho_GraphTools_CAMD.hpp"        
-#include "Tacho_GraphTools_Metis.hpp"       
-//#include "Tacho_GraphTools_MetisMT.hpp"       
-#include "Tacho_GraphTools_Scotch.hpp"      
+  ///
+  /// print execution spaces
+  ///
+  template<typename SpT>
+  void printExecSpaceConfiguration(std::string name, const bool detail = false) {
+    if (!Kokkos::Impl::is_space<SpT>::value) {
+      std::string msg("SpT is not Kokkos execution space");
+      fprintf(stderr, ">> Error in file %s, line %d\n",__FILE__,__LINE__);
+      fprintf(stderr, "   %s\n", msg.c_str());
+      throw std::logic_error(msg.c_str());
+    }
+    std::cout << std::setw(16) << name << "::  ";
+    SpT::print_configuration(std::cout, detail);
+  }
 
-#include "Tacho_SupernodeInfo.hpp"
-#include "Tacho_SymbolicTools.hpp"
-
-#include "Tacho_Lapack_External.hpp"
-#include "Tacho_Lapack_Team.hpp"
-
-#include "Tacho_Blas_External.hpp"
-#include "Tacho_Blas_Team.hpp"
-
-#include "Tacho_Chol.hpp"
-#include "Tacho_Chol_External.hpp"
-#include "Tacho_Chol_Internal.hpp"
-#include "Tacho_Chol_ByBlocks.hpp"
-
-#include "Tacho_Trsm.hpp"
-#include "Tacho_Trsm_External.hpp"
-#include "Tacho_Trsm_Internal.hpp"
-#include "Tacho_Trsm_ByBlocks.hpp"
-
-#include "Tacho_Herk.hpp"
-#include "Tacho_Herk_External.hpp"
-#include "Tacho_Herk_Internal.hpp"
-#include "Tacho_Herk_ByBlocks.hpp"          
-
-#include "Tacho_Gemm.hpp"
-#include "Tacho_Gemm_External.hpp"
-#include "Tacho_Gemm_Internal.hpp"
-#include "Tacho_Gemm_ByBlocks.hpp"
-
-#include "Tacho_Trsv.hpp"
-#include "Tacho_Trsv_External.hpp"
-#include "Tacho_Trsv_Internal.hpp"
-
-#include "Tacho_Gemv.hpp"
-#include "Tacho_Gemv_External.hpp"
-#include "Tacho_Gemv_Internal.hpp"
-
-#include "Tacho_CholSupernodes.hpp"
-#include "Tacho_CholSupernodes_Serial.hpp"
-#include "Tacho_CholSupernodes_SerialPanel.hpp"
-
-#include "Tacho_TaskFunctor_FactorizeChol.hpp"
-#include "Tacho_TaskFunctor_FactorizeCholPanel.hpp"
-#include "Tacho_TaskFunctor_FactorizeCholByBlocks.hpp"
-#include "Tacho_TaskFunctor_FactorizeCholByBlocksPanel.hpp"
-
-#include "Tacho_TaskFunctor_SolveLowerChol.hpp"
-#include "Tacho_TaskFunctor_SolveUpperChol.hpp"
-
-#include "Tacho_NumericTools.hpp"
-
-// Do not include this. 
-// In a gcc (4.9.x), this causes some multiple definition link error with gcc headers.
-// No idea yet why it happens as the code is guarded by Tacho::Experimental namespace.
-//#include "Tacho_CommandLineParser.hpp" 
+}
 
 #endif

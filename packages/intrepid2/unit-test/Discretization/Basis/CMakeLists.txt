@@ -97,5 +97,15 @@ ADD_SUBDIRECTORY(DeRHAM_HEX_FEM)
 ADD_SUBDIRECTORY(DeRHAM_QUAD_FEM)
 ADD_SUBDIRECTORY(DeRHAM_TRI_FEM)
 
+# Basis Equivalence Tests
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BasisEquivalenceTests
+  SOURCES BasisEquivalenceTests.cpp UnitTestMain.cpp
+  ARGS 
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
 # Hierarchical Basis Tests
 ADD_SUBDIRECTORY(HierarchicalBases)

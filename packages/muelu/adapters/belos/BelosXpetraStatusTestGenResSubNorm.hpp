@@ -288,7 +288,7 @@ class StatusTestGenResSubNorm<Scalar,Xpetra::MultiVector<Scalar,LocalOrdinal,Glo
     typename std::vector<int>::iterator p2 = curLSIdx_.begin();
     for (; p2<curLSIdx_.end(); ++p2) {
       // Check if this index is valid
-      if (*p != -1) {
+      if (*p2 != -1) {
         // Check if any of the residuals are larger than the tolerance.
         if (testvector_[ *p2 ] > tolerance_) {
           // do nothing.

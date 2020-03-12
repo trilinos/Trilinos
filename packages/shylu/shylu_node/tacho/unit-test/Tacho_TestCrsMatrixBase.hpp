@@ -15,6 +15,28 @@ using namespace Tacho;
 typedef CrsMatrixBase<ValueType,HostDeviceType> CrsMatrixBaseHostType;
 typedef CrsMatrixBase<ValueType,DeviceType> CrsMatrixBaseDeviceType;
 
+TEST( CrsMatrixBase, coo ) {
+  TEST_BEGIN;
+  {
+    auto a = Coo<double>();
+    EXPECT_EQ(a.i, 0);
+    EXPECT_EQ(a.j, 0);
+    EXPECT_EQ(a.j, 0.0);
+  }
+  {
+    auto a = Coo<double>(1,3, 3.0);
+    auto b = Coo<double>(1,3,10.0);
+    auto c = Coo<double>(2,3, 3.0);
+    auto d = Coo<double>(1,1, 3.0);
+    
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(a != c);
+    EXPECT_TRUE(a < c);
+    EXPECT_FALSE(a < d);
+  }
+  TEST_END;
+}
+
 TEST( CrsMatrixBase, constructor ) {  
   TEST_BEGIN;
   ///

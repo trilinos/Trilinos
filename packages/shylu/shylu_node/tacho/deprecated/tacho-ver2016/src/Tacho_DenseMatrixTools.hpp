@@ -110,7 +110,7 @@ namespace Tacho {
     static void
     copy(DenseMatrixTypeA &A,
          const DenseMatrixTypeB &B) {
-      static_assert( Kokkos::Impl::is_same<
+      static_assert( std::is_same<
                      typename DenseMatrixTypeA::space_type,
                      typename DenseMatrixTypeB::space_type
                      >::value,
@@ -142,7 +142,7 @@ namespace Tacho {
     applyRowPermutation(DenseMatrixTypeA &A,
                         const DenseMatrixTypeB &B,
                         const PermutationVectorType &p) {
-      static_assert( Kokkos::Impl::is_same<
+      static_assert( std::is_same<
                      typename DenseMatrixTypeA::space_type,
                      typename DenseMatrixTypeB::space_type
                      >::value,
@@ -261,7 +261,7 @@ namespace Tacho {
                   const DenseMatrixFlatType &flat,
                   const OrdinalType mb,
                   const OrdinalType nb) {
-      static_assert( Kokkos::Impl::is_same<
+      static_assert( std::is_same<
                      typename DenseMatrixHierType::space_type,
                      typename DenseMatrixFlatType::space_type
                      >::value,
@@ -307,7 +307,7 @@ namespace Tacho {
     //               const DenseMatrixFlatType &flat,
     //               const OrdinalType mb,
     //               const OrdinalType nb) {
-    //   static_assert( Kokkos::Impl::is_same<
+    //   static_assert( std::is_same<
     //                  typename DenseMatrixHierType::space_type,
     //                  typename DenseMatrixFlatType::space_type
     //                  >::value,
@@ -351,7 +351,7 @@ namespace Tacho {
                   const DenseMatrixFlatType &flat,
                   const OrdinalTypeArray range,
                   const OrdinalType nb) {
-      static_assert( Kokkos::Impl::is_same<
+      static_assert( std::is_same<
                      typename DenseMatrixHierType::space_type,
                      typename DenseMatrixFlatType::space_type
                      >::value,
@@ -445,7 +445,7 @@ namespace Tacho {
 //          const OrdinalArrayTypeIp &ip,         
 //          const OrdinalArrayTypeJp &jp) { 
       
-//       static_assert( Kokkos::Impl::is_same<DenseMatrixTypeA::space_type,DenseMatrixTypeB::space_type>::value,
+//       static_assert( std::is_same<DenseMatrixTypeA::space_type,DenseMatrixTypeB::space_type>::value,
 //                      "Space type of input matrices does not match" );
       
 //       typedef DenseMatrixTypeA::space_type space_type;

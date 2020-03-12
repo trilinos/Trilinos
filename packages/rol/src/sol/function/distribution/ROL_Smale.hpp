@@ -112,7 +112,6 @@ public:
   Real moment(const size_t m) const {
     ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Smale): Smale moment is not implemented!");
-    return 0.;
   }
 
   Real lowerBound(void) const {

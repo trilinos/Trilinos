@@ -10,6 +10,7 @@
 #define Tempus_StepperIMEX_RK_decl_hpp
 
 #include "Tempus_config.hpp"
+#include "Tempus_StepperRKBase.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
@@ -223,7 +224,8 @@ namespace Tempus {
  *     Multiphysics Shock-hydro", SAND2016-11353, 2016, pp. 21-28.
  */
 template<class Scalar>
-class StepperIMEX_RK : virtual public Tempus::StepperImplicit<Scalar>
+class StepperIMEX_RK : virtual public Tempus::StepperImplicit<Scalar>,
+                       virtual public Tempus::StepperRKBase<Scalar>
 {
 public:
 

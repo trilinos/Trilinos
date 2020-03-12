@@ -1,28 +1,8 @@
-#include "ShyLU_NodeTacho_config.h"
-
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "Tacho_Util.hpp"
-#include "Tacho_CrsMatrixBase.hpp"
-#include "Tacho_MatrixMarket.hpp"
-
-#include "Tacho_Graph.hpp"
-#include "Tacho_SymbolicTools.hpp"
-
-#if defined(TACHO_HAVE_SCOTCH)
-#include "Tacho_GraphTools_Scotch.hpp"
-#endif
-
-#if defined(TACHO_HAVE_METIS)
-#include "Tacho_GraphTools_Metis.hpp"
-#endif
-
-#include "Tacho_GraphTools_CAMD.hpp"
-
-#include "Tacho_NumericTools.hpp"
-
+#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
 
 #ifdef TACHO_HAVE_MKL
@@ -32,16 +12,7 @@
 using namespace Tacho;
 
 /// select a kokkos task scheudler
-/// - DeprecatedTaskScheduler, DeprecatedTaskSchedulerMultiple
 /// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
-#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
-static const char * scheduler_name = "DeprecatedTaskScheduler";
-#endif
-#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
-template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
-static const char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
-#endif
 #if defined(TACHO_USE_TASKSCHEDULER)
 template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
 static const char * scheduler_name = "TaskScheduler";
@@ -62,6 +33,7 @@ int main (int argc, char *argv[]) {
   bool serial = false;
   int nthreads = 1;
   bool verbose = true;
+  bool sanitize = false;
   std::string file = "test.mtx";
   int nrhs = 1;
   int serial_thres_size = -1; // 32 is better
@@ -71,6 +43,7 @@ int main (int argc, char *argv[]) {
   opts.set_option<bool>("serial", "Flag to use serial algorithm", &serial);
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("serial-thres", "Serialization threshold size", &serial_thres_size);
@@ -122,7 +95,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      MatrixMarket<value_type>::read(file, A);
+      MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     }
     Graph G(A);
     t = timer.seconds();
