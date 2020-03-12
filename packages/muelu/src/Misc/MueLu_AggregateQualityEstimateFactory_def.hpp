@@ -87,6 +87,8 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregate qualities: file output");
     SET_VALID_ENTRY("aggregate qualities: file base");
     SET_VALID_ENTRY("aggregate qualities: check symmetry");
+    SET_VALID_ENTRY("aggregate qualities: algorithm");
+    SET_VALID_ENTRY("aggregate qualities: zero threshold");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -175,6 +177,17 @@ namespace MueLu {
     ParameterList pL = GetParameterList();
 
     RCP<const Matrix> AT = A;
+
+    // Algorithm check
+    std::string algostr = pL.get<std::string>("aggregate qualities: algorithm");
+    MT zeroThreshold = Teuchos::as<MT>(pL.get<double>("aggregate qualities: zero threshold"));
+    enum AggAlgo {ALG_FORWARD=0, ALG_REVERSE};
+    AggAlgo algo;
+    if(algostr == "forward")      {algo = ALG_FORWARD; GetOStream(Statistics1) << "AggregateQuality: Using 'forward' algorithm" << std::endl;}
+    else if(algostr == "reverse") {algo = ALG_REVERSE; GetOStream(Statistics1) << "AggregateQuality: Using 'reverse' algorithm" << std::endl;}
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "\"algorithm\" must be one of (forward|reverse)");
+    }
 
     bool check_symmetry = pL.get<bool>("aggregate qualities: check symmetry");
     if (check_symmetry) {
@@ -300,9 +313,12 @@ namespace MueLu {
       // Compute matrix on bottom of generalized Rayleigh quotient
       DenseMatrix bottomMatrix(A_aggPart);
       MT matrixNorm = A_aggPart.normInf();
+
+      // Forward mode: Include a small perturbation to the bottom matrix to make it nonsingular
+      MT boost = (algo == ALG_FORWARD) ? (-1e-12*matrixNorm) : MT_ZERO;
+
       for (int i=0;i<aggSize;++i){
-        // Include a small perturbation to the bottom matrix to make it nonsingular
-        bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) - 1e-12*matrixNorm;
+        bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) + boost;
       }
 
       // Compute generalized eigenvalues
@@ -320,30 +336,50 @@ namespace MueLu {
       MT* vr = NULL;
 
       const char compute_flag ='N';
-      myLapack.GGES(compute_flag,compute_flag,compute_flag,ptr2func,aggSize,
-                    topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
-                    alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
-                    vr,aggSize,workArray.values(),workArray.length(),bwork,
-                    &info);
+      if(algo == ALG_FORWARD) {
+        // Forward: Solve the generalized eigenvalue problem as is
+        myLapack.GGES(compute_flag,compute_flag,compute_flag,ptr2func,aggSize,
+                      topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
+                      alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
+                      vr,aggSize,workArray.values(),workArray.length(),bwork,
+                      &info);
+        TEUCHOS_ASSERT(info == LO_ZERO);
 
-      TEUCHOS_ASSERT(info == LO_ZERO);
-
-      MT maxEigenVal = MT_ZERO;
-
-      for (int i=LO_ZERO;i<aggSize;++i) {
-        // NOTE: In theory, the eigenvalues should be nearly real
-        //TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
-        maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
-
+        MT maxEigenVal = MT_ZERO;
+        for (int i=LO_ZERO;i<aggSize;++i) {
+          // NOTE: In theory, the eigenvalues should be nearly real
+          //TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
+          maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);          
+        }
+        
+        (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE)*maxEigenVal;
+        
       }
+      else {
+        // Reverse: Swap the top and bottom matrices for the generalized eigenvalue problem
+        // This is trickier, since we need to grab the smallest non-zero eigenvalue and invert it.
+        myLapack.GGES(compute_flag,compute_flag,compute_flag,ptr2func,aggSize,
+                      bottomMatrix.values(),aggSize,topMatrix.values(),aggSize,&sdim,
+                      alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
+                      vr,aggSize,workArray.values(),workArray.length(),bwork,
+                      &info);
 
-      (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE)*maxEigenVal;
-
-    }
-
-
+        TEUCHOS_ASSERT(info == LO_ZERO);
+        
+        MT minEigenVal = MT_ZERO;
+       
+        for (int i=LO_ZERO;i<aggSize;++i) {
+          MT ev = alpha_real[i] / beta[i];
+          if(ev > zeroThreshold) {
+            if (minEigenVal == MT_ZERO) minEigenVal = ev;
+            else minEigenVal = std::min(minEigenVal,ev);
+          }
+        }        
+        if(minEigenVal == MT_ZERO)  (agg_qualities->getDataNonConst(0))[aggId] = Teuchos::ScalarTraits<MT>::rmax();
+        else (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE) / minEigenVal;
+      }
+    }//end aggId loop
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const {
