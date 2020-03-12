@@ -24,7 +24,7 @@ class StepperRKBase
 
 public:
 
-  virtual int getStageNumber() { return stageNumber_; }
+  virtual int getStageNumber() const { return stageNumber_; }
 
   virtual void setStageNumber(int s) { stageNumber_ = s; }
 
