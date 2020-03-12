@@ -133,7 +133,7 @@ fillComplete()
       // in with Tpetra::CrsMatrix's assumption that the matrix's
       // graph structure is fixed after first fillComplete.
 
-      auto newPtrLen = A.graph.row_map.extent(0);
+      const auto newPtrLen = A.graph.row_map.extent(0);
       if (debug) {
         TEUCHOS_TEST_FOR_EXCEPTION
           (A.graph.entries.extent(0) != A.values.extent(0),
@@ -148,6 +148,12 @@ fillComplete()
       }
 
       if (newPtrLen != ptr_.extent(0)) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Reallocate ptr_: old=" << ptr_.extent(0)
+             << ", new=" << newPtrLen << endl;
+          std::cerr << os.str();
+        }
         // Free memory before (re)allocating; this may reduce the
         // high-water memory mark.
         ptr_ = Kokkos::View<LO*, device_type>();
@@ -155,6 +161,11 @@ fillComplete()
           view_alloc("Tpetra::CrsMatrix cuSPARSE row offsets",
                      WithoutInitializing),
           newPtrLen);
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Call copyOffsets" << endl;
+          std::cerr << os.str();
+        }
         Details::copyOffsets(ptr_, A.graph.row_map);
         if (debug) {
           const cudaError_t lastErr = cudaGetLastError();
@@ -169,8 +180,14 @@ fillComplete()
       if (debug && newPtrLen != 0) {
         LO nnz = 0;
         Kokkos::deep_copy(nnz, Kokkos::subview(ptr_, numRows));
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "ptr_[numRows=" << numRows << "]="
+             << nnz << endl;
+          std::cerr << os.str();
+        }
         TEUCHOS_TEST_FOR_EXCEPTION
-          (nnz != A.graph.entries.extent(0), std::logic_error,
+          (nnz != LO(A.graph.entries.extent(0)), std::logic_error,
            "ptr_[numRows=" << numRows << "]=" << nnz << " != "
            "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
            << ".");
@@ -184,6 +201,11 @@ fillComplete()
       // right algorithm.  For now, we just want to test merge path.
       const CuSparseMatrixVectorMultiplyAlgorithm alg =
         CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Call getCuSparseMatrix" << endl;
+        std::cerr << os.str();
+      }
       matrix_ = getCuSparseMatrix(numRows, numCols, numEnt,
                                   ptr, ind, val, alg);
     }
@@ -216,6 +238,8 @@ apply(Kokkos::View<const Scalar**, array_layout,
       const Scalar beta) const
 {
   using std::endl;
+  const char tfecfFuncName[] = "apply";
+
   const bool debug = Details::Behavior::debug("cuSPARSE");
   const bool verbose = Details::Behavior::verbose("cuSPARSE");
   std::unique_ptr<std::string> prefix;
@@ -229,18 +253,22 @@ apply(Kokkos::View<const Scalar**, array_layout,
   }
   if (debug) {
     const cudaError_t lastErr = cudaGetLastError();
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
-       "Tpetra::Details::LocalCuSparseCrsMatrixOperatorRealBase::"
-       "apply, CUDA is in an erroneous state \""
-       << cudaGetErrorName(lastErr) << "\".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lastErr != cudaSuccess, std::runtime_error, ": On entry, CUDA "
+       "is in an erroneous state \"" << cudaGetErrorName(lastErr)
+       << "\".");
   }
 
-  if (! this->isFillComplete()) {
-    using this_type = LocalCuSparseCrsMatrixOperatorRealBase<Scalar>;
-    this_type& thisRef = const_cast<this_type&>(*this);
-    thisRef.fillComplete(); // evil hack
-  }
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (! this->isFillComplete(), std::runtime_error, ": This object is "
+     "not fill complete.  You must call fillComplete on this object "
+     "without an intervening resumeFill call, before you may call "
+     "apply.");
+  // if (! this->isFillComplete()) {
+  //   using this_type = LocalCuSparseCrsMatrixOperatorRealBase<Scalar>;
+  //   this_type& thisRef = const_cast<this_type&>(*this);
+  //   thisRef.fillComplete(); // evil hack
+  // }
 
   using size_type = Kokkos::Cuda::memory_space::size_type;
   const size_type numCols = X.extent(1);

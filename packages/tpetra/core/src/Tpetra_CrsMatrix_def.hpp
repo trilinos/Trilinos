@@ -196,9 +196,32 @@ namespace Tpetra {
     local_multiply_op_type& op,
     const crs_graph_type& globalGraph)
   {
+    using std::endl;
     using IST = impl_scalar_type;
     using subclass_op_type =
       Details::LocalCrsMatrixOperatorWithSetup<IST, IST, device_type>;
+    const char tfecfFuncName[] = "localOperatorFillComplete";
+
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      // Can't use createPrefix in static methods.
+      int myRank = -1;
+      const auto map = globalGraph.getMap();
+      if (! map.is_null()) {
+        const auto comm = map->getComm();
+        if (! comm.is_null()) {
+          myRank = comm->getRank();
+        }
+      }
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Tpetra::CrsMatrix::"
+         << tfecfFuncName << ": ";
+      prefix = std::unique_ptr<std::string>(
+        new std::string(os.str()));
+      os << "Start" << endl;
+      std::cerr << os.str ();
+    }
 
     auto* opSub = dynamic_cast<subclass_op_type*>(&op);
     if (opSub != nullptr) {
@@ -208,6 +231,11 @@ namespace Tpetra {
                                             maxNumEntPerRow);
       opSub->fillComplete();
       TEUCHOS_ASSERT( opSub->isFillComplete() );
+    }
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
     }
   }
 
@@ -621,10 +649,20 @@ namespace Tpetra {
     storageStatus_(Details::STORAGE_1D_PACKED),
     fillComplete_(true)
   {
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+    using std::endl;
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, local_matrix_type[, RCP<ParameterList>])";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
+
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
 
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -638,7 +676,7 @@ namespace Tpetra {
          "exception: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (!graph->isFillComplete (), std::logic_error, ": CrsGraph constructor (RCP"
+      (! graph->isFillComplete (), std::logic_error, ": CrsGraph constructor (RCP"
        "<const Map>, RCP<const Map>, local_graph_type[, RCP<ParameterList>]) "
        "did not produce a fill-complete graph.  Please report this bug to the "
        "Tpetra developers.");
@@ -666,6 +704,12 @@ namespace Tpetra {
        "CrsMatrix constructor that should produce a fillComplete "
        "matrix, isFillComplete() is false." << suffix);
     checkInternalState(tfecfFuncName);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -682,10 +726,19 @@ namespace Tpetra {
     storageStatus_(Details::STORAGE_1D_PACKED),
     fillComplete_(true)
   {
+    using std::endl;
     const char tfecfFuncName[] =
       "CrsMatrix(rowMap,colMap,domMap,ranMap[,params])";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
 
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -727,6 +780,12 @@ namespace Tpetra {
        "CrsMatrix constructor that should produce a fillComplete "
        "matrix, isFillComplete() is false." << suffix);
     checkInternalState(tfecfFuncName);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -746,10 +805,19 @@ namespace Tpetra {
     fillComplete_(true)
   {
     using Teuchos::rcp;
+    using std::endl;
     const char tfecfFuncName[] = "CrsMatrix"
       "(lclMat,rowMap,colMap,domMap,ranMap,Import,Export,params)";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
 
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -792,6 +860,12 @@ namespace Tpetra {
        "CrsMatrix constructor that should produce a fillComplete "
        "matrix, isFillComplete() is false." << suffix);
     checkInternalState(tfecfFuncName);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -800,11 +874,21 @@ namespace Tpetra {
              const Teuchos::DataAccess copyOrView)
     : CrsMatrix (source.getCrsGraph (), source.getLocalValuesView ())
   {
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix("
-      "const CrsMatrix&, const Teuchos::DataAccess): ";
+    using std::endl;
+    const char tfecfFuncName[] = "CrsMatrix(const CrsMatrix&, "
+      "const Teuchos::DataAccess)";
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! source.isFillComplete (), std::invalid_argument,
-       "Source graph must be fillComplete().");
+       "Source matrix must be fillComplete().");
 
     if (copyOrView == Teuchos::Copy) {
       using values_type = typename local_matrix_type::values_type;
@@ -824,10 +908,16 @@ namespace Tpetra {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::invalid_argument, "Second argument 'copyOrView' "
+        (true, std::invalid_argument, ": 2nd argument 'copyOrView' "
          "has an invalid value " << copyOrView << ".  Valid values "
          "include Teuchos::Copy = " << Teuchos::Copy << " and "
          "Teuchos::View = " << Teuchos::View << ".");
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
     }
   }
 
@@ -4757,8 +4847,8 @@ namespace Tpetra {
     if (verbose) {
       prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
       std::ostringstream os;
-      os << *prefix << endl;
-      std::cerr << os.str ();
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4932,6 +5022,12 @@ namespace Tpetra {
     TEUCHOS_ASSERT( lclMatrix_.get() != nullptr );
     localOperatorFillComplete(*lclMatrix_, this->getCrsGraphRef());
     checkInternalState(tfecfFuncName);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4943,7 +5039,16 @@ namespace Tpetra {
                             const Teuchos::RCP<const export_type>& exporter,
                             const Teuchos::RCP<Teuchos::ParameterList> &params)
   {
+    using std::endl;
     const char tfecfFuncName[] = "expertStaticFillComplete";
+    const bool verbose = Details::Behavior::verbose("CrsMatrix");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsMatrix", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     std::string label;
@@ -5004,6 +5109,12 @@ namespace Tpetra {
 #endif
 
     checkInternalState(tfecfFuncName);
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
     }
   }
 
