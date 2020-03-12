@@ -1031,6 +1031,8 @@ namespace MueLu {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: check symmetry",           bool,        aggQualityParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: algorithm",                std::string, aggQualityParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: zero threshold",           double,      aggQualityParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregate qualities: percentiles", Teuchos::Array<double>,aggQualityParams);
+
         aggQualityFact->SetParameterList(aggQualityParams);
         manager.SetFactory("AggregateQualities", aggQualityFact);
 

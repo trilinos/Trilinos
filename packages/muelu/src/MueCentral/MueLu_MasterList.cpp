@@ -230,8 +230,12 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: good aggregate threshold\" type=\"double\" value=\"100.0\"/>"
   "<Parameter name=\"aggregate qualities: file output\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregate qualities: file base\" type=\"string\" value=\"agg_qualities\"/>"
+<<<<<<< HEAD
   "<Parameter name=\"aggregate qualities: algorithm\" type=\"string\" value=\"forward\"/>"
   "<Parameter name=\"aggregate qualities: zero threshold\" type=\"double\" value=\"1e-12\"/>"
+=======
+  "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{.5}\"/>"
+>>>>>>> muelu-mean-agg-quality
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -637,9 +641,13 @@ namespace MueLu {
       
          ("aggregate qualities: file base","aggregate qualities: file base")
       
+<<<<<<< HEAD
          ("aggregate qualities: algorithm","aggregate qualities: algorithm")
       
          ("aggregate qualities: zero threshold","aggregate qualities: zero threshold")
+=======
+         ("aggregate qualities: percentiles","aggregate qualities: percentiles")
+>>>>>>> muelu-mean-agg-quality
       
          ("export data","export data")
       
