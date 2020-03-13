@@ -213,11 +213,17 @@ fillComplete()
   }
 
   if (debug) {
-    const cudaError_t lastErr = cudaGetLastError();
+    cudaError_t lastErr = cudaGetLastError();
     TEUCHOS_TEST_FOR_EXCEPTION
       (lastErr != cudaSuccess, std::runtime_error, "On exit of "
-       << funcName << ", CUDA is in an erroneous state \""
-       << cudaGetErrorName(lastErr) << "\".");
+       << funcName << ", before fence, CUDA is in an erroneous "
+       "state \"" << cudaGetErrorName(lastErr) << "\".");
+    Kokkos::fence();
+    lastErr = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (lastErr != cudaSuccess, std::runtime_error, "On exit of "
+       << funcName << ", after fence, CUDA is in an erroneous "
+       "state \"" << cudaGetErrorName(lastErr) << "\".");
   }
   if (verbose) {
     std::ostringstream os;
