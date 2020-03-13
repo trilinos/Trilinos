@@ -92,10 +92,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   ### TPLS ###
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-      "-DSuperLU_INCLUDE_DIRS:PATH=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
-      "-DSuperLU_LIBRARY_DIRS:PATH=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
   "-DTPL_ENABLE_AmgX=ON"
-    "-DAmgX_LIBRARY_DIRS=/usr/local/amgx/lib" 
+    "-DAmgX_LIBRARY_DIRS=/usr/local/amgx/lib"
     "-DAmgX_INCLUDE_DIRS=/usr/local/amgx/include"
 
   ### PACKAGES CONFIGURATION ###
