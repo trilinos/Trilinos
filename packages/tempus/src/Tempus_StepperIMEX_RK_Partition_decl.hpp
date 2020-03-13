@@ -10,6 +10,7 @@
 #define Tempus_StepperIMEX_RK_Partition_decl_hpp
 
 #include "Tempus_config.hpp"
+#include "Tempus_StepperRKBase.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
@@ -245,7 +246,8 @@ namespace Tempus {
  *  -# Cyr, "IMEX Lagrangian Methods", SAND2015-3745C.
  */
 template<class Scalar>
-class StepperIMEX_RK_Partition : virtual public Tempus::StepperImplicit<Scalar>
+class StepperIMEX_RK_Partition : virtual public Tempus::StepperImplicit<Scalar>,
+                                 virtual public Tempus::StepperRKBase<Scalar>
 {
 public:
 

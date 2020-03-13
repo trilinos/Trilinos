@@ -31,6 +31,12 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  SimpleSolveTransposeExample
+  SOURCES SimpleSolveTranspose
+  COMM serial mpi
+  )
+
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   MultipleSolvesFileExample
 #   SOURCES MultipleSolves_File
