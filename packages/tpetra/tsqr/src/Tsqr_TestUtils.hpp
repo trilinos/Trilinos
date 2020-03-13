@@ -57,22 +57,6 @@ namespace Teuchos {
 namespace TSQR {
   namespace Test {
 
-    /// \brief Return a Kokkos Node instance with the given parameters.
-    ///
-    /// \param plist [in/out] List of parameters for the Node.  This
-    ///   function reserves the right to modify the input parameter
-    ///   list (for example, to fill in any missing parameters with
-    ///   defaults).  Do not rely on this behavior.
-    template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    {
-      using Teuchos::rcp;
-      using Teuchos::rcp_const_cast;
-
-      return rcp (new NodeType (*plist));
-    }
-
     /// \class Cons
     /// \brief Typedef container enabling iteration over compile-time type list.
     ///
