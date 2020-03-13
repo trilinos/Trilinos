@@ -104,6 +104,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTPL_ENABLE_CUSPARSE:BOOL=ON"
       "-DTPL_ENABLE_HWLOC:BOOL=OFF"
 
+      "-DSuperLU_INCLUDE_DIRS=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
+      "-DSuperLU_LIBRARY_DIRS=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
+      "-DSuperLU_LIBRARY_NAMES=superlu"
+
       # Host Blas is required (https://github.com/kokkos/kokkos-kernels/issues/347) for Kokkos-Kernels to build correctly
       "-DTPL_ENABLE_BLAS:BOOL=ON"
       "-DTPL_ENABLE_LAPACK:BOOL=ON"

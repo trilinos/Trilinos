@@ -10,6 +10,7 @@
 #define Tempus_StepperDIRK_decl_hpp
 
 #include "Tempus_config.hpp"
+#include "Tempus_StepperRKBase.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
@@ -142,7 +143,8 @@ namespace Tempus {
  *  \f]
  */
 template<class Scalar>
-class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
+class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>,
+                    virtual public Tempus::StepperRKBase<Scalar>
 {
 public:
 
@@ -202,7 +204,6 @@ public:
     virtual std::string getDescription() const = 0;
   //@}
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getStageX() {return stageX_;};
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageXDot() {return stageXDot_;};
   Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;};
 
@@ -255,7 +256,6 @@ protected:
   Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;

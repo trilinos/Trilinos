@@ -32,6 +32,8 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
+  this->setStageNumber(-1);
+
   this->setTableaus("IMEX RK SSP2");
   this->setObserver();
   this->setDefaultSolver();
@@ -57,6 +59,8 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setZeroInitialGuess(   zeroInitialGuess);
+
+  this->setStageNumber(-1);
 
   this->setExplicitTableau(explicitTableau);
   this->setImplicitTableau(implicitTableau);
@@ -549,11 +553,12 @@ void StepperIMEX_RK<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     bool pass = true;
-    stageX_ = workingState->getX();
-    Thyra::assign(stageX_.ptr(), *(currentState->getX()));
+    this->stageX_ = workingState->getX();
+    Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
+      this->setStageNumber(i);
       this->stepperObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j = 0; j < i; ++j) {
@@ -574,9 +579,9 @@ void StepperIMEX_RK<Scalar>::takeStep(
           // stageG_[i] is not needed.
           assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
-          Thyra::assign(stageX_.ptr(), *xTilde_);
+          Thyra::assign(this->stageX_.ptr(), *xTilde_);
           this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
-          evalImplicitModelExplicitly(stageX_, ts, dt, i, stageG_[i]);
+          evalImplicitModelExplicitly(this->stageX_, ts, dt, i, stageG_[i]);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
@@ -594,18 +599,18 @@ void StepperIMEX_RK<Scalar>::takeStep(
         this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
         const Thyra::SolveStatus<Scalar> sStatus =
-          this->solveImplicitODE(stageX_, stageG_[i], ts, p);
+          this->solveImplicitODE(this->stageX_, stageG_[i], ts, p);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
         this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
-        Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *stageX_, alpha, *xTilde_);
+        Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *this->stageX_, alpha, *xTilde_);
       }
 
       this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-      evalExplicitModel(stageX_, tHats, dt, i, stageF_[i]);
+      evalExplicitModel(this->stageX_, tHats, dt, i, stageF_[i]);
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 
@@ -624,6 +629,8 @@ void StepperIMEX_RK<Scalar>::takeStep(
     workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
+  // reset the stage number
+  this->setStageNumber(-1);
   return;
 }
 
@@ -661,7 +668,7 @@ void StepperIMEX_RK<Scalar>::describe(
   if (verbLevel == Teuchos::VERB_HIGH)
    implicitTableau_->describe(out, verbLevel);
   out << "  xTilde_            = " << xTilde_  << std::endl;
-  out << "  stageX_            = " << stageX_  << std::endl;
+  out << "  stageX_            = " << this->stageX_  << std::endl;
   out << "  stageF_.size()     = " << stageF_.size() << std::endl;
   int numStages = stageF_.size();
   for (int i=0; i<numStages; ++i)

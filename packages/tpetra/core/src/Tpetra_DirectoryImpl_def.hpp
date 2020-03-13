@@ -430,9 +430,27 @@ namespace Tpetra {
 
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const int numProcs = comm->getSize ();
-      const global_size_t nOverP = map.getGlobalNumElements () / numProcs;
       const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid();
       LookupStatus res = AllIDsPresent;
+
+      // Find the first initialized GID for search below
+      auto it = std::find_if(
+        allMinGIDs_.begin(),
+        allMinGIDs_.end()-1,
+        [](GO const gid) { return gid != std::numeric_limits<GO>::max(); }
+      );
+
+      if (it == allMinGIDs_.end()-1) {
+        // No entries have been assigned on this process
+        res = (globalIDs.size() > 0) ? IDNotPresent : AllIDsPresent;
+        std::fill(nodeIDs.begin(), nodeIDs.end(), -1);
+        if (computeLIDs)
+          std::fill(localIDs.begin(), localIDs.end(), LINVALID);
+        return res;
+      }
+
+      const auto i0 = as<GO>(std::distance(allMinGIDs_.begin(), it));
+      const global_size_t nOverP = map.getGlobalNumElements () / as<global_size_t>(numProcs - i0);
 
       // Map is distributed but contiguous.
       typename ArrayView<int>::iterator procIter = nodeIDs.begin();
@@ -451,7 +469,7 @@ namespace Tpetra {
           const GO one = as<GO> (1);
           const GO two = as<GO> (2);
           const GO nOverP_GID = as<GO> (nOverP);
-          const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
+          const GO lowerBound = i0 + GID / std::max(nOverP_GID, one) + two;
           curRank = as<int>(std::min(lowerBound, as<GO>(numProcs - 1)));
         }
         bool found = false;

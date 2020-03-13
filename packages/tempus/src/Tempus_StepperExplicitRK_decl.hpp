@@ -10,6 +10,7 @@
 #define Tempus_StepperExplicitRK_decl_hpp
 
 #include "Tempus_config.hpp"
+#include "Tempus_StepperRKBase.hpp"
 #include "Tempus_StepperExplicit.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperRKObserverComposite.hpp"
@@ -88,7 +89,8 @@ namespace Tempus {
  *   \f]
  */
 template<class Scalar>
-class StepperExplicitRK : virtual public Tempus::StepperExplicit<Scalar>
+class StepperExplicitRK : virtual public Tempus::StepperExplicit<Scalar>,
+                          virtual public Tempus::StepperRKBase<Scalar>
 {
 
 public:
@@ -122,8 +124,6 @@ public:
     virtual Scalar getOrderMax() const {return tableau_->orderMax();}
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
-
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStageX() {return stageX_;}
 
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
@@ -177,7 +177,6 @@ protected:
   Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
 
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >          stepperObserver_;
 
