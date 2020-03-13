@@ -188,6 +188,7 @@ namespace { // (anonymous)
     Teuchos::OSTab tab1(out);
 
     // Don't do cuSPARSE things unless a cuSPARSE handle is active.
+    out << "Get cuSPARSE handle" << endl;
     Kokkos::Cuda execSpace;
     auto cuSparseHandle = getCuSparseHandle(execSpace);
     TEST_ASSERT( cuSparseHandle.get() != nullptr );
@@ -198,6 +199,8 @@ namespace { // (anonymous)
     const int numRows = 3;
     const int numCols = 4;
     const int numEnt = 8;
+    out << "Create nonsymmetric test matrix: numRows=" << numRows
+        << ", numCols=" << numCols << ", numEnt=" << numEnt << endl;
 
     crs_graph_type::entries_type ind
       (view_alloc("ind", WithoutInitializing), numEnt);
@@ -206,11 +209,10 @@ namespace { // (anonymous)
     crs_graph_type::row_map_type::non_const_type ptr
       (view_alloc("ptr", WithoutInitializing), numRows);
 
+    auto val_h = Kokkos::create_mirror_view(val);
+    auto ind_h = Kokkos::create_mirror_view(ind);
+    auto ptr_h = Kokkos::create_mirror_view(ptr);
     {
-      auto val_h = Kokkos::create_mirror_view(val);
-      auto ind_h = Kokkos::create_mirror_view(ind);
-      auto ptr_h = Kokkos::create_mirror_view(ptr);
-
       int pos = 0;
       int row = 0;
       ptr[row] = pos;
@@ -275,9 +277,12 @@ namespace { // (anonymous)
     vector_type<double> y(view_alloc("y", WithoutInitializing), numRows);
     auto y_h = Kokkos::create_mirror_view(y);
 
+    const char* algStrings[] = {"DEFAULT", "LOAD_BALANCED"};
     for (const auto alg :
            {CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT,
             CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED}) {
+      out << "1st pass: Test cuSparseMatrixVectorMultiply with alg="
+          << algStrings[static_cast<int>(alg)] << endl;
       Kokkos::deep_copy(x, 1.0);
       auto A_cu = getCuSparseMatrix(numRows, numCols, numEnt,
                                     ptr.data(), ind.data(),
@@ -292,8 +297,40 @@ namespace { // (anonymous)
       Kokkos::deep_copy(y_h, y);
       TEST_EQUALITY( y_h[0], 5.0 );
       TEST_EQUALITY( y_h[1], 4.0 );
-      TEST_EQUALITY( y_h[1], 4.0 );
+      TEST_EQUALITY( y_h[2], 4.0 );
     }
+
+    out << "Test whether we can change the matrix's values and "
+      "still get the right answer" << endl;
+
+    Kokkos::deep_copy(val_h, val);
+    // Change diagonal entry of row 1.
+    val_h[3] = 6.0;
+    Kokkos::deep_copy(val, val_h);
+
+    for (const auto alg :
+           {CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT,
+            CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED}) {
+      out << "2nd pass: Test cuSparseMatrixVectorMultiply with alg="
+          << algStrings[static_cast<int>(alg)] << endl;
+      Kokkos::deep_copy(x, 1.0);
+      auto A_cu = getCuSparseMatrix(numRows, numCols, numEnt,
+                                    ptr.data(), ind.data(),
+                                    val.data(), alg);
+      auto x_cu = getCuSparseVector(x.data(), numCols);
+      auto y_cu = getCuSparseVector(y.data(), numRows);
+
+      const double alpha = 1.0;
+      const double beta = 0.0;
+      cuSparseMatrixVectorMultiply(*cuSparseHandle, Teuchos::NO_TRANS,
+                                   alpha, *A_cu, *x_cu, beta, *y_cu);
+      Kokkos::deep_copy(y_h, y);
+      TEST_EQUALITY( y_h[0], 5.0 );
+      TEST_EQUALITY( y_h[1], 6.0 );
+      TEST_EQUALITY( y_h[2], 4.0 );
+    }
+
+    out << "Done with test!" << endl;
 #endif
   }
 
