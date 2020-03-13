@@ -167,6 +167,114 @@ namespace { // (anonymous)
 #endif
 
   void
+  testCuSparseMatrixResult(bool& success, Teuchos::FancyOStream& out)
+  {
+#if ! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRACORE_CUSPARSE)
+    out << "Running this test requires enabling CUDA in Kokkos, "
+      "and enabling the CUSPARSE TPL in Tpetra." << std::endl;
+    TEUCHOS_ASSERT( false );
+#else
+    //using Tpetra::Details::CuSparseHandle;
+    using Tpetra::Details::CuSparseMatrix;
+    //using Tpetra::Details::CuSparseMatrixVectorMultiplyAlgorithm;
+    using Tpetra::Details::getCuSparseHandle;
+    using Tpetra::Details::getCuSparseMatrix;
+    using Tpetra::Details::getCuSparseVector;
+    using Tpetra::Details::cuSparseMatrixVectorMultiply;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+    using std::endl;
+
+    out << "Test CuSparseMatrix (actual sparse mat-vec results)" << endl;
+    Teuchos::OSTab tab1(out);
+
+    // Don't do cuSPARSE things unless a cuSPARSE handle is active.
+    Kokkos::Cuda execSpace;
+    auto cuSparseHandle = getCuSparseHandle(execSpace);
+    TEST_ASSERT( cuSparseHandle.get() != nullptr );
+    if (! success) {
+      return;
+    }
+
+    const int numRows = 3;
+    const int numCols = 4;
+    const int numEnt = 8;
+
+    crs_graph_type::entries_type ind
+      (view_alloc("ind", WithoutInitializing), numEnt);
+    crs_matrix_type<double>::values_type val
+      (view_alloc("val", WithoutInitializing), numEnt);
+    crs_graph_type::row_map_type::non_const_type ptr
+      (view_alloc("ptr", WithoutInitializing), numRows);
+
+    {
+      auto val_h = Kokkos::create_mirror_view(val);
+      auto ind_h = Kokkos::create_mirror_view(ind);
+      auto ptr_h = Kokkos::create_mirror_view(ptr);
+
+      int pos = 0;
+      int row = 0;
+      ptr[row] = pos;
+      // row 0
+
+      val[pos] = 4.0;
+      ind[pos] = 0;
+      ++pos;
+
+      val[pos] = 1.0;
+      ind[pos] = 1;
+      ++pos;
+
+      ptr[row+1] = pos;
+      ++row;
+      // row 1
+
+      val[pos] = -1.0;
+      ind[pos] = 0;
+      ++pos;
+
+      val[pos] = 4.0;
+      ind[pos] = 1;
+      ++pos;
+
+      val[pos] = 1.0;
+      ind[pos] = 2;
+      ++pos;
+
+      ptr[row+1] = pos;
+      ++row;
+      // row 2
+
+      val[pos] = -1.0;
+      ind[pos] = 1;
+      ++pos;
+
+      val[pos] = 4.0;
+      ind[pos] = 2;
+      ++pos;
+
+      val[pos] = 1.0;
+      ind[pos] = 3;
+      ++pos;
+
+      ptr[row+1] = pos;
+      ++row;
+
+      // test
+      TEUCHOS_ASSERT( pos == numEnt );
+      TEUCHOS_ASSERT( row == numRows );
+
+      Kokkos::deep_copy(val, val_h);
+      Kokkos::deep_copy(ind, ind_h);
+      Kokkos::deep_copy(ptr, ptr_h);
+    }
+
+    crs_graph_type G(ind, crs_graph_type::row_map_type(ptr));
+    crs_matrix_type<double> A("A", numCols, val, G);
+#endif
+  }
+
+  void
   testCuSparseMatrix(bool& success, Teuchos::FancyOStream& out)
   {
 #if ! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRACORE_CUSPARSE)
