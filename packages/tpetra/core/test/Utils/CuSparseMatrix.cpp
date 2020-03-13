@@ -46,9 +46,125 @@
 // include its declaration header.
 #include "Tpetra_Details_CuSparseMatrix.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosBlas1_scal.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace { // (anonymous)
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(HAVE_TPETRACORE_CUSPARSE)
+
+  using crs_graph_type = Kokkos::StaticCrsGraph<
+    int,  // local column index type
+    Kokkos::LayoutLeft,
+    Kokkos::Cuda,
+    void, // MemoryTraits
+    int   // row offset type
+  >;
+
+  using host_crs_graph_type = Kokkos::StaticCrsGraph<
+    int,  // local column index type
+    Kokkos::LayoutLeft,
+    crs_graph_type::row_map_type::HostMirror::device_type,
+    void, // MemoryTraits
+    int   // row offset type
+  >;
+
+  host_crs_graph_type
+  crsGraphHostMirrorView(const crs_graph_type& G)
+  {
+    auto ind_h = Kokkos::create_mirror_view(G.entries);
+    Kokkos::deep_copy(ind_h, G.entries);
+
+    // row_map is const, so we must make a deep copy.
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+    crs_graph_type::row_map_type::non_const_type ptr_h
+      (view_alloc("ptr_h", WithoutInitializing), G.row_map.extent(0));
+    Kokkos::deep_copy(ptr_h, G.row_map);
+
+    return host_crs_graph_type(ind_h, ptr_h);
+  }
+
+  template<class Scalar>
+  using crs_matrix_type = KokkosSparse::CrsMatrix<
+    Scalar,
+    int,  // local column index type
+    Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+    void, // MemoryTraits
+    int   // row offset type
+  >;
+
+  template<class Scalar>
+  using host_crs_matrix_type = KokkosSparse::CrsMatrix<
+    Scalar,
+    int,  // local column index type
+    typename crs_matrix_type<Scalar>::values_type::HostMirror::device_type,
+    void, // MemoryTraits
+    int   // row offset type
+  >;
+
+  template<class Scalar>
+  host_crs_matrix_type<Scalar>
+  crsMatrixHostMirrorView(const crs_matrix_type<Scalar>& A)
+  {
+    auto G_h = crsGraphHostMirrorView(A.graph);
+    auto val_h = Kokkos::create_mirror_view(A.values);
+    Kokkos::deep_copy(val_h, A.values);
+    return host_crs_matrix_type<Scalar>("A_h", A.numCols(), val_h, G_h);
+  }
+
+  template<class Scalar>
+  using vector_type = Kokkos::View<
+    Scalar*,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>
+  >;
+
+  template<class Scalar>
+  void
+  referenceSparseMatVec(const Teuchos::ETransp op,
+                        const Scalar alpha,
+                        const crs_matrix_type<Scalar>& A,
+                        const vector_type<const Scalar>& x,
+                        const Scalar beta,
+                        const vector_type<Scalar>& y)
+  {
+    auto x_h = Kokkos::create_mirror_view(x);
+    Kokkos::deep_copy(x_h, x);
+    auto y_h = Kokkos::create_mirror_view(y);
+    Kokkos::deep_copy(y_h, y);
+    auto A_h = crsMatrixHostMirrorView(A);
+
+    if (alpha == Scalar{}) {
+      if (beta == Scalar{}) {
+        Kokkos::deep_copy(y_h, Scalar{});
+      }
+      else {
+        KokkosBlas::scal(y_h, beta, y_h);
+      }
+    }
+    else {
+      const int numRows = A.numRows();
+      for (int row = 0; row < numRows; ++row) {
+        auto A_row = A_h.rowConst(row);
+        Scalar sum {};
+        for (int k = 0; k < A_row.length; ++k) {
+          sum += A_row.value(k) * x_h(k);
+        }
+        if (beta == Scalar{}) {
+          y_h[row] = sum;
+        }
+        else {
+          y_h[row] = beta * y_h[row] + sum;
+        }
+      }
+    }
+    Kokkos::deep_copy(y, y_h);
+  }
+
+#endif
 
   void
   testCuSparseMatrix(bool& success, Teuchos::FancyOStream& out)
