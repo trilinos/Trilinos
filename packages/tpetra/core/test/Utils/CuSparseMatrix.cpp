@@ -118,8 +118,7 @@ namespace { // (anonymous)
   using vector_type = Kokkos::View<
     Scalar*,
     Kokkos::LayoutLeft,
-    Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>
+    Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>
   >;
 
   template<class Scalar>
@@ -176,7 +175,7 @@ namespace { // (anonymous)
 #else
     //using Tpetra::Details::CuSparseHandle;
     using Tpetra::Details::CuSparseMatrix;
-    //using Tpetra::Details::CuSparseMatrixVectorMultiplyAlgorithm;
+    using Tpetra::Details::CuSparseMatrixVectorMultiplyAlgorithm;
     using Tpetra::Details::getCuSparseHandle;
     using Tpetra::Details::getCuSparseMatrix;
     using Tpetra::Details::getCuSparseVector;
@@ -271,6 +270,30 @@ namespace { // (anonymous)
 
     crs_graph_type G(ind, crs_graph_type::row_map_type(ptr));
     crs_matrix_type<double> A("A", numCols, val, G);
+
+    vector_type<double> x(view_alloc("x", WithoutInitializing), numCols);
+    vector_type<double> y(view_alloc("y", WithoutInitializing), numRows);
+    auto y_h = Kokkos::create_mirror_view(y);
+
+    for (const auto alg :
+           {CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT,
+            CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED}) {
+      Kokkos::deep_copy(x, 1.0);
+      auto A_cu = getCuSparseMatrix(numRows, numCols, numEnt,
+                                    ptr.data(), ind.data(),
+                                    val.data(), alg);
+      auto x_cu = getCuSparseVector(x.data(), numCols);
+      auto y_cu = getCuSparseVector(y.data(), numRows);
+
+      const double alpha = 1.0;
+      const double beta = 0.0;
+      cuSparseMatrixVectorMultiply(*cuSparseHandle, Teuchos::NO_TRANS,
+                                   alpha, *A_cu, *x_cu, beta, *y_cu);
+      Kokkos::deep_copy(y_h, y);
+      TEST_EQUALITY( y_h[0], 5.0 );
+      TEST_EQUALITY( y_h[1], 4.0 );
+      TEST_EQUALITY( y_h[1], 4.0 );
+    }
 #endif
   }
 
@@ -429,6 +452,11 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST( Utils, CuSparseMatrix )
   {
     runTest(success, out, testCuSparseMatrix);
+  }
+
+  TEUCHOS_UNIT_TEST( Utils, CuSparseMatrixResult )
+  {
+    runTest(success, out, testCuSparseMatrixResult);
   }
 
 } // namespace (anonymous)
