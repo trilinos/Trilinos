@@ -121,25 +121,64 @@ namespace Tpetra {
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
   void Distributor::makeTimers () {
-    const std::string name_doPosts3 = "Tpetra::Distributor: doPosts(3)";
-    const std::string name_doPosts4 = "Tpetra::Distributor: doPosts(4)";
-    const std::string name_doWaits = "Tpetra::Distributor: doWaits";
-    const std::string name_doPosts3_recvs = "Tpetra::Distributor: doPosts(3): recvs";
-    const std::string name_doPosts4_recvs = "Tpetra::Distributor: doPosts(4): recvs";
-    const std::string name_doPosts3_barrier = "Tpetra::Distributor: doPosts(3): barrier";
-    const std::string name_doPosts4_barrier = "Tpetra::Distributor: doPosts(4): barrier";
-    const std::string name_doPosts3_sends = "Tpetra::Distributor: doPosts(3): sends";
-    const std::string name_doPosts4_sends = "Tpetra::Distributor: doPosts(4): sends";
+    timer_doWaits_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doWaits");
 
-    timer_doPosts3_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3);
-    timer_doPosts4_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4);
-    timer_doWaits_ = Teuchos::TimeMonitor::getNewTimer (name_doWaits);
-    timer_doPosts3_recvs_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_recvs);
-    timer_doPosts4_recvs_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_recvs);
-    timer_doPosts3_barrier_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_barrier);
-    timer_doPosts4_barrier_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_barrier);
-    timer_doPosts3_sends_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_sends);
-    timer_doPosts4_sends_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_sends);
+    timer_doPosts3TA_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3) TA");
+    timer_doPosts4TA_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4) TA");
+
+    timer_doPosts3TA_recvs_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): recvs TA");
+    timer_doPosts4TA_recvs_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): recvs TA");
+
+    timer_doPosts3TA_barrier_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): barrier TA");
+    timer_doPosts4TA_barrier_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): barrier TA");
+
+    timer_doPosts3TA_sends_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): sends TA");
+    timer_doPosts4TA_sends_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): sends TA");
+    timer_doPosts3TA_sends_slow_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): sends TA SLOW");
+    timer_doPosts4TA_sends_slow_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): sends TA SLOW");
+    timer_doPosts3TA_sends_fast_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): sends TA FAST");
+    timer_doPosts4TA_sends_fast_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): sends TA FAST");
+
+    timer_doPosts3KV_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3) KV");
+    timer_doPosts4KV_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4) KV");
+
+    timer_doPosts3KV_recvs_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): recvs KV");
+    timer_doPosts4KV_recvs_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): recvs KV");
+
+    timer_doPosts3KV_barrier_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): barrier KV");
+    timer_doPosts4KV_barrier_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): barrier KV");
+
+    timer_doPosts3KV_sends_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): sends KV");
+    timer_doPosts4KV_sends_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): sends KV");
+    timer_doPosts3KV_sends_slow_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): sends KV SLOW");
+    timer_doPosts4KV_sends_slow_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): sends KV SLOW");
+    timer_doPosts3KV_sends_fast_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(3): sends KV FAST");
+    timer_doPosts4KV_sends_fast_ = Teuchos::TimeMonitor::getNewTimer (
+                           "Tpetra::Distributor: doPosts(4): sends KV FAST");
   }
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 

@@ -373,7 +373,7 @@ namespace
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
     const double relTol=1e-12; // 2e-13 is sharp on development setup for polyOrder=3; relaxing for potential architectural differences
-    const double absTol=1e-12; // 5e-13 is sharp on development setup for polyOrder=3; relaxing for potential architectural differences
+    const double absTol=1e-11; // 5e-13 is sharp on development setup for polyOrder=3; relaxing for potential architectural differences
     
     for (int polyOrder=1; polyOrder<4; polyOrder++)
     {
@@ -411,7 +411,7 @@ namespace
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
     const double relTol=1e-11; // 2e-12 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
-    const double absTol=1e-12; // 9e-13 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
+    const double absTol=1e-11; // 9e-13 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
     
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     for (int polyOrder=1; polyOrder<3; polyOrder++)
