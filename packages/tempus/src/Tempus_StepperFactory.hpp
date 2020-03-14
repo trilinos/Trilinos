@@ -1425,7 +1425,9 @@ private:
       return createStepperSDIRK_21Pair(model, stepperPL);
     else if (
       stepperType == "IMEX RK 1st order" ||
+      stepperType == "SSP1_111"          ||
       stepperType == "IMEX RK SSP2"      ||
+      stepperType == "SSP2_222"          ||
       stepperType == "IMEX RK ARS 233"   ||
       stepperType == "General IMEX RK" )
       return createStepperIMEX_RK(model, stepperType, stepperPL);
@@ -1495,7 +1497,8 @@ private:
       << "    'General DIRK'\n"
       << "  Implicit-Explicit (IMEX) Methods:\n"
       << "    'IMEX RK 1st order'\n"
-      << "    'IMEX RK SSP2'\n"
+      << "    'SSP1_111'\n"
+      << "    'IMEX RK SSP2 (SSP2_222)'\n"
       << "    'IMEX RK ARS 233'\n"
       << "    'General IMEX RK'\n"
       << "    'Partitioned IMEX RK 1st order'\n"

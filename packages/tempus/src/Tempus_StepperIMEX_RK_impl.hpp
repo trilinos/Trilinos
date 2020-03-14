@@ -82,7 +82,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 {
   if (stepperType == "") stepperType = "IMEX RK SSP2";
 
-  if (stepperType == "IMEX RK 1st order") {
+  if (stepperType == "IMEX RK 1st order" || stepperType == "SSP1_111" ) {
     {
       // Explicit Tableau
       typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -142,7 +142,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     this->setStepperType("IMEX RK 1st order");
     this->setOrder(1);
 
-  } else if (stepperType == "IMEX RK SSP2") {
+  } else if (stepperType == "IMEX RK SSP2" || stepperType == "SSP2_222" ) {
     // Explicit Tableau
     auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
     this->setExplicitTableau(stepperERK->getTableau());
@@ -218,7 +218,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
        "Error - Not a valid StepperIMEX_RK type!  Stepper Type = "
        << stepperType <<  "\n"
        << "  Current valid types are: " << "\n"
-       << "      'IMEX RK 1st order'" << "\n"
+       << "      'IMEX RK 1st order (SSP1_111)'" << "\n"
        << "      'IMEX RK SSP2'" << "\n"
        << "      'IMEX RK ARS 233'" << "\n"
        << "      'General IMEX RK'" << "\n");
