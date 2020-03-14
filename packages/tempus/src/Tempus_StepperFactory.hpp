@@ -912,6 +912,24 @@ public:
     return stepper;
   }
 
+  Teuchos::RCP<StepperERK_Ralston<Scalar> >
+  createStepperERK_Ralston(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL,
+    std::string stepperType)
+  {
+    auto stepper = Teuchos::rcp(new StepperERK_Ralston<Scalar>());
+    stepper->setStepperType(stepperType);
+    setStepperRKValues(stepper, stepperPL);
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
   Teuchos::RCP<StepperERK_BogackiShampine32<Scalar> >
   createStepperERK_BogackiShampine32(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -1358,6 +1376,8 @@ private:
              stepperType == "Heuns Method" || stepperType == "SSPERK22" ||
              stepperType == "SSPRK2" )
       return createStepperERK_Trapezoidal(model, stepperPL, stepperType);
+    else if (stepperType == "RK Explicit Ralston" || stepperType == "RK2" )
+      return createStepperERK_Ralston(model, stepperPL, stepperType);
     else if (stepperType == "SSPERK54" )
       return createStepperERK_SSPERK54(model, stepperPL);
     else if (stepperType == "Bogacki-Shampine 3(2) Pair" )

@@ -1166,6 +1166,97 @@ protected:
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit Ralston
+ *
+ *  The tableau (order=2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc}   0   &   0   &     \\
+ *                       2/3  &  2/3  &  0  \\ \hline
+ *                            &  1/4  & 3/4  \end{array}
+ *  \f]
+ */
+template<class Scalar>
+class StepperERK_Ralston :
+  virtual public StepperExplicitRK<Scalar>
+{
+public:
+  /** \brief Default constructor.
+   *
+   * Requires subsequent setModel() and initialize()
+   * calls before calling takestep().
+  */
+  StepperERK_Ralston()
+  {
+    this->setStepperType("RK Explicit Ralston");
+    this->setupTableau();
+    this->setupDefault();
+  }
+
+  StepperERK_Ralston(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded)
+  {
+    this->setStepperType("RK Explicit Ralston");
+    this->setupTableau();
+    this->setup(appModel, obs, useFSAL, ICConsistency,
+                ICConsistencyCheck, useEmbedded);
+  }
+
+  std::string getDescription() const
+  {
+    std::ostringstream Description;
+    Description << this->getStepperType() << "\n"
+                << "This Stepper is known as 'RK Explicit Ralston' or 'RK2'.\n"
+                << "c = [   0   2/3 ]'\n"
+                << "A = [   0       ]\n"
+                << "    [  2/3   0  ]\n"
+                << "b = [  1/4  3/4 ]'";
+    return Description.str();
+  }
+
+protected:
+
+  void setupTableau()
+  {
+   typedef Teuchos::ScalarTraits<Scalar> ST;
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+
+    const int NumStages = 2;
+    const int order = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    // Fill A:
+    A(0,0) = zero; A(0,1) = zero; A(1,1) = zero;
+    A(1,0) = (2*one)/(3*one); 
+
+    // Fill b:
+    b(0) = (1*one)/(4*one); 
+    b(1) = (3*one)/(4*one); 
+
+    // fill c:
+    c(0) = zero;
+    c(1) = (2*one)/(3*one); 
+
+
+    this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      this->getStepperType(),A,b,c,order,order,order));
+  }
+};
+
+
+// ----------------------------------------------------------------------------
 /** \brief RK Explicit Trapezoidal
  *
  *  The tableau (order=2) is
