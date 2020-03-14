@@ -1335,7 +1335,7 @@ private:
       return createStepperHHTAlpha(model, stepperPL);
     else if (stepperType == "General ERK" )
       return createStepperERK_General(model, stepperPL);
-    else if (stepperType == "RK Forward Euler" )
+    else if (stepperType == "RK Forward Euler" || stepperType == "RK1" )
       return createStepperERK_ForwardEuler(model, stepperPL);
     else if (stepperType == "RK Explicit 4 Stage" )
       return createStepperERK_4Stage4thOrder(model, stepperPL);
@@ -1348,14 +1348,15 @@ private:
     else if (stepperType == "RK Explicit 3 Stage 3rd order" )
       return createStepperERK_3Stage3rdOrder(model, stepperPL);
     else if (stepperType == "RK Explicit 3 Stage 3rd order TVD" ||
-             stepperType == "SSPERK33")
+             stepperType == "SSPERK33" || stepperType == "SSPRK3" )
       return createStepperERK_3Stage3rdOrderTVD(model, stepperPL, stepperType);
     else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun" )
       return createStepperERK_3Stage3rdOrderHeun(model, stepperPL);
     else if (stepperType == "RK Explicit Midpoint" )
       return createStepperERK_Midpoint(model, stepperPL);
     else if (stepperType == "RK Explicit Trapezoidal" ||
-             stepperType == "Heuns Method" || stepperType == "SSPERK22")
+             stepperType == "Heuns Method" || stepperType == "SSPERK22" ||
+             stepperType == "SSPRK2" )
       return createStepperERK_Trapezoidal(model, stepperPL, stepperType);
     else if (stepperType == "SSPERK54" )
       return createStepperERK_SSPERK54(model, stepperPL);
@@ -1438,7 +1439,7 @@ private:
       << "    'Newmark Explicit a-Form'\n"
       << "    'HHT-Alpha'\n"
       << "  Explicit Runge-Kutta Methods:\n"
-      << "    'RK Forward Euler'\n"
+      << "    'RK Forward Euler (RK1)'\n"
       << "    'RK Explicit 4 Stage'\n"
       << "    'RK Explicit 3/8 Rule'\n"
       << "    'RK Explicit 4 Stage 3rd order by Runge'\n"
@@ -1449,8 +1450,8 @@ private:
       << "    'RK Explicit Midpoint'\n"
       << "    'RK Explicit Trapezoidal' or 'Heuns Method'\n"
       << "    'Bogacki-Shampine 3(2) Pair'\n"
-      << "    'SSPERK22'\n"
-      << "    'SSPERK33'\n"
+      << "    'SSPERK22 (SSPRK2)'\n"
+      << "    'SSPERK33 (SSPRK3)'\n"
       << "    'SSPERK54'\n"
       << "    'General ERK'\n"
       << "  Implicit Runge-Kutta Methods:\n"
