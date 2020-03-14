@@ -38,11 +38,11 @@ using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
 // Comment out any of the following tests to exclude from build/run.
-//#define TEST_PARAMETERLIST
-//#define TEST_CONSTRUCTING_FROM_DEFAULTS
+#define TEST_PARAMETERLIST
+#define TEST_CONSTRUCTING_FROM_DEFAULTS
 #define TEST_SINCOS
-//#define TEST_VANDERPOL
-//#define TEST_EMBEDDED_DIRK
+#define TEST_VANDERPOL
+#define TEST_EMBEDDED_DIRK
 
 
 #ifdef TEST_PARAMETERLIST

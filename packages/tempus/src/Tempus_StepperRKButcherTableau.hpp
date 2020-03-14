@@ -1851,14 +1851,17 @@ protected:
  *                      1-2      & 1/2 -\gamma & 0       & \gamma \\ \hline
  *                               & 1/6         & 1/6     & 2/3   \end{array}
  *  \f]
- *  The default value is \f$\gamma = (3 + \sqrt{3})/6\f$.
+ *  The value is \f$\gamma = 1/ (2 + \sqrt{2})\f$.
+ *  This will produce an L-stable 2nd order method with the stage
+ *  times within the timestep.  
  *
- *  Reference: 
- *             Implicit-Explicit RK Scheme & Appl to Hyperbolic Systems with
- *             Relaxation
- *             Parechi, Russo,...
+ *  Reference: Implicit-explicit Runge-Kutta schemes and applications to
+ *             hyperbolic systems with relaxation
+ *             L Pareschi, G Russo 
+ *             Journal of Scientific computing, 2005 - Springer
  *             Table 5
  */
+
 template<class Scalar>
 class StepperSDIRK_3Stage2ndOrder :
   virtual public StepperDIRK<Scalar>
@@ -1897,7 +1900,17 @@ public:
   {
     std::ostringstream Description;
     Description << this->getStepperType() << "\n"
-                << "b = [ 1/2        1/2      ]'";
+                << "Implicit-explicit Runge-Kutta schemes and applications to\n"
+                << "hyperbolic systems with relaxation\n"
+                << "L Pareschi, G Russo\n"
+                << "Journal of Scientific computing, 2005 - Springer\n"
+                << "Table 5\n"
+                << "gamma = 1/(2+sqrt(2))\n"
+                << "c = [  gamma   (1-gamma)   1/2  ]'\n"
+                << "A = [  gamma      0         0   ]\n"
+                << "    [ 1-2gamma   gamma      0   ]\n"
+                << "    [ 1/2-gamma   0      gamma  ]\n"
+                << "b = [  1/6       1/6       2/3  ]'";
     return Description.str();
   }
 

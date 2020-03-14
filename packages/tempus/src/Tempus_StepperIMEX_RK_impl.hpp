@@ -154,6 +154,17 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
     this->setStepperType("IMEX RK SSP2");
     this->setOrder(2);
+  } else if (stepperType == "IMEX RK SSP3" || stepperType == "SSP3_332" ) {
+    // Explicit Tableau
+    auto stepperERK = Teuchos::rcp(new StepperERK_3Stage3rdOrderTVD<Scalar>());
+    this->setExplicitTableau(stepperERK->getTableau());
+
+    // Implicit Tableau
+    auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_3Stage2ndOrder<Scalar>());
+    this->setImplicitTableau(stepperSDIRK->getTableau());
+
+    this->setStepperType("IMEX RK SSP3");
+    this->setOrder(2);
   } else if (stepperType == "IMEX RK ARS 233") {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     int NumStages = 3;
