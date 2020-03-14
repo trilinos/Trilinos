@@ -56,23 +56,23 @@
 namespace MueLu
 {
 
-  template <class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
+template <class LocalOrdinal = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node = DefaultNode>
 class InterfaceMappingTransferFactory : public TwoLevelFactoryBase
 {
 #undef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 public:
-    //! Constructor.
-    explicit InterfaceMappingTransferFactory();
+  //! Constructor.
+  InterfaceMappingTransferFactory() = default;
 
-    //! Destructor.
-    virtual ~InterfaceMappingTransferFactory() {}
+  //! Destructor.
+  ~InterfaceMappingTransferFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const override;
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const override;
-    void Build(Level &fineLevel, Level &coarseLevel) const override;
+  RCP<const ParameterList> GetValidParameterList() const override;
+  void DeclareInput(Level &fineLevel, Level &coarseLevel) const override;
+  void Build(Level &fineLevel, Level &coarseLevel) const override;
 };
 
 } // namespace MueLu

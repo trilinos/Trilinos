@@ -7,11 +7,6 @@ namespace MueLu
 {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::InterfaceMappingTransferFactory()
-{
-}
-
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const
 {
     RCP<ParameterList> validParamList = rcp(new ParameterList());

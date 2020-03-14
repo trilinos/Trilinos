@@ -57,11 +57,6 @@ namespace MueLu
 {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::InterfaceAggregationFactory()
-{
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const
 {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
@@ -96,10 +91,10 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Dec
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
 {
-  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Aggregates<LocalOrdinal, GlobalOrdinal, Node> Aggregates;
-  typedef std::map<LocalOrdinal, LocalOrdinal> Dual2Primal_type;
-  typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
+  using Map = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  using MapFactory = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>;
+  using Aggregates = Aggregates<LocalOrdinal, GlobalOrdinal, Node>;
+  using Dual2Primal_type = std::map<LocalOrdinal, LocalOrdinal>;
 
   const char prefix[] = "MueLu::InterfaceAggregationFactory::Build: ";
   const ParameterList &pL = GetParameterList();

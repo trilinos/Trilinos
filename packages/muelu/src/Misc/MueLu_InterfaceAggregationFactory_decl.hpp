@@ -58,10 +58,10 @@ namespace MueLu
     @brief Factory for building aggregates for Lagrange multipliers.
 */
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
+template <class Scalar = DefaultScalar,
+          class LocalOrdinal = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node = DefaultNode>
 class InterfaceAggregationFactory : public SingleLevelFactoryBase
 {
 #undef MUELU_INTERFACEAGGREGATIONFACTORY_SHORT
@@ -72,10 +72,10 @@ public:
   //@{
 
   //! Constructor.
-  explicit InterfaceAggregationFactory();
+  InterfaceAggregationFactory() = default;
 
   //! Destructor.
-  virtual ~InterfaceAggregationFactory() {}
+  ~InterfaceAggregationFactory() {}
 
   RCP<const ParameterList> GetValidParameterList() const override;
 
