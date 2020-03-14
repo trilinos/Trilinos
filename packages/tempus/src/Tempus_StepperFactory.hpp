@@ -1027,6 +1027,24 @@ public:
     return stepper;
   }
 
+  Teuchos::RCP<StepperSDIRK_3Stage2ndOrder<Scalar> >
+  createStepperSDIRK_3Stage2ndOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperSDIRK_3Stage2ndOrder<Scalar>());
+    setStepperDIRKValues(stepper, stepperPL);
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      setStepperSolverValues(stepper, stepperPL);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
+  
   Teuchos::RCP<StepperSDIRK_SSPDIRK22<Scalar> >
   createStepperSDIRK_SSPDIRK22(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -1392,6 +1410,8 @@ private:
       return createStepperSDIRK_2Stage2ndOrder(model, stepperPL);
     else if (stepperType == "SSPDIRK22" )
       return createStepperSDIRK_SSPDIRK22(model, stepperPL);
+    else if (stepperType == "SDIRK 3 Stage 2nd order" )
+      return createStepperSDIRK_3Stage2ndOrder(model, stepperPL);
     else if (stepperType == "SSPDIRK32" )
       return createStepperSDIRK_SSPDIRK32(model, stepperPL);
     else if (stepperType == "SSPDIRK23" )
@@ -1493,6 +1513,7 @@ private:
       << "    'SSPDIRK23'\n"
       << "    'SSPDIRK33'\n"
       << "    'SDIRK 2(1) Pair'\n"
+      << "    'SDIRK 3 Stage 2nd order'\n"
       << "    'RK Trapezoidal Rule' or 'RK Crank-Nicolson'\n"
       << "    'General DIRK'\n"
       << "  Implicit-Explicit (IMEX) Methods:\n"
