@@ -305,14 +305,50 @@ namespace { // (anonymous)
         Teuchos::OSTab tab3(out);
         out << "Test LocalCuSparseCrsMatrixOperator::apply" << endl;
         Kokkos::deep_copy(X, 1.0);
-        const double alpha = 1.0;
-        const double beta = 0.0;
-        A_op.apply(X, Y, Teuchos::NO_TRANS, alpha, beta);
-        Kokkos::deep_copy(Y_h, Y);
-        for (int vec = 0; vec < numVecs; ++vec) {
-          TEST_EQUALITY( Y_h(0, vec), 5.0 );
-          TEST_EQUALITY( Y_h(1, vec), 4.0 );
-          TEST_EQUALITY( Y_h(2, vec), 4.0 );
+
+        {
+          const double alpha = 1.0;
+          const double beta = 0.0;
+          out << "alpha=" << alpha << ", beta=" << beta << endl;
+          Teuchos::OSTab tab4(out);
+
+          A_op.apply(X, Y, Teuchos::NO_TRANS, alpha, beta);
+          Kokkos::deep_copy(Y_h, Y);
+          for (int vec = 0; vec < numVecs; ++vec) {
+            TEST_EQUALITY( Y_h(0, vec), 5.0 );
+            TEST_EQUALITY( Y_h(1, vec), 4.0 );
+            TEST_EQUALITY( Y_h(2, vec), 4.0 );
+          }
+        }
+        {
+          const double alpha = 0.0;
+          const double beta = 1.0;
+          out << "alpha=" << alpha << ", beta=" << beta << endl;
+          Teuchos::OSTab tab4(out);
+
+          Kokkos::deep_copy(Y, 7.0);
+          A_op.apply(X, Y, Teuchos::NO_TRANS, alpha, beta);
+          Kokkos::deep_copy(Y_h, Y);
+          for (int vec = 0; vec < numVecs; ++vec) {
+            TEST_EQUALITY( Y_h(0, vec), 7.0 );
+            TEST_EQUALITY( Y_h(1, vec), 7.0 );
+            TEST_EQUALITY( Y_h(2, vec), 7.0 );
+          }
+        }
+        {
+          const double alpha = 2.0;
+          const double beta = -1.0;
+          out << "alpha=" << alpha << ", beta=" << beta << endl;
+          Teuchos::OSTab tab4(out);
+
+          Kokkos::deep_copy(Y, 7.0);
+          A_op.apply(X, Y, Teuchos::NO_TRANS, alpha, beta);
+          Kokkos::deep_copy(Y_h, Y);
+          for (int vec = 0; vec < numVecs; ++vec) {
+            TEST_EQUALITY( Y_h(0, vec), 3.0 );
+            TEST_EQUALITY( Y_h(1, vec), 1.0 );
+            TEST_EQUALITY( Y_h(2, vec), 1.0 );
+          }
         }
       }
 
@@ -369,14 +405,50 @@ namespace { // (anonymous)
         Teuchos::OSTab tab3(out);
         out << "Test LocalCuSparseCrsMatrixOperator::apply" << endl;
         Kokkos::deep_copy(X, 1.0);
-        const double alpha = 1.0;
-        const double beta = 0.0;
-        A_op.apply(X, Y, Teuchos::NO_TRANS, alpha, beta);
-        Kokkos::deep_copy(Y_h, Y);
-        for (int vec = 0; vec < numVecs; ++vec) {
-          TEST_EQUALITY( Y_h(0, vec), 5.0 );
-          TEST_EQUALITY( Y_h(1, vec), 6.0 );
-          TEST_EQUALITY( Y_h(2, vec), 4.0 );
+
+        {
+          const double alpha = 1.0;
+          const double beta = 0.0;
+          out << "alpha=" << alpha << ", beta=" << beta << endl;
+          Teuchos::OSTab tab4(out);
+
+          A_op.apply(X, Y, Teuchos::NO_TRANS, alpha, beta);
+          Kokkos::deep_copy(Y_h, Y);
+          for (int vec = 0; vec < numVecs; ++vec) {
+            TEST_EQUALITY( Y_h(0, vec), 5.0 );
+            TEST_EQUALITY( Y_h(1, vec), 6.0 );
+            TEST_EQUALITY( Y_h(2, vec), 4.0 );
+          }
+        }
+        {
+          const double alpha = 0.0;
+          const double beta = 1.0;
+          out << "alpha=" << alpha << ", beta=" << beta << endl;
+          Teuchos::OSTab tab4(out);
+
+          Kokkos::deep_copy(Y, 7.0);
+          A_op.apply(X, Y, Teuchos::NO_TRANS, alpha, beta);
+          Kokkos::deep_copy(Y_h, Y);
+          for (int vec = 0; vec < numVecs; ++vec) {
+            TEST_EQUALITY( Y_h(0, vec), 7.0 );
+            TEST_EQUALITY( Y_h(1, vec), 7.0 );
+            TEST_EQUALITY( Y_h(2, vec), 7.0 );
+          }
+        }
+        {
+          const double alpha = 2.0;
+          const double beta = -1.0;
+          out << "alpha=" << alpha << ", beta=" << beta << endl;
+          Teuchos::OSTab tab4(out);
+
+          Kokkos::deep_copy(Y, 7.0);
+          A_op.apply(X, Y, Teuchos::NO_TRANS, alpha, beta);
+          Kokkos::deep_copy(Y_h, Y);
+          for (int vec = 0; vec < numVecs; ++vec) {
+            TEST_EQUALITY( Y_h(0, vec), 3.0 );
+            TEST_EQUALITY( Y_h(1, vec), 5.0 );
+            TEST_EQUALITY( Y_h(2, vec), 1.0 );
+          }
         }
       }
     }
