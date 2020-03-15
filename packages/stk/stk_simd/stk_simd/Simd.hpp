@@ -35,6 +35,10 @@
 #ifndef STK_SIMD_SIMD_HPP
 #define STK_SIMD_SIMD_HPP
 
+#ifndef STK_BUILT_IN_SIERRA
+#include <STK_Trilinos_config.h>
+#endif
+
 #include "stk_simd/SimdConfig.hpp" // IWYU pragma: export
 #include <iostream>
 
