@@ -21,6 +21,7 @@ ADD_SUBDIRECTORIES(
   ImportExport
   ImportExport2
   inout
+  LocalOperator
   Map
   MatrixMatrix
   Merge
