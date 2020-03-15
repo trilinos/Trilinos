@@ -207,7 +207,7 @@ namespace { // (anonymous)
     crs_matrix_type<double>::values_type val
       (view_alloc("val", WithoutInitializing), numEnt);
     crs_graph_type::row_map_type::non_const_type ptr
-      (view_alloc("ptr", WithoutInitializing), numRows);
+      (view_alloc("ptr", WithoutInitializing), numRows+1);
 
     auto val_h = Kokkos::create_mirror_view(val);
     auto ind_h = Kokkos::create_mirror_view(ind);
