@@ -577,9 +577,8 @@ static int read_double(char *  ptr, /* pointer to string to parse */
   if (nvals != 1) {
     return (FALSE);
   }
-  else {
-    return (TRUE);
-  }
+
+  return (TRUE);
 }
 
 static int read_long(char *ptr, /* pointer to string to parse */
@@ -596,9 +595,8 @@ static int read_long(char *ptr, /* pointer to string to parse */
   if (nvals != 1) {
     return (FALSE);
   }
-  else {
-    return (TRUE);
-  }
+
+  return (TRUE);
 }
 
 static int read_string(char *ptr, /* pointer to string to parse */

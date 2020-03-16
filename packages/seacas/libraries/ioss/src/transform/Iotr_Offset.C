@@ -53,7 +53,7 @@ namespace Iotr {
     return new Offset();
   }
 
-  Offset::Offset() {}
+  Offset::Offset() = default;
 
   void Offset::set_property(const std::string & /*name*/, int value) { intOffset = value; }
 
@@ -76,7 +76,7 @@ namespace Iotr {
     int    components = field.transformed_storage()->component_count();
 
     if (field.get_type() == Ioss::Field::REAL) {
-      double *rdata = static_cast<double *>(data);
+      auto *rdata = static_cast<double *>(data);
 
       for (size_t i = 0; i < count * components; i++) {
         rdata[i] += realOffset;

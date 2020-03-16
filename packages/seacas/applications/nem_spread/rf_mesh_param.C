@@ -71,7 +71,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
 
   /* Local variables */
   std::string exofile;
-  int         exoid, error;
+  int         exoid;
+  int         error;
   int         cpu_ws;
   float       version;
 

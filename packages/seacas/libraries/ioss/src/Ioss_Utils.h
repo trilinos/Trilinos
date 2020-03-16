@@ -62,7 +62,7 @@ namespace Ioss {
 #define TOPTR(x) (x.empty() ? nullptr : &x[0])
 #endif
 
-#define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
+#define IOSS_ERROR(errmsg) throw std::runtime_error((errmsg).str())
 #define IOSS_WARNING std::cerr
 
 namespace {

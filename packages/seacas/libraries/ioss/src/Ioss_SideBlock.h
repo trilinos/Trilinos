@@ -118,8 +118,8 @@ namespace Ioss {
     const EntityBlock *parentBlock_;
 
     // Pointer to the SideSet (if any) that contains this side block.
-    std::vector<std::string> blockMembership; // What element blocks do the
-                                              // elements in this sideset belong to.
+    std::vector<std::string> blockMembership{}; // What element blocks do the
+                                                // elements in this sideset belong to.
     mutable int consistentSideNumber;
   };
 } // namespace Ioss

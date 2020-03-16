@@ -189,7 +189,9 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
   const double one12th = 1.0 / 12.0;
 
   double              gradop12x[24];
-  double              x[8], y[8], z[8];
+  double              x[8];
+  double              y[8];
+  double              z[8];
   std::vector<double> volume(nelem);
 
   size_t t1 = Ioss::Utils::timer();

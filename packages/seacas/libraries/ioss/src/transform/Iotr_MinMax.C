@@ -104,8 +104,8 @@ namespace Iotr {
     size_t components = field.transformed_storage()->component_count();
     size_t n          = count * components;
     if (field.get_type() == Ioss::Field::REAL) {
-      double *rdata = static_cast<double *>(data);
-      double  value;
+      auto * rdata = static_cast<double *>(data);
+      double value;
       if (doMin) {
         if (doAbs) {
           value = *std::min_element(&rdata[0], &rdata[n], [](double p1, double p2) {

@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2017 National Technology & Engineering Solutions
+// Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -41,7 +41,7 @@ namespace {
   // in case we're logging using the default logger...
   struct stream_holder
   {
-    stream_holder() : out_(nullptr), owns_(false) {}
+    stream_holder() = default;
     ~stream_holder()
     {
       if (owns_) {
@@ -49,8 +49,8 @@ namespace {
       }
       out_ = nullptr;
     }
-    std::ostream *out_;
-    bool          owns_;
+    std::ostream *out_{nullptr};
+    bool          owns_{false};
   };
   // information about the stream we write to, in case
   // we're using the default logger

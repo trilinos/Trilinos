@@ -885,11 +885,10 @@ int main(int argc, char **argv)
         if (k == 1 && j == 2) {
           continue; /* skip element block 3, variable 1 */
         }
-        else {
-          error = ex_put_var(exoid, whole_time_step, EX_ELEM_BLOCK, k, ebids[j],
-                             num_elem_in_block[j], elem_var_vals);
-          printf("after ex_put_elem_var, error = %d\n", error);
-        }
+
+        error = ex_put_var(exoid, whole_time_step, EX_ELEM_BLOCK, k, ebids[j], num_elem_in_block[j],
+                           elem_var_vals);
+        printf("after ex_put_elem_var, error = %d\n", error);
       }
     }
 

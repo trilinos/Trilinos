@@ -67,9 +67,12 @@ template int read_exo_weights(Problem_Description *prob, Weight_Description<int6
 template <typename INT>
 int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 {
-  int         exoid, cpu_ws = 0, io_ws = 0;
+  int         exoid;
+  int         cpu_ws = 0;
+  int         io_ws  = 0;
   int         neblks;
-  float       version, minval = 1.0f;
+  float       version;
+  float       minval = 1.0f;
   char        elem_type[MAX_STR_LENGTH + 1];
   std::string ctemp;
   /*---------------------------Execution Begins--------------------------------*/
@@ -123,7 +126,8 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 
     /* Get the count of elements in each element block */
     for (int cnt = 0; cnt < neblks; cnt++) {
-      INT dum1, dum2;
+      INT dum1;
+      INT dum2;
       if (ex_get_block(exoid, EX_ELEM_BLOCK, eblk_ids[cnt], elem_type, &(eblk_ecnts[cnt]), &dum1,
                        nullptr, nullptr, &dum2) < 0) {
         Gen_Error(0, "fatal: unable to get element block");
@@ -180,7 +184,9 @@ template <typename INT>
 int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
                      Mesh_Description<INT> *mesh, Sphere_Info *sphere)
 {
-  int   exoid, cpu_ws = 0, io_ws = 0;
+  int   exoid;
+  int   cpu_ws = 0;
+  int   io_ws  = 0;
   float version;
   char  elem_type[MAX_STR_LENGTH + 1];
   /*---------------------------Execution Begins--------------------------------*/
@@ -254,12 +260,13 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
       ex_close(exoid);
       return 0;
     }
-    mesh->eb_npe[cnt]  = nodes_in_elem;
-    mesh->eb_type[cnt] = get_elem_type(elem_type, nodes_in_elem, mesh->num_dims);
 
     if (mesh->eb_cnts[cnt] == 0) {
       continue;
     }
+
+    mesh->eb_npe[cnt]  = nodes_in_elem;
+    mesh->eb_type[cnt] = get_elem_type(elem_type, nodes_in_elem, mesh->num_dims);
 
     if (cnt == 0) {
       sphere->end[0] = mesh->eb_cnts[cnt];
@@ -317,12 +324,17 @@ template <typename INT>
 int read_mesh(const std::string &exo_file, Problem_Description *problem,
               Mesh_Description<INT> *mesh, Weight_Description<INT> *weight)
 {
-  float version, *xptr, *yptr, *zptr;
+  float  version;
+  float *xptr;
+  float *yptr;
+  float *zptr;
   /*---------------------------Execution Begins--------------------------------*/
 
   /* Open the ExodusII file */
-  int exoid, cpu_ws = 0, io_ws = 0;
-  int mode = EX_READ | problem->int64api;
+  int exoid;
+  int cpu_ws = 0;
+  int io_ws  = 0;
+  int mode   = EX_READ | problem->int64api;
   if ((exoid = ex_open(exo_file.c_str(), mode, &cpu_ws, &io_ws, &version)) < 0) {
     Gen_Error(0, "fatal: unable to open ExodusII mesh file");
     return 0;

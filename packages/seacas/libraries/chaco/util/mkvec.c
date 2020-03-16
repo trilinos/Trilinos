@@ -54,9 +54,8 @@ double *mkvec_ret(int nl, int nh)
   if (v == NULL) {
     return (NULL);
   }
-  else {
-    return (v - nl);
-  }
+
+  return (v - nl);
 }
 
 /* Free a double vector with range [nl..nh]. */
@@ -80,9 +79,8 @@ float *mkvec_ret_float(int nl, int nh)
   if (v == NULL) {
     return (NULL);
   }
-  else {
-    return (v - nl);
-  }
+
+  return (v - nl);
 }
 
 /* Free a float vector with range [nl..nh]. */

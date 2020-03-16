@@ -184,7 +184,7 @@ bool:     sexp LT sexp          { $$ = (strcmp($1,$3) <  0 ? 1 : 0);    }
         | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);    }
         | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);    }
 
-aexp:   AVAR                    { $$ = $1->value.avar;}
+aexp:   AVAR                    { $$ = new array(*($1->value.avar));}
         | AFNCT LPAR sexp RPAR  {
           if (arg_check($1, $1->value.arrfnct_c == NULL))
             $$ = (*($1->value.arrfnct_c))($3);
