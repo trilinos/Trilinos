@@ -223,7 +223,17 @@ CuSparseMatrix::getValueType() const {
 }
 
 CuSparseMatrix::algorithm_t
-CuSparseMatrix::getAlgorithm(const cusparseOperation_t op) const {
+CuSparseMatrix::getAlgorithm(const cusparseOperation_t /* op */) const {
+  // mfh (16 Mar 2020) For now, per Victor Brunini's recommendation,
+  // test whether calling cuSPARSE with the usual ("naive") algorithm
+  // makes Trilinos' tests pass.
+#ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+    return CUSPARSE_MV_ALG_DEFAULT;
+#else
+    return CUSPARSE_ALG_NAIVE;
+#endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+
+#if 0
   if (alg_ == CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT ||
       op != CUSPARSE_OPERATION_NON_TRANSPOSE) {
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
@@ -239,6 +249,7 @@ CuSparseMatrix::getAlgorithm(const cusparseOperation_t op) const {
     return CUSPARSE_ALG_MERGE_PATH;
 #endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
   }
+#endif // 0
 }
 
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
