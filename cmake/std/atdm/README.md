@@ -1090,16 +1090,25 @@ One can also build directly from the login node on a compute node using:
 $ lalloc 1 -W 4:00 make NP=32
 ```
 
-One can also directly run the test suite
-from the login node using:
+Or, to SSH from the launch node (acquired with `bsub -Is bash` as shown above)
+to the compute node and run make from there, use:
 
 ```bash
-$ busub -Is -W 2:00 ctest -j4
+$ ssh $(atdm_ats2_get_allocated_compute_node_name)
+$ make NP=32
+```
+
+One can also directly run the test suite from the login node using:
+
+```bash
+$ bsub -Is -W 2:00 ctest -j4
 ```
 
 The advantage of creating a node allocation first using `bsub -Is bash` and
-loging into the launch node is that your builds and test runs from there are
+logging into the launch node is that your builds and test runs from there are
 completely interactive since you don't need to wait for a node allocation.
+(Also, you can set an LSF job name with `bsub -J <job-name>` which you can't
+do with `lalloc`.)
 
 The MPI test tests in Trilinos are actually run by a wrapper script
 `trilinos_jsrun` which calls the `jsrun` command and modifies the input
@@ -1117,6 +1126,8 @@ environment variable and run as:
 $ export TPETRA_ASSUME_CUDA_AWARE_MPI=0
 $ lrun -n 1 ctest -j4
 ```
+
+
 
 To explicitly **enable CUDA-aware MPI** when running the test suite set run
 as:
