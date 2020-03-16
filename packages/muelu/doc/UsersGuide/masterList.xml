@@ -1,3 +1,4 @@
+
 <masterlist>
 
   <general>
@@ -752,7 +753,10 @@
       <name>aggregate qualities: algorithm</name>
       <type>string</type>
       <default>forward</default>
-      <description>Algorithm to use ``forward'' or ``reverse.''</description>
+      <description>Which aggregate qualtiy algorithm to use:
+      ``forward'' or ``reverse.''  The forward algorithm uses the
+      ``A'' matrix in the denominator of the generalized eigenvalue
+      problem.  The reverse algorithm uses it in the numerator.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
     

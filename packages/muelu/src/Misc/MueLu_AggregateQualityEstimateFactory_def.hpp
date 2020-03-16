@@ -318,7 +318,7 @@ namespace MueLu {
       MT matrixNorm = A_aggPart.normInf();
 
       // Forward mode: Include a small perturbation to the bottom matrix to make it nonsingular
-      MT boost = (algo == ALG_FORWARD) ? (-1e-12*matrixNorm) : MT_ZERO;
+      const MT boost = (algo == ALG_FORWARD) ? (-1e4*Teuchos::ScalarTraits<MT>::eps()*matrixNorm) : MT_ZERO;
 
       for (int i=0;i<aggSize;++i){
         bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) + boost;
