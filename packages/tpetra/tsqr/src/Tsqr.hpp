@@ -249,7 +249,7 @@ namespace TSQR {
                        const bool forceNonnegativeDiagonal = false)
     {
       const char prefix[] = "TSQR::Tsqr::factorExplicitRaw: ";
-      
+
       // Sanity checks for matrix dimensions.
       if (numRows < numCols) {
         std::ostringstream os;
@@ -289,7 +289,7 @@ namespace TSQR {
           (true, std::runtime_error, prefix <<
            "nodeTsqr_->factor(...) threw: " << e.what ());
       }
-      
+
       // Prepare the output matrix Q by filling with zeros.
       try {
         nodeTsqr_->fill_with_zeros (numRows, numCols, Q, LDQ,
@@ -300,7 +300,7 @@ namespace TSQR {
           (true, std::runtime_error, prefix <<
            "nodeTsqr_->fill_with_zeros(...) threw: " << e.what ());
       }
-      
+
       // Wrap the output matrix Q in a "view."
       mat_view_type Q_rawView (numRows, numCols, Q, LDQ);
       // Wrap the uppermost cache block of Q.  We will need to extract
@@ -324,7 +324,6 @@ namespace TSQR {
       {
         mat_view_type Q_top (numCols, numCols, Q_top_block.data (),
                              Q_top_block.stride (1));
-        mat_view_type R_view (numCols, numCols, R, LDR);
 
         if (nodeTsqr_->wants_device_memory ()) {
           // DistTsqr doesn't know what to do with device memory, so
