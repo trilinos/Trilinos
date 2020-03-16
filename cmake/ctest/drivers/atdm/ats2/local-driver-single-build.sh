@@ -1,7 +1,19 @@
 #!/bin/bash
 #
 # This script is designed to run on the launch node using a single node
-# allocation.
+# allocation.  This script is called by the ats2/local-drivers.sh script in a
+# bsub allocation as:
+#
+#  bsub -J <job-name> -W <timeout> -Is <this-dir>/local-driver-single-build.sh
+#
+# Therefore, this script runs on the launch node (not the login node or the
+# compute node).
+# 
+# This script matches the approach documented in the cmake/std/atdm/README.md
+# file in the "ATS-2" section where everything except the tests are run on the
+# compute node using 'lrun', and then the tests themselves are launched
+# directly from the launch node (since 'jsrun' can only be run from the launch
+# node, not the login node or the compute node).
 #
 
 set +x
@@ -17,6 +29,7 @@ fi
 echo
 echo "***"
 echo "*** Running [start], [update], configure and build for job '${LSB_JOBNAME}'"
+echo "*** on the compute node"
 echo "***"
 echo
 
@@ -29,7 +42,7 @@ set +x
 
 echo
 echo "***"
-echo "*** Running tests for job '${LSB_JOBNAME}'"
+echo "*** Running tests for job '${LSB_JOBNAME}' from the launch node"
 echo "***"
 echo
 

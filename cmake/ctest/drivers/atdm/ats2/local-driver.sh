@@ -36,16 +36,17 @@ if [[ "${Trilinos_CTEST_RUN_CUDA_AWARE_MPI}" == "1" ]]; then
   set +x
 fi
 
-# NOTE: Above, we are using a single bsub allocation for each job that appears
-# on CDash.  We run the configure, build, the tests within that allocation.
-# We do this so that the hostname that shows up in the cmake configure output
-# that is posted to CDash is the same node that runs the test.  However, we
-# use a seprate node allocation to run the cuda-aware MPI build and tests.
-# That is so that if we are hit by the jsrun bug in the first non-cuda-aware
-# MPI test runs (see #6855), then this will not break the tests in the
-# cuda-aware-mpi runs.  Otherwise, you could do a single bsub allocation to
-# run both the non-cuda-aware MPI and the cuda-aware MPI builds.  But the
-# jsrun bug is why we don't do that.
+# NOTE: Above, we are using a single bsub allocation for each Trilinos build.
+# We run the configure, build, the tests within that single allocation.  We do
+# this so that the hostname that shows up in the cmake configure output that
+# is posted to CDash is the same node that runs the tests with ctest.
+# However, we use a seprate node allocation to run the cuda-aware MPI build
+# and tests.  That is so that if we are hit by the jsrun bug (see #6855) in
+# the first non-cuda-aware MPI build that that runs the tests, then this will
+# not break the tests in the followo-one cuda-aware-mpi build case.
+# Otherwise, you could do a single bsub allocation to run both the
+# non-cuda-aware MPI and the cuda-aware MPI builds.  But the jsrun bug is why
+# we don't do that.
 #
 # NOTE: Above, we put an '-exp' on the end of the cuda-aware-mpi build name to
 # make it more clear that this is an experimental build!
