@@ -621,7 +621,8 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
     size_t           tot_dfac  = 0;
     std::vector<int> num_df(num_sets);
     for (int i = 0; i < num_sets; i++) {
-      int n1, n2;
+      int n1;
+      int n2;
       ex_get_set_param(exo_file, EX_NODE_SET, ids[i], &n1, &n2);
       num_nodes[i] = n1;
       num_df[i]    = n2;
@@ -788,7 +789,8 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
                                             MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
-        int n1, n2;
+        int n1;
+        int n2;
         ex_get_set_param(exo_file, EX_SIDE_SET, ids[i], &n1, &n2);
         num_sideset_sides[i] = n1;
         num_sideset_dfac[i]  = n2;
@@ -862,7 +864,8 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
       std::vector<int>    side_nodes;
       std::vector<double> ssdfac;
       for (int i = 0; i < num_sets; i++) {
-        int n1, n2;
+        int n1;
+        int n2;
         ex_get_set_param(exo_file, EX_SIDE_SET, ids[i], &n1, &n2);
         num_sideset_sides[i] = n1;
         num_sideset_dfac[i]  = n2;
@@ -954,8 +957,18 @@ int main(int argc, char *argv[])
 
   const char *ext = EXT;
 
-  int err, num_axes, num_blocks, num_side_sets, num_node_sets, num_time_steps, num_info_lines,
-      num_global_vars, num_nodal_vars, num_element_vars, num_nodeset_vars, num_sideset_vars;
+  int err;
+  int num_axes;
+  int num_blocks;
+  int num_side_sets;
+  int num_node_sets;
+  int num_time_steps;
+  int num_info_lines;
+  int num_global_vars;
+  int num_nodal_vars;
+  int num_element_vars;
+  int num_nodeset_vars;
+  int num_sideset_vars;
 
   size_t num_nodes    = 0;
   size_t num_elements = 0;

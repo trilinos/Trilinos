@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,11 +37,7 @@
 class Norm
 {
 public:
-  Norm()
-      : l1_norm_1(0.0), l1_norm_2(0.0), l1_norm_d(0.0), l2_norm_1(0.0), l2_norm_2(0.0),
-        l2_norm_d(0.0)
-  {
-  }
+  Norm() = default;
 
   double diff(int order) const
   {
@@ -101,13 +97,13 @@ public:
     l2_norm_2 += val2 * val2;
   }
 
-  double l1_norm_1;
-  double l1_norm_2;
-  double l1_norm_d;
+  double l1_norm_1{0.0};
+  double l1_norm_2{0.0};
+  double l1_norm_d{0.0};
 
-  double l2_norm_1;
-  double l2_norm_2;
-  double l2_norm_d;
+  double l2_norm_1{0.0};
+  double l2_norm_2{0.0};
+  double l2_norm_d{0.0};
 };
 
 #endif

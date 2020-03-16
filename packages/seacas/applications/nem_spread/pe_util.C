@@ -63,7 +63,9 @@ void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int /*proc*/, i
  * processor has an identical list.
  */
 {
-  int iproc, proc_id, ctrl_id;
+  int iproc;
+  int proc_id;
+  int ctrl_id;
   /*------------------------ EXECUTION BEGINS ------------------------------*/
 
   /* Allocate memory for the list */
@@ -96,7 +98,6 @@ void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int /*proc*/, i
 
     pio_info->RDsk_List[iproc][1] = proc_id;
   }
-  return;
 }
 
 /*****************************************************************************/
@@ -136,8 +137,11 @@ std::string gen_par_filename(const std::string &scalar_fname, int proc_for, int 
 
   /*      Local variables      */
 
-  int         i1, iTemp1, ctrlID;
-  int         iMaxDigit = 0, iMyDigit = 0;
+  int         i1;
+  int         iTemp1;
+  int         ctrlID;
+  int         iMaxDigit = 0;
+  int         iMyDigit  = 0;
   std::string par_filename;
 
   /************************* EXECUTION BEGINS *******************************/

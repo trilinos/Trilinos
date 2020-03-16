@@ -196,7 +196,7 @@ namespace Iogn {
     void add_transient_fields(Ioss::GroupingEntity *entity);
 
     GeneratedMesh *          m_generatedMesh{nullptr};
-    std::vector<std::string> m_sideset_names;
+    std::vector<std::string> m_sideset_names{};
 
     double currentTime{0.0};
     int    spatialDimension{3};

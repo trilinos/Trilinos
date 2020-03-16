@@ -43,9 +43,9 @@
 struct error_message
 {
   int         level;
-  std::string err_mesg;
+  std::string err_mesg{};
   int         line_no;
-  std::string filename;
+  std::string filename{};
 
   error_message(int l, std::string msg, int ln, std::string file)
       : level(l), err_mesg(std::move(msg)), line_no(ln), filename(std::move(file))
@@ -66,6 +66,6 @@ extern void error_add(int                level,
                                                     * was reported */
 );
 
-extern void error_report(void);
+extern void error_report();
 
 #endif /* _EXOIILB_ERR_CONST_H_ */

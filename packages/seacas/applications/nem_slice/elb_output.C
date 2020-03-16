@@ -52,7 +52,7 @@
 #include <vector> // for vector
 
 namespace {
-  const std::string remove_extension(const std::string &filename)
+  std::string remove_extension(const std::string &filename)
   {
     // Strip off the extension
     size_t ind = filename.find_last_of('.', filename.size());
@@ -200,7 +200,9 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   std::string time     = fmt::format("{:%H:%M:%S}", *lt);
   std::string date     = fmt::format("{:%Y/%m/%d}", *lt);
 
-  char qa_date[15], qa_time[10], qa_name[MAX_STR_LENGTH];
+  char qa_date[15];
+  char qa_time[10];
+  char qa_name[MAX_STR_LENGTH];
   char qa_vers[10];
 
   copy_string(qa_time, time);
@@ -471,7 +473,8 @@ template <typename INT>
 int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_Description *machine,
               Problem_Description *prob, Mesh_Description<INT> *mesh, LB_Description<INT> *lb)
 {
-  int exid_vis, exid_inp;
+  int exid_vis;
+  int exid_inp;
 
   std::string title;
   const char *coord_names[] = {"X", "Y", "Z"};

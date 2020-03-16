@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -83,7 +83,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
  */
 
 {
-  int   exoid, cpu_ws = 0;
+  int   exoid;
+  int   cpu_ws = 0;
   float vers;
   int   max_name_length = 0;
 
@@ -158,8 +159,10 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
   std::vector<INT> ns_ids_global(globals.Num_Node_Set);
   std::vector<INT> ns_cnts_global(globals.Num_Node_Set);
 
-  INT ***eb_map_ptr = nullptr, **eb_cnts_local = nullptr;
-  int    exoid = 0, *par_exoid = nullptr;
+  INT ***eb_map_ptr    = nullptr;
+  INT ** eb_cnts_local = nullptr;
+  int    exoid         = 0;
+  int *  par_exoid     = nullptr;
 
   float       vers;
   std::string cTemp;
@@ -1087,13 +1090,6 @@ namespace {
 
     return count;
   }
-
-#if defined(__PUMAGON__)
-#include <stdio.h>
-#else
-#include <unistd.h>
-#endif
-#include <climits>
 
   int get_free_descriptor_count()
   {

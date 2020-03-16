@@ -553,7 +553,6 @@ int lanczos_ext_float(struct vtx_data **A,       /* sparse matrix in row linked 
   if (maxj == 0) {
     return (1); /* see note on beta[0] and maxj above */
   }
-  else {
-    return (0);
-  }
+
+  return (0);
 }

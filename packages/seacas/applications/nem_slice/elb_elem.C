@@ -901,7 +901,8 @@ template <typename INT>
 int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT side_nodes[],
                 const int skip_check, const int partial_adj)
 {
-  int dup, location[9];
+  int dup;
+  int location[9];
   int count;
   /*  min_match for hex elements means that min_match+1 nodes
       on a face of a hex must match to return the side of the
@@ -1437,7 +1438,10 @@ int get_side_id_hex_tet(const E_Type etype,     /* The element type */
                         int          nsnodes,   /* The number of side nodes */
                         const INT    side_nodes[]) /* The list of side node IDs */
 {
-  int              nnodes, lcnt, i1, i2;
+  int              nnodes;
+  int              lcnt;
+  int              i1;
+  int              i2;
   std::vector<int> loc_node_ids(MAX_SIDE_NODES);
 
   nnodes = get_elem_info(NNODES, etype);

@@ -648,7 +648,7 @@ int main(int argc, char *argv[])
 
   Ioss::Init::Initializer io;
 
-  Ioss::PropertyManager properties;
+  Ioss::PropertyManager properties{};
   Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(in_type, interFace.filename, Ioss::READ_RESTART,
                                                   (MPI_Comm)MPI_COMM_WORLD, properties);
   if (dbi == nullptr || !dbi->ok()) {
@@ -705,12 +705,14 @@ int main(int argc, char *argv[])
 #endif
 
 namespace {
-  int term_width(void)
+  int term_width()
   {
     int cols = 100;
     if (isatty(fileno(stdout))) {
 #ifdef TIOCGSIZE
-      struct ttysize ts;
+      struct ttysize ts
+      {
+      };
       ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
       cols = ts.ts_cols;
 #elif defined(TIOCGWINSZ)

@@ -239,7 +239,10 @@ namespace {
 
     static int count = 0;
 
-    int hflag1, hflag2, tflag1, tflag2;
+    int hflag1;
+    int hflag2;
+    int tflag1;
+    int tflag2;
     /*-----------------------------Execution Begins------------------------------*/
 
     /* Allocate memory necessary for the adjacency */
@@ -374,7 +377,7 @@ namespace {
                     iret = in_list(entry, (graph->nadj) - (graph->start[cnt]),
                                    &graph->adj[graph->start[cnt]]);
                     assert(iret >= 0);
-                    weight->edges[iret + (graph->start[cnt])] += 1.0f;
+                    weight->edges[iret + (graph->start[cnt])] += 1.0F;
                   }
                 }
               }
@@ -473,11 +476,10 @@ namespace {
                     if (nelem < 2) {
                       break;
                     }
-                    else {
-                      nhold = nelem;
-                      for (size_t i = 0; i < nelem; i++) {
-                        hold_elem[i] = hold_elem[pt_list[i]];
-                      }
+
+                    nhold = nelem;
+                    for (size_t i = 0; i < nelem; i++) {
+                      hold_elem[i] = hold_elem[pt_list[i]];
                     }
                   }
                 }
@@ -516,13 +518,12 @@ namespace {
                       }
                       break;
                     }
-                    else {
-                      /*
-                       * if there aren't multiple elements in the intersection,
-                       * then check the opposite corners (1 & 3)
-                       */
-                      inode = 1;
-                    }
+
+                    /*
+                     * if there aren't multiple elements in the intersection,
+                     * then check the opposite corners (1 & 3)
+                     */
+                    inode = 1;
                   }
                 } /* "if (!hflag)" */
 
@@ -724,7 +725,7 @@ namespace {
                         }
                       }
                       else if (weight->type & EDGE_WGT) {
-                        weight->edges[iret + (graph->start[cnt])] += 1.0f;
+                        weight->edges[iret + (graph->start[cnt])] += 1.0F;
                       }
                     }
                   } /* End: if(ecnt != entry) */

@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 namespace {
   void create_unstructured(const std::string &inpfile, const std::string &outfile)
   {
-    Ioss::PropertyManager properties;
+    Ioss::PropertyManager properties{};
     Ioss::DatabaseIO *    dbi =
         Ioss::IOFactory::create("cgns", inpfile, Ioss::READ_MODEL, MPI_COMM_WORLD, properties);
     if (dbi == nullptr || !dbi->ok(true)) {

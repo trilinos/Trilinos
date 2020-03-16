@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -95,8 +95,8 @@
 namespace {
   const size_t max_line_length = MAX_LINE_LENGTH;
 
-  const std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
-  const char *      complex_suffix[] = {".re", ".im"};
+  std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
+  const char *complex_suffix[] = {".re", ".im"};
 
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id,
                              int position)
@@ -1668,11 +1668,19 @@ namespace Iofx {
               }
               elem_topo = block->topology();
             }
-            if (split_type == Ioss::SPLIT_BY_DONT_SPLIT) {
+            else if (split_type == Ioss::SPLIT_BY_DONT_SPLIT) {
               // Most likely this is "unknown", but can be a true
               // topology if there is only a single element block in
               // the model.
               elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
+            }
+            else {
+              std::ostringstream errmsg;
+              fmt::print(errmsg,
+                         "INTERNAL ERROR: Invalid setting for `split_type` {}. Something is wrong "
+                         "in the Iofx::DatabaseIO class. Please report.\n",
+                         split_type);
+              IOSS_ERROR(errmsg);
             }
             assert(elem_topo != nullptr);
 
@@ -3587,6 +3595,7 @@ int64_t DatabaseIO::get_side_connectivity_internal(const Ioss::SideBlock *fb, in
 
       // ensure we have correct connectivity
       block = get_region()->get_element_block(elem_id);
+      assert(block != nullptr);
       if (conn_block != block) {
         ssize_t nelem = block->entity_count();
         nelnode       = block->topology()->number_nodes();

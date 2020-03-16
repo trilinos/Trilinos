@@ -127,7 +127,7 @@ namespace Iocgns {
     void    handle_unstructured_blocks();
     size_t  finalize_structured_blocks();
     int64_t handle_node_ids(void *ids, int64_t num_to_get) const;
-    void    finalize_database() override;
+    void    finalize_database() const override;
     void    get_step_times__() override;
     void    write_adjacency_data();
 
@@ -213,6 +213,7 @@ namespace Iocgns {
     int m_flushInterval{0}; // Default is no flushing after each timestep
     int m_currentVertexSolutionIndex     = 0;
     int m_currentCellCenterSolutionIndex = 0;
+    mutable bool m_dbFinalized = false;
 
     mutable std::vector<size_t> m_zoneOffset; // Offset for local zone/block element ids to global.
 

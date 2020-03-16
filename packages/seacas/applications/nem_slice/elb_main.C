@@ -722,6 +722,5 @@ namespace {
       fmt::print("\telement block groups defined\n");
       fmt::print("\tgroup string: \"{}\"\n", prob->groups);
     }
-    return;
   }
 } // namespace

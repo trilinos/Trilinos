@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -89,12 +89,12 @@ public:
 
   off_t size() const; //!< File size in bytes. Only if is_file() == true
 
-  const std::string filename() const;  //!< Complete filename including path
-  const std::string basename() const;  //!< strip path and extension
-  const std::string tailname() const;  //!< basename() + extension()
-  const std::string extension() const; //!< file extension.
-  const std::string pathname() const;  //!< directory path, no filename
-  const std::string realpath() const;  //!< canonicalized absolute path
+  std::string filename() const;  //!< Complete filename including path
+  std::string basename() const;  //!< strip path and extension
+  std::string tailname() const;  //!< basename() + extension()
+  std::string extension() const; //!< file extension.
+  std::string pathname() const;  //!< directory path, no filename
+  std::string realpath() const;  //!< canonicalized absolute path
 
   void set_filename(const std::string &name);
   void set_filename(const char *name);
