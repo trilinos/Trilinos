@@ -79,7 +79,7 @@
 
 // If defined, read environment variables.
 // Should be removed once we are confident that this works.
-#define DJS_READ_ENV_VARIABLES
+//#define DJS_READ_ENV_VARIABLES
 
 namespace MueLu {
 
