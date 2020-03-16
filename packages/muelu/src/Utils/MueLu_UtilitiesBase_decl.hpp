@@ -343,7 +343,6 @@ namespace MueLu {
     */
     static RCP<Vector> GetMatrixOverlappedDeletedRowsum(const Matrix& A) {
       RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
-      using STS = typename Teuchos::ScalarTraits<Scalar>;
       using LO  = LocalOrdinal;
       using SC  = Scalar;
 

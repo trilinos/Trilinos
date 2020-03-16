@@ -1571,7 +1571,7 @@ namespace MueLu {
         if(Levels_[i+1]->IsAvailable("Importer"))
           importer = Levels_[i+1]->template Get< RCP<const Import> >("Importer");
         if (doPRrebalance_ || importer.is_null()) 
-          coarseX_[i] = MultiVectorFactory::Build(coarseRhs_[i]->getMap(),numvecs,false);
+          coarseX_[i] = MultiVectorFactory::Build(coarseRhs_[i]->getMap(),numvecs,true);
         else {
           coarseImport_[i] = MultiVectorFactory::Build(importer->getTargetMap(), numvecs,false);
           coarseExport_[i] = MultiVectorFactory::Build(importer->getSourceMap(), numvecs,false);
