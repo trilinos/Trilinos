@@ -64,7 +64,6 @@ namespace TSQR {
         typedef S scalar_type;
         typedef LO local_ordinal_type;
         typedef GO global_ordinal_type;
-        typedef Node node_type;
 
         typedef typename TSQR::ScalarTraits< S >::magnitude_type magnitude_type;
         typedef TSQR::Trilinos::TsqrTpetraAdaptor< S, LO, GO, Node > adaptor_type;
@@ -72,7 +71,6 @@ namespace TSQR {
         TpetraTsqrTest (const Tpetra::global_size_t nrowsGlobal,
                         const size_t ncols,
                         const Teuchos::RCP< const Teuchos::Comm<int> >& comm,
-                        const Teuchos::RCP< Node >& node,
                         const Teuchos::ParameterList& params) :
           results_ (magnitude_type(0), magnitude_type(0))
         {
@@ -89,7 +87,7 @@ namespace TSQR {
           }
 
           triple_type testProblem =
-            makeTestProblem (nrowsGlobal, ncols, comm, node, params);
+            makeTestProblem (nrowsGlobal, ncols, comm, params);
           // A is already filled in with the test problem.  A_copy and
           // Q are just multivectors with the same layout as A.
           // A_copy will be used for temporary storage, and Q will
@@ -134,7 +132,6 @@ namespace TSQR {
         typedef Tpetra::Map< LO, GO, Node >              map_type;
         typedef Teuchos::RCP< const map_type >           map_ptr;
         typedef TSQR::Random::NormalGenerator< LO, S >   normalgen_type;
-        typedef Teuchos::RCP< Node >                     node_ptr;
 
         /// Results of the factorization: residual error, and
         /// departure from orthgonality, each in the Frobenius norm,
@@ -146,14 +143,12 @@ namespace TSQR {
         ///
         /// \param nrowsGlobal [in] Number of rows in the entire MultiVector
         /// \param comm [in] Communications handler object
-        /// \param node [in] Kokkos node object
         ///
         /// \return The desired map object
         ///
         static map_ptr
         makeMap (const Tpetra::global_size_t nrowsGlobal,
-                 const comm_ptr& comm,
-                 const node_ptr& node)
+                 const comm_ptr& comm)
         {
           using Tpetra::createUniformContigMapWithNode;
           return createUniformContigMapWithNode< LO, GO, Node > (nrowsGlobal, comm);
@@ -195,13 +190,12 @@ namespace TSQR {
         makeTestProblem (const Tpetra::global_size_t nrowsGlobal,
                          const size_t ncols,
                          const comm_ptr& comm,
-                         const node_ptr& node,
                          const Teuchos::ParameterList& params)
         {
           using TSQR::Trilinos::TpetraMessenger;
           using TSQR::MessengerBase;
 
-          map_ptr map = makeMap (nrowsGlobal, comm, node);
+          map_ptr map = makeMap (nrowsGlobal, comm);
           RCP< MV > A = makeMultiVector (map, ncols);
           RCP< MV > A_copy = makeMultiVector (map, ncols);
           RCP< MV > Q = makeMultiVector (map, ncols);
