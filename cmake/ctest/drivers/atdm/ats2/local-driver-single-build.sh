@@ -7,7 +7,12 @@
 set +x
 
 # Must get the same site name for both builds show they show up on same CDash build
-export CTEST_SITE=$(echo ${LSB_HOSTS} | cut -d' ' -f2)
+if [[ "${CTEST_TEST_TYPE}" == "Experimental" ]] ; then
+  export CTEST_SITE=$(echo ${LSB_HOSTS} | cut -d' ' -f2)
+  # NOTE: Must only conditionally set this because if set in the env, will
+  # override the default value set in the file
+  # TrilinosCTestDriverCore.atdm.cmake!
+fi
 
 echo
 echo "***"
