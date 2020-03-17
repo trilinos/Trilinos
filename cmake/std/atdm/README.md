@@ -1119,18 +1119,16 @@ TPETRA_ASSUME_CUDA_AWARE_MPI=0` if `TPETRA_ASSUME_CUDA_AWARE_MPI` is unset in
 the environment.  Therefore, by default, the tests are run without CUDA-aware
 MPI on this system.
 
-To explicitly **disable CUDA-aware MPI** when running the test suite, set the
-environment variable and run as:
+To explicitly **disable CUDA-aware MPI** when running the test suite from the
+launch node, set the environment variable and run as:
 
 ```bash
 $ export TPETRA_ASSUME_CUDA_AWARE_MPI=0
 $ lrun -n 1 ctest -j4
 ```
 
-
-
-To explicitly **enable CUDA-aware MPI** when running the test suite set run
-as:
+To explicitly **enable CUDA-aware MPI** when running the test suite from the
+launch node, set the environment variable and run as:
 
 ```bash
 $ export TPETRA_ASSUME_CUDA_AWARE_MPI=1
