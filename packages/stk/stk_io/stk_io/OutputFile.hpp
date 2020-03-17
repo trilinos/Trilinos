@@ -138,7 +138,7 @@ public:
 
     void setup_output_params(OutputParams &params) const;
 
-    bool set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes);
+    bool set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes);
 
     void write_output_mesh(const stk::mesh::BulkData& bulk_data,
                            const std::vector<std::vector<int>> &attributeOrdering);

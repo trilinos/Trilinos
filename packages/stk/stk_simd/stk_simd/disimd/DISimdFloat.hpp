@@ -49,11 +49,11 @@ struct Float {
   }
 
   STK_MATH_FORCE_INLINE Float(const SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>& x)
-    : _data(x) {
+    : _data(x.get()) {
   }
 
   STK_MATH_FORCE_INLINE Float(const Float& x)
-    : _data(x._data) {
+    : _data(x._data.get()) {
   }
 
   STK_MATH_FORCE_INLINE Float& operator= (const Float& x) {

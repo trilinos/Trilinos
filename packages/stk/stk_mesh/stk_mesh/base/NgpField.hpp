@@ -47,8 +47,6 @@
 namespace stk {
 namespace mesh {
 
-constexpr unsigned bucketSize = impl::BucketRepository::default_bucket_capacity;
-
 constexpr unsigned INVALID_ORDINAL = 9999999;
 
 template<typename T> class ConstHostField;
@@ -59,9 +57,33 @@ class NgpFieldBase
 public:
   STK_FUNCTION NgpFieldBase() = default;
   STK_FUNCTION virtual ~NgpFieldBase() {}
-  virtual void sync_to_host() {}
+  virtual void update_field() = 0;
+  virtual void modify_on_host() = 0;
+  virtual void modify_on_device() = 0;
+  virtual void sync_to_host() = 0;
+  virtual void sync_to_device() = 0;
+  virtual size_t synchronized_count() const = 0;
+  virtual size_t num_syncs_to_host() const = 0;
+  virtual size_t num_syncs_to_device() const = 0;
 };
 
+template<typename T>
+class EntityFieldData {
+public:
+  STK_FUNCTION EntityFieldData(T* dataPtr, unsigned length, unsigned stride=1)
+  : fieldDataPtr(dataPtr), fieldDataLength(length), fieldDataStride(stride)
+  {}
+  STK_FUNCTION ~EntityFieldData() = default;
+
+  STK_FUNCTION unsigned size() const { return fieldDataLength; }
+  STK_FUNCTION T& operator[](unsigned idx) { return fieldDataPtr[idx*fieldDataStride]; }
+  STK_FUNCTION const T& operator[](unsigned idx) const { return fieldDataPtr[idx*fieldDataStride]; }
+
+private:
+  T* fieldDataPtr;
+  unsigned fieldDataLength;
+  unsigned fieldDataStride;
+};
 
 template<typename T>
 class HostField : public NgpFieldBase
@@ -79,7 +101,14 @@ public:
 
   virtual ~HostField() = default;
 
-  unsigned get_num_components_per_entity(stk::mesh::FastMeshIndex entity) const {
+  void update_field() override {}
+
+  size_t num_syncs_to_host() const override { return field->num_syncs_to_host(); }
+  size_t num_syncs_to_device() const override { return field->num_syncs_to_device(); }
+
+  unsigned get_stride() const { return 1; }
+
+  unsigned get_num_components_per_entity(const stk::mesh::FastMeshIndex& entity) const {
     return stk::mesh::field_scalars_per_entity(*field, entity.bucket_id);
   }
 
@@ -104,24 +133,48 @@ public:
     return data[component];
   }
 
+  T& operator()(const stk::mesh::FastMeshIndex& index, int component) const
+  {
+    T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
+    ThrowAssert(data);
+    return data[component];
+  }
+
+  T& operator()(const HostMesh::MeshIndex& index, int component) const
+  {
+    T* data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket->bucket_id(), index.bucketOrd));
+    ThrowAssert(data);
+    return data[component];
+  }
+
+  EntityFieldData<T> operator()(const stk::mesh::FastMeshIndex& index) const
+  {
+    T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
+    unsigned numScalars = stk::mesh::field_scalars_per_entity(*field, index.bucket_id);
+    ThrowAssert(data);
+    return EntityFieldData<T>(data, numScalars);
+  }
+
   void set_all(const HostMesh& ngpMesh, const T& value)
   {
-    stk::mesh::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const HostMesh::MeshIndex& entity) {
-                                     T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, *entity.bucket, entity.bucketOrd));
-                                     int numScalars = stk::mesh::field_scalars_per_entity(*field, *entity.bucket);
+    stk::mesh::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const FastMeshIndex& entity) {
+                                     T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
+                                     int numScalars = stk::mesh::field_scalars_per_entity(*field, entity.bucket_id);
                                      for (int i=0; i<numScalars; i++) {
                                        fieldPtr[i] = value;
                                      }
                              });
   }
 
+  void modify_on_host() override { }
+
+  void modify_on_device() override { }
+
   void sync_to_host() override { }
 
-  void sync_to_device() { }
+  void sync_to_device() override { }
 
-  void modify_on_host() { }
-
-  void modify_on_device() { }
+  size_t synchronized_count() const override { return field->mesh_meta_data().mesh_bulk_data().synchronized_count(); }
 
   void clear_sync_state() { }
 
@@ -172,6 +225,17 @@ public:
 
   virtual ~ConstHostField() = default;
 
+  void update_field() override {}
+
+  size_t num_syncs_to_host() const override { return stkFieldAdapter.num_syncs_to_host(); }
+  size_t num_syncs_to_device() const override { return stkFieldAdapter.num_syncs_to_device(); }
+
+  unsigned get_stride() const { return stkFieldAdapter.get_stride(); }
+
+  unsigned get_num_components_per_entity(const stk::mesh::FastMeshIndex& index) const {
+    return stkFieldAdapter.get_num_components_per_entity(index);
+  }
+
   const T& get(const HostMesh& ngpMesh, stk::mesh::Entity entity, int component) const
   {
     return stkFieldAdapter.get(ngpMesh, entity, component);
@@ -187,13 +251,29 @@ public:
     return stkFieldAdapter.get(entity, component);
   }
 
+  const T& operator()(stk::mesh::FastMeshIndex index, int component) const
+  {
+    return stkFieldAdapter(index, component);
+  }
+
+  const T& operator()(HostMesh::MeshIndex index, int component) const
+  {
+    return stkFieldAdapter(index, component);
+  }
+
   stk::mesh::EntityRank get_rank() const { return stkFieldAdapter.get_rank(); }
 
   unsigned get_ordinal() const { return stkFieldAdapter.get_ordinal(); }
 
+  void modify_on_host() override { }
+
+  void modify_on_device() override { }
+
   void sync_to_host() override { }
 
-  void sync_to_device() { }
+  void sync_to_device() override { }
+
+  size_t synchronized_count() const override { return stkFieldAdapter.synchronized_count(); }
 
   void swap(ConstHostField<T> &sf) { }
 
@@ -236,13 +316,16 @@ public:
       rank(stk::topology::NODE_RANK),
       ordinal(INVALID_ORDINAL),
       hostBulk(nullptr),
-      hostField(nullptr) { }
+      hostField(nullptr),
+      bucketCapacity(0),
+      synchronizedCount(0)
+  { }
 
   void construct_view(const std::string& name, unsigned numBuckets, unsigned numPerEntity) {
 #ifdef KOKKOS_ENABLE_CUDA
-    deviceData = FieldDataType(name, numBuckets, numPerEntity);
+    deviceData = FieldDataType(name, numBuckets, numPerEntity, bucketCapacity);
 #else
-    deviceData = FieldDataType(name, numBuckets, bucketSize, numPerEntity);
+    deviceData = FieldDataType(name, numBuckets, bucketCapacity, numPerEntity);
 #endif
     hostData = Kokkos::create_mirror_view(deviceData);
     fieldData = FieldDataDualViewType(deviceData, hostData);
@@ -251,34 +334,32 @@ public:
     hostFieldExistsOnBucket = Kokkos::create_mirror_view(deviceFieldExistsOnBucket);
   }
 
-  DeviceField(stk::mesh::EntityRank r, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
-    : NgpFieldBase(),
-      rank(r),
-      ordinal(INVALID_ORDINAL),
-      hostBulk(&bulk),
-      hostField(nullptr)
-  {
-    const stk::mesh::BucketVector& allBuckets = bulk.buckets(rank);
-
-    construct_view("no_name", allBuckets.size(), 1);
-
-    create_device_field_data(initialValue);
-  }
-
   DeviceField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
     : NgpFieldBase(),
       rank(field.entity_rank()),
       ordinal(field.mesh_meta_data_ordinal()),
       hostBulk(&bulk),
-      hostField(&field)
+      hostField(&field),
+      bucketCapacity(0),
+      synchronizedCount(bulk.synchronized_count())
   {
-    stk::mesh::Selector selector = stk::mesh::selectField(field);
-    const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
-    const stk::mesh::BucketVector& allBuckets = bulk.buckets(field.entity_rank());
-    unsigned numPerEntity=field.max_size(rank);
+    update_field();
+  }
 
-    construct_view("deviceData_"+field.name(), allBuckets.size(), numPerEntity);
+  void update_field() override
+  {
+    stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
+    const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
+    if (!buckets.empty()) {
+      bucketCapacity = buckets[0]->capacity();
+    }
 
+    const stk::mesh::BucketVector& allBuckets = hostBulk->buckets(hostField->entity_rank());
+    unsigned numPerEntity = hostField->max_size(rank);
+
+    construct_view("deviceData_"+hostField->name(), allBuckets.size(), numPerEntity);
+
+    hostField->increment_num_syncs_to_device();
     copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
     Kokkos::deep_copy(deviceData, hostData);
 
@@ -287,6 +368,21 @@ public:
       hostFieldExistsOnBucket(buckets[i]->bucket_id()) = true;
     }
     Kokkos::deep_copy(deviceFieldExistsOnBucket, hostFieldExistsOnBucket);
+
+    synchronizedCount = hostBulk->synchronized_count();
+  }
+
+  size_t num_syncs_to_host() const override { return hostField->num_syncs_to_host(); }
+  size_t num_syncs_to_device() const override { return hostField->num_syncs_to_device(); }
+
+  void modify_on_host() override
+  {
+    fieldData.modify_host();
+  }
+
+  void modify_on_device() override
+  {
+    fieldData.modify_device();
   }
 
   void sync_to_host() override
@@ -297,35 +393,41 @@ public:
     }
   }
 
-  void sync_to_device()
+  void sync_to_device() override
   {
     if (need_sync_to_device()) {
       ProfilingBlock prof("copy_to_device for " + hostField->name());
-      copy_host_to_device();
+      if (hostBulk->synchronized_count() == synchronizedCount) {
+        copy_host_to_device();
+      }
+      else {
+        update_field();
+      }
     }
   }
 
-  void modify_on_host()
-  {
-    fieldData.modify_host();  // New Kokkos API
-  }
-
-  void modify_on_device()
-  {
-    fieldData.modify_device();  // New Kokkos API
-  }
+  size_t synchronized_count() const override { return synchronizedCount; }
 
   void clear_sync_state()
   {
-    fieldData.clear_sync_state();  // New Kokkos API
+    fieldData.clear_sync_state();
   }
 
   STK_FUNCTION DeviceField(const DeviceField &) = default;
 
   STK_FUNCTION virtual ~DeviceField() {}
 
+  unsigned get_stride() const
+  {
+    unsigned stride = 1;
+#ifdef KOKKOS_ENABLE_CUDA
+    stride = bucketCapacity;
+#endif
+    return stride;
+  }
+
   STK_FUNCTION
-  unsigned get_num_components_per_entity(stk::mesh::FastMeshIndex entityIndex) const {
+  unsigned get_num_components_per_entity(const stk::mesh::FastMeshIndex& entityIndex) const {
     const unsigned bucketId = entityIndex.bucket_id;
     if (deviceFieldExistsOnBucket[bucketId]) {
 #ifdef KOKKOS_ENABLE_CUDA
@@ -356,6 +458,26 @@ public:
   T& get(MeshIndex entity, int component) const
   {
     return deviceData(entity.bucket->bucket_id(), ORDER_INDICES(entity.bucketOrd, component));
+  }
+
+  STK_FUNCTION
+  T& operator()(const stk::mesh::FastMeshIndex& index, int component) const
+  {
+    return deviceData(index.bucket_id, ORDER_INDICES(index.bucket_ord, component));
+  }
+
+  template <typename MeshIndex> STK_FUNCTION
+  T& operator()(const MeshIndex& index, int component) const
+  {
+    return deviceData(index.bucket->bucket_id(), ORDER_INDICES(index.bucketOrd, component));
+  }
+
+  STK_FUNCTION
+  EntityFieldData<T> operator()(const stk::mesh::FastMeshIndex& index) const
+  {
+    T* dataPtr = &deviceData(index.bucket_id, ORDER_INDICES(index.bucket_ord, 0));
+    const unsigned numScalars = get_num_components_per_entity(index);
+    return EntityFieldData<T>(dataPtr, numScalars, get_stride());
   }
 
   template <typename Mesh>
@@ -390,6 +512,7 @@ private:
     if (hostField) {
       stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
       const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
+      hostField->increment_num_syncs_to_host();
       copy_data(buckets, [](T &hostFieldData, T &stkFieldData){stkFieldData = hostFieldData;});
     }
   }
@@ -399,6 +522,7 @@ private:
     if (hostField) {
       stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
       const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
+      hostField->increment_num_syncs_to_device();
       copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
     }
 
@@ -465,8 +589,8 @@ private:
   }
 
 #ifdef KOKKOS_ENABLE_CUDA
-  typedef Kokkos::DualView<T**[bucketSize], Kokkos::LayoutRight,
-  Kokkos::CudaSpace> FieldDataDualViewType;
+  typedef Kokkos::DualView<T***, Kokkos::LayoutRight,
+                           Kokkos::CudaSpace> FieldDataDualViewType;
 #else
   typedef Kokkos::DualView<T***, Kokkos::LayoutRight> FieldDataDualViewType;
 #endif
@@ -486,6 +610,8 @@ private:
 
   const stk::mesh::BulkData* hostBulk;
   const stk::mesh::FieldBase* hostField;
+  unsigned bucketCapacity;
+  size_t synchronizedCount;
 
   friend ConstDeviceField<T>;
   friend MultistateField<T>;
@@ -521,6 +647,25 @@ public:
 
   STK_FUNCTION virtual ~ConstDeviceField() {}
 
+  void update_field() override { deviceField.update_field(); }
+
+  size_t num_syncs_to_host() const override { return deviceField.num_syncs_to_host(); }
+  size_t num_syncs_to_device() const override { return deviceField.num_syncs_to_device(); }
+
+  unsigned get_stride() const
+  {
+    unsigned stride = 1;
+#ifdef KOKKOS_ENABLE_CUDA
+    stride = deviceField.bucketCapacity;
+#endif
+    return stride;
+  }
+
+  STK_FUNCTION
+  unsigned get_num_components_per_entity(const stk::mesh::FastMeshIndex& entityIndex) const {
+    return deviceField.get_num_components_per_entity(entityIndex);
+  }
+  
   template <typename Mesh> STK_FUNCTION
   T get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
   {
@@ -541,10 +686,38 @@ public:
   }
 
   STK_FUNCTION
+  T operator()(const stk::mesh::FastMeshIndex& index, int component) const
+  {
+    return constDeviceData(index.bucket_id, ORDER_INDICES(index.bucket_ord, component));
+  }
+
+  template <typename MeshIndex> STK_FUNCTION
+  T operator()(const MeshIndex& index, int component) const
+  {
+    return constDeviceData(index.bucket->bucket_id(), ORDER_INDICES(index.bucketOrd, component));
+  }
+
+  STK_FUNCTION
+  EntityFieldData<T> operator()(const stk::mesh::FastMeshIndex& index) const
+  {
+    T* dataPtr = constDeviceData(index.bucket_id, ORDER_INDICES(index.bucket_ord, 0));
+    unsigned numScalars = get_num_components_per_entity(index);
+    return EntityFieldData<T>(dataPtr, numScalars, get_stride());
+  }
+
+  STK_FUNCTION
   stk::mesh::EntityRank get_rank() const { return deviceField.get_rank(); }
 
   STK_FUNCTION
   unsigned get_ordinal() const { return deviceField.get_ordinal(); }
+
+  void modify_on_host() override
+  {
+  }
+
+  void modify_on_device() override
+  {
+  }
 
   void sync_to_host() override
   {
@@ -553,12 +726,14 @@ public:
     }
   }
 
-  void sync_to_device()
+  void sync_to_device() override
   {
     if (need_sync_to_device()) {
       copy_host_to_device();
     }
   }
+
+  size_t synchronized_count() const override { return deviceField.synchronized_count(); }
 
   STK_FUNCTION
   void swap(ConstDeviceField<T> &sf)
@@ -602,11 +777,11 @@ private:
   }
 
 #ifdef KOKKOS_ENABLE_CUDA
-  typedef Kokkos::View<
-  const T * * [bucketSize], Kokkos::LayoutRight, Kokkos::CudaSpace,
-  Kokkos::MemoryTraits<Kokkos::RandomAccess>> ConstFieldDataType;
+  typedef Kokkos::View<const T * * *, Kokkos::LayoutRight, Kokkos::CudaSpace,
+                       Kokkos::MemoryTraits<Kokkos::RandomAccess>> ConstFieldDataType;
 #else
-  typedef Kokkos::View<const T***, Kokkos::LayoutRight, Kokkos::MemoryTraits<Kokkos::RandomAccess> > ConstFieldDataType;
+  typedef Kokkos::View<const T***, Kokkos::LayoutRight,
+                       Kokkos::MemoryTraits<Kokkos::RandomAccess> > ConstFieldDataType;
 #endif
 
   DeviceField<T> deviceField;

@@ -43,8 +43,6 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 
-namespace stk { namespace mesh { struct ConnectivityMap; } }
-
 namespace stk {
 namespace io {
 namespace util {

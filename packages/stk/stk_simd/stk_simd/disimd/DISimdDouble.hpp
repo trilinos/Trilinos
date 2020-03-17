@@ -49,11 +49,11 @@ struct Double {
   }
 
   STK_MATH_FORCE_INLINE Double(const SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>& x)
-    : _data(x) {
+    : _data(x.get()) {
   }
 
   STK_MATH_FORCE_INLINE Double(const Double& x)
-    : _data(x._data) {
+    : _data(x._data.get()) {
   }
 
 #ifdef STK_VOLATILE_SIMD

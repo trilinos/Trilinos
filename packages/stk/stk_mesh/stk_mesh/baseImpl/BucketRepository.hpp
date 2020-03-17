@@ -138,8 +138,6 @@ public:
   // Used in unit tests.  Returns the current partitions.
   std::vector<Partition *> get_partitions(EntityRank rank) const;
 
-  const ConnectivityMap& connectivity_map() const { return m_connectivity_map; }
-
   bool being_destroyed() const { return m_being_destroyed; }
 
   unsigned get_bucket_capacity() const { return m_bucket_capacity; }

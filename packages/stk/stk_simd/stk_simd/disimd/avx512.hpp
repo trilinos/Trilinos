@@ -170,6 +170,10 @@ SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> cbrt(simd<float, simd_ab
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> exp(simd<float, simd_abi::avx512> const& a) {
   return simd<float, simd_abi::avx512>(_mm512_exp_ps(a.get()));
 }
+
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> log(simd<float, simd_abi::avx512> const& a) {
+  return simd<float, simd_abi::avx512>(_mm512_log_ps(a.get()));
+}
 #endif
 
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> fma(
@@ -316,6 +320,10 @@ SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> cbrt(simd<double, simd_
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> exp(simd<double, simd_abi::avx512> const& a) {
   return simd<double, simd_abi::avx512>(_mm512_exp_pd(a.get()));
+}
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> log(simd<double, simd_abi::avx512> const& a) {
+  return simd<double, simd_abi::avx512>(_mm512_log_pd(a.get()));
 }
 #endif
 

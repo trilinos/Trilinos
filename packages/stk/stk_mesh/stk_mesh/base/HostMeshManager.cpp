@@ -5,7 +5,7 @@
 namespace stk {
 namespace mesh {
 
-HostMeshManager::HostMeshManager(stk::mesh::BulkData & bulk)
+HostMeshManager::HostMeshManager(const stk::mesh::BulkData & bulk)
   : NgpMeshManager(),
     m_hostMesh(bulk)
 {

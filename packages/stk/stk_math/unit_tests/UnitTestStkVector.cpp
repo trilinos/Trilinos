@@ -492,7 +492,7 @@ TEST(stk_math_stkVector, cross_product_with_unit_z)
 TEST(stk_math_stkVector, to_string)
 {
     stk::math::Vec<int,THREE> someVec{3,5,7};
-    EXPECT_EQ("3 5 7", someVec.to_string());
+    EXPECT_EQ("3 5 7", someVec.to_string(1));
 }
 
 TEST(stk_math_stkVector, whenSettingVectorToInvalid_makeSureItIsInvalid)
