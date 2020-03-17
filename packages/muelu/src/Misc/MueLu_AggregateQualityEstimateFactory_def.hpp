@@ -45,7 +45,7 @@
 // @HEADER
 #ifndef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_DEF_HPP
 #define MUELU_AGGREGATEQUALITYESTIMATEFACTORY_DEF_HPP
-
+#include <iomanip>
 #include "MueLu_AggregateQualityEstimateFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"
@@ -59,6 +59,8 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_Utilities.hpp"
+
+#include <vector>
 
 namespace MueLu {
 
@@ -87,6 +89,9 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregate qualities: file output");
     SET_VALID_ENTRY("aggregate qualities: file base");
     SET_VALID_ENTRY("aggregate qualities: check symmetry");
+    SET_VALID_ENTRY("aggregate qualities: algorithm");
+    SET_VALID_ENTRY("aggregate qualities: zero threshold");
+    SET_VALID_ENTRY("aggregate qualities: percentiles");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -176,6 +181,17 @@ namespace MueLu {
 
     RCP<const Matrix> AT = A;
 
+    // Algorithm check
+    std::string algostr = pL.get<std::string>("aggregate qualities: algorithm");
+    MT zeroThreshold = Teuchos::as<MT>(pL.get<double>("aggregate qualities: zero threshold"));
+    enum AggAlgo {ALG_FORWARD=0, ALG_REVERSE};
+    AggAlgo algo;
+    if(algostr == "forward")      {algo = ALG_FORWARD; GetOStream(Statistics1) << "AggregateQuality: Using 'forward' algorithm" << std::endl;}
+    else if(algostr == "reverse") {algo = ALG_REVERSE; GetOStream(Statistics1) << "AggregateQuality: Using 'reverse' algorithm" << std::endl;}
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "\"algorithm\" must be one of (forward|reverse)");
+    }
+
     bool check_symmetry = pL.get<bool>("aggregate qualities: check symmetry");
     if (check_symmetry) {
 
@@ -209,7 +225,7 @@ namespace MueLu {
     // we store all the local vertices in a single array in blocks corresponding
     // to aggregates. (This array is aggSortedVertices.) We then store a second
     // array (aggsToIndices) whose k-th element stores the index of the first
-    // vertex in aggregate k in the array aggSortedVertices.      
+    // vertex in aggregate k in the array aggSortedVertices.
 
     ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
     ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
@@ -300,9 +316,12 @@ namespace MueLu {
       // Compute matrix on bottom of generalized Rayleigh quotient
       DenseMatrix bottomMatrix(A_aggPart);
       MT matrixNorm = A_aggPart.normInf();
+
+      // Forward mode: Include a small perturbation to the bottom matrix to make it nonsingular
+      const MT boost = (algo == ALG_FORWARD) ? (-1e4*Teuchos::ScalarTraits<MT>::eps()*matrixNorm) : MT_ZERO;
+
       for (int i=0;i<aggSize;++i){
-        // Include a small perturbation to the bottom matrix to make it nonsingular
-        bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) - 1e-12*matrixNorm;
+        bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) + boost;
       }
 
       // Compute generalized eigenvalues
@@ -320,30 +339,49 @@ namespace MueLu {
       MT* vr = NULL;
 
       const char compute_flag ='N';
-      myLapack.GGES(compute_flag,compute_flag,compute_flag,ptr2func,aggSize,
-                    topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
-                    alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
-                    vr,aggSize,workArray.values(),workArray.length(),bwork,
-                    &info);
+      if(algo == ALG_FORWARD) {
+        // Forward: Solve the generalized eigenvalue problem as is
+        myLapack.GGES(compute_flag,compute_flag,compute_flag,ptr2func,aggSize,
+                      topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
+                      alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
+                      vr,aggSize,workArray.values(),workArray.length(),bwork,
+                      &info);
+        TEUCHOS_ASSERT(info == LO_ZERO);
 
-      TEUCHOS_ASSERT(info == LO_ZERO);
-
-      MT maxEigenVal = MT_ZERO;
-
-      for (int i=LO_ZERO;i<aggSize;++i) {
-        // NOTE: In theory, the eigenvalues should be nearly real
-        //TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
-        maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
-
+        MT maxEigenVal = MT_ZERO;
+        for (int i=LO_ZERO;i<aggSize;++i) {
+          // NOTE: In theory, the eigenvalues should be nearly real
+          //TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
+          maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);          
+        }
+        
+        (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE)*maxEigenVal;
       }
+      else {
+        // Reverse: Swap the top and bottom matrices for the generalized eigenvalue problem
+        // This is trickier, since we need to grab the smallest non-zero eigenvalue and invert it.
+        myLapack.GGES(compute_flag,compute_flag,compute_flag,ptr2func,aggSize,
+                      bottomMatrix.values(),aggSize,topMatrix.values(),aggSize,&sdim,
+                      alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
+                      vr,aggSize,workArray.values(),workArray.length(),bwork,
+                      &info);
 
-      (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE)*maxEigenVal;
-
-    }
-
-
+        TEUCHOS_ASSERT(info == LO_ZERO);
+        
+        MT minEigenVal = MT_ZERO;
+       
+        for (int i=LO_ZERO;i<aggSize;++i) {
+          MT ev = alpha_real[i] / beta[i];
+          if(ev > zeroThreshold) {
+            if (minEigenVal == MT_ZERO) minEigenVal = ev;
+            else minEigenVal = std::min(minEigenVal,ev);
+          }
+        }        
+        if(minEigenVal == MT_ZERO)  (agg_qualities->getDataNonConst(0))[aggId] = Teuchos::ScalarTraits<MT>::rmax();
+        else (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE) / minEigenVal;
+      }
+    }//end aggId loop
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<magnitudeType,LO,GO,Node>> agg_qualities) const {
@@ -358,17 +396,31 @@ namespace MueLu {
     LO num_bad_aggs = 0;
     MT worst_agg = 0.0;
 
+    MT mean_bad_agg = 0.0;
+    MT mean_good_agg  = 0.0;
+
+
     for (size_t i=0;i<agg_qualities->getLocalLength();++i) {
 
-      if (data[i] > good_agg_thresh) num_bad_aggs++;
+      if (data[i] > good_agg_thresh) {
+        num_bad_aggs++;
+        mean_bad_agg += data[i];
+      }
+      else {
+        mean_good_agg += data[i];
+      }
       worst_agg = std::max(worst_agg, data[i]);
-
     }
 
+
+    if (num_bad_aggs > 0) mean_bad_agg /= num_bad_aggs;
+    mean_good_agg /= agg_qualities->getLocalLength() - num_bad_aggs;
+
     if (num_bad_aggs == 0) {
-      GetOStream(Statistics1) << "All aggregates passed the quality measure. Worst aggregate had quality " << worst_agg << std::endl;
+      GetOStream(Statistics1) << "All aggregates passed the quality measure. Worst aggregate had quality " << worst_agg << ". Mean aggregate quality " << mean_good_agg << "." << std::endl;
     } else {
-      GetOStream(Statistics1) << num_bad_aggs << " out of " << agg_qualities->getLocalLength() << " did not pass the quality measure. Worst aggregate had quality " << worst_agg << std::endl;
+      GetOStream(Statistics1) << num_bad_aggs << " out of " << agg_qualities->getLocalLength() << " did not pass the quality measure. Worst aggregate had quality " << worst_agg << ". "
+                              << "Mean bad aggregate quality " << mean_bad_agg << ". Mean good aggregate quality " << mean_good_agg << "." << std::endl;
     }
 
     if (pL.get<bool>("aggregate qualities: file output")) {
@@ -376,9 +428,37 @@ namespace MueLu {
       Xpetra::IO<magnitudeType,LO,GO,Node>::Write(filename, *agg_qualities);
     }
 
+    {
+      const auto n = size_t(agg_qualities->getLocalLength());
+
+      std::vector<MT> tmp;
+      tmp.reserve(n);
+
+      for (size_t i=0; i<n; ++i) {
+        tmp.push_back(data[i]);
+      }
+
+      std::sort(tmp.begin(), tmp.end());
+
+      Teuchos::ArrayView<const double> percents = pL.get<Teuchos::Array<double> >("aggregate qualities: percentiles")();
+
+      GetOStream(Statistics1) << "AGG QUALITY HEADER     : | LEVEL |  TOTAL  |";
+      for (auto percent : percents) {
+        GetOStream(Statistics1) << std::fixed << std::setprecision(4) <<100.0*percent << "% |";
+      }
+      GetOStream(Statistics1) << std::endl;
+
+      GetOStream(Statistics1) << "AGG QUALITY PERCENTILES: | " << level.GetLevelID() << " | " << n << "|";
+      for (auto percent : percents) {
+        size_t i = size_t(n*percent);
+        i = i < n ? i : n-1u;
+        i = i > 0u ? i : 0u;
+        GetOStream(Statistics1) << std::fixed <<std::setprecision(4) << tmp[i] << " |";
+      }
+      GetOStream(Statistics1) << std::endl;
+
+    }
   }
-
-
 
 } // namespace MueLu
 

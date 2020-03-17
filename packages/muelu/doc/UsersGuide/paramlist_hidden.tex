@@ -152,6 +152,15 @@
         
 \cbb{aggregate qualities: file base}{string}{agg_qualities}{Base of filename for aggregate quality output.}
         
+\cbb{aggregate qualities: algorithm}{string}{forward}{Which aggregate qualtiy algorithm to use:
+      ``forward'' or ``reverse.''  The forward algorithm uses the
+      ``A'' matrix in the denominator of the generalized eigenvalue
+      problem.  The reverse algorithm uses it in the numerator.}
+        
+\cbb{aggregate qualities: zero threshold}{double}{1e-12}{The zero threshold for the reverse algorithm.}
+        
+\cbb{aggregate qualities: percentiles}{Array(double)}{{}}{Percentiles of aggregate qualities to report (in a [0,1] range).}
+        
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
       names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
