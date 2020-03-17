@@ -3,6 +3,7 @@
 #ifdef HAVE_TPETRACORE_CUSPARSE
 #include "Kokkos_Core.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Tpetra {
 namespace Details {
@@ -30,9 +31,28 @@ CuSparseVector(int64_t size,
                cudaDataType valueType)
 {
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
-  const cusparseStatus_t status =
-    cusparseCreateDnVec(&handle_, size, values, valueType);
-  TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+  const char prefix[] = "Tpetra::Details::CuSparseVector::"
+    "CuSparseVector: ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (values == nullptr && size != 0, std::invalid_argument,
+     prefix << "size=" << size << " != 0, but values is null.");
+
+  // With CUDA 10.1, cusparseCreateDnVec treats size=0 as an error,
+  // even if values is nullptr.  Thus, it's best not to create the
+  // handle in that case.
+  if (size == 0) {
+    handle_ = nullptr;
+  }
+  else {
+    const cusparseStatus_t status =
+      cusparseCreateDnVec(&handle_, size, values, valueType);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (status != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
+       prefix << "cusparseCreateDnVec(&handle_, size=" << size
+       << ", values=" << values << ", valueType) returned an "
+       "error code not CUSPARSE_STATUS_SUCCESS.");
+  }
 #else
   handle_ = new vector_type{size, values, valueType};
 #endif // HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE

@@ -45,6 +45,10 @@ class CuSparseHandle;
 std::shared_ptr<CuSparseHandle>
 getCuSparseHandle(const Kokkos::Cuda& execSpace);
 
+/// \brief Whether cuSPARSE implements the "new" (as of CUDA 10.1)
+///   interface.
+bool cuSparse_implements_cuda10_interface();
+
 } // namespace Details
 } // namespace Tpetra
 

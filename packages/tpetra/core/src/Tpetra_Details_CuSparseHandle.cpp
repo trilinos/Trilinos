@@ -91,6 +91,15 @@ getCuSparseHandle(const Kokkos::Cuda& execSpace)
   return singleton_;
 }
 
+bool cuSparse_implements_cuda10_interface()
+{
+#ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+  return true;
+#else
+  return false;
+#endif
+}
+
 } // namespace Details
 } // namespace Tpetra
 #endif // HAVE_TPETRACORE_CUSPARSE

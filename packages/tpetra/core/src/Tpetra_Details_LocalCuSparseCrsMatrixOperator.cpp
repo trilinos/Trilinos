@@ -280,7 +280,12 @@ apply(Kokkos::View<const Scalar**, array_layout,
   const size_type numCols = X.extent(1);
   TEUCHOS_ASSERT( Y.extent(1) == numCols );
 
-  if (matrix_.get() == nullptr) {
+  if (matrix_.get() == nullptr || X.extent(0) == 0) {
+    // In the case where X has zero rows, the result of
+    // getCuSparseVector on any column of X will be null.  (cuSPARSE
+    // with CUDA >= 10.1 doesn't permit creating vector handles of
+    // vectors that have zero rows.)  If X has zero rows, then the
+    // matrix must have zero entries.
     if (beta == Scalar{}) {
       Kokkos::deep_copy(Y, Scalar{});
     }
@@ -288,14 +293,22 @@ apply(Kokkos::View<const Scalar**, array_layout,
       KokkosBlas::scal(Y, beta, Y);
     }
   }
-  else {
+  else if (Y.extent(0) != 0) {
+    // In the case where Y has zero rows, the result of
+    // getCuSparseVector on any column of Y will be null.  (cuSPARSE
+    // with CUDA >= 10.1 doesn't permit creating vector handles of
+    // vectors that have zero rows.)  If Y has zero rows, then there's
+    // nothing to do.
+
     for (size_type col = 0; col < numCols; ++col) {
       auto X_col = Kokkos::subview(X, Kokkos::ALL(), col);
       auto Y_col = Kokkos::subview(Y, Kokkos::ALL(), col);
       auto X_col_cuda = getCuSparseVector(
         const_cast<Scalar*>(X_col.data()), X_col.extent(0));
+      TEUCHOS_ASSERT( X_col_cuda.get() != nullptr );
       auto Y_col_cuda = getCuSparseVector(
         Y_col.data(), Y_col.extent(0));
+      TEUCHOS_ASSERT( Y_col_cuda.get() != nullptr );
       cuSparseMatrixVectorMultiply(*handle_, mode, alpha, *matrix_,
                                    *X_col_cuda, beta, *Y_col_cuda);
     }

@@ -93,13 +93,15 @@ CuSparseMatrix(const int64_t numRows,
   alg_(alg)
 {
   using std::endl;
+  const char funcName[] = "Tpetra::Details::CuSparseMatrix::"
+    "CuSparseMatrix";
 
   const bool debug = Details::Behavior::debug("cuSPARSE");
   const bool verbose = Details::Behavior::verbose("cuSPARSE");
   std::unique_ptr<std::string> prefix;
   if (verbose) {
     std::ostringstream os;
-    os << "Tpetra::Details::CuSparseMatrix::CuSparseMatrix: ";
+    os << funcName << ": ";
     prefix = std::unique_ptr<std::string>(new std::string(os.str()));
     os << "Start" << endl;
     std::cerr << os.str();
@@ -114,16 +116,30 @@ CuSparseMatrix(const int64_t numRows,
 
   cusparseStatus_t status;
 #ifdef HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
-  const cusparseIndexType_t csrRowOffsetsType =
-    Impl::getIndexType(ptr);
-  const cusparseIndexType_t csrColIndType =
-    Impl::getIndexType(ind);
-  status =
-    cusparseCreateCsr(&handle_, numRows, numCols, numEntries,
-                      ptr, ind, val,
-                      csrRowOffsetsType, csrColIndType,
-                      idxBase, valueType);
-  TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+  if (numEntries == 0) {
+    // mfh 17 Mar 2020: numRows=0 or numCols=0 are fine, but CUDA 10.1
+    // treats numEntries=0 as an error.
+    handle_ = nullptr;
+  }
+  else {
+    const cusparseIndexType_t csrRowOffsetsType =
+      Impl::getIndexType(ptr);
+    const cusparseIndexType_t csrColIndType =
+      Impl::getIndexType(ind);
+    const cusparseIndexBase_t idxBase = CUSPARSE_INDEX_BASE_ZERO;
+    status =
+      cusparseCreateCsr(&handle_, numRows, numCols, numEntries,
+                        ptr, ind, val,
+                        csrRowOffsetsType, csrColIndType,
+                        idxBase, valueType);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (status != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
+       funcName << ": cusparseCreateCsr(&handle_, numRows=" << numRows
+       << ", numCols=" << numCols << ", numEntries=" << numEntries
+       << ", ptr=" << ptr << ", ind=" << ind << ", val=" << val
+       << "...) returned status = "
+       << Impl::cuSparseStatusString(status) << ".");
+  }
 #else
   handle_ = new matrix_type{numRows, numCols, numEntries,
                             ptr, ind, val, valueType};
@@ -381,12 +397,15 @@ cuSparseMatrixVectorMultiplyGeneric(
   CuSparseVector& y)
 {
   using std::endl;
+  const char funcName[] =
+    "Tpetra::Details::cuSparseMatrixVectorMultiplyGeneric";
+
   const bool debug = Details::Behavior::debug("cuSPARSE");
   const bool verbose = Details::Behavior::verbose("cuSPARSE");
   std::unique_ptr<std::string> prefix;
   if (verbose) {
     std::ostringstream os;
-    os << "Tpetra::Details::cuSparseMatrixVectorMultiplyGeneric: ";
+    os << funcName << ": ";
     prefix = std::unique_ptr<std::string>(new std::string(os.str()));
     os << "Start" << endl;
     std::cerr << os.str();
@@ -394,15 +413,23 @@ cuSparseMatrixVectorMultiplyGeneric(
   if (debug) {
     const cudaError_t lastErr = cudaGetLastError();
     TEUCHOS_TEST_FOR_EXCEPTION
-      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
-       "Tpetra::Details::cuSparseMatrixVectorMultiplyGeneric, CUDA "
-       "is in an erroneous state \"" << cudaGetErrorName(lastErr)
-       << "\".");
+      (lastErr != cudaSuccess, std::runtime_error, funcName << ": On "
+       "entry to this function, CUDA is in an erroneous state \"" <<
+       cudaGetErrorName(lastErr) << "\".");
   }
+
+  auto rawMatrix = matrix.getHandle();
+  // mfh 17 Mar 2020: We should have already handled the case where
+  // the matrix handle is null.  cuSPARSE's CUDA >= 10.1 interface
+  // treats creating a matrix handle with zero entries as an error, so
+  // we just make the matrix handle null in that case.  Similarly, the
+  // CUDA >= 10.1 interface forbids creating dense vector handles for
+  // vectors with zero entries, so we also make the vector handle null
+  // in that case; we should have already handled that.
+  TEUCHOS_ASSERT( rawMatrix != nullptr );
 
   cusparseHandle_t rawHandle = handle.getHandle();
   cusparseOperation_t rawOp = getCuSparseOperation(operation);
-  auto rawMatrix = matrix.getHandle();
   cudaDataType valType = matrix.getValueType();
   auto alg = matrix.getAlgorithm(rawOp);
 
@@ -418,7 +445,10 @@ cuSparseMatrixVectorMultiplyGeneric(
     cusparseSpMV_bufferSize(rawHandle, rawOp, &alpha, rawMatrix,
                             x.getHandle(), &beta, y.getHandle(),
                             valType, alg, &minNeededBufSize);
-  TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (status != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
+     funcName << ": cusparseSpMV_bufferSize returned status = "
+     << Impl::cuSparseStatusString(status) << ".");
   if (verbose) {
     std::ostringstream os;
     os << *prefix << "Buffer size: " << minNeededBufSize << endl;
@@ -434,9 +464,13 @@ cuSparseMatrixVectorMultiplyGeneric(
   status =
     cusparseSpMV(rawHandle, rawOp, &alpha, rawMatrix, x.getHandle(),
                  &beta, y.getHandle(), valType, alg, buf);
-  TEUCHOS_ASSERT( status == CUSPARSE_STATUS_SUCCESS );
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (status != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
+     funcName << ": cusparseSpMV returned status = "
+     << Impl::cuSparseStatusString(status) << ".");
 
 #else
+
   cusparseMatDescr_t descrA = matrix.getDescr();
   const int m = rawMatrix->numRows;
   const int n = rawMatrix->numCols;

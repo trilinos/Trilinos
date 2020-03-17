@@ -102,6 +102,10 @@ namespace { // (anonymous)
     using Tpetra::Details::CuSparseVector;
     using Kokkos::view_alloc;
     using Kokkos::WithoutInitializing;
+    using std::endl;
+
+    out << "Test Tpetra::Details::CuSparseVector" << endl;
+    Teuchos::OSTab tab1(out);
 
     // Don't do cuSPARSE things unless a cuSPARSE handle is active.
     Kokkos::Cuda execSpace1;
@@ -112,7 +116,16 @@ namespace { // (anonymous)
       return;
     }
 
+    const bool cuda10_interface =
+      Tpetra::Details::cuSparse_implements_cuda10_interface();
+
+    out << "CuSparseVector is " << (cuda10_interface ? "" : "not ")
+        << "using CUDA >= 10.1 interface." << endl;
+
     for (int64_t numRows : {0, 11}) {
+      out << "Test numRows=" << numRows << endl;
+      Teuchos::OSTab tab2(out);
+
       {
         Kokkos::View<float*, Kokkos::CudaSpace> x_c_f
           (view_alloc("x_c_f", WithoutInitializing), numRows);
@@ -159,8 +172,12 @@ namespace { // (anonymous)
     using Tpetra::Details::getCuSparseMatrix;
     using Kokkos::view_alloc;
     using Kokkos::WithoutInitializing;
+    using std::endl;
     using LO = Tpetra::Details::DefaultTypes::local_ordinal_type;
     using memory_space = Kokkos::CudaUVMSpace;
+
+    out << "Test Tpetra::Details::CuSparseMatrix" << endl;
+    Teuchos::OSTab tab1(out);
 
     // Don't do cuSPARSE things unless a cuSPARSE handle is active.
     Kokkos::Cuda execSpace1;
@@ -171,30 +188,61 @@ namespace { // (anonymous)
       return;
     }
 
+    const int maxNumRows = 11;
+    const int maxNumCols = 13;
+    const int maxNumEnt = 32;
+
+    const char* algNames[] = {"DEFAULT", "LOAD_BALANCED"};
     for (const auto alg :
            {CuSparseMatrixVectorMultiplyAlgorithm::DEFAULT,
             CuSparseMatrixVectorMultiplyAlgorithm::LOAD_BALANCED}) {
-      for (int64_t numRows : {0, 1, 11}) {
-        Kokkos::View<LO*, memory_space> ptr("ptr", numRows+1);
-        for(int64_t numEntries : {0, 32}) {
-          Kokkos::View<LO*, memory_space> ind
-            (view_alloc("ind", WithoutInitializing), numEntries);
-          Kokkos::View<float*, memory_space> val_f
-            (view_alloc("val_f", WithoutInitializing), numEntries);
-          Kokkos::View<double*, memory_space> val_d
-            (view_alloc("val_d", WithoutInitializing), numEntries);
+      out << "alg=" << algNames[static_cast<int>(alg)] << endl;
+      Teuchos::OSTab tab2(out);
 
-          for (int64_t numCols : {0, 1, 5, 13}) {
-            const int64_t numEnt = (numRows == 0 || numCols == 0) ?
-              int64_t(0) : numEntries;
-            auto mat_f = getCuSparseMatrix(numRows, numCols, numEnt,
-                                           ptr.data(), ind.data(),
-                                           val_f.data(), alg);
-            TEST_ASSERT( mat_f.get() != nullptr );
-            auto mat_d = getCuSparseMatrix(numRows, numCols, numEnt,
-                                           ptr.data(), ind.data(),
-                                           val_d.data(), alg);
-            TEST_ASSERT( mat_d.get() != nullptr );
+      for (int64_t numRows : {0, 1, 2, 3, maxNumRows}) {
+        out << "numRows=" << numRows << endl;
+        Teuchos::OSTab tab3(out);
+
+        Kokkos::View<LO*, memory_space> ptr("ptr", numRows+1);
+
+        for (int64_t numCols : {0, 1, 5, maxNumCols}) {
+          out << "numCols=" << numCols << endl;
+          Teuchos::OSTab tab4(out);
+
+          for(int64_t numEntries : {0, 1, 7, maxNumEnt}) {
+            out << "numEntries=" << numEntries << endl;
+            Teuchos::OSTab tab5(out);
+
+            if (numEntries > numRows * numCols) {
+              out << "Skip; numEntries > numRows * numCols" << endl;
+              continue;
+            }
+
+            Kokkos::deep_copy(ptr, LO(0));
+            if (numEntries != 0) {
+              // make last row get all the entries
+              Kokkos::deep_copy(Kokkos::subview(ptr, numRows),
+                                numEntries);
+            }
+
+            Kokkos::View<LO*, memory_space> ind
+              (view_alloc("ind", WithoutInitializing), numEntries);
+            Kokkos::deep_copy(ind, LO(0));
+            Kokkos::View<float*, memory_space> val_f
+              ("val_f", numEntries);
+            Kokkos::View<double*, memory_space> val_d
+              ("val_d", numEntries);
+
+            // cuSPARSE with CUDA >= 10.1 treats a sparse matrix with
+            // zero entries as an error.  We just make the matrix null
+            // in that case.
+
+            auto mat_f = getCuSparseMatrix(numRows, numCols,
+              numEntries, ptr.data(), ind.data(), val_f.data(), alg);
+            TEST_ASSERT( numEntries == 0 || mat_f.get() != nullptr );
+            auto mat_d = getCuSparseMatrix(numRows, numCols,
+              numEntries, ptr.data(), ind.data(), val_d.data(), alg);
+            TEST_ASSERT( numEntries == 0 || mat_d.get() != nullptr );
           }
         }
       }

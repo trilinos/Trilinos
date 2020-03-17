@@ -5,6 +5,15 @@
 #ifdef HAVE_TPETRACORE_CUSPARSE
 #include <cusparse.h>
 
+// CUDA 10.1 introduced a new cuSPARSE interface and deprecated the
+// old one.  CUDART_VERSION / 1000 gives the major release number (10,
+// in this case); (CUDART_VERSION % 100) / 10 gives the minor release
+// number (1, in this case).
+
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 10010
+#  define HAVE_TPETRACORE_CUSPARSE_NEW_INTERFACE
+#endif
+
 namespace Tpetra {
 namespace Details {
 
