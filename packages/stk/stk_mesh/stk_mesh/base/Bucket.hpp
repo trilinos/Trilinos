@@ -51,6 +51,7 @@
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class DeviceMesh; } }
 namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { namespace impl { struct OverwriteEntityFunctor; } } }
@@ -119,51 +120,6 @@ class Bucket
 
 public:
   typedef size_t size_type;
-private:
-  friend class impl::BucketRepository;
-  friend class impl::Partition;
-  friend struct impl::OverwriteEntityFunctor;
-  friend class BulkData;                // Replacement friend.
-  friend struct Entity;
-  friend struct utest::ReversePartition;
-  friend struct utest::SyncToPartitions;
-
-  BulkData             & m_mesh ;        // Where this bucket resides
-  const EntityRank       m_entity_rank ; // Type of entities for this bucket
-  stk::topology          m_topology ;    // The topology of this bucket
-  std::vector<unsigned>  m_key ;         // REFACTOR
-  const size_t           m_capacity ;    // Capacity for entities
-  size_type              m_size ;        // Number of entities
-  unsigned               m_bucket_id;    // Index into its BucketRepository's m_bucket[entity_rank()], these are NOT unique
-  PartVector             m_parts;
-
-  // Entity data
-  std::vector<Entity>    m_entities;    // Array of entity handles; will be removed soon
-
-  impl::Partition    *m_partition;
-
-  ConnectivityType m_node_kind;
-  ConnectivityType m_edge_kind;
-  ConnectivityType m_face_kind;
-  ConnectivityType m_element_kind;
-
-  impl::BucketConnectivity<stk::topology::NODE_RANK,    FIXED_CONNECTIVITY> m_fixed_node_connectivity; // fixed connectivity to nodes
-  impl::BucketConnectivity<stk::topology::EDGE_RANK,    FIXED_CONNECTIVITY> m_fixed_edge_connectivity; // fixed connectivity to edges
-  impl::BucketConnectivity<stk::topology::FACE_RANK,    FIXED_CONNECTIVITY> m_fixed_face_connectivity; // fixed connectivity to faces
-  impl::BucketConnectivity<stk::topology::ELEMENT_RANK, FIXED_CONNECTIVITY> m_fixed_element_connectivity; // fixed connectivity to elements
-
-  impl::BucketConnectivity<stk::topology::NODE_RANK,    DYNAMIC_CONNECTIVITY> m_dynamic_node_connectivity; // dynamic connectivity to nodes
-  impl::BucketConnectivity<stk::topology::EDGE_RANK,    DYNAMIC_CONNECTIVITY> m_dynamic_edge_connectivity; // dynamic connectivity to edges
-  impl::BucketConnectivity<stk::topology::FACE_RANK,    DYNAMIC_CONNECTIVITY> m_dynamic_face_connectivity; // dynamic connectivity to faces
-  impl::BucketConnectivity<stk::topology::ELEMENT_RANK, DYNAMIC_CONNECTIVITY> m_dynamic_element_connectivity; // dynamic connectivity to elements
-
-  impl::BucketConnectivity<stk::topology::INVALID_RANK, DYNAMIC_CONNECTIVITY> m_dynamic_other_connectivity; // dynamic connectivity to everything else
-
-  bool m_owned;
-  bool m_shared;
-  bool m_aura;
-
-public:
 
   stk::topology topology() const { return m_topology; }
 
@@ -436,6 +392,13 @@ private:
    */
   BulkData & bulk_data() const { return mesh(); }
 
+  bool is_modified() const { return m_is_modified; }
+  unsigned ngp_bucket_id() const { return m_ngp_bucket_id; }
+  void set_ngp_bucket_id(unsigned ngpBucketId) {
+    m_ngp_bucket_id = ngpBucketId;
+    m_is_modified = false;
+  }
+
   Bucket();
 
   Bucket( const Bucket & );
@@ -488,6 +451,53 @@ private:
   }
 
   void debug_check_for_invalid_connectivity_request(ConnectivityType const* type) const;
+
+  friend class impl::BucketRepository;
+  friend class impl::Partition;
+  friend struct impl::OverwriteEntityFunctor;
+  friend class BulkData;                // Replacement friend.
+  friend struct Entity;
+  friend struct utest::ReversePartition;
+  friend struct utest::SyncToPartitions;
+  friend class stk::mesh::DeviceMesh;
+
+  BulkData             & m_mesh ;        // Where this bucket resides
+  const EntityRank       m_entity_rank ; // Type of entities for this bucket
+  stk::topology          m_topology ;    // The topology of this bucket
+  std::vector<unsigned>  m_key ;         // REFACTOR
+  const size_t           m_capacity ;    // Capacity for entities
+  size_type              m_size ;        // Number of entities
+  unsigned               m_bucket_id;    // Index into its BucketRepository's m_bucket[entity_rank()], these are NOT unique
+  unsigned               m_ngp_bucket_id;
+  bool                   m_is_modified;
+  PartVector             m_parts;
+
+  // Entity data
+  std::vector<Entity>    m_entities;    // Array of entity handles; will be removed soon
+
+  impl::Partition    *m_partition;
+
+  ConnectivityType m_node_kind;
+  ConnectivityType m_edge_kind;
+  ConnectivityType m_face_kind;
+  ConnectivityType m_element_kind;
+
+  impl::BucketConnectivity<stk::topology::NODE_RANK,    FIXED_CONNECTIVITY> m_fixed_node_connectivity; // fixed connectivity to nodes
+  impl::BucketConnectivity<stk::topology::EDGE_RANK,    FIXED_CONNECTIVITY> m_fixed_edge_connectivity; // fixed connectivity to edges
+  impl::BucketConnectivity<stk::topology::FACE_RANK,    FIXED_CONNECTIVITY> m_fixed_face_connectivity; // fixed connectivity to faces
+  impl::BucketConnectivity<stk::topology::ELEMENT_RANK, FIXED_CONNECTIVITY> m_fixed_element_connectivity; // fixed connectivity to elements
+
+  impl::BucketConnectivity<stk::topology::NODE_RANK,    DYNAMIC_CONNECTIVITY> m_dynamic_node_connectivity; // dynamic connectivity to nodes
+  impl::BucketConnectivity<stk::topology::EDGE_RANK,    DYNAMIC_CONNECTIVITY> m_dynamic_edge_connectivity; // dynamic connectivity to edges
+  impl::BucketConnectivity<stk::topology::FACE_RANK,    DYNAMIC_CONNECTIVITY> m_dynamic_face_connectivity; // dynamic connectivity to faces
+  impl::BucketConnectivity<stk::topology::ELEMENT_RANK, DYNAMIC_CONNECTIVITY> m_dynamic_element_connectivity; // dynamic connectivity to elements
+
+  impl::BucketConnectivity<stk::topology::INVALID_RANK, DYNAMIC_CONNECTIVITY> m_dynamic_other_connectivity; // dynamic connectivity to everything else
+
+  bool m_owned;
+  bool m_shared;
+  bool m_aura;
+
 };
 #undef CONNECTIVITY_TYPE_SWITCH
 #undef RANK_SWITCH
@@ -626,6 +636,8 @@ template <typename T>
 inline
 void Bucket::modify_all_connectivity(T& callable, Bucket* other_bucket)
 {
+  m_is_modified = true;
+
   switch(m_node_kind) {
   case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity,   T::template generate_args<stk::topology::NODE_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
   case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_node_connectivity, T::template generate_args<stk::topology::NODE_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
@@ -660,6 +672,7 @@ void Bucket::modify_connectivity(T& callable, EntityRank rank)
   switch(rank) {
   case stk::topology::NODE_RANK:
     ThrowAssert(m_node_kind != INVALID_CONNECTIVITY_TYPE);
+    m_is_modified = true;
     switch(m_node_kind) {
     case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity);   break;
     case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_node_connectivity); break;

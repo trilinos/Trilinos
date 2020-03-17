@@ -50,12 +50,13 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 
 namespace shards { class ArrayDimTag; }
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class UnitTestFieldImpl; } }
 namespace stk { namespace mesh { namespace impl { class FieldRepository; } } }
 namespace stk { namespace mesh { class DataTraits; } }
-
-namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class NgpFieldBase; } }
+namespace stk { namespace mesh { template<typename T> class DeviceField; } }
 
 namespace stk {
 namespace mesh {
@@ -83,7 +84,11 @@ typedef std::vector<FieldMetaData> FieldMetaDataVector;
 //   to the "P-impl" pattern.
 class FieldBase
 {
-  public:
+public:
+  FieldBase() = delete;
+  FieldBase(const FieldBase &) = delete;
+  FieldBase & operator=(const FieldBase &) = delete;
+
    /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
    */
@@ -200,6 +205,14 @@ class FieldBase
 
   bool defined_on(const stk::mesh::Part& part) const;
 
+  void modify_on_host() const { m_impl.modify_on_host(); }
+  void modify_on_device() const { m_impl.modify_on_device(); }
+  void sync_to_host() const { m_impl.sync_to_host(); }
+  void sync_to_device() const { m_impl.sync_to_device(); }
+
+  size_t num_syncs_to_host() const { return m_impl.num_syncs_to_host(); }
+  size_t num_syncs_to_device() const { return m_impl.num_syncs_to_device(); }
+
 private:
 
   //  Associate this field with a bulk data.
@@ -211,76 +224,70 @@ private:
    */
   MetaData & meta_data() const { return m_impl.meta_data(); }
 
+  NgpFieldBase * get_ngp_field() const { return m_impl.get_ngp_field(); }
+  void set_ngp_field(NgpFieldBase * ngpField) const { m_impl.set_ngp_field(ngpField); }
+
+  void increment_num_syncs_to_host() const { m_impl.increment_num_syncs_to_host(); }
+  void increment_num_syncs_to_device() const { m_impl.increment_num_syncs_to_device(); }
+
   friend class ::stk::mesh::MetaData ;
   friend class ::stk::mesh::BulkData;
   friend class ::stk::mesh::impl::FieldRepository;
   friend class ::stk::mesh::impl::FieldBaseImpl ;
 
-
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
+
+  template <typename T> friend NgpField<T> & get_updated_ngp_field(const FieldBase & stkField);
+  template <typename T> friend class DeviceField;
 
   FieldMetaDataVector m_field_meta_data;
 
 protected:
-  FieldBase(
-      MetaData                   * arg_mesh_meta_data ,
-      unsigned                     arg_ordinal ,
-      const std::string          & arg_name ,
-      const DataTraits           & arg_traits ,
-      unsigned                     arg_rank,
-      const shards::ArrayDimTag  * const * arg_dim_tags,
-      unsigned                     arg_number_of_states ,
-      FieldState                   arg_this_state
-      )
-    : m_mesh(NULL),
-      m_impl(
-        arg_mesh_meta_data,
-        stk::topology::INVALID_RANK,
-        arg_ordinal,
-        arg_name,
-        arg_traits,
-        arg_rank,
-        arg_dim_tags,
-        arg_number_of_states,
-        arg_this_state
-        )
+  FieldBase(MetaData                   * arg_mesh_meta_data,
+            unsigned                     arg_ordinal,
+            const std::string          & arg_name,
+            const DataTraits           & arg_traits,
+            unsigned                     arg_rank,
+            const shards::ArrayDimTag  * const * arg_dim_tags,
+            unsigned                     arg_number_of_states,
+            FieldState                   arg_this_state)
+    : m_mesh(nullptr),
+      m_impl(arg_mesh_meta_data,
+             stk::topology::INVALID_RANK,
+             arg_ordinal,
+             arg_name,
+             arg_traits,
+             arg_rank,
+             arg_dim_tags,
+             arg_number_of_states,
+             arg_this_state)
   {}
 
-  FieldBase(
-      MetaData                   * arg_mesh_meta_data ,
-      stk::topology::rank_t        arg_entity_rank ,
-      unsigned                     arg_ordinal ,
-      const std::string          & arg_name ,
-      const DataTraits           & arg_traits ,
-      unsigned                     arg_rank,
-      const shards::ArrayDimTag  * const * arg_dim_tags,
-      unsigned                     arg_number_of_states ,
-      FieldState                   arg_this_state
-      )
-    : m_mesh(NULL),
-      m_impl(
-        arg_mesh_meta_data,
-        arg_entity_rank,
-        arg_ordinal,
-        arg_name,
-        arg_traits,
-        arg_rank,
-        arg_dim_tags,
-        arg_number_of_states,
-        arg_this_state
-        )
+  FieldBase(MetaData                   * arg_mesh_meta_data,
+            stk::topology::rank_t        arg_entity_rank,
+            unsigned                     arg_ordinal,
+            const std::string          & arg_name,
+            const DataTraits           & arg_traits,
+            unsigned                     arg_rank,
+            const shards::ArrayDimTag  * const * arg_dim_tags,
+            unsigned                     arg_number_of_states,
+            FieldState                   arg_this_state)
+    : m_mesh(nullptr),
+      m_impl(arg_mesh_meta_data,
+             arg_entity_rank,
+             arg_ordinal,
+             arg_name,
+             arg_traits,
+             arg_rank,
+             arg_dim_tags,
+             arg_number_of_states,
+             arg_this_state)
   {}
 
 private:
-
   stk::mesh::BulkData* m_mesh;
   impl::FieldBaseImpl  m_impl;
-
-  //the following functions are declared but not defined
-  FieldBase();
-  FieldBase( const FieldBase & );
-  FieldBase & operator = ( const FieldBase & );
 };
 
 /** \brief  Print the field type, text name, and number of states. */

@@ -251,7 +251,7 @@ void BucketRepository::internal_modification_end()
     sync_from_partitions();
 
     // What needs to be done depends on the connectivity map.
-    for(EntityRank from_rank = stk::topology::NODE_RANK; from_rank < m_connectivity_map.m_map.size(); ++from_rank)
+    for(EntityRank from_rank = stk::topology::NODE_RANK; from_rank < stk::topology::NUM_RANKS; ++from_rank)
     {
         const BucketVector &buckets = this->buckets(from_rank);
         unsigned num_buckets = buckets.size();
@@ -262,53 +262,30 @@ void BucketRepository::internal_modification_end()
 
             // Update the hop-saving connectivity data on this bucket.
             //
-            for(EntityRank to_rank = stk::topology::NODE_RANK; to_rank < m_connectivity_map.m_map[from_rank].size(); ++to_rank)
+            for(EntityRank to_rank = stk::topology::NODE_RANK; to_rank < stk::topology::NUM_RANKS; ++to_rank)
             {
-                switch(m_connectivity_map.m_map[from_rank][to_rank])
+                if (from_rank == to_rank) {
+                    continue;
+                }
+
+                switch(to_rank)
                 {
-                    case FIXED_CONNECTIVITY:
-                        switch(to_rank)
-                        {
-                            case stk::topology::NODE_RANK:
-                                bucket.m_fixed_node_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                            case stk::topology::EDGE_RANK:
-                                bucket.m_fixed_edge_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                            case stk::topology::FACE_RANK:
-                                bucket.m_fixed_face_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                            case stk::topology::ELEMENT_RANK:
-                                bucket.m_fixed_element_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                            default:
-                                break;
-                        }
+                    case stk::topology::NODE_RANK:
+                        bucket.m_fixed_node_connectivity.end_modification(&bucket.m_mesh);
                         break;
-                    case DYNAMIC_CONNECTIVITY:
-                        switch(to_rank)
-                        {
-                            case stk::topology::NODE_RANK:
-                                bucket.m_dynamic_node_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                            case stk::topology::EDGE_RANK:
-                                bucket.m_dynamic_edge_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                            case stk::topology::FACE_RANK:
-                                bucket.m_dynamic_face_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                            case stk::topology::ELEMENT_RANK:
-                                bucket.m_dynamic_element_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                            case stk::topology::INVALID_RANK:
-                                break;
-                            default:
-                                bucket.m_dynamic_other_connectivity.end_modification(&bucket.m_mesh);
-                                break;
-                        }
+                    case stk::topology::EDGE_RANK:
+                        bucket.m_dynamic_edge_connectivity.end_modification(&bucket.m_mesh);
                         break;
-                    case INVALID_CONNECTIVITY_TYPE:
+                    case stk::topology::FACE_RANK:
+                        bucket.m_dynamic_face_connectivity.end_modification(&bucket.m_mesh);
+                        break;
+                    case stk::topology::ELEMENT_RANK:
+                        bucket.m_dynamic_element_connectivity.end_modification(&bucket.m_mesh);
+                        break;
+                    case stk::topology::INVALID_RANK:
+                        break;
                     default:
+                        bucket.m_dynamic_other_connectivity.end_modification(&bucket.m_mesh);
                         break;
                 }
             }

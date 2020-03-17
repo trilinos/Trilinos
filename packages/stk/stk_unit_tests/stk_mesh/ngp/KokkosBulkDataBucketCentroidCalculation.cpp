@@ -5,7 +5,7 @@
 struct GpuGatherBucketScratchData
 {
   GpuGatherBucketScratchData(const stk::mesh::BulkData &bulk)
-    : ngpMesh(bulk)
+    : ngpMesh(bulk.get_updated_ngp_mesh())
   {
   }
 
@@ -72,7 +72,7 @@ struct GpuGatherBucketScratchData
 
   KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, solo, compact), const int elementBucketIndex) const
   {
-    const stk::mesh::DeviceBucket& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
+    const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
     const unsigned numElements = bucket.size();
     const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
     const unsigned dim = elementCentroids.extent(1);
@@ -99,7 +99,7 @@ struct GpuGatherBucketScratchData
 
   KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, solo, unroll), const int elementBucketIndex) const
   {
-    const stk::mesh::DeviceBucket& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
+    const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
     const int numElements = bucket.size();
     const int nodesPerElem = bucket.get_num_nodes_per_entity();
     double tempx = 0.0, tempy = 0.0, tempz = 0.0;
@@ -125,7 +125,7 @@ struct GpuGatherBucketScratchData
   KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, compact), const TeamHandleType& team) const
   {
     const int elementBucketIndex = team.league_rank();
-    const stk::mesh::DeviceBucket& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
+    const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
     const unsigned numElements = bucket.size();
     const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
     const unsigned dim = elementCentroids.extent(1);
@@ -159,7 +159,7 @@ struct GpuGatherBucketScratchData
   KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, unroll), const TeamHandleType& team) const
   {
     const int elementBucketIndex = team.league_rank();
-    const stk::mesh::DeviceBucket& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
+    const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
     const unsigned numElements = bucket.size();
     const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
@@ -186,7 +186,7 @@ struct GpuGatherBucketScratchData
 
   unsigned bucketCapacity;
 
-  stk::mesh::DeviceMesh ngpMesh;
+  const stk::mesh::NgpMesh ngpMesh;
 
   DeviceViewMatrixType nodeCoords;
   ConstDeviceViewMatrixType constNodeCoords;
@@ -218,7 +218,7 @@ TEST_F(NGP_Kokkos, calculate_centroid_field_with_gather_on_device_bucket)
   calculator.copy_centroids_to_host();
 
   for(unsigned bucketIndex=0; bucketIndex<scratch.ngpMesh.num_buckets(stk::topology::ELEM_RANK); ++bucketIndex) {
-    const stk::mesh::DeviceBucket &bucket = scratch.ngpMesh.get_bucket(stk::topology::ELEM_RANK, bucketIndex);
+    const stk::mesh::NgpMesh::BucketType &bucket = scratch.ngpMesh.get_bucket(stk::topology::ELEM_RANK, bucketIndex);
     unsigned numElements = bucket.size();
     for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
       unsigned elemFieldIndex = scratch.host_get_index(bucket.host_get_entity(elementIndex));
