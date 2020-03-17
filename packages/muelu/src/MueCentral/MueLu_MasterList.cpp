@@ -232,7 +232,7 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: file base\" type=\"string\" value=\"agg_qualities\"/>"
   "<Parameter name=\"aggregate qualities: algorithm\" type=\"string\" value=\"forward\"/>"
   "<Parameter name=\"aggregate qualities: zero threshold\" type=\"double\" value=\"1e-12\"/>"
-  "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{.5}\"/>"
+  "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{}\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"

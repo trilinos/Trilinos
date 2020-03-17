@@ -440,7 +440,7 @@ namespace MueLu {
 
       std::sort(tmp.begin(), tmp.end());
 
-      Teuchos::ArrayView<const double> percents = pL.get<Teuchos::Array<double> >("aggregate qualities: percentiles");
+      Teuchos::ArrayView<const double> percents = pL.get<Teuchos::Array<double> >("aggregate qualities: percentiles")();
 
       GetOStream(Statistics1) << "AGG QUALITY HEADER     : | LEVEL |  TOTAL  |";
       for (auto percent : percents) {
