@@ -53,7 +53,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <locale>
 #include <map>
 #include <numeric>
 #include <random>

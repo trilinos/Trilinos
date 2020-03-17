@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -42,9 +42,7 @@
 #include <cstdlib>        // for exit
 #include <cstring>        // for strlen
 #include <string>
-#include <string> // for string, char_traits, etc
 #include <vector>
-#include <vector> // for vector
 
 namespace {
   size_t get_index(int file_id, EXOTYPE exo_type, size_t id, const char *label);

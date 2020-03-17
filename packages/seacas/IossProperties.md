@@ -104,7 +104,7 @@ Although the properties are usually accessed internally in the
 application calling the IOSS library, it is possible to set the
 properties externally prior to running the application via the setting
 of the environment variable `IOSS_PROPERTIES`.  The value of the
-varible is one or more colon-separated property/property-value pairs.
+variable is one or more colon-separated property/property-value pairs.
 For example, to set the `DECOMPOSITION_METHOD` and the `FILE_TYPE`
 externally, the following would be used:
 ```

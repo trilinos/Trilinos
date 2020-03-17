@@ -66,7 +66,7 @@ namespace {
 
   struct Globals
   {
-    std::string working_directory;
+    std::string working_directory{};
     double      scale_factor{};
   };
 
@@ -510,7 +510,9 @@ namespace {
     radius.resize(nelem);
 
     double gradop12x[24];
-    double x[8], y[8], z[8];
+    double x[8];
+    double y[8];
+    double z[8];
 
     for (size_t ielem = 0; ielem < nelem; ++ielem) {
       for (size_t j = 0; j < 8; j++) {

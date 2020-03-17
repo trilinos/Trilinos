@@ -48,7 +48,7 @@ public:
   bool      operator==(const vector3d &from) const;
   bool      operator!=(const vector3d &from) const;
   void      set(double X, double Y, double Z);
-  void      set(double location[3]);
+  void      set(const double location[3]);
   vector3d &reverse();
 
   vector3d operator-() const;

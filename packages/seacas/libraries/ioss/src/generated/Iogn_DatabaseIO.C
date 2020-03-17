@@ -106,9 +106,9 @@ namespace {
 
   void fill_constant_data(const Ioss::Field &field, void *data, double value)
   {
-    double *rdata           = reinterpret_cast<double *>(data);
-    size_t  count           = field.raw_count();
-    size_t  component_count = field.raw_storage()->component_count();
+    auto * rdata           = reinterpret_cast<double *>(data);
+    size_t count           = field.raw_count();
+    size_t component_count = field.raw_storage()->component_count();
     for (size_t i = 0; i < count * component_count; i++) {
       rdata[i] = value;
     }
@@ -230,7 +230,7 @@ namespace Iogn {
     if (role == Ioss::Field::MESH) {
       if (field.get_name() == "mesh_model_coordinates") {
         // Cast 'data' to correct size -- double
-        double *rdata = static_cast<double *>(data);
+        auto *rdata = static_cast<double *>(data);
         m_generatedMesh->coordinates(rdata);
       }
 
@@ -325,7 +325,7 @@ namespace Iogn {
       if (element_count > 0) {
         int attribute_count = eb->get_property("attribute_count").get_int();
         if (attribute_count > 0) {
-          double *attr = static_cast<double *>(data);
+          auto *attr = static_cast<double *>(data);
           for (size_t i = 0; i < num_to_get; i++) {
             attr[i] = 1.0;
           }

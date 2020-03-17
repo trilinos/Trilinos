@@ -14,7 +14,6 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-//#include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperFactory.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -264,6 +263,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethods.push_back("SSPERK22");
   RKMethods.push_back("SSPERK33");
   //RKMethods.push_back("SSPERK54");  // slope = 3.94129
+  RKMethods.push_back("RK2");  // slope = 3.94129
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(8.33251e-07);
@@ -284,6 +284,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethodErrors.push_back(0.00166645); 
   RKMethodErrors.push_back(4.16603e-05);
   //RKMethodErrors.push_back(3.85613e-07); // SSPERK54
+  RKMethodErrors.push_back(0.00166644); // RK2
+                             
 
   TEST_ASSERT(RKMethods.size() == RKMethodErrors.size() );
 

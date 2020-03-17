@@ -313,7 +313,7 @@ namespace Iocgns {
     m_cgnsFilePtr = -1;
   }
 
-  void ParallelDatabaseIO::finalize_database()
+  void ParallelDatabaseIO::finalize_database() const
   {
     if (is_input()) {
       return;
@@ -323,7 +323,10 @@ namespace Iocgns {
       return;
     }
 
-    Utils::finalize_database(get_file_pointer(), m_timesteps, get_region(), myProcessor, true);
+    if (!m_dbFinalized) {
+      Utils::finalize_database(get_file_pointer(), m_timesteps, get_region(), myProcessor, true);
+      m_dbFinalized = true;
+    }
   }
 
   void ParallelDatabaseIO::release_memory__()
@@ -944,6 +947,7 @@ namespace Iocgns {
     Utils::write_flow_solution_metadata(get_file_pointer(), get_region(), state,
                                         &m_currentVertexSolutionIndex,
                                         &m_currentCellCenterSolutionIndex, true);
+    m_dbFinalized == false;
     return true;
   }
 
@@ -975,7 +979,7 @@ namespace Iocgns {
     // For HDF5 files, it looks like we need to close the database between
     // writes if we want to have a valid database for external access or
     // to protect against a crash corrupting the file.
-    Utils::finalize_database(get_file_pointer(), m_timesteps, get_region(), myProcessor, true);
+    finalize_database();
     closeDatabase__();
     m_cgnsFilePtr = -2; // Tell openDatabase__ that we want to append
   }
@@ -1541,15 +1545,6 @@ namespace Iocgns {
       if (field.get_name() == "element_side_raw" || field.get_name() == "element_side") {
 
         decomp->get_sideset_element_side(get_file_pointer(), sset, data);
-
-        if (field.get_type() == Ioss::Field::INT32) {
-          int *idata = (int *)data;
-          Utils::map_cgns_face_to_ioss(sb->parent_element_topology(), num_to_get, idata);
-        }
-        else {
-          int64_t *idata = (int64_t *)data;
-          Utils::map_cgns_face_to_ioss(sb->parent_element_topology(), num_to_get, idata);
-        }
         return num_to_get;
       }
       else {

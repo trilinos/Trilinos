@@ -306,7 +306,7 @@ namespace Ioss {
   private:
     void verify_field_exists(const std::string &field_name, const std::string &inout) const;
 
-    std::string entityName;
+    std::string entityName{};
 
     DatabaseIO *database_ = nullptr;
 

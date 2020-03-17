@@ -912,6 +912,24 @@ public:
     return stepper;
   }
 
+  Teuchos::RCP<StepperERK_Ralston<Scalar> >
+  createStepperERK_Ralston(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL,
+    std::string stepperType)
+  {
+    auto stepper = Teuchos::rcp(new StepperERK_Ralston<Scalar>());
+    stepper->setStepperType(stepperType);
+    setStepperRKValues(stepper, stepperPL);
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
   Teuchos::RCP<StepperERK_BogackiShampine32<Scalar> >
   createStepperERK_BogackiShampine32(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -1009,6 +1027,24 @@ public:
     return stepper;
   }
 
+  Teuchos::RCP<StepperSDIRK_3Stage2ndOrder<Scalar> >
+  createStepperSDIRK_3Stage2ndOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    auto stepper = Teuchos::rcp(new StepperSDIRK_3Stage2ndOrder<Scalar>());
+    setStepperDIRKValues(stepper, stepperPL);
+
+    if (model != Teuchos::null) {
+      stepper->setModel(model);
+      setStepperSolverValues(stepper, stepperPL);
+      stepper->initialize();
+    }
+
+    return stepper;
+  }
+
+  
   Teuchos::RCP<StepperSDIRK_SSPDIRK22<Scalar> >
   createStepperSDIRK_SSPDIRK22(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -1335,7 +1371,7 @@ private:
       return createStepperHHTAlpha(model, stepperPL);
     else if (stepperType == "General ERK" )
       return createStepperERK_General(model, stepperPL);
-    else if (stepperType == "RK Forward Euler" )
+    else if (stepperType == "RK Forward Euler" || stepperType == "RK1" )
       return createStepperERK_ForwardEuler(model, stepperPL);
     else if (stepperType == "RK Explicit 4 Stage" )
       return createStepperERK_4Stage4thOrder(model, stepperPL);
@@ -1348,15 +1384,18 @@ private:
     else if (stepperType == "RK Explicit 3 Stage 3rd order" )
       return createStepperERK_3Stage3rdOrder(model, stepperPL);
     else if (stepperType == "RK Explicit 3 Stage 3rd order TVD" ||
-             stepperType == "SSPERK33")
+             stepperType == "SSPERK33" || stepperType == "SSPRK3" )
       return createStepperERK_3Stage3rdOrderTVD(model, stepperPL, stepperType);
     else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun" )
       return createStepperERK_3Stage3rdOrderHeun(model, stepperPL);
     else if (stepperType == "RK Explicit Midpoint" )
       return createStepperERK_Midpoint(model, stepperPL);
     else if (stepperType == "RK Explicit Trapezoidal" ||
-             stepperType == "Heuns Method" || stepperType == "SSPERK22")
+             stepperType == "Heuns Method" || stepperType == "SSPERK22" ||
+             stepperType == "SSPRK2" )
       return createStepperERK_Trapezoidal(model, stepperPL, stepperType);
+    else if (stepperType == "RK Explicit Ralston" || stepperType == "RK2" )
+      return createStepperERK_Ralston(model, stepperPL, stepperType);
     else if (stepperType == "SSPERK54" )
       return createStepperERK_SSPERK54(model, stepperPL);
     else if (stepperType == "Bogacki-Shampine 3(2) Pair" )
@@ -1371,6 +1410,8 @@ private:
       return createStepperSDIRK_2Stage2ndOrder(model, stepperPL);
     else if (stepperType == "SSPDIRK22" )
       return createStepperSDIRK_SSPDIRK22(model, stepperPL);
+    else if (stepperType == "SDIRK 3 Stage 2nd order" )
+      return createStepperSDIRK_3Stage2ndOrder(model, stepperPL);
     else if (stepperType == "SSPDIRK32" )
       return createStepperSDIRK_SSPDIRK32(model, stepperPL);
     else if (stepperType == "SSPDIRK23" )
@@ -1404,7 +1445,11 @@ private:
       return createStepperSDIRK_21Pair(model, stepperPL);
     else if (
       stepperType == "IMEX RK 1st order" ||
+      stepperType == "SSP1_111"          ||
       stepperType == "IMEX RK SSP2"      ||
+      stepperType == "IMEX RK SSP3"      ||
+      stepperType == "SSP3_332"          ||
+      stepperType == "SSP2_222"          ||
       stepperType == "IMEX RK ARS 233"   ||
       stepperType == "General IMEX RK" )
       return createStepperIMEX_RK(model, stepperType, stepperPL);
@@ -1438,7 +1483,7 @@ private:
       << "    'Newmark Explicit a-Form'\n"
       << "    'HHT-Alpha'\n"
       << "  Explicit Runge-Kutta Methods:\n"
-      << "    'RK Forward Euler'\n"
+      << "    'RK Forward Euler (RK1)'\n"
       << "    'RK Explicit 4 Stage'\n"
       << "    'RK Explicit 3/8 Rule'\n"
       << "    'RK Explicit 4 Stage 3rd order by Runge'\n"
@@ -1449,8 +1494,8 @@ private:
       << "    'RK Explicit Midpoint'\n"
       << "    'RK Explicit Trapezoidal' or 'Heuns Method'\n"
       << "    'Bogacki-Shampine 3(2) Pair'\n"
-      << "    'SSPERK22'\n"
-      << "    'SSPERK33'\n"
+      << "    'SSPERK22 (SSPRK2)'\n"
+      << "    'SSPERK33 (SSPRK3)'\n"
       << "    'SSPERK54'\n"
       << "    'General ERK'\n"
       << "  Implicit Runge-Kutta Methods:\n"
@@ -1470,11 +1515,14 @@ private:
       << "    'SSPDIRK23'\n"
       << "    'SSPDIRK33'\n"
       << "    'SDIRK 2(1) Pair'\n"
+      << "    'SDIRK 3 Stage 2nd order'\n"
       << "    'RK Trapezoidal Rule' or 'RK Crank-Nicolson'\n"
       << "    'General DIRK'\n"
       << "  Implicit-Explicit (IMEX) Methods:\n"
       << "    'IMEX RK 1st order'\n"
-      << "    'IMEX RK SSP2'\n"
+      << "    'SSP1_111'\n"
+      << "    'IMEX RK SSP2 (SSP2_222)'\n"
+      << "    'IMEX RK SSP3 (SSP3_332)'\n"
       << "    'IMEX RK ARS 233'\n"
       << "    'General IMEX RK'\n"
       << "    'Partitioned IMEX RK 1st order'\n"

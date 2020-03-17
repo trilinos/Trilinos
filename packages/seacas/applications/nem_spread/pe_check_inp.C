@@ -48,8 +48,10 @@ template int NemSpread<float, int64_t>::check_inp(void);
 
 template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
 {
-  int   exid, icpu_ws = 0, iio_ws = 0;
-  float vers = 0.0;
+  int   exid;
+  int   icpu_ws = 0;
+  int   iio_ws  = 0;
+  float vers    = 0.0;
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                 Check the input and output files                          */

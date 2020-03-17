@@ -556,7 +556,7 @@ ex_entity_type ex_var_type_to_ex_entity_type(char var_type)
   if (var_lower == 'e') {
     return EX_ELEM_BLOCK;
   }
-  else if (var_lower == 'm') {
+  if (var_lower == 'm') {
     return EX_NODE_SET;
   }
   else if (var_lower == 'd') {

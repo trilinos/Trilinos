@@ -28,6 +28,7 @@ ENDIF()
 TRIBITS_ADD_TEST_DIRECTORIES(factories)
 TRIBITS_ADD_TEST_DIRECTORIES(maxwell)
 TRIBITS_ADD_TEST_DIRECTORIES(navierstokes)
+TRIBITS_ADD_TEST_DIRECTORIES(meshtying)
 if (NOT MUELU_VALGRIND_TESTING)
   # JJH 4Feb2014:  This is failing the nightly MPI valgrind test.  It runs fine
   # interactively.  If/when I figure out the cause, I'll reenable this during

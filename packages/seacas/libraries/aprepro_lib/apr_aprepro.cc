@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 National Technology & Engineering Solutions
+// Copyright (c) 2014-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -51,7 +51,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.14 (2019/11/20)";
+  const char *       version_string = "5.15 (2020/02/28)";
 
   void output_copyright();
 
@@ -93,6 +93,9 @@ namespace SEAMS {
       for (symrec *ptr = sym_table[hashval]; ptr != nullptr;) {
         symrec *save = ptr;
         ptr          = ptr->next;
+        if (save->type == Parser::token::AVAR) {
+          delete save->value.avar;
+        }
         delete save;
       }
     }
@@ -859,7 +862,7 @@ namespace SEAMS {
     }
 
     if (!original.empty()) {
-      history_data hist;
+      history_data hist{};
       hist.original     = original;
       hist.substitution = substitution;
       hist.index        = outputStream.empty() ? std::streampos(0) : outputStream.top()->tellp();

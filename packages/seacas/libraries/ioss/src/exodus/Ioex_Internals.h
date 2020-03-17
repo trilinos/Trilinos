@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -327,10 +327,11 @@ namespace Ioex {
 
   struct CommunicationMetaData
   {
-    CommunicationMetaData() = default;
+    CommunicationMetaData()                              = default;
+    CommunicationMetaData(const CommunicationMetaData &) = delete;
 
-    std::vector<CommunicationMap> nodeMap;
-    std::vector<CommunicationMap> elementMap;
+    std::vector<CommunicationMap> nodeMap{};
+    std::vector<CommunicationMap> elementMap{};
     int                           processorId{0};
     int                           processorCount{0};
     int64_t                       globalNodes{0};
@@ -344,9 +345,6 @@ namespace Ioex {
     int64_t                       elementsInternal{0};
     int64_t                       elementsBorder{0};
     bool                          outputNemesis{false};
-
-  private:
-    CommunicationMetaData(const CommunicationMetaData &);
   };
 
   class Redefine
@@ -377,15 +375,15 @@ namespace Ioex {
     int  dimensionality{};
     bool file_per_processor{true};
 
-    std::vector<NodeBlock> nodeblocks;
-    std::vector<EdgeBlock> edgeblocks;
-    std::vector<FaceBlock> faceblocks;
-    std::vector<ElemBlock> elemblocks;
-    std::vector<NodeSet>   nodesets;
-    std::vector<EdgeSet>   edgesets;
-    std::vector<FaceSet>   facesets;
-    std::vector<ElemSet>   elemsets;
-    std::vector<SideSet>   sidesets;
+    std::vector<NodeBlock> nodeblocks{};
+    std::vector<EdgeBlock> edgeblocks{};
+    std::vector<FaceBlock> faceblocks{};
+    std::vector<ElemBlock> elemblocks{};
+    std::vector<NodeSet>   nodesets{};
+    std::vector<EdgeSet>   edgesets{};
+    std::vector<FaceSet>   facesets{};
+    std::vector<ElemSet>   elemsets{};
+    std::vector<SideSet>   sidesets{};
     CommunicationMetaData  comm;
   };
 
@@ -443,7 +441,7 @@ namespace Ioex {
 
     int max_name_length() const { return maximumNameLength; }
 
-    int                 exodusFilePtr;
+    int                 exodusFilePtr{0};
     int                 nodeMapVarID[3];
     int                 elementMapVarID[2];
     int                 commIndexVar{0};

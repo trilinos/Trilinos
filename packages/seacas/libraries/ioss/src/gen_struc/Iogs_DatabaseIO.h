@@ -96,7 +96,7 @@ namespace Iogs {
 
     ~DatabaseIO() override;
 
-    const std::string get_format() const override {return "Generated_Structured";}
+    const std::string get_format() const override { return "Generated_Structured"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -195,7 +195,7 @@ namespace Iogs {
     void add_transient_fields(Ioss::GroupingEntity *entity);
 
     GeneratedMesh *          m_generatedMesh{nullptr};
-    std::vector<std::string> m_sideset_names;
+    std::vector<std::string> m_sideset_names{};
 
     double currentTime{0.0};
     int    spatialDimension{3};
