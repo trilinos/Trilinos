@@ -10,6 +10,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/FieldBase.hpp>  // for field_data
+#include <stk_mesh/base/GetEntities.hpp>  // for field_data
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
@@ -638,29 +639,38 @@ void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData, const stk::m
     }
 }
 
-void fill_connectivity_count_field(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings)
+int num_connected_beams(const stk::mesh::BulkData& bulk,
+                             stk::mesh::Entity node)
+{
+  const unsigned numElems = bulk.num_elements(node);
+  const stk::mesh::Entity* elems = bulk.begin_elements(node);
+
+  int numBeams = 0;
+  for(unsigned elemIndex=0; elemIndex<numElems; ++elemIndex) {
+    if (bulk.bucket(elems[elemIndex]).topology() == stk::topology::BEAM_2) {
+      ++numBeams;
+    }
+  }
+
+  return numBeams;
+}
+
+void fill_connectivity_count_field(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings)
 {
     if (balanceSettings.shouldFixSpiders()) {
-        const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
+        const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(bulk);
+        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
-        stk::mesh::Selector beamNodesSelector(stkMeshBulkData.mesh_meta_data().locally_owned_part() &
-                                              stkMeshBulkData.mesh_meta_data().get_topology_root_part(stk::topology::BEAM_2));
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, beamNodesSelector);
-
-        for (stk::mesh::Bucket * bucket : buckets) {
-            for (stk::mesh::Entity node : *bucket) {
-                int * connectivityCount = stk::mesh::field_data(*connectivityCountField, node);
-                const unsigned numElements = stkMeshBulkData.num_elements(node);
-                const stk::mesh::Entity *element = stkMeshBulkData.begin_elements(node);
-                for (unsigned i = 0; i < numElements; ++i) {
-                    if (stkMeshBulkData.bucket(element[i]).topology() == stk::topology::BEAM_2) {
-                        (*connectivityCount)++;
-                    }
-                }
-            }
+        stk::mesh::Selector selectBeamNodes(meta.locally_owned_part() &
+                                              meta.get_topology_root_part(stk::topology::BEAM_2));
+        stk::mesh::EntityVector nodes;
+        mesh::get_selected_entities(selectBeamNodes, bulk.buckets(stk::topology::NODE_RANK), nodes);
+        for(stk::mesh::Entity node : nodes) {
+            int * connectivityCount = stk::mesh::field_data(*connectivityCountField, node);
+            *connectivityCount = num_connected_beams(bulk, node);
         }
 
-        stk::mesh::communicate_field_data(stkMeshBulkData, {connectivityCountField});
+        stk::mesh::communicate_field_data(bulk, {connectivityCountField});
     }
 }
 

@@ -256,7 +256,7 @@ namespace stk {
       m_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
-    FieldNameToPartVector InputFile::get_var_names(Ioss::EntityType type, stk::mesh::MetaData& meta)
+    FieldNameToPartVector InputFile::get_var_names(Ioss::EntityType type, const stk::mesh::MetaData& meta)
     {
         return stk::io::get_var_names(*m_region.get(), type, meta);
     }

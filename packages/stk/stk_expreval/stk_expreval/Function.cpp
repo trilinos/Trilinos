@@ -56,6 +56,7 @@ extern "C" {
   typedef double (*CExtern2)(double, double);
   typedef double (*CExtern3)(double, double, double);
   typedef double (*CExtern4)(double, double, double, double);
+  typedef double (*CExtern5)(double, double, double, double, double);
   typedef double (*CExtern8)(double, double, double, double, double, double, double, double);
 }
 
@@ -195,6 +196,32 @@ private:
 };
 
 template <>
+class CFunction<CExtern5> : public CFunctionBase
+{
+public:
+  typedef CExtern5 Signature;
+
+  explicit CFunction<Signature>(Signature function)
+    : CFunctionBase(5),
+      m_function(function)
+  {}
+
+  virtual ~CFunction()
+  {}
+
+  virtual double operator()(int argc, const double *argv)
+  {
+#ifndef NDEBUG
+    if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 5 arguments"); }
+#endif
+    return (*m_function)(argv[0], argv[1], argv[2], argv[3], argv[4]);
+  }
+
+private:
+  Signature m_function;
+};
+
+template <>
 class CFunction<CExtern8> : public CFunctionBase
 {
 public:
@@ -225,6 +252,7 @@ typedef CFunction<CExtern1> CFunction1;
 typedef CFunction<CExtern2> CFunction2;
 typedef CFunction<CExtern3> CFunction3;
 typedef CFunction<CExtern4> CFunction4;
+typedef CFunction<CExtern5> CFunction5;
 typedef CFunction<CExtern8> CFunction8;
 
 extern "C" {
@@ -420,6 +448,18 @@ extern "C" {
     }
   }
 
+  double point_2(double x, double y, double r, double w)
+  {
+    const double ri = std::sqrt(x*x + y*y);
+    return 1.0 - cosine_ramp3(ri, r-0.5*w, r+0.5*w);
+  }
+
+  double point_3(double x, double y, double z, double r, double w)
+  {
+    const double ri = std::sqrt(x*x + y*y + z*z);
+    return 1.0 - cosine_ramp3(ri, r-0.5*w, r+0.5*w);
+  }
+
   double cosine_ramp1(double t) 
   {
     return cosine_ramp3(t, 0.0, 1.0);
@@ -554,6 +594,9 @@ CFunctionMap::CFunctionMap()
   (*this).emplace("rad",             new CFunction1(rad));
   (*this).emplace("recttopola",      new CFunction2(recttopola));
   (*this).emplace("recttopolr",      new CFunction2(recttopolr));
+
+  (*this).emplace("point2d",         new CFunction4(point_2));
+  (*this).emplace("point3d",         new CFunction5(point_3));
 
   (*this).emplace("cos_ramp",        new CFunction1(cosine_ramp1));
   (*this).emplace("cos_ramp",        new CFunction2(cosine_ramp2));

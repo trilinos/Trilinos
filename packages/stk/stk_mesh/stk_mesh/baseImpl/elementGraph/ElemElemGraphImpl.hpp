@@ -401,7 +401,7 @@ typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
 unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData);
 
-void fill_topologies(const stk::mesh::BulkData& bulkData, const stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
+bool fill_topologies(const stk::mesh::BulkData& bulkData, const stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 

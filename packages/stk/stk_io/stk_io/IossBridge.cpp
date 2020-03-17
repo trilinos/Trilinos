@@ -2941,7 +2941,7 @@ namespace stk {
             names.emplace_back(geName, part);
     }
 
-    void insert_var_names(const Ioss::GroupingEntity *entity, FieldNameToPartVector &names, stk::mesh::MetaData& meta)
+    void insert_var_names(const Ioss::GroupingEntity *entity, FieldNameToPartVector &names, const stk::mesh::MetaData& meta)
     {
         if (stk::io::include_entity(entity)) {
             stk::mesh::Part* part = meta.get_part(entity->name());
@@ -2950,7 +2950,8 @@ namespace stk {
     }
 
     template <typename GroupingEntityVector>
-    FieldNameToPartVector get_grouping_entity_var_names(const GroupingEntityVector &groupingEntities,stk::mesh::MetaData& meta)
+    FieldNameToPartVector get_grouping_entity_var_names(const GroupingEntityVector &groupingEntities,
+                                                        const stk::mesh::MetaData& meta)
     {
         FieldNameToPartVector names;
         for(size_t i=0; i < groupingEntities.size(); i++)
@@ -2959,7 +2960,7 @@ namespace stk {
         return names;
     }
 
-    FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, stk::mesh::MetaData& meta)
+    FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, const stk::mesh::MetaData& meta)
     {
         switch(type)
         {
