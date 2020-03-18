@@ -53,7 +53,6 @@
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_topology/topology.hpp"
 #include "stk_util/util/ReportHandler.hpp"
-namespace stk { namespace mesh { struct ConnectivityMap; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -93,7 +92,6 @@ class TetFixture
               , size_t ny
               , size_t nz
               , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
-              , ConnectivityMap const* connectivity_map = NULL
             );
 
   TetFixture(   stk::ParallelMachine pm
@@ -102,7 +100,6 @@ class TetFixture
               , size_t nz
               , const std::string& coordsName
               , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
-              , ConnectivityMap const* connectivity_map = NULL
             );
 
   ~TetFixture();

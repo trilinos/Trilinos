@@ -477,7 +477,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
         EXPECT_TRUE( &nodeField == myFieldBase);
     }
 
-    unlink(mesh_name.c_str());
+    stk::unit_test_util::delete_mesh(mesh_name);
 }
 
 //////////////////////
@@ -656,6 +656,7 @@ protected:
             std::string filename = "junk-" + solnCases.get_solution_case_names()[solnIndex] + ".g";
             EXPECT_NO_THROW(write_mesh_with_fields(stkIo, filename, rank, solnCases.get_fields_for_case(solnIndex)));
             verify_fields_are_on_entities(filename, rank, solnCases.get_fields_for_case(solnIndex), locallyOwnedEntities.size());
+            stk::unit_test_util::delete_mesh(filename);
         }
 
         verify_acceleration_is_not_on_entities(get_bulk(), rank);

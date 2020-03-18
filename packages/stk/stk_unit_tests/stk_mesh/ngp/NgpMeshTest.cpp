@@ -72,7 +72,7 @@ public:
 
     stk::NgpVector<double> numNodesVec("numNodes", 1);
 
-    stk::mesh::NgpMesh ngpMesh(get_bulk());
+    stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
     Kokkos::parallel_for(1,
                          KOKKOS_LAMBDA(const int i)
                          {
@@ -162,7 +162,7 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
   std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
 
   for (int proc : comm_procs) {

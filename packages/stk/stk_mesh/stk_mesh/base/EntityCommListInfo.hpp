@@ -48,8 +48,6 @@ struct EntityCommListInfo
 {
   EntityKey key;
   Entity    entity; // Might be invalid if entity has been deleted.
-  Bucket* bucket;
-  size_t bucket_ordinal;
   const EntityComm* entity_comm; // Might be NULL if entity has been deleted.
 };
 

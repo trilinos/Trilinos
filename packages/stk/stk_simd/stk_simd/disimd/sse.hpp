@@ -188,6 +188,10 @@ SIMD_ALWAYS_INLINE inline simd<float, simd_abi::sse> cbrt(simd<float, simd_abi::
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::sse> exp(simd<float, simd_abi::sse> const& a) {
   return simd<float, simd_abi::sse>(_mm_exp_ps(a.get()));
 }
+
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::sse> log(simd<float, simd_abi::sse> const& a) {
+  return simd<float, simd_abi::sse>(_mm_log_ps(a.get()));
+}
 #endif
 
 #if defined(__FMA__) || defined(__AVX2__)
@@ -339,6 +343,10 @@ SIMD_ALWAYS_INLINE inline simd<double, simd_abi::sse> cbrt(simd<double, simd_abi
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::sse> exp(simd<double, simd_abi::sse> const& a) {
   return simd<double, simd_abi::sse>(_mm_exp_pd(a.get()));
+}
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::sse> log(simd<double, simd_abi::sse> const& a) {
+  return simd<double, simd_abi::sse>(_mm_log_pd(a.get()));
 }
 #endif
 
