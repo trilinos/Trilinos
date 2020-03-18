@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -43,6 +41,12 @@
 #define TPETRA_MATRIXMATRIX_CUDA_DEF_HPP
 
 #ifdef HAVE_TPETRA_INST_CUDA
+
+#include "Tpetra_Details_Behavior.hpp"
+#include <iostream>
+#include <memory>
+#include <sstream>
+
 namespace Tpetra {
 namespace MMdetails {
 
@@ -119,17 +123,41 @@ template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
          class LocalOrdinalViewType>
-void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
-                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
-                                                                                               const LocalOrdinalViewType & Acol2Brow,
-                                                                                               const LocalOrdinalViewType & Acol2Irow,
-                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,
-                                                                                               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
-                                                                                               const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+void
+KernelWrappers<
+  Scalar,
+  LocalOrdinal,
+  GlobalOrdinal,
+  Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::
+mult_A_B_newmatrix_kernel_wrapper(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+  const LocalOrdinalViewType & Acol2Brow,
+  const LocalOrdinalViewType & Acol2Irow,
+  const LocalOrdinalViewType & Bcol2Ccol,
+  const LocalOrdinalViewType & Icol2Ccol,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
+{
+  using std::endl;
 
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    const auto map = C.getMap();
+    const auto comm = map.is_null() ? Teuchos::null : map->getComm();
+    const int myRank = comm.is_null() ? -1 : comm->getRank();
+
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Tpetra::KernelWrappers::"
+      "mult_A_B_newmatrix_kernel_wrapper (CUDA): ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
@@ -183,7 +211,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
     Ivals   = Bview.importMatrix->getLocalMatrix().values;
   }
 
-
   // Get the algorithm mode
   std::string alg = nodename+std::string(" algorithm");
   //  printf("DEBUG: Using kernel: %s\n",myalg.c_str());
@@ -191,6 +218,11 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
   // Merge the B and Bimport matrices
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call merge_matrices" << endl;
+    std::cerr << os.str();
+  }
   const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements());
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -206,9 +238,19 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   lno_nnz_view_t  entriesC;
   scalar_view_t   valuesC;
   KernelHandle kh;
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call create_spgemm_handle" << endl;
+    std::cerr << os.str();
+  }
   kh.create_spgemm_handle(alg_enum);
   kh.set_team_work_size(team_work_size);
 
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call spgemm_symbolic" << endl;
+    std::cerr << os.str();
+  }
   KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
@@ -216,21 +258,60 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
     entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
     valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
   }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call spgemm_numeric" << endl;
+    std::cerr << os.str();
+  }
+  // NOTE (mfh 18 Mar 2020) After here, but before the next verbose
+  // output below, is the point at which I see the following error on
+  // all processes:
+  //
+  // terminate called after throwing an instance of 'std::runtime_error'
+  //   what():  cudaDeviceSynchronize() error( cudaErrorIllegalAddress): an illegal memory access was encountered .../packages/kokkos/core/src/Cuda/Kokkos_Cuda_Instance.cpp:138
+
   KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,Amat.values,false,Bmerged.graph.row_map,Bmerged.graph.entries,Bmerged.values,false,row_mapC,entriesC,valuesC);
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Finished spgemm_numeric" << endl;
+    std::cerr << os.str();
+  }
+
   kh.destroy_spgemm_handle();
+
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaSort"))));
 #endif
 
   // Sort & set values
-  if (params.is_null() || params->get("sort entries",true))
+  if (params.is_null() || params->get("sort entries",true)) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call Import_Util::sortCrsEntries" << endl;
+      std::cerr << os.str();
+    }
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call C.setAllValues" << endl;
+    std::cerr << os.str();
+  }
   C.setAllValues(row_mapC,entriesC,valuesC);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaESFC"))));
 #endif
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call C.expertStaticFillComplete" << endl;
+    std::cerr << os.str();
+  }
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
@@ -238,6 +319,12 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
   RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > dummyExport;
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 

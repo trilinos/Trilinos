@@ -91,7 +91,7 @@ LocalCuSparseCrsMatrixOperatorRealBase<Scalar>::
 fillComplete()
 {
   using std::endl;
-  const char funcName[] = "Tpetra::Details::"
+  const char tfecfFuncName[] = "Tpetra::Details::"
     "LocalCuSparseCrsMatrixOperatorRealBase::fillComplete";
 
   const bool debug = Details::Behavior::debug("cuSPARSE");
@@ -99,17 +99,17 @@ fillComplete()
   std::unique_ptr<std::string> prefix;
   if (verbose) {
     std::ostringstream os;
-    os << funcName << ": ";
+    os << tfecfFuncName << ": ";
     prefix = std::unique_ptr<std::string>(new std::string(os.str()));
     os << "Start" << endl;
     std::cerr << os.str();
   }
   if (debug) {
     const cudaError_t lastErr = cudaGetLastError();
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (lastErr != cudaSuccess, std::runtime_error, "On entry to "
-       << funcName << ", CUDA is in an erroneous state \""
-       << cudaGetErrorName(lastErr) << "\".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lastErr != cudaSuccess, std::runtime_error, ": On entry, "
+       "CUDA is in an erroneous state \"" << cudaGetErrorName(lastErr)
+       << "\".");
   }
 
   if (! this->isFillComplete()) {
@@ -135,14 +135,14 @@ fillComplete()
 
       const auto newPtrLen = A.graph.row_map.extent(0);
       if (debug) {
-        TEUCHOS_TEST_FOR_EXCEPTION
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (A.graph.entries.extent(0) != A.values.extent(0),
-           std::logic_error, "A.graph.entries.extent(0)="
+           std::logic_error, ": A.graph.entries.extent(0)="
            << A.graph.entries.extent(0) << " != A.values.extent(0)="
            << A.values.extent(0) << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (newPtrLen == 0 && A.graph.entries.extent(0) != 0,
-           std::logic_error, "A.graph.row_map.extent(0)=0, but "
+           std::logic_error, ": A.graph.row_map.extent(0)=0, but "
            "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
            << " != 0.");
       }
@@ -169,11 +169,10 @@ fillComplete()
         Details::copyOffsets(ptr_, A.graph.row_map);
         if (debug) {
           const cudaError_t lastErr = cudaGetLastError();
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (lastErr != cudaSuccess, std::runtime_error, "In "
-             << funcName << ", after calling copyOffsets, CUDA is in "
-             "an erroneous state \"" << cudaGetErrorName(lastErr)
-             << "\".");
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (lastErr != cudaSuccess, std::runtime_error, ": After "
+             "calling copyOffsets, CUDA is in an erroneous state \""
+             << cudaGetErrorName(lastErr) << "\".");
         }
       }
 
@@ -186,9 +185,9 @@ fillComplete()
              << nnz << endl;
           std::cerr << os.str();
         }
-        TEUCHOS_TEST_FOR_EXCEPTION
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (nnz != LO(A.graph.entries.extent(0)), std::logic_error,
-           "ptr_[numRows=" << numRows << "]=" << nnz << " != "
+           ": ptr_[numRows=" << numRows << "]=" << nnz << " != "
            "A.graph.entries.extent(0)=" << A.graph.entries.extent(0)
            << ".");
       }
@@ -214,16 +213,28 @@ fillComplete()
 
   if (debug) {
     cudaError_t lastErr = cudaGetLastError();
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (lastErr != cudaSuccess, std::runtime_error, "On exit of "
-       << funcName << ", before fence, CUDA is in an erroneous "
-       "state \"" << cudaGetErrorName(lastErr) << "\".");
-    Kokkos::fence();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lastErr != cudaSuccess, std::runtime_error, ": On exit, "
+       "before fence, CUDA is in an erroneous state \""
+       << cudaGetErrorName(lastErr) << "\".");
+    try {
+      Kokkos::fence();
+    }
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, ": Kokkos::fence() threw an "
+         "exception: " << e.what());
+    }
+    catch (...) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, ": Kokkos::fence() threw an "
+         "exception not a subclass of std::exception.");
+    }
     lastErr = cudaGetLastError();
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (lastErr != cudaSuccess, std::runtime_error, "On exit of "
-       << funcName << ", after fence, CUDA is in an erroneous "
-       "state \"" << cudaGetErrorName(lastErr) << "\".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lastErr != cudaSuccess, std::runtime_error, ": On exit, after "
+       "fence, CUDA is in an erroneous state \""
+       << cudaGetErrorName(lastErr) << "\".");
   }
   if (verbose) {
     std::ostringstream os;
@@ -311,15 +322,35 @@ apply(Kokkos::View<const Scalar**, array_layout,
       TEUCHOS_ASSERT( Y_col_cuda.get() != nullptr );
       cuSparseMatrixVectorMultiply(*handle_, mode, alpha, *matrix_,
                                    *X_col_cuda, beta, *Y_col_cuda);
+      if (debug) {
+        const cudaError_t lastErr = cudaGetLastError();
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (lastErr != cudaSuccess, std::runtime_error, ": After "
+           "calling cuSparseMatrixVectorMultiply, CUDA is in an "
+           "erroneous state \"" << cudaGetErrorName(lastErr)
+           << "\".");
+      }
     }
   }
 
   if (debug) {
+    try {
+      Kokkos::fence();
+    }
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, ": Kokkos::fence() threw an "
+         "exception: " << e.what());
+    }
+    catch (...) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, ": Kokkos::fence() threw an "
+         "exception not a subclass of std::exception.");
+    }
     const cudaError_t lastErr = cudaGetLastError();
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (lastErr != cudaSuccess, std::runtime_error, "On exit of "
-       "Tpetra::Details::LocalCuSparseCrsMatrixOperatorRealBase::"
-       "apply, CUDA is in an erroneous state \""
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lastErr != cudaSuccess, std::runtime_error, ": After fence, "
+       "on exit, CUDA is in an erroneous state \""
        << cudaGetErrorName(lastErr) << "\".");
   }
   if (verbose) {

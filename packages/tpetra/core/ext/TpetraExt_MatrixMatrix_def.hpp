@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 #ifndef TPETRA_MATRIXMATRIX_DEF_HPP
@@ -57,6 +55,8 @@
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include <algorithm>
+#include <memory>
+#include <sstream>
 #include <type_traits>
 #include "Teuchos_FancyOStream.hpp"
 
@@ -110,6 +110,7 @@ void Multiply(
   using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using std::endl;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
@@ -120,11 +121,22 @@ void Multiply(
   typedef Map<LO,GO,NO>                     map_type;
   typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
 
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> verbose_prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MatrixMatrix::Multiply: ";
+    verbose_prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   //MM is used to time setup, and then multiply.
-  
+
   RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Setup"))));
 #endif
 
@@ -283,6 +295,12 @@ void Multiply(
     // in which case the domain-map of A will be used.
     C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
   }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *verbose_prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 
@@ -300,6 +318,7 @@ void Jacobi(Scalar omega,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
+  using std::endl;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
@@ -308,6 +327,18 @@ void Jacobi(Scalar omega,
   typedef CrsMatrixStruct<SC,LO,GO,NO>      crs_matrix_struct_type;
   typedef Map<LO,GO,NO>                     map_type;
   typedef CrsMatrix<SC,LO,GO,NO>            crs_matrix_type;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> verbose_prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MatrixMatrix::Jacobi: ";
+    verbose_prefix =
+      std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ")+ label + std::string(": ");
@@ -458,6 +489,12 @@ void Jacobi(Scalar omega,
     //   }
     // }
   }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *verbose_prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 
@@ -475,12 +512,25 @@ void Add(
   using Teuchos::Array;
   using Teuchos::RCP;
   using Teuchos::null;
+  using std::endl;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
   typedef Node                              NO;
   typedef CrsMatrix<SC,LO,GO,NO>            crs_matrix_type;
   typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> verbose_prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MatrixMatrix::Add: ";
+    verbose_prefix =
+      std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
   const std::string prefix = "TpetraExt::MatrixMatrix::Add(): ";
 
@@ -532,6 +582,12 @@ void Add(
         B.insertGlobalValues(row,  a_inds(0,a_numEntries), a_vals(0,a_numEntries));
     }
   }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *verbose_prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 template <class Scalar,
@@ -553,7 +609,20 @@ add (const Scalar& alpha,
   using Teuchos::rcpFromRef;
   using Teuchos::rcp;
   using Teuchos::ParameterList;
+  using std::endl;
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>  crs_matrix_type;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MatrixMatrix::add: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+
   if(!params.is_null())
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -578,6 +647,12 @@ add (const Scalar& alpha,
   RCP<crs_matrix_type> C = rcp(new crs_matrix_type(Brcp->getRowMap(), 0));
   //this version of add() always fill completes the result, no matter what is in params on input
   add(alpha, transposeA, A, beta, false, *Brcp, *C, domainMap, rangeMap, params);
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
   return C;
 }
 
@@ -624,6 +699,7 @@ add (const Scalar& alpha,
   using Teuchos::rcp_implicit_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::TimeMonitor;
+  using std::endl;
   using SC = Scalar;
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
@@ -637,17 +713,21 @@ add (const Scalar& alpha,
   using exec_space      = typename crs_graph_type::execution_space;
   using AddKern         = MMdetails::AddKernels<SC,LO,GO,NO>;
   const char* prefix_mmm = "TpetraExt::MatrixMatrix::add: ";
-  constexpr bool debug = false;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("transpose"))));
 #endif
 
-  if (debug) {
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    const int myRank = A.getMap()->getComm()->getRank();
     std::ostringstream os;
-    os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-       << "TpetraExt::MatrixMatrix::add" << std::endl;
-    std::cerr << os.str ();
+    os << "Proc " << myRank << ": Tpetra::MatrixMatrix::add: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -699,11 +779,10 @@ add (const Scalar& alpha,
   // Form the explicit transpose of B if necessary.
   RCP<const crs_matrix_type> Bprime = rcpFromRef(B);
   if (transposeB) {
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
-      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-         << "Form explicit xpose of B" << std::endl;
-      std::cerr << os.str ();
+      os << *prefix << "Form explicit transpose of B" << endl;
+      std::cerr << os.str();
     }
     transposer_type transposer (Bprime);
     Bprime = transposer.createTranspose ();
@@ -784,20 +863,19 @@ add (const Scalar& alpha,
     auto AlocalColmap = Acolmap->getLocalMap();
     auto BlocalColmap = Bcolmap->getLocalMap();
     global_col_inds_array globalColinds;
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
-      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-         << "Call AddKern::convertToGlobalAndAdd(...)" << std::endl;
-      std::cerr << os.str ();
+      os << *prefix << "Call AddKern::convertToGlobalAndAdd" << endl;
+      std::cerr << os.str();
     }
     AddKern::convertToGlobalAndAdd(
       Alocal, alpha, Blocal, beta, AlocalColmap, BlocalColmap,
       vals, rowptrs, globalColinds);
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
-      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-         << "Finished AddKern::convertToGlobalAndAdd(...)" << std::endl;
-      std::cerr << os.str ();
+      os << *prefix << "Finished AddKern::convertToGlobalAndAdd"
+         << endl;
+      std::cerr << os.str();
     }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::null;
@@ -838,11 +916,10 @@ add (const Scalar& alpha,
         MM = Teuchos::null;
         MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("sorted entries full kernel"))));
 #endif
-      if (debug) {
+      if (verbose) {
         std::ostringstream os;
-        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-           << "Call AddKern::addSorted(...)" << std::endl;
-        std::cerr << os.str ();
+        os << *prefix << "Call AddKern::addSorted" << endl;
+        std::cerr << os.str();
       }
       AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, vals, rowptrs, colinds);
     }
@@ -853,11 +930,10 @@ add (const Scalar& alpha,
         MM = Teuchos::null;
         MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mm add unsorted entries full kernel"))));
 #endif
-      if (debug) {
+      if (verbose) {
         std::ostringstream os;
-        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-           << "Call AddKern::addUnsorted(...)" << std::endl;
-        std::cerr << os.str ();
+        os << *prefix << "Call AddKern::addUnsorted" << endl;
+        std::cerr << os.str();
       }
       AddKern::addUnsorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, Aprime->getGlobalNumCols(), vals, rowptrs, colinds);
     }
@@ -873,33 +949,36 @@ add (const Scalar& alpha,
     #endif
       if(!CDomainMap->isSameAs(*Ccolmap))
       {
-        if (debug) {
+        if (verbose) {
           std::ostringstream os;
-          os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-             << "Create Cimport" << std::endl;
-          std::cerr << os.str ();
+          os << *prefix << "Create Cimport" << endl;
+          std::cerr << os.str();
         }
         Cimport = rcp(new import_type(CDomainMap, Ccolmap));
       }
       if(!C.getRowMap()->isSameAs(*CRangeMap))
       {
-        if (debug) {
+        if (verbose) {
           std::ostringstream os;
-          os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-             << "Create Cexport" << std::endl;
-          std::cerr << os.str ();
+          os << *prefix << "Create Cexport" << endl;
+          std::cerr << os.str();
         }
         Cexport = rcp(new export_type(C.getRowMap(), CRangeMap));
       }
 
-      if (debug) {
+      if (verbose) {
         std::ostringstream os;
-        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-           << "Call C->expertStaticFillComplete(...)" << std::endl;
-        std::cerr << os.str ();
+        os << *prefix << "Call C->expertStaticFillComplete" << endl;
+        std::cerr << os.str();
       }
       C.expertStaticFillComplete(CDomainMap, CRangeMap, Cimport, Cexport, params);
     }
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
   }
 }
 
@@ -933,6 +1012,18 @@ void Add(
   //  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node>                       crs_graph_type;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>              crs_matrix_type;
   typedef RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>    transposer_type;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> verbose_prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MatrixMatrix::Add: ";
+    verbose_prefix =
+      std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
   std::string prefix = "TpetraExt::MatrixMatrix::Add(): ";
 
@@ -1062,6 +1153,12 @@ void Add(
       }
     }
   }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *verbose_prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 } //End namespace MatrixMatrix
@@ -1131,12 +1228,24 @@ void mult_AT_B_newmatrix(
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using std::endl;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
   typedef Node                              NO;
   typedef CrsMatrixStruct<SC,LO,GO,NO>      crs_matrix_struct_type;
   typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MMdetails::mult_AT_B_newmatrix: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
@@ -1291,6 +1400,12 @@ void mult_AT_B_newmatrix(
 #ifdef HAVE_TPETRA_MMM_STATISTICS
   printMultiplicationStatistics(Ctemp->getGraph()->getExporter(), label+std::string(" AT_B MMM"));
 #endif
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 /*********************************************************************************************************/
@@ -1311,8 +1426,20 @@ void mult_A_B(
   using Teuchos::ArrayView;
   using Teuchos::OrdinalTraits;
   using Teuchos::null;
-
+  using std::endl;
   typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MMdetails::mult_A_B: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+
   // TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol  = Bview.colMap->getMaxLocalIndex();
@@ -1501,6 +1628,12 @@ void mult_A_B(
           combined_values.view(OrdinalTraits<size_t>::zero(), last_index));
 
   }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 /*********************************************************************************************************/
@@ -1560,6 +1693,7 @@ void mult_A_B_newmatrix(
   using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using std::endl;
 
   // Tpetra typedefs
   typedef LocalOrdinal      LO;
@@ -1576,6 +1710,22 @@ void mult_A_B_newmatrix(
   typedef typename NO::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
   typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    const auto map = C.getMap();
+    const auto comm = map.is_null() ? Teuchos::null : map->getComm();
+    const int myRank = comm.is_null() ? -1 : comm->getRank();
+
+    std::ostringstream os;
+    os << "Proc " << myRank
+       << ": Tpetra::MMdetails::mult_A_B_newmatrix: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
@@ -1604,6 +1754,11 @@ void mult_A_B_newmatrix(
   lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
 
   if (Bview.importMatrix.is_null()) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "B has no remotes" << endl;
+      std::cerr << os.str();
+    }
     // mfh 27 Sep 2016: B has no "remotes," so B and C have the same column Map.
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
@@ -1616,6 +1771,11 @@ void mult_A_B_newmatrix(
       });
   }
   else {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "B has remotes" << endl;
+      std::cerr << os.str();
+    }
     // mfh 27 Sep 2016: B has "remotes," so we need to build the
     // column Map of C, as well as C's Import object (from its domain
     // Map to its column Map).  C's column Map is the union of the
@@ -1625,16 +1785,33 @@ void mult_A_B_newmatrix(
 
     // Choose the right variant of setUnion
     if (!Bimport.is_null() && !Iimport.is_null()) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Cimport = Bimport->setUnion(*Iimport)" << endl;
+        std::cerr << os.str();
+      }
       Cimport = Bimport->setUnion(*Iimport);
     }
     else if (!Bimport.is_null() && Iimport.is_null()) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Cimport = Bimport->setUnion()" << endl;
+        std::cerr << os.str();
+      }
       Cimport = Bimport->setUnion();
     }
     else if (Bimport.is_null() && !Iimport.is_null()) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Cimport = Iimport->setUnion()" << endl;
+        std::cerr << os.str();
+      }
       Cimport = Iimport->setUnion();
     }
     else {
-      throw std::runtime_error("TpetraExt::MMM status of matrix importers is nonsensical");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::runtime_error, "TpetraExt::MMM status of matrix "
+         "importers is nonsensical");
     }
     Ccolmap = Cimport->getTargetMap();
 
@@ -1643,6 +1820,12 @@ void mult_A_B_newmatrix(
     // communication costs of sparse matrix-matrix multiply.
     TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
       std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Compute Bcol2Ccol and Icol2Ccol" << endl;
+      std::cerr << os.str();
+    }
 
     // NOTE: This is not efficient and should be folded into setUnion
     //
@@ -1664,6 +1847,11 @@ void mult_A_B_newmatrix(
   //
   // mfh 27 Sep 2016: We do this because C was originally created
   // without a column Map.  Now we have its column Map.
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Replace column Map" << endl;
+    std::cerr << os.str();
+  }
   C.replaceColMap(Ccolmap);
 
   // mfh 27 Sep 2016: Construct tables that map from local column
@@ -1681,10 +1869,49 @@ void mult_A_B_newmatrix(
   // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
   // (a flag value).
 
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Prepare to construct tables: "
+      "Aview.colMap->getNodeNumElements()="
+       << Aview.colMap->getNodeNumElements() << endl;
+    std::cerr << os.str();
+  }
   // Run through all the hash table lookups once and for all
   lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
   lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
-  Kokkos::fence();
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Call Kokkos::fence" << endl;
+    std::cerr << os.str();
+  }
+  try {
+    Kokkos::fence();
+  }
+  catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::runtime_error, "Tpetra::MMdetails::"
+       "mult_A_B_newmatrix: Right before constructing tables, "
+       "Kokkos::fence threw an exception: " << e.what());
+  }
+  catch (...) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::runtime_error, "Tpetra::MMdetails::"
+       "mult_A_B_newmatrix: Right before constructing tables, "
+       "Kokkos::fence threw an exception not a subclass of "
+       "std::exception.")
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Construct tables: min local index = "
+       << Aview.colMap->getMinLocalIndex()
+       << ", max local index = "
+       << Aview.colMap->getMaxLocalIndex() << endl;
+    std::cerr << os.str();
+  }
+
+  try {
   Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
@@ -1698,11 +1925,73 @@ void mult_A_B_newmatrix(
 
       }
     });
+  }
+  catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::runtime_error, "Tpetra::MMdetails::"
+       "mult_A_B_newmatrix: construct tables kernel threw: "
+       << e.what());
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Finished constructing tables" << endl;
+    std::cerr << os.str();
+  }
+
+  if (verbose) {
+    try {
+      Kokkos::fence();
+    }
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::runtime_error, "Kokkos::fence threw: "
+         << e.what());
+    }
+    catch (...) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::runtime_error, "Kokkos::fence threw an exception "
+         "not a subclass of std::exception.");
+    }
+  }
+
+  if (verbose) {
+    {
+      std::ostringstream os;
+      os << *prefix << "Call barrier" << endl;
+      std::cerr << os.str();
+    }
+    auto map = C.getMap();
+    auto comm = map.is_null() ? Teuchos::null : map->getComm();
+    if (! comm.is_null()) {
+      comm->barrier();
+    }
+    {
+      std::ostringstream os;
+      os << *prefix << "Finished barrier" << endl;
+      std::cerr << os.str();
+    }
+  }
+
+  // NOTE (mfh 18 Mar 2020) Between here and "Done" is the point at
+  // which I see the following error on all processes:
+  //
+  // terminate called after throwing an instance of 'std::runtime_error'
+  //   what():  cudaDeviceSynchronize() error( cudaErrorIllegalAddress): an illegal memory access was encountered .../packages/kokkos/core/src/Cuda/Kokkos_Cuda_Instance.cpp:138
+  //
+  // In CUDA builds, the line of code below invokes the specialization
+  // of mult_A_B_newmatrix_kernel_wrapper in
+  // TpetraExt_MatrixMatrix_Cuda.hpp (which see).
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::mult_A_B_newmatrix_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
 
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 
@@ -1713,16 +2002,35 @@ template<class Scalar,
          class GlobalOrdinal,
          class Node,
          class LocalOrdinalViewType>
-void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                                                               const LocalOrdinalViewType & targetMapToOrigRow,
-                                                                                               const LocalOrdinalViewType & targetMapToImportRow,
-                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,
-                                                                                               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
-                                                                                               const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::
+mult_A_B_newmatrix_kernel_wrapper(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+  const LocalOrdinalViewType & targetMapToOrigRow,
+  const LocalOrdinalViewType & targetMapToImportRow,
+  const LocalOrdinalViewType & Bcol2Ccol,
+  const LocalOrdinalViewType & Icol2Ccol,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
+{
+  using std::endl;
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    const auto map = C.getMap();
+    const auto comm = map.is_null() ? Teuchos::null : map->getComm();
+    const int myRank = comm.is_null() ? -1 : comm->getRank();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Tpetra::MMdetails::KernelWrappers::"
+      "mult_A_B_newmatrix_kernel_wrapper: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
@@ -1925,6 +2233,11 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   MM2 = Teuchos::null;
 #endif
 
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 
@@ -1948,6 +2261,7 @@ void mult_A_B_reuse(
   using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using std::endl;
 
   // Tpetra typedefs
   typedef LocalOrdinal      LO;
@@ -1964,6 +2278,17 @@ void mult_A_B_reuse(
   typedef typename NO::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
   typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MMdetails::mult_A_B_reuse: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
@@ -2024,6 +2349,12 @@ void mult_A_B_reuse(
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::mult_A_B_reuse_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 /*********************************************************************************************************/
@@ -2032,27 +2363,42 @@ template<class Scalar,
          class GlobalOrdinal,
          class Node,
          class LocalOrdinalViewType>
-void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                                                               const LocalOrdinalViewType & targetMapToOrigRow,
-                                                                                               const LocalOrdinalViewType & targetMapToImportRow,
-                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,
-                                                                                               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
-                                                                                               const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
+void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::
+mult_A_B_reuse_kernel_wrapper(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+  const LocalOrdinalViewType & targetMapToOrigRow,
+  const LocalOrdinalViewType & targetMapToImportRow,
+  const LocalOrdinalViewType & Bcol2Ccol,
+  const LocalOrdinalViewType & Icol2Ccol,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& /* params */)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::endl;
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse SerialCore"))));
-  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
+  RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse SerialCore"))));
+  RCP<Teuchos::TimeMonitor> MM2;
 #else
   (void)label;
 #endif
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MMdetails::KernelWrappers::mult_A_B_reuse_kernel_wrapper: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
   // Lots and lots of typedefs
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
@@ -2166,6 +2512,12 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 #endif
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 
@@ -2189,6 +2541,7 @@ void jacobi_A_B_newmatrix(
   using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using std::endl;
   //  typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
@@ -2206,6 +2559,16 @@ void jacobi_A_B_newmatrix(
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
   typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
 
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MMdetails::jacobi_A_B_newmatrix: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
@@ -2331,6 +2694,11 @@ void jacobi_A_B_newmatrix(
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::jacobi_A_B_newmatrix_kernel_wrapper(omega,Dinv,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
 
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 
@@ -2343,30 +2711,45 @@ template<class Scalar,
          class GlobalOrdinal,
          class Node,
          class LocalOrdinalViewType>
-void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
-                                                           const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
-                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                           const LocalOrdinalViewType & targetMapToOrigRow,
-                                                           const LocalOrdinalViewType & targetMapToImportRow,
-                                                           const LocalOrdinalViewType & Bcol2Ccol,
-                                                           const LocalOrdinalViewType & Icol2Ccol,
-                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
-                                                           const std::string& label,
-                                                           const Teuchos::RCP<Teuchos::ParameterList>& params) {
+void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::
+jacobi_A_B_newmatrix_kernel_wrapper(
+  Scalar omega,
+  const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+  const LocalOrdinalViewType & targetMapToOrigRow,
+  const LocalOrdinalViewType & targetMapToImportRow,
+  const LocalOrdinalViewType & Bcol2Ccol,
+  const LocalOrdinalViewType & Icol2Ccol,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::endl;
+
+  const bool verbose =
+    ::Tpetra::Details::Behavior::verbose("CrsMatrix");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Tpetra::MMdetails::KernelWrappers2::"
+      "jacobi_A_B_newmatrix_kernel_wrapper: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   auto MM(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Nemwmatrix SerialCore")));
 #endif
-
-  using Teuchos::Array;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   // Lots and lots of typedefs
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
@@ -2572,6 +2955,12 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
       RCP<const Export<LO,GO,NO> > dummyExport;
       C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
   }
 }
 

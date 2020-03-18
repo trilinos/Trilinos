@@ -494,6 +494,12 @@ namespace Tpetra {
     TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_device () );
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );
+
+    if (this->verbose()) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      this->verboseOutputStream() << os.str();
+    }
   }
 
   namespace { // (anonymous)
