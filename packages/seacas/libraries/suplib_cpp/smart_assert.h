@@ -123,16 +123,16 @@ public:
 
 private:
   // where the assertion occurred
-  string file_;
+  string file_{};
   int    line_;
 
   // expression and values
-  string     expr_;
-  vals_array vals_;
+  string     expr_{};
+  vals_array vals_{};
 
   // level and message
   int    level_;
-  string msg_;
+  string msg_{};
 };
 
 namespace smart_assert {

@@ -147,7 +147,7 @@ namespace Ioss {
 
     // Do anything that might be needed to the database prior to it
     // being closed and destructed.
-    virtual void finalize_database() {}
+    virtual void finalize_database() const {}
 
     // Let's save the name on disk after Filename gets modified, e.g: decoded_filename
     void set_pfsname(const std::string &name) const { pfsName = name; }

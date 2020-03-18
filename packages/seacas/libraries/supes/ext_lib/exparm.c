@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2008-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -164,76 +164,6 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   copy_string(soft, softname, WORDLEN);
 
 #endif /* HPUX */
-/********************************************************************/
-#if defined(paragon)
-
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* 860 has 32 bit words */
-  *knsu = 1;
-
-  uname(&SysInfo);
-
-  sprintf(hardname, "i860 GP ");
-  sprintf(softname, "OSF %.2s.%.1s", SysInfo.version, SysInfo.release);
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-
-#endif
-/********************************************************************/
-#if defined(pumagon) || defined(p6)
-
-  char hardname[MAXCHAR];
-  char softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* 860 has 32 bit words */
-  *knsu = 1;
-
-  sprintf(hardname, "i860 GP ");
-  sprintf(softname, "SUNMOS  ");
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-
-#endif
-/********************************************************************/
-#if defined(p6)
-
-  char hardname[MAXCHAR];
-  char softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* P6 has 32 bit words */
-  *knsu = 1;
-
-  sprintf(hardname, "P6      ");
-  sprintf(softname, "Solari  ");
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-#endif
-/********************************************************************/
-#if defined(cougar)
-
-  char hardname[MAXCHAR];
-  char softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* p6 has 32 bit words */
-  *knsu = 1;
-
-  sprintf(hardname, "PentPro ");
-  sprintf(softname, "COUGAR  ");
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-
-#endif
 /********************************************************************/
 #if defined(__osf__)
 

@@ -291,7 +291,7 @@ namespace SEAMS {
       void move(basic_symbol &s);
 
       /// The semantic value.
-      semantic_type value;
+      semantic_type value{};
 
     private:
 #if YY_CPLUSPLUS < 201103L
@@ -458,7 +458,7 @@ namespace SEAMS {
     /// Debugging level.
     int yydebug_;
     /// Debug stream.
-    std::ostream *yycdebug_;
+    std::ostream *yycdebug_{};
 
     /// \brief Display a symbol type, value and location.
     /// \param yyo    The output stream.
@@ -608,7 +608,7 @@ namespace SEAMS {
     typedef stack<stack_symbol_type> stack_type;
 
     /// The stack.
-    stack_type yystack_;
+    stack_type yystack_{};
 
     /// Push a new state on the stack.
     /// \param m    a debug message to display

@@ -51,7 +51,7 @@ using entity_id = int64_t;
 namespace {
   nc_type get_type(int exoid, unsigned int type)
   {
-    if ((ex_int64_status(exoid) & type) != 0u) {
+    if ((ex_int64_status(exoid) & type) != 0U) {
       return NC_INT64;
     }
 

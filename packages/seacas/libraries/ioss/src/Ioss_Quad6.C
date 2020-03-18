@@ -98,7 +98,7 @@ int Ioss::Quad6::number_nodes_edge(int edge) const
   if (edge == 0) {
     return -1;
   }
-  else if (edge == 1 || edge == 3) {
+  if (edge == 1 || edge == 3) {
     return 3;
   }
   return 2;

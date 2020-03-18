@@ -111,10 +111,10 @@ namespace Ioss {
     bool is_from_decomp() const { return m_fromDecomp; }
     bool is_active() const { return m_isActive && has_faces(); }
 
-    std::string m_connectionName; // Name of the connection; either generated or from file
-    std::string m_donorName; // Name of the zone (m_donorZone) to which this zone is connected via
-                             // this connection.
-    Ioss::IJK_t m_transform; // The transform.  In the same form as defined by CGNS
+    std::string m_connectionName{}; // Name of the connection; either generated or from file
+    std::string m_donorName{}; // Name of the zone (m_donorZone) to which this zone is connected via
+                               // this connection.
+    Ioss::IJK_t m_transform{}; // The transform.  In the same form as defined by CGNS
 
     // The following are all subsetted down to the portion that is actually on this zone
     // This can be different than m_ownerRange and m_donorRange in a parallel run if the

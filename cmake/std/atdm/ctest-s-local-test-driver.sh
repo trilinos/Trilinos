@@ -301,7 +301,7 @@ for build_name_body in ${ATDM_ARRAY_OF_BUILDS[@]} ; do
     &> smart-jenkins-driver.out
 
   echo
-  grep "failed out of" smart-jenkins-driver.out
+  grep "failed.*out.*of" smart-jenkins-driver.out
 
   cd ${BASEDIR}
 

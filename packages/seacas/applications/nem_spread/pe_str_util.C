@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -88,7 +88,11 @@ int token_compare(char *token, const char *key)
 /*****************************************************************************/
 void strip_string(char inp_str[], const char *tokens)
 {
-  int i, j, itok, ntokes, bval;
+  int i;
+  int j;
+  int itok;
+  int ntokes;
+  int bval;
 
   i      = 0;
   ntokes = strlen(tokens);
@@ -139,7 +143,12 @@ void strip_string(char inp_str[], const char *tokens)
 /*****************************************************************************/
 void clean_string(char inp_str[], const char *tokens)
 {
-  int i, j, itok, ntokes, bval, inplen;
+  int i;
+  int j;
+  int itok;
+  int ntokes;
+  int bval;
+  int inplen;
 
   ntokes = strlen(tokens);
   inplen = strlen(inp_str);
@@ -176,8 +185,6 @@ void clean_string(char inp_str[], const char *tokens)
 
   } /* End "while(inp_str[i] != '\0')" */
 
-  return;
-
 } /*---------------- End clean_string() -----------------*/
 
 /*****************************************************************************/
@@ -185,7 +192,8 @@ void clean_string(char inp_str[], const char *tokens)
 /*****************************************************************************/
 void string_to_lower(char in_string[], const char cval)
 {
-  int len, cnt;
+  int len;
+  int cnt;
 
   len = strlen(in_string);
   for (cnt = 0; cnt < len; cnt++) {
@@ -197,6 +205,4 @@ void string_to_lower(char in_string[], const char cval)
       in_string[cnt] = tolower(in_string[cnt]);
     }
   }
-
-  return;
 }

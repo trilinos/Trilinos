@@ -354,8 +354,6 @@ void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_e
       exit(0);
     }
   }
-
-  return;
 }
 
 /***********************************************************************

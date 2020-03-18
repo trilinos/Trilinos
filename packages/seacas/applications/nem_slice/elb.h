@@ -42,14 +42,14 @@
 #include <string>
 #include <vector>
 
-#define ELB_VERSION "4.18"
+#define ELB_VERSION "4.19"
 #define UTIL_NAME "nem_slice"
 #define ELB_FALSE 0
 #define ELB_TRUE 1
 
 /* Macro for maximum value */
 #ifndef MAX
-#define MAX(x, y) ((x > y) ? x : y)
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
 /*
@@ -83,34 +83,31 @@ extern double get_time();
  * load balance is to be constructed. */
 struct Machine_Description
 {
-  int type;
-  int num_dims;
+  int type{-1};
+  int num_dims{-1};
   int dim[3]{};
-  int num_boxes;     /* added for cluster type machines */
-  int procs_per_box; /* added for cluster type machines, if there is only
+  int num_boxes{-1};     /* added for cluster type machines */
+  int procs_per_box{-1}; /* added for cluster type machines, if there is only
                         one box, then this is the same as num_procs */
-  int num_procs;
+  int num_procs{-1};
 
-  Machine_Description() : type(-1), num_dims(-1), num_boxes(-1), procs_per_box(-1), num_procs(-1)
-  {
-    dim[0] = dim[1] = dim[2] = -1;
-  }
+  Machine_Description() { dim[0] = dim[1] = dim[2] = -1; }
 };
 
 /* Structure used for the description of what type of load balance is
  * to be performed. */
 template <typename INT> struct LB_Description
 {
-  int         type;
-  int         ignore_z;
-  int         refine;
-  int         num_sects;
-  int         cnctd_dom;
-  int         outfile;
-  std::string file;
+  int         type{-1};
+  int         ignore_z{0};
+  int         refine{-1};
+  int         num_sects{-1};
+  int         cnctd_dom{-1};
+  int         outfile{-1};
+  std::string file{};
 
   /* Calculated quantities */
-  int *vertex2proc;
+  int *vertex2proc{nullptr};
 
   /* Nodal */
   std::vector<std::vector<INT>> int_nodes;
@@ -119,7 +116,7 @@ template <typename INT> struct LB_Description
   std::vector<std::vector<INT>> ext_procs;
 
   /* Elemental */
-  std::vector<std::vector<std::vector<INT>>> born_procs;
+  std::vector<std::vector<std::vector<INT>>> born_procs{};
   std::vector<std::vector<INT>>              int_elems;
   std::vector<std::vector<INT>>              bor_elems;
   std::vector<std::vector<INT>>              e_cmap_elems;
@@ -127,134 +124,120 @@ template <typename INT> struct LB_Description
   std::vector<std::vector<INT>>              e_cmap_procs;
   std::vector<std::vector<INT>>              e_cmap_neigh;
 
-  LB_Description()
-      : type(-1), ignore_z(0), refine(-1), num_sects(-1), cnctd_dom(-1), outfile(-1),
-        vertex2proc(nullptr)
-  {
-  }
+  LB_Description() {}
 };
 
 /* Structure for the problem description. */
 struct Problem_Description
 {
-  int    type;
-  int    read_coords;
-  int    coarse_flag;
-  int    alloc_graph;
-  size_t num_vertices;
-  int    vis_out;
-  int    skip_checks;     /* put in to skip some error checks for some meshes  */
-  int    face_adj;        /* true if using face definition of adjacencies      */
-  int    partial_adj;     /* true if allowing partial (3/4) of nodes to */
-                          /* determine adjancencies */
-  int   global_mech;      /* true if looking for mechanisms in original mesh   */
-  int   local_mech;       /* true if looking for mechanisms in subdivided mesh */
-  int   find_cnt_domains; /* true if finding number of connected domains in a graph */
-  int   mech_add_procs;   /* adds processors in cases of mechanisms       */
-  int   dsd_add_procs;    /* adds processors in cases of disconnected subdomains */
-  int   no_sph;
-  int   fix_columns; /* detect, fix vertical column partitioning */
-  char *groups;
-  int * group_no;
-  int   num_groups;
-  int   int64db;  /* integer types for output mesh database */
-  int   int64api; /* integer types for exodus api calls */
+  int    type{-1};
+  int    read_coords{-1};
+  int    coarse_flag{-1};
+  int    alloc_graph{-1};
+  size_t num_vertices{0};
+  int    vis_out{-1};
+  int    skip_checks{-1};     /* put in to skip some error checks for some meshes  */
+  int    face_adj{-1};        /* true if using face definition of adjacencies      */
+  int    partial_adj{0};      /* true if allowing partial (3/4) of nodes to */
+                              /* determine adjancencies */
+  int   global_mech{-1};      /* true if looking for mechanisms in original mesh   */
+  int   local_mech{-1};       /* true if looking for mechanisms in subdivided mesh */
+  int   find_cnt_domains{-1}; /* true if finding number of connected domains in a graph */
+  int   mech_add_procs{-1};   /* adds processors in cases of mechanisms       */
+  int   dsd_add_procs{-1};    /* adds processors in cases of disconnected subdomains */
+  int   no_sph{-1};
+  int   fix_columns{0}; /* detect, fix vertical column partitioning */
+  char *groups{nullptr};
+  int * group_no{nullptr};
+  int   num_groups{-1};
+  int   int64db{0};  /* integer types for output mesh database */
+  int   int64api{0}; /* integer types for exodus api calls */
 
-  Problem_Description()
-      : type(-1), read_coords(-1), coarse_flag(-1), alloc_graph(-1), num_vertices(0), vis_out(-1),
-        skip_checks(-1), face_adj(-1), partial_adj(0), global_mech(-1), local_mech(-1),
-        find_cnt_domains(-1), mech_add_procs(-1), dsd_add_procs(-1), no_sph(-1), fix_columns(0),
-        groups(nullptr), group_no(nullptr), num_groups(-1), int64db(0), int64api(0)
-  {
-  }
+  Problem_Description() {}
 };
 
 /* Structure for parameters needed for the Eigensolver in Chaco */
 struct Solver_Description
 {
-  double tolerance;
-  int    rqi_flag;
-  int    vmax;
+  double tolerance{-1.0};
+  int    rqi_flag{-1};
+  int    vmax{-1};
 
-  Solver_Description() : tolerance(-1.0), rqi_flag(-1), vmax(-1) {}
+  Solver_Description() {}
 };
 
 /* Structure used to store information about the weighting scheme, if
  * any, that is to be used. */
 template <typename INT> struct Weight_Description
 {
-  int type;    /* See weight type below for possible types */
-  int ow_read; /* 1 if element block settings overwrite exodus file read */
+  int type{-1};   /* See weight type below for possible types */
+  int ow_read{0}; /* 1 if element block settings overwrite exodus file read */
 
-  std::string exo_filename;
-  std::string exo_varname;
+  std::string exo_filename{};
+  std::string exo_varname{};
 
-  int exo_tindx;
-  int exo_vindx;
+  int exo_tindx{-1};
+  int exo_vindx{-1};
 
   /* Variable parameters */
-  int nvals;
+  int nvals{0};
 
   /* vectors to hold element block weights */
-  std::vector<INT> elemblk;     /* Id of element block */
-  std::vector<INT> elemblk_wgt; /* Weight of that element block */
+  std::vector<INT> elemblk{};     /* Id of element block */
+  std::vector<INT> elemblk_wgt{}; /* Weight of that element block */
 
   /* vector to indicate if weight value has already been overwritten */
-  std::vector<INT> ow;
+  std::vector<INT> ow{};
 
-  std::vector<int>   vertices;
-  std::vector<float> edges;
+  std::vector<int>   vertices{};
+  std::vector<float> edges{};
 
-  Weight_Description<INT>() : type(-1), ow_read(0), exo_tindx(-1), exo_vindx(-1), nvals(0) {}
+  Weight_Description<INT>() {}
 };
 
 /* Structure used to store information about the FEM mesh */
 template <typename INT> struct Mesh_Description
 {
-  size_t              num_nodes;
-  size_t              num_elems;
-  size_t              num_dims;
-  size_t              num_el_blks;
-  std::vector<INT>    eb_cnts;
-  std::vector<INT>    eb_ids;
-  std::vector<INT>    eb_npe;
-  std::vector<E_Type> eb_type;
-  size_t              num_node_sets;
-  size_t              num_side_sets;
-  size_t              max_np_elem;
-  size_t              ns_list_len;
+  size_t              num_nodes{0};
+  size_t              num_elems{0};
+  size_t              num_dims{0};
+  size_t              num_el_blks{0};
+  std::vector<INT>    eb_cnts{};
+  std::vector<INT>    eb_ids{};
+  std::vector<INT>    eb_npe{};
+  std::vector<E_Type> eb_type{};
+  size_t              num_node_sets{0};
+  size_t              num_side_sets{0};
+  size_t              max_np_elem{0};
+  size_t              ns_list_len{0};
   char                title[MAX_LINE_LENGTH + 1]{};
-  float *             coords;
-  E_Type *            elem_type;
+  float *             coords{nullptr};
+  E_Type *            elem_type{nullptr};
   INT **              connect;
 
-  Mesh_Description()
-      : num_nodes(0), num_elems(0), num_dims(0), num_el_blks(0), num_node_sets(0), num_side_sets(0),
-        max_np_elem(0), ns_list_len(0), coords(nullptr), elem_type(nullptr), connect(nullptr)
-  {
-  }
+  Mesh_Description() : connect(nullptr) {}
 };
 
 /* Structure for handling meshes with spheres */
 struct Sphere_Info
 {
-  size_t num;
-  int *  adjust;
-  int *  begin;
-  int *  end;
+  size_t num{0};
+  int *  adjust{nullptr};
+  int *  begin{nullptr};
+  int *  end{nullptr};
 
-  Sphere_Info() : num(0), adjust(nullptr), begin(nullptr), end(nullptr) {}
+  Sphere_Info() {}
 };
 
 /* Structure used to store various information about the graph */
 template <typename INT> struct Graph_Description
 {
-  size_t                        nadj;
-  int                           max_nsur;
-  std::vector<INT>              adj;
-  std::vector<INT>              start;
+  size_t                        nadj{0};
+  int                           max_nsur{0};
+  std::vector<INT>              adj{};
+  std::vector<INT>              start{};
   std::vector<std::vector<INT>> sur_elem;
-  Graph_Description<INT>() : nadj(0), max_nsur(0) {}
+  Graph_Description<INT>() {}
 };
 
 /* Various constants */
