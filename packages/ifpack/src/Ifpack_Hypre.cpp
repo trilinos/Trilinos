@@ -48,7 +48,14 @@
 #include "Epetra_Import.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Ifpack_HypreParameterMap.h"
+//#include "Ifpack_HypreParameterMap.h"
+#include "HYPRE_IJ_mv.h"
+#include "HYPRE_parcsr_ls.h"
+#include "krylov.h"
+#include "_hypre_parcsr_mv.h"
+#include "_hypre_IJ_mv.h"
+#include "HYPRE_parcsr_mv.h"
+#include "HYPRE.h"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -121,16 +128,16 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   IFPACK_CHK_ERRV(HYPRE_IJVectorInitialize(XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorAssemble(XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_));
-  XVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_));
-  XLocal_ = hypre_ParVectorLocalVector(XVec_);
+  XVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_)),false);
+  //  XLocal_ = hypre_ParVectorLocalVector(XVec_);
   // Y in AX = Y
   IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERRV(HYPRE_IJVectorInitialize(YHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorAssemble(YHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_));
-  YVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_));
-  YLocal_ = hypre_ParVectorLocalVector(YVec_);
+  YVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_)),false);
+  //  YLocal_ = hypre_ParVectorLocalVector(YVec_);
 } //Constructor
 
 //==============================================================================
@@ -534,12 +541,16 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
     IFPACK_CHK_ERR(-1);
   }
   Time_.ResetStartTime();
+  hypre_Vector *XLocal_ = hypre_ParVectorLocalVector(XVec_);
+  hypre_Vector *YLocal_ = hypre_ParVectorLocalVector(YVec_);
+
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) IFPACK_CHK_ERR(-1);  // X and Y must have same number of vectors
   if(X.Pointers() == Y.Pointers() || (NumVectors == 1 && X[0] == Y[0])){
     SameVectors = true;
   }
+
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
     // FIXME amk Nov 23, 2015: This will not work for funky data layouts
@@ -590,6 +601,8 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
   if(IsInitialized() == false){
     IFPACK_CHK_ERR(-1);
   }
+  hypre_Vector *XLocal_ = hypre_ParVectorLocalVector(XVec_);
+  hypre_Vector *YLocal_ = hypre_ParVectorLocalVector(YVec_);
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) IFPACK_CHK_ERR(-1);  // X and Y must have same number of vectors
@@ -870,5 +883,46 @@ int Ifpack_Hypre::CopyEpetraToHypre(){
     HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat");
   return 0;
 } //CopyEpetraToHypre()
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_BoomerAMGCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
+    { return HYPRE_BoomerAMGCreate(solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParaSailsCreate(comm, solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_EuclidCreate(comm, solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_AMSCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
+    { return HYPRE_AMSCreate(solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_ParCSRHybridCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRHybridCreate(solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRPCGCreate(comm, solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRGMRESCreate(comm, solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRFlexGMRESCreate(comm, solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRLGMRESCreate(comm, solver);}
+
+//==============================================================================
+int Ifpack_Hypre::Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRBiCGSTABCreate(comm, solver);}
+
 
 #endif // HAVE_HYPRE && HAVE_MPI

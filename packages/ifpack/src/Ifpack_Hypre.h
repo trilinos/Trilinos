@@ -46,13 +46,6 @@
 #include "Ifpack_ConfigDefs.h"
 #ifdef HAVE_HYPRE
 
-#include "HYPRE_IJ_mv.h"
-#include "HYPRE_parcsr_ls.h"
-#include "krylov.h"
-#include "_hypre_parcsr_mv.h"
-#include "_hypre_IJ_mv.h"
-#include "HYPRE_parcsr_mv.h"
-#include "HYPRE.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Condest.h"
 #include "Ifpack_ScalingType.h"
@@ -71,6 +64,27 @@
 #include "Epetra_MpiComm.h"
 
 #include <map>
+
+// Hypre forward declarations (to avoid downstream header pollution)
+
+struct hypre_IJMatrix_struct;
+typedef struct hypre_IJMatrix_struct *HYPRE_IJMatrix;
+struct hypre_IJVector_struct;
+typedef struct hypre_IJVector_struct *HYPRE_IJVector;
+struct hypre_ParCSRMatrix_struct;
+typedef struct hypre_ParCSRMatrix_struct* HYPRE_ParCSRMatrix;
+struct hypre_ParVector_struct;
+typedef struct hypre_ParVector_struct * HYPRE_ParVector;
+struct hypre_Solver_struct;
+typedef struct hypre_Solver_struct *HYPRE_Solver;
+struct hypre_ParVector_struct;
+typedef struct hypre_ParVector_struct hypre_ParVector;
+//struct hypre_Vector;
+
+// Will only work if Hypre is built with HYPRE_BIGINT=OFF
+typedef int HYPRE_Int;
+
+typedef HYPRE_Int (*HYPRE_PtrToParSolverFcn)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
 
 #ifndef HYPRE_ENUMS
 #define HYPRE_ENUMS
@@ -623,12 +637,14 @@ public:
   const Epetra_RowMatrix& Matrix() const{ return(*A_);}
 
   //! Returns the Hypre matrix that was created upon construction.
+#if 0
   const HYPRE_IJMatrix& HypreMatrix()
   {
     if(IsInitialized() == false)
       Initialize();
     return(HypreA_);
   }
+#endif
 
   //! Prints on stream basic information about \c this object.
   virtual std::ostream& Print(std::ostream& os) const;
@@ -723,44 +739,34 @@ private:
   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
 
   //! Create a BoomerAMG solver.
-  int Hypre_BoomerAMGCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
-    { return HYPRE_BoomerAMGCreate(solver);}
+  int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a ParaSails solver.
-  int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParaSailsCreate(comm, solver);}
+  int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a Euclid solver.
-  int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_EuclidCreate(comm, solver);}
+  int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create an AMS solver.
-  int Hypre_AMSCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
-    { return HYPRE_AMSCreate(solver);}
+  int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a Hybrid solver.
-  int Hypre_ParCSRHybridCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRHybridCreate(solver);}
+  int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a PCG solver.
-  int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRPCGCreate(comm, solver);}
+  int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a GMRES solver.
-  int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRGMRESCreate(comm, solver);}
+  int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a FlexGMRES solver.
-  int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRFlexGMRESCreate(comm, solver);}
+  int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a LGMRES solver.
-  int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRLGMRESCreate(comm, solver);}
+  int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a BiCGSTAB solver.
-  int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRBiCGSTABCreate(comm, solver);}
+  int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   // @}
   // @{ Internal data
@@ -815,10 +821,8 @@ private:
   mutable HYPRE_IJVector YHypre_;
   mutable HYPRE_ParVector ParX_;
   mutable HYPRE_ParVector ParY_;
-  mutable hypre_ParVector *XVec_;
-  mutable hypre_ParVector *YVec_;
-  mutable hypre_Vector *XLocal_;
-  mutable hypre_Vector *YLocal_;
+  mutable Teuchos::RCP<hypre_ParVector> XVec_;
+  mutable Teuchos::RCP<hypre_ParVector> YVec_;
 
   Teuchos::RCP<Epetra_MultiVector> Coords_;
   mutable HYPRE_IJVector xHypre_;
