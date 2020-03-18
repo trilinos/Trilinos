@@ -413,7 +413,8 @@ void AlgPuLP<Adapter>::partition(
 
   pulp_graph_t g = {num_verts, num_edges, 
                     out_edges, out_offsets,
-                    vertex_weights, edge_weights, vertex_weights_sum};
+                    vertex_weights.get(), edge_weights.get(), 
+                    vertex_weights_sum};
 
 #else
   // Create XtraPuLP's graph structure
