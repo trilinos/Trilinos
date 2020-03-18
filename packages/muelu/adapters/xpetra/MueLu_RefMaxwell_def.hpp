@@ -545,8 +545,8 @@ namespace MueLu {
       buildProlongator();
     }
 
-    bool doRebalancing = false;
 #ifdef HAVE_MPI
+    bool doRebalancing = false;
     doRebalancing = parameterList_.get<bool>("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
     int rebalanceStriding = parameterList_.get<int>("refmaxwell: subsolves striding", -1);
     int numProcsAH, numProcsA22;
