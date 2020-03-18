@@ -48,7 +48,6 @@
 #include "Epetra_Import.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-//#include "Ifpack_HypreParameterMap.h"
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_ls.h"
 #include "krylov.h"
@@ -60,6 +59,260 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
+
+// The Python script that generates the ParameterMap needs to be after these typedefs
+typedef int (*int_func)(HYPRE_Solver, int);
+typedef int (*double_func)(HYPRE_Solver, double);
+typedef int (*double_int_func)(HYPRE_Solver, double, int);
+typedef int (*int_int_func)(HYPRE_Solver, int, int);
+typedef int (*int_star_func)(HYPRE_Solver, int*);
+typedef int (*int_star_star_func)(HYPRE_Solver, int**);
+typedef int (*double_star_func)(HYPRE_Solver, double*);
+typedef int (*int_int_double_double_func)(HYPRE_Solver, int, int, double, double);
+typedef int (*int_int_int_double_int_int_func)(HYPRE_Solver, int, int, int, double, int, int);
+
+//! This class is used to help with passing parameters in the SetParameter() function. Use this class to call Hypre's internal parameters.
+class FunctionParameter{
+  public:
+    //! Single int constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_func funct, int param1) :
+      chooser_(chooser),
+      option_(0),
+      int_func_(funct),
+      int_param1_(param1) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int param1) :
+      chooser_(chooser),
+      option_(0),
+      int_func_(hypreMapIntFunc_.at(funct_name)),
+      int_param1_(param1) {}
+
+    //! Single double constructor.
+    FunctionParameter(Hypre_Chooser chooser, double_func funct, double param1):
+      chooser_(chooser),
+      option_(1),
+      double_func_(funct),
+      double_param1_(param1) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1):
+      chooser_(chooser),
+      option_(1),
+      double_func_(hypreMapDoubleFunc_.at(funct_name)),
+      double_param1_(param1) {}
+
+    //! Single double, single int constructor.
+    FunctionParameter(Hypre_Chooser chooser, double_int_func funct, double param1, int param2):
+      chooser_(chooser),
+      option_(2),
+      double_int_func_(funct),
+      int_param1_(param2),
+      double_param1_(param1) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1, int param2):
+      chooser_(chooser),
+      option_(2),
+      double_int_func_(hypreMapDoubleIntFunc_.at(funct_name)),
+      int_param1_(param2),
+      double_param1_(param1) {}
+
+    //! Two ints constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_int_func funct, int param1, int param2):
+      chooser_(chooser),
+      option_(3),
+      int_int_func_(funct),
+      int_param1_(param1),
+      int_param2_(param2) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int param1, int param2):
+      chooser_(chooser),
+      option_(3),
+      int_int_func_(hypreMapIntIntFunc_.at(funct_name)),
+      int_param1_(param1),
+      int_param2_(param2) {}
+
+    //! Int pointer constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_star_func funct, int *param1):
+      chooser_(chooser),
+      option_(4),
+      int_star_func_(funct),
+      int_star_param_(param1) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int *param1):
+      chooser_(chooser),
+      option_(4),
+      int_star_func_(hypreMapIntStarFunc_.at(funct_name)),
+      int_star_param_(param1) {}
+
+    //! Double pointer constructor.
+    FunctionParameter(Hypre_Chooser chooser, double_star_func funct, double* param1):
+      chooser_(chooser),
+      option_(5),
+      double_star_func_(funct),
+      double_star_param_(param1) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double* param1):
+      chooser_(chooser),
+      option_(5),
+      double_star_func_(hypreMapDoubleStarFunc_.at(funct_name)),
+      double_star_param_(param1) {}
+
+    //! Two ints, two doubles constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_int_double_double_func funct, int param1, int param2, double param3, double param4):
+      chooser_(chooser),
+      option_(6),
+      int_int_double_double_func_(funct),
+      int_param1_(param1),
+      int_param2_(param2),
+      double_param1_(param3),
+      double_param2_(param4) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int param1, int param2, double param3, double param4):
+      chooser_(chooser),
+      option_(6),
+      int_int_double_double_func_(hypreMapIntIntDoubleDoubleFunc_.at(funct_name)),
+      int_param1_(param1),
+      int_param2_(param2),
+      double_param1_(param3),
+      double_param2_(param4) {}
+
+    //! Integer pointer to list of integer pointers
+    FunctionParameter(Hypre_Chooser chooser, int_star_star_func funct, int ** param1):
+      chooser_(chooser),
+      option_(7),
+      int_star_star_func_(funct),
+      int_star_star_param_(param1) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int** param1):
+      chooser_(chooser),
+      option_(7),
+      int_star_star_func_(hypreMapIntStarStarFunc_.at(funct_name)),
+      int_star_star_param_(param1) {}
+
+    //! Five ints, one double constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_int_int_double_int_int_func funct, int param1, int param2, int param3, double param4, int param5, int param6):
+      chooser_(chooser),
+      option_(8),
+      int_int_int_double_int_int_func_(funct),
+      int_param1_(param1),
+      int_param2_(param2),
+      int_param3_(param3),
+      int_param4_(param5),
+      int_param5_(param6),
+      double_param1_(param4) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int param1, int param2, int param3, double param4, int param5, int param6):
+      chooser_(chooser),
+      option_(8),
+      int_int_int_double_int_int_func_(hypreMapIntIntIntDoubleIntIntFunc_.at(funct_name)),
+      int_param1_(param1),
+      int_param2_(param2),
+      int_param3_(param3),
+      int_param4_(param5),
+      int_param5_(param6),
+      double_param1_(param4) {}
+
+  //! Only method of this class. Calls the function pointer with the passed in HYPRE_Solver
+  int CallFunction(HYPRE_Solver solver, HYPRE_Solver precond) {
+    if(chooser_ == Solver){
+      if(option_ == 0){
+        return int_func_(solver, int_param1_);
+      } else if(option_ == 1){
+        return double_func_(solver, double_param1_);
+    } else if(option_ == 2){
+        return double_int_func_(solver, double_param1_, int_param1_);
+      } else if (option_ == 3){
+        return int_int_func_(solver, int_param1_, int_param2_);
+      } else if (option_ == 4){
+        return int_star_func_(solver, int_star_param_);
+      } else if (option_ == 5){
+        return double_star_func_(solver, double_star_param_);
+      } else if (option_ == 6) {
+        return int_int_double_double_func_(solver, int_param1_, int_param2_, double_param1_, double_param2_);
+      } else if (option_ == 7) {
+        return int_star_star_func_(solver, int_star_star_param_);
+      } else {
+        return int_int_int_double_int_int_func_(solver, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
+      }
+    } else {
+      if(option_ == 0){
+        return int_func_(precond, int_param1_);
+      } else if(option_ == 1){
+        return double_func_(precond, double_param1_);
+      } else if(option_ == 2){
+        return double_int_func_(precond, double_param1_, int_param1_);
+      } else if(option_ == 3) {
+        return int_int_func_(precond, int_param1_, int_param2_);
+    } else if(option_ == 4) {
+        return int_star_func_(precond, int_star_param_);
+      } else if(option_ == 5) {
+        return double_star_func_(precond, double_star_param_);
+      } else if (option_ == 6) {
+        return int_int_double_double_func_(precond, int_param1_, int_param2_, double_param1_, double_param2_);
+      } else if (option_ == 7) {
+        return int_star_star_func_(precond, int_star_star_param_);
+      } else {
+        return int_int_int_double_int_int_func_(precond, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
+      }
+    }
+  }
+  
+   static bool isFuncIntInt(std::string funct_name) {
+    return (hypreMapIntIntFunc_.find(funct_name) != hypreMapIntIntFunc_.end());
+  }
+  
+  static bool isFuncIntIntDoubleDouble(std::string funct_name) {
+    return (hypreMapIntIntDoubleDoubleFunc_.find(funct_name) != hypreMapIntIntDoubleDoubleFunc_.end());
+  }
+  
+  static bool isFuncIntIntIntDoubleIntInt(std::string funct_name) {
+    return (hypreMapIntIntIntDoubleIntIntFunc_.find(funct_name) != hypreMapIntIntIntDoubleIntIntFunc_.end());
+  }
+  
+  static bool isFuncIntStarStar(std::string funct_name) {
+    return (hypreMapIntStarStarFunc_.find(funct_name) != hypreMapIntStarStarFunc_.end());
+  }
+  
+  private:
+    Hypre_Chooser chooser_;
+    int option_;
+    int_func int_func_;
+    double_func double_func_;
+    double_int_func double_int_func_;
+    int_int_func int_int_func_;
+    int_star_func int_star_func_;
+    double_star_func double_star_func_;
+    int_int_double_double_func int_int_double_double_func_;
+    int_int_int_double_int_int_func int_int_int_double_int_int_func_;
+    int_star_star_func int_star_star_func_;
+    int int_param1_;
+    int int_param2_;
+    int int_param3_;
+    int int_param4_;
+    int int_param5_;
+    double double_param1_;
+    double double_param2_;
+    int *int_star_param_;
+    int **int_star_star_param_;
+    double *double_star_param_;
+
+  static const std::map<std::string, int_func> hypreMapIntFunc_;
+  static const std::map<std::string, double_func> hypreMapDoubleFunc_;
+  static const std::map<std::string, double_int_func> hypreMapDoubleIntFunc_;
+  static const std::map<std::string, int_int_func> hypreMapIntIntFunc_;
+  static const std::map<std::string, int_star_func> hypreMapIntStarFunc_;
+  static const std::map<std::string, double_star_func> hypreMapDoubleStarFunc_;
+  static const std::map<std::string, int_int_double_double_func> hypreMapIntIntDoubleDoubleFunc_;
+  static const std::map<std::string, int_int_int_double_int_int_func> hypreMapIntIntIntDoubleIntIntFunc_;
+  static const std::map<std::string, int_star_star_func> hypreMapIntStarStarFunc_;
+
+};
+
+// This really, really needs to be here and not up above
+#include "Ifpack_HypreParameterMap.h"
+
+
+
+
 
 Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
