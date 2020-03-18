@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -39,25 +39,16 @@
 #include <cstdlib>        // for exit
 #include <vector>         // for vector
 
-template <typename INT>
-Side_Set<INT>::Side_Set()
-    : Exo_Entity(), num_dist_factors(0), elmts(nullptr), sides(nullptr), sideIndex(nullptr),
-      dfIndex(nullptr), dist_factors(nullptr)
-{
-}
+template <typename INT> Side_Set<INT>::Side_Set() : Exo_Entity() {}
 
-template <typename INT>
-Side_Set<INT>::Side_Set(int file_id, size_t id)
-    : Exo_Entity(file_id, id), num_dist_factors(0), elmts(nullptr), sides(nullptr),
-      sideIndex(nullptr), dfIndex(nullptr), dist_factors(nullptr)
+template <typename INT> Side_Set<INT>::Side_Set(int file_id, size_t id) : Exo_Entity(file_id, id)
 {
   SMART_ASSERT((int)id != EX_INVALID_ID);
 }
 
 template <typename INT>
 Side_Set<INT>::Side_Set(int file_id, size_t id, size_t ns, size_t ndf)
-    : Exo_Entity(file_id, id, ns), num_dist_factors(ndf), elmts(nullptr), sides(nullptr),
-      sideIndex(nullptr), dfIndex(nullptr), dist_factors(nullptr)
+    : Exo_Entity(file_id, id, ns), num_dist_factors(ndf)
 {
   SMART_ASSERT(id > 0);
 }

@@ -1166,6 +1166,97 @@ protected:
 
 
 // ----------------------------------------------------------------------------
+/** \brief RK Explicit Ralston
+ *
+ *  The tableau (order=2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc}   0   &   0   &     \\
+ *                       2/3  &  2/3  &  0  \\ \hline
+ *                            &  1/4  & 3/4  \end{array}
+ *  \f]
+ */
+template<class Scalar>
+class StepperERK_Ralston :
+  virtual public StepperExplicitRK<Scalar>
+{
+public:
+  /** \brief Default constructor.
+   *
+   * Requires subsequent setModel() and initialize()
+   * calls before calling takestep().
+  */
+  StepperERK_Ralston()
+  {
+    this->setStepperType("RK Explicit Ralston");
+    this->setupTableau();
+    this->setupDefault();
+  }
+
+  StepperERK_Ralston(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded)
+  {
+    this->setStepperType("RK Explicit Ralston");
+    this->setupTableau();
+    this->setup(appModel, obs, useFSAL, ICConsistency,
+                ICConsistencyCheck, useEmbedded);
+  }
+
+  std::string getDescription() const
+  {
+    std::ostringstream Description;
+    Description << this->getStepperType() << "\n"
+                << "This Stepper is known as 'RK Explicit Ralston' or 'RK2'.\n"
+                << "c = [   0   2/3 ]'\n"
+                << "A = [   0       ]\n"
+                << "    [  2/3   0  ]\n"
+                << "b = [  1/4  3/4 ]'";
+    return Description.str();
+  }
+
+protected:
+
+  void setupTableau()
+  {
+   typedef Teuchos::ScalarTraits<Scalar> ST;
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+
+    const int NumStages = 2;
+    const int order = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+
+    // Fill A:
+    A(0,0) = zero; A(0,1) = zero; A(1,1) = zero;
+    A(1,0) = (2*one)/(3*one); 
+
+    // Fill b:
+    b(0) = (1*one)/(4*one); 
+    b(1) = (3*one)/(4*one); 
+
+    // fill c:
+    c(0) = zero;
+    c(1) = (2*one)/(3*one); 
+
+
+    this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      this->getStepperType(),A,b,c,order,order,order));
+  }
+};
+
+
+// ----------------------------------------------------------------------------
 /** \brief RK Explicit Trapezoidal
  *
  *  The tableau (order=2) is
@@ -1742,6 +1833,131 @@ protected:
   private:
     Scalar gammaDefault_;
     Scalar gamma_;
+};
+
+
+// ----------------------------------------------------------------------------
+/** \brief SDIRK 3 Stage 2nd  order
+ *
+ *  The tableau (order=2) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cc}  \gamma  & \gamma      &         & \\
+ *                      1-\gamma & 1-2\gamma   & \gamma  & \\ \hline
+ *                      1-2      & 1/2 -\gamma & 0       & \gamma \\ \hline
+ *                               & 1/6         & 1/6     & 2/3   \end{array}
+ *  \f]
+ *  The value is \f$\gamma = 1/ (2 + \sqrt{2})\f$.
+ *  This will produce an L-stable 2nd order method with the stage
+ *  times within the timestep.  
+ *
+ *  Reference: Implicit-explicit Runge-Kutta schemes and applications to
+ *             hyperbolic systems with relaxation
+ *             L Pareschi, G Russo 
+ *             Journal of Scientific computing, 2005 - Springer
+ *             Table 5
+ */
+
+template<class Scalar>
+class StepperSDIRK_3Stage2ndOrder :
+  virtual public StepperDIRK<Scalar>
+{
+public:
+  /** \brief Default constructor.
+   *
+   * Requires subsequent setModel() and initialize()
+   * calls before calling takestep().
+  */
+  StepperSDIRK_3Stage2ndOrder()
+  {
+    this->setStepperType("SDIRK 3 Stage 2nd order");
+    this->setupTableau();
+    this->setupDefault();
+  }
+
+  StepperSDIRK_3Stage2ndOrder(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool useEmbedded,
+    bool zeroInitialGuess)
+  {
+
+    this->setStepperType("SDIRK 3 Stage 2nd order");
+    this->setupTableau();
+    this->setup(appModel, obs, solver, useFSAL, ICConsistency,
+                ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+  }
+
+  std::string getDescription() const
+  {
+    std::ostringstream Description;
+    Description << this->getStepperType() << "\n"
+                << "Implicit-explicit Runge-Kutta schemes and applications to\n"
+                << "hyperbolic systems with relaxation\n"
+                << "L Pareschi, G Russo\n"
+                << "Journal of Scientific computing, 2005 - Springer\n"
+                << "Table 5\n"
+                << "gamma = 1/(2+sqrt(2))\n"
+                << "c = [  gamma   (1-gamma)   1/2  ]'\n"
+                << "A = [  gamma      0         0   ]\n"
+                << "    [ 1-2gamma   gamma      0   ]\n"
+                << "    [ 1/2-gamma   0      gamma  ]\n"
+                << "b = [  1/6       1/6       2/3  ]'";
+    return Description.str();
+  }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    this->getValidParametersBasicDIRK(pl);
+    pl->set<bool>("Initial Condition Consistency Check",
+                  this->getICConsistencyCheckDefault());
+    return pl;
+  }
+
+protected:
+
+  void setupTableau()
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    const int NumStages = 3;
+    const int order = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar gamma = as<Scalar>(one - ( one / std::sqrt(2.0) ) );
+
+    // Fill A:
+    A(0,0) = A(1,1) = A(2,2) = gamma;
+    A(0,1) = A(0,2) = A(1,2) = A(2,1) = zero;
+    A(1,0) = as<Scalar>(one - 2*gamma);
+    A(2,0) = as<Scalar>(  ( one/ (2.*one)) - gamma );
+
+    // Fill b:
+    b(0) = b(1) = ( one / (6*one) );
+    b(2) = (2*one)/(3*one);
+
+    // Fill c:
+    c(0) = gamma;
+    c(1) = one - gamma;
+    c(2) = one / (2*one);
+
+    this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
+      this->getStepperType(),A,b,c,order,order,order));
+  }
+
 };
 
 

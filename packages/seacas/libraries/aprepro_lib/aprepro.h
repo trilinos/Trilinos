@@ -62,7 +62,7 @@ namespace SEAMS {
 
   struct array
   {
-    std::vector<double> data;
+    std::vector<double> data{};
     int                 rows{0};
     int                 cols{0};
 
@@ -73,9 +73,9 @@ namespace SEAMS {
 
   struct symrec
   {
-    std::string name;
-    std::string syntax;
-    std::string info;
+    std::string name{};
+    std::string syntax{};
+    std::string info{};
     int         type;
     bool        isInternal;
     struct value
@@ -95,7 +95,7 @@ namespace SEAMS {
       double (*fnctptr_ddddc)(double, double, double, double, char *){nullptr};
       double (*fnctptr_dddddd)(double, double, double, double, double, double){nullptr};
       double (*fnctptr_a)(const array *){nullptr};
-      std::string svar;
+      std::string svar{};
       const char *(*strfnct)(){nullptr};
       const char *(*strfnct_c)(char *){nullptr};
       const char *(*strfnct_d)(double){nullptr};
@@ -136,8 +136,8 @@ namespace SEAMS {
   /* Global options */
   struct aprepro_options
   {
-    std::string include_path;
-    std::string include_file;
+    std::string include_path{};
+    std::string include_file{};
     bool        end_on_exit{false};
     bool        warning_msg{true};
     bool        info_msg{false};
@@ -253,9 +253,9 @@ namespace SEAMS {
     void statistics(std::ostream *out = nullptr) const;
 
     aprepro_options      ap_options;
-    std::stack<file_rec> ap_file_list;
+    std::stack<file_rec> ap_file_list{};
 
-    std::stack<std::ostream *> outputStream;
+    std::stack<std::ostream *> outputStream{};
 
     SEAMS::symrec *getsym(const char *sym_name) const;
     SEAMS::symrec *getsym(const std::string &sym_name) const;
@@ -300,11 +300,11 @@ namespace SEAMS {
 
   private:
     void                  init_table(const char *comment);
-    std::vector<symrec *> sym_table;
-    std::ostringstream    parsingResults;
+    std::vector<symrec *> sym_table{};
+    std::ostringstream    parsingResults{};
 
     // Input stream used with parse_string_interactive
-    std::istringstream stringInput;
+    std::istringstream stringInput{};
 
     bool           stringInteractive{false};
     class Scanner *stringScanner{nullptr};
@@ -314,7 +314,7 @@ namespace SEAMS {
     std::ostream *warningStream{&std::cerr};
 
     // For substitution history.
-    std::vector<history_data> history;
+    std::vector<history_data> history{};
 
     mutable int parseErrorCount{0};
 

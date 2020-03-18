@@ -50,8 +50,8 @@ namespace {
   double find_range(const double *x, size_t num_nodes);
 
   template <typename INT>
-  INT Find(double x0, double y0, double z0, double *x, double *y, double *z, INT *id, size_t N,
-           int dim, bool ignore_dups);
+  INT Find(double x0, double y0, double z0, const double *x, const double *y, const double *z,
+           INT *id, size_t N, int dim, bool ignore_dups);
 
   template <typename INT>
   void Compute_Node_Map(INT *&node_map, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
@@ -83,8 +83,9 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
   std::fill(elmt_map, elmt_map + num_elmts, -1);
 
   // Create storage for midpoints.
-  double *x2 = new double[num_elmts];
-  double *y2 = nullptr, *z2 = nullptr;
+  auto *  x2 = new double[num_elmts];
+  double *y2 = nullptr;
+  double *z2 = nullptr;
   if (dim > 1) {
     y2 = new double[num_elmts];
   }
@@ -103,8 +104,11 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
 
   {
     // Compute midpoints of each element and place into x,y,z arrays.
-    size_t num_blocks = file2.Num_Elmt_Blocks(), e = 0;
-    double sum_x, sum_y, sum_z;
+    size_t num_blocks = file2.Num_Elmt_Blocks();
+    size_t e          = 0;
+    double sum_x;
+    double sum_y;
+    double sum_z;
     for (size_t b = 0; b < num_blocks; ++b) {
       const Exo_Block<INT> *block              = file2.Get_Elmt_Block_by_Index(b);
       size_t                num_elmts_in_block = block->Size();
@@ -164,7 +168,9 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
   size_t e1         = 0;
   size_t e2         = 0;
   INT    sort_idx;
-  double mid_x, mid_y, mid_z;
+  double mid_x;
+  double mid_y;
+  double mid_z;
 
   for (size_t b = 0; b < num_blocks; ++b) {
     const Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
@@ -349,12 +355,11 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
   file2.Free_Elmt_Blocks();
 
   delete[] x2;
-  if (y2 != nullptr) {
-    delete[] y2;
-  }
-  if (z2 != nullptr) {
-    delete[] z2;
-  }
+
+  delete[] y2;
+
+  delete[] z2;
+
   delete[] id;
 
   interFace.coord_tol.type = save_tolerance_type;
@@ -391,8 +396,9 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
   std::fill(elmt_map, elmt_map + num_elmts1, -1);
 
   // Create storage for midpoints.
-  double *x2 = new double[num_elmts2];
-  double *y2 = nullptr, *z2 = nullptr;
+  auto *  x2 = new double[num_elmts2];
+  double *y2 = nullptr;
+  double *z2 = nullptr;
   if (dim > 1) {
     y2 = new double[num_elmts2];
   }
@@ -411,8 +417,11 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
 
   {
     // Compute midpoints of each element and place into x,y,z arrays.
-    size_t num_blocks2 = file2.Num_Elmt_Blocks(), e = 0;
-    double sum_x, sum_y, sum_z;
+    size_t num_blocks2 = file2.Num_Elmt_Blocks();
+    size_t e           = 0;
+    double sum_x;
+    double sum_y;
+    double sum_z;
     for (size_t b = 0; b < num_blocks2; ++b) {
       const Exo_Block<INT> *block              = file2.Get_Elmt_Block_by_Index(b);
       size_t                num_elmts_in_block = block->Size();
@@ -472,7 +481,9 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
   size_t e1          = 0;
   size_t e2          = 0;
   INT    sort_idx;
-  double mid_x, mid_y, mid_z;
+  double mid_x;
+  double mid_y;
+  double mid_z;
 
   bool   first     = true;
   size_t unmatched = 0;
@@ -632,12 +643,11 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
   file2.Free_Elmt_Blocks();
 
   delete[] x2;
-  if (y2 != nullptr) {
-    delete[] y2;
-  }
-  if (z2 != nullptr) {
-    delete[] z2;
-  }
+
+  delete[] y2;
+
+  delete[] z2;
+
   delete[] id2;
 
   interFace.coord_tol.type = save_tolerance_type;
@@ -897,8 +907,8 @@ namespace {
   }
 
   template <typename INT>
-  INT Find(double x0, double y0, double z0, double *x, double *y, double *z, INT *id, size_t N,
-           int dim, bool ignore_dups)
+  INT Find(double x0, double y0, double z0, const double *x, const double *y, const double *z,
+           INT *id, size_t N, int dim, bool ignore_dups)
   {
     SMART_ASSERT(x != nullptr);
     SMART_ASSERT(N > 0);
@@ -913,7 +923,9 @@ namespace {
     // Find the index such that x0 > x[0,1,...,low-1] and x0 >= x[low]
     // where x[N] is infinity.
 
-    size_t mid, low = 0, high = N;
+    size_t mid;
+    size_t low  = 0;
+    size_t high = N;
     while (low < high) {
       mid = (low + high) / 2;
       if (x[id[mid]] < x0) {
@@ -1053,9 +1065,8 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
         if (tmp >= min) {
           break;
         }
-        else {
-          min = tmp;
-        }
+
+        min = tmp;
       }
     }
     break;
@@ -1067,10 +1078,9 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
         if (delr > min) {
           break;
         }
-        else {
-          double tmp = dist_sqrd(x[indx[i]], y[indx[i]], x[indx[j]], y[indx[j]]);
-          min        = min < tmp ? min : tmp;
-        }
+
+        double tmp = dist_sqrd(x[indx[i]], y[indx[i]], x[indx[j]], y[indx[j]]);
+        min        = min < tmp ? min : tmp;
       }
     }
     break;
@@ -1082,11 +1092,10 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
         if (delr > min) {
           break;
         }
-        else {
-          double tmp =
-              dist_sqrd(x[indx[i]], y[indx[i]], z[indx[i]], x[indx[j]], y[indx[j]], z[indx[j]]);
-          min = min < tmp ? min : tmp;
-        }
+
+        double tmp =
+            dist_sqrd(x[indx[i]], y[indx[i]], z[indx[i]], x[indx[j]], y[indx[j]], z[indx[j]]);
+        min = min < tmp ? min : tmp;
       }
     }
     break;

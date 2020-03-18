@@ -89,8 +89,8 @@ namespace Excn {
     ObjectType  objectType;
     int         outputCount;
     bool        addStatus;
-    IntVector   index_;
-    std::string type_;
+    IntVector   index_{};
+    std::string type_{};
   };
 } // namespace Excn
 

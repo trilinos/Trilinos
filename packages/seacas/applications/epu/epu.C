@@ -138,7 +138,7 @@ namespace {
 
   void LOG(const std::string message)
   {
-    if (debug_level & 1) {
+    if ((debug_level & 1) != 0u) {
       fmt::print("{}", time_stamp(tsFormat));
     }
     if (rank == 0) {
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
     //  64 -- exodus verbose.
     debug_level = interFace.debug();
 
-    if ((debug_level & 64) != 0u) {
+    if ((debug_level & 64) != 0U) {
       ex_opts(EX_VERBOSE | EX_DEBUG);
     }
     else {
@@ -1695,7 +1695,7 @@ namespace {
         }
       }
 
-      if ((debug_level & 4) != 0u) {
+      if ((debug_level & 4) != 0U) {
         fmt::print("\nGetting element block info for processor {}...\n", p);
       }
       else {
@@ -1705,7 +1705,7 @@ namespace {
       }
 
       for (size_t b = 0; b < global.count(EBLK); b++) {
-        if ((debug_level & 4) != 0u) {
+        if ((debug_level & 4) != 0U) {
           fmt::print("Block {}, Id = {}", b, block_id[b]);
         }
 
@@ -1763,7 +1763,7 @@ namespace {
           }
           free_name_array(names, temp_block.num_attribute);
         }
-        if ((debug_level & 4) != 0u) {
+        if ((debug_level & 4) != 0U) {
           fmt::print(", Name = '{}', Elements = {:12n}, Nodes/element = {}, Attributes = {}\n",
                      blocks[p][b].name_, blocks[p][b].entity_count(), blocks[p][b].nodesPerElement,
                      blocks[p][b].attributeCount);

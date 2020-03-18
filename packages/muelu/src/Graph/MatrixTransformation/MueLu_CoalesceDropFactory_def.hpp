@@ -79,8 +79,7 @@
 
 // If defined, read environment variables.
 // Should be removed once we are confident that this works.
-// #define DJS_READ_ENV_VARIABLES
-
+//#define DJS_READ_ENV_VARIABLES
 
 namespace MueLu {
 
@@ -171,7 +170,7 @@ namespace MueLu {
 #endif
 #ifdef DJS_READ_ENV_VARIABLES
       if (getenv("MUELU_DROP_TOLERANCE_MODE")) {
-        distanceLaplacianAlgo = std::string(getenv("MUELU_DROP_TOLERANCE_MODE"));
+        distanceLaplacianAlgoStr = std::string(getenv("MUELU_DROP_TOLERANCE_MODE"));
       }
 
       if (getenv("MUELU_DROP_TOLERANCE_THRESHOLD")) {

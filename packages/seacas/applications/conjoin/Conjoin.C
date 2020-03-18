@@ -87,10 +87,10 @@ namespace {
 
 struct NodeInfo
 {
-  NodeInfo() : id(0), x(0.0), y(0.0), z(0.0) {}
+  NodeInfo() = default;
   NodeInfo(size_t id_, double x_, double y_, double z_) : id(id_), x(x_), y(y_), z(z_) {}
-  size_t id;
-  double x, y, z;
+  size_t id{0};
+  double x{0.0}, y{0.0}, z{0.0};
 
   bool operator==(const NodeInfo &other) const
   {
@@ -373,7 +373,7 @@ int          main(int argc, char *argv[])
 
     debug_level = interFace.debug();
 
-    if ((debug_level & 64) != 0u) {
+    if ((debug_level & 64) != 0U) {
       ex_opts(EX_VERBOSE | EX_DEBUG);
     }
     else {
@@ -2113,13 +2113,15 @@ namespace {
 
           // Get the parameters for this nodeset...
           if (ex_int64_status(id) & EX_BULK_INT64_API) {
-            int64_t node_count, df_count;
+            int64_t node_count;
+            int64_t df_count;
             ex_get_set_param(id, EX_NODE_SET, nodesets[p][i].id, &node_count, &df_count);
             nodesets[p][i].nodeCount = node_count;
             nodesets[p][i].dfCount   = df_count;
           }
           else {
-            int node_count, df_count;
+            int node_count;
+            int df_count;
             ex_get_set_param(id, EX_NODE_SET, nodesets[p][i].id, &node_count, &df_count);
             nodesets[p][i].nodeCount = node_count;
             nodesets[p][i].dfCount   = df_count;

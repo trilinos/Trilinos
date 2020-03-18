@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -108,7 +108,11 @@ int token_compare(char *token, const char *key)
 /*****************************************************************************/
 void strip_string(char inp_str[], const char *tokens)
 {
-  int i, j, itok, ntokes, bval;
+  int i;
+  int j;
+  int itok;
+  int ntokes;
+  int bval;
 
   i      = 0;
   ntokes = strlen(tokens);
@@ -159,7 +163,8 @@ void strip_string(char inp_str[], const char *tokens)
 /*****************************************************************************/
 void string_to_lower(char in_string[], char cval)
 {
-  int len, cnt;
+  int len;
+  int cnt;
 
   len = strlen(in_string);
   for (cnt = 0; cnt < len; cnt++) {
@@ -171,8 +176,6 @@ void string_to_lower(char in_string[], char cval)
       in_string[cnt] = tolower(in_string[cnt]);
     }
   }
-
-  return;
 }
 
 /*****************************************************************************/
@@ -180,7 +183,12 @@ void string_to_lower(char in_string[], char cval)
 /*****************************************************************************/
 void clean_string(char inp_str[], const char *tokens)
 {
-  int i, j, itok, ntokes, bval, inplen;
+  int i;
+  int j;
+  int itok;
+  int ntokes;
+  int bval;
+  int inplen;
 
   ntokes = strlen(tokens);
   inplen = strlen(inp_str);
@@ -216,8 +224,6 @@ void clean_string(char inp_str[], const char *tokens)
     i++;
 
   } /* End "while(inp_str[i] != '\0')" */
-
-  return;
 
 } /*---------------- End clean_string() -----------------*/
 
@@ -265,7 +271,8 @@ namespace {
   template <typename INT> void gds_qsort(INT v[], size_t left, size_t right)
   {
     size_t pivot;
-    size_t i, j;
+    size_t i;
+    size_t j;
 
     if (left + GDS_QSORT_CUTOFF <= right) {
       pivot = gds_median3(v, left, right);
@@ -295,7 +302,8 @@ namespace {
 
   template <typename INT> void gds_isort(INT v[], size_t N)
   {
-    size_t i, j;
+    size_t i;
+    size_t j;
     size_t ndx = 0;
     INT    small_val;
     INT    tmp;
@@ -395,7 +403,6 @@ void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last
       *last = vecsize - 1;
     }
   }
-  return;
 }
 
 /*****************************************************************************
@@ -460,7 +467,8 @@ template <typename INT> ssize_t in_list(INT value, std::vector<INT> vector)
  *****************************************************************************/
 int roundfloat(float value)
 {
-  float high, low;
+  float high;
+  float low;
   int   ans;
 
   high = std::ceil(value);
@@ -541,7 +549,7 @@ namespace {
     if (ra1 < ra2) {
       return 1;
     }
-    else if (ra1 > ra2) {
+    if (ra1 > ra2) {
       return 0;
     }
     assert(ra1 == ra2);
@@ -549,7 +557,7 @@ namespace {
     if (rb1 < rb2) {
       return 1;
     }
-    else if (rb1 > rb2) {
+    if (rb1 > rb2) {
       return 0;
     }
     assert(rb1 == rb2);
@@ -557,7 +565,7 @@ namespace {
     if (rc1 < rc2) {
       return 1;
     }
-    else if (rc1 > rc2) {
+    if (rc1 > rc2) {
       return 0;
     }
     assert(rc1 == rc2);
@@ -565,9 +573,8 @@ namespace {
     if (rd1 < rd2) {
       return 1;
     }
-    else {
-      return 0;
-    }
+
+    return 0;
   }
 
   template <typename INT> int is_less_than4v(INT *v1, INT *v2, INT *v3, INT *v4, size_t i, size_t j)
@@ -575,7 +582,7 @@ namespace {
     if (v1[i] < v1[j]) {
       return 1;
     }
-    else if (v1[i] > v1[j]) {
+    if (v1[i] > v1[j]) {
       return 0;
     }
     assert(v1[i] == v1[j]);
@@ -583,7 +590,7 @@ namespace {
     if (v2[i] < v2[j]) {
       return 1;
     }
-    else if (v2[i] > v2[j]) {
+    if (v2[i] > v2[j]) {
       return 0;
     }
     assert(v2[i] == v2[j]);
@@ -591,7 +598,7 @@ namespace {
     if (v3[i] < v3[j]) {
       return 1;
     }
-    else if (v3[i] > v3[j]) {
+    if (v3[i] > v3[j]) {
       return 0;
     }
     assert(v3[i] == v3[j]);
@@ -599,9 +606,8 @@ namespace {
     if (v4[i] < v4[j]) {
       return 1;
     }
-    else {
-      return 0;
-    }
+
+    return 0;
   }
 
   template <typename INT> void swap4(INT *v1, INT *v2, INT *v3, INT *v4, size_t i, size_t j)
@@ -698,7 +704,7 @@ namespace {
     if (ra1 < ra2) {
       return 1;
     }
-    else if (ra1 > ra2) {
+    if (ra1 > ra2) {
       return 0;
     }
     assert(ra1 == ra2);
@@ -706,9 +712,8 @@ namespace {
     if (rb1 < rb2) {
       return 1;
     }
-    else {
-      return 0;
-    }
+
+    return 0;
   }
 
   template <typename INT> int is_less_than2v(INT *v1, INT *v2, size_t i, size_t j)
@@ -716,7 +721,7 @@ namespace {
     if (v1[i] < v1[j]) {
       return 1;
     }
-    else if (v1[i] > v1[j]) {
+    if (v1[i] > v1[j]) {
       return 0;
     }
     assert(v1[i] == v1[j]);
@@ -724,9 +729,8 @@ namespace {
     if (v2[i] < v2[j]) {
       return 1;
     }
-    else {
-      return 0;
-    }
+
+    return 0;
   }
 
   template <typename INT> void swap2(INT *v1, INT *v2, size_t i, size_t j)

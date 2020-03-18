@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,6 +36,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_ElementTopology.h>
+#include <Ioss_FaceGenerator.h>
 #include <Ioss_Region.h>
 #include <Ioss_SideBlock.h>
 #include <Ioss_SideSet.h>
@@ -186,9 +187,15 @@ namespace Iocgns {
       }
     }
 
+    static void
+    generate_boundary_faces(Ioss::Region *                                 region,
+                            std::map<std::string, Ioss::FaceUnorderedSet> &boundary_faces,
+                            Ioss::Field::BasicType                         field_type);
+
     static void write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
-                                             int *vertex_solution_index,
-                                             int *cell_center_solution_index, bool is_parallel_io);
+                                             const int *vertex_solution_index,
+                                             const int *cell_center_solution_index,
+                                             bool       is_parallel_io);
     static int  find_solution_index(int cgns_file_ptr, int base, int zone, int step,
                                     CG_GridLocation_t location);
     static Ioss::MeshType check_mesh_type(int cgns_file_ptr);
@@ -227,6 +234,8 @@ namespace Iocgns {
     static void   assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData *> &zones,
                                         std::vector<size_t> &work_vector, bool verbose);
     static void   show_config();
+    static void   generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
+                                       const cgsize_t *connectivity, Ioss::FaceUnorderedSet &faces);
   };
 } // namespace Iocgns
 

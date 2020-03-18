@@ -612,7 +612,6 @@ namespace Iocgns {
     size_t p_start = decomp_elem_offset();
     size_t p_end   = p_start + decomp_elem_count();
 
-    assert(sizeof(INT) == sizeof(cgsize_t));
     size_t sum    = 0; // Size of adjacency vector.
     size_t offset = 0;
 
@@ -774,12 +773,7 @@ namespace Iocgns {
   {
     int base = 1; // Only single base supported so far.
 
-    // Get total length of sideset elemlists...
-    size_t elemlist_size = 0;
-    for (auto &sset : m_sideSets) {
-      elemlist_size += sset.file_count();
-    }
-
+    // NOTE: Not currently used; assume can read all on single processor...
     // Calculate the max "buffer" size usable for storing sideset
     // elemlists. This is basically the space used to store the file
     // decomposition nodal coordinates. The "decomp_node_count()/2*2" is to
@@ -789,23 +783,18 @@ namespace Iocgns {
     //    size_t max_size = std::max(10000, (decomp_node_count() / 2) * 2 * 3 *sizeof(double) /
     //    sizeof(cgsize_t));
 
-    bool subsetting = false; // elemlist_size > max_size;
+    bool subsetting = false;
 
     if (subsetting) {
       assert(1 == 0);
     }
     else {
-      // Can handle reading all sideset elem lists on a single
-      // processor simultaneously.
-      std::vector<cgsize_t> elemlist(elemlist_size);
-
       size_t offset = 0;
       for (auto &sset : m_sideSets) {
 
-        // TODO? Possibly rewrite using cgi_read_int_data so can skip reading element connectivity
-        int                   nodes_per_face = 4; // FIXME: sb->topology()->number_nodes();
-        std::vector<cgsize_t> elements(nodes_per_face *
-                                       sset.file_count()); // Not needed, but can't skip
+        auto                  topology = Ioss::ElementTopology::factory(sset.topologyType, true);
+        int                   nodes_per_face = topology->number_nodes();
+        std::vector<cgsize_t> nodes(nodes_per_face * sset.file_count());
 
         // We get:
         // *  num_to_get parent elements,
@@ -814,38 +803,43 @@ namespace Iocgns {
         // *  num_to_get zeros (face on other parent element)
         std::vector<cgsize_t> parent(4 * sset.file_count());
 
-        CGCHECK2(cg_elements_read(filePtr, base, sset.zone(), sset.section(), TOPTR(elements),
+        CGCHECK2(cg_elements_read(filePtr, base, sset.zone(), sset.section(), TOPTR(nodes),
                                   TOPTR(parent)));
 
-        // Move from 'parent' to 'elementlist'
-        size_t zone_element_id_offset = m_zones[sset.zone()].m_elementOffset;
-        for (size_t i = 0; i < sset.file_count(); i++) {
-          elemlist[offset++] = parent[i] + zone_element_id_offset;
-        }
-      }
-      SMART_ASSERT(offset == elemlist_size)(offset)(elemlist_size);
+        if (parent[0] == 0) {
+          // This model does not contain parent/face data; it only contains the
+          // face connectivity (nodes) data.  Need to construct parent/face data
+          // The faces in the list should all be boundaries of the block and should
+          // therefore, not be shared with another block or shared across processors.
+          // If we check the 'corner_node_cnt' nodes of the face and they are all
+          // on this processor, then assume the face is on this processor...
+          size_t zone_node_id_offset = m_zones[sset.zone()].m_nodeOffset;
+          int    corner_node_cnt     = topology->number_corner_nodes();
+          SMART_ASSERT(corner_node_cnt == 3 || corner_node_cnt == 4);
 
-      // Each processor now has a complete list of all elems in all
-      // sidesets.
-      // Determine which of these are owned by the current
-      // processor...
-      {
-        offset = 0;
-        for (auto &sset : m_sideSets) {
-          size_t ss_beg = offset;
-          size_t ss_end = ss_beg + sset.file_count();
-
-          for (size_t n = ss_beg; n < ss_end; n++) {
-            cgsize_t elem = elemlist[n];
-            // See if elem owned by this processor...
-            if (i_own_elem(elem)) {
-              // Save elem in this processors elemlist for this set.
-              // The saved data is this elems location in the global
-              // elemlist for this set.
-              sset.entitylist_map.push_back(n - offset);
+          for (size_t i = 0; i < sset.file_count(); i++) {
+            size_t j = nodes_per_face * i;
+            if (i_own_node(nodes[j + 0] + zone_node_id_offset) &&
+                i_own_node(nodes[j + 1] + zone_node_id_offset) &&
+                i_own_node(nodes[j + 2] + zone_node_id_offset) &&
+                (corner_node_cnt == 3 || i_own_node(nodes[j + 3] + zone_node_id_offset))) {
+              // This face is on this processor...
+              sset.entitylist_map.push_back(i);
             }
           }
-          offset = ss_end;
+        }
+        else {
+          size_t zone_element_id_offset = m_zones[sset.zone()].m_elementOffset;
+          for (size_t i = 0; i < sset.file_count(); i++) {
+            cgsize_t elem = parent[i] + zone_element_id_offset;
+            // See if elem owned by this processor...
+            if (i_own_elem(elem)) {
+              // Save elem in this processors element list for this set.
+              // The saved data is this elements location in the global
+              // element list (parent) for this set.
+              sset.entitylist_map.push_back(i);
+            }
+          }
         }
       }
 
@@ -1026,44 +1020,118 @@ namespace Iocgns {
     std::vector<INT> element_side;
     int              base = 1;
 
-    int                   nodes_per_face = 4; // FIXME: sb->topology()->number_nodes();
+    auto                  topology       = Ioss::ElementTopology::factory(sset.topologyType, true);
+    int                   nodes_per_face = topology->number_nodes();
     std::vector<cgsize_t> nodes(nodes_per_face * sset.file_count());
 
-    // TODO? Possibly rewrite using cgi_read_int_data so can skip reading element connectivity
-
-    // We get:
-    // *  num_to_get parent elements,
-    // *  num_to_get zeros (other parent element for face, but on boundary so 0)
-    // *  num_to_get face_on_element
-    // *  num_to_get zeros (face on other parent element)
     std::vector<cgsize_t> parent(4 * sset.file_count());
 
     CGCHECK2(
         cg_elements_read(filePtr, base, sset.zone(), sset.section(), TOPTR(nodes), TOPTR(parent)));
-    // Get rid of 'nodes' list -- not used.
-    Ioss::Utils::clear(nodes);
 
-    // Move from 'parent' to 'element_side' and interleave. element, side, element, side, ...
-    element_side.reserve(sset.file_count() * 2);
-    size_t zone_element_id_offset = m_zones[sset.zone()].m_elementOffset;
-    for (size_t i = 0; i < sset.file_count(); i++) {
-      element_side.push_back(parent[0 * sset.file_count() + i] + zone_element_id_offset);
-      element_side.push_back(parent[2 * sset.file_count() + i]);
+    if (parent[0] == 0) {
+      // Get rid of 'parent' list -- not used.
+      Ioss::Utils::clear(parent);
+
+      // This model does not contain parent/face data; it only contains the
+      // face connectivity (nodes) data.  Need to construct parent/face data
+      // The faces in the list should all be boundaries of the block and should
+      // therefore, not be shared with another block or shared across processors.
+      // If we check the 'corner_node_cnt' nodes of the face and they are all
+      // on this processor, then assume the face is on this processor...
+      if (m_boundaryFaces[sset.zone()].empty()) {
+        auto             blk = m_elementBlocks[sset.zone() - 1];
+        std::vector<INT> connectivity(blk.ioss_count() * blk.nodesPerEntity);
+        get_block_connectivity(filePtr, connectivity.data(), sset.zone() - 1, true);
+        auto topo = Ioss::ElementTopology::factory(blk.topologyType, true);
+        // Should map the connectivity from cgns to ioss, but only use the lower order which is
+        // same.
+        Iocgns::Utils::generate_block_faces(topo, blk.ioss_count(), (cgsize_t *)connectivity.data(),
+                                            m_boundaryFaces[sset.zone()]);
+      }
+
+      // TODO: Should we filter down to just corner nodes?
+      auto                  topo = Ioss::ElementTopology::factory(sset.topologyType, true);
+      int                   nodes_per_face = topo->number_nodes();
+      std::vector<cgsize_t> face_nodes(sset.entitylist_map.size() * nodes_per_face);
+      communicate_set_data(nodes.data(), face_nodes.data(), sset, nodes_per_face);
+
+      // Now, iterate the face connectivity vector and find a match in `m_boundaryFaces`
+      size_t offset           = 0;
+      size_t j                = 0;
+      auto & boundary         = m_boundaryFaces[sset.zone()];
+      int    num_corner_nodes = topo->number_corner_nodes();
+      SMART_ASSERT(num_corner_nodes == 3 || num_corner_nodes == 4)(num_corner_nodes);
+      size_t element_id_offset = m_decomposition.m_elementOffset;
+
+      for (int iface = 0; iface < sset.ioss_count(); iface++) {
+        std::array<size_t, 4> conn = {{0, 0, 0, 0}};
+
+        for (int i = 0; i < num_corner_nodes; i++) {
+          conn[i] = face_nodes[offset + i];
+        }
+        offset += nodes_per_face;
+
+        Ioss::Face face(conn);
+        // See if face is in m_boundaryFaces
+        // If not, error
+        // If so, then get parent element and element side.
+        auto it = boundary.find(face);
+        if (it != boundary.end()) {
+          cgsize_t fid = (*it).element[0];
+#if IOSS_DEBUG_OUTPUT
+          fmt::print("Connectivity: {} {} {} {} maps to element {}, face {}\n", conn[0], conn[1],
+                     conn[2], conn[3], fid / 10, fid % 10 + 1);
+#endif
+          ioss_data[j++] = fid / 10 + element_id_offset;
+          ioss_data[j++] = fid % 10 + 1;
+        }
+        else {
+          std::ostringstream errmsg;
+          fmt::print(errmsg,
+                     "ERROR: CGNS: Could not find face with connectivity {} {} {} {} on "
+                     "sideblock {}.",
+                     conn[0], conn[1], conn[2], conn[3], sset.name());
+          IOSS_ERROR(errmsg);
+        }
+      }
     }
-    // The above was all on root processor for this side set, now need to send data to other
-    // processors that own any of the elements in the sideset.
-    communicate_set_data(TOPTR(element_side), ioss_data, sset, 2);
+    else {
+      // Get rid of 'nodes' list -- not used.
+      Ioss::Utils::clear(nodes);
+
+      // `parent` contains:
+      // `num_to_get` parent elements, followed by --
+      // `num_to_get` zeros (other parent element for face, but on boundary so 0)
+      // `num_to_get` face_on_element
+      // `num_to_get` zeros (face on other parent element)
+
+      // Move from 'parent' to 'element_side' and interleave. element, side, element, side, ...
+      element_side.reserve(sset.file_count() * 2);
+      size_t zone_element_id_offset = m_zones[sset.zone()].m_elementOffset;
+      for (size_t i = 0; i < sset.file_count(); i++) {
+        element_side.push_back(parent[0 * sset.file_count() + i] + zone_element_id_offset);
+        element_side.push_back(parent[2 * sset.file_count() + i]);
+      }
+      auto  blk = m_elementBlocks[sset.zone() - 1];
+      auto topo = Ioss::ElementTopology::factory(blk.topologyType, true);
+      Utils::map_cgns_face_to_ioss(topo, sset.file_count(), element_side.data());
+      // The above was all on root processor for this side set, now need to send data to other
+      // processors that own any of the elements in the sideset.
+      communicate_set_data(TOPTR(element_side), ioss_data, sset, 2);
+    }
   }
 
 #ifndef DOXYGEN_SKIP_THIS
-  template void DecompositionData<int>::get_block_connectivity(int filePtr, int *data,
-                                                               int blk_seq) const;
+  template void DecompositionData<int>::get_block_connectivity(int filePtr, int *data, int blk_seq,
+                                                               bool raw_ids) const;
   template void DecompositionData<int64_t>::get_block_connectivity(int filePtr, int64_t *data,
-                                                                   int blk_seq) const;
+                                                                   int blk_seq, bool raw_ids) const;
 #endif
 
   template <typename INT>
-  void DecompositionData<INT>::get_block_connectivity(int filePtr, INT *data, int blk_seq) const
+  void DecompositionData<INT>::get_block_connectivity(int filePtr, INT *data, int blk_seq,
+                                                      bool raw_ids) const
   {
     auto                  blk = m_elementBlocks[blk_seq];
     std::vector<cgsize_t> file_conn(blk.file_count() * blk.nodesPerEntity);
@@ -1192,18 +1260,19 @@ namespace Iocgns {
     }
   }
 
-  void DecompositionDataBase::get_block_connectivity(int filePtr, void *data, int blk_seq) const
+  void DecompositionDataBase::get_block_connectivity(int filePtr, void *data, int blk_seq,
+                                                     bool raw_ids) const
   {
     if (int_size() == sizeof(int)) {
       const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int> *>(this);
       Ioss::Utils::check_dynamic_cast(this32);
-      this32->get_block_connectivity(filePtr, (int *)data, blk_seq);
+      this32->get_block_connectivity(filePtr, (int *)data, blk_seq, raw_ids);
     }
     else {
       const DecompositionData<int64_t> *this64 =
           dynamic_cast<const DecompositionData<int64_t> *>(this);
       Ioss::Utils::check_dynamic_cast(this64);
-      this64->get_block_connectivity(filePtr, (int64_t *)data, blk_seq);
+      this64->get_block_connectivity(filePtr, (int64_t *)data, blk_seq, raw_ids);
     }
   }
 

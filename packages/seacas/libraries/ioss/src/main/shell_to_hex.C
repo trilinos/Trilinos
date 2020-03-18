@@ -73,7 +73,7 @@ namespace {
     bool        do_normals{};
     bool        reverse_normals{};
     double      thickness{};
-    std::string working_directory;
+    std::string working_directory{};
   };
 
   void show_usage(const std::string &prog);

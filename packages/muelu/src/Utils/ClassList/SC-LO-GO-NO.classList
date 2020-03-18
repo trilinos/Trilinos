@@ -46,6 +46,7 @@ Hierarchy
 HierarchyManager
 HierarchyFactory
 HierarchyUtils
+InterfaceAggregationFactory
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 IndefBlockedDiagonalSmoother
 IntrepidPCoarsenFactory - #ifdef HAVE_MUELU_INTREPID2

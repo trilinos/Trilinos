@@ -310,6 +310,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethods.push_back("SSPDIRK32");
   RKMethods.push_back("SSPDIRK23");
   RKMethods.push_back("SSPDIRK33");
+  RKMethods.push_back("SDIRK 3 Stage 2nd order");
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(2.52738e-05);
@@ -332,6 +333,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethodErrors.push_back(5.7869767e-06);
   RKMethodErrors.push_back(1.00713e-07);
   RKMethodErrors.push_back(3.94916e-08);
+  RKMethodErrors.push_back(2.52738e-05);
   
   TEUCHOS_ASSERT( RKMethods.size() == RKMethodErrors.size() ); 
 

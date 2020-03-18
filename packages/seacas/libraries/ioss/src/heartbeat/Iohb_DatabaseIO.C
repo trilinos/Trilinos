@@ -186,7 +186,7 @@ namespace Iohb {
       assert(layout_ == nullptr);
       assert(legend_ == nullptr);
 
-      DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
+      auto *new_this = const_cast<DatabaseIO *>(this);
 
       if (properties.exists("FILE_FORMAT")) {
         std::string format = properties.get("FILE_FORMAT").get_string();
@@ -534,7 +534,7 @@ namespace Iohb {
         }
         else {
           std::vector<double> rdata(ncomp);
-          double *            r_data = reinterpret_cast<double *>(data);
+          auto *              r_data = reinterpret_cast<double *>(data);
           for (int i = 0; i < ncomp; i++) {
             rdata[i] = r_data[i];
           }

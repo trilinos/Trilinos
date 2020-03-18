@@ -3,7 +3,7 @@
  *  Generated: 2019-12-28 21:22:11.930976
  *  ----------------------------------------------------------
  *  This file has been merged from multiple headers. Please don't edit it directly
- *  Copyright (c) 2019 Two Blue Cubes Ltd. All rights reserved.
+ *  Copyright (c) 2019, 2020 Two Blue Cubes Ltd. All rights reserved.
  *
  *  Distributed under the Boost Software License, Version 1.0. (See accompanying
  *  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -478,6 +478,7 @@ namespace Catch {
 #include <cstdint>
 #include <iosfwd>
 #include <string>
+#include <vector>
 
 // We need a dummy global operator<< so we can bring it into Catch namespace later
 struct Catch_global_namespace_dummy
@@ -567,8 +568,6 @@ namespace Catch {
 // start catch_test_registry.h
 
 // start catch_interfaces_testcase.h
-
-#include <vector>
 
 namespace Catch {
 
