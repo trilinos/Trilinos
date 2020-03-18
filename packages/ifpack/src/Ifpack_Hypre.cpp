@@ -382,7 +382,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   IFPACK_CHK_ERRV(HYPRE_IJVectorAssemble(XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_));
   XVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_)),false);
-  //  XLocal_ = hypre_ParVectorLocalVector(XVec_);
+
   // Y in AX = Y
   IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR));
@@ -390,7 +390,9 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   IFPACK_CHK_ERRV(HYPRE_IJVectorAssemble(YHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_));
   YVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_)),false);
-  //  YLocal_ = hypre_ParVectorLocalVector(YVec_);
+
+  // Cache
+  VectorCache_.resize(A->RowMatrixRowMap().NumMyElements());
 } //Constructor
 
 //==============================================================================
@@ -774,6 +776,7 @@ int Ifpack_Hypre::Compute(){
     IFPACK_CHK_ERR(PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_));
     IsPrecondSetup_[0] = true;
   }
+
   IsComputed_ = true;
   NumCompute_ = NumCompute_ + 1;
   ComputeTime_ = ComputeTime_ + Time_.ElapsedTime();
@@ -807,13 +810,12 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
     // FIXME amk Nov 23, 2015: This will not work for funky data layouts
-    double * XValues;
-    IFPACK_CHK_ERR((*X(VecNum)).ExtractView(&XValues));
+    double * XValues = const_cast<double*>(X[VecNum]);
     double * YValues;
     if(!SameVectors){
-      IFPACK_CHK_ERR((*Y(VecNum)).ExtractView(&YValues));
+      YValues = const_cast<double*>(Y[VecNum]);
     } else {
-      YValues = new double[X.MyLength()];
+      YValues = VectorCache_.getRawPtr();
     }
     // Temporarily make a pointer to data in Hypre for end
     double *XTemp = XLocal_->data;
@@ -832,14 +834,8 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
     }
     if(SameVectors){
       int NumEntries = Y.MyLength();
-      std::vector<double> new_values; new_values.resize(NumEntries);
-      std::vector<int> new_indices; new_indices.resize(NumEntries);
-      for(int i = 0; i < NumEntries; i++){
-        new_values[i] = YValues[i];
-        new_indices[i] = i;
-      }
-      IFPACK_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]));
-      delete[] YValues;
+      for(int i = 0; i < NumEntries; i++)
+	Y[VecNum][i] = YValues[i];      
     }
     XLocal_->data = XTemp;
     YLocal_->data = YTemp;
@@ -864,15 +860,14 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
   }
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
-    double * XValues;
+    double * XValues=const_cast<double*>(X[VecNum]);
     double * YValues;
-    IFPACK_CHK_ERR((*X(VecNum)).ExtractView(&XValues));
     double *XTemp = XLocal_->data;
     double *YTemp = YLocal_->data;
     if(!SameVectors){
-      IFPACK_CHK_ERR((*Y(VecNum)).ExtractView(&YValues));
+      YValues = const_cast<double*>(Y[VecNum]);
     } else {
-      YValues = new double[X.MyLength()];
+      YValues = VectorCache_.getRawPtr();
     }
     YLocal_->data = YValues;
     IFPACK_CHK_ERR(HYPRE_ParVectorSetConstantValues(ParY_,0.0));
@@ -895,7 +890,6 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
         new_indices[i] = i;
       }
       IFPACK_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, new_values.data(), new_indices.data()));
-      delete[] YValues;
     }
     XLocal_->data = XTemp;
     YLocal_->data = YTemp;

@@ -61,7 +61,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Time.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 #include "Epetra_MpiComm.h"
+
 
 #include <map>
 
@@ -623,6 +625,9 @@ private:
   std::vector<Teuchos::RCP<FunctionParameter> > FunsToCall_;
   //! Should information be dumped to files
   bool Dump_;
+  //! Dummy vector for caching
+  mutable Teuchos::ArrayRCP<double> VectorCache_;
+
 };
 
 #endif // HAVE_HYPRE
