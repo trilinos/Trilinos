@@ -52,7 +52,7 @@
 
 
 #include "ROL_Vector.hpp"
-#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_MultiVector_def.hpp"
 
 namespace ROL {
 
