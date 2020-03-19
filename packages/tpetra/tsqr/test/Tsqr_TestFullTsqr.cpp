@@ -255,8 +255,6 @@ namespace {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        std::ostream& err)
   {
-    using TSQR::Test::NullCons;
-    using TSQR::Test::Cons;
     using Teuchos::null;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
@@ -277,19 +275,9 @@ namespace {
       return true;
     }
 
-    //
     // Use read-in command-line options to set up test parameters.
-    //
     auto testParams = testParameters(defaultParams, cmdLineOpts);
     defaultParams = null; // save a little space
-
-    // Define lists of Scalar types to test.  We keep separate lists
-    // for real and complex types, since callers can control whether
-    // each of these is tested independently on the command line.
-    using real_type_list = Cons<float, Cons<double, NullCons>>;
-#ifdef HAVE_TPETRATSQR_COMPLEX
-    using complex_type_list = Cons<std::complex<float>, Cons<std::complex<double>, NullCons>>;
-#endif // HAVE_TPETRATSQR_COMPLEX
 
     // Run the tests.  If the tests are set up to fail on
     // insufficiently inaccurate results, run() will throw an
@@ -300,11 +288,11 @@ namespace {
     // line, but since they do not apply to all Scalar types, they
     // don't belong in testParams.
     const bool realResult = cmdLineOpts.testReal ?
-      caller.run<real_type_list>(testParams) :
+      caller.run<float, double>(testParams) :
       true;
 #ifdef HAVE_TPETRATSQR_COMPLEX
     const bool complexResult = cmdLineOpts.testComplex ?
-      caller.run<complex_type_list>(testParams) :
+      caller.run<std::complex<float>, std::complex<double>>(testParams) :
       true;
 #else
     const bool complexResult = true;

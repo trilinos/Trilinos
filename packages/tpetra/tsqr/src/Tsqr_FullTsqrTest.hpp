@@ -55,6 +55,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 namespace TSQR {
   namespace Test {
@@ -772,66 +773,45 @@ namespace TSQR {
     };
 
     /// \class FullTsqrVerifierCallerImpl
-    /// \brief This class implements a "function template
-    ///   specialization."
+    /// \brief Implementation of FullTsqrVerifierCaller::run.
     /// \author Mark Hoemmen
-    ///
-    /// We want to make FullTsqrVerifierCaller::run() a template
-    /// function, with a partial specialization for Cons<CarType,
-    /// CdrType> and a full specialization for NullType.  However,
-    /// function templates can't have partial specializations, at
-    /// least not in the version of the C++ standard currently
-    /// supported by Trilinos.  Thus, I've taken the advice of Herb
-    /// Sutter (C/C++ Users Journal, 19(7), July 2001), which can be
-    /// read online here:
-    ///
-    /// http://www.gotw.ca/publications/mill17.htm
-    ///
-    /// Namely, I've implemented the function template via a class
-    /// template.  This class is an implementation detail and not
-    /// meant to be used anywhere else other than in
-    /// FullTsqrVerifierCaller::run().
-    template<class TypeListType>
+    template<class ... ScalarTypes>
     class FullTsqrVerifierCallerImpl {
     public:
       static bool
-      run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-           const Teuchos::RCP<Teuchos::ParameterList>& testParams,
-           std::vector<int>& randomSeed);
+      run(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+          const Teuchos::RCP<Teuchos::ParameterList>& testParams,
+          std::vector<int>& randomSeed);
     };
 
-    //
-    // Partial specialization for Cons<CarType, CdrType>.
-    //
-    template<class CarType, class CdrType>
-    class FullTsqrVerifierCallerImpl<TSQR::Test::Cons<CarType, CdrType>>
-    {
+    // Partial specialization for FirstScalarType, RestScalarTypes...
+    template<class FirstScalarType, class ... RestScalarTypes>
+    class FullTsqrVerifierCallerImpl<
+      FirstScalarType, RestScalarTypes...> {
     public:
       static bool
-      run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-           const Teuchos::RCP<Teuchos::ParameterList>& testParams,
-           std::vector<int>& randomSeed)
+      run(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+          const Teuchos::RCP<Teuchos::ParameterList>& testParams,
+          std::vector<int>& randomSeed)
       {
-        using car_type = FullTsqrVerifier<CarType>;
-        using cdr_type = FullTsqrVerifierCallerImpl<CdrType>;
+        using first_type = FullTsqrVerifier<FirstScalarType>;
+        using rest_type = FullTsqrVerifierCallerImpl<RestScalarTypes...>;
         const bool success1 =
-          car_type::run (comm, testParams, randomSeed);
+          first_type::run(comm, testParams, randomSeed);
         const bool success2 =
-          cdr_type::run (comm, testParams, randomSeed);
+          rest_type::run(comm, testParams, randomSeed);
         return success1 && success2;
       }
     };
 
-    //
-    // Full specialization for NullCons.
-    //
+    // Full specialization for the empty list of Scalar types.
     template<>
-    class FullTsqrVerifierCallerImpl<TSQR::Test::NullCons> {
+    class FullTsqrVerifierCallerImpl<> {
     public:
       static bool
-      run (const Teuchos::RCP<const Teuchos::Comm<int> >&,
-           const Teuchos::RCP<Teuchos::ParameterList>&,
-           std::vector<int>&)
+      run(const Teuchos::RCP<const Teuchos::Comm<int>>& /* comm */,
+          const Teuchos::RCP<Teuchos::ParameterList>& /* testParams */,
+          std::vector<int>& /* randomSeed */)
       {
         return true;
       }
@@ -843,13 +823,13 @@ namespace TSQR {
     /// \author Mark Hoemmen
     ///
     /// Use this class to test the full TSQR implementation in Tsqr.
-    /// It will test Tsqr over a list of Scalar types that you define,
-    /// using Cons and NullCons.
+    /// It will test Tsqr over a list of Scalar types that you define.
+    /// Represent the list as std::tuple.
     class FullTsqrVerifierCaller {
     public:
       /// \typedef ordinal_type
       /// \brief The (local) Ordinal type to use for TSQR.
-      typedef int ordinal_type;
+      using ordinal_type = int;
 
       /// \brief Return a valid parameter list for verifying Tsqr.
       ///
@@ -913,27 +893,20 @@ namespace TSQR {
         return plist;
       }
 
-      /// \brief Run TsqrVerifier<T>::run() for every type in the type
-      ///   list.
+      /// \brief Run TsqrVerifier<ScalarType>::run() for every
+      ///   ScalarType in ScalarTypes...
       ///
-      /// TypeListType should be either a NullCons (representing an
-      /// empty type list, in which case this function does nothing),
-      /// or a Cons (whose CarType is a Scalar type to test, and whose
-      /// CdrType is either a NullCons or a Cons).
+      /// \tparam ScalarTypes Zero or more Scalar types to test.
       ///
       /// \param testParams [in/out] List of parameters for all tests
       ///   to run.  Call getValidParameterList() to get a valid list
       ///   of parameters with default values and documentation.
-      ///
-      template<class TypeListType>
+      template<class ... ScalarTypes>
       bool
-      run (const Teuchos::RCP<Teuchos::ParameterList>& testParams)
+      run(const Teuchos::RCP<Teuchos::ParameterList>& testParams)
       {
-        // Using a class with a static method is a way to implement
-        // "partial specialization of function templates" (which by
-        // itself is not allowed in C++).
-        using impl_type = FullTsqrVerifierCallerImpl<TypeListType>;
-        return impl_type::run (comm_, testParams, randomSeed_);
+        using impl_type = FullTsqrVerifierCallerImpl<ScalarTypes...>;
+        return impl_type::run(comm_, testParams, randomSeed_);
       }
 
       /// \brief Full constructor.
@@ -948,10 +921,11 @@ namespace TSQR {
       ///   (iseed[3]) must be odd.  Call \c defaultRandomSeed() for a
       ///   constant default value (if you want the same results each
       ///   time; not "random" but reproducible).
-      FullTsqrVerifierCaller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                              const std::vector<int>& randomSeed) :
-        comm_ (comm),
-        randomSeed_ (validateRandomSeed (randomSeed))
+      FullTsqrVerifierCaller(
+        const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+        const std::vector<int>& randomSeed)
+        : comm_(comm),
+          randomSeed_(validateRandomSeed(randomSeed))
       {}
 
       /// \brief One-argument constructor.
@@ -961,14 +935,15 @@ namespace TSQR {
       ///
       /// \param comm [in] Communicator (with one or more processes)
       ///   over which to perform tests.
-      FullTsqrVerifierCaller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
-        comm_ (comm),
-        randomSeed_ (defaultRandomSeed ())
+      FullTsqrVerifierCaller(
+        const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
+        : comm_(comm),
+          randomSeed_(defaultRandomSeed())
       {}
 
       //! Validate the given random seed.
       static std::vector<int>
-      validateRandomSeed (const std::vector<int>& seed)
+      validateRandomSeed(const std::vector<int>& seed)
       {
         TEUCHOS_TEST_FOR_EXCEPTION
           (seed.size () < 4, std::invalid_argument, "Invalid random "
@@ -987,15 +962,8 @@ namespace TSQR {
       }
 
       //! Default random seed.
-      static std::vector<int>
-      defaultRandomSeed ()
-      {
-        std::vector<int> seed (4);
-        seed[0] = 0;
-        seed[1] = 0;
-        seed[2] = 0;
-        seed[3] = 1;
-        return seed;
+      static std::vector<int> defaultRandomSeed() {
+        return {0, 0, 0, 1};
       }
 
     private:
