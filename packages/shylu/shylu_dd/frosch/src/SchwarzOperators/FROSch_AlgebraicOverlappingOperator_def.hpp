@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -73,7 +74,7 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"AlgebraicOverlappingOperator::initialize");
         if (this->Verbose_) {
-            std::cout << "\n\
+            cout << "\n\
 +------------------------------+\n\
 | AlgebraicOverlappingOperator |\n\
 +------------------------------+\n";
@@ -105,7 +106,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string AlgebraicOverlappingOperator<SC,LO,GO,NO>::description() const
+    string AlgebraicOverlappingOperator<SC,LO,GO,NO>::description() const
     {
         return "Algebraic Overlapping Operator";
     }
@@ -130,21 +131,47 @@ namespace FROSch {
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
 
-        LO local,sum,min,max;
+        GO global = this->OverlappingMap_->getMaxAllGlobalIndex();
+        if (this->OverlappingMap_->lib()==UseEpetra || this->OverlappingMap_->getGlobalNumElements()>0) {
+            global += 1;
+        }
+        LO local,sum,minVal,maxVal;
         SC avg;
         if (verbosity==All) {
-            local = (LO) std::max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
+            local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
             reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
-            avg = std::max(sum/double(this->MpiComm_->getSize()),0.0);
-            reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&min));
-            reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&max));
+            avg = max(sum/double(this->MpiComm_->getSize()),0.0);
+            reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
+            reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
 
             if (this->Verbose_) {
-            std::cout << "\n\
-    ------------------------------------------------------------------------------\n\
-     Overlapping subdomains statistics\n\
-    ------------------------------------------------------------------------------\n\
-      Layer " << 0 << ":        avg / min / max             ---  " << avg << " / " << min << " / " << max << "\n";
+                cout
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| "
+                << left << setw(85) << "Overlapping subdomains statistics" << right
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "========================================================================================="
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(19) << " " << right
+                << " | " << setw(10) << "total"
+                << " | " << setw(10) << "avg"
+                << " | " << setw(10) << "min"
+                << " | " << setw(10) << "max"
+                << " | " << setw(10) << "global sum"
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(19) << "Layer 0" << right
+                << " | " << setw(10) << global
+                << " | " << setw(10) << avg
+                << " | " << setw(10) << minVal
+                << " | " << setw(10) << maxVal
+                << " | " << setw(10) << sum
+                << " |";
             }
         }
 
@@ -169,44 +196,54 @@ namespace FROSch {
                     break;
             }
             if (verbosity==All) {
-                local = (LO) std::max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
+                local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
-                avg = std::max(sum/double(this->MpiComm_->getSize()),0.0);
-                reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&min));
-                reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&max));
+                avg = max(sum/double(this->MpiComm_->getSize()),0.0);
+                reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
+                reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
 
                 if (this->Verbose_) {
-                    std::cout << "\
-      layer " << i+1 << ":        avg / min / max             ---  " << avg << " / " << min << " / " << max << "\n";
+                    cout
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << "Layer " << setw(13) << i+1 << right
+                    << " | " << setw(10) << global
+                    << " | " << setw(10) << avg
+                    << " | " << setw(10) << minVal
+                    << " | " << setw(10) << maxVal
+                    << " | " << setw(10) << sum
+                    << " |";
                 }
             }
         }
-        if (this->Verbose_ && verbosity==All) {
-            std::cout << "\
-    ------------------------------------------------------------------------------\n";
+
+        if (this->Verbose_) {
+            cout
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
         }
-        
+
         // AH 08/28/2019 TODO: It seems that ExtendOverlapByOneLayer_Old is currently the fastest method because the map is sorted. This seems to be better for the direct solver. (At least Klu)
         if (this->ParameterList_->get("Sort Overlapping Map",true)) {
             switch (AddingLayersStrategy_) {
                 case LayersFromGraph:
                     this->OverlappingMap_ = SortMapByGlobalIndex(this->OverlappingMap_);
                     break;
-                    
+
                 case LayersFromMatrix:
                     this->OverlappingMap_ = SortMapByGlobalIndex(this->OverlappingMap_);
                     break;
-                    
+
                 case LayersOld:
-                    if (this->Verbose_) std::cout << "FROSch::AlgebraicOverlappingOperator : The overlapping map is already sorted" << std::endl;
+                    if (this->Verbose_) cout << "FROSch::AlgebraicOverlappingOperator : The overlapping map is already sorted" << endl;
                     break;
-                    
+
                 default:
                     FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid strategy for adding layers.");
                     break;
             }
         }
-        
+
         return 0;
     }
 

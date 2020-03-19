@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -99,9 +100,9 @@ namespace FROSch {
         BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
         //Detect linear dependencies
-        if (!this->ParameterList_->get("Skip Orthogonalization",false)) {
+        if (!this->ParameterList_->get("Skip DetectLinearDependencies",false)) {
             LOVecPtr linearDependentVectors = detectLinearDependencies(indicesGammaDofsAll(),this->K_->getRowMap(),this->K_->getRangeMap(),repeatedMap,this->ParameterList_->get("Threshold Phi",1.e-8));
-            // std::cout << this->MpiComm_->getRank() << " " << linearDependentVectors.size() << std::endl;
+            // cout << this->MpiComm_->getRank() << " " << linearDependentVectors.size() << endl;
             AssembledInterfaceCoarseSpace_->zeroOutBasisVectors(linearDependentVectors());
         }
 
@@ -153,9 +154,9 @@ namespace FROSch {
         int blockId = NumberOfBlocks_-1;
 
         // Process the parameter list
-        std::stringstream blockIdStringstream;
+        stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
-        std::string blockIdString = blockIdStringstream.str();
+        string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
@@ -206,9 +207,9 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(computeVolumeFunctionsTime,"HarmonicCoarseOperator::computeVolumeFunctions");
         // Process the parameter list
-        std::stringstream blockIdStringstream;
+        stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
-        std::string blockIdString = blockIdStringstream.str();
+        string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
@@ -250,14 +251,27 @@ namespace FROSch {
                 numEntitiesGlobal += 1;
             }
 
-            if (this->MpiComm_->getRank() == 0) {
-                std::cout << std::boolalpha << "\n\
-    ------------------------------------------------------------------------------\n\
-     GDSW coarse space\n\
-    ------------------------------------------------------------------------------\n\
-      Volumes: translations                       --- " << useForCoarseSpace << "\n\
-      Volumes: rotations                          --- " << useRotations << "\n\
-    ------------------------------------------------------------------------------\n" << std::noboolalpha;
+            if (this->Verbose_) {
+                cout
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| "
+                << left << setw(85) << "RGDSW coarse space" << right
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "========================================================================================="
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(19) << "Volumes " << " | " << setw(19) << " Translations" << right
+                << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << "| " << left << setw(19) << "Volumes " << " | " << setw(19) << " Rotations" << right
+                << " | " << setw(41) << boolalpha << useRotations << noboolalpha
+                << " |"
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << endl;
             }
         }
         return 0;
@@ -411,7 +425,7 @@ namespace FROSch {
                 case 2:
                     err = errx[0]+erry[0];
                     err = ScalarTraits<SC>::squareroot(err);
-                    if (std::fabs(err)<1.0e-12) {
+                    if (fabs(err)<1.0e-12) {
                         FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator : ERROR: In 2D, no rotation can be constant!");
                         rotations[0]->getVectorNonConst(i)->scale(ScalarTraits<SC>::zero());
                         numZeroRotations++;
@@ -421,7 +435,7 @@ namespace FROSch {
                     for (UN j=0; j<3; j++) {
                         err = errx[j]+erry[j]+errz[j];
                         err = ScalarTraits<SC>::squareroot(err);
-                        if (std::fabs(err)<1.0e-12) {
+                        if (fabs(err)<1.0e-12) {
                             rotations[j]->getVectorNonConst(i)->scale(ScalarTraits<SC>::zero());
                             numZeroRotations++;
                         }
@@ -458,7 +472,7 @@ namespace FROSch {
                                                                                                                          SC treshold)
     {
         FROSCH_TIMER_START_LEVELID(detectLinearDependenciesTime,"HarmonicCoarseOperator::detectLinearDependencies");
-        LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); //if (this->Verbose_) std::cout << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors() << " " << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength() << " " << indicesGammaDofsAll.size() << std::endl;
+        LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); //if (this->Verbose_) cout << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors() << " " << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength() << " " << indicesGammaDofsAll.size() << endl;
         if (AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors()>0 && AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength()>0) {
             //Construct matrix phiGamma
             XMatrixPtr phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
@@ -484,8 +498,8 @@ namespace FROSch {
             phiGamma->fillComplete(AssembledInterfaceCoarseSpace_->getBasisMapUnique(),rangeMap);
 
             //Compute Phi^T * Phi
-            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
-            XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); phiGamma->describe(*fancy,VERB_EXTREME);//phiTPhi->describe(*fancy,VERB_EXTREME);AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
+            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
+            XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); //phiGamma->describe(*fancy,VERB_EXTREME);//phiTPhi->describe(*fancy,VERB_EXTREME);AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
 
             // Extract local part of the matrix
             ConstXMatrixPtr repeatedPhiTPhi = ExtractLocalSubdomainMatrix(phiTPhi.getConst(),AssembledInterfaceCoarseSpace_->getBasisMap());
@@ -506,9 +520,9 @@ namespace FROSch {
             }
             // for (LO i=0; i<denseRepeatedPhiTPhi->numRows(); i++) {
             //     for (LO j=0; j<denseRepeatedPhiTPhi->numCols(); j++) {
-            //         std::cout << (*denseRepeatedPhiTPhi)(i,j) << " ";
+            //         cout << (*denseRepeatedPhiTPhi)(i,j) << " ";
             //     }
-            //     std::cout << std::endl;
+            //     cout << endl;
             // }
 
             //Compute local QR factorization
@@ -526,13 +540,93 @@ namespace FROSch {
                 for (LO j=0; j<r->numCols(); j++) {
                     normRow += (*r)(i,j)*(*r)(i,j);
                 }
-                if (std::sqrt(normRow)<treshold) {
+                if (sqrt(normRow)<treshold) {
                     linearDependentVectors[tmp] = i;
                     tmp++;
                 }
             }
             linearDependentVectors.resize(tmp);
         }
+
+        // Count entities
+        GO global = AssembledInterfaceCoarseSpace_->getBasisMap()->getMaxAllGlobalIndex();
+        if (AssembledInterfaceCoarseSpace_->getBasisMap()->lib()==UseEpetra || AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalNumElements()>0) {
+            global += 1;
+        }
+        LOVec localVec(3);
+        LOVec sumVec(3);
+        SCVec avgVec(3);
+        LOVec minVec(3);
+        LOVec maxVec(3);
+
+        LO numLocalBasisFunctions = AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements();
+        LO numLocalLinearDependencies = linearDependentVectors.size();
+        LO numLocalLinearIndependencies = numLocalBasisFunctions-numLocalLinearDependencies;
+
+        sumVec[0] = AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalNumElements();
+        avgVec[0] = max(sumVec[0]/double(this->MpiComm_->getSize()),0.0);
+        reduceAll(*this->MpiComm_,REDUCE_MIN,numLocalBasisFunctions,ptr(&minVec[0]));
+        reduceAll(*this->MpiComm_,REDUCE_MAX,numLocalBasisFunctions,ptr(&maxVec[0]));
+
+        reduceAll(*this->MpiComm_,REDUCE_SUM,numLocalLinearDependencies,ptr(&sumVec[1]));
+        avgVec[1] = max(sumVec[1]/double(this->MpiComm_->getSize()),0.0);
+        reduceAll(*this->MpiComm_,REDUCE_MIN,numLocalLinearDependencies,ptr(&minVec[1]));
+        reduceAll(*this->MpiComm_,REDUCE_MAX,numLocalLinearDependencies,ptr(&maxVec[1]));
+
+        reduceAll(*this->MpiComm_,REDUCE_SUM,numLocalLinearIndependencies,ptr(&sumVec[2]));
+        avgVec[2] = max(sumVec[2]/double(this->MpiComm_->getSize()),0.0);
+        reduceAll(*this->MpiComm_,REDUCE_MIN,numLocalLinearIndependencies,ptr(&minVec[2]));
+        reduceAll(*this->MpiComm_,REDUCE_MAX,numLocalLinearIndependencies,ptr(&maxVec[2]));
+
+        if (this->Verbose_) {
+            cout
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| "
+            << left << setw(85) << "Local linear dependencies of basis functions statistics" << right
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(19) << " " << right
+            << " | " << setw(10) << "total"
+            << " | " << setw(10) << "avg"
+            << " | " << setw(10) << "min"
+            << " | " << setw(10) << "max"
+            << " | " << setw(10) << "global sum"
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(19) << "Basis functions" << right
+            << " | " << setw(10) << global
+            << " | " << setw(10) << avgVec[0]
+            << " | " << setw(10) << minVec[0]
+            << " | " << setw(10) << maxVec[0]
+            << " | " << setw(10) << sumVec[0]
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(19) << "Dependent" << right
+            << " | " << setw(10) << " "
+            << " | " << setw(10) << avgVec[1]
+            << " | " << setw(10) << minVec[1]
+            << " | " << setw(10) << maxVec[1]
+            << " | " << setw(10) << sumVec[1]
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(19) << "Independent" << right
+            << " | " << setw(10) << " "
+            << " | " << setw(10) << avgVec[2]
+            << " | " << setw(10) << minVec[2]
+            << " | " << setw(10) << maxVec[2]
+            << " | " << setw(10) << sumVec[2]
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
+        }
+
         return linearDependentVectors;
     }
 
@@ -580,7 +674,7 @@ namespace FROSch {
 //            jj += j;
 //            kk += k;
 //        }
-        // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); this->Phi_->describe(*fancy,VERB_EXTREME);
+        // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); this->Phi_->describe(*fancy,VERB_EXTREME);
         // Hier Multiplikation kIGamma*PhiGamma
         kIGamma->apply(*mVPhiGamma,*mVtmp);
 
@@ -608,11 +702,11 @@ namespace FROSch {
         ConstUNVecView numLocalBlockRows = AssembledInterfaceCoarseSpace_->getLocalSubspaceSizes();
         FROSCH_ASSERT(numLocalBlockRows.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator : ERROR: numLocalBlockRows.size()!=NumberOfBlocks_");
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            std::stringstream blockIdStringstream;
+            stringstream blockIdStringstream;
             blockIdStringstream << i+1;
-            std::string blockIdString = blockIdStringstream.str();
+            string blockIdString = blockIdStringstream.str();
             RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
-            std::string excludeBlocksString = coarseSpaceList->get("Exclude","0");
+            string excludeBlocksString = coarseSpaceList->get("Exclude","0");
             UNVec excludeBlocks = FROSch::GetIndicesFromString(excludeBlocksString,(UN)0);
             sortunique(excludeBlocks);
             for (UN j=0; j<excludeBlocks.size(); j++) {
@@ -620,7 +714,7 @@ namespace FROSch {
             }
             UNVec extensionBlocks(0);
             for (UN j=0; j<NumberOfBlocks_; j++) {
-                typename UNVec::iterator it = std::find(excludeBlocks.begin(),excludeBlocks.end(),j);
+                typename UNVec::iterator it = find(excludeBlocks.begin(),excludeBlocks.end(),j);
                 if (it == excludeBlocks.end()) {
                     extensionBlocks.push_back(j);
                 }

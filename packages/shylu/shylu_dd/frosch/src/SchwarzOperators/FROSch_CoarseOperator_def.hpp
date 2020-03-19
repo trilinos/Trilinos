@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -72,7 +73,7 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(computeTime,"CoarseOperator::compute");
         FROSCH_ASSERT(this->IsInitialized_,"FROSch::CoarseOperator : ERROR: CoarseOperator has to be initialized before calling compute()");
         // This is not optimal yet... Some work could be moved to Initialize
-        //if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: Some of the operations could probably be moved from initialize() to Compute().\n";
+        //if (this->Verbose_) cout << "FROSch::CoarseOperator : WARNING: Some of the operations could probably be moved from initialize() to Compute().\n";
 
         bool reuseCoarseBasis = this->ParameterList_->get("Reuse: Coarse Basis",true);
         bool reuseCoarseMatrix = this->ParameterList_->get("Reuse: Coarse Matrix",false);
@@ -82,7 +83,7 @@ namespace FROSch {
         }
 
         if (!reuseCoarseBasis) {
-            if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::CoarseOperator : Recomputing the Coarse Basis" << std::endl;
+            if (this->IsComputed_ && this->Verbose_) cout << "FROSch::CoarseOperator : Recomputing the Coarse Basis" << endl;
             clearCoarseSpace(); // AH 12/11/2018: If we do not clear the coarse space, we will always append just append the coarse space
             XMapPtr subdomainMap = this->computeCoarseSpace(CoarseSpace_); // AH 12/11/2018: This map could be overlapping, repeated, or unique. This depends on the specific coarse operator
             if (CoarseSpace_->hasUnassembledMaps()) { // If there is no unassembled basis, the current Phi_ should already be correct
@@ -95,12 +96,12 @@ namespace FROSch {
         }
         if ( this->ParameterList_->get("Set Phi to PList", false ) ){
             if (this->Verbose_)
-                std::cout << "\t### Setting Phi (RCP<Xpetra::Matrix>) to ParameterList.\n";
+                cout << "\t### Setting Phi (RCP<Xpetra::Matrix>) to ParameterList.\n";
 
             this->ParameterList_->set("Phi Pointer", Phi_);
         }
         if (!reuseCoarseMatrix) {
-            if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::CoarseOperator : Recomputing the Coarse Matrix" << std::endl;
+            if (this->IsComputed_ && this->Verbose_) cout << "FROSch::CoarseOperator : Recomputing the Coarse Matrix" << endl;
             this->setUpCoarseOperator();
         }
         this->IsComputed_ = true;
@@ -340,7 +341,7 @@ namespace FROSch {
                             CoarseMatrix_->insertGlobalValues(globalRow,indicesGlob(),values());
                         }
                     }
-                    CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
+                    CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
                 } else {
                     ConstGOVecView indices;
                     ConstSCVecView values;
@@ -366,7 +367,7 @@ namespace FROSch {
                             CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
                         }
                     }
-                    CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
+                    CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
                 }
 
                 bool reuseCoarseMatrixSymbolicFactorization = this->ParameterList_->get("Reuse: Coarse Matrix Symbolic Factorization",true);
@@ -374,7 +375,7 @@ namespace FROSch {
                     reuseCoarseMatrixSymbolicFactorization = false;
                 }
                 if (!reuseCoarseMatrixSymbolicFactorization) {
-                    if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::CoarseOperator : Recomputing the Symbolic Factorization of the coarse matrix" << std::endl;
+                    if (this->IsComputed_ && this->Verbose_) cout << "FROSch::CoarseOperator : Recomputing the Symbolic Factorization of the coarse matrix" << endl;
                     CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
                     CoarseSolver_->initialize();
                 } else {
@@ -398,7 +399,7 @@ namespace FROSch {
             k0 = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMapUnique(),as<LO>(0));
             TripleMatrixMultiply<SC,LO,GO,NO>::MultiplyRAP(*Phi_,true,*this->K_,false,*Phi_,false,*k0);
         } else {
-            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
+            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
             XMatrixPtr tmp = MatrixMatrix<SC,LO,GO,NO>::Multiply(*this->K_,false,*Phi_,false,*fancy);
             k0 = MatrixMatrix<SC,LO,GO,NO>::Multiply(*Phi_,true,*tmp,false,*fancy);
         }
@@ -414,8 +415,8 @@ namespace FROSch {
 
         switch (NumProcsCoarseSolve_) {
             case -1:
-                FROSCH_ASSERT(false,"We do not know the size of the matrix yet. Therefore, we cannot use the formula NumProcsCoarseSolve_ = int(0.5*(1+std::max(k0->getGlobalNumRows()/10000,k0->getGlobalNumEntries()/100000)));");
-                //NumProcsCoarseSolve_ = int(0.5*(1+std::max(k0->getGlobalNumRows()/10000,k0->getGlobalNumEntries()/100000)));
+                FROSCH_ASSERT(false,"We do not know the size of the matrix yet. Therefore, we cannot use the formula NumProcsCoarseSolve_ = int(0.5*(1+max(k0->getGlobalNumRows()/10000,k0->getGlobalNumEntries()/100000)));");
+                //NumProcsCoarseSolve_ = int(0.5*(1+max(k0->getGlobalNumRows()/10000,k0->getGlobalNumEntries()/100000)));
                 break;
 
             case 0:
@@ -446,7 +447,7 @@ namespace FROSch {
             for (int i=0; i<gatheringSteps-1; i++) {
                 numMyRows = 0;
                 numProcsGatheringStep = LO(numProcsGatheringStep/gatheringFactor);
-                //if (this->Verbose_) std::cout << i << " " << numProcsGatheringStep << " " << numGlobalIndices << std::endl;
+                //if (this->Verbose_) cout << i << " " << numProcsGatheringStep << " " << numGlobalIndices << endl;
                 if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/numProcsGatheringStep) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/numProcsGatheringStep) < numProcsGatheringStep) {
                     if (this->MpiComm_->getRank()==0) {
                         numMyRows = numGlobalIndices - (numGlobalIndices/numProcsGatheringStep)*(numProcsGatheringStep-1);
@@ -551,14 +552,31 @@ namespace FROSch {
             FROSCH_ASSERT(false,"FROSch::CoarseOperator : ERROR: Distribution type unknown.");
         }
 
+        GO dimCoarseProblem = coarseMapUnique->getMaxAllGlobalIndex();
+        if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            dimCoarseProblem += 1;
+        }
         if (this->Verbose_) {
-            std::cout << "\n\
-    ------------------------------------------------------------------------------\n\
-     Coarse problem statistics\n\
-    ------------------------------------------------------------------------------\n\
-      Dimension of the coarse problem             --- " << coarseMapUnique->getMaxAllGlobalIndex()+1 << "\n\
-      Number of processes                         --- " << NumProcsCoarseSolve_ << "\n\
-    ------------------------------------------------------------------------------\n";
+            cout
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| "
+            << left << setw(85) << "Coarse problem statistics" << right
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Dimension of the coarse problem" << right
+            << " | " << setw(41) << dimCoarseProblem
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << "| " << left << setw(41) << "Number of processes" << right
+            << " | " << setw(41) << NumProcsCoarseSolve_
+            << " |"
+            << "\n" << setw(FROSCH_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
         }
 
         return 0;
