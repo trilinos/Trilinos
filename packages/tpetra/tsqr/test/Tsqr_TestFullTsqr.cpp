@@ -229,7 +229,7 @@ namespace {
   testParameters(const Teuchos::RCP<const Teuchos::ParameterList>& validParams,
                  const CmdLineOptions& options)
   {
-    auto testParams = parameterList ("FullTsqrVerifier");
+    auto testParams = parameterList("FullTsqrVerifier");
     testParams->set("Cache Size Hint", options.cacheSizeHint);
     testParams->set("numRowsLocal", options.numRowsLocal);
     testParams->set("numCols", options.numCols);
@@ -263,7 +263,7 @@ namespace {
 
     // The Caller iterates the test over all Scalar types.
     using caller_type = TSQR::Test::FullTsqrVerifierCaller;
-    caller_type caller(comm, caller_type::defaultRandomSeed ());
+    caller_type caller(comm, caller_type::defaultRandomSeed());
 
     // Read command-line options
     auto defaultParams = caller.getValidParameterList();
@@ -291,9 +291,15 @@ namespace {
       caller.run<float, double>(testParams) :
       true;
 #ifdef HAVE_TPETRATSQR_COMPLEX
-    const bool complexResult = cmdLineOpts.testComplex ?
-      caller.run<std::complex<float>, std::complex<double>>(testParams) :
-      true;
+    const bool complexResult = [&] {
+      if (cmdLineOpts.testComplex) {
+        return caller.run<std::complex<float>,
+                          std::complex<double>>(testParams);
+      }
+      else {
+        return true;
+      }
+    } ();
 #else
     const bool complexResult = true;
 #endif // HAVE_TPETRATSQR_COMPLEX
@@ -304,7 +310,7 @@ namespace {
 
 
 int
-main (int argc, char* argv[])
+main(int argc, char* argv[])
 {
   using std::endl;
   TSQR::Test::MpiAndKokkosScope testScope(&argc, &argv);
@@ -316,12 +322,12 @@ main (int argc, char* argv[])
   bool success = false; // hopefully this will be true later
   try {
     success = test(argc, argv, comm, err);
-    if(success) {
+    if (success) {
       // The Trilinos test framework expects a message like this.
       out << "\nEnd Result: TEST PASSED" << endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS
     (actually_print_caught_exceptions, err, success);
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
