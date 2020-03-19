@@ -329,6 +329,11 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   Time_(A_->Comm()),
+  HypreA_(0),
+  HypreG_(0),
+  xHypre_(0),
+  yHypre_(0),
+  zHypre_(0),
   IsSolverSetup_(false),
   IsPrecondSetup_(false),
   SolveOrPrec_(Solver),
@@ -405,6 +410,20 @@ void Ifpack_Hypre::Destroy(){
   }
   if(IsPrecondSetup_){
     IFPACK_CHK_ERRV(PrecondDestroyPtr_(Preconditioner_));
+  }
+
+  // Maxwell
+  if(HypreG_) {
+    IFPACK_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreG_));
+  }
+  if(xHypre_) {
+    IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(xHypre_));
+  }
+  if(yHypre_) {
+    IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(yHypre_));
+  }
+  if(zHypre_) {
+    IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(zHypre_));
   }
 } //Destroy()
 
