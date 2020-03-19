@@ -167,6 +167,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
         alphaP  = state_->searchSize;
         ftrialP = ftrial;
         state_->searchSize *= rhoinc_;
+        state_->searchSize  = std::min(state_->searchSize,maxAlpha_);
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
         proj_->project(*state_->iterateVec);
