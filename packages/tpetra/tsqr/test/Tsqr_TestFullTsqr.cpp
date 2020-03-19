@@ -51,9 +51,11 @@ namespace {
 
   // Documentation string to print out if --help is a command-line
   // argument.
-  const char docString[] = "This program tests correctness and "
-    "accuracy of TSQR::Tsqr, which is the full implementation of "
-    "TSQR.";
+  const char docString[] = "This program tests correctness, "
+    "accuracy, and/or performance of TSQR::Tsqr.  TSQR::Tsqr "
+    "is the full implementation of TSQR, including both NodeTsqr "
+    "(within a single MPI process) and DistTsqr (across MPI "
+    "processes).";
 
   // Encapsulation of all command-line parameters.
   struct CmdLineOptions {
@@ -64,6 +66,7 @@ namespace {
       cacheSizeHint(testParams->get<size_t>("Cache Size Hint")),
       numRowsLocal(testParams->get<int>("numRowsLocal")),
       numCols(testParams->get<int>("numCols")),
+      numTrials(testParams->get<int>("numTrials")),
       contiguousCacheBlocks(testParams->get<bool>("contiguousCacheBlocks")),
       testFactorExplicit(testParams->get<bool>("testFactorExplicit")),
       testRankRevealing(testParams->get<bool>("testRankRevealing")),
@@ -71,18 +74,13 @@ namespace {
       printResults(testParams->get<bool>("printResults")),
       failIfInaccurate(testParams->get<bool>("failIfInaccurate")),
       nodeTsqr(testParams->get<std::string>("NodeTsqr")),
-#ifdef HAVE_TPETRATSQR_COMPLEX
-      testComplex(true),
-#else
-      testComplex(false),
-#endif // HAVE_TPETRATSQR_COMPLEX
-      testReal(true),
       verbose(testParams->get<bool>("verbose"))
     {}
 
     size_t cacheSizeHint = 0;
     int numRowsLocal = 10000;
     int numCols = 5;
+    int numTrials = 100;
     bool contiguousCacheBlocks = false;
     bool testFactorExplicit = true;
     bool testRankRevealing = true;
@@ -97,6 +95,8 @@ namespace {
 #endif // HAVE_TPETRATSQR_COMPLEX
     bool testReal = true;
     bool verbose = false;
+    bool verify = true;
+    bool benchmark = false;
 
     // \brief Read command-line options.
     //
@@ -157,6 +157,10 @@ namespace {
                               &numCols,
                               defaultParams->getEntry
                               ("numCols").docString().c_str());
+        cmdLineProc.setOption("numTrials",
+                              &numTrials,
+                              defaultParams->getEntry
+                              ("numTrials").docString().c_str());
         cmdLineProc.setOption("contiguousCacheBlocks",
                               "noContiguousCacheBlocks",
                               &contiguousCacheBlocks,
@@ -196,6 +200,15 @@ namespace {
                               &verbose,
                               defaultParams->getEntry
                               ("verbose").docString().c_str());
+        cmdLineProc.setOption("verify",
+                              "noverify",
+                              &verify,
+                              "Test accuracy");
+        cmdLineProc.setOption("benchmark",
+                              "nobenchmark",
+                              &benchmark,
+                              "Test performance");
+
         cmdLineProc.parse(argc, argv);
         cacheSizeHint = size_t(cacheSizeHintAsInt);
       }
@@ -215,7 +228,12 @@ namespace {
          "Number of rows per process must be positive.");
       TEUCHOS_TEST_FOR_EXCEPTION
         (numCols <= 0, std::invalid_argument,
-         "Number of columns must be positive.");
+         "Number of columns must be positive, but you specified "
+         "--numCols=" << numCols << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numTrials <= 0, std::invalid_argument,
+         "Number of trials must be positive, but you specified "
+         "--numTrials=" << numTrials << ".");
       return false; // Did not print help
     }
   };
@@ -233,6 +251,7 @@ namespace {
     testParams->set("Cache Size Hint", options.cacheSizeHint);
     testParams->set("numRowsLocal", options.numRowsLocal);
     testParams->set("numCols", options.numCols);
+    testParams->set("numTrials", options.numTrials);
     testParams->set("testFactorExplicit",
                     options.testFactorExplicit);
     testParams->set("testRankRevealing", options.testRankRevealing);
@@ -279,32 +298,40 @@ namespace {
     auto testParams = testParameters(defaultParams, cmdLineOpts);
     defaultParams = null; // save a little space
 
-    // Run the tests.  If the tests are set up to fail on
-    // insufficiently inaccurate results, run() will throw an
-    // exception in that case.  Otherwise, the tests return nothing,
-    // and "succeed" if they don't crash or throw an exception.
-    //
-    // The testReal and testComplex options are read in at the command
-    // line, but since they do not apply to all Scalar types, they
-    // don't belong in testParams.
-    const bool realResult = cmdLineOpts.testReal ?
-      caller.run<float, double>(testParams) :
-      true;
+    bool success = true;
+    if (cmdLineOpts.verify) {
+      // Verify accuracy of "full" TSQR.  If the tests are set up to
+      // fail on insufficiently inaccurate results, run() will throw
+      // an exception in that case.  Otherwise, the tests return
+      // nothing, and "succeed" if they don't crash or throw an
+      // exception.
+      if (cmdLineOpts.testReal) {
+        const bool ok = caller.verify<float, double>(testParams);
+        success = success && ok;
+      }
 #ifdef HAVE_TPETRATSQR_COMPLEX
-    const bool complexResult = [&] {
       if (cmdLineOpts.testComplex) {
-        return caller.run<std::complex<float>,
-                          std::complex<double>>(testParams);
+        const bool ok =
+          caller.verify<std::complex<float>,
+                        std::complex<double>>(testParams);
+        success = success && ok;
       }
-      else {
-        return true;
-      }
-    } ();
-#else
-    const bool complexResult = true;
 #endif // HAVE_TPETRATSQR_COMPLEX
+    }
 
-    return realResult && complexResult;
+    if (cmdLineOpts.benchmark) {
+      if (cmdLineOpts.testReal) {
+        caller.benchmark<float, double>(testParams);
+      }
+#ifdef HAVE_TPETRATSQR_COMPLEX
+      if (cmdLineOpts.testComplex) {
+        caller.benchmark<std::complex<float>,
+                         std::complex<double>>(testParams);
+      }
+#endif // HAVE_TPETRATSQR_COMPLEX
+    }
+
+    return success;
   }
 } // namespace (anonymous)
 
