@@ -16,6 +16,8 @@
 #include <ostream>
 #include <iterator>
 #include <cassert>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <limits>
 
@@ -80,19 +82,20 @@ typedef typename std::array<REAL,DIM>::iterator iterator;
     return out;
   }
 
-  std::string to_string() const
+  std::string to_string(int precision) const
   {
-      std::string output;
+      std::ostringstream output;
       for ( size_t i=0; i<DIM; i++)
       {
-          output += std::to_string(vec[i]);
+          output << std::setprecision(precision) << vec[i];
           if ( i != DIM-1 )
-              output += " ";
+              output << " ";
       }
-      return output;
+      return output.str();
   }
 
   unsigned dimension() const { return DIM; }
+
   unsigned size() const { return DIM; }
 
   iterator begin();

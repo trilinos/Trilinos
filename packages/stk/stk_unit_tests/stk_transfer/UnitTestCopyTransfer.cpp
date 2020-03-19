@@ -42,6 +42,9 @@
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include "stk_topology/topology.hpp"           // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, etc
+#include "stk_unit_test_utils/TextMesh.hpp"
+#include "stk_io/FillMesh.hpp"
+#include "stk_io/IossBridge.hpp"
 #include "gtest/gtest.h"
 #include <limits>
 #include <memory>
@@ -52,8 +55,7 @@
 #include "stk_transfer/copy_by_id/TransferCopyById.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyByIdMpmdMeshAdapter.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
-
-
+#include "stk_transfer/copy_by_id/TransferCopyTranslator.hpp"
 
 namespace
 {
@@ -2116,6 +2118,212 @@ TEST(Transfer, copy00___T___11)
     transfer.initialize();
     EXPECT_THROW(transfer.apply(), std::runtime_error);
 
+  }
+}
+
+TEST(Transfer, dataTypeTranslation)
+{
+  unsigned expectedLength = 10;
+
+  for(stk::transfer::DataTypeKey::data_t i = stk::transfer::DataTypeKey::data_t::UNSIGNED_INTEGER; i <= stk::transfer::DataTypeKey::data_t::DOUBLE; 
+      i = static_cast<stk::transfer::DataTypeKey::data_t>(i+1)) {
+    stk::transfer::DataTypeKey dataTranslator(i, expectedLength);
+    EXPECT_EQ(expectedLength, dataTranslator.get_data_length());
+    EXPECT_EQ(i, dataTranslator.get_data_type());
+  }
+}
+
+TEST(Transfer, dataLengthIsTooLong)
+{
+  unsigned expectedLength = stk::transfer::DataTypeKey::key_t::MAX_LENGTH + 1;
+
+  for(stk::transfer::DataTypeKey::data_t i = stk::transfer::DataTypeKey::data_t::UNSIGNED_INTEGER; i <= stk::transfer::DataTypeKey::data_t::DOUBLE; 
+      i = static_cast<stk::transfer::DataTypeKey::data_t>(i+1)) {
+    EXPECT_THROW(stk::transfer::DataTypeKey dataTranslator(i, expectedLength), std::logic_error);
+  }
+}
+
+template<typename SENDTYPE, typename RECVTYPE>
+void test_mismatched_data_type_copy_transfer(unsigned sendBufferSize, unsigned recvBufferSize,
+                                             stk::transfer::DataTypeKey::data_t sendType, stk::transfer::DataTypeKey::data_t recvType)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
+  stk::CommSparse commSparse(MPI_COMM_WORLD);
+
+  std::vector<SENDTYPE> sendBuffer;
+  std::vector<RECVTYPE> recvBuffer;
+
+  for(unsigned i = 0; i < sendBufferSize; i++) {
+    sendBuffer.push_back(i);
+  }
+  for(unsigned i = 0; i < recvBufferSize; i++) {
+    recvBuffer.push_back(std::numeric_limits<RECVTYPE>::max());
+  }
+
+  unsigned sendBufferDataSize = sendBufferSize * sizeof(SENDTYPE);
+  unsigned recvBufferDataSize = recvBufferSize * sizeof(RECVTYPE);
+  int communicatingProc = 1 - stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const uint8_t* sendData = reinterpret_cast<const uint8_t*>(sendBuffer.data());
+
+  for(int phase = 0; phase < 2; phase++) {
+    stk::transfer::DataTypeKey dataTranslator(sendType, sendBufferDataSize);
+    commSparse.send_buffer(communicatingProc).pack<unsigned>(dataTranslator.m_value);
+    for(unsigned index = 0; index < sendBufferDataSize; index++) {
+      commSparse.send_buffer(communicatingProc).pack<uint8_t>(sendData[index]);
+    }
+    if(phase == 0) {
+      commSparse.allocate_buffers();
+    } else {
+      commSparse.communicate();
+    }
+  }
+
+  std::vector<uint8_t> tmpBuffer(sendBufferDataSize);
+  unsigned newBufferSize = 0;
+  unsigned dataKey = 0;
+  commSparse.recv_buffer(communicatingProc).unpack<unsigned>(dataKey);
+
+  stk::transfer::DataTypeKey unpackedData(dataKey);
+  stk::transfer::DataTypeKey::data_t sentDataType = unpackedData.get_data_type();
+  newBufferSize = unpackedData.get_data_length();
+
+  EXPECT_EQ(sendType, sentDataType);
+  EXPECT_EQ(sendBufferDataSize, newBufferSize);
+
+  for(unsigned index = 0; index < sendBufferDataSize; index++) {
+    commSparse.recv_buffer(communicatingProc).unpack<uint8_t>(tmpBuffer[index]);
+  }
+
+  stk::transfer::DataTypeTranslator<unsigned> translateUnsigned;
+  stk::transfer::DataTypeTranslator<int64_t> translateInt64;
+  stk::transfer::DataTypeTranslator<uint64_t> translateUInt64;
+  stk::transfer::DataTypeTranslator<int> translateInt;
+  stk::transfer::DataTypeTranslator<long double> translateLongDouble;
+  stk::transfer::DataTypeTranslator<double> translateDouble;
+  std::vector<stk::transfer::TranslatorBase*> dataTranslators = { &translateUnsigned, 
+                                                                  &translateInt64,
+                                                                  &translateUInt64,
+                                                                  &translateInt,
+                                                                  &translateLongDouble,
+                                                                  &translateDouble };
+
+  dataTranslators[sentDataType]->translate(tmpBuffer.data(), newBufferSize, recvType, recvBuffer.data(), recvBufferDataSize);
+
+  unsigned numEntries = std::min(sendBufferSize, recvBufferSize);
+
+  if(stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    for(unsigned i = 0; i < numEntries; i++) {
+      EXPECT_EQ(recvBuffer[i], sendBuffer[i]);
+    }
+    for(unsigned i = numEntries; i < recvBufferSize; i++) {
+      EXPECT_EQ(std::numeric_limits<RECVTYPE>::max(), recvBuffer[i]);
+    }
+  }
+}
+
+TEST(Transfer, mismatchedDataTypeCopyTransfer)
+{
+  using DataType = stk::transfer::DataTypeKey::data_t;
+  test_mismatched_data_type_copy_transfer<unsigned, unsigned long>(2, 2, DataType::UNSIGNED_INTEGER, DataType::UNSIGNED_INTEGER_64);
+  test_mismatched_data_type_copy_transfer<unsigned, unsigned long>(4, 2, DataType::UNSIGNED_INTEGER, DataType::UNSIGNED_INTEGER_64);
+  test_mismatched_data_type_copy_transfer<unsigned, unsigned long>(2, 4, DataType::UNSIGNED_INTEGER, DataType::UNSIGNED_INTEGER_64);
+
+  test_mismatched_data_type_copy_transfer<int, double>(2, 2, DataType::INTEGER, DataType::DOUBLE);
+  test_mismatched_data_type_copy_transfer<int, double>(4, 2, DataType::INTEGER, DataType::DOUBLE);
+  test_mismatched_data_type_copy_transfer<int, double>(2, 4, DataType::INTEGER, DataType::DOUBLE);
+
+  test_mismatched_data_type_copy_transfer<double, unsigned>(2, 2, DataType::DOUBLE, DataType::UNSIGNED_INTEGER);
+  test_mismatched_data_type_copy_transfer<double, unsigned>(4, 2, DataType::DOUBLE, DataType::UNSIGNED_INTEGER);
+  test_mismatched_data_type_copy_transfer<double, unsigned>(2, 4, DataType::DOUBLE, DataType::UNSIGNED_INTEGER);
+
+  test_mismatched_data_type_copy_transfer<uint64_t, double>(2, 2, DataType::UNSIGNED_INTEGER_64, DataType::DOUBLE);
+  test_mismatched_data_type_copy_transfer<uint64_t, double>(4, 2, DataType::UNSIGNED_INTEGER_64, DataType::DOUBLE);
+  test_mismatched_data_type_copy_transfer<uint64_t, double>(2, 4, DataType::UNSIGNED_INTEGER_64, DataType::DOUBLE);
+}
+
+namespace {
+  stk::mesh::Part&
+  create_block_part(stk::mesh::MetaData& meta, const stk::topology topology, const std::string& blockName, int64_t blockId)
+  {
+    stk::mesh::Part& part = meta.declare_part_with_topology(blockName, topology);
+    stk::io::put_io_part_attribute(part);
+    meta.set_part_id(part, blockId);
+    return part;
+  }
+}
+
+TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { return; }
+
+  std::string fieldName = "node_field";
+  int intInitVals = std::numeric_limits<int>::max();
+  double doubleInitVals = std::numeric_limits<double>::max();
+  std::vector<double> coords = {0,0, 1,0, 0,1, 1,1};
+
+  stk::mesh::MetaData metaA(2);
+  stk::mesh::BulkData bulkA(metaA, MPI_COMM_WORLD);
+  create_block_part(metaA, stk::topology::QUAD_4_2D, "block_1", 1);
+  stk::mesh::FieldBase* fieldBaseA = &metaA.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, fieldName);
+  stk::mesh::put_field_on_mesh(*fieldBaseA, metaA.universal_part(), &intInitVals);
+
+  std::string meshDescA = "0,1,QUAD_4_2D,1,2,4,3,block_1";
+  stk::unit_test_util::setup_text_mesh(bulkA, meshDescA, coords);
+
+  stk::mesh::MetaData metaB(2);
+  stk::mesh::BulkData bulkB(metaB, MPI_COMM_WORLD);
+  create_block_part(metaB, stk::topology::QUAD_4_2D, "block_1", 1);
+  stk::mesh::FieldBase* fieldBaseB = &metaB.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, fieldName);
+  stk::mesh::put_field_on_mesh(*fieldBaseB, metaB.universal_part(), &doubleInitVals);
+
+  std::string meshDescB;
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+    meshDescB = "0,1,QUAD_4_2D,1,2,4,3,block_1";
+  } else {
+    meshDescB = "1,1,QUAD_4_2D,1,2,4,3,block_1";
+  }
+  stk::unit_test_util::setup_text_mesh(bulkB, meshDescB, coords);
+
+  // Set up CopyTransfer
+  stk::mesh::EntityVector entitiesA;
+  stk::mesh::get_selected_entities(metaA.locally_owned_part(),
+                                   bulkA.buckets(stk::topology::NODE_RANK),
+                                   entitiesA);
+  std::vector<stk::mesh::FieldBase*> fieldsA;
+  fieldsA.push_back(fieldBaseA);
+  stk::transfer::TransferCopyByIdStkMeshAdapter transferMeshA(bulkA,entitiesA,fieldsA);
+
+  for(stk::mesh::Entity node : entitiesA) {
+    int* scalar = reinterpret_cast<int*>(stk::mesh::field_data(*fieldBaseA, node));
+    *scalar = static_cast<int>(0);
+  }
+
+  stk::mesh::EntityVector entitiesB;
+  stk::mesh::get_selected_entities(metaB.locally_owned_part(),
+                                   bulkB.buckets(stk::topology::NODE_RANK),
+                                   entitiesB);
+  std::vector<stk::mesh::FieldBase*> fieldsB;
+  fieldsB.push_back(fieldBaseB);
+  stk::transfer::TransferCopyByIdStkMeshAdapter transferMeshB(bulkB,entitiesB,fieldsB);
+
+  for(stk::mesh::Entity node : entitiesB) {
+    double* scalar = reinterpret_cast<double*>(stk::mesh::field_data(*fieldBaseB, node));
+    *scalar = static_cast<double>(std::numeric_limits<double>::max());
+  }
+
+  stk::transfer::SearchByIdCommAll copySearch;
+
+  stk::transfer::TransferCopyById copyTransfer(copySearch,transferMeshA,transferMeshB);
+  copyTransfer.initialize();
+
+  // Apply CopyTransfer
+  copyTransfer.apply();
+
+  if(bulkA.parallel_rank() == 1) {
+    for(stk::mesh::Entity node : entitiesB) {
+      double* scalar = reinterpret_cast<double*>(stk::mesh::field_data(*fieldBaseB, node));
+      EXPECT_DOUBLE_EQ(0.0, *scalar);
+    }
   }
 }
 

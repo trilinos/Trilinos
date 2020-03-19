@@ -82,7 +82,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 {
   if (stepperType == "") stepperType = "IMEX RK SSP2";
 
-  if (stepperType == "IMEX RK 1st order" || stepperType == "SSP1_111" ) {
+  if (stepperType == "IMEX RK 1st order"  ) {
     {
       // Explicit Tableau
       typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -142,7 +142,64 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     this->setStepperType("IMEX RK 1st order");
     this->setOrder(1);
 
-  } else if (stepperType == "IMEX RK SSP2" || stepperType == "SSP2_222" ) {
+  } else if ( stepperType == "SSP1_111" ) 
+  {
+    {
+      // Explicit Tableau
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      const int NumStages = 1;
+      const int order = 1;
+      Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+      const Scalar one = ST::one();
+      const Scalar zero = ST::zero();
+
+      // Fill A:
+      A(0,0) = zero; 
+
+      // Fill b:
+      b(0) = one; 
+
+      // Fill c:
+      c(0) = zero;
+
+
+      auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+        "Explicit Tableau - SSP1_111",
+        A,b,c,order,order,order));
+
+      this->setExplicitTableau(expTableau);
+    }
+    {
+      // Implicit Tableau
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      const int NumStages = 1;
+      const int order     = 1;
+      Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+      const Scalar one = ST::one();
+
+      // Fill A:
+      A(0,0) =  one;
+
+      // Fill b:
+      b(0) = one;
+
+      // Fill c:
+      c(0) = one;
+
+      auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+        "Implicit Tableau - SSP1_111",
+        A,b,c,order,order,order));
+
+      this->setImplicitTableau(impTableau);
+    }
+    this->setStepperType("IMEX RK 1st order (SSP1_111)");
+    this->setOrder(1);
+
+  } else if (stepperType == "IMEX RK SSP2" ) {
     // Explicit Tableau
     auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
     this->setExplicitTableau(stepperERK->getTableau());
@@ -153,6 +210,19 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     this->setImplicitTableau(stepperSDIRK->getTableau());
 
     this->setStepperType("IMEX RK SSP2");
+    this->setOrder(2);
+  } else if (stepperType == "SSP2_222" ) {
+    // Explicit Tableau
+    auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
+    this->setExplicitTableau(stepperERK->getTableau());
+
+    // Implicit Tableau
+    auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_2Stage3rdOrder<Scalar>());
+    stepperSDIRK->setGammaType("gamma");
+    stepperSDIRK->setGamma( 0.5 );
+    this->setImplicitTableau(stepperSDIRK->getTableau());
+
+    this->setStepperType("IMEX RK SSP2( A-Stable, gamma = 0.5) ");
     this->setOrder(2);
   } else if (stepperType == "IMEX RK SSP3" || stepperType == "SSP3_332" ) {
     // Explicit Tableau

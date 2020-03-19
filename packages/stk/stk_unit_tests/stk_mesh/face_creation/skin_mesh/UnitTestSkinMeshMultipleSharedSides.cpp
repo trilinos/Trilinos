@@ -34,7 +34,6 @@ TEST_F(TwoElemTwoSharedSideTester, skin_one_hex)
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
          test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 2u});
-         stk::io::write_mesh("doublyKissingHexes.e", bulkData);
      }
 }
 
@@ -64,7 +63,6 @@ TEST_F(TwoElemThreeSharedSideTester, skin_one_hex)
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
          test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 3u});
-         stk::io::write_mesh("triplyKissingHexes.e", bulkData);
      }
 }
 

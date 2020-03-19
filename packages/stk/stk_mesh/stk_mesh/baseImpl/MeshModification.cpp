@@ -40,6 +40,10 @@ bool MeshModification::modification_begin(const std::string description)
     this->set_sync_state_modifiable();
     this->reset_shared_entity_changed_parts();
 
+    for (FieldBase * stkField : m_bulkData.mesh_meta_data().get_fields()) {
+      stkField->sync_to_host();
+    }
+
     return true;
 }
 

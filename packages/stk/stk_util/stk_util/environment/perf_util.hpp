@@ -150,7 +150,7 @@ double get_max_time_across_procs(double time_on_this_proc, MPI_Comm comm)
 template <typename VALUETYPE>
 void print_tagged_stat(std::ostream& out, const std::string &tag, VALUETYPE value)
 {
-    out << std::setw(6) << std::fixed << std::setprecision(1) << tag << value << std::endl;
+    out << std::setw(11) << std::fixed << std::setprecision(6) << tag << value << std::endl;
 }
 
 inline

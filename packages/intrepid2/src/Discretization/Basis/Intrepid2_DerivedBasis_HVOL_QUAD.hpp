@@ -66,9 +66,9 @@ namespace Intrepid2
   :
   public Basis_TensorBasis<HVOL_LINE, HVOL_LINE>
   {
-    using OutputViewType = typename HVOL_LINE::outputViewType;
-    using PointViewType  = typename HVOL_LINE::pointViewType ;
-    using ScalarViewType = typename HVOL_LINE::scalarViewType;
+    using OutputViewType = typename HVOL_LINE::OutputViewType;
+    using PointViewType  = typename HVOL_LINE::PointViewType ;
+    using ScalarViewType = typename HVOL_LINE::ScalarViewType;
     
     using LineBasis = HVOL_LINE;
     using TensorBasis = Basis_TensorBasis<LineBasis,LineBasis>;

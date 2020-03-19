@@ -66,7 +66,7 @@ size_t EntityRepository::heap_memory_in_bytes() const
     return bytes;
 }
 
-std::pair<stk::mesh::entity_iterator ,bool>
+std::pair<EntityRepository::entity_iterator ,bool>
 EntityRepository::internal_create_entity( const EntityKey & key)
 {
   EntityKeyEntityMap& entMap = m_entities[key.rank()];

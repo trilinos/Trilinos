@@ -110,6 +110,12 @@ public:
     return bulk->entity_key(entity);
   }
 
+  stk::mesh::Entity get_entity(stk::mesh::EntityRank rank,
+                               const stk::mesh::FastMeshIndex& meshIndex) const
+  {
+    return (*(bulk->buckets(rank)[meshIndex.bucket_id]))[meshIndex.bucket_ord];
+  }
+
   ConnectedNodes get_nodes(const MeshIndex &elem) const
   {
     const stk::mesh::Bucket& bucket = *elem.bucket;
@@ -198,6 +204,16 @@ public:
   {
     const stk::mesh::MeshIndex &meshIndex = bulk->mesh_index(entity);
     return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
+  }
+
+  stk::mesh::FastMeshIndex host_mesh_index(stk::mesh::Entity entity) const
+  {
+    return fast_mesh_index(entity);
+  }
+
+  stk::mesh::FastMeshIndex device_mesh_index(stk::mesh::Entity entity) const
+  {
+    return fast_mesh_index(entity);
   }
 
   stk::NgpVector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector) const
