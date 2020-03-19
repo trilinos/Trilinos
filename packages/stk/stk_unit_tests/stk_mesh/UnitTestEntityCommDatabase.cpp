@@ -62,7 +62,7 @@ TEST(EntityCommDatabase, testCommMapChangeListener)
     //CommListUpdater only manages removing entries from comm-list,
     //so we must add an entry manually to set up the test.
     stk::mesh::EntityCommListInfo comm_list_info =
-    {key, stk::mesh::Entity(), nullptr, 0, comm_map.entity_comm(key)};
+    {key, stk::mesh::Entity(), comm_map.entity_comm(key)};
     comm_list.push_back(comm_list_info);
 
     EXPECT_EQ(1u, comm_list.size());

@@ -2222,13 +2222,22 @@ namespace MueLu {
           ParameterList groupList = paramList1; // copy because list temporally modified (remove 'id')
           groupList.remove("group");
 
+          bool setKokkosRefactor = false;
+          bool kokkosRefactor;
+          if (groupList.isParameter("use kokkos refactor")) {
+            kokkosRefactor = groupList.get<bool>("use kokkos refactor");
+            groupList.remove("use kokkos refactor");
+            setKokkosRefactor = true;
+          }
+
           FactoryMap groupFactoryMap;
           BuildFactoryMap(groupList, factoryMapIn, groupFactoryMap, factoryManagers);
 
           // do not store groupFactoryMap in factoryMapOut
           // Create a factory manager object from groupFactoryMap
-          RCP<FactoryManagerBase> m = rcp(new FactoryManager(groupFactoryMap));
-
+          RCP<FactoryManager> m = rcp(new FactoryManager(groupFactoryMap));
+          if (setKokkosRefactor)
+            m->SetKokkosRefactor(kokkosRefactor);
           factoryManagers[paramName] = m;
 
         } else {

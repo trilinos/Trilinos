@@ -318,7 +318,6 @@ TEST(MeshImplUtils, visit_upward_closure_nominal)
     const int myRank = fix.prank();
     BulkData & mesh = fix.mesh();
     if (numProcs != 4) { return; }
-    fix.WriteToExodusFile("2x1x4.exo");
 
     Entity node;
     if (myRank == 0) {

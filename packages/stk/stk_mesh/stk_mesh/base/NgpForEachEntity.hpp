@@ -54,7 +54,7 @@ struct ThreadFunctor
   STK_FUNCTION
   void operator()(const int& i) const
   {
-    functor(typename Mesh::MeshIndex{bucket, static_cast<unsigned>(i)});
+    functor(typename stk::mesh::FastMeshIndex{bucket->bucket_id(), static_cast<unsigned>(i)});
   }
   const typename Mesh::BucketType *bucket;
   const AlgorithmPerEntity &functor;
@@ -74,7 +74,7 @@ struct TeamFunctor
   STK_FUNCTION
   void operator()(const TeamHandleType& team) const
   {
-    const int bucketIndex = bucketIds.device_get(team.league_rank());
+    const int bucketIndex = bucketIds.get<typename Mesh::MeshExecSpace>(team.league_rank());
     const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
     unsigned numElements = bucket.size();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements),

@@ -17,7 +17,7 @@ protected:
     {
         create_num_fields_of_rank(10, stk::topology::NODE_RANK);
         create_num_fields_of_rank(10, stk::topology::ELEM_RANK);
-        setup_mesh("generated:100x100x128", stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_mesh("generated:50x50x64", stk::mesh::BulkData::NO_AUTO_AURA);
     }
 
     void expect_no_entities()

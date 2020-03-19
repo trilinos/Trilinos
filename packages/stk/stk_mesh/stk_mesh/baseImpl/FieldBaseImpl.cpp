@@ -45,42 +45,41 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
+#include "stk_mesh/base/NgpField.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include "stk_util/util/SortAndUnique.hpp"
-
-
-
 
 namespace stk {
 namespace mesh {
 namespace impl {
 
-FieldBaseImpl::FieldBaseImpl(
-    MetaData                   * arg_mesh_meta_data ,
-    stk::topology::rank_t        arg_entity_rank ,
-    unsigned                     arg_ordinal ,
-    const std::string          & arg_name ,
-    const DataTraits           & arg_traits ,
-    unsigned                     arg_rank,
-    const shards::ArrayDimTag  * const * arg_dim_tags,
-    unsigned                     arg_number_of_states ,
-    FieldState                   arg_this_state
-    )
-: m_entity_rank(arg_entity_rank),
-  m_name( arg_name ),
-  m_attribute(),
-  m_data_traits( arg_traits ),
-  m_meta_data( arg_mesh_meta_data ),
-  m_ordinal( arg_ordinal ),
-  m_num_states( arg_number_of_states ),
-  m_this_state( arg_this_state ),
-  m_field_rank( arg_rank ),
-  m_restrictions(),
-  m_initial_value(NULL),
-  m_initial_value_num_bytes(0)
+FieldBaseImpl::FieldBaseImpl(MetaData                   * arg_mesh_meta_data,
+                             stk::topology::rank_t        arg_entity_rank,
+                             unsigned                     arg_ordinal,
+                             const std::string          & arg_name,
+                             const DataTraits           & arg_traits,
+                             unsigned                     arg_rank,
+                             const shards::ArrayDimTag  * const * arg_dim_tags,
+                             unsigned                     arg_number_of_states,
+                             FieldState                   arg_this_state)
+  : m_entity_rank(arg_entity_rank),
+    m_name( arg_name ),
+    m_attribute(),
+    m_data_traits( arg_traits ),
+    m_meta_data( arg_mesh_meta_data ),
+    m_ordinal( arg_ordinal ),
+    m_num_states( arg_number_of_states ),
+    m_this_state( arg_this_state ),
+    m_field_rank( arg_rank ),
+    m_restrictions(),
+    m_initial_value(nullptr),
+    m_initial_value_num_bytes(0),
+    m_ngpField(nullptr),
+    m_numSyncsToHost(0),
+    m_numSyncsToDevice(0)
 {
-  FieldBase * const pzero = NULL ;
-  const shards::ArrayDimTag * const dzero = NULL ;
+  FieldBase * const pzero = nullptr ;
+  const shards::ArrayDimTag * const dzero = nullptr ;
   Copy<MaximumFieldStates>(    m_field_states , pzero );
   Copy<MaximumFieldDimension>( m_dim_tags ,     dzero );
 
@@ -92,11 +91,13 @@ FieldBaseImpl::FieldBaseImpl(
 //----------------------------------------------------------------------
 FieldBaseImpl::~FieldBaseImpl()
 {
+  delete m_ngpField;
+
   if (state() == StateNone) {
     void*& init_val = m_initial_value;
 
     delete [] reinterpret_cast<char*>(init_val);
-    init_val = NULL;
+    init_val = nullptr;
   }
 }
 
@@ -358,6 +359,77 @@ unsigned FieldBaseImpl::max_size( unsigned ent_rank ) const
       }
   }
   return max ;
+}
+
+void
+FieldBaseImpl::modify_on_host() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_host();
+  }
+}
+
+void
+FieldBaseImpl::modify_on_device() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_device();
+  }
+}
+
+void
+FieldBaseImpl::sync_to_host() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->sync_to_host();
+  }
+}
+
+void
+FieldBaseImpl::sync_to_device() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->sync_to_device();
+  }
+}
+
+NgpFieldBase *
+FieldBaseImpl::get_ngp_field() const
+{
+  return m_ngpField;
+}
+
+void
+FieldBaseImpl::set_ngp_field(NgpFieldBase * ngpField) const
+{
+  if (m_ngpField != nullptr) {
+    delete m_ngpField;
+  }
+  m_ngpField = ngpField;
+}
+
+size_t
+FieldBaseImpl::num_syncs_to_host() const
+{
+  return m_numSyncsToHost;
+}
+
+size_t
+FieldBaseImpl::num_syncs_to_device() const
+{
+  return m_numSyncsToDevice;
+}
+
+void
+FieldBaseImpl::increment_num_syncs_to_host() const
+{
+  ++m_numSyncsToHost;
+}
+
+void
+FieldBaseImpl::increment_num_syncs_to_device() const
+{
+  ++m_numSyncsToDevice;
 }
 
 //----------------------------------------------------------------------

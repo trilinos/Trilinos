@@ -1428,12 +1428,79 @@ stk::mesh::ConnectivityOrdinal get_ordinal_from_side_entity(const std::vector<st
     return stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
 }
 
+void filter_out( OrdinalVector & vec ,
+                 const OrdinalVector & parts ,
+                 OrdinalVector & removed )
+{
+  OrdinalVector::iterator i , j ;
+  i = j = vec.begin();
+
+  OrdinalVector::const_iterator ip = parts.begin() ;
+
+  while ( j != vec.end() && ip != parts.end() ) {
+    if      ( *ip < *j ) { ++ip ; }
+    else if ( *j < *ip ) { *i = *j ; ++i ; ++j ; }
+    else {
+      removed.push_back( *ip );
+      ++j ;
+      ++ip ;
+    }    
+  }
+
+  if ( i != j ) { vec.erase( i , j ); } 
+}
+
+void merge_in( OrdinalVector & vec , const OrdinalVector & parts )
+{
+  std::vector<unsigned>::iterator i = vec.begin();
+  OrdinalVector::const_iterator ip = parts.begin() ;
+
+  for ( ; i != vec.end() && ip != parts.end() ; ++i ) {
+
+    const unsigned ord = *ip; 
+
+    if ( ord <= *i ) {
+      if ( ord < *i ) { i = vec.insert( i , ord ); } 
+      ++ip ;
+    }    
+  }
+
+  for ( ; ip != parts.end() ; ++ip ) {
+    const unsigned ord = *ip; 
+    vec.push_back( ord );
+  }
+}
+
 stk::mesh::ConnectivityOrdinal get_ordinal_for_element_side_pair(const stk::mesh::BulkData &bulkData, stk::mesh::Entity element, stk::mesh::Entity side)
 {
     const stk::mesh::Entity * sides = bulkData.begin(element, bulkData.mesh_meta_data().side_rank());
     stk::mesh::ConnectivityOrdinal const * ordinals = bulkData.begin_ordinals(element, bulkData.mesh_meta_data().side_rank());
     std::vector<stk::mesh::Entity> sideVector(sides, sides+bulkData.num_sides(element));
     return get_ordinal_from_side_entity(sideVector, ordinals, side);
+}
+
+void print_field_data_for_entity(const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex, std::ostream& out)
+{
+  const stk::mesh::Bucket* bucket = meshIndex.bucket;
+  size_t b_ord = meshIndex.bucket_ordinal;
+  const stk::mesh::FieldVector& all_fields = mesh.mesh_meta_data().get_fields();
+  for(stk::mesh::FieldBase* field : all_fields) {
+    if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
+    stk::mesh::FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
+    unsigned data_size = field_meta_data.m_bytes_per_entity;
+    if(data_size > 0) { // entity has this field?
+      void* data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * b_ord;
+      out << "        For field: " << *field << ", has data: ";
+      field->print_data(out, data, data_size);
+      out << std::endl;
+    }
+  }
+}
+
+void print_field_data_for_entity(const stk::mesh::BulkData& mesh, const stk::mesh::Entity entity, std::ostream& out)
+{
+  const stk::mesh::MeshIndex meshIndex = mesh.mesh_index(entity);
+  print_field_data_for_entity(mesh, meshIndex, out);
 }
 
 } // namespace impl

@@ -16,19 +16,19 @@
 template <typename Field>
 void assign_value_to_field(stk::mesh::BulkData &bulk, Field ngpField, double value)
 {
-  stk::mesh::NgpMesh ngpMesh(bulk);
+  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(),
-                                 KOKKOS_LAMBDA(stk::mesh::NgpMesh::MeshIndex entity)
+                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
-                                   ngpField.get(entity, 0) = value;
+                                   ngpField(entity, 0) = value;
                                  });
   ngpField.modify_on_device();
 }
 void assign_value_to_statedfield(stk::mesh::BulkData &bulk, stk::mesh::ConvenientNgpMultistateField<double> ngpStatedField, double value)
 {
-  stk::mesh::NgpMesh ngpMesh(bulk);
+  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(),
-                                 KOKKOS_LAMBDA(stk::mesh::NgpMesh::MeshIndex entity)
+                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
                                    ngpStatedField.get_new(entity, 0) = value;
                                  });
@@ -43,11 +43,11 @@ public:
   template <typename Field>
   void test_field_has_value_on_device(const stk::mesh::BulkData& bulk, Field ngpField, double expectedValue)
   {
-    stk::mesh::NgpMesh ngpMesh(bulk);
+    const stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(),
-                                   KOKKOS_LAMBDA(stk::mesh::NgpMesh::MeshIndex entity)
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                    {
-                                     NGP_ThrowRequire(expectedValue == ngpField.get(entity, 0));
+                                     NGP_ThrowRequire(expectedValue == ngpField(entity, 0));
                                    });
   }
 

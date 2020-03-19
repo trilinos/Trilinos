@@ -45,11 +45,6 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-namespace stk { namespace mesh { struct ConnectivityMap; } }
-
-
-
-
 
 namespace stk {
 namespace mesh {
@@ -92,7 +87,6 @@ TetFixture::TetFixture(   MetaData& meta
               , size_t ny
               , size_t nz
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -128,7 +122,6 @@ TetFixture::TetFixture(   MetaData& meta
               , size_t nz
               , const std::string& coordsName
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
