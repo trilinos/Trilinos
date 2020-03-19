@@ -45,7 +45,6 @@
 #include <stk_unit_test_utils/stk_mesh_fixtures/FixtureNodeSharing.hpp>
 #include <stk_unit_test_utils/stk_mesh_fixtures/Hex20Fixture.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
-namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 namespace stk {
 namespace mesh {
@@ -85,7 +84,6 @@ Hex20Fixture::Hex20Fixture(   MetaData& meta
               , size_t ny
               , size_t nz
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -121,7 +119,6 @@ Hex20Fixture::Hex20Fixture(   MetaData& meta
               , size_t nz
               , const std::string& coordsName
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),

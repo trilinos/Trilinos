@@ -118,17 +118,14 @@ namespace Intrepid2 {
     /**  \brief View type for ordinal
     */
     using OrdinalViewType = Kokkos::View<ordinal_type,ExecSpaceType>;
-    using ordinal_view_type INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalViewType instead","OrdinalViewType") = OrdinalViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalViewType instead");
 
     /**  \brief View for basis type
     */
     using EBasisViewType = Kokkos::View<EBasis,ExecSpaceType>;
-    using ebasis_view_type INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use EBasisViewType instead","EBasisViewType") = EBasisViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use EBasisViewType instead");
 
     /**  \brief View for coordinate system type
     */
     using ECoordinatesViewType = Kokkos::View<ECoordinates,ExecSpaceType>;
-    using ecoordinates_view_type INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use ECoordinatesViewType instead","ECoordinatesViewType") = ECoordinatesViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use ECoordinatesViewType instead");
 
     // ** tag interface
     //  - tag interface is not decorated with Kokkos inline so it should be allocated on hostspace
@@ -136,42 +133,34 @@ namespace Intrepid2 {
     /**  \brief View type for 1d host array
     */
     using OrdinalTypeArray1DHost = Kokkos::View<ordinal_type*,typename ExecSpaceType::array_layout,Kokkos::HostSpace>;
-    using ordinal_type_array_1d_host INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalTypeArray1DHost instead","OrdinalTypeArray1DHost") = OrdinalTypeArray1DHost INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalTypeArray1DHost instead");
 
     /**  \brief View type for 2d host array
     */
     using OrdinalTypeArray2DHost = Kokkos::View<ordinal_type**,typename ExecSpaceType::array_layout,Kokkos::HostSpace>;
-    using ordinal_type_array_2d_host INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalTypeArray2DHost instead","OrdinalTypeArray2DHost") = OrdinalTypeArray2DHost INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalTypeArray2DHost instead");
 
     /**  \brief View type for 3d host array
     */
     using OrdinalTypeArray3DHost = Kokkos::View<ordinal_type***,typename ExecSpaceType::array_layout,Kokkos::HostSpace>;
-    using ordinal_type_array_3d_host INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalTypeArray3DHost instead","OrdinalTypeArray3DHost") = OrdinalTypeArray3DHost INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalTypeArray3DHost instead");
 
     /**  \brief View type for 1d host array
     */
     using OrdinalTypeArrayStride1DHost = Kokkos::View<ordinal_type*, Kokkos::LayoutStride, Kokkos::HostSpace>;
-    using ordinal_type_array_stride_1d_host INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalTypeArrayStride1DHost instead","OrdinalTypeArrayStride1DHost") = OrdinalTypeArrayStride1DHost INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalTypeArrayStride1DHost instead");
 
     /**  \brief View type for 1d device array
     */
     using OrdinalTypeArray1D = Kokkos::View<ordinal_type*,ExecSpaceType>;
-    using ordinal_type_array_1d INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalTypeArray1D instead","OrdinalTypeArray1D") = OrdinalTypeArray1D INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalTypeArray1D instead");
 
     /**  \brief View type for 2d device array
     */
     using OrdinalTypeArray2D = Kokkos::View<ordinal_type**,ExecSpaceType>;
-    using ordinal_type_array_2d INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalTypeArray2D instead","OrdinalTypeArray2D") = OrdinalTypeArray2D INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalTypeArray2D instead");
 
     /**  \brief View type for 3d device array
     */
     using OrdinalTypeArray3D = Kokkos::View<ordinal_type***,ExecSpaceType>;
-    using ordinal_type_array_3d INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalTypeArray3D instead","OrdinalTypeArray3D") = OrdinalTypeArray3D INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalTypeArray3D instead");
 
     /**  \brief View type for 1d device array 
     */
     using OrdinalTypeArrayStride1D = Kokkos::View<ordinal_type*, Kokkos::LayoutStride, ExecSpaceType>;
-    using ordinal_type_array_stride_1d INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalTypeArrayStride1D instead","OrdinalTypeArrayStride1D") = OrdinalTypeArrayStride1D INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalTypeArrayStride1D instead");
 
     /**  \brief Scalar type for point values
     */
@@ -337,17 +326,14 @@ namespace Intrepid2 {
     /** \brief View type for basis value output
     */
     using OutputViewType = Kokkos::DynRankView<OutputValueType,Kokkos::LayoutStride,ExecSpaceType>;
-    using outputViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OutputViewType instead","OutputViewType") = OutputViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OutputViewType instead");
 
     /** \brief View type for input points
     */
     using PointViewType = Kokkos::DynRankView<PointValueType,Kokkos::LayoutStride,ExecSpaceType>;
-    using pointViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use PointViewType instead","PointViewType") = PointViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use PointViewType instead");
 
     /** \brief View type for scalars 
     */
     using ScalarViewType = Kokkos::DynRankView<scalarType,Kokkos::LayoutStride,ExecSpaceType>;
-    using scalarViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use ScalarViewType instead","ScalarViewType") = ScalarViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use ScalarViewType instead");
     
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 

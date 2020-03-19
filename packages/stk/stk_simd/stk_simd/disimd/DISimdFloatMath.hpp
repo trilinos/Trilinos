@@ -117,23 +117,27 @@ STK_MATH_FORCE_INLINE simd::Float sqrt(const simd::Float& x) {
 }
   
 STK_MATH_FORCE_INLINE simd::Float cbrt(const simd::Float& x) {
-//#if defined(__INTEL_COMPILER)
-//  return simd::Float(_mm256_cbrt_pd(x._data));
-//#else
+#if defined(__INTEL_COMPILER)
+  return simd::Float(SIMD_NAMESPACE::cbrt(x._data));
+#else
   simd::Float tmp;
   for (int n=0; n < simd::nfloats; ++n) {
     tmp[n] = hidden::CBRT(x[n]);
   }
   return tmp;
-//#endif
+#endif
 }
 
 STK_MATH_FORCE_INLINE simd::Float log(const simd::Float& x) {
+#if defined(__INTEL_COMPILER)
+  return simd::Float(SIMD_NAMESPACE::log(x._data));
+#else
   simd::Float tmp;
   for (int n=0; n < simd::nfloats; ++n) {
     tmp[n] = std::log(x[n]);
   }
   return tmp;
+#endif
 }
 
 STK_MATH_FORCE_INLINE simd::Float log10(const simd::Float& x) {
@@ -145,15 +149,15 @@ STK_MATH_FORCE_INLINE simd::Float log10(const simd::Float& x) {
 }
 
 STK_MATH_FORCE_INLINE simd::Float exp(const simd::Float& x) {
-//#if defined(__INTEL_COMPILER)
-//  return simd::Float(_mm256_exp_pd(x._data));
-//#else
+#if defined(__INTEL_COMPILER)
+  return simd::Float(SIMD_NAMESPACE::exp(x._data));
+#else
   simd::Float tmp;
   for (int n=0; n < simd::nfloats; ++n) {
     tmp[n] = std::exp(x[n]);
   }
   return tmp;
-//#endif
+#endif
 }
 
 STK_MATH_FORCE_INLINE simd::Float pow(const simd::Float& x, const simd::Float& y) {

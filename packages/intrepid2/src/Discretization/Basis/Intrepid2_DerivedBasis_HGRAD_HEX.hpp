@@ -74,9 +74,9 @@ namespace Intrepid2
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
     using PointValueType  = typename HGRAD_LINE::PointValueType;
     
-    using OutputViewType = typename HGRAD_LINE::outputViewType;
-    using PointViewType  = typename HGRAD_LINE::pointViewType ;
-    using ScalarViewType = typename HGRAD_LINE::scalarViewType;
+    using OutputViewType = typename HGRAD_LINE::OutputViewType;
+    using PointViewType  = typename HGRAD_LINE::PointViewType ;
+    using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using LineBasis = HGRAD_LINE;
     using QuadBasis = Intrepid2::Basis_Derived_HGRAD_QUAD<HGRAD_LINE>;

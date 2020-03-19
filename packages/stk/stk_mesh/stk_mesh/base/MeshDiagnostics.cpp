@@ -236,15 +236,20 @@ void pack_side_node_keys(const std::vector<stk::mesh::Entity>& orphanedSides,
                          const stk::mesh::BulkData& bulkData,
                          stk::CommSparse &comm)
 {
+    std::vector<int> sharingProcs;
+    std::vector<stk::mesh::Entity> nodesVec;
+    std::vector<stk::mesh::EntityKey> nodeKeys;
     for(stk::mesh::Entity side : orphanedSides)
     {
         const stk::mesh::Entity* nodes = bulkData.begin_nodes(side);
         unsigned numNodes = bulkData.num_nodes(side);
-        std::vector<stk::mesh::EntityKey> nodeKeys(numNodes);
-        for(unsigned i = 0; i < numNodes; ++i)
+        nodesVec.resize(numNodes);
+        nodeKeys.resize(numNodes);
+        for(unsigned i = 0; i < numNodes; ++i) {
+            nodesVec[i] = nodes[i];
             nodeKeys[i] = bulkData.entity_key(nodes[i]);
-        std::vector<int> sharingProcs;
-        bulkData.shared_procs_intersection(nodeKeys, sharingProcs);
+        }
+        bulkData.shared_procs_intersection(nodesVec, sharingProcs);
         stk::mesh::EntityKey sideKey = bulkData.entity_key(side);
         for(int proc : sharingProcs)
         {

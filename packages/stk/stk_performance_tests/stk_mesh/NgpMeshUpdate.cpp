@@ -40,44 +40,7 @@
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-
-class Timer
-{
-public:
-  Timer(MPI_Comm comm)
-    : communicator(comm),
-      iterationStartTime(0.0),
-      cumulativeTime(0.0),
-      iterationStartHwm(0),
-      meshOperationHwm(1)
-  { }
-
-  void start_timing()
-  {
-    iterationStartTime = stk::wall_time();
-    iterationStartHwm = stk::get_max_hwm_across_procs(communicator);
-  }
-
-  void update_timing()
-  {
-    cumulativeTime += stk::wall_dtime(iterationStartTime);
-    size_t currentHwm = stk::get_max_hwm_across_procs(communicator) - iterationStartHwm;
-    meshOperationHwm = std::max(currentHwm, meshOperationHwm);
-  }
-
-  void print_timing()
-  {
-    double timeAll = stk::get_global_sum(communicator, cumulativeTime);
-    stk::print_stats_for_performance_compare(std::cout, timeAll, meshOperationHwm, 1, communicator);
-  }
-
-private:
-  MPI_Comm communicator;
-  double iterationStartTime;
-  double cumulativeTime;
-  size_t iterationStartHwm;
-  size_t meshOperationHwm;
-};
+#include <stk_performance_tests/stk_mesh/timer.hpp>
 
 class NgpMeshChangeElementPartMembership : public stk::unit_test_util::MeshFixture
 {
@@ -98,7 +61,7 @@ public:
     get_bulk().modification_begin();
     get_bulk().change_entity_parts<stk::mesh::ConstPartVector>(get_element(cycle), {get_part()});
     get_bulk().modification_end();
-    get_bulk().get_ngp_mesh();
+    get_bulk().get_updated_ngp_mesh();
   }
 
 private:
@@ -134,7 +97,7 @@ public:
     get_bulk().modification_begin();
     get_bulk().declare_element(get_new_entity_id(cycle));
     get_bulk().modification_end();
-    get_bulk().get_ngp_mesh();
+    get_bulk().get_updated_ngp_mesh();
   }
 
 private:
@@ -169,7 +132,7 @@ protected:
     get_bulk().modification_begin();
     get_bulk().change_ghosting(*ghosting, element_to_ghost(cycle));
     get_bulk().modification_end();
-    get_bulk().get_ngp_mesh();
+    get_bulk().get_updated_ngp_mesh();
   }
 
 private:
@@ -191,43 +154,49 @@ TEST_F( NgpMeshChangeElementPartMembership, Timing )
 {
   if (get_parallel_size() != 1) return;
 
-  Timer timer(get_comm());
+  const int NUM_RUNS = 100;
+
+  stk::performance_tests::Timer timer(get_comm());
   setup_host_mesh();
 
-  for (int i=0; i<50; i++) {
+  for (int i=0; i<NUM_RUNS; i++) {
     timer.start_timing();
     change_element_part_membership(i);
     timer.update_timing();
   }
-  timer.print_timing();
+  timer.print_timing(NUM_RUNS);
 }
 
 TEST_F( NgpMeshCreateEntity, Timing )
 {
   if (get_parallel_size() != 1) return;
 
-  Timer timer(get_comm());
+  const int NUM_RUNS = 100;
+
+  stk::performance_tests::Timer timer(get_comm());
   setup_host_mesh();
 
-  for (int i=0; i<50; i++) {
+  for (int i=0; i<NUM_RUNS; i++) {
     timer.start_timing();
     create_entity(i);
     timer.update_timing();
   }
-  timer.print_timing();
+  timer.print_timing(NUM_RUNS);
 }
 
 TEST_F( NgpMeshGhosting, Timing )
 {
   if (get_parallel_size() != 2) return;
 
-  Timer timer(get_comm());
+  const int NUM_RUNS = 100;
+
+  stk::performance_tests::Timer timer(get_comm());
   setup_host_mesh();
 
-  for (int i=0; i<50; i++) {
+  for (int i=0; i<NUM_RUNS; i++) {
     timer.start_timing();
     ghost_element(i);
     timer.update_timing();
   }
-  timer.print_timing();
+  timer.print_timing(NUM_RUNS);
 }

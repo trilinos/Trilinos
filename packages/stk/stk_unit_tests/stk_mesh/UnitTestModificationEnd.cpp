@@ -841,7 +841,7 @@ TEST(BulkDataModificationEnd, DISABLED_create_edges_with_min_map)
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator, stk::mesh::ConnectivityMap::default_map());
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
         // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
         // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12

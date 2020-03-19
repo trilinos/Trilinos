@@ -157,6 +157,7 @@ TEST_F(TestSideSet, createSideSetsSpanningMultipleBlocks)
         stk::io::create_bulkdata_sidesets(get_bulk());
 
         EXPECT_EQ(2u, get_bulk().get_number_of_sidesets());
+        stk::unit_test_util::delete_mesh(filename);
     }
 }
 

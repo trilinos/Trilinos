@@ -32,69 +32,54 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef calculate_centroid_hpp
-#define calculate_centroid_hpp
+#ifndef STK_PERFORMANCE_TIMER_HPP
+#define STK_PERFORMANCE_TIMER_HPP
 
-#include <vector>
+#include <stk_util/environment/WallTime.hpp>
+#include <stk_util/environment/perf_util.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
 namespace performance_tests {
 
-/**
-   num_nodes: number of nodes connected to the element
-   elem_node_coords: array of length num_nodes*3, containing the
-   coordinates for an element's nodes
-   elem_centroid: array of length 3
-*/
-template<class T>
-inline
-void
-calculate_centroid_3d(
-  size_t                num_nodes,
-  const T *        elem_node_coords,
-  T *              elem_centroid)
+class Timer
 {
-  //compute the element-centroid:
-  for(size_t n = 0; n < num_nodes; ++n) {
-    elem_centroid[0] += elem_node_coords[n*3 + 0];
-    elem_centroid[1] += elem_node_coords[n*3 + 1];
-    elem_centroid[2] += elem_node_coords[n*3 + 2];
-  }
-  elem_centroid[0] /= num_nodes;
-  elem_centroid[1] /= num_nodes;
-  elem_centroid[2] /= num_nodes;
-}
+public:
+  Timer(MPI_Comm comm)
+    : communicator(comm),
+      iterationStartTime(0.0),
+      cumulativeTime(0.0),
+      iterationStartHwm(0),
+      meshOperationHwm(1)
+  { }
 
-/**
-   num_elements: number of element
-   num_nodes: number of nodes connected to the element
-   elem_node_coords: array of length num_nodes*3, containing the
-   coordinates for an element's nodes
-   elem_centroid: array of length 3
-*/
-template<class T>
-inline
-void
-calculate_centroid_3d(
-  size_t                num_elements,
-  size_t                num_nodes,
-  const T *        elem_node_coords,
-  T *              elem_centroid)
-{
-  //compute the element-centroid:
-  for (size_t i = 0; i < num_elements; ++i) {
-    for(size_t n = 0; n < num_nodes; ++n) {
-      elem_centroid[i*3 + 0] += elem_node_coords[i*num_nodes*3 + n*3 + 0];
-      elem_centroid[i*3 + 1] += elem_node_coords[i*num_nodes*3 + n*3 + 1];
-      elem_centroid[i*3 + 2] += elem_node_coords[i*num_nodes*3 + n*3 + 2];
-    }
-    elem_centroid[i*3 + 0] /= num_nodes;
-    elem_centroid[i*3 + 1] /= num_nodes;
-    elem_centroid[i*3 + 2] /= num_nodes;
+  void start_timing()
+  {
+    iterationStartTime = stk::wall_time();
+    iterationStartHwm = stk::get_max_hwm_across_procs(communicator);
   }
-}
 
-} // namespace performance_tests
-} // namespace stk
+  void update_timing()
+  {
+    cumulativeTime += stk::wall_dtime(iterationStartTime);
+    size_t currentHwm = stk::get_max_hwm_across_procs(communicator) - iterationStartHwm;
+    meshOperationHwm = std::max(currentHwm, meshOperationHwm);
+  }
+
+  void print_timing(unsigned iterationCount)
+  {
+    double timeAll = stk::get_global_sum(communicator, cumulativeTime);
+    stk::print_stats_for_performance_compare(std::cout, timeAll, meshOperationHwm, iterationCount, communicator);
+  }
+
+private:
+  MPI_Comm communicator;
+  double iterationStartTime;
+  double cumulativeTime;
+  size_t iterationStartHwm;
+  size_t meshOperationHwm;
+};
+
+}}
 
 #endif

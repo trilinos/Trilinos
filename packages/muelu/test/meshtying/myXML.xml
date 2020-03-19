@@ -106,6 +106,7 @@
     <!-- Multigrid setup for primal block (A_{00}) -->
     <ParameterList name="myFirstGroup">
       <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="use kokkos refactor" type="bool"     value="false"/>
       <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
       <Parameter name="P" type="string" value="myTentativePFact1"/>
       <Parameter name="R" type="string" value="myRFact1"/>
@@ -117,6 +118,7 @@
     <!-- Multigrid setup for dual block (A_{11}) -->
     <ParameterList name="mySecondGroup">
       <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="use kokkos refactor" type="bool"     value="false"/>
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="P" type="string" value="myTentativePFact2"/>
       <Parameter name="Aggregates" type="string" value="myInterfaceAggs2"/>

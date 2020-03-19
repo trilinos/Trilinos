@@ -12,7 +12,7 @@ class BulkData;
 class HostMeshManager : public NgpMeshManager
 {
 public:
-  HostMeshManager(stk::mesh::BulkData & bulk);
+  HostMeshManager(const stk::mesh::BulkData & bulk);
   ~HostMeshManager() override;
 
   stk::mesh::NgpMesh & get_mesh() override;
