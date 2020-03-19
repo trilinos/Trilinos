@@ -90,7 +90,8 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, Construct ) {
   }
   Matrix.FillComplete();
   Ifpack_Hypre preconditioner(&Matrix);
-  TEST_EQUALITY(preconditioner.Initialize(),0);
+  int rv=preconditioner.Initialize();
+  TEST_EQUALITY(rv,0);
 }
 
 
@@ -258,7 +259,8 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, Ifpack ){
   //
   Ifpack Factory;
   RCP<Ifpack_Preconditioner> preconditioner= rcp(Factory.Create("Hypre", Crs_Matrix));
-  TEST_EQUALITY(preconditioner->Initialize(), 0);
+  int rv = preconditioner->Initialize();
+  TEST_EQUALITY(rv,0);
   int NumProc = Crs_Matrix->Comm().NumProc();
   int MyPID = Crs_Matrix->Comm().MyPID();
 
