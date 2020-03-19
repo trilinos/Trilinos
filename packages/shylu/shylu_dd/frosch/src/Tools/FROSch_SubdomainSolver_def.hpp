@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -454,7 +455,7 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
-    std::string SubdomainSolver<SC,LO,GO,NO>::description() const
+    string SubdomainSolver<SC,LO,GO,NO>::description() const
     {
         return "Subdomain Solver";
     }
@@ -487,7 +488,7 @@ namespace FROSch {
             const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
             ECrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
             TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
-            
+
             FROSCH_ASSERT(false,"FROSch::SubdomainSolver : ERROR: resetMatrix() is not implemented for Amesos yet.");
 #endif
 #else
@@ -500,7 +501,7 @@ namespace FROSch {
                 const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
                 ECrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
                 TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
-                
+
                 if (reuseInitialize) {
                     Amesos2SolverEpetra_->setA(epetraMat,Amesos2::SYMBFACT);
                 } else {
@@ -515,7 +516,7 @@ namespace FROSch {
                 const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
                 ConstTCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrix();
                 TEUCHOS_TEST_FOR_EXCEPT(tpetraMat.is_null());
-                
+
                 if (reuseInitialize) {
                     Amesos2SolverTpetra_->setA(tpetraMat,Amesos2::SYMBFACT);
                 } else {
@@ -534,13 +535,13 @@ namespace FROSch {
         } else if (!ParameterList_->get("SolverType","Amesos").compare("Ifpack2")) {
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
             FROSCH_ASSERT(K_->getRowMap()->lib()==UseTpetra,"FROSch::SubdomainSolver : ERROR: Ifpack2 is not compatible with Epetra.")
-            
+
             // Convert matrix to Tpetra
             const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
             const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
             ConstTCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrix();
             TEUCHOS_TEST_FOR_EXCEPT(tpetraMat.is_null());
-            
+
             FROSCH_ASSERT(false,"FROSch::SubdomainSolver : ERROR: resetMatrix() is not implemented for Ifpack2 yet.");
 #else
             ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Ifpack2");
@@ -556,7 +557,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     void SubdomainSolver<SC,LO,GO,NO>::residual(const XMultiVector & X,
                                                 const XMultiVector & B,

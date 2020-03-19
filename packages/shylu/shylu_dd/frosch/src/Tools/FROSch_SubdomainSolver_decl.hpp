@@ -102,6 +102,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -255,7 +256,7 @@ namespace FROSch {
 
         \return String describing this operator
         */
-        virtual std::string description() const;
+        virtual string description() const;
 
         //! @name Access to class members
         //!@{
@@ -265,11 +266,11 @@ namespace FROSch {
 
         //! Get #IsComputed_
         bool isComputed() const;
-        
+
         int resetMatrix(ConstXMatrixPtr k,
                         bool reuseInitialize);
 
-        /*! 
+        /*!
         \brief Computes a residual using the operator
         */
         virtual void residual(const XMultiVector & X,

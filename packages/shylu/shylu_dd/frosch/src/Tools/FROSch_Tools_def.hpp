@@ -51,6 +51,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -88,7 +89,7 @@ namespace FROSch {
                       return lhs->GID_ < rhs->GID_;
                   }
                   );
-        odList.erase(std::unique(odList.begin(),
+        odList.erase(unique(odList.begin(),
                                  odList.end(),
                                  [] (const RCP<OverlappingData<LO,GO> > lhs, const RCP<OverlappingData<LO,GO> > rhs) {
                                      if (lhs->GID_ == rhs->GID_) {
@@ -115,7 +116,7 @@ namespace FROSch {
     MpiComm_ (comm),
     OriginalMap_ (originalMap),
     ElementCounter_ (),
-    OverlappingDataList_ (dimension*(OriginalMap_->getGlobalNumElements()/MpiComm_->getSize())+std::pow(3,dimension)),
+    OverlappingDataList_ (dimension*(OriginalMap_->getGlobalNumElements()/MpiComm_->getSize())+pow(3,dimension)),
     ComponentsSubdomains_ (OriginalMap_->getNodeNumElements()),
     LevelID_ (levelID)
     {
@@ -173,14 +174,14 @@ namespace FROSch {
     }
 
     template <typename LO,typename GO,typename NO>
-    std::size_t LowerPIDTieBreak<LO,GO,NO>::selectedIndex(GO GID,
-                                                          const std::vector<std::pair<int,LO> > & pid_and_lid) const
+    size_t LowerPIDTieBreak<LO,GO,NO>::selectedIndex(GO GID,
+                                                          const vector<pair<int,LO> > & pid_and_lid) const
     {
         // Always choose index of pair with smallest pid
-        const std::size_t numLids = pid_and_lid.size();
-        std::size_t idx = 0;
+        const size_t numLids = pid_and_lid.size();
+        size_t idx = 0;
         int minpid = pid_and_lid[0].first;
-        std::size_t minidx = 0;
+        size_t minidx = 0;
 
         static int counter = 0;
         for (idx = 0; idx < numLids; ++idx) {
@@ -718,7 +719,7 @@ namespace FROSch {
                 assembledMapTmp[i] = globalstart + mapVector[j]->getGlobalElement(i-localstart);
                 i++;
             }
-            //std::cout << mapVector[j]->getMaxAllGlobalIndex() << std::endl;
+            //cout << mapVector[j]->getMaxAllGlobalIndex() << endl;
             /*
             globalstart += mapVector[j]->getMaxAllGlobalIndex();
 
@@ -727,9 +728,9 @@ namespace FROSch {
             }
              */
 
-            globalstart += std::max(mapVector[j]->getMaxAllGlobalIndex(),(GO)-1)+1; // AH 04/05/2018: mapVector[j]->getMaxAllGlobalIndex() can result in -2147483648 if the map is empty on the process => introducing max(,)
+            globalstart += max(mapVector[j]->getMaxAllGlobalIndex(),(GO)-1)+1; // AH 04/05/2018: mapVector[j]->getMaxAllGlobalIndex() can result in -2147483648 if the map is empty on the process => introducing max(,)
 
-            //if (mapVector[j]->getComm()->getRank() == 0) std::cout << std::endl << globalstart << std::endl;
+            //if (mapVector[j]->getComm()->getRank() == 0) cout << endl << globalstart << endl;
         }
         return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,assembledMapTmp(),0,mapVector[0]->getComm());
     }
@@ -822,7 +823,7 @@ namespace FROSch {
                      GO offset)
     {
         FROSCH_TIMER_START(buildDofMapsTime,"BuildDofMaps");
-        //if (map->getComm()->getRank()==0) std::cout << "WARNING: BuildDofMaps is yet to be tested...\n";
+        //if (map->getComm()->getRank()==0) cout << "WARNING: BuildDofMaps is yet to be tested...\n";
         FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
         FROSCH_ASSERT(map->getGlobalNumElements()%dofsPerNode==0 && map->getNodeNumElements()%dofsPerNode==0,"ERROR: The number of dofsPerNode does not divide the number of global dofs in the map!");
 
@@ -1151,7 +1152,7 @@ namespace FROSch {
     inline void sortunique(T &v)
     {
         std::sort(v.begin(),v.end());
-        v.erase(std::unique(v.begin(),v.end()),v.end());
+        v.erase(unique(v.begin(),v.end()),v.end());
     }
 
     template <class SC, class LO,class GO,class NO>
@@ -1418,7 +1419,7 @@ namespace FROSch {
 
     template <class Type>
     RCP<Type> ExtractPtrFromParameterList(ParameterList& paramList,
-                                          std::string namePtr)
+                                          string namePtr)
     {
         FROSCH_TIMER_START(extractPtrFromParameterListTime,"ExtractPtrFromParameterList");
         RCP<Type> pointer = null;
@@ -1435,7 +1436,7 @@ namespace FROSch {
 
     template <class Type>
     ArrayRCP<Type> ExtractVectorFromParameterList(ParameterList& paramList,
-                                                  std::string nameVector)
+                                                  string nameVector)
     {
         FROSCH_TIMER_START(extractVectorFromParameterListTime,"ExtractVectorFromParameterList");
         ArrayRCP<Type> vector = null;
@@ -1507,7 +1508,7 @@ namespace FROSch {
 #endif
 
     template <class LO>
-    Array<LO> GetIndicesFromString(std::string string, LO dummy)
+    Array<LO> GetIndicesFromString(string string, LO dummy)
     {
         Array<LO> indices(0);
         for (unsigned i=0; i<string.length(); i++) {
@@ -1522,7 +1523,7 @@ namespace FROSch {
                                RCP<ParameterList> parameterList)
     {
         FROSCH_TIMER_START(repartionMatrixZoltan2Time,"RepartionMatrixZoltan2");
-        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
+        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
 
         using inputAdapter    = Zoltan2::XpetraCrsMatrixAdapter<CrsMatrix<SC,LO,GO,NO> >;
 
