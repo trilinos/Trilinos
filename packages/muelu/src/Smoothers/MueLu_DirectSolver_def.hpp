@@ -113,6 +113,8 @@ namespace MueLu {
         errorBelos_ = "Unable to construct Belos solver";
     } catch (Exceptions::RuntimeError& e) {
       errorBelos_ = e.what();
+    } catch (Exceptions::BadCast& e) {
+      errorBelos_ = e.what();
     }
     triedBelos_ = true;
 #endif
