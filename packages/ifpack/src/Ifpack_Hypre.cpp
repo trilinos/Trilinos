@@ -448,13 +448,11 @@ int Ifpack_Hypre::Initialize(){
   CallFunctions();
 
   if (!Coords_.is_null()) {
-    SetCoordinates(Solver, Coords_);
-    SetCoordinates(Preconditioner, Coords_);
+    SetCoordinates(Coords_);
   }
 
   if (!G_.is_null()) {
-    SetDiscreteGradient(Solver, G_);
-    SetDiscreteGradient(Preconditioner, G_);
+    SetDiscreteGradient(G_);
   }
 
   if(UsePreconditioner_){
@@ -646,7 +644,7 @@ int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
 } //SetParameter() - set type of solver
 
 //==============================================================================
-int Ifpack_Hypre::SetDiscreteGradient(Hypre_Chooser chooser, Teuchos::RCP<const Epetra_CrsMatrix> G){
+int Ifpack_Hypre::SetDiscreteGradient(Teuchos::RCP<const Epetra_CrsMatrix> G){
 
   RCP<Epetra_Map> GloballyContiguousRowMap;
   RCP<Epetra_Map> GloballyContiguousColMap;
@@ -699,22 +697,18 @@ int Ifpack_Hypre::SetDiscreteGradient(Hypre_Chooser chooser, Teuchos::RCP<const 
   if (Dump_)
     HYPRE_ParCSRMatrixPrint(ParMatrixG_,"G.mat");
 
-  if (chooser == Solver) {
-    if(SolverType_ == AMS)
-      HYPRE_AMSSetDiscreteGradient(Solver_, ParMatrixG_);
-  } else {
-    if(PrecondType_ == AMS)
-      HYPRE_AMSSetDiscreteGradient(Preconditioner_, ParMatrixG_);
-  }
+  if(SolverType_ == AMS)
+    HYPRE_AMSSetDiscreteGradient(Solver_, ParMatrixG_);
+  if(PrecondType_ == AMS)
+    HYPRE_AMSSetDiscreteGradient(Preconditioner_, ParMatrixG_);
 
   return 0;
 } //SetDiscreteGradient()
 
 //==============================================================================
-int Ifpack_Hypre::SetCoordinates(Hypre_Chooser chooser, Teuchos::RCP<Epetra_MultiVector> coords) {
+int Ifpack_Hypre::SetCoordinates(Teuchos::RCP<Epetra_MultiVector> coords) {
 
-  if (!(((chooser == Solver) && (SolverType_ == AMS)) ||
-        ((chooser == Preconditioner) && (PrecondType_ == AMS))))
+  if(SolverType_ != AMS && PrecondType_ != AMS)
     return 0;
 
   double *xPtr;
@@ -765,13 +759,10 @@ int Ifpack_Hypre::SetCoordinates(Hypre_Chooser chooser, Teuchos::RCP<Epetra_Mult
     HYPRE_ParVectorPrint(zPar_,"coordZ.dat");
   }
 
-  if (chooser == Solver) {
-    if(SolverType_ == AMS)
-      HYPRE_AMSSetCoordinateVectors(Solver_, xPar_, yPar_, zPar_);
-  } else {
-    if(PrecondType_ == AMS)
-      HYPRE_AMSSetCoordinateVectors(Preconditioner_, xPar_, yPar_, zPar_);
-  }
+  if(SolverType_ == AMS)
+    HYPRE_AMSSetCoordinateVectors(Solver_, xPar_, yPar_, zPar_);
+  if(PrecondType_ == AMS)
+    HYPRE_AMSSetCoordinateVectors(Preconditioner_, xPar_, yPar_, zPar_);
 
   return 0;
 

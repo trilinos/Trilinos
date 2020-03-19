@@ -295,10 +295,10 @@ public:
     int SetParameter(Hypre_Chooser chooser) { SolveOrPrec_ = chooser; return 0;}
 
   //! Set coordinates
-    int SetCoordinates(Hypre_Chooser chooser, Teuchos::RCP<Epetra_MultiVector> coords);
+    int SetCoordinates(Teuchos::RCP<Epetra_MultiVector> coords);
 
   //! Set discrete gradient
-    int SetDiscreteGradient(Hypre_Chooser chooser, Teuchos::RCP<const Epetra_CrsMatrix> G);
+    int SetDiscreteGradient(Teuchos::RCP<const Epetra_CrsMatrix> G);
 
   //! Call all the function pointers stored in this object.
     int CallFunctions() const;
