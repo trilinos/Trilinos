@@ -120,25 +120,17 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, ParameterList ){
 
     // Create the parameter list
     Teuchos::ParameterList list("Preconditioner List");
-    RCP<FunctionParameter> functs[11];
-    functs[0] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetMaxIter, 1000));               // max iterations
-    functs[1] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTol, tol));                   // conv. tolerance
-    functs[2] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTwoNorm, 1));                  // use the two norm as the stopping criteria
-    functs[3] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetPrintLevel, 0));               // print solve info
-    functs[4] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetLogging, 1));                  // needed to get run info later
-    functs[5] = rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 1)); // print amg solution info
-    functs[6] = rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 6));
-    functs[7] = rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));  //Sym G.S./Jacobi hybrid
-    functs[8] = rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, 1));
-    functs[9] = rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, 0.0));      // conv. tolerance zero
-    functs[10] = rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, 1));   //do only one iteration!
-
-    list.set("hypre: Solver", PCG);
-    list.set("hypre: Preconditioner", BoomerAMG);
-    list.set("hypre: SolveOrPrecondition", Solver);
+    Teuchos::ParameterList precList = list.sublist("hypre: Preconditioner functions");
+    precList.set("HYPRE_BoomerAMGSetPrintLevel", 1);// print amg solution info
+    precList.set("HYPRE_BoomerAMGSetCoarsenType", 6);
+    precList.set("HYPRE_BoomerAMGSetRelaxType", 6);  //Sym G.S./Jacobi hybrid
+    precList.set("HYPRE_BoomerAMGSetNumSweeps", 1);
+    precList.set("HYPRE_BoomerAMGSetTol", 0.0);      // conv. tolerance zero
+    precList.set("HYPRE_BoomerAMGSetMaxIter", 1);   //do only one iteration!
+    list.set("hypre: Solver", "PCG");
+    list.set("hypre: Preconditioner", "BoomerAMG");
+    list.set("hypre: SolveOrPrecondition", "Solver");
     list.set("hypre: SetPreconditioner", true);
-    list.set("hypre: NumFunctions", 11);
-    list.set<RCP<FunctionParameter>*>("hypre: Functions", functs);
 
     // Create the preconditioner
     Ifpack_Hypre preconditioner(Matrix);
@@ -281,17 +273,15 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, Ifpack ){
   TEST_EQUALITY(preconditioner->Apply(KnownX, B), 0);
 
   Teuchos::ParameterList list("New List");
-  RCP<FunctionParameter> functs[5];
-  functs[0] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetMaxIter, 1000));
-  functs[1] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTol, 1e-9));
-  functs[2] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetLogging, 1));
-  functs[3] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetPrintLevel, 0));
-  functs[4] = rcp(new FunctionParameter(Preconditioner, &HYPRE_ParaSailsSetLogging, 0));
-  list.set("hypre: NumFunctions", 5);
-  list.set<RCP<FunctionParameter>*>("hypre: Functions", functs);
-  list.set("hypre: SolveOrPrecondition", Solver);
-  list.set("hypre: Solver", PCG);
-  list.set("hypre: Preconditioner", ParaSails);
+  Teuchos::ParameterList & solverList = list.sublist("hypre: Solver functions");
+  solverList.set("HYPRE_PCGSetMaxIter", 1000);               // max iterations
+  solverList.set("HYPRE_PCGSetTol", 1e-9);                   // conv. tolerance
+  solverList.set("HYPRE_PCGSetPrintLevel", 0);               // print solve info
+  solverList.set("HYPRE_PCGSetLogging", 1);                  // needed to get run info later
+  list.set("hypre: Solver functions",solverList);
+  list.set("hypre: SolveOrPrecondition", "Solver");
+  list.set("hypre: Solver", "PCG");
+  list.set("hypre: Preconditioner", "ParaSails");
   list.set("hypre: SetPreconditioner", true);
   TEST_EQUALITY(preconditioner->SetParameters(list), 0);
   (dynamic_cast<Ifpack_Hypre*> (preconditioner.get()))->SetParameter(Solver, PCG); // Use a PCG Solver
@@ -354,17 +344,14 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, DiagonalMatrixInOrder ) {
   //
   const double tol = 1e-7;
   Teuchos::ParameterList list("Preconditioner List");
-  RCP<FunctionParameter> functs[5];
-  functs[0] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetMaxIter, 100));               // max iterations
-  functs[1] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTol, tol));                   // conv. tolerance
-  functs[2] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTwoNorm, 1));                  // use the two norm as the stopping criteria
-  functs[3] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetPrintLevel, 2));               // print solve info
-  functs[4] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetLogging, 1));
-  list.set("hypre: Solver", PCG);
-  list.set("hypre: SolveOrPrecondition", Solver);
+  Teuchos::ParameterList & solverList = list.sublist("hypre: Solver functions");
+  solverList.set("HYPRE_PCGSetMaxIter", 1000);               // max iterations
+  solverList.set("HYPRE_PCGSetTol", tol);                    // conv. tolerance
+  solverList.set("HYPRE_PCGSetPrintLevel", 0);               // print solve info
+  solverList.set("HYPRE_PCGSetLogging", 1);                  // needed to get run info later
+  list.set("hypre: Solver", "PCG");
+  list.set("hypre: SolveOrPrecondition", "Solver");
   list.set("hypre: SetPreconditioner", false);
-  list.set("hypre: NumFunctions", 5);
-  list.set<RCP<FunctionParameter>*>("hypre: Functions", functs);
 
   //
   // Create the preconditioner (which is actually a PCG solver)
@@ -417,17 +404,16 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, DiagonalMatrixOutOfOrder ) {
   //
   const double tol = 1e-7;
   Teuchos::ParameterList list("Preconditioner List");
-  RCP<FunctionParameter> functs[5];
-  functs[0] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetMaxIter, 100));               // max iterations
-  functs[1] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTol, tol));                   // conv. tolerance
-  functs[2] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTwoNorm, 1));                  // use the two norm as the stopping criteria
-  functs[3] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetPrintLevel, 2));               // print solve info
-  functs[4] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetLogging, 1));
-  list.set("hypre: Solver", PCG);
-  list.set("hypre: SolveOrPrecondition", Solver);
+  Teuchos::ParameterList & solverList = list.sublist("hypre: Solver functions");
+  solverList.set("HYPRE_PCGSetMaxIter", 1000);               // max iterations
+  solverList.set("HYPRE_PCGSetTol", tol);                   // conv. tolerance
+  solverList.set("HYPRE_PCGSetTwoNorm", 1);                   // conv. tolerance
+  solverList.set("HYPRE_PCGSetPrintLevel", 2);               // print solve info
+  solverList.set("HYPRE_PCGSetLogging", 1);                  // needed to get run info later
+  list.set("hypre: Solver", "PCG");
+  list.set("hypre: SolveOrPrecondition", "Solver");
   list.set("hypre: SetPreconditioner", false);
-  list.set("hypre: NumFunctions", 5);
-  list.set<RCP<FunctionParameter>*>("hypre: Functions", functs);
+
 
   //
   // Create the preconditioner (which is actually a PCG solver)
@@ -494,17 +480,15 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, NonContiguousRowMap ) {
   //
   const double tol = 1e-7;
   Teuchos::ParameterList list("Preconditioner List");
-  RCP<FunctionParameter> functs[11];
-  functs[0] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetMaxIter, 1));               // max iterations
-  functs[1] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTol, tol));                   // conv. tolerance
-  functs[2] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTwoNorm, 1));                  // use the two norm as the stopping criteria
-  functs[3] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetPrintLevel, 2));               // print solve info
-  functs[4] = rcp(new FunctionParameter(Solver, &HYPRE_PCGSetLogging, 1));
-  list.set("hypre: Solver", PCG);
-  list.set("hypre: SolveOrPrecondition", Solver);
+  Teuchos::ParameterList & solverList = list.sublist("hypre: Solver functions");
+  solverList.set("HYPRE_PCGSetMaxIter", 1000);               // max iterations
+  solverList.set("HYPRE_PCGSetTol", tol);                   // conv. tolerance
+  solverList.set("HYPRE_PCGSetTwoNorm", 1);                   // conv. tolerance
+  solverList.set("HYPRE_PCGSetPrintLevel", 2);               // print solve info
+  solverList.set("HYPRE_PCGSetLogging", 1);                  // needed to get run info later
+  list.set("hypre: Solver", "PCG");
+  list.set("hypre: SolveOrPrecondition", "Solver");
   list.set("hypre: SetPreconditioner", false);
-  list.set("hypre: NumFunctions", 5);
-  list.set<RCP<FunctionParameter>*>("hypre: Functions", functs);
 
   //
   // Create the preconditioner (which is actually a PCG solver)
