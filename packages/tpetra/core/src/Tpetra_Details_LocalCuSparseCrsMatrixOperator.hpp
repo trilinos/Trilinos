@@ -204,6 +204,39 @@ public:
 
 #endif // HAVE_TPETRACORE_CUSPARSE
 
+template<class MultiVectorScalar, class MatrixScalar, class Device>
+std::unique_ptr<LocalCrsMatrixOperatorWithSetup<
+                  MultiVectorScalar, MatrixScalar, Device>>
+makeLocalCuSparseCrsMatrixOperator(
+  const typename Device::execution_space&
+#ifdef HAVE_TPETRACORE_CUSPARSE
+    execSpace,
+#else
+    /* execSpace */,
+#endif // HAVE_TPETRACORE_CUSPARSE
+  const std::shared_ptr<
+    typename LocalCrsMatrixOperatorWithSetup<
+      MultiVectorScalar,
+      MatrixScalar,
+      Device>::local_matrix_type>& localMatrix)
+{
+  using base_type = LocalCrsMatrixOperatorWithSetup<
+    MultiVectorScalar, MatrixScalar, Device>;
+#ifdef HAVE_TPETRACORE_CUSPARSE
+  if (cuSparse_implements_cuda10_interface()) {
+    using subclass_type = LocalCuSparseCrsMatrixOperator<
+      MultiVectorScalar, MatrixScalar, Device>;
+    return std::unique_ptr<base_type>(
+      new subclass_type(execSpace, localMatrix));
+  }
+  else {
+    return std::unique_ptr<base_type>(new base_type(localMatrix));
+  }
+#else
+  return std::unique_ptr<base_type>(new base_type(localMatrix));
+#endif // HAVE_TPETRACORE_CUSPARSE
+}
+
 } // namespace Details
 } // namespace Tpetra
 

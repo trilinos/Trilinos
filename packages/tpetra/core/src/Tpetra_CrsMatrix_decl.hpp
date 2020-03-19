@@ -49,7 +49,7 @@
 /// include this file (Tpetra_CrsMatrix_decl.hpp).
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
-#include "Tpetra_LocalCrsMatrixOperator_fwd.hpp"
+#include "Tpetra_Details_LocalCrsMatrixOperatorWithSetup_fwd.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
@@ -4351,10 +4351,13 @@ namespace Tpetra {
     Teuchos::RCP<      Graph>     myGraph_;
     //@}
 
+    //! The type of \c lclMatrix_ (see below).
     using local_multiply_op_type =
-      LocalCrsMatrixOperator<impl_scalar_type,
-                             impl_scalar_type,
-                             device_type>;
+      Details::LocalCrsMatrixOperatorWithSetup<
+        impl_scalar_type,
+        impl_scalar_type,
+        device_type>;
+
   private:
     //! Create the result to assign to lclMatrix_.
     static std::shared_ptr<local_multiply_op_type>

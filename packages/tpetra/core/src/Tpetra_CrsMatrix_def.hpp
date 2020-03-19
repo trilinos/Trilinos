@@ -49,7 +49,6 @@
 /// include "Tpetra_CrsMatrix_decl.hpp".
 
 #include "Tpetra_Details_LocalCrsMatrixOperatorWithSetup.hpp"
-#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_RowMatrix.hpp"
@@ -151,13 +150,15 @@ namespace Tpetra {
     const local_graph_type& lclGraph,
     const size_t numCols)
   {
+    using IST = impl_scalar_type;
+    using DT = device_type;
+
     auto lclMat = std::make_shared<local_matrix_type>(
       "Tpetra::CrsMatrix::lclMatrix_", numCols, val, lclGraph);
-    using IST = impl_scalar_type;
-    using subclass_op_type =
-      Details::LocalCuSparseCrsMatrixOperator<IST, IST, device_type>;
-    return std::make_shared<subclass_op_type>(
-      execution_space(), lclMat);
+    std::unique_ptr<local_multiply_op_type> op =
+      Details::makeLocalCuSparseCrsMatrixOperator<IST, IST, DT>(
+        execution_space(), lclMat);
+    return std::shared_ptr<local_multiply_op_type>(op.release());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -176,16 +177,9 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   localOperatorResumeFill(local_multiply_op_type* op)
   {
-    using IST = impl_scalar_type;
-    using subclass_op_type =
-      Details::LocalCrsMatrixOperatorWithSetup<IST, IST, device_type>;
-
     if (op != nullptr) {
-      auto* opSub = dynamic_cast<subclass_op_type*>(op);
-      if (opSub != nullptr) {
-        opSub->resumeFill();
-        TEUCHOS_ASSERT( ! opSub->isFillComplete() );
-      }
+      op->resumeFill();
+      TEUCHOS_ASSERT( ! op->isFillComplete() );
     }
   }
 
@@ -197,9 +191,6 @@ namespace Tpetra {
     const crs_graph_type& globalGraph)
   {
     using std::endl;
-    using IST = impl_scalar_type;
-    using subclass_op_type =
-      Details::LocalCrsMatrixOperatorWithSetup<IST, IST, device_type>;
     const char tfecfFuncName[] = "localOperatorFillComplete";
 
     const bool verbose = Details::Behavior::verbose("CrsMatrix");
@@ -223,15 +214,12 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
-    auto* opSub = dynamic_cast<subclass_op_type*>(&op);
-    if (opSub != nullptr) {
-      const auto minNumEntPerRow = globalGraph.nodeMinNumRowEntries_;
-      const auto maxNumEntPerRow = globalGraph.nodeMaxNumRowEntries_;
-      opSub->setMinMaxNumberOfEntriesPerRow(minNumEntPerRow,
-                                            maxNumEntPerRow);
-      opSub->fillComplete();
-      TEUCHOS_ASSERT( opSub->isFillComplete() );
-    }
+    const auto minNumEnt = globalGraph.nodeMinNumRowEntries_;
+    const auto maxNumEnt = globalGraph.nodeMaxNumRowEntries_;
+    op.setMinMaxNumberOfEntriesPerRow(minNumEnt, maxNumEnt);
+    op.fillComplete();
+    TEUCHOS_ASSERT( op.isFillComplete() );
+
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
