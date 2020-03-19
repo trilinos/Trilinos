@@ -206,6 +206,20 @@ protected:
     virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption) = 0;
 };
 
+inline void delete_mesh(const std::string & baseFileName)
+{
+  const int pSize = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (pSize == 1) {
+    unlink(baseFileName.c_str());
+  }
+  else {
+    for (int proc = 0; proc < pSize; ++proc) {
+      const std::string fileName = baseFileName + "." + std::to_string(pSize) + "." + std::to_string(proc);
+      unlink(fileName.c_str());
+    }
+  }
+}
+
 }}
 
 #endif

@@ -57,24 +57,6 @@ namespace KokkosBatched {
     extent_int( const iType & r ) const
     { return static_cast<int>(_a.extent(r)*(r == PackDim::value ? vector_length : 1)); }
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-
-    template< typename iType >
-    KOKKOS_INLINE_FUNCTION constexpr
-    typename std::enable_if< std::is_integral<iType>::value , size_t >::type
-    dimension( const iType & r ) const { return extent( r ); }
-
-    KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const { return _a.extent(0)*(0 == PackDim::value ? vector_length : 1); }
-    KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const { return _a.extent(1)*(1 == PackDim::value ? vector_length : 1); }
-    KOKKOS_INLINE_FUNCTION constexpr size_t dimension_2() const { return _a.extent(2)*(2 == PackDim::value ? vector_length : 1); }
-    KOKKOS_INLINE_FUNCTION constexpr size_t dimension_3() const { return _a.extent(3)*(3 == PackDim::value ? vector_length : 1); }
-    KOKKOS_INLINE_FUNCTION constexpr size_t dimension_4() const { return _a.extent(4)*(4 == PackDim::value ? vector_length : 1); }
-    KOKKOS_INLINE_FUNCTION constexpr size_t dimension_5() const { return _a.extent(5)*(5 == PackDim::value ? vector_length : 1); }
-    KOKKOS_INLINE_FUNCTION constexpr size_t dimension_6() const { return _a.extent(6)*(6 == PackDim::value ? vector_length : 1); }
-    KOKKOS_INLINE_FUNCTION constexpr size_t dimension_7() const { return _a.extent(7)*(7 == PackDim::value ? vector_length : 1); }
-
-#endif
-
     KOKKOS_INLINE_FUNCTION constexpr size_t size() const { 
       return (_a.size() * vector_length);
     }

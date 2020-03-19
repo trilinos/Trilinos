@@ -120,8 +120,6 @@ TEST(ElementGraph, RefinedQuad)
         EXPECT_EQ(7u, mesh_counts[stk::topology::ELEM_RANK]);
         EXPECT_EQ(6u, mesh_counts[meta.side_rank()]);
 
-        stk::io::write_mesh("refined.g", mesh);
-
         std::vector<std::pair<stk::mesh::EntityId, int>> id_and_num_faces = {
                 {1, 3},
                 {2, 1},

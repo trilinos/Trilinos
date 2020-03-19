@@ -5,17 +5,26 @@
 #if defined(TACHO_USE_INT_INT) 
 
 #include "Tacho.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
+#include "Tacho_MatrixMarket.hpp"
 #include "Tacho_Solver.hpp"
+#include "Tacho_CommandLineParser.hpp"
 
 namespace tacho {
 
   enum TACHO_PARAM_INDICES 
     {USEDEFAULTSOLVERPARAMETERS,
      VERBOSITY,
-     BLOCKSIZE,
-     PANELSIZE,
-     MAXNUMSUPERBLOCKS, 
      SMALLPROBLEMTHRESHOLDSIZE,
+     TASKING_OPTION_BLOCKSIZE,
+     TASKING_OPTION_PANELSIZE,
+     TASKING_OPTION_MAXNUMSUPERBLOCKS, 
+     LEVELSET_OPTION_SCHEDULING,
+     LEVELSET_OPTION_MAX_NRHS,
+     LEVELSET_OPTION_DEVICE_LEVEL_CUT,
+     LEVELSET_OPTION_DEVICE_FACTOR_THRES,
+     LEVELSET_OPTION_DEVICE_SOLVE_THRES,
+     LEVELSET_OPTION_NSTREAMS,
      INDEX_LENGTH
     };
 
@@ -94,6 +103,13 @@ namespace tacho {
       }
       {
         timer.reset();
+        m_Solver.initialize();
+        const double t = timer.seconds();
+        std::cout << "ExternalInterface:: initialize time " << t << std::endl;
+      }
+      /// I recommend to separate factorization from the solver initialization
+      {
+        timer.reset();
 	m_Solver.factorize(ax);
         const double t = timer.seconds();
         std::cout << "ExternalInterface:: factorize time " << t << std::endl;
@@ -124,12 +140,23 @@ namespace tacho {
     void setSolverParameters(const int* solverParams)
     {
       if (solverParams[USEDEFAULTSOLVERPARAMETERS]) return;
+      // common options
+      m_Solver.setVerbose                     (solverParams[VERBOSITY]);
+      m_Solver.setSmallProblemThresholdsize   (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
 
-      m_Solver.setVerbose                  (solverParams[VERBOSITY]);
-      m_Solver.setBlocksize                (solverParams[BLOCKSIZE]);
-      m_Solver.setPanelsize                (solverParams[PANELSIZE]);
-      m_Solver.setMaxNumberOfSuperblocks   (solverParams[MAXNUMSUPERBLOCKS]);
-      m_Solver.setSmallProblemThresholdsize(solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
+      // tasking options
+      m_Solver.setBlocksize                   (solverParams[TASKING_OPTION_BLOCKSIZE]);
+      m_Solver.setPanelsize                   (solverParams[TASKING_OPTION_PANELSIZE]);
+      m_Solver.setMaxNumberOfSuperblocks      (solverParams[TASKING_OPTION_MAXNUMSUPERBLOCKS]);
+
+      // levelset options
+      m_Solver.setLevelSetScheduling          (solverParams[LEVELSET_OPTION_SCHEDULING]);      
+      m_Solver.setLevelSetOptionMaxNrhs       (solverParams[LEVELSET_OPTION_MAX_NRHS]);      
+      m_Solver.setLevelSetOptionDeviceLevelCut(solverParams[LEVELSET_OPTION_DEVICE_LEVEL_CUT]);
+      m_Solver.setLevelSetOptionDeviceFunctionThreshold
+        (solverParams[LEVELSET_OPTION_DEVICE_FACTOR_THRES], 
+         solverParams[LEVELSET_OPTION_DEVICE_SOLVE_THRES]);
+      m_Solver.setLevelSetOptionNumStreams    (solverParams[LEVELSET_OPTION_NSTREAMS]);
     }
 
   };

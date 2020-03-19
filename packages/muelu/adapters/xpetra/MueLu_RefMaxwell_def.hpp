@@ -400,6 +400,10 @@ namespace MueLu {
             GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount_ << " BC rows and " << BCcolcount_ << " BC columns." << std::endl;
           }
         }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Xpetra::global_size_t>(BCrowcount_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements(), Exceptions::RuntimeError,
+                                 "All edges are detected as boundary edges!");
+
       if (dump_matrices_) {
         GetOStream(Runtime0) << "Dumping BCrows, BCcols" << std::endl;
         std::ofstream outBCrows("BCrows.m");
@@ -541,8 +545,8 @@ namespace MueLu {
       buildProlongator();
     }
 
-    bool doRebalancing = false;
 #ifdef HAVE_MPI
+    bool doRebalancing = false;
     doRebalancing = parameterList_.get<bool>("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
     int rebalanceStriding = parameterList_.get<int>("refmaxwell: subsolves striding", -1);
     int numProcsAH, numProcsA22;

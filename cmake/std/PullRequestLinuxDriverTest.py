@@ -19,6 +19,20 @@ manipulated in order to merge the "source" topic branch into the "target"
 branch.  This makes it easy to test changes to the PR scripts.  But if this
 script is run from ${WORKSPACE}/Trilinos, then these repos are one and the same
 and we get the correct behavior for PR testing.
+
+Expectations
+------------
+
+### Environment Variables
+- WORKSPACE : Root level directory for the Jenkins job.
+- MODULESHOME : Path to the location where modulefiles are.
+- CC : C Compiler
+- FC : Fortran Compiler
+- PULLREQUEST_CDASH_TRACK : Which CDash track should this result be published to?
+- JENKINS_JOB_WEIGHT : Number of cores to use to build Trilinos
+
+### Other Expectations?
+
 """
 from __future__ import print_function
 
@@ -51,6 +65,7 @@ except ImportError:
         exec(output)
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Parse the repo and build information')
@@ -78,10 +93,8 @@ def parse_args():
     return arguments
 
 
-
 def print_input_variables(arguments):
-    print("\n==========================================================================================",
-        file=sys.stdout)
+    print("\n" + "="*90, file=sys.stdout)
     print("Jenkins Input Variables:", file=sys.stdout)
     print("- JOB_BASE_NAME: {job_base_name}".format(
         job_base_name=arguments.job_base_name),
@@ -89,8 +102,7 @@ def print_input_variables(arguments):
     print("- WORKSPACE    : {workspace}".format(
         workspace=arguments.workspaceDir),
           file=sys.stdout)
-    print("\n==========================================================================================",
-        file=sys.stdout)
+    print("\n" + "="*90, file=sys.stdout)
     print("Parameters:", file=sys.stdout)
     print("- TRILINOS_SOURCE_REPO  : {source_repo}".format(
         source_repo=arguments.sourceRepo),
@@ -110,9 +122,7 @@ def print_input_variables(arguments):
     print("- BUILD_NUMBER          : {num}".format(
         num=arguments.job_number),
           file=sys.stdout)
-    print("\n==========================================================================================",
-        file=sys.stdout)
-
+    print("\n" + "="*90, file=sys.stdout)
 
 
 def confirmGitVersion():
@@ -132,8 +142,15 @@ def confirmGitVersion():
     return None
 
 
-
 def setBuildEnviron(arguments):
+    """
+    TODO: Needs explanation.
+          - How is environMap structured?
+          - How is moduleMap structured?
+    TODO: wcm: Could it be possible to offload environMap and moduleMap into a
+          JSON or Yaml file?  (Yaml allows comments which is more helpful
+          than JSON IMO.)
+    """
 
     moduleMap = {'Trilinos_pullrequest_gcc_4.8.4':
                      ['sems-env',
@@ -228,12 +245,47 @@ def setBuildEnviron(arguments):
                      'sems-cmake/3.10.3',
                      'atdm-env',
                      'atdm-ninja_fortran/1.7.2'],
+                'Trilinos_pullrequest_clang_7.0.1':
+                     ['sems-env',
+                     'sems-git/2.10.1',
+                     'sems-gcc/5.3.0',
+                     'sems-clang/7.0.1',
+                     'sems-openmpi/1.10.1',
+                     'sems-python/2.7.9',
+                     'sems-boost/1.63.0/base',
+                     'sems-zlib/1.2.8/base',
+                     'sems-hdf5/1.8.12/parallel',
+                     'sems-netcdf/4.4.1/exo_parallel',
+                     'sems-parmetis/4.0.3/parallel',
+                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
+                     'sems-superlu/4.3/base',
+                     'sems-cmake/3.12.2',
+                     'atdm-env',
+                     'atdm-ninja_fortran/1.7.2'],
+                'Trilinos_pullrequest_clang_9.0.0':
+                     ['sems-env',
+                     'sems-git/2.10.1',
+                     'sems-gcc/5.3.0',
+                     'sems-clang/9.0.0',
+                     'sems-openmpi/1.10.1',
+                     'sems-python/2.7.9',
+                     'sems-boost/1.63.0/base',
+                     'sems-zlib/1.2.8/base',
+                     'sems-hdf5/1.8.12/parallel',
+                     'sems-netcdf/4.4.1/exo_parallel',
+                     'sems-parmetis/4.0.3/parallel',
+                     'sems-scotch/6.0.3/nopthread_64bit_parallel',
+                     'sems-superlu/4.3/base',
+                     'sems-cmake/3.12.2',
+                     'atdm-env',
+                     'atdm-ninja_fortran/1.7.2'],
                 'Trilinos_pullrequest_cuda_9.2':
                      ['git/2.10.1',
                      'devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88',
                       ('openblas/0.2.20/gcc/7.2.0', 'netlib/3.8.0/gcc/7.2.0')]}
 
-    environMap = {'Trilinos_pullrequest_gcc_4.8.4':
+    environMap = {
+                 'Trilinos_pullrequest_gcc_4.8.4':
                       {'OMP_NUM_THREADS': '2'},
                   'Trilinos_pullrequest_gcc_4.9.3_SERIAL':
                       {'OMP_NUM_THREADS': '2'},
@@ -274,8 +326,7 @@ def setBuildEnviron(arguments):
                                             'install',
                                             'Python',
                                             'extras'
-                                            'bin')}
-        ,
+                                            'bin')},
                  'Trilinos_pullrequest_python_3':
                       {'PYTHONPATH':
                            os.path.join(os.path.sep,
@@ -323,6 +374,12 @@ def setBuildEnviron(arguments):
                  'Trilinos_pullrequest_intel_17.0.1':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
                        'OMP_NUM_THREADS': '2'},
+                 'Trilinos_pullrequest_clang_7.0.1':
+                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '5.3.0',
+                       'OMP_NUM_THREADS': '2'},
+                 'Trilinos_pullrequest_clang_9.0.0':
+                      {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '5.3.0',
+                       'OMP_NUM_THREADS': '2'},
                  'Trilinos_pullrequest_cuda_9.2':
                       {'OMPI_CXX':
                        os.path.join(os.environ['WORKSPACE'],
@@ -350,14 +407,16 @@ def setBuildEnviron(arguments):
                                             'install',
                                             'white-ride',
                                             'ninja-1.8.2',
-                                            'bin')} }
+                                            'bin')}
+    }
 
     try:
         moduleList = moduleMap[arguments.job_base_name]
         l_environMap = environMap[arguments.job_base_name]
     except KeyError:
-        sys.exit("""ERROR: Unable to find matching environment for job: Trilinos_pullrequest_UNKOWN
-       Error code was: 42""")
+        sys.exit(dedent("""\
+            ERROR: Unable to find matching environment for job: Trilinos_pullrequest_UNKOWN
+                   Error code was: 42"""))
 
     if 'sems-env' == moduleList[0]:
         module('use', '/projects/sems/modulefiles/projects')
@@ -393,11 +452,9 @@ def setBuildEnviron(arguments):
     for key in os.environ:
         print(key + ' = ' + os.environ[key],
               file=sys.stdout)
-    print(
-        "\n==========================================================================================",
-        file=sys.stdout)
-    print(module('list'))
 
+    print("\n"+"="*90, file=sys.stdout)
+    print(module('list'))
 
 
 def getCDashTrack():
@@ -411,7 +468,6 @@ def getCDashTrack():
         print('PULLREQUEST_CDASH_TRACK isn\'t set, using default value')
 
     return returnValue
-
 
 
 def get_memory_info():
@@ -450,7 +506,6 @@ def get_memory_info():
     return output
 
 
-
 def compute_n():
     '''
     Given the default and the hardware environment determine the
@@ -478,8 +533,9 @@ def compute_n():
     return parallel_level
 
 
-
 def createPackageEnables(arguments):
+    """
+    """
     enable_map = {'Trilinos_pullrequest_python_2': 'TrilinosFrameworkTests',
                   'Trilinos_pullrequest_python_3': 'TrilinosFrameworkTests'}
 
@@ -495,14 +551,14 @@ def createPackageEnables(arguments):
                                    'packageEnables.cmake'])
         else:
             with open('packageEnables.cmake',  'w') as f_out:
-                f_out.write('''
-MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
-  MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
-  SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
-ENDMACRO()
+                f_out.write(dedent('''\
+                    MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+                      MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+                      SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
+                    ENDMACRO()
 
-PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' ON)
-''')
+                    PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' ON)
+                    '''))
         print('Enabled packages:')
         cmake_rstring = subprocess.check_output(['cmake',
                                                  '-P',
@@ -519,19 +575,71 @@ PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map[arguments.job_base_name] + ''' O
     return None
 
 
+def validateSourceBranchIfDestBranchIsMaster(arguments):
+    """
+    We only allow special branches to be merged into master.
+    These should be protected branches that not everyone can create.
+    This routine checks that the source branch name is matches this form:
+    -  master_merge_YYYYMMDD_HHMMSS
 
-config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
-              'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
-              'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
-              'Trilinos_pullrequest_gcc_7.2.0': 'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
-              'Trilinos_pullrequest_gcc_8.3.0': 'PullRequestLinuxGCC8.3.0TestingSettings.cmake',
-              'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
-              'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
-              'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
+    Script will exit with nonzero exit code if this test fails.
+    """
+    re_src_branchname = "master_merge_[0-9]{8}_[0-9]{6}"
+    if "master" == arguments.targetBranch:
+        if re.match(re_src_branchname, arguments.sourceBranch) is None:
+            # If destination is master and source isn't master_merge_YYYYMMDD_HHMMSS
+            # then we exit here with nonzero exit status.
+            sys.exit(dedent("""\
+            ------------------------------------------------------------------------------------------
+            NOTICE: Destination branch is trilinos/Trilnos::master
+            ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
+                  : This violates Trilinos policy, pull requests into the master branch are restricted.
+                  : Perhaps you forgot to specify the develop branch as the target in your PR?
+            ------------------------------------------------------------------------------------------
+            """))
+        else:
+            print(dedent("""\
+                NOTICE: Source branch IS trilinos/Trilinos::{}
+                        : This is allowed, proceeding with testing.""".format(arguments.sourceBranch)))
+    else:
+        print(dedent("""\
+            NOTICE: Destination branch is NOT trilinos/Trilinos::master"
+                  : PR testing will proceed."""))
+
+    return 0
+
+
+def generateBuildNameString(arguments):
+    """
+    Generate the build name string
+    PR-<PR Number>-test-<Jenkins Job Name>-<Jenkins Build Number>
+    """
+    output = "PR-{PULLREQUESTNUM}-test-{JOB_BASE_NAME}-{BUILD_NUMBER}". \
+        format(PULLREQUESTNUM=arguments.github_pr_number,
+               JOB_BASE_NAME=arguments.job_base_name,
+               BUILD_NUMBER=arguments.job_number)
+    return output
+
+
+
+config_map = {
+    'Trilinos_pullrequest_gcc_4.8.4':        'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
+    'Trilinos_pullrequest_intel_17.0.1':     'PullRequestLinuxIntelTestingSettings.cmake',
+    'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
+    'Trilinos_pullrequest_gcc_7.2.0':        'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
+    'Trilinos_pullrequest_gcc_8.3.0':        'PullRequestLinuxGCC8.3.0TestingSettings.cmake',
+    'Trilinos_pullrequest_clang_7.0.1':      'PullRequestLinuxClang7.0.1TestingSettings.cmake',
+    'Trilinos_pullrequest_clang_9.0.0':      'PullRequestLinuxClang9.0.0TestingSettings.cmake',
+    'Trilinos_pullrequest_cuda_9.2':         'PullRequestLinuxCuda9.2TestingSettings.cmake',
+    'Trilinos_pullrequest_python_2':         'PullRequestLinuxPython2.cmake',
+    'Trilinos_pullrequest_python_3':         'PullRequestLinuxPython3.cmake'
+    }
+
 
 
 def run():
     """
+    Top level function to execute in this script.
     """
     return_value = True
     arguments = parse_args()
@@ -540,22 +648,7 @@ def run():
 
     print_input_variables(arguments)
 
-    re_src_branchname = "master_merge_[0-9]{8}_[0-9]{6}"
-    if "master" == arguments.targetBranch:
-        if re.match(re_src_branchname, arguments.sourceBranch) is None:
-            sys.exit("""------------------------------------------------------------------------------------------
-NOTICE: Destination branch is trilinos/Trilnos::master
-ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
-      : This violates Trilinos policy, pull requests into the master branch are restricted.
-      : Perhaps you forgot to specify the develop branch as the target in your PR?
-------------------------------------------------------------------------------------------
-""")
-        else:
-            print("""NOTICE: Source branch IS trilinos/Trilinos::{}
-        : This is allowed, proceeding with testing.""".format(arguments.sourceBranch))
-    else:
-        print("""NOTICE: Destination branch is NOT trilinos/Trilinos::master"
-      : PR testing will proceed.""")
+    validateSourceBranchIfDestBranchIsMaster(arguments)
 
     setBuildEnviron(arguments)
 
@@ -565,10 +658,7 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
 
     parallel_level = compute_n()
 
-    build_name = "PR-{PULLREQUESTNUM}-test-{JOB_BASE_NAME}-{BUILD_NUMBER}". \
-        format(PULLREQUESTNUM=arguments.github_pr_number,
-               JOB_BASE_NAME=arguments.job_base_name,
-               BUILD_NUMBER=arguments.job_number)
+    build_name = generateBuildNameString(arguments)
 
     config_script = config_map[arguments.job_base_name]
 

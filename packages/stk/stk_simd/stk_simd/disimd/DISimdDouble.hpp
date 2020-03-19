@@ -49,12 +49,18 @@ struct Double {
   }
 
   STK_MATH_FORCE_INLINE Double(const SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>& x)
-    : _data(x) {
+    : _data(x.get()) {
   }
 
   STK_MATH_FORCE_INLINE Double(const Double& x)
+    : _data(x._data.get()) {
+  }
+
+#ifdef STK_VOLATILE_SIMD
+  STK_MATH_FORCE_INLINE Double(const volatile Double& x)
     : _data(x._data) {
   }
+#endif
 
   STK_MATH_FORCE_INLINE Double& operator= (const Double& x) {
     _data = x._data;
@@ -71,6 +77,12 @@ struct Double {
     _data += a._data;
     return *this;
   }
+
+#ifdef STK_VOLATILE_SIMD
+  STK_MATH_FORCE_INLINE void operator+= (const volatile Double& a) volatile {
+    _data.plus_equals(a._data);
+  }
+#endif
 
   STK_MATH_FORCE_INLINE Double& operator-= (const Double& a) {
     _data -= a._data;

@@ -46,9 +46,9 @@ namespace KokkosBatched {
     //typedef typename vector_type::value_type value_type;
 
     const int
-      m = A.dimension(0),
+      m = A.extent(0),
       n = 1,
-      k = A.dimension(1);
+      k = A.extent(1);
 
     static_assert(is_vector<vector_type>::value, "value type is not vector type");      
     static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
@@ -150,9 +150,9 @@ namespace KokkosBatched {
     //typedef typename vector_type::value_type value_type;
 
     const int
-      m = A.dimension(0),
+      m = A.extent(0),
       n = 1,
-      k = A.dimension(1);
+      k = A.extent(1);
 
     static_assert(is_vector<vector_type>::value, "value type is not vector type");      
     static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 

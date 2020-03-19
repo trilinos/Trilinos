@@ -198,7 +198,7 @@ off_t FileInfo::size() const
 }
 
 //: Returns the filename
-const std::string FileInfo::filename() const { return filename_; }
+std::string FileInfo::filename() const { return filename_; }
 
 //: Sets the filename
 void FileInfo::set_filename(const std::string &name)
@@ -219,7 +219,7 @@ void FileInfo::set_filename(const char *name)
 //: Returns the filename extension or the empty string if there is
 //: no extension.  Assumes extension is all characters following the
 //: last period.
-const std::string FileInfo::extension() const
+std::string FileInfo::extension() const
 {
   size_t ind  = filename_.find_last_of('.', std::string::npos);
   size_t inds = filename_.find_last_of('/', std::string::npos);
@@ -232,7 +232,7 @@ const std::string FileInfo::extension() const
   return std::string();
 }
 
-const std::string FileInfo::pathname() const
+std::string FileInfo::pathname() const
 {
   size_t ind = filename_.find_last_of('/', filename_.size());
   if (ind != std::string::npos) {
@@ -242,7 +242,7 @@ const std::string FileInfo::pathname() const
   return std::string();
 }
 
-const std::string FileInfo::tailname() const
+std::string FileInfo::tailname() const
 {
   size_t ind = filename_.find_last_of('/', filename_.size());
   if (ind != std::string::npos) {
@@ -252,7 +252,7 @@ const std::string FileInfo::tailname() const
   return filename_; // No path, just return the filename
 }
 
-const std::string FileInfo::basename() const
+std::string FileInfo::basename() const
 {
   std::string tail = tailname();
 
@@ -265,7 +265,7 @@ const std::string FileInfo::basename() const
   return tail;
 }
 
-const std::string FileInfo::realpath() const
+std::string FileInfo::realpath() const
 {
 #ifdef _MSC_VER
   char *path = _fullpath(nullptr, filename_.c_str(), _MAX_PATH);

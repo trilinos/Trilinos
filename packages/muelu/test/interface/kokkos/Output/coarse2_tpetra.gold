@@ -454,9 +454,9 @@ level  rows  nnz    nnz/row  c ratio  procs
   0  9999  29995  3.00                  1  
   1  3333  9997   3.00     3.00         1  
   2  1111  3331   3.00     3.00         1  
-  3  370   1108   2.99     3.00         1  
-  4  121   361    2.98     3.06         1  
-  5  36    106    2.94     3.36         1  
+  3  371   1111   2.99     2.99         1  
+  4  124   370    2.98     2.99         1  
+  5  42    124    2.95     2.95         1  
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
@@ -464,9 +464,9 @@ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 2) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
-Smoother (level 3) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [370, 370], Global nnz: 1108}
+Smoother (level 3) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [371, 371], Global nnz: 1111}
 
-Smoother (level 4) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [121, 121], Global nnz: 361}
+Smoother (level 4) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [124, 124], Global nnz: 370}
 
 Smoother (level 5) pre  : no smoother
 Smoother (level 5) post : no smoother

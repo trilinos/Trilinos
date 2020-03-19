@@ -173,6 +173,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
   TEUCHOS_UNIT_TEST( Distributor, badArgsFromSends)
@@ -210,6 +214,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
   ////
@@ -305,6 +313,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
 
@@ -395,6 +407,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
 
@@ -477,6 +493,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
 
@@ -564,6 +584,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
 
@@ -650,6 +674,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
 
@@ -760,6 +788,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
 
@@ -862,6 +894,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, badArgsFromRecvs, Ordinal )
@@ -911,6 +947,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromRecvs, Ordinal )
@@ -953,6 +993,10 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+#endif
   }
 
 

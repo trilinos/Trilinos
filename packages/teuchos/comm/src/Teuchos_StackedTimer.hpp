@@ -1,5 +1,41 @@
-// @HEADER BEGIN
-// @HEADER END
+// @HEADER
+// ***********************************************************************
+//
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ***********************************************************************
+// @HEADER
 
 #ifndef TEUCHOS_STACKED_TIMER_HPP
 #define TEUCHOS_STACKED_TIMER_HPP
@@ -395,7 +431,7 @@ protected:
 
      /**
       * Dump the timer stats in a pretty format to ostream
-      * @param [in/out] os  Where are you dumping the stats, stdout??
+      * @param [in,out] os  Where are you dumping the stats, stdout??
       */
      void report(std::ostream &os);
 
@@ -607,11 +643,31 @@ public:
 
   /**
    * Dump all the data from all the MPI ranks to an ostream
-   * @param [in] os - Output stream
+   * @param [in,out] os - Output stream
    * @param [in] comm - Teuchos comm pointer
    */
   void report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
+  /**
+   * Dump all the data from all the MPI ranks to the given output stream, in Watchr XML format.
+   *  \c reportWatchrXML() is a wrapper for this function that creates \c os as a \c std::ofstream.
+   * @param [in,out] os - stream where XML will be written
+   * @param [in] datestamp - UTC datestamp in the format YYYY_MM_DD
+   * @param [in] timestamp - UTC timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SS (HH in 24-hour time, and T is just the character 'T')
+   * @param [in] comm - Teuchos comm pointer
+   * @return The complete filename, or empty string if no output was produced.
+   */
+  void reportXML(std::ostream &os, const std::string& datestamp, const std::string& timestamp, Teuchos::RCP<const Teuchos::Comm<int> > comm);
+
+  /**
+   * Dump all the data from all the MPI ranks to <code>$WATCHR_PERF_DIR/name_$DATESTAMP.xml</code>,
+   *  if the environment variable WATCHR_PERF_DIR is defined and non-empty (otherwise, do nothing).
+   *  DATESTAMP is calculated from the current UTC time, in the format YYYY_MM_DD.
+   * @param [in] name - Name of performance test
+   * @param [in] comm - Teuchos comm pointer
+   * @return If on rank 0 and output was produced, the complete output filename. Otherwise the empty string.
+   */
+  std::string reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
   // If set to true, print timer start/stop to verbose ostream.
   void enableVerbose(const bool enable_verbose);
@@ -700,6 +756,11 @@ protected:
     */
   double printLevel(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed,
                     double parent_time, const OutputOptions &options);
+
+   /**
+    * Recursive call to print a level of timer data, in Watchr XML format.
+    */
+  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time);
 
 };  //StackedTimer
 

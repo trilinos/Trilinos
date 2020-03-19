@@ -174,7 +174,7 @@ testSolver (Teuchos::FancyOStream& out,
   // debugging.  If the test crashes without useful output, try
   // setting this to 'true'.  That will change 'myOut' from an alias
   // to 'out', into a wrapper for std::cerr.
-  constexpr bool debug = true;
+  constexpr bool debug = false;
 
   const SC ZERO = STS::zero ();
   const SC ONE = STS::one ();

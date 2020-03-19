@@ -1,7 +1,7 @@
 /* Based on: "$Id: getline.c,v 3.11 1993/12/02 15:54:31 thewalt Exp thewalt $"; */
 
 /*
- * Copyright(C) 2008-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -91,10 +91,6 @@
 #else
 #/* guess */
 #define HAVE_TERMIOS_H 1
-#define HAVE_UNISTD_H 1
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
 #endif
 #include <sys/stat.h>
 #include <sys/time.h>

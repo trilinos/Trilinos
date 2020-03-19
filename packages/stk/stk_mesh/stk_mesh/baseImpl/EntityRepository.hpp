@@ -36,7 +36,7 @@
 #define stk_mesh_baseImpl_EntityRepository_hpp
 
 #include <stddef.h>                     // for size_t
-#include <map>                          // for map, map<>::value_compare
+#include <unordered_map>
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <utility>                      // for pair
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -51,10 +51,11 @@ class EntityRepository {
 public:
 
     typedef std::pair<EntityKey,Entity> EntityKeyEntity;
-    typedef std::vector<EntityKeyEntity> EntityKeyEntityVector;
-    typedef std::map<EntityKey,Entity> EntityKeyEntityMap;
+    typedef std::unordered_map<EntityKey,Entity,stk::mesh::HashValueForEntityKey> EntityKeyEntityMap;
     typedef EntityKeyEntityMap::const_iterator const_iterator;
     typedef EntityKeyEntityMap::iterator iterator;
+    typedef EntityKeyEntityMap::const_iterator const_entity_iterator;
+    typedef EntityKeyEntityMap::iterator entity_iterator;
 
     EntityRepository();
 

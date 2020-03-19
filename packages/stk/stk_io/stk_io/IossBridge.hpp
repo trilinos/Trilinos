@@ -289,7 +289,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
  */
 void define_input_fields(Ioss::Region &region,  stk::mesh::MetaData &meta);
 
-FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, stk::mesh::MetaData& meta);
+FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, const stk::mesh::MetaData& meta);
 
 /**
  * For the given Ioss::GroupingEntity "entity", find all fields that

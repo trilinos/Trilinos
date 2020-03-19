@@ -81,7 +81,14 @@ namespace transfer {
   {
     return "";
   }
+  std::string TransferCopyByIdMpmdMeshAdapter::field_name(const unsigned index) const
+  {
+    return "";
+  }
 
-
+  DataTypeKey::data_t TransferCopyByIdMpmdMeshAdapter::get_field_type(const unsigned fieldIndex) const
+  { 
+    return DataTypeKey::data_t::INVALID_TYPE;
+  }
 }
 }

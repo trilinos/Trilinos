@@ -48,7 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_STRATIMIKOS)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
 
 #include <Teuchos_ParameterList.hpp>
 

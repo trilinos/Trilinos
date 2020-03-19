@@ -45,7 +45,7 @@ public:
     mm_elematt = 7 // step not valid
   };
 
-  DiffData() : diff(0.0), val1(0.0), val2(0.0), id(0), blk(0), type(mm_unknown) {}
+  DiffData() {}
 
   void set_max(double d, double val_1, double val_2, size_t id_ = 0, size_t blk_ = 0)
   {
@@ -58,13 +58,13 @@ public:
     }
   }
 
-  double diff;
-  double val1;
-  double val2;
-  size_t id;
-  size_t blk;
+  double diff{0.0};
+  double val1{0.0};
+  double val2{0.0};
+  size_t id{0};
+  size_t blk{0};
 
-  Type type;
+  Type type{mm_unknown};
 };
 
 class MinMaxData
@@ -80,11 +80,7 @@ public:
     mm_nodeset = 6,
     mm_elematt = 7 // step not valid
   };
-  MinMaxData()
-      : min_val(DBL_MAX), min_step(0), min_id(0), min_blk(0), max_val(-1.0), max_step(0), max_id(0),
-        max_blk(0), type(mm_unknown)
-  {
-  }
+  MinMaxData() : min_val(DBL_MAX) {}
 
   void spec_min_max(double val, int step, size_t id = 0, size_t blk = 0)
   {
@@ -103,15 +99,15 @@ public:
     }
   }
 
-  double min_val;
-  int    min_step;
-  size_t min_id;
-  size_t min_blk;
+  double min_val{};
+  int    min_step{0};
+  size_t min_id{0};
+  size_t min_blk{0};
 
-  double max_val;
-  int    max_step;
-  size_t max_id;
-  size_t max_blk;
+  double max_val{-1.0};
+  int    max_step{0};
+  size_t max_id{0};
+  size_t max_blk{0};
 
-  Type type;
+  Type type{mm_unknown};
 };

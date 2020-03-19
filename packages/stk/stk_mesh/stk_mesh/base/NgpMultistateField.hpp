@@ -179,13 +179,13 @@ public:
   }
 
   STK_FUNCTION
-  T& get_new(stk::mesh::NgpMesh::MeshIndex entity, int component) const
+  T& get_new(const stk::mesh::FastMeshIndex& entity, int component) const
   {
     return NgpMultistateField<T>::get_field_new_state().get(entity, component);
   }
 
   STK_FUNCTION
-  T get_old(stk::mesh::FieldState state, stk::mesh::NgpMesh::MeshIndex entity, int component) const
+  T get_old(stk::mesh::FieldState state, const stk::mesh::FastMeshIndex& entity, int component) const
   {
     return NgpMultistateField<T>::get_field_old_state(state).get(entity, component);
   }

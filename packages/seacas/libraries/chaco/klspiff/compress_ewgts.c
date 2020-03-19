@@ -99,12 +99,11 @@ void restore_ewgts(struct vtx_data **graph, /* list of graph info for each verte
   if (old_ewgts == NULL) {
     return;
   }
-  else { /* otherwise, compress edge weights. */
-    sfree(graph[1]->ewgts);
-    for (i = 1; i <= nvtxs; i++) {
-      graph[i]->ewgts = old_ewgts;
-      old_ewgts += graph[i]->nedges;
-    }
-    old_ewgts = NULL;
+  /* otherwise, compress edge weights. */
+  sfree(graph[1]->ewgts);
+  for (i = 1; i <= nvtxs; i++) {
+    graph[i]->ewgts = old_ewgts;
+    old_ewgts += graph[i]->nedges;
   }
+  old_ewgts = NULL;
 }

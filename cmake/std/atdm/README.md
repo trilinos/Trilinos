@@ -100,15 +100,15 @@ not necessary to specify `<system_name>` in the `<build-name>` keys string.
 But there are some cases where more then one `<system_name>` env are supported
 on the same machine.  For example, on CEE LAN RHEL6 machines, both the <a
 href="#sems-rhel6-environment">sems-rhel6</a> and <a
-href="#cee-rhel6-environment">cee-rhel6</a> environments are supported.  On
-these CEE LAN RHEL6 machines, when `cee-rhel6` is included in `<build-name>`,
-then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is included in
-the build name (or no system name is listed in the build name), then the
-`sems-rhel6` env will be selected by default on such machines.  The same is
-true for CEE LAN RHEL7 machines with the <a
+href="#cee-rhel6-and-rhel7-environment">cee-rhel6</a> environments are
+supported.  On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in
+`<build-name>`, then the `cee-rhel6` env will be selected.  But if
+`sems-rhel6` is included in the build name (or no system name is listed in the
+build name), then the `sems-rhel6` env will be selected by default on such
+machines.  The same is true for CEE LAN RHEL7 machines with the <a
 href="#sems-rhel6-environment">sems-rhel7</a> and <a
-href="#cee-rhel6-environment">cee-rhel6</a> environments.  And if `spack-rhel`
-is included in `<build-name>`, then the <a
+href="#cee-rhel6-and-rhel7-environment">cee-rhel6</a> environments.  And if
+`spack-rhel` is included in `<build-name>`, then the <a
 href="#spack-rhel-environment">spack-rhel</a> will attempted to be loaded.
 (In that case, one must ensure that the ATDM Spack modules have been defined.)
 
@@ -615,7 +615,7 @@ example, skip the configure, skip the build, skip running tests, etc.
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
 * <a href="#spack-rhel-environment">Spack RHEL Environment</a>
-* <a href="#cee-rhel6-environment">CEE RHEL6 and RHEL7 Environment</a>
+* <a href="#cee-rhel6-and-rhel7-environment">CEE RHEL6 and RHEL7 Environment</a>
 * <a href="#waterman">waterman</a>
 * <a href="#ats-2">ATS-2</a>
 
@@ -819,10 +819,10 @@ $ make NP=16
 $ ctest -j8
 ```
 
-NOTE: Above including `sems-rhel6` in the build name
-`sems-rhel6-intel-opt-openmp` is not necessary but is recommended when on a
-CEE LAN RHEL6 machine to be explicit that the SEMS env is being used and not
-the <a href="#cee-rhel6-environment">CEE RHEL6 env</a>.
+NOTE:     Above    including     `sems-rhel6`     in     the    build     name
+`sems-rhel6-intel-opt-openmp` is  not necessary but  is recommended when  on a
+CEE LAN RHEL6 machine  to be explicit that the SEMS env is  being used and not
+the <a href="#cee-rhel6-and-rhel7-environment">CEE RHEL6 env</a>.
 
 One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
@@ -889,6 +889,18 @@ the env var:
 ```
 $ export ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE=<some-url>
 ```
+
+NOTE: If the SEMS modules are not already defined in the current shell
+(i.e. the environment variable `SEMS_MODULEFILES_ROOT` is empty), then the
+`atdm/load-env.sh` script for this 'sems-rhel7' system will attempt to define
+the SEMS modules by running:
+
+```
+$ module use /projects/sems/modulefiles/projects
+$ export SEMS_MODULEFILES_ROOT=/projects/sems/modulefiles
+```
+
+if that directory exists.
 
 
 ### Spack RHEL Environment
@@ -1038,70 +1050,125 @@ $ bsub -x -Is -n 20 \
 ### ATS-2
 
 Once logged on a supported ATS-2 system like 'vortex' (SRN), one can either
-build and configure on a login node or a compute node.  Make sure to setup SSH
-keys as described in `/opt/VORTEX_INTRO` before trying to build on a compute
-node.  For example, to configure, build and run the tests for the default
-`cuda-debug` build for `Kokkos` (after cloning Trilinos on the `develop`
-branch), do:
+build and configure on a login node or a compute node.  But one must always
+run the tests from the launch node (allocated using 'bsub').  Make sure to
+setup SSH keys as described in `/opt/VORTEX_INTRO` before trying to do
+anything.
+
+For example, to configure, build and run the tests for the default
+`cuda-debug` build for `Tpetra` (after cloning Trilinos on the 'develop'
+branch), run the following from the login node on 'vortex':
 
 ```bash
 $ cd <some_build_dir>/
 
+# Load env and configure on the login node
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
-
 $ cmake -GNinja \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
   -DTrilinos_ENABLE_TESTS=ON \
   -DTrilinos_ENABLE_Kokkos=ON \
   $TRILINOS_DIR
 
-$ make NP=20
-```
+# Get a node allocation and log on to launch node
+$ bsub -J <job-name> -W 6:00 -Is bash
 
-You may run the above commands from an interactive bsub session as well using:
+# Build on the allocated compute node 
+$ lrun -n 1 make NP=32
 
-```bash
-$ bsub -J <YOUR_JOB_NAME> -W 4:00 -Is bash
-```
-
-CTest runs everything using the `jsrun` command. You must run jsrun from a
-compute node which can be acquired using the above bsub command.
-
-Once you're on a compute node, you can run ctest. For example:
-
-```bash
+# Run the test suite from the launch node
 $ ctest -j4
 ```
 
-The MPI test exectuables are run by a wrapper script `trilinos_jsrun` which
-calls the `jsrun` command which modifies the input arguments to accommodate
-the MPI test suite in Trilinos (see the implementation of the script
-`trilinos_jsrun` for details).  By default, the script `trilinos_jsrun` will
-set `export TPETRA_ASSUME_CUDA_AWARE_MPI=0` if `TPETRA_ASSUME_CUDA_AWARE_MPI`
-is unset in the environment.  Therefore, by default, the tests are run without
-CUDA-aware MPI on this system.
+CTest runs everything using the `jsrun` command.  You must run jsrun from the
+launch node allocated using `bsub`.  That is why the raw `ctest` command is
+run on the launch node.
 
-To explicitly **disable CUDA-aware MPI** when running the test suite, set the
-environment variable:
+One can also build directly from the login node on a compute node using:
+
+```
+$ lalloc 1 -W 4:00 make NP=32
+```
+
+Or, to SSH from the launch node (acquired with `bsub -Is bash` as shown above)
+to the compute node and run make from there, use:
+
+```bash
+$ ssh $(atdm_ats2_get_allocated_compute_node_name)
+$ make NP=32
+```
+
+One can also directly run the test suite from the login node using:
+
+```bash
+$ bsub -Is -W 2:00 ctest -j4
+```
+
+The advantage of creating a node allocation first using `bsub -Is bash` and
+logging into the launch node is that your builds and test runs from there are
+completely interactive since you don't need to wait for a node allocation.
+(Also, you can set an LSF job name with `bsub -J <job-name>` which you can't
+do with `lalloc`.)
+
+The MPI test tests in Trilinos are actually run by a wrapper script
+`trilinos_jsrun` which calls the `jsrun` command and modifies the input
+arguments to accommodate the MPI test suite in Trilinos (see the
+implementation of the script `trilinos_jsrun` for details on what it does).
+By default, the script `trilinos_jsrun` will set `export
+TPETRA_ASSUME_CUDA_AWARE_MPI=0` if `TPETRA_ASSUME_CUDA_AWARE_MPI` is unset in
+the environment.  Therefore, by default, the tests are run without CUDA-aware
+MPI on this system.
+
+To explicitly **disable CUDA-aware MPI** when running the test suite from the
+launch node, set the environment variable and run as:
 
 ```bash
 $ export TPETRA_ASSUME_CUDA_AWARE_MPI=0
-$ ctest -j4
+$ lrun -n 1 ctest -j4
 ```
 
-and to explicitly **enable CUDA-aware MPI** when running the test suite set:
+To explicitly **enable CUDA-aware MPI** when running the test suite from the
+launch node, set the environment variable and run as:
 
 ```bash
 $ export TPETRA_ASSUME_CUDA_AWARE_MPI=1
-$ ctest -j4
+$ lrun -n 1 ctest -j4
 ```
 
-before running `ctest`.
+Note that one must run the function <a
+href="#ctest-s-local-test-driversh">ctest-s-local-test-driver.sh</a> from the
+login node, not the launch node or the compute node!  It is designed to run
+from the login node and it will allocate resources to run on a compute node
+when it runs.
+
+One can also use the <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
+tool to drive local builds.  To do so, run from the launch node as:
+
+```bash
+# Allocate a compute node and log onto the launch node
+$ bsub -J <job-name> -W 6:00 -Is bash
+
+# Do the configure and build from the allocated compute node
+$ lrun -n 1 ./checkin-test-atdm.sh <buildname0> <buildname1> ... \
+    --enable-packages=<pkg0>,<pkg1>,... --configure --build
+
+# Run tests from the launch node which will call jsrun
+$ ./checkin-test-atdm.sh <buildname0> <buildname1> ... \
+    --enable-packages=<pkg0>,<pkg1>,... --test
+```
 
 **NOTES:**
-- Do NOT do `module purge` before loading the environment. Simply start off with
-  a clean default environment on vortex.
-- One can also `ssh` to a compute node and run ctest from there.
+- Do **NOT** do `module purge` before loading the environment. Simply start
+  off with a clean default environment (through a fresh login) on 'vortex'.
+- Please do not build on the launch node after logging onto it using `bsub -Is
+  bash`.  That takes up CPU resources on the launch node that need to be used
+  by all users of the cluster to run individual MPI jobs.
+- The `lrun` command is just a simpler wrapper around `jsrun` that is meant to
+  be more similar to the SLURM `srun` comamnd.  That is, `lrun -n <N> <cmnd>`
+  should behave similarly to `jsrun --np <N> <cmnd>`.
+- One can directly log into any compute node (independent of if that node is
+  allocated to you or not).  That can be useful to examine a running job but
+  use caution when doing so as not to disturb the job running.
 
 
 ## Building and installing Trilinos for ATDM Applications

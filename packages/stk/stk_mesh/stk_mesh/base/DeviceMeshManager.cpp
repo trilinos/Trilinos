@@ -5,7 +5,7 @@
 namespace stk {
 namespace mesh {
 
-DeviceMeshManager::DeviceMeshManager(stk::mesh::BulkData & bulk)
+DeviceMeshManager::DeviceMeshManager(const stk::mesh::BulkData & bulk)
   : NgpMeshManager(),
     m_deviceMesh(bulk)
 {

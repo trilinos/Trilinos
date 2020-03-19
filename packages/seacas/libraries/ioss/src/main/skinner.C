@@ -356,7 +356,7 @@ namespace {
 
   Ioss::PropertyManager set_properties(Skinner::Interface &interFace)
   {
-    Ioss::PropertyManager properties;
+    Ioss::PropertyManager properties{};
     if (interFace.ints_64_bit()) {
       properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
       properties.add(Ioss::Property("INTEGER_SIZE_API", 8));

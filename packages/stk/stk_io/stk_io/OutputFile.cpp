@@ -124,7 +124,7 @@ Ioss::DatabaseIO *OutputFile::get_output_database()
     return m_region->get_database();
 }
 
-bool OutputFile::set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes)
+bool OutputFile::set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes)
 {
     if(nullptr != m_multiStateSuffixes) {
         delete m_multiStateSuffixes;

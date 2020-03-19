@@ -36,12 +36,13 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
 #include <Ioss_DatabaseIO.h> // for DatabaseIO
-#include <Ioss_IOFactory.h>  // for IOFactory
-#include <Ioss_Map.h>        // for Map
-#include <Ioss_State.h>      // for State
-#include <cstddef>           // for size_t
-#include <cstdint>           // for int64_t
-#include <iostream>          // for ostream
+#include <Ioss_FaceGenerator.h>
+#include <Ioss_IOFactory.h> // for IOFactory
+#include <Ioss_Map.h>       // for Map
+#include <Ioss_State.h>     // for State
+#include <cstddef>          // for size_t
+#include <cstdint>          // for int64_t
+#include <iostream>         // for ostream
 #include <map>
 #include <string> // for string
 
@@ -120,7 +121,7 @@ namespace Iocgns {
     void   create_structured_block(int base, int zone, size_t &num_node);
     void   create_structured_block_fpp(int base, int zone, size_t &num_node);
     size_t finalize_structured_blocks();
-    void   finalize_database() override;
+    void   finalize_database() const override;
     void   get_step_times__() override;
 
     void create_unstructured_block(int base, int zone, size_t &num_node);
@@ -197,14 +198,16 @@ namespace Iocgns {
     int m_flushInterval{0}; // Default is no flushing after each timestep
     int m_currentVertexSolutionIndex     = 0;
     int m_currentCellCenterSolutionIndex = 0;
+    mutable bool m_dbFinalized = false;
 
     mutable std::vector<size_t> m_zoneOffset; // Offset for local zone/block element ids to global.
     mutable std::vector<size_t>
-                                       m_bcOffset; // The BC Section element offsets in unstructured output.
-    mutable std::vector<double>        m_timesteps;
-    std::vector<std::vector<cgsize_t>> m_blockLocalNodeMap;
-    std::map<std::string, int>         m_zoneNameMap;
-    mutable std::map<int, Ioss::Map *> m_globalToBlockLocalNodeMap;
+                                                          m_bcOffset; // The BC Section element offsets in unstructured output.
+    mutable std::vector<double>                           m_timesteps;
+    std::vector<std::vector<cgsize_t>>                    m_blockLocalNodeMap;
+    std::map<std::string, int>                            m_zoneNameMap;
+    mutable std::map<int, Ioss::Map *>                    m_globalToBlockLocalNodeMap;
+    mutable std::map<std::string, Ioss::FaceUnorderedSet> m_boundaryFaces;
   };
 } // namespace Iocgns
 #endif

@@ -71,9 +71,9 @@ namespace Intrepid2
                               HGRAD_LINE>
   {
   public:
-    using OutputViewType = typename HGRAD_LINE::outputViewType;
-    using PointViewType  = typename HGRAD_LINE::pointViewType ;
-    using ScalarViewType = typename HGRAD_LINE::scalarViewType;
+    using OutputViewType = typename HGRAD_LINE::OutputViewType;
+    using PointViewType  = typename HGRAD_LINE::PointViewType ;
+    using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
 
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;
@@ -171,9 +171,9 @@ namespace Intrepid2
                               HGRAD_LINE>
   {
   public:
-    using OutputViewType = typename HGRAD_LINE::outputViewType;
-    using PointViewType  = typename HGRAD_LINE::pointViewType ;
-    using ScalarViewType = typename HGRAD_LINE::scalarViewType;
+    using OutputViewType = typename HGRAD_LINE::OutputViewType;
+    using PointViewType  = typename HGRAD_LINE::PointViewType ;
+    using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;
@@ -272,9 +272,9 @@ namespace Intrepid2
                               HGRAD_LINE,
                               HVOL_LINE>
   {
-    using OutputViewType = typename HGRAD_LINE::outputViewType;
-    using PointViewType  = typename HGRAD_LINE::pointViewType ;
-    using ScalarViewType = typename HGRAD_LINE::scalarViewType;
+    using OutputViewType = typename HGRAD_LINE::OutputViewType;
+    using PointViewType  = typename HGRAD_LINE::PointViewType ;
+    using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;

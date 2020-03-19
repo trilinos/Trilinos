@@ -33,7 +33,7 @@ TEST(NgpMeshManager, NgpMesh_FromBulkData)
   stk::mesh::MetaData meta(3);
   stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
 
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
 
 #ifndef KOKKOS_ENABLE_CUDA
   EXPECT_TRUE((std::is_same<decltype(ngpMesh), stk::mesh::HostMesh&>::value));

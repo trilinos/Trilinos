@@ -357,6 +357,79 @@ inline std::vector< std::vector<int> > getBasisTestCasesUpToDegree(int spaceDim,
   return subBasisDegreeTestCases;
 }
 
+template <class ViewType>
+void testViewFloatingEquality(ViewType &view1, ViewType &view2, double relTol, double absTol, Teuchos::FancyOStream &out, bool &success,
+                              std::string view1Name = "View 1", std::string view2Name = "View 2")
+{
+  using Scalar   = typename ViewType::value_type;
+  using HostView = typename ViewType::HostMirror;
+  using HostViewIteratorScalar = Intrepid2::ViewIterator<HostView, Scalar>;
+  
+  auto hostView1 = getHostCopy(view1);
+  auto hostView2 = getHostCopy(view2);
+  
+  // check that rank/size match
+  TEUCHOS_TEST_FOR_EXCEPTION(view1.rank() != view2.rank(), std::invalid_argument, "views must agree in rank");
+  for (unsigned i=0; i<view1.rank(); i++)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(view1.extent_int(i) != view2.extent_int(i), std::invalid_argument, "views must agree in size in each dimension");
+  }
+  
+  if (view1.size() == 0) return; // nothing to test
+  
+  HostViewIteratorScalar vi1(hostView1);
+  HostViewIteratorScalar vi2(hostView2);
+  
+  double maxDiff = 0.0;
+  double maxRelativeDiff = 0.0;
+  bool differencesFound = false;
+  
+  bool moreEntries = (vi1.nextIncrementRank() != -1) && (vi2.nextIncrementRank() != -1);
+  while (moreEntries)
+  {
+    Scalar value1 = vi1.get();
+    Scalar value2 = vi2.get();
+    
+    const bool small = valuesAreSmall(value1, value2, absTol);
+    const bool valuesMatch = small || essentiallyEqual(value1, value2, relTol);
+    
+    if (!valuesMatch)
+    {
+      differencesFound = true;
+      success = false;
+      auto location = vi1.getLocation();
+      out << "At location (";
+      for (unsigned i=0; i<view1.rank(); i++)
+      {
+        out << location[i];
+        if (i<view1.rank()-1)
+        {
+          out << ",";
+        }
+      }
+      out << ") " << view1Name << " value != " << view2Name << " value (";
+      out << value1 << " != " << value2 << "); diff is " << std::abs(value1-value2) << std::endl;
+      
+      maxDiff = std::max(maxDiff, std::abs(value1-value2));
+      double smallerMagnitude = (std::abs(value1) > std::abs(value2) ? std::abs(value2) : std::abs(value1));
+      if (smallerMagnitude > 0)
+      {
+        const double relativeDiff = std::abs(value1 - value2) / smallerMagnitude;
+        maxRelativeDiff = std::max(maxRelativeDiff, relativeDiff);
+      }
+    }
+    
+    moreEntries =                (vi1.increment() != -1);
+    moreEntries = moreEntries && (vi2.increment() != -1);
+  }
+  
+  if (differencesFound)
+  {
+    out << "max difference = " << maxDiff << std::endl;
+    out << "max relative difference = " << maxRelativeDiff << std::endl;
+  }
+}
+
 #ifdef HAVE_INTREPID2_SACADO
 #include <Sacado.hpp>
 using Sacado_Fad_DFadType = Sacado::Fad::DFad<double>;

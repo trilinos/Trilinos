@@ -42,7 +42,6 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/GetBuckets.hpp>  // for get_involved_parts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>

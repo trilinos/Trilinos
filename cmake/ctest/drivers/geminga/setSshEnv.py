@@ -35,6 +35,7 @@ userid = pwd.getpwuid(os.getuid())[0]
 agentList=[s.strip() for s in charlist.splitlines()]
 agentFound=0
 keyFound=0
+myagent = ""
 for agent in agentList:
   # See if this is your agent by checking ownership of root of lock directory
   # Check only the root, because if it's not yours, you can't see down into it.
@@ -48,8 +49,9 @@ for agent in agentList:
     dirOwner = pwd.getpwuid(st.st_uid).pw_name
     if dirOwner == userid:
       agentFound=1
+      myagent=agent
       # Your ssh agent has been found
-      sshAgentCmd="SSH_AUTH_SOCK=" + agent + " ssh-add -l"
+      sshAgentCmd="SSH_AUTH_SOCK=" + myagent + " ssh-add -l"
       [status,result]=commands.getstatusoutput(sshAgentCmd)
       keyList=[s.strip() for s in result.splitlines()]
 
@@ -57,10 +59,10 @@ for agent in agentList:
       for key in keyList:
         if keyFingerprint in key:
           keyFound=1
-          print envCmd + agent
+          print envCmd + myagent
           break
 
 # If no key matches, just use the last agent found
 if keyFound == 0 and agentFound == 1:
   #print "export SSH_AUTH_SOCK=" + agent
-  print envCmd + agent
+  print envCmd + myagent
