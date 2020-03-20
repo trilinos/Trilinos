@@ -150,7 +150,7 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(64) << "Overlapping subdomains statistics " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
+                << left << setw(74) << "Overlapping subdomains statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="

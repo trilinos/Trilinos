@@ -165,7 +165,7 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(64) << "Volumes statistics " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+                << left << setw(74) << "Volumes statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="
@@ -204,7 +204,7 @@ namespace FROSch {
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << "\n" << setw(FROSCH_INDENT) << " "
             << "| "
-            << left << setw(64) << "Constant Partition Of Unity " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
+            << left << setw(74) << "Constant Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
             << " |"
             << "\n" << setw(FROSCH_INDENT) << " "
             << setw(89) << "========================================================================================="
