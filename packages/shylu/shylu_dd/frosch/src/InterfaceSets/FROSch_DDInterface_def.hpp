@@ -480,12 +480,12 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(85) << "Interface statistics" << right
+                << left << setw(64) << "Interface statistics " << right << setw(18) << "(Level " << setw(2) << LevelID_ << ")"
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << " " << right
+                << "| " << left << setw(20) << " " << right
                 << " | " << setw(10) << "total"
                 << " | " << setw(10) << "avg"
                 << " | " << setw(10) << "min"
@@ -495,7 +495,7 @@ namespace FROSch {
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Vertices" << right
+                << "| " << left << setw(20) << "Vertices" << right
                 << " | "; globalVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[0]; cout
                 << " | "; avgVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << avgVec[0]; cout
                 << " | "; minVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[0]; cout
@@ -503,7 +503,7 @@ namespace FROSch {
                 << " | "; sumVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[0]; cout
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Short edges" << right
+                << "| " << left << setw(20) << "Short edges" << right
                 << " | "; globalVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[1]; cout
                 << " | "; avgVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << avgVec[1]; cout
                 << " | "; minVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[1]; cout
@@ -511,7 +511,7 @@ namespace FROSch {
                 << " | "; sumVec[1]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[1]; cout
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Straight edges" << right
+                << "| " << left << setw(20) << "Straight edges" << right
                 << " | "; globalVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[2]; cout
                 << " | "; avgVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << avgVec[2]; cout
                 << " | "; minVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[2]; cout
@@ -519,7 +519,7 @@ namespace FROSch {
                 << " | "; sumVec[2]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[2]; cout
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Edges" << right
+                << "| " << left << setw(20) << "Edges" << right
                 << " | "; globalVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[3]; cout
                 << " | "; avgVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << avgVec[3]; cout
                 << " | "; minVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[3]; cout
@@ -527,7 +527,7 @@ namespace FROSch {
                 << " | "; sumVec[3]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[3]; cout
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Faces" << right
+                << "| " << left << setw(20) << "Faces" << right
                 << " | "; globalVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[4]; cout
                 << " | "; avgVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << avgVec[4]; cout
                 << " | "; minVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[4]; cout
@@ -535,7 +535,7 @@ namespace FROSch {
                 << " | "; sumVec[4]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[4]; cout
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Roots" << right
+                << "| " << left << setw(20) << "Roots" << right
                 << " | "; globalVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[5]; cout
                 << " | "; avgVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << avgVec[5]; cout
                 << " | "; minVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[5]; cout
@@ -543,7 +543,7 @@ namespace FROSch {
                 << " | "; sumVec[5]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[5]; cout
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Leafs" << right
+                << "| " << left << setw(20) << "Leafs" << right
                 << " | "; globalVec[6]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[6]; cout
                 << " | "; avgVec[6]<0 ? cout << setw(10) << " " : cout << setw(10) << avgVec[6]; cout
                 << " | "; minVec[6]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[6]; cout

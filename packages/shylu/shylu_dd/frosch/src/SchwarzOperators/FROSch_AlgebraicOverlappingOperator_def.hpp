@@ -150,12 +150,12 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(85) << "Overlapping subdomains statistics" << right
+                << left << setw(64) << "Overlapping subdomains statistics " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << " " << right
+                << "| " << left << setw(20) << " " << right
                 << " | " << setw(10) << "total"
                 << " | " << setw(10) << "avg"
                 << " | " << setw(10) << "min"
@@ -165,7 +165,7 @@ namespace FROSch {
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Layer 0" << right
+                << "| " << left << setw(20) << "Layer 0" << right
                 << " | " << setw(10) << global
                 << " | " << setw(10) << avg
                 << " | " << setw(10) << minVal
@@ -205,7 +205,7 @@ namespace FROSch {
                 if (this->Verbose_) {
                     cout
                     << "\n" << setw(FROSCH_INDENT) << " "
-                    << "| " << left << "Layer " << setw(13) << i+1 << right
+                    << "| " << left << "Layer " << setw(14) << i+1 << right
                     << " | " << setw(10) << global
                     << " | " << setw(10) << avg
                     << " | " << setw(10) << minVal

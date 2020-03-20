@@ -313,6 +313,7 @@ namespace FROSch {
             if (OnCoarseSolveComm_) {
                 LO numRows = k0->getNodeNumRows();
                 ArrayRCP<size_t> elemsPerRow(numRows);
+                LO numDiagonalsAdded = 0;
                 if (k0->isFillComplete()) {
                     ConstLOVecView indices;
                     ConstSCVecView values;
@@ -339,6 +340,7 @@ namespace FROSch {
                             GOVec indicesGlob(1,CoarseSolveMap_->getGlobalElement(i));
                             SCVec values(1,ScalarTraits<SC>::one());
                             CoarseMatrix_->insertGlobalValues(globalRow,indicesGlob(),values());
+                            numDiagonalsAdded++;
                         }
                     }
                     CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
@@ -365,9 +367,53 @@ namespace FROSch {
                             GOVec indices(1,globalRow);
                             SCVec values(1,ScalarTraits<SC>::one());
                             CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
+                            numDiagonalsAdded++;
                         }
                     }
                     CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
+
+                    // Statistics on adding diagonal entries
+                    LO sumVal;
+                    LO minVal;
+                    LO maxVal;
+
+                    reduceAll(*CoarseSolveComm_,REDUCE_SUM,numDiagonalsAdded,ptr(&sumVal));
+                    SC avgVal = max(sumVal/double(CoarseSolveComm_->getSize()),0.0);
+                    reduceAll(*CoarseSolveComm_,REDUCE_MIN,numDiagonalsAdded,ptr(&minVal));
+                    reduceAll(*CoarseSolveComm_,REDUCE_MAX,numDiagonalsAdded,ptr(&maxVal));
+
+                    if (CoarseSolveComm_->getRank() == 0) {
+                        cout
+                        << "\n" << setw(FROSCH_INDENT) << " "
+                        << setw(89) << "-----------------------------------------------------------------------------------------"
+                        << "\n" << setw(FROSCH_INDENT) << " "
+                        << "| "
+                        << left << setw(64) << "Number of unit diagonals added " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
+                        << " |"
+                        << "\n" << setw(FROSCH_INDENT) << " "
+                        << setw(89) << "========================================================================================="
+                        << "\n" << setw(FROSCH_INDENT) << " "
+                        << "| " << left << setw(20) << " " << right
+                        << " | " << setw(10) << "total"
+                        << " | " << setw(10) << "avg"
+                        << " | " << setw(10) << "min"
+                        << " | " << setw(10) << "max"
+                        << " | " << setw(10) << "global sum"
+                        << " |"
+                        << "\n" << setw(FROSCH_INDENT) << " "
+                        << setw(89) << "-----------------------------------------------------------------------------------------"
+                        << "\n" << setw(FROSCH_INDENT) << " "
+                        << "| " << left << setw(20) << "Coarse matrix" << right
+                        << " | " << setw(10) << sumVal
+                        << " | " << setw(10) << avgVal
+                        << " | " << setw(10) << minVal
+                        << " | " << setw(10) << maxVal
+                        << " | " << setw(10) << sumVal
+                        << " |"
+                        << "\n" << setw(FROSCH_INDENT) << " "
+                        << setw(89) << "-----------------------------------------------------------------------------------------"
+                        << endl;
+                    }
                 }
 
                 bool reuseCoarseMatrixSymbolicFactorization = this->ParameterList_->get("Reuse: Coarse Matrix Symbolic Factorization",true);
@@ -562,7 +608,7 @@ namespace FROSch {
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << "\n" << setw(FROSCH_INDENT) << " "
             << "| "
-            << left << setw(85) << "Coarse problem statistics" << right
+            << left << setw(64) << "Coarse problem statistics " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
             << " |"
             << "\n" << setw(FROSCH_INDENT) << " "
             << setw(89) << "========================================================================================="

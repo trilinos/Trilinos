@@ -165,12 +165,12 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(85) << "Volumes statistics" << right
+                << left << setw(64) << "Volumes statistics " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")" << right
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << " " << right
+                << "| " << left << setw(20) << " " << right
                 << " | " << setw(10) << "total"
                 << " | " << setw(10) << "avg"
                 << " | " << setw(10) << "min"
@@ -180,7 +180,7 @@ namespace FROSch {
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Volumes" << right
+                << "| " << left << setw(20) << "Volumes" << right
                 << " | "; globalVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[0]; cout
                 << " | "; avgVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << avgVec[0]; cout
                 << " | "; minVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << minVec[0]; cout
@@ -204,7 +204,7 @@ namespace FROSch {
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << "\n" << setw(FROSCH_INDENT) << " "
             << "| "
-            << left << setw(85) << "Constant Partition Of Unity" << right
+            << left << setw(64) << "Constant Partition Of Unity " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
             << " |"
             << "\n" << setw(FROSCH_INDENT) << " "
             << setw(89) << "========================================================================================="

@@ -195,16 +195,16 @@ namespace FROSch {
                     << setw(89) << "-----------------------------------------------------------------------------------------"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| "
-                    << left << setw(85) << "RGDSW coarse space" << right
+                    << left << setw(64) << "RGDSW coarse space " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << setw(89) << "========================================================================================="
                     << "\n" << setw(FROSCH_INDENT) << " "
-                    << "| " << left << setw(19) << "Coarse nodes " << " | " << setw(19) << " Translations" << right
+                    << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Translations" << right
                     << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
-                    << "| " << left << setw(19) << "Coarse nodes " << " | " << setw(19) << " Rotations" << right
+                    << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Rotations" << right
                     << " | " << setw(41) << boolalpha << useRotations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "

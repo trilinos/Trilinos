@@ -224,8 +224,8 @@ namespace FROSch {
     int CoarseSpace<SC,LO,GO,NO>::zeroOutBasisVectors(ConstLOVecView zeros)
     {
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace : ERROR: AssembledBasis_.is_null().");
-        for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
-            AssembledBasis_->getVectorNonConst(j)->scale(ScalarTraits<SC>::zero());
+        for (UN j=0; j<zeros.size(); j++) {
+            AssembledBasis_->getVectorNonConst(zeros[j])->scale(ScalarTraits<SC>::zero());
         }
         return 0;
     }

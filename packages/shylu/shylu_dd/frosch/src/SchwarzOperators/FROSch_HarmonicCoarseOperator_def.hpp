@@ -257,16 +257,16 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(85) << "RGDSW coarse space" << right
+                << left << setw(64) << "RGDSW coarse space " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Volumes " << " | " << setw(19) << " Translations" << right
+                << "| " << left << setw(20) << "Volumes " << " | " << setw(19) << " Translations" << right
                 << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(19) << "Volumes " << " | " << setw(19) << " Rotations" << right
+                << "| " << left << setw(20) << "Volumes " << " | " << setw(19) << " Rotations" << right
                 << " | " << setw(41) << boolalpha << useRotations << noboolalpha
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
@@ -548,7 +548,7 @@ namespace FROSch {
             linearDependentVectors.resize(tmp);
         }
 
-        // Count entities
+        // Statistics on linear dependencies
         GO global = AssembledInterfaceCoarseSpace_->getBasisMap()->getMaxAllGlobalIndex();
         if (AssembledInterfaceCoarseSpace_->getBasisMap()->lib()==UseEpetra || AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalNumElements()>0) {
             global += 1;
@@ -584,12 +584,12 @@ namespace FROSch {
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << "\n" << setw(FROSCH_INDENT) << " "
             << "| "
-            << left << setw(85) << "Local linear dependencies of basis functions statistics" << right
+            << left << setw(64) << "Local linear dependencies of basis functions statistics " << right << setw(18) << "(Level " << setw(2) << this->LevelID_ << ")"
             << " |"
             << "\n" << setw(FROSCH_INDENT) << " "
             << setw(89) << "========================================================================================="
             << "\n" << setw(FROSCH_INDENT) << " "
-            << "| " << left << setw(19) << " " << right
+            << "| " << left << setw(20) << " " << right
             << " | " << setw(10) << "total"
             << " | " << setw(10) << "avg"
             << " | " << setw(10) << "min"
@@ -599,7 +599,7 @@ namespace FROSch {
             << "\n" << setw(FROSCH_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << "\n" << setw(FROSCH_INDENT) << " "
-            << "| " << left << setw(19) << "Basis functions" << right
+            << "| " << left << setw(20) << "Basis functions" << right
             << " | " << setw(10) << global
             << " | " << setw(10) << avgVec[0]
             << " | " << setw(10) << minVec[0]
@@ -607,7 +607,7 @@ namespace FROSch {
             << " | " << setw(10) << sumVec[0]
             << " |"
             << "\n" << setw(FROSCH_INDENT) << " "
-            << "| " << left << setw(19) << "Dependent" << right
+            << "| " << left << setw(20) << "Dependent" << right
             << " | " << setw(10) << " "
             << " | " << setw(10) << avgVec[1]
             << " | " << setw(10) << minVec[1]
@@ -615,7 +615,7 @@ namespace FROSch {
             << " | " << setw(10) << sumVec[1]
             << " |"
             << "\n" << setw(FROSCH_INDENT) << " "
-            << "| " << left << setw(19) << "Independent" << right
+            << "| " << left << setw(20) << "Independent" << right
             << " | " << setw(10) << " "
             << " | " << setw(10) << avgVec[2]
             << " | " << setw(10) << minVec[2]
