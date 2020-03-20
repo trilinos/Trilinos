@@ -41,42 +41,34 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_BRANCHHELPER_PEBBL_H
-#define ROL_PDEOPT_BRANCHHELPER_PEBBL_H
+#ifndef ROL_PDEOPT_TRANSFORM_PEBBL_H
+#define ROL_PDEOPT_TRANSFORM_PEBBL_H
 
-#include "ROL_StdBranchHelper_PEBBL.hpp"
-#include "transform.hpp"
+#include "ROL_StdTransform_PEBBL.hpp"
+#include "../../TOOLS/pdevector.hpp"
 
 template <class Real>
-class PDEOPT_BranchHelper_PEBBL : public ROL::StdBranchHelper_PEBBL<Real> {
+class PDEOPT_Transform_PEBBL : public ROL::StdTransform_PEBBL<Real> {
 private:
-  ROL::Ptr<const ROL::StdVector<Real>> getParameter(const ROL::Vector<Real> &x) const {
-    return dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
+  ROL::Ptr<ROL::StdVector<Real>> getParameter(ROL::Vector<Real> &x) const {
+    return dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
   }
 
 public:
-  PDEOPT_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
-    : ROL::StdBranchHelper_PEBBL<Real>(tol, method) {}
+  PDEOPT_Transform_PEBBL(void)
+    : ROL::StdTransform_PEBBL<Real>() {}
 
-  PDEOPT_BranchHelper_PEBBL(const PDEOPT_BranchHelper_PEBBL &BH)
-    : ROL::StdBranchHelper_PEBBL<Real>(BH) {}
+  PDEOPT_Transform_PEBBL(const PDEOPT_Transform_PEBBL &T)
+    : ROL::StdTransform_PEBBL<Real>(T) {}
 
-  //int getMyIndex(const ROL::Vector<Real> &x) const {
-  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector &g) const {
-    // Use Std implementation
-    return ROL::StdBranchHelper_PEBBL<Real>::getMyIndex(*getParameter(x),*getParameter(g));
+  void pruneVector(ROL::Vector<Real> &c) {
+    ROL::StdTransform_PEBBL<Real>::pruneVector(*getParameter(c));
   }
 
-  void getMyNumFrac(int &nfrac, Real &integralityMeasure,
-                    const ROL::Vector<Real> &x) const {
-    // Use Std implementation
-    ROL::StdBranchHelper_PEBBL<Real>::getMyNumFrac(nfrac, integralityMeasure, *getParameter(x));
+  void shiftVector(ROL::Vector<Real> &c) {
+    ROL::StdTransform_PEBBL<Real>::shiftVector(*getParameter(c));
   }
 
-  ROL::Ptr<ROL::Transform_PEBBL<Real>> createTransform(void) const {
-    return ROL::makePtr<PDEOPT_Transform_PEBBL<Real>>();
-  }
-
-}; // class PDEOPT_BranchHelper_PEBBL
+}; // class PDEOPT_Transform_PEBBL
 
 #endif

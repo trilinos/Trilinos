@@ -85,6 +85,7 @@ private:
   int order_;
   Real XL_, XU_, YL_, YU_;
   std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> ctrl_wts_;
+  bool usePC_;
 
 public:
   PDE_adv_diff(Teuchos::ParameterList &parlist) {
@@ -119,7 +120,18 @@ public:
     YL_ = parlist.sublist("Geometry").get("Y0", 0.0);
     XU_ = XL_ + parlist.sublist("Geometry").get("Width",  2.0);
     YU_ = YL_ + parlist.sublist("Geometry").get("Height", 1.0);
+    usePC_ = parlist.sublist("Problem").get("Piecewise Constant Controls", true);
   }
+
+//  PDE_adv_diff(const PDE_adv_diff &rpde)
+//    : basisPtr_(rpde.basisPtr_), basisPtrs_(rpde.basisPtrs_),
+//      cellCub_(rpde.cellCub_), volCellNodes_(rpde.volCellNodes_),
+//      bdryCellNodes_(rpde.bdryCellNodes_),
+//      bdryCellLocIds_(rpde.bdryCellLocIds_),
+//      fe_vol_(rpde.fe_vol_), fidx_(rpde.fidx_),
+//      bdryCellDofValues_(rpde.bdryCellDofValues_),
+//      order_(rpde.order_), XL_(rpde.XL_), XU_(rpde.XU_), YL(rpde.YL_),
+//      YU_(rpde.YU_), ctrl_wts_(rpde.ctrl_wts_), usePC_(rpde.usePC_) {}
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
                 const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
@@ -158,25 +170,26 @@ public:
                                                             *gradU_eval);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                   *V_gradU,
-                                                  *(fe_vol_->NdetJ()),
+                                                  *fe_vol_->NdetJ(),
                                                   Intrepid::COMP_CPP, true);
 
     // ADD CONTROL TERM TO RESIDUAL
     if (z_coeff != ROL::nullPtr) {
       fe_vol_->evaluateValue(valZ_eval, z_coeff);
+      Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,static_cast<Real>(-1));
       Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                     *valZ_eval,
-                                                    (*fe_vol_->NdetJ()),
+                                                    *fe_vol_->NdetJ(),
                                                     Intrepid::COMP_CPP, true);
     }
     else {
       int n = std::pow(2,order_);
       for (int i = 0; i < n*n; ++i) {
         *valZ_eval = *ctrl_wts_[i];
-        Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,(*z_param)[i]);
+        Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,-(*z_param)[i]);
         Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                       *valZ_eval,
-                                                      (*fe_vol_->NdetJ()),
+                                                      *fe_vol_->NdetJ(),
                                                       Intrepid::COMP_CPP, true);
       }
     }
@@ -226,8 +239,8 @@ public:
                                                              *V,
                                                              *fe_vol_->gradN());
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
-                                                  *V_gradN,
                                                   *fe_vol_->NdetJ(),
+                                                  *V_gradN,
                                                   Intrepid::COMP_CPP, true);
     // APPLY DIRICHLET CONDITIONS
     int numLocalSideIds = bdryCellLocIds_[0].size();
@@ -258,6 +271,7 @@ public:
       // INITIALIZE RIESZ
       jac  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
       *jac = *fe_vol_->massMat();
+      Intrepid::RealSpaceTools<Real>::scale(*jac,static_cast<Real>(-1));
       // APPLY DIRICHLET CONDITIONS
       int numLocalSideIds = bdryCellLocIds_[0].size();
       for (int j = 0; j < numLocalSideIds; ++j) {
@@ -301,6 +315,7 @@ public:
                                                       *ctrl_wts_[i],
                                                       *fe_vol_->NdetJ(),
                                                       Intrepid::COMP_CPP, false);
+        Intrepid::RealSpaceTools<Real>::scale(*jac[i],static_cast<Real>(-1));
         // APPLY DIRICHLET CONDITIONS
         int numLocalSideIds = bdryCellLocIds_[0].size();
         for (int j = 0; j < numLocalSideIds; ++j) {
@@ -449,7 +464,9 @@ public:
         }
       }
     }
-    computeControlWeights();
+    if (usePC_) {
+      computeControlWeights();
+    }
   }
 
   const ROL::Ptr<FE<Real>> getFE(void) const {
@@ -530,6 +547,7 @@ private:
         for (int l = 0; l < n; ++l) {
           for (int m = 0; m < n; ++m) {
             hilbert::xy2d(order_,l,m,D);
+            D = l + m*n;
             xl = XL_ + static_cast<Real>(l)*(XU_-XL_)/static_cast<Real>(n);
             xu = XL_ + static_cast<Real>(l+1)*(XU_-XL_)/static_cast<Real>(n);
             yl = YL_ + static_cast<Real>(m)*(YU_-YL_)/static_cast<Real>(n);

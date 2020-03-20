@@ -77,14 +77,33 @@ public:
   BinaryAdvDiffFactory(ROL::ParameterList                 &pl,
                  const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                  const ROL::Ptr<std::ostream>             &os)
-    : pl_(pl), comm_(comm), os_(os) {}
-
-  void update(void) {
+    : pl_(pl), comm_(comm), os_(os) {
     mesh_      = ROL::makePtr<MeshManager_adv_diff<Real>>(pl_);
     pde_       = ROL::makePtr<PDE_adv_diff<Real>>(pl_);
     con_       = ROL::makePtr<Linear_PDE_Constraint<Real>>(pde_,mesh_,comm_,pl_,*os_);
     assembler_ = con_->getAssembler();
 
+    std::string costType = pl_.sublist("Problem").get("Control Cost Type", "TV");
+    Real stateCost   = pl_.sublist("Problem").get("State Cost",       1.0);
+    Real controlCost = pl_.sublist("Problem").get("Control Cost",     1.0);
+    Real intCost     = pl_.sublist("Problem").get("Integrality Cost", 1.0);
+    std::vector<Real> wts = {stateCost, controlCost, intCost};
+    std::vector<ROL::Ptr<QoI<Real>>> qoi_vec(3,ROL::nullPtr);
+    qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
+    if (costType=="TV") {
+      qoi_vec[1] = ROL::makePtr<QoI_TVControl_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
+    }
+    else if (costType=="L1") {
+      qoi_vec[1] = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
+    }
+    else {
+      qoi_vec[1] = ROL::makePtr<QoI_Control_Cost_L2_adv_diff<Real>>(pde_->getFE(),pl_);
+    }
+    qoi_vec[2] = ROL::makePtr<QoI_IntegralityControl_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
+    obj_  = ROL::makePtr<PDE_Objective<Real>>(qoi_vec, wts, assembler_);
+  }
+
+  void update(void) {
     bool usePC = pl_.sublist("Problem").get("Piecewise Constant Controls", true);
     int  order = pl_.sublist("Problem").get("Hilbert Curve Order", 2);
     int      n = std::pow(2,order);
@@ -97,7 +116,7 @@ public:
     if (usePC) {
       Real XL  = pl_.sublist("Geometry").get("X0", 0.0);
       Real YL  = pl_.sublist("Geometry").get("Y0", 0.0);
-      Real XU  = XL + pl_.sublist("Geometry").get("Width",  1.0);
+      Real XU  = XL + pl_.sublist("Geometry").get("Width",  2.0);
       Real YU  = YL + pl_.sublist("Geometry").get("Height", 1.0);
       Real vol = (XU-XL)/static_cast<Real>(n) * (YU-YL)/static_cast<Real>(n);
       ROL::Ptr<std::vector<Real>> xvec, svec;
@@ -110,24 +129,7 @@ public:
       z_ptr = assembler_->createControlVector();
       z_ = ROL::makePtr<PDE_PrimalOptVector<Real>>(z_ptr,pde_,assembler_,pl_);
     }
-
-    std::string costType = pl_.sublist("Problem").get("Control Cost Type", "TV");
-    bool storage     = pl_.sublist("Problem").get("Use Storage", true);
-    Real stateCost   = pl_.sublist("Problem").get("State Cost",   1.0);
-    Real controlCost = pl_.sublist("Problem").get("Control Cost", 1.0);
-    std::vector<Real> wts = {stateCost, controlCost};
-    std::vector<ROL::Ptr<QoI<Real>>> qoi_vec(2,ROL::nullPtr);
-    qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
-    if (costType=="TV") {
-      qoi_vec[1] = ROL::makePtr<QoI_TVControl_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
-    }
-    else if (costType=="L1") {
-      qoi_vec[1] = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(pde_->getFE(),pl_);
-    }
-    else {
-      qoi_vec[1] = ROL::makePtr<QoI_Control_Cost_L2_adv_diff<Real>>(pde_->getFE(),pl_);
-    }
-    obj_  = ROL::makePtr<PDE_Objective<Real>>(qoi_vec, wts, assembler_);
+    bool storage     = pl_.sublist("Problem").get("Use Storage",     true);
     robj_ = ROL::makePtr<ROL::Reduced_Objective_SimOpt<Real>>(obj_, con_, u_, z_, p_, storage, false);
   }
 
