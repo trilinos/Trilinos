@@ -6,21 +6,28 @@
 matrix equation on a distributed computer system using MPI for message passing.
 The code was ported from Pliris, which runs on CPUs only. The code uses Kokkos
 and Kokkos Kernels libraries to achieve performance portability on heterogeneous
-architectures equipped with CPUs and accelerated hardware such as GPUs.
+architectures equipped with CPUs and acceleration hardware such as GPUs.
 
- The matrix is torus-wrap mapped onto the processors of the parallel machines
-(either CPUs or GPUs). Each processor contains portions of the matrix and the
-right hand sides determined by a distribution function to optimally load balance
-the computation and communication during the LU factorization of the matrix.
-Each processor handles its own workload through Kokkos Kernels BLAS routines
-optimized for multi-threaded CPUs and massively parallel GPUs. Furthermore, CUDA-
-aware MPI is exploited on GPU architectures which allows direct communication
-from GPU memory.
+ The matrix is blocked mapped onto the processors of the parallel machine
+(either CPUs or GPUs). It is solved as if it was torus-wrapped for an optimal balance 
+of computation and communication. A permutation operation is performed on the 
+results to restore the results to their correct position so the torus-wrap distribution
+is hidden to the user. Each processor contains blocks of the matrix and the right hand sides. 
+A distribution function is used to optimally load balance the computation and communication
+during the LU factorization of the matrix. Each processor handles its own workload
+through the Kokkos Kernels BLAS routines optimized for multi-threaded CPUs and 
+massively parallel GPUs. Furthermore, CUDA-aware MPI is exploited on 
+GPU architectures which allows direct communication from GPU memory.
 
-### Relation to MPI Process Topology
+### Relation of the Matrix Distribution to MPI Process Topology
+
+The matrix is distributed to the different MPI processes using the following criterion. 
+No MPI process can have no more than 1 row or column than any other process. This in effect 
+balances the the number of matrix entries that each process needs to fill. An example 
+illustrating this algorithm follows.
 
 ```
- Example: 6 processes
+ Example: 6 MPI processes
         nprocsr =3  (Number of processes for a row)
         Process id in the box below.
 
@@ -46,6 +53,40 @@ from GPU memory.
 
       Note: The fortran convention is assumed the matrix begins with index 1.
 ```
+In addition, the Right Hand Sides (RHS) are distributed in a similar manner, i.e.
+no MPI process can have no more than 1 RHS than any other process. Using the example 
+shown above the RHS are distributed:
+
+   For 1 RHS (x)
+
+         0         1      2        < --- my_col
+       ------    ------ ------
+       |    |x   |    | |    |
+       |  0 |x   |  1 | |  2 |     < --- my_row = 0 for these processes
+       |    |x   |    | |    |
+       ------    ------ ------
+       |    |x   |    | |    |
+       |  3 |x   |  4 | |  5 |     < --- my_row = 1 for these processes
+       |    |x   |    | |    |
+       ------    ------ ------
+
+   For 4 RHS (x)
+
+         0            1        2        < --- my_col
+       ------     ------     ------
+       |    |xx    |    |x   |    |x
+       |  0 |xx    |  1 |x   |  2 |x     < --- my_row = 0 for these processes
+       |    |xx    |    |x   |    |x
+       ------     ------     ------
+       |    |xx    |    |x   |    |x
+       |  3 |xx    |  4 |x   |  5 |x     < --- my_row = 1 for these processes
+       |    |xx    |    |x   |    |x
+       ------     ------     ------
+
+This first version of the solver requires the RHS before the solve occurs since
+the forward solve is realized by factoring the matrix with the RHS appended to 
+the matrix.
+
 
 ### Directory Organization
 
@@ -55,7 +96,7 @@ We organize the directories as follows:
 ```src/``` subdirectory (```adelus/src```):
 
 * ```Adelus::GetDistribution()```: gives the distribution information that is required
-by the dense solver
+by the dense solver to the user that defines the matrix block and right hand side information.
 
 * ```Adelus::FactorSolve()```: factors and solves the dense matrix in which the matrix
 and rhs are packed in Kokkos View
@@ -100,7 +141,7 @@ options can be found below.
   * Whether to enable single precision functionality
   * ```BOOL``` Default: OFF
 * ```Adelus_ENABLE_TIMING```
-  * Whether to enable timing
+  * Whether to enable internal solver timing
   * ```BOOL``` Default: OFF
 * ```Adelus_ENABLE_CUDAHOSTPINNED```
   * Whether to use Cuda Host Pinned memory for MPI
@@ -112,18 +153,18 @@ options can be found below.
   * Whether to enable status prints
   * ```BOOL``` Default: OFF
 
- We refer readers to Trilinos', Kokkos' and Kokkos Kernels' documentations for
-further details of building Trilinos, Kokkos and Kokkos Kernels.
+ We refer readers to Trilinos', Kokkos', and Kokkos Kernels' documentations for
+further details of building Trilinos, Kokkos, and Kokkos Kernels.
 
  Below is an example of a Trilinos build script enabling Adelus (and Kokkos and
 Kokkos Kernels) with CUDA back-end (NVIDIA Volta generation CC 7.0) and OpenMP host
 back-end to perform comparison between the CUDA code and the more classical MPI
-version of the code.
+version of the code.  The example below includes the environment variables and Cmake
+options to build Adelus.
 
 ### Configure
 
 ```
-export LD_LIBRARY_PATH
 export TRILINOS_HOME=/your/Trilinos/home/directory
 export CXX=${TRILINOS_HOME}/Trilinos/packages/kokkos/bin/nvcc_wrapper
 export CUDA_LAUNCH_BLOCKING=1
