@@ -388,7 +388,7 @@ namespace FROSch {
                         << setw(89) << "-----------------------------------------------------------------------------------------"
                         << "\n" << setw(FROSCH_INDENT) << " "
                         << "| "
-                        << left << setw(74) << "Zero rows in coarse matrix (=> added unit diagonal entries) statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                        << left << setw(74) << "Zero rows in coarse matrix statistics (coarse comm) " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                         << " |"
                         << "\n" << setw(FROSCH_INDENT) << " "
                         << setw(89) << "========================================================================================="
@@ -404,6 +404,14 @@ namespace FROSch {
                         << setw(89) << "-----------------------------------------------------------------------------------------"
                         << "\n" << setw(FROSCH_INDENT) << " "
                         << "| " << left << setw(20) << "Zero rows" << right
+                        << " | " << setw(10) << sumVal
+                        << " | " << setw(10) << avgVal
+                        << " | " << setw(10) << minVal
+                        << " | " << setw(10) << maxVal
+                        << " | " << setw(10) << sumVal
+                        << " |"
+                        << "\n" << setw(FROSCH_INDENT) << " "
+                        << "| " << left << setw(20) << "Add unit diagonal" << right
                         << " | " << setw(10) << sumVal
                         << " | " << setw(10) << avgVal
                         << " | " << setw(10) << minVal
@@ -619,7 +627,7 @@ namespace FROSch {
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| "
-                << left << setw(74) << "Coarse problem statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                << left << setw(74) << "Coarse problem statistics (coarse comm) " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << setw(89) << "========================================================================================="

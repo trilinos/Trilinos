@@ -489,7 +489,7 @@ namespace FROSch {
                         values.push_back(valueTmp);
                     }
                 }
-                iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(indicesGammaDofsAll[i]));
+                iD = repeatedMap->getGlobalElement(indicesGammaDofsAll[i]);
 
                 if (iD!=-1) {
                     phiGamma->insertGlobalValues(iD,indices(),values());
@@ -499,7 +499,7 @@ namespace FROSch {
 
             //Compute Phi^T * Phi
             RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
-            XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); //phiGamma->describe(*fancy,VERB_EXTREME);//phiTPhi->describe(*fancy,VERB_EXTREME);AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
+            XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); //phiGamma->describe(*fancy,VERB_EXTREME); phiTPhi->describe(*fancy,VERB_EXTREME); //AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
 
             // Extract local part of the matrix
             ConstXMatrixPtr repeatedPhiTPhi = ExtractLocalSubdomainMatrix(phiTPhi.getConst(),AssembledInterfaceCoarseSpace_->getBasisMap());
@@ -518,11 +518,13 @@ namespace FROSch {
                     (*denseRepeatedPhiTPhi)(i,indices[j]) = values[j];
                 }
             }
-            // for (LO i=0; i<denseRepeatedPhiTPhi->numRows(); i++) {
-            //     for (LO j=0; j<denseRepeatedPhiTPhi->numCols(); j++) {
-            //         cout << (*denseRepeatedPhiTPhi)(i,j) << " ";
+            // if (this->MpiComm_->getRank()==3) {
+            //     for (LO i=0; i<denseRepeatedPhiTPhi->numRows(); i++) {
+            //         for (LO j=0; j<denseRepeatedPhiTPhi->numCols(); j++) {
+            //             cout << (*denseRepeatedPhiTPhi)(i,j) << " ";
+            //         }
+            //         cout << endl;
             //     }
-            //     cout << endl;
             // }
 
             //Compute local QR factorization
@@ -541,6 +543,7 @@ namespace FROSch {
                     normRow += (*r)(i,j)*(*r)(i,j);
                 }
                 if (sqrt(normRow)<treshold) {
+                    //cout << this->MpiComm_->getRank() << " " << i << " " << AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(i) << " " << sqrt(normRow) << std::endl;
                     linearDependentVectors[tmp] = i;
                     tmp++;
                 }
