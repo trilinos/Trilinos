@@ -52,7 +52,7 @@
 
 #cmakedefine HAVE_STK_CUDA
 
-#cmakedefine STK_KOKKOS_SIMD
+//#cmakedefine STK_KOKKOS_SIMD
 
 #cmakedefine STK_VOLATILE_SIMD
 
