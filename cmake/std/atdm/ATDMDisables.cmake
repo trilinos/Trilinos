@@ -40,6 +40,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   STKDoc_tests
   STKExp
   Moertel
+  ShyLU_NodeTacho
   ShyLU_DD
   ShyLU
   Stokhos
