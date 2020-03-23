@@ -171,7 +171,7 @@ namespace FROSch {
                 << "\n" << setw(FROSCH_INDENT) << " "
                 << "| " << left << setw(20) << "Layer 0" << right
                 << " | " << setw(10) << global
-                << " | " << setw(10) << avg
+                << " | " << setw(10) << setprecision(5) << avg
                 << " | " << setw(10) << minVal
                 << " | " << setw(10) << maxVal
                 << " | " << setw(10) << sum
@@ -212,7 +212,7 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| " << left << "Layer " << setw(14) << i+1 << right
                     << " | " << setw(10) << global
-                    << " | " << setw(10) << avg
+                    << " | " << setw(10) << setprecision(5) << avg
                     << " | " << setw(10) << minVal
                     << " | " << setw(10) << maxVal
                     << " | " << setw(10) << sum

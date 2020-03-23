@@ -379,12 +379,12 @@ namespace FROSch {
 
                 FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
                 // Statistics on adding diagonal entries
-                GOVec globalVec(4);
-                LOVec localVec(4);
-                LOVec sumVec(4);
-                SCVec avgVec(4);
-                LOVec minVec(4);
-                LOVec maxVec(4);
+                GOVec globalVec(5);
+                LOVec localVec(5);
+                LOVec sumVec(5);
+                SCVec avgVec(5);
+                LOVec minVec(5);
+                LOVec maxVec(5);
 
                 globalVec[0] = CoarseMatrix_->getGlobalNumRows();
                 localVec[0] = CoarseMatrix_->getNodeNumRows();
@@ -407,11 +407,17 @@ namespace FROSch {
                 reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[2],ptr(&minVec[2]));
                 reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[2],ptr(&maxVec[2]));
 
-                localVec[3] = numDiagonalsAdded;
+                localVec[3] = CoarseMatrix_->getNodeMaxNumRowEntries();
                 reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[3],ptr(&sumVec[3]));
                 avgVec[3] = max(sumVec[3]/double(CoarseSolveComm_->getSize()),0.0);
                 reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[3],ptr(&minVec[3]));
                 reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[3],ptr(&maxVec[3]));
+
+                localVec[4] = numDiagonalsAdded;
+                reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[4],ptr(&sumVec[4]));
+                avgVec[4] = max(sumVec[4]/double(CoarseSolveComm_->getSize()),0.0);
+                reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[4],ptr(&minVec[4]));
+                reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[4],ptr(&maxVec[4]));
 
                 if (CoarseSolveComm_->getRank() == 0) {
                     cout
@@ -446,7 +452,7 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| " << left << setw(20) << "Number of rows" << right
                     << " | " << setw(10) << globalVec[0]
-                    << " | " << setw(10) << avgVec[0]
+                    << " | " << setw(10) << setprecision(5) << avgVec[0]
                     << " | " << setw(10) << minVec[0]
                     << " | " << setw(10) << maxVec[0]
                     << " | " << setw(10) << sumVec[0]
@@ -454,7 +460,7 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| " << left << setw(20) << "Entries" << right
                     << " | " << setw(10) << globalVec[1]
-                    << " | " << setw(10) << avgVec[1]
+                    << " | " << setw(10) << setprecision(5) << avgVec[1]
                     << " | " << setw(10) << minVec[1]
                     << " | " << setw(10) << maxVec[1]
                     << " | " << setw(10) << sumVec[1]
@@ -462,18 +468,26 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| " << left << setw(20) << "Avg entries per row" << right
                     << " | " << setw(10) << globalVec[2]
-                    << " | " << setw(10) << avgVec[2]
+                    << " | " << setw(10) << setprecision(5) << avgVec[2]
                     << " | " << setw(10) << minVec[2]
                     << " | " << setw(10) << maxVec[2]
                     << " | " << setw(10) << sumVec[2]
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
-                    << "| " << left << setw(20) << "Unit diagonals added" << right
-                    << " | " << setw(10) << sumVec[3]
-                    << " | " << setw(10) << avgVec[3]
+                    << "| " << left << setw(20) << "Max entries per row" << right
+                    << " | " << setw(10) << " "
+                    << " | " << setw(10) << setprecision(5) << avgVec[3]
                     << " | " << setw(10) << minVec[3]
                     << " | " << setw(10) << maxVec[3]
-                    << " | " << setw(10) << sumVec[3]
+                    << " | " << setw(10) << " "
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Unit diagonals added" << right
+                    << " | " << setw(10) << sumVec[4]
+                    << " | " << setw(10) << setprecision(5) << avgVec[4]
+                    << " | " << setw(10) << minVec[4]
+                    << " | " << setw(10) << maxVec[4]
+                    << " | " << setw(10) << sumVec[4]
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << setw(89) << "-----------------------------------------------------------------------------------------"
