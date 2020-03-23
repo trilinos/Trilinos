@@ -377,16 +377,41 @@ namespace FROSch {
                 }
                 FROSCH_TIMER_STOP(replicateCoarseMatrixOnCoarseCommTime);
 
-                FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
+                FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
                 // Statistics on adding diagonal entries
-                LO sumVal;
-                LO minVal;
-                LO maxVal;
+                GOVec globalVec(4);
+                LOVec localVec(4);
+                LOVec sumVec(4);
+                SCVec avgVec(4);
+                LOVec minVec(4);
+                LOVec maxVec(4);
 
-                reduceAll(*CoarseSolveComm_,REDUCE_SUM,numDiagonalsAdded,ptr(&sumVal));
-                SC avgVal = max(sumVal/double(CoarseSolveComm_->getSize()),0.0);
-                reduceAll(*CoarseSolveComm_,REDUCE_MIN,numDiagonalsAdded,ptr(&minVal));
-                reduceAll(*CoarseSolveComm_,REDUCE_MAX,numDiagonalsAdded,ptr(&maxVal));
+                globalVec[0] = CoarseMatrix_->getGlobalNumRows();
+                localVec[0] = CoarseMatrix_->getNodeNumRows();
+                reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[0],ptr(&sumVec[0]));
+                avgVec[0] = max(sumVec[0]/double(CoarseSolveComm_->getSize()),0.0);
+                reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[0],ptr(&minVec[0]));
+                reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[0],ptr(&maxVec[0]));
+
+                globalVec[1] = CoarseMatrix_->getGlobalNumEntries();
+                localVec[1] = CoarseMatrix_->getNodeNumEntries();
+                reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[1],ptr(&sumVec[1]));
+                avgVec[1] = max(sumVec[1]/double(CoarseSolveComm_->getSize()),0.0);
+                reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[1],ptr(&minVec[1]));
+                reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[1],ptr(&maxVec[1]));
+
+                globalVec[2] = double(globalVec[1])/double(globalVec[0]);
+                localVec[2] = double(localVec[1])/double(localVec[0]);
+                reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[2],ptr(&sumVec[2]));
+                avgVec[2] = max(sumVec[2]/double(CoarseSolveComm_->getSize()),0.0);
+                reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[2],ptr(&minVec[2]));
+                reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[2],ptr(&maxVec[2]));
+
+                localVec[3] = numDiagonalsAdded;
+                reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[3],ptr(&sumVec[3]));
+                avgVec[3] = max(sumVec[3]/double(CoarseSolveComm_->getSize()),0.0);
+                reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[3],ptr(&minVec[3]));
+                reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[3],ptr(&maxVec[3]));
 
                 if (CoarseSolveComm_->getRank() == 0) {
                     cout
@@ -394,10 +419,20 @@ namespace FROSch {
                     << setw(89) << "-----------------------------------------------------------------------------------------"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| "
-                    << left << setw(74) << "Zero rows in coarse matrix statistics (coarse comm) " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                    << left << setw(74) << "Coarse problem statistics (coarse comm) " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << setw(89) << "========================================================================================="
+                    // << "\n" << setw(FROSCH_INDENT) << " "
+                    // << "| " << left << setw(41) << "Dimension of the coarse problem" << right
+                    // << " | " << setw(41) << dimCoarseProblem
+                    // << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(41) << "Number of ranks on the coarse comm" << right
+                    << " | " << setw(41) << NumProcsCoarseSolve_
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << setw(89) << "-----------------------------------------------------------------------------------------"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << "| " << left << setw(20) << " " << right
                     << " | " << setw(10) << "total"
@@ -409,20 +444,36 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << setw(89) << "-----------------------------------------------------------------------------------------"
                     << "\n" << setw(FROSCH_INDENT) << " "
-                    << "| " << left << setw(20) << "Zero rows" << right
-                    << " | " << setw(10) << sumVal
-                    << " | " << setw(10) << avgVal
-                    << " | " << setw(10) << minVal
-                    << " | " << setw(10) << maxVal
-                    << " | " << setw(10) << sumVal
+                    << "| " << left << setw(20) << "Number of rows" << right
+                    << " | " << setw(10) << globalVec[0]
+                    << " | " << setw(10) << avgVec[0]
+                    << " | " << setw(10) << minVec[0]
+                    << " | " << setw(10) << maxVec[0]
+                    << " | " << setw(10) << sumVec[0]
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
-                    << "| " << left << setw(20) << "Add unit diagonal" << right
-                    << " | " << setw(10) << sumVal
-                    << " | " << setw(10) << avgVal
-                    << " | " << setw(10) << minVal
-                    << " | " << setw(10) << maxVal
-                    << " | " << setw(10) << sumVal
+                    << "| " << left << setw(20) << "Entries" << right
+                    << " | " << setw(10) << globalVec[1]
+                    << " | " << setw(10) << avgVec[1]
+                    << " | " << setw(10) << minVec[1]
+                    << " | " << setw(10) << maxVec[1]
+                    << " | " << setw(10) << sumVec[1]
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Avg entries per row" << right
+                    << " | " << setw(10) << globalVec[2]
+                    << " | " << setw(10) << avgVec[2]
+                    << " | " << setw(10) << minVec[2]
+                    << " | " << setw(10) << maxVec[2]
+                    << " | " << setw(10) << sumVec[2]
+                    << " |"
+                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "| " << left << setw(20) << "Unit diagonals added" << right
+                    << " | " << setw(10) << sumVec[3]
+                    << " | " << setw(10) << avgVec[3]
+                    << " | " << setw(10) << minVec[3]
+                    << " | " << setw(10) << maxVec[3]
+                    << " | " << setw(10) << sumVec[3]
                     << " |"
                     << "\n" << setw(FROSCH_INDENT) << " "
                     << setw(89) << "-----------------------------------------------------------------------------------------"
@@ -610,67 +661,6 @@ namespace FROSch {
 #endif
         } else {
             FROSCH_ASSERT(false,"FROSch::CoarseOperator : ERROR: Distribution type unknown.");
-        }
-
-        if (OnCoarseSolveComm_) {
-            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
-
-            GO dimCoarseProblem = CoarseSolveMap_->getMaxAllGlobalIndex();
-            if (CoarseSolveMap_->lib()==UseEpetra || CoarseSolveMap_->getGlobalNumElements()>0) {
-                dimCoarseProblem += 1;
-            }
-            LO localVal = CoarseSolveMap_->getNodeNumElements();
-            LO sumVal;
-            LO minVal;
-            LO maxVal;
-
-            reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVal,ptr(&sumVal));
-            SC avgVal = max(sumVal/double(CoarseSolveComm_->getSize()),0.0);
-            reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVal,ptr(&minVal));
-            reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVal,ptr(&maxVal));
-
-            if (CoarseSolveComm_->getRank() == 0) {
-                cout
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << "| "
-                << left << setw(74) << "Coarse problem statistics (coarse comm) " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
-                << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "========================================================================================="
-                // << "\n" << setw(FROSCH_INDENT) << " "
-                // << "| " << left << setw(41) << "Dimension of the coarse problem" << right
-                // << " | " << setw(41) << dimCoarseProblem
-                // << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(41) << "Number of ranks on the coarse comm" << right
-                << " | " << setw(41) << NumProcsCoarseSolve_
-                << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(20) << " " << right
-                << " | " << setw(10) << "total"
-                << " | " << setw(10) << "avg"
-                << " | " << setw(10) << "min"
-                << " | " << setw(10) << "max"
-                << " | " << setw(10) << "global sum"
-                << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << "| " << left << setw(20) << "Number of rows" << right
-                << " | " << setw(10) << dimCoarseProblem
-                << " | " << setw(10) << avgVal
-                << " | " << setw(10) << minVal
-                << " | " << setw(10) << maxVal
-                << " | " << setw(10) << sumVal
-                << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
-                << setw(89) << "-----------------------------------------------------------------------------------------"
-                << endl;
-            }
         }
 
         return 0;

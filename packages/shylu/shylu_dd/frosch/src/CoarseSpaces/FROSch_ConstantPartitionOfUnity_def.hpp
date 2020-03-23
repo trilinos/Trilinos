@@ -129,7 +129,7 @@ namespace FROSch {
         if (UseVolumes_) Volumes_->buildEntityMap(DDInterface_->getNodesMap());
 
         if (this->Verbosity_==All) {
-            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
+            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
             // Count entities
             GOVec globalVec(1);
             LOVec localVec(1);
