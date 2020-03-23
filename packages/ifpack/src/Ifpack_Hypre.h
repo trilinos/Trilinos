@@ -527,6 +527,8 @@ private:
   //! Create a BiCGSTAB solver.
   int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
+  //! Map generation function
+  Teuchos::RCP<const Epetra_Map> MakeContiguousColumnMap(Teuchos::RCP<Epetra_RowMatrix> &Matrix);
   // @}
   // @{ Internal data
 
@@ -613,6 +615,8 @@ private:
   //! These are linear maps that meet the needs of Hypre
   Teuchos::RCP<const Epetra_Map> GloballyContiguousRowMap_;
   Teuchos::RCP<const Epetra_Map> GloballyContiguousColMap_;
+  Teuchos::RCP<const Epetra_Map> GloballyContiguousNodeRowMap_;
+  Teuchos::RCP<const Epetra_Map> GloballyContiguousNodeColMap_;
   //! Counter of the number of parameters set
   int NumFunsToCall_;
   //! Which solver was chosen
