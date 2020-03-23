@@ -528,7 +528,7 @@ private:
   int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Map generation function
-  Teuchos::RCP<const Epetra_Map> MakeContiguousColumnMap(Teuchos::RCP<Epetra_RowMatrix> &Matrix);
+  Teuchos::RCP<const Epetra_Map> MakeContiguousColumnMap(Teuchos::RCP<const Epetra_RowMatrix> &Matrix) const;
   // @}
   // @{ Internal data
 
@@ -570,6 +570,7 @@ private:
   //! Pointer to the CSR (same matrix)
   mutable HYPRE_ParCSRMatrix ParMatrix_;
 
+  //! Epetra copy of discrete gradient
   Teuchos::RCP<const Epetra_CrsMatrix> G_;
   //! The Hypre matrix created in SetDiscreteGradient)
   mutable HYPRE_IJMatrix HypreG_;
