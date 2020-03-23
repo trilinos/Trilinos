@@ -41,6 +41,7 @@
 */
 #include "Ifpack_Hypre.h"
 #if defined(HAVE_HYPRE) && defined(HAVE_MPI)
+#include <stdexcept>
 
 #include "Ifpack_Utils.h"
 #include "Epetra_MpiComm.h"
@@ -266,7 +267,7 @@ class FunctionParameter{
   
   static bool isFuncIntIntIntDoubleIntInt(std::string funct_name) {
     return (hypreMapIntIntIntDoubleIntIntFunc_.find(funct_name) != hypreMapIntIntIntDoubleIntIntFunc_.end());
-  }
+             }
   
   static bool isFuncIntStarStar(std::string funct_name) {
     return (hypreMapIntStarStarFunc_.find(funct_name) != hypreMapIntStarStarFunc_.end());
@@ -356,24 +357,15 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
     GloballyContiguousRowMap_ = rcpFromRef(A_->RowMatrixRowMap());
     GloballyContiguousColMap_ = rcpFromRef(A_->RowMatrixColMap());
   } else {  
-    // Must create GloballyContiguous RowMap (which is a permutation of A_'s
-    // RowMap) and the corresponding permuted ColumnMap.
-    //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
-    //           via RowMap.LID()       via GloballyContiguousRowMap.GID()
-    GloballyContiguousRowMap_ = rcp(new Epetra_Map(A_->RowMatrixRowMap().NumGlobalElements(),
-            A_->RowMatrixRowMap().NumMyElements(), 0, Comm()));
-    // Column map requires communication
-    Epetra_Import importer(A_->RowMatrixColMap(), A_->RowMatrixRowMap());
-    Epetra_IntVector MyGIDsHYPRE(A_->RowMatrixRowMap());
-    for (int i=0; i!=A_->RowMatrixRowMap().NumMyElements(); ++i)
-      MyGIDsHYPRE[i] = GloballyContiguousRowMap_->GID(i);
-    // import the HYPRE GIDs
-    Epetra_IntVector ColGIDsHYPRE(A_->RowMatrixColMap());
-    IFPACK_CHK_ERRV(ColGIDsHYPRE.Import(MyGIDsHYPRE, importer, Insert, 0));
-    // Make a HYPRE numbering-based column map.
-    GloballyContiguousColMap_ = rcp(new Epetra_Map(
-        A_->RowMatrixColMap().NumGlobalElements(),
-        ColGIDsHYPRE.MyLength(), &ColGIDsHYPRE[0], 0, Comm()));
+    // Must create GloballyContiguous Maps for Hypre
+    if(A_->OperatorDomainMap().SameAs(A_->RowMatrixRowMap())) {
+      GloballyContiguousColMap_ = MakeContiguousColumnMap(A_);
+      GloballyContiguousRowMap_ = rcp(new Epetra_Map(A_->RowMatrixRowMap().NumGlobalElements(),
+                                                     A_->RowMatrixRowMap().NumMyElements(), 0, Comm()));
+    }
+    else {
+      throw std::runtime_error("Ifpack_Hypre: Unsupported map configuration: Row/Domain maps do not match");
+    }
   }
   // Next create vectors that will be used when ApplyInverse() is called
   int ilower = GloballyContiguousRowMap_->MinMyGID();
@@ -1178,5 +1170,44 @@ int Ifpack_Hypre::Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
 int Ifpack_Hypre::Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver)
     { return HYPRE_ParCSRBiCGSTABCreate(comm, solver);}
 
+//==============================================================================
+Teuchos::RCP<const Epetra_Map> Ifpack_Hypre::MakeContiguousColumnMap(Teuchos::RCP<Epetra_RowMatrix> &MatrixRow){
+  // Must create GloballyContiguous DomainMap (which is a permutation of Matrix_'s
+  // DomainMap) and the corresponding permuted ColumnMap.
+  //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
+  //           via DomainMap.LID()       via GloballyContiguousDomainMap.GID()
+  Teuchos::RCP<Epetra_CrsMatrix> Matrix = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(MatrixRow);
+  if(Matrix.is_null()) 
+    throw std::runtime_error("Ifpack_Hypre: Unsupported matrix configuration: Epetra_CrsMatrix required");
+  const Epetra_Map & DomainMap = Matrix->DomainMap();
+  const Epetra_Map & ColumnMap = Matrix->ColMap();
+
+
+  if(DomainMap.LinearMap()) {
+    // If the domain map is linear then we're done
+    return rcpFromRef(Matrix->DomainMap());
+  }
+  else {
+    // Well, the domain map isn't linear, we need a modified one
+    Teuchos::RCP<Epetra_Map> ContiguousDomainMap = rcp(new Epetra_Map(DomainMap.NumGlobalElements(),
+                                                                      DomainMap.NumMyElements(), 0, Comm()));
+    const Epetra_Import * importer = Matrix->Importer();
+    if(importer) {
+      // If there's an importer then we can use it.
+      Epetra_IntVector MyGIDsHYPRE(View,DomainMap,ContiguousDomainMap->MyGlobalElements());
+
+      // import the HYPRE GIDs
+      Epetra_IntVector ColGIDsHYPRE(ColumnMap);
+      ColGIDsHYPRE.Import(MyGIDsHYPRE, *importer, Insert);
+   
+      // Make a HYPRE numbering-based column map.
+      return Teuchos::rcp(new Epetra_Map(ColumnMap.NumGlobalElements(),ColGIDsHYPRE.MyLength(), &ColGIDsHYPRE[0], 0, Comm()));
+    }
+    else {
+      // The problem has matching domain/column maps, and somehow the domain map isn't linear. 
+      return Teuchos::rcp(new Epetra_Map(ColumnMap.NumGlobalElements(),ColumnMap.NumMyElements(), ContiguousDomainMap->MyGlobalElements(), 0, Comm()));
+    }
+  }  
+}
 
 #endif // HAVE_HYPRE && HAVE_MPI
