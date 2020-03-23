@@ -252,6 +252,7 @@ namespace FROSch {
 
             //------------------------------------------------------------------------------------------------------------------------
             // Communicate coarse matrix
+            FROSCH_TIMER_START_LEVELID(communicateCoarseMatrixTime,"communicate coarse matrix");
             if (!DistributionList_->get("Type","linear").compare("linear")) {
                 XMatrixPtr tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0]);
                 {
@@ -307,10 +308,12 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(false,"Distribution Type unknown!");
             }
+            FROSCH_TIMER_STOP(communicateCoarseMatrixTime);
 
             //------------------------------------------------------------------------------------------------------------------------
             // Matrix to the new communicator
             if (OnCoarseSolveComm_) {
+                FROSCH_TIMER_START_LEVELID(replicateCoarseMatrixOnCoarseCommTime,"replicate coarse matrix on coarse comm");
                 LO numRows = k0->getNodeNumRows();
                 ArrayRCP<size_t> elemsPerRow(numRows);
                 LO numDiagonalsAdded = 0;
@@ -372,6 +375,7 @@ namespace FROSch {
                     }
                     CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
                 }
+                FROSCH_TIMER_STOP(replicateCoarseMatrixOnCoarseCommTime);
 
                 FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
                 // Statistics on adding diagonal entries
