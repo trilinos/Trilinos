@@ -186,7 +186,7 @@ namespace FROSch {
                     values.push_back(valueTmp);
                 }
             }
-            iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(i));
+            iD = repeatedMap->getGlobalElement(i);
 
             if (iD!=-1) {
                 GlobalBasisMatrix_->insertGlobalValues(iD,indices(),values());
