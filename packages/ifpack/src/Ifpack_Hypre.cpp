@@ -653,8 +653,8 @@ int Ifpack_Hypre::SetDiscreteGradient(Teuchos::RCP<const Epetra_CrsMatrix> G){
   MPI_Comm comm = GetMpiComm();
   int ilower = GloballyContiguousRowMap_->MinMyGID();
   int iupper = GloballyContiguousRowMap_->MaxMyGID();
-  int jlower = GloballyContiguousRowMap_->MinMyGID();
-  int jupper = GloballyContiguousRowMap_->MaxMyGID();
+  int jlower = GloballyContiguousNodeRowMap_->MinMyGID();
+  int jupper = GloballyContiguousNodeRowMap_->MaxMyGID();
   IFPACK_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, jlower, jupper, &HypreG_));
   IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreG_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreG_));
@@ -719,7 +719,6 @@ int Ifpack_Hypre::SetCoordinates(Teuchos::RCP<Epetra_MultiVector> coords) {
   IFPACK_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &xHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(xHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(xHypre_));
-
   IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(xHypre_,NumEntries,indices,xPtr));
   IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(xHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(xHypre_, (void**) &xPar_));
@@ -727,7 +726,6 @@ int Ifpack_Hypre::SetCoordinates(Teuchos::RCP<Epetra_MultiVector> coords) {
   IFPACK_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &yHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(yHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(yHypre_));
-
   IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(yHypre_,NumEntries,indices,yPtr));
   IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(yHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(yHypre_, (void**) &yPar_));
@@ -735,7 +733,6 @@ int Ifpack_Hypre::SetCoordinates(Teuchos::RCP<Epetra_MultiVector> coords) {
   IFPACK_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &zHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(zHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(zHypre_));
-
   IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(zHypre_,NumEntries,indices,zPtr));
   IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(zHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(zHypre_, (void**) &zPar_));
@@ -1176,18 +1173,18 @@ Teuchos::RCP<const Epetra_Map> Ifpack_Hypre::MakeContiguousColumnMap(Teuchos::RC
     throw std::runtime_error("Ifpack_Hypre: Unsupported matrix configuration: Epetra_CrsMatrix required");
   const Epetra_Map & DomainMap = Matrix->DomainMap();
   const Epetra_Map & ColumnMap = Matrix->ColMap();
+  const Epetra_Import * importer = Matrix->Importer();
 
-  if(DomainMap.LinearMap()) {
-    // If the domain map is linear then we're done
-    return rcpFromRef(Matrix->DomainMap());
+  if(DomainMap.LinearMap() ) {
+    // If the domain map is linear, then we can just use the column map as is.
+    return rcpFromRef(ColumnMap);
   }
   else {
-    // Well, the domain map isn't linear, we need a modified one
+    // The domain map isn't linear, so we need a new domain map
     Teuchos::RCP<Epetra_Map> ContiguousDomainMap = rcp(new Epetra_Map(DomainMap.NumGlobalElements(),
                                                                       DomainMap.NumMyElements(), 0, Comm()));
-    const Epetra_Import * importer = Matrix->Importer();
-    if(importer) {
-      // If there's an importer then we can use it.
+    if(importer) {    
+      // If there's an importer then we can use it to get a new column map
       Epetra_IntVector MyGIDsHYPRE(View,DomainMap,ContiguousDomainMap->MyGlobalElements());
 
       // import the HYPRE GIDs
@@ -1198,7 +1195,7 @@ Teuchos::RCP<const Epetra_Map> Ifpack_Hypre::MakeContiguousColumnMap(Teuchos::RC
       return Teuchos::rcp(new Epetra_Map(ColumnMap.NumGlobalElements(),ColGIDsHYPRE.MyLength(), &ColGIDsHYPRE[0], 0, Comm()));
     }
     else {
-      // The problem has matching domain/column maps, and somehow the domain map isn't linear. 
+      // The problem has matching domain/column maps, and somehow the domain map isn't linear, so just use the new domain map
       return Teuchos::rcp(new Epetra_Map(ColumnMap.NumGlobalElements(),ColumnMap.NumMyElements(), ContiguousDomainMap->MyGlobalElements(), 0, Comm()));
     }
   }  
