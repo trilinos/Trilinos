@@ -131,13 +131,17 @@ namespace FROSch {
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
 
-        GO global = this->OverlappingMap_->getMaxAllGlobalIndex();
-        if (this->OverlappingMap_->lib()==UseEpetra || this->OverlappingMap_->getGlobalNumElements()>0) {
-            global += 1;
-        }
+        GO global;
         LO local,sum,minVal,maxVal;
         SC avg;
         if (verbosity==All) {
+            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
+
+            global = this->OverlappingMap_->getMaxAllGlobalIndex();
+            if (this->OverlappingMap_->lib()==UseEpetra || this->OverlappingMap_->getGlobalNumElements()>0) {
+                global += 1;
+            }
+
             local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
             reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
             avg = max(sum/double(this->MpiComm_->getSize()),0.0);
@@ -196,6 +200,7 @@ namespace FROSch {
                     break;
             }
             if (verbosity==All) {
+                FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
                 local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
                 avg = max(sum/double(this->MpiComm_->getSize()),0.0);
@@ -216,11 +221,14 @@ namespace FROSch {
             }
         }
 
-        if (this->Verbose_) {
-            cout
-            << "\n" << setw(FROSCH_INDENT) << " "
-            << setw(89) << "-----------------------------------------------------------------------------------------"
-            << endl;
+        if (verbosity==All) {
+            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
+            if (this->Verbose_) {
+                cout
+                << "\n" << setw(FROSCH_INDENT) << " "
+                << setw(89) << "-----------------------------------------------------------------------------------------"
+                << endl;
+            }
         }
 
         // AH 08/28/2019 TODO: It seems that ExtendOverlapByOneLayer_Old is currently the fastest method because the map is sorted. This seems to be better for the direct solver. (At least Klu)

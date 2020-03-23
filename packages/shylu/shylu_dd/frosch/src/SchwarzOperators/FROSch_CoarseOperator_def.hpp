@@ -373,6 +373,7 @@ namespace FROSch {
                     CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
                 }
 
+                FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
                 // Statistics on adding diagonal entries
                 LO sumVal;
                 LO minVal;
@@ -423,6 +424,7 @@ namespace FROSch {
                     << setw(89) << "-----------------------------------------------------------------------------------------"
                     << endl;
                 }
+                FROSCH_TIMER_STOP(printStatisticsTime);
 
                 bool reuseCoarseMatrixSymbolicFactorization = this->ParameterList_->get("Reuse: Coarse Matrix Symbolic Factorization",true);
                 if (!this->IsComputed_) {
@@ -607,6 +609,8 @@ namespace FROSch {
         }
 
         if (OnCoarseSolveComm_) {
+            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
+
             GO dimCoarseProblem = CoarseSolveMap_->getMaxAllGlobalIndex();
             if (CoarseSolveMap_->lib()==UseEpetra || CoarseSolveMap_->getGlobalNumElements()>0) {
                 dimCoarseProblem += 1;

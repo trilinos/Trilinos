@@ -551,6 +551,7 @@ namespace FROSch {
             linearDependentVectors.resize(tmp);
         }
 
+        FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
         // Statistics on linear dependencies
         GO global = AssembledInterfaceCoarseSpace_->getBasisMap()->getMaxAllGlobalIndex();
         if (AssembledInterfaceCoarseSpace_->getBasisMap()->lib()==UseEpetra || AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalNumElements()>0) {
@@ -629,6 +630,7 @@ namespace FROSch {
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << endl;
         }
+        FROSCH_TIMER_STOP(printStatisticsTime);
 
         return linearDependentVectors;
     }

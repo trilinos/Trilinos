@@ -327,6 +327,7 @@ namespace FROSch {
         if (buildLeafsMap) Leafs_->buildEntityMap(NodesMap_);
 
         if (Verbosity_==All) {
+            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print Statistics");
             // Count entities
             GOVec globalVec(7);
             LOVec localVec(7);
