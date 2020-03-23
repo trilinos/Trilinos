@@ -706,13 +706,15 @@ int Ifpack_Hypre::SetCoordinates(Teuchos::RCP<Epetra_MultiVector> coords) {
 
   MPI_Comm comm = GetMpiComm();
   int NumEntries = coords->MyLength();
-  int * indices= coords->Map().MyGlobalElements();
+  int * indices = GloballyContiguousNodeRowMap_->MyGlobalElements();
 
-  int ilower = coords->Map().MinMyGID();
-  int iupper = coords->Map().MaxMyGID();
+  int ilower = GloballyContiguousNodeRowMap_->MinMyGID();
+  int iupper = GloballyContiguousNodeRowMap_->MaxMyGID();
 
-  if( NumEntries != iupper-ilower+1) 
+  if( NumEntries != iupper-ilower+1) {
     std::cout<<"Ifpack_Hypre::SetCoordinates(): Error on rank "<<Comm().MyPID()<<": MyLength = "<<coords->MyLength()<<" GID range = ["<<ilower<<","<<iupper<<"]"<<std::endl;
+    throw std::runtime_error("Ifpack_Hypre: SetCoordinates: Length mismatch");
+  }
 
   IFPACK_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &xHypre_));
   IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(xHypre_, HYPRE_PARCSR));
