@@ -533,7 +533,7 @@ private:
   // @{ Internal data
 
   //! Pointer to the Epetra_RowMatrix to factorize
-  Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
+  Teuchos::RCP<Epetra_RowMatrix> A_;
   //! This objects copy of the ParameterList
   Teuchos::ParameterList List_;
   //! Needed to support Epetra_Operator abstract class

@@ -308,12 +308,8 @@ class FunctionParameter{
 
 };
 
-// This really, really needs to be here and not up above
+// NOTE: This really, really needs to be here and not up above, so please don't move it
 #include "Ifpack_HypreParameterMap.h"
-
-
-
-
 
 Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
@@ -659,19 +655,18 @@ int Ifpack_Hypre::SetDiscreteGradient(Teuchos::RCP<const Epetra_CrsMatrix> G){
   IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreG_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreG_));
 
+  std::vector<int> new_indices(G->MaxNumEntries());
   for(int i = 0; i < G->NumMyRows(); i++){
-    int numElements;
-    IFPACK_CHK_ERR(G->NumMyRowEntries(i,numElements));
-    std::vector<int> indices; indices.resize(numElements);
-    std::vector<double> values; values.resize(numElements);
     int numEntries;
-    IFPACK_CHK_ERR(G->ExtractMyRowCopy(i, numElements, numEntries, values.data(), indices.data()));
+    double * values;
+    int *indices;
+    IFPACK_CHK_ERR(G->ExtractMyRowView(i, numEntries, values, indices));
     for(int j = 0; j < numEntries; j++){
-      indices[j] = GloballyContiguousNodeColMap_->GID(indices[j]);
+      new_indices[j] = GloballyContiguousNodeColMap_->GID(indices[j]);
     }
     int GlobalRow[1];
     GlobalRow[0] = GloballyContiguousRowMap_->GID(i);
-    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, indices.data(), values.data()));
+    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, new_indices.data(), values));
   }
   IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreG_));
   IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreG_, (void**)&ParMatrixG_));
@@ -758,7 +753,7 @@ int Ifpack_Hypre::Compute(){
     IFPACK_CHK_ERR(Initialize());
   }
   Time_.ResetStartTime();
-  CopyEpetraToHypre();
+
   // Hypre Setup must be called after matrix has values
   if(SolveOrPrec_ == Solver){
     IFPACK_CHK_ERR(SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_));
@@ -795,6 +790,10 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   if(X.Pointers() == Y.Pointers() || (NumVectors == 1 && X[0] == Y[0])){
     SameVectors = true;
   }
+  
+  // NOTE: Here were assuming that the local ordering of Epetra's X/Y-vectors and 
+  // Hypre's X/Y-vectors are the same.  Seeing as as this is more or less how we constructed
+  // the Hypre matrices, this seems pretty reasoanble.
 
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
@@ -847,6 +846,11 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
   if(X.Pointers() == Y.Pointers() || (NumVectors == 1 && X[0] == Y[0])){
     SameVectors = true;
   }
+
+  // NOTE: Here were assuming that the local ordering of Epetra's X/Y-vectors and 
+  // Hypre's X/Y-vectors are the same.  Seeing as as this is more or less how we constructed
+  // the Hypre matrices, this seems pretty reasoanble.
+
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
     double * XValues=const_cast<double*>(X[VecNum]);
@@ -872,13 +876,8 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
     }
     if(SameVectors){
       int NumEntries = Y.MyLength();
-      std::vector<double> new_values; new_values.resize(NumEntries);
-      std::vector<int> new_indices; new_indices.resize(NumEntries);
-      for(int i = 0; i < NumEntries; i++){
-        new_values[i] = YValues[i];
-        new_indices[i] = i;
-      }
-      IFPACK_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, new_values.data(), new_indices.data()));
+      for(int i = 0; i < NumEntries; i++)
+	Y[VecNum][i] = YValues[i];      
     }
     XLocal_->data = XTemp;
     YLocal_->data = YTemp;
@@ -1101,19 +1100,22 @@ int Ifpack_Hypre::CreatePrecond(){
 
 //==============================================================================
 int Ifpack_Hypre::CopyEpetraToHypre(){
-  for(int i = 0; i < A_->NumMyRows(); i++){
-    int numElements;
-    IFPACK_CHK_ERR(A_->NumMyRowEntries(i,numElements));
-    std::vector<int> indices; indices.resize(numElements);
-    std::vector<double> values; values.resize(numElements);
+  Teuchos::RCP<const Epetra_CrsMatrix> Matrix = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(A_);
+  if(Matrix.is_null()) 
+    throw std::runtime_error("Ifpack_Hypre: Unsupported matrix configuration: Epetra_CrsMatrix required");
+
+  std::vector<int> new_indices(Matrix->MaxNumEntries());
+  for(int i = 0; i < Matrix->NumMyRows(); i++){
     int numEntries;
-    IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, numElements, numEntries, values.data(), indices.data()));
+    int *indices;
+    double *values;
+    IFPACK_CHK_ERR(Matrix->ExtractMyRowView(i, numEntries, values, indices));
     for(int j = 0; j < numEntries; j++){
-      indices[j] = GloballyContiguousColMap_->GID(indices[j]);
+      new_indices[j] = GloballyContiguousColMap_->GID(indices[j]);
     }
     int GlobalRow[1];
     GlobalRow[0] = GloballyContiguousRowMap_->GID(i);
-    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, indices.data(), values.data()));
+    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values));
   }
   IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
   IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
@@ -1200,5 +1202,7 @@ Teuchos::RCP<const Epetra_Map> Ifpack_Hypre::MakeContiguousColumnMap(Teuchos::RC
     }
   }  
 }
+
+
 
 #endif // HAVE_HYPRE && HAVE_MPI
