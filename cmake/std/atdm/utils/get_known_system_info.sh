@@ -60,6 +60,7 @@ fi
 ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   shiller
   ride
+  ats1
   mutrino   # Will be repalced by 'ats1'
   waterman
   ats2
@@ -106,9 +107,9 @@ elif [[ $realHostname == "white"* ]] ; then
 elif [[ $realHostname == "ride"* ]] ; then
   hostnameMatch=ride
   hostnameMatchSystemName=ride
-elif [[ $realHostname == "mutrino"* ]] ; then
+elif [[ $realHostname == "mutrino"* || $HOST == "mutrino"* ]] ; then
   hostnameMatch=mutrino
-  hostnameMatchSystemName=mutrino
+  hostnameMatchSystemName=ats1
 elif [[ $realHostname == "waterman"* ]] ; then
   hostnameMatch=waterman
   hostnameMatchSystemName=waterman
