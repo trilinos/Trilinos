@@ -1336,8 +1336,8 @@ namespace TSQR {
       // Benchmark sequential TSQR for numTrials trials.
       Teuchos::Time timer("NodeTsqr");
       timer.start();
-      for(int trialNum = 0; trialNum < numTrials; ++trialNum) {
-        if(actor.wants_device_memory()) {
+      for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
+        if (actor.wants_device_memory()) {
           Scalar* A_raw =
             reinterpret_cast<Scalar*>(A_copy_d.data());
           auto factorOutput =
