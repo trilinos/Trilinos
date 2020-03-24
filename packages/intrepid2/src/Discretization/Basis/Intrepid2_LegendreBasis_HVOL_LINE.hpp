@@ -73,12 +73,12 @@ namespace Intrepid2
   class OutputFieldType, class InputPointsType>
   struct Hierarchical_HVOL_LINE_Functor
   {
-    using ScratchSpace       = Kokkos::DefaultExecutionSpace::scratch_memory_space;
+    using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     using PointScratchView   = Kokkos::View<PointScalar*, ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     
-    using TeamPolicy = Kokkos::TeamPolicy<>;
-    using TeamMember = TeamPolicy::member_type;
+    using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+    using TeamMember = typename TeamPolicy::member_type;
     
     OutputFieldType  output_;      // F,P
     InputPointsType  inputPoints_; // P,D
