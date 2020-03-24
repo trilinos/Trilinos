@@ -373,7 +373,7 @@ namespace FROSch {
                             numDiagonalsAdded++;
                         }
                     }
-                    CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); CoarseMatrix_->describe(*fancy,VERB_HIGH);
+                    CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); CoarseMatrix_->describe(*fancy,VERB_EXTREME);
                 }
                 FROSCH_TIMER_STOP(replicateCoarseMatrixOnCoarseCommTime);
 
@@ -524,9 +524,9 @@ namespace FROSch {
             k0 = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMapUnique(),as<LO>(0));
             TripleMatrixMultiply<SC,LO,GO,NO>::MultiplyRAP(*Phi_,true,*this->K_,false,*Phi_,false,*k0);
         } else {
-            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); //Phi_->describe(*fancy,VERB_HIGH);
+            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); //Phi_->describe(*fancy,VERB_EXTREME);
             XMatrixPtr tmp = MatrixMatrix<SC,LO,GO,NO>::Multiply(*this->K_,false,*Phi_,false,*fancy);
-            k0 = MatrixMatrix<SC,LO,GO,NO>::Multiply(*Phi_,true,*tmp,false,*fancy); //k0->describe(*fancy,VERB_HIGH);
+            k0 = MatrixMatrix<SC,LO,GO,NO>::Multiply(*Phi_,true,*tmp,false,*fancy); //k0->describe(*fancy,VERB_EXTREME);
         }
         return k0;
     }

@@ -188,11 +188,11 @@ namespace FROSch {
             }
             iD = repeatedMap->getGlobalElement(i);
 
-            if (iD!=-1) {
+            if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
                 GlobalBasisMatrix_->insertGlobalValues(iD,indices(),values());
             }
         }
-        GlobalBasisMatrix_->fillComplete(AssembledBasisMapUnique_,rangeMap);
+        GlobalBasisMatrix_->fillComplete(AssembledBasisMapUnique_,rangeMap); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); GlobalBasisMatrix_->describe(*fancy,VERB_EXTREME);
         return 0;
     }
 
