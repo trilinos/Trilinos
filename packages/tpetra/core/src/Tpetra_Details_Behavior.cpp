@@ -358,6 +358,29 @@ size_t Behavior::longRowMinNumEntries ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
+bool Behavior::profilingRegionUseTeuchosTimers () 
+{
+  constexpr char envVarName[] = "TPETRA_USE_TEUCHOS_TIMERS";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+bool Behavior::profilingRegionUseKokkosProfiling () 
+{
+  constexpr char envVarName[] = "TPETRA_USE_KOKKOS_PROFILING";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+
 bool Behavior::debug (const char name[])
 {
   constexpr char envVarName[] = "TPETRA_DEBUG";
