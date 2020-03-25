@@ -140,7 +140,7 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixRows {
 
     const LO lclNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
     TEUCHOS_TEST_FOR_EXCEPTION
-      (lclNumRows != 0 && A_lcl.graph.numRows () != lclNumRows,
+      (lclNumRows != 0 && static_cast<LO>(A_lcl.graph.numRows ()) != lclNumRows,
        std::invalid_argument, "The matrix must have been either created "
        "with a KokkosSparse::CrsMatrix, or must have been fill-completed "
        "at least once.");

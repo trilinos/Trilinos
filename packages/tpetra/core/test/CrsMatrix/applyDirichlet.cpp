@@ -150,7 +150,7 @@ namespace { // (anonymous)
     // For now, just make sure that this compiles.
     Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows (execution_space (), eye, lclRowInds);
 
-    execution_space::fence ();
+    Kokkos::fence ();
     std::vector<typename crs_matrix_type::local_ordinal_type> lclRowInds_v (lclNumRows);
     for (LO k = 0; k < lclNumRows; ++k) {
       lclRowInds_v[k] = k;
