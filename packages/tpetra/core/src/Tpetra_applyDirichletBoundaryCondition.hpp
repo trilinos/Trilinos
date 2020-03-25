@@ -70,9 +70,8 @@ applyDirichletBoundaryConditionToLocalMatrixRows
 (const typename CrsMatrixType::execution_space& execSpace,
  CrsMatrixType& A,
  const Kokkos::View<
-   const typename CrsMatrixType::local_ordinal_type*,
-   typename CrsMatrixType::device_type,
-   Kokkos::MemoryTraits<Kokkos::Unmanaged>>& lclRowInds);
+ typename CrsMatrixType::local_ordinal_type*,
+ typename CrsMatrixType::device_type> & lclRowInds);
 
 /// \brief For all k in <tt>[0, lclRowInds.extent(0))</tt>, set local
 ///   row <tt>lclRowInds[k]</tt> of A to have 1 on the diagonal and 0
@@ -88,9 +87,8 @@ void
 applyDirichletBoundaryConditionToLocalMatrixRows
 (CrsMatrixType& A,
  const Kokkos::View<
-   const typename CrsMatrixType::local_ordinal_type*,
-   typename CrsMatrixType::device_type,
-   Kokkos::MemoryTraits<Kokkos::Unmanaged>>& lclRowInds);
+ typename CrsMatrixType::local_ordinal_type*,
+ typename CrsMatrixType::device_type>& lclRowInds);
   
 /// \brief For all k in <tt>[0, lclRowInds.extent(0))</tt>, set local
 ///   row <tt>lclRowInds[k]</tt> of A to have 1 on the diagonal and 0
@@ -106,9 +104,8 @@ void
 applyDirichletBoundaryConditionToLocalMatrixRows
 (CrsMatrixType& A,
  const Kokkos::View<
-   const typename CrsMatrixType::local_ordinal_type*,
-   Kokkos::HostSpace,
-   Kokkos::MemoryTraits<Kokkos::Unmanaged>>& lclRowInds);
+ typename CrsMatrixType::local_ordinal_type*,
+ Kokkos::HostSpace> & lclRowInds);
 
 namespace Details {
 
@@ -200,9 +197,8 @@ applyDirichletBoundaryConditionToLocalMatrixRows
 (const typename CrsMatrixType::execution_space& execSpace,
  CrsMatrixType& A,
  const Kokkos::View<
-   const typename CrsMatrixType::local_ordinal_type*,
-   typename CrsMatrixType::device_type,
-   Kokkos::MemoryTraits<Kokkos::Unmanaged>>& lclRowInds)
+ typename CrsMatrixType::local_ordinal_type*,
+ typename CrsMatrixType::device_type> & lclRowInds)
 {
   using SC = typename CrsMatrixType::scalar_type;
   using LO = typename CrsMatrixType::local_ordinal_type;
@@ -225,9 +221,8 @@ void
 applyDirichletBoundaryConditionToLocalMatrixRows
 (CrsMatrixType& A,
  const Kokkos::View<
-   const typename CrsMatrixType::local_ordinal_type*,
-   typename CrsMatrixType::device_type,
-   Kokkos::MemoryTraits<Kokkos::Unmanaged>>& lclRowInds)
+ typename CrsMatrixType::local_ordinal_type*,
+ typename CrsMatrixType::device_type> & lclRowInds)
 {
   using execution_space = typename CrsMatrixType::execution_space;
   applyDirichletBoundaryConditionToLocalMatrixRows (execution_space (), A, lclRowInds);
@@ -238,9 +233,8 @@ void
 applyDirichletBoundaryConditionToLocalMatrixRows
 (CrsMatrixType& A,
  const Kokkos::View<
-   const typename CrsMatrixType::local_ordinal_type*,
-   Kokkos::HostSpace,
-   Kokkos::MemoryTraits<Kokkos::Unmanaged>>& lclRowInds)
+ typename CrsMatrixType::local_ordinal_type*,
+ Kokkos::HostSpace> & lclRowInds)
 {
   using SC = typename CrsMatrixType::scalar_type;
   using LO = typename CrsMatrixType::local_ordinal_type;

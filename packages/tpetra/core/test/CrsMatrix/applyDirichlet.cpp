@@ -118,46 +118,95 @@ namespace { // (anonymous)
     lcl_col_inds_type lclColInds ("lclColInds", lclNumRows);
     Kokkos::View<IST*, device_type> values ("values", lclNumRows);
 
-    Kokkos::parallel_for
-      ("Fill 2*identity matrix",
-       range_type (0, lclNumRows),
-       KOKKOS_LAMBDA (const LO lclRow) {
-        rowOffsets(lclRow+1) = lclRow + static_cast<LO> (1);
-        lclColInds(lclRow) = lclRow;
-        values(lclRow) = KAT::one () + KAT::one ();
-      });
-
-    local_graph_type G_lcl (lclColInds, rowOffsets);
-    local_matrix_type A_lcl ("A_lcl", G_lcl);
-    crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
-    TEST_ASSERT( eye.isFillComplete () );
-
+    // Device filled BCs
     Kokkos::View<typename crs_matrix_type::local_ordinal_type*, device_type> lclRowInds ("lclRowInds", lclNumRows);
     Kokkos::parallel_for
       ("Fill lclRowInds",
        range_type (0, lclNumRows),
        KOKKOS_LAMBDA (const LO lclRow) {
-        lclRowInds(lclRow) = lclRow;
+	  lclRowInds(lclRow) = lclRow;
       });
-
-    Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows (eye, lclRowInds);
-    eye.apply (vec1, vec2);
-    vec2.update (-STS::one (), vec1, STS::one ());
-
-    const mag_type resNorm1 = vec2.norm1 ();
-    TEST_EQUALITY( resNorm1, Teuchos::ScalarTraits<mag_type>::zero () );
-
-    // For now, just make sure that this compiles.
-    Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows (execution_space (), eye, lclRowInds);
-
-    Kokkos::fence ();
-    std::vector<typename crs_matrix_type::local_ordinal_type> lclRowInds_v (lclNumRows);
+    
+    // Host filled BCs
+    Kokkos::View<typename crs_matrix_type::local_ordinal_type*, Kokkos::HostSpace> lclRowInds_h ("lclRowsInds_h",lclNumRows);
     for (LO k = 0; k < lclNumRows; ++k) {
-      lclRowInds_v[k] = k;
+      lclRowInds_h[k] = k;
     }
-    Kokkos::View<const typename crs_matrix_type::local_ordinal_type*, Kokkos::HostSpace> lclRowInds_h (lclRowInds.data (), lclNumRows);
-    // For now, just make sure that this compiles.
-    Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows (eye, lclRowInds_h);
+
+
+    /*** Test device-filled boundary list, no execution space ***/
+    {
+      Kokkos::parallel_for
+	("Fill 2*identity matrix",
+	 range_type (0, lclNumRows),
+	 KOKKOS_LAMBDA (const LO lclRow) {
+	  rowOffsets(lclRow+1) = lclRow + static_cast<LO> (1);
+	  lclColInds(lclRow) = lclRow;
+	  values(lclRow) = KAT::one () + KAT::one ();
+	});
+      
+      local_graph_type G_lcl (lclColInds, rowOffsets);
+      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
+      TEST_ASSERT( eye.isFillComplete () );
+
+      Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows (eye, lclRowInds);
+      eye.apply (vec1, vec2);
+      vec2.update (-STS::one (), vec1, STS::one ());
+      
+      const mag_type resNorm1 = vec2.norm1 ();
+      TEST_EQUALITY( resNorm1, Teuchos::ScalarTraits<mag_type>::zero () );      
+    }      
+
+    /*** Test device-filled boundary list, provided execution space ***/
+    {
+      Kokkos::parallel_for
+	("Fill 2*identity matrix",
+	 range_type (0, lclNumRows),
+	 KOKKOS_LAMBDA (const LO lclRow) {
+	  rowOffsets(lclRow+1) = lclRow + static_cast<LO> (1);
+	  lclColInds(lclRow) = lclRow;
+	  values(lclRow) = KAT::one () + KAT::one ();
+	});
+      
+      local_graph_type G_lcl (lclColInds, rowOffsets);
+      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
+      TEST_ASSERT( eye.isFillComplete () );
+
+      Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows (execution_space(), eye, lclRowInds);
+      eye.apply (vec1, vec2);
+      vec2.update (-STS::one (), vec1, STS::one ());
+      
+      const mag_type resNorm1 = vec2.norm1 ();
+      TEST_EQUALITY( resNorm1, Teuchos::ScalarTraits<mag_type>::zero () );      
+    }    
+
+   
+    /*** Test host-filled boundary list ***/
+    {
+      Kokkos::parallel_for
+	("Fill 2*identity matrix",
+	 range_type (0, lclNumRows),
+	 KOKKOS_LAMBDA (const LO lclRow) {
+	  rowOffsets(lclRow+1) = lclRow + static_cast<LO> (1);
+	  lclColInds(lclRow) = lclRow;
+	  values(lclRow) = KAT::one () + KAT::one ();
+	});
+      
+      local_graph_type G_lcl (lclColInds, rowOffsets);
+      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
+      TEST_ASSERT( eye.isFillComplete () );
+
+      Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows (eye, lclRowInds_h);
+      eye.apply (vec1, vec2);
+      vec2.update (-STS::one (), vec1, STS::one ());
+      
+      const mag_type resNorm1 = vec2.norm1 ();
+      TEST_EQUALITY( resNorm1, Teuchos::ScalarTraits<mag_type>::zero () );      
+    }    
+
   }
 
 //
