@@ -97,8 +97,6 @@ namespace { // (anonymous)
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const auto comm = Tpetra::getDefaultComm ();
     const LO lclNumRows = 10;
-    const GO gblNumRows = static_cast<GO> (lclNumRows) *
-      static_cast<GO> (comm->getSize ());
     RCP<const map_type> rowMap =
       createContigMapWithNode<LO,GO,NT> (INVALID, lclNumRows,
                                          comm);
