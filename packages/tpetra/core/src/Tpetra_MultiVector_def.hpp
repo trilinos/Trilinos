@@ -3921,6 +3921,7 @@ namespace Tpetra {
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
                         beta_local, C_sub);
+      Kokkos::fence();
     }
 
     if (! isConstantStride ()) {
