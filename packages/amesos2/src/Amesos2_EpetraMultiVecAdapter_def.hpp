@@ -255,6 +255,55 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
 
 }
 
+void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
+  Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> & host_view,
+  size_t lda,
+  Teuchos::Ptr<
+    const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
+                      MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
+                      MultiVecAdapter<Epetra_MultiVector>::node_t> > distribution_map,
+                      EDistribution /* distribution */) const
+{
+    using Teuchos::rcpFromPtr;
+    using Teuchos::as;
+
+    const size_t local_length = getLocalLength();
+    const size_t num_vecs = getGlobalNumVectors();
+
+  #ifdef HAVE_AMESOS2_DEBUG
+    const size_t requested_vector_length = distribution_map->getNodeNumElements();
+    TEUCHOS_TEST_FOR_EXCEPTION( lda < requested_vector_length,
+            std::invalid_argument,
+            "Given stride is not large enough for local vector length" );
+  #endif
+
+    // First make a host view
+    host_view = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>(
+      Kokkos::ViewAllocateWithoutInitializing("get1dCopy_kokkos_view"),
+      local_length, num_vecs);
+
+    // Optimization for ROOTED and single MPI process
+    if ( num_vecs == 1 && this->mv_->Comm().MyPID() == 0 && this->mv_->Comm().NumProc() == 1 ) {
+	    mv_->ExtractCopy(host_view.data(), lda);
+    }
+    else {
+      Epetra_Map e_dist_map
+        = *Util::tpetra_map_to_epetra_map<local_ordinal_t,
+                                          global_ordinal_t,
+                                          global_size_t,
+                                          node_t>(*distribution_map);
+
+      multivec_t redist_mv(e_dist_map, as<int>(num_vecs));
+      const Epetra_Import importer(e_dist_map, *mv_map_); // Note, target/source order is reversed in Tpetra
+      redist_mv.Import(*mv_, importer, Insert);
+
+      // Finally, access data
+
+      // Can we consider direct ptr usage with ExtractView?
+      // For now I will just copy - this was discussed as low priority for now.
+      redist_mv.ExtractCopy(host_view.data(), lda);
+    }
+}
 
 Teuchos::ArrayRCP<MultiVecAdapter<Epetra_MultiVector>::scalar_t>
 MultiVecAdapter<Epetra_MultiVector>::get1dViewNonConst(bool local)
@@ -351,6 +400,39 @@ MultiVecAdapter<Epetra_MultiVector>::put1dData(
   }
 }
 
+void
+MultiVecAdapter<Epetra_MultiVector>::put1dData_kokkos_view_host(
+  Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> & host_new_data,
+  size_t lda,
+  Teuchos::Ptr<
+    const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
+                      MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
+                      MultiVecAdapter<Epetra_MultiVector>::node_t> > source_map,
+                      EDistribution /* distribution */)
+{
+  using Teuchos::rcpFromPtr;
+  using Teuchos::as;
+
+  const size_t num_vecs  = getGlobalNumVectors();
+
+  double* data_ptr = host_new_data.data();
+
+  // Optimization for ROOTED and single MPI process
+  if ( num_vecs == 1 && mv_->Comm().MyPID() == 0 && mv_->Comm().NumProc() == 1 ) {
+    auto vector = mv_->Pointers();
+    for ( size_t i = 0; i < lda; ++i ) {
+      vector[0][i] = data_ptr[i];
+    }
+  }
+  else {
+    const Epetra_BlockMap e_source_map
+      = *Util::tpetra_map_to_epetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(*source_map);
+    const multivec_t source_mv(Copy, e_source_map, data_ptr, as<int>(lda), as<int>(num_vecs));
+    const Epetra_Import importer(*mv_map_, e_source_map);
+
+    mv_->Import(source_mv, importer, Insert);
+  }
+}
 
 std::string MultiVecAdapter<Epetra_MultiVector>::description() const
 {

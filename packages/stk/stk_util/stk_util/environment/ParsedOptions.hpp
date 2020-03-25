@@ -46,11 +46,15 @@ namespace stk {
 class VariableType
 {
 public:
-  VariableType() : val() {}
-  VariableType(const std::string& value) : val(value) {}
-  ~VariableType(){}
-
-  VariableType(const VariableType& varType) : val(varType.val) {}
+  VariableType()
+    : val(),
+      isParsed(false)
+  {}
+  VariableType(const std::string& value)
+    : val(value),
+      isParsed(false)
+  {}
+  ~VariableType() {}
 
   operator const std::string&() const { return val; }
   operator std::string&() { return val; }
@@ -61,6 +65,7 @@ public:
   const T& as() const
   {
     ThrowRequireMsg(!val.empty(), "Error in VariableType::as, internal value is empty.");
+    ThrowRequireMsg(sizeof(T) <= maxSize, std::string("Error: ") + typeid(T).name() + " size too big in in VariableType::as()");
     std::istringstream iss(val);
     T* Tptr = new (asData) T(0);
     iss >> *Tptr;
@@ -71,9 +76,14 @@ public:
   const std::string& value() const { return val; }
   std::string& value() { return val; }
 
+  void set_parsed() { isParsed = true; }
+  bool is_parsed() const { return isParsed; }
+
 private:
+  static constexpr unsigned maxSize = 64;
   std::string val;
-  mutable char asData[64];
+  mutable char asData[maxSize];
+  bool isParsed;
 };
 
 template<>
@@ -98,7 +108,7 @@ public:
       KeyMapType::iterator it = keyToIndex.find(key);
       
       if (it == keyToIndex.end()) {
-        unsigned idx = indexToValues.size();
+        size_t idx = indexToValues.size();
         keyToIndex.insert(std::make_pair(key,idx));
         indexToValues.push_back(VariableType(val));
         return true;
@@ -115,7 +125,7 @@ public:
       KeyMapType::iterator it = keyToIndex.find(name);
       
       if (it == keyToIndex.end()) {
-        unsigned idx = indexToValues.size();
+        size_t idx = indexToValues.size();
         keyToIndex.insert(std::make_pair(name,idx));
         if (!abbrev.empty()) {
           keyToIndex.insert(std::make_pair(abbrev,idx));
@@ -128,6 +138,27 @@ public:
       }
 
       return false;
+    }
+
+    void set_parsed(const std::string& key)
+    {
+      KeyMapType::iterator it = keyToIndex.find(key);
+
+      if (it != keyToIndex.end()) {
+        indexToValues[it->second].set_parsed();
+      }
+    }
+
+    bool is_parsed(const std::string& key) const
+    {
+      KeyMapType::const_iterator it = keyToIndex.find(key);
+
+      if (it != keyToIndex.end()) {
+        return indexToValues[it->second].is_parsed();
+      }
+      else {
+        return false;
+      }
     }
 
     size_t count(const std::string& key) const { return keyToIndex.count(key); }

@@ -33,32 +33,25 @@
 // 
 
 #include <stk_util/stk_config.h>
-
-#ifdef STK_HAVE_BOOSTLIB
-
 #include <stk_util/environment/ProgramOptions.hpp>
-#include "boost/program_options/options_description.hpp"
-#include "boost/program_options/variables_map.hpp"  // for variables_map
 
 namespace stk {
 
-boost::program_options::options_description &
-get_options_description()
+OptionsSpecification&
+get_options_specification()
 {
-  static boost::program_options::options_description s_optionsDescription;
+  static OptionsSpecification s_optionsSpecification;
 
-  return s_optionsDescription;
+  return s_optionsSpecification;
 }
 
-boost::program_options::variables_map &
-get_variables_map()
+ParsedOptions&
+get_parsed_options()
 {
-  static boost::program_options::variables_map s_variablesMap;
+  static ParsedOptions s_parsedOptions;
 
-  return s_variablesMap;
+  return s_parsedOptions;
 }
 
 } // namespace stk
-
-#endif
 

@@ -147,7 +147,7 @@ namespace Ioss {
 
     // Do anything that might be needed to the database prior to it
     // being closed and destructed.
-    virtual void finalize_database() {}
+    virtual void finalize_database() const {}
 
     // Let's save the name on disk after Filename gets modified, e.g: decoded_filename
     void set_pfsname(const std::string &name) const { pfsName = name; }
@@ -224,11 +224,6 @@ namespace Ioss {
     virtual bool needs_shared_node_information() const { return false; }
 
     Ioss::IfDatabaseExistsBehavior open_create_behavior() const;
-
-    //! This function is used to create the path to an output directory (or history, restart, etc.)
-    //  if it does not exist.  Called by all processors. Will throw exception if path does not
-    //  specify a valid directory or if the path cannot be created.
-    void create_path(const std::string &filename) const;
 
     void set_region(Region *region) { region_ = region; }
 

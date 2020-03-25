@@ -74,7 +74,7 @@ namespace Iovs {
                MPI_Comm communicator, const Ioss::PropertyManager &props);
     ~DatabaseIO() override;
 
-    const std::string get_format() const override {return "Embedded Visualization";}
+    const std::string get_format() const override { return "Embedded Visualization"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -239,13 +239,13 @@ namespace Iovs {
     bool singleProcOnly; // True if history or heartbeat which is only written from proc 0...
     bool doLogging;      // True if logging field input/output
 
-    std::string        databaseTitle;
+    std::string        databaseTitle{};
     static std::string paraview_script_filename;
-    std::string        catalyst_block_file_name;
-    std::string        paraview_json_parse;
-    std::string        sierra_input_deck_name;
-    std::string        catalyst_output_directory;
-    std::string        paraview_script_extra_filename;
+    std::string        catalyst_block_file_name{};
+    std::string        paraview_json_parse{};
+    std::string        sierra_input_deck_name{};
+    std::string        catalyst_output_directory{};
+    std::string        paraview_script_extra_filename{};
     int                enableLogging;
     int                debugLevel;
     int                underscoreVectors;
@@ -263,7 +263,7 @@ namespace Iovs {
     ParaViewCatalystIossAdapterBase *pvcsa;
     mutable bool                     globalNodeAndElementIDsCreated;
     void                             create_global_node_and_element_ids() const;
-    mutable EntityIdSet              ids_;
+    mutable EntityIdSet              ids_{};
   };
 } // namespace Iovs
 

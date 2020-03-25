@@ -171,7 +171,8 @@ lib stk_balance_lib
       [ glob 
              $(stk_balance-root)/stk_balance/*.cpp 
              $(stk_balance-root)/stk_balance/internal/*.cpp 
-      ] 
+             $(stk_balance-root)/stk_balance/mesh/*.cpp
+      ]
     ]
     search_tolerance
     search_tolerance_algs

@@ -37,12 +37,12 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_Tsqr_DistTsqrHelper_hpp
-#define __TSQR_Tsqr_DistTsqrHelper_hpp
+#ifndef TSQR_DISTTSQRHELPER_HPP
+#define TSQR_DISTTSQRHELPER_HPP
 
 #include "Tsqr_MatView.hpp"
 #include "Tsqr_MessengerBase.hpp"
-#include "Tsqr_Combine.hpp"
+#include "Tsqr_Impl_CombineUser.hpp"
 #include "Tsqr_Util.hpp"
 
 #include <algorithm> // std::min, std::max
@@ -59,53 +59,61 @@ namespace TSQR {
   /// The only reason to mess with this class is if you want to change
   /// how the internode part of TSQR is implemented.
   template<class LocalOrdinal, class Scalar>
-  class DistTsqrHelper {
+  class DistTsqrHelper :
+    private Impl::CombineUser<LocalOrdinal, Scalar> {
   public:
-    DistTsqrHelper () {}
+    using ordinal_type = LocalOrdinal;
+    using scalar_type = Scalar;
+
+    ordinal_type work_size (const ordinal_type ncols) {
+      auto& combine = this->getCombine (ncols);
+      return combine.work_size (2*ncols, ncols, ncols);
+    }
 
     void
-    factor_pair (const LocalOrdinal ncols,
-                 std::vector< Scalar >& R_mine,
-                 const LocalOrdinal P_mine,
-                 const LocalOrdinal P_other,
-                 const LocalOrdinal tag,
-                 MessengerBase<Scalar>* const messenger,
-                 std::vector<std::vector<Scalar> >& Q_factors,
-                 std::vector<std::vector<Scalar> >& tau_arrays,
-                 std::vector<Scalar >& work)
+    factor_pair (const ordinal_type ncols,
+                 std::vector<scalar_type>& R_mine,
+                 const ordinal_type P_mine,
+                 const ordinal_type P_other,
+                 const ordinal_type tag,
+                 MessengerBase<scalar_type>* const messenger,
+                 std::vector<std::vector<scalar_type>>& Q_factors,
+                 std::vector<std::vector<scalar_type>>& tau_arrays,
+                 scalar_type work[],
+                 const ordinal_type lwork)
     {
       using std::endl;
       using std::ostringstream;
       using std::vector;
-
-      if (P_mine == P_other)
+      using LO = ordinal_type;
+      if (P_mine == P_other) {
         return; // nothing to do
-
+      }
       const int P_top = std::min (P_mine, P_other);
       const int P_bot = std::max (P_mine, P_other);
-      const LocalOrdinal nelts = ncols * ncols;
-      const LocalOrdinal ldr = ncols;
-      MatView<LocalOrdinal, Scalar> R_mine_view
+      const LO nelts = ncols * ncols;
+      const LO ldr = ncols;
+      MatView<LO, scalar_type> R_mine_view
         (ncols, ncols, R_mine.data (), ldr);
-      vector< Scalar > R_other (nelts);
-      MatView<LocalOrdinal, Scalar> R_other_view
+      vector<scalar_type> R_other (nelts);
+      MatView<LO, scalar_type> R_other_view
         (ncols, ncols, R_other.data (), ldr);
-      vector< Scalar > tau (ncols);
+      vector<scalar_type> tau (ncols);
 
       // Send and receive R factor.
-      messenger->swapData (R_mine.data(), R_other.data(),
+      messenger->swapData (R_mine.data (), R_other.data (),
                            nelts, P_other, tag);
 
-      Combine<LocalOrdinal, Scalar> combine;
+      auto& combine = this->getCombine (ncols);
       if (P_mine == P_top) {
         combine.factor_pair (R_mine_view, R_other_view,
-                             tau.data(), work.data());
+                             tau.data(), work, lwork);
         Q_factors.push_back (R_other);
         tau_arrays.push_back (tau);
       }
       else if (P_mine == P_bot) {
         combine.factor_pair (R_other_view, R_mine_view,
-                             tau.data(), work.data());
+                             tau.data (), work, lwork);
         Q_factors.push_back (R_mine);
         // Make sure that the "bottom" processor gets the current R
         // factor, which is returned in R_mine.
@@ -116,255 +124,265 @@ namespace TSQR {
         ostringstream os;
         os << "Should never get here: P_mine (= " << P_mine
            << ") not one of P_top, P_bot = " << P_top << ", " << P_bot;
-        throw std::logic_error (os.str());
+        throw std::logic_error (os.str ());
       }
     }
 
     void
-    factor_helper (const LocalOrdinal ncols,
-                   std::vector< Scalar >& R_mine,
-                   const LocalOrdinal my_rank,
-                   const LocalOrdinal P_first,
-                   const LocalOrdinal P_last,
-                   const LocalOrdinal tag,
-                   MessengerBase< Scalar >* const messenger,
-                   std::vector< std::vector< Scalar > >& Q_factors,
-                   std::vector< std::vector< Scalar > >& tau_arrays,
-                   std::vector< Scalar >& work)
+    factor_helper (const ordinal_type ncols,
+                   std::vector<scalar_type>& R_mine,
+                   const ordinal_type my_rank,
+                   const ordinal_type P_first,
+                   const ordinal_type P_last,
+                   const ordinal_type tag,
+                   MessengerBase<scalar_type>* const messenger,
+                   std::vector<std::vector<scalar_type>>& Q_factors,
+                   std::vector<std::vector<scalar_type>>& tau_arrays,
+                   scalar_type work[],
+                   const ordinal_type lwork)
     {
       using std::endl;
       using std::ostringstream;
       using std::vector;
 
-      if (P_last <= P_first)
+      if (P_last <= P_first) {
         return;
-      else
-        {
-          const int P = P_last - P_first + 1;
-          // Whether the interval [P_first, P_last] has an even number of
-          // elements.  Our interval splitting scheme ensures that the
-          // interval [P_first, P_mid - 1] always has an even number of
-          // elements.
-          const bool b_even = (P % 2 == 0);
-          // We split the interval [P_first, P_last] into 2 intervals:
-          // [P_first, P_mid-1], and [P_mid, P_last].  We bias the
-          // splitting procedure so that the lower interval always has an
-          // even number of processor ranks, and never has fewer processor
-          // ranks than the higher interval.
-          const int P_mid = b_even ? (P_first + P/2) : (P_first + P/2 + 1);
+      }
+      else {
+        const int P = P_last - P_first + 1;
+        // Whether the interval [P_first, P_last] has an even number
+        // of elements.  Our interval splitting scheme ensures that
+        // the interval [P_first, P_mid - 1] always has an even number
+        // of elements.
+        const bool b_even = (P % 2 == 0);
+        // We split the interval [P_first, P_last] into 2 intervals:
+        // [P_first, P_mid-1], and [P_mid, P_last].  We bias the
+        // splitting procedure so that the lower interval always has
+        // an even number of processor ranks, and never has fewer
+        // processor ranks than the higher interval.
+        const int P_mid = b_even ? (P_first + P/2) : (P_first + P/2 + 1);
 
-          if (my_rank < P_mid) // Interval [P_first, P_mid-1]
-            {
-              factor_helper (ncols, R_mine, my_rank, P_first, P_mid - 1,
-                             tag + 1, messenger, Q_factors, tau_arrays, work);
+        if (my_rank < P_mid) { // Interval [P_first, P_mid-1]
+          factor_helper (ncols, R_mine, my_rank, P_first, P_mid - 1,
+                         tag + 1, messenger, Q_factors, tau_arrays,
+                         work, lwork);
 
-              // If there aren't an even number of processors in the
-              // original interval, then the last processor in the lower
-              // interval has to skip this round.
-              if (b_even || my_rank < P_mid - 1) {
-                const int my_offset = my_rank - P_first;
-                const int P_other = P_mid + my_offset;
-                if (P_other < P_mid || P_other > P_last) {
-                  throw std::logic_error ("P_other not in [P_mid,P_last] range");
-                }
-                factor_pair (ncols, R_mine, my_rank, P_other, tag,
-                             messenger, Q_factors, tau_arrays, work);
-              }
-              // If I'm skipping this round, get the "current" R factor
-              // from P_mid.
-              if (! b_even && my_rank == P_mid - 1) {
-                const int theTag = 142; // magic constant
-                messenger->recv (&R_mine[0], ncols*ncols, P_mid, theTag);
-              }
+          // If there aren't an even number of processors in the
+          // original interval, then the last processor in the lower
+          // interval has to skip this round.
+          if (b_even || my_rank < P_mid - 1) {
+            const int my_offset = my_rank - P_first;
+            const int P_other = P_mid + my_offset;
+            if (P_other < P_mid || P_other > P_last) {
+              throw std::logic_error ("P_other not in [P_mid,P_last] range");
             }
-          else // Interval [P_mid, P_last]
-            {
-              factor_helper (ncols, R_mine, my_rank, P_mid, P_last,
-                             tag + 1, messenger, Q_factors, tau_arrays, work);
-
-              const int my_offset = my_rank - P_mid;
-              const int P_other = P_first + my_offset;
-
-              if (P_other < P_first || P_other >= P_mid)
-                throw std::logic_error ("P_other not in [P_first,P_mid-1] range");
-              factor_pair (ncols, R_mine, my_rank, P_other, tag,
-                           messenger, Q_factors, tau_arrays, work);
-
-              // If Proc P_mid-1 is skipping this round, Proc P_mid will
-              // send it the "current" R factor.
-              if (! b_even)
-                {
-                  const int theTag = 142; // magic constant
-                  messenger->send (R_mine.data(), ncols*ncols, P_mid-1, theTag);
-                }
-            }
+            factor_pair (ncols, R_mine, my_rank, P_other, tag,
+                         messenger, Q_factors, tau_arrays,
+                         work, lwork);
+          }
+          // If I'm skipping this round, get the "current" R factor
+          // from P_mid.
+          if (! b_even && my_rank == P_mid - 1) {
+            const int theTag = 142; // magic constant
+            messenger->recv (R_mine.data (), ncols*ncols, P_mid,
+                             theTag);
+          }
         }
+        else { // Interval [P_mid, P_last]
+          factor_helper (ncols, R_mine, my_rank, P_mid, P_last,
+                         tag + 1, messenger, Q_factors, tau_arrays,
+                         work, lwork);
+          const int my_offset = my_rank - P_mid;
+          const int P_other = P_first + my_offset;
+
+          if (P_other < P_first || P_other >= P_mid) {
+            throw std::logic_error ("P_other not in [P_first,"
+                                    "P_mid-1] range");
+          }
+          factor_pair (ncols, R_mine, my_rank, P_other, tag,
+                       messenger, Q_factors, tau_arrays, work, lwork);
+
+          // If Proc P_mid-1 is skipping this round, Proc P_mid will
+          // send it the "current" R factor.
+          if (! b_even) {
+            const int theTag = 142; // magic constant
+            messenger->send (R_mine.data(), ncols*ncols, P_mid-1, theTag);
+          }
+        }
+      }
     }
 
     void
     apply_pair (const ApplyType& apply_type,
-                const LocalOrdinal ncols_C,
-                const LocalOrdinal ncols_Q,
-                Scalar C_mine[],
-                const LocalOrdinal ldc_mine,
-                Scalar C_other[], // contiguous ncols_C x ncols_C scratch
-                const LocalOrdinal P_mine,
-                const LocalOrdinal P_other,
-                const LocalOrdinal tag,
-                MessengerBase< Scalar >* const messenger,
-                const std::vector< Scalar >& Q_cur,
-                const std::vector< Scalar >& tau_cur,
-                std::vector< Scalar >& work)
+                const ordinal_type ncols_C,
+                const ordinal_type ncols_Q,
+                scalar_type C_mine[],
+                const ordinal_type ldc_mine,
+                scalar_type C_other[], // contiguous ncols_C x ncols_C scratch
+                const ordinal_type P_mine,
+                const ordinal_type P_other,
+                const ordinal_type tag,
+                MessengerBase<scalar_type>* const messenger,
+                const std::vector<scalar_type>& Q_cur,
+                const std::vector<scalar_type>& tau_cur,
+                scalar_type work[],
+                const ordinal_type lwork)
     {
       using std::endl;
       using std::ostringstream;
       using std::vector;
+      using LO = ordinal_type;
+      using const_mat_view_type = MatView<LO, const scalar_type>;
+      using mat_view_type = MatView<LO, scalar_type>;
 
-      if (P_mine == P_other)
+      if (P_mine == P_other) {
         return; // nothing to do
-
+      }
       const int P_top = std::min (P_mine, P_other);
       const int P_bot = std::max (P_mine, P_other);
-
-      const LocalOrdinal nelts = ncols_C * ncols_C;
-      const LocalOrdinal ldq = ncols_Q;
-      const LocalOrdinal ldc_other = ncols_C;
+      const LO nelts = ncols_C * ncols_C;
+      const LO ldq = ncols_Q;
+      const LO ldc_other = ncols_C;
 
       // Send and receive C_mine resp. C_other to the other processor of
       // the pair.
-      messenger->swapData (&C_mine[0], &C_other[0], nelts, P_other, tag);
+      messenger->swapData (C_mine, C_other, nelts, P_other, tag);
 
-      Combine< LocalOrdinal, Scalar > combine;
-      if (P_mine == P_top)
-        combine.apply_pair (apply_type, ncols_C, ncols_Q, &Q_cur[0], ldq,
-                            &tau_cur[0], C_mine, ldc_mine, C_other, ldc_other,
-                            &work[0]);
-      else if (P_mine == P_bot)
-        combine.apply_pair (apply_type, ncols_C, ncols_Q, &Q_cur[0], ldq,
-                            &tau_cur[0], C_other, ldc_other, C_mine, ldc_mine,
-                            &work[0]);
-      else
-        {
-          ostringstream os;
-          os << "Should never get here: P_mine (= " << P_mine
-             << ") not one of P_top, P_bot = " << P_top << ", " << P_bot;
-          throw std::logic_error (os.str());
-        }
+      const_mat_view_type Q_bot
+        (ncols_Q, ncols_Q, Q_cur.data (), ldq);
+      auto& combine = this->getCombine (std::max (ncols_Q, ncols_C));
+      if (P_mine == P_top) {
+        mat_view_type C_top (ncols_Q, ncols_C, C_mine, ldc_mine);
+        mat_view_type C_bot (ncols_Q, ncols_C, C_other, ldc_other);
+        combine.apply_pair (apply_type, Q_bot, tau_cur.data (),
+                            C_top, C_bot, work, lwork);
+      }
+      else if (P_mine == P_bot) {
+        mat_view_type C_top (ncols_Q, ncols_C, C_other, ldc_other);
+        mat_view_type C_bot (ncols_Q, ncols_C, C_mine, ldc_mine);
+        combine.apply_pair (apply_type, Q_bot, tau_cur.data (),
+                            C_top, C_bot, work, lwork);
+      }
+      else {
+        ostringstream os;
+        os << "Should never get here: P_mine (= " << P_mine
+           << ") not one of P_top, P_bot = " << P_top << ", "
+           << P_bot;
+        throw std::logic_error (os.str ());
+      }
     }
 
     void
     apply_helper (const ApplyType& apply_type,
-                  const LocalOrdinal ncols_C,
-                  const LocalOrdinal ncols_Q,
-                  Scalar C_mine[],
-                  const LocalOrdinal ldc_mine,
-                  Scalar C_other[], // contiguous ncols_C x ncols_C scratch
-                  const LocalOrdinal my_rank,
-                  const LocalOrdinal P_first,
-                  const LocalOrdinal P_last,
-                  const LocalOrdinal tag,
-                  MessengerBase< Scalar >* const messenger,
-                  const std::vector< std::vector< Scalar > >& Q_factors,
-                  const std::vector< std::vector< Scalar > >& tau_arrays,
-                  const LocalOrdinal cur_pos,
-                  std::vector< Scalar >& work)
+                  const ordinal_type ncols_C,
+                  const ordinal_type ncols_Q,
+                  scalar_type C_mine[],
+                  const ordinal_type ldc_mine,
+                  scalar_type C_other[], // contiguous ncols_C x ncols_C scratch
+                  const ordinal_type my_rank,
+                  const ordinal_type P_first,
+                  const ordinal_type P_last,
+                  const ordinal_type tag,
+                  MessengerBase<scalar_type>* const messenger,
+                  const std::vector<std::vector<scalar_type>>& Q_factors,
+                  const std::vector<std::vector<scalar_type>>& tau_arrays,
+                  const ordinal_type cur_pos,
+                  scalar_type work[],
+                  const ordinal_type lwork)
     {
       using std::endl;
       using std::ostringstream;
       using std::vector;
 
-      if (P_last <= P_first)
+      if (P_last <= P_first) {
         return;
-      else
-        {
-          const int P = P_last - P_first + 1;
-          // Whether the interval [P_first, P_last] has an even number of
-          // elements.  Our interval splitting scheme ensures that the
-          // interval [P_first, P_mid - 1] always has an even number of
-          // elements.
-          const bool b_even = (P % 2 == 0);
-          // We split the interval [P_first, P_last] into 2 intervals:
-          // [P_first, P_mid-1], and [P_mid, P_last].  We bias the
-          // splitting procedure so that the lower interval always has an
-          // even number of processor ranks, and never has fewer processor
-          // ranks than the higher interval.
-          const int P_mid = b_even ? (P_first + P/2) : (P_first + P/2 + 1);
+      }
+      else {
+        const int P = P_last - P_first + 1;
+        // Whether the interval [P_first, P_last] has an even number
+        // of elements.  Our interval splitting scheme ensures that
+        // the interval [P_first, P_mid - 1] always has an even number
+        // of elements.
+        const bool b_even = (P % 2 == 0);
+        // We split the interval [P_first, P_last] into 2 intervals:
+        // [P_first, P_mid-1], and [P_mid, P_last].  We bias the
+        // splitting procedure so that the lower interval always has
+        // an even number of processor ranks, and never has fewer
+        // processor ranks than the higher interval.
+        const int P_mid = b_even ? (P_first + P/2) : (P_first + P/2 + 1);
 
-          if (my_rank < P_mid) // Interval [P_first, P_mid - 1]
-            {
-              const bool b_participating = b_even || my_rank < P_mid - 1;
+        if (my_rank < P_mid) { // Interval [P_first, P_mid - 1]
+          const bool b_participating = b_even || my_rank < P_mid - 1;
 
-              if (cur_pos < 0)
-                {
-                  ostringstream os;
-                  os << "On Proc " << my_rank << ": cur_pos (= " << cur_pos
-                     << ") < 0; lower interval [" << P_first << "," << (P_mid-1)
-                     << "]; original interval [" << P_first << "," << P_last
-                     << "]" << endl;
-                  throw std::logic_error (os.str());
-                }
+          if (cur_pos < 0) {
+            ostringstream os;
+            os << "On Proc " << my_rank << ": cur_pos (= " << cur_pos
+               << ") < 0; lower interval [" << P_first << "," << (P_mid-1)
+               << "]; original interval [" << P_first << "," << P_last
+               << "]" << endl;
+            throw std::logic_error (os.str());
+          }
 
-              // If there aren't an even number of processors in the
-              // original interval, then the last processor in the lower
-              // interval has to skip this round.  Since we skip this
-              // round, don't decrement cur_pos (else we'll skip an entry
-              // and eventually fall off the front of the array.
-              int new_cur_pos;
-              if (b_even || my_rank < P_mid - 1)
-                {
-                  if (! b_participating)
-                    throw std::logic_error("Should never get here");
-
-                  const int my_offset = my_rank - P_first;
-                  const int P_other = P_mid + my_offset;
-                  // assert (P_mid <= P_other && P_other <= P_last);
-                  if (P_other < P_mid || P_other > P_last)
-                    throw std::logic_error("Should never get here");
-
-                  apply_pair (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                              C_other, my_rank, P_other, tag, messenger,
-                              Q_factors[cur_pos], tau_arrays[cur_pos], work);
-                  new_cur_pos = cur_pos - 1;
-                }
-              else
-                {
-                  if (b_participating)
-                    throw std::logic_error("Should never get here");
-
-                  new_cur_pos = cur_pos;
-                }
-              apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                            C_other, my_rank, P_first, P_mid - 1, tag + 1,
-                            messenger, Q_factors, tau_arrays, new_cur_pos,
-                            work);
+          // If there aren't an even number of processors in the
+          // original interval, then the last processor in the lower
+          // interval has to skip this round.  Since we skip this
+          // round, don't decrement cur_pos (else we'll skip an entry
+          // and eventually fall off the front of the array.
+          int new_cur_pos;
+          if (b_even || my_rank < P_mid - 1) {
+            if (! b_participating) {
+              throw std::logic_error("Should never get here");
             }
-          else
-            {
-              if (cur_pos < 0)
-                {
-                  ostringstream os;
-                  os << "On Proc " << my_rank << ": cur_pos (= " << cur_pos
-                     << ") < 0; upper interval [" << P_mid << "," << P_last
-                     << "]; original interval [" << P_first << "," << P_last
-                     << "]" << endl;
-                  throw std::logic_error (os.str());
-                }
 
-              const int my_offset = my_rank - P_mid;
-              const int P_other = P_first + my_offset;
-              // assert (0 <= P_other && P_other < P_mid);
-              apply_pair (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                          C_other, my_rank, P_other, tag, messenger,
-                          Q_factors[cur_pos], tau_arrays[cur_pos], work);
-              apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
-                            C_other, my_rank, P_mid, P_last, tag + 1,
-                            messenger, Q_factors, tau_arrays, cur_pos - 1,
-                            work);
+            const int my_offset = my_rank - P_first;
+            const int P_other = P_mid + my_offset;
+            // assert (P_mid <= P_other && P_other <= P_last);
+            if (P_other < P_mid || P_other > P_last) {
+              throw std::logic_error("Should never get here");
             }
+            apply_pair (apply_type, ncols_C, ncols_Q, C_mine,
+                        ldc_mine, C_other, my_rank, P_other,
+                        tag, messenger, Q_factors[cur_pos],
+                        tau_arrays[cur_pos], work, lwork);
+            new_cur_pos = cur_pos - 1;
+          }
+          else {
+            if (b_participating) {
+              throw std::logic_error("Should never get here");
+            }
+            new_cur_pos = cur_pos;
+          }
+          apply_helper (apply_type, ncols_C, ncols_Q, C_mine,
+                        ldc_mine, C_other, my_rank, P_first,
+                        P_mid - 1, tag + 1, messenger, Q_factors,
+                        tau_arrays, new_cur_pos, work, lwork);
         }
+        else {
+          if (cur_pos < 0) {
+            ostringstream os;
+            os << "On Proc " << my_rank << ": cur_pos (= " << cur_pos
+               << ") < 0; upper interval [" << P_mid << "," << P_last
+               << "]; original interval [" << P_first << "," << P_last
+               << "]" << endl;
+            throw std::logic_error (os.str ());
+          }
+
+          const int my_offset = my_rank - P_mid;
+          const int P_other = P_first + my_offset;
+          // assert (0 <= P_other && P_other < P_mid);
+          apply_pair (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
+                      C_other, my_rank, P_other, tag, messenger,
+                      Q_factors[cur_pos], tau_arrays[cur_pos],
+                      work, lwork);
+          apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine,
+                        C_other, my_rank, P_mid, P_last, tag + 1,
+                        messenger, Q_factors, tau_arrays, cur_pos - 1,
+                        work, lwork);
+        }
+      }
     }
   };
 
 } // namespace TSQR
 
-#endif // __TSQR_Tsqr_DistTsqrHelper_hpp
+#endif // TSQR_DISTTSQRHELPER_HPP

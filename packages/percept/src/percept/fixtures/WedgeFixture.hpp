@@ -69,9 +69,7 @@
 
           // line2 mesh
           SweepMesher& tp2 = m_sweepMesher;
-          //tp2 = SweepMesher();
 
-          //tp2.initNodes(coordsLine.begin(), n_nodes_x);
           tp2.initNodes(&coordsLine[0], n_nodes_x);
           tp2.initElems(shards_Line_2, &line2Elems[0], n_nodes_x - 1);
           if(verbose) std::cout << "line2 mesh\n";
@@ -91,15 +89,11 @@
 
           SweepMesher quadMeshCopy;
           quadMeshCopy.CopyFromBasicMesh(tp2);
-          //tp2.stkMeshCreate(parallel_machine);
-          //tp2.writeSTKMesh("wedge-quad-0.e");
 
           // break all of the quads into tris
           tp2.breakAllElements<shards_Quadrilateral_4, shards_Triangle_3>();
           if(verbose) std::cout << "after break quad to tri\n";
           tp2.dump(verbose);
-          //tp2.stkMeshCreate(parallel_machine);
-          //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
           std::array<double, 3> dir1 = {{0,0,(zmax-zmin)/double(n_nodes_z - 1)}};
@@ -126,12 +120,10 @@
 
         stk::mesh::MetaData *getMetaData() { return m_sweepMesher.getMetaData() ; }
 
-        //stk::mesh::BulkData* 
         void
         createBulkAfterMetaCommit(stk::ParallelMachine parallel_machine)
         {
           m_sweepMesher.stkMeshCreateBulkAfterMetaCommit(parallel_machine);
-          //return m_sweepMesher.get_bulk_data();
         }
 
         void createFixedSizeMesh(stk::ParallelMachine parallel_machine, std::string output_filename)
@@ -142,10 +134,6 @@
             {{0,0,0}}, {{1,0,0}}, {{2,0,0}}, {{3,0,0}}, {{4,0,0}}
           };
 
-          //         double coordsCPP[][3] = {
-          //           {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0},
-          //           {0,0,1}, {1,0,1}, {2,2,1}, {0,3,1}
-          //         };
           unsigned numNodesLine = sizeof(coordsLine)/sizeof(coordsLine[0]);
 
           unsigned line2Elems[] = {
@@ -183,17 +171,12 @@
 
           SweepMesher quadMeshCopy;
           quadMeshCopy.CopyFromBasicMesh(tp2);
-          //tp2.stkMeshCreate(parallel_machine);
-          //tp2.writeSTKMesh("wedge-quad-0.e");
 
           // break all of the quads into tris
           tp2.breakAllElements<shards_Quadrilateral_4, shards_Triangle_3>();
-          //verbose=true;
           if(verbose) std::cout << "after break quad to tri\n";
           tp2.dump(verbose);
           tp2.dump();
-          //tp2.stkMeshCreate(parallel_machine);
-          //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
           std::array<double, 3> dir1 = {{0,0,2.345}};

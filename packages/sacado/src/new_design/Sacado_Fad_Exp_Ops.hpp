@@ -66,7 +66,7 @@ namespace Sacado {                                                      \
       typedef ExprSpecDefault expr_spec_type;                           \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      OP(const T& expr_) : expr(expr_)  {}                              \
+      explicit OP(const T& expr_) : expr(expr_)  {}                     \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \
@@ -232,11 +232,10 @@ FAD_UNARYOP_MACRO(sinh,
                   expr.fastAccessDx(i)* cosh(expr.val()))
 FAD_UNARYOP_MACRO(tanh,
                   TanhOp,
-                  using std::tanh; using std::cosh;,
+                  using std::tanh;,
                   tanh(expr.val()),
-                  expr.dx(i)/( cosh(expr.val())* cosh(expr.val())),
-                  expr.fastAccessDx(i) /
-                    ( cosh(expr.val())* cosh(expr.val())))
+                  expr.dx(i)*(value_type(1)-tanh(expr.val())*tanh(expr.val())),
+                  expr.fastAccessDx(i)*(value_type(1)-tanh(expr.val())*tanh(expr.val())))
 FAD_UNARYOP_MACRO(acosh,
                   ACoshOp,
                   using std::acosh; using std::sqrt;,

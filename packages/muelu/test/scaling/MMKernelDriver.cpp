@@ -481,7 +481,7 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
       copy_view(Acolind,AcolindMKL);
       copy_view(Bcolind,BcolindMKL);
   
-      if(Kokkos::Impl::is_same<Scalar,double>::value) {
+      if(std::is_same<Scalar,double>::value) {
         mkl_rc = mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO,
                                           Au->getNodeNumRows(),
                                           Au->getNodeNumCols(),

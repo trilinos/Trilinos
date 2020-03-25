@@ -610,6 +610,30 @@ public:
   */
   const Epetra_CrsMatrix* M() const { return M_.get();}
 
+  std::map<int,int> lm_to_dof()
+  {
+      // Create a map from Lagrange multiplier dofs to the primal dofs on the same node
+      std::vector<MOERTEL::Node*> nodes;
+      std::map<int,int> lm_to_dof;
+      for (auto&& keyval : interface_)
+      {
+        Teuchos::RCP<MOERTEL::Interface> inter = keyval.second;
+        inter->GetNodeView(nodes);
+        for (auto&& node : nodes)
+        {
+          if (! node->Nlmdof())
+            continue;
+          const int* dof = node->Dof();
+          const int* lmdof = node->LMDof();
+          for (int j=0; j<node->Nlmdof(); ++j)
+            lm_to_dof[lmdof[j]] = dof[j];
+        }
+      }
+      lm_to_dof_ = Teuchos::rcp(new std::map<int,int>(lm_to_dof));
+
+      return lm_to_dof;
+  }
+
   /*!
   \brief Query a managed interface added using AddInterface
   
@@ -676,7 +700,7 @@ protected:
   Teuchos::RCP<Epetra_CrsMatrix> spdmatrix_;           // the spd matrix of the problem;
   Teuchos::RCP<Epetra_CrsMatrix> spdrhs_;              // the matrix to left-multiply the rhs vector with for the spd problem
   
-  Teuchos::RCP<std::map<int,int> >    lm_to_dof_;           // maps lagrange multiplier dofs to primary dofs (slave side))
+  Teuchos::RCP<std::map<int,int> >    lm_to_dof_;      // maps Lagrange multiplier dofs to primary dofs (slave side)
   
   Teuchos::RCP<Epetra_CrsMatrix> I_;
   Teuchos::RCP<Epetra_CrsMatrix> WT_;

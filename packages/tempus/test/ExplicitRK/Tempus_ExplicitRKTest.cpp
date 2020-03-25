@@ -41,6 +41,7 @@ using Tempus::SolutionState;
 #define TEST_CONSTRUCTING_FROM_DEFAULTS
 #define TEST_SINCOS
 #define TEST_EMBEDDED_VANDERPOL
+#define TEST_STAGE_NUMBER
 
 
 #ifdef TEST_PARAMETERLIST
@@ -262,6 +263,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethods.push_back("SSPERK22");
   RKMethods.push_back("SSPERK33");
   //RKMethods.push_back("SSPERK54");  // slope = 3.94129
+  RKMethods.push_back("RK2");  // slope = 3.94129
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(8.33251e-07);
@@ -282,6 +284,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethodErrors.push_back(0.00166645); 
   RKMethodErrors.push_back(4.16603e-05);
   //RKMethodErrors.push_back(3.85613e-07); // SSPERK54
+  RKMethodErrors.push_back(0.00166644); // RK2
+                             
 
   TEST_ASSERT(RKMethods.size() == RKMethodErrors.size() );
 
@@ -530,5 +534,83 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
   Teuchos::TimeMonitor::summarize();
 }
 #endif // TEST_EMBEDDED_VANDERPOL
+
+
+#ifdef TEST_STAGE_NUMBER
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExplicitRK, stage_number)
+{
+  double dt = 0.1;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_ExplicitRK_SinCos.xml");
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
+  auto model = rcp(new SinCosModel<double>(scm_pl));
+
+  // Setup Stepper for field solve ----------------------------
+  RCP<Tempus::StepperFactory<double> > sf =
+    Teuchos::rcp(new Tempus::StepperFactory<double>());
+  RCP<Tempus::Stepper<double> > stepper =
+    sf->createStepper("RK Explicit 4 Stage");
+  stepper->setModel(model);
+  stepper->initialize();
+
+  // Setup TimeStepControl ------------------------------------
+  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
+  ParameterList tscPL = pl->sublist("Demo Integrator")
+                           .sublist("Time Step Control");
+  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
+  timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
+  timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
+  timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
+  timeStepControl->setInitTimeStep(dt);
+  timeStepControl->initialize();
+
+  // Setup initial condition SolutionState --------------------
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+    stepper->getModel()->getNominalValues();
+  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  icState->setTime    (timeStepControl->getInitTime());
+  icState->setIndex   (timeStepControl->getInitIndex());
+  icState->setTimeStep(0.0);
+  icState->setOrder   (stepper->getOrder());
+  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+
+  // Setup SolutionHistory ------------------------------------
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->setName("Forward States");
+  solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+  solutionHistory->setStorageLimit(2);
+  solutionHistory->addState(icState);
+
+  // Setup Integrator -----------------------------------------
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>();
+  integrator->setStepperWStepper(stepper);
+  integrator->setTimeStepControl(timeStepControl);
+  integrator->setSolutionHistory(solutionHistory);
+  //integrator->setObserver(...);
+  integrator->initialize();
+
+  // get the RK stepper
+  auto erk_stepper = Teuchos::rcp_dynamic_cast<Tempus::StepperExplicitRK<double>  >(stepper,true);
+
+  TEST_EQUALITY( -1 , erk_stepper->getStageNumber());
+  const std::vector<int> ref_stageNumber = { 1, 4, 8, 10, 11, -1, 5};
+  for(auto stage_number : ref_stageNumber) {
+    // set the stage number
+    erk_stepper->setStageNumber(stage_number);
+    // make sure we are getting the correct stage number
+    TEST_EQUALITY( stage_number, erk_stepper->getStageNumber());
+  }
+}
+#endif // TEST_STAGE_NUMBER
 
 } // namespace Tempus_Test

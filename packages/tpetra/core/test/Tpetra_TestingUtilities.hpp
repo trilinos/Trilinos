@@ -117,18 +117,6 @@ namespace Tpetra {
       }
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Get the default Kokkos(Classic) Node for Tpetra tests.
-    /// \tparam Node The Kokkos(Classic) Node type.
-    ///
-    /// \warning This function is an implementation detail of Tpetra.
-    ///   Users must not call this function or rely on its behavior.
-    template <class Node>
-    TPETRA_DEPRECATED
-    Teuchos::RCP<Node> getNode () {
-      return Teuchos::null;
-    }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   } // namespace TestingUtilities
 } // namespace Tpetra

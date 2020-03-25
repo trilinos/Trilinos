@@ -42,7 +42,7 @@
 
 #ifndef _FROSCH_TWOLEVELBLOCKPRECONDITIONER_DEF_HPP
 #define _FROSCH_TWOLEVELBLOCKPRECONDITIONER_DEF_HPP
-
+#define FindOneEntryOnlyRowsGlobal_Matrix
 #include <FROSch_TwoLevelBlockPreconditioner_decl.hpp>
 
 
@@ -54,8 +54,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     TwoLevelBlockPreconditioner<SC,LO,GO,NO>::TwoLevelBlockPreconditioner(ConstXMatrixPtr k,
                                                                           ParameterListPtr parameterList) :
-    OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList),
-    CoarseOperator_ ()
+    OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList)
     {
         FROSCH_TIMER_START_LEVELID(twoLevelBlockPreconditionerTime,"TwoLevelBlockPreconditioner::TwoLevelBlockPreconditioner");
         if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
@@ -110,26 +109,29 @@ namespace FROSch {
 //        //////////
 //        // Maps //
 //        //////////
-//        if (repeatedMapVec.is_null()) {
-//            ConstXMapPtr tmpMap =  this->K_->getRowMap();
-//            XMapPtrVecPtr subMapVec = BuildSubMaps(tmpMap,blockMaxGIDVec);// Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
-//            repeatedMapVec = BuildRepeatedSubMaps(this->K_,subMapVec);
-//
-//        }
+        FROSCH_ASSERT(!repeatedMapVec.is_null(),"repeatedMapVec.is_null() = true. Please provide the repeated maps vector. The maps itself can be null and will be constructed.");
+        for (UN i = 0; i < repeatedMapVec.size(); i++) {
+            if (repeatedMapVec[i].is_null()) {
+                FROSCH_ASSERT( i==0, "We can only construct a repeated map for a non block system");
+                repeatedMapVec[i] = BuildRepeatedMap( this->K_ );
+//                repeatedMapVec[i] = BuildRepeatedMap(this->K_, this->ParameterList_->get("Reduce approx repeated map",true) ); // Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
+            }
+        }
 
         // Build dofsMaps and repeatedNodesMap
         ConstXMapPtrVecPtr repeatedNodesMapVec;
         if (dofsMapsVec.is_null()) {
             FROSCH_TIMER_START_LEVELID(buildDofMapsTime,"BuildDofMaps");
             if (0>BuildDofMapsVec(repeatedMapVec,dofsPerNodeVec,dofOrderingVec,repeatedNodesMapVec,dofsMapsVec)) ret -= 100; // Todo: Rückgabewerte
-            } else {
+        } else {
             FROSCH_ASSERT(dofsMapsVec.size()==dofsPerNodeVec.size(),"dofsMapsVec.size()!=dofsPerNodeVec.size()");
             for (UN j=0; j<dofsMapsVec.size(); j++) {
                 FROSCH_ASSERT(dofsMapsVec[j].size()==dofsPerNodeVec[j],"dofsMapsVec[block].size()!=dofsPerNodeVec[block]");
-                for (UN i=0; i<dofsMapsVec.size(); i++) {
+                for (UN i=0; i<dofsMapsVec[j].size(); i++) {
                     FROSCH_ASSERT(!dofsMapsVec[j][i].is_null(),"dofsMapsVec[block][i].is_null()");
                 }
             }
+            repeatedNodesMapVec = BuildNodeMapsFromDofMaps( dofsMapsVec, dofsPerNodeVec, dofOrderingVec );
         }
 
         //////////////////////////
@@ -138,9 +140,10 @@ namespace FROSch {
         if (!nodeListVec.is_null()) {
             FROSCH_TIMER_START_LEVELID(communicateNodeListTime,"Communicate Node List");
             for (UN i=0; i<nodeListVec.size(); i++) {
-                if (!nodeListVec[i]->getMap()->isSameAs(*repeatedNodesMapVec[i])) {
+                ConstXMapPtr nodeListVecMap_i = nodeListVec[i]->getMap();
+                if (!nodeListVecMap_i->isSameAs(*repeatedNodesMapVec[i])) {
                     RCP<MultiVector<SC,LO,GO,NO> > tmpNodeList = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMapVec[i],nodeListVec[i]->getNumVectors());
-                    RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nodeListVec[i]->getMap(),repeatedNodesMapVec[i]);
+                    RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nodeListVecMap_i,repeatedNodesMapVec[i]);
                     tmpNodeList->doImport(*nodeListVec[i],*scatter,INSERT);
                     nodeListVec[i] = tmpNodeList.getConst();
                 }
@@ -151,7 +154,14 @@ namespace FROSch {
         /////////////////////////////////////
         // Determine dirichletBoundaryDofs //
         /////////////////////////////////////
-        ConstXMapPtr repeatedMap = MergeMaps(repeatedMapVec);
+        ConstXMapPtr repeatedMap;
+        if (this->ParameterList_->get("Continuous Blocks",false)){
+//            repeatedMap = MergeMapsCont( repeatedMapVec );
+            FROSCH_ASSERT(false,"Implement MergeMapsCont.");
+        }
+        else
+            repeatedMap = MergeMaps( repeatedMapVec );
+        
         if (dirichletBoundaryDofsVec.is_null()) {
             FROSCH_TIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
             dirichletBoundaryDofsVec.resize(repeatedMapVec.size());

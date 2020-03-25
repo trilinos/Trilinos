@@ -161,9 +161,9 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
     }
     RCP<const Epetra_CrsMatrix> epetraKn;
     if (Kn.is_null()) {
-      RCP<Matrix> temp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(SM->getRangeMap(),0);
+      RCP<Matrix> temp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(SM->getRangeMap());
       Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*SM,false,*D0,false,*temp,true,true);
-      RCP<Matrix> Kn2 = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(D0->getDomainMap(),0);
+      RCP<Matrix> Kn2 = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(D0->getDomainMap());
       Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*D0,true,*temp,false,*Kn2,true,true);
       epetraKn = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Kn2);
     } else
@@ -289,6 +289,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       xml = "Maxwell_complex.xml";
                                                         clp.setOption("xml",                   &xml,               "xml file with solver parameters");
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+    int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", material_file = "", Ms_file="";
@@ -369,7 +370,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP<Matrix> M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0_file, node_map);
       // build lumped mass matrix inverse (M0inv_Matrix)
       RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
-      RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0));
       RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
       Teuchos::ArrayRCP<size_t> rowPtr;
       Teuchos::ArrayRCP<LO> colInd;
@@ -468,11 +469,14 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
-      belosParams->set("Maximum Iterations", 100);
+      belosParams->set("Maximum Iterations", maxIts);
       belosParams->set("Convergence Tolerance",tol);
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
       belosParams->set("Output Style",Belos::Brief);
+      belosParams->set("Implicit Residual Scaling","None");
+      belosParams->set("Explicit Residual Test",true);
+      belosParams->set("Explicit Residual Scaling","None");
       solver = factory->create(belosSolverType,belosParams);
 
       comm->barrier();
@@ -563,6 +567,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string precType          = "MueLu-RefMaxwell"; clp.setOption("precType",              &precType,          "preconditioner to use (MueLu-RefMaxwell|ML-RefMaxwell|none)");
     std::string xml               = "";                 clp.setOption("xml",                   &xml,               "xml file with solver parameters (default: \"Maxwell.xml\")");
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+    int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
 
@@ -645,7 +650,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0_file, node_map);
       // build lumped mass matrix inverse (M0inv_Matrix)
       RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
-      RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0));
       RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
       Teuchos::ArrayRCP<size_t> rowPtr;
       Teuchos::ArrayRCP<LO> colInd;
@@ -762,12 +767,15 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
-      belosParams->set("Maximum Iterations", 100);
+      belosParams->set("Maximum Iterations", maxIts);
       belosParams->set("Convergence Tolerance",tol);
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
       belosParams->set("Output Style",Belos::Brief);
       belosParams->set("Implicit Residual Scaling","None");
+      belosParams->set("Explicit Residual Test",true);
+      belosParams->set("Explicit Residual Scaling","None");
+
       solver = factory->create(belosSolverType,belosParams);
 
       comm->barrier();
@@ -794,10 +802,13 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       SList.set("Linear Solver Type","Belos");
       SList.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", belosSolverType);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Output Frequency",1);
-      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Maximum Iterations",100);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Maximum Iterations",maxIts);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Convergence Tolerance",tol);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Output Style",1);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Verbosity",33);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Implicit Residual Scaling","None");
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Explicit Residual Test",true);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Explicit Residual Scaling","None");
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("VerboseObject").set("Verbosity Level", "medium");
       SList.set("Preconditioner Type","MueLuRefMaxwell");
       params.set("parameterlist: syntax","muelu");

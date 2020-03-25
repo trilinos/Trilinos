@@ -179,6 +179,7 @@ HingeGroupVector get_convex_groupings(const stk::mesh::BulkData& bulk, const Hin
 
 
 // Hinge Snipping
+void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes, bool debug = false);
 void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug = false);
 
 }}}

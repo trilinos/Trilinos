@@ -97,9 +97,9 @@ inline bool find_proc_before_index(const EntityCommInfoVector& infovec, int proc
 
 struct InfoRankLess {
   bool operator()(const EntityCommListInfo& info, EntityRank rank) const
-  { return info.bucket->entity_rank() < rank; }
+  { return info.key.rank() < rank; }
   bool operator()(EntityRank rank, const EntityCommListInfo& info) const
-  { return rank < info.bucket->entity_rank(); }
+  { return rank < info.key.rank(); }
 };
 
 inline void communicate_field_data(
@@ -134,11 +134,12 @@ inline void communicate_field_data(
       const FieldBase & f = *fields[fi];
       for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
       {
-          const Bucket* bucket = comm_info_vec[i].bucket;
+          const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
+          const Bucket& bucket = *meshIndex.bucket;
 
           unsigned e_size = 0;
 
-          const unsigned bucketId = bucket->bucket_id();
+          const unsigned bucketId = bucket.bucket_id();
           const unsigned size = field_bytes_per_entity(f, bucketId);
           e_size += size;
 
@@ -147,7 +148,7 @@ inline void communicate_field_data(
               continue;
           }
 
-          const bool owned = bucket->owned();
+          const bool owned = bucket.owned();
           if(owned)
           {
               const EntityCommInfoVector& infovec = comm_info_vec[i].entity_comm->comm_map;
@@ -195,18 +196,19 @@ inline void communicate_field_data(
       const FieldBase & f = *fields[fi];
       for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
       {
-          const Bucket* bucket = comm_info_vec[i].bucket;
+          const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
+          const Bucket& bucket = *meshIndex.bucket;
 
-          const bool owned = bucket->owned();
+          const bool owned = bucket.owned();
 
           unsigned e_size = 0;
 
           {
-              const unsigned bucketId = bucket->bucket_id();
+              const unsigned bucketId = bucket.bucket_id();
               const unsigned size = field_bytes_per_entity(f, bucketId);
               if (owned && size > 0)
               {
-                  unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, comm_info_vec[i].bucket_ordinal, size));
+                  unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, meshIndex.bucket_ordinal, size));
                   std::memcpy(field_data_ptr+e_size, ptr, size);
               }
               e_size += size;
@@ -255,8 +257,9 @@ inline void communicate_field_data(
 
       for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
       {
-          const Bucket* bucket = comm_info_vec[i].bucket;
-          if (bucket->owned()) {
+          const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
+          const Bucket& bucket = *meshIndex.bucket;
+          if (bucket.owned()) {
               continue;
           }
 
@@ -267,11 +270,11 @@ inline void communicate_field_data(
           }
 
           {
-              const unsigned bucketId = bucket->bucket_id();
+              const unsigned bucketId = bucket.bucket_id();
               const unsigned size = field_bytes_per_entity(f, bucketId);
               if (size > 0)
               {
-                  unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, comm_info_vec[i].bucket_ordinal, size));
+                  unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, meshIndex.bucket_ordinal, size));
 
                   std::memcpy(ptr, &(recv_data[owner][recv_sizes[owner]]), size);
                   recv_sizes[owner] += size;

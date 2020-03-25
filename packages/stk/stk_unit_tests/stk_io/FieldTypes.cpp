@@ -35,13 +35,21 @@
 #include <stddef.h>                     // for size_t
 #include <unistd.h>                     // for unlink
 #include <stk_util/diag/StringUtil.hpp> // for make_lower
+#include <stk_unit_test_utils/getOption.h>
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string
 #include <stk_mesh/base/FindRestriction.hpp>
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/FillMesh.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <Ioss_VariableType.h>
+#include <Ioss_NodeBlock.h>
+#include <Ioss_ElementBlock.h>
+#include <Ioss_NodeSet.h>
+#include <Ioss_SideSet.h>
+#include <Ioss_Field.h>
 #include <Ionit_Initializer.h>                       // for Initializer
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include "stk_io/StkIoUtils.hpp"
@@ -591,4 +599,122 @@ TEST(StkIoFieldType, testFieldRepresentationAndSize)
     test_field_representation_and_size(matrix_22       , 8, Ioss::Field::INT64  , 32u, stk::util::ParameterType::INT64VECTOR  );
 }
 
+std::string get_role_string(Ioss::Field::RoleType role)
+{
+  switch(role) {
+    case Ioss::Field::RoleType::INTERNAL:
+      return "INTERNAL";
+    case Ioss::Field::RoleType::MESH:
+      return "MESH";
+    case Ioss::Field::RoleType::ATTRIBUTE:
+      return "ATTRIBUTE";
+    case Ioss::Field::RoleType::COMMUNICATION:
+      return "COMMUNICATION";
+    case Ioss::Field::RoleType::INFORMATION:
+      return "INFORMATION";
+    case Ioss::Field::RoleType::REDUCTION:
+      return "REDUCTION";
+    case Ioss::Field::RoleType::TRANSIENT:
+      return "TRANSIENT";
+    default:
+      return "";
+  }
+  return "";
+}
+
+std::string get_type_string(Ioss::Field::BasicType type)
+{
+  switch(type) {
+    case Ioss::Field::BasicType::INVALID:
+      return "INVALID";
+    case Ioss::Field::BasicType::DOUBLE:
+      return "DOUBLE";
+    case Ioss::Field::BasicType::INTEGER:
+      return "INTEGER";
+    case Ioss::Field::BasicType::INT64:
+      return "INT64";
+    case Ioss::Field::BasicType::COMPLEX:
+      return "COMPLEX";
+    case Ioss::Field::BasicType::STRING:
+      return "STRING";
+    case Ioss::Field::BasicType::CHARACTER:
+      return "CHARACTER";
+    default:
+      return "";
+  }
+  return "";
+}
+
+void describe_fields(const Ioss::GroupingEntity* entity)
+{
+  std::cout << "Entity: " << entity->name() << std::endl;
+
+  Ioss::NameList names;
+  entity->field_describe(&names);
+
+  for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+    Ioss::Field io_field = entity->get_field(*I);
+
+    std::cout << "\tField: " << io_field.get_name() << std::endl;
+    std::cout << "\t\tRole: " << get_role_string(io_field.get_role()) << std::endl;
+    std::cout << "\t\tType: " << get_type_string(io_field.get_type()) << std::endl;
+  }
+
+  std::cout << std::endl;
+}
+
+TEST(StkIoFieldType, inputFile)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    return;
+  }
+
+  std::string meshSpec = stk::unit_test_util::get_option("--mesh", "none specified");
+
+  if (meshSpec == "none specified") {
+    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+      std::cout<<"No mesh specified, exiting."<<std::endl;
+    }
+    return;
+  }
+
+  stk::mesh::MetaData meta;
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::io::StkMeshIoBroker stkIo;
+  stk::io::fill_mesh(meshSpec, bulk, stkIo);
+
+  int numSteps = stkIo.get_num_time_steps();
+
+  if(numSteps>0) {
+      stkIo.read_defined_input_fields(numSteps);
+  }
+
+  Teuchos::RCP<Ioss::Region> ioRegion = stkIo.get_input_io_region();
+
+  const Ioss::NodeBlockContainer &    nodeBlocks = ioRegion->get_node_blocks();
+  const Ioss::ElementBlockContainer & elemBlocks = ioRegion->get_element_blocks();
+  const Ioss::SideSetContainer &        sideSets = ioRegion->get_sidesets();
+  const Ioss::NodeSetContainer &        nodeSets = ioRegion->get_nodesets();
+
+  std::cout << "PRINTING NODEBLOCK INFO" << std::endl;
+  for(auto nodeBlock : nodeBlocks) {
+    describe_fields(nodeBlock);
+  }
+
+  std::cout << "PRINTING ELEMBLOCK INFO" << std::endl;
+  for(auto elemBlock : elemBlocks) {
+      describe_fields(elemBlock);
+  }
+
+  std::cout << "PRINTING SIDESET INFO" << std::endl;
+  for(auto sideSet : sideSets) {
+      describe_fields(sideSet);
+  }
+
+  std::cout << "PRINTING NODESET INFO" << std::endl;
+  for(auto nodeSet : nodeSets) {
+      describe_fields(nodeSet);
+  }
+}
 }

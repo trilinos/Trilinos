@@ -138,19 +138,19 @@ namespace FROSch {
         CommPtr MpiComm_;
         CommPtr SerialComm_;
         
-        ConstXMapPtrVec UnassembledBasesMaps_;
-        ConstXMapPtrVec UnassembledBasesMapsUnique_;
+        ConstXMapPtrVec UnassembledBasesMaps_ = ConstXMapPtrVec(0);
+        ConstXMapPtrVec UnassembledBasesMapsUnique_ = ConstXMapPtrVec(0);
 
-        ConstXMultiVectorPtrVec UnassembledSubspaceBases_;
+        ConstXMultiVectorPtrVec UnassembledSubspaceBases_ = ConstXMultiVectorPtrVec(0);
         
-        LOVec Offsets_;
+        LOVec Offsets_ = LOVec(0);
         
         ConstXMapPtr AssembledBasisMap_;
         ConstXMapPtr AssembledBasisMapUnique_;
 
         XMultiVectorPtr AssembledBasis_;
 
-        UNVec LocalSubspacesSizes_;
+        UNVec LocalSubspacesSizes_ = UNVec(0);
         
         XMatrixPtr GlobalBasisMatrix_;
     };

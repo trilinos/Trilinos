@@ -94,6 +94,7 @@ public:
       m_inputRegion(input_region),
       m_subsetSelector(nullptr),
       m_sharedSelector(nullptr),
+      m_skinMeshSelector(nullptr),
       m_multiStateSuffixes(nullptr)
     {
         initialize_output_selectors();
@@ -120,6 +121,7 @@ public:
       m_inputRegion(input_region),
       m_subsetSelector(nullptr),
       m_sharedSelector(nullptr),
+      m_skinMeshSelector(nullptr),
       m_multiStateSuffixes(nullptr)
     {
         m_region = ioss_output_region;
@@ -136,7 +138,7 @@ public:
 
     void setup_output_params(OutputParams &params) const;
 
-    bool set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes);
+    bool set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes);
 
     void write_output_mesh(const stk::mesh::BulkData& bulk_data,
                            const std::vector<std::vector<int>> &attributeOrdering);
@@ -171,6 +173,7 @@ public:
 
     void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
     void set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
+    void set_skin_mesh_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
 
     void set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
 
@@ -229,6 +232,7 @@ private:
     Teuchos::RCP<stk::mesh::Selector> m_subsetSelector;
     Teuchos::RCP<stk::mesh::Selector> m_sharedSelector;
     Teuchos::RCP<stk::mesh::Selector> m_outputSelector[stk::topology::ELEM_RANK+1];
+    Teuchos::RCP<stk::mesh::Selector> m_skinMeshSelector;
     Teuchos::RCP<Ioss::Region> m_region;
     std::vector<stk::io::FieldAndName> m_namedFields;
     std::vector<stk::io::FieldAndName> m_additionalAttributeFields;

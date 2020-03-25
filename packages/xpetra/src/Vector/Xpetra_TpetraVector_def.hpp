@@ -186,18 +186,6 @@ dot(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& a) const
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights) const
-{
-    XPETRA_MONITOR("TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted");
-    return getTpetra_Vector()->normWeighted(*toTpetra(weights));
-}
-#endif
-
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& vec)
@@ -238,7 +226,7 @@ getDeviceLocalView() const
 #if 0
  template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<
+      std::is_same<
         typename dual_view_type::t_dev_um::execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
         typename dual_view_type::t_dev_um,
@@ -381,13 +369,6 @@ class TpetraVector<Scalar, int, int, EpetraNode>
     Scalar dot(const Vector& a) const { return Teuchos::ScalarTraits<Scalar>::zero(); }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    TPETRA_DEPRECATED typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector& weights) const
-    {
-        return Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::zero());
-    }
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
 
     //! @name Xpetra specific
@@ -443,13 +424,13 @@ class TpetraVector<Scalar, int, int, EpetraNode>
     ///          only valid as long as the vector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
+      std::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
       typename dual_view_type::t_dev_um,
       typename dual_view_type::t_host_um>::type
     getLocalView() const
     {
         typename Kokkos::Impl::if_c<
-          Kokkos::Impl::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
+          std::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
           typename dual_view_type::t_dev_um,
           typename dual_view_type::t_host_um>::type ret;
         return ret;
@@ -584,12 +565,6 @@ class TpetraVector<Scalar, int, long long, EpetraNode>
     Scalar dot(const Vector& a) const { return Teuchos::ScalarTraits<Scalar>::zero(); }
 
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector& weights) const
-    {
-        return Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::zero());
-    }
-#endif      // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
     //@{
@@ -641,13 +616,13 @@ class TpetraVector<Scalar, int, long long, EpetraNode>
     ///          only valid as long as the vector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
+      std::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
       typename dual_view_type::t_dev_um,
       typename dual_view_type::t_host_um>::type
     getLocalView() const
     {
         typename Kokkos::Impl::if_c<
-          Kokkos::Impl::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
+          std::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
           typename dual_view_type::t_dev_um,
           typename dual_view_type::t_host_um>::type ret;
         return ret;

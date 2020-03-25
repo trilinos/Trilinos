@@ -136,12 +136,16 @@ public:
     virtual int    getNConsecutiveFailures() const {return metaData_->getNConsecutiveFailures();}
     virtual Scalar getTolAbs()           const {return metaData_->getTolAbs();}
     virtual Scalar getTolRel()           const {return metaData_->getTolRel();}
+    virtual Scalar getXNormL2()          const {return metaData_->getXNormL2();}
+    virtual Scalar getDxNormL2Abs()      const {return metaData_->getDxNormL2Abs();}
+    virtual Scalar getDxNormL2Rel()      const {return metaData_->getDxNormL2Rel();}
+    virtual bool   getComputeNorms()     const {return metaData_->getComputeNorms();}
     virtual Status getSolutionStatus()   const {return metaData_->getSolutionStatus();}
-    virtual bool getOutput()             const {return metaData_->getOutput();}
-    virtual bool getOutputScreen()       const {return metaData_->getOutputScreen();}
-    virtual bool getIsSynced()           const {return metaData_->getIsSynced();}
-    virtual bool getIsInterpolated()     const {return metaData_->getIsInterpolated();}
-    virtual bool getAccuracy()           const {return metaData_->getAccuracy();}
+    virtual bool   getOutput()           const {return metaData_->getOutput();}
+    virtual bool   getOutputScreen()     const {return metaData_->getOutputScreen();}
+    virtual bool   getIsSynced()         const {return metaData_->getIsSynced();}
+    virtual bool   getIsInterpolated()   const {return metaData_->getIsInterpolated();}
+    virtual bool   getAccuracy()         const {return metaData_->getAccuracy();}
   //@}
 
   /// \name Set MetaData values
@@ -170,12 +174,21 @@ public:
     virtual void setNRunningFailures(int nFailures) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
                                           metaData_nc_->setNRunningFailures(nFailures); }
     virtual void setNConsecutiveFailures(int nConsecutiveFailures)
-      { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                        { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
                                           metaData_nc_->setNConsecutiveFailures(nConsecutiveFailures); }
     virtual void setTolRel (Scalar tolRel){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
                                           metaData_nc_->setTolRel(tolRel); }
     virtual void setTolAbs (Scalar tolAbs){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
                                           metaData_nc_->setTolAbs(tolAbs); }
+
+    virtual void setXNormL2 (Scalar xNormL2){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setXNormL2(xNormL2); }
+    virtual void setDxNormL2Rel (Scalar dxNormL2Rel){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setDxNormL2Rel(dxNormL2Rel); }
+    virtual void setDxNormL2Abs (Scalar dxNormL2Abs){ TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setDxNormL2Abs(dxNormL2Abs); }
+    virtual void setComputeNorms(bool computeNorms) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
+                                          metaData_nc_->setComputeNorms(computeNorms); }
 
     virtual void setSolutionStatus(Status s) { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
                                                metaData_nc_->setSolutionStatus(s); }
@@ -242,8 +255,15 @@ public:
     virtual void setXDotDot(Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot)
       { xdotdot_nc_ = Teuchos::null; xdotdot_ = xdotdot; }
 
+    virtual void setStepperState(Teuchos::RCP<StepperState<Scalar> >& ss)
+      { stepperState_nc_ = ss; stepperState_ = ss; }
+    virtual void setStepperState(const Teuchos::RCP<StepperState<Scalar> >& ss)
+      { stepperState_nc_ = Teuchos::null; stepperState_ = ss; }
+
+    virtual void setPhysicsState(Teuchos::RCP<PhysicsState<Scalar> >& ps)
+      { physicsState_nc_ = ps; physicsState_ = ps; }
     virtual void setPhysicsState(const Teuchos::RCP<PhysicsState<Scalar> >& ps)
-      { physicsState_nc_ = ps; physicsState_ = physicsState_nc_; }
+      { physicsState_nc_ = Teuchos::null; physicsState_ = ps; }
   //@}
 
 
@@ -287,6 +307,10 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  /// Compute the solution norms, and solution change from ssIn, if provided.
+  virtual void computeNorms(
+    const Teuchos::RCP<const SolutionState<Scalar> >& ssIn = Teuchos::null);
+
 private:
   // Member Data
 
@@ -307,12 +331,12 @@ private:
   Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot_nc_;
 
   /// StepperState for this SolutionState
-  Teuchos::RCP<const Tempus::StepperState<Scalar> > stepperState_;
-  Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState_nc_;
+  Teuchos::RCP<const StepperState<Scalar> > stepperState_;
+  Teuchos::RCP<StepperState<Scalar> > stepperState_nc_;
 
   /// PhysicsState for this SolutionState
-  Teuchos::RCP<const Tempus::PhysicsState<Scalar> > physicsState_;
-  Teuchos::RCP<Tempus::PhysicsState<Scalar> > physicsState_nc_;
+  Teuchos::RCP<const PhysicsState<Scalar> > physicsState_;
+  Teuchos::RCP<PhysicsState<Scalar> > physicsState_nc_;
 
 };
 } // namespace Tempus

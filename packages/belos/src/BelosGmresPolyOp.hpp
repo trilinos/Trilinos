@@ -620,11 +620,11 @@ namespace Belos {
     try {
       gmres_iter->iterate();
     }
-    catch (GmresIterationOrthoFailure e) {
+    catch (GmresIterationOrthoFailure& e) {
       // Try to recover the most recent least-squares solution
       gmres_iter->updateLSQR( gmres_iter->getCurSubspaceDim() );
     }
-    catch (std::exception e) {
+    catch (std::exception& e) {
       using std::endl;
       printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration "
         << gmres_iter->getNumIters() << endl << e.what () << endl;
@@ -763,7 +763,10 @@ namespace Belos {
     std::vector<int> extra (dim_);
     int totalExtra = 0;
     for(int i=0; i<dim_; ++i){
-      extra[i] = ceil((log10(pof[i])-MagnitudeType(4.0))/MagnitudeType(14.0));
+      if (pof[i] > MCT::zero())
+        extra[i] = ceil((log10(pof[i])-MagnitudeType(4.0))/MagnitudeType(14.0));
+      else
+        extra[i] = 0;
       if(extra[i] > 0){
         totalExtra += extra[i];
       }
@@ -864,7 +867,12 @@ namespace Belos {
         {
           a = thetaN(i,0) - sorted(k,0);
           b = thetaN(i,1) - sorted(k,1);
-          prod(i) = prod(i) + log10(sqrt(a*a + b*b));
+          if (a*a + b*b > MCT::zero())
+            prod(i) = prod(i) + log10(hypot(a,b));
+          else {
+            prod(i) = -std::numeric_limits<MagnitudeType>::infinity();
+            break;
+          }
         }
       }
       

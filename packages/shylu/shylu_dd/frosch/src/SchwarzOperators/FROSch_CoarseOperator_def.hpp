@@ -54,28 +54,8 @@ namespace FROSch {
     CoarseOperator<SC,LO,GO,NO>::CoarseOperator(ConstXMatrixPtr k,
                                                 ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
-    CoarseSolveComm_ (),
-    OnCoarseSolveComm_ (false),
-    NumProcsCoarseSolve_ (0),
     CoarseSpace_ (new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_)),
-    Phi_ (),
-    CoarseMatrix_ (),
-    XTmp_ (),
-    XCoarse_ (),
-    XCoarseSolve_ (),
-    XCoarseSolveTmp_ (),
-    YTmp_ (),
-    YCoarse_ (),
-    YCoarseSolve_ (),
-    YCoarseSolveTmp_ (),
-    GatheringMaps_ (0),
-    CoarseSolveMap_ (),
-    CoarseSolver_ (),
-    DistributionList_ (sublist(parameterList,"Distribution")),
-    CoarseSolveExporters_ (0)
-#ifdef FROSCH_COARSEOPERATOR_EXPORT_AND_IMPORT
-    , CoarseSolveImporters_ (0)
-#endif
+    DistributionList_ (sublist(parameterList,"Distribution"))
     {
         FROSCH_TIMER_START_LEVELID(coarseOperatorTime,"CoarseOperator::CoarseOperator");
     }
@@ -112,6 +92,12 @@ namespace FROSch {
                 FROSCH_ASSERT(CoarseSpace_->hasGlobalBasisMatrix(),"FROSch::CoarseOperator : !CoarseSpace_->hasGlobalBasisMatrix()");
                 Phi_ = CoarseSpace_->getGlobalBasisMatrix();
             }
+        }
+        if ( this->ParameterList_->get("Set Phi to PList", false ) ){
+            if (this->Verbose_)
+                std::cout << "\t### Setting Phi (RCP<Xpetra::Matrix>) to ParameterList.\n";
+            
+            this->ParameterList_->set("Phi Pointer", Phi_);
         }
         if (!reuseCoarseMatrix) {
             if (this->IsComputed_ && this->Verbose_) std::cout << "FROSch::CoarseOperator : Recomputing the Coarse Matrix" << std::endl;
@@ -155,8 +141,8 @@ namespace FROSch {
             y.update(alpha,*XTmp_,beta);
         } else {
             if (i==0) {
-                if (this->Verbose_ && Phi_.is_null()) std::cout << "FROSch::CoarseOperator : WARNING: Coarse Basis is empty => The CoarseOperator will just act as the identity...\n";
-                if (this->Verbose_ && !this->IsComputed_) std::cout << "FROSch::CoarseOperator : WARNING: CoarseOperator has not been computed yet => The CoarseOperator will just act as the identity...\n";
+                FROSCH_WARNING("FROSch::CoarseOperator",(this->Verbose_ && Phi_.is_null()),"Coarse Basis is empty => The CoarseOperator will just act as the identity...");
+                FROSCH_WARNING("FROSch::CoarseOperator",(this->Verbose_ && !this->IsComputed_),"CoarseOperator has not been computed yet => The CoarseOperator will just act as the identity...");
                 i++;
             }
             y.update(ScalarTraits<SC>::one(),x,ScalarTraits<SC>::zero());
@@ -266,7 +252,7 @@ namespace FROSch {
             //------------------------------------------------------------------------------------------------------------------------
             // Communicate coarse matrix
             if (!DistributionList_->get("Type","linear").compare("linear")) {
-                XMatrixPtr tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
+                XMatrixPtr tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0]);
                 {
 #ifdef FROSCH_COARSEOPERATOR_DETAIL_TIMERS
                     FROSCH_TIMER_START_LEVELID(coarseMatrixExportTime,"Export Coarse Matrix");
@@ -277,7 +263,7 @@ namespace FROSch {
                 for (UN j=1; j<GatheringMaps_.size(); j++) {
                     tmpCoarseMatrix->fillComplete();
                     k0 = tmpCoarseMatrix;
-                    tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],k0->getGlobalMaxNumRowEntries());
+                    tmpCoarseMatrix = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j]);
                     {
 #ifdef FROSCH_COARSEOPERATOR_DETAIL_TIMERS
                         FROSCH_TIMER_START_LEVELID(coarseMatrixExportTime,"Export Coarse Matrix");
@@ -293,7 +279,7 @@ namespace FROSch {
                 CoarseSolveExporters_[0] = ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMapUnique(),GatheringMaps_[0]);
                 
                 if (NumProcsCoarseSolve_ < this->MpiComm_->getSize()) {
-                    XMatrixPtr k0Unique = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
+                    XMatrixPtr k0Unique = MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0]);
                     k0Unique->doExport(*k0,*CoarseSolveExporters_[0],INSERT);
                     k0Unique->fillComplete(GatheringMaps_[0],GatheringMaps_[0]);
                     
@@ -338,7 +324,7 @@ namespace FROSch {
                         }
                         elemsPerRow[i] = numEntries;
                     }
-                    CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,elemsPerRow,StaticProfile);
+                    CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,elemsPerRow);
                     for (LO i = 0; i < numRows; i++) {
                         GO globalRow = CoarseSolveMap_->getGlobalElement(i);
                         k0->getLocalRowView(i,indices,values);
@@ -368,7 +354,7 @@ namespace FROSch {
                         }
                         elemsPerRow[i] = numEntries;
                     }
-                    CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,elemsPerRow,StaticProfile);
+                    CoarseMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,elemsPerRow);
                     for (LO i = 0; i < numRows; i++) {
                         GO globalRow = CoarseSolveMap_->getGlobalElement(i);
                         k0->getGlobalRowView(globalRow,indices,values);
@@ -398,7 +384,7 @@ namespace FROSch {
                 CoarseSolver_->compute();
             }
         } else {
-            if (this->Verbose_) std::cout << "FROSch::CoarseOperator : WARNING: No coarse basis has been set up. Neglecting CoarseOperator." << std::endl;
+            FROSCH_WARNING("FROSch::CoarseOperator",this->Verbose_,"No coarse basis has been set up. Neglecting CoarseOperator.");
         }
         return 0;
     }

@@ -442,6 +442,9 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
     else if (type == "bar3" || type == "rod3" || type == "truss3") {
       type = "rod2d3";
     }
+    else if (type == "bar4" || type == "rod4" || type == "truss4") {
+      type = "rod2d4";
+    }
   }
 
   if (Ioss::Utils::substr_equal("super", type)) {
@@ -569,7 +572,7 @@ namespace {
 
   Ioss::Field get_next_field(char **names, int num_names, size_t count,
                              Ioss::Field::RoleType fld_role, const char suffix_separator,
-                             int *truth_table)
+                             const int *truth_table)
   {
     // NOTE: 'names' are all lowercase at this point.
 
@@ -1379,7 +1382,7 @@ namespace {
                          61, 51, 37, 40, 49, 18, 28, 20, 55, 30, 34, 11, 43, 14, 22, 4,
                          62, 57, 46, 52, 38, 26, 32, 41, 50, 36, 17, 19, 29, 10, 13, 21,
                          56, 45, 25, 31, 35, 16, 9,  12, 44, 24, 15, 8,  23, 7,  6,  5};
-}
+} // namespace
 
 int Ioss::Utils::log_power_2(uint64_t value)
 {
@@ -2500,7 +2503,6 @@ namespace {
 #endif
     default: return;
     }
-    return;
   }
 
   void transfer_qa_info(Ioss::Region &in, Ioss::Region &out)

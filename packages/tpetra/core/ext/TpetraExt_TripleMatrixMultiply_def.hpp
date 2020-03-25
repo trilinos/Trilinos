@@ -228,7 +228,7 @@ namespace Tpetra {
       RCP<const map_type> targetMap_P = Pprime->getRowMap();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP All I&X"))));
+      MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP All I&X"))));
 #endif
 
       // Now import any needed remote rows and populate the Aview struct
@@ -259,7 +259,7 @@ namespace Tpetra {
         Actemp = rcp(&Ac,false);// don't allow deallocation
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP All Multiply"))));
+      MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP All Multiply"))));
 #endif
 
       // Call the appropriate method to perform the actual multiplication.
@@ -303,7 +303,7 @@ namespace Tpetra {
 
       if (needs_final_export) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP exportAndFillComplete"))));
+        MM = Teuchos::null; MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP exportAndFillComplete"))));
 #endif
         Teuchos::ParameterList labelList;
         labelList.set("Timer Label", label);
@@ -492,7 +492,6 @@ namespace Tpetra {
       // Run through all the hash table lookups once and for all
       lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
       lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
-      Kokkos::fence();
       Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
           GO aidx = Acolmap_local.getGlobalElement(i);
           LO P_LID = Prowmap_local.getLocalElement(aidx);
@@ -505,6 +504,7 @@ namespace Tpetra {
             targetMapToImportRow(i) = I_LID;
           }
         });
+      Kokkos::fence();
 
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -606,6 +606,7 @@ namespace Tpetra {
 
           }
         });
+      Kokkos::fence();
 
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -771,6 +772,7 @@ namespace Tpetra {
             targetMapToImportRow(i) = I_LID;
           }
         });
+      Kokkos::fence();
 
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -870,6 +872,7 @@ namespace Tpetra {
 
           }
         });
+      Kokkos::fence();
 
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -1087,7 +1090,7 @@ namespace Tpetra {
       Kokkos::resize(Cvals,nnz);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort"))));
+      MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort"))));
 #endif
 
       // Final sort & set of CRS arrays
@@ -1096,7 +1099,7 @@ namespace Tpetra {
       Ac.setAllValues(Crowptr, Ccolind, Cvals);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC"))));
+     MM = Teuchos::null;  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC"))));
 #endif
 
       // Final FillComplete

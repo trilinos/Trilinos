@@ -125,25 +125,25 @@ int GetLongOption::parse(int argc, char *const *argv)
           matchStatus = ExactMatch;
           break;
         }
-        else {
-          /* partial match found */
-          if (pc == nullptr) {
-            matchStatus = PartialMatch;
-            pc          = t;
-          }
-          else {
-            // Multiple partial matches...Print warning
-            if (matchStatus == PartialMatch) {
-              // First time, print the message header and the first
-              // matched duplicate...
-              errmsg << "ERROR: " << pname << ": Multiple matches found for option '" << optmarker
-                     << strtok(token, "= ") << "'.\n";
-              errmsg << "\t" << optmarker << pc->option << ": " << pc->description << "\n";
-            }
-            errmsg << "\t" << optmarker << t->option << ": " << t->description << "\n";
-            matchStatus = MultipleMatch;
-          }
+
+        /* partial match found */
+        if (pc == nullptr) {
+          matchStatus = PartialMatch;
+          pc          = t;
         }
+        else {
+          // Multiple partial matches...Print warning
+          if (matchStatus == PartialMatch) {
+            // First time, print the message header and the first
+            // matched duplicate...
+            errmsg << "ERROR: " << pname << ": Multiple matches found for option '" << optmarker
+                   << strtok(token, "= ") << "'.\n";
+            errmsg << "\t" << optmarker << pc->option << ": " << pc->description << "\n";
+          }
+          errmsg << "\t" << optmarker << t->option << ": " << t->description << "\n";
+          matchStatus = MultipleMatch;
+        }
+
       } /* end if */
     }   /* end for */
 
@@ -211,11 +211,11 @@ int GetLongOption::parse(char *const str, char *const p)
           matchStatus = ExactMatch;
           break;
         }
-        else {
-          /* partial match found */
-          matchStatus = PartialMatch;
-          pc          = t;
-        }
+
+        /* partial match found */
+        matchStatus = PartialMatch;
+        pc          = t;
+
       } /* end if */
     }   /* end for */
 

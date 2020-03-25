@@ -780,10 +780,12 @@ int cpy_coord_val(int in_id, int out_id, char *var_nm, int in_large)
   EXCHECKI(nc_inq_varid(in_id, VAR_COORD, &var_in_id));
 
   EXCHECKI(nc_inq_varid(out_id, VAR_COORD_X, &var_out_id[0]));
-  if (spatial_dim > 1)
+  if (spatial_dim > 1) {
     EXCHECKI(nc_inq_varid(out_id, VAR_COORD_Y, &var_out_id[1]));
-  if (spatial_dim > 2)
+  }
+  if (spatial_dim > 2) {
     EXCHECKI(nc_inq_varid(out_id, VAR_COORD_Z, &var_out_id[2]));
+  }
 
   EXCHECKI(nc_inq_vartype(in_id, var_in_id, &var_type_in));
   EXCHECKI(nc_inq_vartype(out_id, var_out_id[0], &var_type_out));
@@ -860,7 +862,7 @@ size_t type_size(nc_type type)
   if (type == NC_FLOAT) {
     return sizeof(float); /* OK */
   }
-  else if (type == NC_DOUBLE) {
+  if (type == NC_DOUBLE) {
     return sizeof(double); /* OK */
   }
   else {

@@ -95,7 +95,7 @@ cmake \
       -D CMAKE_SKIP_RULE_DEPENDENCY=ON \
       -D CMAKE_BUILD_TYPE:STRING=DEBUG \
       -D Trilinos_ENABLE_OpenMP:BOOL=ON \
-      -D Kokkos_ENABLE_OpenMP:BOOL=ON \
+      -D Kokkos_ENABLE_OPENMP:BOOL=ON \
       -D Kokkos_ENABLE_Serial:BOOL=ON \
        ../Trilinos
 

@@ -40,9 +40,9 @@ namespace {
      for the potential portability problems with the union and bit-fields below.
   */
   union Float_t {
-    explicit Float_t(float num = 0.0f) : f(num) {}
+    explicit Float_t(float num = 0.0F) : f(num) {}
     // Portable extraction of components.
-    bool Negative() const { return ((uint32_t)i >> 31) != 0; }
+    bool Negative() const { return (static_cast<uint32_t>(i) >> 31) != 0; }
 
     int32_t i;
     float   f;
@@ -51,7 +51,7 @@ namespace {
   union Double_t {
     explicit Double_t(double num = 0.0) : f(num) {}
     // Portable extraction of components.
-    bool Negative() const { return ((uint64_t)i >> 63) != 0; }
+    bool Negative() const { return (static_cast<uint64_t>(i) >> 63) != 0; }
 
     int64_t i;
     double  f;
@@ -139,10 +139,10 @@ bool Tolerance::Diff(double v1, double v2) const
   if (type == ULPS_FLOAT_) {
     return !AlmostEqualUlpsFloat(v1, v2, static_cast<int>(value));
   }
-  else if (type == ULPS_DOUBLE_) {
+  if (type == ULPS_DOUBLE_) {
     return !AlmostEqualUlpsDouble(v1, v2, static_cast<int>(value));
   }
-  else if (type == EIGEN_REL_) {
+  if (type == EIGEN_REL_) {
     if (v1 == 0.0 && v2 == 0.0) {
       return false;
     }
@@ -176,10 +176,10 @@ const char *Tolerance::typestr() const
   if (type == ABSOLUTE_) {
     return "absolute";
   }
-  else if (type == COMBINED_) {
+  if (type == COMBINED_) {
     return "combined";
   }
-  else if (type == ULPS_FLOAT_) {
+  if (type == ULPS_FLOAT_) {
     return "ulps_float";
   }
   else if (type == ULPS_DOUBLE_) {
@@ -207,10 +207,10 @@ const char *Tolerance::abrstr() const
   if (type == ABSOLUTE_) {
     return "abs";
   }
-  else if (type == COMBINED_) {
+  if (type == COMBINED_) {
     return "com";
   }
-  else if (type == ULPS_FLOAT_) {
+  if (type == ULPS_FLOAT_) {
     return "upf";
   }
   else if (type == ULPS_DOUBLE_) {

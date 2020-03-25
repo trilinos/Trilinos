@@ -208,7 +208,32 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   TEST_EQUALITY(options.print_names_before_values,true);
   out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
   options.print_names_before_values = false;
-  timer.report(out, comm, options);
+  // Make sure neither report() nor reportXML() have side effects that change the output:
+  // calling them any number of times with no new starts/stops and the same OutputOptions
+  // should produce identical output.
+  //
+  // This is very important as performance tests will
+  // typically call both report() and reportWatchrXML().
+  std::string reportOut;
+  {
+    std::ostringstream reportOut1;
+    timer.report(reportOut1, comm, options);
+    std::ostringstream reportOut2;
+    timer.report(reportOut2, comm, options);
+    reportOut = reportOut1.str();
+    TEST_EQUALITY(reportOut, reportOut2.str());
+  }
+  std::string reportXmlOut;
+  {
+    std::ostringstream reportOut1;
+    timer.reportXML(reportOut1, "2020_01_01", "2020-01-01T01:02:03", comm);
+    std::ostringstream reportOut2;
+    timer.reportXML(reportOut2, "2020_01_01", "2020-01-01T01:02:03", comm);
+    reportXmlOut = reportOut1.str();
+    TEST_EQUALITY(reportXmlOut, reportOut2.str());
+  }
+  out << reportOut << '\n';
+  out << reportXmlOut << '\n';
 }
 
 TEUCHOS_UNIT_TEST(StackedTimer, UnitTestSupport)

@@ -87,7 +87,7 @@ namespace {
     double            minimum_time{};
     double            offset_time{};
     double            offset_pressure{};
-    std::string       working_directory;
+    std::string       working_directory{};
   };
 
   void show_usage(const std::string &prog, bool add_sset);

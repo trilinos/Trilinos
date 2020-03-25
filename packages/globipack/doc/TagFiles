@@ -1,3 +1,0 @@
-@INCLUDE=teuchos/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/globipack.tag=$(TRILINOS_HOME)/packages/globipack/doc/html

@@ -76,8 +76,8 @@ protected:
     {
         setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
-        std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
-                                0,2,HEX_8,9,10,11,12,13,14,15,16";
+        std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
+                               "0,2,HEX_8,9,10,11,12,13,14,15,16";
         double eps = 0.1;
         std::vector<double> coordinates {
             0,0,0,
@@ -98,7 +98,7 @@ protected:
             1,eps+2,1,
             0,eps+2,1,
         };
-        stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, get_bulk());
+        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
     }
 
     unsigned get_num_search_results_with_app_settings(const stk::balance::GraphCreationSettings &balanceSettings)

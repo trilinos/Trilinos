@@ -66,6 +66,21 @@ PHX_EXTENT(Ordinal6)
 PHX_EXTENT(Ordinal7)
 PHX_EXTENT(Ordinal8)
 
+namespace PHX {
+  template<> std::string print<Spatial>(){return "Spatial";}
+  template<> std::string print<Quadrature>(){return "Quadrature";}
+  template<> std::string print<Node>(){return "Node";}
+  template<> std::string print<Cell>(){return "Cell";}
+  template<> std::string print<Ordinal1>(){return "Ordinal1";}
+  template<> std::string print<Ordinal2>(){return "Ordinal2";}
+  template<> std::string print<Ordinal3>(){return "Ordinal3";}
+  template<> std::string print<Ordinal4>(){return "Ordinal4";}
+  template<> std::string print<Ordinal5>(){return "Ordinal5";}
+  template<> std::string print<Ordinal6>(){return "Ordinal6";}
+  template<> std::string print<Ordinal7>(){return "Ordinal7";}
+  template<> std::string print<Ordinal8>(){return "Ordinal8";}
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 TEUCHOS_UNIT_TEST(DataLayout, basic)

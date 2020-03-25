@@ -66,7 +66,7 @@ SET(BUILD_DIR_NAME MPI_OPT_SHARED)
 SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos Zoltan STK Mesquite Claps FEI Phdmesh NOX Piro Sundance)
+SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos Zoltan STK FEI NOX Piro Sundance)
 
 #Disabling STK below also so it is not turned on by TrilinosCouplings
 SET( EXTRA_CONFIGURE_OPTIONS

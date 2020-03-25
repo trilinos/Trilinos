@@ -237,9 +237,7 @@ void test_matrix(const int maxRegPerProc,
   // to composite format so it can be compared
   // with the original composite B vector.
   RCP<Vector> compB = VectorFactory::Build(A->getRowMap());
-  regionalToComposite(regB, compB,
-                      rowImportPerGrp,
-                      Xpetra::ADD);
+  regionalToComposite(regB, compB, rowImportPerGrp);
 
   // Extract the data from B and compB to compare it
   ArrayRCP<const SC> dataB     = B->getData(0);
@@ -257,7 +255,7 @@ void test_matrix(const int maxRegPerProc,
   /*           calculation            */
   /*                                  */
   /************************************/
-  RCP<Matrix> compositeMatrix = MatrixFactory::Build(A->getRowMap(), 10, Xpetra::StaticProfile);
+  RCP<Matrix> compositeMatrix = MatrixFactory::Build(A->getRowMap(), 10);
   // Transform region A into composite A.
   regionalToComposite(regionGrpMats,
                       rowMapPerGrp, colMapPerGrp,
@@ -536,7 +534,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
                      rowImportPerGrp, colImportPerGrp, regionGrpMats);
 
   // Finally do the revert operation: start with regionGrpMats and bring it to composite format
-  RCP<Matrix> compositeMatrix = MatrixFactory::Build(dofMap, 10, Xpetra::StaticProfile);
+  RCP<Matrix> compositeMatrix = MatrixFactory::Build(dofMap, 10);
   regionalToComposite(regionGrpMats,
                       rowMapPerGrp, colMapPerGrp,
                       rowImportPerGrp, Xpetra::INSERT,
@@ -663,9 +661,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, MatVec, Scalar, LocalOrdinal, Gl
   // Now create composite B using region B so we can compare
   // composite B with the original B
   RCP<Vector> compB = VectorFactory::Build(dofMap);
-  regionalToComposite(regB, compB,
-                      rowImportPerGrp,
-                      Xpetra::ADD);
+  regionalToComposite(regB, compB, rowImportPerGrp);
 
   // Extract the data from B and compB to compare it
   ArrayRCP<const SC> dataB     = B->getData(0);

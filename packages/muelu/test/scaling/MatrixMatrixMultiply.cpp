@@ -209,6 +209,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     options.print_warnings = false;
     timer->report(std::cout, comm, options);
 
+    auto xmlOut = timer->reportWatchrXML(std::string("MueLu_MatrixMatrix") + std::to_string(comm->getSize()), comm);
+    if(xmlOut.length())
+      std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
+
     if (comm->getRank() == 0)
       std::cout << "End Result: TEST PASSED";
 
@@ -285,7 +289,7 @@ namespace MueLuTests {
     LO realMaxEntriesPerRow = maxEntriesPerRow;
     if (maxEntriesPerRow > numGlobalRows)
       realMaxEntriesPerRow = numGlobalRows;
-    RCP<Matrix> A = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, eprData, Xpetra::StaticProfile));
+    RCP<Matrix> A = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, eprData));
 
     Array<Scalar> vals(realMaxEntriesPerRow);
     //stick in ones for values

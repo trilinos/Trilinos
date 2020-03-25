@@ -44,7 +44,7 @@
 
 namespace Ioss {
   class PropertyManager;
-}
+} // namespace Ioss
 
 #if defined(SEACAS_HAVE_MPI)
 namespace {

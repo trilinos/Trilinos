@@ -152,8 +152,8 @@ namespace tsl {
       using distance_type = std::int_least16_t;
 
       bucket_entry() noexcept
-          : bucket_hash(), m_dist_from_ideal_bucket(EMPTY_MARKER_DIST_FROM_IDEAL_BUCKET),
-            m_last_bucket(false)
+          : bucket_hash(), m_dist_from_ideal_bucket(EMPTY_MARKER_DIST_FROM_IDEAL_BUCKET)
+
       {
         tsl_rh_assert(empty());
       }
@@ -297,7 +297,7 @@ namespace tsl {
       static const distance_type EMPTY_MARKER_DIST_FROM_IDEAL_BUCKET = -1;
 
       distance_type m_dist_from_ideal_bucket;
-      bool          m_last_bucket;
+      bool          m_last_bucket{false};
       storage       m_value;
     };
 
@@ -383,7 +383,7 @@ namespace tsl {
         if (STORE_HASH && sizeof(std::size_t) == sizeof(truncated_hash_type)) {
           return true;
         }
-        else if (STORE_HASH && is_power_of_two_policy<GrowthPolicy>::value) {
+        if (STORE_HASH && is_power_of_two_policy<GrowthPolicy>::value) {
           tsl_rh_assert(my_bucket_count > 0);
           return (my_bucket_count - 1) <= std::numeric_limits<truncated_hash_type>::max();
         }
@@ -428,7 +428,7 @@ namespace tsl {
         using reference         = value_type &;
         using pointer           = value_type *;
 
-        robin_iterator() noexcept {}
+        robin_iterator() noexcept = default;
 
         // Copy constructor from iterator to const_iterator.
         template <bool TIsConst = IsConst, typename std::enable_if<TIsConst>::type * = nullptr>
@@ -857,9 +857,8 @@ namespace tsl {
 
           return 1;
         }
-        else {
-          return 0;
-        }
+
+        return 0;
       }
 
       void swap(robin_hash &other)

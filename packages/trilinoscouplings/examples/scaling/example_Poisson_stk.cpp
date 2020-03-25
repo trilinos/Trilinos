@@ -319,8 +319,7 @@ void mesh_read_write(const std::string &type,
 int main(int argc, char *argv[]) {
 
   using Teuchos::RCP;
-  typedef stk::mesh::Entity entity_type;
-  typedef stk::mesh::Selector selector_type;
+  using entity_type = stk::mesh::Entity;
 
   const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
   const stk::mesh::EntityRank ELEMENT_RANK = stk::topology::ELEMENT_RANK;
@@ -523,7 +522,7 @@ int main(int argc, char *argv[]) {
   stk::mesh::Part* const part = metaData.get_part("block_1");
 
   // get the topology of this part
-  ShardsCellTopology cellType = metaData.get_cell_topology( *part );
+  ShardsCellTopology cellType = stk::mesh::get_cell_topology(metaData.get_topology( *part ));
 
   // Get dimensions
   int numNodesPerElem = cellType.getNodeCount();

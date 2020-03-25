@@ -34,15 +34,12 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
-#ifndef __Epetra_TsqrAdaptor_hpp
-#define __Epetra_TsqrAdaptor_hpp
+#ifndef EPETRA_TSQRADAPTOR_HPP
+#define EPETRA_TSQRADAPTOR_HPP
 
-///
 /// \file Epetra_TsqrAdaptor.hpp
 /// \brief Epetra_MultiVector to TSQR adaptor
 ///
@@ -54,24 +51,21 @@
 /// Trilinos to get the correct list of libraries against which to
 /// link, but we make this easy temporary fix now so they have time to
 /// fix their build systems later.
-///
 
-#include <Tpetra_ConfigDefs.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 
 #if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
-#include <Kokkos_DefaultNode.hpp> // Include minimal Kokkos Node types
-#include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#include <Tsqr.hpp> // full (internode + intranode) TSQR
-#include <Tsqr_DistTsqr.hpp> // internode TSQR
-#include <Epetra_Comm.h>
+#include "Tsqr_NodeTsqrFactory.hpp" // create intranode TSQR object
+#include "Tsqr.hpp" // full (internode + intranode) TSQR
+#include "Tsqr_DistTsqr.hpp" // internode TSQR
+#include "Epetra_Comm.h"
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#include <Epetra_TsqrMessenger.hpp>
-#include <Epetra_MultiVector.h>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#include "Epetra_TsqrMessenger.hpp"
+#include "Epetra_MultiVector.h"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include <stdexcept>
-
 
 namespace Epetra {
 
@@ -119,11 +113,14 @@ namespace Epetra {
     /// both are int.
     typedef int ordinal_type;
 
-    /// \typedef node_type
+    /// \typedef device_type
     ///
-    /// TSQR depends on a Kokkos Node type.  We just use the default
-    /// Node type here.
-    typedef Tpetra::Details::DefaultTypes::node_type node_type;
+    /// TSQR depends on a Kokkos::Device type.  For Epetra, use a
+    /// host-only type.  Typical types are Kokkos::Serial or
+    /// Kokkos::OpenMP, depending on build settings.
+    using device_type =
+      Kokkos::Device<Kokkos::DefaultHostExecutionSpace,
+                     Kokkos::HostSpace>;
 
     /// \typedef dense_matrix_type
     ///
@@ -133,23 +130,25 @@ namespace Epetra {
     /// \note TSQR lives in the Kokkos package, which requires the
     ///   Teuchos package, so it's acceptable for us to require
     ///   Teuchos components.
-    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
+    using dense_matrix_type =
+      Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>;
 
     /// \typedef magnitude_type
     ///
     /// Epetra_MultiVector's "Scalar" type is real.  TSQR supports
     /// complex arithmetic as well, in which magnitude_type would
     /// differ from scalar_type.
-    typedef double magnitude_type;
+    using magnitude_type = double;
 
   private:
-    typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
-    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
+    using matview_type = TSQR::MatView<ordinal_type, scalar_type>;
+    using node_tsqr_factory_type =
+      TSQR::NodeTsqrFactory<scalar_type, ordinal_type, device_type>;
     // Don't need a "typename" here, because there are no template
     // parameters involved in the type definition.
-    typedef node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-    typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
+    using node_tsqr_type = TSQR::NodeTsqr<ordinal_type, scalar_type>;
+    using dist_tsqr_type = TSQR::DistTsqr<ordinal_type, scalar_type>;
+    using tsqr_type = TSQR::Tsqr<ordinal_type, scalar_type>;
 
   public:
     /// \brief Constructor (that accepts a parameter list).
@@ -159,7 +158,7 @@ namespace Epetra {
     ///   implementation.  For details, call \c getValidParameters()
     ///   and examine the documentation embedded therein.
     TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-      nodeTsqr_ (new node_tsqr_type),
+      nodeTsqr_ (node_tsqr_factory_type::getNodeTsqr ()),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
       ready_ (false)
@@ -169,7 +168,7 @@ namespace Epetra {
 
     //! Constructor (that uses default parameters).
     TsqrAdaptor () :
-      nodeTsqr_ (new node_tsqr_type),
+      nodeTsqr_ (node_tsqr_factory_type::getNodeTsqr ()),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
       ready_ (false)
@@ -341,26 +340,11 @@ namespace Epetra {
     {
       if (! ready_) {
         prepareDistTsqr (mv);
-        prepareNodeTsqr (mv);
         ready_ = true;
       }
     }
 
-    /// \brief Finish intranode TSQR initialization.
-    ///
-    /// \note It's OK to call this method more than once; it is idempotent.
-    void
-    prepareNodeTsqr (const MV& mv)
-    {
-      (void) mv; // Epetra objects don't have a Kokkos Node.
-
-      // Create Node with empty ParameterList.
-      Teuchos::ParameterList plist;
-      Teuchos::RCP<node_type> node (new node_type (plist));
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, node);
-    }
-
-    /// \brief Finish internode TSQR initialization.
+    /// \brief Finish interprocess TSQR initialization.
     ///
     /// \param mv [in] A multivector, from which to extract the
     ///   Epetra_Comm communicator wrapper to use to initialize TSQR.
@@ -387,5 +371,5 @@ namespace Epetra {
 
 #endif // defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
-#endif // __Epetra_TsqrAdaptor_hpp
+#endif // EPETRA_TSQRADAPTOR_HPP
 

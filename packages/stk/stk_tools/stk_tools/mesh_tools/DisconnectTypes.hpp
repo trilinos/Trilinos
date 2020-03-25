@@ -36,13 +36,67 @@
 
 #include <utility>
 #include <vector>
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace tools {
 
-using BlockPair = std::pair<stk::mesh::Part*, stk::mesh::Part*>;
+struct BlockPairIdGetter {
+
+  unsigned operator()(const stk::mesh::Part* part) {
+    ThrowRequire(part != nullptr);
+    return part->mesh_meta_data_ordinal();
+  }
+};
+
+struct BlockPair {
+  typedef stk::mesh::Part* UNIT;
+
+  BlockPair() : first(nullptr), second(nullptr) { }
+
+  BlockPair(stk::mesh::Part* first_, stk::mesh::Part* second_)
+    : first(first_), second(second_)
+  { }
+
+  BlockPair(const BlockPair& rhs)
+  {
+    first = rhs.first;
+    second = rhs.second;
+  }
+
+  bool operator!=(const BlockPair& rhs) const
+  {
+    return first->mesh_meta_data_ordinal() != rhs.first->mesh_meta_data_ordinal() ||
+           second->mesh_meta_data_ordinal() != rhs.second->mesh_meta_data_ordinal();
+  }
+
+  bool operator==(const BlockPair& rhs) const
+  {
+    return first->mesh_meta_data_ordinal() == rhs.first->mesh_meta_data_ordinal() &&
+           second->mesh_meta_data_ordinal() == rhs.second->mesh_meta_data_ordinal();
+  }
+
+  bool operator<(const BlockPair& rhs) const
+  {
+    if(first->mesh_meta_data_ordinal() < rhs.first->mesh_meta_data_ordinal()) {
+      return true;
+    }
+    else if(first->mesh_meta_data_ordinal() == rhs.first->mesh_meta_data_ordinal()) {
+      return second->mesh_meta_data_ordinal() < rhs.second->mesh_meta_data_ordinal();
+    }
+    return false;
+  }
+
+  const stk::mesh::Part* get_first() const { return first; }
+  const stk::mesh::Part* get_second() const { return second; }
+  bool is_adjacent() const { return true; }
+
+  stk::mesh::Part* first;
+  stk::mesh::Part* second;
+};
+
 using BlockPairVector = std::vector<BlockPair>;
 using BlockNamePair = std::pair<std::string, std::string>;
 using BlockNamePairVector = std::vector<BlockNamePair>;

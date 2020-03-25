@@ -113,8 +113,9 @@ const char *normalize(const char *arg)
   const char * argptr = arg;
   char *       bufptr;
 
-  if (BUFFER != NULL)
+  if (BUFFER != NULL) {
     free(BUFFER);
+  }
 
   if (!quote) { /* Just copy arg */
     BUFFER = our_malloc(strlen(arg) + 1);
@@ -159,9 +160,10 @@ const char *normalize(const char *arg)
       *bufptr++ = *argptr;
       *bufptr++ = '\'';
     }
-    else
+    else {
       /* Just copy */
       *bufptr++ = *argptr;
+    }
     argptr++;
   }
   *bufptr++ = '\'';
@@ -183,34 +185,41 @@ int generate_output(char *argv[], int argc, const char *optstr, const struct opt
   int         longindex;
   const char *charptr;
 
-  if (quiet_errors) /* No error reporting from getopt(3) */
+  if (quiet_errors) { /* No error reporting from getopt(3) */
     opterr = 0;
+  }
   optind = 0; /* Reset getopt(3) */
 
   while ((opt = (alternative ? getopt_long_only(argc, argv, optstr, longopts, &longindex)
-                             : getopt_long(argc, argv, optstr, longopts, &longindex))) != EOF)
-    if (opt == '?' || opt == ':')
+                             : getopt_long(argc, argv, optstr, longopts, &longindex))) != EOF) {
+    if (opt == '?' || opt == ':') {
       exit_code = 1;
+    }
     else if (!quiet_output) {
       if (opt == LONG_OPT) {
         printf(" --%s", longopts[longindex].name);
-        if (longopts[longindex].has_arg)
+        if (longopts[longindex].has_arg) {
           printf(" %s", normalize(optarg ? optarg : ""));
+        }
       }
-      else if (opt == NON_OPT)
+      else if (opt == NON_OPT) {
         printf(" %s", normalize(optarg ? optarg : ""));
+      }
       else {
         printf(" -%c", opt);
         charptr = strchr(optstr, opt);
-        if (charptr != NULL && *++charptr == ':')
+        if (charptr != NULL && *++charptr == ':') {
           printf(" %s", normalize(optarg ? optarg : ""));
+        }
       }
     }
+  }
 
   if (!quiet_output) {
     printf(" --");
-    while (optind < argc)
+    while (optind < argc) {
       printf(" %s", normalize(argv[optind++]));
+    }
     printf("\n");
   }
   return exit_code;
@@ -223,8 +232,9 @@ int generate_output(char *argv[], int argc, const char *optstr, const struct opt
  */
 void parse_error(const char *message)
 {
-  if (message)
+  if (message) {
     fprintf(stderr, "getopt: %s\n", message);
+  }
   fputs("Try `getopt --help' for more information.\n", stderr);
   exit(2);
 }
@@ -288,9 +298,10 @@ void add_long_options(char *options)
           tokptr[strlen(tokptr) - 1] = '\0';
           arg_opt                    = required_argument;
         }
-        if (strlen(tokptr) == 0)
+        if (strlen(tokptr) == 0) {
           parse_error("empty long option after "
                       "-l or --long argument");
+        }
       }
       add_longopt(tokptr, arg_opt);
     }
@@ -300,16 +311,21 @@ void add_long_options(char *options)
 
 void set_shell(const char *new_shell)
 {
-  if (!strcmp(new_shell, "bash"))
+  if (!strcmp(new_shell, "bash")) {
     shell = BASH;
-  else if (!strcmp(new_shell, "tcsh"))
+  }
+  else if (!strcmp(new_shell, "tcsh")) {
     shell = TCSH;
-  else if (!strcmp(new_shell, "sh"))
+  }
+  else if (!strcmp(new_shell, "sh")) {
     shell = BASH;
-  else if (!strcmp(new_shell, "csh"))
+  }
+  else if (!strcmp(new_shell, "csh")) {
     shell = TCSH;
-  else
+  }
+  else {
     parse_error("unknown shell after -s or --shell argument");
+  }
 }
 
 void print_help(void)
@@ -360,8 +376,9 @@ int main(int argc, char *argv[])
 
   init_longopt();
 
-  if (getenv("GETOPT_COMPATIBLE"))
+  if (getenv("GETOPT_COMPATIBLE")) {
     compatible = 1;
+  }
 
   if (argc == 1) {
     if (compatible) {
@@ -370,8 +387,9 @@ int main(int argc, char *argv[])
       printf(" --\n");
       exit(0);
     }
-    else
+    else {
       parse_error("missing optstring argument");
+    }
   }
 
   if (argv[1][0] != '-' || compatible) {
@@ -382,20 +400,22 @@ int main(int argc, char *argv[])
     exit(generate_output(argv + 1, argc - 1, optstr, long_options));
   }
 
-  while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF)
+  while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
     switch (opt) {
     case 'a': alternative = 1; break;
     case 'h': print_help(); exit(0);
     case 'o':
-      if (optstr)
+      if (optstr) {
         free(optstr);
+      }
       optstr = our_malloc(strlen(optarg ? optarg : "") + 1);
       strcpy(optstr, optarg ? optarg : "");
       break;
     case 'l': add_long_options(optarg ? optarg : ""); break;
     case 'n':
-      if (name)
+      if (name) {
         free(name);
+      }
       name = our_malloc(strlen(optarg ? optarg : "") + 1);
       strcpy(name, optarg ? optarg : "");
       break;
@@ -409,19 +429,23 @@ int main(int argc, char *argv[])
     case ':': parse_error(NULL); /* fall through */ /* exits */
     default: parse_error("internal error, contact the author.");
     }
+  }
 
   if (!optstr) {
-    if (optind >= argc)
+    if (optind >= argc) {
       parse_error("missing optstring argument");
+    }
     else {
       optstr = our_malloc(strlen(argv[optind]) + 1);
       strcpy(optstr, argv[optind]);
       optind++;
     }
   }
-  if (name)
+  if (name) {
     argv[optind - 1] = name;
-  else
+  }
+  else {
     argv[optind - 1] = argv[0];
+  }
   exit(generate_output(argv + optind - 1, argc - optind + 1, optstr, long_options));
 }

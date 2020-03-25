@@ -37,7 +37,7 @@
 #define yylex SEAMSlex
 
 // First part of user prologue.
-#line 33 "aprepro.yy"
+#line 33 "/scratch/gdsjaar/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
 
 #include "apr_array.h"
 #include "apr_util.h"
@@ -120,7 +120,7 @@ namespace SEAMS {
 #define YY_SYMBOL_PRINT(Title, Symbol)                                                             \
   do {                                                                                             \
     if (yydebug_) {                                                                                \
-      *yycdebug_ << Title << ' ';                                                                  \
+      *yycdebug_ << Title << ' ';                                                                \
       yy_print_(*yycdebug_, Symbol);                                                               \
       *yycdebug_ << '\n';                                                                          \
     }                                                                                              \
@@ -731,7 +731,7 @@ namespace SEAMS {
           case 28:
 #line 187 "aprepro.yy"
           {
-            (yylhs.value.arrval) = (yystack_[0].value.tptr)->value.avar;
+            (yylhs.value.arrval) = new array(*((yystack_[0].value.tptr)->value.avar));
           }
 #line 791 "apr_parser.cc"
           break;

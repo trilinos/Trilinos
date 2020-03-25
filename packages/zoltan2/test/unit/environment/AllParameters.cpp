@@ -68,7 +68,7 @@ static string fnParams[NUMFN][3]={
 
 // Value is a particular string
 #ifdef HAVE_ZOLTAN2_PULP
-#define NUMSTR 37
+#define NUMSTR 38
 #else
 #define NUMSTR 35
 #endif
@@ -101,6 +101,7 @@ static string strParams[NUMSTR][3]={
 #ifdef HAVE_ZOLTAN2_PULP
   {"pulp_vert_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
   {"pulp_edge_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+  {"pulp_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
 #endif // HAVE_ZOLTAN2_PULP
   {"scotch_imbalance_ratio", "1.1", "invalid_option"},         // AnyNumberParameterEntryValidator
   {"compute_metrics", "false", "invalid_bool_setting"},        // BoolParameterEntryValidator - accepts true/false/"true"/"false"

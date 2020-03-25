@@ -174,7 +174,7 @@ double MeshField::restore_field_data_at_step(Ioss::Region *region,
       // selector of the stk part.
       bool subsetted = rank == stk::topology::NODE_RANK &&
         io_entity->type() == Ioss::NODEBLOCK &&
-        *stk_part != mesh::MetaData::get(bulk).universal_part();
+        *stk_part != bulk.mesh_meta_data().universal_part();
 
       size_t state_count = m_field->number_of_states();
       stk::mesh::FieldState state = m_field->state();

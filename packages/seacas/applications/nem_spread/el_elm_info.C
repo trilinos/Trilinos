@@ -568,7 +568,7 @@ int elem_info(int info, int ielem_type, int supp)
 /*****************************************************************************/
 /*****************************************************************************/
 
-int get_type(char string[], int nodes, int num_dim)
+int get_type(const char string[], int nodes, int num_dim)
 
 /*
  * Function which returns the element type according to this analysis code

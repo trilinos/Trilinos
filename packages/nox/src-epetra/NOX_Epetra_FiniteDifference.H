@@ -80,19 +80,30 @@ namespace Epetra {
 
   /*! \brief Concrete implementation for creating an Epetra_RowMatrix Jacobian via finite differencing of the residual.
 
-The Jacobian entries are calculated via 1st order finite differencing.  This requires \f$ N  + 1 \f$ calls to computeF() where \f$ N \f$ is the number of unknowns in the problem.
+The Jacobian entries are calculated via 1st order finite differencing.
+This requires \f$ N + 1 \f$ calls to computeF() where \f$ N \f$ is the
+number of unknowns in the problem.
 
   \f[ J_{ij} = \frac{\partial F_i}{\partial x_j} = \frac{F_i(x+\delta\mathbf{e}_j) - F_i(x)}{\delta}  \f]
 
-where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is the solution vector, and \f$\delta\f$ is a small perturbation to the \f$x_j\f$ entry.
+where \f$ J\f$ is the Jacobian, \f$ F\f$ is the function evaluation,
+\f$ x\f$ is the solution vector, and \f$\delta\f$ is a small
+perturbation to the \f$ x_j\f$ entry.
 
-The perturbation, \f$ \delta \f$, is calculated based on one of the following equations:
+The perturbation, \f$ \delta \f$, is calculated based on one of the
+following equations:
 
 \f[ \delta = \alpha * | x_j | + \beta \f]
 \f[ \delta = \alpha * | x_j | + \beta_j \f]
 
-where \f$ \alpha \f$ is a scalar value (defaults to 1.0e-4) and \f$ \beta \f$ can be either a scalar or a vector (defaults to a scalar value of 1.0e-6).  The choice is defined by the type of constructor used.  All parameters are supplied in the constructor.
-In addition to the forward difference derivative approximation, backward or centered differences can be used via the setDifferenceMethod function.  Note that centered difference provides second order spatial accuracy but at the cost of twice as many function evaluations.
+where \f$ \alpha \f$ is a scalar value (defaults to 1.0e-4) and \f$
+\beta \f$ can be either a scalar or a vector (defaults to a scalar
+value of 1.0e-6).  The choice is defined by the type of constructor
+used.  All parameters are supplied in the constructor.  In addition to
+the forward difference derivative approximation, backward or centered
+differences can be used via the setDifferenceMethod function.  Note
+that centered difference provides second order spatial accuracy but at
+the cost of twice as many function evaluations.
 
   Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is very inefficient when computing the Jacobian and is not recommended for large-scale systems but only for debugging purposes.
   */
@@ -328,7 +339,8 @@ protected:
   //! Vector for the perturbation calculation.
   Teuchos::RCP<const Epetra_Vector> betaVector;
 
-  //! Define types for the \f$ \beta \f$ parameter during the computation of the perturbation parameter \f$ \delta\f$.
+  //! Define types for the \f$ \beta \f$ parameter during the
+  //! computation of the perturbation parameter \f$ \delta\f$.
   enum BetaType {Scalar, Vector};
 
   //! Flag that sets whether \f$ \beta \f$ is a scalar or a vector.

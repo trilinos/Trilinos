@@ -137,6 +137,9 @@ public:
     m_productName = product_name;
   }
 
+  const ProductMap& productMap() const { return m_productMap; }
+        ProductMap& productMap()       { return m_productMap; }
+
   ProductMap::const_iterator productMap_begin() const {
       return m_productMap.begin();
   }

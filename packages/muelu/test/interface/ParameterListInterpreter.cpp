@@ -47,6 +47,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <algorithm>
+#include <cstdio>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -101,9 +102,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     useKokkos = true;
   }
 #endif
+  bool compareWithGold = true;
+#ifdef KOKKOS_ENABLE_CUDA
+  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    // Behavior of some algorithms on Cuda is non-deterministic, so we won't check the output.
+    compareWithGold = false;
+#endif
   clp.setOption("kokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
   clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
+  clp.setOption("compareWithGold", "skipCompareWithGold", &compareWithGold, "compare runs against gold files");
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -124,21 +132,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string prefix;
   if (useKokkos) {
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
-      prefix = "kokkos-complex/";
-    } else {
-      prefix = "kokkos/";
-    }
+    prefix = "kokkos/";
 #else
     std::cout << "No kokkos refactor available." << std::endl;
     return EXIT_FAILURE;
 #endif
   } else {
-    if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
-      prefix = "complex/";
-    } else {
-      prefix = "default/";
-    }
+    prefix = "default/";
   }
   std::string outDir = prefix+"Output/";
 
@@ -210,7 +210,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         continue;
 #endif
       }
-      std::cout << "Testing: "<< xmlFile << std::endl;
+      if (myRank == 0)
+        std::cout << "Testing: "<< xmlFile << std::endl;
 
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
@@ -221,13 +222,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         continue;
       }
 
-      std::filebuf    buffer;
+      std::stringbuf buffer;
       std::streambuf* oldbuffer = NULL;
-      if (myRank == 0) {
-        // Redirect output
-        buffer.open((baseFile + ".out").c_str(), std::ios::out);
-        oldbuffer = std::cout.rdbuf(&buffer);
-      }
+      //   // Redirect output
+      oldbuffer = std::cout.rdbuf(&buffer);
 
       // NOTE: we cannot use ParameterListInterpreter(xmlFile, comm), because we want to update the ParameterList
       // first to include "test" verbosity
@@ -295,17 +293,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         timer.stop();
+
       } catch (Teuchos::ExceptionBase& e) {
         std::string msg = e.what();
         msg = msg.substr(msg.find_last_of('\n')+1);
 
-        if (myRank == 0) {
+        if (myRank == 0)
           std::cout << "Caught exception: " << msg << std::endl;
-
-          // Redirect output back
-          std::cout.rdbuf(oldbuffer);
-          buffer.close();
-        }
 
         if (msg == "Zoltan interface is not available" ||
             msg == "Zoltan2 interface is not available" ||
@@ -318,12 +312,30 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
 
+      // Redirect output back
+      std::cout.rdbuf(oldbuffer);
+#ifdef HAVE_MPI
+      std::string logStr = buffer.str();
+      if (myRank == 0)
+        remove((baseFile + ".out").c_str());
+      RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm)->getRawMpiComm();
+      MPI_File logfile;
+      comm->barrier();
+      MPI_File_open((*mpiComm)(), (baseFile + ".out").c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &logfile);
+      MPI_File_set_atomicity(logfile, true);
+      const char* msg = logStr.c_str();
+      int err = MPI_File_write_ordered(logfile, msg, logStr.size(), MPI_CHAR, MPI_STATUS_IGNORE);
+      TEUCHOS_ASSERT(err == MPI_SUCCESS);
+      MPI_File_close(&logfile);
+#else
+      std::ofstream outStream;
+      outStream.open((baseFile + ".out").c_str(), std::ofstream::out);
+      outStream << buffer.str();
+      outStream.close();
+#endif
+
       std::string cmd;
       if (myRank == 0) {
-        // Redirect output back
-        std::cout.rdbuf(oldbuffer);
-        buffer.close();
-
         // Create a copy of outputs
         cmd = "cp -f ";
         system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
@@ -375,58 +387,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         run_sed("'/RCP/ s/=0x0/=0/g'", baseFile);
 #endif
 
-        // When using the kokkos refactor path, aggregation is non-deterministic
-        // This means that we need to remove most mentions of matrix sizes in the
-        // level smoothers and we also need to remove data from the summary
-        if(useKokkos) {
-          // Defining a couple helpful regex strings
-          const std::string floatRegex   = "[0-9]\\{1,\\}.[0-9]\\{1,\\}";
-          const std::string integerRegex = "[0-9]\\{1,\\}";
-
-          // Catch lines of the MueLu summary (except the first one which is a bit different)
-          std::string stringToReplace = integerRegex + "\\s*"
-            + integerRegex + "\\s*"
-            + integerRegex + "\\s*"
-            + floatRegex + "\\s*"
-            + floatRegex + "\\s*[0-9]";
-          std::string replacementString = "<ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // Catch the first line of the MueLu summary
-          stringToReplace = integerRegex + "\\s*" + integerRegex + "\\s*"
-            + integerRegex + "\\s*" + floatRegex + "\\s*[0-9]";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // Catch the matrix size related informations from Ifpack's output
-          stringToReplace = "Global matrix dimensions: [" + integerRegex + ",\\s*" + integerRegex
-            + "], Global nnz: " + integerRegex;
-          replacementString = "Global matrix dimensions: <ignored>, Global nnz: <ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // Catch operator/smoother complexity output from MueLu
-          stringToReplace = "Operator complexity = " + floatRegex;
-          replacementString = "Operator complexity = <ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-          stringToReplace = "Smoother complexity = " + floatRegex;
-          replacementString = "Smoother complexity = <ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // Finally ignore the Chebyshev eigen value ratio which varies with aggregation
-          stringToReplace = "chebyshev: ratio eigenvalue = " + floatRegex;
-          replacementString = "chebyshev: ratio eigenvalue = <ignored>";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-
-          // as well as the alpha paramter it sets
-          stringToReplace = "lambdaMax = <ignored>, alpha: " + floatRegex + ", lambdaMin = <ignored>,";
-          replacementString = "lambdaMax = <ignored>, alpha: <ignored>, lambdaMin = <ignored>,";
-          run_sed("'s/" + stringToReplace + "/" + replacementString + "/'", baseFile);
-        }
-
         // Run comparison (ignoring whitespaces)
         cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".gold_filtered " + baseFile + ".out_filtered";
-        int ret = system(cmd.c_str());
-        if (ret)
+        int ret = 0;
+        if (compareWithGold)
+          ret = system(cmd.c_str());
+        else
+          std::cout << "Skipping comparison with gold file\n";
+        if (ret) {
           failed = true;
+        }
 
         //std::ios_base::fmtflags ff(std::cout.flags());
         //std::cout.precision(2);

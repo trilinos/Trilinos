@@ -86,7 +86,7 @@ namespace Iofx {
                MPI_Comm communicator, const Ioss::PropertyManager &props);
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
-    ~DatabaseIO() override{};
+    ~DatabaseIO() override                        = default;
 
     // Kluge -- a few applications need access so can diretly access exodus API
     int get_file_pointer() const override; // Open file and set exodusFilePtr.

@@ -44,7 +44,8 @@
 //
 // @HEADER
 #include "Xpetra_VectorFactory.hpp"
-
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_BlockedVector.hpp"
 
 namespace Xpetra {
 
@@ -60,11 +61,6 @@ VectorFactory<double, int, int, EpetraNode>::
 Build(const Teuchos::RCP<const Xpetra::Map<int, int, EpetraNode>>& map, bool zeroOut)
 {
     XPETRA_MONITOR("VectorFactory::Build");
-
-    using Scalar        = double;
-    using LocalOrdinal  = int;
-    using GlobalOrdinal = int;
-    using Node          = EpetraNode;
 
     RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> 
       bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
@@ -102,11 +98,6 @@ Build(const Teuchos::RCP<const Xpetra::Map<int, long long, EpetraNode>>& map, bo
 {
     XPETRA_MONITOR("VectorFactory::Build");
 
-    using Scalar        = double;
-    using LocalOrdinal  = int;
-    using GlobalOrdinal = long long;
-    using Node          = EpetraNode;
-
     RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
       Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
     if(!bmap.is_null())
@@ -142,11 +133,6 @@ Build(const Teuchos::RCP<const Xpetra::Map<int, int, EpetraNode>>& map, bool zer
 {
     XPETRA_MONITOR("VectorFactory::Build");
 
-    using Scalar        = int;
-    using LocalOrdinal  = int;
-    using GlobalOrdinal = int;
-    using Node          = EpetraNode;
-
     RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
       Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
     if(!bmap.is_null())
@@ -180,11 +166,6 @@ VectorFactory<int, int, long long, EpetraNode>::
 Build(const Teuchos::RCP<const Xpetra::Map<int, long long, EpetraNode>>& map, bool zeroOut)
 {
     XPETRA_MONITOR("VectorFactory::Build");
-
-    using Scalar        = int;
-    using LocalOrdinal  = int;
-    using GlobalOrdinal = long long;
-    using Node          = EpetraNode;
 
     RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
       Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);

@@ -13,7 +13,7 @@
 
 namespace Tempus {
 
-// SolutionStateMetaData definitions:
+
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData()
   :time_          (0.0),
@@ -27,6 +27,10 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    nConsecutiveFailures_(0),
    tolRel_        (1.0e-02),
    tolAbs_        (0.0),
+   xNormL2_       (0.0),
+   dxNormL2Rel_   (0.0),
+   dxNormL2Abs_   (0.0),
+   computeNorms_  (false),
    solutionStatus_(WORKING),
    output_        (false),
    outputScreen_  (false),
@@ -35,6 +39,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    accuracy_      (0.0)
 {}
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const Scalar time,
@@ -65,6 +70,57 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
    nConsecutiveFailures_(nConsecutiveFailures),
    tolRel_        (tolRel),
    tolAbs_        (tolAbs),
+   xNormL2_       (0.0),
+   dxNormL2Rel_   (0.0),
+   dxNormL2Abs_   (0.0),
+   computeNorms_  (false),
+   solutionStatus_(solutionStatus),
+   output_        (output),
+   outputScreen_  (outputScreen),
+   isSynced_      (isSynced),
+   isInterpolated_(isInterpolated),
+   accuracy_      (accuracy)
+{}
+#endif
+
+template<class Scalar>
+SolutionStateMetaData<Scalar>::SolutionStateMetaData(
+  const Scalar time,
+  const int    iStep,
+  const Scalar dt,
+  const Scalar errorAbs,
+  const Scalar errorRel,
+  const int    order,
+  const int    nFailures,
+  const int    nRunningFailures,
+  const int    nConsecutiveFailures,
+  const Scalar tolRel,
+  const Scalar tolAbs,
+  const Scalar xNormL2,
+  const Scalar dxNormL2Rel,
+  const Scalar dxNormL2Abs,
+  const bool   computeNorms,
+  const Status solutionStatus,
+  const bool   output,
+  const bool   outputScreen,
+  const bool   isSynced,
+  const bool   isInterpolated,
+  const Scalar accuracy)
+  :time_          (time),
+   iStep_         (iStep),
+   dt_            (dt),
+   errorAbs_      (errorAbs),
+   errorRel_      (errorRel),
+   order_         (order),
+   nFailures_     (nFailures),
+   nRunningFailures_(nRunningFailures),
+   nConsecutiveFailures_(nConsecutiveFailures),
+   tolRel_        (tolRel),
+   tolAbs_        (tolAbs),
+   xNormL2_       (xNormL2),
+   dxNormL2Rel_   (dxNormL2Rel),
+   dxNormL2Abs_   (dxNormL2Abs),
+   computeNorms_  (computeNorms),
    solutionStatus_(solutionStatus),
    output_        (output),
    outputScreen_  (outputScreen),
@@ -86,6 +142,9 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
    nConsecutiveFailures_(ssmd.nConsecutiveFailures_),
    tolRel_        (ssmd.tolRel_),
    tolAbs_        (ssmd.tolAbs_),
+   dxNormL2Rel_   (ssmd.dxNormL2Rel_),
+   dxNormL2Abs_   (ssmd.dxNormL2Abs_),
+   computeNorms_  (ssmd.computeNorms_),
    solutionStatus_(ssmd.solutionStatus_),
    output_        (ssmd.output_),
    outputScreen_  (ssmd.outputScreen_),
@@ -111,6 +170,10 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
       nConsecutiveFailures_,
       tolRel_,
       tolAbs_,
+      xNormL2_,
+      dxNormL2Rel_,
+      dxNormL2Abs_,
+      computeNorms_,
       solutionStatus_,
       output_,
       outputScreen_,
@@ -137,6 +200,10 @@ copy(const Teuchos::RCP<const SolutionStateMetaData<Scalar> >& ssmd)
   nConsecutiveFailures_ = ssmd->nConsecutiveFailures_;
   tolRel_         = ssmd->tolRel_,
   tolAbs_         = ssmd->tolAbs_,
+  xNormL2_        = ssmd->xNormL2_,
+  dxNormL2Rel_    = ssmd->dxNormL2Rel_,
+  dxNormL2Abs_    = ssmd->dxNormL2Abs_,
+  computeNorms_   = ssmd->computeNorms_,
   solutionStatus_ = ssmd->solutionStatus_;
   output_         = ssmd->output_;
   outputScreen_   = ssmd->outputScreen_;
@@ -168,10 +235,14 @@ void SolutionStateMetaData<Scalar>::describe(
         << "errorRel       = " << errorRel_ << std::endl
         << "order          = " << order_ << std::endl
         << "nFailures      = " << nFailures_ << std::endl
-        << "nRunningFailures= " << nRunningFailures_<< std::endl
+        << "nRunningFailures = " << nRunningFailures_<< std::endl
         << "nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
         << "tolRel         = " << tolRel_ << std::endl
         << "tolAbs         = " << tolAbs_ << std::endl
+        << "xNormL2        = " << xNormL2_ << std::endl
+        << "dxNormL2Rel    = " << dxNormL2Rel_ << std::endl
+        << "dxNormL2Abs    = " << dxNormL2Abs_ << std::endl
+        << "computeNorms   = " << computeNorms_ << std::endl
         << "solutionStatus = " << toString(solutionStatus_) << std::endl
         << "output         = " << output_ << std::endl
         << "outputScreen   = " << outputScreen_ << std::endl

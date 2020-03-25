@@ -37,8 +37,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __Tsqr_CombineBenchmarker_hpp
-#define __Tsqr_CombineBenchmarker_hpp
+#ifndef TSQR_COMBINEBENCHMARKER_HPP
+#define TSQR_COMBINEBENCHMARKER_HPP
 
 #include "Tsqr_ConfigDefs.hpp"
 #include "Tsqr_Random_NormalGenerator.hpp"
@@ -60,6 +60,19 @@
 namespace TSQR {
   namespace Test {
 
+    template<class Ordinal, class Scalar>
+    void
+    fill_with_identity_columns (const MatView<Ordinal, Scalar>& A)
+    {
+      deep_copy (A, Scalar {});
+      const Ordinal numCols = A.extent (1);
+      // FIXME (mfh 08 Dec 2019) Eventually stop writing to Matrix or
+      // MatView entries on host, for eventual GPU-ization.
+      for (Ordinal j = 0; j < numCols; ++j) {
+        A(j,j) = Scalar (1.0);
+      }
+    }
+
     /// \fn computeTimerResolution
     /// \brief Compute resolution in seconds of the TimerType timer.
     ///
@@ -74,15 +87,15 @@ namespace TSQR {
     double
     computeTimerResolution ()
     {
-      typedef TimerType timer_type;
+      using timer_type = TimerType;
       timer_type timer ("Timer resolution");
 
-      // Warmup run for the timer.
-      for (int warmup = 0; warmup < 5; ++warmup)
-        {
-          timer.start();
-          (void) timer.stop();
-        }
+      // Warmup run for the timer.  Some timer implementations needed
+      // to be called at least once in order to get sensible results.
+      for (int warmup = 0; warmup < 5; ++warmup) {
+        timer.start ();
+        (void) timer.stop ();
+      }
 
       // Keep a count of the total number of times timer.stop() is
       // called (once per outer loop iteration).  If bigger than
@@ -177,21 +190,21 @@ namespace TSQR {
     template<class Ordinal, class Scalar, class CombineType, class TimerType>
     class CombineBenchmarker {
     public:
-      typedef Ordinal ordinal_type;
-      typedef Scalar scalar_type;
-      typedef CombineType combine_type;
-      typedef TimerType timer_type;
+      using ordinal_type = Ordinal;
+      using scalar_type = Scalar;
+      using combine_type = CombineType;
+      using timer_type = TimerType;
 
     private:
-      typedef Teuchos::ScalarTraits<scalar_type> STS;
-      typedef typename STS::magnitudeType magnitude_type;
-      typedef Teuchos::ScalarTraits<magnitude_type> STM;
-      typedef TSQR::Random::NormalGenerator<ordinal_type, scalar_type> normgen_type;
-      typedef TSQR::Random::MatrixGenerator<ordinal_type, scalar_type, normgen_type> matgen_type;
-      typedef Matrix<ordinal_type, scalar_type> matrix_type;
+      using mag_type =
+        typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
+      using normgen_type =
+        TSQR::Random::NormalGenerator<ordinal_type, scalar_type>;
+      using matgen_type =
+        TSQR::Random::MatrixGenerator<ordinal_type, scalar_type, normgen_type>;
+      using matrix_type = Matrix<ordinal_type, scalar_type>;
 
     public:
-
       /// \brief Constructor with user-specified seed.
       ///
       /// \param timerRes [in] Resolution in seconds of the TimerType
@@ -291,33 +304,34 @@ namespace TSQR {
 
         // Generate a random cache block A.
         matrix_type A (numRows, numCols);
-        std::vector<magnitude_type> sigmas (numCols);
+        std::vector<mag_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
         matGen.fill_random_svd (numRows, numCols, A.data(),
                                 A.stride(1), sigmas.data());
 
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
-        deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j) {
-          Q(j,j) = STS::one();
-        }
+        fill_with_identity_columns (Q.view ());
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
 
+        // Work space array for factorization and applying the Q factor.
+        const Ordinal lwork =
+          combiner.work_size (numRows, numCols, numCols);
+        std::vector<Scalar> work (lwork);
+
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"),
-                                A.view(), tau.data(),
-                                Q.view(), work.data());
+          combiner.factor_first (A.view (), tau.data (),
+                                 work.data (), lwork);
+          combiner.apply_first (ApplyType ("N"),
+                                A.view (), tau.data (),
+                                Q.view (), work.data (), lwork);
         }
 
         // How much time numTrials runs must take in order for
@@ -342,10 +356,11 @@ namespace TSQR {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
-            combiner.factor_first (A.view(), tau.data(), work.data());
-            combiner.apply_first (ApplyType("N"),
-                                  A.view(), tau.data(),
-                                  Q.view(), work.data());
+            combiner.factor_first (A.view (), tau.data (),
+                                   work.data (), lwork);
+            combiner.apply_first (ApplyType ("N"),
+                                  A.view (), tau.data (),
+                                  Q.view (), work.data (), lwork);
           }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
@@ -388,32 +403,34 @@ namespace TSQR {
 
         // Generate a random cache block A.
         matrix_type A (numRows, numCols);
-        std::vector<magnitude_type> sigmas (numCols);
+        std::vector<mag_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
         matGen.fill_random_svd (numRows, numCols, A.data(),
                                 A.stride(1), sigmas.data());
 
         // A place to put the Q factor.
         matrix_type Q (numRows, numCols);
-        deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j)
-          Q(j,j) = STS::one();
+        fill_with_identity_columns (Q.view ());
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
 
+        // Work space array for factorization and applying the Q factor.
+        const Ordinal lwork =
+          combiner.work_size (numRows, numCols, numCols);
+        std::vector<Scalar> work (lwork);
+
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"),
-                                A.view(), tau.data(),
-                                Q.view(), work.data());
+          combiner.factor_first (A.view (), tau.data (),
+                                 work.data (), lwork);
+          combiner.apply_first (ApplyType ("N"),
+                                A.view (), tau.data (),
+                                Q.view (), work.data (), lwork);
         }
         //
         // The actual timing runs.
@@ -421,10 +438,11 @@ namespace TSQR {
         timer_type timer ("Combine first");
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_first (A.view(), tau.data(), work.data());
-          combiner.apply_first (ApplyType("N"),
-                                A.view(), tau.data(),
-                                Q.view(), work.data());
+          combiner.factor_first (A.view (), tau.data (),
+                                 work.data (), lwork);
+          combiner.apply_first (ApplyType ("N"),
+                                A.view (), tau.data (),
+                                Q.view (), work.data (), lwork);
         }
         return timer.stop();
       }
@@ -459,53 +477,56 @@ namespace TSQR {
                            const Ordinal numCols,
                            const double accuracyFactor)
       {
-        if (numRows == 0 || numCols == 0)
+        if (numRows == 0 || numCols == 0) {
           throw std::invalid_argument("Calibrating timings is impossible for "
                                       "a matrix with either zero rows or zero "
                                       "columns.");
-        else if (accuracyFactor < 0)
+        }
+        else if (accuracyFactor < 0) {
           throw std::invalid_argument("Accuracy factor for Combine numTrials "
                                       "calibration must be nonnegative.");
+        }
         // Random matrix generator.
         matgen_type matGen (normGenS_);
 
         // Generate a random R factor first.
         matrix_type R (numCols, numCols);
-        std::vector<magnitude_type> sigmas (numCols);
+        std::vector<mag_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R.data(),
-                              R.stride(1), sigmas.data());
+        matGen.fill_random_R (numCols, R.data (),
+                              R.stride (1), sigmas.data ());
 
         // Now generate a random cache block.
         matrix_type A (numRows, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_svd (numRows, numCols, A.data(),
-                                A.stride(1), sigmas.data());
+        matGen.fill_random_svd (numRows, numCols, A.data (),
+                                A.stride (1), sigmas.data ());
 
         // A place to put the Q factor.
-        matrix_type Q (numRows + numCols, numCols);
-        deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j)
-          Q(j,j) = STS::one();
+        matrix_type Q (numCols + numRows, numCols);
+        fill_with_identity_columns (Q.view ());
+        auto Q_top_Q_bot = partition_2x1 (Q, numCols);
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
 
+        // Work space array for factorization and applying the Q factor.
+        const Ordinal lwork =
+          combiner.work_size (numRows, numCols, numCols);
+        std::vector<Scalar> work (lwork);
+
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_inner (R.view(), A.view(),
-                                 tau.data(), work.data());
-          combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                &Q(0, 0), Q.stride(1),
-                                &Q(numCols, 0), Q.stride(1),
-                                work.data());
+          combiner.factor_inner (R.view (), A.view (), tau.data (),
+                                 work.data (), lwork);
+          combiner.apply_inner (ApplyType ("N"), A.view (),
+                                tau.data (), Q_top_Q_bot.first,
+                                Q_top_Q_bot.second,
+                                work.data (), lwork);
         }
 
         // How much time numTrials runs must take in order for
@@ -530,20 +551,18 @@ namespace TSQR {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
-            combiner.factor_inner (R.view(), A.view(),
-                                   tau.data(), work.data());
-            combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
-                                  A.data(), A.stride(1), tau.data(),
-                                  &Q(0, 0), Q.stride(1),
-                                  &Q(numCols, 0), Q.stride(1),
-                                  work.data());
+            combiner.factor_inner (R.view (), A.view (), tau.data (),
+                                   work.data (), lwork);
+            combiner.apply_inner (ApplyType ("N"), A.view (),
+                                  tau.data (), Q_top_Q_bot.first,
+                                  Q_top_Q_bot.second, work.data (),
+                                  lwork);
           }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
 
         return std::make_pair (numTrials, theTime);
       }
-
 
       /// \brief Benchmark TSQR::Combine on [R; A];
       ///
@@ -581,7 +600,7 @@ namespace TSQR {
 
         // Generate a random R factor first.
         matrix_type R (numCols, numCols);
-        std::vector<magnitude_type> sigmas (numCols);
+        std::vector<mag_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
         matGen.fill_random_R (numCols, R.data(), R.stride(1), sigmas.data());
 
@@ -591,47 +610,45 @@ namespace TSQR {
         matGen.fill_random_svd (numRows, numCols, A.data(), A.stride(1), sigmas.data());
 
         // A place to put the Q factor.
-        matrix_type Q (numRows + numCols, numCols);
-        deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j)
-          Q(j,j) = STS::one();
+        matrix_type Q (numCols + numRows, numCols);
+        fill_with_identity_columns (Q.view ());
+        auto Q_top_Q_bot = partition_2x1 (Q, numCols);
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
 
+        // Work space array for factorization and applying the Q factor.
+        const Ordinal lwork =
+          combiner.work_size (numRows, numCols, numCols);
+        std::vector<Scalar> work (lwork);
+
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_inner (R.view(), A.view(),
-                                 tau.data(), work.data());
-          combiner.apply_inner (ApplyType("N"),
-                                numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                &Q(0, 0), Q.stride(1),
-                                &Q(numCols, 0), Q.stride(1),
-                                work.data());
+          combiner.factor_inner (R.view (), A.view (), tau.data (),
+                                 work.data (), lwork);
+          combiner.apply_inner (ApplyType ("N"), A.view (),
+                                tau.data (), Q_top_Q_bot.first,
+                                Q_top_Q_bot.second,
+                                work.data (), lwork);
         }
         //
         // The actual timing runs.
         //
         timer_type timer ("Combine cache block");
-        timer.start();
+        timer.start ();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_inner (R.view(), A.view(),
-                                 tau.data(), work.data());
-          combiner.apply_inner (ApplyType("N"),
-                                numRows, numCols, numCols,
-                                A.data(), A.stride(1), tau.data(),
-                                &Q(0, 0), Q.stride(1),
-                                &Q(numCols, 0), Q.stride(1),
-                                work.data());
+          combiner.factor_inner (R.view (), A.view (), tau.data (),
+                                 work.data (), lwork);
+          combiner.apply_inner (ApplyType ("N"), A.view (),
+                                tau.data (), Q_top_Q_bot.first,
+                                Q_top_Q_bot.second,
+                                work.data (), lwork);
         }
-        return timer.stop();
+        return timer.stop ();
       }
 
       /// \brief Estimate number of trials for TSQR::Combine on [R1; R2].
@@ -672,38 +689,43 @@ namespace TSQR {
 
         // Generate R1 first.
         matrix_type R1 (numCols, numCols);
-        std::vector<magnitude_type> sigmas (numCols);
+        std::vector<mag_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
         matGen.fill_random_R (numCols, R1.data(), R1.stride(1), sigmas.data());
 
         // Now generate R2.
         matrix_type R2 (numCols, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R2.data(), R2.stride(1), sigmas.data());
+        matGen.fill_random_R (numCols, R2.data (),
+                              R2.stride (1), sigmas.data ());
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
-        deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j)
-          Q(j,j) = STS::one();
+        fill_with_identity_columns (Q.view ());
+        auto Q_top_Q_bot = partition_2x1 (Q.view (), numCols);
+
+        auto R1_view = R1.view ();
+        auto R2_view = R2.view ();
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
 
+        // Work space array for factorization and applying the Q factor.
+        const Ordinal lwork =
+          combiner.work_size (2 * numCols, numCols, numCols);
+        std::vector<Scalar> work (lwork);
+
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_pair (R1.view(), R2.view(), tau.data(), work.data());
-          combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                               R2.data(), R2.stride(1), tau.data(),
-                               &Q(0, 0), Q.stride(1),
-                               &Q(numCols, 0), Q.stride(1),
-                               work.data());
+          combiner.factor_pair (R1_view, R2_view, tau.data (),
+                                work.data (), lwork);
+          combiner.apply_pair (ApplyType ("N"), R2_view, tau.data (),
+                               Q_top_Q_bot.first, Q_top_Q_bot.second,
+                               work.data (), lwork);
         }
 
         // How much time numTrials runs must take in order for
@@ -728,20 +750,18 @@ namespace TSQR {
           numTrials *= 2; // First value of numTrials is 4.
           timer.start();
           for (int trial = 0; trial < numTrials; ++trial) {
-            combiner.factor_pair (R1.view(), R2.view(),
-                                  tau.data(), work.data());
-            combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                                 R2.data(), R2.stride(1), tau.data(),
-                                 &Q(0, 0), Q.stride(1),
-                                 &Q(numCols, 0), Q.stride(1),
-                                 work.data());
+            combiner.factor_pair (R1_view, R2_view, tau.data (),
+                                  work.data (), lwork);
+            combiner.apply_pair (ApplyType ("N"), R2_view,
+                                 tau.data (), Q_top_Q_bot.first,
+                                 Q_top_Q_bot.second,
+                                 work.data (), lwork);
           }
           theTime = timer.stop();
         } while (theTime < minAcceptableTime && numTrials < maxNumTrials);
 
         return std::make_pair (numTrials, theTime);
       }
-
 
       /// \brief Benchmark TSQR::Combine on [R1; R2].
       ///
@@ -763,50 +783,57 @@ namespace TSQR {
       benchmarkPair (const Ordinal numCols,
                      const int numTrials)
       {
-        if (numCols == 0)
-          throw std::invalid_argument("Benchmarking does not make sense for "
-                                      "a matrix with zero columns.");
-        TEUCHOS_TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument,
-                           "The number of trials must be positive, but "
-                           "numTrials = " << numTrials << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (numCols == 0, std::invalid_argument, "Benchmarking does "
+           "not make sense for a matrix with zero columns.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (numTrials < 1, std::invalid_argument, "The number of "
+           "trials must be positive, but numTrials = " << numTrials
+           << ".");
 
         // Random matrix generator.
         matgen_type matGen (normGenS_);
 
         // Generate R1 first.
         matrix_type R1 (numCols, numCols);
-        std::vector<magnitude_type> sigmas (numCols);
+        std::vector<mag_type> sigmas (numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R1.data(), R1.stride(1), sigmas.data());
+        matGen.fill_random_R (numCols, R1.data (), R1.stride (1),
+                              sigmas.data ());
 
         // Now generate R2.
         matrix_type R2 (numCols, numCols);
         randomSingularValues (sigmas, numCols);
-        matGen.fill_random_R (numCols, R2.data(), R2.stride(1), sigmas.data());
+        matGen.fill_random_R (numCols, R2.data (), R2.stride (1),
+                              sigmas.data ());
 
         // A place to put the Q factor of [R1; R2].
         matrix_type Q (2*numCols, numCols);
-        deep_copy (Q, Scalar {});
-        for (Ordinal j = 0; j < numCols; ++j)
-          Q(j,j) = STS::one();
+        fill_with_identity_columns (Q.view ());
+        auto Q_top_Q_bot = partition_2x1 (Q.view (), numCols);
+
+        auto R1_view = R1.view ();
+        auto R2_view = R2.view ();
 
         // TAU array (Householder reflector scaling factors).
         std::vector<Scalar> tau (numCols);
-        // Work space array for factorization and applying the Q factor.
-        std::vector<Scalar> work (numCols);
 
         // The Combine instance to benchmark.
         combine_type combiner;
 
+        // Work space array for factorization and applying the Q factor.
+        const Ordinal lwork =
+          combiner.work_size (2 * numCols, numCols, numCols);
+        std::vector<Scalar> work (lwork);
+
         // A few warmup runs just to avoid timing anomalies.
         const int numWarmupRuns = 3;
         for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
-          combiner.factor_pair (R1.view(), R2.view(), tau.data(), work.data());
-          combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                               R2.data(), R2.stride(1), tau.data(),
-                               &Q(0, 0), Q.stride(1),
-                               &Q(numCols, 0), Q.stride(1),
-                               work.data());
+          combiner.factor_pair (R1_view, R2_view, tau.data (),
+                                work.data (), lwork);
+          combiner.apply_pair (ApplyType ("N"), R2_view, tau.data (),
+                               Q_top_Q_bot.first, Q_top_Q_bot.second,
+                               work.data (), lwork);
         }
         //
         // The actual timing runs.
@@ -814,23 +841,21 @@ namespace TSQR {
         timer_type timer ("Combine pair");
         timer.start();
         for (int trial = 0; trial < numTrials; ++trial) {
-          combiner.factor_pair (R1.view(), R2.view(), tau.data(), work.data());
-          combiner.apply_pair (ApplyType("N"), numCols, numCols,
-                               R2.data(), R2.stride(1), tau.data(),
-                               &Q(0, 0), Q.stride(1),
-                               &Q(numCols, 0), Q.stride(1),
-                               work.data());
+          combiner.factor_pair (R1_view, R2_view, tau.data (),
+                                work.data (), lwork);
+          combiner.apply_pair (ApplyType ("N"), R2_view, tau.data (),
+                               Q_top_Q_bot.first, Q_top_Q_bot.second,
+                               work.data (), lwork);
         }
         return timer.stop();
       }
 
     private:
-
       //! Pseudorandom normal(0,1) generator for Scalar values.
       TSQR::Random::NormalGenerator<ordinal_type, scalar_type> normGenS_;
 
-      //! Pseudorandom normal(0,1) generator for magnitude_type values.
-      TSQR::Random::NormalGenerator<ordinal_type, magnitude_type> normGenM_;
+      //! Pseudorandom normal(0,1) generator for mag_type values.
+      TSQR::Random::NormalGenerator<ordinal_type, mag_type> normGenM_;
 
       //! Timer resolution (in seconds) for TimerType timers.
       double timerResolution_;
@@ -842,33 +867,33 @@ namespace TSQR {
       /// \param numValues [in] Number of random singular values to
       ///   generate.
       void
-      randomSingularValues (std::vector<magnitude_type>& sigmas,
+      randomSingularValues (std::vector<mag_type>& sigmas,
                             const Ordinal numValues)
       {
-        // Cast to avoid compiler warnings for signed / unsigned
-        // comparisons.
-        typedef typename std::vector<magnitude_type>::size_type size_type;
-        if (sigmas.size() < static_cast<size_type> (numValues))
-          sigmas.resize (numValues);
+        using STM = Teuchos::ScalarTraits<mag_type>;
 
+        if (sigmas.size () < size_t (numValues)) {
+          sigmas.resize (numValues);
+        }
         // Relative amount by which to perturb each singular value.  The
         // perturbation will be multiplied by a normal(0,1) pseudorandom
         // number drawn from magGen.
-        const magnitude_type perturbationFactor = magnitude_type(10) * STM::eps();
-        const magnitude_type one = STM::one();
-        for (Ordinal k = 0; k < numValues; ++k)
-          {
-            magnitude_type perturbation = perturbationFactor * normGenM_();
-            // If (1 - perturbation) is a small or nonpositive number,
-            // subtract instead.
-            if (one - perturbation <= perturbationFactor)
-              perturbation = -perturbation;
-            sigmas[k] = one - perturbation;
+        const mag_type perturbationFactor =
+          mag_type (10.0) * STM::eps ();
+        const mag_type one (1.0);
+        for (Ordinal k = 0; k < numValues; ++k) {
+          mag_type perturbation = perturbationFactor * normGenM_ ();
+          // If (1 - perturbation) is a small or nonpositive number,
+          // subtract instead.
+          if (one - perturbation <= perturbationFactor) {
+            perturbation = -perturbation;
           }
+          sigmas[k] = one - perturbation;
+        }
       }
     };
 
   } // namespace Test
 } // namespace TSQR
 
-#endif // __Tsqr_CombineBenchmarker_hpp
+#endif // TSQR_COMBINEBENCHMARKER_HPP

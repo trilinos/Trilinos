@@ -135,19 +135,6 @@ int proc;
 
   zz->ZTime = Zoltan_Timer_Create(ZOLTAN_TIMER_DEF);
 
-  /* Test that size_t is uniform on all processors */
-  if (communicator != MPI_COMM_NULL) {
-    int my_sizet = sizeof(size_t);
-    int max_sizet, min_sizet;
-    MPI_Allreduce(&my_sizet, &max_sizet, 1, MPI_INT, MPI_MAX, zz->Communicator);
-    MPI_Allreduce(&my_sizet, &min_sizet, 1, MPI_INT, MPI_MIN, zz->Communicator);
-    if (min_sizet != max_sizet) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                         "min sizeof(size_t) != max sizeof(size_t)");
-      Zoltan_Destroy(&zz);
-    }
-  }
-
   return(zz);
 }
 

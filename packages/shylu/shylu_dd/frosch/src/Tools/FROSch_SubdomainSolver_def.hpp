@@ -56,24 +56,6 @@ namespace FROSch {
                                                   GOVecPtr blockCoarseSize) :
     K_ (k),
     ParameterList_ (parameterList),
-    YTmp_ (),
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-    EpetraLinearProblem_ (),
-#endif
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-    AmesosSolver_ (),
-#endif
-#ifdef HAVE_SHYLU_DDFROSCH_MUELU
-    MueLuFactory_ (),
-    MueLuHierarchy_ (),
-#endif
-#ifdef HAVE_SHYLU_DDFROSCH_BELOS
-    BelosLinearProblem_(),
-    BelosSolverManager_(),
-#endif
-#ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
-    Ifpack2Preconditioner_ (),
-#endif
     IsInitialized_ (false),
     IsComputed_ (false)
     {
@@ -150,9 +132,10 @@ namespace FROSch {
                 FROSCH_ASSERT(blockCoarseSize.size()==2,"Wrong size of blockCoarseSize for MueLu nullspace...");
                 unsigned dofs = (unsigned) ParameterList_->sublist("MueLu").get("Dimension",2);
                 nullspace = XMultiVectorFactory::Build(K_->getRowMap(), dofs+1);
+                ConstXMapPtr nullspaceMap = nullspace->getMap();
                 //nullspace of upper part
                 for (unsigned j=0; j<nullspace->getLocalLength(); j++) {
-                    GO globIndex = nullspace->getMap()->getGlobalElement(j);
+                    GO globIndex = nullspaceMap->getGlobalElement(j);
                     if (globIndex<=(GO)(dofs*blockCoarseSize[0]-1)) {
                         unsigned vecIndex = (globIndex)%dofs;
                         nullspace->getDataNonConst(vecIndex)[j] = 1.;

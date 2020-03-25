@@ -145,14 +145,14 @@ namespace Intrepid2 {
     
     // quadrilateral bases
     using HGRAD_QUAD = Basis_Derived_HGRAD_QUAD<HGRAD_LINE>;
-    using HCURL_QUAD = Basis_Derived_HCURL_QUAD<HGRAD_LINE, HGRAD_LINE>;
-    using HDIV_QUAD  = Basis_Derived_HDIV_QUAD <HGRAD_LINE, HGRAD_LINE>;
+    using HCURL_QUAD = Basis_Derived_HCURL_QUAD<HGRAD_LINE, HVOL_LINE>;
+    using HDIV_QUAD  = Basis_Derived_HDIV_QUAD <HGRAD_LINE, HVOL_LINE>;
     using HVOL_QUAD  = Basis_Derived_HVOL_QUAD <HVOL_LINE>;
     
     // hexahedral bases
     using HGRAD_HEX = Basis_Derived_HGRAD_HEX<HGRAD_LINE>;
-    using HCURL_HEX = Basis_Derived_HCURL_HEX<HGRAD_LINE, HGRAD_LINE>;
-    using HDIV_HEX  = Basis_Derived_HDIV_HEX <HGRAD_LINE, HGRAD_LINE>;
+    using HCURL_HEX = Basis_Derived_HCURL_HEX<HGRAD_LINE, HVOL_LINE>;
+    using HDIV_HEX  = Basis_Derived_HDIV_HEX <HGRAD_LINE, HVOL_LINE>;
     using HVOL_HEX  = Basis_Derived_HVOL_HEX <HVOL_LINE>;
   };
   

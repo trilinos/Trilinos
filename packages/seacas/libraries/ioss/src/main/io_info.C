@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -73,7 +73,9 @@ namespace {
     int64_t             num_dist = ge->get_property("distribution_factor_count").get_int();
     std::vector<double> df;
     // Do even if num_dist == 0 so parallel does not assert.
-    ge->get_field_data("distribution_factors", df);
+    if (ge->field_exists("distribution_factors")) {
+      ge->get_field_data("distribution_factors", df);
+    }
     if (num_dist > 0) {
       auto mm = std::minmax_element(df.begin(), df.end());
       fmt::print("{}Distribution Factors: ", prefix);
@@ -102,7 +104,7 @@ namespace {
 
   Ioss::PropertyManager set_properties(const Info::Interface &interFace)
   {
-    Ioss::PropertyManager properties;
+    Ioss::PropertyManager properties{};
     if (!interFace.decomp_method().empty()) {
       properties.add(Ioss::Property("DECOMPOSITION_METHOD", interFace.decomp_method()));
     }
@@ -524,16 +526,16 @@ namespace {
       max_width = max_width > (int)field_name.length() ? max_width : field_name.length();
     }
 
-    auto width = Ioss::Utils::term_width();
-    int cur_out = 8; // Tab width...
+    auto width   = Ioss::Utils::term_width();
+    int  cur_out = 8; // Tab width...
     for (const auto &field_name : fields) {
       const Ioss::VariableType *var_type   = ige->get_field(field_name).raw_storage();
       int                       comp_count = var_type->component_count();
       fmt::print("{1:>{0}s}:{2}  ", max_width, field_name, comp_count);
       cur_out += max_width + 4;
       if (cur_out + max_width >= width) {
-	fmt::print("\n\t");
-	cur_out = 8;
+        fmt::print("\n\t");
+        cur_out = 8;
       }
     }
     if (!header.empty()) {
@@ -595,7 +597,7 @@ namespace Ioss {
         }
         region.output_summary(std::cout, true);
 
-        if (interFace.summary() == 0) {
+        if (!interFace.summary()) {
 
           info_nodeblock(region, interFace);
           info_edgeblock(region);

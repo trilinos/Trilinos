@@ -22,12 +22,10 @@ packages/amesos amesos-checkins@software.sandia.gov
 packages/belos belos-checkins@software.sandia.gov
 packages/anasazi anasazi-checkins@software.sandia.gov
 packages/meros meros-checkins@software.sandia.gov
-packages/mesquite mesquite-checkins@software.sandia.gov
 packages/teuchos teuchos-checkins@software.sandia.gov
 packages/kokkos kokkos-checkins@software.sandia.gov
 packages/pliris pliris-checkins@software.sandia.gov
 packages/cmmlib cmmlib-checkins@software.sandia.gov
-packages/claps claps-checkins@software.sandia.gov
 packages/CTrilinos Ctrilinos-checkins@software.sandia.gov
 packages/didasko didasko-checkins@software.sandia.gov
 packages/pamgen pamgen-checkins@software.sandia.gov
@@ -39,7 +37,6 @@ packages/rbgen rbgen-checkins@software.sandia.gov
 packages/rtop thyra-checkins@software.sandia.gov
 packages/rythmos rythmos-checkins@software.sandia.gov
 packages/galeri galeri-checkins@software.sandia.gov
-packages/globipack globipack-checkins@software.sandia.gov
 packages/capo capo-checkins@software.sandia.gov
 packages/isorropia isorropia-checkins@software.sandia.gov
 packages/zoltan2 zoltan2-checkins@software.sandia.gov
@@ -47,7 +44,6 @@ packages/zoltan zoltan-checkins@software.sandia.gov
 packages/shylu shylu-checkins@software.sandia.gov
 packages/moertel moertel-checkins@software.sandia.gov
 packages/moocho moocho-checkins@software.sandia.gov
-packages/optipack optipack-checkins@software.sandia.gov
 packages/sacado sacado-checkins@software.sandia.gov
 packages/stokhos stokhos-checkins@software.sandia.gov
 packages/TivaBuena tivabuena-checkins@software.sandia.gov
@@ -60,7 +56,6 @@ packages/phdmesh phdmesh-checkins@software.sandia.gov
 packages/intrepid intrepid-checkins@software.sandia.gov
 packages/shards shards-checkins@software.sandia.gov
 packages/stk stk-checkins@software.sandia.gov
-packages/trios trios-checkins@software.sandia.gov
 packages/seacas seacas-checkins@software.sandia.gov
 packages/teko teko-checkins@software.sandia.gov
 packages/muelu muelu-checkins@software.sandia.gov

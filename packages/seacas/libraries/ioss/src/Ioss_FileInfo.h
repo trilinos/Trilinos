@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -100,12 +100,12 @@ namespace Ioss {
 
     off_t size() const; //!< File size in bytes. Only if is_file() == true
 
-    const std::string filename() const;  //!< Complete filename including path
-    const std::string basename() const;  //!< strip path and extension
-    const std::string tailname() const;  //!< basename() + extension()
-    const std::string extension() const; //!< file extension.
-    const std::string pathname() const;  //!< directory path, no filename
-    const std::string realpath() const;  //!< canonicalized absolute path
+    std::string filename() const;  //!< Complete filename including path
+    std::string basename() const;  //!< strip path and extension
+    std::string tailname() const;  //!< basename() + extension()
+    std::string extension() const; //!< file extension.
+    std::string pathname() const;  //!< directory path, no filename
+    std::string realpath() const;  //!< canonicalized absolute path
 
     void set_filename(const std::string &name);
     void set_filename(const char *name);
@@ -115,6 +115,12 @@ namespace Ioss {
     bool operator!=(const FileInfo &other) const { return filename_ != other.filename_; }
 
     bool remove_file();
+
+    //! This function is used to create the path to an output directory (or history, restart, etc.)
+    //!  if it does not exist.  Called by all processors. Will throw exception if path does not
+    //!  specify a valid directory or if the path cannot be created.
+    static void create_path(const std::string &filename, MPI_Comm communicator);
+    static void create_path(const std::string &filename);
 
   private:
     std::string filename_{};

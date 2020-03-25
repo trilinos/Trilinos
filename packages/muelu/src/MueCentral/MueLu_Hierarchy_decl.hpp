@@ -55,7 +55,6 @@
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 
-#include <Xpetra_Cloner.hpp>
 #include <MueLu_SmootherCloner.hpp>
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -333,13 +332,6 @@ namespace MueLu {
       dumpFile_  = filename;
     }
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-    template<class Node2>
-    Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-    MUELU_DEPRECATED
-    clone (const RCP<Node2> &node2) const;
-#endif
-
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
 
@@ -418,67 +410,6 @@ namespace MueLu {
     
 
   }; //class Hierarchy
-
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template<typename Node2>
-  Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  MUELU_DEPRECATED
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  clone (const Teuchos::RCP<Node2> &node2) const {
-    typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2>           New_H_Type;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2>      CloneOperator;
-    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2> CloneSmoother;
-
-    Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
-    new_h->Levels_.resize(this->GetNumLevels());
-    new_h->maxCoarseSize_     = maxCoarseSize_;
-    new_h->implicitTranspose_ = implicitTranspose_;
-    new_h->fuseProlongationAndUpdate_ = fuseProlongationAndUpdate_;
-    new_h->isPreconditioner_  = isPreconditioner_;
-    new_h->isDumpingEnabled_  = isDumpingEnabled_;
-    new_h->dumpLevel_         = dumpLevel_;
-    new_h->dumpFile_          = dumpFile_;
-
-    RCP<SmootherBase>  Pre, Post;
-    RCP<CloneSmoother> clonePre, clonePost;
-    RCP<CloneOperator> cloneA, cloneR, cloneP;
-    RCP<Operator>      A, R, P;
-    for (int i = 0; i < GetNumLevels(); i++) {
-      RCP<Level> level      = this->Levels_[i];
-      RCP<Level> clonelevel = rcp(new Level());
-
-      if (level->IsAvailable("A")) {
-        A      = level->template Get<RCP<Operator> >("A");
-        cloneA = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*A, node2);
-        clonelevel->template Set<RCP<CloneOperator> >("A", cloneA);
-      }
-      if (level->IsAvailable("R")){
-        R      = level->template Get<RCP<Operator> >("R");
-        cloneR = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*R, node2);
-        clonelevel->template Set<RCP<CloneOperator> >("R", cloneR);
-      }
-      if (level->IsAvailable("P")){
-        P      = level->template Get<RCP<Operator> >("P");
-        cloneP = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*P,  node2);
-        clonelevel->template Set<RCP<CloneOperator> >("P", cloneP);
-      }
-      if (level->IsAvailable("PreSmoother")){
-        Pre      = level->template Get<RCP<SmootherBase> >("PreSmoother");
-        clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2> (Pre, cloneA, node2);
-        clonelevel->template Set<RCP<CloneSmoother> >("PreSmoother", clonePre);
-      }
-      if (level->IsAvailable("PostSmoother")){
-        Post      = level->template Get<RCP<SmootherBase> >("PostSmoother");
-        clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2> (Post, cloneA, node2);
-        clonelevel-> template Set<RCP<CloneSmoother> >("PostSmoother", clonePost);
-      }
-      new_h->Levels_[i] = clonelevel;
-    }
-
-    return new_h;
-  }
-#endif
 
 } //namespace MueLu
 

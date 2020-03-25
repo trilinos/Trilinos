@@ -287,7 +287,7 @@ namespace Tacho {
     /// Callable: Device (o), KokkosFunctors (x), Blocking (o)
     template<typename SpT>
     inline
-    typename std::enable_if< Kokkos::Impl::is_same<SpT,space_type>::value >::type
+    typename std::enable_if< std::is_same<SpT,space_type>::value >::type
     mirror(const DenseMatrixBase<value_type,ordinal_type,size_type,SpT> &b) {
         // when the space is same, everything is shallow copy 
         // setLabel(b._label);
@@ -300,7 +300,7 @@ namespace Tacho {
 
     template<typename SpT>
     inline
-    typename std::enable_if< ! Kokkos::Impl::is_same<SpT,space_type>::value >::type
+    typename std::enable_if< ! std::is_same<SpT,space_type>::value >::type
     mirror(const DenseMatrixBase<value_type,ordinal_type,size_type,SpT> &b) {
         // when the space is different, perform deep copy
         createInternalArrays(b._m, b._n, b._rs, b._cs);

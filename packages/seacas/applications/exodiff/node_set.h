@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -45,6 +45,9 @@ public:
   Node_Set();
   Node_Set(int file_id, size_t id);
   Node_Set(int file_id, size_t id, size_t nnodes, size_t ndfs = 0);
+  Node_Set(const Node_Set &) = delete;
+  const Node_Set &operator=(const Node_Set &) = delete;
+
   ~Node_Set() override;
 
   void       apply_map(const INT *node_map);
@@ -58,9 +61,6 @@ public:
   int Check_State() const;
 
 private:
-  Node_Set(const Node_Set &);                  // Not written.
-  const Node_Set &operator=(const Node_Set &); // Not written.
-
   void entity_load_params() override;
 
   EXOTYPE     exodus_type() const override;
@@ -69,11 +69,11 @@ private:
 
   void load_nodes(const INT *node_map = nullptr) const;
 
-  size_t num_dist_factors;
+  size_t num_dist_factors{0};
 
-  mutable INT *   nodes;        // Array.
-  mutable INT *   nodeIndex;    // An index array which orders the nodelist in sorted order.
-  mutable double *dist_factors; // Array.
+  mutable INT *   nodes{nullptr};     // Array.
+  mutable INT *   nodeIndex{nullptr}; // An index array which orders the nodelist in sorted order.
+  mutable double *dist_factors{nullptr}; // Array.
 
   friend class ExoII_Read<INT>;
 };

@@ -2,9 +2,16 @@
 #define TPETRATSQR_CONFIG_H
 
 /* Define if building TSQR with std::complex<T> support */
-#cmakedefine HAVE_KOKKOSTSQR_COMPLEX
+#cmakedefine HAVE_TPETRATSQR_COMPLEX
+#ifdef HAVE_TPETRATSQR_COMPLEX
+   /* For backwards compatibility */
+#  define HAVE_KOKKOSTSQR_COMPLEX HAVE_TPETRATSQR_COMPLEX
+#endif
 
-/* Define if the TBB (Intel Threading Building Blocks) TPL is available */
-#cmakedefine HAVE_KOKKOSTSQR_TBB
+/* Define if TSQR supports the CUBLAS TPL */
+#cmakedefine HAVE_TPETRATSQR_CUBLAS
+
+/* Define if TSQR supports the CUSOLVER TPL */
+#cmakedefine HAVE_TPETRATSQR_CUSOLVER
 
 #endif // TPETRATSQR_CONFIG_H

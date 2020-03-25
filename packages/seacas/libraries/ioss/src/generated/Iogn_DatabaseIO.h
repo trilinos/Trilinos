@@ -96,7 +96,7 @@ namespace Iogn {
 
     ~DatabaseIO() override;
 
-    const std::string get_format() const override {return "Generated";}
+    const std::string get_format() const override { return "Generated"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -120,12 +120,13 @@ namespace Iogn {
 
     bool begin_state__(int state, double time) override;
 
-    void get_step_times__() override;
-    void get_nodeblocks();
-    void get_elemblocks();
-    void get_nodesets();
-    void get_sidesets();
-    void get_commsets();
+    void        get_step_times__() override;
+    void        get_nodeblocks();
+    void        get_elemblocks();
+    void        get_nodesets();
+    void        get_sidesets();
+    void        get_commsets();
+    std::string get_sideset_topology() const;
 
     const Ioss::Map &get_node_map() const;
     const Ioss::Map &get_element_map() const;
@@ -195,7 +196,7 @@ namespace Iogn {
     void add_transient_fields(Ioss::GroupingEntity *entity);
 
     GeneratedMesh *          m_generatedMesh{nullptr};
-    std::vector<std::string> m_sideset_names;
+    std::vector<std::string> m_sideset_names{};
 
     double currentTime{0.0};
     int    spatialDimension{3};

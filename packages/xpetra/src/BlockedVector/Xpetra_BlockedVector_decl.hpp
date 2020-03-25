@@ -51,9 +51,9 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include "Xpetra_BlockedMap.hpp"
-#include "Xpetra_BlockedMultiVector.hpp"
-#include "Xpetra_Map.hpp"
+#include "Xpetra_BlockedMap_decl.hpp"
+#include "Xpetra_BlockedMultiVector_decl.hpp"
+#include "Xpetra_Map_decl.hpp"
 #include "Xpetra_Vector.hpp"
 
 
@@ -71,10 +71,10 @@ class BlockedVector
     , public virtual Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
   public:
-    typedef Scalar        scalar_type;
-    typedef LocalOrdinal  local_ordinal_type;
-    typedef GlobalOrdinal global_ordinal_type;
-    typedef Node          node_type;
+    using scalar_type         = Scalar;
+    using local_ordinal_type  = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using node_type           = Node;
 
     using Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot;                     // overloading, not hiding
     using Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm1;                   // overloading, not hiding
@@ -381,14 +381,14 @@ class BlockedVector
     ///          only valid as long as the Vector does not run of scope!
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<
+      std::is_same<
         typename dev_execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
         typename dual_view_type::t_dev_um,
         typename dual_view_type::t_host_um>::type
     getLocalView () const
     {
-      if(Kokkos::Impl::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
+      if(std::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
       {
         return getHostLocalView();
       }
@@ -422,7 +422,7 @@ class BlockedVector
     /// \warning Be aware that the view on the Vector data is non-persisting, i.e.
     ///          only valid as long as the Vector does not run of scope!
     template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename dev_execution_space::memory_space,
+    typename Kokkos::Impl::if_c<std::is_same<typename dev_execution_space::memory_space,
                                                       typename TargetDeviceType::memory_space>::value,
                                 typename dual_view_type::t_dev_um,
                                 typename dual_view_type::t_host_um>::type

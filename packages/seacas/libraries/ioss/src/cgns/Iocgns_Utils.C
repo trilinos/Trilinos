@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2018 National Technology & Engineering Solutions
+// Copyright(C) 1999-2018, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,6 +34,7 @@
 
 #include <Ioss_Beam2.h>
 #include <Ioss_Beam3.h>
+#include <Ioss_FaceGenerator.h>
 #include <Ioss_Hex20.h>
 #include <Ioss_Hex27.h>
 #include <Ioss_Hex8.h>
@@ -80,29 +81,6 @@
   }
 
 namespace {
-  std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel)
-  {
-    int         proc = 0;
-    std::string zname{name};
-
-    if (is_parallel) {
-      // Name should/might be of the form `basename_proc-#`.  Strip
-      // off the `_proc-#` portion and return just the basename.
-      auto tokens = Ioss::tokenize(zname, "_");
-      zname       = tokens[0];
-      if (tokens.size() >= 2) {
-        size_t idx = tokens.size() - 1;
-        if (tokens[idx].substr(0, 5) == "proc-") {
-          auto ptoken = Ioss::tokenize(tokens[idx], "-");
-          proc        = std::stoi(ptoken[1]);
-          idx--;
-          zname = tokens[idx];
-        }
-      }
-    }
-    return std::make_pair(zname, proc);
-  }
-
   int power_2(int count)
   {
     // Return the maximum power of two which is less than or equal to 'count'
@@ -382,7 +360,144 @@ namespace {
       assert(block->field_count(Ioss::Field::TRANSIENT) == (size_t)fld_count[i]);
     }
   }
+
+#if IOSS_DEBUG_OUTPUT
+  void output_table(const Ioss::ElementBlockContainer &            ebs,
+                    std::map<std::string, Ioss::FaceUnorderedSet> &boundary_faces)
+  {
+    // Get maximum name and face_count length...
+    size_t max_name = std::string("Block Name").length();
+    size_t max_face = std::string("Face Count").length();
+    for (auto eb : ebs) {
+      const std::string &name = eb->name();
+      if (name.length() > max_name) {
+        max_name = name.length();
+      }
+      size_t face_width = Ioss::Utils::number_width(boundary_faces[name].size());
+      max_face          = face_width > max_face ? face_width : max_face;
+    }
+    max_name += 4; // Padding
+    max_face += 4;
+
+    fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
+    fmt::print("\t|{2:^{0}}|{3:^{1}}|\n", max_name, max_face, "Block Name", "Face Count");
+    fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
+    for (auto eb : ebs) {
+      const std::string &name = eb->name();
+      fmt::print("\t|{2:^{0}}|{3:{1}n}  |\n", max_name, max_face - 2, name,
+                 boundary_faces[name].size());
+    }
+    fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
+  }
+#endif
 } // namespace
+
+std::pair<std::string, int> Iocgns::Utils::decompose_name(const std::string &name, bool is_parallel)
+{
+  int         proc = is_parallel ? -1 : 0;
+  std::string zname{name};
+
+  if (is_parallel) {
+    // Name should/might be of the form `basename_proc-#`.  Strip
+    // off the `_proc-#` portion and return just the basename.
+    auto tokens = Ioss::tokenize(zname, "_");
+    zname       = tokens[0];
+    if (tokens.size() >= 2) {
+      size_t idx = tokens.size() - 1;
+      if (tokens[idx].substr(0, 5) == "proc-") {
+        auto ptoken = Ioss::tokenize(tokens[idx], "-");
+        proc        = std::stoi(ptoken[1]);
+        idx--;
+        zname = tokens[idx];
+      }
+    }
+  }
+  return std::make_pair(zname, proc);
+}
+
+template <typename INT>
+void Iocgns::Utils::map_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
+                                          INT *idata)
+{
+  // Map from CGNS to IOSS/Exodus/Patran order...
+  switch (topo->shape()) {
+  case Ioss::ElementShape::HEX:
+    switch (topo->number_nodes()) {
+    case 8:
+    case 20: break;
+    case 27: {
+      // nodes 1 through 20 are the same...
+      //
+      // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
+      // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
+      static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
+      for (size_t i = 0; i < element_count; i++) {
+        size_t             con_beg = 27 * i; // start of connectivity for i'th element.
+        std::array<int, 7> reorder;
+        for (size_t j = 0; j < 7; j++) {
+          reorder[j] = idata[con_beg + hex27_map[j]];
+        }
+
+        for (size_t j = 0; j < 7; j++) {
+          idata[con_beg + 20 + j] = reorder[j];
+        }
+      }
+    }
+    }
+    break;
+  default:
+      // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add error
+      // checking)
+      ;
+  }
+}
+
+template void Iocgns::Utils::map_cgns_connectivity<int>(const Ioss::ElementTopology *topo,
+                                                        size_t element_count, int *idata);
+template void Iocgns::Utils::map_cgns_connectivity<int64_t>(const Ioss::ElementTopology *topo,
+                                                            size_t element_count, int64_t *idata);
+
+template <typename INT>
+void Iocgns::Utils::unmap_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
+                                            INT *idata)
+{
+  // Map from IOSS/Exodus/Patran to CGNS order...
+  switch (topo->shape()) {
+  case Ioss::ElementShape::HEX:
+    switch (topo->number_nodes()) {
+    case 8:
+    case 20: break;
+    case 27: {
+      // nodes 1 through 20 are the same...
+      //
+      // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
+      // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
+      static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
+      for (size_t i = 0; i < element_count; i++) {
+        size_t             con_beg = 27 * i; // start of connectivity for i'th element.
+        std::array<int, 7> reorder;
+        for (size_t j = 0; j < 7; j++) {
+          reorder[j] = idata[con_beg + 20 + j];
+        }
+
+        for (size_t j = 0; j < 7; j++) {
+          idata[con_beg + hex27_map[j]] = reorder[j];
+        }
+      }
+    }
+    }
+    break;
+  default:
+      // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add error
+      // checking)
+      ;
+  }
+}
+
+template void Iocgns::Utils::unmap_cgns_connectivity<int>(const Ioss::ElementTopology *topo,
+                                                          size_t element_count, int *idata);
+template void Iocgns::Utils::unmap_cgns_connectivity<int64_t>(const Ioss::ElementTopology *topo,
+                                                              size_t element_count, int64_t *idata);
 
 void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *function, int lineno,
                                int processor)
@@ -547,7 +662,7 @@ bool Iocgns::Utils::is_cell_field(const Ioss::Field &field)
   if (index & CG_VERTEX_FIELD_ID) {
     return false;
   }
-  else if (index & CG_CELL_CENTER_FIELD_ID) {
+  if (index & CG_CELL_CENTER_FIELD_ID) {
     return true;
   }
   return !(field.get_name() == "mesh_model_coordinates" ||
@@ -1145,6 +1260,12 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
         CGERR(cg_1to1_write(file_ptr, base, db_zone, connect_name.c_str(), donor_name.c_str(),
                             owner_range.data(), donor_range.data(), zgc.m_transform.data(),
                             &zgc_idx));
+
+        if (zgc.is_from_decomp()) {
+          CGERR(cg_goto(file_ptr, base, "Zone_t", db_zone, "ZoneGridConnectivity", 0,
+                        "GridConnectivity1to1_t", zgc_idx, "end"));
+          CGERR(cg_descriptor_write("Decomp", "is_decomp"));
+        }
       }
     }
   }
@@ -1257,9 +1378,9 @@ CG_ElementType_t Iocgns::Utils::map_topology_to_cgns(const std::string &name)
 }
 
 void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
-                                                 int *vertex_solution_index,
-                                                 int *cell_center_solution_index,
-                                                 bool is_parallel_io)
+                                                 const int *vertex_solution_index,
+                                                 const int *cell_center_solution_index,
+                                                 bool       is_parallel_io)
 {
   std::string c_name = fmt::format("CellCenterSolutionAtStep{:05}", state);
   std::string v_name = fmt::format("VertexSolutionAtStep{:05}", state);
@@ -1275,7 +1396,8 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
     int base = block->get_property("base").get_int();
     int zone = get_db_zone(block);
     if (has_nodal_fields) {
-      CGERR(cg_sol_write(file_ptr, base, zone, v_name.c_str(), CG_Vertex, vertex_solution_index));
+      CGERR(cg_sol_write(file_ptr, base, zone, v_name.c_str(), CG_Vertex,
+                         (int *)vertex_solution_index));
       CGERR(
           cg_goto(file_ptr, base, "Zone_t", zone, "FlowSolution_t", *vertex_solution_index, "end"));
       CGERR(cg_gridlocation_write(CG_Vertex));
@@ -1283,7 +1405,7 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
     }
     if (block->field_count(Ioss::Field::TRANSIENT) > 0) {
       CGERR(cg_sol_write(file_ptr, base, zone, c_name.c_str(), CG_CellCenter,
-                         cell_center_solution_index));
+                         (int *)cell_center_solution_index));
       CGERR(cg_goto(file_ptr, base, "Zone_t", zone, "FlowSolution_t", *cell_center_solution_index,
                     "end"));
       CGERR(cg_descriptor_write("Step", step.c_str()));
@@ -1641,6 +1763,7 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
   // * data     (cgsize_t * 7) (bocotype + range[6])
 
   int num_bcs = 0;
+
   CGCHECKNP(cg_nbocos(cgns_file_ptr, base, zone, &num_bcs));
 
   std::vector<int>  bc_data(7 * num_bcs);
@@ -1691,6 +1814,34 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
     bool is_parallel_io = true;
     add_bc_to_block(block, boco_name, fam_name, ibc, range, bocotype, is_parallel_io);
   }
+}
+
+void Iocgns::Utils::generate_boundary_faces(
+    Ioss::Region *region, std::map<std::string, Ioss::FaceUnorderedSet> &boundary_faces,
+    Ioss::Field::BasicType field_type)
+{
+  // See if we already generated the faces for this model...
+  Ioss::FaceGenerator face_generator(*region);
+  if (field_type == Ioss::Field::INT32) {
+    face_generator.generate_faces((int)0, true);
+  }
+  else {
+    face_generator.generate_faces((int64_t)0, true);
+  }
+  const Ioss::ElementBlockContainer &ebs = region->get_element_blocks();
+  for (auto eb : ebs) {
+    const std::string &name     = eb->name();
+    auto &             boundary = boundary_faces[name];
+    auto &             faces    = face_generator.faces(name);
+    for (auto &face : faces) {
+      if (face.elementCount_ == 1) {
+        boundary.insert(face);
+      }
+    }
+  }
+#if IOSS_DEBUG_OUTPUT
+  output_table(ebs, boundary_faces);
+#endif
 }
 
 void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                    cgns_file_ptr,
@@ -1911,8 +2062,8 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
             (block->type() == Ioss::STRUCTUREDBLOCK)
                 ? &(dynamic_cast<Ioss::StructuredBlock *>(block)->get_node_block())
                 : region->get_node_blocks()[0];
-        Ioss::NodeBlock *nb           = const_cast<Ioss::NodeBlock *>(cnb);
-        size_t           entity_count = nb->entity_count();
+        auto * nb           = const_cast<Ioss::NodeBlock *>(cnb);
+        size_t entity_count = nb->entity_count();
         Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT,
                                 enable_field_recognition, suffix_separator, nullptr, fields);
         size_t index = 1;
@@ -2527,7 +2678,9 @@ void Iocgns::Utils::show_config()
   fmt::print(stderr, "\t\tParallel NOT enabled\n");
 #endif
 #if CG_BUILD_HDF5
-  unsigned major, minor, release;
+  unsigned major;
+  unsigned minor;
+  unsigned release;
   H5get_libversion(&major, &minor, &release);
   fmt::print(stderr, "\t\tHDF5 enabled ({}.{}.{})\n", major, minor, release);
 #else
@@ -2543,4 +2696,58 @@ void Iocgns::Utils::show_config()
 #else
   fmt::print(stderr, "\t\tHDF5 Multi-Dataset NOT Available.\n\n");
 #endif
+}
+
+namespace {
+  void create_face(Ioss::FaceUnorderedSet &faces, size_t id, std::array<size_t, 4> &conn,
+                   size_t element, int local_face)
+  {
+    Ioss::Face face(id, conn);
+    auto       face_iter = faces.insert(face);
+
+    (*(face_iter.first)).add_element(element * 10 + local_face);
+  }
+} // namespace
+
+void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
+                                         const cgsize_t *        connectivity,
+                                         Ioss::FaceUnorderedSet &boundary)
+{
+  // Only handle continuum elements at this time...
+  if (topo->parametric_dimension() != 3) {
+    return;
+  }
+
+  int num_face_per_elem = topo->number_faces();
+  assert(num_face_per_elem <= 6);
+  std::array<Ioss::IntVector, 6> face_conn;
+  std::array<int, 6>             face_node_count{};
+  for (int face = 0; face < num_face_per_elem; face++) {
+    face_conn[face]       = topo->face_connectivity(face + 1);
+    face_node_count[face] = topo->face_type(face + 1)->number_corner_nodes();
+  }
+
+  Ioss::FaceUnorderedSet all_faces;
+  int                    num_node_per_elem = topo->number_nodes();
+  for (size_t elem = 0, offset = 0; elem < num_elem; elem++, offset += num_node_per_elem) {
+    for (int face = 0; face < num_face_per_elem; face++) {
+      size_t id = 0;
+      assert(face_node_count[face] <= 4);
+      std::array<size_t, 4> conn = {{0, 0, 0, 0}};
+      for (int j = 0; j < face_node_count[face]; j++) {
+        size_t fnode = offset + face_conn[face][j];
+        size_t lnode = connectivity[fnode]; // local since "connectivity_raw"
+        conn[j]      = lnode;
+        id += Ioss::FaceGenerator::id_hash(lnode);
+      }
+      create_face(all_faces, id, conn, elem + 1, face);
+    }
+  }
+
+  // All faces generated for this element block; now extract boundary faces...
+  for (auto &face : all_faces) {
+    if (face.elementCount_ == 1) {
+      boundary.insert(face);
+    }
+  }
 }

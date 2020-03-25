@@ -316,8 +316,9 @@ static int gl_getc(void)
 #ifdef __unix__
   char ch;
   while ((c = read(0, &ch, 1)) == -1) {
-    if (errno != EINTR)
+    if (errno != EINTR) {
       break;
+    }
   }
   c = (ch <= 0) ? -1 : ch;
 #endif /* __unix__ */
@@ -369,7 +370,7 @@ static int gl_getcx(int tlen)
       /* ready */
       break;
     }
-    else if (result == 0) {
+    if (result == 0) {
       errno = ETIMEDOUT;
       return (-2);
     }
@@ -380,10 +381,12 @@ static int gl_getcx(int tlen)
 
   for (errno = 0;;) {
     c = read(0, &ch, 1);
-    if (c == 1)
+    if (c == 1) {
       return ((int)ch);
-    if (errno != EINTR)
+    }
+    if (errno != EINTR) {
       break;
+    }
   }
 
   return (-1);

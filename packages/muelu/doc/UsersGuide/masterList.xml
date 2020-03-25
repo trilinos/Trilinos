@@ -1,3 +1,4 @@
+
 <masterlist>
 
   <general>
@@ -387,6 +388,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: distance laplacian algo</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: drop tol</name>
       <type>double</type>
       <default>0.0</default>
@@ -409,6 +419,14 @@
       <default>-1</default>
       <description>Maximum size of an aggregate (-1 means unlimited).</description>
       <visible>true</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: compute aggregate qualities</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to compute aggregate quality estimates.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -464,8 +482,8 @@
     <parameter>
       <name>aggregation: coloring algorithm</name>
       <type>string</type>
-      <default>default</default>
-      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently always set to COLORING_D2_SERIAL.</description>
+      <default>serial</default>
+      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -685,7 +703,80 @@
     </parameter>
 
 
+    <parameter>
+      <name>aggregation: pairwise: size</name>
+      <type>int</type>
+      <default>8</default>
+      <description>Target size for pairwise aggregation.  The number
+      of pairwise steps used will be log base-2 of this number.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
   </aggregation>
+
+  <aggregate_qualities>
+
+    <parameter>
+      <name>aggregate qualities: check symmetry</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: good aggregate threshold</name>
+      <type>double</type>
+      <default>100.0</default>
+      <description>Maximum quality where aggregate is considered acceptable.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: file output</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to output files containing the aggregate qualities.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: file base</name>
+      <type>string</type>
+      <default>agg_qualities</default>
+      <description>Base of filename for aggregate quality output.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: algorithm</name>
+      <type>string</type>
+      <default>forward</default>
+      <description>Which aggregate qualtiy algorithm to use:
+      ``forward'' or ``reverse.''  The forward algorithm uses the
+      ``A'' matrix in the denominator of the generalized eigenvalue
+      problem.  The reverse algorithm uses it in the numerator.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+    
+    <parameter>
+      <name>aggregate qualities: zero threshold</name>
+      <type>double</type>
+      <default>1e-12</default>
+      <description>The zero threshold for the reverse algorithm.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: percentiles</name>
+      <type>Array(double)</type>
+      <default>{}</default>
+      <description>Percentiles of aggregate qualities to report (in a [0,1] range).</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+  </aggregate_qualities>
 
   <misc>
 

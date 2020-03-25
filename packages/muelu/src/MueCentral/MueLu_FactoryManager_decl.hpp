@@ -51,6 +51,7 @@
 #include "MueLu_FactoryManagerBase.hpp"
 
 #include "MueLu_AmalgamationFactory_fwd.hpp"
+#include "MueLu_AggregateQualityEstimateFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"
@@ -69,6 +70,9 @@
 #include "MueLu_TrilinosSmoother_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
+#include "MueLu_InterfaceMappingTransferFactory_fwd.hpp"
+#include "MueLu_InterfaceAggregationFactory_fwd.hpp"
+
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationFactory_kokkos_fwd.hpp"

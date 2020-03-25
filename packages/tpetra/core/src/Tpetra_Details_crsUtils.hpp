@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 
@@ -46,7 +44,10 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_UnorderedMap.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_CrsPadding.hpp"
+#include <iostream>
+#include <memory>
 
 /// \file Tpetra_Details_crsUtils.hpp
 /// \brief Functions for manipulating CRS arrays
@@ -61,121 +62,327 @@ namespace impl {
 
 template<class ViewType>
 ViewType
-uninitialized_view(const std::string& name, const size_t& size)
+make_uninitialized_view(
+  const std::string& name,
+  const size_t size,
+  const bool verbose,
+  const std::string* const prefix)
 {
-  return ViewType (Kokkos::view_alloc(name, Kokkos::WithoutInitializing), size);
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Allocate Kokkos::View " << name
+       << ": " << size << std::endl;
+    std::cerr << os.str();
+  }
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  return ViewType(view_alloc(name, WithoutInitializing), size);
 }
 
+template<class ViewType>
+ViewType
+make_initialized_view(
+  const std::string& name,
+  const size_t size,
+  const bool verbose,
+  const std::string* const prefix)
+{
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Allocate & initialize Kokkos::View "
+       << name << ": " << size << std::endl;
+    std::cerr << os.str();
+  }
+  return ViewType(name, size);
+}
+
+template<class OutViewType, class InViewType>
+void
+assign_to_view(OutViewType& out,
+               const InViewType& in,
+               const char viewName[],
+               const bool verbose,
+               const std::string* const prefix)
+{
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Assign to Kokkos::View " << viewName
+       << ": Old size: " << out.extent(0)
+       << ", New size: " << in.extent(0) << std::endl;
+    std::cerr << os.str();
+  }
+  out = in;
+}
+
+template<class MemorySpace, class ViewType>
+auto create_mirror_view(
+  const MemorySpace& memSpace,
+  const ViewType& view,
+  const bool verbose,
+  const std::string* const prefix) ->
+  decltype(Kokkos::create_mirror_view(memSpace, view))
+{
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Create mirror view: "
+       << "view.extent(0): " << view.extent(0) << std::endl;
+    std::cerr << os.str();
+  }
+  return Kokkos::create_mirror_view(memSpace, view);
+}
+
+enum class PadCrsAction {
+  INDICES_ONLY,
+  INDICES_AND_VALUES
+};
+
 /// \brief Implementation of padCrsArrays
+///
+/// \param row_ptr_beg [in] Offset to beginning of each row.
+/// \param row_ptr_end [in] Offset to end of each row.
+///
+/// Each row lclRow has row_ptr_end[lclRow] - row_ptr_beg[lclRow]
+/// entries.  Offsets row_ptr_end[lclRow] to
+/// row_ptr_beg[lclRow+1] - 1 (inclusive) are extra space.
 template<class RowPtr, class Indices, class Values, class Padding>
 void
 pad_crs_arrays(
-    const RowPtr& row_ptr_beg,
-    const RowPtr& row_ptr_end,
-    Indices& indices,
-    Values& values,
-    const Padding& padding)
+  const PadCrsAction action,
+  const RowPtr& row_ptr_beg,
+  const RowPtr& row_ptr_end,
+  Indices& indices,
+  Values& values,
+  const Padding& padding,
+  const int my_rank,
+  const bool verbose)
 {
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  using std::endl;
+  std::unique_ptr<std::string> prefix;
 
-  if (padding.size() == 0 || row_ptr_beg.size() == 0) {
-    // Nothing to do
-    return;
+  const size_t maxNumToPrint = verbose ?
+    Behavior::verbosePrintCountThreshold() : size_t(0);
+  if (verbose) {
+    std::ostringstream os;
+    os << "Proc " << my_rank << ": Tpetra::...::pad_crs_arrays: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    std::cerr << os.str();
+  }
+  Kokkos::HostSpace hostSpace;
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "On input: ";
+    auto row_ptr_beg_h =
+      Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
+    Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
+    verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg before scan",
+                      maxNumToPrint);
+    os << ", ";
+    auto row_ptr_end_h =
+      Kokkos::create_mirror_view(hostSpace, row_ptr_end);
+    Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
+    verbosePrintArray(os, row_ptr_end_h, "row_ptr_end before scan",
+                      maxNumToPrint);
+    os << ", indices.extent(0): " << indices.extent(0)
+       << ", values.extent(0): " << values.extent(0)
+       << ", padding: ";
+    padding.print(os);
+    os << endl;
+    std::cerr << os.str();
   }
 
-  auto pad_values = values.extent(0) == indices.extent(0);
+  if (row_ptr_beg.size() == 0) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done; local matrix has no rows" << endl;
+      std::cerr << os.str();
+    }
+    return; // nothing to do
+  }
 
-  // Determine if the indices array is large enough
-  auto num_row = row_ptr_beg.size() - 1;
-  auto policy = Kokkos::RangePolicy<typename Padding::execution_space>(0, num_row);
-  RowPtr entries_this_row("entries_this_row", num_row);
-  Kokkos::deep_copy(entries_this_row, 0);
-  size_t additional_size_needed = 0;
-  Kokkos::parallel_reduce("Determine additional size needed", policy,
-    KOKKOS_LAMBDA(const int i, size_t& ladditional_size_needed) {
+  const size_t lclNumRows(row_ptr_beg.size() - 1);
+  RowPtr newAllocPerRow =
+    make_uninitialized_view<RowPtr>("newAllocPerRow", lclNumRows,
+                                    verbose, prefix.get());
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Fill newAllocPerRow & compute increase" << endl;
+    std::cerr << os.str();
+  }
+  size_t increase = 0;
+  {
+    auto row_ptr_end_h = create_mirror_view(
+      hostSpace, row_ptr_end, verbose, prefix.get());
+    Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
+    auto row_ptr_beg_h = create_mirror_view(
+      hostSpace, row_ptr_beg, verbose, prefix.get());
+    Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
 
-      auto allocated_this_row = row_ptr_beg(i+1) - row_ptr_beg(i);
-      auto used_this_row = row_ptr_end(i) - row_ptr_beg(i);
-      auto free_this_row = allocated_this_row - used_this_row;
-      entries_this_row(i) = allocated_this_row;
+    auto newAllocPerRow_h = create_mirror_view(
+      hostSpace, newAllocPerRow, verbose, prefix.get());
+    using host_range_type = Kokkos::RangePolicy<
+      Kokkos::DefaultHostExecutionSpace, size_t>;
+    Kokkos::parallel_reduce
+      ("Tpetra::CrsGraph: Compute new allocation size per row",
+       host_range_type(0, lclNumRows),
+       [&] (const size_t lclRowInd, size_t& lclIncrease) {
+         const size_t start = row_ptr_beg_h[lclRowInd];
+         const size_t end   = row_ptr_beg_h[lclRowInd+1];
+         TEUCHOS_ASSERT( end >= start );
+         const size_t oldAllocSize = end - start;
+         const size_t oldNumEnt = row_ptr_end_h[lclRowInd] - start;
+         TEUCHOS_ASSERT( oldNumEnt <= oldAllocSize );
 
-      auto k = padding.find(static_cast<typename Padding::key_type>(i));
-      if (padding.valid_at(k)) {
-        // Additional padding was requested for this LID
-        auto num_ent = padding.value_at(k);
-        auto n = (num_ent > free_this_row) ? num_ent - free_this_row : 0;
-        entries_this_row(i) += n;
-        ladditional_size_needed += n;
-      }
-    }, additional_size_needed);
+         // This is not a pack routine.  Do not shrink!  Shrinking now
+         // to fit the number of entries would ignore users' hint for
+         // the max number of entries in each row.  Also, CrsPadding
+         // only counts entries and ignores any available free space.
 
-  if (additional_size_needed == 0)
-    return;
+         auto result = padding.get_result(lclRowInd);
+         const size_t newNumEnt = oldNumEnt + result.numInSrcNotInTgt;
+         if (newNumEnt > oldAllocSize) {
+           lclIncrease += (newNumEnt - oldAllocSize);
+           newAllocPerRow_h[lclRowInd] = newNumEnt;
+         }
+         else {
+           newAllocPerRow_h[lclRowInd] = oldAllocSize;
+         }
+       }, increase);
 
-  using ptrs_value_type = typename RowPtr::non_const_value_type;
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "increase: " << increase << ", ";
+      verbosePrintArray(os, newAllocPerRow_h, "newAllocPerRow",
+                        maxNumToPrint);
+      os << endl;
+      std::cerr << os.str();
+    }
+
+    if (increase == 0) {
+      return;
+    }
+    Kokkos::deep_copy(newAllocPerRow, newAllocPerRow_h);
+  }
+
   using inds_value_type = typename Indices::non_const_value_type;
   using vals_value_type = typename Values::non_const_value_type;
 
-  // The indices array must be resized and the row_ptr arrays shuffled
-  auto indices_new = uninitialized_view<Indices>("ind new", indices.size()+additional_size_needed);
-  auto values_new = uninitialized_view<Values>("val new", pad_values ? values.size()+additional_size_needed : 0);
-  Kokkos::deep_copy(values_new, vals_value_type(0.0));
+  const size_t newIndsSize = size_t(indices.size()) + increase;
+  auto indices_new = make_uninitialized_view<Indices>(
+    "Tpetra::CrsGraph column indices", newIndsSize, verbose,
+    prefix.get());
 
-  // mfh: Not so fussy about this not being a kernel initially,
-  // since we're adding a new feature upon which existing code does not rely,
-  // namely Export/Import to a StaticProfile CrsGraph.  However, watch out
-  // for fence()ing relating to UVM.
-  auto this_row_beg = row_ptr_beg(0);
-  auto this_row_end = row_ptr_end(0);
-  using range = Kokkos::pair<ptrs_value_type, ptrs_value_type>;
-  for (typename RowPtr::size_type i=0; i<num_row-1; i++) {
-
-    auto used_this_row = this_row_end - this_row_beg;
-
-    // Copy over indices
-    {
-      auto indices_old_subview = subview(indices, range(this_row_beg, this_row_beg+used_this_row));
-      auto indices_new_subview = subview(indices_new, range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
-      // just call memcpy; it works fine on device if this becomes a kernel
-      memcpy(indices_new_subview.data(), indices_old_subview.data(), used_this_row * sizeof(inds_value_type));
-    }
-
-    // And then the values
-    if (pad_values) {
-      auto values_old_subview = subview(values, range(this_row_beg, this_row_beg+used_this_row));
-      auto values_new_subview = subview(values_new, range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
-      memcpy(values_new_subview.data(), values_old_subview.data(), used_this_row * sizeof(vals_value_type));
-    }
-
-    // Before modifying the row_ptr arrays, save current beg, end for next iteration
-    this_row_beg = row_ptr_beg(i+1);
-    this_row_end = row_ptr_end(i+1);
-
-    auto used_next_row = row_ptr_end(i+1) - row_ptr_beg(i+1);
-    row_ptr_beg(i+1) = row_ptr_beg(i) + entries_this_row(i);
-    row_ptr_end(i+1) = row_ptr_beg(i+1) + used_next_row;
+  Values values_new;
+  if (action == PadCrsAction::INDICES_AND_VALUES) {
+    const size_t newValsSize = newIndsSize;
+    // NOTE (mfh 10 Feb 2020) If we don't initialize values_new here,
+    // then the CrsMatrix tests fail.
+    values_new = make_initialized_view<Values>(
+      "Tpetra::CrsMatrix values", newValsSize, verbose, prefix.get());
   }
 
-  {
-    // Copy indices/values for last row
-    row_ptr_beg(num_row) = indices_new.size();
-    auto n = num_row - 1;
-    auto used_this_row = row_ptr_end(n) - row_ptr_beg(n);
-
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Repack" << endl;
+    std::cerr << os.str();
+  }
+  using execution_space = typename Indices::execution_space;
+  using range_type = Kokkos::RangePolicy<execution_space, size_t>;
+  Kokkos::parallel_scan(
+    "Tpetra::CrsGraph or CrsMatrix repack",
+    range_type(0, lclNumRows+1),
+    KOKKOS_LAMBDA (const size_t lclRow, size_t& newRowBeg,
+                   const bool finalPass)
     {
-      auto indices_old_subview = subview(indices, range(this_row_beg, this_row_beg+used_this_row));
-      auto indices_new_subview = subview(indices_new, range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
-      memcpy(indices_new_subview.data(), indices_old_subview.data(), used_this_row * sizeof(inds_value_type));
-    }
+      // row_ptr_beg    has lclNumRows + 1 entries.
+      // row_ptr_end    has lclNumRows     entries.
+      // newAllocPerRow has lclNumRows     entries.
+      const size_t row_beg = row_ptr_beg[lclRow];
+      const size_t row_end =
+        lclRow < lclNumRows ? row_ptr_end[lclRow] : row_beg;
+      const size_t numEnt = row_end - row_beg;
+      const size_t newRowAllocSize =
+        lclRow < lclNumRows ? newAllocPerRow[lclRow] : size_t(0);
+      if (finalPass) {
+        if (lclRow < lclNumRows) {
+          const Kokkos::pair<size_t, size_t> oldRange(
+            row_beg, row_beg + numEnt);
+          const Kokkos::pair<size_t, size_t> newRange(
+            newRowBeg, newRowBeg + numEnt);
+          auto oldColInds = subview(indices, oldRange);
+          auto newColInds = subview(indices_new, newRange);
+          // memcpy works fine on device; the next step is to
+          // introduce two-level parallelism and use team copy.
+          memcpy(newColInds.data(), oldColInds.data(),
+                 numEnt * sizeof(inds_value_type));
+          if (action == PadCrsAction::INDICES_AND_VALUES) {
+            auto oldVals = subview(values, oldRange);
+            auto newVals = subview(values_new, newRange);
+            memcpy(newVals.data(), oldVals.data(),
+                   numEnt * sizeof(vals_value_type));
+          }
+        }
+        // It's the final pass, so we can modify these arrays.
+        row_ptr_beg[lclRow] = newRowBeg;
+        if (lclRow < lclNumRows) {
+          row_ptr_end[lclRow] = newRowBeg + numEnt;
+        }
+      }
+      newRowBeg += newRowAllocSize;
+    });
 
-    if (pad_values) {
-      auto values_old_subview = subview(values, range(this_row_beg, this_row_beg+used_this_row));
-      auto values_new_subview = subview(values_new, range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
-      memcpy(values_new_subview.data(), values_old_subview.data(), used_this_row * sizeof(vals_value_type));
-    }
+  if (verbose) {
+    std::ostringstream os;
+
+    os << *prefix;
+    auto row_ptr_beg_h =
+      Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
+    Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
+    verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg after scan",
+                      maxNumToPrint);
+    os << endl;
+
+    os << *prefix;
+    auto row_ptr_end_h =
+      Kokkos::create_mirror_view(hostSpace, row_ptr_end);
+    Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
+    verbosePrintArray(os, row_ptr_end_h, "row_ptr_end after scan",
+                      maxNumToPrint);
+    os << endl;
+
+    std::cerr << os.str();
   }
 
-  indices = indices_new;
-  values = values_new;
+  assign_to_view(indices, indices_new,
+                 "Tpetra::CrsGraph column indices",
+                 verbose, prefix.get());
+  assign_to_view(values, values_new,
+                 "Tpetra::CrsMatrix values",
+                 verbose, prefix.get());
+
+  if (verbose) {
+    auto indices_h = Kokkos::create_mirror_view(hostSpace, indices);
+    Kokkos::deep_copy(indices_h, indices);
+    auto values_h = Kokkos::create_mirror_view(hostSpace, values);
+    Kokkos::deep_copy(values_h, values);
+    std::ostringstream os;
+    os << "On output: ";
+    verbosePrintArray(os, indices_h, "indices", maxNumToPrint);
+    os << ", ";
+    verbosePrintArray(os, values_h, "values", maxNumToPrint);
+    os << ", padding: ";
+    padding.print(os);
+    os << endl;
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 /// \brief Implementation of insertCrsIndices
@@ -292,10 +499,6 @@ find_crs_indices(
 ///        column index (in the indices array) of row i.
 /// \param [in/out] indices - array containing columns indices of nonzeros in
 ///        CRS representation.
-/// \param [in] padding - Kookos::UnorderedMap. padding[i] is the amount of free
-///        space required for row i. If the distance between row_ptr_end[i] and
-///        row_ptr_beg[i] does not accommodate padding[i], we resize and shift
-///        indices to accommodate.
 ///
 template<class RowPtr, class Indices, class Padding>
 void
@@ -303,12 +506,16 @@ padCrsArrays(
     const RowPtr& rowPtrBeg,
     const RowPtr& rowPtrEnd,
     Indices& indices,
-    const Padding& padding)
+    const Padding& padding,
+    const int my_rank,
+    const bool verbose)
 {
   using impl::pad_crs_arrays;
   // send empty values array
   Indices values;
-  pad_crs_arrays<RowPtr, Indices, Indices, Padding>(rowPtrBeg, rowPtrEnd, indices, values, padding);
+  pad_crs_arrays<RowPtr, Indices, Indices, Padding>(
+    impl::PadCrsAction::INDICES_ONLY, rowPtrBeg, rowPtrEnd,
+    indices, values, padding, my_rank, verbose);
 }
 
 template<class RowPtr, class Indices, class Values, class Padding>
@@ -318,10 +525,14 @@ padCrsArrays(
     const RowPtr& rowPtrEnd,
     Indices& indices,
     Values& values,
-    const Padding& padding)
+    const Padding& padding,
+    const int my_rank,
+    const bool verbose)
 {
   using impl::pad_crs_arrays;
-  pad_crs_arrays<RowPtr, Indices, Values, Padding>(rowPtrBeg, rowPtrEnd, indices, values, padding);
+  pad_crs_arrays<RowPtr, Indices, Values, Padding>(
+    impl::PadCrsAction::INDICES_AND_VALUES, rowPtrBeg, rowPtrEnd,
+    indices, values, padding, my_rank, verbose);
 }
 
 /// \brief Insert new indices in to current list of indices

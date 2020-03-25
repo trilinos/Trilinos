@@ -63,8 +63,8 @@ namespace Iohb {
     void add(const std::string &name, std::vector<std::string> &value);
 
   private:
-    std::ostringstream layout_;
-    std::string        separator_;
+    std::ostringstream layout_{};
+    std::string        separator_{};
 
     int  precision_;
     int  count_; // Number of fields on current line...

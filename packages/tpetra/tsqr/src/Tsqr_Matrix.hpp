@@ -77,98 +77,12 @@ namespace TSQR {
     using mat_view_type = MatView<ordinal_type, non_const_value_type>;
     using const_mat_view_type = MatView<ordinal_type, const_value_type>;
 
-  private:
-    static bool
-    fits_in_size_t (const ordinal_type& ord)
-    {
-      const ordinal_type result = ordinal_type (size_t (ord));
-      return (ord == result);
-    }
-
-    /// Check whether num_rows*num_cols makes sense as an amount of
-    /// storage (for the num_rows by num_cols dense matrix).  Not
-    /// making sense includes negative values for either parameter (if
-    /// they are signed types), or overflow when computing their
-    /// product.  Throw an exception of the appropriate type for any
-    /// of these cases.  Otherwise, return num_rows*num_cols as a
-    /// size_t.
-    ///
-    /// \param num_rows [in] Number of rows in the matrix
-    /// \param num_cols [in] Number of columns in the matrix
-    /// \return num_rows*num_cols
-    size_t
-    verified_alloc_size (const ordinal_type num_rows,
-                         const ordinal_type num_cols) const
-    {
-      static_assert (std::numeric_limits<ordinal_type>::is_integer,
-                     "ordinal_type must be an integer type.");
-      // Quick exit also checks for zero num_cols (which prevents
-      // division by zero in the tests below).
-      if (num_rows == 0 || num_cols == 0) {
-        return size_t(0);
-      }
-
-      // If ordinal_type is signed, make sure that num_rows and num_cols
-      // are nonnegative.
-      if (std::numeric_limits<ordinal_type>::is_signed) {
-        if (num_rows < 0) {
-          std::ostringstream os;
-          os << "# rows (= " << num_rows << ") < 0";
-          throw std::logic_error (os.str());
-        }
-        else if (num_cols < 0) {
-          std::ostringstream os;
-          os << "# columns (= " << num_cols << ") < 0";
-          throw std::logic_error (os.str());
-        }
-      }
-
-      // If ordinal_type is bigger than a size_t, do special range
-      // checking.  The compiler warns (comparison of signed and
-      // unsigned) if ordinal_type is a signed type and we try to do
-      // "numeric_limits<size_t>::max() <
-      // std::numeric_limits<ordinal_type>::max()", so instead we cast each
-      // of num_rows and num_cols to size_t and back to ordinal_type again,
-      // and see if we get the same result.  If not, then we
-      // definitely can't return a size_t product of num_rows and
-      // num_cols.
-      if (! fits_in_size_t (num_rows)) {
-        std::ostringstream os;
-        os << "# rows (= " << num_rows << ") > max size_t value (= "
-           << std::numeric_limits<size_t>::max() << ")";
-        throw std::range_error (os.str());
-      }
-      else if (! fits_in_size_t (num_cols)) {
-        std::ostringstream os;
-        os << "# columns (= " << num_cols << ") > max size_t value (= "
-           << std::numeric_limits<size_t>::max() << ")";
-        throw std::range_error (os.str());
-      }
-
-      // Both num_rows and num_cols fit in a size_t, and are
-      // nonnegative.  Now check whether their product also fits in a
-      // size_t.
-      //
-      // Note: This may throw a SIGFPE (floating-point exception) if
-      // num_cols is zero.  Be sure to check first (above).
-      if (size_t (num_rows) >
-          std::numeric_limits<size_t>::max() / size_t (num_cols)) {
-        std::ostringstream os;
-        os << "num_rows (= " << num_rows << ") * num_cols (= "
-           << num_cols << ") > max size_t value (= "
-           << std::numeric_limits<size_t>::max() << ")";
-        throw std::range_error (os.str());
-      }
-      return size_t (num_rows) * size_t (num_cols);
-    }
-
-  public:
     //! Constructor with dimensions.
     Matrix (const ordinal_type num_rows,
             const ordinal_type num_cols) :
       nrows_ (num_rows),
       ncols_ (num_cols),
-      A_ (verified_alloc_size (num_rows, num_cols))
+      A_ (size_t (num_rows) * size_t (num_cols))
     {}
 
     //! Constructor with dimensions and fill datum.
@@ -177,7 +91,7 @@ namespace TSQR {
             const non_const_value_type& value) :
       nrows_ (num_rows),
       ncols_ (num_cols),
-      A_ (verified_alloc_size (num_rows, num_cols), value)
+      A_ (size_t (num_rows) * size_t (num_cols), value)
     {}
 
     /// \brief Copy constructor.
@@ -188,21 +102,17 @@ namespace TSQR {
     Matrix (const Matrix& in) :
       nrows_ (in.extent(0)),
       ncols_ (in.extent(1)),
-      A_ (verified_alloc_size (in.extent(0), in.extent(1)))
+      A_ (size_t (in.extent(0)) * size_t (in.extent(1)))
     {
-      if (! in.empty()) {
-        MatView<ordinal_type, non_const_value_type> this_view
-          (extent(0), extent(1), data(), stride(1));
-        MatView<ordinal_type, const_value_type> in_view
-          (in.extent(0), in.extent(1), in.data(), in.stride(1));
-        deep_copy (this_view, in_view);
-      }
+      MatView<ordinal_type, const_value_type> in_view
+        (in.extent(0), in.extent(1), in.data(), in.stride(1));
+      deep_copy (*this, in_view);
     }
 
     //! Default constructor (constructs an empty matrix).
     Matrix () = default;
 
-    /// \brief "Copy constructor" from a matrix view type.
+    /// \brief "Copy constructor" from a Matrix or MatrixView.
     ///
     /// This constructor allocates a new matrix and copies the
     /// elements of the input view into the resulting new matrix.
@@ -212,7 +122,7 @@ namespace TSQR {
     Matrix (const MatrixViewType& in) :
       nrows_ (in.extent(0)),
       ncols_ (in.extent(1)),
-      A_ (verified_alloc_size (in.extent(0), in.extent(1)))
+      A_ (size_t (in.extent(0)) * size_t (in.extent(1)))
     {
       if (A_.size() != 0) {
         MatView<ordinal_type, non_const_value_type> this_view
@@ -246,18 +156,6 @@ namespace TSQR {
       return A_[i];
     }
 
-    //! Equality: ONLY compares dimensions and pointers (shallow).
-    template<class MatrixViewType>
-    bool operator== (const MatrixViewType& B) const
-    {
-      if (data() != B.data() || extent(0) != B.extent(0) ||
-          extent(1) != B.extent(1) || stride(1) != B.stride(1)) {
-        return false;
-      } else {
-        return true;
-      }
-    }
-
     constexpr ordinal_type extent (const int r) const noexcept {
       return r == 0 ? nrows_ : (r == 1 ? ncols_ : ordinal_type(0));
     }
@@ -265,9 +163,6 @@ namespace TSQR {
     constexpr ordinal_type stride(const int r) const noexcept {
       return r == 0 ? ordinal_type(1) : (r == 1 ? nrows_ : ordinal_type(0));
     }
-
-    //! Whether the matrix is empty (has either zero rows or zero columns).
-    bool empty() const { return extent(0) == 0 || extent(1) == 0; }
 
     //! A non-const pointer to the matrix data.
     pointer data()
@@ -308,7 +203,7 @@ namespace TSQR {
       if (num_rows == extent(0) && num_cols == extent(1))
         return; // no need to reallocate or do anything else
 
-      const size_t alloc_size = verified_alloc_size (num_rows, num_cols);
+      const size_t alloc_size = size_t (num_rows) * size_t (num_cols);
       nrows_ = num_rows;
       ncols_ = num_cols;
       A_.resize (alloc_size);
@@ -327,6 +222,11 @@ namespace TSQR {
     std::vector<non_const_value_type> A_;
   };
 
+  template<class LO, class SC>
+  bool empty (const Matrix<LO, SC>& A) {
+    return A.extent(0) == 0 || A.extent(1) == 0;
+  }
+
   template<class LO, class SC, class SourceScalar>
   void
   deep_copy (Matrix<LO, SC>& tgt, const SourceScalar& src)
@@ -342,6 +242,23 @@ namespace TSQR {
              const SourceMat<SourceOrdinal, SourceScalar>& src)
   {
     deep_copy (tgt.view(), src);
+  }
+
+  template<class LO, class TargetScalar, class SourceScalar>
+  void
+  copy_upper_triangle (Matrix<LO, TargetScalar>& R_out,
+                       const MatView<LO, SourceScalar>& R_in)
+  {
+    copy_upper_triangle (R_out.view (), R_in);
+  }
+
+  template<class LO, class TargetScalar, class SourceScalar>
+  void
+  copy_upper_triangle (Matrix<LO, TargetScalar>& R_out,
+                       const Matrix<LO, SourceScalar>& R_in)
+  {
+    auto R_out_view = R_out.view ();
+    copy_upper_triangle (R_out_view, R_in.const_view ());
   }
 
   template<class LO, class SC>

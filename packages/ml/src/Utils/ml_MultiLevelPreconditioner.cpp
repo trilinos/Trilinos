@@ -2122,21 +2122,33 @@ ComputePreconditioner(const bool CheckPreconditioner)
     if (!List_.get("energy minimization: enable", false))
       ML_CHK_ERR(SetSmoothingDamping());
 
-    if (List_.get("aggregation: aux: enable", false)) {
-      double Threshold   = List_.get("aggregation: aux: threshold", 0.0);
-      int MaxAuxLevels   = List_.get("aggregation: aux: max levels", 10);
-      ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
+    bool use_aux_agg = List_.get("aggregation: aux: enable", false);
+    bool use_mat_agg = List_.get("aggregation: material: enable", false);
+    if (use_aux_agg && use_mat_agg){ 
+      double AuxThreshold = List_.get("aggregation: aux: threshold", 0.0);
+      int AuxMaxLevels    = List_.get("aggregation: aux: max levels", 10);
+      double MatThreshold = List_.get("aggregation: material: threshold", 0.0);
+      int MatMaxLevels    = List_.get("aggregation: material: max levels", 10);
+      ml_->Amat[LevelID_[0]].aux_data->threshold = AuxThreshold;
+      ml_->Amat[LevelID_[0]].aux_data->m_threshold = MatThreshold; 
       ml_->Amat[LevelID_[0]].aux_data->enable = 1;
-      ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = (MatMaxLevels < AuxMaxLevels) ? MatMaxLevels : AuxMaxLevels;
       ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
     }
-
-    if (List_.get("aggregation: material: enable", false)) {
-      double Threshold   = List_.get("aggregation: material: threshold", 0.0);
-      int MaxAuxLevels   = List_.get("aggregation: material: max levels", 10);
-      ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
+    else if(use_aux_agg) {
+      double AuxThreshold = List_.get("aggregation: aux: threshold", 0.0);
+      int AuxMaxLevels    = List_.get("aggregation: aux: max levels", 10);
+      ml_->Amat[LevelID_[0]].aux_data->threshold = AuxThreshold;
       ml_->Amat[LevelID_[0]].aux_data->enable = 1;
-      ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = AuxMaxLevels;
+      ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
+    }
+    else if (use_mat_agg) {
+      double MatThreshold = List_.get("aggregation: material: threshold", 0.0);
+      int MatMaxLevels    = List_.get("aggregation: material: max levels", 10);
+      ml_->Amat[LevelID_[0]].aux_data->m_threshold = MatThreshold;
+      ml_->Amat[LevelID_[0]].aux_data->enable = 1;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = MatMaxLevels;
       ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
     }
 
@@ -2902,8 +2914,10 @@ SetParameterList(const ParameterList & List)
 int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
 {
 
-  char finest[80];
-  char coarsest[80];
+  char finest[160];
+  char finest_tmp[80];
+  char coarsest[160];
+  char coarsest_tmp[80];
   finest[0] = '\0';
   coarsest[0] = '\0';
   char * label;
@@ -2912,33 +2926,33 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
 
   if (ml_->pre_smoother[i].smoother->func_ptr != NULL) {
     label = ml_->pre_smoother[i].label;
-    if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest, "%s", "~");
-    else                                sprintf(finest, "%s", label);
-  } else                                sprintf(finest, "%s", "~");
+    if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest_tmp, "%s", "~");
+    else                                sprintf(finest_tmp, "%s", label);
+  } else                                sprintf(finest_tmp, "%s", "~");
 
   if (ml_->post_smoother[i].smoother->func_ptr != NULL) {
     label = ml_->post_smoother[i].label;
-    if( strncmp(label,"PostS_", 5) == 0 ) sprintf(finest, "%s/~", finest);
-    else                                  sprintf(finest, "%s/%s", finest, label);
-  } else                                  sprintf(finest, "%s/~", finest);
+    if( strncmp(label,"PostS_", 5) == 0 ) sprintf(finest,  "%s/~", finest_tmp);
+    else                                  sprintf(finest, "%s/%s", finest_tmp, label);
+  } else                                  sprintf(finest,  "%s/~", finest_tmp);
 
   if (i != ml_->ML_coarsest_level) {
     i = ml_->ML_coarsest_level;
     if ( ML_CSolve_Check( &(ml_->csolve[i]) ) == 1 ) {
-    sprintf(coarsest, "%s", ml_->csolve[i].label);
+    sprintf(coarsest_tmp, "%s", ml_->csolve[i].label);
     }
 
     else {
       if (ml_->pre_smoother[i].smoother->func_ptr != NULL) {
-    label = ml_->pre_smoother[i].label;
-    if( strncmp(label,"PreS_",4) == 0 ) sprintf(coarsest, "%s", "~");
-    else                                sprintf(coarsest, "%s", label);
-      } else                                sprintf(coarsest, "%s", "~");
+        label = ml_->pre_smoother[i].label;
+        if( strncmp(label,"PreS_",4) == 0 ) sprintf(coarsest_tmp, "%s", "~");
+        else                                sprintf(coarsest_tmp, "%s", label);
+      } else                                sprintf(coarsest_tmp, "%s", "~");
       if (ml_->post_smoother[i].smoother->func_ptr != NULL) {
-    label = ml_->post_smoother[i].label;
-    if( strncmp(label,"PostS_", 5) == 0 ) sprintf(coarsest, "%s/~", coarsest);
-    else                                  sprintf(coarsest, "%s/%s",coarsest, label);
-      } else                                  sprintf(coarsest, "%s/~", coarsest);
+        label = ml_->post_smoother[i].label;
+        if( strncmp(label,"PostS_", 5) == 0 ) sprintf(coarsest, "%s/~", coarsest_tmp);
+        else                                  sprintf(coarsest, "%s/%s",coarsest_tmp, label);
+      } else                                  sprintf(coarsest, "%s/~", coarsest_tmp);
     }
   }
 
@@ -3142,6 +3156,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   double Omega = List_.get("coarse: damping factor", 1.0);
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
   std::string PreOrPostSmoother = List_.get("coarse: pre or post","post");
+  int splitComm = (int) List_.get("coarse: split communicator",true);
   int pre_or_post;
 
   if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
@@ -3331,26 +3346,26 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
   else if( CoarseSolution == "Amesos-LAPACK" ) {
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_LAPACK, MaxProcs, AddToDiag);
+                           ML_AMESOS_LAPACK, MaxProcs, AddToDiag, splitComm);
   }
   else if( CoarseSolution == "Amesos-KLU" ) {
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_KLU, MaxProcs, AddToDiag);
+                           ML_AMESOS_KLU, MaxProcs, AddToDiag, splitComm);
   } else if( CoarseSolution == "Amesos-UMFPACK" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_UMFPACK, MaxProcs, AddToDiag);
+                           ML_AMESOS_UMFPACK, MaxProcs, AddToDiag, splitComm);
   else if(  CoarseSolution == "Amesos-Superludist" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag);
+                           ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag, splitComm);
   else if(  CoarseSolution == "Amesos-Superlu" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_SUPERLU, MaxProcs, AddToDiag);
+                           ML_AMESOS_SUPERLU, MaxProcs, AddToDiag, splitComm);
   else if( CoarseSolution == "Amesos-MUMPS" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_MUMPS, MaxProcs, AddToDiag);
+                           ML_AMESOS_MUMPS, MaxProcs, AddToDiag, splitComm);
   else if( CoarseSolution == "Amesos-ScaLAPACK" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1],
-                           ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
+                           ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag, splitComm);
 
  else if( CoarseSolution == "block Gauss-Seidel" ) {
     if( verbose_ ) std::cout << msg << "block Gauss-Seidel (sweeps="

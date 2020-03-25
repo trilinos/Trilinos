@@ -63,10 +63,10 @@ namespace Excn {
       }
     }
 
-    std::vector<INT> localNodeToGlobal;
-    std::vector<INT> localElementToGlobal;
+    std::vector<INT> localNodeToGlobal{};
+    std::vector<INT> localElementToGlobal{};
 
-    std::string title;
+    std::string title{};
 
     size_t dimensionality{0};
     size_t nodeCount{0};
@@ -95,9 +95,9 @@ namespace Excn {
 
     size_t entity_count() const { return elementCount; }
 
-    IntVector                truthTable;
-    std::vector<std::string> attributeNames;
-    std::string              name_;
+    IntVector                truthTable{};
+    std::vector<std::string> attributeNames{};
+    std::string              name_{};
     int64_t                  id{0};
     size_t                   elementCount{0};
     size_t                   nodesPerElement{0};
@@ -127,33 +127,33 @@ namespace Excn {
   {
     NodeSet() = default;
 
-    IntVector   truthTable;
+    IntVector   truthTable{};
     int64_t     id{0};
     size_t      nodeCount{0};
     size_t      dfCount{0};
     size_t      offset_{0};
     size_t      position_{0};
-    std::string name_;
+    std::string name_{};
 
-    std::vector<INT> nodeSetNodes;
-    std::vector<INT> nodeOrderMap;
-    DistVector       distFactors;
+    std::vector<INT> nodeSetNodes{};
+    std::vector<INT> nodeOrderMap{};
+    DistVector       distFactors{};
 
     size_t entity_count() const { return nodeCount; }
 
     void dump() const
     {
-      fmt::print(stderr, "NodeSet {}, Name: '{}', {:n} nodes, {:n} df,\torder = {}\n", id, name_,
-                 nodeCount, dfCount, position_);
+      fmt::print("NodeSet {}, Name: '{}', {:n} nodes, {:n} df,\torder = {}\n", id, name_, nodeCount,
+                 dfCount, position_);
     }
 
     void dump_order() const
     {
       dump();
       for (size_t i = 0; i < nodeCount; i++) {
-        fmt::print(stderr, "{}, ", nodeOrderMap[i]);
+        fmt::print("{}, ", nodeOrderMap[i]);
       }
-      fmt::print(stderr, "\n");
+      fmt::print("\n");
     }
   };
 
@@ -162,28 +162,28 @@ namespace Excn {
   {
     SideSet() = default;
 
-    IntVector   truthTable;
+    IntVector   truthTable{};
     int64_t     id{0};
     size_t      sideCount{0};
     size_t      dfCount{0};
     size_t      offset_{0};
     size_t      position_{0};
-    std::string name_;
+    std::string name_{};
 
-    std::vector<INT> elems;
-    std::vector<INT> sides;
+    std::vector<INT> elems{};
+    std::vector<INT> sides{};
 
     // For conjoin only. Maps the location (of elems, sides, vars) within this sideset into
     // the location in the corresponding global sideset
-    std::vector<INT> elemOrderMap;
-    DistVector       distFactors;
+    std::vector<INT> elemOrderMap{};
+    DistVector       distFactors{};
 
     size_t entity_count() const { return sideCount; }
 
     void dump() const
     {
-      fmt::print(stderr, "SideSet {}, Name: '{}', {:n} sides, {:n} df\toffset = {}, order = {}\n",
-                 id, name_, sideCount, dfCount, offset_, position_);
+      fmt::print("SideSet {}, Name: '{}', {:n} sides, {:n} df\toffset = {}, order = {}\n", id,
+                 name_, sideCount, dfCount, offset_, position_);
     }
   };
 
@@ -204,8 +204,8 @@ namespace Excn {
     CommunicationMetaData()                              = default;
     CommunicationMetaData(const CommunicationMetaData &) = delete;
 
-    std::vector<CommunicationMap> nodeMap;
-    std::vector<CommunicationMap> elementMap;
+    std::vector<CommunicationMap> nodeMap{};
+    std::vector<CommunicationMap> elementMap{};
 
     size_t processorId{0};
     size_t processorCount{0};

@@ -54,10 +54,10 @@
 #include "Tpetra_CrsGraph.hpp"
 
 #include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_TpetraMap_decl.hpp"
+#include "Xpetra_TpetraImport_decl.hpp"
+#include "Xpetra_TpetraExport_decl.hpp"
 #include "Xpetra_Utils.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_TpetraImport.hpp"
-#include "Xpetra_TpetraExport.hpp"
 
 namespace Xpetra {
 
@@ -83,16 +83,16 @@ namespace Xpetra {
     //@{
 
     //! Constructor specifying fixed number of entries for each row.
-    TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+    TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, const RCP< ParameterList > &params=null);
 
     //! Constructor specifying (possibly different) number of entries in each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const RCP< ParameterList > &params=null);
 
     //! Constructor specifying column Map and fixed number of entries for each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, const RCP< ParameterList > &params=null);
 
     //! Constructor specifying column Map and number of entries in each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const RCP< ParameterList > &params=null);
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.

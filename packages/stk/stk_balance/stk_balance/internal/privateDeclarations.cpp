@@ -10,6 +10,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/FieldBase.hpp>  // for field_data
+#include <stk_mesh/base/GetEntities.hpp>  // for field_data
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
@@ -638,29 +639,38 @@ void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData, const stk::m
     }
 }
 
-void fill_connectivity_count_field(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings)
+int num_connected_beams(const stk::mesh::BulkData& bulk,
+                             stk::mesh::Entity node)
+{
+  const unsigned numElems = bulk.num_elements(node);
+  const stk::mesh::Entity* elems = bulk.begin_elements(node);
+
+  int numBeams = 0;
+  for(unsigned elemIndex=0; elemIndex<numElems; ++elemIndex) {
+    if (bulk.bucket(elems[elemIndex]).topology() == stk::topology::BEAM_2) {
+      ++numBeams;
+    }
+  }
+
+  return numBeams;
+}
+
+void fill_connectivity_count_field(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings)
 {
     if (balanceSettings.shouldFixSpiders()) {
-        const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
+        const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(bulk);
+        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
-        stk::mesh::Selector beamNodesSelector(stkMeshBulkData.mesh_meta_data().locally_owned_part() &
-                                              stkMeshBulkData.mesh_meta_data().get_topology_root_part(stk::topology::BEAM_2));
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, beamNodesSelector);
-
-        for (stk::mesh::Bucket * bucket : buckets) {
-            for (stk::mesh::Entity node : *bucket) {
-                int * connectivityCount = stk::mesh::field_data(*connectivityCountField, node);
-                const unsigned numElements = stkMeshBulkData.num_elements(node);
-                const stk::mesh::Entity *element = stkMeshBulkData.begin_elements(node);
-                for (unsigned i = 0; i < numElements; ++i) {
-                    if (stkMeshBulkData.bucket(element[i]).topology() == stk::topology::BEAM_2) {
-                        (*connectivityCount)++;
-                    }
-                }
-            }
+        stk::mesh::Selector selectBeamNodes(meta.locally_owned_part() &
+                                              meta.get_topology_root_part(stk::topology::BEAM_2));
+        stk::mesh::EntityVector nodes;
+        mesh::get_selected_entities(selectBeamNodes, bulk.buckets(stk::topology::NODE_RANK), nodes);
+        for(stk::mesh::Entity node : nodes) {
+            int * connectivityCount = stk::mesh::field_data(*connectivityCountField, node);
+            *connectivityCount = num_connected_beams(bulk, node);
         }
 
-        stk::mesh::communicate_field_data(stkMeshBulkData, {connectivityCountField});
+        stk::mesh::communicate_field_data(bulk, {connectivityCountField});
     }
 }
 
@@ -685,11 +695,6 @@ void fill_zoltan2_graph(const BalanceSettings& balanceSettings,
                                                    localIds);
 
     logMessage(stkMeshBulkData.parallel(), "Finished filling in graph data");
-}
-
-bool is_geometric_method(const std::string method)
-{
-    return (method=="rcb" || method=="rib" || method=="multijagged");
 }
 
 
@@ -1061,19 +1066,39 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
     #endif
 }
 
-void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
+bool is_geometric_method(const std::string& method)
+{
+  return (method=="rcb" ||
+          method=="rib" ||
+          method=="multijagged");
+}
+
+bool is_graph_based_method(const std::string& method)
+{
+  return (method == "parmetis");
+}
+
+void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings,
+                                              const int numSubdomainsToCreate,
+                                              stk::mesh::EntityProcVec &decomp,
+                                              stk::mesh::BulkData& stkMeshBulkData,
+                                              const std::vector<stk::mesh::Selector>& selectors)
 {
     ThrowRequireWithSierraHelpMsg(numSubdomainsToCreate > 0);
-    ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) || balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan");
+    ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) ||
+                                  is_graph_based_method(balanceSettings.getDecompMethod()));
 
-    if(is_geometric_method(balanceSettings.getDecompMethod()))
+    if (is_geometric_method(balanceSettings.getDecompMethod()))
     {
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
-        fill_decomp_using_geometric_method(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);
+        fill_decomp_using_geometric_method(balanceSettings, numSubdomainsToCreate,
+                                           decomp, stkMeshBulkData, selectors, localIds);
     }
-    else if (balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan")
+    else if (is_graph_based_method(balanceSettings.getDecompMethod()))
     {
-        stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().globally_shared_part(), "customAura");
+        stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData,
+                                                                          stkMeshBulkData.mesh_meta_data().globally_shared_part(),
+                                                                          "customAura");
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
         internal::fill_connectivity_count_field(stkMeshBulkData, balanceSettings);
         fill_decomp_using_parmetis(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);

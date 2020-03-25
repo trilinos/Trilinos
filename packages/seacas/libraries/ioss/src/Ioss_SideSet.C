@@ -46,7 +46,7 @@
 #include "Ioss_PropertyManager.h"
 
 namespace {
-  const std::string id_str() { return std::string("id"); }
+  std::string id_str() { return std::string("id"); }
   void check_for_duplicate_names(const Ioss::SideSet *sset, const Ioss::SideBlock *side_block)
   {
     const std::string &name = side_block->name();

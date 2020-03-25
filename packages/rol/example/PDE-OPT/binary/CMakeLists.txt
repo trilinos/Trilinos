@@ -1,1 +1,3 @@
 ADD_SUBDIRECTORY(adv-diff)
+ADD_SUBDIRECTORY(adv-diff-SUR)
+ADD_SUBDIRECTORY(elasticity)

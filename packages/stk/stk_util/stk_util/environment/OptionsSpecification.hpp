@@ -63,6 +63,7 @@ struct Option
     isFlag(isFlg), isRequired(isReqd), isImplicit(isImplct),
     position(pos)
   {}
+  virtual ~Option() {}
 
   std::string name;
   std::string abbrev;
@@ -126,7 +127,7 @@ struct ValueType {
 class OptionsSpecification
 {
 public:
-  OptionsSpecification(const std::string& usagePreamble_="", unsigned lineLen=0);
+  OptionsSpecification(const std::string& usagePreamble_="", unsigned lineLen=80);
 
   virtual ~OptionsSpecification(){}
 

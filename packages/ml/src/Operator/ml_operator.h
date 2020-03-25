@@ -96,6 +96,7 @@ typedef struct {
   int       max_level;
   int**     filter;
   int       filter_size;
+  double    m_threshold; /* material threshold */
 
   /* For tracking the filtered vs. unfiltered number of nonzeros */
   int filtered_nnz;

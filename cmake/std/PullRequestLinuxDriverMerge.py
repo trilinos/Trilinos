@@ -28,6 +28,7 @@ import argparse
 import subprocess
 
 
+
 def write_header():
     print('''--------------------------------------------------------------------------------
 -
@@ -35,6 +36,7 @@ def write_header():
 -
 --------------------------------------------------------------------------------''',
           file=sys.stdout)
+
 
 def echoJenkinsVars(workspace):
     print('''
@@ -54,6 +56,7 @@ Environment:
     print('''
 ================================================================================''',
           file=sys.stdout)
+
 
 def parseArgs():
     '''Parse the arguments - no  options are available at this time'''

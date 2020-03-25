@@ -119,7 +119,7 @@ namespace Iotr {
   bool Tensor::internal_execute(const Ioss::Field &field, void *data)
   {
     assert(field.get_type() == Ioss::Field::REAL);
-    double *r = static_cast<double *>(data);
+    auto *r = static_cast<double *>(data);
 
     int count      = field.raw_count();
     int components = field.raw_storage()->component_count();

@@ -859,7 +859,7 @@ void NLNML::NLNML_Preconditioner::Set_Smoothers()
   else if ((fsmoother=="MLS")||(fsmoother=="Cheby"))
     ML_Gen_Smoother_Cheby(ml_,0,ML_BOTH,30.,nsmoothfine);
   else if (fsmoother=="AmesosKLU")
-    ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
+    ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0,1);
   else
   {
     std::cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"
@@ -917,7 +917,7 @@ void NLNML::NLNML_Preconditioner::Set_Smoothers()
     else if ((smoother=="MLS")||(smoother=="Cheby"))
       ML_Gen_Smoother_Cheby(ml_,i,ML_BOTH,30.,nsmooth);
     else if (smoother=="AmesosKLU")
-      ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
+      ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0,1);
     else
     {
       std::cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"
@@ -975,7 +975,7 @@ void NLNML::NLNML_Preconditioner::Set_Smoothers()
   else if ((csmoother=="MLS")||(csmoother=="Cheby"))
     ML_Gen_Smoother_Cheby(ml_,coarsegrid,ML_BOTH,30.,ncsmooth);
   else if (csmoother=="AmesosKLU")
-    ML_Gen_Smoother_Amesos(ml_,coarsegrid,ML_AMESOS_KLU,-1,0.0);
+    ML_Gen_Smoother_Amesos(ml_,coarsegrid,ML_AMESOS_KLU,-1,0.0,1);
   else
   {
     std::cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"

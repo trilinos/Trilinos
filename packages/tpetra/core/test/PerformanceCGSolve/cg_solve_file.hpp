@@ -366,16 +366,10 @@ int run (int argc, char *argv[])
   if (nsize < 0) {
     typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
     b = reader_type::readVectorFile (filename_vector, map->getComm (),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                     map->getNode (),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                      map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
     b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                                          , map->getNode ()
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                          );
   }
 
@@ -392,9 +386,11 @@ int run (int argc, char *argv[])
   StackedTimer::OutputOptions options;
   options.print_warnings = false;
   timer->report(std::cout, comm, options);
-
+  auto xmlOut = timer->reportWatchrXML(std::string("TpetraCG") + std::to_string(comm->getSize()), comm);
   if(myRank == 0)
   {
+    if(xmlOut.length())
+      std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
     if(success)
       std::cout << "End Result: TEST PASSED\n";
     else

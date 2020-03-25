@@ -43,14 +43,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  dmfad_example
-  SOURCES dmfad_example.cpp
-  ARGS -v
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   trad_example
   SOURCES trad_example.cpp
   ARGS -v

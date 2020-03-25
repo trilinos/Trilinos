@@ -42,7 +42,9 @@ int main(int argc, char* argv[])
  
   cout << "basker_test: using " << numthreads << "threads" << endl;
   #ifdef BASKER_KOKKOS
-  Exe_Space::initialize(numthreads);
+  Kokkos::InitArguments init_args;
+  init_args.num_threads = numthreads;
+  Kokkos::initialize(init_args);
   cout << "---------------USING KOKKOS-------------" << endl;
   #else
   //omp_set_num_threads(numthreads);

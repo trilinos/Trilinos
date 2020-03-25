@@ -32,8 +32,11 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK()
   this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
   this->setZeroInitialGuess(   false);
 
+  this->setStageNumber(-1);
+
   this->setTableaus("IMEX RK SSP2");
   this->setObserver();
+  this->setDefaultSolver();
 }
 
 
@@ -57,15 +60,16 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setZeroInitialGuess(   zeroInitialGuess);
 
+  this->setStageNumber(-1);
+
   this->setExplicitTableau(explicitTableau);
   this->setImplicitTableau(implicitTableau);
   this->setOrder(order);
   this->setObserver(obs);
+  this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
-
     this->setModel(appModel);
-    this->setSolver(solver);
     this->initialize();
   }
 }
@@ -78,7 +82,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 {
   if (stepperType == "") stepperType = "IMEX RK SSP2";
 
-  if (stepperType == "IMEX RK 1st order") {
+  if (stepperType == "IMEX RK 1st order"  ) {
     {
       // Explicit Tableau
       typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -138,7 +142,64 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     this->setStepperType("IMEX RK 1st order");
     this->setOrder(1);
 
-  } else if (stepperType == "IMEX RK SSP2") {
+  } else if ( stepperType == "SSP1_111" ) 
+  {
+    {
+      // Explicit Tableau
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      const int NumStages = 1;
+      const int order = 1;
+      Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+      const Scalar one = ST::one();
+      const Scalar zero = ST::zero();
+
+      // Fill A:
+      A(0,0) = zero; 
+
+      // Fill b:
+      b(0) = one; 
+
+      // Fill c:
+      c(0) = zero;
+
+
+      auto expTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+        "Explicit Tableau - SSP1_111",
+        A,b,c,order,order,order));
+
+      this->setExplicitTableau(expTableau);
+    }
+    {
+      // Implicit Tableau
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      const int NumStages = 1;
+      const int order     = 1;
+      Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+      Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+      const Scalar one = ST::one();
+
+      // Fill A:
+      A(0,0) =  one;
+
+      // Fill b:
+      b(0) = one;
+
+      // Fill c:
+      c(0) = one;
+
+      auto impTableau = Teuchos::rcp(new RKButcherTableau<Scalar>(
+        "Implicit Tableau - SSP1_111",
+        A,b,c,order,order,order));
+
+      this->setImplicitTableau(impTableau);
+    }
+    this->setStepperType("IMEX RK 1st order (SSP1_111)");
+    this->setOrder(1);
+
+  } else if (stepperType == "IMEX RK SSP2" ) {
     // Explicit Tableau
     auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
     this->setExplicitTableau(stepperERK->getTableau());
@@ -149,6 +210,30 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     this->setImplicitTableau(stepperSDIRK->getTableau());
 
     this->setStepperType("IMEX RK SSP2");
+    this->setOrder(2);
+  } else if (stepperType == "SSP2_222" ) {
+    // Explicit Tableau
+    auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
+    this->setExplicitTableau(stepperERK->getTableau());
+
+    // Implicit Tableau
+    auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_2Stage3rdOrder<Scalar>());
+    stepperSDIRK->setGammaType("gamma");
+    stepperSDIRK->setGamma( 0.5 );
+    this->setImplicitTableau(stepperSDIRK->getTableau());
+
+    this->setStepperType("IMEX RK SSP2( A-Stable, gamma = 0.5) ");
+    this->setOrder(2);
+  } else if (stepperType == "IMEX RK SSP3" || stepperType == "SSP3_332" ) {
+    // Explicit Tableau
+    auto stepperERK = Teuchos::rcp(new StepperERK_3Stage3rdOrderTVD<Scalar>());
+    this->setExplicitTableau(stepperERK->getTableau());
+
+    // Implicit Tableau
+    auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_3Stage2ndOrder<Scalar>());
+    this->setImplicitTableau(stepperSDIRK->getTableau());
+
+    this->setStepperType("IMEX RK SSP3");
     this->setOrder(2);
   } else if (stepperType == "IMEX RK ARS 233") {
     typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -214,7 +299,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
        "Error - Not a valid StepperIMEX_RK type!  Stepper Type = "
        << stepperType <<  "\n"
        << "  Current valid types are: " << "\n"
-       << "      'IMEX RK 1st order'" << "\n"
+       << "      'IMEX RK 1st order (SSP1_111)'" << "\n"
        << "      'IMEX RK SSP2'" << "\n"
        << "      'IMEX RK ARS 233'" << "\n"
        << "      'General IMEX RK'" << "\n");
@@ -234,6 +319,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     << "    number of stages = " << explicitTableau_->numStages() << "\n"
     << "  Implicit tableau = " << implicitTableau_->description() << "\n"
     << "    number of stages = " << implicitTableau_->numStages() << "\n");
+
+  this->isInitialized_ = false;
 }
 
 
@@ -246,6 +333,8 @@ void StepperIMEX_RK<Scalar>::setExplicitTableau(
     "Error - Received an implicit Tableau for setExplicitTableau()!\n" <<
     "        Tableau = " << explicitTableau->description() << "\n");
   explicitTableau_ = explicitTableau;
+
+  this->isInitialized_ = false;
 }
 
 
@@ -258,6 +347,8 @@ void StepperIMEX_RK<Scalar>::setImplicitTableau(
     "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n" <<
     "        Tableau = " << implicitTableau->description() << "\n");
   implicitTableau_ = implicitTableau;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -279,6 +370,12 @@ void StepperIMEX_RK<Scalar>::setModel(
     "  Likely have given the wrong ModelEvaluator to this Stepper.\n");
 
   setModelPair(modelPairIMEX);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(this->solver_ == Teuchos::null, std::logic_error,
+    "Error - Solver is not set!\n");
+  this->solver_->setModel(modelPairIMEX);
+
+  this->isInitialized_ = false;
 }
 
 
@@ -308,6 +405,8 @@ void StepperIMEX_RK<Scalar>::setModelPair(
     "  Implicit vector dim = " << impXDim << "\n");
 
   this->wrapperModel_ = wrapperModelPairIMEX;
+
+  this->isInitialized_ = false;
 }
 
 /** \brief Create WrapperModelPairIMEX from explicit/implicit ModelEvaluators.
@@ -325,6 +424,8 @@ void StepperIMEX_RK<Scalar>::setModelPair(
   this->wrapperModel_ = Teuchos::rcp(
     new WrapperModelEvaluatorPairIMEX_Basic<Scalar>(
                                               explicitModel, implicitModel));
+
+  this->isInitialized_ = false;
 }
 
 
@@ -332,7 +433,6 @@ template<class Scalar>
 void StepperIMEX_RK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-
   if (this->stepperObserver_ == Teuchos::null)
      this->stepperObserver_  =
         Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
@@ -355,19 +455,13 @@ void StepperIMEX_RK<Scalar>::setObserver(
     *out << " In the future, this will result in a runtime error!" << std::endl;
   }
 
-
+  this->isInitialized_ = false;
 }
 
 
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (explicitTableau_ == Teuchos::null) || (implicitTableau_ == Teuchos::null),
-    std::logic_error,
-    "Error - Need to set the Butcher Tableaus, setTableaus(), before calling "
-    "StepperIMEX_RK::initialize()\n");
-
   TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
     std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
@@ -386,6 +480,8 @@ void StepperIMEX_RK<Scalar>::initialize()
 
   xTilde_ = Thyra::createMember(this->wrapperModel_->get_x_space());
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
+  StepperImplicit<Scalar>::initialize();
 }
 
 
@@ -507,6 +603,8 @@ template<class Scalar>
 void StepperIMEX_RK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  this->checkInitialized();
+
   using Teuchos::RCP;
   using Teuchos::SerialDenseMatrix;
   using Teuchos::SerialDenseVector;
@@ -536,12 +634,13 @@ void StepperIMEX_RK<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     bool pass = true;
-    stageX_ = workingState->getX();
-    Thyra::assign(stageX_.ptr(), *(currentState->getX()));
+    this->stageX_ = workingState->getX();
+    Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
-        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+      this->setStageNumber(i);
+      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j = 0; j < i; ++j) {
         if (AHat(i,j) != Teuchos::ScalarTraits<Scalar>::zero())
@@ -561,9 +660,9 @@ void StepperIMEX_RK<Scalar>::takeStep(
           // stageG_[i] is not needed.
           assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
-          Thyra::assign(stageX_.ptr(), *xTilde_);
+          Thyra::assign(this->stageX_.ptr(), *xTilde_);
           this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
-          evalImplicitModelExplicitly(stageX_, ts, dt, i, stageG_[i]);
+          evalImplicitModelExplicitly(this->stageX_, ts, dt, i, stageG_[i]);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
@@ -581,18 +680,18 @@ void StepperIMEX_RK<Scalar>::takeStep(
         this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
         const Thyra::SolveStatus<Scalar> sStatus =
-          this->solveImplicitODE(stageX_, stageG_[i], ts, p);
+          this->solveImplicitODE(this->stageX_, stageG_[i], ts, p);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
         this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
-        Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *stageX_, alpha, *xTilde_);
+        Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *this->stageX_, alpha, *xTilde_);
       }
 
       this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-      evalExplicitModel(stageX_, tHats, dt, i, stageF_[i]);
+      evalExplicitModel(this->stageX_, tHats, dt, i, stageF_[i]);
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 
@@ -608,8 +707,11 @@ void StepperIMEX_RK<Scalar>::takeStep(
     if (pass == true) workingState->setSolutionStatus(Status::PASSED);
     else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
+    workingState->computeNorms(currentState);
     this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
+  // reset the stage number
+  this->setStageNumber(-1);
   return;
 }
 
@@ -633,14 +735,77 @@ getDefaultStepperState()
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /* verbLevel */) const
+   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
+
+  out << "--- StepperIMEX_RK_Partition ---\n";
+  out << "  explicitTableau_   = " << explicitTableau_ << std::endl;
+  if (verbLevel == Teuchos::VERB_HIGH)
+   explicitTableau_->describe(out, verbLevel);
+  out << "  implicitTableau_   = " << implicitTableau_ << std::endl;
+  if (verbLevel == Teuchos::VERB_HIGH)
+   implicitTableau_->describe(out, verbLevel);
+  out << "  xTilde_            = " << xTilde_  << std::endl;
+  out << "  stageX_            = " << this->stageX_  << std::endl;
+  out << "  stageF_.size()     = " << stageF_.size() << std::endl;
+  int numStages = stageF_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageF_["<<i<<"] = " << stageF_[i] << std::endl;
+  out << "  stageG_.size()     = " << stageG_.size() << std::endl;
+  numStages = stageG_.size();
+  for (int i=0; i<numStages; ++i)
+    out << "    stageG_["<<i<<"] = " << stageG_[i] << std::endl;
+  out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
+  out << "  order_             = " << order_ << std::endl;
+  out << "--------------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperIMEX_RK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  bool isValidSetup = true;
+
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
   Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > wrapperModelPairIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairIMEX<Scalar> >(
       this->wrapperModel_);
-  out << this->getStepperType() << "::describe:" << std::endl
-      << "wrapperModelPairIMEX = " << wrapperModelPairIMEX->description()
-      << std::endl;
+
+  if ( wrapperModelPairIMEX->getExplicitModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The explicit ModelEvaluator is not set!\n";
+  }
+
+  if ( wrapperModelPairIMEX->getImplicitModel() == Teuchos::null) {
+    isValidSetup = false;
+    out << "The implicit ModelEvaluator is not set!\n";
+  }
+
+  if (this->wrapperModel_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The wrapper ModelEvaluator is not set!\n";
+  }
+
+  if (stepperObserver_ == Teuchos::null) {
+    isValidSetup = false;
+    out << "The stepper observer is not set!\n";
+  }
+
+  if ( explicitTableau_ == Teuchos::null ) {
+    isValidSetup = false;
+    out << "The explicit tableau is not set!\n";
+  }
+
+  if ( implicitTableau_ == Teuchos::null ) {
+    isValidSetup = false;
+    out << "The implicit tableau is not set!\n";
+  }
+
+  return isValidSetup;
 }
 
 

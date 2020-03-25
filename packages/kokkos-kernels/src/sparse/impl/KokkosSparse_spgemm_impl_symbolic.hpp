@@ -364,7 +364,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
   //this one will be LP on CPUs
   KOKKOS_INLINE_FUNCTION
@@ -540,7 +540,7 @@ struct KokkosSPGEMM
         int overall_num_unsuccess = 0;
 
         Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &overall_num_unsuccess_) {
+            [&] (const int /* threadid */, int &overall_num_unsuccess_) {
           overall_num_unsuccess_ += num_unsuccess;
         }, overall_num_unsuccess);
 
@@ -620,12 +620,14 @@ struct KokkosSPGEMM
         m_space.release_chunk(globally_used_hash_indices);
       });
     }
-    rowmapC(row_index) = num_elements;
+    Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
+      rowmapC(row_index) = num_elements;
+    });
   }
 
   ////
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
     return shared_memory_size;
   }
 
@@ -880,7 +882,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
 
 
@@ -1179,7 +1181,7 @@ struct KokkosSPGEMM
         int overall_num_unsuccess = 0;
 
         Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &overall_num_unsuccess_) {
+            [&] (const int /* threadid */, int &overall_num_unsuccess_) {
           overall_num_unsuccess_ += num_unsuccess;
         }, overall_num_unsuccess);
 
@@ -1296,11 +1298,14 @@ struct KokkosSPGEMM
       });
       num_elements += num_global_elements;
     }
-
-    rowmapC(row_index) = num_elements;
+    Kokkos::single(Kokkos::PerThread(teamMember),
+      [&]()
+      {
+        rowmapC(row_index) = num_elements;
+      });
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
     return shared_memory_size;
   }
 
@@ -1766,8 +1771,11 @@ void KokkosSPGEMM
 	{
 		Kokkos::Impl::Timer timer1_;
 		size_type c_max_nnz = 0;
-		KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
-		MyExecSpace().fence();
+                if(m > 0)
+                {
+                  KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
+                  MyExecSpace().fence();
+                }
 		this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 
 		if (KOKKOSKERNELS_VERBOSE){
@@ -2269,8 +2277,11 @@ void KokkosSPGEMM
   {
     Kokkos::Impl::Timer timer1_;
     size_type c_max_nnz = 0;
-    KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
-    MyExecSpace().fence();
+    if(m > 0)
+    {
+      KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
+      MyExecSpace().fence();
+    }
     this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 
     if (KOKKOSKERNELS_VERBOSE){

@@ -111,6 +111,14 @@ if (TPL_ENABLE_MPI)
   )
 endif()
 
+TRIBITS_ADD_ADVANCED_TEST(create_path_fpp
+   TEST_0 CMND rm ARGS -rf create_path_test_directory
+   TEST_1 EXEC io_shell ARGS --in_type generated 100x100x100 create_path_test_directory/1/2/3/4/5/tmp.g
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS ${NPROCS}
+   TEST_2 CMND ls ARGS -1 create_path_test_directory/1/2/3/4/5/
+   )
+
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
    TEST_0 EXEC io_shell ARGS -64 ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
      NOEXEPREFIX NOEXESUFFIX
@@ -317,6 +325,26 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
   XHOSTTYPE Windows
   )
 
+IF (NOT SEACASIoss_ENABLE_THREADSAFE)
+TRIBITS_ADD_ADVANCED_TEST(cgns_bc_no_parents_to_exodus
+   TEST_0 EXEC io_shell ARGS ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_without_parents.cgns exodus_bc_parents.e
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_bc_parents.gold exodus_bc_parents.e
+  COMM mpi serial
+  XHOSTTYPE Windows
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(cgns_Q2_bc_no_parents_to_exodus
+   TEST_0 EXEC io_shell ARGS ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_Q2_without_parents.cgns exodus_Q2_bc_parents.e
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS 1
+   TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_Q2_bc_parents.gold exodus_Q2_bc_parents.e
+  COMM mpi serial
+  XHOSTTYPE Windows
+  )
+ENDIF()
+
 TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/generated.cgns exodus_generated.e
      NOEXEPREFIX NOEXESUFFIX
@@ -378,6 +406,21 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_zgc
    TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/5blocks-struc.cgns 5blocks2.cgns
      NUM_MPI_PROCS 1
   COMM mpi serial
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_periodic_roundtrip_fpp
+   TEST_0 EXEC io_shell ARGS --compose external ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-fpp.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 EXEC io_shell ARGS --external --compose external self-looping-fpp.cgns self-looping2.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_2 EXEC io_shell ARGS --external self-looping2.cgns self-looping3.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_3 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping3.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi
   )
 
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_fpp

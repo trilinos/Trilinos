@@ -490,6 +490,7 @@ public:
       if (step_state->searchSize <= ROL_EPSILON<Real>()*algo_state.gnorm && autoRad) {
         step_state->searchSize = one;
       }
+      obj.update(x,true,algo_state.iter);
     }
     // Build trust-region model
     if (bnd.isActivated()) { 
@@ -614,41 +615,6 @@ public:
     // Compute new gradient and update secant storage
     if ( TRflag_ == TRUSTREGION_FLAG_SUCCESS || 
          TRflag_ == TRUSTREGION_FLAG_POSPREDNEG ) {  
-      // Perform line search (smoothing) to ensure decrease 
-      if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
-        Real tol = std::sqrt(ROL_EPSILON<Real>());
-        // Compute new gradient
-        obj.gradient(*gp_,x,tol); // MUST DO SOMETHING HERE WITH TOL
-        algo_state.ngrad++;
-        // Compute smoothed step
-        Real alpha(1);
-        xnew_->set(x);
-        xnew_->axpy(-alpha*alpha_init_,gp_->dual());
-        bnd.project(*xnew_);
-        // Compute new objective value
-        obj.update(*xnew_,true,algo_state.iter);
-        Real ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
-        algo_state.nfval++;
-        // Perform smoothing
-        int cnt = 0;
-        alpha = static_cast<Real>(1)/alpha_init_;
-        while ( (fnew-ftmp) <= mu_*(fnew-fold) ) { 
-          xnew_->set(x);
-          xnew_->axpy(-alpha*alpha_init_,gp_->dual());
-          bnd.project(*xnew_);
-          obj.update(*xnew_,true,algo_state.iter);
-          ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
-          algo_state.nfval++;
-          if ( cnt >= max_fval_ ) {
-            break;
-          }
-          alpha *= beta_;
-          cnt++;
-        }
-        // Store objective function and iteration information
-        fnew = ftmp;
-        x.set(*xnew_);
-      }
       // Store previous gradient for secant update
       if ( useSecantHessVec_ || useSecantPrecond_ ) {
         gp_->set(*(state->gradientVec));

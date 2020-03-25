@@ -90,5 +90,4 @@ void error_report()
       }
     }
   }
-  return;
 }

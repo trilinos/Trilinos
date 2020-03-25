@@ -92,6 +92,11 @@ using Tpetra::Import;
 
 %}
 
+// Include the NumPy typemaps
+%include "numpy.i"
+%fragment("NumPy_Array_Requirements");
+%fragment("NumPy_Object_to_Array");
+
 // Define shortcuts for the default Tpetra template types
 %inline
 %{
@@ -479,9 +484,6 @@ convertPythonToTpetraVector(PyObject * pyobj,
 
 %}
 
-// Global swig features
-%feature("autodoc", "1");
-
 // SWIG standard library include files
 using std::string;
 %include "stl.i"
@@ -501,7 +503,10 @@ import numpy
 %include "Teuchos_Array.i"
 
 // Include Tpetra documentation
+#if SWIG_VERSION < 0x040000
+%feature("autodoc", "1");
 %include "Tpetra_dox.i"
+#endif
 
 // Include the standard exception handlers
 %include "exception.i"
@@ -605,6 +610,7 @@ import numpy
 ////////////////////////////////////////////////////////////
 // Use %import and forward declarations to prevent SWIG warnings when
 // we %include "Tpetra_ConfigDefs.hpp"
+#pragma SWIG nowarn=305
 %import "Teuchos_config.h"
 %import "Teuchos_ConfigDefs.hpp"
 %import "Teuchos_ENull.hpp"
@@ -1139,7 +1145,7 @@ public:
   void modify();
   template<class TargetDeviceType>
   typename Kokkos::Impl::if_c<
-    Kokkos::Impl::is_same<
+    std::is_same<
       typename execution_space::memory_space,
       typename TargetDeviceType::memory_space>::value,
       typename dual_view_type::t_dev,
@@ -1148,17 +1154,17 @@ public:
   void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
            const Teuchos::ArrayView<dot_type>& dots) const;
   template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
+  typename std::enable_if< !(std::is_same<dot_type, T>::value), void >::type
   dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
       const Teuchos::ArrayView<T> &dots) const;
   template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
+  typename std::enable_if< !(std::is_same<dot_type, T>::value), void >::type
   dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
       std::vector<T>& dots) const;
   void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
            const Kokkos::View<dot_type*, execution_space>& dots) const;
   template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
+  typename std::enable_if< !(std::is_same<dot_type, T>::value), void >::type
   dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
       const Kokkos::View<T*, execution_space>& dots) const;
   void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A);
@@ -1178,36 +1184,36 @@ public:
               const Scalar& gamma);
   void norm1(const Kokkos::View<mag_type*, execution_space>& norms) const;
   template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
+  typename std::enable_if< !(std::is_same<mag_type, T>::value), void >::type
   norm1(const Kokkos::View<T*, execution_space>& norms) const;
   void norm1(const Teuchos::ArrayView<mag_type>& norms) const;
   template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+  typename std::enable_if< !(std::is_same<mag_type,T>::value), void >::type
   norm1(const Teuchos::ArrayView<T>& norms) const;
   void norm2(const Kokkos::View<mag_type*, execution_space>& norms) const;
   template<typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
+  typename std::enable_if< !(std::is_same<mag_type, T>::value), void >::type
   norm2(const Kokkos::View<T*, execution_space>& norms) const;
   void norm2(const Teuchos::ArrayView<mag_type>& norms) const;
   template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+  typename std::enable_if< !(std::is_same<mag_type,T>::value), void >::type
   norm2(const Teuchos::ArrayView<T>& norms) const;
   void normInf(const Kokkos::View<mag_type*, execution_space>& norms) const;
   template<typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
+  typename std::enable_if< !(std::is_same<mag_type, T>::value), void >::type
   normInf(const Kokkos::View<T*, execution_space>& norms) const;
   void normInf(const Teuchos::ArrayView<mag_type>& norms) const;
-  // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+  // typename std::enable_if< !(std::is_same<mag_type,T>::value), void >::type
   // normInf(const Teuchos::ArrayView<T>& norms) const;
   // void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
   //                   const Teuchos::ArrayView<mag_type>& norms) const;
   // template <typename T>
-  // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+  // typename std::enable_if< !(std::is_same<mag_type,T>::value), void >::type
   // normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
   //              const Teuchos::ArrayView<T>& norms) const;
   void meanValue(const Teuchos::ArrayView<impl_scalar_type>& means) const;
   template <typename T>
-  typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<impl_scalar_type, T>::value, void>::type
+  typename std::enable_if<! std::is_same<impl_scalar_type, T>::value, void>::type
   meanValue(const Teuchos::ArrayView<T>& means) const;
   void multiply(Teuchos::ETransp transA,
                 Teuchos::ETransp transB,

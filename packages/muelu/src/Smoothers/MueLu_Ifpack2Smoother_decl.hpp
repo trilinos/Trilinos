@@ -187,14 +187,6 @@ namespace MueLu {
 
     //@}
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-    //! Clone the smoother to a different node type
-    template<typename Node2>    
-    RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-    MUELU_DEPRECATED
-    clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const;
-#endif
-
     //! @name Overridden from Teuchos::Describable
     //@{
 
@@ -240,38 +232,6 @@ namespace MueLu {
 
   }; // class Ifpack2Smoother
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template<typename Node2>
-  RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-  MUELU_DEPRECATED
-  Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2>& node2, const RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const {
-#ifdef HAVE_XPETRA_TPETRA
-    const ParameterList& paramList = this->GetParameterList();
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix1;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> Matrix2;
-    RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother =
-        rcp(new Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList, overlap_));
-
-    //Get Tpetra::CrsMatrix from Xpetra::Matrix
-    RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > crsOp =
-        rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >(A_newnode);
-    const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >& tmp =
-        rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >(crsOp->getCrsMatrix());
-
-    Ifpack2::Factory factory;
-    cloneSmoother->prec_ = factory.clone<Matrix1, Matrix2>(prec_, tmp->getTpetra_CrsMatrix(), paramList);
-    cloneSmoother->type_ = type_;
-    cloneSmoother->SetParameterList(paramList);
-    cloneSmoother->IsSetup(this->IsSetup());
-    return cloneSmoother;
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-        "MueLu::Ifpack2Smoother::clone(): clone only available with Tpetra.");
-#endif
-  }
-#endif
-
 #ifdef HAVE_MUELU_EPETRA
 
 # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
@@ -305,12 +265,6 @@ namespace MueLu {
     void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {}
     RCP<SmootherPrototype> Copy() const { return Teuchos::null;}
 
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-    template<typename Node2>
-    RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-    MUELU_DEPRECATED
-    clone(const RCP<Node2>& node2, const Teuchos::RCP<const Matrix >& A_newnode) const { return Teuchos::null; }
-#endif
     std::string description() const { return std::string(""); }
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {}
 

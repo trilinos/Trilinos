@@ -77,15 +77,13 @@ public:
   BranchHelper_PEBBL(const BranchHelper_PEBBL &con) {}
 
   //virtual int getMyIndex(const Vector<Real> &x) const = 0;
-  virtual int getMyIndex(const Vector<Real> &x, const Vector<Real> &lam,
-                         Objective<Real> &obj, Constraint<Real> &con) const = 0;
+  virtual int getMyIndex(const Vector<Real> &x, const Vector<Real> &g) const = 0;
   virtual void getMyNumFrac(int &nfrac, Real &integralityMeasure,
                             const Vector<Real> &x) const = 0;
 
   //int getIndex(const Vector<Real> &x) const {
-  int getIndex(const Vector<Real> &x, const Vector<Real> &lam,
-               Objective<Real> &obj, Constraint<Real> &con) const {
-    return getMyIndex(x,lam,obj,con);
+  int getIndex(const Vector<Real> &x, const Vector<Real> &g) const {
+    return getMyIndex(x,g);
     //return getMyIndex(*getVector(x),lam,obj,con);
   }
 

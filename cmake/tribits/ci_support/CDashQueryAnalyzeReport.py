@@ -57,6 +57,24 @@ from GeneralScriptSupport import *
 
 import cdash_build_testing_date as CBTD
 
+
+# Accept the --date input option with values 'today', 'yesterday', or some
+# 'YYYY-MM-DD' value.
+#
+def convertInputDateArgToYYYYMMDD(cdashProjectTestingDayStartTime, dateText,
+  currentDateTimeStr=None,  # Used for unit testing only
+  ):
+  if dateText == "yesterday" or dateText == "today":
+    if dateText == "yesterday": dayIncr = -1
+    else: dayIncr = 0
+    dateTime = CBTD.getRelativeCDashBuildStartTimeFromCmndLineArgs(
+      currentDateTimeStr, cdashProjectTestingDayStartTime, dayIncr)
+    rtnDate = CBTD.getDateOnlyFromDateTime(dateTime)
+  else:
+    rtnDate = validateAndConvertYYYYMMDD(dateText)
+  return rtnDate
+
+
 # Validate a date YYYY-MM-DD string and return a date object for the
 # 'datetime' module.
 # 

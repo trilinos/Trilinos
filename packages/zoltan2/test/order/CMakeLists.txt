@@ -10,6 +10,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_TEST(
+  Ordering1
+  NAME Ordering1_Ashear
+  COMM serial mpi
+  ARGS
+   "--inputFile=Ashear"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 IF (${PROJECT_NAME}_ENABLE_Galeri)
 
   TRIBITS_ADD_TEST(
@@ -117,6 +127,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_order_tests
     simple.mtx
     simple_coord.mtx
     simple_ordering.mtx
+    Ashear.mtx
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

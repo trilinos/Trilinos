@@ -88,24 +88,6 @@ namespace {
     return Teuchos::rcp(new Teuchos::SerialComm<int>());
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  // Get an instance of the given Kokkos Node type.
-  //
-  // \warning This function is NOT reentrant, and therefore NOT thread safe.
-  template <class Node>
-  Teuchos::RCP<Node> getNode () {
-    //static Teuchos::RCP<Node> node_ = Teuchos::null; // Defaults to null
-    //if (node_.is_null ()) {
-    //  Teuchos::ParameterList pl;
-    //  pl.set<int> ("Num Threads", 0);
-    //  pl.set<int> ("Verbose", 1);
-    //  node_ = Teuchos::rcp (new Node (pl));
-    //}
-    //return node_;
-    Teuchos::ParameterList pl;
-    return Teuchos::rcp (new Node (pl));
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //
   // UNIT TESTS
@@ -198,11 +180,11 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, StridedMaps_Epetra, M, MA, Scalar, LO, GO, Node )
   {
+#ifdef HAVE_XPETRA_EPETRA
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const size_t numLocal = 10;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
-#ifdef HAVE_XPETRA_EPETRA
     typedef Xpetra::CrsMatrixWrap<double, int, GO, Xpetra::EpetraNode> EpCrsMatrix;
 
     Teuchos::RCP<const Xpetra::Map<int,GO,Node> > epmap = Xpetra::MapFactory<int,GO,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
@@ -259,7 +241,6 @@ namespace {
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const size_t numLocal = 10;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
-    using MV  = Xpetra::MultiVector<Scalar,LO,GO,Node>;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -268,6 +249,7 @@ namespace {
 
 
 #ifdef HAVE_XPETRA_TPETRA
+    using MV  = Xpetra::MultiVector<Scalar,LO,GO,Node>;
     typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     RCP<const Xpetra::Map<LO,GO,Node> > map =
       Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);   

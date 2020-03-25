@@ -63,7 +63,7 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
+IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
  # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
 
  TRIBITS_ADD_TEST(
@@ -104,7 +104,7 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
+IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP)
 
   TRIBITS_ADD_TEST(
     BlockPrec
@@ -116,7 +116,7 @@ IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
 
 ENDIF()
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
+IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
  # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
 
  TRIBITS_ADD_TEST(
@@ -140,7 +140,7 @@ ENDIF()
 #################################################
 # ML RefMaxwell solver
 
-IF (NOT Kokkos_ENABLE_Cuda AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
+IF (NOT Kokkos_ENABLE_CUDA AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
 
   TRIBITS_ADD_TEST(
     BlockPrec

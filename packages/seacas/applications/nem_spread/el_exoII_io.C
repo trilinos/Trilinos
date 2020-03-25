@@ -881,7 +881,6 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
     print_line("=", 79);
     fmt::print("\n");
   }
-  return;
 }
 
 /*****************************************************************************/
@@ -1201,10 +1200,17 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
   size_t ielem_count;
 #endif
   INT *  elem_blk             = nullptr, ipos;
-  size_t num_elem_per_message = 0, num_attr_per_message = 0, num_attr_left_over = 0;
-  size_t num_elem_messages = 0, num_attr_messages = 0, num_elem_left_over = 0;
+  size_t num_elem_per_message = 0;
+  size_t num_attr_per_message = 0;
+  size_t num_attr_left_over   = 0;
+  size_t num_elem_messages    = 0;
+  size_t num_attr_messages    = 0;
+  size_t num_elem_left_over   = 0;
 
-  size_t istart_elem, iend_elem, istart_attr, iend_attr;
+  size_t istart_elem;
+  size_t iend_elem;
+  size_t istart_attr;
+  size_t iend_attr;
   int    local_ielem_blk;
 
   /**************************** execution begins ******************************/
@@ -1981,7 +1987,9 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
  */
 
 {
-  size_t num_messages, num_left_over, num_node_per_message;
+  size_t num_messages;
+  size_t num_left_over;
+  size_t num_node_per_message;
 
   /* Allocate arrays */
   std::vector<INT>  list_length(Proc_Info[2]);
@@ -2435,7 +2443,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       /* One element ID + One side ID */
       size_t iss_size = 3 * sizeof(INT);
 
-      size_t num_messages, num_left_over, num_elem_per_message;
+      size_t num_messages;
+      size_t num_left_over;
+      size_t num_elem_per_message;
       find_message_info(iss_size, num_elem_in_ssets[i], &num_elem_per_message, &num_messages,
                         &num_left_over);
 

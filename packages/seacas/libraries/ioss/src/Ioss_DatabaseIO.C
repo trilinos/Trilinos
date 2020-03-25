@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -228,7 +228,12 @@ namespace Ioss {
     if (!is_input()) {
       // Create full path to the output file at this point if it doesn't
       // exist...
-      create_path(DBFilename);
+      if (isParallel) {
+        Ioss::FileInfo::create_path(DBFilename, util().communicator());
+      }
+      else {
+        Ioss::FileInfo::create_path(DBFilename);
+      }
     }
   }
 
@@ -321,13 +326,18 @@ namespace Ioss {
     if (using_dw()) {      // We are about to write to a output database in BB
       Ioss::FileInfo path{filename};
       Ioss::FileInfo bb_file{get_dwPath() + path.tailname()};
-      if (bb_file.exists() &&
-          !bb_file.is_writable()) { // already existing file which has been closed
-        // If we can't write to the file on the BB, then it is a file which
-        // is being staged by datawarp system over to the permanent filesystem.
-        // Wait until staging has finished...
-        // stage wait returns 0 = success, -ENOENT or -errno
+      if (bb_file.exists() && !bb_file.is_writable()) {
+	// already existing file which has been closed If we can't
+        // write to the file on the BB, then it is a file which is
+        // being staged by datawarp system over to the permanent
+        // filesystem.  Wait until staging has finished...  stage wait
+        // returns 0 = success, -ENOENT or -errno
 #if defined SEACAS_HAVE_DATAWARP
+#if IOSS_DEBUG_OUTPUT
+        if (myProcessor == 0) {
+	  fmt::print(stderr, "DW: dw_wait_file_stage({});\n", bb_file.filename());
+	}
+#endif
         int dwret = dw_wait_file_stage(bb_file.filename().c_str());
         if (dwret < 0) {
           std::ostringstream errmsg;
@@ -355,8 +365,38 @@ namespace Ioss {
     if (using_dw()) {
       if (!using_parallel_io() || (using_parallel_io() && myProcessor == 0)) {
 #if defined SEACAS_HAVE_DATAWARP
+	int complete=0, pending=0, deferred=0, failed=0;
+	dw_query_file_stage(get_dwname().c_str(), &complete, &pending, &deferred, &failed);
+#if IOSS_DEBUG_OUTPUT
+        auto initial = std::chrono::high_resolution_clock::now();
+	fmt::print(stderr, "Query: {}, {}, {}, {}\n", complete, pending, deferred, failed);
+#endif
+	if (pending > 0) {
+	  int dwret = dw_wait_file_stage(get_dwname().c_str());
+	  if (dwret < 0) {
+	    std::ostringstream errmsg;
+	    fmt::print(errmsg, "ERROR: failed waiting for file stage `{}`: {}\n", get_dwname(),
+		       std::strerror(-dwret));
+	    IOSS_ERROR(errmsg);
+	  }
+#if IOSS_DEBUG_OUTPUT
+	  dw_query_file_stage(get_dwname().c_str(), &complete, &pending, &deferred, &failed);
+	  fmt::print(stderr, "Query: {}, {}, {}, {}\n", complete, pending, deferred, failed);
+#endif
+	}
+
+#if IOSS_DEBUG_OUTPUT
+        fmt::print(stderr, "\nDW: BEGIN dw_stage_file_out({}, {}, DW_STAGE_IMMEDIATE);\n",
+                   get_dwname(), get_pfsname());
+#endif
         int ret =
             dw_stage_file_out(get_dwname().c_str(), get_pfsname().c_str(), DW_STAGE_IMMEDIATE);
+
+#if IOSS_DEBUG_OUTPUT
+        auto time_now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff     = time_now - initial;
+        fmt::print(stderr, "\nDW: END dw_stage_file_out({})\n", diff.count());
+#endif
         if (ret < 0) {
           std::ostringstream errmsg;
           fmt::print(errmsg, "ERROR: file staging of `{}` to `{}` failed at close: {}\n",
@@ -385,68 +425,6 @@ namespace Ioss {
       exists = static_cast<IfDatabaseExistsBehavior>(properties.get("APPEND_OUTPUT").get_int());
     }
     return exists;
-  }
-
-#if defined(_MSC_VER)
-#include <direct.h>
-#ifndef S_ISDIR
-#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
-#endif
-#endif
-
-  void DatabaseIO::create_path(const std::string &filename) const
-  {
-    bool               error_found = false;
-    std::ostringstream errmsg;
-
-    if (myProcessor == 0) {
-      Ioss::FileInfo file      = Ioss::FileInfo(filename);
-      std::string    path      = file.pathname();
-      std::string    path_root = path[0] == '/' ? "/" : "";
-
-      auto comps = tokenize(path, "/");
-      for (const auto &comp : comps) {
-        path_root += comp;
-
-        struct stat st;
-        if (stat(path_root.c_str(), &st) != 0) {
-          const int mode = 0777; // Users umask will be applied to this.
-#ifdef _MSC_VER
-          if (mkdir(path_root.c_str()) != 0 && errno != EEXIST) {
-#else
-          if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-#endif
-            fmt::print(errmsg, "ERROR: Cannot create directory '{}': {}\n", path_root,
-                       std::strerror(errno));
-            error_found = true;
-            break;
-          }
-        }
-        else if (!S_ISDIR(st.st_mode)) {
-          errno = ENOTDIR;
-          fmt::print(errmsg, "ERROR: Path '{}' is not a directory.\n", path_root);
-          error_found = true;
-          break;
-        }
-        path_root += "/";
-      }
-    }
-    else {
-      // Give the other processors something to say in case there is an error.
-      fmt::print(errmsg,
-                 "ERROR: Could not create path. See processor 0 output for more details.\n");
-    }
-
-    // Sync all processors with error status...
-    // All processors but 0 will have error_found=false
-    // Processor 0 will have error_found = true or false depending on path
-    // result.
-    int is_error = error_found ? 1 : 0;
-    error_found  = (util().global_minmax(is_error, Ioss::ParallelUtils::DO_MAX) == 1);
-
-    if (error_found) {
-      IOSS_ERROR(errmsg);
-    }
   }
 
   const std::string &DatabaseIO::decoded_filename() const

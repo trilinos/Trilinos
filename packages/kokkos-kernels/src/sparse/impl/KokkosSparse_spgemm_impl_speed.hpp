@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include "KokkosKernels_Utils.hpp"
+
 namespace KokkosSparse{
 
 namespace Impl{
@@ -55,7 +57,8 @@ template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t
 struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-  NumericCMEM_CPU{
+  NumericCMEM_CPU
+{
   nnz_lno_t numrows;
   nnz_lno_t numcols;
 
@@ -199,7 +202,7 @@ struct KokkosSPGEMM
         marker [ind] = 0;
       }
     });
-
+    memory_space.release_chunk(dense_accum);
   }
 
 };
@@ -217,7 +220,8 @@ template <typename a_row_view_t__, typename a_nnz_view_t__, typename a_scalar_vi
 struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-  NumericCMEM{
+  NumericCMEM
+{
   nnz_lno_t numrows;
 
   a_row_view_t__ row_mapA;
@@ -300,8 +304,8 @@ struct KokkosSPGEMM
         thread_memory((shared_memory_size /8 / suggested_team_size_) * 8),
         shmem_key_size(), shared_memory_hash_func(), shmem_hash_size(1)
         {
-
-          shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 2) / unit_memory);
+          constexpr size_t scalarAlignPad = (alignof(scalar_t) > alignof(nnz_lno_t)) ? (alignof(scalar_t) - alignof(nnz_lno_t)) : 0;
+          shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 2 - scalarAlignPad) / unit_memory);
           if (KOKKOSKERNELS_VERBOSE_){
             std::cout << "\t\tNumericCMEM -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<
                 " initial key size:" << shmem_key_size << std::endl;
@@ -347,8 +351,7 @@ struct KokkosSPGEMM
     //holds the keys
     nnz_lno_t * keys = (nnz_lno_t *) (all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
-    scalar_t * vals = (scalar_t *) (all_shared_memory);
-
+    scalar_t* vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
     hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
@@ -422,7 +425,7 @@ struct KokkosSPGEMM
           int overall_num_unsuccess = 0;
 
           Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-              [&] (const int threadid, int &overall_num_unsuccess_) {
+              [&] (const int /* threadid */, int &overall_num_unsuccess_) {
             overall_num_unsuccess_ += num_unsuccess;
           }, overall_num_unsuccess);
 
@@ -463,10 +466,38 @@ struct KokkosSPGEMM
     });
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
     return shared_memory_size;
   }
 };
+
+
+//
+// * Notes on KokkosSPGEMM_numeric_speed *
+//
+// Prior to this routine, KokkosSPGEMM_numeric(...) was called
+//
+//   KokkosSPGEMM_numeric(...) :
+//     if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm) :
+//       call KokkosSPGEMM_numeric_speed(...)
+//     else:
+//       call  KokkosSPGEMM_numeric_hash(...)
+//
+//
+// KokkosSPGEMM_numeric_speed:
+//
+// Algorithm selection as follows and matching to kernel Tag:
+//
+//  Policy typedefs with tags found in: KokkosSparse_spgemm_impl.hpp
+//
+//  if Cuda enabled :
+//    "KokkosSparse::NumericCMEM::KKSPEED::GPU" : gpu_team_policy_t,  i.e. GPUTag
+//
+//  else :
+//    "KokkosSparse::NumericCMEM_CPU::DENSE::DYNAMIC" : dynamic_multicore_team_policy_t,  i.e. MultiCoreTag
+//    "KokkosSparse::NumericCMEM_CPU::DENSE::STATIC" :  multicore_team_policy_t,  i.e. MultiCoreTag
+//
+
 
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
@@ -476,11 +507,12 @@ void
   KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-    KokkosSPGEMM_numeric_speed(
+  KokkosSPGEMM_numeric_speed(
     c_row_view_t rowmapC_,
     c_lno_nnz_view_t entriesC_,
     c_scalar_nnz_view_t valuesC_,
-    KokkosKernels::Impl::ExecSpaceType my_exec_space_){
+    KokkosKernels::Impl::ExecSpaceType my_exec_space_)
+{
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tSPEED MODE" << std::endl;

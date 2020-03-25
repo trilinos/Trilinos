@@ -53,6 +53,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
@@ -72,6 +73,8 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_InterfaceMappingTransferFactory.hpp"
+#include "MueLu_InterfaceAggregationFactory.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
@@ -190,6 +193,7 @@ namespace MueLu {
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       if (varName == "UnAmalgamationInfo")              return MUELU_KOKKOS_FACTORY(varName, AmalgamationFactory, AmalgamationFactory_kokkos);
       if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
+      if (varName == "AggregateQualities")       return SetAndReturnDefaultFactory(varName, rcp(new AggregateQualityEstimateFactory()));
       if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
@@ -223,6 +227,8 @@ namespace MueLu {
       }
       if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null)));
 
+      if (varName == "DualNodeID2PrimalNodeID")         return SetAndReturnDefaultFactory(varName, rcp(new InterfaceMappingTransferFactory()));
+      if (varName == "CoarseDualNodeID2PrimalNodeID")   return SetAndReturnDefaultFactory(varName, rcp(new InterfaceAggregationFactory()));
 #ifdef HAVE_MUELU_INTREPID2
       // If we're asking for it, find who made P
       if (varName == "pcoarsen: element to node map")                      return GetFactory("P");
