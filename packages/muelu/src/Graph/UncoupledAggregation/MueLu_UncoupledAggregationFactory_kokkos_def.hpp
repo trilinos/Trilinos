@@ -105,6 +105,8 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
+    SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
 #undef  SET_VALID_ENTRY
