@@ -58,7 +58,7 @@ if [[ "${Trilinos_CTEST_RUN_CUDA_AWARE_MPI}" == "1" ]]; then
 fi
 
 # NOTE: We allow the configure and build to be performed again in the
-# follow-up CUDA-aware MPI build through they don't need to be.  This so that
+# follow-up CUDA-aware MPI build though they don't need to be.  This so that
 # developers that are looking on CDash will be able to see configure-related
 # information associated with that build.  We also need to run configure and
 # build again to make the cdash_analyze_and_report.py tool not report this
