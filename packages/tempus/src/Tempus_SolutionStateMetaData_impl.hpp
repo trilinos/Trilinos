@@ -39,50 +39,6 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    accuracy_      (0.0)
 {}
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-SolutionStateMetaData<Scalar>::SolutionStateMetaData(
-  const Scalar time,
-  const int    iStep,
-  const Scalar dt,
-  const Scalar errorAbs,
-  const Scalar errorRel,
-  const int    order,
-  const int    nFailures,
-  const int    nRunningFailures,
-  const int    nConsecutiveFailures,
-  const Scalar tolRel,
-  const Scalar tolAbs,
-  const Status solutionStatus,
-  const bool   output,
-  const bool   outputScreen,
-  const bool   isSynced,
-  const bool   isInterpolated,
-  const Scalar accuracy)
-  :time_          (time),
-   iStep_         (iStep),
-   dt_            (dt),
-   errorAbs_      (errorAbs),
-   errorRel_      (errorRel),
-   order_         (order),
-   nFailures_     (nFailures),
-   nRunningFailures_(nRunningFailures),
-   nConsecutiveFailures_(nConsecutiveFailures),
-   tolRel_        (tolRel),
-   tolAbs_        (tolAbs),
-   xNormL2_       (0.0),
-   dxNormL2Rel_   (0.0),
-   dxNormL2Abs_   (0.0),
-   computeNorms_  (false),
-   solutionStatus_(solutionStatus),
-   output_        (output),
-   outputScreen_  (outputScreen),
-   isSynced_      (isSynced),
-   isInterpolated_(isInterpolated),
-   accuracy_      (accuracy)
-{}
-#endif
-
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const Scalar time,

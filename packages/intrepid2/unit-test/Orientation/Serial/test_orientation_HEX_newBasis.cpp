@@ -1,11 +1,11 @@
-//@HEADER
+// @HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,24 +34,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
+//
 // ************************************************************************
-//@HEADER
+// @HEADER
 
-#ifndef TSQR_TESTUTILS_HPP
-#define TSQR_TESTUTILS_HPP
+/** \file test_01.cpp
+    \brief  Test for checking orientation tools for hexahedral elements.
+    \author Created by Mauro Perego
+*/
 
-/// \file Tsqr_TestUtils.hpp
-/// \brief Utilities for testing various TSQR components.
-/// \author Mark Hoemmen
+#include "Kokkos_Core.hpp"
 
-#include "TpetraTSQR_config.h"
+#include "test_orientation_HEX_newBasis.hpp"
 
-namespace Teuchos {
-  // Forward declaration of Teuchos::Comm, so that we can use
-  // RCP<Comm<int> > as the argument of methods defined in this header
-  // file, without needing to include Teuchos_Comm.hpp.
-  template<class Ordinal>
-  class Comm;
+int main(int argc, char *argv[]) {
+
+  const bool verbose = (argc-1) > 0;
+  Kokkos::initialize();
+  
+  const int r_val = Intrepid2::Test::OrientationHexNewBasis<double,Kokkos::Serial>(verbose);
+
+  Kokkos::finalize();
+  return r_val;
 }
 
-#endif // TSQR_TESTUTILS_HPP

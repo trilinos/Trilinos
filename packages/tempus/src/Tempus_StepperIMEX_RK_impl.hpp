@@ -235,7 +235,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
     this->setStepperType("IMEX RK SSP3");
     this->setOrder(2);
-  } else if (stepperType == "IMEX RK ARS 233") {
+  } else if (stepperType == "IMEX RK ARS 233" || stepperType == "ARS 233" ) {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     int NumStages = 3;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);

@@ -132,6 +132,9 @@ namespace MueLuTests {
     params.set<int> ("aggregation: max agg size", 3);
     params.set<bool>("aggregation: deterministic", false);
 
+    params.set<bool>("aggregation: error on nodes with no on-rank neighbors", false);
+    params.set<bool>("aggregation: phase3 avoid singletons", false);
+
     if(bPhase1) {
       RCP<MueLu::AggregationAlgorithmBase_kokkos<LO,GO,NO> > phase1
         = rcp(new AggregationPhase1Algorithm_kokkos(dropFact));

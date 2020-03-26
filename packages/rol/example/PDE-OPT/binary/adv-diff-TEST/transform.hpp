@@ -1,11 +1,11 @@
-//@HEADER
+// @HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,24 +34,41 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
 // ************************************************************************
-//@HEADER
+// @HEADER
 
-#ifndef TSQR_TESTUTILS_HPP
-#define TSQR_TESTUTILS_HPP
+#ifndef ROL_PDEOPT_TRANSFORM_PEBBL_H
+#define ROL_PDEOPT_TRANSFORM_PEBBL_H
 
-/// \file Tsqr_TestUtils.hpp
-/// \brief Utilities for testing various TSQR components.
-/// \author Mark Hoemmen
+#include "ROL_StdTransform_PEBBL.hpp"
+#include "../../TOOLS/pdevector.hpp"
 
-#include "TpetraTSQR_config.h"
+template <class Real>
+class PDEOPT_Transform_PEBBL : public ROL::StdTransform_PEBBL<Real> {
+private:
+  ROL::Ptr<ROL::StdVector<Real>> getParameter(ROL::Vector<Real> &x) const {
+    return dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
+  }
 
-namespace Teuchos {
-  // Forward declaration of Teuchos::Comm, so that we can use
-  // RCP<Comm<int> > as the argument of methods defined in this header
-  // file, without needing to include Teuchos_Comm.hpp.
-  template<class Ordinal>
-  class Comm;
-}
+public:
+  PDEOPT_Transform_PEBBL(void)
+    : ROL::StdTransform_PEBBL<Real>() {}
 
-#endif // TSQR_TESTUTILS_HPP
+  PDEOPT_Transform_PEBBL(const PDEOPT_Transform_PEBBL &T)
+    : ROL::StdTransform_PEBBL<Real>(T) {}
+
+  void pruneVector(ROL::Vector<Real> &c) {
+    ROL::StdTransform_PEBBL<Real>::pruneVector(*getParameter(c));
+  }
+
+  void shiftVector(ROL::Vector<Real> &c) {
+    ROL::StdTransform_PEBBL<Real>::shiftVector(*getParameter(c));
+  }
+
+}; // class PDEOPT_Transform_PEBBL
+
+#endif

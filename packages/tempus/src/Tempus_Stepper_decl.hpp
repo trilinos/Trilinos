@@ -69,12 +69,6 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    TEMPUS_DEPRECATED
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& /* appModel */){}
-
-#endif // TEMPUS_HIDE_DEPRECATED_CODE
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
 
     /// Set solver.
