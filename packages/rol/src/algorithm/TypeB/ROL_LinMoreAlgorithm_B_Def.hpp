@@ -56,15 +56,16 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   ParameterList &trlist = list.sublist("Step").sublist("Trust Region");
   // Trust-Region Parameters
   state_->searchSize = trlist.get("Initial Radius",            -1.0);
-  delMax_ = trlist.get("Maximum Radius",                       1.e8);
-  eta0_   = trlist.get("Step Acceptance Threshold",            0.05);
-  eta1_   = trlist.get("Radius Shrinking Threshold",           0.05);
-  eta2_   = trlist.get("Radius Growing Threshold",             0.9);
-  gamma0_ = trlist.get("Radius Shrinking Rate (Negative rho)", 0.0625);
-  gamma1_ = trlist.get("Radius Shrinking Rate (Positive rho)", 0.25);
-  gamma2_ = trlist.get("Radius Growing Rate",                  2.5);
-  TRsafe_ = trlist.get("Safeguard Size",                       100.0);
-  eps_    = TRsafe_*ROL_EPSILON<Real>();
+  delMax_    = trlist.get("Maximum Radius",                       1.e8);
+  eta0_      = trlist.get("Step Acceptance Threshold",            0.05);
+  eta1_      = trlist.get("Radius Shrinking Threshold",           0.05);
+  eta2_      = trlist.get("Radius Growing Threshold",             0.9);
+  gamma0_    = trlist.get("Radius Shrinking Rate (Negative rho)", 0.0625);
+  gamma1_    = trlist.get("Radius Shrinking Rate (Positive rho)", 0.25);
+  gamma2_    = trlist.get("Radius Growing Rate",                  2.5);
+  TRsafe_    = trlist.get("Safeguard Size",                       100.0);
+  eps_       = TRsafe_*ROL_EPSILON<Real>();
+  interpRad_ = trlist.get("Use Radius Interpolation",             false);
   // Krylov Parameters
   maxit_ = list.sublist("General").sublist("Krylov").get("Iteration Limit",    20);
   tol1_  = list.sublist("General").sublist("Krylov").get("Absolute Tolerance", 1e-4);
@@ -273,7 +274,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS) || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
       obj.update(x,false,state_->iter);
-      if (rho < zero && TRflag_ != TRUtils::TRNAN) {
+      if (interpRad_ && (rho < zero && TRflag_ != TRUtils::TRNAN)) {
         // Negative reduction, interpolate to find new trust-region radius
         state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
           state_->snorm,pRed,state_->value,ftrial,state_->searchSize,gamma0_,gamma1_,eta2_,

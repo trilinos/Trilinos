@@ -71,6 +71,7 @@ private:
   Real gamma2_; ///< Radius increase rate (default: 2.5)
   Real TRsafe_; ///< Safeguard size for numerically evaluating ratio (default: 1e2)
   Real eps_;    ///< Safeguard for numerically evaluating ratio
+  bool interpRad_; ///< Interpolate the trust-region radius if ratio is negative (default: false)
 
   // ITERATION FLAGS/INFORMATION
   TRUtils::ETRFlag TRflag_; ///< Trust-region exit flag
