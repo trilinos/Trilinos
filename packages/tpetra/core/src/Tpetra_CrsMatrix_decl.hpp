@@ -4550,6 +4550,7 @@ namespace Tpetra {
     sourceMatrix->exportAndFillComplete (destMatrix, rowExporter, domainExporter, domainMap, rangeMap, params);
     return destMatrix;
   }
+
 } // namespace Tpetra
 
 /**
