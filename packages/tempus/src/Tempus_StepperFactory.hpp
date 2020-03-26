@@ -1451,6 +1451,7 @@ private:
       stepperType == "SSP3_332"          ||
       stepperType == "SSP2_222"          ||
       stepperType == "IMEX RK ARS 233"   ||
+      stepperType == "ARS 233"           ||
       stepperType == "General IMEX RK" )
       return createStepperIMEX_RK(model, stepperType, stepperPL);
     else if (
