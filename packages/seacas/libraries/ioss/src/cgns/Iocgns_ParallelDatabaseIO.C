@@ -947,7 +947,7 @@ namespace Iocgns {
     Utils::write_flow_solution_metadata(get_file_pointer(), get_region(), state,
                                         &m_currentVertexSolutionIndex,
                                         &m_currentCellCenterSolutionIndex, true);
-    m_dbFinalized == false;
+    m_dbFinalized = false;
     return true;
   }
 

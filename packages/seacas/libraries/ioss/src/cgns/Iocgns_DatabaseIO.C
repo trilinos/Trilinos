@@ -2677,7 +2677,7 @@ namespace Iocgns {
 
             for (size_t i = 0; i < block_map->size(); i++) {
               auto idx = global_to_zone_local_idx(i, block_map, nodeMap, isParallel);
-              SMART_ASSERT(idx < num_to_get)(i)(idx)(num_to_get);
+              SMART_ASSERT(idx < (size_t)num_to_get)(i)(idx)(num_to_get);
               x[i] = rdata[idx * spatial_dim + 0];
               if (spatial_dim > 1) {
                 y[i] = rdata[idx * spatial_dim + 1];
@@ -2714,7 +2714,7 @@ namespace Iocgns {
 
             for (size_t i = 0; i < block_map->size(); i++) {
               auto idx = global_to_zone_local_idx(i, block_map, nodeMap, isParallel);
-              SMART_ASSERT(idx < num_to_get)(i)(idx)(num_to_get);
+              SMART_ASSERT(idx < (size_t)num_to_get)(i)(idx)(num_to_get);
               xyz[i] = rdata[idx];
             }
 
