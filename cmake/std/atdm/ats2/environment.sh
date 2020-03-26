@@ -59,7 +59,7 @@ echo "Using $ATDM_CONFIG_SYSTEM_NAME compiler stack $ATDM_CONFIG_COMPILER to bui
 # Some basic settings
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
-export ATDM_CONFIG_BUILD_COUNT=32 # Assume building on a compute node!
+export ATDM_CONFIG_BUILD_COUNT=8 # Assume building on the shared login node!
 
 # Set ctest -j parallel level for non-CUDA builds
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then

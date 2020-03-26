@@ -96,6 +96,15 @@
 extern char hdf5_access[64];
 
 namespace {
+  size_t global_to_zone_local_idx(size_t i, const Ioss::Map *block_map, Ioss::Map &nodeMap,
+                                  bool isParallel)
+  {
+    auto global = block_map->map()[i + 1]; // 1-based index over all nodes in model (all procs)
+    if (isParallel) {
+      return nodeMap.global_to_local(global) - 1;
+    }
+    return global - 1;
+  }
 
 #ifdef SEACAS_HAVE_MPI
   bool has_decomp_descriptor(int cgns_file_ptr, int base, int zone, int zgc_idx)
@@ -119,6 +128,34 @@ namespace {
       }
     }
     return has_decomp_flag;
+  }
+
+  void zgc_check_descriptor(int cgns_file_ptr, int base, int zone, int zgc_idx,
+                            Ioss::ZoneConnectivity &zgc)
+  {
+    if (cg_goto(cgns_file_ptr, base, "Zone_t", zone, "ZoneGridConnectivity", 0,
+                "GridConnectivity1to1_t", zgc_idx, "end") == CG_OK) {
+      int ndescriptor = 0;
+      cg_ndescriptors(&ndescriptor);
+      if (ndescriptor > 0) {
+        for (int i = 0; i < ndescriptor; i++) {
+          char  name[33];
+          char *text = nullptr;
+          cg_descriptor_read(i + 1, name, &text);
+          if (strcmp(name, "OriginalName") == 0) {
+            zgc.m_connectionName = text;
+            cg_free(text);
+            break;
+          }
+          if (strcmp(name, "Decomp") == 0) {
+            zgc.m_fromDecomp = true;
+            cg_free(text);
+            break;
+          }
+          cg_free(text);
+        }
+      }
+    }
   }
 #endif
 
@@ -181,11 +218,6 @@ namespace {
       CGCHECK(cg_1to1_read(cgns_file_ptr, base, db_zone, ii + 1, connectname, donorname,
                            range.data(), donor_range.data(), transform.data()));
 
-      bool is_decomp = false;
-      if (isParallel) {
-        is_decomp = has_decomp_descriptor(cgns_file_ptr, base, db_zone, ii + 1);
-      }
-
       auto        donorname_proc = Iocgns::Utils::decompose_name(donorname, isParallel);
       std::string donor_name     = donorname_proc.first;
 
@@ -218,7 +250,11 @@ namespace {
 
       block->m_zoneConnectivity.back().m_ownerProcessor = myProcessor;
       block->m_zoneConnectivity.back().m_donorProcessor = donorname_proc.second;
-      block->m_zoneConnectivity.back().m_fromDecomp     = is_decomp;
+
+      if (isParallel) {
+        zgc_check_descriptor(cgns_file_ptr, base, db_zone, ii + 1,
+                             block->m_zoneConnectivity.back());
+      }
     }
   }
 
@@ -1441,9 +1477,6 @@ namespace Iocgns {
     // If block I is adjacent to block J, then they will share at
     // least 1 "side" (face 3D or edge 2D).
     // Currently, assuming they are adjacent if they share at least one node...
-
-    int64_t node_count = get_region()->get_property("node_count").get_int();
-
     const auto &blocks = get_region()->get_element_blocks();
     for (auto I = blocks.cbegin(); I != blocks.cend(); I++) {
       int base = (*I)->get_property("base").get_int();
@@ -1451,25 +1484,19 @@ namespace Iocgns {
 
       const auto &I_map = m_globalToBlockLocalNodeMap[zone];
 
-      // Flag all nodes used by this block...
-      std::vector<size_t> I_nodes(node_count);
-      for (size_t i = 0; i < I_map->size(); i++) {
-        auto global = I_map->map()[i + 1] - 1;
-        SMART_ASSERT(global < node_count);
-        I_nodes[global] = i + 1;
-      }
       for (auto J = I + 1; J != blocks.end(); J++) {
         int                   dzone = (*J)->get_property("zone").get_int();
         const auto &          J_map = m_globalToBlockLocalNodeMap[dzone];
         std::vector<cgsize_t> point_list;
         std::vector<cgsize_t> point_list_donor;
         for (size_t i = 0; i < J_map->size(); i++) {
-          auto global = J_map->map()[i + 1] - 1;
-          SMART_ASSERT(global < node_count);
-          if (I_nodes[global] > 0) {
+          auto global = J_map->map()[i + 1];
+          // See if this global id exists in I_map...
+          auto i_zone_local = I_map->global_to_local(global, false);
+          if (i_zone_local > 0) {
             // Have a match between nodes used by two different blocks,
             // They are adjacent...
-            point_list.push_back(I_nodes[global]);
+            point_list.push_back(i_zone_local);
             point_list_donor.push_back(i + 1);
           }
         }
@@ -2620,34 +2647,43 @@ namespace Iocgns {
 
     if (role == Ioss::Field::MESH) {
       if (field.get_name() == "ids") {
-        // Ignored...
+        // Only needed for parallel, but will be sequential in serial, so no space saving to not
+        // use.
+        nodeMap.set_size(num_to_get);
+        if (int_byte_size_api() == 4) {
+          nodeMap.set_map(static_cast<int *>(data), num_to_get, 0);
+        }
+        else {
+          nodeMap.set_map(static_cast<int64_t *>(data), num_to_get, 0);
+        }
       }
       else if (field.get_name() == "mesh_model_coordinates" ||
                field.get_name() == "mesh_model_coordinates_x" ||
                field.get_name() == "mesh_model_coordinates_y" ||
                field.get_name() == "mesh_model_coordinates_z") {
+
+        // 'rdata' is of size number-nodes-on-this-rank
         double *rdata = static_cast<double *>(data);
 
         if (field.get_name() == "mesh_model_coordinates") {
           int spatial_dim = nb->get_property("component_degree").get_int();
           for (const auto &block : m_globalToBlockLocalNodeMap) {
             auto zone = block.first;
-            // NOTE: 'block_map' has one more entry than node_count.  First entry is for something
-            // else.
-            //       'block_map' is 1-based.
+            // NOTE: 'block_map' is 1-based indexing
             const auto &        block_map = block.second;
             std::vector<double> x(block_map->size());
             std::vector<double> y(block_map->size());
             std::vector<double> z(block_map->size());
 
             for (size_t i = 0; i < block_map->size(); i++) {
-              auto global = block_map->map()[i + 1] - 1;
-              x[i]        = rdata[global * spatial_dim + 0];
+              auto idx = global_to_zone_local_idx(i, block_map, nodeMap, isParallel);
+              SMART_ASSERT(idx < (size_t)num_to_get)(i)(idx)(num_to_get);
+              x[i] = rdata[idx * spatial_dim + 0];
               if (spatial_dim > 1) {
-                y[i] = rdata[global * spatial_dim + 1];
+                y[i] = rdata[idx * spatial_dim + 1];
               }
               if (spatial_dim > 2) {
-                z[i] = rdata[global * spatial_dim + 2];
+                z[i] = rdata[idx * spatial_dim + 2];
               }
             }
 
@@ -2672,15 +2708,14 @@ namespace Iocgns {
           // Outputting only a single coordinate value...
           for (const auto &block : m_globalToBlockLocalNodeMap) {
             auto zone = block.first;
-            // NOTE: 'block_map' has one more entry than node_count.  First entry is for something
-            // else.
-            //       'block_map' is 1-based.
+            // NOTE: 'block_map' is 1-based indexing
             const auto &        block_map = block.second;
             std::vector<double> xyz(block_map->size());
 
             for (size_t i = 0; i < block_map->size(); i++) {
-              auto global = block_map->map()[i + 1] - 1;
-              xyz[i]      = rdata[global];
+              auto idx = global_to_zone_local_idx(i, block_map, nodeMap, isParallel);
+              SMART_ASSERT(idx < (size_t)num_to_get)(i)(idx)(num_to_get);
+              xyz[i] = rdata[idx];
             }
 
             std::string cgns_name = "Invalid";
@@ -2722,8 +2757,8 @@ namespace Iocgns {
 
         if (comp_count == 1) {
           for (size_t j = 0; j < block_map->size(); j++) {
-            auto global = block_map->map()[j + 1] - 1;
-            blk_data[j] = rdata[global];
+            auto idx    = global_to_zone_local_idx(j, block_map, nodeMap, isParallel);
+            blk_data[j] = rdata[idx];
           }
           CGCHECKM(cg_field_write(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
                                   CG_RealDouble, field.get_name().c_str(), blk_data.data(),
@@ -2735,8 +2770,8 @@ namespace Iocgns {
 
           for (int i = 0; i < comp_count; i++) {
             for (size_t j = 0; j < block_map->size(); j++) {
-              auto global = block_map->map()[j + 1] - 1;
-              blk_data[j] = rdata[comp_count * global + i];
+              auto idx    = global_to_zone_local_idx(j, block_map, nodeMap, isParallel);
+              blk_data[j] = rdata[comp_count * idx + i];
             }
             std::string var_name =
                 var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
@@ -2846,6 +2881,10 @@ namespace Iocgns {
     int     zone       = Iocgns::Utils::get_db_zone(parent_block);
     ssize_t num_to_get = field.verify(data_size);
 
+    if (num_to_get == 0) {
+      return num_to_get;
+    }
+
     Ioss::Field::RoleType role = field.get_role();
 
     if (role == Ioss::Field::MESH) {
@@ -2867,6 +2906,14 @@ namespace Iocgns {
         //       the data so would have to generate it.  This may cause problems
         //       with codes that use the downstream data if they base the BC off
         //       of the nodes instead of the element/side info.
+        std::vector<cgsize_t> point_range{cg_start, cg_end};
+        CGCHECKM(cg_boco_write(get_file_pointer(), base, zone, name.c_str(), CG_FamilySpecified,
+                               CG_PointRange, 2, point_range.data(), &sect));
+        CGCHECKM(
+            cg_goto(get_file_pointer(), base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", sect, "end"));
+        CGCHECKM(cg_famname_write(name.c_str()));
+        CGCHECKM(cg_boco_gridlocation_write(get_file_pointer(), base, zone, sect, CG_FaceCenter));
+
         CGCHECKM(cg_section_partial_write(get_file_pointer(), base, zone, name.c_str(), type,
                                           cg_start, cg_end, 0, &sect));
 

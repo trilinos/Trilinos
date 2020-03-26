@@ -327,22 +327,37 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
 
 IF (NOT SEACASIoss_ENABLE_THREADSAFE)
 TRIBITS_ADD_ADVANCED_TEST(cgns_bc_no_parents_to_exodus
-   TEST_0 EXEC io_shell ARGS ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_without_parents.cgns exodus_bc_parents.e
+   TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_without_parents.cgns exodus_bc_parents.e
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS 1
+     NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_bc_parents.gold exodus_bc_parents.e
   COMM mpi serial
   XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(cgns_Q2_bc_no_parents_to_exodus
-   TEST_0 EXEC io_shell ARGS ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_Q2_without_parents.cgns exodus_Q2_bc_parents.e
+   TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_Q2_without_parents.cgns exodus_Q2_bc_parents.e
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS 1
+     NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_Q2_bc_parents.gold exodus_Q2_bc_parents.e
   COMM mpi serial
   XHOSTTYPE Windows
   )
+
+if ( CGNS_CGNSDIFF_BINARY )
+TRIBITS_ADD_ADVANCED_TEST(cgns_Q2_parents_no_parent_compare_random_decomp
+   TEST_0 EXEC io_shell ARGS --random ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_Q2_without_parents.cgns BC_Q2_p1.cgns
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS ${NPROCS}
+   TEST_1 EXEC io_shell ARGS --random ${CMAKE_CURRENT_SOURCE_DIR}/test/BC_Q2_parents.cgns BC_Q2_p2.cgns
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS ${NPROCS}
+   TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d BC_Q2_p1.cgns BC_Q2_p2.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  XHOSTTYPE Windows
+  )
+ENDIF()
 ENDIF()
 
 TRIBITS_ADD_ADVANCED_TEST(unstructured_cgns_to_exodus
