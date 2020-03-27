@@ -38,9 +38,7 @@ template<class Scalar> class StepperForwardEuler;
  *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \State Form $f(x_{n},t_{n})$
  *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *    \State Form $y \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$
- *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_EXPLICIT\_EVAL)}
- *    \State $x_n \leftarrow y$
+ *    \State Form $x_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$
  *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
  *  \end{algorithmic}
  *  \f}
@@ -54,7 +52,6 @@ public:
   enum ACTION_LOCATION {
     BEGIN_STEP,     ///< At the beginning of the step.
     BEFORE_EXPLICIT_EVAL,   ///< Before the explicit evaluation.
-    AFTER_EXPLICIT_EVAL,    ///< After the explicit evaluation.
     END_STEP        ///< At the end of the step.
   };
 
