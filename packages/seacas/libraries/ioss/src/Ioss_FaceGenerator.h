@@ -61,9 +61,15 @@ namespace Ioss {
 
     void add_element(size_t element_id) const
     {
-      assert(elementCount_ < 2);
-      element[elementCount_++] = element_id;
+      if (elementCount_ < 2) {
+	element[elementCount_++] = element_id;
+      }
+      else {
+	face_element_error(element_id);
+      }
     }
+
+    void face_element_error(size_t element_id) const;
 
     size_t hashId_{0};
 

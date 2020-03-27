@@ -234,8 +234,12 @@ namespace Iocgns {
     static void   assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData *> &zones,
                                         std::vector<size_t> &work_vector, bool verbose);
     static void   show_config();
-    static void   generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
-                                       const cgsize_t *connectivity, Ioss::FaceUnorderedSet &faces);
+
+    template <typename INT>
+      static void generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
+				       const std::vector<INT> &connectivity,
+				       Ioss::FaceUnorderedSet &boundary,
+				       const std::vector<INT> &zone_local_zone_global);
   };
 } // namespace Iocgns
 

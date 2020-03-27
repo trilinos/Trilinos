@@ -6,3 +6,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 2
 )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  stacked_timer4
+  SOURCES stacked_timer4.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+)
