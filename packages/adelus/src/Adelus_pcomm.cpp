@@ -61,11 +61,11 @@ double d_one = 1.;
 
 int ringnext,ringprev,hbit,rmbit,my_col_id,my_row_id;
 int ringnex2,ringpre2,ringnex3,ringpre3,ringnex4,ringpre4;
-typedef struct {
-  DATA_TYPE entry;
-  DATA_TYPE current;
-  int row;
-} pivot_type;
+//typedef struct {
+//  DATA_TYPE entry;
+//  DATA_TYPE current;
+//  int row;
+//} pivot_type;
 
 void initcomm(){
   extern int nprocs_col, nprocs_row, me, hbit, my_col_id, my_row_id, rmbit;

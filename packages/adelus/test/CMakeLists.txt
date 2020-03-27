@@ -1,5 +1,3 @@
-IF(Adelus_ENABLE_ZCPLX)
+IF(Adelus_ENABLE_ZCPLX OR Adelus_ENABLE_DREAL)
   ADD_SUBDIRECTORY(vector_random)
-#This test seems to be hanging
-#  ADD_SUBDIRECTORY(vector_random_fs)
 ENDIF()

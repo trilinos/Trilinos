@@ -177,7 +177,7 @@ void back_solve6(ZDView& ZV)
   // set j2 to be first column in last group of columns
   max_bytes = nrhs/nprocs_row;
   if (nrhs%nprocs_row > 0) max_bytes++; 
-  max_bytes = max_bytes*sizeof(DATA_TYPE)*my_rows;
+  max_bytes = max_bytes*sizeof(ADELUS_DATA_TYPE)*my_rows;
 
 #ifdef GET_TIMING
   allocviewtime=eliminaterhstime=bcastrowtime=updrhstime=sendrhstime=recvrhstime=copyrhstime=0.0;
@@ -190,11 +190,11 @@ void back_solve6(ZDView& ZV)
   t1 = MPI_Wtime();
 #endif
   ViewMatrixType row1( "row1", one, nrhs );   // row1: diagonal row (temp variables)
-  ViewMatrixType row2( "row2", my_rows, max_bytes/sizeof(DATA_TYPE)/my_rows );
+  ViewMatrixType row2( "row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
 
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
   View2DHostPinnType h_row1( "h_row1", one, nrhs );
-  View2DHostPinnType h_row2( "h_row2", my_rows, max_bytes/sizeof(DATA_TYPE)/my_rows );
+  View2DHostPinnType h_row2( "h_row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
   View2DHostPinnType h_rhs ( "h_rhs",  my_rows, nrhs );
 #endif
 
@@ -262,7 +262,7 @@ void back_solve6(ZDView& ZV)
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
 #endif
-        bytes[0] = n_rhs_this*sizeof(DATA_TYPE);
+        bytes[0] = n_rhs_this*sizeof(ADELUS_DATA_TYPE);
         type[0]  = SOCOLTYPE+j;
 
         //MPI_Bcast((char *) row1, bytes[0], MPI_CHAR, mesh_row(root), col_comm);
@@ -320,7 +320,7 @@ void back_solve6(ZDView& ZV)
         MPI_Irecv(reinterpret_cast<char *>(  row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], MPI_COMM_WORLD, &msgrequest);
 #endif
 
-        n_rhs_this = bytes[0]/sizeof(DATA_TYPE)/my_rows;
+        n_rhs_this = bytes[0]/sizeof(ADELUS_DATA_TYPE)/my_rows;
 
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
 #ifdef GET_TIMING
@@ -336,7 +336,7 @@ void back_solve6(ZDView& ZV)
         t1 = MPI_Wtime();
 #endif
         dest[1]  = dest_left;
-        bytes[1] = n_rhs_this * sizeof(DATA_TYPE) * my_rows;
+        bytes[1] = n_rhs_this * sizeof(ADELUS_DATA_TYPE) * my_rows;
         type[1]  = SOROWTYPE+j;
 
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
@@ -372,9 +372,9 @@ void back_solve6(ZDView& ZV)
         // Copy row2 -> rhs
         blas_length = n_rhs_this*my_rows;
 #ifdef KOKKOS_ENABLE_CUDA//Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
-        cudaMemcpy(reinterpret_cast<DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<DATA_TYPE *>(row2.data()), blas_length*sizeof(DATA_TYPE), cudaMemcpyDeviceToDevice);
+        cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyDeviceToDevice);
 #else
-        memcpy(reinterpret_cast<DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<DATA_TYPE *>(row2.data()), blas_length*sizeof(DATA_TYPE));
+        memcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE));
 #endif
 #ifdef GET_TIMING
         copyrhstime += (MPI_Wtime()-t1);

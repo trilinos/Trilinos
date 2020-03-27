@@ -140,25 +140,12 @@ void factor(ZDView& ZV,                    // matrix and rhs
   int ringdist,rdist;
   long type,bytes;
 
-#ifdef DREAL
+#if defined(DREAL) || defined(ZCPLX)
   struct {
     double val;
     int proc;
   } pivot_in,pivot_out;
-#endif
-#ifdef ZCPLX
-  struct {
-    double val;
-    int proc;
-  } pivot_in,pivot_out;
-#endif
-#ifdef SREAL
-  struct {
-    float val;
-    int proc;
-  } pivot_in,pivot_out;
-#endif
-#ifdef SCPLX
+#else
   struct {
     float val;
     int proc;
@@ -331,13 +318,13 @@ void factor(ZDView& ZV,                    // matrix and rhs
       current = pivot.current;
       pivot_in.val  = abs(pivot.entry);
       pivot_in.proc = me;
-      bytes = sizeof(DATA_TYPE);
+      bytes = sizeof(ADELUS_DATA_TYPE);
 #ifdef DEBUG
       printf("Node %d: pivot val %g, pivot row %d \n",me,pivot_in.val,pivot.row);
 #endif
 
       // Exchange to find global pivot value
-      MPI_Allreduce(&pivot_in,&pivot_out,1,MPI_DATA_TYPE2,MPI_MAXLOC,col_comm);
+      MPI_Allreduce(&pivot_in,&pivot_out,1,ADELUS_MPI_DATA_TYPE2,MPI_MAXLOC,col_comm);
       // Changed the mesh_row argument
       MPI_Bcast(&current,bytes,MPI_BYTE,mesh_row(r_owner),col_comm);
       MPI_Barrier(col_comm);
@@ -439,7 +426,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 #endif
       for (rdist = 1;rdist <= MAXDIST;rdist++) {
         if (rowplus(rdist) == c_owner) break;
-        bytes=sizeof(DATA_TYPE)*col_len;
+        bytes=sizeof(ADELUS_DATA_TYPE)*col_len;
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
         MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
 #else //CUDA-aware MPI
@@ -464,7 +451,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 
       // recv column and pivot
 
-      bytes=col_len*sizeof(DATA_TYPE);
+      bytes=col_len*sizeof(ADELUS_DATA_TYPE);
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
       MPI_Irecv(h_coltmp.data(),bytes,MPI_BYTE,MPI_ANY_SOURCE,LUROWTYPE+j,MPI_COMM_WORLD,&msgrequest);
 #else //CUDA-aware MPI
@@ -510,7 +497,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
 #endif
-        bytes=col_len*sizeof(DATA_TYPE);
+        bytes=col_len*sizeof(ADELUS_DATA_TYPE);
         Kokkos::deep_copy(subview(col1_view, Kokkos::make_pair(sav_col_i, sav_col_i+col_len), sav_col_j), subview(h_coltmp, Kokkos::make_pair(0, col_len)));
 #ifdef GET_TIMING
         copyhostpinnedtime += (MPI_Wtime()-t1);
@@ -522,7 +509,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 #endif
         for (rdist = 1;rdist <= MAXDIST;rdist++) {
           if (rowplus(rdist) == c_owner) break;
-          bytes=col_len*sizeof(DATA_TYPE);
+          bytes=col_len*sizeof(ADELUS_DATA_TYPE);
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
           MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
 #else //CUDA-aware MPI
@@ -538,7 +525,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
     act_piv_row_i = lpivot_row;
     piv_row_i = cur_col_i + (lpivot_row - rows_used);
     piv_col1_row_i = act_col_i + (lpivot_row - rows_used);
-    row_size = (row_len + colcnt)*sizeof(DATA_TYPE);
+    row_size = (row_len + colcnt)*sizeof(ADELUS_DATA_TYPE);
 
     // send current row to owner of pivot row, skip this if pivot row is current row
 
@@ -674,7 +661,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 #ifdef GET_TIMING
     t1 = MPI_Wtime();
 #endif
-    bytes=sizeof(DATA_TYPE)*row_size ;
+    bytes=sizeof(ADELUS_DATA_TYPE)*row_size ;
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
     MPI_Bcast(reinterpret_cast<char *>(h_row3.data()), row_size, MPI_CHAR, mesh_row(pivot_owner), col_comm);
     MPI_Barrier(col_comm);
@@ -730,7 +717,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
 #endif
-        bytes=(row_len+colcnt)*sizeof(DATA_TYPE);
+        bytes=(row_len+colcnt)*sizeof(ADELUS_DATA_TYPE);
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
         MPI_Send(h_row2.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,MPI_COMM_WORLD);
 #else //CUDA-aware MPI
@@ -747,7 +734,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
         t1 = MPI_Wtime();
 #endif
         if (me != r_owner) {
-          bytes=(row_len+colcnt)*sizeof(DATA_TYPE);
+          bytes=(row_len+colcnt)*sizeof(ADELUS_DATA_TYPE);
 #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
           MPI_Recv(h_row2.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,MPI_COMM_WORLD,&msgstatus);
 #else //CUDA-aware MPI

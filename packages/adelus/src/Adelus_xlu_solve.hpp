@@ -118,7 +118,7 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
   if (my_first_col < nrhs % nprocs_row) ++my_rhs;
 
 #ifdef PRINT_STATUS
-  printf("Rank %i -- lusolve_() Begin LU+Solve+Perm, value_type %s, execution_space %s, memory_space %s\n", me, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- lusolve_() Begin LU+Solve+Perm with blksz %d, value_type %s, execution_space %s, memory_space %s\n", me, blksz, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 
   // Allocate arrays for factor/solve
@@ -126,10 +126,10 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewType2D;
   typedef Kokkos::View<int*, Kokkos::LayoutLeft, memory_space> ViewIntType1D;
 
-  totmem += (blksz) * (my_rows) * sizeof(DATA_TYPE);             //col1_view
-  totmem += blksz * (my_cols + blksz + nrhs) * sizeof(DATA_TYPE);//row1_view
-  totmem += (my_cols + blksz + nrhs) * sizeof(DATA_TYPE);        //row2_view
-  totmem += (my_cols + blksz + nrhs) * sizeof(DATA_TYPE);        //row3_view
+  totmem += (blksz) * (my_rows) * sizeof(ADELUS_DATA_TYPE);             //col1_view
+  totmem += blksz * (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);//row1_view
+  totmem += (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);        //row2_view
+  totmem += (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);        //row3_view
   totmem += my_cols * sizeof(int);                               //pivot_vec_view
   
   ViewType2D    col1_view      ( "col1_view",      my_rows, blksz );

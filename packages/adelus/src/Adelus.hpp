@@ -139,7 +139,7 @@ namespace Adelus {
   /// Matrix and rhs are packed and passed as device pointer
 
   inline
-  void FactorSolve_devPtr( DATA_TYPE* AA,
+  void FactorSolve_devPtr( ADELUS_DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
                            int my_rhs_,
@@ -177,7 +177,7 @@ namespace Adelus {
   /// Matrix and rhs are packed and passed as host pointer
 
   inline
-  void FactorSolve_hostPtr( DATA_TYPE* AA,
+  void FactorSolve_hostPtr( ADELUS_DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
                             int my_rhs_,
@@ -237,7 +237,7 @@ namespace Adelus {
   /// Matrix and rhs are packed and passed as device pointer
 
   inline
-  void FactorSolve_devPtr( DATA_TYPE* AA,
+  void FactorSolve_devPtr( ADELUS_DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
                            int my_rhs_,
@@ -275,7 +275,7 @@ namespace Adelus {
   /// Matrix and rhs are packed and passed as host pointer
 
   inline
-  void FactorSolve_hostPtr( DATA_TYPE* AA,
+  void FactorSolve_hostPtr( ADELUS_DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
                             int my_rhs_,
@@ -335,7 +335,7 @@ namespace Adelus {
   /// Matrix and rhs are packed and passed as device pointer
 
   inline
-  void FactorSolve_devPtr( DATA_TYPE* AA,
+  void FactorSolve_devPtr( ADELUS_DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
                            int my_rhs_,
@@ -373,7 +373,7 @@ namespace Adelus {
   /// Matrix and rhs are packed and passed as host pointer
 
   inline
-  void FactorSolve_hostPtr( DATA_TYPE* AA,
+  void FactorSolve_hostPtr( ADELUS_DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
                             int my_rhs_,
@@ -433,7 +433,7 @@ namespace Adelus {
   /// Matrix and rhs are packed and passed as device pointer
 
   inline
-  void FactorSolve_devPtr( DATA_TYPE* AA,
+  void FactorSolve_devPtr( ADELUS_DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
                            int my_rhs_,
@@ -471,7 +471,7 @@ namespace Adelus {
   /// Matrix and rhs are packed and passed as host pointer
 
   inline
-  void FactorSolve_hostPtr( DATA_TYPE* AA,
+  void FactorSolve_hostPtr( ADELUS_DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
                             int my_rhs_,

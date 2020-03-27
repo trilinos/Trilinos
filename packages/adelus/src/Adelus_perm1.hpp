@@ -219,16 +219,16 @@ namespace Adelus {
   
           if( dest !=me ) {
   
-            bytes = (my_rhs_ + 1)*sizeof(DATA_TYPE);
+            bytes = (my_rhs_ + 1)*sizeof(ADELUS_DATA_TYPE);
   
-            MPI_Irecv( (char *)(reinterpret_cast<DATA_TYPE *>(rhs_temp.data())+next_s),bytes,MPI_CHAR,MPI_ANY_SOURCE,
+            MPI_Irecv( (char *)(reinterpret_cast<ADELUS_DATA_TYPE *>(rhs_temp.data())+next_s),bytes,MPI_CHAR,MPI_ANY_SOURCE,
                   MPI_ANY_TAG,MPI_COMM_WORLD,&msgrequest);
 
            auto sub_ZV = subview(ZV, ptr1_idx, Kokkos::ALL());     				
            zcopy_wr_local_index(my_rhs_, sub_ZV, temp_s, local_index);
   
            type = PERMTYPE+change_send;
-           MPI_Send((char *)(reinterpret_cast<DATA_TYPE *>(temp_s.data())),bytes,MPI_CHAR,dest,
+           MPI_Send((char *)(reinterpret_cast<ADELUS_DATA_TYPE *>(temp_s.data())),bytes,MPI_CHAR,dest,
                    type,MPI_COMM_WORLD);
            change_send++;
   
@@ -358,18 +358,7 @@ namespace Adelus {
         ptr1_idx++;
       }
 
-#ifdef ZCPLX
-      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_DOUBLE_COMPLEX, MPI_SUM, col_comm);
-#endif
-#ifdef DREAL
-      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_DOUBLE, MPI_SUM, col_comm);
-#endif
-#ifdef SCPLX
-      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_COMPLEX, MPI_SUM, col_comm);
-#endif
-#ifdef SREAL  
-      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, MPI_FLOAT, MPI_SUM, col_comm);
-#endif
+      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
   
       Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)), 
                          subview(rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );

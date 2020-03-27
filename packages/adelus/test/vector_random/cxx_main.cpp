@@ -58,19 +58,6 @@
 #include <KokkosBlas2_gemv.hpp>
 #include <Adelus.hpp>
 
-#ifdef DREAL
-#define MPI_VALUE_TYPE MPI_DOUBLE 
-#endif
-#ifdef SREAL
-#define MPI_VALUE_TYPE MPI_FLOAT
-#endif
-#ifdef ZCPLX
-#define MPI_VALUE_TYPE MPI_DOUBLE_COMPLEX
-#endif
-#ifdef SCPLX
-#define MPI_VALUE_TYPE MPI_COMPLEX 
-#endif
-
 int main(int argc, char *argv[])
 {
   char processor_name[MPI_MAX_PROCESSOR_NAME];
@@ -234,13 +221,24 @@ int main(int argc, char *argv[])
   //  Local size -- myrows  * (mycols + myrhs)
   
   typedef Kokkos::LayoutLeft Layout;
+#ifdef DREAL
+  typedef Kokkos::View<double**, Layout>  ViewMatrixType;
+  typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+#elif defined(SREAL)
+  typedef Kokkos::View<float**, Layout>  ViewMatrixType;
+  typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+#elif defined(SCPLX)
+  typedef Kokkos::View<Kokkos::complex<float>**, Layout>  ViewMatrixType;
+  typedef Kokkos::View<Kokkos::complex<float>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+#else
   typedef Kokkos::View<Kokkos::complex<double>**, Layout>  ViewMatrixType;
   typedef Kokkos::View<Kokkos::complex<double>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+#endif
   typedef typename ViewMatrixType::device_type::execution_space execution_space;
   typedef typename ViewMatrixType::device_type::memory_space memory_space;
-  printf("Rank %d, ViewMatrixType execution_space %s, memory_space %s\n",rank,typeid(execution_space).name(),typeid(memory_space).name());
-
   typedef typename ViewMatrixType::value_type ScalarA;
+
+  printf("Rank %d, ViewMatrixType execution_space %s, memory_space %s, value_type %s\n",rank, typeid(execution_space).name(), typeid(memory_space).name(), typeid(ScalarA).name());
 
   ViewMatrixType A( "A", myrows, mycols + myrhs + 6 );
 	
@@ -268,7 +266,6 @@ int main(int argc, char *argv[])
     std::cout << " ****   Setting Random Matrix    ****" << std::endl;
  
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed+rank);
-  //Kokkos::fill_random(A, rand_pool,ScalarA(10));
   Kokkos::fill_random(A, rand_pool,Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,ScalarA >::max());
 
   Kokkos::deep_copy( h_A, A );
@@ -289,7 +286,7 @@ int main(int argc, char *argv[])
 
   // Sum to Processor 0
 
-  MPI_Allreduce(temp.data(), temp2.data(), myrows, MPI_VALUE_TYPE, MPI_SUM, rowcomm);
+  MPI_Allreduce(temp.data(), temp2.data(), myrows, ADELUS_MPI_DATA_TYPE, MPI_SUM, rowcomm);
 
   if( rank == 0 )
     std::cout << " ****   Packing RHS in Matrix   ****" << std::endl;
@@ -303,7 +300,7 @@ int main(int argc, char *argv[])
 
   // Globally Sum the RHS needed for testing later
 
-  MPI_Allreduce(rhs.data(), temp4.data(), matrix_size, MPI_VALUE_TYPE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(rhs.data(), temp4.data(), matrix_size, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
   // Pack back into RHS
 
@@ -340,7 +337,7 @@ int main(int argc, char *argv[])
 
   // All processors get the answer
 
-  MPI_Allreduce(tempp.data(), temp22.data(), matrix_size, MPI_VALUE_TYPE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(tempp.data(), temp22.data(), matrix_size, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
   
   // perform the Matrix vector product
 
@@ -350,8 +347,8 @@ int main(int argc, char *argv[])
   KokkosBlas::gemv("N", alpha, subview(h_A,Kokkos::ALL(),Kokkos::make_pair(0, mycols)),
                                subview(temp22,Kokkos::make_pair(myfirstcol - 1, myfirstcol - 1 + mycols)),
                          beta, subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows)));
-	
-  MPI_Allreduce(tempp.data(), temp3.data(), matrix_size, MPI_VALUE_TYPE, MPI_SUM, MPI_COMM_WORLD);
+
+  MPI_Allreduce(tempp.data(), temp3.data(), matrix_size, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
   if( rank == 0) {
     std::cout <<  "======================================" << std::endl;
