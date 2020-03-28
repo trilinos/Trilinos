@@ -221,7 +221,8 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
       if (used[i]) {
         int bin=(time[i]- min_[i])/dh;
         bins[i] = std::max(std::min(bin,options.num_histogram-1) , 0);
-      }
+      } else
+        bins[i] = -1;
     }
     // Recycle the used array for the temp bin array
     for (int j=0; j<options.num_histogram; ++j){
