@@ -33,6 +33,7 @@ set (EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Panzer_ENABLE_FADTYPE "Sacado::Fad::DFad<RealType>" CACHE STRING "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_Debug_Bounds_Check ON CACHE BOOL "Set by default for CUDA PR testing")
 set (KOKKOS_ENABLE_DEBUG ON CACHE BOOL "Set by default for CUDA PR testing")
+set (MueLu_ENABLE_Kokkos_Refactor_Use_By_Default ON CACHE BOOL "Set by default for CUDA PR testing")
 
 # TPL settings specific to CUDA build
 set (TPL_ENABLE_CUDA ON CACHE BOOL "Set by default for CUDA PR testing")
