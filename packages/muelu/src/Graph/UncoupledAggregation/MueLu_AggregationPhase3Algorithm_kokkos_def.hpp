@@ -95,12 +95,8 @@ namespace MueLu {
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
                         LO& numNonAggregatedNodes) const {
 
-    bool makeNonAdjAggs = false;
-    bool error_on_isolated = false;
-    if(params.isParameter("aggregation: error on nodes with no on-rank neighbors"))
-      error_on_isolated = params.get<bool>("aggregation: error on nodes with no on-rank neighbors");
-    if(params.isParameter("aggregation: phase3 avoid singletons"))
-      makeNonAdjAggs = params.get<bool>("aggregation: phase3 avoid singletons");
+    bool error_on_isolated = params.get<bool>("aggregation: error on nodes with no on-rank neighbors");
+    bool makeNonAdjAggs = params.get<bool>("aggregation: phase3 avoid singletons");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
