@@ -354,7 +354,7 @@ TRIBITS_ADD_ADVANCED_TEST(cgns_Q2_parents_no_parent_compare_random_decomp
      NUM_MPI_PROCS ${NPROCS}
    TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d BC_Q2_p1.cgns BC_Q2_p2.cgns
      NUM_MPI_PROCS 1
-  COMM mpi serial
+  COMM mpi
   XHOSTTYPE Windows
   )
 ENDIF()

@@ -141,7 +141,7 @@ namespace {
 
     int              num_children = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
     std::vector<int> children(num_children);
-    ex_get_group_ids(exoid, nullptr, TOPTR(children));
+    ex_get_group_ids(exoid, nullptr, children.data());
     prefix += '\t';
     for (int i = 0; i < num_children; i++) {
       print_groups(children[i], prefix);
