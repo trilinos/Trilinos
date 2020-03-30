@@ -42,7 +42,7 @@ public:
     switch(modType) {
       case StepperForwardEulerModifierXBase<Scalar>::X_BEGIN_STEP:
       case StepperForwardEulerModifierXBase<Scalar>::X_BEFORE_EXPLICIT_EVAL:
-      case StepperForwardEulerModifierXBase<Scalar>::X_END_STEP:
+      case StepperForwardEulerModifierXBase<Scalar>::XDOT_END_STEP:
       {
         // No-op.
         break;
