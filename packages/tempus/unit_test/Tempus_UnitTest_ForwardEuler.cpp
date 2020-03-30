@@ -80,11 +80,10 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
     model, obs, useFSAL, ICConsistency, ICConsistencyCheck));   
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#else
+#endif
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
     model, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
 
 }
 #endif // CONSTRUCTION

@@ -41,8 +41,8 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
-
   this->setObserver(obs);
+  this->setAppAction(Teuchos::null);
 
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
@@ -63,6 +63,7 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
+  this->setObserver();
 
   this->setAppAction(stepperFEAppAction);
   if (appModel != Teuchos::null) {
@@ -265,12 +266,11 @@ bool StepperForwardEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) cons
     isValidSetup = false;
     out << "The Forward Euler observer is not set!\n";
   }
-#else
+#endif
   if (stepperFEAppAction_ == Teuchos::null) {
     isValidSetup = false;
     out << "The Forward Euler AppAction is not set!\n";
   }
-#endif
   return isValidSetup;
 }
 
