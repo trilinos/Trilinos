@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -999,7 +999,7 @@ namespace Ioex {
     int    step  = get_current_state();
     size_t count = globalValues.size();
     if (count > 0) {
-      int ierr = ex_get_var(get_file_pointer(), step, EX_GLOBAL, 1, 0, count, TOPTR(globalValues));
+      int ierr = ex_get_var(get_file_pointer(), step, EX_GLOBAL, 1, 0, count, globalValues.data());
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
@@ -1198,7 +1198,7 @@ namespace Ioex {
         else {
           Ioss::SerializeIO serializeIO__(this);
           int               ierr =
-              ex_get_truth_table(get_file_pointer(), type, block_count, nvar, TOPTR(truth_table));
+              ex_get_truth_table(get_file_pointer(), type, block_count, nvar, truth_table.data());
           if (ierr < 0) {
             Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
           }
@@ -1324,14 +1324,14 @@ namespace Ioex {
     exo_params.num_sset  = m_variables[EX_SIDE_SET].size();
     exo_params.num_elset = m_variables[EX_ELEM_SET].size();
 
-    exo_params.edge_var_tab  = TOPTR(m_truthTable[EX_EDGE_BLOCK]);
-    exo_params.face_var_tab  = TOPTR(m_truthTable[EX_FACE_BLOCK]);
-    exo_params.elem_var_tab  = TOPTR(m_truthTable[EX_ELEM_BLOCK]);
-    exo_params.nset_var_tab  = TOPTR(m_truthTable[EX_NODE_SET]);
-    exo_params.eset_var_tab  = TOPTR(m_truthTable[EX_EDGE_SET]);
-    exo_params.fset_var_tab  = TOPTR(m_truthTable[EX_FACE_SET]);
-    exo_params.sset_var_tab  = TOPTR(m_truthTable[EX_SIDE_SET]);
-    exo_params.elset_var_tab = TOPTR(m_truthTable[EX_ELEM_SET]);
+    exo_params.edge_var_tab  = m_truthTable[EX_EDGE_BLOCK].data();
+    exo_params.face_var_tab  = m_truthTable[EX_FACE_BLOCK].data();
+    exo_params.elem_var_tab  = m_truthTable[EX_ELEM_BLOCK].data();
+    exo_params.nset_var_tab  = m_truthTable[EX_NODE_SET].data();
+    exo_params.eset_var_tab  = m_truthTable[EX_EDGE_SET].data();
+    exo_params.fset_var_tab  = m_truthTable[EX_FACE_SET].data();
+    exo_params.sset_var_tab  = m_truthTable[EX_SIDE_SET].data();
+    exo_params.elset_var_tab = m_truthTable[EX_ELEM_SET].data();
 
     if (isParallel) {
       // Check consistency among all processors.  They should all
@@ -1570,7 +1570,7 @@ namespace Ioex {
               name_length, maximumNameLength, get_filename());
         }
       }
-      int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
+      int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, var_names.data());
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
@@ -1755,7 +1755,7 @@ namespace Ioex {
               std::memcpy(&cname[i * (maximumNameLength + 1)], names[i], maximumNameLength + 1);
             }
           }
-          util().attribute_reduction(attribute_count * (maximumNameLength + 1), TOPTR(cname));
+          util().attribute_reduction(attribute_count * (maximumNameLength + 1), cname.data());
           for (int i = 0; i < attribute_count; i++) {
             std::memcpy(names[i], &cname[i * (maximumNameLength + 1)], maximumNameLength + 1);
           }
@@ -2006,7 +2006,7 @@ namespace {
           }
         }
         size_t ge_id = ge->get_property("id").get_int();
-        int    ierr  = ex_put_attr_names(exoid, type, ge_id, TOPTR(names));
+        int    ierr  = ex_put_attr_names(exoid, type, ge_id, names.data());
         if (ierr < 0) {
           Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
         }
