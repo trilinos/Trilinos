@@ -84,11 +84,9 @@ public:
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// \name Basic stepper methods
   //@{
-    TEMPUS_DEPRECATED
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    TEMPUS_DEPRECATED
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperFEObserver_; }
 #endif
