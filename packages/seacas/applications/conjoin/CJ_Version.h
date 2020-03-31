@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2009-2010-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,8 +33,8 @@
 
 static char const *qainfo[] = {
     "conjoin",
-    "2019/12/03",
-    "1.4.6",
+    "2020/03/30",
+    "1.4.7",
 };
 
 #endif // SEACAS_Version_h
