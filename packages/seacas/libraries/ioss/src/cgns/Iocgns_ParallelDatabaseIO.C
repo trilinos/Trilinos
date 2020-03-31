@@ -250,7 +250,7 @@ namespace Iocgns {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          fmt::print(stderr, "File Open Time = {}\n", duration);
+          fmt::print(stderr, "{} File Open Time = {}\n", is_input() ? "Input" : "Output", duration);
         }
       }
 
@@ -294,7 +294,7 @@ namespace Iocgns {
 
   void ParallelDatabaseIO::closeDatabase__() const
   {
-    if (m_cgnsFilePtr != -1) {
+    if (m_cgnsFilePtr > 0) {
       bool do_timer = false;
       Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
       double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
@@ -305,12 +305,12 @@ namespace Iocgns {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          fmt::print(stderr, "File Close Time = {}\n", duration);
+          fmt::print(stderr, "{} File Close Time = {}\n", is_input() ? "Input" : "Output", duration);
         }
       }
       closeDW();
+      m_cgnsFilePtr = -1;
     }
-    m_cgnsFilePtr = -1;
   }
 
   void ParallelDatabaseIO::finalize_database() const
@@ -668,7 +668,7 @@ namespace Iocgns {
       // Each processor will be responsible for a subsetted range of the overall range.
       // This processor, should range from min + my_proc*per_proc to min + (my_proc+1)*per_proc.
       std::vector<int> r_count(proc_count);
-      MPI_Alltoall(TOPTR(p_count), 1, Ioss::mpi_type(int(0)), TOPTR(r_count), 1,
+      MPI_Alltoall(p_count.data(), 1, Ioss::mpi_type(int(0)), r_count.data(), 1,
                    Ioss::mpi_type(int(0)), pcomm);
 
       std::vector<int> recv_disp(proc_count);
@@ -1027,9 +1027,9 @@ namespace Iocgns {
         std::iota(file_data.begin(), file_data.end(), file_offset + 1);
 
         if (type == entity_type::NODE)
-          decomp->communicate_node_data(TOPTR(file_data), &entity_map.map()[1], 1);
+          decomp->communicate_node_data(file_data.data(), &entity_map.map()[1], 1);
         else if (type == entity_type::ELEM)
-          decomp->communicate_element_data(TOPTR(file_data), &entity_map.map()[1], 1);
+          decomp->communicate_element_data(file_data.data(), &entity_map.map()[1], 1);
 
         // Check for sequential node map.
         // If not, build the reverse G2L node map...
@@ -1092,12 +1092,12 @@ namespace Iocgns {
         if (int_byte_size_api() == 4) {
           std::vector<int> file_ids(count);
           std::iota(file_ids.begin(), file_ids.end(), offset + 1);
-          decomp->communicate_node_data(TOPTR(file_ids), (int *)data, 1);
+          decomp->communicate_node_data(file_ids.data(), (int *)data, 1);
         }
         else {
           std::vector<int64_t> file_ids(count);
           std::iota(file_ids.begin(), file_ids.end(), offset + 1);
-          decomp->communicate_node_data(TOPTR(file_ids), (int64_t *)data, 1);
+          decomp->communicate_node_data(file_ids.data(), (int64_t *)data, 1);
         }
       }
 
@@ -1335,7 +1335,7 @@ namespace Iocgns {
         // memory to read in the data and then map into supplied
         // 'data'
         std::vector<double> coord(num_to_get);
-        CGCHECKM(cgp_coord_read_data(get_file_pointer(), base, zone, 1, rmin, rmax, TOPTR(coord)));
+        CGCHECKM(cgp_coord_read_data(get_file_pointer(), base, zone, 1, rmin, rmax, coord.data()));
 
         // Map to global coordinate position...
         for (cgsize_t i = 0; i < num_to_get; i++) {
@@ -1344,7 +1344,7 @@ namespace Iocgns {
 
         if (phys_dimension >= 2) {
           CGCHECKM(
-              cgp_coord_read_data(get_file_pointer(), base, zone, 2, rmin, rmax, TOPTR(coord)));
+              cgp_coord_read_data(get_file_pointer(), base, zone, 2, rmin, rmax, coord.data()));
 
           // Map to global coordinate position...
           for (cgsize_t i = 0; i < num_to_get; i++) {
@@ -1354,7 +1354,7 @@ namespace Iocgns {
 
         if (phys_dimension == 3) {
           CGCHECKM(
-              cgp_coord_read_data(get_file_pointer(), base, zone, 3, rmin, rmax, TOPTR(coord)));
+              cgp_coord_read_data(get_file_pointer(), base, zone, 3, rmin, rmax, coord.data()));
 
           // Map to global coordinate position...
           for (cgsize_t i = 0; i < num_to_get; i++) {
@@ -1726,14 +1726,14 @@ namespace Iocgns {
             cgsize_t start  = node_offset[zone - 1] + 1;
             cgsize_t finish = start + block_map->size() - 1;
 
-            auto xx = block_map->size() > 0 ? TOPTR(x) : nullptr;
+            auto xx = block_map->size() > 0 ? x.data() : nullptr;
             CGCHECKM(
                 cgp_coord_write_data(get_file_pointer(), base, zone, crd_idx, &start, &finish, xx));
 
             if (spatial_dim > 1) {
               CGCHECKM(cgp_coord_write(get_file_pointer(), base, zone, CG_RealDouble, "CoordinateY",
                                        &crd_idx));
-              auto yy = block_map->size() > 0 ? TOPTR(y) : nullptr;
+              auto yy = block_map->size() > 0 ? y.data() : nullptr;
               CGCHECKM(cgp_coord_write_data(get_file_pointer(), base, zone, crd_idx, &start,
                                             &finish, yy));
             }
@@ -1741,7 +1741,7 @@ namespace Iocgns {
             if (spatial_dim > 2) {
               CGCHECKM(cgp_coord_write(get_file_pointer(), base, zone, CG_RealDouble, "CoordinateZ",
                                        &crd_idx));
-              auto zz = block_map->size() > 0 ? TOPTR(z) : nullptr;
+              auto zz = block_map->size() > 0 ? z.data() : nullptr;
               CGCHECKM(cgp_coord_write_data(get_file_pointer(), base, zone, crd_idx, &start,
                                             &finish, zz));
             }
@@ -1780,7 +1780,7 @@ namespace Iocgns {
                                      cgns_name.c_str(), &crd_idx));
             cgsize_t start  = node_offset[zone - 1] + 1;
             cgsize_t finish = start + block_map->size() - 1;
-            auto     xx     = block_map->size() > 0 ? TOPTR(xyz) : nullptr;
+            auto     xx     = block_map->size() > 0 ? xyz.data() : nullptr;
             CGCHECKM(
                 cgp_coord_write_data(get_file_pointer(), base, zone, crd_idx, &start, &finish, xx));
           }
@@ -2211,7 +2211,7 @@ namespace Iocgns {
           int idx = 0;
           CGCHECKM(cgp_coord_write(get_file_pointer(), base, zone, CG_RealDouble, ordinate, &idx));
           CGCHECKM(
-              cgp_coord_write_data(get_file_pointer(), base, zone, idx, rmin, rmax, TOPTR(coord)));
+              cgp_coord_write_data(get_file_pointer(), base, zone, idx, rmin, rmax, coord.data()));
         };
         // ========================================================================
 
@@ -2505,7 +2505,7 @@ namespace Iocgns {
       const auto &block_map = block.second;
       node_count[zone - 1]  = block_map->size();
     }
-    MPI_Exscan(TOPTR(node_count), TOPTR(node_offset), num_zones, Ioss::mpi_type(node_count[0]),
+    MPI_Exscan(node_count.data(), node_offset.data(), num_zones, Ioss::mpi_type(node_count[0]),
                MPI_SUM, util().communicator());
 
     return node_offset;

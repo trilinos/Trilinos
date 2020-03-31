@@ -58,9 +58,9 @@ void testTachoSolver(int numRows,
   tachoParams[tacho::LEVELSET_OPTION_NSTREAMS] = 8;
 #else
 #  ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  tachoParams[tacho::MAXNUMSUPERBLOCKS] = tacho::host_space::thread_pool_size(0)/2;
+  tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = std::max(tacho::host_space::thread_pool_size(0)/2,1);
 #  else
-  tachoParams[tacho::MAXNUMSUPERBLOCKS] = tacho::host_space::impl_thread_pool_size(0)/2;
+  tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = std::max(tacho::host_space::impl_thread_pool_size(0)/2,1);
 #  endif
   tachoParams[tacho::TASKING_OPTION_BLOCKSIZE] = 256;
   tachoParams[tacho::TASKING_OPTION_PANELSIZE] = 128;
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
 #else
 #include <iostream>
 int main(int argc, char *argv[]) {
-  std::cout << "ExternalInterface example is NOT enabled; please configure with -D TACHO_ENABLE_INT_INT=ON\n";
+  std::cout << "ExternalInterface example is NOT enabled; please configure with -D Tacho_ENABLE_INT_INT=ON\n";
   return 0;
 }
 #endif

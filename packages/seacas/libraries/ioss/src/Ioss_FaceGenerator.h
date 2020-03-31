@@ -62,10 +62,10 @@ namespace Ioss {
     void add_element(size_t element_id) const
     {
       if (elementCount_ < 2) {
-	element[elementCount_++] = element_id;
+        element[elementCount_++] = element_id;
       }
       else {
-	face_element_error(element_id);
+        face_element_error(element_id);
       }
     }
 

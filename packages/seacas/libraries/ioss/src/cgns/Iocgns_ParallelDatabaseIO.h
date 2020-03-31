@@ -210,10 +210,10 @@ namespace Iocgns {
 
     mutable std::unique_ptr<DecompositionDataBase> decomp;
 
-    int m_flushInterval{0}; // Default is no flushing after each timestep
-    int m_currentVertexSolutionIndex     = 0;
-    int m_currentCellCenterSolutionIndex = 0;
-    mutable bool m_dbFinalized = false;
+    int          m_flushInterval{0}; // Default is no flushing after each timestep
+    int          m_currentVertexSolutionIndex     = 0;
+    int          m_currentCellCenterSolutionIndex = 0;
+    mutable bool m_dbFinalized                    = false;
 
     mutable std::vector<size_t> m_zoneOffset; // Offset for local zone/block element ids to global.
 

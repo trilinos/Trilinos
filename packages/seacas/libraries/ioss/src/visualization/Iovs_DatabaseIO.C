@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -494,7 +494,7 @@ namespace Iovs {
           }
         }
         if (this->pvcsa != nullptr) {
-          this->pvcsa->CreateGlobalVariable(component_names, TOPTR(globalValues),
+          this->pvcsa->CreateGlobalVariable(component_names, globalValues.data(),
                                             this->DBFilename.c_str());
         }
       }
@@ -596,7 +596,7 @@ namespace Iovs {
           }
 
           if (this->pvcsa != nullptr) {
-            this->pvcsa->CreateNodalVariable(component_names, TOPTR(interleaved_data),
+            this->pvcsa->CreateNodalVariable(component_names, interleaved_data.data(),
                                              this->DBFilename.c_str());
           }
         }
@@ -717,7 +717,7 @@ namespace Iovs {
             }
           }
           if (this->pvcsa != nullptr) {
-            this->pvcsa->CreateElementVariable(component_names, bid, TOPTR(interleaved_data),
+            this->pvcsa->CreateElementVariable(component_names, bid, interleaved_data.data(),
                                                this->DBFilename.c_str());
           }
         }
