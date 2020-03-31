@@ -102,6 +102,9 @@ namespace Tacho {
             ::invoke(member, Diag::NonUnit(), AL, tT);
 
           if (n_m > 0) {
+            // temporal barrier
+            member.team_barrier();
+
             // update
             UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
             UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
@@ -167,6 +170,9 @@ namespace Tacho {
             ::invoke(member, one, AL, tT, zero, bT);
 
           if (n_m > 0) {
+            // temporal barrier
+            member.team_barrier();
+
             // solve offdiag
             UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
             auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());

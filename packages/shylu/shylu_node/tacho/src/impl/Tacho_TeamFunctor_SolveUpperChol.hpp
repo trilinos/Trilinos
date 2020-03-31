@@ -97,6 +97,9 @@ namespace Tacho {
           const auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
 
           if (n_m > 0) {
+            // temporal barrier
+            member.team_barrier();
+
             // update
             const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
             const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
@@ -155,6 +158,9 @@ namespace Tacho {
             auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
             Gemv<Trans::NoTranspose,GemvAlgoType>
               ::invoke(member, minus_one, AR, bB, one, tT);
+
+            // temporal barrier
+            member.team_barrier();
           }
           Gemv<Trans::NoTranspose,GemvAlgoType>
             ::invoke(member, one, AL, tT, zero, bT);
