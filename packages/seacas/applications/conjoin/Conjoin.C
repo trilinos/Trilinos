@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2009-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -203,6 +203,8 @@ template <typename T, typename INT>
 int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */);
 
 namespace {
+  void sort_file_times(StringVector &input_files);
+
   void                         compress_white_space(char *str);
   void                         add_info_record(char *info_record, int size);
   template <typename INT> void put_mesh_summary(const Excn::Mesh<INT> &mesh);
@@ -381,6 +383,10 @@ int          main(int argc, char *argv[])
     }
 
     int error = 0;
+
+    if (interFace.sort_times()) {
+      sort_file_times(interFace.inputFiles_);
+    }
 
     if (!Excn::ExodusFile::initialize(interFace)) {
       fmt::print(stderr, "ERROR: Problem initializing input and/or output files.\n");
@@ -3044,4 +3050,38 @@ namespace {
     }
     return max_ent;
   }
+
+  void sort_file_times(StringVector &input_files)
+  {
+    // Sort files based on minimum timestep time
+    std::vector<std::pair<double, std::string>> file_time_name;
+    file_time_name.reserve(input_files.size());
+    for (auto &filename : input_files) {
+      float version       = 0.0;
+      int   cpu_word_size = sizeof(float);
+      int   io_wrd_size   = 0;
+      int   exoid = ex_open(filename.c_str(), EX_READ, &cpu_word_size, &io_wrd_size, &version);
+      if (exoid < 0) {
+        fmt::print(stderr, "ERROR: Cannot open file '{}'\n", filename);
+        exit(EXIT_FAILURE);
+      }
+
+      int    nts  = ex_inquire_int(exoid, EX_INQ_TIME);
+      double time = 0.0;
+      if (nts > 0) {
+        ex_get_time(exoid, 1, &time);
+      }
+      file_time_name.emplace_back(time, filename);
+      ex_close(exoid);
+    }
+
+    std::sort(file_time_name.begin(), file_time_name.end());
+    input_files.clear();
+    input_files.reserve(file_time_name.size());
+
+    for (const auto &entry : file_time_name) {
+      input_files.push_back(entry.second);
+    }
+  }
+
 } // namespace
