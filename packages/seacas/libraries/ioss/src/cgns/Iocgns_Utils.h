@@ -97,10 +97,77 @@ namespace Iocgns {
 
     template <typename INT>
     static void map_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
-                                      INT *idata);
+                                      INT *idata)
+    {
+      // Map from CGNS to IOSS/Exodus/Patran order...
+      switch (topo->shape()) {
+      case Ioss::ElementShape::HEX:
+        switch (topo->number_nodes()) {
+        case 8:
+        case 20: break;
+        case 27: {
+          // nodes 1 through 20 are the same...
+          //
+          // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
+          // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
+          static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
+          for (size_t i = 0; i < element_count; i++) {
+            size_t             con_beg = 27 * i; // start of connectivity for i'th element.
+            std::array<int, 7> reorder;
+            for (size_t j = 0; j < 7; j++) {
+              reorder[j] = idata[con_beg + hex27_map[j]];
+            }
+
+            for (size_t j = 0; j < 7; j++) {
+              idata[con_beg + 20 + j] = reorder[j];
+            }
+          }
+        }
+        }
+        break;
+      default:
+          // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add
+          // error checking)
+          ;
+      }
+    }
+
     template <typename INT>
     static void unmap_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
-                                        INT *idata);
+                                        INT *idata)
+    {
+      // Map from IOSS/Exodus/Patran to CGNS order...
+      switch (topo->shape()) {
+      case Ioss::ElementShape::HEX:
+        switch (topo->number_nodes()) {
+        case 8:
+        case 20: break;
+        case 27: {
+          // nodes 1 through 20 are the same...
+          //
+          // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
+          // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
+          static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
+          for (size_t i = 0; i < element_count; i++) {
+            size_t             con_beg = 27 * i; // start of connectivity for i'th element.
+            std::array<int, 7> reorder;
+            for (size_t j = 0; j < 7; j++) {
+              reorder[j] = idata[con_beg + 20 + j];
+            }
+
+            for (size_t j = 0; j < 7; j++) {
+              idata[con_beg + hex27_map[j]] = reorder[j];
+            }
+          }
+        }
+        }
+        break;
+      default:
+          // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add
+          // error checking)
+          ;
+      }
+    }
 
     template <typename INT>
     static void map_cgns_face_to_ioss(const Ioss::ElementTopology *parent_topo, size_t num_to_get,
@@ -236,10 +303,10 @@ namespace Iocgns {
     static void   show_config();
 
     template <typename INT>
-      static void generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
-				       const std::vector<INT> &connectivity,
-				       Ioss::FaceUnorderedSet &boundary,
-				       const std::vector<INT> &zone_local_zone_global);
+    static void generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
+                                     const std::vector<INT> &connectivity,
+                                     Ioss::FaceUnorderedSet &boundary,
+                                     const std::vector<INT> &zone_local_zone_global);
   };
 } // namespace Iocgns
 
