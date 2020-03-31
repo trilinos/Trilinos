@@ -407,7 +407,10 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
   *fos << "Attempting to setup AMG hierarchy for the composite coarse grid problem" << std::endl;
 
   // Get parameter list for AMG hierarchy
-  RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlFile(xmlFileName);
+  RCP<ParameterList> mueluParams = Teuchos::rcp(new ParameterList());
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, mueluParams.ptr(),
+      *compOp->getRowMap()->getComm());
+
 
   // Get the user data sublist
   const std::string userName = "user data";
@@ -614,7 +617,8 @@ void createRegionHierarchy(const int maxRegPerProc,
      */
 
     // Read MueLu parameter list form xml file
-    RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlFile(xmlFileName);
+    RCP<ParameterList> mueluParams = Teuchos::rcp(new ParameterList());
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, mueluParams.ptr(), *mapComp->getComm());
 
     // Insert region-specific data into parameter list
     const std::string userName = "user data";
