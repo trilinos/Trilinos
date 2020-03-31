@@ -271,6 +271,30 @@ namespace Tacho {
                    c, &ldc);
     return 0;
   }
+#if defined (KOKKOS_ENABLE_CUDA)
+  template<>
+  int
+  Blas<float>::gemm(cublasHandle_t handle, 
+                    const cublasOperation_t transa, 
+                    const cublasOperation_t transb,
+                    int m, int n, int k,
+                    const float alpha,
+                    const float *a, int lda,
+                    const float *b, int ldb,
+                    const float beta,
+                    /* */ float *c, int ldc) {
+    const int r_val = cublasSgemm(handle,
+                                  transa, transb,
+                                  m, n, k, 
+                                  &alpha,
+                                  a, lda,
+                                  b, ldb,
+                                  &beta,
+                                  c, ldc);
+    return r_val;
+  }
+#endif
+
   template<>
   int 
   Blas<float>::herk(const char uplo, const char trans, 
@@ -436,6 +460,30 @@ namespace Tacho {
                    c, &ldc);
     return 0;
   }
+#if defined (KOKKOS_ENABLE_CUDA)
+  template<>
+  int
+  Blas<double>::gemm(cublasHandle_t handle, 
+                     const cublasOperation_t transa, 
+                     const cublasOperation_t transb,
+                     int m, int n, int k,
+                     const double alpha,
+                     const double *a, int lda,
+                     const double *b, int ldb,
+                     const double beta,
+                     /* */ double *c, int ldc) {
+    const int r_val = cublasDgemm(handle,
+                                  transa, transb,
+                                  m, n, k, 
+                                  &alpha,
+                                  a, lda,
+                                  b, ldb,
+                                  &beta,
+                                  c, ldc);
+    return r_val;
+  }
+#endif
+
   template<>
   int 
   Blas<double>::herk(const char uplo, const char trans, 
@@ -601,6 +649,30 @@ namespace Tacho {
                    (      Kokkos::complex<float>*)c, &ldc);
     return 0;
   }
+#if defined (KOKKOS_ENABLE_CUDA)
+  template<>
+  int
+  Blas<Kokkos::complex<float> >::gemm(cublasHandle_t handle, 
+                                      const cublasOperation_t transa, 
+                                      const cublasOperation_t transb,
+                                      int m, int n, int k,
+                                      const Kokkos::complex<float>  alpha,
+                                      const Kokkos::complex<float>  *a, int lda,
+                                      const Kokkos::complex<float>  *b, int ldb,
+                                      const Kokkos::complex<float>  beta,
+                                      /* */ Kokkos::complex<float>  *c, int ldc) {
+    const int r_val = cublasCgemm(handle,
+                                  transa, transb,
+                                  m, n, k, 
+                                  (const cuComplex*)&alpha,
+                                  (const cuComplex*)a, lda,
+                                  (const cuComplex*)b, ldb,
+                                  (const cuComplex*)&beta,
+                                  (cuComplex*)c, ldc);
+    return r_val;
+  }
+#endif
+
   template<>
   int 
   Blas<Kokkos::complex<float> >::herk(const char uplo, const char trans, 
@@ -766,6 +838,30 @@ namespace Tacho {
                    (      Kokkos::complex<double>*)c, &ldc);
     return 0;
   }
+#if defined (KOKKOS_ENABLE_CUDA)
+  template<>
+  int
+  Blas<Kokkos::complex<double> >::gemm(cublasHandle_t handle, 
+                                       const cublasOperation_t transa, 
+                                       const cublasOperation_t transb,
+                                       int m, int n, int k,
+                                       const Kokkos::complex<double>  alpha,
+                                       const Kokkos::complex<double>  *a, int lda,
+                                       const Kokkos::complex<double>  *b, int ldb,
+                                       const Kokkos::complex<double>  beta,
+                                       /* */ Kokkos::complex<double>  *c, int ldc) {
+    const int r_val = cublasZgemm(handle,
+                                  transa, transb,
+                                  m, n, k, 
+                                  (const cuDoubleComplex*)&alpha,
+                                  (const cuDoubleComplex*)a, lda,
+                                  (const cuDoubleComplex*)b, ldb,
+                                  (const cuDoubleComplex*)&beta,
+                                  (cuDoubleComplex*)c, ldc);
+    return r_val;
+  }
+#endif
+
   template<>
   int 
   Blas<Kokkos::complex<double> >::herk(const char uplo, const char trans, 
