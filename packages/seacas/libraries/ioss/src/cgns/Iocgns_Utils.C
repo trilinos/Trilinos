@@ -415,90 +415,6 @@ std::pair<std::string, int> Iocgns::Utils::decompose_name(const std::string &nam
   return std::make_pair(zname, proc);
 }
 
-template <typename INT>
-void Iocgns::Utils::map_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
-                                          INT *idata)
-{
-  // Map from CGNS to IOSS/Exodus/Patran order...
-  switch (topo->shape()) {
-  case Ioss::ElementShape::HEX:
-    switch (topo->number_nodes()) {
-    case 8:
-    case 20: break;
-    case 27: {
-      // nodes 1 through 20 are the same...
-      //
-      // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
-      // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
-      static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
-      for (size_t i = 0; i < element_count; i++) {
-        size_t             con_beg = 27 * i; // start of connectivity for i'th element.
-        std::array<int, 7> reorder;
-        for (size_t j = 0; j < 7; j++) {
-          reorder[j] = idata[con_beg + hex27_map[j]];
-        }
-
-        for (size_t j = 0; j < 7; j++) {
-          idata[con_beg + 20 + j] = reorder[j];
-        }
-      }
-    }
-    }
-    break;
-  default:
-      // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add error
-      // checking)
-      ;
-  }
-}
-
-template void Iocgns::Utils::map_cgns_connectivity<int>(const Ioss::ElementTopology *topo,
-                                                        size_t element_count, int *idata);
-template void Iocgns::Utils::map_cgns_connectivity<int64_t>(const Ioss::ElementTopology *topo,
-                                                            size_t element_count, int64_t *idata);
-
-template <typename INT>
-void Iocgns::Utils::unmap_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
-                                            INT *idata)
-{
-  // Map from IOSS/Exodus/Patran to CGNS order...
-  switch (topo->shape()) {
-  case Ioss::ElementShape::HEX:
-    switch (topo->number_nodes()) {
-    case 8:
-    case 20: break;
-    case 27: {
-      // nodes 1 through 20 are the same...
-      //
-      // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
-      // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
-      static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
-      for (size_t i = 0; i < element_count; i++) {
-        size_t             con_beg = 27 * i; // start of connectivity for i'th element.
-        std::array<int, 7> reorder;
-        for (size_t j = 0; j < 7; j++) {
-          reorder[j] = idata[con_beg + 20 + j];
-        }
-
-        for (size_t j = 0; j < 7; j++) {
-          idata[con_beg + hex27_map[j]] = reorder[j];
-        }
-      }
-    }
-    }
-    break;
-  default:
-      // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add error
-      // checking)
-      ;
-  }
-}
-
-template void Iocgns::Utils::unmap_cgns_connectivity<int>(const Ioss::ElementTopology *topo,
-                                                          size_t element_count, int *idata);
-template void Iocgns::Utils::unmap_cgns_connectivity<int64_t>(const Ioss::ElementTopology *topo,
-                                                              size_t element_count, int64_t *idata);
-
 void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *function, int lineno,
                                int processor)
 {
@@ -688,12 +604,12 @@ namespace {
       }
 
       if (zgc_i.m_donorRangeBeg[i] <= zgc_i.m_donorRangeEnd[i]) {
-	zgc_i.m_donorRangeBeg[i] = std::min(zgc_i.m_donorRangeBeg[i], zgc_j.m_donorRangeBeg[i]);
-	zgc_i.m_donorRangeEnd[i] = std::max(zgc_i.m_donorRangeEnd[i], zgc_j.m_donorRangeEnd[i]);
+        zgc_i.m_donorRangeBeg[i] = std::min(zgc_i.m_donorRangeBeg[i], zgc_j.m_donorRangeBeg[i]);
+        zgc_i.m_donorRangeEnd[i] = std::max(zgc_i.m_donorRangeEnd[i], zgc_j.m_donorRangeEnd[i]);
       }
       else {
-	zgc_i.m_donorRangeBeg[i] = std::max(zgc_i.m_donorRangeBeg[i], zgc_j.m_donorRangeBeg[i]);
-	zgc_i.m_donorRangeEnd[i] = std::min(zgc_i.m_donorRangeEnd[i], zgc_j.m_donorRangeEnd[i]);
+        zgc_i.m_donorRangeBeg[i] = std::max(zgc_i.m_donorRangeBeg[i], zgc_j.m_donorRangeBeg[i]);
+        zgc_i.m_donorRangeEnd[i] = std::min(zgc_i.m_donorRangeEnd[i], zgc_j.m_donorRangeEnd[i]);
       }
     }
   }
@@ -848,8 +764,7 @@ namespace {
                 assert(zgc[i].is_valid());
 
                 // Flag the 'j' instance so it is processed only this time.
-		zgc[j].m_isActive = false;
-
+                zgc[j].m_isActive = false;
               }
               else {
                 // We have a bad zgc -- name and owner_zone match, but not donor_zone.
@@ -867,9 +782,7 @@ namespace {
 
       // Cull out all 'non-active' zgc instances (owner and donor zone <= 0)
       zgc.erase(std::remove_if(zgc.begin(), zgc.end(),
-                               [](Ioss::ZoneConnectivity &z) {
-                                 return !z.is_active();
-			       }),
+                               [](Ioss::ZoneConnectivity &z) { return !z.is_active(); }),
                 zgc.end());
 
       count = (int)zgc.size();
@@ -1207,8 +1120,8 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
                                              zgc.m_donorRangeBeg[2], zgc.m_donorRangeEnd[0],
                                              zgc.m_donorRangeEnd[1], zgc.m_donorRangeEnd[2]}};
 
-        std::string donor_name   = zgc.m_donorName;
-        std::string connect_name = zgc.m_connectionName;
+        std::string donor_name    = zgc.m_donorName;
+        std::string connect_name  = zgc.m_connectionName;
         std::string original_name = zgc.m_connectionName;
         if (is_parallel && !is_parallel_io) {
           if (zgc.is_from_decomp()) {
@@ -2725,7 +2638,7 @@ template <typename INT>
 void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
                                          const std::vector<INT> &connectivity,
                                          Ioss::FaceUnorderedSet &boundary,
-					 const std::vector<INT> &zone_local_zone_global)
+                                         const std::vector<INT> &zone_local_zone_global)
 {
   // Only handle continuum elements at this time...
   if (topo->parametric_dimension() != 3) {
@@ -2767,11 +2680,9 @@ void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num
   }
 }
 
-template void Iocgns::Utils::generate_block_faces<int>(Ioss::ElementTopology *topo, size_t num_elem,
-						       const std::vector<int> &connectivity,
-						       Ioss::FaceUnorderedSet &boundary,
-						       const std::vector<int> &zone_local_zone_global);
-template void Iocgns::Utils::generate_block_faces<int64_t>(Ioss::ElementTopology *topo, size_t num_elem,
-							   const std::vector<int64_t> &connectivity,
-							   Ioss::FaceUnorderedSet &boundary,
-							   const std::vector<int64_t> &zone_local_zone_global);
+template void Iocgns::Utils::generate_block_faces<int>(
+    Ioss::ElementTopology *topo, size_t num_elem, const std::vector<int> &connectivity,
+    Ioss::FaceUnorderedSet &boundary, const std::vector<int> &zone_local_zone_global);
+template void Iocgns::Utils::generate_block_faces<int64_t>(
+    Ioss::ElementTopology *topo, size_t num_elem, const std::vector<int64_t> &connectivity,
+    Ioss::FaceUnorderedSet &boundary, const std::vector<int64_t> &zone_local_zone_global);

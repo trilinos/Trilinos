@@ -119,7 +119,7 @@ namespace Tpetra {
   }
 
 
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   void Distributor::makeTimers () {
     timer_doWaits_ = Teuchos::TimeMonitor::getNewTimer (
                            "Tpetra::Distributor: doWaits");
@@ -180,7 +180,7 @@ namespace Tpetra {
     timer_doPosts4KV_sends_fast_ = Teuchos::TimeMonitor::getNewTimer (
                            "Tpetra::Distributor: doPosts(4): sends KV FAST");
   }
-#endif // TPETRA_DISTRIBUTOR_TIMERS
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
   Distributor::
   Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -200,9 +200,9 @@ namespace Tpetra {
     , useDistinctTags_ (useDistinctTags_default)
   {
     this->setParameterList(plist);
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS   
     makeTimers ();
-#endif // TPETRA_DISTRIBUTOR_TIMERS
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   }
 
   Distributor::
@@ -256,9 +256,9 @@ namespace Tpetra {
       Teuchos::parameterList (*rhsList);
     this->setParameterList (newList);
 
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     makeTimers ();
-#endif // TPETRA_DISTRIBUTOR_TIMERS
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   }
 
   void Distributor::swap (Distributor& rhs) {
@@ -563,9 +563,9 @@ namespace Tpetra {
     using Teuchos::waitAll;
     using std::endl;
 
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor timeMon (*timer_doWaits_);
-#endif // TPETRA_DISTRIBUTOR_TIMERS
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     const bool debug = Details::Behavior::debug("Distributor");
 

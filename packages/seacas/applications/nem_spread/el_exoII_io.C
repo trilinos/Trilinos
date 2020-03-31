@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -956,10 +956,10 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
    * output databases.
    */
   {
-    int sequential = 1;
+    bool sequential = true;
     for (size_t i = 0; i < globals.Num_Node; i++) {
       if ((size_t)global_node_ids[i] != i + 1) {
-        sequential = 0;
+        sequential = false;
         break;
       }
     }
@@ -974,12 +974,12 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
                    i + 1, global_node_ids[i]);
-        sequential = 1; // Map is invalid, ignore it.
+        sequential = true; // Map is invalid, ignore it.
         break;
       }
     }
 
-    if (sequential == 0) {
+    if (!sequential) {
       for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
         size_t itotal_nodes = globals.Num_Internal_Nodes[iproc] + globals.Num_Border_Nodes[iproc] +
@@ -1483,6 +1483,22 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         break;
       }
     }
+
+    // Check that map is valid 1 <= global_node_id[*]
+    // If not, output a warning and disable the map.
+    for (size_t i = 0; i < globals.Num_Elem; i++) {
+      if (global_ids[i] <= 0) {
+        fmt::print(stderr,
+                   "---------------------------------------------------------------------\n"
+                   "ERROR: Local element {:n} has a global id of {:n} which is invalid.\n"
+                   "       All global ids must be greater than 0. The map will be ignored.\n"
+                   "---------------------------------------------------------------------\n",
+                   i + 1, global_ids[i]);
+        sequential = true; // Map is invalid, ignore it.
+        break;
+      }
+    }
+
     if (!sequential) {
       for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 

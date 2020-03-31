@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -93,8 +93,8 @@ int main(int argc, char **argv)
   num_node_sets = 0;
   num_side_sets = 0;
 
-  error = ex_put_init(exoid, title, num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets,
-                      num_side_sets);
+  ex_put_init(exoid, title, num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets,
+              num_side_sets);
 
   /* write element block parameters */
   for (i = 0; i < 10; i++) {

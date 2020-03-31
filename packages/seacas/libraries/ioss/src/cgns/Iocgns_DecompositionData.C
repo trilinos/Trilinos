@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -410,8 +410,9 @@ namespace Iocgns {
     if (global_element_count < (size_t)m_decomposition.m_processorCount) {
       std::ostringstream errmsg;
       fmt::print(errmsg,
-		 "ERROR: CGNS: Element Count ({}) is less than Processor Count ({}). No decomposition possible.",
-		 global_element_count, m_decomposition.m_processorCount);
+                 "ERROR: CGNS: Element Count ({}) is less than Processor Count ({}). No "
+                 "decomposition possible.",
+                 global_element_count, m_decomposition.m_processorCount);
       IOSS_ERROR(errmsg);
     }
 
@@ -455,14 +456,14 @@ namespace Iocgns {
       std::vector<double> y;
       std::vector<double> z;
 
-      get_file_node_coordinates(filePtr, 0, TOPTR(x));
+      get_file_node_coordinates(filePtr, 0, x.data());
       if (m_decomposition.m_spatialDimension > 1) {
         y.resize(decomp_node_count());
-        get_file_node_coordinates(filePtr, 1, TOPTR(y));
+        get_file_node_coordinates(filePtr, 1, y.data());
       }
       if (m_decomposition.m_spatialDimension > 2) {
         z.resize(decomp_node_count());
-        get_file_node_coordinates(filePtr, 2, TOPTR(z));
+        get_file_node_coordinates(filePtr, 2, z.data());
       }
 
       m_decomposition.calculate_element_centroids(x, y, z);
@@ -574,8 +575,8 @@ namespace Iocgns {
           std::vector<cgsize_t> points(npnts);
           std::vector<cgsize_t> donors(npnts);
 
-          CGCHECK2(cg_conn_read(filePtr, base, zone, i + 1, TOPTR(points), donor_datatype,
-                                TOPTR(donors)));
+          CGCHECK2(cg_conn_read(filePtr, base, zone, i + 1, points.data(), donor_datatype,
+                                donors.data()));
 
           for (int j = 0; j < npnts; j++) {
             // Convert to 0-based global id by subtracting 1 and adding zone.m_nodeOffset
@@ -761,7 +762,7 @@ namespace Iocgns {
 #endif
       block.fileSectionOffset = blk_start;
       CGCHECK2(cgp_elements_read_data(filePtr, base, zone, section, blk_start, blk_end,
-                                      TOPTR(connectivity)));
+                                      connectivity.data()));
       size_t el          = 0;
       INT    zone_offset = block.zoneNodeOffset;
 
@@ -810,66 +811,65 @@ namespace Iocgns {
         // *  num_to_get zeros (face on other parent element)
         std::vector<cgsize_t> parent(4 * sset.file_count());
 
-        CGCHECK2(cg_elements_read(filePtr, base, sset.zone(), sset.section(), TOPTR(nodes),
-                                  TOPTR(parent)));
+        CGCHECK2(cg_elements_read(filePtr, base, sset.zone(), sset.section(), nodes.data(),
+                                  parent.data()));
 
         if (parent[0] == 0) {
-	  // Get rid of 'parent' list -- not used.
-	  Ioss::Utils::clear(parent);
+          // Get rid of 'parent' list -- not used.
+          Ioss::Utils::clear(parent);
 
-	  // This model does not contain parent/face data; it only contains the
-	  // face connectivity (nodes) data.  Need to construct parent/face data
-	  // The faces in the list should all be boundaries of the block and should
-	  // therefore, not be shared with another block or shared across processors.
-	  // If we check the 'corner_node_cnt' nodes of the face and they are all
-	  // on this processor, then assume the face is on this processor...
-	  if (m_boundaryFaces[sset.zone()].empty()) {
-	    // Need map of proc-zone-implicit element ids to global-zone-implicit ids
-	    // so we can assign the correct element id to the faces.
-	    auto             blk = m_elementBlocks[sset.zone() - 1];
-	    std::vector<INT> file_data(blk.fileCount);
-	    std::iota(file_data.begin(), file_data.end(), blk.fileSectionOffset);
-	    std::vector<INT> zone_local_zone_global(blk.iossCount);
-	    communicate_element_data(file_data.data(), zone_local_zone_global.data(), 1);
-	    Ioss::Utils::clear(file_data);
+          // This model does not contain parent/face data; it only contains the
+          // face connectivity (nodes) data.  Need to construct parent/face data
+          // The faces in the list should all be boundaries of the block and should
+          // therefore, not be shared with another block or shared across processors.
+          // If we check the 'corner_node_cnt' nodes of the face and they are all
+          // on this processor, then assume the face is on this processor...
+          if (m_boundaryFaces[sset.zone()].empty()) {
+            // Need map of proc-zone-implicit element ids to global-zone-implicit ids
+            // so we can assign the correct element id to the faces.
+            auto             blk = m_elementBlocks[sset.zone() - 1];
+            std::vector<INT> file_data(blk.fileCount);
+            std::iota(file_data.begin(), file_data.end(), blk.fileSectionOffset);
+            std::vector<INT> zone_local_zone_global(blk.iossCount);
+            communicate_element_data(file_data.data(), zone_local_zone_global.data(), 1);
+            Ioss::Utils::clear(file_data);
 
-	    std::vector<INT> connectivity(blk.ioss_count() * blk.nodesPerEntity);
-	    get_block_connectivity(filePtr, connectivity.data(), sset.zone() - 1, true);
+            std::vector<INT> connectivity(blk.ioss_count() * blk.nodesPerEntity);
+            get_block_connectivity(filePtr, connectivity.data(), sset.zone() - 1, true);
 
-	    auto topo = Ioss::ElementTopology::factory(blk.topologyType, true);
-	    // Should map the connectivity from cgns to ioss, but only use the lower order which is
-	    // same.
-	    Iocgns::Utils::generate_block_faces(topo, blk.ioss_count(),
-						connectivity,
-						m_boundaryFaces[sset.zone()],
-						zone_local_zone_global);
-	  }
+            auto topo = Ioss::ElementTopology::factory(blk.topologyType, true);
+            // Should map the connectivity from cgns to ioss, but only use the lower order which is
+            // same.
+            Iocgns::Utils::generate_block_faces(topo, blk.ioss_count(), connectivity,
+                                                m_boundaryFaces[sset.zone()],
+                                                zone_local_zone_global);
+          }
 
-	  // TODO: Should we filter down to just corner nodes?
-	  // Now, iterate the face connectivity vector and see if
-	  // there is a match in `m_boundaryFaces`
-	  size_t offset           = 0;
-	  auto & boundary         = m_boundaryFaces[sset.zone()];
-	  int    num_corner_nodes = topology->number_corner_nodes();
-	  SMART_ASSERT(num_corner_nodes == 3 || num_corner_nodes == 4)(num_corner_nodes);
+          // TODO: Should we filter down to just corner nodes?
+          // Now, iterate the face connectivity vector and see if
+          // there is a match in `m_boundaryFaces`
+          size_t offset           = 0;
+          auto & boundary         = m_boundaryFaces[sset.zone()];
+          int    num_corner_nodes = topology->number_corner_nodes();
+          SMART_ASSERT(num_corner_nodes == 3 || num_corner_nodes == 4)(num_corner_nodes);
 
-	  for (size_t iface = 0; iface < sset.file_count(); iface++) {
-	    std::array<size_t, 4> conn = {{0, 0, 0, 0}};
+          for (size_t iface = 0; iface < sset.file_count(); iface++) {
+            std::array<size_t, 4> conn = {{0, 0, 0, 0}};
 
-	    for (int i = 0; i < num_corner_nodes; i++) {
-	      conn[i] = nodes[offset + i];
-	    }
-	    offset += nodes_per_face;
+            for (int i = 0; i < num_corner_nodes; i++) {
+              conn[i] = nodes[offset + i];
+            }
+            offset += nodes_per_face;
 
-	    Ioss::Face face(conn);
-	    // See if face is in m_boundaryFaces
-	    // If not, then owned by another rank
-	    // If so, then get parent element and element side.
-	    auto it = boundary.find(face);
-	    if (it != boundary.end()) {
+            Ioss::Face face(conn);
+            // See if face is in m_boundaryFaces
+            // If not, then owned by another rank
+            // If so, then get parent element and element side.
+            auto it = boundary.find(face);
+            if (it != boundary.end()) {
               sset.entitylist_map.push_back(iface);
-	    }
-	  }
+            }
+          }
         }
         else {
           size_t zone_element_id_offset = m_zones[sset.zone()].m_elementOffset;
@@ -897,7 +897,7 @@ namespace Iocgns {
         }
 
         std::vector<int> has_elems(m_sideSets.size() * m_decomposition.m_processorCount);
-        MPI_Allgather(TOPTR(has_elems_local), has_elems_local.size(), MPI_INT, TOPTR(has_elems),
+        MPI_Allgather(has_elems_local.data(), has_elems_local.size(), MPI_INT, has_elems.data(),
                       has_elems_local.size(), MPI_INT, m_decomposition.m_comm);
 
         for (size_t i = 0; i < m_sideSets.size(); i++) {
@@ -967,18 +967,18 @@ namespace Iocgns {
   {
     std::vector<double> tmp(decomp_node_count());
     if (field.get_name() == "mesh_model_coordinates_x") {
-      get_file_node_coordinates(filePtr, 0, TOPTR(tmp));
-      communicate_node_data(TOPTR(tmp), ioss_data, 1);
+      get_file_node_coordinates(filePtr, 0, tmp.data());
+      communicate_node_data(tmp.data(), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates_y") {
-      get_file_node_coordinates(filePtr, 1, TOPTR(tmp));
-      communicate_node_data(TOPTR(tmp), ioss_data, 1);
+      get_file_node_coordinates(filePtr, 1, tmp.data());
+      communicate_node_data(tmp.data(), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates_z") {
-      get_file_node_coordinates(filePtr, 2, TOPTR(tmp));
-      communicate_node_data(TOPTR(tmp), ioss_data, 1);
+      get_file_node_coordinates(filePtr, 2, tmp.data());
+      communicate_node_data(tmp.data(), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates") {
@@ -999,8 +999,8 @@ namespace Iocgns {
       // and 1 communicate_node_data call.
       //
       for (int d = 0; d < m_decomposition.m_spatialDimension; d++) {
-        get_file_node_coordinates(filePtr, d, TOPTR(tmp));
-        communicate_node_data(TOPTR(tmp), TOPTR(ioss_tmp), 1);
+        get_file_node_coordinates(filePtr, d, tmp.data());
+        communicate_node_data(tmp.data(), ioss_tmp.data(), 1);
 
         size_t index = d;
         for (size_t i = 0; i < ioss_node_count(); i++) {
@@ -1048,7 +1048,7 @@ namespace Iocgns {
       offset += count;
       beg = end;
     }
-    communicate_node_data(TOPTR(tmp), ioss_data, 1);
+    communicate_node_data(tmp.data(), ioss_data, 1);
   }
 
   template void DecompositionData<int>::get_sideset_element_side(
@@ -1070,7 +1070,7 @@ namespace Iocgns {
     std::vector<cgsize_t> parent(4 * sset.file_count());
 
     CGCHECK2(
-        cg_elements_read(filePtr, base, sset.zone(), sset.section(), TOPTR(nodes), TOPTR(parent)));
+        cg_elements_read(filePtr, base, sset.zone(), sset.section(), nodes.data(), parent.data()));
 
     if (parent[0] == 0) {
       // Get rid of 'parent' list -- not used.
@@ -1088,15 +1088,15 @@ namespace Iocgns {
       communicate_set_data(nodes.data(), face_nodes.data(), sset, nodes_per_face);
 
       // Now, iterate the face connectivity vector and find a match in `m_boundaryFaces`
-      size_t offset           = 0;
-      size_t j                = 0;
+      size_t offset = 0;
+      size_t j      = 0;
 
       // NOTE: The boundary face generation doesn't filter proc-boundary faces,
       //       so all zones will have boundary faces generated in 'get_sideset_data`
       assert(!m_boundaryFaces[sset.zone()].empty());
-      auto & boundary         = m_boundaryFaces[sset.zone()];
+      auto &boundary = m_boundaryFaces[sset.zone()];
 
-      int    num_corner_nodes = topology->number_corner_nodes();
+      int num_corner_nodes = topology->number_corner_nodes();
       SMART_ASSERT(num_corner_nodes == 3 || num_corner_nodes == 4)(num_corner_nodes);
 
       for (size_t iface = 0; iface < sset.ioss_count(); iface++) {
@@ -1107,7 +1107,7 @@ namespace Iocgns {
         }
         offset += nodes_per_face;
 
-	size_t zone_element_id_offset = m_zones[sset.zone()].m_elementOffset;
+        size_t     zone_element_id_offset = m_zones[sset.zone()].m_elementOffset;
         Ioss::Face face(conn);
         // See if face is in m_boundaryFaces
         // If not, error
@@ -1149,12 +1149,12 @@ namespace Iocgns {
         element_side.push_back(parent[0 * sset.file_count() + i] + zone_element_id_offset);
         element_side.push_back(parent[2 * sset.file_count() + i]);
       }
-      auto  blk = m_elementBlocks[sset.zone() - 1];
+      auto blk  = m_elementBlocks[sset.zone() - 1];
       auto topo = Ioss::ElementTopology::factory(blk.topologyType, true);
       Utils::map_cgns_face_to_ioss(topo, sset.file_count(), element_side.data());
       // The above was all on root processor for this side set, now need to send data to other
       // processors that own any of the elements in the sideset.
-      communicate_set_data(TOPTR(element_side), ioss_data, sset, 2);
+      communicate_set_data(element_side.data(), ioss_data, sset, 2);
     }
   }
 
@@ -1174,23 +1174,23 @@ namespace Iocgns {
     int                   base = 1;
     CGCHECK2(cgp_elements_read_data(filePtr, base, blk.zone(), blk.section(), blk.fileSectionOffset,
                                     blk.fileSectionOffset + blk.file_count() - 1,
-                                    TOPTR(file_conn)));
+                                    file_conn.data()));
 
     if (!raw_ids) {
       // Map from zone-local node numbers to global implicit
       if (blk.zoneNodeOffset != 0) {
-	for (auto &node : file_conn) {
-	  node += blk.zoneNodeOffset;
-	}
+        for (auto &node : file_conn) {
+          node += blk.zoneNodeOffset;
+        }
       }
 
       if (!m_zoneSharedMap.empty()) {
-	for (auto &node : file_conn) {
-	  ZoneSharedMap::const_iterator alias = m_zoneSharedMap.find(node - 1);
-	  if (alias != m_zoneSharedMap.end()) {
-	    node = (*alias).second + 1;
-	  }
-	}
+        for (auto &node : file_conn) {
+          ZoneSharedMap::const_iterator alias = m_zoneSharedMap.find(node - 1);
+          if (alias != m_zoneSharedMap.end()) {
+            node = (*alias).second + 1;
+          }
+        }
       }
     }
 
