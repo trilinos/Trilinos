@@ -403,9 +403,11 @@ namespace MueLu {
 
    LO nAmalgNodesOnProc = rowMap->getNodeNumElements()/nPDEs;
    Teuchos::Array<GO> nodalGIDs(nAmalgNodesOnProc);
+   typename Teuchos::ScalarTraits<Scalar>::coordinateType temp;
    for (size_t i = 0; i < as<size_t>(nAmalgNodesOnProc); i++ ) {
      GO gid = rowMap->getGlobalElement(i*nPDEs);
-     nodalGIDs[i] = as<GO>(floor(gid/nPDEs));
+     temp =  ((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (gid))/((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (nPDEs));
+     nodalGIDs[i] = as<GO>(floor(temp));
    }
    GO nAmalgNodesGlobal = rowMap->getGlobalNumElements();
    GO nBlkGlobal       = nAmalgNodesGlobal/nPDEs;
@@ -424,7 +426,9 @@ namespace MueLu {
   void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badGuysDropfunc(LO row, const Teuchos::ArrayView<const LocalOrdinal>& cols, const Teuchos::ArrayView<const Scalar>& vals, const MultiVector&  testVecs, LO nPDEs, Teuchos::ArrayRCP<Scalar> & penalties, const MultiVector& nearNull, Teuchos::ArrayRCP<LO>& Bcols, Teuchos::ArrayRCP<bool>& keepOrNot, LO &Nbcols, LO nLoc) const {
 
   LO nLeng  = cols.size();
-  LO blkRow = as<LO>(floor( (as<Scalar>(row))/(as<Scalar>(nPDEs)) ));
+  typename Teuchos::ScalarTraits<Scalar>::coordinateType temp;
+  temp =  ((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (row))/((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (nPDEs));
+  LO blkRow = as<LO>(floor(temp));
   Teuchos::ArrayRCP<Scalar> badGuy( nLeng, 0.0);
   Teuchos::ArrayRCP<Scalar> subNull(nLeng, 0.0);  /* subset of nearNull       */
                                                   /* associated with current  */
@@ -449,7 +453,8 @@ namespace MueLu {
 
   for (LO i = 0; i < nLeng; i++) {
     if ((cols[i] < nLoc ) && (vals[i] != 0.0)) {   /* on processor */
-      LO colDof = cols[i] - (as<LO>(floor( (as<Scalar>(cols[i]))/(as<Scalar>(nPDEs)))))*nPDEs;
+      temp =  ((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (cols[i]))/((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (nPDEs));
+      LO colDof = cols[i] - (as<LO>(floor( temp    )))*nPDEs;
       if (colDof == rowDof) { /* same dof within node as row */
         Bcols[  Nbcols] = (cols[i] - colDof)/nPDEs;
         subNull[Nbcols] = oneNull[cols[i]];
@@ -502,7 +507,7 @@ namespace MueLu {
   /* new neighbor                                                              */
 
   LO nKeep = 1, flag  = 1, minId;
-  Scalar minFit, minFitRP, minFitRTimesBadGuy;
+  Scalar minFit, minFitRP = 0., minFitRTimesBadGuy = 0.;
   Scalar newRP, newRTimesBadGuy; 
 
   while (flag == 1) {
