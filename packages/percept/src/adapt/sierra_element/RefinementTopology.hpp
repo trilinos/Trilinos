@@ -14,15 +14,12 @@
 
 #include <utility>
 
-#include <adapt/sierra_element/RefinementKey.hpp>
 #include <adapt/sierra_element/CellTopology.hpp>
 
 namespace percept {
   namespace Elem {
 
     class MeshObjTopology;
-    class RefinementKey;
-    class MeshObjRefinementTopology;
 
     class RefinementTopology
     {
@@ -111,28 +108,6 @@ namespace percept {
        */
       const UInt *edge_permutation(UInt orientation) const;
 
-      bool query_refinement_topology(RefinementKey &object_key, MeshObjRefinementTopology & refTop) const;
-
-      bool refine_rivara_tri(RefinementKey &, MeshObjRefinementTopology & refTop) const;
-      bool refine_rivara_tet(RefinementKey &, MeshObjRefinementTopology & refTop) const;
-
-      /*------------------------------------------------------------------*/
-      /** Mapping of parent->face->child to parent->child->face
-       * @pre  face_ordinal < num_faces()
-       * @pre  face_child_ordinal < face_topology(face_ordinal)->num_child()
-       * @return (child_ordinal, child_face_ordinal)
-       */
-      std::pair<UInt,UInt> child_face(const UInt face_ordinal ,
-                                      const UInt face_child_ordinal) const;
-
-      /** Mapping of parent->edge->child to parent->child->edge
-       * @pre  edge_ordinal < getEdgeCount()
-       * @pre  edge_child_ordinal < edge_topology(edge_ordinal)->num_child()
-       * @return (child_ordinal, child_edge_ordinal)
-       */
-      std::pair<UInt,UInt> child_edge(const UInt edge_ordinal ,
-                                      const UInt edge_child_ordinal) const;
-
       std::vector< std::pair<UInt,UInt> >
       get_children_on_ordinal(const UInt face_ordinal) const;
 
@@ -155,63 +130,6 @@ namespace percept {
       const UInt * const *                  m_edgePermutation;
 
       bool                                  m_homogeneousChild;
-    };
-
-
-    /**
-     * Class to hold refinement information for partial and heterogeneous
-     */
-    class MeshObjRefinementTopology
-    {
-    public:
-      MeshObjRefinementTopology();
-      ~MeshObjRefinementTopology();
-
-      UInt num_child() const;
-
-      UInt num_child_nodes() const ;
-
-      CellTopology child_cell_topology(UInt child) const ;
-
-      const UInt * child_node(UInt child) const ;
-
-      bool homogeneous_refinement() const;
-
-      bool full_refinement() const;
-      /*------------------------------------------------------------------*/
-      /** Mapping of parent->face->child to parent->child->face
-       * @pre  face_ordinal < num_faces()
-       * @pre  face_child_ordinal < face_topology(face_ordinal)->num_child()
-       * @arg  objTop need to have objects regular topology as well
-       * @return (child_ordinal, child_face_ordinal)
-       */
-      std::pair<UInt,UInt> child_face(const UInt face_ordinal ,
-                                      const UInt face_child_ordinal,
-                                      const Elem::CellTopology & objTop ,
-                                      const RefinementKey &objDesiredKey) const ;
-
-      /** Mapping of parent->edge->child to parent->child->edge
-       * @pre  edge_ordinal < getEdgeCount()
-       * @pre  edge_child_ordinal < edge_topology(edge_ordinal)->num_child()
-       * @arg  objTop need to have objects regular topology as well
-       * @return (child_ordinal, child_edge_ordinal)
-       */
-      std::pair<UInt,UInt> child_edge(const UInt edge_ordinal ,
-                                      const UInt edge_child_ordinal,
-                                      const Elem::CellTopology & objTop) const;
-
-
-    public: // private:
-      UInt                                  m_numChild;
-      UInt                                  m_numChildNodes;
-      const CellTopology *                  m_childCellTopology;
-      UInt * *                              m_childNode;
-      bool                                  m_homogeneous; /*whether refinement is self simmilar*/
-      bool                                  m_fullRefinement; /*whether all edges are to be refined or not*/
-
-    private:
-      MeshObjRefinementTopology(const MeshObjRefinementTopology&);
-      MeshObjRefinementTopology&operator=(const MeshObjRefinementTopology&);
     };
 
 

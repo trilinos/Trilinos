@@ -14,7 +14,7 @@ void applyRotation(stk::mesh::Field<double, stk::mesh::Cartesian> *vectorField,
 		   double&xrot, double&yrot, double&zrot) // angles in degrees
 {
   stk::mesh::BulkData& bulkdata = vectorField->get_mesh();
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulkdata);
+  const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
   stk::mesh::EntityRank rank = vectorField->entity_rank();
 
   // TODO support 2D?
@@ -87,7 +87,7 @@ void applyTranslation(stk::mesh::Field<double, stk::mesh::Cartesian> *vectorFiel
 		      double&xtrans, double&ytrans, double&ztrans)
 {
   stk::mesh::BulkData& bulkdata = vectorField->get_mesh();
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulkdata);
+  const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
   stk::mesh::EntityRank rank = vectorField->entity_rank();
 
   stk::mesh::Selector select_used =
