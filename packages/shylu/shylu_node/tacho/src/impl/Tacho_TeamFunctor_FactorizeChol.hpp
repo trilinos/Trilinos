@@ -173,7 +173,7 @@ namespace Tacho {
             
             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
 
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)            
+#if 0 //defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)            
             for (ordinal_type iii=0;i<(srcsize-ijbeg);++iii) {
               const ordinal_type ii = ijbeg + iii;
               const ordinal_type row = s2t[ii];
