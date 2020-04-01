@@ -4182,6 +4182,17 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sync_host () {
     view_.sync_host ();
+
+    // This fence was motivated by the following specific situation:
+    // For transform Y to X:
+    //  Y.putScalar()    // acts on device
+    //  Y.sync_host()    // now need_sync_host() and need_sync_device() are false
+    //  transform (on device)
+    //  Y.sync_host()    // no modifications so no fence - this usually will be a fence
+    //  read Y           // crashes
+    // The expectation is that Tpetra developers would not normally be using sync_host
+    // so this fence should not be an issue for internal performance.
+    execution_space ().fence ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

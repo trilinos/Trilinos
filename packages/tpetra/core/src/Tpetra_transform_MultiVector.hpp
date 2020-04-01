@@ -323,15 +323,6 @@ namespace Tpetra {
              range_type range (execSpace, 0, lclNumRows);
 
              Kokkos::parallel_for (kernelLabel, range, g);
-
-             // This fence is currently needed for the following specific situation:
-             // For transform Y to X:
-             //  Y.putScalar()    // acts on device
-             //  Y.sync_host()    // now need_sync_host() and need_sync_device() are false
-             //  transform (on device)
-             //  Y.sync_host()    // no modifications so no fence - this usually will be a fence
-             //  read Y           // crashes
-             Kokkos::fence();
            },
            readOnly (input).on (memSpace).at (execSpace),
            writeOnly (output).on (memSpace).at (execSpace));
@@ -367,7 +358,6 @@ namespace Tpetra {
             range_type range (execSpace, 0, lclNumRows);
 
             Kokkos::parallel_for (kernelLabel, range, g);
-            Kokkos::fence(); // see note in above transform_vec_notSameObject
           },
           readOnly (input).on (memSpace).at (execSpace),
           writeOnly (output).on (memSpace).at (execSpace));
