@@ -42,6 +42,7 @@
 #include <Ioss_SideSet.h>
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
+#include <cgns/Iocgns_Defines.h>
 #include <cgnslib.h>
 #include <ostream>
 #include <string>
@@ -73,6 +74,18 @@
 namespace Iocgns {
   class StructuredZoneData;
 
+  struct ZoneBC
+  {
+    ZoneBC(const std::string &bc_name, std::array<cgsize_t, 2> &point_range)
+        : name(bc_name), range_beg(point_range[0]), range_end(point_range[1])
+    {
+    }
+
+    std::string name;
+    cgsize_t    range_beg;
+    cgsize_t    range_end;
+  };
+
   class Utils
   {
   public:
@@ -83,6 +96,7 @@ namespace Iocgns {
     static const size_t CG_VERTEX_FIELD_ID      = 1ul << 34;
 
     static std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel);
+    static std::string                 decompose_sb_name(const std::string &name);
 
     static size_t index(const Ioss::Field &field);
 
@@ -213,7 +227,7 @@ namespace Iocgns {
     }
 
     static void map_ioss_face_to_cgns(const Ioss::ElementTopology *parent_topo, size_t num_to_get,
-                                      std::vector<cgsize_t> &data)
+                                      CGNSIntVector &data)
     {
       // The {topo}_map[] arrays map from CGNS face# to IOSS face#.
       // See http://cgns.github.io/CGNS_docs_current/sids/conv.html#unstructgrid
@@ -253,6 +267,9 @@ namespace Iocgns {
       default:;
       }
     }
+
+    static std::vector<ZoneBC> parse_zonebc_sideblocks(int cgns_file_ptr, int base, int zone,
+                                                       int myProcessor);
 
     static void
     generate_boundary_faces(Ioss::Region *                                 region,

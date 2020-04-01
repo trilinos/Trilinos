@@ -415,6 +415,19 @@ std::pair<std::string, int> Iocgns::Utils::decompose_name(const std::string &nam
   return std::make_pair(zname, proc);
 }
 
+std::string Iocgns::Utils::decompose_sb_name(const std::string &name)
+{
+  std::string zname{name};
+
+  // Name should/might be of the form `zonename/sb_name`.  Extract
+  // the 'sb_name' and return that
+  auto tokens = Ioss::tokenize(zname, "/");
+  if (tokens.size() >= 2) {
+    zname = tokens.back();
+  }
+  return zname;
+}
+
 void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *function, int lineno,
                                int processor)
 {
@@ -1048,7 +1061,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     if (is_parallel_io) {
       region.get_database()->progress("\t\tBoundary Conditions");
     }
-    std::vector<cgsize_t> bc_range(sb->m_boundaryConditions.size() * 6);
+    CGNSIntVector bc_range(sb->m_boundaryConditions.size() * 6);
     size_t                idx = 0;
     for (const auto &bc : sb->m_boundaryConditions) {
       for (size_t i = 0; i < 3; i++) {
@@ -2579,6 +2592,43 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
   }
   return new_zone_id;
 }
+
+std::vector<Iocgns::ZoneBC> Iocgns::Utils::parse_zonebc_sideblocks(int cgns_file_ptr, int base, int zone,
+							   int myProcessor)
+  {
+    int num_bc;
+    CGCHECK(cg_nbocos(cgns_file_ptr, base, zone, &num_bc));
+
+    std::vector<Iocgns::ZoneBC> zonebc;
+    zonebc.reserve(num_bc);
+
+    for (int i = 0; i < num_bc; i++) {
+      char              boco_name[CGNS_MAX_NAME_LENGTH + 1];
+      CG_BCType_t       boco_type;
+      CG_PointSetType_t ptset_type;
+      cgsize_t          num_pnts;
+      cgsize_t          normal_list_size; // ignore
+      CG_DataType_t     normal_data_type; // ignore
+      int               num_dataset;      // ignore
+      CGCHECK(cg_boco_info(cgns_file_ptr, base, zone, i + 1, boco_name, &boco_type, &ptset_type,
+                           &num_pnts, nullptr, &normal_list_size, &normal_data_type, &num_dataset));
+
+      if (num_pnts != 2 || ptset_type != CG_PointRange) {
+        std::ostringstream errmsg;
+        fmt::print(
+            errmsg,
+            "CGNS: In Zone {}, boundary condition '{}' has a PointSetType of '{}' and {} points.\n"
+            "      The type must be 'PointRange' and there must be 2 points.",
+            zone, boco_name, cg_PointSetTypeName(ptset_type), num_pnts);
+        IOSS_ERROR(errmsg);
+      }
+
+      std::array<cgsize_t, 2> point_range;
+      CGCHECK(cg_boco_read(cgns_file_ptr, base, zone, i + 1, point_range.data(), nullptr));
+      zonebc.emplace_back(boco_name, point_range);
+    }
+    return zonebc;
+  }
 
 #ifdef CG_BUILD_HDF5
 extern "C" int H5get_libversion(unsigned *, unsigned *, unsigned *);
