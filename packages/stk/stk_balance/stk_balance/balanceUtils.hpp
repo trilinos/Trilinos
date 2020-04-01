@@ -77,7 +77,7 @@ public:
 class BalanceSettings
 {
 public:
-    BalanceSettings() {}
+    BalanceSettings();
     virtual ~BalanceSettings() {}
 
     enum GraphOption
@@ -123,6 +123,9 @@ public:
     virtual void setDecompMethod(const std::string& method) ;
     virtual std::string getDecompMethod() const ;
 
+    virtual void setInitialDecompMethod(const std::string& method) ;
+    virtual std::string getInitialDecompMethod() const ;
+
     virtual std::string getCoordinateFieldName() const ;
 
     virtual bool shouldPrintMetrics() const;
@@ -150,6 +153,8 @@ public:
     virtual double getNodeBalancerTargetLoadBalance() const;
     virtual unsigned getNodeBalancerMaxIterations() const;
 
+private:
+    std::string initialDecompMethod;
 };
 
 class BasicGeometricSettings : public BalanceSettings

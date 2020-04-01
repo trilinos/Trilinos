@@ -38,7 +38,6 @@
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint64_t
 #include <iosfwd>                       // for ostream
-#include <functional>
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowAssertMsg
 
@@ -47,7 +46,7 @@ namespace mesh {
 
 struct EntityKey
 {
-  enum entity_key_t : uint64_t {
+  enum entity_key_t {
       RANK_SHIFT = 56ULL
     , MIN_ID = 0ULL
     , MAX_ID = (1ULL << RANK_SHIFT) - 1ULL
@@ -101,7 +100,7 @@ struct HashValueForEntityKey
     STK_FUNCTION
     size_t operator()(EntityKey k) const
     {
-      return std::hash<uint64_t>{}(static_cast<EntityKey::entity_key_t>(k));
+      return static_cast<size_t>(k.m_value);
     }
 };
 

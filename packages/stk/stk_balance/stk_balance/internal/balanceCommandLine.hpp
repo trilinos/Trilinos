@@ -56,13 +56,15 @@ struct ParsedOptions
     double faceSearchRelTol;
     bool useContactSearch;
     std::string decompMethod;
+    std::string initialDecompMethod;
 
     enum ParserFlags {
       APP_TYPE              = 1,
       FACE_SEARCH_ABS_TOL   = 2,
       FACE_SEARCH_REL_TOL   = 4,
       CONTACT_SEARCH        = 8,
-      DECOMP_METHOD         = 16
+      DECOMP_METHOD         = 16,
+      INITIAL_DECOMP_METHOD = 32
     };
 
     ParsedOptions()
@@ -78,6 +80,7 @@ struct ParsedOptions
         faceSearchRelTol(0.15),
         useContactSearch(true),
         decompMethod("parmetis"),
+        initialDecompMethod("RIB"),
         m_parsedState(0)
     {
     }
@@ -110,6 +113,12 @@ struct ParsedOptions
     {
       decompMethod = method;
       m_parsedState |= DECOMP_METHOD;
+    }
+
+    void set_initial_decomp_method(std::string method)
+    {
+      initialDecompMethod = method;
+      m_parsedState |= INITIAL_DECOMP_METHOD;
     }
 
     bool is_option_provided(ParserFlags parserFlags) const

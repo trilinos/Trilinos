@@ -207,7 +207,8 @@ public :
 
     stk::mesh::FieldBase* field=m_transfer_fields[fieldIndex];
 
-    DataTypeKey::data_t dataType;
+    DataTypeKey::data_t dataType( DataTypeKey::data_t::INVALID_TYPE );
+
  
     if(field->type_is<unsigned>()) {
       dataType = DataTypeKey::data_t::UNSIGNED_INTEGER;

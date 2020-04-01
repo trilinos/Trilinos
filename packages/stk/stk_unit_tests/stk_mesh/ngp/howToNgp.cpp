@@ -708,19 +708,14 @@ unsigned count_num_elems(stk::mesh::NgpMesh ngpMesh,
                          stk::mesh::EntityRank rank,
                          stk::mesh::Part &part)
 {
-#ifdef KOKKOS_ENABLE_CUDA
-  using DeviceSpace = Kokkos::CudaSpace;
-#else
-  using DeviceSpace = Kokkos::HostSpace;
-#endif
-  Kokkos::View<unsigned *, DeviceSpace> numElems("numElems", 1);
+  Kokkos::View<unsigned *, stk::mesh::MemSpace> numElems("numElems", 1);
   stk::mesh::for_each_entity_run(ngpMesh, rank, part,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
                                    unsigned fieldValue = static_cast<unsigned>(ngpField(entity, 0));
                                    Kokkos::atomic_add(&numElems(0), fieldValue);
                                  });
-  Kokkos::View<unsigned *, DeviceSpace>::HostMirror numElemsHost =
+  Kokkos::View<unsigned *, stk::mesh::MemSpace>::HostMirror numElemsHost =
       Kokkos::create_mirror_view(numElems);
   Kokkos::deep_copy(numElemsHost, numElems);
   return numElemsHost(0);
@@ -809,19 +804,16 @@ void verify_state_new_has_value(stk::mesh::BulkData &bulk,
   }
 }
 
-void set_new_as_old_plus_one_on_device(stk::mesh::NgpMesh &ngpMesh,
-                                       stk::mesh::EntityRank rank,
-                                       stk::mesh::Selector sel,
-                                       stk::mesh::NgpMultistateField<int> &ngpMultistateField)
+void set_new_as_old_plus_one_in_field_on_device(stk::mesh::NgpMesh &ngpMesh,
+                                                           stk::mesh::EntityRank rank,
+                                                           stk::mesh::Selector sel,
+                                                           stk::mesh::NgpMultistateField<int> &ngpMultistateField)
 {
-  ngpMultistateField.sync_to_device();
   int component = 0;
   stk::mesh::for_each_entity_run(ngpMesh, rank, sel,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
-                                   stk::mesh::NgpConstField<int> stateNField = ngpMultistateField.get_field_old_state(stk::mesh::StateN);
-                                   stk::mesh::NgpField<int> stateNp1Field = ngpMultistateField.get_field_new_state();
-                                   stateNp1Field(entity, component) = stateNField(entity, component) + 1;
+                                   ngpMultistateField.get_new(entity, component) = ngpMultistateField.get_old(stk::mesh::StateOld, entity, component) + 1;
                                  });
   ngpMultistateField.modify_on_device();
 }
@@ -834,52 +826,16 @@ TEST_F(NgpHowTo, useMultistateFields)
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
 
   stk::mesh::NgpMultistateField<int> ngpMultistateField(get_bulk(), stkField);
-  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpMesh ngpMesh(get_bulk());
 
-  set_new_as_old_plus_one_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
+  set_new_as_old_plus_one_in_field_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
   int newStateValue = 1;
   verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
 
   get_bulk().update_field_data_states();
   ngpMultistateField.increment_state();
 
-  set_new_as_old_plus_one_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
-  newStateValue = 2;
-  verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
-}
-
-void set_new_as_old_plus_one_in_convenient_field_on_device(stk::mesh::NgpMesh &ngpMesh,
-                                                           stk::mesh::EntityRank rank,
-                                                           stk::mesh::Selector sel,
-                                                           stk::mesh::ConvenientNgpMultistateField<int> &ngpMultistateField)
-{
-  int component = 0;
-  stk::mesh::for_each_entity_run(ngpMesh, rank, sel,
-                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
-                                 {
-                                   ngpMultistateField.get_new(entity, component) = ngpMultistateField.get_old(stk::mesh::StateOld, entity, component) + 1;
-                                 });
-  ngpMultistateField.modify_on_device();
-}
-
-TEST_F(NgpHowTo, useConvenientMultistateFields)
-{
-  int numStates = 2;
-  int initialValue = 0;
-  stk::mesh::Field<int> &stkField = create_field_with_num_states_and_init(get_meta(), "myField", numStates, initialValue);
-  setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
-
-  stk::mesh::ConvenientNgpMultistateField<int> ngpMultistateField(get_bulk(), stkField);
-  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
-
-  set_new_as_old_plus_one_in_convenient_field_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
-  int newStateValue = 1;
-  verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
-
-  get_bulk().update_field_data_states();
-  ngpMultistateField.increment_state();
-
-  set_new_as_old_plus_one_in_convenient_field_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
+  set_new_as_old_plus_one_in_field_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
   newStateValue = 2;
   verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
 }

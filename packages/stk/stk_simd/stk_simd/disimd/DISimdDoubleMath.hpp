@@ -297,27 +297,15 @@ STK_MATH_FORCE_INLINE simd::Double erf(const simd::Double& a) {
 }
 
 STK_MATH_FORCE_INLINE simd::Double multiplysign(const simd::Double& x, const simd::Double& y) { // return x times sign of y
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = x[i]*std::copysign(1.0, y[i]);
-  }
-  return tmp;
+  return simd::Double(SIMD_NAMESPACE::multiplysign(x._data, y._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Double copysign(const simd::Double& x, const simd::Double& y) { // return abs(x) times sign of y
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::copysign(x[i], y[i]);
-  }
-  return tmp;
+  return simd::Double(SIMD_NAMESPACE::copysign(x._data, y._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Double abs(const simd::Double& x) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::abs(x[i]);
-  }
-  return tmp;
+  return simd::Double(SIMD_NAMESPACE::abs(x._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Double min(const simd::Double& x, const simd::Double& y) {
