@@ -96,55 +96,6 @@
 extern char hdf5_access[64];
 
 namespace {
-  struct ZoneBC
-  {
-    ZoneBC(const std::string &bc_name, std::array<cgsize_t, 2> &point_range)
-        : name(bc_name), range_beg(point_range[0]), range_end(point_range[1])
-    {
-    }
-
-    std::string name;
-    cgsize_t    range_beg;
-    cgsize_t    range_end;
-  };
-
-  std::vector<ZoneBC> parse_zonebc_sideblocks(int cgns_file_ptr, int base, int zone,
-                                              int myProcessor)
-  {
-    int num_bc;
-    CGCHECK(cg_nbocos(cgns_file_ptr, base, zone, &num_bc));
-
-    std::vector<ZoneBC> zonebc;
-    zonebc.reserve(num_bc);
-
-    for (int i = 0; i < num_bc; i++) {
-      char              boco_name[CGNS_MAX_NAME_LENGTH + 1];
-      CG_BCType_t       boco_type;
-      CG_PointSetType_t ptset_type;
-      cgsize_t          num_pnts;
-      cgsize_t          normal_list_size; // ignore
-      CG_DataType_t     normal_data_type; // ignore
-      int               num_dataset;      // ignore
-      CGCHECK(cg_boco_info(cgns_file_ptr, base, zone, i + 1, boco_name, &boco_type, &ptset_type,
-                           &num_pnts, nullptr, &normal_list_size, &normal_data_type, &num_dataset));
-
-      if (num_pnts != 2 || ptset_type != CG_PointRange) {
-        std::ostringstream errmsg;
-        fmt::print(
-            errmsg,
-            "CGNS: In Zone {}, boundary condition '{}' has a PointSetType of '{}' and {} points.\n"
-            "      The type must be 'PointRange' and there must be 2 points.",
-            zone, boco_name, cg_PointSetTypeName(ptset_type), num_pnts);
-        IOSS_ERROR(errmsg);
-      }
-
-      std::array<cgsize_t, 2> point_range;
-      CGCHECK(cg_boco_read(cgns_file_ptr, base, zone, i + 1, point_range.data(), nullptr));
-      zonebc.emplace_back(boco_name, point_range);
-    }
-    return zonebc;
-  }
-
   size_t global_to_zone_local_idx(size_t i, const Ioss::Map *block_map, Ioss::Map &nodeMap,
                                   bool isParallel)
   {
@@ -1297,8 +1248,8 @@ namespace Iocgns {
 #if IOSS_DEBUG_OUTPUT
           fmt::print("Zone {} shares {} nodes with {}\n", zone, npnts, donorname);
 #endif
-          std::vector<cgsize_t> points(npnts);
-          std::vector<cgsize_t> donors(npnts);
+          CGNSIntVector points(npnts);
+          CGNSIntVector donors(npnts);
 
           CGCHECKM(cg_conn_read(get_file_pointer(), base, zone, i + 1, points.data(),
                                 donor_datatype, donors.data()));
@@ -1340,7 +1291,7 @@ namespace Iocgns {
     // The BC_t nodes in the ZoneBC_t give the element range for each SideBlock
     // which can be matched up below with the Elements_t nodes to get contents
     // of the SideBlocks.
-    auto zonebc = parse_zonebc_sideblocks(get_file_pointer(), base, zone, myProcessor);
+    auto zonebc = Utils::parse_zonebc_sideblocks(get_file_pointer(), base, zone, myProcessor);
 
     // ========================================================================
     // Read the sections and create an element block for the ones that
@@ -1559,8 +1510,8 @@ namespace Iocgns {
       for (auto J = I + 1; J != blocks.end(); J++) {
         int                   dzone = (*J)->get_property("zone").get_int();
         const auto &          J_map = m_globalToBlockLocalNodeMap[dzone];
-        std::vector<cgsize_t> point_list;
-        std::vector<cgsize_t> point_list_donor;
+        CGNSIntVector point_list;
+        CGNSIntVector point_list_donor;
         for (size_t i = 0; i < J_map->size(); i++) {
           auto global = J_map->map()[i + 1];
           // See if this global id exists in I_map...
@@ -1958,7 +1909,7 @@ namespace Iocgns {
               Utils::map_cgns_connectivity(eb->topology(), num_to_get, idata);
             }
             else {
-              std::vector<cgsize_t> connect(element_nodes * num_to_get);
+              CGNSIntVector connect(element_nodes * num_to_get);
               CGCHECKM(
                   cg_elements_read(get_file_pointer(), base, zone, sect, connect.data(), nullptr));
               if (field.get_type() == Ioss::Field::INT32) {
@@ -2286,14 +2237,14 @@ namespace Iocgns {
         // TODO(gdsjaar): ? Possibly rewrite using cgi_read_int_data so can skip reading element
         // connectivity
         int                   nodes_per_face = sb->topology()->number_nodes();
-        std::vector<cgsize_t> elements(nodes_per_face * num_to_get); // Not needed, but can't skip
+        CGNSIntVector elements(nodes_per_face * num_to_get); // Not needed, but can't skip
 
         // The parent information will be formatted as:
         // *  `num_to_get` parent elements,
         // *  `num_to_get` zeros (other parent element for face, but on boundary so 0)
         // *  `num_to_get` face_on_element
         // *  `num_to_get` zeros (face on other parent element)
-        std::vector<cgsize_t> parent(4 * num_to_get);
+        CGNSIntVector parent(4 * num_to_get);
 
         CGCHECKM(
             cg_elements_read(get_file_pointer(), base, zone, sect, elements.data(), parent.data()));
@@ -2609,7 +2560,7 @@ namespace Iocgns {
                                         num_to_get, 0, (cgsize_t *)data, &sect));
             }
             else {
-              std::vector<cgsize_t> connect;
+              CGNSIntVector connect;
               connect.reserve(element_nodes * num_to_get);
               if (field.get_type() == Ioss::Field::INT32) {
                 auto *idata = reinterpret_cast<int *>(data);
@@ -2749,7 +2700,7 @@ namespace Iocgns {
 
             for (size_t i = 0; i < block_map->size(); i++) {
               auto idx = global_to_zone_local_idx(i, block_map, nodeMap, isParallel);
-              SMART_ASSERT(idx < num_to_get)(i)(idx)(num_to_get);
+              SMART_ASSERT(idx < (size_t)num_to_get)(i)(idx)(num_to_get);
               x[i] = rdata[idx * spatial_dim + 0];
               if (spatial_dim > 1) {
                 y[i] = rdata[idx * spatial_dim + 1];
@@ -2786,7 +2737,7 @@ namespace Iocgns {
 
             for (size_t i = 0; i < block_map->size(); i++) {
               auto idx = global_to_zone_local_idx(i, block_map, nodeMap, isParallel);
-              SMART_ASSERT(idx < num_to_get)(i)(idx)(num_to_get);
+              SMART_ASSERT(idx < (size_t)num_to_get)(i)(idx)(num_to_get);
               xyz[i] = rdata[idx];
             }
 
@@ -2963,9 +2914,6 @@ namespace Iocgns {
       // Handle the MESH fields required for a CGNS file model.
       // (The 'genesis' portion)
       if (field.get_name() == "element_side") {
-        // Get name from parent sideset...
-        auto &name = sb->owner()->name();
-
         CG_ElementType_t type = Utils::map_topology_to_cgns(sb->topology()->name());
         int              sect = 0;
 
@@ -2978,7 +2926,12 @@ namespace Iocgns {
         //       the data so would have to generate it.  This may cause problems
         //       with codes that use the downstream data if they base the BC off
         //       of the nodes instead of the element/side info.
-        std::vector<cgsize_t> point_range{cg_start, cg_end};
+        // Get name from parent sideset...  This is name of the ZoneBC entry
+        auto &name = sb->owner()->name();
+	// This is the name of the BC_t node 
+	auto sb_name = Iocgns::Utils::decompose_sb_name(sb->name());
+
+        CGNSIntVector point_range{cg_start, cg_end};
         CGCHECKM(cg_boco_write(get_file_pointer(), base, zone, name.c_str(), CG_FamilySpecified,
                                CG_PointRange, 2, point_range.data(), &sect));
         CGCHECKM(
@@ -2986,13 +2939,13 @@ namespace Iocgns {
         CGCHECKM(cg_famname_write(name.c_str()));
         CGCHECKM(cg_boco_gridlocation_write(get_file_pointer(), base, zone, sect, CG_FaceCenter));
 
-        CGCHECKM(cg_section_partial_write(get_file_pointer(), base, zone, name.c_str(), type,
+        CGCHECKM(cg_section_partial_write(get_file_pointer(), base, zone, sb_name.c_str(), type,
                                           cg_start, cg_end, 0, &sect));
 
         sb->property_update("section", sect);
 
         size_t                offset = m_zoneOffset[zone - 1];
-        std::vector<cgsize_t> parent(4 * num_to_get);
+        CGNSIntVector parent(4 * num_to_get);
 
         if (field.get_type() == Ioss::Field::INT32) {
           int *  idata = reinterpret_cast<int *>(data);

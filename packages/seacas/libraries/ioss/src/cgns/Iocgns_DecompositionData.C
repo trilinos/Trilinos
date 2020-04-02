@@ -572,8 +572,8 @@ namespace Iocgns {
           }
 #endif
           // The 'ids' in 'points' and 'donors' will be zone-local 1-based.
-          std::vector<cgsize_t> points(npnts);
-          std::vector<cgsize_t> donors(npnts);
+          CGNSIntVector points(npnts);
+          CGNSIntVector donors(npnts);
 
           CGCHECK2(cg_conn_read(filePtr, base, zone, i + 1, points.data(), donor_datatype,
                                 donors.data()));
@@ -629,6 +629,13 @@ namespace Iocgns {
 
     CGCHECK2(cg_nzones(filePtr, base, &num_zones));
     for (int zone = 1; zone <= num_zones; zone++) {
+      // ========================================================================
+      // Read the ZoneBC_t node to get list of SideBlocks to define on this zone
+      // The BC_t nodes in the ZoneBC_t give the element range for each SideBlock
+      // which can be matched up below with the Elements_t nodes to get contents
+      // of the SideBlocks.
+      auto zonebc = Utils::parse_zonebc_sideblocks(filePtr, base, zone, m_decomposition.m_processor);
+
       cgsize_t size[3];
       char     zone_name[CGNS_MAX_NAME_LENGTH + 1];
       CGCHECK2(cg_zone_read(filePtr, base, zone, zone_name, size));
@@ -688,12 +695,29 @@ namespace Iocgns {
         }
         else {
           // This is a boundary-condition -- sideset (?)
-          std::string ss_name(section_name);
+          std::string bc_name(section_name);
+	  std::string ss_name;
+	  // Search zonebc (if it exists) for an entry such that the element ranges overlap.
+	  if (!zonebc.empty()) {
+	    size_t i = 0;
+	    for (; i < zonebc.size(); i++) {
+	      if (zonebc[i].range_beg >= el_start && zonebc[i].range_end <= el_end) {
+		break;
+	      }
+	    }
+	    if (i < zonebc.size()) {
+	      ss_name = zonebc[i].name;
+	    }
+	  }
+	  else {
+	    ss_name = section_name;
+	  }
 
           Ioss::SetDecompositionData sset;
           sset.zone_            = zone;
           sset.section_         = is;
-          sset.name_            = ss_name;
+          sset.name_            = bc_name;
+	  sset.ss_name_         = ss_name;
           sset.fileCount        = num_entity;
           sset.topologyType     = Utils::map_cgns_to_topology_type(e_type);
           sset.parentBlockIndex = last_blk_location;
@@ -749,7 +773,7 @@ namespace Iocgns {
       int    section       = block.section_;
 
       // Get the connectivity (raw) for this portion of elements...
-      std::vector<cgsize_t> connectivity(overlap * element_nodes);
+      CGNSIntVector connectivity(overlap * element_nodes);
       INT                   blk_start = std::max(b_start, p_start) - b_start + 1;
       INT                   blk_end   = blk_start + overlap - 1;
       blk_start                       = blk_start < 0 ? 0 : blk_start;
@@ -802,14 +826,14 @@ namespace Iocgns {
 
         auto                  topology = Ioss::ElementTopology::factory(sset.topologyType, true);
         int                   nodes_per_face = topology->number_nodes();
-        std::vector<cgsize_t> nodes(nodes_per_face * sset.file_count());
+        CGNSIntVector nodes(nodes_per_face * sset.file_count());
 
         // We get:
         // *  num_to_get parent elements,
         // *  num_to_get zeros (other parent element for face, but on boundary so 0)
         // *  num_to_get face_on_element
         // *  num_to_get zeros (face on other parent element)
-        std::vector<cgsize_t> parent(4 * sset.file_count());
+        CGNSIntVector parent(4 * sset.file_count());
 
         CGCHECK2(cg_elements_read(filePtr, base, sset.zone(), sset.section(), nodes.data(),
                                   parent.data()));
@@ -1065,9 +1089,9 @@ namespace Iocgns {
 
     auto                  topology       = Ioss::ElementTopology::factory(sset.topologyType, true);
     int                   nodes_per_face = topology->number_nodes();
-    std::vector<cgsize_t> nodes(nodes_per_face * sset.file_count());
+    CGNSIntVector nodes(nodes_per_face * sset.file_count());
 
-    std::vector<cgsize_t> parent(4 * sset.file_count());
+    CGNSIntVector parent(4 * sset.file_count());
 
     CGCHECK2(
         cg_elements_read(filePtr, base, sset.zone(), sset.section(), nodes.data(), parent.data()));
@@ -1084,7 +1108,7 @@ namespace Iocgns {
       // on this processor, then assume the face is on this processor...
 
       // TODO: Should we filter down to just corner nodes?
-      std::vector<cgsize_t> face_nodes(sset.entitylist_map.size() * nodes_per_face);
+      CGNSIntVector face_nodes(sset.entitylist_map.size() * nodes_per_face);
       communicate_set_data(nodes.data(), face_nodes.data(), sset, nodes_per_face);
 
       // Now, iterate the face connectivity vector and find a match in `m_boundaryFaces`
@@ -1170,7 +1194,7 @@ namespace Iocgns {
                                                       bool raw_ids) const
   {
     auto                  blk = m_elementBlocks[blk_seq];
-    std::vector<cgsize_t> file_conn(blk.file_count() * blk.nodesPerEntity);
+    CGNSIntVector file_conn(blk.file_count() * blk.nodesPerEntity);
     int                   base = 1;
     CGCHECK2(cgp_elements_read_data(filePtr, base, blk.zone(), blk.section(), blk.fileSectionOffset,
                                     blk.fileSectionOffset + blk.file_count() - 1,
