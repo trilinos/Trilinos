@@ -34,7 +34,7 @@ TEST_F(UpdateNgpMesh, lazyAutoUpdate)
   get_bulk().modification_begin();
   get_bulk().modification_end();
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_FALSE(ngpMesh->is_up_to_date());
   ngpMesh = &get_bulk().get_updated_ngp_mesh();  // Trigger update
   EXPECT_TRUE(ngpMesh->is_up_to_date());
@@ -56,7 +56,7 @@ TEST_F(UpdateNgpMesh, manualUpdate)
   get_bulk().modification_begin();
   get_bulk().modification_end();
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_FALSE(ngpMesh.is_up_to_date());
   get_bulk().update_ngp_mesh();
   EXPECT_TRUE(ngpMesh.is_up_to_date());
@@ -75,7 +75,7 @@ TEST_F(UpdateNgpMesh, OnlyOneDeviceMesh_InternalAndExternal)
   // Create first NgpMesh inside BulkData
   get_bulk().get_updated_ngp_mesh();
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_THROW(stk::mesh::NgpMesh secondNgpMesh(get_bulk()), std::logic_error);
 #else
   EXPECT_NO_THROW(stk::mesh::NgpMesh secondNgpMesh(get_bulk()));
@@ -88,7 +88,7 @@ TEST_F(UpdateNgpMesh, OnlyOneDeviceMesh_TwoExternal)
 
   stk::mesh::NgpMesh firstNgpMesh(get_bulk());
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_THROW(stk::mesh::NgpMesh secondNgpMesh(get_bulk()), std::logic_error);
 #else
   EXPECT_NO_THROW(stk::mesh::NgpMesh secondNgpMesh(get_bulk()));

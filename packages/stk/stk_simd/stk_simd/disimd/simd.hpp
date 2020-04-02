@@ -53,7 +53,12 @@
 #include "vector_size.hpp"
 #endif
 
-#if defined(__SSE__)
+#ifdef __CUDACC__
+#include "cuda_warp.hpp"
+
+#else
+
+#ifdef __SSE__
 #include "sse.hpp"
 #endif
 
@@ -69,12 +74,10 @@
 #include "neon.hpp"
 #endif
 
-#if defined(__VSX__) && (!defined(__CUDACC__))
+#ifdef __VSX__
 #include "vsx.hpp"
 #endif
 
-#ifdef __CUDACC__
-#include "cuda_warp.hpp"
 #endif
 
 namespace SIMD_NAMESPACE {

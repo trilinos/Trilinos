@@ -34,7 +34,7 @@
 #ifndef STK_MESH_NGPATOMICS_HPP
 #define STK_MESH_NGPATOMICS_HPP
 
-#include "stk_util/stk_config.h"
+#include "stk_util/stk_kokkos_macros.h"
 #include "Kokkos_Core.hpp"
 
 namespace stk {

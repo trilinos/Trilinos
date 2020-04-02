@@ -105,6 +105,11 @@ class simd<float, simd_abi::avx> {
   SIMD_ALWAYS_INLINE inline simd(float value)
     :m_value(_mm256_set1_ps(value))
   {}
+  SIMD_ALWAYS_INLINE inline simd(
+      float a, float b, float c, float d,
+      float e, float f, float g, float h)
+    :m_value(_mm256_setr_ps(a, b, c, d, e, f, g, h))
+  {}
   SIMD_ALWAYS_INLINE inline
   simd(storage_type const& value) {
     copy_from(value.data(), element_aligned_tag());
@@ -115,9 +120,13 @@ class simd<float, simd_abi::avx> {
     return *this;
   }
   template <class Flags>
-  SIMD_ALWAYS_INLINE inline simd(float const* ptr, Flags flags) {
-    copy_from(ptr, flags);
-  }
+  SIMD_ALWAYS_INLINE inline simd(float const* ptr, Flags /*flags*/)
+    :m_value(_mm256_loadu_ps(ptr))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(float const* ptr, int stride)
+    :simd(ptr[0],        ptr[stride],   ptr[2*stride], ptr[3*stride],
+          ptr[4*stride], ptr[5*stride], ptr[6*stride], ptr[7*stride])
+  {}
   SIMD_ALWAYS_INLINE inline constexpr simd(__m256 const& value_in)
     :m_value(value_in)
   {}
@@ -150,6 +159,16 @@ class simd<float, simd_abi::avx> {
     return simd_mask<float, simd_abi::avx>(_mm256_cmp_ps(m_value, other.m_value, _CMP_EQ_OS));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx> multiplysign(simd<float, simd_abi::avx> const& a, simd<float, simd_abi::avx> const& b) {
+  __m256 const sign_mask = _mm256_set1_ps(-0.f);
+  return simd<float, simd_abi::avx>(_mm256_xor_ps(a.get(), _mm256_and_ps(sign_mask, b.get())));
+}
+
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx> copysign(simd<float, simd_abi::avx> const& a, simd<float, simd_abi::avx> const& b) {
+  __m256 const sign_mask = _mm256_set1_ps(-0.);
+  return simd<float, simd_abi::avx>(_mm256_xor_ps(_mm256_andnot_ps(sign_mask, a.get()), _mm256_and_ps(sign_mask, b.get())));
+}
 
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx> abs(simd<float, simd_abi::avx> const& a) {
   __m256 sign_mask = _mm256_set1_ps(-0.f);  // -0.f = 1 << 31
@@ -244,9 +263,17 @@ class simd<double, simd_abi::avx> {
   using mask_type = simd_mask<double, abi_type>;
   using storage_type = simd_storage<double, abi_type>;
   SIMD_ALWAYS_INLINE inline simd() = default;
+  SIMD_ALWAYS_INLINE inline simd(simd const&) = default;
+  SIMD_ALWAYS_INLINE inline simd(simd&&) = default;
+  SIMD_ALWAYS_INLINE inline simd& operator=(simd const&) = default;
+  SIMD_ALWAYS_INLINE inline simd& operator=(simd&&) = default;
   SIMD_ALWAYS_INLINE inline static constexpr int size() { return 4; }
   SIMD_ALWAYS_INLINE inline simd(double value)
     :m_value(_mm256_set1_pd(value))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(
+      double a, double b, double c, double d)
+    :m_value(_mm256_setr_pd(a, b, c, d))
   {}
   SIMD_ALWAYS_INLINE inline
   simd(storage_type const& value) {
@@ -264,9 +291,12 @@ class simd<double, simd_abi::avx> {
     return *this;
   }
   template <class Flags>
-  SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags flags) {
-    copy_from(ptr, flags);
-  }
+  SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags /*flags*/)
+    :m_value(_mm256_loadu_pd(ptr))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(double const* ptr, int stride)
+    :simd(ptr[0], ptr[stride], ptr[2*stride], ptr[3*stride])
+  {}
   SIMD_ALWAYS_INLINE inline constexpr simd(__m256d const& value_in)
     :m_value(value_in)
   {}
@@ -304,6 +334,16 @@ class simd<double, simd_abi::avx> {
     return simd_mask<double, simd_abi::avx>(_mm256_cmp_pd(m_value, other.m_value, _CMP_EQ_OS));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx> multiplysign(simd<double, simd_abi::avx> const& a, simd<double, simd_abi::avx> const& b) {
+  __m256d const sign_mask = _mm256_set1_pd(-0.f);
+  return simd<double, simd_abi::avx>(_mm256_xor_pd(a.get(), _mm256_and_pd(sign_mask, b.get())));
+}
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx> copysign(simd<double, simd_abi::avx> const& a, simd<double, simd_abi::avx> const& b) {
+  __m256d const sign_mask = _mm256_set1_pd(-0.f);
+  return simd<double, simd_abi::avx>(_mm256_xor_pd(_mm256_andnot_pd(sign_mask, a.get()), _mm256_and_pd(sign_mask, b.get())));
+}
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx> abs(simd<double, simd_abi::avx> const& a) {
   __m256d const sign_mask = _mm256_set1_pd(-0.f);  // -0.f = 1 << 31

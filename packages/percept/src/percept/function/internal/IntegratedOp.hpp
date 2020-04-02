@@ -120,7 +120,7 @@
           return false;
         
         int cell_dimension = cell_topo.getDimension();
-        int meta_dimension = stk::mesh::MetaData::get(bulkData).spatial_dimension();
+        int meta_dimension = bulkData.mesh_meta_data().spatial_dimension();
 
         if (cell_dimension == meta_dimension - 1)
           {
@@ -129,7 +129,8 @@
 
         VERIFY_OP_ON(cell_dimension, ==, meta_dimension, "Dimensions don't match");
 
-        CoordinatesFieldType& coord_field = *(stk::mesh::MetaData::get(bulkData)).get_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates");
+        const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
+        CoordinatesFieldType& coord_field = *meta.get_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates");
 
         // FIXME for fields not on a Node
         unsigned nDOF = m_nDOFs;
@@ -318,12 +319,13 @@
         const CellTopologyData * const child_cell_topo_data = stk::mesh::get_cell_topology(mybucket(bulkData, child_element).topology()).getCellTopologyData();
         CellTopology child_cell_topo(child_cell_topo_data);
         int child_cell_dimension = child_cell_topo.getDimension();
-        int meta_dimension = stk::mesh::MetaData::get(bulkData).spatial_dimension();
+        int meta_dimension = bulkData.mesh_meta_data().spatial_dimension();
 
         // for now, only allow face (or edge)
         VERIFY_OP_ON(child_cell_dimension, ==, meta_dimension - 1, "Dimensions don't match");
 
-        CoordinatesFieldType& coord_field = *(stk::mesh::MetaData::get(bulkData)).get_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates");
+        const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
+        CoordinatesFieldType& coord_field = *meta.get_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates");
 
         // FIXME for fields not on a Node
         unsigned nDOF = m_nDOFs;

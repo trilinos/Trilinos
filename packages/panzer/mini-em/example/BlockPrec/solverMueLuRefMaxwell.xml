@@ -145,6 +145,7 @@
             <ParameterList name="Preconditioner Types">
               <ParameterList name="MueLuRefMaxwell">
                 <Parameter name="parameterlist: syntax" type="string" value="muelu"/>
+                <Parameter name="use kokkos refactor" type="bool" value="false"/>
                 <Parameter name="verbosity" type="string" value="extreme"/>
                 <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>
                 <Parameter name="refmaxwell: mode" type="string" value="additive"/>
@@ -192,6 +193,7 @@
                 <!-- </ParameterList> -->
 
                 <ParameterList name="refmaxwell: 11list">
+                  <Parameter name="use kokkos refactor" type="bool" value="false"/>
                   <Parameter name="verbosity" type="string" value="extreme"/>
                   <Parameter name="coarse: max size" type="int" value="2500"/>
                   <Parameter name="number of equations" type="int" value="3"/>
@@ -245,6 +247,7 @@
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 22list">
+                  <Parameter name="use kokkos refactor" type="bool" value="false"/>
                   <Parameter name="verbosity" type="string" value="extreme"/>
                   <Parameter name="coarse: max size" type="int" value="2500"/>
                   <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>

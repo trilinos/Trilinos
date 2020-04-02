@@ -8,15 +8,6 @@
 
 #include <percept/Percept.hpp>
 
-#if defined(STK_PERCEPT_LITE)
-#if STK_PERCEPT_LITE
-//d1 STK_PERCEPT_LITE
-#endif
-#else 
-//ud STK_PERCEPT_LITE
-#endif
-
-
 #if !defined(NO_GEOM_SUPPORT)
 
 #include "JacobianUtil.hpp"
@@ -33,38 +24,6 @@
                                        {2, 3, 1, 6}, {3, 0, 2, 7},
                                        {4, 7, 5, 0}, {5, 4, 6, 1},
                                        {6, 5, 7, 2}, {7, 6, 4, 3}};
-
-#if 0
-    static inline void set2d(JacobianUtil::Vec3D v, const double *x)
-    {
-      v[0] = x[0];
-      v[1] = x[1];
-      v[2] = 0.0;
-    }
-    static inline void set3d(JacobianUtil::Vec3D v, const double *x)
-    {
-      v[0] = x[0];
-      v[1] = x[1];
-      v[2] = x[2];
-    }
-#endif
-
-    void scale_to_unit(DenseMatrix<3,3>& A)
-    {
-      for (int jvert=0; jvert < 3; jvert++)
-        {
-          double sum=0.0;
-          for (int ixyz=0; ixyz < 3; ixyz++)
-            {
-              sum += A(ixyz, jvert)*A(ixyz, jvert);
-            }
-          sum = std::max(1.e-10, std::sqrt(sum));
-          for (int ixyz=0; ixyz < 3; ixyz++)
-            {
-              A(ixyz, jvert) /= sum;
-            }
-        }
-    }
 
     template<>    bool  JacobianUtilImpl<STKMesh>::jacobian_matrix_1D_in_2D(double &detJ, DenseMatrix<3,3>& A, const double *x[2])
     {
@@ -101,7 +60,6 @@
       A(2,0) = 0; // (x[1][2] - x[0][2]);
       A(2,1) = 0; // (x[2][2] - x[0][2]);
       A(2,2) = 1.0;
-      //if (m_scale_to_unit) scale_to_unit(A);
 
       detJ = det(A);
       return detJ < 0.0;
@@ -400,7 +358,6 @@
           check_unhandled_topo(eMesh, topology_data);
         case shards::Pyramid<5>::key:
           {
-            bool err=false;
             for (i = 0; i < 5; ++i) {
               metric_valid = jacobian_matrix_pyramid_3D_new(i,
                                                             m_detJ[i], m_J[i],
@@ -409,21 +366,9 @@
                                                             VERTEX(v_i[2]),
                                                             VERTEX(v_i[3]),
                                                             VERTEX(v_i[4]));
-              if (m_detJ[i] < 1.e-12) err=true;
             }
 
-            // FIXME
             m = average_metrics(m_detJ, 5);
-            if (m < 1.e-12 || err)
-              {
-                std::cout << "pyramid detJ= " << m << std::endl;
-                for (i = 0; i < 5; ++i) {
-                  std::cout << " detJ[" << i << "]= " << m_detJ[i] << std::endl;
-                }
-                for (i = 0; i < 5; ++i) {
-                  std::cout << " J[" << i << "]= " << m_J[i] << std::endl;
-                }
-              }
           }
           break;
 
