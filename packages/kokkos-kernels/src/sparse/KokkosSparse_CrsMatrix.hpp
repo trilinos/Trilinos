@@ -389,7 +389,7 @@ public:
   typedef typename Device::execution_space execution_space;
   //! Type of the matrix's memory space.
   typedef typename Device::memory_space memory_space;
-  //! Type of the matrix's device type.
+  //! Canonical device type
   typedef Kokkos::Device<execution_space, memory_space> device_type;
 
   //! Type of each value in the matrix.
