@@ -55,7 +55,7 @@ using namespace Intrepid;
           }
         if (!part)
           {
-            m_selector = new stk::mesh::Selector(stk::mesh::MetaData::get(m_bulkData).universal_part());
+            m_selector = new stk::mesh::Selector(m_bulkData.mesh_meta_data().universal_part());
           }
         else
           {
@@ -73,7 +73,7 @@ using namespace Intrepid;
                 VERIFY_OP_ON(m_selector, !=, 0, "FunctionOperator::init");
                 delete m_selector;
               }
-            m_selector = new stk::mesh::Selector(stk::mesh::MetaData::get(m_bulkData).universal_part());
+            m_selector = new stk::mesh::Selector(m_bulkData.mesh_meta_data().universal_part());
             m_own_selector = true;
           }
       }

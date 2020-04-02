@@ -3,8 +3,6 @@
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
-#include <stk_balance/internal/StkBalanceUtils.hpp>
-#include <stk_balance/internal/balanceDefaults.hpp>
 
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
@@ -21,406 +19,495 @@
 #include <iostream>
 #include <limits>
 
-namespace
+class StkBalanceRunner
 {
+public:
+  StkBalanceRunner(MPI_Comm c)
+    : m_comm(c)
+  { }
 
-void unlink_serial_file(const std::string &baseName)
+  void set_filename(const std::string& name)
+  {
+    m_options.m_inFile = name;
+  }
+
+  void set_output_dir(const std::string& name)
+  {
+    m_options.outputDirectory = name;
+  }
+
+  void set_app_type_defaults(stk::balance::AppTypeDefaults defaults)
+  {
+    m_options.set_app_type_default(defaults);
+  }
+
+  void set_initial_decomp_method(const std::string& method)
+  {
+    m_options.set_initial_decomp_method(method);
+  }
+
+  void set_decomp_method(const std::string& method)
+  {
+    m_options.set_decomp_method(method);
+  }
+
+  void run_end_to_end() const
+  {
+    stk::balance::run_stk_rebalance(m_options, m_comm);
+  }
+
+private:
+  MPI_Comm m_comm;
+  stk::balance::ParsedOptions m_options;
+};
+
+class MeshFromFile
 {
-    unlink(baseName.c_str());
-}
+public:
+  MeshFromFile(const MPI_Comm& c)
+    : m_comm(c),
+      m_empty(true),
+      bulk(meta, m_comm)
+  { }
 
-void unlink_parallel_file(const std::string &baseName)
+  void fill_from_serial(const std::string& fileName)
+  {
+    stk::io::fill_mesh_with_auto_decomp(fileName, bulk, broker);
+    m_empty = false;
+  }
+
+  void fill_from_parallel(const std::string& baseName)
+  {
+    stk::io::fill_mesh_preexisting(broker, baseName, bulk);
+    m_empty = false;
+  }
+
+  bool is_empty() const { return m_empty; }
+
+private:
+  MPI_Comm m_comm;
+  bool m_empty;
+
+public:
+  stk::mesh::MetaData meta;
+  stk::mesh::BulkData bulk;
+  stk::io::StkMeshIoBroker broker;
+};
+
+class TransientWriter
 {
-    std::string file = stk::balance::internal::get_parallel_filename(stk::parallel_machine_rank(MPI_COMM_WORLD),
-                                                                     stk::parallel_machine_size(MPI_COMM_WORLD),
-                                                                     baseName);
+public:
+  TransientWriter(MPI_Comm c, const std::string& name)
+    : m_comm(c),
+      m_fileBaseName(name),
+      m_fieldName("myFieldName"),
+      m_varName("TestTime")
+  { }
 
-    unlink(file.c_str());
-}
+  void set_field_name(const std::string& name)
+  {
+    m_fieldName = name;
+  }
 
+  void set_global_variable_name(const std::string& name)
+  {
+    m_varName = name;
+  }
 
-void verify_expected_time_steps_in_parallel_file(const std::string &parallelMeshName, const std::vector<double>& expectedTimeSteps)
-{
-    stk::io::StkMeshIoBroker broker;
-    stk::mesh::MetaData metaData;
-    stk::mesh::BulkData bulkData(metaData, MPI_COMM_WORLD);
-    stk::io::fill_mesh_preexisting(broker, parallelMeshName, bulkData);
-    std::vector<double> inputTimeSteps = broker.get_time_steps();
-    EXPECT_EQ(expectedTimeSteps, inputTimeSteps);
-}
+  void set_time_steps(const std::vector<double>& steps)
+  {
+    m_timeSteps = steps;
+  }
 
-void verify_expected_global_variable_in_parallel_file(const std::string &parallelMeshName, const std::vector<double>& expectedTimeSteps,
-                                                      const std::string& globalVariableName)
-{
-    stk::io::StkMeshIoBroker broker;
-    stk::mesh::MetaData metaData;
-    stk::mesh::BulkData bulkData(metaData, MPI_COMM_WORLD);
-    stk::io::fill_mesh_preexisting(broker, parallelMeshName, bulkData);
-    std::vector<std::string> names;
-    broker.get_global_variable_names(names);
-    ASSERT_EQ(3u, names.size());
-    EXPECT_EQ(globalVariableName+"_double", names[0]);
-    EXPECT_EQ(globalVariableName+"_int", names[1]);
-    EXPECT_EQ(globalVariableName+"_real_vec", names[2]);
+  void write_static_mesh(const std::string& meshDesc) const
+  {
+    stk::unit_test_util::generated_mesh_to_file_in_serial(meshDesc, m_fileBaseName);
+  }
 
-    std::vector<double> inputTimeSteps = broker.get_time_steps();
-    EXPECT_EQ(expectedTimeSteps, inputTimeSteps);
-    double testTimeValue = 0;
-    const double epsilon = std::numeric_limits<double>::epsilon();
-    for(size_t i=0; i<expectedTimeSteps.size(); ++i) {
-        int timestep = i+1;
-        broker.read_defined_input_fields(timestep);
-        bool success = broker.get_global(globalVariableName+"_double", testTimeValue);
-        EXPECT_TRUE(success);
-        EXPECT_NEAR(expectedTimeSteps[i], testTimeValue, epsilon);
+  void write_transient_mesh(const std::string& meshDesc) const
+  {
+    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(
+          meshDesc, m_fileBaseName, m_fieldName, m_varName, m_timeSteps, m_fieldSetter);
+  }
 
-        int goldIntValue = timestep;
-        int testIntValue = 0;
-        success = broker.get_global(globalVariableName+"_int", testIntValue);
-        EXPECT_TRUE(success);
-        EXPECT_EQ(goldIntValue, testIntValue);
+  void write_two_element_mesh_with_sideset(stk::unit_test_util::ElementOrdering elemOrdering) const
+  {
+    if (stk::parallel_machine_rank(m_comm) == 0) {
+      stk::mesh::MetaData meta(3);
+      stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
 
-        std::vector<double> goldVecValue(3, expectedTimeSteps[i]);
-        std::vector<double> testVecValue;
-        success = broker.get_global(globalVariableName+"_real_vec", testVecValue);
-        EXPECT_EQ(goldVecValue, testVecValue);
+      stk::unit_test_util::create_AB_mesh_with_sideset_and_field(
+            bulk, stk::unit_test_util::LEFT, elemOrdering, "dummyField");
+      stk::io::write_mesh_with_fields(m_fileBaseName, bulk, 1, 1.0);
     }
-}
+  }
 
-void verify_input_transient_fields(stk::io::StkMeshIoBroker &stkIo, const std::vector<double>& expectedTimeSteps)
+private:
+  MPI_Comm m_comm;
+  std::string m_fileBaseName;
+  std::string m_fieldName;
+  std::string m_varName;
+  std::vector<double> m_timeSteps;
+  stk::unit_test_util::IdAndTimeFieldValueSetter m_fieldSetter;
+};
+
+class TransientVerifier
 {
-    EXPECT_EQ(stkIo.get_num_time_steps(), (int)expectedTimeSteps.size());
-    EXPECT_EQ(expectedTimeSteps, stkIo.get_time_steps());
+public:
+  TransientVerifier(const MPI_Comm& c)
+    : m_comm(c),
+      m_epsilon(std::numeric_limits<double>::epsilon())
+  { }
 
-    stk::io::FieldNameToPartVector fieldNamePartVector = stkIo.get_nodal_var_names();
+  void verify_num_transient_fields(const MeshFromFile& mesh, unsigned expectedNumFields) const
+  {
+    stk::io::FieldNameToPartVector fieldNamePartVector = mesh.broker.get_nodal_var_names();
+    EXPECT_EQ(fieldNamePartVector.size(), expectedNumFields);
+  }
 
-    EXPECT_EQ(fieldNamePartVector.size(), 2u);
-}
+  void verify_time_steps(const MeshFromFile& mesh, const std::vector<double>& expectedTimeSteps) const
+  {
+    EXPECT_EQ(expectedTimeSteps, mesh.broker.get_time_steps());
+  }
 
-void verify_input_static_fields(stk::io::StkMeshIoBroker &stkIo)
-{
-    EXPECT_EQ(0, stkIo.get_num_time_steps());
+  void verify_global_variables_at_each_time_step(MeshFromFile& mesh,
+                                                 const std::string& globalVariableName,
+                                                 const std::vector<double>& expectedTimeSteps) const
+  {
+    verify_time_steps(mesh, expectedTimeSteps);
+    verify_global_variable_names(mesh, globalVariableName);
 
-    stk::io::FieldNameToPartVector fieldNamePartVector = stkIo.get_nodal_var_names();
+    int index = 0;
+    for(double timeStep : expectedTimeSteps) {
+      index++;
+      mesh.broker.read_defined_input_fields(index);
 
-    EXPECT_EQ(fieldNamePartVector.size(), 0u);
-}
+      verify_global_int(mesh, globalVariableName, index);
 
-void verify_transient_field_values(stk::mesh::BulkData& bulk, stk::mesh::FieldBase* field, double timeStep)
-{
-    const stk::mesh::BucketVector & entityBuckets = bulk.get_buckets(field->entity_rank(),bulk.mesh_meta_data().locally_owned_part());
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-        stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-        for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-            stk::mesh::Entity entity = entityBucket[entityIndex];
-            double * data = static_cast<double*> (stk::mesh::field_data(*field, entity));
-            unsigned numEntriesPerEntity = stk::mesh::field_scalars_per_entity(*field, entity);
-            for(unsigned i=0; i<numEntriesPerEntity; i++)
-                EXPECT_EQ(i + 100*timeStep + static_cast<double>(bulk.identifier(entity)), data[i]);
-        }
+      verify_global_double(mesh, globalVariableName, timeStep);
+      verify_global_real_vec(mesh, globalVariableName, timeStep);
     }
-}
+  }
 
-void verify_transient_data_from_parallel_file(const std::string &inputParallelFile, const std::vector<double>& expectedTimeSteps)
-{
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-    stk::io::StkMeshIoBroker broker;
-    stk::io::fill_mesh_preexisting(broker, inputParallelFile, bulk);
+  void verify_sideset_orientation(const MeshFromFile& mesh,
+                                  const stk::mesh::EntityId expectedId,
+                                  const stk::mesh::ConnectivityOrdinal expectedOrdinal) const
+  {
+    std::vector<const stk::mesh::SideSet *> sidesets = mesh.bulk.get_sidesets();
 
-    stk::mesh::FieldVector transientFields = stk::io::get_transient_fields(meta);
+    if (stk::parallel_machine_rank(m_comm) == 0) {
+      ASSERT_EQ(sidesets.size(), 1u);
+      ASSERT_EQ(sidesets[0]->size(), 1u);
 
-    verify_input_transient_fields(broker, expectedTimeSteps);
-    std::vector<double> timeSteps = broker.get_time_steps();
+      const stk::mesh::SideSetEntry sideSetEntry = (*sidesets[0])[0];
+      EXPECT_EQ(mesh.bulk.identifier(sideSetEntry.element), expectedId);
+      EXPECT_EQ(sideSetEntry.side, expectedOrdinal);
+    }
+    else {
+      ASSERT_EQ(sidesets.size(), 1u);
+      EXPECT_EQ(sidesets[0]->size(), 0u);
+    }
+  }
+
+  void compare_entity_rank_names(const MeshFromFile& meshA, const MeshFromFile& meshB) const
+  {
+    EXPECT_EQ(meshA.meta.entity_rank_names(), meshB.meta.entity_rank_names());
+  }
+
+  void verify_transient_field_names(const MeshFromFile& mesh, const std::string& fieldBaseName) const
+  {
+    const stk::mesh::FieldVector transientFields = stk::io::get_transient_fields(mesh.meta, stk::topology::NODE_RANK);
+    verify_transient_field_name(transientFields[0], fieldBaseName+"_scalar");
+    verify_transient_field_name(transientFields[1], fieldBaseName+"_vector");
+  }
+
+  void verify_transient_fields(MeshFromFile& mesh) const
+  {
+    stk::io::StkMeshIoBroker& broker = mesh.broker;
+
+    const stk::mesh::FieldVector transientFields = stk::io::get_transient_fields(mesh.meta);
+    const std::vector<double> timeSteps = broker.get_time_steps();
+
     for(int iStep=0; iStep<broker.get_num_time_steps(); iStep++)
     {
-        double readTime = broker.read_defined_input_fields_at_step(iStep+1, nullptr);
-        EXPECT_EQ(timeSteps[iStep], readTime);
+      double readTime = broker.read_defined_input_fields_at_step(iStep+1, nullptr);
+      EXPECT_EQ(timeSteps[iStep], readTime);
 
-        for(stk::mesh::FieldBase* field : transientFields)
-            verify_transient_field_values(bulk, field, readTime);
+      for(stk::mesh::FieldBase* field : transientFields)
+        verify_transient_field_values(mesh.bulk, field, readTime);
     }
-}
+  }
 
-void verify_static_data_from_parallel_file(const std::string &inputParallelFile)
-{
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-    stk::io::StkMeshIoBroker broker;
-    stk::io::fill_mesh_preexisting(broker, inputParallelFile, bulk);
+private:
+  void verify_global_variable_names(const MeshFromFile& mesh, const std::string& baseName) const
+  {
+    std::vector<std::string> goldNames = {baseName+"_double",
+                                          baseName+"_int",
+                                          baseName+"_real_vec"};
+    std::vector<std::string> names;
+    mesh.broker.get_global_variable_names(names);
+    EXPECT_EQ(names, goldNames);
+  }
 
-    verify_input_static_fields(broker);
-}
+  void verify_global_double(const MeshFromFile& mesh, const std::string& variable, double goldValue) const
+  {
+    double value;
+    EXPECT_TRUE(mesh.broker.get_global(variable+"_double", value));
+    EXPECT_NEAR(value, goldValue, m_epsilon);
+  }
 
-void verify_static_data_from_serial_file(const std::string &inputSerialFile)
-{
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-    stk::io::StkMeshIoBroker broker;
-    broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
-    stk::io::fill_mesh_preexisting(broker, inputSerialFile, bulk);
+  void verify_global_int(const MeshFromFile& mesh, const std::string& variable, int goldValue) const
+  {
+    int value;
+    EXPECT_TRUE(mesh.broker.get_global(variable+"_int", value));
+    EXPECT_EQ(value, goldValue);
+  }
 
-    verify_input_static_fields(broker);
-}
+  void verify_global_real_vec(const MeshFromFile& mesh, const std::string& variable, double goldValue) const
+  {
+    std::vector<double> values;
+    EXPECT_TRUE(mesh.broker.get_global(variable+"_real_vec", values));
 
-void verify_transient_field_name(stk::io::StkMeshIoBroker &brokerA, stk::io::StkMeshIoBroker &brokerB, const std::string &fieldBaseName)
-{
-    EXPECT_EQ(brokerA.meta_data().entity_rank_names(), brokerB.meta_data().entity_rank_names());
-
-    stk::mesh::FieldVector transientFieldsA = stk::io::get_transient_fields(brokerA.meta_data(), stk::topology::NODE_RANK);
-    stk::mesh::FieldVector transientFieldsB = stk::io::get_transient_fields(brokerB.meta_data(), stk::topology::NODE_RANK);
-
-    EXPECT_EQ(2u, transientFieldsA.size());
-    EXPECT_EQ(2u, transientFieldsB.size());
-
-    std::string scalarFieldName = fieldBaseName + "_scalar";
-    std::string vectorFieldName = fieldBaseName + "_vector";
-
-    EXPECT_EQ(0, strcasecmp(scalarFieldName.c_str(), transientFieldsA[0]->name().c_str())) << scalarFieldName << "   " << transientFieldsA[0]->name();
-    EXPECT_EQ(0, strcasecmp(vectorFieldName.c_str(), transientFieldsA[1]->name().c_str())) << vectorFieldName << "   " << transientFieldsA[1]->name();
-
-    EXPECT_EQ(0, strcasecmp(scalarFieldName.c_str(), transientFieldsB[0]->name().c_str())) << scalarFieldName << "   " << transientFieldsB[0]->name();
-    EXPECT_EQ(0, strcasecmp(vectorFieldName.c_str(), transientFieldsB[1]->name().c_str())) << vectorFieldName << "   " << transientFieldsB[1]->name();
-}
-
-void verify_transient_transfer(const std::string& serialOutputMeshName,
-                               const std::string& parallelOutputMeshName,
-                               const std::string& fieldBaseName,
-                               const std::vector<double>& expectedTimeSteps)
-{
-    stk::mesh::MetaData metaA;
-    stk::mesh::BulkData bulkA(metaA, MPI_COMM_WORLD);
-    stk::io::StkMeshIoBroker brokerA;
-    brokerA.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
-    stk::io::fill_mesh_preexisting(brokerA, serialOutputMeshName, bulkA);
-
-    stk::mesh::MetaData metaB;
-    stk::mesh::BulkData bulkB(metaB, MPI_COMM_WORLD);
-    stk::io::StkMeshIoBroker brokerB;
-    stk::io::fill_mesh_preexisting(brokerB, parallelOutputMeshName, bulkB);
-
-    verify_input_transient_fields(brokerA, expectedTimeSteps);
-    verify_transient_field_name(brokerA, brokerB, fieldBaseName);
-    verify_transient_data_from_parallel_file(parallelOutputMeshName, expectedTimeSteps);
-}
-
-void verify_static_transfer(const std::string& serialOutputMeshName,
-                            const std::string& parallelOutputMeshName)
-{
-    verify_static_data_from_serial_file(serialOutputMeshName);
-    verify_static_data_from_parallel_file(parallelOutputMeshName);
-}
-
-TEST(TestTransientFieldBalance, verifyNumberOfSteps)
-{
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
-    {
-        std::string outputMeshName = "twenty_hex_transient.e";
-        std::string fieldBaseName = "myField";
-        std::string globalVariableName = "TestTime";
-        const std::vector<double> expectedTimeSteps = {0.0, 1.0, 2.0, 3.0, 4.0};
-
-        stk::unit_test_util::IdAndTimeFieldValueSetter fieldSetter;
-        stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial("1x1x20", outputMeshName, fieldBaseName, globalVariableName, expectedTimeSteps, fieldSetter);
-
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::io::StkMeshIoBroker broker;
-        stk::io::fill_mesh_with_auto_decomp(outputMeshName, bulk, broker);
-        verify_input_transient_fields(broker, expectedTimeSteps);
-
-        stk::balance::ParsedOptions options(outputMeshName, ".");
-        options.set_app_type_default(stk::balance::SD_DEFAULTS);
-        stk::balance::run_stk_rebalance(options, MPI_COMM_WORLD);
-
-        verify_expected_time_steps_in_parallel_file(outputMeshName, expectedTimeSteps);
-
-        unlink_serial_file(outputMeshName.c_str());
-        unlink_parallel_file(outputMeshName.c_str());
+    EXPECT_EQ(values.size(), 3u);
+    for (double value : values) {
+      EXPECT_NEAR(value, goldValue, m_epsilon);
     }
-}
+  }
 
-void check_sideset_orientation(const stk::mesh::BulkData& bulk,
-                               const std::vector<stk::mesh::SideSet*> & sidesets,
-                               const stk::mesh::EntityId expectedId,
-                               const stk::mesh::ConnectivityOrdinal expectedOrdinal)
-{
-    const stk::mesh::SideSetEntry sideSetEntry = (*sidesets[0])[0];
-    EXPECT_EQ(expectedId, bulk.identifier(sideSetEntry.element));
-    EXPECT_EQ(expectedOrdinal, sideSetEntry.side);
-}
+  void verify_transient_field_name(stk::mesh::FieldBase* field, const std::string& fieldName) const
+  {
+    EXPECT_EQ(0, strcasecmp(fieldName.c_str(), field->name().c_str()))
+        << fieldName << "   " << field->name();
+  }
 
-TEST(TestTransientFieldBalance, verifyTransientDataTransferWithSidesets)
-{
-    std::string serialOutputMeshName = "two_hex_transient.e";
-    std::string parallelOutputMeshName = "two_hex_transient_balanced.e";
-    const std::vector<double> expectedTimeSteps = {0.0};
-    const stk::mesh::EntityId expectedId = 1;
-    const stk::mesh::ConnectivityOrdinal expectedOrdinal = 5;
+  void verify_transient_field_values(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase* field, double timeStep) const
+  {
+    const stk::mesh::BucketVector & entityBuckets = bulk.get_buckets(field->entity_rank(),bulk.mesh_meta_data().locally_owned_part());
 
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
-    {
-        // Build the target serial mesh and write it to a file
-        if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
-        {
-            stk::mesh::MetaData meta(3);
-            stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
+    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
+      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
 
-            stk::unit_test_util::create_AB_mesh_with_sideset_and_field(bulk, stk::unit_test_util::LEFT, stk::unit_test_util::INCREASING, "dummyField");
-            stk::io::write_mesh_with_fields(serialOutputMeshName, bulk, 1, 1.0);
+      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
+        stk::mesh::Entity entity = entityBucket[entityIndex];
 
-            std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
-            ASSERT_EQ(1u, sidesets.size());
-            EXPECT_EQ(1u, sidesets[0]->size());
+        double * data = static_cast<double*> (stk::mesh::field_data(*field, entity));
+        unsigned numEntriesPerEntity = stk::mesh::field_scalars_per_entity(*field, entity);
 
-            check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
+        for(unsigned i=0; i<numEntriesPerEntity; i++) {
+          EXPECT_EQ(i + 100*timeStep + static_cast<double>(bulk.identifier(entity)), data[i]);
         }
-
-        // Read, balance, and write the mesh on two processors
-        stk::balance::BasicZoltan2Settings rcbOptions;
-        stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialOutputMeshName, MPI_COMM_WORLD, rcbOptions);
-
-        stk::mesh::MetaData meta(3);
-        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-
-        // Read the decomposed mesh to make sure the sideset maintains its polarity
-        stk::io::fill_mesh(parallelOutputMeshName, bulk);
-
-        std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
-        if ((sidesets.size() == 1u) && (sidesets[0]->size() == 1u))
-        {
-            check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
-        }
+      }
     }
-    unlink_serial_file(serialOutputMeshName);
-    unlink_parallel_file(parallelOutputMeshName);
+  }
+
+  MPI_Comm m_comm;
+  const double m_epsilon;
+};
+
+class TransientFieldBalance : public stk::unit_test_util::MeshFixture
+{
+public:
+  TransientFieldBalance()
+    : fileBaseName("transient.e"),
+      balanceRunner(get_comm()),
+      writer(get_comm(), fileBaseName),
+      verifier(get_comm()),
+      m_initialMeshPtr(new MeshFromFile(get_comm())),
+      m_balancedMeshPtr(new MeshFromFile(get_comm()))
+  {
+    balanceRunner.set_filename(fileBaseName);
+    balanceRunner.set_output_dir(".");
+    balanceRunner.set_app_type_defaults(stk::balance::SD_DEFAULTS);
+    balanceRunner.set_decomp_method("rcb");
+  }
+
+  MeshFromFile& get_initial_mesh()
+  {
+    if (m_initialMeshPtr->is_empty()) read_initial_mesh();
+    return *m_initialMeshPtr;
+  }
+
+  MeshFromFile& get_balanced_mesh()
+  {
+    if (m_balancedMeshPtr->is_empty()) read_balanced_mesh();
+    return *m_balancedMeshPtr;
+  }
+
+  void cleanup_files()
+  {
+    unlink_serial_file(fileBaseName);
+    unlink_parallel_file(fileBaseName);
+  }
+
+private:
+  void read_initial_mesh()
+  {
+    m_initialMeshPtr->fill_from_serial(fileBaseName);
+  }
+
+  void read_balanced_mesh()
+  {
+    m_balancedMeshPtr->fill_from_parallel(fileBaseName);
+  }
+
+  void unlink_parallel_file(const std::string& baseName)
+  {
+    std::string parallelName = stk::io::construct_parallel_filename(baseName, get_parallel_size(), get_parallel_rank());
+    unlink_serial_file(parallelName);
+  }
+
+  void unlink_serial_file(const std::string& fileName)
+  {
+    unlink(fileName.c_str());
+  }
+
+protected:
+  const std::string fileBaseName;
+  StkBalanceRunner balanceRunner;
+  TransientWriter writer;
+  const TransientVerifier verifier;
+
+private:
+  const std::unique_ptr<MeshFromFile> m_initialMeshPtr;
+  const std::unique_ptr<MeshFromFile> m_balancedMeshPtr;
+};
+
+TEST_F(TransientFieldBalance, verifyStaticDataTransfer)
+{
+  if (get_parallel_size() == 2 ||
+      get_parallel_size() == 4 ||
+      get_parallel_size() == 8 ||
+      get_parallel_size() == 16) {
+
+    writer.write_static_mesh("1x4x4");
+
+    MeshFromFile& initialMesh = get_initial_mesh();
+    verifier.verify_time_steps(initialMesh, {});
+    verifier.verify_num_transient_fields(initialMesh, 0u);
+
+    balanceRunner.run_end_to_end();
+
+    MeshFromFile& balancedMesh = get_balanced_mesh();
+    verifier.verify_time_steps(balancedMesh, {});
+    verifier.verify_num_transient_fields(balancedMesh, 0u);
+
+    cleanup_files();
+  }
 }
 
-TEST(TestTransientFieldBalance, verifyTransientDataTransferWithSidesetsOnMovedElements)
+TEST_F(TransientFieldBalance, verifyNumberOfSteps)
 {
-    std::string serialOutputMeshName = "two_hex_transient.e";
-    std::string parallelOutputMeshName = "two_hex_transient_balanced.e";
-    const std::vector<double> expectedTimeSteps = {0.0};
-    const stk::mesh::EntityId expectedId = 2;
-    const stk::mesh::ConnectivityOrdinal expectedOrdinal = 5;
+  if (get_parallel_size() != 2) return;
 
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
-    {
-        // Build the target serial mesh and write it to a file
-        if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
-        {
-            stk::mesh::MetaData meta(3);
-            stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
+  const std::vector<double> timeSteps = {0.0, 1.0, 2.0, 3.0, 4.0};
 
-            stk::unit_test_util::create_AB_mesh_with_sideset_and_field(bulk, stk::unit_test_util::LEFT, stk::unit_test_util::DECREASING, "dummyField");
-            stk::io::write_mesh_with_fields(serialOutputMeshName, bulk, 1, 1.0);
+  writer.set_time_steps(timeSteps);
+  writer.write_transient_mesh("1x1x20");
 
-            std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
-            ASSERT_EQ(1u, sidesets.size());
-            ASSERT_EQ(1u, sidesets[0]->size());
+  MeshFromFile& initialMesh = get_initial_mesh();
+  verifier.verify_time_steps(initialMesh, timeSteps);
+  verifier.verify_num_transient_fields(initialMesh, 2u);
 
-            check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
-        }
+  balanceRunner.run_end_to_end();
 
-        {
-            // Read, balance, and write the mesh on two processors
-            stk::balance::BasicZoltan2Settings rcbOptions;
-            const std::string initialDecompMethod = "BLOCK";
-            stk::mesh::MetaData meta;
-            stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-            stk::balance::initial_decomp_and_balance(bulk, rcbOptions, serialOutputMeshName, parallelOutputMeshName, initialDecompMethod);
-        }
+  MeshFromFile& balancedMesh = get_balanced_mesh();
+  verifier.verify_time_steps(balancedMesh, timeSteps);
 
-        {
-            stk::mesh::MetaData meta(3);
-            stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-
-            // Read the decomposed mesh to make sure the sideset maintains its polarity
-            stk::io::fill_mesh(parallelOutputMeshName, bulk);
-
-            std::vector<stk::mesh::SideSet *> sidesets = bulk.get_sidesets();
-            if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
-              ASSERT_EQ(1u, sidesets.size());
-              ASSERT_EQ(1u, sidesets[0]->size());
-              check_sideset_orientation(bulk, sidesets, expectedId, expectedOrdinal);
-            }
-        }
-    }
-    unlink_serial_file(serialOutputMeshName);
-    unlink_parallel_file(parallelOutputMeshName);
+  cleanup_files();
 }
 
-TEST(TestTransientFieldBalance, verifyTransientDataTransferOnFourProcessors)
+TEST_F(TransientFieldBalance, verifyGlobalVariable)
 {
-    std::string serialOutputMeshName = "sixteen_hex_transient.e";
-    std::string parallelOutputMeshName = "sixteen_hex_transient_balanced.e";
-    std::string fieldBaseName = "myField";
-    std::string globalVariableName = "TestTime";
-    const std::vector<double> expectedTimeSteps = {0.0, 1.0, 2.0, 3.0, 4.0};
+  if (get_parallel_size() != 2) return;
 
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 4)
-    {
-        stk::unit_test_util::IdAndTimeFieldValueSetter fieldSetter;
-        stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial("1x4x4", serialOutputMeshName, fieldBaseName, globalVariableName, expectedTimeSteps, fieldSetter);
+  const std::vector<double> timeSteps = {0.0, 1.0, 2.0, 3.0, 4.0};
+  const std::string globalVariableName = "test_time";
 
-        stk::balance::BasicZoltan2Settings rcbOptions;
-        stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialOutputMeshName, MPI_COMM_WORLD, rcbOptions);
+  writer.set_time_steps(timeSteps);
+  writer.set_global_variable_name(globalVariableName);
+  writer.write_transient_mesh("1x1x20");
 
-        verify_transient_transfer(serialOutputMeshName, parallelOutputMeshName, fieldBaseName, expectedTimeSteps);
+  MeshFromFile& initialMesh = get_initial_mesh();
+  verifier.verify_time_steps(initialMesh, timeSteps);
+  verifier.verify_num_transient_fields(initialMesh, 2u);
 
-        unlink_serial_file(serialOutputMeshName);
-        unlink_parallel_file(parallelOutputMeshName);
-    }
+  balanceRunner.run_end_to_end();
+
+  MeshFromFile& balancedMesh = get_balanced_mesh();
+  verifier.verify_global_variables_at_each_time_step(balancedMesh, globalVariableName, timeSteps);
+
+  cleanup_files();
 }
 
-TEST(TestTransientFieldBalance, verifyStaticDataTransfer)
+TEST_F(TransientFieldBalance, verifyTransientDataTransferOnFourProcessors)
 {
-    std::string serialOutputMeshName = "sixteen_hex_static.e";
-    std::string parallelOutputMeshName = "sixteen_hex_static_balanced.e";
+  if (get_parallel_size() != 4) return;
 
-    if((stk::parallel_machine_size(MPI_COMM_WORLD) ==  2) ||
-       (stk::parallel_machine_size(MPI_COMM_WORLD) ==  4) ||
-       (stk::parallel_machine_size(MPI_COMM_WORLD) ==  8) ||
-       (stk::parallel_machine_size(MPI_COMM_WORLD) == 16))
-    {
-        stk::unit_test_util::generated_mesh_to_file_in_serial("1x4x4", serialOutputMeshName);
+  const std::vector<double> timeSteps = {0.0, 1.0, 2.0, 3.0, 4.0};
+  const std::string fieldName = "myField";
 
-        stk::balance::BasicZoltan2Settings rcbOptions;
-        stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialOutputMeshName, MPI_COMM_WORLD, rcbOptions);
+  writer.set_time_steps(timeSteps);
+  writer.set_field_name(fieldName);
+  writer.write_transient_mesh("1x4x4");
 
-        verify_static_transfer(serialOutputMeshName, parallelOutputMeshName);
+  MeshFromFile& initialMesh = get_initial_mesh();
+  verifier.verify_time_steps(initialMesh, timeSteps);
+  verifier.verify_num_transient_fields(initialMesh, 2u);
+  verifier.verify_transient_field_names(initialMesh, fieldName);
 
-        unlink_serial_file(serialOutputMeshName);
-        unlink_parallel_file(parallelOutputMeshName);
-    }
+  balanceRunner.run_end_to_end();
+
+  MeshFromFile& balancedMesh = get_balanced_mesh();
+  verifier.verify_time_steps(balancedMesh, timeSteps);
+  verifier.verify_num_transient_fields(balancedMesh, 2u);
+  verifier.verify_transient_field_names(balancedMesh, fieldName);
+
+  verifier.compare_entity_rank_names(initialMesh, balancedMesh);
+
+  verifier.verify_transient_fields(balancedMesh);
+
+  cleanup_files();
 }
 
-TEST(TestTransientFieldBalance, verifyGlobalVariable)
+TEST_F(TransientFieldBalance, verifyTransientDataTransferWithSidesets)
 {
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
-    {
-        std::string outputMeshName = "twenty_hex_transient.e";
-        std::string fieldBaseName = "myField";
-        const std::vector<double> expectedTimeSteps = {0.0, 1.0, 2.0, 3.0, 4.0};
-        std::string globalVariableName = "test_time";
-        stk::unit_test_util::IdAndTimeFieldValueSetter fieldSetter;
-        stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial("1x1x20", outputMeshName, fieldBaseName, globalVariableName, expectedTimeSteps, fieldSetter);
+  if (get_parallel_size() != 2) return;
 
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::io::StkMeshIoBroker broker;
-        stk::io::fill_mesh_with_auto_decomp(outputMeshName, bulk, broker);
-        verify_input_transient_fields(broker, expectedTimeSteps);
+  const stk::mesh::EntityId expectedId = 1;
+  const stk::mesh::ConnectivityOrdinal expectedOrdinal = 5;
 
-        stk::balance::ParsedOptions options(outputMeshName, ".");
-        options.set_app_type_default(stk::balance::SD_DEFAULTS);
-        stk::balance::run_stk_rebalance(options, MPI_COMM_WORLD);
+  writer.write_two_element_mesh_with_sideset(stk::unit_test_util::INCREASING);
 
-        verify_expected_global_variable_in_parallel_file(outputMeshName, expectedTimeSteps, globalVariableName);
+  MeshFromFile& initialMesh = get_initial_mesh();
+  verifier.verify_sideset_orientation(initialMesh, expectedId, expectedOrdinal);
 
-        unlink_serial_file(outputMeshName.c_str());
-        unlink_parallel_file(outputMeshName.c_str());
-    }
+  balanceRunner.run_end_to_end();
+
+  MeshFromFile& balancedMesh = get_balanced_mesh();
+  verifier.verify_sideset_orientation(balancedMesh, expectedId, expectedOrdinal);
+
+  cleanup_files();
+}
+
+TEST_F(TransientFieldBalance, verifyTransientDataTransferWithSidesetsOnMovedElements)
+{
+  if (get_parallel_size() != 2) return;
+
+  const stk::mesh::EntityId expectedId = 2;
+  const stk::mesh::ConnectivityOrdinal expectedOrdinal = 5;
+
+  writer.write_two_element_mesh_with_sideset(stk::unit_test_util::DECREASING);
+
+  MeshFromFile& initialMesh = get_initial_mesh();
+  verifier.verify_sideset_orientation(initialMesh, expectedId, expectedOrdinal);
+
+  balanceRunner.set_initial_decomp_method("BLOCK");
+  balanceRunner.run_end_to_end();
+
+  MeshFromFile& balancedMesh = get_balanced_mesh();
+  verifier.verify_sideset_orientation(balancedMesh, expectedId, expectedOrdinal);
+
+  cleanup_files();
 }
 
 TEST(TestTransientFieldBalance, verifyThrowIfInputFileEqualsOutputFile)
@@ -434,7 +521,7 @@ TEST(TestTransientFieldBalance, verifyThrowIfInputFileEqualsOutputFile)
 
     stk::balance::BasicZoltan2Settings rcbOptions;
     EXPECT_THROW(stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialMeshName, MPI_COMM_WORLD, rcbOptions), std::logic_error);
-    unlink_serial_file(serialMeshName);
+    unlink(serialMeshName.c_str());
   }
 }
 
@@ -449,8 +536,6 @@ TEST(TestTransientFieldBalance, verifyThrowIfInputFileEqualsDotSlashOutputFile)
 
     stk::balance::BasicZoltan2Settings rcbOptions;
     EXPECT_THROW(stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialMeshName, MPI_COMM_WORLD, rcbOptions), std::logic_error);
-    unlink_serial_file(serialMeshName);
+    unlink(serialMeshName.c_str());
   }
-}
-
 }

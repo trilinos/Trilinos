@@ -102,7 +102,7 @@ TEST_F(NgpFieldAccess, Centroid)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 2000;
+  const int NUM_RUNS = 400;
   const int ELEMS_PER_DIM = 100;
 
   declare_centroid_field();
@@ -121,7 +121,7 @@ TEST_F(NgpFieldAccess, ConstCentroid)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 2000;
+  const int NUM_RUNS = 400;
   const int ELEMS_PER_DIM = 100;
 
   declare_centroid_field();
@@ -140,7 +140,7 @@ TEST_F(NgpFieldAccess, CentroidMultiBlock)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 2000;
+  const int NUM_RUNS = 5;
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
 
@@ -164,7 +164,7 @@ TEST_F(NgpFieldAccess, ConstCentroidMultiBlock)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 2000;
+  const int NUM_RUNS = 5;
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
 

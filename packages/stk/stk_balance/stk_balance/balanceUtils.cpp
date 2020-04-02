@@ -16,6 +16,10 @@ namespace balance
 
 //////////////////////////////////////////////////////////////////////////
 
+BalanceSettings::BalanceSettings()
+  : initialDecompMethod("RIB")
+{}
+
 size_t BalanceSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
 {
     return 1;
@@ -129,6 +133,16 @@ void BalanceSettings::setDecompMethod(const std::string& method)
 std::string BalanceSettings::getDecompMethod() const
 {
     return std::string("parmetis");
+}
+
+void BalanceSettings::setInitialDecompMethod(const std::string& method)
+{
+    initialDecompMethod = method;
+}
+
+std::string BalanceSettings::getInitialDecompMethod() const
+{
+    return initialDecompMethod;
 }
 
 std::string BalanceSettings::getCoordinateFieldName() const
@@ -379,6 +393,7 @@ void GraphCreationSettings::setDecompMethod(const std::string& input_method)
 {
     method = input_method;
 }
+
 void GraphCreationSettings::setToleranceForFaceSearch(double tol)
 {
     m_UseConstantToleranceForFaceSearch = true;

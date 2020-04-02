@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -47,6 +47,7 @@
 #include <string>   // for string
 
 #include <cgns/Iocgns_DecompositionData.h>
+#include <cgns/Iocgns_Defines.h>
 
 #include <cgnslib.h>
 
@@ -70,8 +71,6 @@ namespace Ioss {
 } // namespace Ioss
 
 namespace Iocgns {
-
-  using CGNSIntVector = std::vector<cgsize_t>;
 
   class ParallelDatabaseIO : public Ioss::DatabaseIO
   {
