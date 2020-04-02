@@ -144,8 +144,6 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename STS::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     if (predrop_ != Teuchos::null)
       GetOStream(Parameters0) << predrop_->description();
@@ -169,8 +167,7 @@ namespace MueLu {
    testVecs->randomize();    
    for (size_t kk = 0; kk < testVecs->getNumVectors(); kk++ ) {
      Teuchos::ArrayRCP< Scalar > curVec = testVecs->getDataNonConst(kk);
-     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getNodeNumElements()); ii++ ) curVec[ii] = fabs(curVec[ii]);
-     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getNodeNumElements()); ii++ ) curVec[ii] = fabs(curVec[ii]);
+     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getNodeNumElements()); ii++ ) curVec[ii] = Teuchos::ScalarTraits<SC>::magnitude(curVec[ii]);
    }
    nearNull = MultiVectorFactory::Build(A->getRowMap(), nPDEs, true);
 
@@ -466,9 +463,9 @@ namespace MueLu {
           for (size_t kk = 0; kk < testVecs.getNumVectors(); kk++ ) {
             Teuchos::ArrayRCP< const Scalar > curVec = testVecs.getData(kk);
             actualRatio = curVec[cols[i]]/curVec[row];
-            if  (fabs(actualRatio - targetRatio) > worstRatio) {
+            if (Teuchos::ScalarTraits<SC>::magnitude(actualRatio - targetRatio) > Teuchos::ScalarTraits<SC>::magnitude(worstRatio)) {
                badGuy[Nbcols] = actualRatio;
-               worstRatio = fabs(actualRatio - targetRatio);
+               worstRatio = Teuchos::ScalarTraits<SC>::magnitude(actualRatio - targetRatio);
             }
           }
         }
@@ -531,7 +528,7 @@ namespace MueLu {
              newFit = newFit + diff*diff;
           }
         }
-        if (newFit < minFit) {
+        if (Teuchos::ScalarTraits<SC>::magnitude(newFit) < Teuchos::ScalarTraits<SC>::magnitude(minFit)) {
           minId     = i;
           minFit    = newFit;
           minFitRP  = newRP;
@@ -544,7 +541,7 @@ namespace MueLu {
     else {
       minFit = sqrt(minFit);
       Scalar newScore = penalties[nKeep] + minFit;
-      if (newScore < currentScore) {
+      if (Teuchos::ScalarTraits<SC>::magnitude(newScore) < Teuchos::ScalarTraits<SC>::magnitude(currentScore)) {
         nKeep           = nKeep + 1;
         keepOrNot[minId]= true;
         currentScore    = newScore;

@@ -50,7 +50,7 @@
     </ParameterList>
 
     <ParameterList name="export data">
-      <Parameter name="P" type="string" value="{1}"/>
+      <Parameter name="P" type="string" value="{11}"/>
     </ParameterList>
 
 </ParameterList>
