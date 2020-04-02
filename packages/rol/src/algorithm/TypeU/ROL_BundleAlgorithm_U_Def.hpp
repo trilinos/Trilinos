@@ -138,8 +138,8 @@ std::vector<std::string> BundleAlgorithm_U<Real>::run( Vector<Real>       &x,
   Ptr<Vector<Real>> y = x.clone();
   Ptr<Vector<Real>> aggSubGradNew = g.clone();
   Real aggSubGradOldNorm = state_->gnorm;
-  Real linErrNew, valueNew;
-  Real aggLinErrNew, aggLinErrOld, aggDistMeasNew;
+  Real linErrNew(0), valueNew(0);
+  Real aggLinErrNew(0), aggLinErrOld(0), aggDistMeasNew(0);
   Real v(0), l(0), u(T_), gd(0);
   bool flag = true;
 
