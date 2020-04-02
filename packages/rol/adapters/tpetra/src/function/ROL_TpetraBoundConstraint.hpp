@@ -317,7 +317,7 @@ namespace ROL {
                     if(( X_(i,j)<=L_(i,j)+xeps_) && (G_(i,j)>geps_))  {
                         Y_(i,j) = zero;
                     }
-                    else if(( X_(i,j)>=U_(i,j)-eps_) && (G_(i,j)<-geps_) ) {
+                    else if(( X_(i,j)>=U_(i,j)-xeps_) && (G_(i,j)<-geps_) ) {
                         Y_(i,j) = zero;
                     }
                 }
