@@ -9,6 +9,7 @@
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_util/stk_config.h>
 
@@ -24,7 +25,7 @@ void assign_value_to_field(stk::mesh::BulkData &bulk, Field ngpField, double val
                                  });
   ngpField.modify_on_device();
 }
-void assign_value_to_statedfield(stk::mesh::BulkData &bulk, stk::mesh::ConvenientNgpMultistateField<double> ngpStatedField, double value)
+void assign_value_to_statedfield(stk::mesh::BulkData &bulk, stk::mesh::NgpMultistateField<double> ngpStatedField, double value)
 {
   stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(),
@@ -51,11 +52,31 @@ public:
                                    });
   }
 
+  template<typename Field>
+  void test_field_state_has_value_on_device(stk::mesh::BulkData& bulk, Field ngpMultiStateField, stk::mesh::FieldState state, double expectedValue)
+  {
+    stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
+
+    if(state == stk::mesh::StateNew) {
+      stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(),
+                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
+                                    {
+                                      NGP_ThrowRequire(expectedValue == ngpMultiStateField.get_new(entity, 0));
+                                    });
+    } else {
+      stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(),
+                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
+                                    {
+                                      NGP_ThrowRequire(expectedValue == ngpMultiStateField.get_old(state, entity, 0));
+                                    });
+    }
+  }
+
 protected:
-  stk::mesh::ConvenientNgpMultistateField<double> create_field_with_num_states(unsigned numStates)
+  stk::mesh::NgpMultistateField<double> create_field_with_num_states(unsigned numStates)
   {
     make_mesh_with_field(numStates);
-    return stk::mesh::ConvenientNgpMultistateField<double>(get_bulk(), *stkField);
+    return stk::mesh::NgpMultistateField<double>(get_bulk(), *stkField);
   }
   void make_mesh_with_field(unsigned numStates)
   {
@@ -193,9 +214,25 @@ TEST_F(StatedFields, field_swap)
   test_field_has_value_on_device(get_bulk(), ngpFieldNew, 1);
   test_field_has_value_on_device(get_bulk(), ngpFieldOld, 0);
 }
+
+TEST_F(StatedFields, new_field_swap)
+{
+  stk::mesh::NgpMultistateField<double> ngpStatedField = create_field_with_num_states(2);
+  verify_can_assign_values_per_state(ngpStatedField);
+
+  test_field_state_has_value_on_device(get_bulk(), ngpStatedField, stk::mesh::StateNew, 0);
+  test_field_state_has_value_on_device(get_bulk(), ngpStatedField, stk::mesh::StateOld, 1);
+
+  get_bulk().update_field_data_states();
+  ngpStatedField.increment_state();
+
+  test_field_state_has_value_on_device(get_bulk(), ngpStatedField, stk::mesh::StateNew, 1);
+  test_field_state_has_value_on_device(get_bulk(), ngpStatedField, stk::mesh::StateOld, 0);
+}
+
 TEST_F(StatedFields, gettingFieldData_direct)
 {
-  stk::mesh::ConvenientNgpMultistateField<double> ngpStatedField = create_field_with_num_states(3);
+  stk::mesh::NgpMultistateField<double> ngpStatedField = create_field_with_num_states(3);
   verify_initial_value_set_per_state(ngpStatedField);
 
   assign_value_to_statedfield(get_bulk(), ngpStatedField, 2);
@@ -216,7 +253,7 @@ TEST_F(StatedFields, gettingFieldData_direct)
 }
 TEST_F(StatedFields, updateFromHostStkField)
 {
-  stk::mesh::ConvenientNgpMultistateField<double> ngpStatedField = create_field_with_num_states(1);
+  stk::mesh::NgpMultistateField<double> ngpStatedField = create_field_with_num_states(1);
   verify_initial_value_set_per_state(ngpStatedField);
   stk::mesh::NgpField<double> ngpField = ngpStatedField.get_field_new_state();
 

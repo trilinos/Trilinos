@@ -130,7 +130,7 @@ void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, const
   const stk::mesh::FieldBase& coords = *bulk.mesh_meta_data().coordinate_field();
   CoordFieldType ngpCoords(bulk, coords);
   stk::mesh::NgpField<double> ngpCentroid(bulk, centroid);
-  stk::mesh::NgpMesh ngpMesh(bulk);
+  stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
 
   calculate_centroid(ngpMesh, ngpCoords, selector, ngpCentroid);
 

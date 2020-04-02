@@ -1561,7 +1561,7 @@
                             }
                         }
                     }
-		  stk::mesh::Selector owned = stk::mesh::MetaData::get(*m_eMesh.get_bulk_data()).locally_owned_part();
+		  stk::mesh::Selector owned = m_eMesh.get_bulk_data()->mesh_meta_data().locally_owned_part();
                   boundarySelector = boundarySelector & owned;
                   smoothGeometry(0, &boundarySelector, option, use_ref_mesh);
                 }

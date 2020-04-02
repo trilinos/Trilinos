@@ -35,6 +35,7 @@
 #define STK_MESH_NGP_HPP
 
 #include "Kokkos_Core.hpp"
+#include "stk_util/stk_kokkos_macros.h"
 
 namespace stk {
 namespace mesh {
@@ -46,7 +47,7 @@ template<typename T> class DeviceField;
 template<typename T> class ConstHostField;
 template<typename T> class ConstDeviceField;
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 using NgpMesh = stk::mesh::DeviceMesh;
 template <typename T> using NgpField = stk::mesh::DeviceField<T>;
 template <typename T> using NgpConstField = stk::mesh::ConstDeviceField<T>;
