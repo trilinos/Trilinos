@@ -125,6 +125,10 @@ class simd<float, simd_abi::sse> {
   SIMD_ALWAYS_INLINE inline simd(float value)
     :m_value(_mm_set1_ps(value))
   {}
+  SIMD_ALWAYS_INLINE inline simd(
+      float a, float b, float c, float d)
+    :m_value(_mm_setr_ps(a, b, c, d))
+  {}
   SIMD_ALWAYS_INLINE inline
   simd(storage_type const& value) {
     copy_from(value.data(), element_aligned_tag());
@@ -135,9 +139,12 @@ class simd<float, simd_abi::sse> {
     return *this;
   }
   template <class Flags>
-  SIMD_ALWAYS_INLINE inline simd(float const* ptr, Flags flags) {
-    copy_from(ptr, flags);
-  }
+  SIMD_ALWAYS_INLINE inline simd(float const* ptr, Flags /*flags*/)
+    :m_value(_mm_loadu_ps(ptr))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(float const* ptr, int stride)
+    :simd(ptr[0], ptr[stride], ptr[2*stride], ptr[3*stride])
+  {}
   SIMD_ALWAYS_INLINE inline constexpr simd(__m128 const& value_in)
     :m_value(value_in)
   {}
@@ -170,6 +177,16 @@ class simd<float, simd_abi::sse> {
     return simd_mask<float, simd_abi::sse>(_mm_cmpeq_ps(m_value, other.m_value));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::sse> multiplysign(simd<float, simd_abi::sse> const& a, simd<float, simd_abi::sse> const& b) {
+  __m128 const sign_mask = _mm_set1_ps(-0.);
+  return simd<float, simd_abi::sse>(_mm_xor_ps(a.get(), _mm_and_ps(sign_mask, b.get())));
+}
+
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::sse> copysign(simd<float, simd_abi::sse> const& a, simd<float, simd_abi::sse> const& b) {
+  __m128 const sign_mask = _mm_set1_ps(-0.);
+  return simd<float, simd_abi::sse>(_mm_xor_ps(_mm_andnot_ps(sign_mask, a.get()), _mm_and_ps(sign_mask, b.get())));
+}
 
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::sse> abs(simd<float, simd_abi::sse> const& a) {
   __m128 const sign_mask = _mm_set1_ps(-0.f);  // -0.f = 1 << 31
@@ -266,9 +283,16 @@ class simd<double, simd_abi::sse> {
   using mask_type = simd_mask<double, abi_type>;
   using storage_type = simd_storage<double, abi_type>;
   SIMD_ALWAYS_INLINE inline simd() = default;
+  SIMD_ALWAYS_INLINE inline simd(simd const&) = default;
+  SIMD_ALWAYS_INLINE inline simd(simd&&) = default;
+  SIMD_ALWAYS_INLINE inline simd& operator=(simd const&) = default;
+  SIMD_ALWAYS_INLINE inline simd& operator=(simd&&) = default;
   SIMD_ALWAYS_INLINE inline static constexpr int size() { return 2; }
   SIMD_ALWAYS_INLINE inline simd(double value)
     :m_value(_mm_set1_pd(value))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(double a, double b)
+    :m_value(_mm_setr_pd(a, b))
   {}
   SIMD_ALWAYS_INLINE inline
   simd(storage_type const& value) {
@@ -286,9 +310,12 @@ class simd<double, simd_abi::sse> {
     return *this;
   }
   template <class Flags>
-  SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags flags) {
-    copy_from(ptr, flags);
-  }
+  SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags /*flags*/)
+    :m_value(_mm_loadu_pd(ptr))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(double const* ptr, int stride)
+    :simd(ptr[0], ptr[stride])
+  {}
   SIMD_ALWAYS_INLINE inline constexpr simd(__m128d const& value_in)
     :m_value(value_in)
   {}
@@ -326,6 +353,16 @@ class simd<double, simd_abi::sse> {
     return simd_mask<double, simd_abi::sse>(_mm_cmpeq_pd(m_value, other.m_value));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::sse> multiplysign(simd<double, simd_abi::sse> const& a, simd<double, simd_abi::sse> const& b) {
+  __m128d const sign_mask = _mm_set1_pd(-0.);
+  return simd<double, simd_abi::sse>(_mm_xor_pd(a.get(), _mm_and_pd(sign_mask, b.get())));
+}
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::sse> copysign(simd<double, simd_abi::sse> const& a, simd<double, simd_abi::sse> const& b) {
+  __m128d const sign_mask = _mm_set1_pd(-0.);
+  return simd<double, simd_abi::sse>(_mm_xor_pd(_mm_andnot_pd(sign_mask, a.get()), _mm_and_pd(sign_mask, b.get())));
+}
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::sse> abs(simd<double, simd_abi::sse> const& a) {
   __m128d const sign_mask = _mm_set1_pd(-0.);  // -0. = 1 << 63

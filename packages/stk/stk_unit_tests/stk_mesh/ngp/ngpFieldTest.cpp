@@ -202,7 +202,7 @@ TEST_F(NgpFieldFixture, GetNgpField)
   stk::mesh::NgpField<int> & ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
   EXPECT_EQ(ngpIntField.get_ordinal(), stkIntField.mesh_meta_data_ordinal());
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE((std::is_same<decltype(ngpIntField), stk::mesh::DeviceField<int>&>::value));
 #else
   EXPECT_TRUE((std::is_same<decltype(ngpIntField), stk::mesh::HostField<int>&>::value));
@@ -250,12 +250,14 @@ TEST_F(NgpFieldFixture, ModifyAndSync)
   sync_field_to_host(stkIntField);
   check_field_on_host(get_bulk(), stkIntField, multiplier*multiplier);
 
+#ifdef STK_USE_DEVICE_MESH
   size_t expectedSyncsToDevice = 2;
   size_t expectedSyncsToHost = 1;
-#ifndef KOKKOS_ENABLE_CUDA
-  expectedSyncsToDevice = 0;
-  expectedSyncsToHost = 0;
+#else
+  size_t expectedSyncsToDevice = 0;
+  size_t expectedSyncsToHost = 0;
 #endif
+
   EXPECT_EQ(expectedSyncsToDevice, stkIntField.num_syncs_to_device());
   EXPECT_EQ(expectedSyncsToHost, stkIntField.num_syncs_to_host());
 
@@ -289,11 +291,12 @@ TEST_F(NgpFieldFixture, UpdateNgpFieldAfterMeshMod_WithMostCurrentDataOnHost)
   sync_field_to_host(stkIntField);
   check_field_on_host(get_bulk(), stkIntField, multiplier*multiplier);
 
+#ifdef STK_USE_DEVICE_MESH
   size_t expectedSyncsToDevice = 2;
   size_t expectedSyncsToHost = 1;
-#ifndef KOKKOS_ENABLE_CUDA
-  expectedSyncsToDevice = 0;
-  expectedSyncsToHost = 0;
+#else
+  size_t expectedSyncsToDevice = 0;
+  size_t expectedSyncsToHost = 0;
 #endif
 
   EXPECT_EQ(expectedSyncsToDevice, stkIntField.num_syncs_to_device());

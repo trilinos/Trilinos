@@ -2279,6 +2279,8 @@ void MeshAdapt::initialize_m2g_geometry(std::string input_geometry)
 
   bd->modification_begin();
 
+  std::vector<stk::mesh::Entity> nodesToCheck;
+  std::vector<int> procsSharedTo;
   for (unsigned i = 0; i < curveIDs.size(); i++) { //create beams and put them into corresponding curve parts
 
     std::vector<stk::mesh::Part *> add_parts_beams(1, static_cast<stk::mesh::Part*>(0));
@@ -2293,22 +2295,20 @@ void MeshAdapt::initialize_m2g_geometry(std::string input_geometry)
       bool toDeclare = true;
 
       std::vector<stk::mesh::EntityId> beamNodeIDs;
-      std::vector<int> procsSharedTo;
-      std::vector<stk::mesh::EntityKey> keysToCheck;
       int lowestRank = std::numeric_limits<int>::max();
 
       for (unsigned j = 0; j < edge_node_ids[ii].size(); j++)
         beamNodeIDs.push_back((stk::mesh::EntityId) edge_node_ids[ii][j]);
 
+      nodesToCheck.clear();
       for (unsigned j = 0; j < edge_node_ids[ii].size(); j++) {
 
         stk::mesh::Entity cur_node = bd->get_entity(stk::topology::NODE_RANK, beamNodeIDs[j]);
 
-        stk::mesh::EntityKey key = bd->entity_key(cur_node);
-        keysToCheck.push_back(key);
+        nodesToCheck.push_back(cur_node);
       }
 
-      bd->shared_procs_intersection(keysToCheck, procsSharedTo);
+      bd->shared_procs_intersection(nodesToCheck, procsSharedTo);
       procsSharedTo.push_back(THIS_PROC_NUM); //find all processes that own or have this node shared to it
       for (size_t iii = 0; iii < procsSharedTo.size(); iii++) {
         if (procsSharedTo[iii] < lowestRank)
@@ -2353,7 +2353,8 @@ void MeshAdapt::initialize_m2g_geometry(std::string input_geometry)
 
       int lowestRank = std::numeric_limits<int>::max();
       std::vector<stk::mesh::EntityKey> keysToCheck;
-      std::vector<int> procsSharedTo;
+     
+      procsSharedTo.clear(); //std::vector<int> procsSharedTo;
 
       stk::mesh::Entity cur_node;
       for (unsigned j = 0; j < face_node_ids[ii].size(); j++) {

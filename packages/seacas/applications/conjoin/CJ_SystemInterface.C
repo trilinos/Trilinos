@@ -62,6 +62,11 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("64-bit", GetLongOption::NoValue,
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
 
+  options_.enroll("sort_times", GetLongOption::NoValue,
+                  "Sort the input files on the minimum timestep time in the file. "
+                  "Default is to process files in the order they appear on the command line.",
+                  nullptr);
+
   options_.enroll(
       "compress", GetLongOption::MandatoryValue,
       "Specify the hdf5 (netcdf4) compression level [0..9] to be used on the output file.",
@@ -256,37 +261,18 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("netcdf4") != nullptr) {
-    useNetcdf4_ = true;
-  }
-
-  if (options_.retrieve("64-bit") != nullptr) {
-    ints64Bit_ = true;
-  }
+  useNetcdf4_        = options_.retrieve("netcdf4") != nullptr;
+  sortTimes_         = options_.retrieve("sort_times") != nullptr;
+  ints64Bit_         = options_.retrieve("64-bit") != nullptr;
+  ignoreCoordinates_ = options_.retrieve("ignore_coordinate_check") != nullptr;
+  omitNodesets_      = options_.retrieve("omit_nodesets") != nullptr;
+  omitSidesets_      = options_.retrieve("omit_sidesets") != nullptr;
 
   {
     const char *temp = options_.retrieve("compress");
     if (temp != nullptr) {
       compressionLevel_ = std::strtol(temp, nullptr, 10);
     }
-  }
-
-  if (options_.retrieve("ignore_coordinate_check") != nullptr) {
-    ignoreCoordinates_ = true;
-  }
-
-  if (options_.retrieve("omit_nodesets") != nullptr) {
-    omitNodesets_ = true;
-  }
-  else {
-    omitNodesets_ = false;
-  }
-
-  if (options_.retrieve("omit_sidesets") != nullptr) {
-    omitSidesets_ = true;
-  }
-  else {
-    omitSidesets_ = false;
   }
 
   if (options_.retrieve("copyright") != nullptr) {

@@ -238,6 +238,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
         ThrowRequireMsg(f.type_is<T>(),
                       "Please don't mix fields with different primitive types in the same parallel assemble operation");
 
+        f.sync_to_host();
         const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[proc];
         for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
             unsigned bucket = bktIndices.bucket_info[i].bucket_id;
@@ -289,6 +290,9 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
         const FieldBase& f = *fields[j] ;
         const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[iproc];
         const std::vector<unsigned>& ords = bktIndices.ords;
+
+        f.sync_to_host();
+        f.modify_on_host();
 
         size_t ords_offset = 0;
         for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {

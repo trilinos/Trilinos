@@ -107,6 +107,15 @@ class simd<float, simd_abi::avx512> {
   SIMD_ALWAYS_INLINE inline simd(float value)
     :m_value(_mm512_set1_ps(value))
   {}
+  SIMD_ALWAYS_INLINE inline simd(
+      float a, float b, float c, float d,
+      float e, float f, float g, float h,
+      float i, float j, float k, float l,
+      float m, float n, float o, float p)
+    :m_value(_mm512_setr_ps(
+          a, b, c, d, e, f, g, h,
+          i, j, k, l, m, n, o, p))
+  {}
   SIMD_ALWAYS_INLINE inline
   simd(storage_type const& value) {
     copy_from(value.data(), element_aligned_tag());
@@ -117,9 +126,15 @@ class simd<float, simd_abi::avx512> {
     return *this;
   }
   template <class Flags>
-  SIMD_ALWAYS_INLINE inline simd(float const* ptr, Flags flags) {
-    copy_from(ptr, flags);
-  }
+  SIMD_ALWAYS_INLINE inline simd(float const* ptr, Flags /*flags*/)
+    :m_value(_mm512_loadu_ps(ptr))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(float const* ptr, int stride)
+    :simd(ptr[0],        ptr[stride],   ptr[2*stride], ptr[3*stride],
+          ptr[4*stride], ptr[5*stride], ptr[6*stride], ptr[7*stride],
+          ptr[8*stride], ptr[9*stride], ptr[10*stride], ptr[11*stride],
+          ptr[12*stride], ptr[13*stride], ptr[14*stride], ptr[15*stride])
+  {}
   SIMD_ALWAYS_INLINE inline constexpr simd(__m512 const& value_in)
     :m_value(value_in)
   {}
@@ -152,6 +167,16 @@ class simd<float, simd_abi::avx512> {
     return simd_mask<float, simd_abi::avx512>(_mm512_cmp_ps_mask(m_value, other.m_value, _CMP_EQ_OS));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> multiplysign(simd<float, simd_abi::avx512> const& a, simd<float, simd_abi::avx512> const& b) {
+  static simd<float, simd_abi::avx512> sign_mask(-0.f);
+  return simd<float, simd_abi::avx512>(_mm512_xor_ps(a.get(), _mm512_and_ps(sign_mask.get(), b.get())));
+}
+
+SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> copysign(simd<float, simd_abi::avx512> const& a, simd<float, simd_abi::avx512> const& b) {
+  static simd<float, simd_abi::avx512> sign_mask(-0.f);
+  return simd<float, simd_abi::avx512>(_mm512_xor_ps(_mm512_andnot_ps(sign_mask.get(), a.get()) , _mm512_and_ps(sign_mask.get(), b.get())));
+}
 
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> abs(simd<float, simd_abi::avx512> const& a) {
   __m512 const rhs = a.get();
@@ -242,9 +267,18 @@ class simd<double, simd_abi::avx512> {
   using mask_type = simd_mask<double, abi_type>;
   using storage_type = simd_storage<double, abi_type>;
   SIMD_ALWAYS_INLINE inline simd() = default;
+  SIMD_ALWAYS_INLINE inline simd(simd const&) = default;
+  SIMD_ALWAYS_INLINE inline simd(simd&&) = default;
+  SIMD_ALWAYS_INLINE inline simd& operator=(simd const&) = default;
+  SIMD_ALWAYS_INLINE inline simd& operator=(simd&&) = default;
   SIMD_ALWAYS_INLINE inline static constexpr int size() { return 8; }
   SIMD_ALWAYS_INLINE inline simd(double value)
     :m_value(_mm512_set1_pd(value))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(
+      double a, double b, double c, double d,
+      double e, double f, double g, double h)
+    :m_value(_mm512_setr_pd(a, b, c, d, e, f, g, h))
   {}
   SIMD_ALWAYS_INLINE inline
   simd(storage_type const& value) {
@@ -262,9 +296,13 @@ class simd<double, simd_abi::avx512> {
     return *this;
   }
   template <class Flags>
-  SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags flags) {
-    copy_from(ptr, flags);
-  }
+  SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags /*flags*/)
+    :m_value(_mm512_loadu_pd(ptr))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(double const* ptr, int stride)
+    :simd(ptr[0],        ptr[stride],   ptr[2*stride], ptr[3*stride],
+          ptr[4*stride], ptr[5*stride], ptr[6*stride], ptr[7*stride])
+  {}
   SIMD_ALWAYS_INLINE inline constexpr simd(__m512d const& value_in)
     :m_value(value_in)
   {}
@@ -302,6 +340,16 @@ class simd<double, simd_abi::avx512> {
     return simd_mask<double, simd_abi::avx512>(_mm512_cmp_pd_mask(m_value, other.m_value, _CMP_EQ_OS));
   }
 };
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> multiplysign(simd<double, simd_abi::avx512> const& a, simd<double, simd_abi::avx512> const& b) {
+  static simd<double, simd_abi::avx512> sign_mask(-0.0);
+  return simd<double, simd_abi::avx512>(_mm512_xor_pd(a.get(), _mm512_and_pd(sign_mask.get(), b.get())));
+}
+
+SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> copysign(simd<double, simd_abi::avx512> const& a, simd<double, simd_abi::avx512> const& b) {
+  static simd<double, simd_abi::avx512> sign_mask(-0.0);
+  return simd<double, simd_abi::avx512>(_mm512_xor_pd(_mm512_andnot_pd(sign_mask.get(), a.get()) , _mm512_and_pd(sign_mask.get(), b.get())));
+}
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> abs(simd<double, simd_abi::avx512> const& a) {
   __m512d const rhs = a.get();
