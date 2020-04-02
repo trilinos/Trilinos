@@ -56,6 +56,7 @@ NewOptimizationProblem<Real>::NewOptimizationProblem(const Ptr<Objective<Real>> 
     hasEquality_(false), hasInequality_(false),
     hasLinearEquality_(false), hasLinearInequality_(false),
     cnt_econ_(0), cnt_icon_(0), cnt_linear_econ_(0), cnt_linear_icon_(0),
+    ppa_(PPA_DEFAULT),
     obj_(nullPtr), xprim_(nullPtr), xdual_(nullPtr), bnd_(nullPtr),
     con_(nullPtr), mul_(nullPtr), res_(nullPtr), proj_(nullPtr),
     problemType_(TYPE_U) {
@@ -247,6 +248,16 @@ void NewOptimizationProblem<Real>::removeLinearConstraint(std::string name) {
 }
 
 template<typename Real>
+void NewOptimizationProblem<Real>::setProjectionAlgorithm(EPolyProjAlgo ppa) {
+  if (!isFinalized_) {
+    ppa_ = ppa;
+  }
+  else {
+    throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot set polyhedral projection algorithm after problem is finalized!");
+  }
+}
+
+template<typename Real>
 void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream) {
   if (!isFinalized_) {
     std::unordered_map<std::string,ConstraintData<Real>> con, lcon, icon;
@@ -370,7 +381,7 @@ void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToSt
         mul_         = nullPtr;
         res_         = nullPtr;
         proj_        = makePtr<PolyhedralProjection<Real>>(*xprim_,*xdual_,bnd_,
-                         cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual());
+                         cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual(),ppa_);
       }
       else {
         NewConstraintManager<Real> cm(con,lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
@@ -387,7 +398,7 @@ void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToSt
         bnd_         = cm.getBoundConstraint();
         proj_        = makePtr<PolyhedralProjection<Real>>(*xprim_,*xdual_,bnd_,
                         cm.getLinearConstraint(),*cm.getLinearMultiplier(),
-                        *cm.getLinearResidual());
+                        *cm.getLinearResidual(),ppa_);
       }
     }
     isFinalized_ = true;

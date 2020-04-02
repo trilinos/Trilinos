@@ -51,17 +51,26 @@
 
 namespace ROL {
 
+enum EPolyProjAlgo {
+  PPA_NEWTON = 0,
+  PPA_DYKSTRA,
+  PPA_DEFAULT
+};
+
 template<typename Real>
 class PolyhedralProjection {
 private:
   const Ptr<BoundConstraint<Real>> bnd_;
   const Ptr<Constraint<Real>>      con_;
-  const bool                       useSN_;
+  EPolyProjAlgo                    ppa_;
 
   int dim_;
   Ptr<Krylov<Real>> krylov_;
   Ptr<Vector<Real>> xnew_, xdual_, xprim_, mul_, lnew_, dlam_, res_;
   Real b_, mul1_, dlam1_, cdot_;
+
+  // For Dykstra's algorithm
+  Ptr<Vector<Real>> tmp_, p_, q_, y_, z_;
 
 public:
   virtual ~PolyhedralProjection() {}
@@ -70,7 +79,7 @@ public:
     : PolyhedralProjection(makePtrFromRef(bnd)) {}
 
   PolyhedralProjection(const Ptr<BoundConstraint<Real>> &bnd)
-    : bnd_(bnd), con_(nullPtr), useSN_(false) {}
+    : bnd_(bnd), con_(nullPtr), ppa_(PPA_DEFAULT) {}
 
   PolyhedralProjection(const Vector<Real>    &xprim,
                        const Vector<Real>    &xdual,
@@ -78,8 +87,8 @@ public:
                        Constraint<Real>      &con,
                        const Vector<Real>    &mul,
                        const Vector<Real>    &res,
-                       bool                   useSN = false)
-    : PolyhedralProjection(xprim,xdual,makePtrFromRef(bnd),makePtrFromRef(con),mul,res,useSN) {}
+                       EPolyProjAlgo          ppa = PPA_DEFAULT)
+    : PolyhedralProjection(xprim,xdual,makePtrFromRef(bnd),makePtrFromRef(con),mul,res,ppa) {}
 
   PolyhedralProjection(const Vector<Real>               &xprim,
                        const Vector<Real>               &xdual,
@@ -87,39 +96,77 @@ public:
                        const Ptr<Constraint<Real>>      &con,
                        const Vector<Real>               &mul,
                        const Vector<Real>               &res,
-                       bool                              useSN = false)
-    : bnd_(bnd), con_(con), useSN_(useSN) {
-    xnew_  = xprim.clone();
-    xprim_ = xprim.clone();
-    xdual_ = xdual.clone();
+                       EPolyProjAlgo                     ppa = PPA_DEFAULT)
+    : bnd_(bnd), con_(con), ppa_(ppa) {
 
     dim_ = mul.dimension();
-    mul_ = mul.clone();
-    res_ = res.clone();
-    if (dim_ == 1 && !useSN_) {
-      mul1_  = static_cast<Real>(0);
-      dlam1_ = static_cast<Real>(2);
-      // con.value(x) = xprim_->dot(x) + b_
-      Real tol(std::sqrt(ROL_EPSILON<Real>()));
-      xprim_->zero();
-      con_->value(*res_,*xprim_,tol);
-      b_ = res_->dot(*res_->basis(0));
-      mul_->setScalar(static_cast<Real>(1));
-      con_->applyAdjointJacobian(*xdual_,*mul_,xprim,tol);
-      xprim_->set(xdual_->dual());
-      cdot_ = xprim_->dot(*xprim_);
+    if (ppa_ == PPA_DEFAULT && dim_!=1) {
+      ppa_ = PPA_NEWTON;
     }
-    else {
-      lnew_ = mul.clone();
-      dlam_ = mul.clone();
+    switch (ppa_) {
+      case PPA_NEWTON :
+      {
+        xnew_  = xprim.clone();
+        xprim_ = xprim.clone();
+        xdual_ = xdual.clone();
+        mul_   = mul.clone();
+        res_   = res.clone();
+        lnew_  = mul.clone();
+        dlam_  = mul.clone();
+  
+        ParameterList list;
+        list.sublist("General").sublist("Krylov").set("Type",               "CG");
+        list.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-6);
+        list.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
+        list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
+        list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
+        krylov_ = KrylovFactory<Real>(list);
+        break;
+      }
+      case PPA_DYKSTRA :
+      {
+        tmp_ = xprim.clone();
+        y_   = xprim.clone();
+        q_   = xprim.clone();
+        p_   = xprim.clone();
+        res_ = res.clone();
+        z_   = xdual.clone();
+        mul_ = mul.clone();
+        if (dim_ == 1) {
+          xprim_ = xprim.clone();
+          Real tol(std::sqrt(ROL_EPSILON<Real>()));
+          xprim_->zero();
+          con_->value(*res_,*xprim_,tol);
+          b_ = res_->dot(*res_->basis(0));
+          mul_->setScalar(static_cast<Real>(1));
+          con_->applyAdjointJacobian(*z_,*mul_,xprim,tol);
+          xprim_->set(z_->dual());
+          cdot_ = xprim_->dot(*xprim_);
+        }
+        z_->zero();
+        break;
+      }
+      default :
+      {
+        xnew_  = xprim.clone();
+        xprim_ = xprim.clone();
+        xdual_ = xdual.clone();
+        mul_   = mul.clone();
+        res_   = res.clone();
 
-      ParameterList list;
-      list.sublist("General").sublist("Krylov").set("Type",               "CG");
-      list.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-6);
-      list.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
-      list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
-      list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
-      krylov_ = KrylovFactory<Real>(list);
+        mul1_  = static_cast<Real>(0);
+        dlam1_ = static_cast<Real>(2);
+        // con.value(x) = xprim_->dot(x) + b_
+        Real tol(std::sqrt(ROL_EPSILON<Real>()));
+        xprim_->zero();
+        con_->value(*res_,*xprim_,tol);
+        b_ = res_->dot(*res_->basis(0));
+        mul_->setScalar(static_cast<Real>(1));
+        con_->applyAdjointJacobian(*xdual_,*mul_,xprim,tol);
+        xprim_->set(xdual_->dual());
+        cdot_ = xprim_->dot(*xprim_);
+        break;
+      }
     }
   }
 
@@ -128,18 +175,29 @@ public:
       bnd_->project(x);
     }
     else {
-      if (dim_==1 && !useSN_) {
-        mul1_  = (-b_-xprim_->dot(x))/cdot_;
-        //mul1_  = static_cast<Real>(0);
-        dlam1_ = static_cast<Real>(2);
-        //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);
-        project_1d(x,mul1_,dlam1_);
-      }
-      else {
-        //std::cout << std::scientific << std::setprecision(16);
-        //x.print(std::cout);
-        project_nd(x,*mul_,*dlam_);
-        //x.print(std::cout);
+      switch (ppa_) {
+        case PPA_NEWTON :
+        {
+          //std::cout << std::scientific << std::setprecision(16);
+          //x.print(std::cout);
+          project_nd(x,*mul_,*dlam_);
+          //x.print(std::cout);
+          break;
+        }
+        case PPA_DYKSTRA :
+        {
+          project_Dykstra(x);
+          break;
+        }
+        default :
+        {
+          mul1_  = (-b_-xprim_->dot(x))/cdot_;
+          //mul1_  = static_cast<Real>(0);
+          dlam1_ = static_cast<Real>(2);
+          //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);
+          project_1d(x,mul1_,dlam1_);
+          break;
+        }
       }
     }
   }
@@ -415,6 +473,62 @@ private:
       std::cout << ">>> ROL::PolyhedralProjection::project : Projection may be inaccurate!  rnorm = " << rnorm << "  rtol = " << ctol << std::endl;
     }
     x.set(*xnew_);
+  }
+
+  void project_bnd(Vector<Real> &x, const Vector<Real> &y) const {
+    x.set(y);
+    bnd_->project(x);
+  }
+
+  void project_con(Vector<Real> &x, const Vector<Real> &y) const {
+    if (dim_ == 1) {
+      Real rhs = residual_1d(y);
+      Real lam = -rhs/cdot_;
+      x.set(y);
+      x.axpy(lam,*xprim_);
+    }
+    else {
+      Real tol = std::sqrt(ROL_EPSILON<Real>());
+      residual_nd(*res_,y);
+      con_->solveAugmentedSystem(x,*mul_,*z_,*res_,y,tol);
+      x.scale(static_cast<Real>(-1));
+      x.plus(y);
+    }
+  }
+
+  void project_Dykstra(Vector<Real> &x) const {
+    const Real one(1);
+    const Real atol(ROL_EPSILON<Real>()), rtol(std::sqrt(ROL_EPSILON<Real>()));
+    const Real xnorm(x.norm()), ctol(rtol*std::min(atol,rtol*xnorm));
+    const unsigned maxit(5000);
+    Real norm1(0), norm2(0), rnorm(0);
+    p_->zero(); q_->zero();
+    for (unsigned cnt=0; cnt < maxit; ++cnt) {
+      // Constraint projection
+      tmp_->set(x);   tmp_->plus(*p_);
+      project_con(*y_,*tmp_);
+      p_->set(*tmp_); p_->axpy(-one,*y_);
+      // compute error between pnew and pold
+      tmp_->set(x);   tmp_->axpy(-one,*y_);
+      norm1 = tmp_->norm();
+      // Bounds projection
+      tmp_->set(*y_); tmp_->plus(*q_);
+      project_bnd(x,*tmp_);
+      q_->set(*tmp_); q_->axpy(-one,x);
+      // compute error between qnew and qold
+      tmp_->set(x);   tmp_->axpy(-one,*y_);
+      norm2 = tmp_->norm();
+      // stopping condition based on Birgin/Raydan paper
+      // Robust Stopping Criteria for Dykstra's Algorithm
+      // SISC Vol. 26, No. 4, 2005
+      rnorm = norm1*norm1 + norm2*norm2;
+      //std::cout << cnt << "  " << norm1 << "  " << norm2 << "  " << rnorm << "  " << ctol << std::endl;
+      if (rnorm <= ctol) break;
+    }
+    if (rnorm > ctol) {
+      //throw Exception::NotImplemented(">>> ROL::PolyhedralProjection::project : Projection failed!");
+      std::cout << ">>> ROL::PolyhedralProjection::project : Projection may be inaccurate!  rnorm = " << rnorm << "  rtol = " << ctol << std::endl;
+    }
   }
 
 }; // class PolyhedralProjection

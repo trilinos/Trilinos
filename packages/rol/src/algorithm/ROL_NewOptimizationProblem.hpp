@@ -77,6 +77,8 @@ private:
   std::unordered_map<std::string,ConstraintData<Real>> INPUT_con_;
   std::unordered_map<std::string,ConstraintData<Real>> INPUT_linear_con_;
 
+  EPolyProjAlgo ppa_;
+
   Ptr<Objective<Real>>            obj_;
   Ptr<Vector<Real>>               xprim_;
   Ptr<Vector<Real>>               xdual_;
@@ -189,6 +191,12 @@ public:
       @param[in] name  the unique constraint identifier
   */
   void removeLinearConstraint(std::string name);
+
+  /** \brief Set polyhedral projection algorithm.
+
+      @param[in] ppa  polyhedral projection algorithm
+  */
+  void setProjectionAlgorithm(EPolyProjAlgo ppa);
 
   /***************************************************************************/
   /*** Accessor methods ******************************************************/

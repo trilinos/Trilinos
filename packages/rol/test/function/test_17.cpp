@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
     RealT err(0);
     ROL::Ptr<con2d<RealT>> con = ROL::makePtr<con2d<RealT>>();
     ROL::StdVector<RealT> r(1);
+    ROL::EPolyProjAlgo ppa = ROL::PPA_DEFAULT;
 
     ROL::Ptr<std::vector<RealT>> yptr = ROL::makePtr<std::vector<RealT>>(2);
     (*yptr)[0] = static_cast<RealT>(10)*(static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX)-half);
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>> u0 = x.clone(); u0->setScalar(static_cast<RealT>(1));
     ROL::Ptr<ROL::Bounds<RealT>> bnd0 = ROL::makePtr<ROL::Bounds<RealT>>(l0,u0);
 
-    ROL::PolyhedralProjection<RealT> pp0(x,x.dual(),*bnd0,*con,r,r.dual());
+    ROL::PolyhedralProjection<RealT> pp0(x,x.dual(),*bnd0,*con,r,r.dual(),ppa);
     pp0.project(Px);
  
     ROL::Ptr<std::vector<RealT>> x0ptr = ROL::makePtr<std::vector<RealT>>(2);
@@ -166,7 +167,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>> u1 = z.clone(); u1->setScalar(static_cast<RealT>(1));
     ROL::Ptr<ROL::Bounds<RealT>> bnd1 = ROL::makePtr<ROL::Bounds<RealT>>(l1,u1);
 
-    ROL::PolyhedralProjection<RealT> pp1(z,z.dual(),*bnd1,*con,r,r.dual());
+    ROL::PolyhedralProjection<RealT> pp1(z,z.dual(),*bnd1,*con,r,r.dual(),ppa);
     pp1.project(Pz);
 
     ROL::Ptr<std::vector<RealT>> e1ptr = ROL::makePtr<std::vector<RealT>>(2);
