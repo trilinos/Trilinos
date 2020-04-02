@@ -154,6 +154,14 @@ public:
       maxIndex_++;
     }
   }
+
+  /** \brief Push the contents of *this into another SimController.
+  */
+  void push(SimController<Real,Key> &to) const {
+    for (auto it = indices_.begin(); it != indices_.end(); ++it) {
+      to.set(*vectors_[it->second],it->first);
+    }
+  }
 }; // class SimController
 
 } // namespace ROL
