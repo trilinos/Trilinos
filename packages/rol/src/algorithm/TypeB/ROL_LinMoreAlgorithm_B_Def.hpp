@@ -149,7 +149,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   Real gfnorm(0), gfnormf(0), tol(0), stol(0), snorm(0);
   Real ftrial(0), pRed(0), rho(1), alpha(1), q(0);
-  int flagCG(0), iterCG(0);
+  int flagCG(0), iterCG(0), maxit(0);
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
@@ -193,6 +193,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     }
 
     // Trust-region subproblem solve loop
+    maxit = maxit_;
     for (int i = 0; i < minit_; ++i) {
       // Run Truncated CG
       flagCG = 0; iterCG = 0;
@@ -201,8 +202,9 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
       stol    = tol; //zero;
       if (gfnorm > zero) {
         snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
-                       state_->searchSize,*model_,bnd,tol,stol,maxit_,
+                       state_->searchSize,*model_,bnd,tol,stol,maxit,
                        *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
+        maxit   -= iterCG;
         SPiter_ += iterCG;
         if (verbosity_ > 1) {
           outStream << "  Computation of CG step"               << std::endl;
@@ -421,7 +423,7 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
   while (search) {
     nsteps++;
     snorm = dgpstep(pwa,s,x,beta);
-    model.hessVec(dwa,pwa,x,tol);
+    model.hessVec(dwa,pwa,x,tol); nhess_++;
     gs = pwa.dot(g);
     q  = half * pwa.dot(dwa.dual()) + gs;
     if (q <= mu0_*gs || nsteps > pslim_) {
@@ -608,12 +610,14 @@ std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
            << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
     }
     hist << std::endl;
-    hist << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
-    hist << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
-    for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
-      hist << "    " << NumberToString(flag) << " - "
-           << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
-    }            
+    if (minit_ > 0) {
+      hist << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
+      hist << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
+      for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
+        hist << "    " << NumberToString(flag) << " - "
+             << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
+      }
+    }
     hist << std::string(114,'-') << std::endl;
   }
   hist << "  ";
@@ -626,8 +630,10 @@ std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
   hist << std::setw(10) << std::left << "#grad";
   hist << std::setw(10) << std::left << "#hess";
   hist << std::setw(10) << std::left << "tr_flag";
-  hist << std::setw(10) << std::left << "iterCG";
-  hist << std::setw(10) << std::left << "flagCG";
+  if (minit_ > 0) {
+    hist << std::setw(10) << std::left << "iterCG";
+    hist << std::setw(10) << std::left << "flagCG";
+  }
   hist << std::endl;
   return hist.str();
 }
@@ -660,8 +666,10 @@ std::string LinMoreAlgorithm_B<Real>::print( const bool print_header ) const {
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << nhess_;
     hist << std::setw(10) << std::left << "---";
-    hist << std::setw(10) << std::left << "---";
-    hist << std::setw(10) << std::left << "---";
+    if (minit_ > 0) {
+      hist << std::setw(10) << std::left << "---";
+      hist << std::setw(10) << std::left << "---";
+    }
     hist << std::endl;
   }
   else {
@@ -675,8 +683,10 @@ std::string LinMoreAlgorithm_B<Real>::print( const bool print_header ) const {
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << nhess_;
     hist << std::setw(10) << std::left << TRflag_;
-    hist << std::setw(10) << std::left << SPiter_;
-    hist << std::setw(10) << std::left << SPflag_;
+    if (minit_ > 0) {
+      hist << std::setw(10) << std::left << SPiter_;
+      hist << std::setw(10) << std::left << SPflag_;
+    }
     hist << std::endl;
   }
   return hist.str();
