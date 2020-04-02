@@ -227,7 +227,7 @@ namespace
                             const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success)
   {
     // first, check that the bases agree on cardinality
-    TEST_ASSERT(basis1.getCardinality() == basis2.getCardinality());
+    TEST_EQUALITY(basis1.getCardinality(), basis2.getCardinality());
     
     const int basisCardinality = basis1.getCardinality();
     
@@ -245,6 +245,18 @@ namespace
     ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points 1D ref cell", numRefPoints, spaceDim);
     ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights 1D ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
+    
+    out << "Points being tested:\n";
+    for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
+    {
+      out << pointOrdinal << ": " << "(";
+      for (int d=0; d<spaceDim; d++)
+      {
+        out << points(pointOrdinal,d);
+        if (d < spaceDim-1) out << ",";
+      }
+      out << ")\n";
+    }
     
     auto functionSpace = basis1.getFunctionSpace();
     
@@ -475,6 +487,106 @@ namespace
     CnBasis cnBasis(polyOrder);
     C2Basis c2Basis;
     testBasisEquivalence(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalCnVersusNodalC2_HGRAD )
+  {
+    using CnBasis = Intrepid2::Basis_HGRAD_TET_Cn_FEM<Kokkos::DefaultExecutionSpace>;
+    using C2Basis = Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::DefaultExecutionSpace>;
+    
+    // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-12; // 2e-14 is sharp on development setup; relaxing for potential architectural differences
+    const double absTol=1e-13; // 3e-15 is sharp on development setup; relaxing for potential architectural differences
+    
+    CnBasis cnBasis(2);
+    C2Basis c2Basis;
+    testBasisEquivalence(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronHierarchicalDGVersusHierarchicalCG_HGRAD )
+  {
+    using CGBasis = HierarchicalBasisFamily<>::HGRAD_TET;
+    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_TET;
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6; // 3e-8 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
+    const double absTol=1e-9; // 5e-11 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
+    
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      CGBasis cgBasis(polyOrder);
+      DGBasis dgBasis(polyOrder);
+      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchicalCG_HGRAD )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_TET;
+    using NodalBasis        = NodalBasisFamily<>::HGRAD_TET;
+    
+    // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6;  // 3e-08 is sharp on development setup for polyOrder=6; relaxing for potential architectural differences
+    const double absTol=1e-10; // 3e-12 is sharp on development setup for polyOrder=6; relaxing for potential architectural differences
+    
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchicalCG_HGRAD )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_TRI;
+    using NodalBasis        = NodalBasisFamily<>::HGRAD_TRI;
+    
+    // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11; // 7e-13 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    const double absTol=1e-12; // 2e-14 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleHierarchicalCGVersusHierarchicalDG_HGRAD )
+  {
+    using CGBasis =   HierarchicalBasisFamily<>::HGRAD_TRI;
+    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_TRI;
+    
+    // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11; // 7e-13 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    const double absTol=1e-12; // 2e-14 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      CGBasis cgBasis(polyOrder);
+      DGBasis dgBasis(polyOrder);
+      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+    }
   }
   
 } // namespace

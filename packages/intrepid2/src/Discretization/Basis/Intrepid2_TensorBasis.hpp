@@ -752,7 +752,7 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "one-operator, two-inputPoints getValues should be overridden by TensorBasis subclasses");
     }
     
-    /** \brief  Evaluation of a tensor FEM basis on a <strong>reference cell</strong>; subclasses should override this.
+    /** \brief  Evaluation of a tensor FEM basis on a <strong>reference cell</strong>.
 
         Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
         points in the <strong>reference cell</strong> for which the basis is defined.
