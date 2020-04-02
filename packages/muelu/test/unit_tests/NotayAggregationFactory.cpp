@@ -47,8 +47,10 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
-#include "MueLu_NotayAggregationFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_Types.hpp"
 
 namespace MueLuTests {
@@ -77,8 +79,8 @@ namespace MueLuTests {
     LO numUnaggregatedNodes = A->getNodeNumRows(), numDirichletNodes = 0;
 
     Teuchos::ParameterList params;
-    params.set("aggregation: Dirichlet threshold",10.0);
-    NAF->BuildInitialAggregates(params,A,*aggregates,aggStat,numUnaggregatedNodes, numDirichletNodes);
+    NAF->BuildInitialAggregates(params, A, Teuchos::ScalarTraits<SC>::magnitude(10.0),
+                                *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
     Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
@@ -152,8 +154,8 @@ namespace MueLuTests {
     LO numUnaggregatedNodes = A->getNodeNumRows(), numDirichletNodes = 0;
 
     Teuchos::ParameterList params;
-    params.set("aggregation: Dirichlet threshold",4.1);
-    NAF->BuildInitialAggregates(params,A,*aggregates,aggStat,numUnaggregatedNodes,numDirichletNodes);
+    NAF->BuildInitialAggregates(params, A, Teuchos::ScalarTraits<SC>::magnitude(4.1),
+                                *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
     Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
@@ -216,8 +218,8 @@ namespace MueLuTests {
     typename Matrix::local_matrix_type intermediateP;
 
     Teuchos::ParameterList params;
-    params.set("aggregation: Dirichlet threshold",4.1);
-    NAF->BuildInitialAggregates(params,A,*aggregates,aggStat,numUnaggregatedNodes,numDirichletNodes);
+    NAF->BuildInitialAggregates(params, A, Teuchos::ScalarTraits<SC>::magnitude(4.1),
+                                *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
     out << "numDirichletNodes=" << numDirichletNodes << std::endl;
 
@@ -228,7 +230,9 @@ namespace MueLuTests {
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
     NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
-                                      aggregates, intermediateP);
+                                      aggregates->GetNumAggregates(),
+                                      v2a.view(0, A->getNodeNumRows()),
+                                      intermediateP);
 
   } // IntermediateProlongator2D
 
@@ -239,11 +243,6 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    //    using TST                   = Teuchos::ScalarTraits<SC>;
-    //    using magnitude_type        = typename TST::magnitudeType;
-    //    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
-    //    using real_type             = typename TST::coordinateType;
-    //    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
     using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -267,12 +266,11 @@ namespace MueLuTests {
     std::vector<unsigned> aggStat(A->getMap()->getNodeNumElements(),MueLu::READY);
     LO numUnaggregatedNodes = A->getNodeNumRows(), numDirichletNodes = 0;
     typename Matrix::local_matrix_type intermediateP;
-    typename Matrix::local_matrix_type coarseA;
+    typename Matrix::local_matrix_type coarseA = A->getLocalMatrix();
 
     Teuchos::ParameterList params;
-    params.set("aggregation: Dirichlet threshold",4.1);
-    NAF->BuildInitialAggregates(params, A, *aggregates, aggStat,
-                                numUnaggregatedNodes, numDirichletNodes);
+    NAF->BuildInitialAggregates(params, A, Teuchos::ScalarTraits<SC>::magnitude(4.1),
+                                *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
     Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
@@ -280,18 +278,75 @@ namespace MueLuTests {
     TEST_EQUALITY(numUnaggregatedNodes, 0);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
-    NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
-                                      aggregates, intermediateP);
+    NAF->BuildOnRankLocalMatrix(A->getLocalMatrix(), coarseA);
 
-    NAF->BuildCoarseLocalMatrix(A->getLocalMatrix(), intermediateP, coarseA);
+    NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
+                                      aggregates->GetNumAggregates(),
+                                      v2a.view(0, A->getNodeNumRows()),
+                                      intermediateP);
+
+    NAF->BuildCoarseLocalMatrix(intermediateP, coarseA);
 
   } // CoarseLocalMatrix2D
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(NotayAggregation, BuildNotayAggregates2D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
+
+    out << "version: " << MueLu::Version() << std::endl;
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    // Do a 2D Star2D Matrix with up/down as a "weak connection"
+    Teuchos::ParameterList mp;
+    mp.set("matrixType","Star2D");
+    const int nx = 5;
+    mp.set("nx",(GO)nx);
+    mp.set("ny",(GO)nx*comm->getSize());
+    mp.set("a",2.2);
+    mp.set("b",-0.1);  mp.set("c",-0.1);
+    mp.set("d",-1.0); mp.set("e",-1.0);
+    mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    MueLu::Level currentLevel;
+    test_factory::createSingleLevelHierarchy(currentLevel);
+    currentLevel.SetFactoryManager(Teuchos::null);
+    currentLevel.Request("A");
+    currentLevel.Set("A", A);
+
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    RCP<NotayAggregationFactory> NAF   = rcp(new NotayAggregationFactory());
+    NAF->SetFactory("Graph", dropFact);
+    NAF->SetFactory("DofsPerNode", dropFact);
+    NAF->SetParameter("aggregation: pairwise: size", Teuchos::ParameterEntry(4));
+    NAF->SetParameter("aggregation: Dirichlet threshold", Teuchos::ParameterEntry(4.1));
+
+    currentLevel.Request("Aggregates", NAF.get());
+    currentLevel.Request(*NAF);
+    NAF->Build(currentLevel);
+    RCP<Aggregates> aggregates = currentLevel.Get<RCP<Aggregates> >("Aggregates", NAF.get());
+    currentLevel.Release("Aggregates", NAF.get());
+
+    auto v2a = aggregates->GetVertex2AggId()->getData(0);
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+
+  } // BuildNotayAggregates2D
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NotayAggregation,InitialAggregation1D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NotayAggregation,InitialAggregation2D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NotayAggregation,IntermediateProlongator2D,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NotayAggregation,CoarseLocalMatrix2D,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NotayAggregation,CoarseLocalMatrix2D,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NotayAggregation,BuildNotayAggregates2D,Scalar,LO,GO,Node)
 
 
 #include <MueLu_ETI_4arg.hpp>

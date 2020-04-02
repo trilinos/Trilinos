@@ -77,6 +77,17 @@ class NotayAggregationFactory : public SingleLevelFactoryBase {
 #include "MueLu_UseShortNames.hpp"
 
 public:
+  //! @name typedefs
+  //@{
+  using local_matrix_type = typename Matrix::local_matrix_type;
+  using device_type       = typename local_matrix_type::device_type;
+  using execution_space   = typename device_type::execution_space;
+  using magnitude_type    = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  using impl_scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
+  using row_sum_type      = typename Kokkos::View<impl_scalar_type*, Kokkos::LayoutLeft, device_type>;
+  //@}
+
+
   //! @name Constructors/Destructors.
   //@{
 
@@ -108,31 +119,49 @@ public:
   /*! @brief Build aggregates. */
   void Build(Level &currentLevel) const;
 
-
+  /*! @brief Initial aggregation phase. */
   void BuildInitialAggregates(const Teuchos::ParameterList& params,
                               const RCP<const Matrix>& A,
+                              const magnitude_type kappa,
                               Aggregates& aggregates,
                               std::vector<unsigned>& aggStat,
                               LO& numNonAggregatedNodes,
                               LO& numDirichletNodes) const;
 
+  /*! @brief Further aggregation phase increases coarsening rate by a factor of ~2 per iteration. */
+  void BuildFurtherAggregates(const Teuchos::ParameterList& params,
+                              const RCP<const Matrix>& A,
+                              const local_matrix_type& coarseA,
+                              const magnitude_type kappa,
+                              const row_sum_type& rowSum,
+                              std::vector<LO>& localAggStat,
+                              Array<LO>& localVertex2AggID,
+                              LO& numLocalAggregates,
+                              LO& numNonAggregatedNodes) const;
 
+  void BuildOnRankLocalMatrix(const local_matrix_type& localA,
+                              local_matrix_type& onRankA) const;
+
+  /*! @brief Construction of a local prolongator with values equal to 1.0.  */
   void BuildIntermediateProlongator(const LO numRows,
                                     const LO numDirichletNodes,
-                                    const RCP<Aggregates>& aggregates,
-                                    typename Matrix::local_matrix_type& intermediateP) const;
+                                    const LO numLocalAggregates,
+                                    const ArrayView<const LO>& localVertex2AggID,
+                                    local_matrix_type& intermediateP) const;
 
-  void BuildCoarseLocalMatrix(const typename Matrix::local_matrix_type& A,
-                              const typename Matrix::local_matrix_type& intermediateP,
-                              typename Matrix::local_matrix_type& coarseA) const;
+  /*! @brief Implementation of a local Galerkin projection called inside BuildFurtherAggregates. */
+  void BuildCoarseLocalMatrix(const local_matrix_type& intermediateP,
+                              local_matrix_type& coarseA) const;
 
-  void localSpGEMM(const typename Matrix::local_matrix_type& A,
-                   const typename Matrix::local_matrix_type& B,
+  /*! @brief Wrapper for kokkos-kernels' spgemm that takes in CrsMatrix. */
+  void localSpGEMM(const local_matrix_type& A,
+                   const local_matrix_type& B,
                    const std::string matrixLabel,
-                   typename Matrix::local_matrix_type& C) const;
+                   local_matrix_type& C) const;
 
+  /*! @brief debugging routine meant to disappear eventually */
   std::string printLocalMatrix(const std::string& matrixLabel,
-                               const typename Matrix::local_matrix_type& A) const;
+                               const local_matrix_type& A) const;
 
 
   //@}
