@@ -138,7 +138,7 @@ NGP_TEST_F(NgpParallelSum, simpleVersion)
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 NGP_TEST_F(NgpParallelSum, simpleVersion_noSyncToDeviceAfterwards)
 {
   const double initValue = 0.0;
@@ -186,7 +186,7 @@ NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion)
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion_noSyncToDeviceAfterwards)
 {
   const double initValue = 0.0;
@@ -234,7 +234,7 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting)
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting_noSyncToDeviceAfterwards)
 {
   const double initValue = 0.0;
@@ -282,7 +282,7 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData)
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAfterwards)
 {
   const double initValue = 0.0;

@@ -180,6 +180,12 @@ main (int argc, char *argv[])
     cmdp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
                     "generated matrix to that file in MatrixMarket format.");
 
+    // If coordsFilename is nonempty, dump the coords to that file
+    // in MatrixMarket format.
+    std::string coordsFilename;
+    cmdp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
+                    "generated coordinates to that file in MatrixMarket format.");
+
     // If rowMapFilename is nonempty, dump the matrix's row Map to
     // that file in MatrixMarket format.
     std::string rowMapFilename;
@@ -191,8 +197,8 @@ main (int argc, char *argv[])
     bool exitAfterAssembly = false;
     cmdp.setOption ("exitAfterAssembly", "dontExitAfterAssembly",
                     &exitAfterAssembly, "If true, exit after building the "
-                    "sparse matrix and dense right-hand side vector.  If either"
-                    " --matrixFilename or --rowMapFilename are nonempty strings"
+                    "sparse matrix and dense right-hand side vector.  If "
+                    " --matrixFilename --coordsFilename or --rowMapFilename are nonempty strings"
                     ", dump the matrix resp. row Map to their respective files "
                     "before exiting.");
 
@@ -202,9 +208,7 @@ main (int argc, char *argv[])
                     &exitAfterPrecond, "If true, exit after building the "
                     "preconditioner.");
 
-
-     // If matrixFilename is nonempty, dump the matrix to that file
-    // in MatrixMarket format.
+    // Number of rebuilds of the MueLu hierarchy
     int numMueluRebuilds=0;
     cmdp.setOption ("rebuild", &numMueluRebuilds, "Number of times to rebuild the MueLu hierarchy.");
 
@@ -279,6 +283,9 @@ main (int argc, char *argv[])
         typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
         if (matrixFilename != "") {
           writer_type::writeSparseFile (matrixFilename, A);
+        }
+        if (coordsFilename != "") {
+          writer_type::writeDenseFile (coordsFilename, coords);
         }
         if (rowMapFilename != "") {
           writer_type::writeMapFile (rowMapFilename, * (A->getRowMap ()));

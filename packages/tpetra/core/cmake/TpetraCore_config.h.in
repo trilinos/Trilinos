@@ -72,8 +72,9 @@
 /* Define when enabling the Murmur hash function in Tpetra */
 #cmakedefine TPETRA_USE_MURMUR_HASH
 
-/* Define when enabling KokkosContainers in Tpetra */
+/* Tpetra timers */
 #cmakedefine HAVE_TPETRA_MMM_TIMINGS
+#cmakedefine HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
 /* Define when enabling KokkosCore in Tpetra */
 #cmakedefine HAVE_TPETRACORE_KOKKOSCORE

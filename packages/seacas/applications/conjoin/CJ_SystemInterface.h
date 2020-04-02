@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2009-2010-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -54,6 +54,7 @@ namespace Excn {
     bool ints_64_bit() const { return ints64Bit_; }
     bool ignore_coordinates() const { return ignoreCoordinates_; }
     bool use_netcdf4() const { return useNetcdf4_; }
+    bool sort_times() const { return sortTimes_; }
 
     double alive_value() const { return aliveValue_; }
 
@@ -90,6 +91,7 @@ namespace Excn {
     bool ints64Bit_{false};
     bool ignoreCoordinates_{false};
     bool useNetcdf4_{false};
+    bool sortTimes_{false};
 
     double aliveValue_{-1.0};
     double interpartMinimumTimeDelta_{0.0};

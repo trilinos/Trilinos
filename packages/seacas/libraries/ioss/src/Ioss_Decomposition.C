@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -333,7 +333,7 @@ namespace Ioss {
 #if !defined(NO_PARMETIS_SUPPORT)
     if (m_method == "KWAY" || m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" ||
         m_method == "METIS_SFC") {
-      metis_decompose((idx_t *)TOPTR(m_pointer), (idx_t *)TOPTR(m_adjacency), element_blocks);
+      metis_decompose((idx_t *)m_pointer.data(), (idx_t *)m_adjacency.data(), element_blocks);
     }
 #endif
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -424,7 +424,7 @@ namespace Ioss {
 
     // Tell each processor how many nodes worth of data to send to
     // every other processor...
-    MPI_Alltoall(TOPTR(recv_count), 1, Ioss::mpi_type((INT)0), TOPTR(send_count), 1,
+    MPI_Alltoall(recv_count.data(), 1, Ioss::mpi_type((INT)0), send_count.data(), 1,
                  Ioss::mpi_type((INT)0), m_comm);
 
     send_count[m_processor] = 0;
@@ -627,8 +627,8 @@ namespace Ioss {
     // Determine whether sizeof(INT) matches sizeof(idx_t).
     // If not, decide how to proceed...
     if (sizeof(INT) == sizeof(idx_t)) {
-      internal_metis_decompose(el_blocks, (idx_t *)TOPTR(m_elementDist), pointer, adjacency,
-                               TOPTR(elem_partition));
+      internal_metis_decompose(el_blocks, (idx_t *)m_elementDist.data(), pointer, adjacency,
+                               elem_partition.data());
     }
 
     // Now know that they don't match... Are we widening or narrowing...
@@ -638,8 +638,8 @@ namespace Ioss {
       std::vector<idx_t> dist_cv(m_elementDist.begin(), m_elementDist.end());
       std::vector<idx_t> pointer_cv(m_pointer.begin(), m_pointer.end());
       std::vector<idx_t> adjacency_cv(m_adjacency.begin(), m_adjacency.end());
-      internal_metis_decompose(el_blocks, TOPTR(dist_cv), TOPTR(pointer_cv), TOPTR(adjacency_cv),
-                               TOPTR(elem_partition));
+      internal_metis_decompose(el_blocks, dist_cv.data(), pointer_cv.data(), adjacency_cv.data(),
+                               elem_partition.data());
     }
 
     else if (sizeof(idx_t) < sizeof(INT)) {
@@ -664,8 +664,8 @@ namespace Ioss {
         std::vector<idx_t> dist_cv(m_elementDist.begin(), m_elementDist.end());
         std::vector<idx_t> pointer_cv(m_pointer.begin(), m_pointer.end());
         std::vector<idx_t> adjacency_cv(m_adjacency.begin(), m_adjacency.end());
-        internal_metis_decompose(el_blocks, TOPTR(dist_cv), TOPTR(pointer_cv), TOPTR(adjacency_cv),
-                                 TOPTR(elem_partition));
+        internal_metis_decompose(el_blocks, dist_cv.data(), pointer_cv.data(), adjacency_cv.data(),
+                                 elem_partition.data());
       }
     }
     // ------------------------------------------------------------------------
@@ -691,7 +691,7 @@ namespace Ioss {
     exportElementCount[m_processor] = 0;
 
     importElementCount.resize(m_processorCount + 1);
-    MPI_Alltoall(TOPTR(exportElementCount), 1, Ioss::mpi_type((INT)0), TOPTR(importElementCount), 1,
+    MPI_Alltoall(exportElementCount.data(), 1, Ioss::mpi_type((INT)0), importElementCount.data(), 1,
                  Ioss::mpi_type((INT)0), m_comm);
     show_progress("\tmetis_decompose Communication 1 finished");
 
@@ -757,8 +757,8 @@ namespace Ioss {
     if (m_method == "KWAY") {
       int rc =
           ParMETIS_V3_PartMeshKway(element_dist, pointer, adjacency, elm_wgt, &wgt_flag, &num_flag,
-                                   &ncon, &common_nodes, &nparts, TOPTR(tp_wgts), TOPTR(ub_vec),
-                                   TOPTR(options), &edge_cuts, elem_partition, &m_comm);
+                                   &ncon, &common_nodes, &nparts, tp_wgts.data(), ub_vec.data(),
+                                   options.data(), &edge_cuts, elem_partition, &m_comm);
 #if IOSS_DEBUG_OUTPUT
       fmt::print(stderr, "Edge Cuts = {}\n", edge_cuts);
 #endif
@@ -785,8 +785,8 @@ namespace Ioss {
                     "Parmetis real_t size must match double size");
 
       rc = ParMETIS_V3_PartGeomKway(element_dist, dual_xadj, dual_adjacency, elm_wgt, elm_wgt,
-                                    &wgt_flag, &num_flag, &ndims, (real_t *)TOPTR(m_centroids),
-                                    &ncon, &nparts, TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options),
+                                    &wgt_flag, &num_flag, &ndims, (real_t *)m_centroids.data(),
+                                    &ncon, &nparts, tp_wgts.data(), ub_vec.data(), options.data(),
                                     &edge_cuts, elem_partition, &m_comm);
 
 #if IOSS_DEBUG_OUTPUT
@@ -805,7 +805,7 @@ namespace Ioss {
       static_assert(sizeof(double) == sizeof(real_t),
                     "Parmetis real_t size must match double size");
 
-      int rc = ParMETIS_V3_PartGeom(element_dist, &ndims, (real_t *)TOPTR(m_centroids),
+      int rc = ParMETIS_V3_PartGeom(element_dist, &ndims, (real_t *)m_centroids.data(),
                                     elem_partition, &m_comm);
 
       if (rc != METIS_OK) {
@@ -1031,7 +1031,7 @@ namespace Ioss {
       }
     }
 
-    MPI_Alltoall(TOPTR(export_conn_size), 1, Ioss::mpi_type((INT)0), TOPTR(import_conn_size), 1,
+    MPI_Alltoall(export_conn_size.data(), 1, Ioss::mpi_type((INT)0), import_conn_size.data(), 1,
                  Ioss::mpi_type((INT)0), m_comm);
     show_progress("\tCommunication 1 finished");
 
@@ -1117,7 +1117,7 @@ namespace Ioss {
     // Tell other processors how many nodes I will be importing from
     // them...
     importNodeCount[m_processor] = 0;
-    MPI_Alltoall(TOPTR(importNodeCount), 1, Ioss::mpi_type((INT)0), TOPTR(exportNodeCount), 1,
+    MPI_Alltoall(importNodeCount.data(), 1, Ioss::mpi_type((INT)0), exportNodeCount.data(), 1,
                  Ioss::mpi_type((INT)0), m_comm);
     show_progress("\tCommunication 3 finished");
 
@@ -1318,7 +1318,7 @@ namespace Ioss {
 
     // Tell other processors how many nodes/procs I am sending them...
     std::vector<INT> recv_comm_map_count(m_processorCount);
-    MPI_Alltoall(TOPTR(send_comm_map_count), 1, Ioss::mpi_type((INT)0), TOPTR(recv_comm_map_count),
+    MPI_Alltoall(send_comm_map_count.data(), 1, Ioss::mpi_type((INT)0), recv_comm_map_count.data(),
                  1, Ioss::mpi_type((INT)0), m_comm);
     show_progress("\tCommuniation 1 finished");
 

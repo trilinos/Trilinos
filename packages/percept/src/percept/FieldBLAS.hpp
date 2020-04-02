@@ -24,7 +24,7 @@ void field_axpby(
   const double     beta ,
   stk::mesh::Field<double> *Y)
 {
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulkdata);
+  const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
   stk::mesh::Selector select_used =
     meta.locally_owned_part() |
     meta.globally_shared_part() ;
@@ -55,7 +55,7 @@ void field_copy_component(
   stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> *Y,
   const int index)
 {
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulkdata);
+  const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
   const unsigned nDim = meta.spatial_dimension();
 
   const unsigned field_size_y = Y->max_size(stk::topology::NODE_RANK);

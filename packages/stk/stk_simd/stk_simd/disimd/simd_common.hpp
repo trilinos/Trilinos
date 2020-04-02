@@ -165,6 +165,37 @@ SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, Abi> operator/(simd<T, Abi> c
 }
 
 template <class T, class Abi>
+SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, Abi> multiplysign(simd<T, Abi> a, simd<T, Abi> b) {
+  T tmp_a[simd<T, Abi>::size()];
+  T tmp_b[simd<T, Abi>::size()];
+  a.copy_to(tmp_a, element_aligned_tag());
+  b.copy_to(tmp_b, element_aligned_tag());
+  for (int i = 0; i < simd<T, Abi>::size(); ++i) tmp_a[i] = tmp_a[i]*std::copysign(1.0, tmp_b[i]);
+  a.copy_from(tmp_a, element_aligned_tag());
+  return a;
+}
+
+template <class T, class Abi>
+SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, Abi> copysign(simd<T, Abi> a, simd<T, Abi> b) {
+  T tmp_a[simd<T, Abi>::size()];
+  T tmp_b[simd<T, Abi>::size()];
+  a.copy_to(tmp_a, element_aligned_tag());
+  b.copy_to(tmp_b, element_aligned_tag());
+  for (int i = 0; i < simd<T, Abi>::size(); ++i) tmp_a[i] = std::copysign(tmp_a[i], tmp_b[i]);
+  a.copy_from(tmp_a, element_aligned_tag());
+  return a;
+}
+
+template <class T, class Abi>
+SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, Abi> abs(simd<T, Abi> a) {
+  T tmp[simd<T, Abi>::size()];
+  a.copy_to(tmp, element_aligned_tag());
+  for (int i = 0; i < simd<T, Abi>::size(); ++i) tmp[i] = std::abs(tmp[i]);
+  a.copy_from(tmp, element_aligned_tag());
+  return a;
+}
+
+template <class T, class Abi>
 SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd<T, Abi> cbrt(simd<T, Abi> a) {
   T tmp[simd<T, Abi>::size()];
   a.copy_to(tmp, element_aligned_tag());
@@ -207,7 +238,7 @@ class simd_storage {
   SIMD_ALWAYS_INLINE inline simd_storage() = default;
   SIMD_ALWAYS_INLINE inline static constexpr
   int size() { return simd<T, Abi>::size(); }
-  SIMD_ALWAYS_INLINE inline
+  SIMD_ALWAYS_INLINE explicit inline
   simd_storage(simd<T, Abi> const& value) {
     value.copy_to(m_value, element_aligned_tag());
   }

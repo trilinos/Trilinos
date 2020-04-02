@@ -98,6 +98,9 @@
 #include "Intrepid2_HDIV_TET_I1_FEM.hpp"
 #include "Intrepid2_HDIV_WEDGE_I1_FEM.hpp"
 
+#include "Intrepid2_HierarchicalBasisFamily.hpp"
+#include "Intrepid2_NodalBasisFamily.hpp"
+
 #include "Teuchos_LAPACK.hpp"
 
 
@@ -337,69 +340,82 @@ namespace Intrepid2 {
     
   private:
 
-    template<typename BasisPtrType>
+    template<typename BasisType>
     inline 
-    static CoeffMatrixDataViewType createCoeffMatrixInternal(BasisPtrType basis);
+    static CoeffMatrixDataViewType createCoeffMatrixInternal(const BasisType* basis);
     
     //
     // High order elements transformation matrices for HGRAD
     // 
 
+    template<typename BasisType>
     inline
-    static void init_HGRAD_QUAD_Cn_FEM(CoeffMatrixDataViewType matData,
-                                       const ordinal_type order);
+    static void init_HGRAD_QUAD(CoeffMatrixDataViewType matData,
+                               BasisType const *cellBasis);
 
+    template<typename BasisType>
     inline
-    static void init_HGRAD_HEX_Cn_FEM(CoeffMatrixDataViewType matData,
-                                      const ordinal_type order);
+    static void init_HGRAD_HEX(CoeffMatrixDataViewType matData,
+                               BasisType const *cellBasis);
 
+    template<typename BasisType>
     inline
-    static void init_HGRAD_TRI_Cn_FEM(CoeffMatrixDataViewType matData,
-                                      const ordinal_type order);
+    static void init_HGRAD_TRI(CoeffMatrixDataViewType matData,
+        BasisType const *cellBasis);
     
+    template<typename BasisType>
     inline
-    static void init_HGRAD_TET_Cn_FEM(CoeffMatrixDataViewType matData,
-                                      const ordinal_type order);
+    static void init_HGRAD_TET(CoeffMatrixDataViewType matData,
+        BasisType const *cellBasis);
 
     //
     // High order elements transformation matrices for HCURL
     // 
 
+    template<typename BasisType>
     inline
-    static void init_HCURL_QUAD_In_FEM(CoeffMatrixDataViewType matData,
-                                       const ordinal_type order);
+    static void init_HCURL_QUAD(CoeffMatrixDataViewType matData,
+                                BasisType const *cellBasis);
 
+    template<typename BasisType>
     inline
-    static void init_HCURL_HEX_In_FEM(CoeffMatrixDataViewType matData,
-                                      const ordinal_type order);
+    static void init_HCURL_HEX(CoeffMatrixDataViewType matData,
+        BasisType const *cellBasis);
 
+    template<typename BasisType>
     inline
-    static void init_HCURL_TRI_In_FEM(CoeffMatrixDataViewType matData,
-                                      const ordinal_type order);
+    static void init_HCURL_TRI(CoeffMatrixDataViewType matData,
+        BasisType const *cellBasis);
 
+    template<typename BasisType>
     inline
-    static void init_HCURL_TET_In_FEM(CoeffMatrixDataViewType matData,
-                                      const ordinal_type order);
+    static void init_HCURL_TET(CoeffMatrixDataViewType matData,
+        BasisType const *cellBasis);
 
     //
     // High order elements transformation matrices for HDIV
     // 
     
+    template<typename BasisType>
     inline
-    static void init_HDIV_QUAD_In_FEM(CoeffMatrixDataViewType matData,
-                                      const ordinal_type order);
+    static void init_HDIV_QUAD(CoeffMatrixDataViewType matData,
+                               BasisType const *cellBasis);
 
-    inline
-    static void init_HDIV_HEX_In_FEM(CoeffMatrixDataViewType matData,
-                                     const ordinal_type order);
 
+    template<typename BasisType>
     inline
-    static void init_HDIV_TRI_In_FEM(CoeffMatrixDataViewType matData,
-                                     const ordinal_type order);
+    static void init_HDIV_HEX(CoeffMatrixDataViewType matData,
+        BasisType const *cellBasis);
 
+    template<typename BasisType>
     inline
-    static void init_HDIV_TET_In_FEM(CoeffMatrixDataViewType matData,
-                                     const ordinal_type order);
+    static void init_HDIV_TRI(CoeffMatrixDataViewType matData,
+        BasisType const *cellBasis);
+
+    template<typename BasisType>
+    inline
+    static void init_HDIV_TET(CoeffMatrixDataViewType matData,
+        BasisType const *cellBasis);
 
     //
     // I1 element specialization
@@ -422,9 +438,9 @@ namespace Intrepid2 {
     /** \brief  Create coefficient matrix.
           \param  basis      [in]  - basis type
     */
-    template<typename BasisPtrType>
+    template<typename BasisType>
     inline 
-    static CoeffMatrixDataViewType createCoeffMatrix(BasisPtrType basis);
+    static CoeffMatrixDataViewType createCoeffMatrix(const BasisType* basis);
 
     /** \brief  Clear coefficient matrix
     */
@@ -461,13 +477,13 @@ namespace Intrepid2 {
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties,
              typename ortValueType,    class ...ortProperties,
-             typename BasisPtrType>
+             typename BasisType>
     inline
     static void
     modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                              const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
-                             const BasisPtrType  basis);
+                             const BasisType*  basis);
 
     template<typename ExecutionSpaceType, typename dofCoordsValueType,
              typename dofCoeffsValueType, typename BasisType>

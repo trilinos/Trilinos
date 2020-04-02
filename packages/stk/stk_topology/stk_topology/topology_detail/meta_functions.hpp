@@ -85,13 +85,22 @@ constexpr bool defined_on_spatial_dimension_()
 
 
 //------------------------------------------------------------------------------
+
 template <typename Topology, unsigned FaceOrdinal>
 STK_INLINE_FUNCTION
-constexpr topology::topology_t face_topology_()
+constexpr typename std::enable_if<FaceOrdinal < Topology::num_faces, topology::topology_t>::type
+face_topology_()
 {
-  return (FaceOrdinal < Topology::num_faces) ? Topology::face_topology_vector[FaceOrdinal] : topology::INVALID_TOPOLOGY;
+  return Topology::face_topology_vector[FaceOrdinal];
 }
 
+template <typename Topology, unsigned FaceOrdinal>
+STK_INLINE_FUNCTION
+constexpr typename std::enable_if<FaceOrdinal >= Topology::num_faces, topology::topology_t>::type
+face_topology_()
+{
+  return topology::INVALID_TOPOLOGY;
+}
 
 //------------------------------------------------------------------------------
 template <typename Topology, typename OrdinalOutputFunctor, unsigned EdgeOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
