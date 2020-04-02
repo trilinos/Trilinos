@@ -35,14 +35,12 @@ namespace Tempus {
  *  \renewcommand{\thealgorithm}{}                                          
  *  \caption{Forward Euler with the locations of the application actions indicated}
  *  \begin{algorithmic}[1]                                                    
- *    \State Start with $x_n$, $\Delta t_n$                                
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}   
- *    \State Form $f(x_{n},t_{n})$                                            
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}           
- *    \State Form $y \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$              
- *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_EXPLICIT\_EVAL)}            
- *    \State $x_n \leftarrow y$                                                    
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}      
+ *    \State Start with $x_n$, $\Delta t_n$                                                             
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}                             
+ *    \State Form $f(x_{n},t_{n})$                                                                      
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}                  
+ *    \State Form $x_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$                                      
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}    
  *  \end{algorithmic}                                                        
  *  \f}                                                                           
  */
