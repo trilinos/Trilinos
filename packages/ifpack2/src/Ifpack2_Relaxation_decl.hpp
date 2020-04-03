@@ -762,6 +762,8 @@ private:
 
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_ = 1;
+  //! Number of inner-sweeps for the two-stage Gauss Seidel
+  int NumInnerSweeps_ = 1;
   //! Which relaxation method to use.
   Details::RelaxationType PrecType_ = Ifpack2::Details::JACOBI;
   //! Damping factor
@@ -782,6 +784,8 @@ private:
   bool fixTinyDiagEntries_ = false;
   //! Whether to spend extra effort and all-reduces checking diagonal entries.
   bool checkDiagEntries_ = false;
+  //! Whether to use sparse-triangular solve instead of inner-iterations
+  bool InnerSpTrsv_ = false;
   //! For MTSGS, the cluster size (use point coloring if equal to 1)
   int clusterSize_ = 1;
 
