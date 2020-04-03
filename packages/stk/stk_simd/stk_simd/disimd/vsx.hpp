@@ -114,6 +114,9 @@ class simd<float, simd_abi::vsx> {
   SIMD_ALWAYS_INLINE inline simd(float value)
     :m_value(vec_splats(value))
   {}
+  SIMD_ALWAYS_INLINE inline simd(float a, float b, float c, float d)
+    :m_value((__vector float){a, b, c, d})
+  {}
   SIMD_ALWAYS_INLINE inline
   simd(storage_type const& value) {
     copy_from(value.data(), element_aligned_tag());
@@ -127,6 +130,9 @@ class simd<float, simd_abi::vsx> {
   SIMD_ALWAYS_INLINE inline simd(float const* ptr, Flags flags) {
     copy_from(ptr, flags);
   }
+  SIMD_ALWAYS_INLINE inline simd(float const* ptr, int stride)
+    :simd(ptr[0], ptr[stride], ptr[2*stride], ptr[3*stride])
+  {}
   SIMD_ALWAYS_INLINE inline constexpr simd(__vector float const& value_in)
     :m_value(value_in)
   {}
@@ -247,9 +253,16 @@ class simd<double, simd_abi::vsx> {
   using mask_type = simd_mask<double, abi_type>;
   using storage_type = simd_storage<double, abi_type>;
   SIMD_ALWAYS_INLINE inline simd() = default;
+  SIMD_ALWAYS_INLINE inline simd(simd const&) = default;
+  SIMD_ALWAYS_INLINE inline simd(simd&&) = default;
+  SIMD_ALWAYS_INLINE inline simd& operator=(simd const&) = default;
+  SIMD_ALWAYS_INLINE inline simd& operator=(simd&&) = default;
   SIMD_ALWAYS_INLINE inline static constexpr int size() { return 2; }
   SIMD_ALWAYS_INLINE inline simd(double value)
     :m_value(vec_splats(value))
+  {}
+  SIMD_ALWAYS_INLINE inline simd(double a, double b)
+    :m_value((__vector double){a, b})
   {}
   SIMD_ALWAYS_INLINE inline
   simd(storage_type const& value) {
@@ -270,6 +283,9 @@ class simd<double, simd_abi::vsx> {
   SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags flags) {
     copy_from(ptr, flags);
   }
+  SIMD_ALWAYS_INLINE inline simd(double const* ptr, int stride)
+    :simd(ptr[0], ptr[stride])
+  {}
   SIMD_ALWAYS_INLINE inline constexpr simd(__vector double const& value_in)
     :m_value(value_in)
   {}

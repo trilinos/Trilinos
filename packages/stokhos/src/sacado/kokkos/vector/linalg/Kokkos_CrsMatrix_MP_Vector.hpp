@@ -120,7 +120,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                   Update
 #ifdef KOKKOS_ENABLE_CUDA
                   , typename std::enable_if<
-                      !std::is_same<MatrixDevice,Kokkos::Cuda>::value >::type
+                      !std::is_same<typename MatrixDevice::execution_space,Kokkos::Cuda>::value >::type
 #endif
                   >
 {
@@ -132,7 +132,7 @@ public:
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
   typedef OutputVectorValue scalar_type;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
   typedef KokkosSparse::CrsMatrix< MatrixValue,
@@ -214,7 +214,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                   Update
 #ifdef KOKKOS_ENABLE_CUDA
                   , typename std::enable_if<
-                    !std::is_same<MatrixDevice,Kokkos::Cuda>::value >::type
+                    !std::is_same<typename MatrixDevice::execution_space,Kokkos::Cuda>::value >::type
 #endif
                   >
 {
@@ -224,7 +224,7 @@ public:
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
   typedef OutputVectorValue scalar_type;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
   typedef KokkosSparse::CrsMatrix< MatrixValue,
@@ -319,7 +319,7 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
   typedef KokkosSparse::CrsMatrix< MatrixValue,
@@ -376,7 +376,7 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
   typedef KokkosSparse::CrsMatrix< MatrixValue,

@@ -88,7 +88,7 @@ public:
   typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
 
   typedef KokkosSparse::CrsMatrix< MatrixValue,
                                    MatrixOrdinal,
@@ -485,7 +485,7 @@ public:
   typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
 
   typedef KokkosSparse::CrsMatrix< MatrixValue,
                                    MatrixOrdinal,
@@ -929,7 +929,7 @@ public:
 
   template <int BlockSize>
   struct BlockKernel {
-    typedef MatrixDevice execution_space;
+    typedef typename MatrixDevice::execution_space execution_space;
     typedef typename Kokkos::FlatArrayType<matrix_values_type>::type matrix_array_type;
     typedef typename input_vector_type::array_type input_array_type;
     typedef typename output_vector_type::array_type output_array_type;
@@ -1052,7 +1052,7 @@ public:
   };
 
   struct Kernel {
-    typedef MatrixDevice execution_space;
+    typedef typename MatrixDevice::execution_space execution_space;
     typedef typename Kokkos::FlatArrayType<matrix_values_type>::type matrix_array_type;
     typedef typename input_vector_type::array_type input_array_type;
     typedef typename output_vector_type::array_type output_array_type;
@@ -1189,7 +1189,7 @@ public:
   typedef Kokkos::View< OutputVectorValue**,
                         OutputP... > output_vector_type;
 
-  typedef MatrixDevice execution_space;
+  typedef typename MatrixDevice::execution_space execution_space;
   typedef typename MatrixValue::ordinal_type size_type;
   typedef typename InputVectorValue::value_type input_scalar;
   typedef typename OutputVectorValue::value_type output_scalar;

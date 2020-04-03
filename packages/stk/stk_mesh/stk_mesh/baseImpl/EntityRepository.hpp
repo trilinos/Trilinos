@@ -36,7 +36,7 @@
 #define stk_mesh_baseImpl_EntityRepository_hpp
 
 #include <stddef.h>                     // for size_t
-#include <unordered_map>
+#include <map>                          // for map, map<>::value_compare
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <utility>                      // for pair
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -51,11 +51,9 @@ class EntityRepository {
 public:
 
     typedef std::pair<EntityKey,Entity> EntityKeyEntity;
-    typedef std::unordered_map<EntityKey,Entity,stk::mesh::HashValueForEntityKey> EntityKeyEntityMap;
-    typedef EntityKeyEntityMap::const_iterator const_iterator;
-    typedef EntityKeyEntityMap::iterator iterator;
-    typedef EntityKeyEntityMap::const_iterator const_entity_iterator;
-    typedef EntityKeyEntityMap::iterator entity_iterator;
+    typedef std::vector<EntityKeyEntity> EntityKeyEntityVector;
+    typedef EntityKeyEntityVector::const_iterator const_iterator;
+    typedef EntityKeyEntityVector::iterator iterator;
 
     EntityRepository();
 
@@ -65,10 +63,12 @@ public:
 
     const_entity_iterator begin_rank(EntityRank ent_rank) const
     {
+      clear_cache(ent_rank);
       return m_entities[ent_rank].begin();
     }
     const_entity_iterator end_rank(EntityRank ent_rank) const
     {
+      clear_cache(ent_rank);
       return m_entities[ent_rank].end();
     }
 
@@ -82,17 +82,34 @@ public:
 
     void update_entity_key(EntityKey new_key, EntityKey old_key, Entity entity);
 
-    void destroy_entity(EntityKey key);
+    void destroy_entity(EntityKey key, Entity entity);
 
     void update_num_ranks(unsigned numRanks) {
         m_entities.resize(numRanks);
+        m_create_cache.resize(numRanks);
+        m_update_cache.resize(numRanks);
+        m_destroy_cache.resize(numRanks);
     }
+
+    void clear_all_cache();
+    void clear_cache(EntityRank rank) const;
 
     size_t heap_memory_in_bytes() const;
 
   private:
+    void clear_destroyed_entity_cache(EntityRank rank) const;
+    void clear_updated_entity_cache(EntityRank rank) const;
+    void clear_created_entity_cache(EntityRank rank) const;
+    entity_iterator get_from_cache(const EntityKey& key) const;
+    std::pair<entity_iterator,bool> add_to_cache(const EntityKey& key);
 
-    mutable std::vector<EntityKeyEntityMap> m_entities;
+    mutable std::vector<EntityKeyEntityVector> m_entities;
+
+    mutable std::vector<EntityKeyEntityVector> m_create_cache;
+    mutable std::vector<std::vector<std::pair<EntityKey,EntityKey> > > m_update_cache;
+    mutable std::vector<std::vector<EntityKey> > m_destroy_cache;
+    mutable unsigned m_maxCreateCacheSize;
+    mutable unsigned m_maxUpdateCacheSize;
 
     //disable copy constructor and assignment operator
     EntityRepository(const EntityRepository &);

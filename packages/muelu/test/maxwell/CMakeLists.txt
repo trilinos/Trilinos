@@ -2,6 +2,7 @@
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
+  ${PACKAGE_NAME}_ENABLE_ML
   )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -29,7 +30,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_ENABLE_EPETRA)
+    IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_ENABLE_Epetra)
       TRIBITS_ADD_TEST(
         Maxwell3D
         NAME "Maxwell3D-Tpetra-ML-list"
@@ -59,7 +60,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
+    IF (${PACKAGE_NAME}_ENABLE_ML)
       TRIBITS_ADD_TEST(
         Maxwell3D
         NAME "Maxwell3D-ML"
@@ -72,7 +73,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
-    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Maxwell.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml
+    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Maxwell.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml
     )
 
   IF(HAVE_MUELU_COMPLEX)

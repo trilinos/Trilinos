@@ -58,14 +58,6 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
-#if HAVE_CGNS
-#  if defined(STK_BUILT_IN_SIERRA)
-#    include <cgns/Iocgns_Initializer.h>
-#  else
-#    include <Iocgns_Initializer.h>
-#  endif
-#endif
-
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 #include <Shards_CellTopology.hpp>
@@ -1057,7 +1049,6 @@ private:
 
       /// read with no commit
       void read_metaDataNoCommit( const std::string& in_filename, const std::string &type = "exodus" );
-      void read_metaDataNoCommitCGNSStructured( const std::string& in_filename );
 
       /// create with no commit
       void create_metaDataNoCommit( const std::string& gmesh_spec);
@@ -1108,7 +1099,6 @@ private:
       Teuchos::RCP<stk::io::StkMeshIoBroker>       m_iossMeshData;
       Teuchos::RCP<stk::io::StkMeshIoBroker>       m_iossMeshDataOut;
 
-      std::shared_ptr<Ioss::Region>         m_cgns_structured_region;
 #if !STK_PERCEPT_LITE
       std::shared_ptr<BlockStructuredGrid>  m_block_structured_grid;
 #endif
@@ -1198,9 +1188,6 @@ private:
       bool m_markNone;
     private:
 
-#if HAVE_CGNS
-      std::shared_ptr<Iocgns::Initializer> m_iocgns_init;
-#endif
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 
       void checkState(const std::string& function) {

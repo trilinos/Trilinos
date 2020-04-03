@@ -250,6 +250,8 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       const stk::mesh::EntityRank rank = field_part.get_entity_rank();
       stk::io::get_input_entity_list(io_entity, rank, bulk, entity_list);
       
+      m_field->sync_to_host();
+      m_field->modify_on_host();
       for (size_t i=0; i < entity_list.size(); ++i) {
 	if (bulk.is_valid(entity_list[i])) {
 	  double *fld_data = static_cast<double*>(stk::mesh::field_data(*m_field, entity_list[i]));

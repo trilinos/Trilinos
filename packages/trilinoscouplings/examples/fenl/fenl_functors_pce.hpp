@@ -670,7 +670,7 @@ template< typename ExecutionSpace ,
           class CoeffFunctionType>
 class ElementComputation<
   Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
-  KokkosSparse::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
+  KokkosSparse::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , Kokkos::Device<ExecutionSpace, typename ExecutionSpace::memory_space> , MemoryTraits , SizeType >,
   CoeffFunctionType >
 {
 public:
@@ -682,9 +682,10 @@ public:
   //------------------------------------
 
   typedef ExecutionSpace   execution_space ;
+  typedef Kokkos::Device<execution_space, typename execution_space::memory_space> DeviceType;
   typedef ScalarType   scalar_type ;
 
-  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
@@ -699,7 +700,7 @@ public:
   typedef typename Sacado::mpl::apply<CoeffFunctionType, ensemble_scalar_type>::type scalar_coeff_function_type;
   typedef ElementComputation<
     Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
-    KokkosSparse::CrsMatrix< ensemble_scalar_type , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
+    KokkosSparse::CrsMatrix< ensemble_scalar_type , OrdinalType , DeviceType , MemoryTraits , SizeType >,
     scalar_coeff_function_type > scalar_element_computation_type;
   typedef typename scalar_element_computation_type::sparse_matrix_type scalar_sparse_matrix_type ;
   typedef typename scalar_sparse_matrix_type::values_type scalar_matrix_values_type ;
