@@ -324,6 +324,7 @@ namespace MueLu {
       verbMap["test"]    = Test;
 
       MUELU_SET_VAR_2LIST(paramList, paramList, "verbosity", std::string, verbosityLevel);
+      verbosityLevel = lowerCase(verbosityLevel);
 
       TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
                                  "Invalid verbosity level: \"" << verbosityLevel << "\"");
@@ -1934,33 +1935,34 @@ namespace MueLu {
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string, MsgType> verbMap;
       //for developers
-      verbMap["Errors"]         = Errors;
-      verbMap["Warnings0"]      = Warnings0;
-      verbMap["Warnings00"]     = Warnings00;
-      verbMap["Warnings1"]      = Warnings1;
-      verbMap["PerfWarnings"]   = PerfWarnings;
-      verbMap["Runtime0"]       = Runtime0;
-      verbMap["Runtime1"]       = Runtime1;
-      verbMap["RuntimeTimings"] = RuntimeTimings;
-      verbMap["NoTimeReport"]   = NoTimeReport;
-      verbMap["Parameters0"]    = Parameters0;
-      verbMap["Parameters1"]    = Parameters1;
-      verbMap["Statistics0"]    = Statistics0;
-      verbMap["Statistics1"]    = Statistics1;
-      verbMap["Timings0"]       = Timings0;
-      verbMap["Timings1"]       = Timings1;
-      verbMap["TimingsByLevel"] = TimingsByLevel;
-      verbMap["External"]       = External;
-      verbMap["Debug"]          = Debug;
-      verbMap["Test"]           = Test;
+      verbMap["errors"]         = Errors;
+      verbMap["warnings0"]      = Warnings0;
+      verbMap["warnings00"]     = Warnings00;
+      verbMap["warnings1"]      = Warnings1;
+      verbMap["perfWarnings"]   = PerfWarnings;
+      verbMap["runtime0"]       = Runtime0;
+      verbMap["runtime1"]       = Runtime1;
+      verbMap["runtimeTimings"] = RuntimeTimings;
+      verbMap["noTimeReport"]   = NoTimeReport;
+      verbMap["parameters0"]    = Parameters0;
+      verbMap["parameters1"]    = Parameters1;
+      verbMap["statistics0"]    = Statistics0;
+      verbMap["statistics1"]    = Statistics1;
+      verbMap["timings0"]       = Timings0;
+      verbMap["timings1"]       = Timings1;
+      verbMap["timingsByLevel"] = TimingsByLevel;
+      verbMap["external"]       = External;
+      verbMap["debug"]          = Debug;
+      verbMap["test"]           = Test;
       //for users and developers
-      verbMap["None"]           = None;
-      verbMap["Low"]            = Low;
-      verbMap["Medium"]         = Medium;
-      verbMap["High"]           = High;
-      verbMap["Extreme"]        = Extreme;
+      verbMap["none"]           = None;
+      verbMap["low"]            = Low;
+      verbMap["medium"]         = Medium;
+      verbMap["high"]           = High;
+      verbMap["extreme"]        = Extreme;
       if (hieraList.isParameter("verbosity")) {
         std::string vl = hieraList.get<std::string>("verbosity");
+        vl = lowerCase(vl);
         hieraList.remove("verbosity");
         //TODO Move this to its own class or MueLu::Utils?
         if (verbMap.find(vl) != verbMap.end())
