@@ -92,6 +92,7 @@ private:
   int minit_;      ///< Maximum number of minor (subproblem solve) iterations (default: 10)
   int extlim_;     ///< Maximum number of extrapolation steps for Cauchy point (default: 10)
   int intlim_;     ///< Maximum number of interpolation steps for Cauchy point (default: 10)
+  Real alpha_;     ///< Initial Cauchy point step length (default: 1.0)
   Real interpf_;   ///< Backtracking rate for Cauchy point computation (default: 1e-1)
   Real extrapf_;   ///< Extrapolation rate for Cauchy point computation (default: 1e1)
   Real qtol_;      ///< Relative tolerance for computed decrease in Cauchy point computation (default: 1-8)

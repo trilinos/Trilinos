@@ -74,6 +74,7 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   minit_     = trlist.sublist("Lin-More").get("Maximum Number of Minor Iterations",       10);
   extlim_    = trlist.sublist("Lin-More").get("Maximum Number of Extrapolation Steps",    10);
   intlim_    = trlist.sublist("Lin-More").get("Maximum Number of Interpolation Steps",    10);
+  alpha_     = trlist.sublist("Lin-More").get("Initial Cauchy Point Step Size",           1.0);
   interpf_   = trlist.sublist("Lin-More").get("Cauchy Point Backtracking Rate",           0.1);
   extrapf_   = trlist.sublist("Lin-More").get("Cauchy Point Extrapolation Rate",          10.0);
   qtol_      = trlist.sublist("Lin-More").get("Cauchy Point Decrease Tolerance",          1e-8);
@@ -148,7 +149,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
   const Real zero(0);
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   Real gfnorm(0), gfnormf(0), tol(0), stol(0), snorm(0);
-  Real ftrial(0), pRed(0), rho(1), alpha(1), q(0);
+  Real ftrial(0), pRed(0), rho(1), q(0);
   int flagCG(0), iterCG(0), maxit(0);
   // Initialize trust-region data
   std::vector<std::string> output;
@@ -168,7 +169,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     // Compute Cauchy point (TRON notation: x = x[1])
-    snorm = dcauchy(*state_->stepVec,alpha,q,*state_->iterateVec,
+    snorm = dcauchy(*state_->stepVec,alpha_,q,*state_->iterateVec,
                     state_->gradientVec->dual(),state_->searchSize,
                     *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
     x.plus(*state_->stepVec);                       // Set x = x[0] + alpha*g
