@@ -202,10 +202,16 @@ namespace Tacho {
               const T alpha11 = cjA(A[p*as0+p*as1]);
               local_beta1 /= alpha11;
 
+#if 1
               Kokkos::single(Kokkos::PerTeam(member), [&]() {
                   *beta1 = local_beta1;
                 });
-              //member.team_barrier();
+#else 
+              Kokkos::parallel_for(Kokkos::TeamVectorRange(member,1),[&](const int &dummy) {
+                  *beta1 = local_beta1;
+                });
+#endif
+              member.team_barrier();
             }
 
             Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
@@ -243,10 +249,16 @@ namespace Tacho {
               const T alpha11 = A[p*as0+p*as1];
               local_beta1 /= alpha11;
 
+#if 1
               Kokkos::single(Kokkos::PerTeam(member), [&]() {              
                   *beta1 = local_beta1;
                 });
-              //member.team_barrier();
+#else
+              Kokkos::parallel_for(Kokkos::TeamVectorRange(member,1),[&](const int &dummy) {
+                  *beta1 = local_beta1;
+                });
+#endif
+              member.team_barrier();
             }
 
             Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
