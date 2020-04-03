@@ -196,27 +196,24 @@ namespace Tacho {
             const T *__restrict__ a01   = A+p*as1;
             /**/  T *__restrict__ beta1 = b+p*bs0;
             
-            member.team_barrier();
+
             T local_beta1 = *beta1;
             if (!use_unit_diag) {
               const T alpha11 = cjA(A[p*as0+p*as1]);
               local_beta1 /= alpha11;
-
-#if 1
+              /// before modifying beta1 we need make sure
+              /// that every local_beta1 has the previous beta1 value
+              member.team_barrier();
               Kokkos::single(Kokkos::PerTeam(member), [&]() {
                   *beta1 = local_beta1;
                 });
-#else 
-              Kokkos::parallel_for(Kokkos::TeamVectorRange(member,1),[&](const int &dummy) {
-                  *beta1 = local_beta1;
-                });
-#endif
-              member.team_barrier();
             }
 
             Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
                 b0[i*bs0] -= cjA(a01[i*as0]) * local_beta1;
               });
+            /// make sure the b0 is fully updated
+            member.team_barrier();
           }
         } 
 
@@ -243,27 +240,24 @@ namespace Tacho {
               *__restrict__ beta1 =        b+p*bs0,
               *__restrict__ b2    = iend ? beta1+bs0 : NULL;
             
-            member.team_barrier();
+
             T local_beta1 = *beta1;
             if (!use_unit_diag) {
               const T alpha11 = A[p*as0+p*as1];
               local_beta1 /= alpha11;
-
-#if 1
+              /// before modifying beta1 we need make sure
+              /// that every local_beta1 has the previous beta1 value
+              member.team_barrier();
               Kokkos::single(Kokkos::PerTeam(member), [&]() {              
                   *beta1 = local_beta1;
                 });
-#else
-              Kokkos::parallel_for(Kokkos::TeamVectorRange(member,1),[&](const int &dummy) {
-                  *beta1 = local_beta1;
-                });
-#endif
-              member.team_barrier();
             }
 
             Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
                 b2[i*bs0] -= a21[i*as0] * local_beta1;
               });
+            /// make sure the b2 is fully updated
+            member.team_barrier();
           }
         }
 
