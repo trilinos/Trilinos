@@ -196,7 +196,8 @@ namespace Tacho {
             const T *__restrict__ a01   = A+p*as1;
             /**/  T *__restrict__ beta1 = b+p*bs0;
             
-
+            /// make sure the previous iteration update is done
+            member.team_barrier();
             T local_beta1 = *beta1;
             if (!use_unit_diag) {
               const T alpha11 = cjA(A[p*as0+p*as1]);
@@ -208,12 +209,9 @@ namespace Tacho {
                   *beta1 = local_beta1;
                 });
             }
-
             Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
                 b0[i*bs0] -= cjA(a01[i*as0]) * local_beta1;
               });
-            /// make sure the b0 is fully updated
-            member.team_barrier();
           }
         } 
 
@@ -240,7 +238,8 @@ namespace Tacho {
               *__restrict__ beta1 =        b+p*bs0,
               *__restrict__ b2    = iend ? beta1+bs0 : NULL;
             
-
+            /// make sure that the previous iteration update is done
+            member.team_barrier();
             T local_beta1 = *beta1;
             if (!use_unit_diag) {
               const T alpha11 = A[p*as0+p*as1];
@@ -252,12 +251,9 @@ namespace Tacho {
                   *beta1 = local_beta1;
                 });
             }
-
             Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
                 b2[i*bs0] -= a21[i*as0] * local_beta1;
               });
-            /// make sure the b2 is fully updated
-            member.team_barrier();
           }
         }
 
