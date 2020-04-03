@@ -120,6 +120,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO)
   X_diff_mtgs.update (1, X_wanted, -1);
   double normInf_mt_gs = X_diff_mtgs.normInf ();
 
+
+  // Test two-stage Symmetric Gauss-Seidel (SGS) with three sweeps.
+  ParameterList params_sgs2;
+
+  //params_sgs2.set ("relaxation: type", "Symmetric Gauss-Seidel, second order");
+  //params_sgs2.set ("relaxation: sweeps", 5);
+  params_sgs2.set ("relaxation: type", "Gauss-Seidel, second order");
+  params_sgs2.set ("relaxation: sweeps", 10);
+  params_sgs2.set ("relaxation: inner sweeps", 10);
+  params_sgs2.set ("relaxation: zero starting solution", true);
+
+  Ifpack2::Relaxation<row_matrix_type> prec_sgs2 (A);
+
+  prec_sgs2.setParameters (params_sgs2);
+  TEST_NOTHROW( prec_sgs2.initialize () );
+  TEST_NOTHROW( prec_sgs2.compute () );
+
+  X_seek.putScalar (STS::zero ());
+  prec_sgs2.apply (Y_result, X_seek);
+
+  vec_type X_diff_sgs2(X_seek, Teuchos::Copy);
+  X_diff_sgs2.update (1, X_wanted, -1);
+  double normInf_sgs2 = X_diff_sgs2.normInf ();
+
+
+
+  // Jacobi
   ParameterList params_jacobi;
   params_jacobi.set ("relaxation: type", "Jacobi");
   params_jacobi.set ("relaxation: sweeps", 10);
@@ -140,12 +167,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO)
   int sgs_improve = initial_normInf > normInf_mt_gs;
   int sgs_better_than_jacobi = normInf_mt_gs < normInf_jacobi;
 
+  int sgs2_improve = initial_normInf > normInf_sgs2;
+  int sgs2_better_than_jacobi = normInf_sgs2 < normInf_jacobi;
+
   out << "Initial Norm:" << initial_normInf
       << " MT GS Norm:" << normInf_mt_gs
+      << " SGS-2 Norm:" << normInf_sgs2
       << " Jacobi Norm:" << normInf_jacobi << std::endl;
 
   TEST_EQUALITY( sgs_improve, 1 );
   TEST_EQUALITY( sgs_better_than_jacobi, 1 );
+
+  TEST_EQUALITY( sgs2_improve, 1 );
+  TEST_EQUALITY( sgs2_better_than_jacobi, 1 );
 }
 
 
