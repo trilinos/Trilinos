@@ -186,7 +186,7 @@ namespace MueLu {
     // that the square submatrix that only contains
     // columns corresponding to local rows.
     LO numLocalAggregates = aggregates->GetNumAggregates();
-    Array<LO> localVertex2AggID(aggregates->GetVertex2AggId()->getData(0).view(0, numRows));
+    Array<LO> localVertex2AggId(aggregates->GetVertex2AggId()->getData(0).view(0, numRows));
     RCP<Vector> rowSumVector = MueLu::UtilitiesBase<SC,LO,GO,NO>::GetLumpedMatrixDiagonal(A);
     Kokkos::View<impl_scalar_type**, Kokkos::LayoutLeft, device_type> rowSumView
       = rowSumVector->template getLocalView<device_type>();
@@ -196,8 +196,8 @@ namespace MueLu {
     for(LO aggregationIter = 1; aggregationIter < maxNumIter; ++aggregationIter) {
 
       // Compute the intermediate prolongator
-      BuildIntermediateProlongator(numRows, numDirichletNodes, numLocalAggregates,
-                                   localVertex2AggID(), intermediateP);
+      BuildIntermediateProlongator(coarseLocalA.numRows(), numDirichletNodes, numLocalAggregates,
+                                   localVertex2AggId(), intermediateP);
 
       KokkosSparse::spmv("T", 1.0, intermediateP, rowSumFine, 0.0, rowSumCoarse);
 
@@ -208,14 +208,27 @@ namespace MueLu {
       numLocalAggregates    = 0;
       numNonAggregatedNodes = static_cast<LO>(coarseLocalA.numRows());
       std::vector<LO> localAggStat(numNonAggregatedNodes, READY);
-      localVertex2AggID.resize(numNonAggregatedNodes, -1);
+      localVertex2AggId.resize(numNonAggregatedNodes, -1);
       BuildFurtherAggregates(pL, A, coarseLocalA, kappa, rowSumCoarse,
-                             localAggStat, localVertex2AggID,
+                             localAggStat, localVertex2AggId,
                              numLocalAggregates, numNonAggregatedNodes);
       rowSumFine   = rowSumCoarse;
       rowSumCoarse = row_sum_type("rowSumCoarse", numLocalAggregates);
 
-      *out << "localVertex2AggID: " << localVertex2AggID() << std::endl;
+      *out << "numLocalAggregates: " << numLocalAggregates
+           << ", localVertex2AggId: " << localVertex2AggId() << std::endl;
+
+      // Update the aggregates
+      RCP<LOMultiVector> vertex2AggIdMV = aggregates->GetVertex2AggId();
+      ArrayRCP<LO>       vertex2AggId   = vertex2AggIdMV->getDataNonConst(0);
+      *out << "old vertex2AggId: " << vertex2AggId() << std::endl;
+      for(size_t vertexIdx = 0; vertexIdx < A->getNodeNumRows(); ++vertexIdx) {
+        LO oldAggIdx = vertex2AggId[vertexIdx];
+        if(oldAggIdx != Teuchos::OrdinalTraits<LO>::invalid()) {
+          vertex2AggId[vertexIdx] = localVertex2AggId[oldAggIdx];
+        }
+      }
+      *out << "new vertex2AggId: " << vertex2AggId() << std::endl;
     }
 
     *out << "Setting aggregates on current level" << std::endl;
