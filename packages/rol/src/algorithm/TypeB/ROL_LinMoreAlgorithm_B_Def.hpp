@@ -72,16 +72,17 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   tol2_  = list.sublist("General").sublist("Krylov").get("Relative Tolerance", 1e-2);
   // Algorithm-Specific Parameters
   ROL::ParameterList &lmlist = trlist.sublist("Lin-More");
-  minit_     = lmlist.get("Maximum Number of Minor Iterations",       10);
-  mu0_       = lmlist.get("Sufficient Decrease Parameter",            1e-2);
-  cplim_     = lmlist.sublist("Cauchy Point").get("Maximum Number of Steps",     10);
-  alpha_     = lmlist.sublist("Cauchy Point").get("Initial Step Size",           1.0);
-  normAlpha_ = lmlist.sublist("Cauchy Point").get("Normalize Initial Step Size",false); 
-  interpf_   = lmlist.sublist("Cauchy Point").get("Backtracking Rate",           0.1);
-  extrapf_   = lmlist.sublist("Cauchy Point").get("Extrapolation Rate",          10.0);
-  qtol_      = lmlist.sublist("Cauchy Point").get("Decrease Tolerance",          1e-8);
-  interpfPS_ = lmlist.sublist("Projected Search").get("Backtracking Rate",       0.5);
-  pslim_     = lmlist.sublist("Projected Search").get("Maximum Number of Steps", 20);
+  minit_     = lmlist.get("Maximum Number of Minor Iterations",                        10);
+  mu0_       = lmlist.get("Sufficient Decrease Parameter",                             1e-2);
+  redlim_    = lmlist.sublist("Cauchy Point").get("Maximum Number of Reduction Steps", 10);
+  explim_    = lmlist.sublist("Cauchy Point").get("Maximum Number of Expansion Steps", 10);
+  alpha_     = lmlist.sublist("Cauchy Point").get("Initial Step Size",                 1.0);
+  normAlpha_ = lmlist.sublist("Cauchy Point").get("Normalize Initial Step Size",       false); 
+  interpf_   = lmlist.sublist("Cauchy Point").get("Reduction Rate",                    0.1);
+  extrapf_   = lmlist.sublist("Cauchy Point").get("Expansion Rate",                    10.0);
+  qtol_      = lmlist.sublist("Cauchy Point").get("Decrease Tolerance",                1e-8);
+  interpfPS_ = lmlist.sublist("Projected Search").get("Backtracking Rate",             0.5);
+  pslim_     = lmlist.sublist("Projected Search").get("Maximum Number of Steps",       20);
   // Output Parameters
   verbosity_   = list.sublist("General").get("Output Level",0);
   printHeader_ = verbosity_ > 2;
@@ -364,7 +365,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
         q  = half * s.dot(dwa.dual()) + gs;
-        search = (q > mu0_*gs) && (cnt < cplim_);
+        search = (q > mu0_*gs) && (cnt < redlim_);
       }
       cnt++;
     }
@@ -377,7 +378,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     while (search) {
       alpha *= extrapf_;
       snorm = dgpstep(s,g,x,-alpha);
-      if (snorm <= del && cnt < cplim_) {
+      if (snorm <= del && cnt < explim_) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
         q  = half * s.dot(dwa.dual()) + gs;

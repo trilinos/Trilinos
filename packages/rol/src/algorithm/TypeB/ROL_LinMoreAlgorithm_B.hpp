@@ -91,7 +91,8 @@ private:
   // ALGORITHM SPECIFIC PARAMETERS
   int minit_;      ///< Maximum number of minor (subproblem solve) iterations (default: 10)
   Real mu0_;       ///< Sufficient decrease parameter (default: 1e-2)
-  int cplim_;      ///< Maximum number of Cauchy point steps (default: 10)
+  int  redlim_;    ///< Maximum number of Cauchy point reduction steps (default: 10)
+  int  explim_;    ///< Maximum number of Cauchy point expansion steps (default: 10)
   Real alpha_;     ///< Initial Cauchy point step length (default: 1.0)
   bool normAlpha_; ///< Normalize initial Cauchy point step length (default: false)
   Real interpf_;   ///< Backtracking rate for Cauchy point computation (default: 1e-1)
