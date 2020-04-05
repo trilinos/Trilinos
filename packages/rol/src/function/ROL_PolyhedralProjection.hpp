@@ -500,7 +500,7 @@ private:
     const Real one(1);
     const Real atol(ROL_EPSILON<Real>()), rtol(std::sqrt(ROL_EPSILON<Real>()));
     const Real xnorm(x.norm()), ctol(rtol*std::min(atol,rtol*xnorm));
-    const unsigned maxit(5000);
+    const unsigned maxit(10000);
     Real norm1(0), norm2(0), rnorm(0);
     p_->zero(); q_->zero();
     for (unsigned cnt=0; cnt < maxit; ++cnt) {
