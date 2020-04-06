@@ -55,7 +55,7 @@ DykstraProjection<Real>::DykstraProjection(const Vector<Real>               &xpr
                                            const Vector<Real>               &mul,
                                            const Vector<Real>               &res)
   : PolyhedralProjection<Real>(xprim,xdual,bnd,con,mul,res),
-    DEFAULT_atol_      (ROL_EPSILON<Real>()),
+    DEFAULT_atol_      (std::sqrt(ROL_EPSILON<Real>()*std::sqrt(ROL_EPSILON<Real>()))),
     DEFAULT_rtol_      (std::sqrt(ROL_EPSILON<Real>())),
     DEFAULT_maxit_     (10000),
     DEFAULT_verbosity_ (0),
