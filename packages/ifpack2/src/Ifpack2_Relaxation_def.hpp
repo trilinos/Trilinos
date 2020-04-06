@@ -248,8 +248,8 @@ Relaxation<MatrixType>::getValidParameters () const
     precTypes[3] = "MT Gauss-Seidel";
     precTypes[4] = "MT Symmetric Gauss-Seidel";
     precTypes[5] = "Richardson";
-    precTypes[6] = "Gauss-Seidel, second order";
-    precTypes[7] = "Symmetric Gauss-Seidel, second order";
+    precTypes[6] = "Gauss-Seidel, two stage";
+    precTypes[7] = "Symmetric Gauss-Seidel, two stage";
     Array<Details::RelaxationType> precTypeEnums (8);
     precTypeEnums[0] = Details::JACOBI;
     precTypeEnums[1] = Details::GS;
@@ -2645,9 +2645,9 @@ std::string Relaxation<MatrixType>::description () const
   } else if (PrecType_ == Ifpack2::Details::MTSGS) {
     os << "MT Symmetric Gauss-Seidel";
   } else if (PrecType_ == Ifpack2::Details::GS2) {
-    os << "Gauss-Seidel, second order";
+    os << "Gauss-Seidel, two stage";
   } else if (PrecType_ == Ifpack2::Details::SGS2) {
-    os << "Symmetric Gauss-Seidel, second order";
+    os << "Symmetric Gauss-Seidel, two stage";
   }
   else {
     os << "INVALID";
@@ -2729,9 +2729,9 @@ describe (Teuchos::FancyOStream &out,
       } else if (PrecType_ == Ifpack2::Details::MTSGS) {
         out << "MT Symmetric Gauss-Seidel";
       } else if (PrecType_ == Ifpack2::Details::GS2) {
-        out << "Gauss-Seidel, second order";
+        out << "Gauss-Seidel, two stage";
       } else if (PrecType_ == Ifpack2::Details::SGS2) {
-        out << "Symmetric Gauss-Seidel, second order";
+        out << "Symmetric Gauss-Seidel, two stage";
       } else {
         out << "INVALID";
       }
