@@ -60,13 +60,8 @@
 #include <stdexcept>
 #include <iostream>
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TransientSolver(
-#else
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
-#endif
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, 
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel):
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
@@ -80,13 +75,8 @@ Piro::TransientSolver<Scalar>::TransientSolver(
 #endif
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TransientSolver(
-#else
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
-#endif
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, int numParameters, 
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel) : 
     out(Teuchos::VerboseObjectBase::getDefaultOStream()),
@@ -100,15 +90,9 @@ Piro::TransientSolver<Scalar>::TransientSolver(
 #endif
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_space(int l) const
-#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TransientSolver<Scalar>::get_p_space(int l) const
-#endif
 {
 #ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -123,15 +107,9 @@ Piro::TransientSolver<Scalar>::get_p_space(int l) const
   return model_->get_p_space(l);
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_space(int j) const
-#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TransientSolver<Scalar>::get_g_space(int j) const
-#endif
 {
 #ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -151,15 +129,9 @@ Piro::TransientSolver<Scalar>::get_g_space(int j) const
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNominalValues() const
-#else
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TransientSolver<Scalar>::getNominalValues() const
-#endif
 {
 #ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -172,15 +144,9 @@ Piro::TransientSolver<Scalar>::getNominalValues() const
   return result;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInArgs() const
-#else
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TransientSolver<Scalar>::createInArgs() const
-#endif
 {
 #ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -191,15 +157,9 @@ Piro::TransientSolver<Scalar>::createInArgs() const
   return inArgs;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createOutArgsImpl() const
-#else
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 Piro::TransientSolver<Scalar>::createOutArgsImpl() const
-#endif
 {
 #ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -273,15 +233,9 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
 }
 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::create_DgDp_op_impl(int j, int l) const
-#else
 template <typename Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Piro::TransientSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
-#endif
 {
   TEUCHOS_ASSERT(j != num_g_);
   const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
@@ -289,15 +243,9 @@ Piro::TransientSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
   return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void 
-Piro::TransientSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalConvergedModel(
-#else
 template <typename Scalar>
 void 
 Piro::TransientSolver<Scalar>::evalConvergedModel(
-#endif
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {

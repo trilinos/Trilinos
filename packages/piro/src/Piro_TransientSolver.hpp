@@ -46,33 +46,14 @@
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
-// This "define" turns on the extended template interface in TransientSolver.
-// Is it necessary??
-#if defined(HAVE_PIRO_TEMPUS) 
-#define ALBANY_BUILD
-#endif
-
-#ifdef ALBANY_BUILD
-#include "Kokkos_DefaultNode.hpp"
-#endif
-
 #include <map>
 #include <string>
-
-#include "Tpetra_Map.hpp" 
-using default_lo = Tpetra::Map<>::local_ordinal_type;
-using default_go = Tpetra::Map<>::global_ordinal_type;
 
 namespace Piro {
 
 /** \brief Thyra-based Model Evaluator for Tempus solves using Tempus
  * */
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal = default_lo, typename GlobalOrdinal = default_go,
-          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
-#else
 template <typename Scalar>
-#endif
 class TransientSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
 {
