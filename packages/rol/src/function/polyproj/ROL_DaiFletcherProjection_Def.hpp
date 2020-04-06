@@ -105,7 +105,7 @@ void DaiFletcherProjection<Real>::project(Vector<Real> &x, std::ostream &stream)
     bnd_->project(x);
   }
   else {
-    mul1_  = (-b_-xprim_->dot(x))/cdot_;
+    mul1_  = -residual(x)/cdot_;
     //mul1_  = static_cast<Real>(0);
     dlam1_ = static_cast<Real>(2);
     //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);
@@ -147,10 +147,11 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
   }
   const Real ctol = std::min(atol_,rtol_*std::max(std::abs(r),std::abs(r0)));
   std::ios_base::fmtflags streamFlags(stream.flags());
-  if (verbosity_ > 2) {
+  if (verbosity_ > 1) {
     stream << std::scientific << std::setprecision(6);
+    stream << std::endl;
     stream << " Polyhedral Projection using the Dai-Fletcher Algorithm" << std::endl;
-    stream << "   Bracketing Phase" << std::endl;
+    stream << "  Bracketing Phase" << std::endl;
     stream << "  ";
     stream << std::setw(6)  << std::left << "iter";
     stream << std::setw(15) << std::left << "Lower lam";
@@ -166,6 +167,15 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
     lam += dlam;
     update_primal(*xnew_,x,lam);
     r    = residual(*xnew_);
+    if (verbosity_ > 1) {
+      stream << "  ";
+      stream << std::setw(6)  << std::left << cnt;
+      stream << std::setw(15) << std::left << lam1;
+      stream << std::setw(15) << std::left << r1;
+      stream << std::setw(15) << std::left << lam2;
+      stream << std::setw(15) << std::left << r2;
+      stream << std::endl;
+    }
     while ( r < zero && std::abs(r) > ctol && cnt < maxit_ ) {
       lam1  = lam;
       r1    = r;
@@ -174,7 +184,8 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
       lam  += dlam;
       update_primal(*xnew_,x,lam);
       r     = residual(*xnew_);
-      if (verbosity_ > 2) {
+      cnt++;
+      if (verbosity_ > 1) {
         stream << "  ";
         stream << std::setw(6)  << std::left << cnt;
         stream << std::setw(15) << std::left << lam1;
@@ -183,7 +194,6 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
         stream << std::setw(15) << std::left << r2;
         stream << std::endl;
       }
-      cnt++;
     }
     lam2 = lam;
     r2   = r;
@@ -194,6 +204,15 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
     lam -= dlam;
     update_primal(*xnew_,x,lam);
     r    = residual(*xnew_);
+    if (verbosity_ > 1) {
+      stream << "  ";
+      stream << std::setw(6)  << std::left << cnt;
+      stream << std::setw(15) << std::left << lam1;
+      stream << std::setw(15) << std::left << r1;
+      stream << std::setw(15) << std::left << lam2;
+      stream << std::setw(15) << std::left << r2;
+      stream << std::endl;
+    }
     while ( r > zero && std::abs(r) > ctol && cnt < maxit_ ) {
       lam2  = lam;
       r2    = r;
@@ -202,7 +221,8 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
       lam  -= dlam;
       update_primal(*xnew_,x,lam);
       r     = residual(*xnew_);
-      if (verbosity_ > 2) {
+      cnt++;
+      if (verbosity_ > 1) {
         stream << "  ";
         stream << std::setw(6)  << std::left << cnt;
         stream << std::setw(15) << std::left << lam1;
@@ -211,7 +231,6 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
         stream << std::setw(15) << std::left << r2;
         stream << std::endl;
       }
-      cnt++;
     }
     lam1 = lam;
     r1   = r;
@@ -224,13 +243,14 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
   update_primal(*xnew_,x,lam);
   r     = residual(*xnew_);
   cnt   = 0;
-  if (verbosity_ > 2) {
+  if (verbosity_ > 1) {
     stream << std::endl;
     stream << "  Secant Phase" << std::endl;
     stream << "  ";
     stream << std::setw(6)  << std::left << "iter";
     stream << std::setw(15) << std::left << "res";
     stream << std::setw(15) << std::left << "stepsize";
+    stream << std::setw(15) << std::left << "residual tol";
     stream << std::endl;
   }
   while ( std::abs(r) > ctol && std::abs(dlam) > ltol_ && cnt < maxit_ ) {
@@ -269,16 +289,21 @@ void DaiFletcherProjection<Real>::project_df(Vector<Real> &x, Real &lam, Real &d
         lam  = lam3;
         s    = (lam2-lam1)/(lam2-lam);
       }
-      if (verbosity_ > 2) {
-        stream << "  ";
-        stream << std::setw(6)  << std::left << r;
-        stream << std::setw(15) << std::left << dlam;
-        stream << std::endl;
-      }
-      cnt++;
     }
     update_primal(*xnew_,x,lam);
     r = residual(*xnew_);
+    if (verbosity_ > 1) {
+      stream << "  ";
+      stream << std::setw(6)  << std::left << cnt;
+      stream << std::setw(15) << std::left << r;
+      stream << std::setw(15) << std::left << dlam;
+      stream << std::setw(15) << std::left << ctol;
+      stream << std::endl;
+    }
+    cnt++;
+  }
+  if (verbosity_ > 1) {
+    stream << std::endl;
   }
   // Return projection
   x.set(*xnew_);

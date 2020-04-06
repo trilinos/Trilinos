@@ -186,9 +186,10 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
   Real alpha(1), tmp(0), mu(0), rho(1), dd(0);
   int iter(0), flag(0);
   std::ios_base::fmtflags streamFlags(stream.flags());
-  if (verbosity_ > 2) {
+  if (verbosity_ > 1) {
     stream << std::scientific << std::setprecision(6);
     stream << " Polyhedral Projection using Dual Semismooth Newton" << std::endl;
+    stream << std::endl;
     stream << "  ";
     stream << std::setw(6)  << std::left << "iter";
     stream << std::setw(15) << std::left << "Residual norm";
@@ -238,7 +239,7 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
       update_primal(*xnew_,x,lam);
       rnorm = residual(*res_,*xnew_);
     }
-    if (verbosity_ > 2) {
+    if (verbosity_ > 1) {
       stream << "  ";
       stream << std::setw(6)  << std::left << cnt;
       stream << std::setw(15) << std::left << rnorm;
@@ -250,10 +251,11 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
       stream << std::setw(6)  << std::left << flag;
       stream << std::endl;
     }
-    if (rnorm <= ctol) {
-      break;
-    }
+    if (rnorm <= ctol) break;
     alpha = one;
+  }
+  if (verbosity_ > 1) {
+    stream << std::endl;
   }
   if (rnorm > ctol) {
     //throw Exception::NotImplemented(">>> ROL::PolyhedralProjection::project : Projection failed!");
