@@ -48,7 +48,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_PolyhedralProjection.hpp"
+#include "ROL_PolyhedralProjectionFactory.hpp"
 #include "ROL_NewOptimizationProblem.hpp"
 
 /** \class ROL::Algorithm_G

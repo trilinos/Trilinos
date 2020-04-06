@@ -95,7 +95,8 @@ private:
                    BoundConstraint<Real>       &bnd,
                    Constraint<Real>            &con,
                    Vector<Real>                &pwa,
-                   Vector<Real>                &dwa);
+                   Vector<Real>                &dwa,
+                   std::ostream &outStream = std::cout);
 public:
 
   MoreauYosidaAlgorithm_G(ParameterList &list);

@@ -41,76 +41,70 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_MOREAUYOSIDAALGORITHM_B_H
-#define ROL_MOREAUYOSIDAALGORITHM_B_H
 
-#include "ROL_Algorithm_B.hpp"
-#include "ROL_MoreauYosidaPenalty.hpp"
+#ifndef ROL_DYKSTRAPROJECTION_H
+#define ROL_DYKSTRAPROJECTION_H
 
-/** \class ROL::MoreauYosidaAlgorithm_B
-    \brief Provides an interface to run the Moreau-Yosida algorithm.
-*/
+#include "ROL_PolyhedralProjection.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
 template<typename Real>
-class MoreauYosidaAlgorithm_B : public Algorithm_B<Real> {
+class DykstraProjection : public PolyhedralProjection<Real> {
 private:
-  Real compViolation_;
-  Real gnorm_;
-  Real maxPenalty_;
-  Real tau_;
-  bool print_;
-  bool updatePenalty_;
-  bool updateMultiplier_;
+  int dim_;
+  Ptr<Vector<Real>> tmp_, p_, q_, y_, z_;
+  Real b_, cdot_;
 
-  ROL::ParameterList list_;
-  int subproblemIter_;
+  Real DEFAULT_atol_, DEFAULT_rtol_;
+  int DEFAULT_maxit_, DEFAULT_verbosity_;
 
-  std::string stepname_;
+  Real atol_, rtol_;
+  int maxit_, verbosity_;
 
-  int verbosity_;
-  bool printHeader_;
+  using PolyhedralProjection<Real>::bnd_;
+  using PolyhedralProjection<Real>::con_;
+  using PolyhedralProjection<Real>::xprim_;
+  using PolyhedralProjection<Real>::xdual_;
+  using PolyhedralProjection<Real>::mul_;
+  using PolyhedralProjection<Real>::res_;
 
-  bool hasEcon_;
-
-  using Algorithm_B<Real>::status_;
-  using Algorithm_B<Real>::state_;
-  using Algorithm_B<Real>::proj_;
-
-  void initialize(Vector<Real>              &x,
-                  const Vector<Real>        &g,
-                  MoreauYosidaPenalty<Real> &myobj,
-                  BoundConstraint<Real>     &bnd,
-                  Vector<Real>              &pwa,
-                  std::ostream &outStream = std::cout); 
-
-  void updateState(const Vector<Real> &x,
-                   MoreauYosidaPenalty<Real> &myobj,
-                   BoundConstraint<Real> &bnd,
-                   Vector<Real> &pwa,
-                   std::ostream &outStream = std::cout);
 public:
 
-  MoreauYosidaAlgorithm_B(ParameterList &list);
+  DykstraProjection(const Vector<Real>               &xprim,
+                    const Vector<Real>               &xdual,
+                    const Ptr<BoundConstraint<Real>> &bnd,
+                    const Ptr<Constraint<Real>>      &con,
+                    const Vector<Real>               &mul,
+                    const Vector<Real>               &res);
 
-  using Algorithm_B<Real>::run;
-  std::vector<std::string> run( Vector<Real>          &x,
-                                const Vector<Real>    &g, 
-                                Objective<Real>       &obj,
-                                BoundConstraint<Real> &bnd,
-                                std::ostream          &outStream = std::cout);
+  DykstraProjection(const Vector<Real>               &xprim,
+                    const Vector<Real>               &xdual,
+                    const Ptr<BoundConstraint<Real>> &bnd,
+                    const Ptr<Constraint<Real>>      &con,
+                    const Vector<Real>               &mul,
+                    const Vector<Real>               &res,
+                    ParameterList                    &list);
 
-  std::string printHeader( void ) const override;
+  void project(Vector<Real> &x, std::ostream &stream = std::cout) override;
 
-  std::string printName( void ) const override;
+private:
 
-  std::string print( const bool print_header = false ) const override;
+  Real residual_1d(const Vector<Real> &x) const;
 
-}; // class ROL::MoreauYosidaAlgorithm_B
+  void residual_nd(Vector<Real> &r, const Vector<Real> &y) const;
+
+  void project_bnd(Vector<Real> &x, const Vector<Real> &y) const;
+
+  void project_con(Vector<Real> &x, const Vector<Real> &y) const;
+
+  void project_Dykstra(Vector<Real> &x, std::ostream &stream = std::cout) const;
+
+}; // class DykstraProjection
 
 } // namespace ROL
 
-#include "ROL_MoreauYosidaAlgorithm_B_Def.hpp"
+#include "ROL_DykstraProjection_Def.hpp"
 
 #endif

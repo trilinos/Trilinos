@@ -48,7 +48,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_PolyhedralProjection.hpp"
+#include "ROL_PolyhedralProjectionFactory.hpp"
 #include "ROL_NewOptimizationProblem.hpp"
 
 /** \class ROL::Algorithm_B
@@ -89,7 +89,8 @@ protected:
 
   void initialize(const Vector<Real> &x, const Vector<Real> &g); 
 
-  Real optimalityCriterion(const Vector<Real> &x, const Vector<Real> &g, Vector<Real> &primal) const;
+  Real optimalityCriterion(const Vector<Real> &x, const Vector<Real> &g, Vector<Real> &primal,
+                           std::ostream &outStream = std::cout) const;
 
 public:
 

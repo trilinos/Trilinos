@@ -76,13 +76,13 @@ void GradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
                                            std::ostream &outStream) {
   const Real one(1);
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
   }
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
-  proj_->project(x);
+  proj_->project(x,outStream);
   obj.update(x,true,state_->iter);    
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
@@ -90,7 +90,7 @@ void GradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec);
+  proj_->project(*state_->stepVec,outStream);
   Real fnew = state_->value;
   if (!useralpha_) {
     // Evaluate objective at P(x - g)
@@ -140,7 +140,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
     if (!usePrevAlpha_ && !useAdapt_) state_->searchSize = alpha0_;
     state_->iterateVec->set(x);
     state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
-    proj_->project(*state_->iterateVec);
+    proj_->project(*state_->iterateVec,outStream);
     obj.update(*state_->iterateVec,false);
     ftrial = obj.value(*state_->iterateVec,tol);
     ls_nfval = 1;
@@ -170,7 +170,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
         state_->searchSize  = std::min(state_->searchSize,maxAlpha_);
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
-        proj_->project(*state_->iterateVec);
+        proj_->project(*state_->iterateVec,outStream);
         obj.update(*state_->iterateVec,false);
         ftrial = obj.value(*state_->iterateVec,tol);
         ls_nfval++;
@@ -192,7 +192,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
         state_->searchSize = alphaP;
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
-        proj_->project(*state_->iterateVec);
+        proj_->project(*state_->iterateVec,outStream);
         obj.update(*state_->iterateVec,false);
         s->set(*state_->iterateVec);
         s->axpy(-one,x);
@@ -203,7 +203,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
         state_->searchSize *= rhodec_;
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
-        proj_->project(*state_->iterateVec);
+        proj_->project(*state_->iterateVec,outStream);
         obj.update(*state_->iterateVec,false);
         ftrial = obj.value(*state_->iterateVec,tol);
         ls_nfval++;
@@ -242,7 +242,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
 
     // Compute projected gradient norm
     s->set(x); s->axpy(-one,*state_->stepVec);
-    proj_->project(*s);
+    proj_->project(*s,outStream);
     s->axpy(-one,x);
     state_->gnorm = s->norm();
 

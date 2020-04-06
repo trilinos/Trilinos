@@ -46,7 +46,7 @@
 
 */
 
-#include "ROL_PolyhedralProjection.hpp"
+#include "ROL_PolyhedralProjectionFactory.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_StdConstraint.hpp"
@@ -93,7 +93,8 @@ int main(int argc, char *argv[]) {
     RealT err(0);
     ROL::Ptr<con2d<RealT>> con = ROL::makePtr<con2d<RealT>>();
     ROL::StdVector<RealT> r(1);
-    ROL::EPolyProjAlgo ppa = ROL::PPA_DEFAULT;
+    ROL::ParameterList list;
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
 
     ROL::Ptr<std::vector<RealT>> yptr = ROL::makePtr<std::vector<RealT>>(2);
     (*yptr)[0] = static_cast<RealT>(10)*(static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX)-half);
@@ -115,8 +116,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>> u0 = x.clone(); u0->setScalar(static_cast<RealT>(1));
     ROL::Ptr<ROL::Bounds<RealT>> bnd0 = ROL::makePtr<ROL::Bounds<RealT>>(l0,u0);
 
-    ROL::PolyhedralProjection<RealT> pp0(x,x.dual(),*bnd0,*con,r,r.dual(),ppa);
-    pp0.project(Px);
+    ROL::Ptr<ROL::PolyhedralProjection<RealT>> pp0 = ROL::PolyhedralProjectionFactory<RealT>(x,x.dual(),bnd0,con,r,r.dual(),list);
+    pp0->project(Px,*outStream);
  
     ROL::Ptr<std::vector<RealT>> x0ptr = ROL::makePtr<std::vector<RealT>>(2);
     RealT k0 = std::max(zero,std::min(one,half*(one+(*yptr)[0]-(*yptr)[1])));
@@ -167,8 +168,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>> u1 = z.clone(); u1->setScalar(static_cast<RealT>(1));
     ROL::Ptr<ROL::Bounds<RealT>> bnd1 = ROL::makePtr<ROL::Bounds<RealT>>(l1,u1);
 
-    ROL::PolyhedralProjection<RealT> pp1(z,z.dual(),*bnd1,*con,r,r.dual(),ppa);
-    pp1.project(Pz);
+    ROL::Ptr<ROL::PolyhedralProjection<RealT>> pp1 = ROL::PolyhedralProjectionFactory<RealT>(z,z.dual(),bnd1,con,r,r.dual(),list);
+    pp1->project(Pz,*outStream);
 
     ROL::Ptr<std::vector<RealT>> e1ptr = ROL::makePtr<std::vector<RealT>>(2);
     ROL::PrimalScaledStdVector<RealT> e1(e1ptr,dptr);

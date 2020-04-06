@@ -91,7 +91,8 @@ private:
   void updateState(const Vector<Real>           &x,
                    InteriorPointObjective<Real> &ipobj,
                    BoundConstraint<Real>        &bnd,
-                   Vector<Real>                 &pwa);
+                   Vector<Real>                 &pwa,
+                   std::ostream &outStream = std::cout);
 public:
 
   InteriorPointAlgorithm_B(ParameterList &list);

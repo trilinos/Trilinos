@@ -95,6 +95,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/boundconstraint
                     ${DIR}/constraint
                     ${DIR}/nlls
+                    ${DIR}/polyproj
                     ${DIR}/objective
                     ${DIR}/operator
                     ${DIR}/simopt
@@ -106,6 +107,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/boundconstraint/*.hpp
                     ${DIR}/constraint/*.hpp
                     ${DIR}/nlls/*.hpp
+                    ${DIR}/polyproj/*.hpp
                     ${DIR}/objective/*.hpp
                     ${DIR}/operator/*.hpp
                     ${DIR}/simopt/*.hpp

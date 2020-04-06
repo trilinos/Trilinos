@@ -143,7 +143,8 @@ private:
   //    x     -- The anchor vector x (unchanged)
   //    alpha -- The step size (unchanged)
   Real dgpstep(Vector<Real> &s, const Vector<Real> &w,
-         const Vector<Real> &x, const Real alpha) const;
+         const Vector<Real> &x, const Real alpha,
+         std::ostream &outStream = std::cout) const;
 
   // Compute Cauchy point, i.e., the minimizer of q(P(x - alpha*g)-x)
   // subject to the trust region constraint ||P(x - alpha*g)-x|| <= del

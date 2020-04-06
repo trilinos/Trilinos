@@ -56,7 +56,6 @@ NewOptimizationProblem<Real>::NewOptimizationProblem(const Ptr<Objective<Real>> 
     hasEquality_(false), hasInequality_(false),
     hasLinearEquality_(false), hasLinearInequality_(false),
     cnt_econ_(0), cnt_icon_(0), cnt_linear_econ_(0), cnt_linear_icon_(0),
-    ppa_(PPA_DEFAULT),
     obj_(nullPtr), xprim_(nullPtr), xdual_(nullPtr), bnd_(nullPtr),
     con_(nullPtr), mul_(nullPtr), res_(nullPtr), proj_(nullPtr),
     problemType_(TYPE_U) {
@@ -248,9 +247,9 @@ void NewOptimizationProblem<Real>::removeLinearConstraint(std::string name) {
 }
 
 template<typename Real>
-void NewOptimizationProblem<Real>::setProjectionAlgorithm(EPolyProjAlgo ppa) {
+void NewOptimizationProblem<Real>::setProjectionAlgorithm(ParameterList &list) {
   if (!isFinalized_) {
-    ppa_ = ppa;
+    ppa_list_ = list;
   }
   else {
     throw Exception::NotImplemented(">>> ROL::NewOptimizationProblem: Cannot set polyhedral projection algorithm after problem is finalized!");
@@ -380,8 +379,8 @@ void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToSt
         con_         = nullPtr;
         mul_         = nullPtr;
         res_         = nullPtr;
-        proj_        = makePtr<PolyhedralProjection<Real>>(*xprim_,*xdual_,bnd_,
-                         cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual(),ppa_);
+        proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
+                         cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual(),ppa_list_);
       }
       else {
         NewConstraintManager<Real> cm(con,lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
@@ -396,9 +395,9 @@ void NewOptimizationProblem<Real>::finalize(bool lumpConstraints, bool printToSt
         mul_         = cm.getMultiplier();
         res_         = cm.getResidual();
         bnd_         = cm.getBoundConstraint();
-        proj_        = makePtr<PolyhedralProjection<Real>>(*xprim_,*xdual_,bnd_,
+        proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
                         cm.getLinearConstraint(),*cm.getLinearMultiplier(),
-                        *cm.getLinearResidual(),ppa_);
+                        *cm.getLinearResidual(),ppa_list_);
       }
     }
     isFinalized_ = true;

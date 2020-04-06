@@ -41,76 +41,66 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_MOREAUYOSIDAALGORITHM_B_H
-#define ROL_MOREAUYOSIDAALGORITHM_B_H
 
-#include "ROL_Algorithm_B.hpp"
-#include "ROL_MoreauYosidaPenalty.hpp"
+#ifndef ROL_DAIFLETCHERPROJECTION_H
+#define ROL_DAIFLETCHERPROJECTION_H
 
-/** \class ROL::MoreauYosidaAlgorithm_B
-    \brief Provides an interface to run the Moreau-Yosida algorithm.
-*/
+#include "ROL_PolyhedralProjection.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
 template<typename Real>
-class MoreauYosidaAlgorithm_B : public Algorithm_B<Real> {
+class DaiFletcherProjection : public PolyhedralProjection<Real> {
 private:
-  Real compViolation_;
-  Real gnorm_;
-  Real maxPenalty_;
-  Real tau_;
-  bool print_;
-  bool updatePenalty_;
-  bool updateMultiplier_;
+  int dim_;
+  Ptr<Vector<Real>> xnew_;
+  Real b_, mul1_, dlam1_, cdot_;
 
-  ROL::ParameterList list_;
-  int subproblemIter_;
+  Real DEFAULT_atol_, DEFAULT_rtol_, DEFAULT_ltol_;
+  int DEFAULT_maxit_, DEFAULT_verbosity_;
 
-  std::string stepname_;
+  Real atol_, rtol_, ltol_;
+  int maxit_, verbosity_;
 
-  int verbosity_;
-  bool printHeader_;
+  using PolyhedralProjection<Real>::bnd_;
+  using PolyhedralProjection<Real>::con_;
+  using PolyhedralProjection<Real>::xprim_;
+  using PolyhedralProjection<Real>::xdual_;
+  using PolyhedralProjection<Real>::mul_;
+  using PolyhedralProjection<Real>::res_;
 
-  bool hasEcon_;
-
-  using Algorithm_B<Real>::status_;
-  using Algorithm_B<Real>::state_;
-  using Algorithm_B<Real>::proj_;
-
-  void initialize(Vector<Real>              &x,
-                  const Vector<Real>        &g,
-                  MoreauYosidaPenalty<Real> &myobj,
-                  BoundConstraint<Real>     &bnd,
-                  Vector<Real>              &pwa,
-                  std::ostream &outStream = std::cout); 
-
-  void updateState(const Vector<Real> &x,
-                   MoreauYosidaPenalty<Real> &myobj,
-                   BoundConstraint<Real> &bnd,
-                   Vector<Real> &pwa,
-                   std::ostream &outStream = std::cout);
 public:
 
-  MoreauYosidaAlgorithm_B(ParameterList &list);
+  DaiFletcherProjection(const Vector<Real>               &xprim,
+                        const Vector<Real>               &xdual,
+                        const Ptr<BoundConstraint<Real>> &bnd,
+                        const Ptr<Constraint<Real>>      &con,
+                        const Vector<Real>               &mul,
+                        const Vector<Real>               &res);
 
-  using Algorithm_B<Real>::run;
-  std::vector<std::string> run( Vector<Real>          &x,
-                                const Vector<Real>    &g, 
-                                Objective<Real>       &obj,
-                                BoundConstraint<Real> &bnd,
-                                std::ostream          &outStream = std::cout);
+  DaiFletcherProjection(const Vector<Real>               &xprim,
+                        const Vector<Real>               &xdual,
+                        const Ptr<BoundConstraint<Real>> &bnd,
+                        const Ptr<Constraint<Real>>      &con,
+                        const Vector<Real>               &mul,
+                        const Vector<Real>               &res,
+                        ParameterList                    &list);
 
-  std::string printHeader( void ) const override;
+  void project(Vector<Real> &x, std::ostream &stream = std::cout) override;
 
-  std::string printName( void ) const override;
+private:
 
-  std::string print( const bool print_header = false ) const override;
+  Real residual(const Vector<Real> &x) const;
 
-}; // class ROL::MoreauYosidaAlgorithm_B
+  void update_primal(Vector<Real> &y, const Vector<Real> &x, const Real lam) const;
+
+  void project_df(Vector<Real> &x, Real &lam, Real &dlam, std::ostream &stream = std::cout) const;
+
+}; // class DaiFletcherProjection
 
 } // namespace ROL
 
-#include "ROL_MoreauYosidaAlgorithm_B_Def.hpp"
+#include "ROL_DaiFletcherProjection_Def.hpp"
 
 #endif

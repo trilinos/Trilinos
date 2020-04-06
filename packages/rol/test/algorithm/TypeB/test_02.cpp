@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Constraint<RealT>> con;
     ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
     ROL::Ptr<ROL::LinMoreAlgorithm_B<RealT>> algo;
+    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> prob;
     std::vector<RealT> data;
     RealT e1, e2, e3, e4, e5, err;
 
@@ -98,8 +99,14 @@ int main(int argc, char *argv[]) {
     mul = HS41.getEqualityMultiplier();
     bnd = HS41.getBoundConstraint();
 
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
+    prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,sol);
+    prob->addBoundConstraint(bnd);
+    prob->addLinearConstraint("con1",con,mul);
+    prob->setProjectionAlgorithm(list);
+    prob->finalize(false,true,*outStream);
     algo = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
-    algo->run(*sol,*obj,*bnd,*con,*mul,*outStream);
+    algo->run(*prob,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
@@ -120,8 +127,14 @@ int main(int argc, char *argv[]) {
     mul = HS53.getEqualityMultiplier();
     bnd = HS53.getBoundConstraint();
 
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
+    prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,sol);
+    prob->addBoundConstraint(bnd);
+    prob->addLinearConstraint("con1",con,mul);
+    prob->setProjectionAlgorithm(list);
+    prob->finalize(false,true,*outStream);
     algo = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
-    algo->run(*sol,*obj,*bnd,*con,*mul,*outStream);
+    algo->run(*prob,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
@@ -140,6 +153,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Constraint<RealT>>      icon;
     ROL::Ptr<ROL::BoundConstraint<RealT>> ibnd;
 
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
     *outStream << std::endl << "Hock and Schittkowski Problem #21" << std::endl << std::endl;
     ROL::ZOO::getHS21<RealT> HS21;
     obj  = HS21.getObjective();
@@ -149,8 +163,13 @@ int main(int argc, char *argv[]) {
     imul = HS21.getInequalityMultiplier();
     ibnd = HS21.getSlackBoundConstraint();
 
+    prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,sol);
+    prob->addBoundConstraint(bnd);
+    prob->addLinearConstraint("con1",icon,imul,ibnd);
+    prob->setProjectionAlgorithm(list);
+    prob->finalize(false,true,*outStream);
     algo = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
-    algo->run(*sol,*obj,*bnd,*icon,*imul,*ibnd,*outStream);
+    algo->run(*prob,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1] << std::endl;

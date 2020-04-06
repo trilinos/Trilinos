@@ -83,11 +83,12 @@ void Algorithm_B<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g)
 template<typename Real>
 Real Algorithm_B<Real>::optimalityCriterion(const Vector<Real> &x,
                                             const Vector<Real> &g,
-                                            Vector<Real> &primal) const {
+                                            Vector<Real> &primal,
+                                            std::ostream &outStream) const {
   const Real one(1);
   primal.set(x);
   primal.axpy(-one,g.dual());
-  proj_->project(primal);
+  proj_->project(primal,outStream);
   primal.axpy(-one,x);
   return primal.norm();
 }
@@ -146,7 +147,8 @@ std::vector<std::string> Algorithm_B<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &linear_emul,
                                                  const Vector<Real>    &linear_eres,
                                                  std::ostream          &outStream ) {
-  proj_ = makePtr<PolyhedralProjection<Real>>(x,g,bnd,linear_econ,linear_emul,linear_eres);
+  ParameterList list;
+  proj_ = PolyhedralProjectionFactory<Real>(x,g,makePtrFromRef(bnd),makePtrFromRef(linear_econ),linear_emul,linear_eres,list);
   return run(x,g,obj,bnd,outStream);
 }
 

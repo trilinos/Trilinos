@@ -107,7 +107,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   const Real one(1);
   hasEcon_ = true;
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
     hasEcon_ = false;
   }
   // Initialize data
@@ -115,7 +115,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   nhess_ = 0;
   // Update approximate gradient and approximate objective function.
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
-  proj_->project(x);
+  proj_->project(x,outStream);
   state_->iterateVec->set(x);
   obj.update(x,true,state_->iter);
   state_->value = obj.value(x,ftol); 
@@ -124,7 +124,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec);
+  proj_->project(*state_->stepVec,outStream);
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
@@ -321,9 +321,10 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
 
 template<typename Real>
 Real LinMoreAlgorithm_B<Real>::dgpstep(Vector<Real> &s, const Vector<Real> &w,
-                                 const Vector<Real> &x, const Real alpha) const {
+                                 const Vector<Real> &x, const Real alpha,
+                                 std::ostream &outStream) const {
   s.set(x); s.axpy(alpha,w);
-  proj_->project(s);
+  proj_->project(s,outStream);
   s.axpy(static_cast<Real>(-1),x);
   return s.norm();
 }
@@ -344,7 +345,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
   bool interp = false;
   Real gs(0), snorm(0);
   // Compute s = P(x[0] - alpha g[0])
-  snorm = dgpstep(s,g,x,-alpha);
+  snorm = dgpstep(s,g,x,-alpha,outStream);
   if (snorm > del) {
     interp = true;
   }
@@ -360,7 +361,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     bool search = true;
     while (search) {
       alpha *= interpf_;
-      snorm = dgpstep(s,g,x,-alpha);
+      snorm = dgpstep(s,g,x,-alpha,outStream);
       if (snorm <= del) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
@@ -377,7 +378,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
     dwa1.set(dwa);
     while (search) {
       alpha *= extrapf_;
-      snorm = dgpstep(s,g,x,-alpha);
+      snorm = dgpstep(s,g,x,-alpha,outStream);
       if (snorm <= del && cnt < explim_) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
@@ -400,7 +401,7 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
       cnt++;
     }
     alpha = alphas;
-    snorm = dgpstep(s,g,x,-alpha);
+    snorm = dgpstep(s,g,x,-alpha,outStream);
   }
   if (verbosity_ > 1) {
     outStream << "  Cauchy point"                         << std::endl;
@@ -429,7 +430,7 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
   bool search = true;
   while (search) {
     nsteps++;
-    snorm = dgpstep(pwa,s,x,beta);
+    snorm = dgpstep(pwa,s,x,beta,outStream);
     model.hessVec(dwa,pwa,x,tol); nhess_++;
     gs = pwa.dot(g);
     q  = half * pwa.dot(dwa.dual()) + gs;

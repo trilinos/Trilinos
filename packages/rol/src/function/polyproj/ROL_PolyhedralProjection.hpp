@@ -41,76 +41,47 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_MOREAUYOSIDAALGORITHM_B_H
-#define ROL_MOREAUYOSIDAALGORITHM_B_H
 
-#include "ROL_Algorithm_B.hpp"
-#include "ROL_MoreauYosidaPenalty.hpp"
+#ifndef ROL_POLYHEDRALPROJECTION_H
+#define ROL_POLYHEDRALPROJECTION_H
 
-/** \class ROL::MoreauYosidaAlgorithm_B
-    \brief Provides an interface to run the Moreau-Yosida algorithm.
-*/
+#include "ROL_BoundConstraint.hpp"
+#include "ROL_Constraint.hpp"
+#include <iostream>
 
 namespace ROL {
 
 template<typename Real>
-class MoreauYosidaAlgorithm_B : public Algorithm_B<Real> {
-private:
-  Real compViolation_;
-  Real gnorm_;
-  Real maxPenalty_;
-  Real tau_;
-  bool print_;
-  bool updatePenalty_;
-  bool updateMultiplier_;
+class PolyhedralProjection {
+protected:
+  const Ptr<BoundConstraint<Real>> bnd_;
+  const Ptr<Constraint<Real>>      con_;
+  Ptr<Vector<Real>> xprim_, xdual_, mul_, res_;
 
-  ROL::ParameterList list_;
-  int subproblemIter_;
-
-  std::string stepname_;
-
-  int verbosity_;
-  bool printHeader_;
-
-  bool hasEcon_;
-
-  using Algorithm_B<Real>::status_;
-  using Algorithm_B<Real>::state_;
-  using Algorithm_B<Real>::proj_;
-
-  void initialize(Vector<Real>              &x,
-                  const Vector<Real>        &g,
-                  MoreauYosidaPenalty<Real> &myobj,
-                  BoundConstraint<Real>     &bnd,
-                  Vector<Real>              &pwa,
-                  std::ostream &outStream = std::cout); 
-
-  void updateState(const Vector<Real> &x,
-                   MoreauYosidaPenalty<Real> &myobj,
-                   BoundConstraint<Real> &bnd,
-                   Vector<Real> &pwa,
-                   std::ostream &outStream = std::cout);
 public:
+  virtual ~PolyhedralProjection() {}
 
-  MoreauYosidaAlgorithm_B(ParameterList &list);
+  PolyhedralProjection(const Ptr<BoundConstraint<Real>> &bnd);
 
-  using Algorithm_B<Real>::run;
-  std::vector<std::string> run( Vector<Real>          &x,
-                                const Vector<Real>    &g, 
-                                Objective<Real>       &obj,
-                                BoundConstraint<Real> &bnd,
-                                std::ostream          &outStream = std::cout);
+  PolyhedralProjection(const Vector<Real>               &xprim,
+                       const Vector<Real>               &xdual,
+                       const Ptr<BoundConstraint<Real>> &bnd,
+                       const Ptr<Constraint<Real>>      &con,
+                       const Vector<Real>               &mul,
+                       const Vector<Real>               &res);
 
-  std::string printHeader( void ) const override;
+  virtual void project(Vector<Real> &x, std::ostream &stream = std::cout);
 
-  std::string printName( void ) const override;
+  const Ptr<Constraint<Real>> getLinearConstraint(void) const;
 
-  std::string print( const bool print_header = false ) const override;
+  const Ptr<Vector<Real>> getMultiplier(void) const;
 
-}; // class ROL::MoreauYosidaAlgorithm_B
+  const Ptr<Vector<Real>> getResidual(void) const;
+
+}; // class PolyhedralProjection
 
 } // namespace ROL
 
-#include "ROL_MoreauYosidaAlgorithm_B_Def.hpp"
+#include "ROL_PolyhedralProjection_Def.hpp"
 
 #endif

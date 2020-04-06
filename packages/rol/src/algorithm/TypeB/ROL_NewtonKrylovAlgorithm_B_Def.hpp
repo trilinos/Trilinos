@@ -118,20 +118,20 @@ void NewtonKrylovAlgorithm_B<Real>::initialize(Vector<Real>          &x,
                                                std::ostream &outStream) {
   const Real one(1);
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
   }
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
-  proj_->project(x);
+  proj_->project(x,outStream);
   state_->iterateVec->set(x);
   obj.update(x,true,state_->iter);    
   state_->value = obj.value(x,ftol); state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec);
+  proj_->project(*state_->stepVec,outStream);
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
@@ -180,7 +180,7 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
     if (!usePrevAlpha_) state_->searchSize = alpha0_;
     x.set(*state_->iterateVec);
     x.axpy(-state_->searchSize,*s);
-    proj_->project(x);
+    proj_->project(x,outStream);
     obj.update(x,false);
     ftrial = obj.value(x,tol); ls_nfval_ = 1;
     state_->stepVec->set(x);
@@ -199,7 +199,7 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
       state_->searchSize *= rhodec_;
       x.set(*state_->iterateVec);
       x.axpy(-state_->searchSize,*s);
-      proj_->project(x);
+      proj_->project(x,outStream);
       obj.update(x,false);
       ftrial = obj.value(x,tol); ls_nfval_++;
       state_->stepVec->set(x);
@@ -233,7 +233,7 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
 
     // Compute projected gradient norm
     s->set(x); s->axpy(-one,*gp);
-    proj_->project(*s);
+    proj_->project(*s,outStream);
     s->axpy(-one,x);
     state_->gnorm = s->norm();
 

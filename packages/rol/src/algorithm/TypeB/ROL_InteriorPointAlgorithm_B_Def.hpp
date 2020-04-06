@@ -92,10 +92,10 @@ void InteriorPointAlgorithm_B<Real>::initialize(Vector<Real>                 &x,
                                                 std::ostream                 &outStream) {
   hasPolyProj_ = true;
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
     hasPolyProj_ = false;
   }
-  proj_->project(x);
+  proj_->project(x,outStream);
   bnd.projectInterior(x);
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);
@@ -110,7 +110,8 @@ template<typename Real>
 void InteriorPointAlgorithm_B<Real>::updateState(const Vector<Real>           &x,
                                                  InteriorPointObjective<Real> &ipobj,
                                                  BoundConstraint<Real>        &bnd,
-                                                 Vector<Real>                 &pwa) {
+                                                 Vector<Real>                 &pwa,
+                                                 std::ostream                 &outStream) {
   const Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   // Update objective and constraint
@@ -122,7 +123,7 @@ void InteriorPointAlgorithm_B<Real>::updateState(const Vector<Real>           &x
   //state_->gnorm = state_->gradientVec->norm();
   pwa.set(x);
   pwa.axpy(-one,state_->gradientVec->dual());
-  proj_->project(pwa);
+  proj_->project(pwa,outStream);
   pwa.axpy(-one,x);
   state_->gnorm = pwa.norm();
   // Update state
@@ -186,7 +187,7 @@ std::vector<std::string> InteriorPointAlgorithm_B<Real>::run( Vector<Real>      
     }
 
     // Update state
-    updateState(x,ipobj,bnd,*pwa);
+    updateState(x,ipobj,bnd,*pwa,outStream);
 
     // Update Output
     output.push_back(print(printHeader_));

@@ -50,7 +50,7 @@
 #include "ROL_HS53.hpp"
 #include "ROL_HS55.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_PolyhedralProjection.hpp"
+#include "ROL_PolyhedralProjectionFactory.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Constraint<RealT>> con;
     ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
     ROL::Ptr<ROL::PolyhedralProjection<RealT>> proj;
+    ROL::ParameterList list;
     std::vector<RealT> data;
 
     *outStream << std::endl << "Hock and Schittkowski Problem #41" << std::endl << std::endl;
@@ -97,8 +98,9 @@ int main(int argc, char *argv[]) {
     u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
     c   = mul->dual().clone();
 
-    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(*sol,sol->dual(),*bnd,*con,*lam,*c);
-    proj->project(*x);
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
+    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
+    proj->project(*x,*outStream);
 
     con->value(*c,*x,tol);
     cnorm = c->norm();
@@ -133,8 +135,9 @@ int main(int argc, char *argv[]) {
     u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
     c   = mul->dual().clone();
 
-    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(*sol,sol->dual(),*bnd,*con,*lam,*c);
-    proj->project(*x);
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dykstra");
+    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
+    proj->project(*x,*outStream);
 
     con->value(*c,*x,tol);
     cnorm = c->norm();
@@ -178,8 +181,9 @@ int main(int argc, char *argv[]) {
     u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
     c   = mul->dual().clone();
 
-    proj = ROL::makePtr<ROL::PolyhedralProjection<RealT>>(*sol,sol->dual(),*bnd,*con,*lam,*c);
-    proj->project(*x);
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Newton");
+    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
+    proj->project(*x,*outStream);
 
     con->value(*c,*x,tol);
     cnorm = c->norm();

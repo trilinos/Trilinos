@@ -93,7 +93,7 @@ void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>              &x,
                                                std::ostream              &outStream) {
   hasEcon_ = true;
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
     hasEcon_ = false;
   }
   // Initialize data
@@ -101,7 +101,7 @@ void MoreauYosidaAlgorithm_B<Real>::initialize(Vector<Real>              &x,
   // Initialize the algorithm state
   state_->nfval = 0;
   state_->ngrad = 0;
-  updateState(x,myobj,bnd,pwa);
+  updateState(x,myobj,bnd,pwa,outStream);
 }
 
 
@@ -109,7 +109,8 @@ template<typename Real>
 void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real> &x,
                                                 MoreauYosidaPenalty<Real> &myobj,
                                                 BoundConstraint<Real> &bnd,
-                                                Vector<Real> &pwa) {
+                                                Vector<Real> &pwa,
+                                                std::ostream &outStream) {
   const Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   // Update objective and constraint.
@@ -120,7 +121,7 @@ void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real> &x,
   //gnorm_ = state_->gradientVec->norm();
   pwa.set(x);
   pwa.axpy(-one,myobj.getGradient()->dual());
-  proj_->project(pwa);
+  proj_->project(pwa,outStream);
   pwa.axpy(-one,x);
   gnorm_ = pwa.norm();
   // Compute constraint violation
@@ -172,7 +173,7 @@ std::vector<std::string> MoreauYosidaAlgorithm_B<Real>::run( Vector<Real>       
     state_->iter++;
 
     // Update state
-    updateState(x,myobj,bnd,*pwa);
+    updateState(x,myobj,bnd,*pwa,outStream);
 
     // Update multipliers
     if (updatePenalty_) {

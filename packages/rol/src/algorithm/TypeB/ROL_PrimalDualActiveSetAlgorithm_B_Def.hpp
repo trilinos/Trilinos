@@ -90,7 +90,7 @@ void PrimalDualActiveSetAlgorithm_B<Real>::initialize(Vector<Real>          &x,
                                                       std::ostream &outStream) {
   // Initialize projection operator
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
     hasPoly_ = false;
   }
   // Create Krylov solver
@@ -112,14 +112,14 @@ void PrimalDualActiveSetAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   Algorithm_B<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
-  proj_->project(x);
+  proj_->project(x,outStream);
   state_->iterateVec->set(x);
   obj.update(x,true,state_->iter);    
   state_->value = obj.value(x,ftol); state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec);
+  proj_->project(*state_->stepVec,outStream);
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
@@ -286,7 +286,7 @@ std::vector<std::string> PrimalDualActiveSetAlgorithm_B<Real>::run( Vector<Real>
     }
     obj.gradient(*state_->gradientVec,x,tol); state_->ngrad++;
     xtmp->set(x); xtmp->axpy(-one,state_->gradientVec->dual());
-    proj_->project(*xtmp);
+    proj_->project(*xtmp,outStream);
     xtmp->axpy(-one,x);
     state_->gnorm = xtmp->norm();
     if ( secant_ != nullPtr ) {

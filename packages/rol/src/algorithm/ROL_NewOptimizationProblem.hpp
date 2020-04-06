@@ -52,7 +52,7 @@
 #include "ROL_NewConstraintManager.hpp"
 #include "ROL_SlacklessObjective.hpp"
 #include "ROL_ReduceLinearConstraint.hpp"
-#include "ROL_PolyhedralProjection.hpp"
+#include "ROL_PolyhedralProjectionFactory.hpp"
 
 namespace ROL {
 
@@ -77,7 +77,7 @@ private:
   std::unordered_map<std::string,ConstraintData<Real>> INPUT_con_;
   std::unordered_map<std::string,ConstraintData<Real>> INPUT_linear_con_;
 
-  EPolyProjAlgo ppa_;
+  ParameterList ppa_list_;
 
   Ptr<Objective<Real>>            obj_;
   Ptr<Vector<Real>>               xprim_;
@@ -196,7 +196,7 @@ public:
 
       @param[in] ppa  polyhedral projection algorithm
   */
-  void setProjectionAlgorithm(EPolyProjAlgo ppa);
+  void setProjectionAlgorithm(ParameterList &list);
 
   /***************************************************************************/
   /*** Accessor methods ******************************************************/

@@ -97,17 +97,17 @@ void MoreauYosidaAlgorithm_G<Real>::initialize(Vector<Real>                &x,
                                                std::ostream                &outStream) {
   hasPolyProj_ = true;
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
     hasPolyProj_ = false;
   }
-  proj_->project(x);
+  proj_->project(x,outStream);
   // Initialize data
   Algorithm_G<Real>::initialize(x,g,l,c);
   // Initialize the algorithm state
   state_->nfval = 0;
   state_->ngrad = 0;
   state_->ncval = 0;
-  updateState(x,l,myobj,bnd,con,pwa,dwa);
+  updateState(x,l,myobj,bnd,con,pwa,dwa,outStream);
 }
 
 
@@ -118,7 +118,8 @@ void MoreauYosidaAlgorithm_G<Real>::updateState(const Vector<Real>          &x,
                                                 BoundConstraint<Real>       &bnd,
                                                 Constraint<Real>            &con,
                                                 Vector<Real>                &pwa,
-                                                Vector<Real>                &dwa) {
+                                                Vector<Real>                &dwa,
+                                                std::ostream                &outStream) {
   const Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   // Update objective and constraint
@@ -133,7 +134,7 @@ void MoreauYosidaAlgorithm_G<Real>::updateState(const Vector<Real>          &x,
   //gnorm_ = state_->gradientVec->norm();
   pwa.set(x);
   pwa.axpy(-one,state_->gradientVec->dual());
-  proj_->project(pwa);
+  proj_->project(pwa,outStream);
   pwa.axpy(-one,x);
   gnorm_ = pwa.norm();
   // Compute constraint violation

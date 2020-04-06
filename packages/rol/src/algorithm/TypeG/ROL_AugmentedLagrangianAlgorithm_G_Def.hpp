@@ -106,10 +106,10 @@ void AugmentedLagrangianAlgorithm_G<Real>::initialize( Vector<Real>             
                                                        std::ostream                       &outStream ) {
   hasPolyProj_ = true;
   if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(bnd);
+    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
     hasPolyProj_ = false;
   }
-  proj_->project(x);
+  proj_->project(x,outStream);
 
   const Real one(1), TOL(1.e-2);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
@@ -155,7 +155,7 @@ void AugmentedLagrangianAlgorithm_G<Real>::initialize( Vector<Real>             
 
   // Compute gradient of the lagrangian
   x.axpy(-one,state_->gradientVec->dual());
-  proj_->project(x);
+  proj_->project(x,outStream);
   x.axpy(-one/std::min(fscale_,cscale_),*state_->iterateVec);
   state_->gnorm = x.norm();
   x.set(*state_->iterateVec);
@@ -238,7 +238,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_G<Real>::run( Vector<Real>
       state_->gradientVec->scale(state_->searchSize);
     }
     x.axpy(-one/std::min(fscale_,cscale_),state_->gradientVec->dual());
-    proj_->project(x);
+    proj_->project(x,outStream);
     x.axpy(-one,*state_->iterateVec);
     state_->gnorm = x.norm();
     x.set(*state_->iterateVec);
