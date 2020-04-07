@@ -82,40 +82,20 @@
 #include <stdexcept>
 #include <iostream>
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TempusSolver() :
-#else
-template <typename Scalar>
-Piro::TempusSolver<Scalar>::TempusSolver() :
-#endif
-  out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  isInitialized(false),
-  abort_on_fail_at_min_dt_(false)
-{
-#ifdef DEBUT_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-}
-
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TempusSolver(
-#else
 template <typename Scalar>
 Piro::TempusSolver<Scalar>::TempusSolver(
-#endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     bool computeSensitivities,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver):
+  TransientSolver<Scalar>(in_model), 
   computeSensitivities_(computeSensitivities),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false),
   piroObserver_(piroObserver),
   supports_x_dotdot_(false)
 {
-#ifdef DEBUT_OUTPUT
+#ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
@@ -132,17 +112,12 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     initialize(appParams, in_model);
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::initialize(
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::initialize(
-#endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model)
 {
-#ifdef DEBUT_OUTPUT
+#ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   using Teuchos::ParameterList;
@@ -240,19 +215,11 @@ void Piro::TempusSolver<Scalar>::initialize(
 
 #ifdef HAVE_PIRO_IFPACK2
     typedef Thyra::PreconditionerFactoryBase<double> Base;
-#ifdef ALBANY_BUILD
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, LocalOrdinal, GlobalOrdinal, Node> > Impl;
-#else
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
-#endif
     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
 #ifdef HAVE_PIRO_MUELU
-#ifdef ALBANY_BUILD
-    Stratimikos::enableMueLu<LocalOrdinal, GlobalOrdinal, Node>(linearSolverBuilder);
-#else
     Stratimikos::enableMueLu(linearSolverBuilder);
-#endif
 #endif
 
     linearSolverBuilder.setParameterList(sublist(tempusPL, "Stratimikos", true));
@@ -289,11 +256,7 @@ void Piro::TempusSolver<Scalar>::initialize(
       }
       else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-#ifdef ALBANY_BUILD
-        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
-#else
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-#endif
         sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),false));
       }
     }
@@ -309,12 +272,8 @@ void Piro::TempusSolver<Scalar>::initialize(
       }
       else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-#ifdef ALBANY_BUILD
-        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
-#else
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-#endif
-        sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),true));
+          sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),true));
       }
     }
     // C.2) Create the Thyra-wrapped ModelEvaluator
@@ -348,13 +307,8 @@ void Piro::TempusSolver<Scalar>::initialize(
   isInitialized = true;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TempusSolver(
-#else
 template <typename Scalar>
 Piro::TempusSolver<Scalar>::TempusSolver(
-#endif
     const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
@@ -362,6 +316,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     Scalar finalTime,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
+  TransientSolver<Scalar>(underlyingModel, icModel), 
   fwdStateIntegrator(stateIntegrator),
   fwdStateStepper(stateStepper),
   fwdTimeStepSolver(timeStepSolver),
@@ -376,7 +331,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   solnVerbLevel(verbosityLevel),
   isInitialized(true)
 {
-#ifdef DEBUT_OUTPUT
+#ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   if (fwdStateStepper->getModel() != underlyingModel) {
@@ -384,13 +339,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TempusSolver(
-#else
 template <typename Scalar>
 Piro::TempusSolver<Scalar>::TempusSolver(
-#endif
     const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
@@ -399,6 +349,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     Scalar finalTime,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
+  TransientSolver<Scalar>(underlyingModel, icModel), 
   fwdStateIntegrator(stateIntegrator),
   fwdStateStepper(stateStepper),
   fwdTimeStepSolver(timeStepSolver),
@@ -413,7 +364,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   solnVerbLevel(verbosityLevel),
   isInitialized(true)
 {
-#ifdef DEBUT_OUTPUT
+#ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   //IKT, 12/5/16: the following exception check is needed until setInitialCondition method
@@ -429,189 +380,12 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_space(int l) const
-#else
-template<typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::TempusSolver<Scalar>::get_p_space(int l) const
-#endif
-{
-#ifdef DEBUT_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      l >= num_p || l < 0,
-      Teuchos::Exceptions::InvalidParameter,
-      "\n Error in Piro::TempusSolver::get_p_map():  " <<
-      "Invalid parameter index l = " <<
-      l << "\n");
-
-  return model->get_p_space(l);
-}
-
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_space(int j) const
-#else
-template<typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::TempusSolver<Scalar>::get_g_space(int j) const
-#endif
-{
-#ifdef DEBUT_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      j > num_g || j < 0,
-      Teuchos::Exceptions::InvalidParameter,
-      "\n Error in Piro::TempusSolver::get_g_map():  " <<
-      "Invalid response index j = " <<
-      j << "\n");
-
-  if (j < num_g) {
-    return model->get_g_space(j);
-  } else {
-    // j == num_g
-    return model->get_x_space();
-  }
-}
-
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNominalValues() const
-#else
-template<typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::TempusSolver<Scalar>::getNominalValues() const
-#endif
-{
-#ifdef DEBUT_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model->getNominalValues();
-  for (int l = 0; l < num_p; ++l) {
-    result.set_p(l, modelNominalValues.get_p(l));
-  }
-  return result;
-}
-
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInArgs() const
-#else
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::TempusSolver<Scalar>::createInArgs() const
-#endif
-{
-#ifdef DEBUT_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
-  inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(num_p);
-  return inArgs;
-}
-
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createOutArgsImpl() const
-#else
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-Piro::TempusSolver<Scalar>::createOutArgsImpl() const
-#endif
-{
-#ifdef DEBUT_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
-  outArgs.setModelEvalDescription(this->description());
-
-  // One additional response slot for the solution vector
-  outArgs.set_Np_Ng(num_p, num_g + 1);
-
-  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
-
-  if (num_p > 0) {
-    // Only one parameter supported
-    const int l = 0;
-
-    if (Teuchos::nonnull(initialConditionModel)) {
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs =
-        initialConditionModel->createOutArgs();
-      const Thyra::ModelEvaluatorBase::DerivativeSupport init_dxdp_support =
-        initCondOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, initCondOutArgs.Ng() - 1, l);
-      if (!init_dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-        // Ok to return early since only one parameter supported
-        return outArgs;
-      }
-    }
-
-    // Computing the DxDp sensitivity for a transient problem currently requires the evaluation of
-    // the mutilivector-based, Jacobian-oriented DfDp derivatives of the underlying transient model.
-    const Thyra::ModelEvaluatorBase::DerivativeSupport model_dfdp_support =
-      modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
-    if (!model_dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-      // Ok to return early since only one parameter supported
-      return outArgs;
-    }
-
-    // Solution sensitivity
-    outArgs.setSupports(
-        Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
-        num_g,
-        l,
-        Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-
-    if (num_g > 0) {
-      // Only one response supported
-      const int j = 0;
-
-      const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdx_support =
-        modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
-      if (!model_dgdx_support.none()) {
-        const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdp_support =
-          modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-        // Response sensitivity
-        Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
-        if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-          dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-        }
-        if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
-          dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
-        }
-        outArgs.setSupports(
-            Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
-            j,
-            l,
-            dgdp_support);
-      }
-    }
-  }
-
-  return outArgs;
-}
-
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelImpl(
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::evalModelImpl(
-#endif
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
-#ifdef DEBUT_OUTPUT
+#ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   using Teuchos::RCP;
@@ -806,31 +580,10 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::create_DgDp_op_impl(int j, int l) const
-#else
-template <typename Scalar>
-Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Piro::TempusSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
-#endif
-{
-  TEUCHOS_ASSERT(j != num_g);
-  const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
-    Teuchos::tuple(Thyra::zero<Scalar>(this->get_g_space(j), this->get_p_space(l)));
-  return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
-}
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Teuchos::ParameterList>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidTempusParameters() const
-#else
 template <typename Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 Piro::TempusSolver<Scalar>::getValidTempusParameters() const
-#endif
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
     Teuchos::rcp(new Teuchos::ParameterList("ValidTempusSolverParams"));
@@ -856,38 +609,23 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
   return validPL;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-#endif
 addStepperFactory(const std::string & stepperName,const Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > & factory)
 {
   stepperFactories[stepperName] = factory;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-#endif
 addStepControlFactory(const std::string & stepControlName,
                       const Teuchos::RCP<Piro::TempusStepControlFactory<Scalar>> & step_control_strategy)
 {
   stepControlFactories[stepControlName] = step_control_strategy;
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-#endif
 setStartTime(const Scalar start_time)
 {
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator->getTimeStepControl();
@@ -895,13 +633,8 @@ setStartTime(const Scalar start_time)
   tsc->setInitTime(start_time); 
 } 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Scalar Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 Scalar Piro::TempusSolver<Scalar>::
-#endif
 getStartTime() const
 {
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
@@ -909,13 +642,8 @@ getStartTime() const
   return start_time; 
 } 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-#endif
 setFinalTime(const Scalar final_time)
 {
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator->getTimeStepControl();
@@ -924,13 +652,8 @@ setFinalTime(const Scalar final_time)
   tsc->setFinalTime(final_time); 
 } 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Scalar Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 Scalar Piro::TempusSolver<Scalar>::
-#endif
 getFinalTime() const
 {
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
@@ -938,13 +661,8 @@ getFinalTime() const
   return final_time; 
 } 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-#endif
 setInitTimeStep(const Scalar init_time_step)
 {
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator->getTimeStepControl();
@@ -953,26 +671,16 @@ setInitTimeStep(const Scalar init_time_step)
 } 
 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Scalar Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 Scalar Piro::TempusSolver<Scalar>::
-#endif
 getInitTimeStep() const
 {
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
   auto init_time_step = tsc->getInitTimeStep(); 
   return init_time_step; 
 } 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-#endif
 setObserver()
 {
   Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
@@ -994,13 +702,8 @@ setObserver()
   }
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-#endif
 setInitialState(Scalar t0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0,
@@ -1013,26 +716,16 @@ setInitialState(Scalar t0,
  
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
-#endif
 setInitialGuess(Teuchos::RCP< const Thyra::VectorBase<Scalar> > initial_guess) 
 {
    fwdStateStepper->setInitialGuess(initial_guess); 
    fwdStateStepper->initialize();
 }
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar>::
-#endif
 getSolutionHistory() const
 {
   Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > soln_history_const = fwdStateIntegrator->getSolutionHistory();
@@ -1041,46 +734,31 @@ getSolutionHistory() const
 }
   
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > Piro::TempusSolver<Scalar>::
-#endif
 getSolver() const
 {
   return fwdStateStepper->getSolver(); 
 }
 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Tempus::Status Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-#else
 template <typename Scalar>
 Tempus::Status Piro::TempusSolver<Scalar>::
-#endif
 getTempusIntegratorStatus() const
 {
   return fwdStateIntegrator->getStatus(); 
 }
 
 
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-#else
 template <typename Scalar>
 Teuchos::RCP<Piro::TempusSolver<Scalar> >
-#endif
 Piro::tempusSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out(Teuchos::VerboseObjectBase::getDefaultOStream());
-#ifdef DEBUT_OUTPUT
+#ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
    bool computeSensitivities = true;
@@ -1090,10 +768,6 @@ Piro::tempusSolver(
        computeSensitivities = analysisPL.get<bool>("Compute Sensitivities");
    }
 
-#ifdef ALBANY_BUILD
-  return Teuchos::rcp(new TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, computeSensitivities, piroObserver));
-#else
   return Teuchos::rcp(new TempusSolver<Scalar>(appParams, in_model, computeSensitivities, piroObserver));
-#endif
 
 }

@@ -322,11 +322,13 @@ namespace {
     //X_exact->describe(out, Teuchos::VERB_EXTREME);
     //B->describe(out, Teuchos::VERB_EXTREME);
 
-
-    const int numSolvers = 11;
+    // Cholmod now runs on its own 1 rank test. Multiple ranks not yet supported.
+    // Tests in this list will run in Amesos2_SolverFactory_UnitTests_MPI_4.
+    const int numSolvers = 10;
     const char* solverNames[numSolvers] = {"shylubasker", "basker", "klu2", "superlu_dist",
                                            "superlu_mt", "superlu", "pardiso_mkl",
-                                           "lapack", "mumps", "amesos2_cholmod", "umfpack"};
+                                           "lapack", "mumps", "umfpack"};
+
     // The number of solvers that Amesos2::create actually supports,
     // for the current MV and MAT types.  If it doesn't support _any_
     // of the solvers, we consider this test to have failed.

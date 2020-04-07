@@ -111,6 +111,28 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
 
 ENDIF()
 
+##### CHOLMOD Tests #####
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Cholmod)
+IF (${PACKAGE_NAME}_ENABLE_Cholmod)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCholmodFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES cholmod_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Cholmod_Solver_Test
+    ARGS "--xml-params=cholmod_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+ENDIF()
+
 ##### SuperLU_MT Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)

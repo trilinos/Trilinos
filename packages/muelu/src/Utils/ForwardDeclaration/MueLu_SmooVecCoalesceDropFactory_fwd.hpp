@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
-//                  Copyright 2011 Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,38 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_SMOOVECCOALESCEDROPFACTORY_FWD_HPP
+#define MUELU_SMOOVECCOALESCEDROPFACTORY_FWD_HPP
 
-#include "Amesos2_config.h"
 
-#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
 
-#include "Amesos2_Cholmod_decl.hpp"
-#include "Amesos2_Cholmod_def.hpp"
-#include "Amesos2_ExplicitInstantiationHelpers.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
 
-namespace Amesos2 {
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(Cholmod);
-#endif
-
-  #define AMESOS2_CHOLMOD_LOCAL_INSTANT(S,LO,GO,N) \
-    template class Amesos2::Cholmod<Tpetra::CrsMatrix<S, LO, GO, N>, \
-                                    Tpetra::MultiVector<S, LO, GO, N> >;
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(AMESOS2_CHOLMOD_LOCAL_INSTANT)
-
-  #define AMESOS2_KOKKOS_IMPL_SOLVER_NAME Cholmod
-  #include "Amesos2_Kokkos_Impl.hpp"
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class SmooVecCoalesceDropFactory;
 }
 
-#endif // (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#ifndef MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
+#define MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
+#endif
+
+
+
+#endif // MUELU_SMOOVECCOALESCEDROPFACTORY_FWD_HPP
