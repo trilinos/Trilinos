@@ -125,12 +125,11 @@ namespace Tacho {
     size_type_array _buf_factor_ptr;
 
     // workspace meta data for solve
-    ordinal_type _max_nrhs;
-    size_type_array_host _h_buf_solve_ptr;
-    size_type_array _buf_solve_ptr;
+    size_type_array_host _h_buf_solve_ptr, _h_buf_solve_nrhs_ptr;
+    size_type_array _buf_solve_ptr, _buf_solve_nrhs_ptr;
     
     // workspace
-    size_type _max_bufsize_factorize, _max_bufsize_solve;
+    size_type _bufsize_factorize, _bufsize_solve;
     value_type_array _buf;
 
     // common for host and cuda
@@ -284,6 +283,8 @@ namespace Tacho {
     void
     print_stat_solve() {
       printf("  Time\n");
+      printf("             time for extra work e.g.,workspace and permute:  %10.6f s\n", stat.t_extra);
+      printf("             time for solve:                                  %10.6f s\n", stat.t_solve);
       printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
       printf("\n");
       printf("  Memory\n");
@@ -377,8 +378,8 @@ namespace Tacho {
       }
 
       // create workspace for factorization / solve
-      _max_bufsize_factorize = 0;
-      _max_bufsize_solve = 0;
+      _bufsize_factorize = 0;
+      _bufsize_solve = 0;
       _h_buf_factor_ptr = size_type_array_host(do_not_initialize_tag("h_buf_factor_ptr"), _h_buf_level_ptr(_nlevel));
       _h_buf_solve_ptr = size_type_array_host(do_not_initialize_tag("h_buf_solve_ptr"), _h_buf_level_ptr(_nlevel)); 
       {
@@ -393,11 +394,11 @@ namespace Tacho {
             const auto s = _h_supernodes(sid); 
             const ordinal_type n_m = s.n-s.m;
             _h_buf_factor_ptr(k) = n_m*(n_m+max_factor_team_size) + _h_buf_factor_ptr(k-1);
-            _h_buf_solve_ptr(k) = n_m*_max_nrhs + _h_buf_solve_ptr(k-1);
+            _h_buf_solve_ptr(k) = n_m + _h_buf_solve_ptr(k-1);
           }
           const ordinal_type last_idx = lbeg+pend-pbeg;
-          _max_bufsize_factorize = max(_max_bufsize_factorize, _h_buf_factor_ptr(last_idx));
-          _max_bufsize_solve = max(_max_bufsize_solve, _h_buf_solve_ptr(last_idx));
+          _bufsize_factorize = max(_bufsize_factorize, _h_buf_factor_ptr(last_idx));
+          _bufsize_solve = max(_bufsize_solve, _h_buf_solve_ptr(last_idx));
         }
       }
 
@@ -408,6 +409,10 @@ namespace Tacho {
       _buf_solve_ptr = Kokkos::create_mirror_view(exec_memory_space(), _h_buf_solve_ptr);
       Kokkos::deep_copy(_buf_solve_ptr, _h_buf_solve_ptr);
       track_alloc(_buf_solve_ptr.span()*sizeof(size_type));
+
+      _h_buf_solve_nrhs_ptr = size_type_array_host(do_not_initialize_tag("h_buf_solve_nrhs_ptr"), _h_buf_solve_ptr.extent(0));
+      _buf_solve_nrhs_ptr = Kokkos::create_mirror_view(exec_memory_space(), _h_buf_solve_nrhs_ptr);
+      track_alloc(_buf_solve_nrhs_ptr.span()*sizeof(size_type));
 
       ///
       /// cuda library initialize
@@ -502,6 +507,7 @@ namespace Tacho {
     release(const ordinal_type verbose = 0) {
       track_free(_buf_factor_ptr.span()*sizeof(size_type));
       track_free(_buf_solve_ptr.span()*sizeof(size_type));
+      track_free(_buf_solve_nrhs_ptr.span()*sizeof(size_type));
       track_free(_buf.span()*sizeof(value_type));
       track_free(_factorize_mode.span()*sizeof(ordinal_type));
       track_free(_solve_mode.span()*sizeof(ordinal_type));
@@ -518,15 +524,14 @@ namespace Tacho {
       : _m(0), 
         _nsupernodes(0), 
         _nlevel(0), 
-        _max_bufsize_factorize(0), 
-        _max_bufsize_solve(0), 
+        _bufsize_factorize(0), 
+        _bufsize_solve(0), 
         _nstreams(0), 
         stat() {}
     
     LevelSetTools(const LevelSetTools &b) = default;
 
-    LevelSetTools(const NumericTools<value_type,scheduler_type> &N, 
-                  const ordinal_type max_nrhs = 1) 
+    LevelSetTools(const NumericTools<value_type,scheduler_type> &N)
       :
       _m(N.getNumRows()),
       _ap(N.getRowPtr()),
@@ -535,7 +540,6 @@ namespace Tacho {
       _peri(N.getInversePermutationVector()),
       _info(N.getSupernodesInfo()),
       _h_stree_level(N.getSupernodesTreeLevel()),
-      _max_nrhs(max_nrhs),
       _nstreams(0)
     {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -656,7 +660,7 @@ namespace Tacho {
       timer.reset();
       value_type_array work;
       {
-        _buf = value_type_array(do_not_initialize_tag("buf"), _max_bufsize_factorize);
+        _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
         track_alloc(_buf.span()*sizeof(value_type));
 
 #if defined (KOKKOS_ENABLE_CUDA)
@@ -756,9 +760,7 @@ namespace Tacho {
         track_free(work.span()*sizeof(value_type));
 #endif
         track_free(_buf.span()*sizeof(value_type));
-
-        _buf = value_type_array(do_not_initialize_tag("buf"), _max_bufsize_solve);
-        track_alloc(_buf.span()*sizeof(value_type));
+        _buf = value_type_array();
       }
       stat.t_extra += timer.seconds();
 
@@ -858,6 +860,27 @@ namespace Tacho {
 
     inline
     void
+    allocateWorkspaceSolve(const ordinal_type nrhs) {
+      const size_type buf_extent = _bufsize_solve*nrhs;
+      const size_type buf_span = _buf.span();
+      
+      if (buf_extent != buf_span) {
+        _buf = value_type_array(do_not_initialize_tag("buf"), buf_extent);
+        track_free(buf_span*sizeof(value_type));
+        track_alloc(_buf.span()*sizeof(value_type));
+        const Kokkos::RangePolicy<exec_space> policy(0,_buf_solve_ptr.extent(0));
+        const auto buf_solve_nrhs_ptr = _buf_solve_nrhs_ptr;
+        const auto buf_solve_ptr = _buf_solve_ptr;
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
+            buf_solve_nrhs_ptr(i) = nrhs*buf_solve_ptr(i);
+          });
+        Kokkos::deep_copy(_h_buf_solve_nrhs_ptr, _buf_solve_nrhs_ptr);
+      }
+    }
+
+
+    inline
+    void
     solveCholesky(const value_type_matrix &x,   // solution
                   const value_type_matrix &b,   // right hand side
                   const value_type_matrix &t,
@@ -875,15 +898,15 @@ namespace Tacho {
 
       // solve U^{H} (U x) = b 
       const ordinal_type nrhs = x.extent(1);
-      TACHO_TEST_FOR_EXCEPTION(nrhs > _max_nrhs, std::logic_error,
-                               "nrhs is bigger than max nrhs");
-      
       Kokkos::Impl::Timer timer;
 
       stat.n_kernel_launching = 0;
 
-      // 0. permute and copy b -> t
+      // one-time operation when nrhs is changed
       timer.reset();
+      allocateWorkspaceSolve(nrhs);
+
+      // 0. permute and copy b -> t
       applyRowPermutationToDenseMatrix(t, b, _perm);      
       stat.t_extra = timer.seconds();
 
@@ -928,7 +951,7 @@ namespace Tacho {
 
               const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
 
-              const auto solve_buf_ptr = Kokkos::subview(_buf_solve_ptr, range_solve_buf_ptr);
+              const auto solve_buf_ptr = Kokkos::subview(_buf_solve_nrhs_ptr, range_solve_buf_ptr);
               functor.setRange(pbeg, pend);
               functor.setBufferPtr(solve_buf_ptr);
               if (is_host) {
@@ -955,7 +978,7 @@ namespace Tacho {
                                      functor);
                 ++stat.n_kernel_launching;
               }
-              const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_ptr, range_solve_buf_ptr);              
+              const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);              
               solveLowerOnDevice(pbeg, pend, h_buf_solve_ptr, t); 
               Kokkos::fence();
               
@@ -999,7 +1022,7 @@ namespace Tacho {
                 pcnt = pend - pbeg;
               
               const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
-              const auto solve_buf_ptr = Kokkos::subview(_buf_solve_ptr, range_solve_buf_ptr);
+              const auto solve_buf_ptr = Kokkos::subview(_buf_solve_nrhs_ptr, range_solve_buf_ptr);
               functor.setRange(pbeg, pend);
               functor.setBufferPtr(solve_buf_ptr);
               if (is_host) {
@@ -1033,7 +1056,7 @@ namespace Tacho {
                 ++stat.n_kernel_launching;
               }
 
-              const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_ptr, range_solve_buf_ptr);
+              const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
               solveUpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
               Kokkos::fence();
             }
