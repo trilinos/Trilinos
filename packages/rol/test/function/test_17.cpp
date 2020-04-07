@@ -94,7 +94,10 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<con2d<RealT>> con = ROL::makePtr<con2d<RealT>>();
     ROL::StdVector<RealT> r(1);
     ROL::ParameterList list;
+    list.sublist("General").set("Output Level",2);
     list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
+    //list.sublist("General").sublist("Polyhedral Projection").set("Type","Dykstra");
+    //list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
 
     ROL::Ptr<std::vector<RealT>> yptr = ROL::makePtr<std::vector<RealT>>(2);
     (*yptr)[0] = static_cast<RealT>(10)*(static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX)-half);

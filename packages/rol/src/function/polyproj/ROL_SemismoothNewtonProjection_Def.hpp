@@ -187,18 +187,18 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
   int iter(0), flag(0);
   std::ios_base::fmtflags streamFlags(stream.flags());
   if (verbosity_ > 1) {
+    stream << std::endl;
     stream << std::scientific << std::setprecision(6);
     stream << " Polyhedral Projection using Dual Semismooth Newton" << std::endl;
-    stream << std::endl;
     stream << "  ";
     stream << std::setw(6)  << std::left << "iter";
-    stream << std::setw(15) << std::left << "Residual norm";
+    stream << std::setw(15) << std::left << "rnorm";
     stream << std::setw(15) << std::left << "alpha";
     stream << std::setw(15) << std::left << "mu";
     stream << std::setw(15) << std::left << "rho";
-    stream << std::setw(15) << std::left << "Residual tol";
-    stream << std::setw(6)  << std::left << "Krylov iter";
-    stream << std::setw(6)  << std::left << "Krylov flag";
+    stream << std::setw(15) << std::left << "rtol";
+    stream << std::setw(8)  << std::left << "kiter";
+    stream << std::setw(8)  << std::left << "kflag";
     stream << std::endl;
   }
   for (int cnt = 0; cnt < maxit_; ++cnt) {
@@ -247,8 +247,8 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
       stream << std::setw(15) << std::left << mu;
       stream << std::setw(15) << std::left << rho;
       stream << std::setw(15) << std::left << ctol;
-      stream << std::setw(6)  << std::left << iter;
-      stream << std::setw(6)  << std::left << flag;
+      stream << std::setw(8)  << std::left << iter;
+      stream << std::setw(8)  << std::left << flag;
       stream << std::endl;
     }
     if (rnorm <= ctol) break;

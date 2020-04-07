@@ -153,10 +153,10 @@ void DykstraProjection<Real>::project_Dykstra(Vector<Real> &x, std::ostream &str
     stream << " Polyhedral Projection using Dykstra's Algorithm" << std::endl;
     stream << "  ";
     stream << std::setw(6)  << std::left << "iter";
-    stream << std::setw(15) << std::left << "Con Norm";
-    stream << std::setw(15) << std::left << "Bnd Norm";
-    stream << std::setw(15) << std::left << "Error";
-    stream << std::setw(15) << std::left << "Tol";
+    stream << std::setw(15) << std::left << "con norm";
+    stream << std::setw(15) << std::left << "bnd norm";
+    stream << std::setw(15) << std::left << "error";
+    stream << std::setw(15) << std::left << "tol";
     stream << std::endl;
   }
   for (int cnt=0; cnt < maxit_; ++cnt) {

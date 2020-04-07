@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
     ROL::Ptr<ROL::PolyhedralProjection<RealT>> proj;
     ROL::ParameterList list;
+    list.sublist("General").set("Output Level",2);
     std::vector<RealT> data;
 
     *outStream << std::endl << "Hock and Schittkowski Problem #41" << std::endl << std::endl;
@@ -181,7 +182,7 @@ int main(int argc, char *argv[]) {
     u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
     c   = mul->dual().clone();
 
-    list.sublist("General").sublist("Polyhedral Projection").set("Type","Newton");
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
     proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
     proj->project(*x,*outStream);
 
