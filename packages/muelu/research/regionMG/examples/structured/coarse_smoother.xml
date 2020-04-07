@@ -1,0 +1,7 @@
+<ParameterList name="coarse grid smoother">
+  <Parameter name="smoother: type"                     type="string" value="Gauss"/>
+  <Parameter name="smoother: sweeps"                   type="int"    value="10"/>
+  <Parameter name="smoother: damping"                  type="double" value="1.0"/>
+  <Parameter name="smoother: Chebyshev eigRatio"       type="double" value="2.0"/>
+  <Parameter name="smoother: Chebyshev boost factor"   type="double" value="1.1"/>
+</ParameterList>
