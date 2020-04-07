@@ -164,11 +164,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO)
   X_diff_jacobi.update (1, X_wanted, -1);
   double normInf_jacobi = X_diff_jacobi.normInf ();
 
-  int sgs_improve = initial_normInf > normInf_mt_gs;
-  int sgs_better_than_jacobi = normInf_mt_gs < normInf_jacobi;
+  bool sgs_improve = initial_normInf > normInf_mt_gs;
+  bool sgs_better_than_jacobi = normInf_mt_gs < normInf_jacobi;
 
-  int sgs2_improve = initial_normInf > normInf_sgs2;
-  int sgs2_better_than_jacobi = normInf_sgs2 < normInf_jacobi;
+  bool sgs2_improve = initial_normInf > normInf_sgs2;
+  bool sgs2_better_than_jacobi = normInf_sgs2 < normInf_jacobi;
 
   out << "Initial Norm:" << initial_normInf
       << " MT GS Norm:" << normInf_mt_gs
