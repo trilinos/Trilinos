@@ -123,9 +123,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO)
 
   // Test two-stage Gauss-Seidel (SGS) with ten sweeps, and ten inner sweeps.
   ParameterList params_sgs2;
-
-  //params_sgs2.set ("relaxation: type", "Two-stage Symmetric Gauss-Seidel");
-  //params_sgs2.set ("relaxation: sweeps", 5);
   params_sgs2.set ("relaxation: type", "Two-stage Gauss-Seidel");
   params_sgs2.set ("relaxation: sweeps", 10);
   params_sgs2.set ("relaxation: inner sweeps", 10);
