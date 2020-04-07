@@ -92,7 +92,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO)
   A->apply(X_wanted, Y_result);
 
 
-  // Test Symmetric Gauss-Seidel (SGS) with three sweeps.
+  // Test Gauss-Seidel (SGS) with ten sweeps.
   // Start by letting SGS set the starting solution to zero.
   ParameterList params_mt_sgs;
 
@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO)
   double normInf_mt_gs = X_diff_mtgs.normInf ();
 
 
-  // Test two-stage Symmetric Gauss-Seidel (SGS) with three sweeps.
+  // Test two-stage Gauss-Seidel (SGS) with ten sweeps, and ten inner sweeps.
   ParameterList params_sgs2;
 
   //params_sgs2.set ("relaxation: type", "Two-stage Symmetric Gauss-Seidel");
@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO)
 
 
 
-  // Jacobi
+  // Jacobi with ten sweeps
   ParameterList params_jacobi;
   params_jacobi.set ("relaxation: type", "Jacobi");
   params_jacobi.set ("relaxation: sweeps", 10);
