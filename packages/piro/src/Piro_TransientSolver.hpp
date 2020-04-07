@@ -102,14 +102,12 @@ private:
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
 
+  Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
 
   int num_p_;
   int num_g_;
-
-  Teuchos::RCP<Teuchos::FancyOStream> out;
-  Teuchos::EVerbosityLevel solnVerbLevel;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
 
 
 };
