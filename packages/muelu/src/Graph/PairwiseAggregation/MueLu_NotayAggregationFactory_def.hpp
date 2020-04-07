@@ -142,7 +142,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(aggregateTargetSize != 2 && aggregateTargetSize != 4 && aggregateTargetSize != 8,
 			       Exceptions::RuntimeError,
 			       "NotayAggregationFactory::Build(): aggregateTargetSize needs to be a power of two");
-    const int maxNumIter = 2;
+    const int maxNumIter = 3;
 
 
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
@@ -187,11 +187,6 @@ namespace MueLu {
     // columns corresponding to local rows.
     LO numLocalAggregates = aggregates->GetNumAggregates();
     Array<LO> localVertex2AggId(aggregates->GetVertex2AggId()->getData(0).view(0, numRows));
-    RCP<Vector> rowSumVector = MueLu::UtilitiesBase<SC,LO,GO,NO>::GetLumpedMatrixDiagonal(A);
-    Kokkos::View<impl_scalar_type**, Kokkos::LayoutLeft, device_type> rowSumView
-      = rowSumVector->template getLocalView<device_type>();
-    row_sum_type rowSumFine = Kokkos::subview(rowSumView, Kokkos::ALL (), 0);
-    row_sum_type rowSumCoarse("rowSumCoarse", numLocalAggregates);
     BuildOnRankLocalMatrix(A->getLocalMatrix(), coarseLocalA);
     for(LO aggregationIter = 1; aggregationIter < maxNumIter; ++aggregationIter) {
 
@@ -199,7 +194,24 @@ namespace MueLu {
       BuildIntermediateProlongator(coarseLocalA.numRows(), numDirichletNodes, numLocalAggregates,
                                    localVertex2AggId(), intermediateP);
 
-      KokkosSparse::spmv("T", 1.0, intermediateP, rowSumFine, 0.0, rowSumCoarse);
+      row_sum_type rowSum("rowSum", numLocalAggregates);
+      typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
+      typename local_matrix_type::row_map_type::HostMirror row_map_h
+        = Kokkos::create_mirror_view(coarseLocalA.graph.row_map);
+      Kokkos::deep_copy(row_map_h, coarseLocalA.graph.row_map);
+      typename local_matrix_type::values_type::HostMirror values_h
+        = Kokkos::create_mirror_view(coarseLocalA.values);
+      Kokkos::deep_copy(values_h, coarseLocalA.values);
+      for(LO rowIdx = 0; rowIdx < static_cast<LO>(coarseLocalA.numRows()); ++rowIdx) {
+        impl_scalar_type sum = Kokkos::ArithTraits<impl_scalar_type>::zero();
+        for(LO entryIdx = static_cast<LO>(row_map_h(rowIdx));
+            entryIdx < static_cast<LO>(row_map_h(rowIdx + 1));
+            ++entryIdx) {
+          sum += values_h(entryIdx);
+        }
+        rowSum_h(rowIdx) = sum;
+      }
+      Kokkos::deep_copy(rowSum, rowSum_h);
 
       // Compute the coarse local matrix and coarse row sum
       BuildCoarseLocalMatrix(intermediateP, coarseLocalA);
@@ -209,11 +221,9 @@ namespace MueLu {
       numNonAggregatedNodes = static_cast<LO>(coarseLocalA.numRows());
       std::vector<LO> localAggStat(numNonAggregatedNodes, READY);
       localVertex2AggId.resize(numNonAggregatedNodes, -1);
-      BuildFurtherAggregates(pL, A, coarseLocalA, kappa, rowSumCoarse,
+      BuildFurtherAggregates(pL, A, coarseLocalA, kappa, rowSum,
                              localAggStat, localVertex2AggId,
                              numLocalAggregates, numNonAggregatedNodes);
-      rowSumFine   = rowSumCoarse;
-      rowSumCoarse = row_sum_type("rowSumCoarse", numLocalAggregates);
 
       *out << "numLocalAggregates: " << numLocalAggregates
            << ", localVertex2AggId: " << localVertex2AggId() << std::endl;
@@ -235,7 +245,10 @@ namespace MueLu {
 
     // DO stuff
     Set(currentLevel, "Aggregates", aggregates);
+
+    *out << "Printing aggregates statistics" << std::endl;
     GetOStream(Statistics0) << aggregates->description() << std::endl;
+    *out << "Exiting pairwise aggregation factory" << std::endl;
   }
 
 
@@ -451,9 +464,7 @@ namespace MueLu {
     // is not currently provided in kokkos-kernels so here
     // is an ugly way to get that done...
     const LO numRows = static_cast<LO>(coarseA.numRows());
-    typename local_matrix_type::values_type diagA("diag of coarse A", numRows);
-    typename local_matrix_type::values_type::HostMirror diagA_h = Kokkos::create_mirror_view(diagA);
-    Kokkos::deep_copy(diagA_h, diagA);
+    typename local_matrix_type::values_type::HostMirror diagA_h("diagA host", numRows);
     typename local_matrix_type::row_map_type::HostMirror row_map_h
       = Kokkos::create_mirror_view(coarseA.graph.row_map);
     Kokkos::deep_copy(row_map_h, coarseA.graph.row_map);
@@ -539,7 +550,7 @@ namespace MueLu {
       }
     } // end loop over matrix rows
 
-  }
+  } // BuildFurtherAggregates
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -703,9 +714,13 @@ namespace MueLu {
 
     local_matrix_type AP;
 
-    *out << printLocalMatrix("coarseA", coarseA);
+    // *out << printLocalMatrix("coarseA", coarseA);
+
+    *out << "About to compute \"AP\""  << std::endl;
 
     localSpGEMM(coarseA, intermediateP, "AP", AP);
+
+    *out << "Computed AP" << std::endl;
 
     // Note 03/11/20, lbv: does kh need to destroy and recreate the spgemm handle
     // I am not sure but doing it for safety in case it stashes data from the previous
@@ -771,14 +786,14 @@ namespace MueLu {
                                      intermediateP.nnz(),
                                      valuesPt, rowPtrPt, colIndPt);
 
-    *out << printLocalMatrix("intermediatePt", intermediatePt);
+    // *out << printLocalMatrix("intermediatePt", intermediatePt);
     *out << "computed Pt" << std::endl;
 
 
     // Create views for coarseA matrix
     localSpGEMM(intermediatePt, AP, "coarseA", coarseA);
 
-    *out << printLocalMatrix("coarseA", coarseA);
+    // *out << printLocalMatrix("coarseA", coarseA);
     *out << "created Ac" << std::endl;
 
   } // BuildCoarseLocalMatrix

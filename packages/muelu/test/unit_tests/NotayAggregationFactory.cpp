@@ -305,7 +305,7 @@ namespace MueLuTests {
     // Do a 2D Star2D Matrix with up/down as a "weak connection"
     Teuchos::ParameterList mp;
     mp.set("matrixType","Star2D");
-    const int nx = 5;
+    const int nx = 9;
     mp.set("nx",(GO)nx);
     mp.set("ny",(GO)nx*comm->getSize());
     mp.set("a",2.2);
@@ -331,8 +331,11 @@ namespace MueLuTests {
     currentLevel.Request("Aggregates", NAF.get());
     currentLevel.Request(*NAF);
     NAF->Build(currentLevel);
+    out << "Pairwise aggregation factory is done" << std::endl;
     RCP<Aggregates> aggregates = currentLevel.Get<RCP<Aggregates> >("Aggregates", NAF.get());
+    out << "Recovered aggregates from muelu level" << std::endl;
     currentLevel.Release("Aggregates", NAF.get());
+    std::cout << "Testing pairwise aggregates" << std::endl;
 
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
     Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
