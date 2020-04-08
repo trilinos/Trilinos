@@ -141,7 +141,7 @@ void compute_field_error(
   stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> * xferField,
   stk::mesh::Field<double, stk::mesh::Cartesian> * errorField)
 {
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulkdata);
+  const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
 
   const unsigned field_size = field->max_size(stk::topology::NODE_RANK);
   const unsigned nDim = meta.spatial_dimension();

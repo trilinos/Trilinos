@@ -109,9 +109,6 @@ enum class FaceCreationBehavior;
 namespace stk {
 namespace mesh {
 
-typedef std::unordered_map<EntityKey,Entity,HashValueForEntityKey>::const_iterator const_entity_iterator;
-typedef std::unordered_map<EntityKey,Entity,HashValueForEntityKey>::iterator entity_iterator;
-
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);

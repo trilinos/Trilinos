@@ -656,7 +656,7 @@ struct throw_no_matrix_support_exception {
 #endif
 
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
-    if(solverName == "amesos2_cholmod")
+    if(solverName == "amesos2_cholmod" || solverName == "cholmod")
       return handle_solver_matrix_and_type_support<Cholmod,Matrix,Vector>::apply(A, X, B);
 #endif
 

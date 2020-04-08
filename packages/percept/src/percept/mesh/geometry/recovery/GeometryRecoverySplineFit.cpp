@@ -28,7 +28,7 @@
     stk::mesh::Part& GeometryRecoverySplineFit::create_clone_part(const std::string& clone_name, const stk::mesh::EntityRank rank_to_clone, bool make_part_io_part )
     {
       stk::mesh::Part& clone = m_eMesh.get_fem_meta_data()->declare_part(clone_name, rank_to_clone);
-      if (make_part_io_part && clone.attribute<Ioss::GroupingEntity>() == NULL) {
+      if (make_part_io_part && !stk::io::is_part_io_part(clone)) {
         stk::io::put_io_part_attribute(clone);
       }
       return clone;

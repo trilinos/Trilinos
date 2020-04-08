@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -80,7 +80,7 @@ namespace {
         }
       }
       int ierr =
-          ex_put_coordinate_frames(exoid, nframes, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+          ex_put_coordinate_frames(exoid, nframes, ids.data(), coordinates.data(), tags.data());
       if (ierr < 0) {
         Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
       }
@@ -101,7 +101,7 @@ namespace {
       std::vector<char>   tags(nframes);
       std::vector<double> coord(nframes * 9);
       std::vector<INT>    ids(nframes);
-      ierr = ex_get_coordinate_frames(exoid, &nframes, TOPTR(ids), TOPTR(coord), TOPTR(tags));
+      ierr = ex_get_coordinate_frames(exoid, &nframes, ids.data(), coord.data(), tags.data());
       if (ierr < 0) {
         Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
       }
@@ -439,35 +439,35 @@ namespace Ioex {
   {
     std::vector<char> buffer(length + 1);
     buffer[0] = '\0';
-    int error = ex_get_name(exoid, type, id, TOPTR(buffer));
+    int error = ex_get_name(exoid, type, id, buffer.data());
     if (error < 0) {
       exodus_error(exoid, __LINE__, __func__, __FILE__);
     }
     if (buffer[0] != '\0') {
-      Ioss::Utils::fixup_name(TOPTR(buffer));
+      Ioss::Utils::fixup_name(buffer.data());
       // Filter out names of the form "basename_id" if the name
       // id doesn't match the id in the name...
       size_t base_size = basename.size();
       if (std::strncmp(basename.c_str(), &buffer[0], base_size) == 0) {
-        int64_t name_id = extract_id(TOPTR(buffer));
+        int64_t name_id = extract_id(buffer.data());
         if (name_id > 0 && name_id != id) {
           // See if name is truly of form "basename_name_id"
           std::string tmp_name = Ioss::Utils::encode_entity_name(basename, name_id);
-          if (tmp_name == TOPTR(buffer)) {
+          if (tmp_name == buffer.data()) {
             std::string new_name = Ioss::Utils::encode_entity_name(basename, id);
             fmt::print(IOSS_WARNING,
                        "WARNING: The entity named '{}' has the id {} which does not match the "
                        "embedded id {}.\n"
                        "         This can cause issues later; the entity will be renamed to '{}' "
                        "(IOSS)\n\n",
-                       TOPTR(buffer), id, name_id, new_name);
+                       buffer.data(), id, name_id, new_name);
             db_has_name = false;
             return new_name;
           }
         }
       }
       db_has_name = true;
-      return (std::string(TOPTR(buffer)));
+      return (std::string(buffer.data()));
     }
     db_has_name = false;
     return Ioss::Utils::encode_entity_name(basename, id);

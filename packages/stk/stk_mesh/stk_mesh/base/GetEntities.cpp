@@ -81,8 +81,12 @@ unsigned count_selected_entities(
 {
   size_t count = 0;
 
-  for (const Bucket* bptr : input_buckets) {
-    if ( selector( *bptr ) ) { count += bptr->size(); }
+  const BucketVector::const_iterator ie = input_buckets.end();
+        BucketVector::const_iterator ik = input_buckets.begin();
+
+  for ( ; ik != ie ; ++ik ) {
+    const Bucket & k = ** ik ;
+    if ( selector( k ) ) { count += k.size(); }
   }
 
   return count ;
@@ -96,14 +100,17 @@ void get_selected_entities( const Selector & selector ,
 {
   size_t count = count_selected_entities(selector,input_buckets);
 
-  entities.clear();
-  entities.reserve(count);
+  entities.resize(count);
 
-  for (const Bucket* bptr : input_buckets) {
-    const Bucket& bkt = *bptr;
-    if ( selector( bkt ) ) {
-      for(Entity e : bkt) {
-        entities.push_back(e);
+  const BucketVector::const_iterator ie = input_buckets.end();
+        BucketVector::const_iterator ik = input_buckets.begin();
+
+  for ( size_t j = 0 ; ik != ie ; ++ik ) {
+    const Bucket & k = ** ik ;
+    if ( selector( k ) ) {
+      const size_t n = k.size();
+      for ( size_t i = 0; i < n; ++i, ++j ) {
+        entities[j] = k[i] ;
       }
     }
   }

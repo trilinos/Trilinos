@@ -593,7 +593,7 @@ void
 BulkData::update_ngp_mesh() const
 {
   if (m_ngpMeshManager == nullptr) {
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
     m_ngpMeshManager = new DeviceMeshManager(*this);
 #else
     m_ngpMeshManager = new HostMeshManager(*this);
@@ -1446,7 +1446,7 @@ void BulkData::record_entity_deletion(Entity entity)
 {
     const EntityKey key = entity_key(entity);
     set_mesh_index(entity, 0, 0);
-    m_entity_repo->destroy_entity(key);
+    m_entity_repo->destroy_entity(key, entity);
     notifier.notify_local_entities_created_or_deleted(key.rank());
     notifier.notify_local_buckets_changed(key.rank());
     m_meshModification.mark_entity_as_deleted(entity.local_offset());
@@ -1651,6 +1651,8 @@ void BulkData::declare_entities(stk::topology::rank_t rank, const IDVECTOR& newI
 
         this->internal_set_owner(new_entity, parallel_rank());
     }
+    //now clear the created-entity cache...
+    begin_entities(rank);
 }
 
 template
@@ -2180,6 +2182,8 @@ void BulkData::update_field_data_states(FieldBase* field)
         for(int state=0; state<num_state; ++state) {
             stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
             field_set[state] = field->field_state(state_identifier);
+            field_set[state]->sync_to_host();
+            field_set[state]->modify_on_host();
         }
 
         int outer_idx = 0;
@@ -2205,8 +2209,11 @@ void BulkData::update_field_data_states()
       const int num_state = field.number_of_states();
       i += num_state ;
 
-
-
+      for(int s=0; s < num_state; ++s)
+      {
+        field_set[outer_idx+s]->sync_to_host();
+        field_set[outer_idx+s]->modify_on_host();
+      }
 
       if (num_state > 1) {
         for ( int b = 0, be = field_set[outer_idx]->get_meta_data_for_field().size(); b < be; ++b) {

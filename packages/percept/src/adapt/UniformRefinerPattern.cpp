@@ -721,7 +721,7 @@
                 << " with topo= " << getToTopoPartName() << std::endl;
             stk::mesh::set_topology(*block_to, stk::mesh::get_topology(shards::CellTopology(getToTopology()), eMesh.get_fem_meta_data()->spatial_dimension()));
 
-            if (block_to->attribute<Ioss::GroupingEntity>() == 0) {
+            if (!stk::io::is_part_io_part(block_to)) {
               stk::io::put_io_part_attribute(*block_to);
             }
 
@@ -890,7 +890,7 @@
                   std::string ioss_elem_topo = "";
                   convert_stk_topology_to_ioss_name(elem_topo, ioss_elem_topo);
 
-                  bool is_io_part = from_superset->attribute<Ioss::GroupingEntity>() != NULL;
+                  bool is_io_part = stk::io::is_part_io_part(*from_superset);
 
                   // need to create independent of toPart topology
                   if (is_io_part && from_superset->id()>0)

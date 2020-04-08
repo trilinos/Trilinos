@@ -1042,6 +1042,9 @@ namespace MueLu {
   // Generates a communicator whose only members are other ranks of the baseComm on my node
   Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId, const int reductionFactor);
 
+  // Lower case string
+  std::string lowerCase (const std::string& s);
+
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT

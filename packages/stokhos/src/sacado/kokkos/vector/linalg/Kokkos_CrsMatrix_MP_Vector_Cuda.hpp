@@ -89,7 +89,7 @@ template <typename MatrixStorage,
           typename Update>
 class MPMultiply< KokkosSparse::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                     MatrixOrdinal,
-                                    Kokkos::Cuda,
+                                    Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>,
                                     MatrixMemory,
                                     MatrixSize>,
                   Kokkos::View< const Sacado::MP::Vector<InputStorage>*,
@@ -106,13 +106,13 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef typename Kokkos::Cuda Device;
-  typedef Device execution_space;
+  typedef Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space> Device;
+  typedef typename Device::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
   typedef KokkosSparse::CrsMatrix<MatrixValue,
                             MatrixOrdinal,
-                            execution_space,
+                            Device,
                             MatrixMemory,
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
@@ -336,7 +336,7 @@ template <typename MatrixStorage,
           typename Update>
 class MPMultiply< KokkosSparse::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                     MatrixOrdinal,
-                                    Kokkos::Cuda,
+                                    Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>,
                                     MatrixMemory,
                                     MatrixSize>,
                   Kokkos::View< const Sacado::MP::Vector<InputStorage>**,
@@ -353,14 +353,14 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef typename Kokkos::Cuda Device;
-  typedef Device execution_space;
+  typedef Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space> Device;
+  typedef typename Device::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
 
   typedef KokkosSparse::CrsMatrix<MatrixValue,
                             MatrixOrdinal,
-                            execution_space,
+                            Device,
                             MatrixMemory,
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;

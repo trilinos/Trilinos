@@ -109,7 +109,6 @@ using namespace Intrepid;
         m_deriv_spec = deriv_spec;
         Dimensions domain_dimensions = getDomainDimensions();
         Dimensions codomain_dimensions = getCodomainDimensions();
-        //int meta_dimension = stk::mesh::MetaData::get_meta_data(stk::mesh::MetaData::get(*m_bulkData)).get_spatial_dimension();
         int num_grad = deriv_spec.dimension(0);
         //domain_dimensions.push_back(num_grad);
         codomain_dimensions.back() = num_grad;
@@ -128,7 +127,7 @@ using namespace Intrepid;
 
       virtual Teuchos::RCP<Function > gradient(int spatialDim=3)
       {
-        int meta_dimension = stk::mesh::MetaData::get(*m_bulkData).spatial_dimension();
+        int meta_dimension = m_bulkData->mesh_meta_data().spatial_dimension();
         VERIFY_OP_ON(meta_dimension, ==, spatialDim, "gradient: mismatch in spatial dimensions");
         std::string xyz[] = {"x", "y", "z"};
         MDArrayString mda(meta_dimension);
@@ -201,7 +200,7 @@ using namespace Intrepid;
       VERIFY_OP_ON(output_field_values.rank(), <=, 3, "FieldFunction::operator() output_field_values bad rank");
 
       int numInterpPoints = parametric_coordinates.dimension(0);
-      int spatialDim = stk::mesh::MetaData::get(*m_bulkData).spatial_dimension();
+      int spatialDim = m_bulkData->mesh_meta_data().spatial_dimension();
       int num_grad = getCodomainDimensions().back();
 
       int numCells = PerceptMesh::size1(bucket_or_element); 

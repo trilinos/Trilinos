@@ -129,7 +129,6 @@ namespace Tacho {
 
     // ** levelset options
     bool         _levelset;             // use level set code instead of tasking
-    ordinal_type _max_nrhs;             // maximum # of rhs to temporal memory allocation in solve
     ordinal_type _device_level_cut;     // above this level, matrices are computed on device
     ordinal_type _device_factor_thres;  // bigger than this threshold, device function is used
     ordinal_type _device_solve_thres;   // bigger than this threshold, device function is used
@@ -164,7 +163,6 @@ namespace Tacho {
     /// Level set tools options
     ///
     void setLevelSetScheduling(const bool levelset);
-    void setLevelSetOptionMaxNrhs(const ordinal_type max_nrhs);
     void setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut);
     void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
                                                   const ordinal_type device_solve_thres);
@@ -202,7 +200,7 @@ namespace Tacho {
       return analyze();
     }
 
-    int initialize(const ordinal_type max_nrhs = -1);
+    int initialize();
     int factorize(const value_type_array &ax);
     int solve(const value_type_matrix &x,
               const value_type_matrix &b,

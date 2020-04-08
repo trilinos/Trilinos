@@ -117,7 +117,10 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
     default="",
     help="Partial URL fragment for queryTests.php making of the filters for"+\
       " the set of non-passing tests matching this set of builds (e.g."+\
-      " 'filtercombine=and&filtercount=1&showfilters=1&filtercombine=and&field1=groupname&compare1=61&value1=ATDM'"+\
+      " 'filtercombine=and&filtercount=1&showfilters=1&filtercombine=and&field1=groupname&compare1=61&value1=ATDM')."+\
+      "  This set of filter fields may also filter out extra nonpassing tests"+\
+      " such for know random system failures to avoid flooding the output.  In this"+\
+      " case, one should also set --require-test-history-match-nonpassing-tests=off."+\
       " [REQUIRED] [default = '']" )
 
   clp.add_option(
@@ -187,6 +190,21 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
        "  [default '"+str(limitTableRows)+"']" )
 
   addOptionParserChoiceOption(
+    "--require-test-history-match-nonpassing-tests",
+    "requireTestHistoryMatchNonpassingTestsStr",
+    ("on", "off"), 0,
+    "Require that the status for each tracked test listed in the tests with issue"\
+    +" trackers CSV file match the status of that test returned from the test history"\
+    +" returned from CDash.  In general, these should match up but these may not if extra"\
+    +" filter criteria has been added to the list on nonpassing tests in the"\
+    +" --cdash-nonpassed-tests-filters=<filters> set of filters (such as to filter out"\
+    +" a large number of random system failures).  In this case, an error will be"\
+    +" returned by default and the script will crash.  But this can be relaxed by"\
+    +" setting this to 'off' which will result in these tracked tests being listed in"\
+    +" the 'twim' table but typically with status 'Failed'.",
+    clp )
+
+  addOptionParserChoiceOption(
     "--print-details", "printDetailsStr",
     ("on", "off"), 1,
     "Print more info like the CDash URLs for downloaded data and the cache"+\
@@ -196,9 +214,18 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
   clp.add_option(
     "--write-failing-tests-without-issue-trackers-to-file",
     dest="writeFailingTestsWithoutIssueTrackersToFile", type="string", default="",
-    help="Write CSV file with a list of tets with issue trackers failed 'twif'." \
+    help="Write a CSV file with a list of tets with issue trackers failed 'twif'." \
     +"  This is to make it easy to add new entires to the file read by" \
     +" the option --tests-with-issue-trackers-file=<file>. [default = '']" )
+
+  clp.add_option(
+    "--write-test-data-to-file",
+    dest="writeTestDataToFile", type="string", default="",
+    help="Write pretty-printed Python list of dictionaries for tests with" \
+    +" with issue trackers.  This includes the history of the tests for" \
+    +" --limit-test-history-days=<days> of history.  This contains all of the" \
+    +" information that appears in the generated summary tables for tests with" \
+    +" associated issue trackers.  [default = '']" )
 
   clp.add_option(
     "--write-email-to-file", dest="writeEmailToFile", type="string", default="",
@@ -235,6 +262,11 @@ def setExtraCmndLineOptionsAfterParse(inOptions_inout):
   else:
     setattr(inOptions_inout, 'useCachedCDashData', False)
 
+  if inOptions_inout.requireTestHistoryMatchNonpassingTestsStr == "on":
+    setattr(inOptions_inout, 'requireTestHistoryMatchNonpassingTests', True)
+  else:
+    setattr(inOptions_inout, 'requireTestHistoryMatchNonpassingTests', False)
+
   if inOptions_inout.printDetailsStr == "on":
     setattr(inOptions_inout, 'printDetails', True)
   else:
@@ -256,26 +288,29 @@ def getCmndLineOptions():
 
 
 def fwdCmndLineOptions(inOptions, lt=""):
+  io = inOptions
   cmndLineOpts = \
-    "  --date='"+inOptions.date+"'"+lt+\
-    "  --cdash-project-testing-day-start-time='"+inOptions.cdashProjectTestingDayStartTime+"'"+lt+\
-    "  --cdash-project-name='"+inOptions.cdashProjectName+"'"+lt+\
-    "  --build-set-name='"+inOptions.buildSetName+"'"+lt+\
-    "  --cdash-site-url='"+inOptions.cdashSiteUrl+"'"+lt+\
-    "  --cdash-builds-filters='"+inOptions.cdashBuildsFilters+"'"+lt+\
-    "  --cdash-nonpassed-tests-filters='"+inOptions.cdashNonpassedTestsFilters+"'"+lt+\
-    "  --expected-builds-file='"+inOptions.expectedBuildsFile+"'"+lt+\
-    "  --tests-with-issue-trackers-file='"+inOptions.testsWithIssueTrackersFile+"'"+lt+\
-    "  --cdash-queries-cache-dir='"+inOptions.cdashQueriesCacheDir+"'"+lt+\
-    "  --cdash-base-cache-files-prefix='"+inOptions.cdashBaseCacheFilesPrefix+"'"+lt+\
-    "  --use-cached-cdash-data='"+inOptions.useCachedCDashDataStr+"'"+lt+\
-    "  --limit-test-history-days='"+str(inOptions.testHistoryDays)+"'"+lt+\
-    "  --limit-table-rows='"+str(inOptions.limitTableRows)+"'"+lt+\
-    "  --print-details='"+inOptions.printDetailsStr+"'"+lt+\
-    "  --write-failing-tests-without-issue-trackers-to-file='"+inOptions.writeFailingTestsWithoutIssueTrackersToFile+"'"+lt+\
-    "  --write-email-to-file='"+inOptions.writeEmailToFile+"'"+lt+\
-    "  --email-from-address='"+inOptions.emailFromAddress+"'"+lt+\
-    "  --send-email-to='"+inOptions.sendEmailTo+"'"+lt
+    "  --date='"+io.date+"'"+lt+\
+    "  --cdash-project-testing-day-start-time='"+io.cdashProjectTestingDayStartTime+"'"+lt+\
+    "  --cdash-project-name='"+io.cdashProjectName+"'"+lt+\
+    "  --build-set-name='"+io.buildSetName+"'"+lt+\
+    "  --cdash-site-url='"+io.cdashSiteUrl+"'"+lt+\
+    "  --cdash-builds-filters='"+io.cdashBuildsFilters+"'"+lt+\
+    "  --cdash-nonpassed-tests-filters='"+io.cdashNonpassedTestsFilters+"'"+lt+\
+    "  --expected-builds-file='"+io.expectedBuildsFile+"'"+lt+\
+    "  --tests-with-issue-trackers-file='"+io.testsWithIssueTrackersFile+"'"+lt+\
+    "  --cdash-queries-cache-dir='"+io.cdashQueriesCacheDir+"'"+lt+\
+    "  --cdash-base-cache-files-prefix='"+io.cdashBaseCacheFilesPrefix+"'"+lt+\
+    "  --use-cached-cdash-data='"+io.useCachedCDashDataStr+"'"+lt+\
+    "  --limit-test-history-days='"+str(io.testHistoryDays)+"'"+lt+\
+    "  --limit-table-rows='"+str(io.limitTableRows)+"'"+lt+\
+    "  --require-test-history-match-nonpassing-tests='"+io.requireTestHistoryMatchNonpassingTestsStr+"'"+lt+\
+    "  --print-details='"+io.printDetailsStr+"'"+lt+\
+    "  --write-failing-tests-without-issue-trackers-to-file='"+io.writeFailingTestsWithoutIssueTrackersToFile+"'"+lt+\
+    "  --write-test-data-to-file='"+io.writeTestDataToFile+"'"+lt+\
+    "  --write-email-to-file='"+io.writeEmailToFile+"'"+lt+\
+    "  --email-from-address='"+io.emailFromAddress+"'"+lt+\
+    "  --send-email-to='"+io.sendEmailTo+"'"+lt
   return cmndLineOpts 
 
 
@@ -360,29 +395,32 @@ class TestSetGetDataAnayzeReporter(object):
           limitTableRows )
       else:
         testSetSortedLimitedLOD = testSetLOD
+
+      sio = self.inOptions
   
       if getTestHistory:
 
         CDQAR.foreachTransform(
           testSetSortedLimitedLOD,
           CDQAR.AddTestHistoryToTestDictFunctor(
-            cdashUrl=self.inOptions.cdashSiteUrl,
-            projectName=self.inOptions.cdashProjectName,
-            date=self.inOptions.date,
-            testingDayStartTimeUtc=self.inOptions.cdashProjectTestingDayStartTime,
-            daysOfHistory=self.inOptions.testHistoryDays,
+            cdashUrl=sio.cdashSiteUrl,
+            projectName=sio.cdashProjectName,
+            date=sio.date,
+            testingDayStartTimeUtc=sio.cdashProjectTestingDayStartTime,
+            daysOfHistory=sio.testHistoryDays,
             testCacheDir=self.testHistoryCacheDir,
-            useCachedCDashData=self.inOptions.useCachedCDashData,
+            useCachedCDashData=sio.useCachedCDashData,
             alwaysUseCacheFileIfExists=True,
             verbose=True,
-            printDetails=self.inOptions.printDetails,
+            printDetails=sio.printDetails,
+            requireMatchTestTopTestHistory=sio.requireTestHistoryMatchNonpassingTests,
             )
           )
   
       self.overallVars.htmlEmailBodyBottom += CDQAR.createCDashTestHtmlTableStr(
         testSetType,
         testSetDescr, testSetAcro, testSetTotalSize, testSetSortedLimitedLOD,
-        self.inOptions.testHistoryDays, limitRowsToDisplay=limitTableRows,
+        sio.testHistoryDays, limitRowsToDisplay=limitTableRows,
         testSetColor=colorTestSet )
 
 
@@ -415,10 +453,10 @@ if __name__ == '__main__':
   # B) Sound off
   #
 
-  print "***"
-  print "*** Query and analyze CDash results for "+inOptions.buildSetName+\
-        " for testing day "+inOptions.date
-  print "***"
+  print("***")
+  print("*** Query and analyze CDash results for "+inOptions.buildSetName+\
+        " for testing day "+inOptions.date)
+  print("***")
 
   #
   # C) Create beginning of email body (that does not require getting any data off CDash)
@@ -673,7 +711,8 @@ if __name__ == '__main__':
 
       overallVars.summaryLineDataNumbersList.append(bmAcro+"="+str(bmNum))
 
-      overallVars.htmlEmailBodyTop += CDQAR.colorHtmlText(bmSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
+      overallVars.htmlEmailBodyTop += \
+        CDQAR.colorHtmlText(bmSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
 
       bmColDataList = [
         tcd("Group", 'group'),
@@ -713,7 +752,8 @@ if __name__ == '__main__':
 
       overallVars.summaryLineDataNumbersList.append(cAcro+"="+str(cNum))
 
-      overallVars.htmlEmailBodyTop += CDQAR.colorHtmlText(cSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
+      overallVars.htmlEmailBodyTop += \
+        CDQAR.colorHtmlText(cSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
 
       cColDataList = [
         tcd("Group", 'group'),
@@ -753,7 +793,8 @@ if __name__ == '__main__':
 
       overallVars.summaryLineDataNumbersList.append(bAcro+"="+str(bNum))
 
-      overallVars.htmlEmailBodyTop += CDQAR.colorHtmlText(bSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
+      overallVars.htmlEmailBodyTop += \
+        CDQAR.colorHtmlText(bSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
 
       cColDataList = [
         tcd("Group", 'group'),
@@ -838,6 +879,8 @@ if __name__ == '__main__':
           alwaysUseCacheFileIfExists=True,
           verbose=True,
           printDetails=inOptions.printDetails,
+          requireMatchTestTopTestHistory=inOptions.requireTestHistoryMatchNonpassingTests,
+
           )
         )
 
@@ -926,12 +969,20 @@ if __name__ == '__main__':
     #
 
     if inOptions.writeFailingTestsWithoutIssueTrackersToFile:
-
       twoifCsvFileName = inOptions.writeFailingTestsWithoutIssueTrackersToFile
-
       print("\nWriting list of 'twiof' to file "+twoifCsvFileName+" ...")
-
       CDQAR.writeTestsLODToCsvFile(twoifLOD, twoifCsvFileName)
+
+    #
+    # D.7) Write out test data to CSV file
+    #
+
+    if inOptions.writeTestDataToFile:
+      testDataFileName = inOptions.writeTestDataToFile
+      print("\nWriting out gathered test data to file "+testDataFileName+" ...")
+      testDataLOD = twipLOD + twimLOD + twifLOD + twinrLOD
+      # ToDo: Add the first inOptions.limitTableRows elements of twiofLOD and twoinrLOD ...
+      CDQAR.pprintPythonDataToFile(testDataLOD, testDataFileName)
 
   except Exception:
     # Traceback!

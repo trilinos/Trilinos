@@ -93,6 +93,7 @@ Smoother
 SmootherBase
 SmootherFactory
 SmootherPrototype
+SmooVecCoalesceDropFactory
 SolverBase
 SteepestDescentSolver
 StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS)

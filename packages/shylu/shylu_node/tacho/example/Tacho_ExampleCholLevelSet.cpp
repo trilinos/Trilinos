@@ -172,7 +172,7 @@ int main (int argc, char *argv[]) {
         S.SupernodesTreeRoots());
     N.printMemoryStat(verbose);
 
-    Tacho::LevelSetTools<value_type,scheduler_type> L(N, nrhs);
+    Tacho::LevelSetTools<value_type,scheduler_type> L(N);
     L.initialize(device_level_cut, device_factor_thres, device_solve_thres, verbose);
     L.createStream(nstreams);
 

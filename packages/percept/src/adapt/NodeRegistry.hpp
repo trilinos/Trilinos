@@ -56,14 +56,11 @@
 #define DEBUG_NR_DEEP 0
 
 #include <adapt/NodeRegistryType.hpp>
-#include <adapt/NodeRegistry_KOKKOS.hpp>
 
 // use old PerceptMesh/BulkData create entities if set to 1 - if 0, use PerceptMesh ID server which is much faster (doesn't use DistributedIndex)
 #define USE_CREATE_ENTITIES 0
 
   namespace percept {
-
-    class NodeRegistry_KOKKOS;
 
     using std::vector;
     using std::map;
@@ -349,8 +346,6 @@
 
       void mod_begin();
       void mod_end(const std::string& msg="");
-
-      bool verifyAllKeysInKokkosNR(NodeRegistry_KOKKOS * nrk, SetOfEntities& nodesMappedTo, unsigned& noKeysNotInCommon);
 
     private:
       percept::PerceptMesh& m_eMesh;

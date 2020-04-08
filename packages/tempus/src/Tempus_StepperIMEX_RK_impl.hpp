@@ -199,7 +199,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     this->setStepperType("IMEX RK 1st order (SSP1_111)");
     this->setOrder(1);
 
-  } else if (stepperType == "IMEX RK SSP2" ) {
+  } else if (stepperType == "IMEX RK SSP2" || stepperType == "SSP2_222_L" ) {
     // Explicit Tableau
     auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
     this->setExplicitTableau(stepperERK->getTableau());
@@ -211,7 +211,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
     this->setStepperType("IMEX RK SSP2");
     this->setOrder(2);
-  } else if (stepperType == "SSP2_222" ) {
+  } else if (stepperType == "SSP2_222" || stepperType == "SSP2_222_A" ) {
     // Explicit Tableau
     auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
     this->setExplicitTableau(stepperERK->getTableau());
