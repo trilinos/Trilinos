@@ -60,7 +60,7 @@ namespace Stokhos {
 //----------------------------------------------------------------------------
 
 // Kernel implementing y = A * x where
-//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>,
+//   A == KokkosSparse::CrsMatrix< const Sacado::UQ::PCE<...>,...>,
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
 //   x and y are rank 1
 template <typename MatrixDevice,
@@ -72,7 +72,7 @@ template <typename MatrixDevice,
           typename ... InputP,
           typename OutputStorage,
           typename ... OutputP>
-class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class Multiply< KokkosSparse::CrsMatrix< const Sacado::UQ::PCE<MatrixStorage>,
                                          MatrixOrdinal,
                                          MatrixDevice,
                                          MatrixMemory,
@@ -90,7 +90,7 @@ public:
 
   typedef typename MatrixDevice::execution_space execution_space;
 
-  typedef KokkosSparse::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< const MatrixValue,
                                    MatrixOrdinal,
                                    MatrixDevice,
                                    MatrixMemory,
@@ -457,7 +457,7 @@ public:
 };
 
 // Kernel implementing y = A * x where
-//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>,
+//   A == KokkosSparse::CrsMatrix< const Sacado::UQ::PCE<...>,...>,
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>**,...>,
 //   x and y are rank 2
 template <typename MatrixDevice,
@@ -469,7 +469,7 @@ template <typename MatrixDevice,
           typename ... InputP,
           typename OutputStorage,
           typename ... OutputP>
-class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class Multiply< KokkosSparse::CrsMatrix< const Sacado::UQ::PCE<MatrixStorage>,
                                          MatrixOrdinal,
                                          MatrixDevice,
                                          MatrixMemory,
@@ -487,7 +487,7 @@ public:
 
   typedef typename MatrixDevice::execution_space execution_space;
 
-  typedef KokkosSparse::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< const MatrixValue,
                                    MatrixOrdinal,
                                    MatrixDevice,
                                    MatrixMemory,
@@ -878,11 +878,8 @@ public:
   }
 };
 
-template <typename MatrixType, typename InputViewType, typename OutputViewType>
-class MeanMultiply {};
-
-// Kernel implementing y = A * x where PCE size of A is 1
-//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1
+// Kernel implementing y = A * x where
+//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>,
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
 //   x and y are rank 1
 template <typename MatrixDevice,
@@ -894,7 +891,122 @@ template <typename MatrixDevice,
           typename ... InputP,
           typename OutputStorage,
           typename ... OutputP>
-class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+                                         MatrixOrdinal,
+                                         MatrixDevice,
+                                         MatrixMemory,
+                                         MatrixSize>,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>*,
+                              InputP... >,
+                Kokkos::View< Sacado::UQ::PCE<OutputStorage>*,
+                              OutputP... >
+                >
+{
+public:
+  typedef Sacado::UQ::PCE<MatrixStorage> MatrixValue;
+  typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
+  typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
+
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
+                                   MatrixOrdinal,
+                                   MatrixDevice,
+                                   MatrixMemory,
+                                   MatrixSize> matrix_type;
+  typedef typename matrix_type::const_type const_matrix_type;
+
+  typedef Kokkos::View< const InputVectorValue*,
+                        InputP... > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue*,
+                        OutputP... > output_vector_type;
+
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
+
+  static void apply( const matrix_type & A ,
+                     const input_vector_type & x ,
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
+  {
+    const_matrix_type cA = A;
+    Multiply< const_matrix_type, input_vector_type, output_vector_type >::apply(
+      cA, x, y, a, b);
+  }
+};
+
+// Kernel implementing y = A * x where
+//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>,
+//   x, y == Kokkos::View< Sacado::UQ::PCE<...>**,...>,
+//   x and y are rank 2
+template <typename MatrixDevice,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename ... InputP,
+          typename OutputStorage,
+          typename ... OutputP>
+class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+                                         MatrixOrdinal,
+                                         MatrixDevice,
+                                         MatrixMemory,
+                                         MatrixSize>,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>**,
+                              InputP... >,
+                Kokkos::View< Sacado::UQ::PCE<OutputStorage>**,
+                              OutputP... >
+                >
+{
+public:
+  typedef Sacado::UQ::PCE<MatrixStorage> MatrixValue;
+  typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
+  typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
+
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
+                                   MatrixOrdinal,
+                                   MatrixDevice,
+                                   MatrixMemory,
+                                   MatrixSize> matrix_type;
+  typedef typename matrix_type::const_type const_matrix_type;
+
+  typedef Kokkos::View< const InputVectorValue**,
+                        InputP... > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue**,
+                        OutputP... > output_vector_type;
+
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
+
+  static void apply( const matrix_type & A ,
+                     const input_vector_type & x ,
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
+  {
+    const_matrix_type cA = A;
+    Multiply< const_matrix_type, input_vector_type, output_vector_type >::apply(
+      cA, x, y, a, b);
+  }
+};
+
+template <typename MatrixType, typename InputViewType, typename OutputViewType>
+class MeanMultiply {};
+
+// Kernel implementing y = A * x where PCE size of A is 1
+//   A == KokkosSparse::CrsMatrix< const Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1
+//   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
+//   x and y are rank 1
+template <typename MatrixDevice,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename ... InputP,
+          typename OutputStorage,
+          typename ... OutputP>
+class MeanMultiply< KokkosSparse::CrsMatrix< const Sacado::UQ::PCE<MatrixStorage>,
                                          MatrixOrdinal,
                                          MatrixDevice,
                                          MatrixMemory,
@@ -910,7 +1022,7 @@ public:
   typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
-  typedef KokkosSparse::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< const MatrixValue,
                                    MatrixOrdinal,
                                    MatrixDevice,
                                    MatrixMemory,
@@ -1163,7 +1275,7 @@ template <typename MatrixDevice,
           typename ... InputP,
           typename OutputStorage,
           typename ... OutputP>
-class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class MeanMultiply< KokkosSparse::CrsMatrix< const Sacado::UQ::PCE<MatrixStorage>,
                                          MatrixOrdinal,
                                          MatrixDevice,
                                          MatrixMemory,
@@ -1179,7 +1291,7 @@ public:
   typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
-  typedef KokkosSparse::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< const MatrixValue,
                                    MatrixOrdinal,
                                    MatrixDevice,
                                    MatrixMemory,
@@ -1214,6 +1326,118 @@ public:
         Kokkos::subview(y, Kokkos::ALL(), i);
       MeanMultiply1D::apply( A, x_col, y_col, a, b );
     }
+  }
+};
+
+// Kernel implementing y = A * x where PCE size of A is 1
+//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1
+//   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
+//   x and y are rank 1
+template <typename MatrixDevice,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename ... InputP,
+          typename OutputStorage,
+          typename ... OutputP>
+class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+                                         MatrixOrdinal,
+                                         MatrixDevice,
+                                         MatrixMemory,
+                                         MatrixSize>,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>*,
+                              InputP... >,
+                Kokkos::View< Sacado::UQ::PCE<OutputStorage>*,
+                              OutputP... >
+                    >
+{
+public:
+  typedef Sacado::UQ::PCE<MatrixStorage> MatrixValue;
+  typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
+  typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
+
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
+                                   MatrixOrdinal,
+                                   MatrixDevice,
+                                   MatrixMemory,
+                                   MatrixSize> matrix_type;
+  typedef typename matrix_type::const_type const_matrix_type;
+
+  typedef Kokkos::View< const InputVectorValue*,
+                        InputP... > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue*,
+                        OutputP... > output_vector_type;
+
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
+
+  static void apply( const matrix_type & A ,
+                     const input_vector_type & x ,
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
+  {
+    const_matrix_type cA = A;
+    MeanMultiply< const_matrix_type, input_vector_type, output_vector_type >::apply(
+      cA, x, y, a, b);
+  }
+};
+
+// Kernel implementing y = A * x where PCE size of A is 1
+//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1
+//   x, y == Kokkos::View< Sacado::UQ::PCE<...>**,...>,
+//   x and y are rank 2
+template <typename MatrixDevice,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename ... InputP,
+          typename OutputStorage,
+          typename ... OutputP>
+class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+                                         MatrixOrdinal,
+                                         MatrixDevice,
+                                         MatrixMemory,
+                                         MatrixSize>,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>**,
+                              InputP... >,
+                Kokkos::View< Sacado::UQ::PCE<OutputStorage>**,
+                              OutputP... >
+                    >
+{
+public:
+  typedef Sacado::UQ::PCE<MatrixStorage> MatrixValue;
+  typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
+  typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
+
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
+                                   MatrixOrdinal,
+                                   MatrixDevice,
+                                   MatrixMemory,
+                                   MatrixSize> matrix_type;
+  typedef typename matrix_type::const_type const_matrix_type;
+
+  typedef Kokkos::View< const InputVectorValue**,
+                        InputP... > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue**,
+                        OutputP... > output_vector_type;
+
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
+
+  static void apply( const matrix_type & A ,
+                     const input_vector_type & x ,
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
+  {
+    const_matrix_type cA = A;
+    MeanMultiply< const_matrix_type, input_vector_type, output_vector_type >::apply(
+      cA, x, y, a, b);
   }
 };
 
