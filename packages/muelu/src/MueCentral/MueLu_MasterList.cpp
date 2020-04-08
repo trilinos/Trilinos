@@ -188,6 +188,9 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: number of random vectors\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"aggregation: number of times to pre or post smooth\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"aggregation: penalty parameters\" type=\"Array(double)\" value=\"{12.,-.2,0,0,0} \"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
@@ -553,6 +556,12 @@ namespace MueLu {
          ("aggregation: ordering","aggregation: ordering")
       
          ("aggregation: drop scheme","aggregation: drop scheme")
+      
+         ("aggregation: number of random vectors","aggregation: number of random vectors")
+      
+         ("aggregation: number of times to pre or post smooth","aggregation: number of times to pre or post smooth")
+      
+         ("aggregation: penalty parameters","aggregation: penalty parameters")
       
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
       
