@@ -60,16 +60,16 @@ cuSOLVER<Matrix,Vector>::cuSOLVER(
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::cuSOLVER,Matrix,Vector>(A, X, B)
 {
-  auto status = CUSOLVER::cusolverSpCreate(&data_.handle);
-  TEUCHOS_TEST_FOR_EXCEPTION( status != CUSOLVER::CUSOLVER_STATUS_SUCCESS,
+  auto status = cusolverSpCreate(&data_.handle);
+  TEUCHOS_TEST_FOR_EXCEPTION( status != CUSOLVER_STATUS_SUCCESS,
     std::runtime_error, "cusolverSpCreate failed");
 
-  status = CUSOLVER::cusolverSpCreateCsrcholInfo(&data_.chol_info);
-  TEUCHOS_TEST_FOR_EXCEPTION( status != CUSOLVER::CUSOLVER_STATUS_SUCCESS,
+  status = cusolverSpCreateCsrcholInfo(&data_.chol_info);
+  TEUCHOS_TEST_FOR_EXCEPTION( status != CUSOLVER_STATUS_SUCCESS,
     std::runtime_error, "cusolverSpCreateCsrcholInfo failed");
 
-  auto sparse_status = CUSOLVER::cusparseCreateMatDescr(&data_.desc);
-  TEUCHOS_TEST_FOR_EXCEPTION( sparse_status != CUSOLVER::CUSPARSE_STATUS_SUCCESS,
+  auto sparse_status = cusparseCreateMatDescr(&data_.desc);
+  TEUCHOS_TEST_FOR_EXCEPTION( sparse_status != CUSPARSE_STATUS_SUCCESS,
     std::runtime_error, "cusparseCreateMatDescr failed");
 }
 
@@ -118,9 +118,9 @@ cuSOLVER<Matrix,Vector>::symbolicFactorization_impl()
     const int nnz = device_cols_view_.size(); // reorder may have changed this
     const int * colIdx = device_cols_view_.data();
     const int * rowPtr = device_row_ptr_view_.data();
-    auto status = CUSOLVER::cusolverSpXcsrcholAnalysis(
+    auto status = cusolverSpXcsrcholAnalysis(
       data_.handle, size, nnz, data_.desc, rowPtr, colIdx, data_.chol_info);
-    err = (status != CUSOLVER::CUSOLVER_STATUS_SUCCESS) ? 1 : 0;
+    err = (status != CUSOLVER_STATUS_SUCCESS) ? 1 : 0;
   }
 
   Teuchos::broadcast(*(this->getComm()), 0, &err);
@@ -147,7 +147,7 @@ cuSOLVER<Matrix,Vector>::numericFactorization_impl()
       values, rowPtr, colIdx, data_.chol_info,
       &internalDataInBytes, &workspaceInBytes);
 
-    if(status == CUSOLVER::CUSOLVER_STATUS_SUCCESS) {
+    if(status == CUSOLVER_STATUS_SUCCESS) {
       const size_t buffer_size = workspaceInBytes / sizeof(cusolver_type);
       if(buffer_size > buffer_.extent(0)) {
         buffer_ = device_value_type_array(
@@ -156,7 +156,7 @@ cuSOLVER<Matrix,Vector>::numericFactorization_impl()
       status = function_map::numeric(data_.handle, size, nnz, data_.desc,
         values, rowPtr, colIdx, data_.chol_info, buffer_.data());
     }
-    err = (status != CUSOLVER::CUSOLVER_STATUS_SUCCESS) ? 1 : 0;
+    err = (status != CUSOLVER_STATUS_SUCCESS) ? 1 : 0;
   }
 
   Teuchos::broadcast(*(this->getComm()), 0, &err);
@@ -214,7 +214,7 @@ cuSOLVER<Matrix,Vector>::solve_impl(
       cusolver_type * x = this->xValues_.data() + n * size;
       auto status = function_map::solve(
         data_.handle, size, b, x, data_.chol_info, buffer_.data());
-      err = (status != CUSOLVER::CUSOLVER_STATUS_SUCCESS) ? 1 : 0;
+      err = (status != CUSOLVER_STATUS_SUCCESS) ? 1 : 0;
       if(err != 0) {
         break;
       }

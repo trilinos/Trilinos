@@ -47,68 +47,64 @@
 #include "Amesos2_FunctionMap.hpp"
 #include "Amesos2_cuSOLVER_TypeMap.hpp"
 
+#include <cuda.h>
+#include <cusolverSp.h>
+#include <cusolverDn.h>
+#include <cusparse.h>
+#include <cusolverSp_LOWLEVEL_PREVIEW.h>
+
 #ifdef HAVE_TEUCHOS_COMPLEX
-  // For cudaDoubleComplex and cudaFloatComplex
-  // Not namespaced because of extern C. TODO
 #include <cuComplex.h>
 #endif
 
 namespace Amesos2 {
 
-  namespace CUSOLVER {
-#    include <cuda.h>
-#    include <cusolverSp.h>
-#    include <cusolverDn.h>
-#    include <cusparse.h>
-#    include <cusolverSp_LOWLEVEL_PREVIEW.h>
-  }
-
   template <>
   struct FunctionMap<cuSOLVER,double>
   {
-    static CUSOLVER::cusolverStatus_t bufferInfo(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t bufferInfo(
+                 cusolverSpHandle_t handle,
                  int size,
                  int nnz,
-                 CUSOLVER::cusparseMatDescr_t & desc,
+                 cusparseMatDescr_t & desc,
                  const double * values,
                  const int * rowPtr,
                  const int * colIdx,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  size_t * internalDataInBytes,
                  size_t * workspaceInBytes)
     {
-      CUSOLVER::cusolverStatus_t status =
-        CUSOLVER::cusolverSpDcsrcholBufferInfo(handle, size, nnz, desc, values,
+      cusolverStatus_t status =
+        cusolverSpDcsrcholBufferInfo(handle, size, nnz, desc, values,
           rowPtr, colIdx, chol_info, internalDataInBytes, workspaceInBytes);
       return status;
     }
 
-    static CUSOLVER::cusolverStatus_t numeric(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t numeric(
+                 cusolverSpHandle_t handle,
                  int size,
                  int nnz,
-                 CUSOLVER::cusparseMatDescr_t & desc,
+                 cusparseMatDescr_t & desc,
                  const double * values,
                  const int * rowPtr,
                  const int * colIdx,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  void * buffer)
     {
-      CUSOLVER::cusolverStatus_t status = cusolverSpDcsrcholFactor(
+      cusolverStatus_t status = cusolverSpDcsrcholFactor(
         handle, size, nnz, desc, values, rowPtr, colIdx, chol_info, buffer);
       return status;
     }
 
-    static CUSOLVER::cusolverStatus_t solve(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t solve(
+                 cusolverSpHandle_t handle,
                  int size,
                  const double * b,
                  double * x,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  void * buffer)
     {
-      CUSOLVER::cusolverStatus_t status = CUSOLVER::cusolverSpDcsrcholSolve(
+      cusolverStatus_t status = cusolverSpDcsrcholSolve(
         handle, size, b, x, chol_info, buffer);
       return status;
     }
@@ -117,49 +113,49 @@ namespace Amesos2 {
   template <>
   struct FunctionMap<cuSOLVER,float>
   {
-    static CUSOLVER::cusolverStatus_t bufferInfo(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t bufferInfo(
+                 cusolverSpHandle_t handle,
                  int size,
                  int nnz,
-                 CUSOLVER::cusparseMatDescr_t & desc,
+                 cusparseMatDescr_t & desc,
                  const float * values,
                  const int * rowPtr,
                  const int * colIdx,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  size_t * internalDataInBytes,
                  size_t * workspaceInBytes)
     {
-      CUSOLVER::cusolverStatus_t status =
-        CUSOLVER::cusolverSpScsrcholBufferInfo(handle, size, nnz, desc, values,
+      cusolverStatus_t status =
+        cusolverSpScsrcholBufferInfo(handle, size, nnz, desc, values,
           rowPtr, colIdx, chol_info, internalDataInBytes, workspaceInBytes);
       return status;
     }
 
-    static CUSOLVER::cusolverStatus_t numeric(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t numeric(
+                 cusolverSpHandle_t handle,
                  int size,
                  int nnz,
-                 CUSOLVER::cusparseMatDescr_t & desc,
+                 cusparseMatDescr_t & desc,
                  const float * values,
                  const int * rowPtr,
                  const int * colIdx,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  void * buffer)
     {
-      CUSOLVER::cusolverStatus_t status = cusolverSpScsrcholFactor(
+      cusolverStatus_t status = cusolverSpScsrcholFactor(
         handle, size, nnz, desc, values, rowPtr, colIdx, chol_info, buffer);
       return status;
     }
 
-    static CUSOLVER::cusolverStatus_t solve(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t solve(
+                 cusolverSpHandle_t handle,
                  int size,
                  const float * b,
                  float * x,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  void * buffer)
     {
-      CUSOLVER::cusolverStatus_t status = CUSOLVER::cusolverSpScsrcholSolve(
+      cusolverStatus_t status = cusolverSpScsrcholSolve(
         handle, size, b, x, chol_info, buffer);
       return status;
     }
@@ -169,58 +165,58 @@ namespace Amesos2 {
   template <>
   struct FunctionMap<cuSOLVER,Kokkos::complex<double>>
   {
-    static CUSOLVER::cusolverStatus_t bufferInfo(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t bufferInfo(
+                 cusolverSpHandle_t handle,
                  int size,
                  int nnz,
-                 CUSOLVER::cusparseMatDescr_t & desc,
+                 cusparseMatDescr_t & desc,
                  const void * values,
                  const int * rowPtr,
                  const int * colIdx,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  size_t * internalDataInBytes,
                  size_t * workspaceInBytes)
     {
       typedef cuDoubleComplex scalar_t;
       const scalar_t * cu_values = reinterpret_cast<const scalar_t *>(values);
-      CUSOLVER::cusolverStatus_t status =
-        CUSOLVER::cusolverSpZcsrcholBufferInfo(handle, size, nnz, desc,
+      cusolverStatus_t status =
+        cusolverSpZcsrcholBufferInfo(handle, size, nnz, desc,
           cu_values, rowPtr, colIdx, chol_info,
           internalDataInBytes, workspaceInBytes);
       return status;
     }
 
-    static CUSOLVER::cusolverStatus_t numeric(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t numeric(
+                 cusolverSpHandle_t handle,
                  int size,
                  int nnz,
-                 CUSOLVER::cusparseMatDescr_t & desc,
+                 cusparseMatDescr_t & desc,
                  const void * values,
                  const int * rowPtr,
                  const int * colIdx,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  void * buffer)
     {
       typedef cuDoubleComplex scalar_t;
       const scalar_t * cu_values =
         reinterpret_cast<const scalar_t *>(values);
-      CUSOLVER::cusolverStatus_t status = cusolverSpZcsrcholFactor(
+      cusolverStatus_t status = cusolverSpZcsrcholFactor(
         handle, size, nnz, desc, cu_values, rowPtr, colIdx, chol_info, buffer);
       return status;
     }
 
-    static CUSOLVER::cusolverStatus_t solve(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t solve(
+                 cusolverSpHandle_t handle,
                  int size,
                  const void * b,
                  void * x,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  void * buffer)
     {
       typedef cuDoubleComplex scalar_t;
       const scalar_t * cu_b = reinterpret_cast<const scalar_t *>(b);
       scalar_t * cu_x = reinterpret_cast<scalar_t *>(x);
-      CUSOLVER::cusolverStatus_t status = CUSOLVER::cusolverSpZcsrcholSolve(
+      cusolverStatus_t status = cusolverSpZcsrcholSolve(
         handle, size, cu_b, cu_x, chol_info, buffer);
       return status;
     }
@@ -229,57 +225,57 @@ namespace Amesos2 {
   template <>
   struct FunctionMap<cuSOLVER,Kokkos::complex<float>>
   {
-    static CUSOLVER::cusolverStatus_t bufferInfo(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t bufferInfo(
+                 cusolverSpHandle_t handle,
                  int size,
                  int nnz,
-                 CUSOLVER::cusparseMatDescr_t & desc,
+                 cusparseMatDescr_t & desc,
                  const void * values,
                  const int * rowPtr,
                  const int * colIdx,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  size_t * internalDataInBytes,
                  size_t * workspaceInBytes)
     {
       typedef cuFloatComplex scalar_t;
       const scalar_t * cu_values = reinterpret_cast<const scalar_t *>(values);
-      CUSOLVER::cusolverStatus_t status =
-        CUSOLVER::cusolverSpCcsrcholBufferInfo(handle, size, nnz, desc,
+      cusolverStatus_t status =
+        cusolverSpCcsrcholBufferInfo(handle, size, nnz, desc,
           cu_values, rowPtr, colIdx, chol_info,
           internalDataInBytes, workspaceInBytes);
       return status;
     }
 
-    static CUSOLVER::cusolverStatus_t numeric(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t numeric(
+                 cusolverSpHandle_t handle,
                  int size,
                  int nnz,
-                 CUSOLVER::cusparseMatDescr_t & desc,
+                 cusparseMatDescr_t & desc,
                  const void * values,
                  const int * rowPtr,
                  const int * colIdx,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  void * buffer)
     {
       typedef cuFloatComplex scalar_t;
       const scalar_t * cu_values = reinterpret_cast<const scalar_t *>(values);
-      CUSOLVER::cusolverStatus_t status = cusolverSpCcsrcholFactor(
+      cusolverStatus_t status = cusolverSpCcsrcholFactor(
         handle, size, nnz, desc, cu_values, rowPtr, colIdx, chol_info, buffer);
       return status;
     }
 
-    static CUSOLVER::cusolverStatus_t solve(
-                 CUSOLVER::cusolverSpHandle_t handle,
+    static cusolverStatus_t solve(
+                 cusolverSpHandle_t handle,
                  int size,
                  const void * b,
                  void * x,
-                 CUSOLVER::csrcholInfo_t & chol_info,
+                 csrcholInfo_t & chol_info,
                  void * buffer)
     {
       typedef cuFloatComplex scalar_t;
       const scalar_t * cu_b = reinterpret_cast<const scalar_t *>(b);
       scalar_t * cu_x = reinterpret_cast<scalar_t *>(x);
-      CUSOLVER::cusolverStatus_t status = CUSOLVER::cusolverSpCcsrcholSolve(
+      cusolverStatus_t status = cusolverSpCcsrcholSolve(
         handle, size, cu_b, cu_x, chol_info, buffer);
       return status;
     }

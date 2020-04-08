@@ -188,9 +188,9 @@ private:
 
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct cuSolverData {
-    CUSOLVER::cusolverSpHandle_t handle;
-    CUSOLVER::csrcholInfo_t chol_info;
-    CUSOLVER::cusparseMatDescr_t desc;
+    cusolverSpHandle_t handle;
+    csrcholInfo_t chol_info;
+    cusparseMatDescr_t desc;
     bool bReorder;
   } data_;
 
