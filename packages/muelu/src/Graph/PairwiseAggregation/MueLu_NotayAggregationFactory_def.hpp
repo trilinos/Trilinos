@@ -177,6 +177,9 @@ namespace MueLu {
                            *aggregates, aggStat, numNonAggregatedNodes, numDirichletNodes);
     TEUCHOS_TEST_FOR_EXCEPTION(0 < numNonAggregatedNodes, Exceptions::RuntimeError,
                                "Initial pairwise aggregation failed to aggregate all nodes");
+    LO numLocalAggregates = aggregates->GetNumAggregates();
+    GetOStream(Statistics0) << "Init   : " << numLocalAggregates << " - "
+                            << A->getNodeNumRows() / numLocalAggregates << std::endl;
 
     // Temporary data storage for further aggregation steps
     local_matrix_type intermediateP;
@@ -185,36 +188,38 @@ namespace MueLu {
     // Compute the on rank part of the local matrix
     // that the square submatrix that only contains
     // columns corresponding to local rows.
-    LO numLocalAggregates = aggregates->GetNumAggregates();
+    LO numLocalDirichletNodes = numDirichletNodes;
     Array<LO> localVertex2AggId(aggregates->GetVertex2AggId()->getData(0).view(0, numRows));
     BuildOnRankLocalMatrix(A->getLocalMatrix(), coarseLocalA);
     for(LO aggregationIter = 1; aggregationIter < maxNumIter; ++aggregationIter) {
-
       // Compute the intermediate prolongator
-      BuildIntermediateProlongator(coarseLocalA.numRows(), numDirichletNodes, numLocalAggregates,
+      BuildIntermediateProlongator(coarseLocalA.numRows(), numLocalDirichletNodes, numLocalAggregates,
                                    localVertex2AggId(), intermediateP);
-
-      row_sum_type rowSum("rowSum", numLocalAggregates);
-      typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
-      typename local_matrix_type::row_map_type::HostMirror row_map_h
-        = Kokkos::create_mirror_view(coarseLocalA.graph.row_map);
-      Kokkos::deep_copy(row_map_h, coarseLocalA.graph.row_map);
-      typename local_matrix_type::values_type::HostMirror values_h
-        = Kokkos::create_mirror_view(coarseLocalA.values);
-      Kokkos::deep_copy(values_h, coarseLocalA.values);
-      for(LO rowIdx = 0; rowIdx < static_cast<LO>(coarseLocalA.numRows()); ++rowIdx) {
-        impl_scalar_type sum = Kokkos::ArithTraits<impl_scalar_type>::zero();
-        for(LO entryIdx = static_cast<LO>(row_map_h(rowIdx));
-            entryIdx < static_cast<LO>(row_map_h(rowIdx + 1));
-            ++entryIdx) {
-          sum += values_h(entryIdx);
-        }
-        rowSum_h(rowIdx) = sum;
-      }
-      Kokkos::deep_copy(rowSum, rowSum_h);
 
       // Compute the coarse local matrix and coarse row sum
       BuildCoarseLocalMatrix(intermediateP, coarseLocalA);
+
+      row_sum_type rowSum("rowSum", numLocalAggregates);
+      { // This should eventually become a function in kokkos-kernels or MueLu_Utilities.
+        typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
+        typename local_matrix_type::row_map_type::HostMirror row_map_h
+          = Kokkos::create_mirror_view(coarseLocalA.graph.row_map);
+        Kokkos::deep_copy(row_map_h, coarseLocalA.graph.row_map);
+        typename local_matrix_type::values_type::HostMirror values_h
+          = Kokkos::create_mirror_view(coarseLocalA.values);
+        Kokkos::deep_copy(values_h, coarseLocalA.values);
+        for(LO rowIdx = 0; rowIdx < static_cast<LO>(coarseLocalA.numRows()); ++rowIdx) {
+          impl_scalar_type sum = Kokkos::ArithTraits<impl_scalar_type>::zero();
+          for(LO entryIdx = static_cast<LO>(row_map_h(rowIdx));
+              entryIdx < static_cast<LO>(row_map_h(rowIdx + 1));
+              ++entryIdx) {
+            sum += values_h(entryIdx);
+          }
+          rowSum_h(rowIdx) = sum;
+        }
+        Kokkos::deep_copy(rowSum, rowSum_h);
+        // Kokkos::deep_copy(rowSum, Kokkos::ArithTraits<impl_scalar_type>::one());
+      }
 
       // Compute new aggregates
       numLocalAggregates    = 0;
@@ -225,30 +230,28 @@ namespace MueLu {
                              localAggStat, localVertex2AggId,
                              numLocalAggregates, numNonAggregatedNodes);
 
-      *out << "numLocalAggregates: " << numLocalAggregates
-           << ", localVertex2AggId: " << localVertex2AggId() << std::endl;
+      // After the first initial pairwise aggregation
+      // the Dirichlet nodes have been removed.
+      numLocalDirichletNodes = 0;
 
       // Update the aggregates
       RCP<LOMultiVector> vertex2AggIdMV = aggregates->GetVertex2AggId();
       ArrayRCP<LO>       vertex2AggId   = vertex2AggIdMV->getDataNonConst(0);
-      *out << "old vertex2AggId: " << vertex2AggId() << std::endl;
       for(size_t vertexIdx = 0; vertexIdx < A->getNodeNumRows(); ++vertexIdx) {
         LO oldAggIdx = vertex2AggId[vertexIdx];
         if(oldAggIdx != Teuchos::OrdinalTraits<LO>::invalid()) {
           vertex2AggId[vertexIdx] = localVertex2AggId[oldAggIdx];
         }
       }
-      *out << "new vertex2AggId: " << vertex2AggId() << std::endl;
-    }
 
-    *out << "Setting aggregates on current level" << std::endl;
+      // We could probably print some better statistics at some point
+      GetOStream(Statistics0) << "Iter " << aggregationIter << ": " << numLocalAggregates << " - "
+                              << A->getNodeNumRows() / numLocalAggregates << std::endl;
+    }
 
     // DO stuff
     Set(currentLevel, "Aggregates", aggregates);
-
-    *out << "Printing aggregates statistics" << std::endl;
     GetOStream(Statistics0) << aggregates->description() << std::endl;
-    *out << "Exiting pairwise aggregation factory" << std::endl;
   }
 
 
@@ -308,10 +311,6 @@ namespace MueLu {
 
     // 0,1 : Initialize: Flag boundary conditions
     // Modification: We assume symmetry here aij = aji
-
-    // printf("numRows = %d, A->getRowMap()->getNodeNumElements() = %d\n",
-    //        (int)numRows, (int) A->getRowMap()->getNodeNumElements());
-
     for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
       MT aii = STS::magnitude(D[row]);
       MT rowsum = AbsRs[row];
@@ -625,9 +624,6 @@ namespace MueLu {
 
     onrankA = local_matrix_type("onrankA", numRows, numRows,
                                 nnzOnrankA, values, rowPtr, colInd);
-
-    *out << printLocalMatrix("onrankA", onrankA);
-
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -684,8 +680,6 @@ namespace MueLu {
     intermediateP = local_matrix_type("intermediateP",
                                       numRows, numLocalAggregates, intermediatePnnz,
                                       values, rowPtr, colInd);
-
-    *out << printLocalMatrix("intermediateP", intermediateP);
   } // BuildIntermediateProlongator
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -693,15 +687,6 @@ namespace MueLu {
   BuildCoarseLocalMatrix(const typename Matrix::local_matrix_type& intermediateP,
                          typename Matrix::local_matrix_type& coarseA) const {
     Monitor m(*this, "BuildCoarseLocalMatrix");
-
-    // Set debug outputs based on environment variable
-    RCP<Teuchos::FancyOStream> out;
-    if(const char* dbg = std::getenv("MUELU_PAIRWISEAGGREGATION_DEBUG")) {
-      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      out->setShowAllFrontMatter(false).setShowProcRank(true);
-    } else {
-      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
-    }
 
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using values_type       = typename local_matrix_type::values_type;
@@ -713,14 +698,7 @@ namespace MueLu {
     using col_indices_type  = Kokkos::View<col_index_type*, array_layout, device_type, memory_traits>;
 
     local_matrix_type AP;
-
-    // *out << printLocalMatrix("coarseA", coarseA);
-
-    *out << "About to compute \"AP\""  << std::endl;
-
     localSpGEMM(coarseA, intermediateP, "AP", AP);
-
-    *out << "Computed AP" << std::endl;
 
     // Note 03/11/20, lbv: does kh need to destroy and recreate the spgemm handle
     // I am not sure but doing it for safety in case it stashes data from the previous
@@ -761,8 +739,6 @@ namespace MueLu {
     const col_index_type invalidColumnIndex = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
     Kokkos::deep_copy(colIndPt_h, invalidColumnIndex);
 
-    *out << "allocated Pt's column indices and values" << std::endl;
-
     col_index_type colIdx = 0;
     for(LO rowIdx = 0; rowIdx < intermediateP.numRows(); ++rowIdx) {
       for(size_type entryIdxP = rowPtrP_h(rowIdx); entryIdxP < rowPtrP_h(rowIdx + 1); ++entryIdxP) {
@@ -786,16 +762,8 @@ namespace MueLu {
                                      intermediateP.nnz(),
                                      valuesPt, rowPtrPt, colIndPt);
 
-    // *out << printLocalMatrix("intermediatePt", intermediatePt);
-    *out << "computed Pt" << std::endl;
-
-
     // Create views for coarseA matrix
     localSpGEMM(intermediatePt, AP, "coarseA", coarseA);
-
-    // *out << printLocalMatrix("coarseA", coarseA);
-    *out << "created Ac" << std::endl;
-
   } // BuildCoarseLocalMatrix
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -804,16 +772,6 @@ namespace MueLu {
               const typename Matrix::local_matrix_type& B,
               const std::string matrixLabel,
               typename Matrix::local_matrix_type& C) const {
-    Monitor m(*this, "localSpGEMM");
-
-    // Set debug outputs based on environment variable
-    RCP<Teuchos::FancyOStream> out;
-    if(const char* dbg = std::getenv("MUELU_PAIRWISEAGGREGATION_DEBUG")) {
-      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      out->setShowAllFrontMatter(false).setShowProcRank(true);
-    } else {
-      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
-    }
 
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using values_type       = typename local_matrix_type::values_type;
@@ -858,8 +816,6 @@ namespace MueLu {
       valuesC = values_type(Kokkos::ViewAllocateWithoutInitializing("C values"), nnzC);
     }
 
-    *out << "computed symbolic C" << std::endl;
-
     // Numeric multiplication
     KokkosSparse::Experimental::spgemm_numeric(&kh, A.numRows(),
                                                B.numRows(), B.numCols(),
@@ -868,53 +824,9 @@ namespace MueLu {
                                                rowPtrC, colIndC, valuesC);
     kh.destroy_spgemm_handle();
 
-    *out << "computed numeric C" << std::endl;
-
     C = local_matrix_type(matrixLabel, A.numRows(), B.numCols(), nnzC, valuesC, rowPtrC, colIndC);
 
   } // localSpGEMM
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::string NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  printLocalMatrix(const std::string& matrixLabel,
-                   const typename Matrix::local_matrix_type& A) const {
-    // This function is used for debugging purposes only and does not run on Cuda
-    // It could implement the construction of a hostA the uses the copy constructor
-    // of CrsMatrix with HostMirror views of the original A.
-    // At the moment let us simply check the memory space of views and throw if it is not
-    // host compatible.
-
-    using size_type      = typename Matrix::local_matrix_type::staticcrsgraph_type::size_type;
-    using col_index_type = typename Matrix::local_matrix_type::staticcrsgraph_type::data_type;
-
-    std::ostringstream matrix_description;
-
-    if(std::is_same<typename Matrix::local_matrix_type::values_type::memory_space,
-       typename Matrix::local_matrix_type::values_type::HostMirror::memory_space>::value &&
-       std::is_same<typename Matrix::local_matrix_type::values_type::data_type,
-       typename Matrix::local_matrix_type::values_type::HostMirror::data_type>::value) {
-
-      matrix_description << matrixLabel << ":" << std::endl
-                         << "  - numRows=" << A.numRows() << std::endl
-                         << "  - numCols=" << A.numCols() << std::endl
-                         << "  - nnz=    " << A.nnz() << std::endl
-                         << "  - rows:" << std::endl;
-      for(col_index_type rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {
-        matrix_description << "      row " << rowIdx
-                           << ", entries " << A.graph.row_map(rowIdx)
-                           << " to " << A.graph.row_map(rowIdx + 1) << " { ";
-        for(size_type entryIdx = A.graph.row_map(rowIdx); entryIdx < A.graph.row_map(rowIdx + 1); ++entryIdx) {
-          matrix_description << "(" << A.graph.entries(entryIdx) << ", " << A.values(entryIdx) << ") ";
-        }
-        matrix_description << "}" << std::endl;
-      }
-    } else {
-      throw std::runtime_error("You can only print matrices that are on host");
-    }
-
-    return matrix_description.str();
-  }
-
 
 } //namespace MueLu
 

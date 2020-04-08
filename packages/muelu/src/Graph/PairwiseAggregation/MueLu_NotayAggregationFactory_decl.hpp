@@ -159,10 +159,6 @@ public:
                    const std::string matrixLabel,
                    local_matrix_type& C) const;
 
-  /*! @brief debugging routine meant to disappear eventually */
-  std::string printLocalMatrix(const std::string& matrixLabel,
-                               const local_matrix_type& A) const;
-
 
   //@}
 
