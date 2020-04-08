@@ -505,7 +505,7 @@ void smootherSetup(RCP<Teuchos::ParameterList> params,
   std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
 
   switch(smootherTypes[type]) {
-  case 0:
+  case 0: // None
   {
     break;
   }
@@ -546,7 +546,7 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
   std::map<std::string, int> smootherTypes = getListOfValidSmootherTypes();
 
   switch(smootherTypes[type]) {
-  case 0:
+  case 0: // None
   {
     break;
   }
