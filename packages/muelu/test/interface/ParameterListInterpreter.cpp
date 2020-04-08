@@ -97,11 +97,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool runHeavyTests = false;
   std::string xmlForceFile = "";
   bool useKokkos = false;
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
   if(lib == Xpetra::UseTpetra) {
-    useKokkos = true;
-  }
+#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
+    useKokkos = false;
+#else
+# ifdef HAVE_MUELU_SERIAL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+      useKokkos = false;
+# endif
+# ifdef HAVE_MUELU_OPENMP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+      useKokkos = true;
+# endif
+# ifdef HAVE_MUELU_CUDA
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+      useKokkos = true;
+# endif
 #endif
+  }
   bool compareWithGold = true;
 #ifdef KOKKOS_ENABLE_CUDA
   if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
@@ -145,16 +158,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::vector<std::string> dirList;
   if (runHeavyTests) {
     dirList.push_back(prefix+"EasyParameterListInterpreter-heavy/");
-#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
-    // commented since extended xml interface does not support kokkos factories
-    dirList.push_back(prefix+"FactoryParameterListInterpreter-heavy/");
-#endif
+    if (!useKokkos)
+      // commented since extended xml interface does not support kokkos factories
+      dirList.push_back(prefix+"FactoryParameterListInterpreter-heavy/");
   } else {
     dirList.push_back(prefix+"EasyParameterListInterpreter/");
-#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
-    // commented since extended xml interface does not support kokkos factories
-    dirList.push_back(prefix+"FactoryParameterListInterpreter/");
-#endif
+    if (!useKokkos)
+      // commented since extended xml interface does not support kokkos factories
+      dirList.push_back(prefix+"FactoryParameterListInterpreter/");
   }
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
   // The ML interpreter have internal ifdef, which means that the resulting

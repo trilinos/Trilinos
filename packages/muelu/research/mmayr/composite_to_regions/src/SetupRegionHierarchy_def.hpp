@@ -731,6 +731,8 @@ void createRegionHierarchy(const int maxRegPerProc,
     levelList.set<Teuchos::Array<RCP<Vector> > >("solution", regSol, "Cached solution vector");
   }
 
+  // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseLevelMaps ..." << std::endl;
+
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: MakeCoarseLevel")));
   MakeCoarseLevelMaps(maxRegPerGID,
@@ -742,46 +744,6 @@ void createRegionHierarchy(const int maxRegPerProc,
                       quasiRegColMaps,
                       compRowMaps,
                       regRowImporters);
-
-  // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeOperator ..." << std::endl;
-
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > coarseCompOp;
-  RCP<realvaluedmultivector_type> compCoarseCoordinates;
-  MakeCoarseCompositeOperator(maxRegPerProc,
-                              compRowMaps[numLevels - 1],
-                              quasiRegRowMaps[numLevels - 1],
-                              quasiRegColMaps[numLevels - 1],
-                              regRowImporters[numLevels - 1],
-                              regMatrices[numLevels - 1],
-                              regCoarseCoordinates,
-                              coarseCompOp,
-                              compCoarseCoordinates,
-                              keepCoarseCoords);
-
-  // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeSolver ..." << std::endl;
-
-  tmLocal = Teuchos::null;
-  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: CreateCoarseSolver")));
-  const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
-  coarseSolverData->set<RCP<const Map> >("compCoarseRowMap", coarseCompOp->getRowMap());
-  if (coarseSolverType == "direct")
-  {
-    RCP<DirectCoarseSolver> coarseDirectSolver = MakeCompositeDirectSolver(coarseCompOp);
-    coarseSolverData->set<RCP<DirectCoarseSolver> >("direct solver object", coarseDirectSolver);
-  }
-  else if (coarseSolverType == "amg")
-  {
-    if(keepCoarseCoords == false) {
-      std::cout << "WARNING: you requested a coarse AMG solver but you did not request coarse coordinates to be kept, repartitioning is not possible!" << std::endl;
-    }
-    std::string amgXmlFileName = coarseSolverData->get<std::string>("amg xml file");
-    RCP<Hierarchy> coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName, compCoarseCoordinates);
-    coarseSolverData->set<RCP<Hierarchy> >("amg hierarchy object", coarseAMGHierarchy);
-  }
-  else
-  {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
-  }
 
   // std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
 
@@ -795,15 +757,69 @@ void createRegionHierarchy(const int maxRegPerProc,
                               regRowImporters,
                               quasiRegRowMaps);
 
-  int noCoarseSmoothing = 1;
-  if (coarseSolverType == "smoother") noCoarseSmoothing = 0;
+  // std::cout << mapComp->getComm()->getRank() << " | Setup smoothers ..." << std::endl;
 
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: SmootherSetup")));
-  for(int levelIdx = 0; levelIdx < numLevels-noCoarseSmoothing; ++levelIdx) {
+  // Only set the smoother up to the last but one level
+  // if we want to use a smoother on the coarse level
+  // we will handle that separately with "coarse solver type"
+  for(int levelIdx = 0; levelIdx < numLevels - 1; ++levelIdx) {
+    smootherParams[levelIdx]->set("smoother: level", levelIdx);
     smootherSetup(smootherParams[levelIdx], regRowMaps[levelIdx],
                   regMatrices[levelIdx], regInterfaceScalings[levelIdx],
                   regRowImporters[levelIdx]);
+  }
+
+  // std::cout << mapComp->getComm()->getRank() << " | CreateCoarseSolver ..." << std::endl;
+
+  tmLocal = Teuchos::null;
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: CreateCoarseSolver")));
+  const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
+  if (coarseSolverType == "smoother") {
+    // Set the smoother on the coarsest level.
+    const std::string smootherXMLFileName = coarseSolverData->get<std::string>("smoother xml file");
+    RCP<ParameterList> coarseSmootherParams = smootherParams[numLevels - 1];
+    Teuchos::updateParametersFromXmlFileAndBroadcast(smootherXMLFileName, coarseSmootherParams.ptr(), *mapComp->getComm());
+    coarseSmootherParams->set("smoother: level", numLevels - 1);
+    coarseSmootherParams->print();
+    smootherSetup(smootherParams[numLevels - 1], regRowMaps[numLevels - 1],
+                  regMatrices[numLevels - 1], regInterfaceScalings[numLevels - 1],
+                  regRowImporters[numLevels - 1]);
+  } else if( (coarseSolverType == "direct") || (coarseSolverType == "amg") ) {
+    // A composite coarse matrix is needed
+
+    // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeOperator ..." << std::endl;
+
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > coarseCompOp;
+    RCP<realvaluedmultivector_type> compCoarseCoordinates;
+    MakeCoarseCompositeOperator(maxRegPerProc,
+                                compRowMaps[numLevels - 1],
+                                quasiRegRowMaps[numLevels - 1],
+                                quasiRegColMaps[numLevels - 1],
+                                regRowImporters[numLevels - 1],
+                                regMatrices[numLevels - 1],
+                                regCoarseCoordinates,
+                                coarseCompOp,
+                                compCoarseCoordinates,
+                                keepCoarseCoords);
+
+    coarseSolverData->set<RCP<const Map> >("compCoarseRowMap", coarseCompOp->getRowMap());
+
+    // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeSolver ..." << std::endl;
+    if (coarseSolverType == "direct") {
+      RCP<DirectCoarseSolver> coarseDirectSolver = MakeCompositeDirectSolver(coarseCompOp);
+      coarseSolverData->set<RCP<DirectCoarseSolver> >("direct solver object", coarseDirectSolver);
+    } else if (coarseSolverType == "amg") {
+      if(keepCoarseCoords == false) {
+        std::cout << "WARNING: you requested a coarse AMG solver but you did not request coarse coordinates to be kept, repartitioning is not possible!" << std::endl;
+      }
+      std::string amgXmlFileName = coarseSolverData->get<std::string>("amg xml file");
+      RCP<Hierarchy> coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName, compCoarseCoordinates);
+      coarseSolverData->set<RCP<Hierarchy> >("amg hierarchy object", coarseAMGHierarchy);
+    }
+  } else  {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unknown coarse solver type.");
   }
 
 } // createRegionHierarchy
@@ -988,6 +1004,8 @@ void vCycle(const int l, ///< ID of current level
     fos->setOutputToRootOnly(0);
 
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: * - coarsest grid solve")));
+
+    // std::cout << "Applying coarse colver" << std::endl;
 
     const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
     if (coarseSolverType == "smoother") {

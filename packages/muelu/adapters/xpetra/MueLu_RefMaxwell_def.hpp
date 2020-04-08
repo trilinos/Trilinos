@@ -171,12 +171,21 @@ namespace MueLu {
 
 #if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
     useKokkos_ = false;
-#elif defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
-    useKokkos_ = list.get("use kokkos refactor",true);
 #else
-    useKokkos_ = list.get("use kokkos refactor",false);
+# ifdef HAVE_MUELU_SERIAL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+      useKokkos_ = false;
+# endif
+# ifdef HAVE_MUELU_OPENMP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+      useKokkos_ = true;
+# endif
+# ifdef HAVE_MUELU_CUDA
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+      useKokkos_ = true;
+# endif
+    useKokkos_ = list.get("use kokkos refactor",useKokkos_);
 #endif
-
   }
 
 

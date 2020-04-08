@@ -162,31 +162,32 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName        = "";                  clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
-  std::string yamlFileName       = "";                  clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
-  std::string convergenceLog     = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,    "file in which the convergence history of the linear solver is stored");
-  int         maxIts             = 200;                 clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-  std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
-  int         smootherIts        = 2;                   clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
-  double      smootherDamp       = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
-  double      smootherChebyEigRatio = 2.0;              clp.setOption("smootherChebyEigRatio", &smootherChebyEigRatio, "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
-  double      smootherChebyBoostFactor = 1.1;           clp.setOption("smootherChebyBoostFactor", &smootherChebyBoostFactor, "boost factor for Chebyshev smoother");
-  double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
-  bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
-  bool        keepCoarseCoords   = false;               clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
-  std::string coarseSolverType   = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,  "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
-  std::string unstructured       = "{}";                clp.setOption("unstructured",          &unstructured,      "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
-  std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,  "Read parameters for AMG as coarse level solve from this xml file.");
+  std::string xmlFileName           = "";                  clp.setOption("xml",                   &xmlFileName,           "read parameters from an xml file");
+  std::string yamlFileName          = "";                  clp.setOption("yaml",                  &yamlFileName,          "read parameters from a yaml file");
+  std::string convergenceLog        = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,        "file in which the convergence history of the linear solver is stored");
+  int         maxIts                = 200;                 clp.setOption("its",                   &maxIts,                "maximum number of solver iterations");
+  std::string smootherType          = "Jacobi";            clp.setOption("smootherType",          &smootherType,          "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
+  int         smootherIts           = 2;                   clp.setOption("smootherIts",           &smootherIts,           "number of smoother iterations");
+  double      smootherDamp          = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,          "damping parameter for the level smoother");
+  double      smootherChebyEigRatio = 2.0;                 clp.setOption("smootherChebyEigRatio", &smootherChebyEigRatio, "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
+  double      smootherChebyBoostFactor = 1.1;              clp.setOption("smootherChebyBoostFactor", &smootherChebyBoostFactor, "boost factor for Chebyshev smoother");
+  double      tol                   = 1e-12;               clp.setOption("tol",                   &tol,                   "solver convergence tolerance");
+  bool        scaleResidualHist     = true;                clp.setOption("scale", "noscale",      &scaleResidualHist,     "scaled Krylov residual history");
+  bool        serialRandom          = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
+  bool        keepCoarseCoords      = false;               clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
+  std::string coarseSolverType      = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,      "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
+  std::string unstructured          = "{}";                clp.setOption("unstructured",          &unstructured,          "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
+  std::string coarseAmgXmlFile      = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,      "Read parameters for AMG as coarse level solve from this xml file.");
+  std::string coarseSmootherXMLFile = "";                  clp.setOption("coarseSmootherXML",     &coarseSmootherXMLFile, "File containing the parameters to use with the coarse level smoother.");
 #ifdef HAVE_MUELU_TPETRA
-  std::string equilibrate = "no" ;                      clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
+  std::string equilibrate = "no" ;                         clp.setOption("equilibrate",           &equilibrate,           "equilibrate the system (no | diag | 1-norm)");
 #endif
 #ifdef HAVE_MUELU_CUDA
-  bool profileSetup = false;                            clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
-  bool profileSolve = false;                            clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+  bool profileSetup = false;                               clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
+  bool profileSolve = false;                               clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
-  int  cacheSize = 0;                                   clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
-  bool useStackedTimer   = false;                       clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
+  int  cacheSize = 0;                                      clp.setOption("cachesize",               &cacheSize,           "cache size (in KB)");
+  bool useStackedTimer   = false;                          clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -654,6 +655,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
   coarseSolverData->set<std::string>("coarse solver type", coarseSolverType);
   coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
+  coarseSolverData->set<std::string>("smoother xml file", coarseSmootherXMLFile);
   RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 
 
