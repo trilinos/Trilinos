@@ -807,9 +807,9 @@ namespace KokkosSparse{
           KokkosBlas::scal (localR, one, localB);
           if (sweep > 0 || !init_zero_x_vector) {
             KokkosSparse::
-            spmv ("N", -one, crsmatA,
-                             localX,
-                        one, localR);
+            spmv ("N", scalar_t(-one), crsmatA,
+                                       localX,
+                                 one,  localR);
           }
           if (!two_stage) { // ===== sparse-triangular solve =====
             if (direction == GS_FORWARD ||
@@ -869,16 +869,16 @@ namespace KokkosSparse{
                  (direction == GS_SYMMETRIC && sweep%2 == 0)) {
                 // Z = Z - L*R
                 KokkosSparse::
-                spmv("N", -one, crsmatL,
-                                localR,
-                           one, localZ);
+                spmv("N", scalar_t(-one), crsmatL,
+                                          localR,
+                                    one, localZ);
               }
               else {
                 // Z = R - U*T
                 KokkosSparse::
-                spmv("N", -one, crsmatU,
-                                localR,
-                           one, localZ);
+                spmv("N", scalar_t(-one), crsmatU,
+                                          localR,
+                                    one, localZ);
               }
               #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
               if (ii+1 < NumInnerSweeps) {
