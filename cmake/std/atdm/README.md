@@ -333,13 +333,10 @@ $ source <install-prefix>/load_matching_env.sh
 
 Sourcing this file loads the compilers, MPI, and TPLs and sets up the various
 `ATDM_CONG_` environment variables described above.  It also sets the
-environment variable:
-
-```
-$ export ATDM_TRILINOS_INSTALL_PREFIX=<install-prefix>
-```
-
-that clients can use to point back to the Trilinos installation directory.
+environment variable `export Trilinos_ROOT=<install-prefix>` that clients can
+use to point back to the Trilinos installation directory.  Also, this variable
+will allow `find_package(Trilinos)` to automatically find the right Trilinos
+installation with no further action.
 
 The install location `<install-prefix>` can be set using the CMake cache
 variable:
@@ -354,29 +351,23 @@ or by setting the environment variable:
 $ export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=<install-prefix>
 ```
 
+when configuring Trilinos.
+
 If the environment variable `ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX` is set,
 then it will be used to set `CMAKE_INSTALL_PREFIX` internally and override any
 value that might be passed in or set otherwise.  (This is a `FORCE`D cache
 variable set on `CMAKE_INSTALL_PREFIX` so this value will appear in the
 `CMakeCache.txt` file.)
 
-The name of the installed script `load_matching_env.sh` and the environment
-variable `ATDM_TRILINOS_INSTALL_PREFIX` that it exports can be changed at
-configure-time using the CMake cache variables:
+The name of the installed script `load_matching_env.sh` can be changed at
+configure-time using the CMake cache variable:
 
 ```
   -D ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME=<load-matching-env-sh> \
-  -D ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME=<trilinos-install-prefix-var-name> \
 ```
 
-where
-
-* If the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
-  specified, then it is given the name `load_matching_env.sh` by default.
-
-* If the CMake cache variable `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is
-  not specified, then it is given the name `ATDM_TRILINOS_INSTALL_PREFIX` by
-  default.
+whereif the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
+specified, then it is given the name `load_matching_env.sh` by default.
 
 
 ## Parallel build and test processes
