@@ -379,6 +379,42 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, TransferRequest, LO, GO, Node )
+  {
+    using Tpetra::createContigMapWithNode;
+    using Tpetra::createNonContigMapWithNode;
+
+    // test ABSMAX CombineMode
+    //
+    // The test includes both local and remote entries, to exercise
+    // both copying and permuting, and unpacking and combining.
+    typedef Tpetra::Vector<>::scalar_type SC;
+    typedef Tpetra::Vector<SC,LO,GO,Node> Vec;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const int numImages = comm->getSize();
+    if (numImages < 2) return;
+
+    auto smap = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
+    const GO myOnlyGID = smap->getGlobalElement (0);
+    auto dmap = createNonContigMapWithNode<LO, GO, Node> (tuple<GO> (myOnlyGID, (myOnlyGID+1) % numImages), comm);
+    RCP<Vec> srcVec = rcp (new Vec (smap));
+    srcVec->putScalar (-1.0);
+    RCP<Vec> dstVec = rcp (new Vec (dmap));
+    dstVec->putScalar (-3.0);
+    // first item of dstVec is local (w.r.t. srcVec), while the second is remote
+    // ergo, during the import:
+    // - the first will be over-written (by 1.0) from the source, while
+    // - the second will be "combined", i.e., abs(max(1.0,3.0)) = 3.0 from the dest
+    auto importer = Tpetra::createImport<LO, GO, Node> (smap, dmap);
+    auto req = dstVec->startImport (*srcVec,*importer,Tpetra::ABSMAX);
+    req->process();
+    TEST_COMPARE_ARRAYS( tuple<SC>(-1.0,3.0), dstVec->get1dView() )
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
 
  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ExportReverse, LO, GO, Node )
   {

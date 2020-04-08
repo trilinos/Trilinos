@@ -53,6 +53,7 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_SrcDistObject.hpp"
 #include "Tpetra_DistObject_fwd.hpp"
+#include "Tpetra_TransferRequest.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <memory>
 #include <type_traits>
@@ -350,6 +351,9 @@ namespace Tpetra {
     //! The type of the Map specialization to use with this class.
     using map_type = Map<local_ordinal_type, global_ordinal_type, node_type>;
 
+    using transfer_type = ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>;
+    // using request_type = ::Tpetra::TransferRequest<Packet, LocalOrdinal, GlobalOrdinal, Node>;
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -419,6 +423,18 @@ namespace Tpetra {
               const CombineMode CM,
               const bool restrictedMode = false);
 
+    Teuchos::RCP<TransferRequest<Packet, LocalOrdinal, GlobalOrdinal, Node> >
+    startImport (const SrcDistObject& source,
+                 Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >& importer,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    finishImport (const SrcDistObject& source,
+                  const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                  const CombineMode CM,
+                  const bool needCommunication);
+
     /// \brief Export data into this object using an Export object
     ///   ("forward mode").
     ///
@@ -451,6 +467,19 @@ namespace Tpetra {
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
               const CombineMode CM,
               const bool restrictedMode = false);
+
+    Teuchos::RCP<TransferRequest<Packet, LocalOrdinal, GlobalOrdinal, Node> >
+    startExport (const SrcDistObject& source,
+                 Teuchos::RCP<const Export<LocalOrdinal, GlobalOrdinal, Node> >& exporter,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    finishExport (const SrcDistObject& source,
+                  const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                  const CombineMode CM,
+                  const bool needCommunication);
+
 
     /// \brief Import data into this object using an Export object
     ///   ("reverse mode").
@@ -486,6 +515,18 @@ namespace Tpetra {
               const CombineMode CM,
               const bool restrictedMode = false);
 
+    Teuchos::RCP<TransferRequest<Packet, LocalOrdinal, GlobalOrdinal, Node> >
+    startImport (const SrcDistObject& source,
+                 Teuchos::RCP<const Export<LocalOrdinal, GlobalOrdinal, Node> >& exporter,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    finishImport (const SrcDistObject& source,
+                  const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                  const CombineMode CM,
+                  const bool needCommunication);
+
     /// \brief Export data into this object using an Import object
     ///   ("reverse mode").
     ///
@@ -519,6 +560,19 @@ namespace Tpetra {
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
               const CombineMode CM,
               const bool restrictedMode = false);
+
+    Teuchos::RCP<TransferRequest<Packet, LocalOrdinal, GlobalOrdinal, Node> >
+    startExport (const SrcDistObject& source,
+                 Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >& importer,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    finishExport (const SrcDistObject& source,
+                  const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                  const CombineMode CM,
+                  const bool needCommunication);
+
 
     //@}
     //! @name Attribute accessor methods
@@ -623,7 +677,7 @@ namespace Tpetra {
 
     //@}
 
-  protected:
+  public:
     /// \enum ReverseOption
     /// \brief Whether the data transfer should be performed in
     ///   forward or reverse mode.
@@ -636,6 +690,8 @@ namespace Tpetra {
       DoForward, //*!< Perform the transfer in forward mode.
       DoReverse  //*!< Perform the transfer in reverse mode.
     };
+
+  protected:
 
     /// \brief Whether the implementation's instance promises always
     ///   to have a constant number of packets per LID (local index),
@@ -681,6 +737,31 @@ namespace Tpetra {
                 const ReverseOption revOp,
                 const CombineMode CM,
                 const bool restrictedMode);
+
+  private:
+    bool transferInProgress_;
+
+  protected:
+
+    virtual Teuchos::RCP<TransferRequest<Packet, LocalOrdinal, GlobalOrdinal, Node> >
+    startTransfer (const SrcDistObject& src,
+                   Teuchos::RCP<const transfer_type>& transfer,
+                   const char modeString[],
+                   const ReverseOption revOp,
+                   const CombineMode CM,
+                   const bool restrictedMode);
+
+
+
+  public:
+
+    virtual void
+    finishTransfer (const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                    const ReverseOption revOp,
+                    const CombineMode CM,
+                    const bool needCommunication);
+
+  protected:
 
     /// \brief Reallocate numExportPacketsPerLID_ and/or
     ///   numImportPacketsPerLID_, if necessary.
@@ -743,6 +824,32 @@ namespace Tpetra {
                    const ReverseOption revOp,
                    const bool commOnHost,
                    const bool restrictedMode);
+
+    virtual bool
+    startTransferNew (const SrcDistObject& src,
+                      const CombineMode CM,
+                      const size_t numSameIDs,
+                      const Kokkos::DualView<const local_ordinal_type*,
+                        buffer_device_type>& permuteToLIDs,
+                      const Kokkos::DualView<const local_ordinal_type*,
+                        buffer_device_type>& permuteFromLIDs,
+                      const Kokkos::DualView<const local_ordinal_type*,
+                        buffer_device_type>& remoteLIDs,
+                      const Kokkos::DualView<const local_ordinal_type*,
+                        buffer_device_type>& exportLIDs,
+                      Distributor& distor,
+                      const ReverseOption revOp,
+                      const bool commOnHost,
+                      const bool restrictedMode);
+
+    virtual void
+    finishTransferNew (const CombineMode CM,
+                       const bool needCommunication,
+                       const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& remoteLIDs,
+                       Distributor& distor,
+                       const ReverseOption revOp,
+                       const bool commOnHost);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///

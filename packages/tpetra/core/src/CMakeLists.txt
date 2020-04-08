@@ -311,7 +311,7 @@ FUNCTION(TPETRA_PROCESS_ALL_LGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
       FOREACH(LO ${LOCALORDINAL_TYPES})
         TPETRA_MANGLE_TEMPLATE_PARAMETER(LO_MANGLED "${LO}")
         TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
-        
+
         TPETRA_PROCESS_ONE_LGN_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
           "${CLASS_NAME}" "${CLASS_MACRO_NAME}"
           "${LO_MANGLED}" "${GO_MANGLED}" "${NT_MANGLED}"
@@ -581,6 +581,10 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::DistObject.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(DISTOBJECT_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "DistObject" "DISTOBJECT" "${DistObject_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${DISTOBJECT_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::TransferRequest.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(TRANSFERREQUEST_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "TransferRequest" "TRANSFERREQUEST" "${DistObject_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${TRANSFERREQUEST_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::leftAndOrRightScaleCrsMatrix.
   # Do this only for non-integer Scalar types, since we really only
