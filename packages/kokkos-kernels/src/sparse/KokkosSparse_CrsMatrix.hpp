@@ -435,6 +435,8 @@ public:
   //! Nonconst version of the type of the entries in the sparse matrix.
   typedef typename values_type::non_const_value_type non_const_value_type;
 
+  typedef CrsMatrix<const_value_type,ordinal_type,device_type,memory_traits,size_type> const_type;
+
 #ifdef KOKKOS_USE_CUSPARSE
   cusparseHandle_t cusparse_handle;
   cusparseMatDescr_t cusparse_descr;
