@@ -339,7 +339,6 @@ public:
     algo_state.ncval = fletcher.getNumberConstraintEvaluations();
     // Update objective function and constraints
     // fletcher.update(x,true,algo_state.iter);
-    // bnd.update(x,true,algo_state.iter);
     // Update multipliers
     algo_state.lagmultVec->set(*(fletcher.getMultiplierVec(x)));
   }

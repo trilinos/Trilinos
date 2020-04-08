@@ -45,6 +45,7 @@
 #define ROL_BOUND_CONSTRAINT_H
 
 #include "ROL_Vector.hpp"
+#include "ROL_Ptr.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
@@ -68,45 +69,23 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class BoundConstraint {
 private:
   bool Lactivated_; ///< Flag that determines whether or not the lower bounds are being used.
   bool Uactivated_; ///< Flag that determines whether or not the upper bounds are being used.
+
+protected:
   Ptr<Vector<Real>> lower_;
   Ptr<Vector<Real>> upper_;
-  bool hasSetScalar_;
 
 public:
 
   virtual ~BoundConstraint() {}
-
-  BoundConstraint(void) : Lactivated_(true), Uactivated_(true), hasSetScalar_(false) {}
-
-  BoundConstraint(const Vector<Real> &x) : Lactivated_(false), Uactivated_(false), hasSetScalar_(false) {
-    try {
-      lower_ = x.clone(); lower_->setScalar(ROL_NINF<Real>());
-      upper_ = x.clone(); upper_->setScalar(ROL_INF<Real>());
-      hasSetScalar_ = true;
-    }
-    catch(std::exception &e) {
-      hasSetScalar_ = false;
-      // Do nothing.  If someone calls getLowerBound or getUpperBound,
-      // an exception will be thrown.
-    }
-  }
-
+  BoundConstraint(void);
+  BoundConstraint(const Vector<Real> &x);
 
   // REQUIRED FUNCTIONS (VIRTUAL)
-
-  /** \brief Update bounds.
-
-      The update function allows the user to update the bounds at each new iterations.
-          @param[in]      x      is the optimization variable.
-          @param[in]      flag   is set to true if control is changed.
-          @param[in]      iter   is the outer algorithm iterations count.
-  */
-  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
 
   /** \brief Project optimization variables onto the bounds.
 
@@ -116,11 +95,7 @@ public:
       \f]
        @param[in,out]      x is the optimization variable.
   */
-  virtual void project( Vector<Real> &x ) {
-    if (isActivated()) {
-      throw Exception::NotImplemented(">>> ROL::BoundConstraint::project: Not Implemented!");
-    }
-  }
+  virtual void project( Vector<Real> &x );
 
   /** \brief Project optimization variables into the interior of the feasible set.
 
@@ -132,11 +107,7 @@ public:
       \f]
        @param[in,out]      x is the optimization variable.
   */
-  virtual void projectInterior( Vector<Real> &x ) {
-    if (isActivated()) {
-      throw Exception::NotImplemented(">>> ROL::BoundConstraint::projectInterior: Not Implemented!");
-    }
-  }
+  virtual void projectInterior( Vector<Real> &x );
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
 
@@ -149,11 +120,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
-    if (isUpperActivated()) {
-      throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
-    }
-  }
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
 
@@ -169,11 +136,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
-    if (isUpperActivated()) {
-      throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
-    }
-  }
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-active set.
 
@@ -186,11 +149,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
-    if (isLowerActivated()) {
-      throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
-    }
-  }
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
 
@@ -206,116 +165,77 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
-    if (isLowerActivated()) {
-      throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
-    }
-  }
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
 
 
   // QUERY FUNCTIONS (VIRTUAL AND NONVIRTUAL)
 
   /** \brief Return the ref count pointer to the lower bound vector */
-  virtual const Ptr<const Vector<Real>> getLowerBound( void ) const {
-    if (hasSetScalar_) {
-      return lower_;
-    }
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::getLowerBound: Not implemented!");
-  }
+  virtual const Ptr<const Vector<Real>> getLowerBound( void ) const;
 
   /** \brief Return the ref count pointer to the upper bound vector */
-  virtual const Ptr<const Vector<Real>> getUpperBound( void ) const {
-    if (hasSetScalar_) {
-      return upper_;
-    }
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::getUpperBound: Not implemented!");
-  }
+  virtual const Ptr<const Vector<Real>> getUpperBound( void ) const;
 
   /** \brief Check if the vector, v, is feasible.
 
       This function returns true if \f$v = P_{[a,b]}(v)\f$.
       @param[in]    v   is the vector to be checked.
   */
-  virtual bool isFeasible( const Vector<Real> &v ) { 
-    if (isActivated()) {
-      throw Exception::NotImplemented(">>> ROL::BoundConstraint::isFeasible: Not implemented!");
-    }
-    return true;
-  }
+  virtual bool isFeasible( const Vector<Real> &v );
 
   /** \brief Turn on lower bound.
 
       This function turns on lower bounds.
   */
-  void activateLower(void) {
-    Lactivated_ = true;
-  }
+  void activateLower(void);
 
   /** \brief Turn on upper bound.
 
       This function turns on upper bounds.
   */
-  void activateUpper(void) {
-    Uactivated_ = true;
-  }
+  void activateUpper(void);
 
   /** \brief Turn on bounds.
    
       This function turns the bounds on. 
   */
-  void activate(void) {
-    activateLower();
-    activateUpper();
-  }
+  void activate(void);
 
   /** \brief Turn off lower bound.
 
       This function turns the lower bounds off.
   */
-  void deactivateLower(void) {
-    Lactivated_ = false;
-  }
+  void deactivateLower(void);
 
   /** \brief Turn off upper bound.
 
       This function turns the upper bounds off.
   */
-  void deactivateUpper(void) {
-    Uactivated_ = false;
-  }
+  void deactivateUpper(void);
 
   /** \brief Turn off bounds.
 
       This function turns the bounds off.
   */
-  void deactivate(void) {
-    deactivateLower();
-    deactivateUpper();
-  }
+  void deactivate(void);
 
   /** \brief Check if lower bound are on.
 
       This function returns true if the lower bounds are turned on.
   */
-  bool isLowerActivated(void) const {
-    return Lactivated_;
-  }
+  bool isLowerActivated(void) const;
 
   /** \brief Check if upper bound are on.
 
       This function returns true if the upper bounds are turned on.
   */
-  bool isUpperActivated(void) const {
-    return Uactivated_;
-  }
+  bool isUpperActivated(void) const;
 
   /** \brief Check if bounds are on.
 
       This function returns true if the bounds are turned on.
   */
-  bool isActivated(void) const {
-    return (isLowerActivated() || isUpperActivated());
-  }
+  bool isActivated(void) const;
 
 
   // HELPER FUNCTIONS (NONVIRTUAL)
@@ -331,12 +251,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
-    if (isActivated()) {
-      pruneUpperActive(v,x,eps);
-      pruneLowerActive(v,x,eps);
-    }
-  }
+  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
   
@@ -351,12 +266,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
-    if (isActivated()) {
-      pruneUpperActive(v,g,x,xeps,geps);
-      pruneLowerActive(v,g,x,xeps,geps);
-    }
-  }
+  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
   
@@ -365,15 +275,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
-    if (isLowerActivated()) {
-      const Real one(1);
-      Ptr<Vector<Real>> tmp = v.clone(); 
-      tmp->set(v);
-      pruneLowerActive(*tmp,x,eps);
-      v.axpy(-one,*tmp);
-    }
-  }
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
   
@@ -382,15 +284,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) { 
-    if (isUpperActivated()) {
-      const Real one(1);
-      Ptr<Vector<Real>> tmp = v.clone(); 
-      tmp->set(v);
-      pruneUpperActive(*tmp,x,eps);
-      v.axpy(-one,*tmp);
-    }
-  }
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
@@ -401,15 +295,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) { 
-    if (isLowerActivated()) {
-      const Real one(1);
-      Ptr<Vector<Real>> tmp = v.clone(); 
-      tmp->set(v);
-      pruneLowerActive(*tmp,g,x,xeps,geps);
-      v.axpy(-one,*tmp);
-    }
-  }
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
@@ -420,15 +306,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) { 
-    if (isUpperActivated()) {
-      const Real one(1);
-      Ptr<Vector<Real>> tmp = v.clone(); 
-      tmp->set(v);
-      pruneUpperActive(*tmp,g,x,xeps,geps);
-      v.axpy(-one,*tmp);
-    }
-  }
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
   
@@ -437,15 +315,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) { 
-    if (isActivated()) {
-      const Real one(1);
-      Ptr<Vector<Real>> tmp = v.clone(); 
-      tmp->set(v);
-      pruneActive(*tmp,x,eps);
-      v.axpy(-one,*tmp);
-    }
-  }
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
@@ -456,15 +326,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) { 
-    if (isActivated()) {
-      const Real one(1);
-      Ptr<Vector<Real>> tmp = v.clone(); 
-      tmp->set(v);
-      pruneActive(*tmp,g,x,xeps,geps);
-      v.axpy(-one,*tmp);
-    }
-  }
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
  
   /** \brief Compute projected gradient.
 
@@ -472,13 +334,7 @@ public:
            @param[in,out]    g  is the gradient of the objective function at x.
            @param[in]        x  is the optimization variable
   */
-  void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) {
-    if (isActivated()) {
-      Ptr<Vector<Real>> tmp = g.clone();
-      tmp->set(g);
-      pruneActive(g,*tmp,x);
-    }
-  }
+  void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x );
  
   /** \brief Compute projected step.
 
@@ -486,17 +342,12 @@ public:
       @param[in,out]         v  is the step variable.
       @param[in]             x is the optimization variable.
   */
-  void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) { 
-    if (isActivated()) {
-      const Real one(1);
-      v.plus(x);
-      project(v);
-      v.axpy(-one,x);
-    }
-  }
+  void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x );
 
 }; // class BoundConstraint
 
 } // namespace ROL
+
+#include "ROL_BoundConstraint_Def.hpp"
 
 #endif

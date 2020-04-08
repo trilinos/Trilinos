@@ -288,7 +288,6 @@ public:
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     obj_->update(x,flag,iter);
-    bnd_->update(x,flag,iter);
     isValueComputed_ = false;
     isGradComputed_  = (flag && iter>0) ? false : isGradComputed_;
     isPenEvaluated_  = false;

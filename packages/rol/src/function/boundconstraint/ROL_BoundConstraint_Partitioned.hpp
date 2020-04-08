@@ -57,7 +57,7 @@
 */
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class BoundConstraint_Partitioned : public BoundConstraint<Real> {
 
   typedef Vector<Real>                          V;
@@ -67,6 +67,8 @@ class BoundConstraint_Partitioned : public BoundConstraint<Real> {
 private:
   std::vector<Ptr<BoundConstraint<Real>>> bnd_;
 
+  using BoundConstraint<Real>::lower_;
+  using BoundConstraint<Real>::upper_;
   Ptr<V> l_;
   Ptr<V> u_;
 
@@ -131,10 +133,10 @@ public:
       }
     }
     if (hasLvec_) {
-      l_ = makePtr<PV>(lp);
+      lower_ = makePtr<PV>(lp);
     }
     if (hasUvec_) {
-      u_ = makePtr<PV>(up);
+      upper_ = makePtr<PV>(up);
     }
   }
 
@@ -206,24 +208,6 @@ public:
       }
     }
   }
- 
-  const Ptr<const Vector<Real>> getLowerBound( void ) const {
-    if (hasLvec_) {
-      return l_;
-    }
-    else {
-      return BoundConstraint<Real>::getLowerBound();
-    }
-  }
-       
-  const Ptr<const Vector<Real>> getUpperBound( void ) const {
-    if (hasUvec_) {
-      return u_;
-    }
-    else {
-      return BoundConstraint<Real>::getUpperBound();
-    }
-  }
 
   bool isFeasible( const Vector<Real> &v ) { 
     bool feasible = true;
@@ -239,7 +223,7 @@ public:
 
 
 
-template<class Real>
+template<typename Real>
 Ptr<BoundConstraint<Real>> 
 CreateBoundConstraint_Partitioned( const Ptr<BoundConstraint<Real>> &bnd1,
                                    const Ptr<BoundConstraint<Real>> &bnd2 ) {
