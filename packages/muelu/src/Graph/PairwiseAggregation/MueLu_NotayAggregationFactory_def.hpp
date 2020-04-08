@@ -130,19 +130,20 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
 
-    const MT kappa = STS::magnitude(static_cast<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
+    const MT kappa = static_cast<MT>(pL.get<double>("aggregation: Dirichlet threshold"));
     TEUCHOS_TEST_FOR_EXCEPTION(kappa <= MT_TWO,
                                Exceptions::RuntimeError,
-                               "Pairwise requires kappa > 2 otherwise all rows are considered as Dirichlet rows.");
+                               "Pairwise requires kappa > 2"
+                               " otherwise all rows are considered as Dirichlet rows.");
 
     // Parameters
-    int aggregateTargetSize = 2;
+    int maxNumIter = 3;
     if (pL.isParameter("aggregation: pairwise: size"))
-      aggregateTargetSize = pL.get<int>("aggregation: pairwise: size");
-    TEUCHOS_TEST_FOR_EXCEPTION(aggregateTargetSize != 2 && aggregateTargetSize != 4 && aggregateTargetSize != 8,
+      maxNumIter = pL.get<int>("aggregation: pairwise: size");
+    TEUCHOS_TEST_FOR_EXCEPTION(maxNumIter < 1,
 			       Exceptions::RuntimeError,
-			       "NotayAggregationFactory::Build(): aggregateTargetSize needs to be a power of two");
-    const int maxNumIter = 3;
+			       "NotayAggregationFactory::Build(): \"aggregation: pairwise: size\""
+                               " must be a strictly positive integer");
 
 
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
@@ -248,6 +249,9 @@ namespace MueLu {
       GetOStream(Statistics0) << "Iter " << aggregationIter << ": " << numLocalAggregates << " - "
                               << A->getNodeNumRows() / numLocalAggregates << std::endl;
     }
+    aggregates->SetNumAggregates(numLocalAggregates);
+    aggregates->AggregatesCrossProcessors(false);
+    aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
 
     // DO stuff
     Set(currentLevel, "Aggregates", aggregates);
@@ -422,8 +426,6 @@ namespace MueLu {
 
     // update aggregate object
     aggregates.SetNumAggregates(aggIndex);
-    aggregates.AggregatesCrossProcessors(false);
-    aggregates.ComputeAggregateSizes(true/*forceRecompute*/);
   } // BuildInitialAggregates
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
