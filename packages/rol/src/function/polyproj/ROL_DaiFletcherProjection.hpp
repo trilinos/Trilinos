@@ -63,6 +63,8 @@ private:
   Real atol_, rtol_, ltol_;
   int maxit_, verbosity_;
 
+  Real ctol_;
+
   using PolyhedralProjection<Real>::bnd_;
   using PolyhedralProjection<Real>::con_;
   using PolyhedralProjection<Real>::xprim_;

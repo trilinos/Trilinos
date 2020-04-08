@@ -63,7 +63,7 @@ private:
   int DEFAULT_maxit_, DEFAULT_lstype_, DEFAULT_verbosity_;
   bool DEFAULT_useproj_;
 
-  Real atol_, rtol_, stol_, decr_, factor_, regscale_, errscale_;
+  Real atol_, rtol_, stol_, decr_, factor_, regscale_, errscale_, ctol_;
   int maxit_, lstype_, verbosity_;
   bool useproj_;
 

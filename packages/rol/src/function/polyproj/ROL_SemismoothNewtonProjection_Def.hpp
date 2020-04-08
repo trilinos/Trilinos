@@ -55,8 +55,8 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
                                                              const Vector<Real>               &mul,
                                                              const Vector<Real>               &res)
   : PolyhedralProjection<Real>(xprim,xdual,bnd,con,mul,res),
-    DEFAULT_atol_      (1e-4*std::sqrt(ROL_EPSILON<Real>())),
-    DEFAULT_rtol_      (1e-2),
+    DEFAULT_atol_      (std::sqrt(ROL_EPSILON<Real>()*std::sqrt(ROL_EPSILON<Real>()))),
+    DEFAULT_rtol_      (std::sqrt(ROL_EPSILON<Real>())),
     DEFAULT_stol_      (std::sqrt(ROL_EPSILON<Real>())),
     DEFAULT_decr_      (1e-4),
     DEFAULT_factor_    (0.5),
@@ -89,6 +89,15 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
   list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
   list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
   krylov_ = KrylovFactory<Real>(list);
+
+  // Set tolerance
+  Real resl = residual(*res_,*bnd_->getLowerBound());
+  Real resu = residual(*res_,*bnd_->getUpperBound());
+  Real res0 = std::max(resl,resu);
+  if (res0 < atol_) {
+    res0 = static_cast<Real>(1);
+  }
+  ctol_ = std::min(atol_,rtol_*res0);
 }
 
 template<typename Real>
@@ -166,15 +175,6 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
                                                    Vector<Real> &dlam,
                                                    std::ostream &stream) const {
   const Real zero(0), half(0.5), one(1);
-  // Compute initial residual at lam = 0 to set relative tolerance
-  dlam.zero();
-  update_primal(*xnew_,x,dlam);
-  Real rnorm0 = residual(*res_,*xnew_);
-  if (rnorm0 == zero) {
-    lam.set(dlam);
-    x.set(*xnew_);
-    return;
-  }
   // Compute initial residual
   update_primal(*xnew_,x,lam);
   Real rnorm = residual(*res_,*xnew_);
@@ -182,7 +182,6 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
     x.set(*xnew_);
     return;
   }
-  const Real ctol = std::min(atol_,rtol_*std::max(rnorm0,rnorm));
   Real alpha(1), tmp(0), mu(0), rho(1), dd(0);
   int iter(0), flag(0);
   std::ios_base::fmtflags streamFlags(stream.flags());
@@ -246,21 +245,21 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
       stream << std::setw(15) << std::left << alpha;
       stream << std::setw(15) << std::left << mu;
       stream << std::setw(15) << std::left << rho;
-      stream << std::setw(15) << std::left << ctol;
+      stream << std::setw(15) << std::left << ctol_;
       stream << std::setw(8)  << std::left << iter;
       stream << std::setw(8)  << std::left << flag;
       stream << std::endl;
     }
-    if (rnorm <= ctol) break;
+    if (rnorm <= ctol_) break;
     alpha = one;
   }
   if (verbosity_ > 1) {
     stream << std::endl;
   }
-  if (rnorm > ctol) {
+  if (rnorm > ctol_) {
     //throw Exception::NotImplemented(">>> ROL::PolyhedralProjection::project : Projection failed!");
     stream << ">>> ROL::PolyhedralProjection::project : Projection may be inaccurate!  rnorm = ";
-    stream << rnorm << "  rtol = " << ctol << std::endl;
+    stream << rnorm << "  rtol = " << ctol_ << std::endl;
   }
   x.set(*xnew_);
   stream.flags(streamFlags);
