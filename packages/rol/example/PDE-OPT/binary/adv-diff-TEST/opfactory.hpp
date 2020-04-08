@@ -122,6 +122,20 @@ public:
       ROL::Ptr<std::vector<Real>> xvec, svec;
       xvec = ROL::makePtr<std::vector<Real>>(n*n,0);
       svec = ROL::makePtr<std::vector<Real>>(n*n,vol);
+      std::ifstream file;
+      std::stringstream name;
+      name << "control_" << order << ".txt";
+      Real val(0), zero(0), half(0.5), one(1);
+      file.open(name.str());
+      if (file.is_open()) {
+        for (int i = 0; i < n; ++i) {
+          for (int j = 0; j < n; ++j) {
+            file >> val;
+            (*xvec)[i+j*n] = (val < half ? zero : one);
+          }
+        }
+      }
+      file.close();
       ROL::Ptr<ROL::StdVector<Real>> xstd = ROL::makePtr<ROL::PrimalScaledStdVector<Real>>(xvec,svec);
       z_ = ROL::makePtr<PDE_OptVector<Real>>(xstd);
     }

@@ -81,7 +81,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAG
 
   ENDIF()
 
-  IF (${PACKAGE_NAME}_ENABLE_Epetra AND (NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor OR NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default))
+  IF (${PACKAGE_NAME}_ENABLE_Epetra AND (NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor))
     TRIBITS_ADD_TEST(
       Structured
       NAME "Structured_Laplace2D_Epetra"

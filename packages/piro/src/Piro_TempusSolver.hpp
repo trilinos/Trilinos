@@ -53,44 +53,26 @@
 
 #include "Piro_TempusStepperFactory.hpp"
 #include "Piro_TempusStepControlFactory.hpp"
-
-// This "define" turns on the extended template interface in TempusSolver.
-// Is it necessary??
-#if defined(HAVE_PIRO_TEMPUS) 
-#define ALBANY_BUILD
-#endif
-
-#ifdef ALBANY_BUILD
-#include "Kokkos_DefaultNode.hpp"
-#endif
+#include "Piro_TransientSolver.hpp"
 
 #include <map>
 #include <string>
-
-#include "Tpetra_Map.hpp"
-using default_lo = Tpetra::Map<>::local_ordinal_type;
-using default_go = Tpetra::Map<>::global_ordinal_type;
 
 namespace Piro {
 
 /** \brief Thyra-based Model Evaluator for Tempus solves
  *  \ingroup Piro_Thyra_solver_grp
  * */
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal = default_lo, typename GlobalOrdinal = default_go,
-          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
-#else
 template <typename Scalar>
-#endif
 class TempusSolver
-    : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
+    : public Piro::TransientSolver<Scalar> 
 {
 public:
   /** \name Constructors/initializers */
   //@{
 
   /** \brief Initializes the internals, though the object is a blank slate. To initialize it call <code>initialize</code> */
-  TempusSolver();
+  //TempusSolver();
 
   /** \brief Initialize with internally built objects according to the given parameter list. */
   TempusSolver(
@@ -125,18 +107,6 @@ public:
   void initialize(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model);
-
-  /** \name Overridden from Thyra::ModelEvaluatorBase. */
-  //@{
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
-  //@}
 
   void addStepperFactory(const std::string & stepperName,
                          const Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > & stepperFactories);
@@ -191,16 +161,12 @@ public:
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
   //@{
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
   /** \brief . */
   void evalModelImpl(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
-
-  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
 
   /** \brief . */
   Teuchos::RCP<const Teuchos::ParameterList> getValidTempusParameters() const;
@@ -249,14 +215,8 @@ private:
 };
 
 /** \brief Non-member constructor function */
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal = default_lo, typename GlobalOrdinal = default_go,
-          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
-Teuchos::RCP<TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-#else
 template <typename Scalar>
 Teuchos::RCP<TempusSolver<Scalar> >
-#endif
 tempusSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,

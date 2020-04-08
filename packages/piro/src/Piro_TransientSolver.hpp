@@ -40,45 +40,39 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_VELOCITYVERLETSOLVER_H
-#define PIRO_VELOCITYVERLETSOLVER_H
+#ifndef PIRO_TRANSIENTSOLVER_H
+#define PIRO_TRANSIENTSOLVER_H
 
-#include <iostream>
-
+#include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Piro_ObserverBase.hpp"
 
-#include "Thyra_AdaptiveSolutionManager.hpp"
+#include <map>
+#include <string>
 
 namespace Piro {
 
+/** \brief Thyra-based Model Evaluator for Tempus solves using Tempus
+ * */
 template <typename Scalar>
-class VelocityVerletSolver
-    : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar> {
-
-
-  public:
-
+class TransientSolver
+    : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
+{
+public:
   /** \name Constructors/initializers */
   //@{
+  /** \brief . */
+  explicit TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model, 
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null); 
 
-  /** \brief Takes the number of elements in the discretization . */
-  VelocityVerletSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-                       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-                       const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
-                       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null
-                      );
-
+  /** \brief . */
+  TransientSolver(
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      int numParameters, 
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null); 
   //@}
 
-/** \name Overridden from Thyra::ModelEvaluatorBase. */
+  /** \name Overridden from Thyra::ModelEvaluatorBase. */
   //@{
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x() const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_dot() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
@@ -89,44 +83,36 @@ class VelocityVerletSolver
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
   //@}
 
+protected:
+  /** \name Service methods for subclasses. */
+  //@{
+
+  /** \brief . */
+  void evalConvergedModel(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
+  //@}
+
+
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
   //@{
   /** \brief . */
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
-  /** \brief . */
-  void evalModelImpl(
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
-  //@}
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
 
-  /** \brief . */
-  void setProblemParamDefaults(Teuchos::ParameterList* appParams_);
-  /** \brief . */
-  void setSolverParamDefaults(Teuchos::ParameterList* appParams_);
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList>
-    getValidVelocityVerletParameters() const;
+  Teuchos::RCP<Teuchos::FancyOStream> out;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
 
-   //These are set in the constructor and used in evalModel
-   mutable Teuchos::RCP<Teuchos::ParameterList> appParams;
-   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
-   Teuchos::RCP<Piro::ObserverBase<Scalar> > observer;
-   Teuchos::RCP<Thyra::AdaptiveSolutionManager> solMgr;
-   Teuchos::RCP<Teuchos::FancyOStream> out;
-   Teuchos::EVerbosityLevel solnVerbLevel;
+  int num_p_;
+  int num_g_;
 
-   int num_p;
-   int num_g;
-
-   int numTimeSteps;
-   Scalar t_init, t_final, delta_t;
 
 };
 
 }
 
-#include "Piro_VelocityVerletSolver_Def.hpp"
-
+#include "Piro_TransientSolver_Def.hpp"
 #endif

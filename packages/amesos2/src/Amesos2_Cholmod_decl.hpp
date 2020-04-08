@@ -61,9 +61,9 @@
 namespace Amesos2 {
 
 
-/** \brief Amesos2 interface to the SuperLU package.
+/** \brief Amesos2 interface to the CHOLMOD package.
  *
- * See the \ref superlu_parameters "summary of SuperLU parameters"
+ * See the \ref cholmod_parameters "summary of CHOLMOD parameters"
  * supported by this Amesos2 interface.
  *
  * \ingroup amesos2_solver_interfaces
@@ -93,8 +93,8 @@ public:
   typedef TypeMap<Amesos2::Cholmod,scalar_type>                    type_map;
 
   /*
-   * The SuperLU interface will need two other typedef's, which are:
-   * - the superlu type that corresponds to scalar_type and
+   * The CHOLMOD interface will need two other typedef's, which are:
+   * - the CHOLMOD type that corresponds to scalar_type and
    * - the corresponding type to use for magnitude
    */
   typedef typename type_map::type                                 chol_type;
@@ -219,7 +219,7 @@ private:
   bool loadA_impl(EPhase current_phase);
 
 
-  // struct holds all data necessary to make a superlu factorization or solve call
+  // struct holds all data necessary to make a cholmod factorization or solve call
   mutable struct CholData {
     CHOL::cholmod_sparse A; 
     CHOL::cholmod_dense x, b;
@@ -228,18 +228,32 @@ private:
     CHOL::cholmod_common c;
   } data_;
 
-  // The following Arrays are persisting storage arrays for A, X, and B
+  typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+  typedef long size_type;
+  typedef long ordinal_type;
+  typedef Kokkos::View<size_type*, HostExecSpaceType>       host_size_type_array;
+  typedef Kokkos::View<ordinal_type*, HostExecSpaceType> host_ordinal_type_array;
+
+  typedef Kokkos::View<chol_type*, HostExecSpaceType>      host_value_type_array;
+
+  // The following Views are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for CHOLMOD
-  Teuchos::Array<chol_type> nzvals_;
+  host_value_type_array host_nzvals_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<int> rowind_;
+  host_size_type_array host_rows_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<int> colptr_;
+  host_ordinal_type_array host_col_ptr_view_;
+
+  typedef typename Kokkos::View<chol_type**, Kokkos::LayoutLeft, HostExecSpaceType>
+    host_solve_array_t;
 
   /// Persisting 1D store for X
-  Teuchos::Array<chol_type> xvals_;  int ldx_;
+  mutable host_solve_array_t xValues_;
+  int ldx_;
+
   /// Persisting 1D store for B
-  Teuchos::Array<chol_type> bvals_;  int ldb_;
+  mutable host_solve_array_t bValues_;
+  int ldb_;
 
   bool firstsolve;
   
@@ -262,14 +276,20 @@ private:
  */
 template <>
 struct solver_traits<Cholmod> {
+
+// Cholmod does not yet support float.
 #ifdef HAVE_TEUCHOS_COMPLEX
-  typedef Meta::make_list4<float,
-			   double,
-                           std::complex<double>,
-                           CHOL::complex> supported_scalars;
+  typedef Meta::make_list3<double, std::complex<double>,
+                           Kokkos::complex<double>> supported_scalars;
 #else
-  typedef Meta::make_list2<float, double> supported_scalars;
+  typedef Meta::make_list1<double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<Cholmod,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2

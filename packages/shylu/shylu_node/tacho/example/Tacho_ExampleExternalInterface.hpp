@@ -20,7 +20,6 @@ namespace tacho {
      TASKING_OPTION_PANELSIZE,
      TASKING_OPTION_MAXNUMSUPERBLOCKS, 
      LEVELSET_OPTION_SCHEDULING,
-     LEVELSET_OPTION_MAX_NRHS,
      LEVELSET_OPTION_DEVICE_LEVEL_CUT,
      LEVELSET_OPTION_DEVICE_FACTOR_THRES,
      LEVELSET_OPTION_DEVICE_SOLVE_THRES,
@@ -151,7 +150,6 @@ namespace tacho {
 
       // levelset options
       m_Solver.setLevelSetScheduling          (solverParams[LEVELSET_OPTION_SCHEDULING]);      
-      m_Solver.setLevelSetOptionMaxNrhs       (solverParams[LEVELSET_OPTION_MAX_NRHS]);      
       m_Solver.setLevelSetOptionDeviceLevelCut(solverParams[LEVELSET_OPTION_DEVICE_LEVEL_CUT]);
       m_Solver.setLevelSetOptionDeviceFunctionThreshold
         (solverParams[LEVELSET_OPTION_DEVICE_FACTOR_THRES], 
