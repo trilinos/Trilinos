@@ -56,6 +56,8 @@
 #include "Xpetra_CrsMatrixUtils.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 
+#include "Xpetra_TpetraMultiVector.hpp"
+
 #include "MueLu_RefMaxwell_decl.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
@@ -1926,14 +1928,23 @@ namespace MueLu {
 
       // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
 
+      RCP<Xpetra::TransferRequest<Scalar,LocalOrdinal,GlobalOrdinal,Node> > reqH, req22;
       if (!ImporterH_.is_null()) {
-        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
-        P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: start import coarse (1,1)");
+        reqH = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(P11resTmp_)->startImport(*P11res_, ImporterH_, Xpetra::INSERT);
+      }
+      if (!Importer22_.is_null()) {
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: start import (2,2)");
+        req22 = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(D0resTmp_)->startImport(*D0res_, Importer22_, Xpetra::INSERT);
+      }
+      if (!ImporterH_.is_null()) {
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: finish import coarse (1,1)");
+        reqH->process();
         P11res_.swap(P11resTmp_);
       }
       if (!Importer22_.is_null()) {
-        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
-        D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: finish import (2,2)");
+        req22->process();
         D0res_.swap(D0resTmp_);
       }
 
@@ -1968,14 +1979,24 @@ namespace MueLu {
       }
 
       if (!Importer22_.is_null()) {
-        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: export (2,2)");
-        D0xTmp_->doExport(*D0x_, *Importer22_, Xpetra::INSERT);
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: start export (2,2)");
+        req22 = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(D0xTmp_)->startExport(*D0x_, Importer22_, Xpetra::INSERT);
+      }
+
+      if (!ImporterH_.is_null()) {
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: start export coarse (1,1)");
+        reqH = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(P11xTmp_)->startExport(*P11x_, ImporterH_, Xpetra::INSERT);
+      }
+
+      if (!Importer22_.is_null()) {
+        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: finish export (2,2)");
+        req22->process();
         D0x_.swap(D0xTmp_);
       }
 
       if (!ImporterH_.is_null()) {
-        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: export coarse (1,1)");
-        P11xTmp_->doExport(*P11x_, *ImporterH_, Xpetra::INSERT);
+        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: finish export coarse (1,1)");
+        reqH->process();
         P11x_.swap(P11xTmp_);
       }
 

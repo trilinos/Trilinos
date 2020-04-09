@@ -2,6 +2,7 @@
 
   <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>
   <Parameter name="refmaxwell: mode" type="string" value="additive"/>
+  <Parameter name="refmaxwell: subsolves on subcommunicators" type="bool" value="true"/>
   <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
   <Parameter name="refmaxwell: dump matrices" type="bool" value="false"/>
 
@@ -12,6 +13,11 @@
   <ParameterList name="smoother: params">
     <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
     <Parameter name="relaxation: sweeps" type="int" value="1"/>
+  </ParameterList>
+
+  <ParameterList name="matvec params">
+    <!-- <Parameter name="Send type" type="string" value="Send"/> -->
+    <Parameter name="Send type" type="string" value="Isend"/>
   </ParameterList>
 
   <ParameterList name="refmaxwell: 11list">
@@ -26,6 +32,24 @@
       <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
       <Parameter name="relaxation: sweeps" type="int" value="1"/>
       <Parameter name="relaxation: use l1" type="bool" value="true"/>
+    </ParameterList>
+
+    <ParameterList name="matvec params">
+      <!-- <Parameter name="Send type" type="string" value="Send"/> -->
+      <Parameter name="Send type" type="string" value="Isend"/>
+    </ParameterList>
+
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: target rows per proc" type="int" value="2000"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="2000"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
+    <Parameter name="repartition: print partition distribution" type="bool" value="true"/>
+    <ParameterList name="repartition: params">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
     </ParameterList>
   </ParameterList>
 
@@ -43,13 +67,20 @@
       <Parameter name="relaxation: use l1" type="bool" value="true"/>
     </ParameterList>
 
+    <ParameterList name="matvec params">
+      <!-- <Parameter name="Send type" type="string" value="Send"/> -->
+      <Parameter name="Send type" type="string" value="Isend"/>
+    </ParameterList>
+
     <Parameter name="repartition: enable" type="bool" value="true"/>
     <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
     <Parameter name="repartition: start level" type="int" value="1"/>
-    <Parameter name="repartition: min rows per proc" type="int" value="200"/>
+    <Parameter name="repartition: target rows per proc" type="int" value="2000"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="2000"/>
     <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
     <Parameter name="repartition: remap parts" type="bool" value="true"/>
     <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
+    <Parameter name="repartition: print partition distribution" type="bool" value="true"/>
     <ParameterList name="repartition: params">
       <Parameter name="algorithm" type="string" value="multijagged"/>
     </ParameterList>

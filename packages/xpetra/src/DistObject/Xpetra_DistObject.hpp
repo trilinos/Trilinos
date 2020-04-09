@@ -52,10 +52,34 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_Import.hpp"
 #include "Xpetra_Export.hpp"
+#include "Xpetra_Exceptions.hpp"
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
 namespace Xpetra {
+
+  template<class Packet,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class TransferRequest {
+
+  public:
+
+    //! @name Constructor/Destructor Methods
+    //@{
+
+    //! Destructor.
+    virtual ~TransferRequest() = default;
+
+    virtual void process() = 0;
+
+
+
+    //@}
+
+  };      // TransferRequest class
+
 
   template <class Packet,
             class LocalOrdinal,
@@ -81,14 +105,22 @@ namespace Xpetra {
     //! Import data into this object using an Import object ("forward mode").
     virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
 
+    Teuchos::RCP<TransferRequest <Packet, LocalOrdinal, GlobalOrdinal, Node> > startImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >&importer, CombineMode CM) { TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "DistObject<..>::startExport not implemented"); };
+
     //! Export data into this object using an Export object ("forward mode").
     virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
+
+    Teuchos::RCP<TransferRequest <Packet, LocalOrdinal, GlobalOrdinal, Node> > startExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >&importer, CombineMode CM) { TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "DistObject<..>::startExport not implemented"); };
 
     //! Import data into this object using an Export object ("reverse mode").
     virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
 
+    Teuchos::RCP<TransferRequest <Packet, LocalOrdinal, GlobalOrdinal, Node> > startImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >&exporter, CombineMode CM) { TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "DistObject<..>::startExport not implemented"); };
+
     //! Export data into this object using an Import object ("reverse mode").
     virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
+
+    Teuchos::RCP<TransferRequest <Packet, LocalOrdinal, GlobalOrdinal, Node> > startExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >&importer, CombineMode CM) { TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "DistObject<..>::startExport not implemented"); };
 
     //@}
 

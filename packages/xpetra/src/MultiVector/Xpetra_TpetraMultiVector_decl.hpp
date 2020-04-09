@@ -255,11 +255,19 @@ namespace Xpetra {
 
     void doImport(const DistObject< Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM);
 
+    Teuchos::RCP<TransferRequest <Scalar, LocalOrdinal, GlobalOrdinal, Node> > startImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >&importer, CombineMode CM);
+
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM);
+
+    Teuchos::RCP<TransferRequest <Scalar, LocalOrdinal, GlobalOrdinal, Node> > startExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >&importer, CombineMode CM);
 
     void doImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
 
+    Teuchos::RCP<TransferRequest <Scalar, LocalOrdinal, GlobalOrdinal, Node> > startImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >&exporter, CombineMode CM);
+
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
+
+    Teuchos::RCP<TransferRequest <Scalar, LocalOrdinal, GlobalOrdinal, Node> > startExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >&exporter, CombineMode CM);
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
 

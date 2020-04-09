@@ -51,6 +51,7 @@
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_TpetraImport.hpp"
 #include "Xpetra_TpetraExport.hpp"
+#include "Xpetra_TpetraTransferRequest.hpp"
 
 #include "Xpetra_TpetraMultiVector_decl.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -309,6 +310,18 @@ namespace Xpetra {
     RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
     this->getTpetra_MultiVector()->doImport(*v, toTpetra(importer), toTpetra(CM));
   }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<TransferRequest <Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  startImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >&importer, CombineMode CM) {
+    XPETRA_MONITOR("TpetraMultiVector::startImport");
+
+    XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Xpetra::TpetraMultiVector::startImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
+    RCP< const Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > tImporter = Teuchos::rcp_dynamic_cast<const TpetraImport<LocalOrdinal,GlobalOrdinal,Node> >(importer)->getTpetra_Import();
+    RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
+    return toXpetra(this->getTpetra_MultiVector()->startImport(*v, tImporter, toTpetra(CM)));
+  }
   
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>  
   void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
@@ -319,6 +332,18 @@ namespace Xpetra {
     RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
     this->getTpetra_MultiVector()->doExport(*v, toTpetra(importer), toTpetra(CM));
     
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<TransferRequest <Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  startExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >&importer, CombineMode CM) {
+    XPETRA_MONITOR("TpetraMultiVector::startImport");
+
+    XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Xpetra::TpetraMultiVector::startExport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
+    RCP< const Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > tImporter = Teuchos::rcp_dynamic_cast<const TpetraImport<LocalOrdinal,GlobalOrdinal,Node> >(importer)->getTpetra_Import();
+    RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
+    return toXpetra(this->getTpetra_MultiVector()->startExport(*v, tImporter, toTpetra(CM)));
   }
   
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -331,6 +356,18 @@ namespace Xpetra {
     this->getTpetra_MultiVector()->doImport(*v, toTpetra(exporter), toTpetra(CM));
     
   }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<TransferRequest <Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  startImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >&exporter, CombineMode CM) {
+    XPETRA_MONITOR("TpetraMultiVector::startImport");
+
+    XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Xpetra::TpetraMultiVector::startImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
+    RCP< const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> > tExporter = Teuchos::rcp_dynamic_cast<const TpetraExport<LocalOrdinal,GlobalOrdinal,Node> >(exporter)->getTpetra_Export();
+    RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
+    return toXpetra(this->getTpetra_MultiVector()->startImport(*v, tExporter, toTpetra(CM)));
+  }
   
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
@@ -342,6 +379,18 @@ namespace Xpetra {
     this->getTpetra_MultiVector()->doExport(*v, toTpetra(exporter), toTpetra(CM));
 
     }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<TransferRequest <Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  startExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >&exporter, CombineMode CM) {
+    XPETRA_MONITOR("TpetraMultiVector::startExport");
+
+    XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Xpetra::TpetraMultiVector::startExport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
+    RCP< const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> > tExporter = Teuchos::rcp_dynamic_cast<const TpetraExport<LocalOrdinal,GlobalOrdinal,Node> >(exporter)->getTpetra_Export();
+    RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
+    return toXpetra(this->getTpetra_MultiVector()->startExport(*v, tExporter, toTpetra(CM)));
+  }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
