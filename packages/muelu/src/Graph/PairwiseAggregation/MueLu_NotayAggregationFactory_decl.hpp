@@ -122,6 +122,7 @@ public:
   /*! @brief Initial aggregation phase. */
   void BuildInitialAggregates(const Teuchos::ParameterList& params,
                               const RCP<const Matrix>& A,
+			      const ArrayView<const LO>& orderingVector,
                               const magnitude_type kappa,
                               Aggregates& aggregates,
                               std::vector<unsigned>& aggStat,

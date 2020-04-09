@@ -4,8 +4,9 @@
 
     <ParameterList name="PairwiseAggregationFact">
       <Parameter name="factory"                             type="string" value="NotayAggregationFactory"/>
+      <Parameter name="aggregation: ordering"	   	    type="string" value="random"/>
       <Parameter name="aggregation: compute aggregate qualities" type="bool" value="false"/>
-      <Parameter name="aggregation: pairwise: size"         type="int"    value="3"/>
+      <Parameter name="aggregation: pairwise: size"         type="int"    value="2"/>
       <Parameter name="aggregation: Dirichlet threshold"    type="double" value="4.5"/>
     </ParameterList>
 

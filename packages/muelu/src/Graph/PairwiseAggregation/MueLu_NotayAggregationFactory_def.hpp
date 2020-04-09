@@ -68,6 +68,21 @@
 
 namespace MueLu {
 
+  namespace NotayUtils {
+    template <class LocalOrdinal>
+    LocalOrdinal RandomOrdinal(LocalOrdinal min, LocalOrdinal max) {
+      return min + as<LocalOrdinal>((max-min+1) * (static_cast<double>(std::rand()) / (RAND_MAX + 1.0)));
+    }
+    
+    template <class LocalOrdinal>
+    void RandomReorder(Teuchos::Array<LocalOrdinal> & list) {
+      typedef LocalOrdinal LO;
+      LO n = Teuchos::as<LO>(list.size());
+      for(LO i = 0; i < n-1; i++)
+	std::swap(list[i], list[RandomOrdinal(i,n-1)]);
+    }
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
@@ -78,14 +93,8 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: pairwise: size");
     SET_VALID_ENTRY("aggregation: compute aggregate qualities");
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
+    SET_VALID_ENTRY("aggregation: ordering");
 #undef SET_VALID_ENTRY
-
-
-
-    /*
-    validParamList->getEntry("aggregation: ordering").setValidator(
-	  rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random", "cuthill-mckee"), "aggregation: ordering")));
-    */
 
     // general variables needed in AggregationFactory
     validParamList->set< RCP<const FactoryBase> >("A",           null, "Generating factory of the matrix");
@@ -168,13 +177,30 @@ namespace MueLu {
     // Notay, "Aggregation-based algebraic multigrid for convection-diffusion equations",
     // SISC 34(3), pp. A2288-2316.
 
+    // Handle Ordering 
+    // FIXME: Add Cuthill-McKee
+    std::string orderingStr = pL.get<std::string>("aggregation: ordering");
+    enum {
+      O_NATURAL,
+      O_RANDOM,
+    } ordering;
 
-    // FIXME: Do the ordering
+    ordering = O_NATURAL;
+    if (orderingStr == "random" ) ordering = O_RANDOM;
+    else if(orderingStr == "natural") {}
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(1,Exceptions::RuntimeError,"Invalid ordering type");
+    }
 
-
+    Array<LO> orderingVector(numRows);
+    for (LO i = 0; i < numRows; i++)
+      orderingVector[i] = i;
+    if (ordering == O_RANDOM)
+      MueLu::NotayUtils::RandomReorder(orderingVector);
+  
     // Get the party stated
     LO numNonAggregatedNodes = numRows, numDirichletNodes = 0;
-    BuildInitialAggregates(pL, A, kappa,
+    BuildInitialAggregates(pL, A, orderingVector(), kappa,
                            *aggregates, aggStat, numNonAggregatedNodes, numDirichletNodes);
     TEUCHOS_TEST_FOR_EXCEPTION(0 < numNonAggregatedNodes, Exceptions::RuntimeError,
                                "Initial pairwise aggregation failed to aggregate all nodes");
@@ -263,6 +289,7 @@ namespace MueLu {
   void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildInitialAggregates(const Teuchos::ParameterList& params,
                          const RCP<const Matrix>& A,
+			 const Teuchos::ArrayView<const LO> & orderingVector,
                          const typename Teuchos::ScalarTraits<Scalar>::magnitudeType kappa,
                          Aggregates& aggregates,
                          std::vector<unsigned>& aggStat,
@@ -328,11 +355,10 @@ namespace MueLu {
       }
     }
 
-    // FIXME: Add ordering here or pass it in from Build()
-
     // 2 : Iteration
     LO aggIndex = LO_ZERO;
-    for(LO current_idx = 0; current_idx < numRows; current_idx++) {
+    for(LO i = 0; i < numRows; i++) {
+      LO current_idx = orderingVector[i];
       // If we're aggregated already, skip this guy
       if(aggStat[current_idx] != READY)
         continue;
