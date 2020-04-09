@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -61,7 +61,7 @@ enum TOLERANCE_TYPE_enum {
 class Tolerance
 {
 public:
-  Tolerance() : type(RELATIVE_), value(0.0), floor(0.0) {}
+  Tolerance() = default;
 
   Tolerance(TOLERANCE_TYPE_enum tol_type, double tol_value, double tol_floor)
       : type(tol_type), value(tol_value), floor(tol_floor)
@@ -77,9 +77,9 @@ public:
   const char *typestr() const;
   const char *abrstr() const;
 
-  TOLERANCE_TYPE_enum type;
-  double              value;
-  double              floor;
+  TOLERANCE_TYPE_enum type{RELATIVE_};
+  double              value{0.0};
+  double              floor{0.0};
 
   // If true, use the older definition of the floor tolerance which was
   // |a-b| < floor.  The new definition is |a| < floor && |b| < floor

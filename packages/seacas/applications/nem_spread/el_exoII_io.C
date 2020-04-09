@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -881,7 +881,6 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
     print_line("=", 79);
     fmt::print("\n");
   }
-  return;
 }
 
 /*****************************************************************************/
@@ -957,10 +956,10 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
    * output databases.
    */
   {
-    int sequential = 1;
+    bool sequential = true;
     for (size_t i = 0; i < globals.Num_Node; i++) {
       if ((size_t)global_node_ids[i] != i + 1) {
-        sequential = 0;
+        sequential = false;
         break;
       }
     }
@@ -975,12 +974,12 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
                    i + 1, global_node_ids[i]);
-        sequential = 1; // Map is invalid, ignore it.
+        sequential = true; // Map is invalid, ignore it.
         break;
       }
     }
 
-    if (sequential == 0) {
+    if (!sequential) {
       for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
         size_t itotal_nodes = globals.Num_Internal_Nodes[iproc] + globals.Num_Border_Nodes[iproc] +
@@ -1201,10 +1200,17 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
   size_t ielem_count;
 #endif
   INT *  elem_blk             = nullptr, ipos;
-  size_t num_elem_per_message = 0, num_attr_per_message = 0, num_attr_left_over = 0;
-  size_t num_elem_messages = 0, num_attr_messages = 0, num_elem_left_over = 0;
+  size_t num_elem_per_message = 0;
+  size_t num_attr_per_message = 0;
+  size_t num_attr_left_over   = 0;
+  size_t num_elem_messages    = 0;
+  size_t num_attr_messages    = 0;
+  size_t num_elem_left_over   = 0;
 
-  size_t istart_elem, iend_elem, istart_attr, iend_attr;
+  size_t istart_elem;
+  size_t iend_elem;
+  size_t istart_attr;
+  size_t iend_attr;
   int    local_ielem_blk;
 
   /**************************** execution begins ******************************/
@@ -1477,6 +1483,22 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         break;
       }
     }
+
+    // Check that map is valid 1 <= global_node_id[*]
+    // If not, output a warning and disable the map.
+    for (size_t i = 0; i < globals.Num_Elem; i++) {
+      if (global_ids[i] <= 0) {
+        fmt::print(stderr,
+                   "---------------------------------------------------------------------\n"
+                   "ERROR: Local element {:n} has a global id of {:n} which is invalid.\n"
+                   "       All global ids must be greater than 0. The map will be ignored.\n"
+                   "---------------------------------------------------------------------\n",
+                   i + 1, global_ids[i]);
+        sequential = true; // Map is invalid, ignore it.
+        break;
+      }
+    }
+
     if (!sequential) {
       for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
@@ -1981,7 +2003,9 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
  */
 
 {
-  size_t num_messages, num_left_over, num_node_per_message;
+  size_t num_messages;
+  size_t num_left_over;
+  size_t num_node_per_message;
 
   /* Allocate arrays */
   std::vector<INT>  list_length(Proc_Info[2]);
@@ -2435,7 +2459,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       /* One element ID + One side ID */
       size_t iss_size = 3 * sizeof(INT);
 
-      size_t num_messages, num_left_over, num_elem_per_message;
+      size_t num_messages;
+      size_t num_left_over;
+      size_t num_elem_per_message;
       find_message_info(iss_size, num_elem_in_ssets[i], &num_elem_per_message, &num_messages,
                         &num_left_over);
 

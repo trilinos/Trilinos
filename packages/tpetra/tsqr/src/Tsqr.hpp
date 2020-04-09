@@ -71,24 +71,24 @@ namespace TSQR {
   ///
   /// \tparam Scalar The type of the matrix entries.
   ///
-  /// \tparam NodeTsqrType The intranode (single-node) part of TSQR.
-  ///   Defaults to \c SequentialTsqr, which provides a sequential
-  ///   cache-blocked implementation.  Any class implementing the same
-  ///   compile-time interface is valid.  We provide \c NodeTsqr as an
-  ///   archetype of the "NodeTsqrType" concept, but it is not
-  ///   necessary that NodeTsqrType derive from that abstract base
-  ///   class.  Inheriting from \c NodeTsqr is useful, though, because
-  ///   it provides default implementations of some routines that are
-  ///   not performance-critical.
+  /// \tparam NodeTsqrType The intranode (single-MPI-process) part of
+  ///   TSQR.  Defaults to \c SequentialTsqr, which provides a
+  ///   sequential cache-blocked implementation.  Any class
+  ///   implementing the same compile-time interface is valid.  We
+  ///   provide \c NodeTsqr as an archetype of the "NodeTsqrType"
+  ///   concept, but it is not necessary that NodeTsqrType derive from
+  ///   that abstract base class.  Inheriting from \c NodeTsqr is
+  ///   useful, though, because it provides default implementations of
+  ///   some routines that are not performance-critical.
   ///
   /// \note TSQR only needs to know about the local ordinal type (used
-  ///   to index matrix entries on a single node), not about the
+  ///   to index matrix entries on a single process), not about the
   ///   global ordinal type (used to index matrix entries globally,
-  ///   i.e., over all nodes).  For some distributed linear algebra
-  ///   libraries, such as Epetra, the local and global ordinal types
-  ///   are the same (int, in the case of Epetra).  For other
-  ///   distributed linear algebra libraries, such as Tpetra, the
-  ///   local and global ordinal types may be different.
+  ///   i.e., over all processes).  For some distributed linear
+  ///   algebra libraries, such as Epetra, the local and global
+  ///   ordinal types are the same (int, in the case of Epetra).  For
+  ///   other distributed linear algebra libraries, such as Tpetra,
+  ///   the local and global ordinal types may be different.
   template<class LocalOrdinal,
            class Scalar>
   class Tsqr {
@@ -125,10 +125,10 @@ namespace TSQR {
     /// \brief Constructor
     ///
     /// \param nodeTsqr [in/out] Previously initialized NodeTsqrType
-    ///   object.  This takes care of the intranode part of TSQR.
+    ///   object.  This takes care of the intraprocess part of TSQR.
     ///
     /// \param distTsqr [in/out] Previously initialized DistTsqrType
-    ///   object.  This takes care of the internode part of TSQR.
+    ///   object.  This takes care of the interprocess part of TSQR.
     Tsqr (const node_tsqr_ptr& nodeTsqr,
           const dist_tsqr_ptr& distTsqr) :
       nodeTsqr_ (nodeTsqr),
@@ -138,12 +138,15 @@ namespace TSQR {
       TEUCHOS_ASSERT( ! distTsqr_.is_null () );
     }
 
-    /// \brief Cache size hint in bytes used by the intranode part of TSQR.
+    /// \brief Cache size hint in bytes used by the intraprocess part
+    ///   of TSQR.
     ///
     /// This value may differ from the cache size hint given to the
     /// constructor of the NodeTsqrType object, since that constructor
     /// input is merely a suggestion.
-    size_t cache_size_hint() const { return nodeTsqr_->cache_size_hint(); }
+    size_t cache_size_hint() const {
+      return nodeTsqr_->cache_size_hint();
+    }
 
     /// \brief Does the R factor have a nonnegative diagonal?
     ///
@@ -155,8 +158,9 @@ namespace TSQR {
     ///
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
       // Tsqr computes an R factor with nonnegative diagonal, if and
-      // only if all QR factorization steps (both intranode and
-      // internode) produce an R factor with a nonnegative diagonal.
+      // only if all QR factorization steps (both intraprocess and
+      // interprocess) produce an R factor with a nonnegative
+      // diagonal.
       return nodeTsqr_->QR_produces_R_factor_with_nonnegative_diagonal() &&
         distTsqr_->QR_produces_R_factor_with_nonnegative_diagonal();
     }
@@ -191,29 +195,38 @@ namespace TSQR {
     ///   array.  In particular, Q may <i>not</i> alias A.  If you try
     ///   this, you will certainly give you the wrong answer.
     ///
-    /// \param numRows [in] Number of rows in my node's part of A.
-    ///   Q must have the same number of rows as A on each node.
+    /// \param numRows [in] Number of rows in my process' part of A.
+    ///   Q must have the same number of rows as A on each process.
+    ///
     /// \param numCols [in] Number of columns in A, Q, and R.
-    /// \param A [in/out] On input: my node's part of the matrix to
+    ///
+    /// \param A [in/out] On input: my process' part of the matrix to
     ///   factor; the matrix is distributed over the participating
-    ///   processors.  My node's part of the matrix is stored in
+    ///   processors.  My process' part of the matrix is stored in
     ///   column-major order with column stride LDA.  The columns of A
     ///   on input are the vectors to orthogonalize.  On output:
     ///   overwritten with garbage.
-    /// \param LDA [in] Leading dimension (column stride) of my node's
-    ///   part of A.
-    /// \param Q [out] On output: my node's part of the explicit Q
-    ///   factor.  My node's part of the matrix is stored in
+    ///
+    /// \param LDA [in] Leading dimension (column stride) of my
+    ///   process' part of A.
+    ///
+    /// \param Q [out] On output: my process' part of the explicit Q
+    ///   factor.  My process' part of the matrix is stored in
     ///   column-major order with column stride LDQ (which may differ
     ///   from LDA).  Q may <i>not</i> alias A.
-    /// \param LDQ [in] Leading dimension (column stride) of my node's
-    ///   part of Q.
+    ///
+    /// \param LDQ [in] Leading dimension (column stride) of my
+    ///   process' part of Q.
+    ///
     /// \param R [out] On output: the R factor, which is square with
     ///   the same number of rows and columns as the number of columns
-    ///   in A.  The R factor is replicated on all nodes.  It is
-    ///   stored in column-major order with column stride LDR.
-    /// \param LDR [in] Leading dimension (column stride) of my node's
-    ///   part of R.
+    ///   in A.  The R factor is replicated on all processes in the
+    ///   matrix's communicator.  It is stored in column-major order
+    ///   with column stride LDR.
+    ///
+    /// \param LDR [in] Leading dimension (column stride) of my
+    ///   process' part of R.
+    ///
     /// \param forceNonnegativeDiagonal [in] If true, then (if
     ///   necessary) do extra work (modifying both the Q and R
     ///   factors) in order to force the R factor to have a
@@ -236,6 +249,14 @@ namespace TSQR {
                                forceNonnegativeDiagonal);
     }
 
+    /// \brief Generalization of factorExplicit (see above) that
+    ///   permits input(/output) A and output Q to have contiguous
+    ///   cache blocks.
+    ///
+    /// If contiguousCacheBlocks is true, then both A and Q are stored
+    /// with contiguous cache blocks.  This method ignores LDA and LDQ
+    /// in that case.  R still has the usual column-major storage
+    /// format.
     void
     factorExplicitRaw (const LocalOrdinal numRows,
                        const LocalOrdinal numCols,
@@ -249,7 +270,7 @@ namespace TSQR {
                        const bool forceNonnegativeDiagonal = false)
     {
       const char prefix[] = "TSQR::Tsqr::factorExplicitRaw: ";
-      
+
       // Sanity checks for matrix dimensions.
       if (numRows < numCols) {
         std::ostringstream os;
@@ -289,7 +310,7 @@ namespace TSQR {
           (true, std::runtime_error, prefix <<
            "nodeTsqr_->factor(...) threw: " << e.what ());
       }
-      
+
       // Prepare the output matrix Q by filling with zeros.
       try {
         nodeTsqr_->fill_with_zeros (numRows, numCols, Q, LDQ,
@@ -300,7 +321,7 @@ namespace TSQR {
           (true, std::runtime_error, prefix <<
            "nodeTsqr_->fill_with_zeros(...) threw: " << e.what ());
       }
-      
+
       // Wrap the output matrix Q in a "view."
       mat_view_type Q_rawView (numRows, numCols, Q, LDQ);
       // Wrap the uppermost cache block of Q.  We will need to extract
@@ -324,7 +345,6 @@ namespace TSQR {
       {
         mat_view_type Q_top (numCols, numCols, Q_top_block.data (),
                              Q_top_block.stride (1));
-        mat_view_type R_view (numCols, numCols, R, LDR);
 
         if (nodeTsqr_->wants_device_memory ()) {
           // DistTsqr doesn't know what to do with device memory, so

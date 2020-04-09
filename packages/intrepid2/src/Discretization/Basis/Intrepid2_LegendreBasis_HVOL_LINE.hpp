@@ -73,12 +73,12 @@ namespace Intrepid2
   class OutputFieldType, class InputPointsType>
   struct Hierarchical_HVOL_LINE_Functor
   {
-    using ScratchSpace       = Kokkos::DefaultExecutionSpace::scratch_memory_space;
+    using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     using PointScratchView   = Kokkos::View<PointScalar*, ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     
-    using TeamPolicy = Kokkos::TeamPolicy<>;
-    using TeamMember = TeamPolicy::member_type;
+    using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+    using TeamMember = typename TeamPolicy::member_type;
     
     OutputFieldType  output_;      // F,P
     InputPointsType  inputPoints_; // P,D
@@ -184,12 +184,12 @@ namespace Intrepid2
   : public Basis<ExecutionSpace,OutputScalar,PointScalar>
   {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ordinal_type_array_1d_host;
-    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ordinal_type_array_2d_host;
+    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
     
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::outputViewType OutputViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::pointViewType  PointViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::scalarViewType ScalarViewType;
+    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType OutputViewType;
+    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType  PointViewType;
+    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
   public:

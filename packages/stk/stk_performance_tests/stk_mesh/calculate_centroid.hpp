@@ -37,6 +37,9 @@
 
 #include <vector>
 
+#include "stk_mesh/base/NgpMesh.hpp"
+#include "stk_mesh/base/NgpField.hpp"
+
 namespace stk {
 namespace performance_tests {
 
@@ -92,6 +95,76 @@ calculate_centroid_3d(
     elem_centroid[i*3 + 1] /= num_nodes;
     elem_centroid[i*3 + 2] /= num_nodes;
   }
+}
+
+template <typename CoordFieldType>
+void calculate_centroid(const stk::mesh::NgpMesh &ngpMesh, const CoordFieldType &ngpCoords, const stk::mesh::Selector &sel, stk::mesh::NgpField<double> &ngpCentroid)
+{
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, sel,
+                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
+                                 {
+                                   stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elem);
+
+                                   for(unsigned dim = 0; dim < 3; dim++) {
+                                     ngpCentroid(elem, dim) = 0;
+                                   }
+
+                                   for(size_t i = 0; i < nodes.size(); i++)
+                                   {
+                                     stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
+                                     for(unsigned dim = 0; dim < 3; dim++) {
+                                       ngpCentroid(elem, dim) += ngpCoords(nodeIndex, dim);
+                                     }
+                                   }
+
+                                   for(unsigned dim = 0; dim < 3; dim++) {
+                                     ngpCentroid(elem, dim) /= nodes.size();
+                                   }
+                                 });
+  ngpCentroid.modify_on_device();
+}
+
+template <typename CoordFieldType>
+void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, const stk::mesh::Selector& selector, stk::mesh::FieldBase &centroid)
+{
+  const stk::mesh::FieldBase& coords = *bulk.mesh_meta_data().coordinate_field();
+  CoordFieldType ngpCoords(bulk, coords);
+  stk::mesh::NgpField<double> ngpCentroid(bulk, centroid);
+  stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
+
+  calculate_centroid(ngpMesh, ngpCoords, selector, ngpCentroid);
+
+  ngpCentroid.sync_to_host();
+}
+
+template <typename CoordFieldType>
+void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, stk::mesh::FieldBase &centroid)
+{
+  calculate_centroid_using_coord_field<CoordFieldType>(bulk, bulk.mesh_meta_data().locally_owned_part(), centroid);
+}
+
+inline
+std::vector<double> get_centroid_average(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid)
+{
+  std::vector<double> average = {0, 0, 0};
+  size_t numElems = 0;
+  for(const stk::mesh::Bucket *bucket : bulk.buckets(stk::topology::ELEM_RANK))
+  {
+    for(stk::mesh::Entity elem : *bucket)
+    {
+      double *elemCentroid = stk::mesh::field_data(centroid, elem);
+      for(size_t dim = 0; dim < 3; dim++) {
+        average[dim] += elemCentroid[dim];
+      }
+      numElems++;
+    }
+  }
+
+  for(size_t dim = 0; dim < 3; dim++) {
+    average[dim] /= numElems;
+  }
+
+  return average;
 }
 
 } // namespace performance_tests

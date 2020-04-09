@@ -50,21 +50,6 @@
 #include <stk_search/SearchMethod.hpp>
 #include <stk_transfer/GeometricTransferImpl.hpp>
 #include <stk_transfer/TransferBase.hpp>
-#include <boost/shared_ptr.hpp>
-namespace to_be_deprecated {
-template<typename T>
-boost::shared_ptr<T> make_shared_ptr(std::shared_ptr<T>& ptr)
-{
-    return boost::shared_ptr<T>(ptr.get(), [ptr](T*) mutable {ptr.reset();});
-}
-
-template<typename T>
-std::shared_ptr<T> make_shared_ptr(boost::shared_ptr<T>& ptr)
-{
-    return std::shared_ptr<T>(ptr.get(), [ptr](T*) mutable {ptr.reset();});
-}
-}
-
 
 namespace stk {
 namespace transfer {
@@ -93,22 +78,6 @@ public :
 
 
   enum {Dimension = 3};
-
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2019-05-16
-  STK_DEPRECATED GeometricTransfer(boost::shared_ptr<MeshA> &mesha,
-                                   boost::shared_ptr<MeshB> &meshb,
-                                   const std::string &name,
-                                   const double expansion_factor = 1.5,
-                                   const stk::search::SearchMethod search_method = stk::search::KDTREE)
-  : m_mesha(to_be_deprecated::make_shared_ptr(mesha)),
-  m_meshb(to_be_deprecated::make_shared_ptr(meshb)),
-  m_name (name),
-  m_has_parallel_machine(false),
-  m_expansion_factor(expansion_factor),
-  m_search_method(search_method)
-  {
-  }
-#endif
 
   GeometricTransfer(std::shared_ptr<MeshA> &mesha,
                     std::shared_ptr<MeshB> &meshb,
@@ -149,11 +118,6 @@ public :
   void determine_entities_to_copy(typename MeshA::EntityProcVec &entities_to_copy) const;
   const std::shared_ptr<MeshA> meshA() const {return m_mesha;}
   const std::shared_ptr<MeshB> meshB() const {return m_meshb;}
-
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2019-05-16
-  STK_DEPRECATED boost::shared_ptr<MeshA> mesha() {return to_be_deprecated::make_shared_ptr(m_mesha);}
-  STK_DEPRECATED boost::shared_ptr<MeshB> meshb() {return to_be_deprecated::make_shared_ptr(m_meshb);}
-#endif
 
 protected :
   std::shared_ptr<MeshA>               m_mesha;

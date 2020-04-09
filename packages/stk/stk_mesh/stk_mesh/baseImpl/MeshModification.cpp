@@ -40,6 +40,10 @@ bool MeshModification::modification_begin(const std::string description)
     this->set_sync_state_modifiable();
     this->reset_shared_entity_changed_parts();
 
+    for (FieldBase * stkField : m_bulkData.mesh_meta_data().get_fields()) {
+      stkField->sync_to_host();
+    }
+
     return true;
 }
 
@@ -68,6 +72,8 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
     ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
     ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+
+    m_bulkData.m_entity_repo->clear_all_cache();
 
     if(m_bulkData.parallel_size() > 1)
     {

@@ -1,6 +1,5 @@
 #include <stk_ngp_test/ngp_test.hpp>
 #include <stk_mesh/base/Ngp.hpp>
-#include <stk_mesh/base/NgpFieldManager.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_mesh/base/MetaData.hpp>
@@ -10,6 +9,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/NgpFieldParallel.hpp"
+#include "stk_mesh/base/GetNgpField.hpp"
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -110,9 +110,9 @@ void check_field_on_device(stk::mesh::NgpMesh &mesh,
                            stk::mesh::NgpField<T> & userField,
                            stk::mesh::NgpField<T> & goldValues)
 {
-  stk::mesh::for_each_entity_run(mesh, stk::topology::NODE_RANK, mesh.get_bulk_on_host().mesh_meta_data().universal_part(), KOKKOS_LAMBDA(stk::mesh::NgpMesh::MeshIndex entity)
+  stk::mesh::for_each_entity_run(mesh, stk::topology::NODE_RANK, mesh.get_bulk_on_host().mesh_meta_data().universal_part(), KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
   {
-                                   NGP_EXPECT_NEAR(userField.get(entity, 0), goldValues.get(entity, 0), 1.e-12);
+                                   NGP_EXPECT_NEAR(userField(entity, 0), goldValues(entity, 0), 1.e-12);
                                  });
 }
 
@@ -129,17 +129,16 @@ NGP_TEST_F(NgpParallelSum, simpleVersion)
 
   initialize_shared_values(userField, goldValues);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   stk::mesh::parallel_sum<double>(get_bulk(), std::vector<stk::mesh::NgpField<double>*>{&deviceUserField});
 
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 NGP_TEST_F(NgpParallelSum, simpleVersion_noSyncToDeviceAfterwards)
 {
   const double initValue = 0.0;
@@ -154,10 +153,9 @@ NGP_TEST_F(NgpParallelSum, simpleVersion_noSyncToDeviceAfterwards)
   const bool leaveSharedGoldValuesNotSummed = true;
   initialize_shared_values(userField, goldValues, leaveSharedGoldValuesNotSummed);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   const bool finalSyncToDevice = false;
   stk::mesh::parallel_sum<double>(get_bulk(), std::vector<stk::mesh::NgpField<double>*>{&deviceUserField}, finalSyncToDevice);
@@ -179,17 +177,16 @@ NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion)
 
   initialize_owned_shared_values(userField, goldValues);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   stk::mesh::copy_owned_to_shared<double>(get_bulk(), std::vector<stk::mesh::NgpField<double>*>{&deviceUserField});
 
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion_noSyncToDeviceAfterwards)
 {
   const double initValue = 0.0;
@@ -204,10 +201,9 @@ NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion_noSyncToDeviceAfterwards)
   const bool leaveSharedGoldValuesZero = true;
   initialize_owned_shared_values(userField, goldValues, leaveSharedGoldValuesZero);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   const bool finalSyncToDevice = false;
   stk::mesh::copy_owned_to_shared<double>(get_bulk(), std::vector<stk::mesh::NgpField<double>*>{&deviceUserField}, finalSyncToDevice);
@@ -229,17 +225,16 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting)
 
   initialize_owned_ghosted_values(userField, goldValues);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   stk::mesh::communicate_field_data<double>(*get_bulk().ghostings()[stk::mesh::BulkData::AURA], std::vector<stk::mesh::NgpField<double>*>{&deviceUserField});
 
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting_noSyncToDeviceAfterwards)
 {
   const double initValue = 0.0;
@@ -254,10 +249,9 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting_noSyncToDeviceAf
   const bool leaveRecvGhostGoldValuesZero = true;
   initialize_owned_ghosted_values(userField, goldValues, leaveRecvGhostGoldValuesZero);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   const bool finalSyncToDevice = false;
   stk::mesh::communicate_field_data<double>(*get_bulk().ghostings()[stk::mesh::BulkData::AURA], std::vector<stk::mesh::NgpField<double>*>{&deviceUserField}, finalSyncToDevice);
@@ -279,17 +273,16 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData)
 
   initialize_owned_ghosted_values(userField, goldValues);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   stk::mesh::communicate_field_data<double>(get_bulk(), std::vector<stk::mesh::NgpField<double>*>{&deviceUserField});
 
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_USE_DEVICE_MESH
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAfterwards)
 {
   const double initValue = 0.0;
@@ -304,10 +297,9 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAf
   const bool leaveRecvGhostGoldValuesZero = true;
   initialize_owned_ghosted_values(userField, goldValues, leaveRecvGhostGoldValuesZero);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   const bool finalSyncToDevice = false;
   stk::mesh::communicate_field_data<double>(get_bulk(), std::vector<stk::mesh::NgpField<double>*>{&deviceUserField}, finalSyncToDevice);
@@ -316,7 +308,7 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAf
 }
 #endif
 
-NGP_TEST_F(NgpParallelSum, DeviceMPIVersion)
+NGP_TEST_F(NgpParallelSum, DISABLED_DeviceMPIVersion)
 {
   const double initValue = 0.0;
   const int numStates = 1;
@@ -329,10 +321,9 @@ NGP_TEST_F(NgpParallelSum, DeviceMPIVersion)
 
   initialize_shared_values(userField, goldValues);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   stk::mesh::parallel_sum_device_mpi<double>(ngpMesh, std::vector<stk::mesh::NgpField<double>*>{&deviceUserField});
 
@@ -366,10 +357,9 @@ NGP_TEST_F(NgpParallelSum, Performance)
 
   initialize_shared_values(userField, goldValues);
 
-  stk::mesh::NgpMesh ngpMesh(get_bulk());
-  stk::mesh::NgpFieldManager fieldManager(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = fieldManager.get_field<double>(userField.mesh_meta_data_ordinal());
-  stk::mesh::NgpField<double> & deviceGoldValues = fieldManager.get_field<double>(goldValues.mesh_meta_data_ordinal());
+  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
+  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
 
   const bool useSimpleDefault = true;
   bool useSimple = stk::unit_test_util::get_command_line_option("-s", useSimpleDefault);

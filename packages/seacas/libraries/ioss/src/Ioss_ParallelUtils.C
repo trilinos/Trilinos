@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -48,8 +48,6 @@
 
 #ifdef SEACAS_HAVE_MPI
 #include <Ioss_SerializeIO.h>
-#include <cassert>
-#include <cstring>
 #endif
 
 namespace {
@@ -145,11 +143,11 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
     if (string_length > 0) {
       broadcast_string.resize(string_length + 1);
       if (rank == 0) {
-        Ioss::Utils::copy_string(TOPTR(broadcast_string), result_string,
+        Ioss::Utils::copy_string(broadcast_string.data(), result_string,
                                  static_cast<size_t>(string_length) + 1);
       }
-      MPI_Bcast(TOPTR(broadcast_string), string_length + 1, MPI_CHAR, 0, communicator_);
-      value = std::string(TOPTR(broadcast_string));
+      MPI_Bcast(broadcast_string.data(), string_length + 1, MPI_CHAR, 0, communicator_);
+      value = std::string(broadcast_string.data());
     }
     else {
       value = std::string("");
@@ -311,14 +309,14 @@ void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) c
 
     std::vector<char> recv_buf(length);
     const int         success =
-        MPI_Allreduce(buffer, TOPTR(recv_buf), length, MPI_BYTE, MPI_BOR, communicator_);
+        MPI_Allreduce(buffer, recv_buf.data(), length, MPI_BYTE, MPI_BOR, communicator_);
     if (MPI_SUCCESS != success) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Allreduce failed", __func__);
       IOSS_ERROR(errmsg);
     }
 
-    std::memcpy(buffer, TOPTR(recv_buf), length);
+    std::memcpy(buffer, recv_buf.data(), length);
   }
 #endif
 }
@@ -549,8 +547,8 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
   }
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Gather((void *)TOPTR(my_values), count, mpi_type(T()),
-                                   (void *)TOPTR(result), count, mpi_type(T()), 0, communicator_);
+    const int success = MPI_Gather((void *)my_values.data(), count, mpi_type(T()),
+                                   (void *)result.data(), count, mpi_type(T()), 0, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Gather failed", __func__);

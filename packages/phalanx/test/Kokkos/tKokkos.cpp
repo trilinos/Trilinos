@@ -752,7 +752,10 @@ namespace phalanx_test {
     const size_t nnz = 21;
 
     using Kokkos::View;
-    View<typename Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device>::size_type*,PHX::Device> row_offsets("row_offsets",num_rows+1);
+    using local_matrix_type = KokkosSparse::CrsMatrix<double,int,PHX::Device>;
+    using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
+    using size_type = typename local_matrix_type::size_type;
+    View<size_type*,PHX::Device> row_offsets("row_offsets",num_rows+1);
 
     auto host_row_offsets = Kokkos::create_mirror_view(row_offsets);
     host_row_offsets(0) = 0;
@@ -786,8 +789,8 @@ namespace phalanx_test {
     Kokkos::deep_copy(col_ids, host_col_ids);
 
     // CrsMatrix requires LayoutLeft!
-    Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device> g(col_ids,row_offsets);
-    KokkosSparse::CrsMatrix<double,int,PHX::Device> J("Jacobian",g);
+    local_graph_type g(col_ids,row_offsets);
+    local_matrix_type J("Jacobian",g);
 
     TEST_EQUALITY(J.numRows(),10);
     TEST_EQUALITY(J.numCols(),10);

@@ -1,7 +1,12 @@
 INCLUDE(SetDefaultAndFromEnv)
 
-# Must match what is in CDash project 'Trilinos'
-SET(CTEST_NIGHTLY_START_TIME "04:00:00 UTC") # 10 PM MDT or 9 PM MST
+SET(CTEST_NIGHTLY_START_TIME "04:00:00 UTC")
+# NOTE: Above only is used by centralized VCS like CVS and SVN and does
+# nothing for git and other Distributed VCS.  However, it needs to be set here
+# to get around a defect in ctest_start() when passing in the APPEND argument
+# which is used in ctest -S scripts to run tests on a different node from
+# where the build is done (like in many of the ATDM Trilinos builds). For
+# details, see https://gitlab.kitware.com/cmake/cmake/issues/20471.
 
 # Set actual CTest/CDash settings
 

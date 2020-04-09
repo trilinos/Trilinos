@@ -134,7 +134,7 @@ namespace MueLu {
       D->scale(Teuchos::as<Scalar>(-one/omega));
       // left scale matrix T with (scaled) diagonal D
       // Copy the value of A01 so we can do the left scale.
-      RCP<Matrix> T = MatrixFactory::BuildCopy(A01);
+      RCP<Matrix> T = MatrixFactory::BuildCopy(A01, false);
       T->leftScale(*D);
 
       // build Schur complement operator

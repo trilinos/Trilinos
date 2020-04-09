@@ -92,7 +92,8 @@ template int parse_groups(Mesh_Description<int64_t> *mesh, Problem_Description *
 template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_Description *prob)
 {
   char *id;
-  int   last, found;
+  int   last;
+  int   found;
 
   /*---------------------------Execution Begins--------------------------------*/
 
@@ -245,7 +246,7 @@ int get_group_info(Machine_Description *machine, Problem_Description *prob,
     nproc = ilog2i(machine->procs_per_box);
   }
   for (int i = 0; i < prob->num_groups; i++) {
-    nprocg[i] = int((nproc * (nelemg[i] + 0.5f)) / static_cast<float>(prob->num_vertices));
+    nprocg[i] = int((nproc * (nelemg[i] + 0.5F)) / static_cast<float>(prob->num_vertices));
     if (nelemg[i] && !nprocg[i]) {
       nprocg[i] = 1;
     }
@@ -319,7 +320,7 @@ namespace {
         if (p[qn - 1] == '/' || *p == 0) {
           return;
         }
-        else if (i < 0) {
+        if (i < 0) {
           stop = -i;
           for (c = last; c <= stop; c++) {
             chgrp(n, c, blkids, nblks, prob);

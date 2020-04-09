@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -56,13 +56,7 @@ namespace Ioss {
   struct MeshCopyOptions;
 } // namespace Ioss
 
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
-
-#define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
+#define IOSS_ERROR(errmsg) throw std::runtime_error((errmsg).str())
 #define IOSS_WARNING std::cerr
 
 namespace {

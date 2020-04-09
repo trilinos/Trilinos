@@ -59,6 +59,10 @@
 #include <cstdlib> // for std::getenv
 #include <cstdio> // for printf
 
+#ifdef PHX_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
+#include <unordered_set>
+#endif
+
 // *************************************************************************
 template <typename EvalT, typename Traits>
 PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer() :
@@ -268,6 +272,19 @@ assignSharedFields()
   // required sizes of the fields.
   const auto& fields = this->dag_manager_.getFieldTags();
   const auto& ranges = this->dag_manager_.getFieldUseRange();
+
+  // Corner case check. Need to get rid of this exception!
+#ifdef PHX_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
+  std::unordered_set<std::string> check_duplicates;
+  for (auto& f : fields)
+    check_duplicates.insert(f->identifier());
+  TEUCHOS_TEST_FOR_EXCEPTION(fields.size() != check_duplicates.size(),
+    std::runtime_error,
+    "ERROR: PHX::EvalautionContainer::assignSharedFields() - "
+    "a field is being evalauted by more than one evaluator in "
+    "the DAG. This is not allowed when shared fields are enabled!");
+#endif
+
   // tuple args: 0=size in bytes, 1=FieldTag, 2=range of existence
   using CandidateFieldsType =
     std::list<std::tuple<std::size_t,Teuchos::RCP<PHX::FieldTag>,std::pair<int,int>>>;

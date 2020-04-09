@@ -56,4 +56,4 @@ unset ATDM_CONFIG_Kokkos_ENABLE_Serial
 unset ATDM_CONFIG_Kokkos_ENABLE_Cuda
 unset ATDM_CONFIG_Kokkos_ENABLE_Deprecated_Code
 unset ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG
-
+unset atdm_run_script_on_compute_node

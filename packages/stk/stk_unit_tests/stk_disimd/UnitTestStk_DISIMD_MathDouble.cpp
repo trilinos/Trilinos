@@ -278,6 +278,20 @@ TEST_F(MathFunctionWithTwoDoubleArg, DISimd_Sum_ScalarAndSimdMatch)
                      fullRange, fullRange);
 }
 
+#ifdef STK_VOLATILE_SIMD
+TEST_F(MathFunctionWithTwoDoubleArg, VolatilePlusEquals_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x, double y) { return x+y; },
+                     [](stk::simd::Double x, stk::simd::Double y) {
+                          volatile stk::simd::Double a = x;
+                          volatile stk::simd::Double b = y;
+                          a += b;
+                          return a;
+                     },
+                     fullRange, fullRange);
+}
+#endif
+
 TEST_F(MathFunctionWithTwoDoubleArg, DISimd_Subtract_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x, double y) { return x-y; },

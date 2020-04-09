@@ -142,27 +142,43 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
 {
   std::vector<std::string> stepperTypes;
   stepperTypes.push_back("IMEX RK 1st order");
+  stepperTypes.push_back("SSP1_111"         );
   stepperTypes.push_back("IMEX RK SSP2"     );
+  stepperTypes.push_back("SSP2_222"         );
   stepperTypes.push_back("IMEX RK ARS 233"  );
   stepperTypes.push_back("General IMEX RK"  );
+  stepperTypes.push_back("IMEX RK SSP3"     );
 
   std::vector<double> stepperOrders;
   stepperOrders.push_back(1.07964);
+  stepperOrders.push_back(1.07964); // SSP1_111
   stepperOrders.push_back(2.00408);
+  stepperOrders.push_back(2.76941); //SSP2_222
   stepperOrders.push_back(2.70655);
+  stepperOrders.push_back(2.00211);
   stepperOrders.push_back(2.00211);
 
   std::vector<double> stepperErrors;
   stepperErrors.push_back(0.0046423);
+  stepperErrors.push_back(0.103569); // SSP1_111
   stepperErrors.push_back(0.0154534);
+  stepperErrors.push_back(0.000533759); // SSP2_222
   stepperErrors.push_back(0.000298908);
   stepperErrors.push_back(0.0071546);
+  stepperErrors.push_back(0.0151202);
 
   std::vector<double> stepperInitDt;
+  stepperInitDt.push_back(0.0125);
   stepperInitDt.push_back(0.0125);
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
+  stepperInitDt.push_back(0.05);
+  stepperInitDt.push_back(0.05);
+
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperOrders.size() ); 
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperErrors.size() ); 
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperInitDt.size() ); 
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {

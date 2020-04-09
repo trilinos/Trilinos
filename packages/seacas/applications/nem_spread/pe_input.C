@@ -106,8 +106,12 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
   FILE *file_cmd = nullptr;
   char  inp_line[MAX_INPUT_STR_LN + 1];
   char  inp_copy[MAX_INPUT_STR_LN + 1];
-  char *cptr, *cptr2, *cptr3;
-  int   i, icnt, tlist_alloc;
+  char *cptr;
+  char *cptr2;
+  char *cptr3;
+  int   i;
+  int   icnt;
+  int   tlist_alloc;
 
   /***************************** BEGIN EXECUTION ******************************/
 

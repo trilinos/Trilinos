@@ -151,7 +151,7 @@ int driver (int argc, char *argv[]) {
                    A.Cols());
 
     /// create numeric tools and levelset tools
-    solver.initialize(nrhs);
+    solver.initialize();
 
     /// symbolic structure can be reused
     solver.factorize(values_on_device);

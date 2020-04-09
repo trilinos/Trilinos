@@ -165,7 +165,7 @@ namespace tsl {
       static_assert(is_power_of_two(GrowthFactor) && GrowthFactor >= 2,
                     "GrowthFactor must be a power of two >= 2.");
 
-      std::size_t m_mask;
+      std::size_t m_mask{};
     };
 
     /**
@@ -223,7 +223,7 @@ namespace tsl {
 
       static_assert(REHASH_SIZE_MULTIPLICATION_FACTOR >= 1.1, "Growth factor should be >= 1.1.");
 
-      std::size_t m_mod;
+      std::size_t m_mod{};
     };
 
     namespace detail {
@@ -320,7 +320,7 @@ namespace tsl {
       void clear() noexcept { m_iprime = 0; }
 
     private:
-      unsigned int m_iprime;
+      unsigned int m_iprime{};
 
       static_assert(std::numeric_limits<decltype(m_iprime)>::max() >= detail::PRIMES.size(),
                     "The type of m_iprime is not big enough.");

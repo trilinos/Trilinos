@@ -620,8 +620,8 @@ namespace Amesos2 {
       template<typename KV_S, typename KV_GO, typename KV_GS>
       static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
                         KV_S& nzvals,
-                        KV_GO& colind,
-                        KV_GS& rowptr,
+                        KV_GO& rowind,
+                        KV_GS& colptr,
                         typename Matrix::global_size_t& nnz,
                         const Teuchos::Ptr<
                           const Tpetra::Map<typename Matrix::local_ordinal_t,
@@ -630,8 +630,7 @@ namespace Amesos2 {
                         EDistribution distribution,
                         EStorage_Ordering ordering)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          "Refactor in progress. For Tacho this is not expected to be called.");
+        mat->getCcs_kokkos_view(nzvals, rowind, colptr, nnz, map, ordering, distribution);
       }
 
       static
@@ -676,7 +675,6 @@ namespace Amesos2 {
                         EStorage_Ordering ordering)
       {
         mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering, distribution);
-        //mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering);
       }
 
       template<typename KV_S, typename KV_GO, typename KV_GS>
@@ -692,8 +690,7 @@ namespace Amesos2 {
                         EDistribution distribution,
                         EStorage_Ordering ordering)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          "Kokkos adapter is not expecting multiple ranks to be used yet.");
+        mat->getCrs_kokkos_view(nzvals, colind, rowptr, nnz, map, ordering, distribution);
       }
 
       static

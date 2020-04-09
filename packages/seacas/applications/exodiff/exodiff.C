@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -65,17 +65,17 @@ SystemInterface interFace;
 
 struct TimeInterp
 {
-  TimeInterp() : step1(-1), step2(-1), time(0.0), proportion(0.0) {}
+  TimeInterp() = default;
 
-  int step1; // step at beginning of interval. -1 if time prior to time at step1
-  int step2; // step at end of interval. -1 if time after time at step2
+  int step1{-1}; // step at beginning of interval. -1 if time prior to time at step1
+  int step2{-1}; // step at end of interval. -1 if time after time at step2
 
-  double time; // Time being interpolated to.
+  double time{0.0}; // Time being interpolated to.
 
   // If t1 = time at step1 and t2 = time at step2,
   // then proportion = (time-t1)/(t2-t1)
   // Or, value at time = (1.0-proportion)*v1 + proportion*v2
-  double proportion;
+  double proportion{0.0};
 };
 
 std::string Date()
@@ -229,9 +229,10 @@ namespace {
       return 0;
     }
 
-    int   ws = 0, comp_ws = 8;
-    float dumb = 0.0;
-    int   err  = ex_open(file_name.c_str(), EX_READ, &comp_ws, &ws, &dumb);
+    int   ws      = 0;
+    int   comp_ws = 8;
+    float dumb    = 0.0;
+    int   err     = ex_open(file_name.c_str(), EX_READ, &comp_ws, &ws, &dumb);
     if (err < 0) {
       Error(fmt::format("Couldn't open file \"{}\".\n", file_name));
       return 0;
@@ -239,9 +240,8 @@ namespace {
     if ((ex_int64_status(err) & EX_ALL_INT64_DB) != 0) {
       return 8;
     }
-    else {
-      return 4;
-    }
+
+    return 4;
   }
 
   template <typename INT> TimeInterp get_surrounding_times(double time, ExoII_Read<INT> &file)
@@ -400,9 +400,8 @@ int main(int argc, char *argv[])
   if (interFace.exit_status_switch && diff_flag) {
     return 2;
   }
-  else {
-    return 0;
-  }
+
+  return 0;
 }
 
 namespace {
@@ -1020,14 +1019,14 @@ double FileDiff(double v1, double v2, TOLERANCE_TYPE_enum type)
   if (type == IGNORE_) { // ignore
     return 0.0;
   }
-  else if (type == RELATIVE_) { // relative diff
+  if (type == RELATIVE_) { // relative diff
     if (v1 == 0.0 && v2 == 0.0) {
       return 0.0;
     }
     double max = fabs(v1) < fabs(v2) ? fabs(v2) : fabs(v1);
     return (v1 - v2) / max;
   }
-  else if (type == COMBINED_) {
+  if (type == COMBINED_) {
     // if (Abs(x - y) <= Max(absTol, relTol * Max(Abs(x), Abs(y))))
     // In the current implementation, absTol == relTol;
     // In summary, use abs tolerance if both values are less than 1.0;
@@ -1087,10 +1086,9 @@ template <typename INT> size_t global_elmt_num(ExoII_Read<INT> &file, size_t b_i
     if (b_idx == b) {
       return g + e_idx + 1;
     }
-    else {
-      SMART_ASSERT(file.Get_Elmt_Block_by_Index(b) != 0);
-      g += file.Get_Elmt_Block_by_Index(b)->Size();
-    }
+
+    SMART_ASSERT(file.Get_Elmt_Block_by_Index(b) != 0);
+    g += file.Get_Elmt_Block_by_Index(b)->Size();
   }
   SMART_ASSERT(0);
   return 0;
@@ -1774,12 +1772,12 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         diff_flag = true;
       }
 
-      double  v2    = 0;
-      double *vals2 = nullptr;
+      double        v2    = 0;
+      const double *vals2 = nullptr;
       if (!interFace.summary_flag) {
         // Without mapping, get result for this nset
         nset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
-        vals2 = (double *)nset2->Get_Results(vidx2);
+        vals2 = nset2->Get_Results(vidx2);
 
         if (vals2 == nullptr) {
           Error(fmt::format("Could not find variable '{}' in nodeset {}, file 2.\n", name,
@@ -1954,11 +1952,11 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         diff_flag = true;
       }
 
-      double  v2    = 0;
-      double *vals2 = nullptr;
+      double        v2    = 0;
+      const double *vals2 = nullptr;
       if (!interFace.summary_flag) {
         sset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
-        vals2 = (double *)sset2->Get_Results(vidx2);
+        vals2 = sset2->Get_Results(vidx2);
 
         if (vals2 == nullptr) {
           Error(fmt::format("Could not find variable '{}' in sideset {}, file 2.\n", name,
@@ -2121,7 +2119,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
       same1 = Equal_Values(vals1, range1.second, &value1);
     }
 
-    double *vals2 = (double *)sset2->Distribution_Factors();
+    auto *vals2 = sset2->Distribution_Factors();
 
     if (vals2 == nullptr) {
       Error(
@@ -2360,7 +2358,8 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
                     const INT *node_id_map, const INT *elem_id_map)
 {
   int name_length = 0;
-  int i, n;
+  int i;
+  int n;
 
   fmt::print("# NOTES:  - The min/max values are reporting the min/max in absolute value.\n"
              "#         - Time values (t) are 1-offset time step numbers.\n"

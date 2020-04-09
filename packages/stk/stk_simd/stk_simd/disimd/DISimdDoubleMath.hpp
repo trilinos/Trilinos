@@ -117,24 +117,27 @@ STK_MATH_FORCE_INLINE simd::Double sqrt(const simd::Double& x) {
 }
   
 STK_MATH_FORCE_INLINE simd::Double cbrt(const simd::Double& x) {
-//#if defined(__INTEL_COMPILER)
-//  return simd::Double(_mm256_cbrt_pd(x._data));
-//  DI-QUESTION: cbrt(..) ?
-//#else
+#if defined(__INTEL_COMPILER)
+  return simd::Double(SIMD_NAMESPACE::cbrt(x._data));
+#else
   simd::Double tmp;
   for (int n=0; n < simd::ndoubles; ++n) {
     tmp[n] = hidden::CBRT(x[n]);
   }
   return tmp;
-//#endif
+#endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double log(const simd::Double& x) {
+#if defined(__INTEL_COMPILER)
+  return simd::Double(SIMD_NAMESPACE::log(x._data));
+#else
   simd::Double tmp;
   for (int n=0; n < simd::ndoubles; ++n) {
     tmp[n] = std::log(x[n]);
   }
   return tmp;
+#endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double log10(const simd::Double& x) {
@@ -146,16 +149,15 @@ STK_MATH_FORCE_INLINE simd::Double log10(const simd::Double& x) {
 }
 
 STK_MATH_FORCE_INLINE simd::Double exp(const simd::Double& x) {
-//#if defined(__INTEL_COMPILER)
-//  return simd::Double(_mm256_exp_pd(x._data));
-//  DI-QUESTION: exp(..) ?
-//#else
+#if defined(__INTEL_COMPILER)
+  return simd::Double(SIMD_NAMESPACE::exp(x._data));
+#else
   simd::Double tmp;
   for (int n=0; n < simd::ndoubles; ++n) {
     tmp[n] = std::exp(x[n]);
   }
   return tmp;
-//#endif
+#endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const simd::Double& y) {
@@ -295,27 +297,15 @@ STK_MATH_FORCE_INLINE simd::Double erf(const simd::Double& a) {
 }
 
 STK_MATH_FORCE_INLINE simd::Double multiplysign(const simd::Double& x, const simd::Double& y) { // return x times sign of y
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = x[i]*std::copysign(1.0, y[i]);
-  }
-  return tmp;
+  return simd::Double(SIMD_NAMESPACE::multiplysign(x._data, y._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Double copysign(const simd::Double& x, const simd::Double& y) { // return abs(x) times sign of y
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::copysign(x[i], y[i]);
-  }
-  return tmp;
+  return simd::Double(SIMD_NAMESPACE::copysign(x._data, y._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Double abs(const simd::Double& x) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::abs(x[i]);
-  }
-  return tmp;
+  return simd::Double(SIMD_NAMESPACE::abs(x._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Double min(const simd::Double& x, const simd::Double& y) {

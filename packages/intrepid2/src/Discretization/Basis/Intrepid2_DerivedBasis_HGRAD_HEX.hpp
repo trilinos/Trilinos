@@ -74,9 +74,9 @@ namespace Intrepid2
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
     using PointValueType  = typename HGRAD_LINE::PointValueType;
     
-    using OutputViewType = typename HGRAD_LINE::outputViewType;
-    using PointViewType  = typename HGRAD_LINE::pointViewType ;
-    using ScalarViewType = typename HGRAD_LINE::scalarViewType;
+    using OutputViewType = typename HGRAD_LINE::OutputViewType;
+    using PointViewType  = typename HGRAD_LINE::PointViewType ;
+    using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using LineBasis = HGRAD_LINE;
     using QuadBasis = Intrepid2::Basis_Derived_HGRAD_QUAD<HGRAD_LINE>;
@@ -100,6 +100,22 @@ namespace Intrepid2
      */
     Basis_Derived_HGRAD_HEX(int polyOrder) : Basis_Derived_HGRAD_HEX(polyOrder, polyOrder, polyOrder) {}
     
+    /** \brief  Returns basis name
+
+        \return the name of the basis
+    */
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_DerivedBasis_HGRAD_HEX";
+    }
+
+    /** \brief True if orientation is required
+    */
+    virtual bool requireOrientation() const {
+      return (this->getDegree() > 2);
+    }
+
     using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;
     
     /** \brief  multi-component getValues() method (required/called by TensorBasis)

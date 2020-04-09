@@ -51,7 +51,7 @@
 
 namespace Piro {
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar>
 class TransientDecorator
     : public Thyra::ModelEvaluatorDefaultBase<Scalar> {
 

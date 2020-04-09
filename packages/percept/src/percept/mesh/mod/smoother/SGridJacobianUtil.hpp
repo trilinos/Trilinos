@@ -58,14 +58,11 @@ inline bool jacobian_matrix_3D(double &detJ,
     using  Base::m_dMetric_dA;
     using  Base::m_grad;
     using  Base::m_num_nodes;
-    using  Base::m_scale_to_unit;
     using  Base::m_use_approximate_quadratic_jacobian;
 
     using MeshType = StructuredGrid;
 
     enum { NELEM_TYPES = 1 };
-    //using  Base::NELEM_TYPES;
-
 
     JacobianUtilImpl(bool use_approximate_quadratic_jacobian=true) : Base(use_approximate_quadratic_jacobian)
     {

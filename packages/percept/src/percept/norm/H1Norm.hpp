@@ -155,14 +155,15 @@
 
           {
             // FIXME - make all percept code const-correct
-            PerceptMesh eMesh(&stk::mesh::MetaData::get(m_bulkData), &m_bulkData);
+            const stk::mesh::MetaData& meta = m_bulkData.mesh_meta_data();
+            PerceptMesh eMesh(&meta, &m_bulkData);
             int spatialDim = eMesh.get_spatial_dim();
             H1_NormOp H1_op(integrand, spatialDim);
             //CompositeFunction H1_of_integrand("H1_of_integrand", integrand, H1_op);
             IntegratedOp integrated_H1_op(H1_op, m_turboOpt);
             integrated_H1_op.setCubDegree(m_cubDegree);
 
-            const stk::mesh::Part& locally_owned_part = stk::mesh::MetaData::get(m_bulkData).locally_owned_part();
+            const stk::mesh::Part& locally_owned_part = meta.locally_owned_part();
             stk::mesh::Selector selector(*m_selector & locally_owned_part);
             //eMesh.print_info("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)

@@ -132,6 +132,8 @@ IF (Piro_ENABLE_Tempus)
   APPEND_SET(HEADERS
     Piro_TempusSolver.hpp
     Piro_TempusSolver_Def.hpp 
+    Piro_TransientSolver.hpp
+    Piro_TransientSolver_Def.hpp 
     Piro_TempusStepperFactory.hpp
     Piro_TempusStepControlFactory.hpp
     Piro_ObserverToTempusIntegrationObserverAdapter.hpp 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -57,12 +57,19 @@ namespace Ioss {
   public:
     Face() = default;
     Face(size_t id, std::array<size_t, 4> conn) : hashId_(id), connectivity_(std::move(conn)) {}
+    Face(std::array<size_t, 4> conn);
 
     void add_element(size_t element_id) const
     {
-      assert(elementCount_ < 2);
-      element[elementCount_++] = element_id;
+      if (elementCount_ < 2) {
+        element[elementCount_++] = element_id;
+      }
+      else {
+        face_element_error(element_id);
+      }
     }
+
+    void face_element_error(size_t element_id) const;
 
     size_t hashId_{0};
 
@@ -128,14 +135,22 @@ namespace Ioss {
     explicit FaceGenerator(Ioss::Region &region);
     ~FaceGenerator() = default;
 
+    static size_t id_hash(size_t global_id);
+
     template <typename INT> void generate_faces(INT /*dummy*/, bool block_by_block = false);
     FaceUnorderedSet &           faces(const std::string &name = "ALL") { return faces_[name]; }
 
+    //! Given a local node id (0-based), return the hashed value.
+    size_t node_id_hash(size_t local_node_id) const { return hashIds_[local_node_id]; }
+
   private:
-    template <typename INT> void            generate_block_faces(INT /*dummy*/);
-    template <typename INT> void            generate_model_faces(INT /*dummy*/);
+    template <typename INT> void hash_node_ids(const std::vector<INT> &node_ids);
+    template <typename INT> void generate_block_faces(INT /*dummy*/);
+    template <typename INT> void generate_model_faces(INT /*dummy*/);
+
     Ioss::Region &                          region_;
     std::map<std::string, FaceUnorderedSet> faces_;
+    std::vector<size_t>                     hashIds_;
   };
 
 } // namespace Ioss

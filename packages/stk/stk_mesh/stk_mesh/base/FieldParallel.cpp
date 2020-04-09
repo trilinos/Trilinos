@@ -131,7 +131,6 @@ void communicate_field_data(
   }
 
   // Send packing:
-
   for (int phase = 0; phase < 2; ++phase) {
 
     for ( const EntityCommListInfo& ecli : mesh.internal_comm_list()) {
@@ -239,6 +238,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
         ThrowRequireMsg(f.type_is<T>(),
                       "Please don't mix fields with different primitive types in the same parallel assemble operation");
 
+        f.sync_to_host();
         const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[proc];
         for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
             unsigned bucket = bktIndices.bucket_info[i].bucket_id;
@@ -290,6 +290,9 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
         const FieldBase& f = *fields[j] ;
         const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[iproc];
         const std::vector<unsigned>& ords = bktIndices.ords;
+
+        f.sync_to_host();
+        f.modify_on_host();
 
         size_t ords_offset = 0;
         for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
@@ -438,11 +441,12 @@ void parallel_op_including_ghosts_impl(const BulkData & mesh, const std::vector<
         {
             ThrowAssertMsg(mesh.is_valid(comm_info_vec[i].entity),"parallel_sum_including_ghosts found invalid entity");
         }
-      const Bucket* bucket = comm_info_vec[i].bucket;
+      const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
+      const Bucket& bucket = *meshIndex.bucket;
 
       unsigned e_size = 0 ;
-      if(is_matching_rank(f, *bucket)) {
-        const unsigned bucketId = bucket->bucket_id();
+      if(is_matching_rank(f, bucket)) {
+        const unsigned bucketId = bucket.bucket_id();
         e_size += field_bytes_per_entity( f , bucketId );
       }
 
@@ -450,7 +454,7 @@ void parallel_op_including_ghosts_impl(const BulkData & mesh, const std::vector<
         continue;
       }
 
-      const bool owned = bucket->owned();
+      const bool owned = bucket.owned();
 
       if ( !owned ) {
          send_size[ mesh.parallel_owner_rank(comm_info_vec[i].entity) ] += e_size ;
@@ -494,12 +498,13 @@ void parallel_op_including_ghosts_impl(const BulkData & mesh, const std::vector<
         const bool owned = mesh.parallel_owner_rank(comm_info_vec[i].entity) == parallel_rank;
         if ( (!owned && phase == 0) || (owned && phase == 1) )
         {
-            const Bucket* bucket = comm_info_vec[i].bucket;
+            const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
+            const Bucket& bucket = *meshIndex.bucket;
 
-            if(!is_matching_rank(f, *bucket)) continue;
+            if(!is_matching_rank(f, bucket)) continue;
 
-            const unsigned bucketId = bucket->bucket_id();
-            const size_t bucket_ordinal = comm_info_vec[i].bucket_ordinal;
+            const unsigned bucketId = bucket.bucket_id();
+            const size_t bucket_ordinal = meshIndex.bucket_ordinal;
             const unsigned scalars_per_entity = field_scalars_per_entity(f, bucketId);
 
             if ( scalars_per_entity > 0 ) {

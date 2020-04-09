@@ -59,10 +59,7 @@ echo "Using $ATDM_CONFIG_SYSTEM_NAME compiler stack $ATDM_CONFIG_COMPILER to bui
 # Some basic settings
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
-export ATDM_CONFIG_BUILD_COUNT=8
-# ToDo: Experiment with increasing the build parallelism for different
-# compilers, different build configurations, on the login node vs. the compute
-# node, etc.
+export ATDM_CONFIG_BUILD_COUNT=8 # Assume building on the shared login node!
 
 # Set ctest -j parallel level for non-CUDA builds
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
@@ -258,11 +255,52 @@ export F77=mpifort
 export FC=mpifort
 export F90=mpifort
 
-# Define function atdm_run_script_on_compute_node
-unset atdm_run_script_on_compute_node
+# Default install location
+export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs/
 
-source $ATDM_SCRIPT_DIR/common/define_run_on_lsf_compute_node_func.sh
+# System-info for what ATS-2 system we are using
+if [[ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "vortex" ]] ; then
+  export ATDM_CONFIG_ATS2_LOGIN_NODE=vortex60
+  export ATDM_CONFIG_ATS2_LAUNCH_NODE=vortex59
+  # NOTE: If more login and launch nodes gets added to 'vortex', we will need
+  # to change this to a list of node names instead of just one.  But we will
+  # deal with that later if that occurs.
+else
+  echo "Error, the ats2 env on system '${ATDM_CONFIG_KNOWN_HOSTNAME}'"
+  return
+fi
+
+
+#
+# Define functions for running on compute nodes
+#
+
+
+function atdm_ats2_get_allocated_compute_node_name() {
+  if [[ "${LSB_HOSTS}" != "" ]] ; then
+    echo ${LSB_HOSTS} | cut -d' ' -f2
+  else
+     echo
+  fi
+}
+export -f atdm_ats2_get_allocated_compute_node_name
+
+
+function atdm_ats2_get_node_type() {
+  current_hostname=$(hostname)
+  if   [[ "${current_hostname}" == "${ATDM_CONFIG_ATS2_LOGIN_NODE}" ]] ; then
+    echo "login_node"
+  elif [[ "${current_hostname}" == "${ATDM_CONFIG_ATS2_LAUNCH_NODE}" ]] ; then
+    echo "launch_node"
+  else
+    echo "compute_node"
+  fi
+}
+export -f atdm_ats2_get_node_type
+
+
+#
+# All done!
+#
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
-
-export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs/

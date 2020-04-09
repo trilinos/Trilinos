@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2008-2017 National Technology & Engineering Solutions of
+ * Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,11 +38,6 @@
 #include <string.h>
 
 #include "exodusII.h"
-
-#define DEBUG
-#undef DEBUG
-
-#include <stdlib.h>
 
 /*
 //  Read and EXODUSII database and return a TECPLOT file

@@ -74,7 +74,7 @@ namespace Ioss {
                                 MPI_Comm                     communicator,
                                 const Ioss::PropertyManager &properties) const = 0;
 
-    virtual void show_config() const { return; }
+    virtual void show_config() const {}
 
     static void alias(const std::string &base, const std::string &syn);
 

@@ -881,7 +881,7 @@
           ost << sep << pv[ii]->name();
           if (extra_info)
             {
-              bool is_io_part = pv[ii]->attribute<Ioss::GroupingEntity>() != NULL;
+              bool is_io_part = stk::io::is_part_io_part(pv[ii]);
 
               ost << " " << pv[ii]->primary_entity_rank() << " " << pv[ii]->topology() << " IO: " << is_io_part;
             }
@@ -1866,9 +1866,6 @@
       m_comm          = comm;
       m_ownData       = true;
 
-#if HAVE_CGNS
-      m_iocgns_init.reset(new Iocgns::Initializer());
-#endif
       set_io_broker( new stk::io::StkMeshIoBroker(comm) );
 
       m_isCommitted   = false;
@@ -2445,33 +2442,10 @@
       //checkOmit(in_region.    get_commsets(), omit_part ) ; /*const CommSetContainer&  */
     }
 
-    void PerceptMesh::read_metaDataNoCommitCGNSStructured(const std::string& in_filename)
-    {
-      Ioss::PropertyManager properties;
-      Ioss::DatabaseIO *    dbi = Ioss::IOFactory::create("cgns", in_filename, Ioss::READ_MODEL,
-                                                          (MPI_Comm)m_comm, properties);
-      if (dbi == nullptr || !dbi->ok(true)) {
-        std::exit(EXIT_FAILURE);
-      }
-
-      // NOTE: 'region' owns 'db' pointer at this time...
-      m_cgns_structured_region.reset( new Ioss::Region(dbi, "region_1") );
-
-      if (m_cgns_structured_region->get_element_blocks().size())
-        VERIFY_MSG("specified read of structured grid but this mesh has unstructured blocks");
-
-    }
-
     // ========================================================================
     void PerceptMesh::read_metaDataNoCommit( const std::string& in_filename, const std::string& type)
     {
       EXCEPTWATCH;
-
-      if (type == "cgns_structured")
-      {
-        read_metaDataNoCommitCGNSStructured(in_filename);
-        return;
-      }
 
       stk::io::StkMeshIoBroker* mesh_data = m_iossMeshData.get();
 
@@ -2528,7 +2502,6 @@
       this->get_ioss_aliases(part.name(), aliases);
       for (auto alias : aliases)
         {
-          //std::cout << "  alias= " << alias << std::endl;
           if (alias == bname)
             {
               return true;
@@ -2548,14 +2521,7 @@
         {
           return;
         }
-#if !STK_PERCEPT_LITE
-      if (getProperty("file_type") == "cgns_structured")
-        {
-          m_block_structured_grid.reset(new BlockStructuredGrid(this->parallel(), m_cgns_structured_region.get()));
-          m_block_structured_grid->read_cgns();
-          return;
-        }
-#endif
+
       int step = 1;
 
       if (get_database_time_step_count() == 0)
@@ -2705,8 +2671,7 @@
           if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
             {
               //if (!get_rank()) std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
-              const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
-              if (entity)
+              if (stk::io::is_part_io_part(part))
                 {
                   stk::io::remove_io_part_attribute(part);
                 }
@@ -2722,8 +2687,7 @@
           std::string name = part.name();
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() = " << name << " s_omit_part= " << s_omit_part << std::endl;
           {
-            const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
-            if (entity)
+            if (stk::io::is_part_io_part(part))
               {
                 //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() omitted part= " << name << std::endl;
                 stk::io::remove_io_part_attribute(part);
@@ -4359,29 +4323,6 @@
 
     void PerceptMesh::add_coordinate_state_fields(const bool output_fields)
     {
-#if !STK_PERCEPT_LITE
-      if (m_block_structured_grid)
-        {
-          int scalarDimension = get_spatial_dim(); // a scalar
-
-          m_block_structured_grid->register_field("coordinates_N", scalarDimension);
-          m_block_structured_grid->register_field("coordinates_NM1", scalarDimension);
-          m_block_structured_grid->register_field("coordinates_lagged", scalarDimension);
-//          m_block_structured_grid->register_field("coordinates_0", scalarDimension); //madbrew : grepping for this coord field reveals that it only gets used for the stkmesh case
-
-          m_block_structured_grid->register_field("cg_g", scalarDimension);
-          m_block_structured_grid->register_field("cg_r", scalarDimension);
-          m_block_structured_grid->register_field("cg_d", scalarDimension);
-          m_block_structured_grid->register_field("cg_s", scalarDimension);
-
-          // edge length and adjacency
-          m_block_structured_grid->register_field("cg_edge_length", 1);
-          m_block_structured_grid->register_field("num_adj_elems", 1); //number of elements adjacent to a node, across block boundaries
-
-          return;
-        }
-#endif
-
       m_num_coordinate_field_states = 3;
 
       int scalarDimension = get_spatial_dim(); // a scalar
@@ -5453,7 +5394,7 @@
     void PerceptMesh::add_part(const std::string& part_name, bool make_part_io_part)
     {
       stk::mesh::Part& part = get_fem_meta_data()->declare_part(part_name, stk::topology::NODE_RANK);
-      if (make_part_io_part && part.attribute<Ioss::GroupingEntity>() == NULL) {
+      if (make_part_io_part && !stk::io::is_part_io_part(part)) {
         stk::io::put_io_part_attribute(part);
       }
     }
@@ -5539,7 +5480,7 @@
       stk::mesh::EntitySideVector boundary;
 
       // select owned
-      stk::mesh::Selector owned = stk::mesh::MetaData::get(*get_bulk_data()).locally_owned_part();
+      stk::mesh::Selector owned = get_bulk_data()->mesh_meta_data().locally_owned_part();
 
       const stk::mesh::PartVector parts = get_fem_meta_data()->get_parts();
       for (unsigned ip=0; ip < parts.size(); ip++)

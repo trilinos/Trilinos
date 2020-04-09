@@ -61,13 +61,18 @@ char *filename;
 
 int main(int argc, char *argv[])
 {
-  int   c1, c2, c3, c4;
+  int   c1;
+  int   c2;
+  int   c3;
+  int   c4;
   FILE *fid;
 
-  size_t j, k;
+  size_t j;
+  size_t k;
 
   int   exoid;
-  int   CPU_word_size, IO_word_size;
+  int   CPU_word_size;
+  int   IO_word_size;
   float version;
   int   file_size;
   int   netcdf_based    = 0;
@@ -232,7 +237,7 @@ int main(int argc, char *argv[])
     printf("ex_close failed");
   }
 
-  version += 0.00005f;
+  version += 0.00005F;
   sprintf(cversion, "%4.2f", version);
 
   k = strlen(cversion);

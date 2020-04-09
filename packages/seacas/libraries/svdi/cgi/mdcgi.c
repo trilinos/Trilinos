@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,7 +35,6 @@
 /* mdcgi - multiple simultaneous devices routines for cgi  */
 #include "mdcgi.h"
 #include "stdtyp.h"
-#include "stdtyp.h" // for anything
 #include <stdio.h>  // for fprintf, stderr, NULL
 /******************************************************************************/
 /*                                                                            */

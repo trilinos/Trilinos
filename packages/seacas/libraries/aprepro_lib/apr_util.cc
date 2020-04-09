@@ -260,9 +260,8 @@ namespace SEAMS {
     if (ok == 0) {
       return S_ISDIR(s.st_mode);
     }
-    else {
-      return false;
-    }
+
+    return false;
   }
 
   bool check_valid_var(const char *var)

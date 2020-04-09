@@ -113,9 +113,9 @@ namespace Ioss {
 #if defined(IOSS_THREADSAFE)
     mutable std::mutex m_;
 #endif
-    MapContainer        m_map;
-    MapContainer        m_reorder;
-    ReverseMapContainer m_reverse;
+    MapContainer        m_map{};
+    MapContainer        m_reorder{};
+    ReverseMapContainer m_reverse{};
     std::string         m_entityType{"unknown"}; // node, element, edge, face
     std::string         m_filename{"undefined"}; // For error messages only.
     int64_t             m_offset{-1};            // local to global offset if m_map is sequential.

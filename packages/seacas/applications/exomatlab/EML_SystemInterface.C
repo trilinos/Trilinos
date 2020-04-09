@@ -51,7 +51,7 @@
 
 namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
-}
+} // namespace
 
 SystemInterface::SystemInterface()
     : minimumTime_(0.0), maximumTime_(-1.0), inputFile_(), outputFile_(), listVars_(false),

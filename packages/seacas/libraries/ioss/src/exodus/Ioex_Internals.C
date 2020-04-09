@@ -67,7 +67,7 @@ using namespace Ioex;
 namespace {
   nc_type get_type(int exoid, unsigned int type)
   {
-    if ((ex_int64_status(exoid) & type) != 0u) {
+    if ((ex_int64_status(exoid) & type) != 0U) {
       return NC_INT64;
     }
 
@@ -3969,7 +3969,7 @@ namespace {
       return (EX_FATAL);
     }
 
-    if (name_var) {
+    if (name_var != nullptr) {
       dim[0] = dimid;
       dim[1] = namestrdim;
       status = nc_def_var(exoid, name_var, NC_CHAR, 2, dim, &varid);

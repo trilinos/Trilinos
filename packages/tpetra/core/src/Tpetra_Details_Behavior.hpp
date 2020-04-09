@@ -199,6 +199,21 @@ public:
   /// entries to treat it as "dense" relative to other rows, is a
   /// separate question.
   static size_t longRowMinNumEntries ();
+
+  /// \brief Use Teuchos::Timer in Tpetra::ProfilingRegion
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_USE_TEUCHOS_TIMERS</tt> environment variable.
+  static bool profilingRegionUseTeuchosTimers();
+
+  /// \brief Use Kokkos::Profiling in Tpetra::ProfilingRegion
+  ///
+  /// This is enabled by default if KOKKOS_ENABLE_PROFILING is defined.
+  /// You mau control this at run time via the <tt>TPETRA_USE_KOKKOS_PROFILING</tt>
+  /// environment variable.
+  static bool profilingRegionUseKokkosProfiling();
+
+
 };
 
 } // namespace Details

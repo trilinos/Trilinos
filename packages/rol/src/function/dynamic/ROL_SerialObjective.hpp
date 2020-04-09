@@ -216,8 +216,29 @@ public:
 
   } // hessVec_22
 
-  // TODO: hessVec_21
+  virtual void hessVec_21(       Vector<Real>& hv,
+                           const Vector<Real>& v,
+                           const Vector<Real>& u,
+                           const Vector<Real>& z,
+                           Real& tol ) override {
 
+    auto& hvp = partition(hv);   auto& vp  = partition(v);
+    auto& up  = partition(u);    auto& zp  = partition(z);
+
+    auto tmp = clone(hvp[0]);
+    auto& x  = *tmp;
+
+    // TODO: Implement skip initial condition
+
+    obj_->hessVec_z_un( hvp[0], vp[0], getInitialCondition(), up[0], zp[0], ts(0) );
+
+    for( size_type k=1; k<numTimeSteps(); ++k ) {
+      obj_->hessVec_z_un( hvp[k], vp[k],   up[k-1], up[k], zp[k], ts(k) );
+      obj_->hessVec_z_uo( x,      vp[k-1], up[k-1], up[k], zp[k], ts(k) );
+      hvp[k].plus(x);
+   }
+
+  } // hessVec_21
 
   virtual void hessVec_22(       Vector<Real>& hv, 
                            const Vector<Real>& v,

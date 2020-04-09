@@ -113,10 +113,12 @@ namespace MueLu {
         errorBelos_ = "Unable to construct Belos solver";
     } catch (Exceptions::RuntimeError& e) {
       errorBelos_ = e.what();
+    } catch (Exceptions::BadCast& e) {
+      errorBelos_ = e.what();
     }
     triedBelos_ = true;
 #endif
-#if defined(HAVE_MUELU_STRATIMIKOS)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
     try {
       sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
       if (sStratimikos_.is_null())

@@ -84,9 +84,8 @@ int findindex(int *   indices, /* indices sorting values */
   if (target == vals[indices[high]]) {
     return (high);
   }
-  else {
-    return (low);
-  }
+
+  return (low);
 }
 
 void inits2d(struct vtx_data **graph,                /* graph data structure for vertex weights */

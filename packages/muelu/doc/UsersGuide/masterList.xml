@@ -382,8 +382,36 @@
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
-      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".</description>
+      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".</description>
       <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: number of random vectors</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Determines how many random vectors are smoothed when "unsupported vector smoothing" used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+
+    <parameter>
+      <name>aggregation: number of times to pre or post smooth</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Determines how many times presmoother (or postsmoother if no presmoother set) is invoked when "unsupported vector smoothing" used. Each invocation may include several smoother sweeps.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: penalty parameters</name>
+      <type>Array(double)</type>
+      <default>{12.,-.2,0,0,0} </default>
+      <description>Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
     <parameter>
@@ -747,6 +775,33 @@
       <default>agg_qualities</default>
       <description>Base of filename for aggregate quality output.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: algorithm</name>
+      <type>string</type>
+      <default>forward</default>
+      <description>Which aggregate qualtiy algorithm to use:
+      ``forward'' or ``reverse.''  The forward algorithm uses the
+      ``A'' matrix in the denominator of the generalized eigenvalue
+      problem.  The reverse algorithm uses it in the numerator.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+    
+    <parameter>
+      <name>aggregate qualities: zero threshold</name>
+      <type>double</type>
+      <default>1e-12</default>
+      <description>The zero threshold for the reverse algorithm.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregate qualities: percentiles</name>
+      <type>Array(double)</type>
+      <default>{}</default>
+      <description>Percentiles of aggregate qualities to report (in a [0,1] range).</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
   </aggregate_qualities>
