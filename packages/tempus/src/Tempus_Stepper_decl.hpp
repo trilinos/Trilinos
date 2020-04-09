@@ -80,11 +80,10 @@ public:
       getSolver() const = 0;
 
     /// Set Observer
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null) = 0;
+    virtual void setObserver(Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
 
     /// Get Observer
-    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const = 0;
+    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const {return Teuchos::null;}
 
     /// Initialize after construction and changing input parameters.
     virtual void initialize();
