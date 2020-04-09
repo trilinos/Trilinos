@@ -141,6 +141,7 @@ namespace Tempus {
  *        \frac{\partial \mathcal{F}_i}{\partial \dot{X}_i}
  *      + \frac{\partial \mathcal{F}_i}{\partial X_i}.
  *  \f]
+ *
  */
 template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>,
