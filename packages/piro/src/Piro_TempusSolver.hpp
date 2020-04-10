@@ -78,7 +78,6 @@ public:
   TempusSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      bool computeSensitivities,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
@@ -171,36 +170,34 @@ private:
   /** \brief . */
   Teuchos::RCP<const Teuchos::ParameterList> getValidTempusParameters() const;
 
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > fwdStateIntegrator;
-  Teuchos::RCP<Tempus::Stepper<Scalar> > fwdStateStepper;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver;
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > fwdStateIntegrator_;
+  Teuchos::RCP<Tempus::Stepper<Scalar> > fwdStateStepper_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver_;
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel;
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
 
-  Scalar t_initial;
-  Scalar t_final;
+  Scalar t_initial_;
+  Scalar t_final_;
 
-  int num_p;
-  int num_g;
+  int num_p_;
+  int num_g_;
 
-  bool computeSensitivities_;
-
-  Teuchos::RCP<Teuchos::FancyOStream> out;
-  Teuchos::EVerbosityLevel solnVerbLevel;
+  Teuchos::RCP<Teuchos::FancyOStream> out_; 
+  Teuchos::EVerbosityLevel solnVerbLevel_;
 
   // used for adding user defined steppers externally, this gives us "the open-close principal"
-  std::map<std::string,Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > > stepperFactories;
+  std::map<std::string,Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > > stepperFactories_;
 
-  std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories;
+  std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories_;
 
-  bool isInitialized;
+  bool isInitialized_;
 
   Teuchos::RCP<Piro::ObserverBase<Scalar> > piroObserver_;
 
   bool supports_x_dotdot_; 
- 
+  
   //! Set observer
   void setObserver(); 
 
