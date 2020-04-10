@@ -55,6 +55,7 @@
 #include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_Export_fwd.hpp"
 #include "Tpetra_Import_fwd.hpp"
+#include "Tpetra_TransferRequest.hpp"
 #include "Teuchos_RCP.hpp"
 #include <memory>
 
@@ -85,6 +86,7 @@ private:
   using multivector_type = Tpetra::MultiVector<SC, LO, GO, NT>;
   using operator_type = Tpetra::Operator<SC, LO, GO, NT>;
   using vector_type = Tpetra::Vector<SC, LO, GO, NT>;
+  using transfer_request_type = Tpetra::TransferRequest<SC, LO, GO, NT>;
 
 public:
   ChebyshevKernel (const Teuchos::RCP<const operator_type>& A);

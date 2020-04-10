@@ -57,7 +57,7 @@ namespace Ifpack2 {
 namespace Details {
 namespace Impl {
 
-/// \brief Functor for computing W := alpha * D * (B - A*X) + beta * W and X := X+W.
+/// \brief Functor for computing W := alpha * D * (B - A_local*X) + beta * W and X := X+W.
 ///
 /// This is an implementation detail of chebyshev_kernel_vector,
 /// which in turn is an implementation detail of ChebyshevKernel.
@@ -70,7 +70,7 @@ template<class WVector,
          class Scalar,
          bool use_beta,
          bool do_X_update>
-struct ChebyshevKernelVectorFunctor {
+struct LocalChebyshevKernelVectorFunctor {
   static_assert (static_cast<int> (WVector::Rank) == 1,
                  "WVector must be a rank 1 View.");
   static_assert (static_cast<int> (DVector::Rank) == 1,
@@ -99,8 +99,9 @@ struct ChebyshevKernelVectorFunctor {
   const Scalar beta;
 
   const LO rows_per_team;
+  const LO numRows_;
 
-  ChebyshevKernelVectorFunctor (const Scalar& alpha_,
+  LocalChebyshevKernelVectorFunctor (const Scalar& alpha_,
                                      const WVector& m_w_,
                                      const DVector& m_d_,
                                      const BVector& m_b_,
@@ -117,7 +118,8 @@ struct ChebyshevKernelVectorFunctor {
     m_x_colMap (m_x_colMap_),
     m_x_domMap (m_x_domMap_),
     beta (beta_),
-    rows_per_team (rows_per_team_)
+    rows_per_team (rows_per_team_),
+    numRows_ (m_A.numRows ())
   {
     const size_t numRows = m_A.numRows ();
     const size_t numCols = m_A.numCols ();
@@ -150,8 +152,11 @@ struct ChebyshevKernelVectorFunctor {
          Kokkos::parallel_reduce
            (Kokkos::ThreadVectorRange (dev, row_length),
             [&] (const LO iEntry, residual_value_type& lsum) {
-              const auto A_val = A_row.value(iEntry);
-              lsum += A_val * m_x_colMap(A_row.colidx(iEntry));
+              const auto lclCol = A_row.colidx(iEntry);
+              if (lclCol < numRows_) {
+                const auto A_val = A_row.value(iEntry);
+                lsum += A_val * m_x_colMap(lclCol);
+              }
             }, A_x);
 
          Kokkos::single
@@ -165,6 +170,118 @@ struct ChebyshevKernelVectorFunctor {
               else {
                 m_w(lclRow) = alpha_D_res;
               }
+              // if (do_X_update)
+              //   m_x_domMap(lclRow) += m_w(lclRow);
+            });
+       });
+  }
+};
+
+
+template<class WVector,
+         class DVector,
+         class BVector,
+         class AMatrix,
+         class XVector_colMap,
+         class XVector_domMap,
+         class Scalar,
+         bool use_beta,
+         bool do_X_update>
+struct RemoteChebyshevKernelVectorFunctor {
+  static_assert (static_cast<int> (WVector::Rank) == 1,
+                 "WVector must be a rank 1 View.");
+  static_assert (static_cast<int> (DVector::Rank) == 1,
+                 "DVector must be a rank 1 View.");
+  static_assert (static_cast<int> (BVector::Rank) == 1,
+                 "BVector must be a rank 1 View.");
+  static_assert (static_cast<int> (XVector_colMap::Rank) == 1,
+                 "XVector_colMap must be a rank 1 View.");
+  static_assert (static_cast<int> (XVector_domMap::Rank) == 1,
+                 "XVector_domMap must be a rank 1 View.");
+
+  using execution_space = typename AMatrix::execution_space;
+  using LO = typename AMatrix::non_const_ordinal_type;
+  using value_type = typename AMatrix::non_const_value_type;
+  using team_policy = typename Kokkos::TeamPolicy<execution_space>;
+  using team_member = typename team_policy::member_type;
+  using ATV = Kokkos::ArithTraits<value_type>;
+
+  const Scalar alpha;
+  WVector m_w;
+  DVector m_d;
+  BVector m_b;
+  AMatrix m_A;
+  XVector_colMap m_x_colMap;
+  XVector_domMap m_x_domMap;
+  const Scalar beta;
+
+  const LO rows_per_team;
+  const LO numRows_;
+
+  RemoteChebyshevKernelVectorFunctor (const Scalar& alpha_,
+                                     const WVector& m_w_,
+                                     const DVector& m_d_,
+                                     const BVector& m_b_,
+                                     const AMatrix& m_A_,
+                                     const XVector_colMap& m_x_colMap_,
+                                     const XVector_domMap& m_x_domMap_,
+                                     const Scalar& beta_,
+                                     const int rows_per_team_) :
+    alpha (alpha_),
+    m_w (m_w_),
+    m_d (m_d_),
+    m_b (m_b_),
+    m_A (m_A_),
+    m_x_colMap (m_x_colMap_),
+    m_x_domMap (m_x_domMap_),
+    beta (beta_),
+    rows_per_team (rows_per_team_),
+    numRows_ (m_A.numRows ())
+  {
+    const size_t numRows = m_A.numRows ();
+    const size_t numCols = m_A.numCols ();
+
+    TEUCHOS_ASSERT( m_w.extent (0) == m_d.extent (0) );
+    TEUCHOS_ASSERT( m_w.extent (0) == m_b.extent (0) );
+    TEUCHOS_ASSERT( numRows == size_t (m_w.extent (0)) );
+    TEUCHOS_ASSERT( numCols <= size_t (m_x_colMap.extent (0)) );
+    TEUCHOS_ASSERT( numRows <= size_t (m_x_domMap.extent (0)) );
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const team_member& dev) const
+  {
+    using residual_value_type = typename BVector::non_const_value_type;
+    using KAT = Kokkos::ArithTraits<residual_value_type>;
+
+    Kokkos::parallel_for
+      (Kokkos::TeamThreadRange (dev, 0, rows_per_team),
+       [&] (const LO& loop) {
+         const LO lclRow =
+           static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
+         if (lclRow >= m_A.numRows ()) {
+           return;
+         }
+         const auto A_row = m_A.rowConst(lclRow);
+         const LO row_length = static_cast<LO> (A_row.length);
+         residual_value_type A_x = KAT::zero ();
+
+         Kokkos::parallel_reduce
+           (Kokkos::ThreadVectorRange (dev, row_length),
+            [&] (const LO iEntry, residual_value_type& lsum) {
+              const auto lclCol = A_row.colidx(iEntry);
+              if (lclCol >= numRows_) {
+                const auto A_val = A_row.value(iEntry);
+                lsum += A_val * m_x_colMap(lclCol);
+              }
+            }, A_x);
+
+         Kokkos::single
+           (Kokkos::PerThread(dev),
+            [&] () {
+              const auto alpha_D_res =
+                alpha * m_d(lclRow) * ( - A_x);
+              m_w(lclRow) += alpha_D_res;
               if (do_X_update)
                 m_x_domMap(lclRow) += m_w(lclRow);
             });
@@ -247,7 +364,8 @@ template<class WVector,
          class AMatrix,
          class XVector_colMap,
          class XVector_domMap,
-         class Scalar>
+         class Scalar,
+         class ReqType>
 static void
 chebyshev_kernel_vector
 (const Scalar& alpha,
@@ -258,7 +376,8 @@ chebyshev_kernel_vector
  const XVector_colMap& x_colMap,
  const XVector_domMap& x_domMap,
  const Scalar& beta,
- const bool do_X_update)
+ const bool do_X_update,
+ Teuchos::RCP<ReqType> req)
 {
   using execution_space = typename AMatrix::execution_space;
 
@@ -300,49 +419,89 @@ chebyshev_kernel_vector
   if (beta == Kokkos::ArithTraits<Scalar>::zero ()) {
     constexpr bool use_beta = false;
     if (do_X_update) {
-      using functor_type =
-        ChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
-                                     b_vec_type, matrix_type,
-                                     x_colMap_vec_type, x_domMap_vec_type,
-                                     scalar_type,
-                                     use_beta,
-                                     true>;
-      functor_type func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
-      Kokkos::parallel_for (kernel_label, policy, func);
+      using local_functor_type =
+        LocalChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
+                                          b_vec_type, matrix_type,
+                                          x_colMap_vec_type, x_domMap_vec_type,
+                                          scalar_type,
+                                          use_beta,
+                                          true>;
+      using remote_functor_type =
+        RemoteChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
+                                          b_vec_type, matrix_type,
+                                          x_colMap_vec_type, x_domMap_vec_type,
+                                          scalar_type,
+                                          use_beta,
+                                          true>;
+      local_functor_type local_func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
+      Kokkos::parallel_for (kernel_label, policy, local_func);
+      req->process();
+      remote_functor_type remote_func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
+      Kokkos::parallel_for (kernel_label, policy, remote_func);
     } else {
-      using functor_type =
-        ChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
+      using local_functor_type =
+        LocalChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
                                      b_vec_type, matrix_type,
                                      x_colMap_vec_type, x_domMap_vec_type,
                                      scalar_type,
                                      use_beta,
                                      false>;
-      functor_type func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
-      Kokkos::parallel_for (kernel_label, policy, func);
+      using remote_functor_type =
+        RemoteChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
+                                     b_vec_type, matrix_type,
+                                     x_colMap_vec_type, x_domMap_vec_type,
+                                     scalar_type,
+                                     use_beta,
+                                     false>;
+      local_functor_type local_func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
+      Kokkos::parallel_for (kernel_label, policy, local_func);
+      req->process();
+      remote_functor_type remote_func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
+      Kokkos::parallel_for (kernel_label, policy, remote_func);
     }
   }
   else {
     constexpr bool use_beta = true;
     if (do_X_update) {
-      using functor_type =
-        ChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
+      using local_functor_type =
+        LocalChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
                                      b_vec_type, matrix_type,
                                      x_colMap_vec_type, x_domMap_vec_type,
                                      scalar_type,
                                      use_beta,
                                      true>;
-      functor_type func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
-      Kokkos::parallel_for (kernel_label, policy, func);
+      using remote_functor_type =
+        RemoteChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
+                                     b_vec_type, matrix_type,
+                                     x_colMap_vec_type, x_domMap_vec_type,
+                                     scalar_type,
+                                     use_beta,
+                                     true>;
+      local_functor_type local_func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
+      Kokkos::parallel_for (kernel_label, policy, local_func);
+      req->process();
+      remote_functor_type remote_func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
+      Kokkos::parallel_for (kernel_label, policy, remote_func);
     } else {
-      using functor_type =
-        ChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
+      using local_functor_type =
+        LocalChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
                                      b_vec_type, matrix_type,
                                      x_colMap_vec_type, x_domMap_vec_type,
                                      scalar_type,
                                      use_beta,
                                      false>;
-      functor_type func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
-      Kokkos::parallel_for (kernel_label, policy, func);
+      using remote_functor_type =
+        RemoteChebyshevKernelVectorFunctor<w_vec_type, d_vec_type,
+                                     b_vec_type, matrix_type,
+                                     x_colMap_vec_type, x_domMap_vec_type,
+                                     scalar_type,
+                                     use_beta,
+                                     false>;
+      local_functor_type local_func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
+      Kokkos::parallel_for (kernel_label, policy, local_func);
+      req->process();
+      remote_functor_type remote_func (alpha, w, d, b, A, x_colMap, x_domMap, beta, rows_per_team);
+      Kokkos::parallel_for (kernel_label, policy, remote_func);
     }
   }
 }
@@ -491,7 +650,21 @@ fusedCase (vector_type& W,
            vector_type& X,
            const SC& beta)
 {
-  vector_type& X_colMap = importVector (X);
+  // vector_type& X_colMap = importVector (X);
+
+  vector_type X_colMap;
+  Teuchos::RCP<transfer_request_type> req;
+  if (imp_.is_null ()) {
+    X_colMap = X;
+  }
+  else {
+    if (X_colMap_.get () == nullptr) {
+      using V = vector_type;
+      X_colMap_ = std::unique_ptr<V> (new V (imp_->getTargetMap ()));
+    }
+    req = X_colMap_->startImport (X, imp_, Tpetra::REPLACE);
+    X_colMap = *X_colMap_;
+  }
 
   // Only need these aliases because we lack C++14 generic lambdas.
   using Tpetra::with_local_access_function_argument_type;
@@ -525,7 +698,7 @@ fusedCase (vector_type& W,
                                   B_lcl, A_lcl,
                                   X_colMap_lcl, X_domMap_lcl,
                                   beta,
-                                  do_X_update);
+                                  do_X_update, req);
        },
        writeOnly (W),
        readOnly (D_inv),
@@ -544,7 +717,7 @@ fusedCase (vector_type& W,
                                   B_lcl, A_lcl,
                                   X_colMap_lcl, X_domMap_lcl,
                                   beta,
-                                  do_X_update);
+                                  do_X_update, req);
        },
        readWrite (W),
        readOnly (D_inv),
