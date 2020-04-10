@@ -243,6 +243,29 @@ Piro::TransientSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
   return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
 }
 
+
+template <typename Scalar>
+const Thyra::ModelEvaluator<Scalar> &
+Piro::TransientSolver<Scalar>::getModel() const 
+{
+  return model_; 
+}
+
+template <typename Scalar>
+int 
+Piro::TransientSolver<Scalar>::num_p() const 
+{
+  return num_p_; 
+}
+
+template <typename Scalar> 
+int 
+Piro::TransientSolver<Scalar>::num_g() const 
+{
+  return num_g_; 
+}
+
+
 template <typename Scalar>
 void 
 Piro::TransientSolver<Scalar>::evalConvergedModel(

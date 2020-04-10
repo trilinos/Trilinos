@@ -83,6 +83,18 @@ public:
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
   //@}
 
+  /** \name Getters for subbclasses */
+  //@{
+  /** \brief . */
+  const Thyra::ModelEvaluator<Scalar> &getModel() const; 
+
+  /** \brief . */
+  int num_p() const; 
+
+  /** \brief . */
+  int num_g() const; 
+
+  //@}
 protected:
   /** \name Service methods for subclasses. */
   //@{
