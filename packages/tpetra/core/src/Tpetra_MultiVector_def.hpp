@@ -3919,9 +3919,11 @@ namespace Tpetra {
       const impl_scalar_type alpha_IST (alpha);
 
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
+
+      this->modify_device ();
+
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
                         beta_local, C_sub);
-      Kokkos::fence();
     }
 
     if (! isConstantStride ()) {
@@ -3934,6 +3936,7 @@ namespace Tpetra {
 
     // If Case 2 then sum up *this and distribute it to all processes.
     if (Case2) {
+      Kokkos::fence();
       this->reduce ();
     }
   }
