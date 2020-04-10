@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -50,6 +51,7 @@
 #include <KokkosBlas1_fill.hpp>
 #include <KokkosBlas1_nrm2.hpp>
 #include <KokkosKernels_config.h>
+#include "KokkosKernels_default_types.hpp"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -57,26 +59,12 @@
 using std::cout;
 using std::string;
 
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  typedef int default_lno_t;
-#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-  typedef int64_t default_lno_t;
-#else
-  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
-#endif
-  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
-#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  typedef int default_size_type;
-#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-  typedef size_t default_size_type;
-#else
-  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
-#endif
-
-template<typename size_type, typename lno_t, typename device_t>
-void runGS(string matrixPath, string devName, bool symmetric)
+template<typename device_t>
+void runGS(string matrixPath, string devName, bool symmetric, bool twostage, bool classic)
 {
-  typedef double scalar_t;
+  typedef default_scalar scalar_t;
+  typedef default_lno_t lno_t;
+  typedef default_size_type size_type;
   typedef typename device_t::execution_space exec_space;
   typedef typename device_t::memory_space mem_space;
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exec_space, mem_space, mem_space> KernelHandle;
@@ -129,7 +117,18 @@ void runGS(string matrixPath, string devName, bool symmetric)
   for(int clusterSize : clusterSizes)
   {
     //cluster size of 1 is standard multicolor GS
-    if(clusterSize == 1)
+
+    if(twostage || classic) {
+      // Two-stage or Classical GS
+      if (classic) {
+        std::cout << "\n\n***** RUNNING CLASSICAL SGS (two-stage with inner triangular solve)\n";
+      } else {
+        std::cout << "\n\n***** RUNNING TWO-STAGE SGS\n";
+      }
+      //this constructor is for two-stage
+      kh.create_gs_handle(KokkosSparse::GS_TWOSTAGE);
+      kh.set_gs_twostage(!classic, nrows);
+    } else if(clusterSize == 1)
     {
       std::cout << "\n\n***** RUNNING POINT COLORING SGS\n";
       //this constructor is for point coloring
@@ -188,7 +187,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
 int main(int argc, char** argv)
 {
   //Expect two args: matrix name and device flag.
-  if(argc != 3 && argc != 4)
+  if(argc != 3 && argc != 4 && argc != 5)
   {
     std::cout << "Usage: ./sparse_gs matrix.mtx [--device] [--symmetric]\n\n";
     std::cout << "device can be \"serial\", \"openmp\", \"cuda\" or \"threads\".\n";
@@ -199,9 +198,15 @@ int main(int argc, char** argv)
   string device;
   string matrixPath;
   bool sym = false;
+  bool twostage = false;
+  bool classic = false;
   for(int i = 1; i < argc; i++)
   {
-    if(!strcmp(argv[i], "--symmetric"))
+    if(!strcmp(argv[i], "--twostage"))
+      twostage = true;
+    else if(!strcmp(argv[i], "--classic"))
+      classic = true;
+    else if(!strcmp(argv[i], "--symmetric"))
       sym = true;
     else if(!strcmp(argv[i], "--serial"))
       device = "serial";
@@ -235,32 +240,34 @@ int main(int argc, char** argv)
     #endif
   }
   Kokkos::initialize();
+  //Kokkos::ScopeGuard kokkosScope (argc, argv);
+
   bool run = false;
   #ifdef KOKKOS_ENABLE_SERIAL
   if(device == "serial")
   {
-    runGS<default_size_type, default_lno_t, Kokkos::Serial>(matrixPath, device, sym);
+    runGS<Kokkos::Serial>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_OPENMP
   if(device == "openmp")
   {
-    runGS<default_size_type, default_lno_t, Kokkos::OpenMP>(matrixPath, device, sym);
+    runGS<Kokkos::OpenMP>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_THREADS
   if(device == "threads")
   {
-    runGS<default_size_type, default_lno_t, Kokkos::Threads>(matrixPath, device, sym);
+    runGS<Kokkos::Threads>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_CUDA
   if(device == "cuda")
   {
-    runGS<default_size_type, default_lno_t, Kokkos::Cuda>(matrixPath, device, sym);
+    runGS<Kokkos::Cuda>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
