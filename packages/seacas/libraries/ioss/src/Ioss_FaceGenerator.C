@@ -46,6 +46,7 @@
 #include <algorithm>
 #include <chrono>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <functional>
 #include <random>
 #include <utility>
@@ -265,7 +266,7 @@ namespace {
       // For now, use all-to-all; optimization is just send to processors with
       // data...
       std::vector<INT> check_count(proc_count);
-      MPI_Alltoall(TOPTR(potential_count), 1, Ioss::mpi_type((INT)0), TOPTR(check_count), 1,
+      MPI_Alltoall(potential_count.data(), 1, Ioss::mpi_type((INT)0), check_count.data(), 1,
                    Ioss::mpi_type((INT)0), region.get_database()->util().communicator());
 
       const int            values_per_face = 6; // id, 4-node-conn, element
@@ -324,6 +325,19 @@ namespace Ioss {
     for (auto node : connectivity_) {
       hashId_ += Ioss::FaceGenerator::id_hash(node);
     }
+  }
+
+  void Face::face_element_error(size_t element_id) const
+  {
+    std::ostringstream errmsg;
+    fmt::print(errmsg,
+               "ERROR: Face {} has more than two elements using it.\n"
+               "       The element/local_face are: {}:{}, {}:{}, and {}:{}.\n"
+               "       The face connectivity is {} {} {} {}.\n",
+               hashId_, element[0] / 10, element[0] % 10, element[1] / 10, element[1] % 10,
+               element_id / 10, element_id % 10, connectivity_[0], connectivity_[1],
+               connectivity_[2], connectivity_[3]);
+    IOSS_ERROR(errmsg);
   }
 
   size_t FaceGenerator::id_hash(size_t global_id)

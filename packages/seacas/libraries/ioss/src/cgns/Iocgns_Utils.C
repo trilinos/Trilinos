@@ -415,89 +415,18 @@ std::pair<std::string, int> Iocgns::Utils::decompose_name(const std::string &nam
   return std::make_pair(zname, proc);
 }
 
-template <typename INT>
-void Iocgns::Utils::map_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
-                                          INT *idata)
+std::string Iocgns::Utils::decompose_sb_name(const std::string &name)
 {
-  // Map from CGNS to IOSS/Exodus/Patran order...
-  switch (topo->shape()) {
-  case Ioss::ElementShape::HEX:
-    switch (topo->number_nodes()) {
-    case 8:
-    case 20: break;
-    case 27: {
-      // nodes 1 through 20 are the same...
-      //
-      // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
-      // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
-      static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
-      for (size_t i = 0; i < element_count; i++) {
-        size_t             con_beg = 27 * i; // start of connectivity for i'th element.
-        std::array<int, 7> reorder;
-        for (size_t j = 0; j < 7; j++) {
-          reorder[j] = idata[con_beg + hex27_map[j]];
-        }
+  std::string zname{name};
 
-        for (size_t j = 0; j < 7; j++) {
-          idata[con_beg + 20 + j] = reorder[j];
-        }
-      }
-    }
-    }
-    break;
-  default:
-      // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add error
-      // checking)
-      ;
+  // Name should/might be of the form `zonename/sb_name`.  Extract
+  // the 'sb_name' and return that
+  auto tokens = Ioss::tokenize(zname, "/");
+  if (tokens.size() >= 2) {
+    zname = tokens.back();
   }
+  return zname;
 }
-
-template void Iocgns::Utils::map_cgns_connectivity<int>(const Ioss::ElementTopology *topo,
-                                                        size_t element_count, int *idata);
-template void Iocgns::Utils::map_cgns_connectivity<int64_t>(const Ioss::ElementTopology *topo,
-                                                            size_t element_count, int64_t *idata);
-
-template <typename INT>
-void Iocgns::Utils::unmap_cgns_connectivity(const Ioss::ElementTopology *topo, size_t element_count,
-                                            INT *idata)
-{
-  // Map from IOSS/Exodus/Patran to CGNS order...
-  switch (topo->shape()) {
-  case Ioss::ElementShape::HEX:
-    switch (topo->number_nodes()) {
-    case 8:
-    case 20: break;
-    case 27: {
-      // nodes 1 through 20 are the same...
-      //
-      // ioss: 21, 22, 23, 24, 25, 26, 27 [zero-based: 20, 21, 22, 23, 24, 25, 26]
-      // cgns: 27, 21, 26, 25, 23, 22, 24 [zero-based: 26, 20, 25, 24, 22, 21, 23]
-      static std::array<int, 7> hex27_map{26, 20, 25, 24, 22, 21, 23};
-      for (size_t i = 0; i < element_count; i++) {
-        size_t             con_beg = 27 * i; // start of connectivity for i'th element.
-        std::array<int, 7> reorder;
-        for (size_t j = 0; j < 7; j++) {
-          reorder[j] = idata[con_beg + 20 + j];
-        }
-
-        for (size_t j = 0; j < 7; j++) {
-          idata[con_beg + hex27_map[j]] = reorder[j];
-        }
-      }
-    }
-    }
-    break;
-  default:
-      // do nothing cgns ordering matches ioss/exodus/patran (or not handled yet... todo: add error
-      // checking)
-      ;
-  }
-}
-
-template void Iocgns::Utils::unmap_cgns_connectivity<int>(const Ioss::ElementTopology *topo,
-                                                          size_t element_count, int *idata);
-template void Iocgns::Utils::unmap_cgns_connectivity<int64_t>(const Ioss::ElementTopology *topo,
-                                                              size_t element_count, int64_t *idata);
 
 void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *function, int lineno,
                                int processor)
@@ -678,7 +607,7 @@ namespace {
   {
     assert(zgc_i.m_transform == zgc_j.m_transform);
     for (int i = 0; i < 3; i++) {
-      if (zgc_i.m_transform[i] > 0) {
+      if (zgc_i.m_ownerRangeBeg[i] <= zgc_i.m_ownerRangeEnd[i]) {
         zgc_i.m_ownerRangeBeg[i] = std::min(zgc_i.m_ownerRangeBeg[i], zgc_j.m_ownerRangeBeg[i]);
         zgc_i.m_ownerRangeEnd[i] = std::max(zgc_i.m_ownerRangeEnd[i], zgc_j.m_ownerRangeEnd[i]);
       }
@@ -686,8 +615,15 @@ namespace {
         zgc_i.m_ownerRangeBeg[i] = std::max(zgc_i.m_ownerRangeBeg[i], zgc_j.m_ownerRangeBeg[i]);
         zgc_i.m_ownerRangeEnd[i] = std::min(zgc_i.m_ownerRangeEnd[i], zgc_j.m_ownerRangeEnd[i]);
       }
-      zgc_i.m_donorRangeBeg[i] = std::min(zgc_i.m_donorRangeBeg[i], zgc_j.m_donorRangeBeg[i]);
-      zgc_i.m_donorRangeEnd[i] = std::max(zgc_i.m_donorRangeEnd[i], zgc_j.m_donorRangeEnd[i]);
+
+      if (zgc_i.m_donorRangeBeg[i] <= zgc_i.m_donorRangeEnd[i]) {
+        zgc_i.m_donorRangeBeg[i] = std::min(zgc_i.m_donorRangeBeg[i], zgc_j.m_donorRangeBeg[i]);
+        zgc_i.m_donorRangeEnd[i] = std::max(zgc_i.m_donorRangeEnd[i], zgc_j.m_donorRangeEnd[i]);
+      }
+      else {
+        zgc_i.m_donorRangeBeg[i] = std::max(zgc_i.m_donorRangeBeg[i], zgc_j.m_donorRangeBeg[i]);
+        zgc_i.m_donorRangeEnd[i] = std::min(zgc_i.m_donorRangeEnd[i], zgc_j.m_donorRangeEnd[i]);
+      }
     }
   }
 #endif
@@ -828,12 +764,12 @@ namespace {
 
       // Consolidate down to the minimum set that has the union of all ranges.
       for (size_t i = 0; i < zgc.size(); i++) {
-        if (zgc[i].m_ownerZone > 0 && zgc[i].m_donorZone > 0) {
+        if (zgc[i].is_active()) {
           auto owner_zone = zgc[i].m_ownerZone;
           auto donor_zone = zgc[i].m_donorZone;
 
           for (size_t j = i + 1; j < zgc.size(); j++) {
-            if (zgc[j].m_connectionName == zgc[i].m_connectionName &&
+            if (zgc[j].is_active() && zgc[j].m_connectionName == zgc[i].m_connectionName &&
                 zgc[j].m_ownerZone == owner_zone) {
               if (zgc[j].m_donorZone == donor_zone) {
                 // Found another instance of the "same" zgc...  Union the ranges
@@ -841,8 +777,7 @@ namespace {
                 assert(zgc[i].is_valid());
 
                 // Flag the 'j' instance so it is processed only this time.
-                zgc[j].m_ownerZone = -1;
-                zgc[j].m_donorZone = -1;
+                zgc[j].m_isActive = false;
               }
               else {
                 // We have a bad zgc -- name and owner_zone match, but not donor_zone.
@@ -860,10 +795,7 @@ namespace {
 
       // Cull out all 'non-active' zgc instances (owner and donor zone <= 0)
       zgc.erase(std::remove_if(zgc.begin(), zgc.end(),
-                               [](Ioss::ZoneConnectivity &z) {
-                                 return (z.m_ownerZone == -1 && z.m_donorZone == -1) ||
-                                        z.is_from_decomp() || !z.is_active();
-                               }),
+                               [](Ioss::ZoneConnectivity &z) { return !z.is_active(); }),
                 zgc.end());
 
       count = (int)zgc.size();
@@ -1129,7 +1061,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     if (is_parallel_io) {
       region.get_database()->progress("\t\tBoundary Conditions");
     }
-    std::vector<cgsize_t> bc_range(sb->m_boundaryConditions.size() * 6);
+    CGNSIntVector bc_range(sb->m_boundaryConditions.size() * 6);
     size_t                idx = 0;
     for (const auto &bc : sb->m_boundaryConditions) {
       for (size_t i = 0; i < 3; i++) {
@@ -1201,8 +1133,9 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
                                              zgc.m_donorRangeBeg[2], zgc.m_donorRangeEnd[0],
                                              zgc.m_donorRangeEnd[1], zgc.m_donorRangeEnd[2]}};
 
-        std::string donor_name   = zgc.m_donorName;
-        std::string connect_name = zgc.m_connectionName;
+        std::string donor_name    = zgc.m_donorName;
+        std::string connect_name  = zgc.m_connectionName;
+        std::string original_name = zgc.m_connectionName;
         if (is_parallel && !is_parallel_io) {
           if (zgc.is_from_decomp()) {
             connect_name = std::to_string(zgc.m_ownerGUID) + "--" + std::to_string(zgc.m_donorGUID);
@@ -1265,6 +1198,11 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
           CGERR(cg_goto(file_ptr, base, "Zone_t", db_zone, "ZoneGridConnectivity", 0,
                         "GridConnectivity1to1_t", zgc_idx, "end"));
           CGERR(cg_descriptor_write("Decomp", "is_decomp"));
+        }
+        else if (original_name != connect_name) {
+          CGERR(cg_goto(file_ptr, base, "Zone_t", db_zone, "ZoneGridConnectivity", 0,
+                        "GridConnectivity1to1_t", zgc_idx, "end"));
+          CGERR(cg_descriptor_write("OriginalName", original_name.c_str()));
         }
       }
     }
@@ -2655,6 +2593,43 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
   return new_zone_id;
 }
 
+std::vector<Iocgns::ZoneBC> Iocgns::Utils::parse_zonebc_sideblocks(int cgns_file_ptr, int base, int zone,
+							   int myProcessor)
+  {
+    int num_bc;
+    CGCHECK(cg_nbocos(cgns_file_ptr, base, zone, &num_bc));
+
+    std::vector<Iocgns::ZoneBC> zonebc;
+    zonebc.reserve(num_bc);
+
+    for (int i = 0; i < num_bc; i++) {
+      char              boco_name[CGNS_MAX_NAME_LENGTH + 1];
+      CG_BCType_t       boco_type;
+      CG_PointSetType_t ptset_type;
+      cgsize_t          num_pnts;
+      cgsize_t          normal_list_size; // ignore
+      CG_DataType_t     normal_data_type; // ignore
+      int               num_dataset;      // ignore
+      CGCHECK(cg_boco_info(cgns_file_ptr, base, zone, i + 1, boco_name, &boco_type, &ptset_type,
+                           &num_pnts, nullptr, &normal_list_size, &normal_data_type, &num_dataset));
+
+      if (num_pnts != 2 || ptset_type != CG_PointRange) {
+        std::ostringstream errmsg;
+        fmt::print(
+            errmsg,
+            "CGNS: In Zone {}, boundary condition '{}' has a PointSetType of '{}' and {} points.\n"
+            "      The type must be 'PointRange' and there must be 2 points.",
+            zone, boco_name, cg_PointSetTypeName(ptset_type), num_pnts);
+        IOSS_ERROR(errmsg);
+      }
+
+      std::array<cgsize_t, 2> point_range;
+      CGCHECK(cg_boco_read(cgns_file_ptr, base, zone, i + 1, point_range.data(), nullptr));
+      zonebc.emplace_back(boco_name, point_range);
+    }
+    return zonebc;
+  }
+
 #ifdef CG_BUILD_HDF5
 extern "C" int H5get_libversion(unsigned *, unsigned *, unsigned *);
 #endif
@@ -2709,9 +2684,11 @@ namespace {
   }
 } // namespace
 
+template <typename INT>
 void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,
-                                         const cgsize_t *        connectivity,
-                                         Ioss::FaceUnorderedSet &boundary)
+                                         const std::vector<INT> &connectivity,
+                                         Ioss::FaceUnorderedSet &boundary,
+                                         const std::vector<INT> &zone_local_zone_global)
 {
   // Only handle continuum elements at this time...
   if (topo->parametric_dimension() != 3) {
@@ -2740,7 +2717,8 @@ void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num
         conn[j]      = lnode;
         id += Ioss::FaceGenerator::id_hash(lnode);
       }
-      create_face(all_faces, id, conn, elem + 1, face);
+      auto elem_id = zone_local_zone_global[elem];
+      create_face(all_faces, id, conn, elem_id, face);
     }
   }
 
@@ -2751,3 +2729,10 @@ void Iocgns::Utils::generate_block_faces(Ioss::ElementTopology *topo, size_t num
     }
   }
 }
+
+template void Iocgns::Utils::generate_block_faces<int>(
+    Ioss::ElementTopology *topo, size_t num_elem, const std::vector<int> &connectivity,
+    Ioss::FaceUnorderedSet &boundary, const std::vector<int> &zone_local_zone_global);
+template void Iocgns::Utils::generate_block_faces<int64_t>(
+    Ioss::ElementTopology *topo, size_t num_elem, const std::vector<int64_t> &connectivity,
+    Ioss::FaceUnorderedSet &boundary, const std::vector<int64_t> &zone_local_zone_global);

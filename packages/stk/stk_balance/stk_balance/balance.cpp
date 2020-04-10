@@ -477,7 +477,7 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
 
     InternalMesh mesh(comm, balanceSettings.getCoordinateFieldName());
 
-    initial_decomp_and_balance(mesh, balanceSettings, exodusFilename, outputFilename, initialDecompMethod);
+    initial_decomp_and_balance(mesh, balanceSettings, exodusFilename, outputFilename, balanceSettings.getInitialDecompMethod());
 }
 
 StkBalanceSettings create_balance_settings(const stk::balance::ParsedOptions & options)
@@ -523,6 +523,10 @@ StkBalanceSettings create_balance_settings(const stk::balance::ParsedOptions & o
 
   if (options.is_option_provided(stk::balance::ParsedOptions::DECOMP_METHOD)) {
     balanceSettings.setDecompMethod(options.decompMethod);
+  }
+
+  if (options.is_option_provided(stk::balance::ParsedOptions::INITIAL_DECOMP_METHOD)) {
+    balanceSettings.setInitialDecompMethod(options.initialDecompMethod);
   }
 
   return balanceSettings;

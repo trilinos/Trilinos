@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -116,6 +116,7 @@ namespace Ioss {
     }
 
     const std::string &name() const { return name_; }
+    const std::string &ss_name() const { return ss_name_.empty() ? name_ : ss_name_; }
     int64_t            id() const { return id_; }
     int                zone() const { return zone_; }
     int                section() const { return section_; }
@@ -128,6 +129,7 @@ namespace Ioss {
     std::vector<bool>   hasEntities; // T/F if this set exists on processor p
 
     std::string name_{};
+    std::string ss_name_{};
     int64_t     id_{0};
     int         zone_{0}; // Zone of the element block that this set is on
     int         section_{0};

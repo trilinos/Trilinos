@@ -79,6 +79,7 @@ namespace MueLu {
     using global_ordinal_type = GlobalOrdinal;
     using execution_space     = typename DeviceType::execution_space;
     using memory_space        = typename DeviceType::memory_space;
+    using device_type         = Kokkos::Device<execution_space, memory_space>;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
     using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
     using size_type           = size_t;
@@ -86,7 +87,7 @@ namespace MueLu {
     using map_type            = Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type>;
     using local_graph_type    = Kokkos::StaticCrsGraph<LocalOrdinal,
                                                        Kokkos::LayoutLeft,
-                                                       execution_space>;
+                                                       device_type>;
     using boundary_nodes_type = Kokkos::View<const bool*, memory_space>;
     using row_type            = Kokkos::View<const LocalOrdinal*, memory_space>;
 

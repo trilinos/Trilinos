@@ -1,21 +1,19 @@
 #ifndef STK_KOKKOS_MACROS_H
 #define STK_KOKKOS_MACROS_H
 
-//When we are ready to depend on kokkos we will #include Kokkos_Macros.hpp
-//and define our STK_FUNCTION macros in terms of the corresponding kokkos macros.
-//Until then, do our own (duplicated) implementation.
+#include <Kokkos_Macros.hpp>
 
-#if defined(__CUDA_ARCH__)
-
-#define STK_INLINE_FUNCTION __device__ __host__ inline
-#define STK_FUNCTION __device__ __host__
-
-#else
-
-#define STK_INLINE_FUNCTION inline
-#define STK_FUNCTION
-
+// This should eventually need to be supplemented with checks for ROCM and
+// other accelerator platforms
+//
+#ifdef KOKKOS_ENABLE_CUDA
+  #ifndef STK_USE_DEVICE_MESH
+    #define STK_USE_DEVICE_MESH
+  #endif
 #endif
+
+#define STK_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
+#define STK_FUNCTION KOKKOS_FUNCTION
 
 #endif
 

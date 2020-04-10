@@ -350,14 +350,10 @@ namespace TSQR {
     getNodeTsqr(const NodeTestParameters& p,
                 const std::string& overrideNodeTsqrType = "")
     {
-      const std::string nodeTsqrType = [&] () {
-        if(overrideNodeTsqrType == "") {
-          return p.nodeTsqrType;
-        }
-        else {
-          return overrideNodeTsqrType;
-        }
-      }();
+      const std::string nodeTsqrType = overrideNodeTsqrType == "" ?
+        p.nodeTsqrType : overrideNodeTsqrType;
+
+      TEUCHOS_ASSERT( nodeTsqrType != "" );
       using fct_type = ::TSQR::NodeTsqrFactory<SC, int, device_type>;
       auto nodeTsqr = fct_type::getNodeTsqr(nodeTsqrType);
       TEUCHOS_ASSERT( ! nodeTsqr.is_null() );
@@ -1302,6 +1298,8 @@ namespace TSQR {
     {
       using std::endl;
 
+      TEUCHOS_ASSERT( nodeTsqrType != "" );
+
       const int numRows = params.numRows;
       const int numCols = params.numCols;
       const int numTrials = params.numTrials;
@@ -1338,8 +1336,8 @@ namespace TSQR {
       // Benchmark sequential TSQR for numTrials trials.
       Teuchos::Time timer("NodeTsqr");
       timer.start();
-      for(int trialNum = 0; trialNum < numTrials; ++trialNum) {
-        if(actor.wants_device_memory()) {
+      for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
+        if (actor.wants_device_memory()) {
           Scalar* A_raw =
             reinterpret_cast<Scalar*>(A_copy_d.data());
           auto factorOutput =
@@ -1412,8 +1410,10 @@ namespace TSQR {
     benchmarkNodeTsqrImplementation(std::ostream& out,
                                     const std::vector<int>& iseed,
                                     const NodeTestParameters& p,
-                                    const std::string& nodeTsqrType = "")
+                                    const std::string& nodeTsqrType)
     {
+      TEUCHOS_ASSERT( nodeTsqrType != "" );
+
       // Make sure that all NodeTsqr implementations get the same
       // pseudorandom seed.  That way, if there are any data-dependent
       // performance effects (e.g., subnorms), all implementations
@@ -1430,6 +1430,7 @@ namespace TSQR {
                                      std::vector<int>& iseed,
                                      const NodeTestParameters& p)
     {
+      TEUCHOS_ASSERT( p.nodeTsqrType != "" );
 
       if(p.nodeTsqrType == "all" || p.nodeTsqrType == "ALL" ||
          p.nodeTsqrType == "All") {
@@ -1445,7 +1446,7 @@ namespace TSQR {
         }
       }
       else {
-        benchmarkNodeTsqrImplementation<Scalar>(out, iseed, p);
+        benchmarkNodeTsqrImplementation<Scalar>(out, iseed, p, p.nodeTsqrType);
       }
     }
 

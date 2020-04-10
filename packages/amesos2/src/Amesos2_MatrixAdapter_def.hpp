@@ -78,6 +78,22 @@ namespace Amesos2 {
   }
 
   template < class Matrix >
+  template<typename KV_S, typename KV_GO, typename KV_GS>
+  void
+  MatrixAdapter<Matrix>::getCrs_kokkos_view(KV_S & nzval,
+        KV_GO & colind,
+        KV_GS & rowptr,
+        typename MatrixAdapter<Matrix>::global_size_t& nnz,
+        const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > rowmap,
+        EStorage_Ordering ordering,
+        EDistribution distribution) const
+  {
+    help_getCrs_kokkos_view(nzval, colind, rowptr,
+      nnz, rowmap, distribution, ordering,
+    typename adapter_t::get_crs_spec());
+  }
+
+  template < class Matrix >
   void
   MatrixAdapter<Matrix>::getCrs(const Teuchos::ArrayView<scalar_t> nzval,
 				const Teuchos::ArrayView<global_ordinal_t> colind,
@@ -106,6 +122,22 @@ namespace Amesos2 {
     help_getCcs(nzval, rowind, colptr,
 		nnz, colmap, distribution, ordering,
 		typename adapter_t::get_ccs_spec());
+  }
+
+  template < class Matrix >
+  template<typename KV_S, typename KV_GO, typename KV_GS>
+  void
+  MatrixAdapter<Matrix>::getCcs_kokkos_view(KV_S & nzval,
+        KV_GO & colind,
+        KV_GS & rowptr,
+        typename MatrixAdapter<Matrix>::global_size_t& nnz,
+        const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > rowmap,
+        EStorage_Ordering ordering,
+        EDistribution distribution) const
+  {
+    help_getCcs_kokkos_view(nzval, colind, rowptr,
+      nnz, rowmap, distribution, ordering,
+    typename adapter_t::get_ccs_spec());
   }
 
   template < class Matrix >
@@ -282,6 +314,26 @@ namespace Amesos2 {
   }
 
   template < class Matrix >
+  template<typename KV_S, typename KV_GO, typename KV_GS>
+  void
+  MatrixAdapter<Matrix>::help_getCrs_kokkos_view(KV_S & nzval,
+             KV_GO & colind,
+             KV_GS & rowptr,
+             typename MatrixAdapter<Matrix>::global_size_t& nnz,
+             const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+             EDistribution distribution,
+             EStorage_Ordering ordering,
+             no_special_impl nsi) const
+  {
+
+    //Added void to remove parameter not used warning
+    ((void)nsi);
+    do_getCrs_kokkos_view(nzval, colind, rowptr,
+      nnz, rowmap, distribution, ordering,
+      typename adapter_t::major_access());
+  }
+
+  template < class Matrix >
   void
   MatrixAdapter<Matrix>::do_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
 				   const Teuchos::ArrayView<global_ordinal_t> colind,
@@ -354,6 +406,110 @@ namespace Amesos2 {
     rowptr[rowptr_ind] = nnz = rowInd;
   }
 
+  template < class Matrix >
+  template<typename KV_S, typename KV_GO, typename KV_GS>
+  void
+  MatrixAdapter<Matrix>::do_getCrs_kokkos_view(KV_S & nzval,
+           KV_GO & colind,
+           KV_GS & rowptr,
+           typename MatrixAdapter<Matrix>::global_size_t& nnz,
+           const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+           EDistribution distribution,
+           EStorage_Ordering ordering,
+           row_access ra) const
+  {
+    // Kokkos adapter will be serial and won't have the rowmap.
+    // Tacho for example wouldn't ever call this in serial but Cholmod will
+    // call ccs and want to convert using this.
+    // If the kokkos adapter is extended to multiple ranks then this will
+    // need to change.
+    if(this->row_map_ == Teuchos::null) {
+      this->returnValues_kokkos_view(nzval);
+      this->returnRowPtr_kokkos_view(rowptr);
+      this->returnColInd_kokkos_view(colind);
+      nnz = nzval.size();
+      return;
+    }
+
+    using Teuchos::rcp;
+    using Teuchos::RCP;
+    using Teuchos::ArrayView;
+    using Teuchos::OrdinalTraits;
+
+    // Note nzval, colind, and rowptr will not all be in the same memory space.
+    // Currently only Cholmod exercises this code which has all the arrays on host,
+    // so this will need extension and testing when we have a solver using device here.
+    Kokkos::View<scalar_t*, Kokkos::HostSpace>
+      mat_nzval(Kokkos::ViewAllocateWithoutInitializing("mat_nzval"), nzval.size());
+    ArrayView<scalar_t> nzval_arrayview(mat_nzval.data(), nzval.size());
+
+    Kokkos::View<global_ordinal_t*, Kokkos::HostSpace>
+      mat_colind(Kokkos::ViewAllocateWithoutInitializing("mat_colind"), colind.size());
+    ArrayView<global_ordinal_t> colind_arrayview(mat_colind.data(), colind.size());
+
+    // For rowptr we can just make a mirror and deep_copy at the end
+    typename KV_GS::HostMirror host_rowptr = Kokkos::create_mirror_view(rowptr);
+
+    ((void) ra);
+
+    RCP<const type> get_mat;
+    if( *rowmap == *this->row_map_ && distribution != CONTIGUOUS_AND_ROOTED ){
+      // No need to redistribute
+      get_mat = rcp(this,false); // non-owning
+    } else {
+      get_mat = get(rowmap, distribution);
+    }
+    // RCP<const type> get_mat = get(rowmap);
+
+    // rmap may not necessarily check same as rowmap because rmap may
+    // have been constructued with Tpetra's "expert" constructor,
+    // which assumes that the map points are non-contiguous.
+    //
+    // TODO: There may be some more checking between the row map
+    // compatibility, but things are working fine now.
+
+    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
+    ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
+    if( node_elements.size() == 0 ) return; // no more contribution
+
+    typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
+    row_end = node_elements.end();
+
+    size_t rowptr_ind = OrdinalTraits<size_t>::zero();
+    global_ordinal_t rowInd = OrdinalTraits<global_ordinal_t>::zero();
+
+    for( row_it = node_elements.begin(); row_it != row_end; ++row_it ){
+      host_rowptr(rowptr_ind++) = rowInd;
+      size_t rowNNZ = get_mat->getGlobalRowNNZ(*row_it);
+      size_t nnzRet = OrdinalTraits<size_t>::zero();
+      ArrayView<global_ordinal_t> colind_view = colind_arrayview.view(rowInd,rowNNZ);
+      ArrayView<scalar_t> nzval_view = nzval_arrayview.view(rowInd,rowNNZ);
+
+      get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet);
+      for (size_t rr = 0; rr < nnzRet ; rr++) {
+        colind_view[rr] -= rmap->getIndexBase();
+      }
+
+      // It was suggested that instead of sorting each row's indices
+      // individually, that we instead do a double-transpose at the
+      // end, which would also lead to the indices being sorted.
+      if( ordering == SORTED_INDICES ) {
+        Tpetra::sort2(colind_view.begin(), colind_view.end(), nzval_view.begin());
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
+        std::runtime_error,
+        "Number of values returned different from "
+                          "number of values reported");
+      rowInd += rowNNZ;
+    }
+    host_rowptr(rowptr_ind) = nnz = rowInd;
+
+    deep_copy_or_assign_view(nzval, mat_nzval);
+    deep_copy_or_assign_view(colind, mat_colind);
+    deep_copy_or_assign_view(rowptr, host_rowptr);
+  }
+
   // TODO: This may not work with distributed matrices.
   template < class Matrix >
   void
@@ -412,6 +568,26 @@ namespace Amesos2 {
   }
 
   template < class Matrix >
+  template<typename KV_S, typename KV_GO, typename KV_GS>
+  void
+  MatrixAdapter<Matrix>::help_getCcs_kokkos_view(KV_S & nzval,
+             KV_GO & colind,
+             KV_GS & rowptr,
+             typename MatrixAdapter<Matrix>::global_size_t& nnz,
+             const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+             EDistribution distribution,
+             EStorage_Ordering ordering,
+             no_special_impl nsi) const
+  {
+
+    //Added void to remove parameter not used warning
+    ((void)nsi);
+    do_getCcs_kokkos_view(nzval, colind, rowptr,
+      nnz, rowmap, distribution, ordering,
+      typename adapter_t::major_access());
+  }
+
+  template < class Matrix >
   void
   MatrixAdapter<Matrix>::do_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
 				   const Teuchos::ArrayView<global_ordinal_t> rowind,
@@ -434,6 +610,43 @@ namespace Amesos2 {
 
     if( !nzval.is_null() && !rowind.is_null() && !colptr.is_null() )
       Util::transpose(nzval_tmp(), colind(), rowptr(), nzval, rowind, colptr);
+  }
+
+  template < class Matrix >
+  template<typename KV_S, typename KV_GO, typename KV_GS>
+  void
+  MatrixAdapter<Matrix>::do_getCcs_kokkos_view(KV_S & nzval,
+           KV_GO & rowind,
+           KV_GS & colptr,
+           typename MatrixAdapter<Matrix>::global_size_t& nnz,
+           const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+           EDistribution distribution,
+           EStorage_Ordering ordering,
+           row_access ra) const
+  {
+    using Teuchos::Array;
+    // get the crs and transpose
+
+    ((void) ra);
+
+    KV_S nzval_tmp(Kokkos::ViewAllocateWithoutInitializing("nzval_tmp"), nzval.size());
+    KV_GO colind(Kokkos::ViewAllocateWithoutInitializing("colind"), rowind.size());
+    KV_GS rowptr(Kokkos::ViewAllocateWithoutInitializing("rowptr"), this->getGlobalNumRows() + 1);
+
+    this->getCrs_kokkos_view(nzval_tmp, colind, rowptr, nnz, colmap, ordering, distribution);
+
+    if(nzval_tmp.size() && colind.size() && rowptr.size()) {
+      // This is currently just used by Cholmod in which case the views will be
+      // host, even if Cholmod is using GPU. Will need to upgrade this section
+      // to properly handle device when we have a solver that needs it.
+      ArrayView<typename KV_S::value_type> av_nzval_tmp(nzval_tmp.data(), nzval_tmp.size());
+      ArrayView<typename KV_GO::value_type> av_colind(colind.data(), colind.size());
+      ArrayView<typename KV_GS::value_type> av_rowptr(rowptr.data(), rowptr.size());
+      ArrayView<typename KV_S::value_type> av_nzval(nzval.data(), nzval.size());
+      ArrayView<typename KV_GO::value_type> av_rowind(rowind.data(), rowind.size());
+      ArrayView<typename KV_GS::value_type> av_colptr(colptr.data(), colptr.size());
+      Util::transpose(av_nzval_tmp, av_colind, av_rowptr, av_nzval, av_rowind, av_colptr);
+    }
   }
 
   template < class Matrix >

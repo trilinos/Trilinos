@@ -40,6 +40,7 @@
 // @HEADER
 
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 // I don't like including everything, but currently (as of 19 Apr
 // 2017), Kokkos does not provide a public header file to get just the
 // Profiling hooks.  Users are just supposed to include
@@ -49,19 +50,21 @@
 namespace Tpetra {
 namespace Details {
 
-#if defined(KOKKOS_ENABLE_PROFILING)
 ProfilingRegion::ProfilingRegion (const char name[]) {
-  ::Kokkos::Profiling::pushRegion (name);
+#if defined(KOKKOS_ENABLE_PROFILING)  
+  if(Behavior::profilingRegionUseKokkosProfiling()) 
+    ::Kokkos::Profiling::pushRegion(name);
+#endif
+  if(Behavior::profilingRegionUseTeuchosTimers())
+    tm = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(name)));
+  
 }
-#else // NOT (KOKKOS_ENABLE_PROFILING)
-ProfilingRegion::ProfilingRegion (const char /* name */ []) {
-}
-#endif // (KOKKOS_ENABLE_PROFILING)
 
 ProfilingRegion::~ProfilingRegion () {
 #if defined(KOKKOS_ENABLE_PROFILING)
-  ::Kokkos::Profiling::popRegion ();
-#endif // (KOKKOS_ENABLE_PROFILING)
+  if(Behavior::profilingRegionUseKokkosProfiling()) 
+    ::Kokkos::Profiling::popRegion();
+#endif 
 }
 
 } // namespace Details

@@ -164,13 +164,11 @@ void Stepper<Scalar>::initialize()
 template<class Scalar>
 void Stepper<Scalar>::checkInitialized()
 {
-#ifdef TEMPUS_HIDE_DEPRECATED_CODE
   if ( !this->isInitialized() ) {
     this->describe( *(this->getOStream()), Teuchos::VERB_MEDIUM);
     TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
       "Error - " << this->description() << " is not initialized!");
   }
-#endif // TEMPUS_HIDE_DEPRECATED_CODE
 }
 
 

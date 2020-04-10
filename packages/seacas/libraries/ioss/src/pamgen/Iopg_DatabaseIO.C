@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -650,8 +650,8 @@ namespace Iopg {
         }
 
         int error =
-            im_ne_get_cmap_params(get_file_pointer(), TOPTR(nodeCmapIds), TOPTR(nodeCmapNodeCnts),
-                                  TOPTR(elemCmapIds), TOPTR(elemCmapElemCnts), myProcessor);
+            im_ne_get_cmap_params(get_file_pointer(), nodeCmapIds.data(), nodeCmapNodeCnts.data(),
+                                  elemCmapIds.data(), elemCmapElemCnts.data(), myProcessor);
         if (error < 0)
           pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -1330,7 +1330,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
         }
         else {
           Ioss::IntVector is_valid_side;
-          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, TOPTR(sides),
+          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, sides.data(),
                                                       number_sides, get_region());
           size_t ieb = 0;
           for (int iel = 0; iel < number_sides; iel++) {
@@ -1379,8 +1379,8 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
         }
         else {
           Ioss::IntVector is_valid_side;
-          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element),
-                                                      TOPTR(sides), number_sides, get_region());
+          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(),
+                                                      sides.data(), number_sides, get_region());
 
           size_t index = 0;
           for (int iel = 0; iel < number_sides; iel++) {
@@ -1625,7 +1625,7 @@ int DatabaseIO::get_side_connectivity(const Ioss::SideBlock *fb, int id, int, in
   //----
 
   Ioss::IntVector is_valid_side;
-  Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element), TOPTR(side),
+  Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(), side.data(),
                                               number_sides, get_region());
 
   Ioss::IntVector     elconnect;
