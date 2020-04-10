@@ -148,9 +148,6 @@ int main(int argc, char *argv[])
         std::cin >> buf[2];
       }
     }
-    std::cout << " Matrix Size "<< buf[0] <<"\n";
-    std::cout << " Processors in a row  " <<  buf[1] << "\n";
-    std::cout << " Processors in a node  " <<  buf[2] << "\n";
   }
 
   /* Send the initilization data to each processor    */
@@ -162,9 +159,15 @@ int main(int argc, char *argv[])
 
   matrix_size = buf[0];
 
-  nprocs_per_row  = buf[1];
+  nprocs_per_row = buf[1];
 
   nptile = buf[2];
+
+  if( rank == 0 ) {
+    std::cout << " Matrix Size " << matrix_size << std::endl;
+    std::cout << " Processors in a row  "  << nprocs_per_row << std::endl;
+    std::cout << " Processors in a node  " << nptile << std::endl;
+  }
 
   // Example for 1 RHS
 
@@ -221,17 +224,22 @@ int main(int argc, char *argv[])
   //  Local size -- myrows  * (mycols + myrhs)
   
   typedef Kokkos::LayoutLeft Layout;
+#ifdef KOKKOS_ENABLE_CUDA
+  typedef Kokkos::CudaSpace TestSpace;
+#else
+  typedef Kokkos::HostSpace TestSpace;
+#endif
 #ifdef DREAL
-  typedef Kokkos::View<double**, Layout>  ViewMatrixType;
+  typedef Kokkos::View<double**, Layout, TestSpace>  ViewMatrixType;
   typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
 #elif defined(SREAL)
-  typedef Kokkos::View<float**, Layout>  ViewMatrixType;
+  typedef Kokkos::View<float**, Layout, TestSpace>  ViewMatrixType;
   typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
 #elif defined(SCPLX)
-  typedef Kokkos::View<Kokkos::complex<float>**, Layout>  ViewMatrixType;
+  typedef Kokkos::View<Kokkos::complex<float>**, Layout, TestSpace>  ViewMatrixType;
   typedef Kokkos::View<Kokkos::complex<float>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
 #else
-  typedef Kokkos::View<Kokkos::complex<double>**, Layout>  ViewMatrixType;
+  typedef Kokkos::View<Kokkos::complex<double>**, Layout, TestSpace>  ViewMatrixType;
   typedef Kokkos::View<Kokkos::complex<double>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
 #endif
   typedef typename ViewMatrixType::device_type::execution_space execution_space;
