@@ -113,7 +113,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::initialize(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-    const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model)
+    const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model) 
 {
 #ifdef DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -123,11 +123,9 @@ void Piro::TempusSolver<Scalar>::initialize(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  // set some internals
-  model = in_model;
+  model_ = in_model;  
   num_p_ = in_model->Np();
-  num_g_ = in_model->Ng();
-
+  num_g_ = in_model->Ng(); 
   //
   *out_ << "\nA) Get the base parameter list ...\n";
   //
@@ -253,8 +251,8 @@ void Piro::TempusSolver<Scalar>::initialize(
              << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
       }
       else {
-        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
+        model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
         sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),false));
       }
     }
@@ -269,28 +267,28 @@ void Piro::TempusSolver<Scalar>::initialize(
              << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
       }
       else {
-        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
+        model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
           sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),true));
       }
     }
     // C.2) Create the Thyra-wrapped ModelEvaluator
 
-    thyraModel_ = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model, lowsFactory));
+    thyraModel_ = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model_, lowsFactory));
 
     const RCP<const Thyra::VectorSpaceBase<double> > x_space = thyraModel_->get_x_space();
 
     //
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
-    //Create Tempus integrator with observer using tempusPL and model.
-    fwdStateIntegrator_ = Tempus::integratorBasic<Scalar>(tempusPL, model);
+    //Create Tempus integrator with observer using tempusPL and model_.
+    fwdStateIntegrator_ = Tempus::integratorBasic<Scalar>(tempusPL, model_);
 
     //Get stepper from integrator
     fwdStateStepper_ = fwdStateIntegrator_->getStepper();
 
     //Set observer
-    supports_x_dotdot_ = model->createInArgs().supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
+    supports_x_dotdot_ = model_->createInArgs().supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
     setObserver();  
 
   }
@@ -318,12 +316,12 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   fwdStateIntegrator_(stateIntegrator),
   fwdStateStepper_(stateStepper),
   fwdTimeStepSolver_(timeStepSolver),
-  model(underlyingModel),
+  model_(underlyingModel),
   initialConditionModel_(icModel),
   t_initial_(0.0),
   t_final_(finalTime),
-  num_p_(model->Np()),
-  num_g_(model->Ng()),
+  num_p_(model_->Np()),
+  num_g_(model_->Ng()),
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel_(verbosityLevel),
   isInitialized_(true)
@@ -350,12 +348,12 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   fwdStateIntegrator_(stateIntegrator),
   fwdStateStepper_(stateStepper),
   fwdTimeStepSolver_(timeStepSolver),
-  model(underlyingModel),
+  model_(underlyingModel),
   initialConditionModel_(icModel),
   t_initial_(initialTime),
   t_final_(finalTime),
-  num_p_(model->Np()),
-  num_g_(model->Ng()),
+  num_p_(model_->Np()),
+  num_g_(model_->Ng()),
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel_(verbosityLevel),
   isInitialized_(true)
@@ -408,7 +406,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   }
   const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model->getNominalValues();
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model_->getNominalValues();
 
   // Set initial time in ME if needed
 
@@ -420,7 +418,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     // The initial condition depends on the parameter
     // It is found by querying the auxiliary model evaluator as the last response
     const RCP<Thyra::VectorBase<Scalar> > initialState =
-      Thyra::createMember(model->get_x_space());
+      Thyra::createMember(model_->get_x_space());
 
     {
       Thyra::ModelEvaluatorBase::InArgs<Scalar> initCondInArgs = initialConditionModel_->createInArgs();
@@ -523,7 +521,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
 
   // As post-processing step, calculate responses at final solution
   {
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model_->createInArgs();
     {
       modelInArgs.set_x(finalSolution);
       if (num_p_ > 0) {
@@ -545,13 +543,13 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
       modelInArgs.set_t(t_final_ - soln_dt);
     }
 
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model_->createOutArgs();
     if (Teuchos::nonnull(g_out)) {
       Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
       modelOutArgs.set_g(j, g_out);
     }
 
-    model->evalModel(modelInArgs, modelOutArgs);
+    model_->evalModel(modelInArgs, modelOutArgs);
   }
 
   // Return the final solution as an additional g-vector, if requested

@@ -174,7 +174,7 @@ private:
   Teuchos::RCP<Tempus::Stepper<Scalar> > fwdStateStepper_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver_;
 
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
 
