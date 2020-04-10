@@ -83,8 +83,8 @@ public:
     if(!computeValue)
        return value_;
 
-    Real norm = rol_x.norm();
-    std::cout << "Value norm: " << norm << std::endl;
+    // Real norm = rol_x.norm();
+    // std::cout << "Value norm: " << norm << std::endl;
 
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
@@ -119,8 +119,8 @@ public:
   */
   void gradient( Vector<Real> &rol_g, const Vector<Real> &rol_x, Real &tol ) {
 
-    Real norm = rol_x.norm();
-    std::cout << "In Gradient, Value norm: " << norm << std::endl;
+    // Real norm = rol_x.norm();
+    // std::cout << "In Gradient, Value norm: " << norm << std::endl;
 
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
