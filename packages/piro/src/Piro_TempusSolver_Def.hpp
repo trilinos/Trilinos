@@ -451,28 +451,16 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
 
   //*out_ << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel_);
 
-  //JF  may need a version of the following for multipoint, i.e. num_p_>1, l+1, if we want sensitivities
-  RCP<Thyra::MultiVectorBase<Scalar> > dgxdp_out;
-  Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv_out;
-  if (num_p_ > 0) {
-    const Thyra::ModelEvaluatorBase::DerivativeSupport dgxdp_support =
-      outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g_, l);
-    if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-      const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgxdp_deriv =
-        outArgs.get_DgDp(num_g_, l);
-      dgxdp_out = dgxdp_deriv.getMultiVector();
-    }
 
-    if (num_g_ > 0) {
-      const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
-        outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-      if (!dgdp_support.none()) {
-        dgdp_deriv_out = outArgs.get_DgDp(j, l);
+  bool requestedSensitivities = false;
+  for (int i=0; i<num_p_; i++) {
+    for (int j=0; j<=num_g_; j++) {
+      if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
+        requestedSensitivities = true;
+        break;
       }
     }
   }
-
-  bool requestedSensitivities = Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
   RCP<const Tempus::SolutionState<Scalar> > solutionState;
