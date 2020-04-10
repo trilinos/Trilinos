@@ -53,6 +53,7 @@
 #define GALERI_XPETRAMATRIXTYPES_HPP
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayView.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 #include "Galeri_config.h"
 #include "Galeri_MatrixTraits.hpp"
@@ -204,9 +205,13 @@ namespace Galeri {
             const Scalar d, const Scalar e,
             const DirBC DirichletBC = 0, const bool keepBCs = false)
     {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      
       LocalOrdinal nnz = 5;
 
-      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, nnz);
+      RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, nnz);
 
       LocalOrdinal  numMyElements = map->getNodeNumElements();
       GlobalOrdinal indexBase     = map->getIndexBase();
@@ -220,56 +225,62 @@ namespace Galeri {
       //    e
       //  b a c
       //    d
-      for (LocalOrdinal i = 0; i < numMyElements; ++i)  {
-        size_t n = 0;
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Matrix Generation")));
+	for (LocalOrdinal i = 0; i < numMyElements; ++i)  {
+	  size_t n = 0;
 
-        center = myGlobalElements[i] - indexBase;
-        GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
+	  center = myGlobalElements[i] - indexBase;
+	  GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
 
-        bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
-                           (right == -1 && (DirichletBC & DIR_RIGHT))  ||
-                           (lower == -1 && (DirichletBC & DIR_BOTTOM)) ||
-                           (upper == -1 && (DirichletBC & DIR_TOP));
+	  bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
+                             (right == -1 && (DirichletBC & DIR_RIGHT))  ||
+                             (lower == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                             (upper == -1 && (DirichletBC & DIR_TOP));
 
-        if (isDirichlet && keepBCs) {
-          // Dirichlet unknown we want to keep
-          inds[n]   = center;
-          vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
+	  if (isDirichlet && keepBCs) {
+	    // Dirichlet unknown we want to keep
+	    inds[n]   = center;
+	    vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
 
-        } else {
-          // The Neumann b.c. are treated in a sane way. The Dirichlet b.c., however, are treated
-          // insane when the option keepBCs=false. Speicifically, in this case we don't want to keep
-          // Dirichlet b.c., but that would result in inconsistency between the map and the number of
-          // degrees of freedom, plus the problem with GIDs. Therefore, we virtually expand domain by
-          // one node in the direction of the Dirichlet b.c., and then assume that that node was
-          // not kept. But we use an old GIDs. So yes, that's weird.
+	  } else {
+	    // The Neumann b.c. are treated in a sane way. The Dirichlet b.c., however, are treated
+	    // insane when the option keepBCs=false. Speicifically, in this case we don't want to keep
+	    // Dirichlet b.c., but that would result in inconsistency between the map and the number of
+	    // degrees of freedom, plus the problem with GIDs. Therefore, we virtually expand domain by
+	    // one node in the direction of the Dirichlet b.c., and then assume that that node was
+	    // not kept. But we use an old GIDs. So yes, that's weird.
 
-          if (left  != -1) { inds[n] = left;  vals[n++] = b; }
-          if (right != -1) { inds[n] = right; vals[n++] = c; }
-          if (lower != -1) { inds[n] = lower; vals[n++] = d; }
-          if (upper != -1) { inds[n] = upper; vals[n++] = e; }
+	    if (left  != -1) { inds[n] = left;  vals[n++] = b; }
+	    if (right != -1) { inds[n] = right; vals[n++] = c; }
+	    if (lower != -1) { inds[n] = lower; vals[n++] = d; }
+	    if (upper != -1) { inds[n] = upper; vals[n++] = e; }
 
-          // diagonal
-          Scalar z = a;
-          if (IsBoundary2d(center, nx, ny) && !isDirichlet) {
-            // Neumann boundary unknown (diagonal = sum of all offdiagonal)
-            z = Teuchos::ScalarTraits<Scalar>::zero();
-            for (size_t j = 0; j < n; j++)
-              z -= vals[j];
-          }
-          inds[n]   = center;
-          vals[n++] = z;
-        }
+	    // diagonal
+	    Scalar z = a;
+	    if (IsBoundary2d(center, nx, ny) && !isDirichlet) {
+	      // Neumann boundary unknown (diagonal = sum of all offdiagonal)
+	      z = Teuchos::ScalarTraits<Scalar>::zero();
+	      for (size_t j = 0; j < n; j++)
+		z -= vals[j];
+	    }
+	    inds[n]   = center;
+	    vals[n++] = z;
+	  }
 
-        for (size_t j = 0; j < n; j++)
-          inds[j] += indexBase;
+	  for (size_t j = 0; j < n; j++)
+	    inds[j] += indexBase;
 
-        Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
-        Teuchos::ArrayView<Scalar>        av(&vals[0], n);
-        mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	  Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
+	  Teuchos::ArrayView<Scalar>        av(&vals[0], n);
+	  mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	}
       }
 
-      mtx->fillComplete();
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Matrix FillComplete")));
+	mtx->fillComplete();
+      }
 
       return mtx;
     }
