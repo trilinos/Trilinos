@@ -70,7 +70,6 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) {}
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    TEMPUS_DEPRECATED
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& /* appModel */){}
 
