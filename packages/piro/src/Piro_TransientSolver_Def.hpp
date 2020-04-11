@@ -64,14 +64,14 @@ template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, 
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel):
-  out(Teuchos::VerboseObjectBase::getDefaultOStream()),
+  out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   model_(model), 
   initialConditionModel_(icModel),
   num_p_(model->Np()), 
   num_g_(model->Ng())
 {
 #ifdef DEBUG_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 }
 
@@ -79,14 +79,14 @@ template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, int numParameters, 
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel) : 
-    out(Teuchos::VerboseObjectBase::getDefaultOStream()),
+    out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
     model_(model),
     initialConditionModel_(icModel),
     num_p_(numParameters),
     num_g_(model->Ng())
 {
 #ifdef DEBUG_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 }
 
@@ -95,7 +95,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TransientSolver<Scalar>::get_p_space(int l) const
 {
 #ifdef DEBUG_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p_ || l < 0,
@@ -112,7 +112,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TransientSolver<Scalar>::get_g_space(int j) const
 {
 #ifdef DEBUG_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g_ || j < 0,
@@ -134,7 +134,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TransientSolver<Scalar>::getNominalValues() const
 {
 #ifdef DEBUG_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model_->getNominalValues();
@@ -149,7 +149,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TransientSolver<Scalar>::createInArgs() const
 {
 #ifdef DEBUG_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
@@ -162,7 +162,7 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 Piro::TransientSolver<Scalar>::createOutArgsImpl() const
 {
 #ifdef DEBUG_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
@@ -265,6 +265,13 @@ Piro::TransientSolver<Scalar>::num_g() const
   return num_g_; 
 }
 
+template <typename Scalar>
+void 
+Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string sensitivity_method_string)
+{
+  if (sensitivity_method_string == "Forward") sensitivityMethod_ = FORWARD;
+  else if (sensitivity_method_string == "Adjoint") sensitivityMethod_ = ADJOINT; 
+}
 
 template <typename Scalar>
 void 
@@ -273,11 +280,40 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
 #ifdef DEBUG_OUTPUT
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out_ << "DEBUG sensitivityMethod = " << sensitivityMethod_ << "\n"; 
 #endif
   using Teuchos::RCP;
   using Teuchos::rcp;
+  
+  // Check if sensitivities are requested 
+  // IKT, 4/10/2020: not sure if the following will be needed or not... 
+  bool requestedSensitivities_ = false;
+  for (int i=0; i<num_p_; i++) {
+    for (int j=0; j<=num_g_; j++) {
+      if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
+        requestedSensitivities_ = true;
+        break;
+      }
+    }
+  }
 
+#ifdef DEBUG_OUTPUT
+  *out_ << "DEBUG requestedSensitivities = " << requestedSensitivities_ << "\n";
+#endif 
+  if (requestedSensitivities_ == true) {
+    //
+    *out_ << "\nE) Solve the forward problem with Sensitivities...\n";
+    //
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter,
+        "\n Error! Piro::TempusSolver: sensitivities with Tempus are not yet supported!");
+  }
+
+  *out_ << "\nF) Calculate responses ...\n";
+
+  // Deal with responses 
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model_->createOutArgs();
   for (int j=0; j<num_g_; j++) { 
     auto g_out = outArgs.get_g(j); 

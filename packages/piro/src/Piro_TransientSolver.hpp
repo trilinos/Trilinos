@@ -95,6 +95,7 @@ public:
   int num_g() const; 
 
   //@}
+  
 protected:
   /** \name Service methods for subclasses. */
   //@{
@@ -103,6 +104,10 @@ protected:
   void evalConvergedModel(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
+  //@}
+
+  /** \brief . */
+  void setSensitivityMethod(const std::string sensitivity_method_string);  
   //@}
 
 
@@ -114,12 +119,16 @@ private:
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out;
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel_;
+  bool requestedSensitivities_; 
 
   int num_p_;
   int num_g_;
+
+  enum SENS_METHOD {FORWARD, ADJOINT};
+  SENS_METHOD sensitivityMethod_;
 
 
 };

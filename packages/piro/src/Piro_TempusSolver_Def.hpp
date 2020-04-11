@@ -125,7 +125,11 @@ void Piro::TempusSolver<Scalar>::initialize(
 
   model_ = in_model;  
   num_p_ = in_model->Np();
-  num_g_ = in_model->Ng(); 
+  num_g_ = in_model->Ng();
+
+  std::string sensitivity_method = appParams->get("Sensitivity Method","Forward");
+  this->setSensitivityMethod(sensitivity_method); 
+ 
   //
   *out_ << "\nA) Get the base parameter list ...\n";
   //
@@ -460,29 +464,6 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   }
 
 
-  // Compute sensitivities
-  bool requestedSensitivities = false;
-  for (int i=0; i<num_p_; i++) {
-    for (int j=0; j<=num_g_; j++) {
-      if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
-        requestedSensitivities = true;
-        break;
-      }
-    }
-  }
-
-  if (requestedSensitivities == true) {
-    //
-    *out_ << "\nE) Solve the forward problem with Sensitivities...\n";
-    //
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter,
-        "\n Error! Piro::TempusSolver: sensitivities with Tempus are not yet supported!");
-  }
-
-  *out_ << "\nF) Check the solution to the forward problem ...\n";
-
   // As post-processing step, calculate responses at final solution
   Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model_->createInArgs();
   
@@ -503,6 +484,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   const Scalar soln_dt = solutionState->getTimeStep();
   modelInArgs.set_t(t_final_ - soln_dt);
 
+  //Calculate responses and sensitivities 
   this->evalConvergedModel(modelInArgs, outArgs); 
 
 }
