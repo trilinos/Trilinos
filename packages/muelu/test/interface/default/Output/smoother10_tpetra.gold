@@ -7,6 +7,8 @@ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=
 smoother -> 
  relaxation: sweeps = 3
  relaxation: type = Jacobi   [default]
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: damping factor = 1   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
@@ -107,6 +109,8 @@ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=
 smoother -> 
  relaxation: sweeps = 3
  relaxation: type = Jacobi   [default]
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: damping factor = 1   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]

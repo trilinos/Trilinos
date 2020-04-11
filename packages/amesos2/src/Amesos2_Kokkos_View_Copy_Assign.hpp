@@ -144,45 +144,6 @@ deep_copy_or_assign_view(dst_t & dst, const src_t & src) {
   implement_copy_or_assign_diff_mem_check_types(dst, src); // full copy
 }
 
-// special utility method to hard cast src Kokkos::complex to std::complex
-// to handle case where Kokkos::View needs to send data to Tpetra method
-// in std::complex form. If the src is not Kokkos::complex this method is just
-// going to call the regular deep_copy_or_assign_view above.
-// MDM-TODO This should be improved but set it up to open discussion on how to
-// handle some std::complex Kokkos::complex conversion issues.
-// I would like to remove the reinterpret_cast but not sure how to do that and
-// preserve the optimization pathways this file sets up.
-template<class dst_t, class src_t> // Kokkos::complex<real_t> version
-typename std::enable_if<
-  std::is_same<typename src_t::value_type, typename Kokkos::complex<double>>::value
-  >::type
-deep_copy_or_assign_view_make_src_std_complex(dst_t & dst, src_t & src) {
-  typedef const Kokkos::View<std::complex<double>**, Kokkos::LayoutLeft, typename src_t::execution_space> std_complex_t;
-  // MDM-TODO - make this safer
-  std_complex_t * std_complex_src = reinterpret_cast<std_complex_t*>(&src);
-  deep_copy_or_assign_view(dst, *std_complex_src);
-}
-
-template<class dst_t, class src_t> // Kokkos::complex<real_t> version
-typename std::enable_if<
-  std::is_same<typename src_t::value_type, typename Kokkos::complex<float>>::value
-  >::type
-deep_copy_or_assign_view_make_src_std_complex(dst_t & dst, src_t & src) {
-  typedef const Kokkos::View<std::complex<float>**, Kokkos::LayoutLeft, typename src_t::execution_space> std_complex_t;
-  // MDM-TODO - make this safer
-  std_complex_t * std_complex_src = reinterpret_cast<std_complex_t*>(&src);
-  deep_copy_or_assign_view(dst, *std_complex_src);
-}
-
-template<class dst_t, class src_t> // Kokkos::complex<real_t> version
-typename std::enable_if<
-  !std::is_same<typename src_t::value_type, typename Kokkos::complex<double>>::value &&
-  !std::is_same<typename src_t::value_type, typename Kokkos::complex<float>>::value
-  >::type
-deep_copy_or_assign_view_make_src_std_complex(dst_t & dst, src_t & src) {
-  deep_copy_or_assign_view(dst, src);
-}
-
 } // end namespace Amesos2
 
 #endif  // AMESOS2_KOKKOS_VIEW_COPY_ASSIGN_HPP

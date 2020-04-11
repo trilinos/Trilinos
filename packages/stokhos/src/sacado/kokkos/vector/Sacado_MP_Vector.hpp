@@ -2059,8 +2059,6 @@ public:
 
 #endif
 
-#endif // HAVE_STOKHOS_SACADO
-
 #include "Kokkos_NumericTraits.hpp"
 
 namespace Kokkos {
@@ -2085,5 +2083,7 @@ struct reduction_identity< Sacado::MP::Vector<Storage> > {
 };
 
 }
+
+#endif // HAVE_STOKHOS_SACADO
 
 #endif // SACADO_MP_VECTOR_HPP
