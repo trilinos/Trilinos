@@ -385,71 +385,82 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  // TODO: Support more than 1 parameter and 1 response
-  const int j = 0;
-  const int l = 0;
-
-  // Parse InArgs
-  RCP<const Thyra::VectorBase<Scalar> > p_in;
-  if (num_p_ > 0) {
-    p_in = inArgs.get_p(l);
-  }
-  RCP<const Thyra::VectorBase<Scalar> > p_in2;  //JF add for multipoint
-  if (num_p_ > 1) {
-    p_in2 = inArgs.get_p(l+1);
-  }
-
-  // Parse OutArgs
-  RCP<Thyra::VectorBase<Scalar> > g_out;
-  if (num_g_ > 0) {
-    g_out = outArgs.get_g(j);
-  }
-  const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
-
+  // Set initial time and initial condition 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model_->getNominalValues();
-
-  // Set initial time in ME if needed
-
   if(t_initial_ > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t)) {
     state_ic.set_t(t_initial_);
   }
-
+  
   if (Teuchos::nonnull(initialConditionModel_)) {
+    // IKT, 4/10/20, FIXME: I don't understand this case...
     // The initial condition depends on the parameter
     // It is found by querying the auxiliary model evaluator as the last response
-    const RCP<Thyra::VectorBase<Scalar> > initialState =
-      Thyra::createMember(model_->get_x_space());
-
+    const RCP<Thyra::VectorBase<Scalar> > initialState = Thyra::createMember(model_->get_x_space());
     {
       Thyra::ModelEvaluatorBase::InArgs<Scalar> initCondInArgs = initialConditionModel_->createInArgs();
-      if (num_p_ > 0) {
+      for (int l = 0; l < num_p_; ++l) {
         initCondInArgs.set_p(l, inArgs.get_p(l));
       }
-
       Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs = initialConditionModel_->createOutArgs();
       initCondOutArgs.set_g(initCondOutArgs.Ng() - 1, initialState);
-
       initialConditionModel_->evalModel(initCondInArgs, initCondOutArgs);
     }
-
     state_ic.set_x(initialState);
   }
 
-  // Set paramters p_in as part of initial conditions
-  if (num_p_ > 0) {
+  // Set parameters as part of initial conditions
+  for (int l = 0; l < num_p_; ++l) {
+    auto p_in = inArgs.get_p(l); 
     if (Teuchos::nonnull(p_in)) {
       state_ic.set_p(l, p_in);
-    }
-  }
-  if (num_p_ > 1) { //JF added for multipoint
-    if (Teuchos::nonnull(p_in2)) {
-      state_ic.set_p(l+1, p_in2);
     }
   }
 
   //*out_ << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel_);
 
+  //
+  *out_ << "\nE) Solve the forward problem ...\n";
+  //
+  RCP<const Thyra::VectorBase<Scalar> > finalSolution;
+  RCP<const Tempus::SolutionState<Scalar> > solutionState;
+  RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory;
+    
+  *out_ << "T final requested: " << t_final_ << " \n";
+  fwdStateIntegrator_->advanceTime(t_final_);
+  double time = fwdStateIntegrator_->getTime();
+  *out_ << "T final actual: " << time << "\n";
 
+  if (abs(time-t_final_) > 1.0e-10) {
+    if (abort_on_failure_ == true) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter,
+        "\n Error! Piro::TempusSolver: time-integrator did not make it to final time " <<
+        "specified in Input File.  Final time in input file is " << t_final_ <<
+        ", whereas actual final time is " << time << ".  If you'd like to " <<
+        "suppress this exception, run with 'Abort on Failure' set to 'false' in " << 
+        "Tempus sublist.\n" );
+    }
+    else {
+       *out_ << "\n WARNING: Piro::TempusSolver did not make it to final time, but "
+            << "solver will not abort since you have specified 'Abort on Failure' = 'false'.\n"; 
+    }
+  }
+
+  finalSolution = fwdStateIntegrator_->getX();
+
+  solutionHistory = fwdStateIntegrator_->getSolutionHistory();
+  auto numStates = solutionHistory->getNumStates();
+  solutionState = (*solutionHistory)[numStates-1];
+  //Get final solution from solutionHistory.
+  finalSolution = solutionState->getX();
+
+  if (Teuchos::VERB_MEDIUM <= solnVerbLevel_) {
+    *out_ << "Final Solution\n" << *finalSolution << "\n";
+  }
+
+
+  // Compute sensitivities
   bool requestedSensitivities = false;
   for (int i=0; i<num_p_; i++) {
     for (int j=0; j<=num_g_; j++) {
@@ -460,54 +471,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     }
   }
 
-  RCP<const Thyra::VectorBase<Scalar> > finalSolution;
-  RCP<const Tempus::SolutionState<Scalar> > solutionState;
-  RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory;
-  if (!requestedSensitivities)
-  {
-    //
-    *out_ << "\nE) Solve the forward problem ...\n";
-    //
-    //
-    *out_ << "T final requested: " << t_final_ << " \n";
-
-    fwdStateIntegrator_->advanceTime(t_final_);
-
-    double time = fwdStateIntegrator_->getTime();
-
-    *out_ << "T final actual: " << time << "\n";
-
-    if (abs(time-t_final_) > 1.0e-10) {
-      if (abort_on_failure_ == true) {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true,
-          Teuchos::Exceptions::InvalidParameter,
-          "\n Error! Piro::TempusSolver: time-integrator did not make it to final time " <<
-          "specified in Input File.  Final time in input file is " << t_final_ <<
-          ", whereas actual final time is " << time << ".  If you'd like to " <<
-          "suppress this exception, run with 'Abort on Failure' set to 'false' in " << 
-          "Tempus sublist.\n" );
-      }
-      else {
-         *out_ << "\n WARNING: Piro::TempusSolver did not make it to final time, but "
-              << "solver will not abort since you have specified 'Abort on Failure' = 'false'.\n"; 
-      }
-    }
-
-    finalSolution = fwdStateIntegrator_->getX();
-
-    solutionHistory = fwdStateIntegrator_->getSolutionHistory();
-    auto numStates = solutionHistory->getNumStates();
-    solutionState = (*solutionHistory)[numStates-1];
-    //Get final solution from solutionHistory.
-    finalSolution = solutionState->getX();
-
-    if (Teuchos::VERB_MEDIUM <= solnVerbLevel_) {
-      *out_ << "Final Solution\n" << *finalSolution << "\n";
-    }
-
-  }
-  else {
+  if (requestedSensitivities == true) {
     //
     *out_ << "\nE) Solve the forward problem with Sensitivities...\n";
     //
@@ -520,42 +484,27 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   *out_ << "\nF) Check the solution to the forward problem ...\n";
 
   // As post-processing step, calculate responses at final solution
-  {
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model_->createInArgs();
-    {
-      modelInArgs.set_x(finalSolution);
-      if (num_p_ > 0) {
-        modelInArgs.set_p(l, p_in);
-      }
-      if (num_p_ > 1) {  //JF added for multipoint
-        modelInArgs.set_p(l+1, p_in2);
-      }
-      //Set time to be final time at which the solve occurs (< t_final_ in the case we don't make it to t_final_).
-      //IKT: get final time from solutionHistory workingSpace, which is different than how it is done in Piro::RythmosSolver class.
-      //IKT, 11/1/16, FIXME? workingState pointer is null right now, so the following
-      //code is commented out for now.  Use t_final_ and soln_dt in set_t instead for now.
-      /*RCP<Tempus::SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
-      const Scalar time = workingState->getTime();
-      const Scalar dt   = workingState->getTimeStep();
-      const Scalar t = time + dt;
-      modelInArgs.set_t(t);*/
-      const Scalar soln_dt = solutionState->getTimeStep();
-      modelInArgs.set_t(t_final_ - soln_dt);
-    }
-
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model_->createOutArgs();
-    if (Teuchos::nonnull(g_out)) {
-      Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
-      modelOutArgs.set_g(j, g_out);
-    }
-
-    model_->evalModel(modelInArgs, modelOutArgs);
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model_->createInArgs();
+  
+  modelInArgs.set_x(finalSolution);
+  for (int l=0; l < num_p_; ++l) { 
+    auto p_in = inArgs.get_p(l); 
+    modelInArgs.set_p(l, p_in);
   }
+  //Set time to be final time at which the solve occurs (< t_final_ in the case we don't make it to t_final_).
+  //IKT: get final time from solutionHistory workingSpace, which is different than how it is done in Piro::RythmosSolver class.
+  //IKT, 11/1/16, FIXME? workingState pointer is null right now, so the following
+  //code is commented out for now.  Use t_final_ and soln_dt in set_t instead for now.
+  /*RCP<Tempus::SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
+  const Scalar time = workingState->getTime();
+  const Scalar dt   = workingState->getTimeStep();
+  const Scalar t = time + dt;
+  modelInArgs.set_t(t);*/
+  const Scalar soln_dt = solutionState->getTimeStep();
+  modelInArgs.set_t(t_final_ - soln_dt);
 
-  // Return the final solution as an additional g-vector, if requested
-  if (Teuchos::nonnull(gx_out)) {
-    Thyra::copy(*finalSolution, gx_out.ptr());
-  }
+  this->evalConvergedModel(modelInArgs, outArgs); 
+
 }
 
 

@@ -275,5 +275,23 @@ Piro::TransientSolver<Scalar>::evalConvergedModel(
 #ifdef DEBUG_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  //IKT FIXME: FILL IN! 
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model_->createOutArgs();
+  for (int j=0; j<num_g_; j++) { 
+    auto g_out = outArgs.get_g(j); 
+    if (g_out != Teuchos::null) {
+      Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
+      modelOutArgs.set_g(j, g_out);
+    }
+  }
+
+  model_->evalModel(modelInArgs, modelOutArgs);
+
+  // Return the final solution as an additional g-vector, if requested
+  const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
+  if (Teuchos::nonnull(gx_out)) {
+    Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
+  }
 }
