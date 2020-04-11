@@ -233,7 +233,7 @@ void back_solve6(ZDView& ZV)
                  
         // do an elimination step on the rhs that I own
 
-        auto ptr2_view = subview(ZV, end_row-1, Kokkos::ALL());
+        //auto ptr2_view = subview(ZV, end_row-1, Kokkos::ALL());
 
         root = row_owner(global_col);
 
@@ -241,6 +241,7 @@ void back_solve6(ZDView& ZV)
 #ifdef GET_TIMING
           t1 = MPI_Wtime();
 #endif
+          auto ptr2_view = subview(ZV, end_row-1, Kokkos::ALL());
           auto ptr3_view = subview(ZV, end_row-1, Kokkos::make_pair(my_cols, my_cols+n_rhs_this));
           elimination_rhs(n_rhs_this, ptr3_view, ptr2_view, row1, act_col);//note: row1 = ptr4
           end_row--;
