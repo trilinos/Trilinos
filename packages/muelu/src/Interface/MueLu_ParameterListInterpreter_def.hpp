@@ -2241,7 +2241,7 @@ namespace MueLu {
           groupList.remove("group");
 
           bool setKokkosRefactor = false;
-          bool kokkosRefactor;
+          bool kokkosRefactor = useKokkos_;
           if (groupList.isParameter("use kokkos refactor")) {
             kokkosRefactor = groupList.get<bool>("use kokkos refactor");
             groupList.remove("use kokkos refactor");
