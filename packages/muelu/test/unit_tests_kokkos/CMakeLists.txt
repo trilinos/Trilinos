@@ -40,7 +40,7 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Zoltan
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
+
   TRIBITS_ADD_EXECUTABLE(
     UnitTests_kokkos
     SOURCES ${SOURCES}
@@ -68,5 +68,3 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       )
 
   ENDIF()
-
-ENDIF() # Galeri TMP

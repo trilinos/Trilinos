@@ -136,6 +136,10 @@
 #include "Amesos2_Cholmod.hpp"
 #endif
 
+#ifdef HAVE_AMESOS2_CUSOLVER
+#include "Amesos2_cuSOLVER.hpp"
+#endif
+
 #ifdef HAVE_AMESOS2_MUMPS
 #include "Amesos2_MUMPS.hpp"
 #endif
@@ -658,6 +662,11 @@ struct throw_no_matrix_support_exception {
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
     if(solverName == "amesos2_cholmod" || solverName == "cholmod")
       return handle_solver_matrix_and_type_support<Cholmod,Matrix,Vector>::apply(A, X, B);
+#endif
+
+#ifdef HAVE_AMESOS2_CUSOLVER
+    if(solverName == "amesos2_cusolver" || solverName == "cusolver")
+      return handle_solver_matrix_and_type_support<cuSOLVER,Matrix,Vector>::apply(A, X, B);
 #endif
 
     /* If none of the above conditionals are satisfied, then the solver

@@ -440,9 +440,22 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
       APPEND_SET(SOURCES
         Amesos2_Cholmod.cpp
         )
-ENDIF()
+  ENDIF()
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_CUSOLVER)
+  APPEND_SET(HEADERS
+    Amesos2_cuSOLVER.hpp
+    Amesos2_cuSOLVER_decl.hpp
+    Amesos2_cuSOLVER_def.hpp
+    Amesos2_cuSOLVER_FunctionMap.hpp
+    Amesos2_cuSOLVER_TypeMap.hpp
+  )
+
+  APPEND_SET(SOURCES
+    Amesos2_cuSOLVER.cpp
+  )
+ENDIF()
 
 #
 # C) Define the targets for package's library(s)

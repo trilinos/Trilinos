@@ -9,6 +9,8 @@ postsmoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -97,6 +99,8 @@ postsmoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -188,6 +192,8 @@ postsmoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -279,6 +285,8 @@ postsmoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ relaxation: inner sweeps = 1   [default]
+ relaxation: inner sparse-triangular solve = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
