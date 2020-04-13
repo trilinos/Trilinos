@@ -31,8 +31,16 @@ fi
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info_utils.sh
 
 realHostname=`hostname`
-if [[ "${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE}" ]] ; then
-  realHostname=${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE}
+if [[ "${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}" ]] ; then
+  echo
+  echo "***"
+  echo "*** WARNING: realHostname=$realHostname overriden to value of"
+  echo "*** ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING='${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}'"
+  echo "*** in <trilinos-dir>/cmake/std/atdm/utils/get_known_system_info.sh."
+  echo "*** This variable should only be set for unit testing purposes!"
+  echo "***"
+  echo
+  realHostname=${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}
 fi
 #echo "Hostname = '$realHostname'"
 
