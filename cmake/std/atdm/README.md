@@ -1214,7 +1214,7 @@ $ ctest -j4
 ```
 
 The advantage of the latter approach is that one just waits once for a node
-allocationand then one can immediately run fast parallel builds on the compute
+allocation and then one can immediately run fast parallel builds on the compute
 node (taking up the entire node).  Then one can run the test suite multiple
 times without waiting for a new allocation.
 
