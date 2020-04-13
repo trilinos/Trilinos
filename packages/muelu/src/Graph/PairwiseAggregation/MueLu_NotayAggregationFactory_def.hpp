@@ -73,7 +73,7 @@ namespace MueLu {
     LocalOrdinal RandomOrdinal(LocalOrdinal min, LocalOrdinal max) {
       return min + as<LocalOrdinal>((max-min+1) * (static_cast<double>(std::rand()) / (RAND_MAX + 1.0)));
     }
-    
+
     template <class LocalOrdinal>
     void RandomReorder(Teuchos::Array<LocalOrdinal> & list) {
       typedef LocalOrdinal LO;
@@ -177,7 +177,7 @@ namespace MueLu {
     // Notay, "Aggregation-based algebraic multigrid for convection-diffusion equations",
     // SISC 34(3), pp. A2288-2316.
 
-    // Handle Ordering 
+    // Handle Ordering
     // FIXME: Add Cuthill-McKee
     std::string orderingStr = pL.get<std::string>("aggregation: ordering");
     enum {
@@ -197,7 +197,7 @@ namespace MueLu {
       orderingVector[i] = i;
     if (ordering == O_RANDOM)
       MueLu::NotayUtils::RandomReorder(orderingVector);
-  
+
     // Get the party stated
     LO numNonAggregatedNodes = numRows, numDirichletNodes = 0;
     BuildInitialAggregates(pL, A, orderingVector(), kappa,

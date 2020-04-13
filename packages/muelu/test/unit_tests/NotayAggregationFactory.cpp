@@ -78,8 +78,14 @@ namespace MueLuTests {
     std::vector<unsigned> aggStat(A->getMap()->getNodeNumElements(),MueLu::READY);
     LO numUnaggregatedNodes = A->getNodeNumRows(), numDirichletNodes = 0;
 
+    Array<LO> orderingVector(A->getNodeNumRows());
+    for (LO i = 0; i < numRows; i++) {
+      orderingVector[i] = i;
+    }
+
     Teuchos::ParameterList params;
-    NAF->BuildInitialAggregates(params, A, Teuchos::ScalarTraits<SC>::magnitude(10.0),
+    NAF->BuildInitialAggregates(params, A, orderingVector(),
+                                Teuchos::ScalarTraits<SC>::magnitude(10.0),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
