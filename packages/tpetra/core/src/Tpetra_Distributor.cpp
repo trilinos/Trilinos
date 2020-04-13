@@ -385,6 +385,12 @@ namespace Tpetra {
     }
   }
 
+  Teuchos::RCP<Distributor>
+  Distributor::
+  getReverseDistributor() {
+    return reverseDistributor_;
+  }
+
   Teuchos::RCP<const Teuchos::ParameterList>
   Distributor::getValidParameters () const
   {
