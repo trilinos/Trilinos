@@ -51,6 +51,8 @@
  *         parameters are specified by an input XML file.
  */
 
+#include "KokkosBlas.hpp"
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TestingHelpers.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -69,8 +71,6 @@
 #include <MatrixMarket_Tpetra.hpp> // For reading matrix-market files
 
 #include "Amesos2.hpp"          // includes everything from Amesos2
-
-#include "KokkosBlas.hpp"
 
 // #ifdef HAVE_TPETRA_INST_INT_INT
 #if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
