@@ -204,7 +204,7 @@ namespace Intrepid2 {
 
         output.access(4, 0) =  2.*z*(1. + z);
         output.access(4, 1) =  0.;
-        output.access(4, 2) =  ((-1. + 4.*x)*(1. + 2.*z))/2.;;
+        output.access(4, 2) =  ((-1. + 4.*x)*(1. + 2.*z))/2.;
         output.access(4, 3) =  0.;
         output.access(4, 4) =  0.;
         output.access(4, 5) =  x*(-1. + 2.*x);

@@ -181,11 +181,12 @@ namespace Intrepid2
      Shifted, scaled Legendre polynomials are given by
         P_i(x;t) = P_i(x/t) * t^i = ~P_i(2x-t;t).
      */
-    template<typename OutputValueViewType, typename ScalarType>
-    KOKKOS_INLINE_FUNCTION void shiftedScaledLegendreValues(OutputValueViewType outputValues, Intrepid2::ordinal_type n, ScalarType x, double t)
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
+    KOKKOS_INLINE_FUNCTION void shiftedScaledLegendreValues(OutputValueViewType outputValues, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
-      ScalarType two_x_minus_t = 2. * x - t;
-      ScalarType t_squared = t * t;
+      using OutputScalar = typename OutputValueViewType::value_type;
+      OutputScalar two_x_minus_t = 2. * x - t;
+      OutputScalar t_squared = t * t;
       if (n >= 0) outputValues(0) = 1.0;
       if (n >= 1) outputValues(1) = two_x_minus_t;
       for (int i=2; i<=n; i++)
@@ -199,7 +200,7 @@ namespace Intrepid2
         \param [out] outputValues - the view into which to place the output values (must have at least n+1 entries)
         \param [in] n - the maximum polynomial order of integrated Legendre polynomials to compute
         \param [in] x - point at which to evaluate the polynomials
-        \param [in] t - scaling parameter
+        \param [in] t - scaling parameter; may be of type double or may match the type of x
      These are defined for x in [0,1].  See equation (2.18) in Fuentes et al.  (We additionally define L_0 = 1.)
      
      Shifted, scaled Legendre polynomials are given by
@@ -208,8 +209,8 @@ namespace Intrepid2
       The formula in Fuentes et al. is defined in terms of P_i and P_{i-2}.  We offer two versions of this computation, one which can
       reuse an existing P_i computation (in the form of a shiftedScaledLegendreValues input container), and one which reuses space in outputValues.
      */
-    template<typename OutputValueViewType, typename ScalarType>
-    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedLegendreValues(OutputValueViewType outputValues, Intrepid2::ordinal_type n, ScalarType x, double t)
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
+    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedLegendreValues(OutputValueViewType outputValues, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // reduced memory version: compute P_i in outputValues
       shiftedScaledLegendreValues(outputValues,n,x,t);
@@ -249,9 +250,9 @@ namespace Intrepid2
       The formula in Fuentes et al. is defined in terms of P_i and P_{i-2}.  We offer two versions of this computation, one which can
       reuse an existing P_i computation (in the form of a shiftedScaledLegendreValues input container), and one which reuses space in outputValues.
      */
-    template<typename OutputValueViewType, typename ScalarType>
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
     KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedLegendreValues(OutputValueViewType outputValues, const OutputValueViewType shiftedScaledLegendreValues,
-                                                                      Intrepid2::ordinal_type n, ScalarType x, double t)
+                                                                      Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // reduced flops version: rely on previously computed P_i
       if (n >= 0) outputValues(0) = 1.0;
@@ -303,8 +304,8 @@ namespace Intrepid2
         \param [in] t - scaling parameter
      These are defined for x in [0,1].  The x derivative of integrated Legendre is just Legendre; the only distinction is in the index -- outputValues indices are shifted by 1 relative to shiftedScaledLegendreValues, above.
      */
-    template<typename OutputValueViewType, typename ScalarType>
-    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedLegendreValues_dx(OutputValueViewType outputValues, Intrepid2::ordinal_type n, ScalarType x, double t)
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
+    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedLegendreValues_dx(OutputValueViewType outputValues, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       if (n >= 0) outputValues(0) = 0.0;
       if (n >= 1) outputValues(1) = 1.0;
@@ -325,8 +326,8 @@ namespace Intrepid2
      
      This implementation uses less memory than the one below, but depending on the application may introduce some extra computation, in the form of a call to shiftedScaledLegendreValues().
      */
-    template<typename OutputValueViewType, typename ScalarType>
-    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedLegendreValues_dt(OutputValueViewType outputValues, Intrepid2::ordinal_type n, ScalarType x, double t)
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
+    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedLegendreValues_dt(OutputValueViewType outputValues, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // memory-conserving version -- place the Legendre values in the final output container
       shiftedScaledLegendreValues(outputValues, n, x, t);
@@ -358,9 +359,9 @@ namespace Intrepid2
      
      This implementation uses more memory than the one above, but depending on the application may save some computation, in that it can reuse previously computed shiftedScaledLegendreValues.
      */
-    template<typename OutputValueViewType, typename ScalarType>
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
     KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedLegendreValues_dt(OutputValueViewType outputValues, const OutputValueViewType shiftedScaledLegendreValues,
-                                                                         Intrepid2::ordinal_type n, ScalarType x, double t)
+                                                                         Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // reduced flops version: rely on previously computed P_i
       if (n >= 0) outputValues(0) = 0.0;
@@ -387,11 +388,11 @@ namespace Intrepid2
      
      When alpha = 0, Jacobi coincides with Legendre.
     */
-    template<typename OutputValueViewType, typename ScalarType>
-    KOKKOS_INLINE_FUNCTION void shiftedScaledJacobiValues(OutputValueViewType outputValues, double alpha, Intrepid2::ordinal_type n, ScalarType x, double t)
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
+    KOKKOS_INLINE_FUNCTION void shiftedScaledJacobiValues(OutputValueViewType outputValues, double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       ScalarType two_x_minus_t = 2. * x - t;
-      double alpha_squared_t = alpha * alpha * t;
+      ScalarTypeForScaling alpha_squared_t = alpha * alpha * t;
       
       if (n >= 0) outputValues(0) = 1.0;
       if (n >= 1) outputValues(1) = two_x_minus_t + alpha * x;
@@ -406,7 +407,7 @@ namespace Intrepid2
         double c_i = (2. * i + alpha) * (2. * i + alpha - 2.);
         double d_i = 2. * (i + alpha - 1.) * (i - 1.) * (2. * i + alpha);
         
-        outputValues(i) = (b_i / a_i) * (c_i * two_x_minus_t + alpha_squared_t) * P_i_minus_one - (d_i / a_i) * P_i_minus_two;
+        outputValues(i) = (b_i / a_i) * (c_i * two_x_minus_t + alpha_squared_t) * P_i_minus_one - (d_i / a_i) * t * t * P_i_minus_two;
       }
     }
     
@@ -427,9 +428,9 @@ namespace Intrepid2
      
      Compared with the integratedJacobiValues() below, this version uses more memory, but may require fewer floating point computations by reusing the values in jacobiValues.
      */
-    template<typename OutputValueViewType, typename ScalarType>
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
     KOKKOS_INLINE_FUNCTION void integratedJacobiValues(OutputValueViewType outputValues, const OutputValueViewType jacobiValues,
-                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, double t)
+                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // reduced flops version: rely on previously computed P_i
       if (n >= 0) outputValues(0) = 1.0;
@@ -446,7 +447,7 @@ namespace Intrepid2
         double b_i = alpha       / ((2. * i + alpha - 2.) * (2. * i + alpha     ));
         double c_i = (i - 1.)    / ((2. * i + alpha - 2.) * (2. * i + alpha - 1.));
         
-        outputValues(i) = a_i * P_i + b_i * P_i_minus_1 + c_i * t_squared * P_i_minus_2;
+        outputValues(i) = a_i * P_i + b_i * t * P_i_minus_1 - c_i * t_squared * P_i_minus_2;
       }
     }
     
@@ -467,9 +468,9 @@ namespace Intrepid2
      
      Compared with the integratedJacobiValues() above, this version uses less memory, but may require more floating point computations.
      */
-    template<typename OutputValueViewType, typename ScalarType>
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
     KOKKOS_INLINE_FUNCTION void integratedJacobiValues(OutputValueViewType outputValues,
-                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, double t)
+                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // memory-conserving version -- place the Jacobi values in the final output container
       shiftedScaledJacobiValues(outputValues, alpha, n, x, t);
@@ -489,7 +490,7 @@ namespace Intrepid2
         double b_i = alpha       / ((2. * i + alpha - 2.) * (2. * i + alpha     ));
         double c_i = (i - 1.)    / ((2. * i + alpha - 2.) * (2. * i + alpha - 1.));
         
-        ScalarType L_i = a_i * P_i + b_i * P_i_minus_1 + c_i * t_squared * P_i_minus_2;
+        ScalarType L_i = a_i * P_i + b_i * t * P_i_minus_1 - c_i * t_squared * P_i_minus_2;
         
         P_i_minus_2 = P_i_minus_1;
         P_i_minus_1 = P_i;
@@ -507,9 +508,9 @@ namespace Intrepid2
         \param [in] t - scaling parameter
      These are defined for x in [0,1].  The x derivative of integrated Jacobi is just Jacobi; the only distinction is in the index -- outputValues indices are shifted by 1 relative to shiftedScaledJacobiValues, above.
      */
-    template<typename OutputValueViewType, typename ScalarType>
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
     KOKKOS_INLINE_FUNCTION void integratedJacobiValues_dx(OutputValueViewType outputValues,
-                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, double t)
+                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // rather than repeating the somewhat involved implementation of jacobiValues here,
       // call with (n-1), and then move values accordingly
@@ -537,9 +538,9 @@ namespace Intrepid2
      
      This implementation uses more memory than the one above, but depending on the application may save some computation, in that it can reuse previously computed jacobiValues.
      */
-    template<typename OutputValueViewType, typename ScalarType>
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
     KOKKOS_INLINE_FUNCTION void integratedJacobiValues_dt(OutputValueViewType outputValues, const OutputValueViewType jacobiValues,
-                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, double t)
+                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // reduced flops version: rely on previously computed P_i
       if (n >= 0) outputValues(0) = 0.0;
@@ -562,9 +563,9 @@ namespace Intrepid2
      
      This implementation requires less memory than the one above, but depending on the application may require some extra computation.
      */
-    template<typename OutputValueViewType, typename ScalarType>
+    template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
     KOKKOS_INLINE_FUNCTION void integratedJacobiValues_dt(OutputValueViewType outputValues,
-                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, double t)
+                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // memory-conserving version -- place the Jacobi values in the final output container
       shiftedScaledJacobiValues(outputValues, alpha, n, x, t);

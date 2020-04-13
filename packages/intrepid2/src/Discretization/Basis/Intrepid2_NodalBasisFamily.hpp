@@ -59,10 +59,20 @@
 #include <Intrepid2_HDIV_QUAD_In_FEM.hpp>
 #include <Intrepid2_HVOL_QUAD_Cn_FEM.hpp>
 
+#include <Intrepid2_HGRAD_TRI_Cn_FEM.hpp>
+#include <Intrepid2_HCURL_TRI_In_FEM.hpp>
+#include <Intrepid2_HDIV_TRI_In_FEM.hpp>
+#include <Intrepid2_HVOL_TRI_Cn_FEM.hpp>
+
 #include <Intrepid2_HGRAD_HEX_Cn_FEM.hpp>
 #include <Intrepid2_HCURL_HEX_In_FEM.hpp>
 #include <Intrepid2_HDIV_HEX_In_FEM.hpp>
 #include <Intrepid2_HVOL_HEX_Cn_FEM.hpp>
+
+#include <Intrepid2_HGRAD_TET_Cn_FEM.hpp>
+#include <Intrepid2_HCURL_TET_In_FEM.hpp>
+#include <Intrepid2_HDIV_TET_In_FEM.hpp>
+#include <Intrepid2_HVOL_TET_Cn_FEM.hpp>
 
 namespace Intrepid2 {
   // the following defines a family of nodal basis functions, derived from a the standard high-order Intrepid2 bases on the line
@@ -112,11 +122,24 @@ namespace Intrepid2 {
     using HDIV_QUAD  = Basis_HDIV_QUAD_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
     using HVOL_QUAD  = Basis_HVOL_QUAD_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
     
-    // hexahedral bases
+    // triangle bases
+    using HGRAD_TRI = Basis_HGRAD_TRI_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HCURL_TRI = Basis_HCURL_TRI_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HDIV_TRI  = Basis_HDIV_TRI_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HVOL_TRI  = Basis_HVOL_TRI_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    
+    // hexahedron bases
     using HGRAD_HEX = Basis_HGRAD_HEX_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
     using HCURL_HEX = Basis_HCURL_HEX_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
     using HDIV_HEX  = Basis_HDIV_HEX_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
     using HVOL_HEX  = Basis_HVOL_HEX_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    
+    // tetrahedron bases
+    using HGRAD_TET = Basis_HGRAD_TET_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HCURL_TET = Basis_HCURL_TET_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HDIV_TET  = Basis_HDIV_TET_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HVOL_TET  = Basis_HVOL_TET_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    
   };
   
   /** \class Intrepid2::DerivedBasisFamilyModified
@@ -149,7 +172,7 @@ namespace Intrepid2 {
     using HDIV_QUAD  = Basis_Derived_HDIV_QUAD <HGRAD_LINE, HVOL_LINE>;
     using HVOL_QUAD  = Basis_Derived_HVOL_QUAD <HVOL_LINE>;
     
-    // hexahedral bases
+    // hexahedron bases
     using HGRAD_HEX = Basis_Derived_HGRAD_HEX<HGRAD_LINE>;
     using HCURL_HEX = Basis_Derived_HCURL_HEX<HGRAD_LINE, HVOL_LINE>;
     using HDIV_HEX  = Basis_Derived_HDIV_HEX <HGRAD_LINE, HVOL_LINE>;
