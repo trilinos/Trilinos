@@ -73,12 +73,13 @@ namespace MueLuTests {
     int rank = comm->getRank();
     int numproc = comm->getSize();
     RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16*comm->getSize());
+    const int numRows = static_cast<int>(A->getNodeNumRows());
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
-    std::vector<unsigned> aggStat(A->getMap()->getNodeNumElements(),MueLu::READY);
-    LO numUnaggregatedNodes = A->getNodeNumRows(), numDirichletNodes = 0;
+    std::vector<unsigned> aggStat(numRows, MueLu::READY);
+    LO numUnaggregatedNodes = numRows, numDirichletNodes = 0;
 
-    Array<LO> orderingVector(A->getNodeNumRows());
+    Array<LO> orderingVector(numRows);
     for (LO i = 0; i < numRows; i++) {
       orderingVector[i] = i;
     }
@@ -101,7 +102,6 @@ namespace MueLuTests {
 #endif
 
     //    TEST_EQUALITY(numUnaggregatedNodes, 0);
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     if(numproc == 1) {
       TEST_EQUALITY(aggregates->GetNumAggregates(),7);
     }
@@ -153,21 +153,27 @@ namespace MueLuTests {
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
     RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    const int numRows = static_cast<int>(A->getNodeNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
-    std::vector<unsigned> aggStat(A->getMap()->getNodeNumElements(),MueLu::READY);
-    LO numUnaggregatedNodes = A->getNodeNumRows(), numDirichletNodes = 0;
+    std::vector<unsigned> aggStat(numRows, MueLu::READY);
+    LO numUnaggregatedNodes = numRows, numDirichletNodes = 0;
+
+    Array<LO> orderingVector(numRows);
+    for (LO i = 0; i < numRows; i++) {
+      orderingVector[i] = i;
+    }
 
     Teuchos::ParameterList params;
-    NAF->BuildInitialAggregates(params, A, Teuchos::ScalarTraits<SC>::magnitude(4.1),
+    NAF->BuildInitialAggregates(params, A, orderingVector(),
+                                Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
     Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
     // For this problem, the four corners will be detected as "Dirichlet" and ignored, this will
     // generate some number of singletons
@@ -216,15 +222,22 @@ namespace MueLuTests {
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
     RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    const int numRows = static_cast<int>(A->getNodeNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
-    std::vector<unsigned> aggStat(A->getMap()->getNodeNumElements(),MueLu::READY);
-    LO numUnaggregatedNodes = A->getNodeNumRows(), numDirichletNodes = 0;
+    std::vector<unsigned> aggStat(numRows, MueLu::READY);
+    LO numUnaggregatedNodes = numRows, numDirichletNodes = 0;
     typename Matrix::local_matrix_type intermediateP;
 
+    Array<LO> orderingVector(numRows);
+    for (LO i = 0; i < numRows; i++) {
+      orderingVector[i] = i;
+    }
+
     Teuchos::ParameterList params;
-    NAF->BuildInitialAggregates(params, A, Teuchos::ScalarTraits<SC>::magnitude(4.1),
+    NAF->BuildInitialAggregates(params, A, orderingVector(),
+                                Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
     out << "numDirichletNodes=" << numDirichletNodes << std::endl;
@@ -233,7 +246,6 @@ namespace MueLuTests {
     Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
     NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
                                       aggregates->GetNumAggregates(),
@@ -258,39 +270,43 @@ namespace MueLuTests {
     // Do a 2D Star2D Matrix with up/down as a "weak connection"
     Teuchos::ParameterList mp;
     mp.set("matrixType","Star2D");
-    const int nx = 3;
-    mp.set("nx",(GO)nx);
-    mp.set("ny",(GO)nx*comm->getSize());
-    mp.set("a",2.2);
-    mp.set("b",-0.1);  mp.set("c",-0.1);
-    mp.set("d",-1.0); mp.set("e",-1.0);
-    mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
+    const GO nx = 3;
+    mp.set("nx", nx);
+    mp.set("ny", nx*comm->getSize());
+    mp.set("a",  2.2);
+    mp.set("b", -0.1); mp.set("c", -0.1);
+    mp.set("d", -1.0); mp.set("e", -1.0);
+    mp.set("z1", 0.0); mp.set("z2", 0.0);  mp.set("z3", 0.0);  mp.set("z4", 0.0);
     RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    const int numRows = static_cast<int>(A->getNodeNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
-    std::vector<unsigned> aggStat(A->getMap()->getNodeNumElements(),MueLu::READY);
-    LO numUnaggregatedNodes = A->getNodeNumRows(), numDirichletNodes = 0;
+    std::vector<unsigned> aggStat(numRows, MueLu::READY);
+    LO numUnaggregatedNodes = numRows, numDirichletNodes = 0;
     typename Matrix::local_matrix_type intermediateP;
     typename Matrix::local_matrix_type coarseA = A->getLocalMatrix();
 
+    Array<LO> orderingVector(numRows);
+    for (LO i = 0; i < numRows; i++) {
+      orderingVector[i] = i;
+    }
+
     Teuchos::ParameterList params;
-    NAF->BuildInitialAggregates(params, A, Teuchos::ScalarTraits<SC>::magnitude(4.1),
+    NAF->BuildInitialAggregates(params, A, orderingVector(),
+                                Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
     Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
     NAF->BuildOnRankLocalMatrix(A->getLocalMatrix(), coarseA);
-
     NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
                                       aggregates->GetNumAggregates(),
                                       v2a.view(0, A->getNodeNumRows()),
                                       intermediateP);
-
     NAF->BuildCoarseLocalMatrix(intermediateP, coarseA);
 
   } // CoarseLocalMatrix2D
