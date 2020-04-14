@@ -759,8 +759,9 @@ protected:
 
    /**
     * Recursive call to print a level of timer data, in Watchr XML format.
+    * prependRoot will be prepended to the root level's timer name in the output (if level > 0, it has no effect).
     */
-  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time);
+  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time, const std::string& prependRoot = "");
 
 };  //StackedTimer
 
