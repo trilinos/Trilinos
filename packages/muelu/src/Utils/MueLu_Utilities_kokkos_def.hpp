@@ -682,14 +682,25 @@ namespace MueLu {
   Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
     using local_matrix_type = typename Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type;
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
+    using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
     using device            = typename local_graph_type::device_type;
 
-    Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ordering = MueLu::ReverseCuthillMcKee(Op);
+    local_matrix_type localMatrix = Op.getLocalMatrix();
+    using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle<typename local_graph_type::size_type, LocalOrdinal,Scalar,
+      typename device::execution_space, typename device::memory_space,typename device::memory_space>;
+
+    using rcm_t = KokkosSparse::Impl::RCM<KernelHandle, typename local_graph_type::row_map_type::const_type, typename local_graph_type::entries_type::non_const_type>;
     
-    // Now reverse things
-    auto view1D = Kokkos::subview(ordering->template getLocalView<device>(),Kokkos::ALL (), 0);
-    MueLu::kokkos_reverse(view1D);
-    return ordering;
+    rcm_t rcm(localMatrix.numRows(), localMatrix.graph.row_map, localMatrix.graph.entries);
+    lno_nnz_view_t rcmOrder = rcm.cuthill_mckee();
+
+    RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > retval = 
+      Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRowMap());
+
+    // Copy out data
+    auto view1D = Kokkos::subview(retval->template getLocalView<device>(),Kokkos::ALL (), 0);
+    Kokkos::deep_copy(view1D,rcmOrder);
+    return retval;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
