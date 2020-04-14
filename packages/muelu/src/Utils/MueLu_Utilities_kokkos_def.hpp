@@ -661,7 +661,7 @@ namespace MueLu {
     using device            = typename local_graph_type::device_type;
 
     local_matrix_type localMatrix = Op.getLocalMatrix();
-    using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle<size_t, LocalOrdinal,Scalar,
+    using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle<typename local_graph_type::size_type, LocalOrdinal,Scalar,
       typename device::execution_space, typename device::memory_space,typename device::memory_space>;
 
     using rcm_t = KokkosSparse::Impl::RCM<KernelHandle, typename local_graph_type::row_map_type::const_type, typename local_graph_type::entries_type::non_const_type>;
