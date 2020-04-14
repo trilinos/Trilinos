@@ -71,6 +71,10 @@ RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, Globa
     DualNodeID2PrimalNodeID represents the mapping between the Dual Node IDs to the Primal Node IDs.
     This map makes one assumption: the number of dof per dual node is a constant and has to be set in 
     the parameter list as "number of DOFs per dual node".
+
+    Layout of the std::map<key, value>:
+    - key: dual node ID
+    - value: primal node ID.
   */
   validParamList->set<RCP<std::map<LocalOrdinal, LocalOrdinal>>>("DualNodeID2PrimalNodeID - level 0", null, "");
   return validParamList;
