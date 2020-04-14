@@ -94,13 +94,13 @@ namespace Intrepid2
     */
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "Intrepid2_DerivedBasis_HGRAD_QUAD";
     }
 
     /** \brief True if orientation is required
     */
-    virtual bool requireOrientation() const {
+    virtual bool requireOrientation() const override {
       return (this->getDegree() > 2);
     }
     

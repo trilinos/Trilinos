@@ -158,14 +158,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::vector<std::string> dirList;
   if (runHeavyTests) {
     dirList.push_back(prefix+"EasyParameterListInterpreter-heavy/");
-    if (!useKokkos)
+    if (!useKokkos) {
       // commented since extended xml interface does not support kokkos factories
       dirList.push_back(prefix+"FactoryParameterListInterpreter-heavy/");
+    }
   } else {
     dirList.push_back(prefix+"EasyParameterListInterpreter/");
-    if (!useKokkos)
+    if (!useKokkos) {
       // commented since extended xml interface does not support kokkos factories
       dirList.push_back(prefix+"FactoryParameterListInterpreter/");
+    }
   }
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
   // The ML interpreter have internal ifdef, which means that the resulting
@@ -211,6 +213,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         baseFile = outFile.substr(0, outFile.find_last_of('.'));
         found = baseFile.find("_np");
         jumpOut = true;
+        std::cout << "Test dir: " << dirList[k] << std::endl;
       }
 
       if (numProc == 1 && found != std::string::npos) {
@@ -260,25 +263,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // and the ML parameter list interpreter. Note that the ML paramter interpreter also
         // works with Tpetra matrices.
         if (dirList[k] == prefix+"EasyParameterListInterpreter/"         ||
-            dirList[k] == prefix+"EasyParameterListInterpreter-heavy/"   ||
-            dirList[k] == prefix+"FactoryParameterListInterpreter/"      ||
-            dirList[k] == prefix+"FactoryParameterListInterpreter-heavy/") {
+            dirList[k] == prefix+"EasyParameterListInterpreter-heavy/") {
           paramList.set("use kokkos refactor", useKokkos);
-          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
+          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList,comm));
+        } else if (dirList[k] == prefix+"FactoryParameterListInterpreter/"      ||
+                   dirList[k] == prefix+"FactoryParameterListInterpreter-heavy/") {
+          paramList.sublist("Hierarchy").set("use kokkos refactor", useKokkos);
+          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList,comm));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter/") {
           paramList.set("use kokkos refactor", useKokkos);
           mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter2/") {
-          //std::cout << "ML ParameterList: " << std::endl;
-          //std::cout << paramList << std::endl;
           RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
-          //std::cout << "MueLu ParameterList: " << std::endl;
-          //std::cout << *mueluParamList << std::endl;
           mueluParamList->set("use kokkos refactor", useKokkos);
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
-        }
+        } else
+          TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Not a test directory");
 
         RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
 
