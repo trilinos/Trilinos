@@ -1127,6 +1127,18 @@ namespace MueLu {
       rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->replaceDomainMapAndImporter(Importer22_->getTargetMap(), ImporterD0);
     }
 
+    if ((!D0_T_Matrix_.is_null()) &&
+        (!R11_.is_null()) &&
+        (!rcp_dynamic_cast<CrsMatrixWrap>(D0_T_Matrix_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null()) &&
+        (!rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null()) &&
+        (D0_T_Matrix_->getColMap()->lib() == Xpetra::UseTpetra) &&
+        (R11_->getColMap()->lib() == Xpetra::UseTpetra))
+      D0_T_R11_colMapsMatch_ = D0_T_Matrix_->getColMap()->isSameAs(*R11_->getColMap());
+    else
+      D0_T_R11_colMapsMatch_ = false;
+    if (D0_T_R11_colMapsMatch_)
+      GetOStream(Runtime0) << "RefMaxwell::compute(): D0_T and R11 have matching colMaps" << std::endl;
+
     // Allocate temporary MultiVectors for solve
     allocateMemory(1);
 
@@ -1166,6 +1178,8 @@ namespace MueLu {
       P11res_    = MultiVectorFactory::Build(R11_->getRangeMap(), numVectors);
     else
       P11res_    = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
+    if (D0_T_R11_colMapsMatch_)
+      D0TR11Tmp_ = MultiVectorFactory::Build(R11_->getColMap(), numVectors);
     if (!ImporterH_.is_null()) {
       P11resTmp_ = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
       P11xTmp_   = MultiVectorFactory::Build(ImporterH_->getSourceMap(), numVectors);
@@ -1926,13 +1940,29 @@ namespace MueLu {
           D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
         }
       } else {
-        {
-          RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
-          R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
-        }
-        {
-          RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restriction (2,2) (explicit)");
-          D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
+        if (D0_T_R11_colMapsMatch_) {
+          // Column maps of D0_T and R11 match, and we're running Tpetra
+          {
+            RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restrictions import");
+            D0TR11Tmp_->doImport(*residual_, *rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix()->getCrsGraph()->getImporter(), Xpetra::INSERT);
+          }
+          {
+            RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restriction (2,2) (explicit)");
+            rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(D0_T_Matrix_)->getCrsMatrix())->getTpetra_CrsMatrix()->localApply(toTpetra(*D0TR11Tmp_),toTpetra(*D0res_),Teuchos::NO_TRANS);
+          }
+          {
+            RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
+            rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix())->getTpetra_CrsMatrix()->localApply(toTpetra(*D0TR11Tmp_),toTpetra(*P11res_),Teuchos::NO_TRANS);
+          }
+        } else {
+          {
+            RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
+            R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
+          }
+          {
+            RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restriction (2,2) (explicit)");
+            D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
+          }
         }
       }
     }
@@ -1942,12 +1972,12 @@ namespace MueLu {
 
       // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
 
-      if (!ImporterH_.is_null()) {
+      if (!ImporterH_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
         P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
         P11res_.swap(P11resTmp_);
       }
-      if (!Importer22_.is_null()) {
+      if (!Importer22_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
         D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
         D0res_.swap(D0resTmp_);
@@ -2062,7 +2092,7 @@ namespace MueLu {
     }
 
     { // solve coarse (1,1) block
-      if (!ImporterH_.is_null()) {
+      if (!ImporterH_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
         P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
         P11res_.swap(P11resTmp_);
@@ -2080,17 +2110,15 @@ namespace MueLu {
         P11x_  ->replaceMap(origXMap);
         P11res_->replaceMap(origRhsMap);
       }
-      if (!ImporterH_.is_null()) {
-        RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: export coarse (1,1)");
-        P11xTmp_->doExport(*P11x_, *ImporterH_, Xpetra::INSERT);
-        P11x_.swap(P11xTmp_);
-      }
     }
 
     { // update current solution
       RCP<Teuchos::TimeMonitor> tmUp = getTimer("MueLu RefMaxwell: update");
       P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
       X.update(one, *residual_, one);
+    }
+    if (!ImporterH_.is_null()) {
+      P11res_.swap(P11resTmp_);
     }
 
   }
@@ -2111,7 +2139,7 @@ namespace MueLu {
     }
 
     { // solve (2,2) block
-      if (!Importer22_.is_null()) {
+      if (!Importer22_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
         D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
         D0res_.swap(D0resTmp_);
@@ -2129,17 +2157,15 @@ namespace MueLu {
         D0x_  ->replaceMap(origXMap);
         D0res_->replaceMap(origRhsMap);
       }
-      if (!Importer22_.is_null()) {
-        RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: export (2,2)");
-        D0xTmp_->doExport(*D0x_, *Importer22_, Xpetra::INSERT);
-        D0x_.swap(D0xTmp_);
-      }
     }
 
     { //update current solution
       RCP<Teuchos::TimeMonitor> tmUp = getTimer("MueLu RefMaxwell: update");
       D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
       X.update(one, *residual_, one);
+    }
+    if (!Importer22_.is_null()) {
+      D0res_.swap(D0resTmp_);
     }
 
   }
