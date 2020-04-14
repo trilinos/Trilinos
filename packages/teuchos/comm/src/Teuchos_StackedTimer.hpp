@@ -660,9 +660,22 @@ public:
   void reportXML(std::ostream &os, const std::string& datestamp, const std::string& timestamp, Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
   /**
-   * Dump all the data from all the MPI ranks to <code>$WATCHR_PERF_DIR/name_$DATESTAMP.xml</code>,
-   *  if the environment variable WATCHR_PERF_DIR is defined and non-empty (otherwise, do nothing).
-   *  DATESTAMP is calculated from the current UTC time, in the format YYYY_MM_DD.
+   * Dump all the data from all the MPI ranks to an XML file. This function
+   * calls reportXML and is intended to be used directly by performance tests.
+   *
+   * The output filename is controlled by two environment variables: <code>$WATCHR_PERF_DIR</code> (required)
+   * and <code>$WATCHR_BUILD_NAME</code> (optional). <code>$WATCHR_PERF_DIR</code> is the directory where the output
+   * will be created. If it is not set or is empty, no output will be produced and the function returns an empty
+   * string on all ranks.
+   *
+   * If <code>$WATCHR_BUILD_NAME</code> is set, the filename is
+   * <code>$WATCHR_BUILD_NAME-name_$DATESTAMP.xml</code>, with spaces in <code>$WATCHR_BUILD_NAME</code>
+   * replaced by underscores. Additionally, the build name is prepended (verbatim) to the top-level timer name, so that
+   * Watchr knows it is a different data series than runs of the same test from other builds.
+   *
+   * If <code>$WATCHR_BUILD_NAME</code> is not set or is empty, the filename is just <code>name_$DATESTAMP.xml</code>.
+   * DATESTAMP is calculated from the current UTC time, in the format YYYY_MM_DD.
+   *
    * @param [in] name - Name of performance test
    * @param [in] comm - Teuchos comm pointer
    * @return If on rank 0 and output was produced, the complete output filename. Otherwise the empty string.
@@ -759,8 +772,9 @@ protected:
 
    /**
     * Recursive call to print a level of timer data, in Watchr XML format.
+    * prependRoot will be prepended to the root level's timer name in the output (if level > 0, it has no effect).
     */
-  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time);
+  double printLevelXML(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, double parent_time, const std::string& prependRoot = "");
 
 };  //StackedTimer
 
