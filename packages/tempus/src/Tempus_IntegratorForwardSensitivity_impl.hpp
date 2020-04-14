@@ -326,35 +326,35 @@ createSensitivityModelAndStepper(
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> >
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
-  Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorForwardSensitivity<Scalar>(pList, model));
+  Teuchos::RCP<IntegratorForwardSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorForwardSensitivity<Scalar>(pList, model));
   return(integrator);
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> >
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   std::string stepperType)
 {
-  Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorForwardSensitivity<Scalar>(model, stepperType));
+  Teuchos::RCP<IntegratorForwardSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorForwardSensitivity<Scalar>(model, stepperType));
   return(integrator);
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> >
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity()
 {
-  Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorForwardSensitivity<Scalar>());
+  Teuchos::RCP<IntegratorForwardSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorForwardSensitivity<Scalar>());
   return(integrator);
 }
 

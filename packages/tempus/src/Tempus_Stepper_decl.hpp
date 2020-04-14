@@ -67,23 +67,31 @@ public:
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) {}
 
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+    virtual void setNonConstModel(
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& /* appModel */){}
+
+#endif // TEMPUS_HIDE_DEPRECATED_CODE
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
+    { return Teuchos::null; }
 
     /// Set solver.
     virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) = 0;
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) {}
 
     /// Get solver
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
-      getSolver() const = 0;
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+    { return Teuchos::null; }
 
     /// Set Observer
-    virtual void setObserver(Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
 
     /// Get Observer
-    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const {return Teuchos::null;}
+    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const
+    { return Teuchos::null; }
 
     /// Initialize after construction and changing input parameters.
     virtual void initialize();
@@ -140,6 +148,18 @@ public:
     virtual bool getICConsistencyCheckDefault() const { return false; }
 
     virtual OrderODE getOrderODE() const = 0;
+
+    /// Get x from SolutionState or Stepper storage.
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStepperX(
+      Teuchos::RCP<SolutionState<Scalar> > state);
+
+    /// Get xDot from SolutionState or Stepper storage.
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStepperXDot(
+      Teuchos::RCP<SolutionState<Scalar> > state);
+
+    /// Get xDotDot from SolutionState or Stepper storage.
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStepperXDotDot(
+      Teuchos::RCP<SolutionState<Scalar> > state);
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -170,7 +190,24 @@ private:
   std::string ICConsistency_ = std::string("None");  //< Type of consistency to apply to ICs.
   bool ICConsistencyCheck_ = true;      //< Check if the initial condition is consistent
 
+  // RCP to SolutionState memory or Stepper temporary memory (if needed).
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > stepperX_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > stepperXDot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > stepperXDotDot_;
+
 protected:
+
+  /// Set x for Stepper storage.
+  virtual void setStepperX(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
+  { stepperX_ = x; }
+
+  /// Set xDot for Stepper storage.
+  virtual void setStepperXDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xDot)
+  { stepperXDot_ = xDot; }
+
+  /// Set x for Stepper storage.
+  virtual void setStepperXDotDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot)
+  { stepperXDotDot_ = xDotDot; }
 
   bool isInitialized_ = false; //< True if stepper's member data is initialized.
 };

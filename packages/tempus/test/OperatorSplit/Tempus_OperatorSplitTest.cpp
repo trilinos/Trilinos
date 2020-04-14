@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
   stepper->getModel()->getNominalValues();
   auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
-  auto icState = rcp(new Tempus::SolutionState<double>(icX, icXDot));
+  auto icState = Tempus::createSolutionStateX(icX, icXDot);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);

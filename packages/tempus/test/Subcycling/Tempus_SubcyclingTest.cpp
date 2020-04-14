@@ -148,7 +148,7 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);  // dt for ICs are indicated by zero.
@@ -272,7 +272,7 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
       stepper->getModel()->getNominalValues();
     auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-    auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+    auto icState = Tempus::createSolutionStateX(icSolution);
     icState->setTime    (timeStepControl->getInitTime());
     icState->setIndex   (timeStepControl->getInitIndex());
     icState->setTimeStep(0.0);  // dt for ICs are zero.
@@ -467,7 +467,7 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
       stepper->getModel()->getNominalValues();
     auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
     auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
-    auto icState = rcp(new Tempus::SolutionState<double>(icX, icXDot));
+    auto icState = Tempus::createSolutionStateX(icX, icXDot);
     icState->setTime    (timeStepControl->getInitTime());
     icState->setIndex   (timeStepControl->getInitIndex());
     icState->setTimeStep(0.0);  // dt for ICs are zero.
