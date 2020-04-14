@@ -62,7 +62,7 @@ namespace MueLu
     This factory is intended to be used for saddle-point systems of surface-coupled problems,
     where constraints are enforced with Lagrange multipliers.
     In addition to the primal unknowns, Lagrange multipliers are considered as dual unknowns.
-    The presenence of Lagrange mulitpliers make this a prima/dual problem
+    The presence of Lagrange multipliers make this a primal/dual problem.
 
     It is assumed that each primal slave-side interface node (carrying primal unknowns) is replicated
     with a dual node carrying the dual unknowns.
@@ -91,7 +91,7 @@ namespace MueLu
     The * in the @c requested column states that the data is requested as input with all dependencies (see InterfaceAggregationFactory::DeclareInput).
 
     The mapping of dual-to-primal node IDs, \c DualNodeID2PrimalNodeID, is of data type \c std::map<LocalOrdinal,LocalOrdinal>.
-    The 'key' refers to the global ID of the dual node, while the 'value' represents the global ID of its primal counterpart.
+    The 'key' refers to the local ID of the dual node, while the 'value' represents the local ID of its primal counterpart.
 
     ### Variables provided by InterfaceAggregationFactory ###
 
