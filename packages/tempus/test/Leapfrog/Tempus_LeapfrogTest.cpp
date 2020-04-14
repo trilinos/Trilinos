@@ -45,12 +45,7 @@ using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
 
-
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Leapfrog, ConstructingFromDefaults)
@@ -141,10 +136,8 @@ TEUCHOS_UNIT_TEST(Leapfrog, ConstructingFromDefaults)
   std::cout << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.167158, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Leapfrog, SinCos)
@@ -254,6 +247,6 @@ TEUCHOS_UNIT_TEST(Leapfrog, SinCos)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
+
 
 }

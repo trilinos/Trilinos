@@ -474,7 +474,6 @@ Teuchos::RCP<SolutionState<Scalar> > createSolutionStateX(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot)
 {
-  std::cout << "Called non-const createSolutionStateX" << std::endl;
   Teuchos::RCP<SolutionStateMetaData<Scalar> >
     metaData_nc = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
 
@@ -496,7 +495,6 @@ Teuchos::RCP<SolutionState<Scalar> > createSolutionStateX(
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot)
 {
-  std::cout << "Called const createSolutionStateX" << std::endl;
   Teuchos::RCP<const SolutionStateMetaData<Scalar> >
     metaData = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
 

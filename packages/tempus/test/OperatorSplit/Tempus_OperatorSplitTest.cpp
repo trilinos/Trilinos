@@ -38,12 +38,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_VANDERPOL
 
-
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
@@ -143,10 +138,8 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -2.223910, 1.0e-4);
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1),  0.565441, 1.0e-4);
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
@@ -237,6 +230,6 @@ TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
+
 
 } // namespace Tempus_Test
