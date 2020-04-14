@@ -1645,6 +1645,7 @@ namespace Tpetra {
         Kokkos::RangePolicy<LO, typename DT::execution_space>
           range (static_cast<LO> (0), static_cast<LO> (lgMap.size ()));
         Kokkos::parallel_for (range, *this);
+        Kokkos::fence();
       }
 
       KOKKOS_INLINE_FUNCTION void operator () (const LO& lid) const {

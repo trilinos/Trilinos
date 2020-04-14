@@ -57,6 +57,17 @@ namespace Tacho {
              const T *b, int ldb,
              const T beta,
              /* */ T *c, int ldc);
+#if defined (KOKKOS_ENABLE_CUDA)
+    static 
+    int gemm(const cublasHandle_t handle, 
+             const cublasOperation_t transa, const cublasOperation_t transb, 
+             int m, int n, int k,
+             const T alpha, 
+             const T *a, int lda,
+             const T *b, int ldb,
+             const T beta,
+             /* */ T *c, int ldc);
+#endif
 
     static 
     int herk(const char uplo, const char trans, 

@@ -1,11 +1,12 @@
 #include "DeviceMeshManager.hpp"
 #include "BulkData.hpp"
-#include "stk_mesh/base/NgpMesh.hpp"
+#include "NgpMesh.hpp"
+#include "stk_util/stk_kokkos_macros.h"
 
 namespace stk {
 namespace mesh {
 
-DeviceMeshManager::DeviceMeshManager(stk::mesh::BulkData & bulk)
+DeviceMeshManager::DeviceMeshManager(const stk::mesh::BulkData & bulk)
   : NgpMeshManager(),
     m_deviceMesh(bulk)
 {
@@ -18,7 +19,7 @@ DeviceMeshManager::~DeviceMeshManager()
 stk::mesh::NgpMesh &
 DeviceMeshManager::get_mesh()
 {
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef STK_USE_DEVICE_MESH
   ThrowErrorMsg("DeviceMeshManager does not have host mesh");
   static HostMesh hostMesh;
   return hostMesh;  // Never used; Avoids build problems on the CPU

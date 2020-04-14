@@ -492,10 +492,9 @@ namespace Tpetra {
     using local_matrix_type =
       KokkosSparse::CrsMatrix<impl_scalar_type,
                               local_ordinal_type,
-                              execution_space,
+                              device_type,
                               void,
                               typename local_graph_type::size_type>;
-
 
     //@}
     //! @name Constructors and destructor
@@ -4550,6 +4549,7 @@ namespace Tpetra {
     sourceMatrix->exportAndFillComplete (destMatrix, rowExporter, domainExporter, domainMap, rangeMap, params);
     return destMatrix;
   }
+
 } // namespace Tpetra
 
 /**

@@ -71,9 +71,9 @@ namespace Intrepid2
                               HGRAD_LINE>
   {
   public:
-    using OutputViewType = typename HGRAD_LINE::outputViewType;
-    using PointViewType  = typename HGRAD_LINE::pointViewType ;
-    using ScalarViewType = typename HGRAD_LINE::scalarViewType;
+    using OutputViewType = typename HGRAD_LINE::OutputViewType;
+    using PointViewType  = typename HGRAD_LINE::PointViewType ;
+    using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
 
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;
@@ -171,9 +171,9 @@ namespace Intrepid2
                               HGRAD_LINE>
   {
   public:
-    using OutputViewType = typename HGRAD_LINE::outputViewType;
-    using PointViewType  = typename HGRAD_LINE::pointViewType ;
-    using ScalarViewType = typename HGRAD_LINE::scalarViewType;
+    using OutputViewType = typename HGRAD_LINE::OutputViewType;
+    using PointViewType  = typename HGRAD_LINE::PointViewType ;
+    using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;
@@ -190,7 +190,9 @@ namespace Intrepid2
     TensorBasis3(LineGradBasis(polyOrder_x),
                  LineVolBasis (polyOrder_y-1),
                  LineGradBasis(polyOrder_z))
-    {}
+    {
+      this->functionSpace_ = FUNCTION_SPACE_HCURL;
+    }
     
     using TensorBasis3::getValues;
     
@@ -272,9 +274,9 @@ namespace Intrepid2
                               HGRAD_LINE,
                               HVOL_LINE>
   {
-    using OutputViewType = typename HGRAD_LINE::outputViewType;
-    using PointViewType  = typename HGRAD_LINE::pointViewType ;
-    using ScalarViewType = typename HGRAD_LINE::scalarViewType;
+    using OutputViewType = typename HGRAD_LINE::OutputViewType;
+    using PointViewType  = typename HGRAD_LINE::PointViewType ;
+    using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;
@@ -400,12 +402,30 @@ namespace Intrepid2
     Basis_Derived_HCURL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
     :
     DirectSumBasis(Family12(polyOrder_x, polyOrder_y, polyOrder_z),
-                   Family3 (polyOrder_x, polyOrder_y, polyOrder_z)) {}
+                   Family3 (polyOrder_x, polyOrder_y, polyOrder_z)) {
+      this->functionSpace_ = FUNCTION_SPACE_HCURL;
+    }
     
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in all dimensions.
      */
     Basis_Derived_HCURL_HEX(int polyOrder) : Basis_Derived_HCURL_HEX(polyOrder, polyOrder, polyOrder) {}
+
+    /** \brief  Returns basis name
+
+        \return the name of the basis
+    */
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_DerivedBasis_HCURL_HEX";
+    }
+
+    /** \brief True if orientation is required
+    */
+    virtual bool requireOrientation() const {
+      return true;
+    }
   };
 } // end namespace Intrepid2
 

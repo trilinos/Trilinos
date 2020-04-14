@@ -5,7 +5,7 @@
 #
 # Usage:
 #
-#   atdm_run_script_on_comput_node <script_to_run> <output_file> \
+#   atdm_run_script_on_compute_node <script_to_run> <output_file> \
 #     [<timeout>] [<account>]
 #
 # If <timeout> is not given, then it is set to the env var

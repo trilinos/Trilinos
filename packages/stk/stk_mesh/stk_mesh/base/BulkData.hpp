@@ -79,7 +79,6 @@
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
-namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class EntityProcMapping; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
@@ -195,11 +194,11 @@ public:
    *          Do not store a persistent pointer or reference unless you are willing
    *          to manually call update_ngp_mesh() when appropriate.
    */
-  NgpMesh & get_ngp_mesh();
+  NgpMesh & get_updated_ngp_mesh() const;
 
   /** \brief  Perform manual update of a persistent NgpMesh instance.
    */
-  void update_ngp_mesh();
+  void update_ngp_mesh() const;
 
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel.parallel() ; }
@@ -638,7 +637,9 @@ public:
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
   bool in_ghost( const Ghosting & ghost , Entity entity , int proc ) const;
-  void shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
+  bool in_ghost( const Ghosting & ghost , Entity entity ) const;
+  void shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
+  void shared_procs_intersection(const EntityVector & entities, std::vector<int> & procs ) const;
 
   // Comm-related convenience methods
 
@@ -1263,7 +1264,11 @@ protected: //functions
                                          std::vector<SideSharingData>& sideSharingDataReceived);
   void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
 
-private: //functions
+private:
+  void register_device_mesh() const;
+  void unregister_device_mesh() const;
+
+  void create_ngp_mesh_manager() const;
   void record_entity_deletion(Entity entity);
   void break_boundary_relations_and_delete_buckets(const std::vector<impl::RelationEntityToNode> & relationsToDestroy, const stk::mesh::BucketVector & bucketsToDelete);
   void delete_buckets(const stk::mesh::BucketVector & buckets);
@@ -1459,6 +1464,7 @@ private:
   friend class ::stk::mesh::FaceCreator;
   friend class ::stk::mesh::EntityLess;
   friend class ::stk::io::StkMeshIoBroker;
+  friend class stk::mesh::DeviceMesh;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
@@ -1610,7 +1616,8 @@ private: // data
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   std::shared_ptr<stk::mesh::ElemElemGraphUpdater> m_elemElemGraphUpdater;
   stk::mesh::impl::SideSetImpl<unsigned> m_sideSetData;
-  stk::mesh::NgpMeshManager* m_ngpMeshManager;
+  mutable stk::mesh::NgpMeshManager* m_ngpMeshManager;
+  mutable bool m_isDeviceMeshRegistered;
 
 protected:
   stk::mesh::impl::SoloSideIdGenerator m_soloSideIdGenerator;

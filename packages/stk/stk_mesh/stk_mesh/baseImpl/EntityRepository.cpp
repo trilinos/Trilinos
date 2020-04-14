@@ -44,8 +44,38 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
+struct EntityKeyEntityLess {
+inline bool operator()(const std::pair<EntityKey,Entity>& key_ent_pair, const EntityKey& key) const
+{
+  return key_ent_pair.first.m_value < key.m_value;
+}
+inline bool operator()(const EntityKey& key, const std::pair<EntityKey,Entity>& key_ent_pair) const
+{
+  return key.m_value < key_ent_pair.first.m_value;
+}
+};
+
+struct match_EntityKey {
+  match_EntityKey(const EntityKey& key)
+  : m_key(key)
+  {}
+  bool operator()(const std::pair<EntityKey,Entity>& item) const
+  { return item.first == m_key; }
+
+  bool operator==(const std::pair<EntityKey,Entity>& item) const
+  { return item.first == m_key; }
+
+private:
+  const EntityKey& m_key;
+};
+
 EntityRepository::EntityRepository()
- : m_entities(stk::topology::NUM_RANKS)
+ : m_entities(stk::topology::NUM_RANKS),
+   m_create_cache(stk::topology::NUM_RANKS),
+   m_update_cache(stk::topology::NUM_RANKS),
+   m_destroy_cache(stk::topology::NUM_RANKS),
+   m_maxCreateCacheSize(512),
+   m_maxUpdateCacheSize(4096)
 {
 }
 
@@ -62,40 +92,237 @@ size_t capacity_in_bytes(const VecType& v)
 size_t EntityRepository::heap_memory_in_bytes() const
 {
     size_t bytes = 0;
-    for(auto entityMap : m_entities) { bytes += entityMap.size()*sizeof(EntityKeyEntity); }
+    for(auto vec : m_entities) { bytes += capacity_in_bytes(vec); }
+    for(auto vec : m_create_cache) { bytes += capacity_in_bytes(vec); }
+    for(auto vec : m_update_cache) { bytes += capacity_in_bytes(vec); }
+    for(auto vec : m_destroy_cache) { bytes += capacity_in_bytes(vec); }
     return bytes;
+}
+
+void EntityRepository::clear_all_cache()
+{
+  for(EntityRank rank=stk::topology::BEGIN_RANK; rank<m_create_cache.size(); ++rank) {
+    clear_cache(rank);
+  }
+}
+
+void EntityRepository::clear_destroyed_entity_cache(EntityRank rank) const
+{
+  if (!m_destroy_cache[rank].empty()) {
+    std::vector<EntityKey>& destroy = m_destroy_cache[rank];
+    std::sort(destroy.begin(), destroy.end());
+    EntityKeyEntityVector& entities = m_entities[rank];
+    size_t destroyIdx = 0;
+    EntityKeyEntityVector::iterator start = std::lower_bound(entities.begin(), entities.end(), destroy[0], EntityKeyEntityLess());
+    EntityKeyEntityVector::iterator end = std::upper_bound(entities.begin(), entities.end(), destroy.back(), EntityKeyEntityLess());
+    size_t startIdx = std::distance(entities.begin(), start);
+    size_t endIdx = std::distance(entities.begin(), end);
+    size_t keep = startIdx;
+    for(size_t i=startIdx; i<endIdx; ++i) {
+      if (destroyIdx < destroy.size() && entities[i].first == destroy[destroyIdx]) {
+        ++destroyIdx;
+        continue;
+      }
+      if (i > keep) {
+        entities[keep] = entities[i];
+      }
+      ++keep;
+    }
+    if (endIdx < entities.size()) {
+      size_t len = entities.size() - endIdx;
+      std::memmove(&entities[keep], &entities[endIdx], len*sizeof(EntityKeyEntity));
+      keep += len;
+    }
+    entities.resize(keep);
+
+    destroy.clear();
+    size_t num = std::max(m_entities[stk::topology::NODE_RANK].size(),
+                          m_entities[stk::topology::ELEM_RANK].size());
+    unsigned possibleCacheSize = num/1000;
+    m_maxUpdateCacheSize = std::max(m_maxUpdateCacheSize, possibleCacheSize);
+  }
+}
+
+void EntityRepository::clear_updated_entity_cache(EntityRank rank) const
+{
+  if (!m_update_cache[rank].empty()) {
+    std::vector<std::pair<EntityKey,EntityKey> >& update = m_update_cache[rank];
+    std::sort(update.begin(), update.end());
+    EntityKeyEntityVector::iterator iter = m_entities[rank].begin();
+    EntityKeyEntityVector::iterator end = m_entities[rank].end();
+    for(const std::pair<EntityKey,EntityKey>& oldnew : update) {
+      EntityKeyEntityVector::iterator thisIter = std::lower_bound(iter, end, oldnew.first, EntityKeyEntityLess());
+      if (thisIter != end && thisIter->first == oldnew.first) {
+        thisIter->first = oldnew.second;
+        iter = thisIter+1;
+      }
+    }
+    m_update_cache[rank].clear();
+    std::sort(m_entities[rank].begin(), m_entities[rank].end());
+  }
+}
+
+void EntityRepository::clear_created_entity_cache(EntityRank rank) const
+{
+  if (!m_create_cache[rank].empty()) {
+    std::sort(m_create_cache[rank].begin(), m_create_cache[rank].end());
+    unsigned numOld = m_entities[rank].size();
+    m_entities[rank].insert(m_entities[rank].end(), m_create_cache[rank].begin(), m_create_cache[rank].end());
+    if (numOld > 0) {
+      const EntityKey& firstNewKey = m_create_cache[rank][0].first;
+      const EntityKey& lastOldKey = m_entities[rank][numOld-1].first;
+      const bool isOverlap = (firstNewKey < lastOldKey);
+      if (isOverlap) {
+        EntityKeyEntityVector::iterator oldEnd = m_entities[rank].begin()+numOld;
+        EntityKeyEntityVector::iterator startOfOverlap = std::lower_bound(m_entities[rank].begin(), oldEnd, firstNewKey, EntityKeyEntityLess());
+        EntityKeyEntityVector::iterator endOfOverlap = std::lower_bound(oldEnd, m_entities[rank].end(), lastOldKey, EntityKeyEntityLess());
+        std::inplace_merge(startOfOverlap, oldEnd, endOfOverlap);
+      }
+    }
+    m_create_cache[rank].clear();
+    size_t num = std::max(m_entities[stk::topology::NODE_RANK].size(),
+                          m_entities[stk::topology::ELEM_RANK].size());
+    unsigned possibleCacheSize = num/1000;
+    m_maxCreateCacheSize = std::max(m_maxCreateCacheSize, possibleCacheSize);
+  }
+}
+
+void EntityRepository::clear_cache(EntityRank rank) const
+{
+  clear_created_entity_cache(rank);
+
+  clear_updated_entity_cache(rank);
+
+  clear_destroyed_entity_cache(rank);
+}
+
+std::pair<stk::mesh::entity_iterator,bool>
+EntityRepository::add_to_cache(const EntityKey& key)
+{
+    bool inserted_new_entity = false;
+    EntityRank rank = key.rank();
+    EntityKeyEntityVector& cache = m_create_cache[rank];
+
+    if (cache.size() >= m_maxCreateCacheSize) {
+        clear_cache(rank);
+    }
+
+    EntityKeyEntityVector& entities = m_entities[rank];
+    EntityKeyEntityVector::iterator iter = std::lower_bound(entities.begin(), entities.end(),
+                                                            key, EntityKeyEntityLess());
+    Entity entity;
+    if (iter == entities.end() || iter->first != key) {
+        cache.emplace_back(key, Entity());
+        iter = cache.begin()+(cache.size()-1);
+        inserted_new_entity = true;
+    }
+    else {
+        inserted_new_entity = false;
+    }
+ 
+    if (cache.size() >= m_maxCreateCacheSize) {
+        clear_cache(rank);
+        iter = std::lower_bound(entities.begin(), entities.end(), key, EntityKeyEntityLess());
+    }
+
+    return std::make_pair(iter, inserted_new_entity);
+}
+
+stk::mesh::entity_iterator EntityRepository::get_from_cache(const EntityKey& key) const
+{
+  if (!m_create_cache[key.rank()].empty()) {
+    EntityKeyEntityVector& cache = m_create_cache[key.rank()];
+    EntityKeyEntityVector::iterator iter =
+         std::find_if(cache.begin(), cache.end(), match_EntityKey(key));
+    if (iter != cache.end()) {
+      return iter;
+    }
+  }
+  return m_create_cache[key.rank()].end();
 }
 
 std::pair<stk::mesh::entity_iterator ,bool>
 EntityRepository::internal_create_entity( const EntityKey & key)
 {
-  EntityKeyEntityMap& entMap = m_entities[key.rank()];
-  return entMap.insert(EntityKeyEntity(key,Entity()));
+  if (key.rank() > m_entities.size()) {
+    m_entities.resize(key.rank());
+    m_create_cache.resize(key.rank());
+    m_update_cache.resize(key.rank());
+    m_destroy_cache.resize(key.rank());
+  }
+
+  clear_updated_entity_cache(key.rank());
+  clear_destroyed_entity_cache(key.rank());
+
+  entity_iterator ent = get_from_cache(key);
+  if (ent != m_create_cache[key.rank()].end()) {
+    return std::make_pair(ent, false);
+  }
+
+  return add_to_cache(key);
 }
 
 Entity EntityRepository::get_entity(const EntityKey &key) const
 {
-  const EntityRank rank = key.rank();
+  EntityRank rank = key.rank();
+  if (!m_destroy_cache[rank].empty()) {
+    const std::vector<EntityKey>& destroyed = m_destroy_cache[rank];
+    if (destroyed.size() < 64) {
+      std::vector<EntityKey>::const_iterator iter = std::find(destroyed.begin(), destroyed.end(), key);
+      if (iter != destroyed.end()) {
+        return Entity();
+      }
+    }
+    else {
+      clear_destroyed_entity_cache(rank);
+    }
+  }
 
-  entity_iterator ent = m_entities[rank].find(key);
-  if (ent != m_entities[rank].end()) {
+  clear_updated_entity_cache(rank);
+
+  ThrowErrorMsgIf( ! key.is_valid(),
+      "Invalid key: " << key.rank() << " " << key.id());
+
+  if (rank >= m_entities.size()) {
+    return Entity();
+  }
+
+  entity_iterator ent = get_from_cache(key);
+  if (ent != m_create_cache[rank].end()) {
     return ent->second;
   }
 
-  return Entity();
+  const EntityKeyEntityVector& entities = m_entities[rank];
+
+  const EntityKeyEntityVector::const_iterator iter = std::lower_bound(entities.begin(), entities.end(), key, EntityKeyEntityLess());
+
+  return (iter != entities.end() && (iter->first==key)) ? iter->second : Entity() ;
 }
 
 void EntityRepository::update_entity_key(EntityKey new_key, EntityKey old_key, Entity entity)
 {
-  const EntityRank rank = new_key.rank();
+  EntityRank rank = new_key.rank();
+  clear_created_entity_cache(rank);
+  clear_destroyed_entity_cache(rank);
 
-  m_entities[rank].erase(old_key);
-  m_entities[rank].insert(EntityKeyEntity(new_key, entity));
+  if (m_update_cache[rank].size() >= m_maxUpdateCacheSize) {
+    clear_cache(rank);
+  }
+
+  m_update_cache[rank].emplace_back(old_key, new_key);
 }
 
-void EntityRepository::destroy_entity(EntityKey key)
+void EntityRepository::destroy_entity(EntityKey key, Entity entity)
 { 
-  m_entities[key.rank()].erase(key);
+  EntityRank rank = key.rank();
+  clear_created_entity_cache(rank);
+  clear_updated_entity_cache(rank);
+
+  if (m_destroy_cache[rank].size() >= m_maxUpdateCacheSize) {
+    clear_cache(rank);
+  }
+
+  m_destroy_cache[rank].push_back(key);
 } 
 
 } // namespace impl

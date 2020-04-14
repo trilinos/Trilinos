@@ -82,17 +82,9 @@ public:
     {
     }
 
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
-            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr)
-    {
-    }
-
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, stk::mesh::ConnectivityMap const &/*conn_map*/) :
-            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm,
+                   enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
+            : stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
 #ifdef SIERRA_MIGRATION
 , false
 #endif
@@ -104,7 +96,6 @@ public:
                    MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option,
                    bool _add_fmwk_data,
-                   stk::mesh::ConnectivityMap const* /*arg_connectivity_map*/,
                    stk::mesh::FieldDataManager *field_data_manager,
                    unsigned bucket_capacity) :
             stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option

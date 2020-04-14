@@ -82,6 +82,7 @@
 #include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_CloneRepartitionInterface.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_SmooVecCoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_CoarseningVisualizationFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -95,6 +96,8 @@
 #include "MueLu_GeneralGeometricPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_GeometricInterpolationPFactory.hpp"
+#include "MueLu_InterfaceAggregationFactory.hpp"
+#include "MueLu_InterfaceMappingTransferFactory.hpp"
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
@@ -236,6 +239,7 @@ namespace MueLu {
       if (factoryName == "CoarseMapFactory")                      return Build2<CoarseMapFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseningVisualizationFactory")        return Build2<CoarseningVisualizationFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory")                   return Build2<CoalesceDropFactory>                   (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SmooVecCoalesceDropFactory")           return Build2<SmooVecCoalesceDropFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ConstraintFactory")                     return Build2<ConstraintFactory>                     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoupledAggregationFactory")             return BuildCoupledAggregationFactory                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoordinatesTransferFactory")            return Build2<CoordinatesTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
@@ -247,6 +251,8 @@ namespace MueLu {
       if (factoryName == "GeneralGeometricPFactory")              return Build2<GeneralGeometricPFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                       return Build2<GenericRFactory>                       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeometricInterpolationPFactory")        return Build2<GeometricInterpolationPFactory>        (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "InterfaceAggregationFactory")           return Build2<InterfaceAggregationFactory>           (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "InterfaceMappingTransferFactory")       return Build2<InterfaceMappingTransferFactory>       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "LineDetectionFactory")                  return Build2<LineDetectionFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MapTransferFactory")                    return Build2<MapTransferFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixAnalysisFactory")                 return Build2<MatrixAnalysisFactory>                 (paramList, factoryMapIn, factoryManagersIn);

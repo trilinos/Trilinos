@@ -389,7 +389,7 @@ public:
   typedef typename Device::execution_space execution_space;
   //! Type of the matrix's memory space.
   typedef typename Device::memory_space memory_space;
-  //! Type of the matrix's device type.
+  //! Canonical device type
   typedef Kokkos::Device<execution_space, memory_space> device_type;
 
   //! Type of each value in the matrix.
@@ -407,14 +407,14 @@ public:
   typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, execution_space, size_type, memory_traits> StaticCrsGraphType;
+  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, size_type, memory_traits> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, execution_space, size_type, memory_traits> staticcrsgraph_type;
+  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, size_type, memory_traits> staticcrsgraph_type;
 #else
   //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, execution_space, memory_traits, size_type> StaticCrsGraphType;
+  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, execution_space, memory_traits, size_type> staticcrsgraph_type;
+  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> staticcrsgraph_type;
 #endif
   //! Type of column indices in the sparse matrix.
   typedef typename staticcrsgraph_type::entries_type index_type;
@@ -434,6 +434,8 @@ public:
   typedef typename values_type::const_value_type const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
   typedef typename values_type::non_const_value_type non_const_value_type;
+
+  typedef CrsMatrix<const_value_type,ordinal_type,device_type,memory_traits,size_type> const_type;
 
 #ifdef KOKKOS_USE_CUSPARSE
   cusparseHandle_t cusparse_handle;

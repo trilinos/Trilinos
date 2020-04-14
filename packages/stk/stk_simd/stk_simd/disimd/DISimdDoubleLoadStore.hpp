@@ -37,21 +37,52 @@
 namespace stk {
 namespace simd {
 
+using native_simd = SIMD_NAMESPACE::simd<double,SIMD_NAMESPACE::simd_abi::native>;
+
+namespace impl {
+
+template<int N>
+STK_MATH_FORCE_INLINE
+void store_strided(double* x, const simd::Double& z, const int offset)
+{
+  for(int i=0; i<N; ++i) x[i*offset] = z[i];
+}
+
+template<>
+STK_MATH_FORCE_INLINE
+void store_strided<2>(double* x, const simd::Double& z, const int offset)
+{
+  x[0] = z[0]; x[offset] = z[1];
+}
+
+template<>
+STK_MATH_FORCE_INLINE
+void store_strided<4>(double* x, const simd::Double& z, const int offset)
+{
+  x[0] = z[0]; x[offset] = z[1]; x[2*offset] = z[2]; x[3*offset] = z[3];
+}
+
+template<>
+STK_MATH_FORCE_INLINE
+void store_strided<8>(double* x, const simd::Double& z, const int offset)
+{
+  x[0] = z[0]; x[offset] = z[1]; x[2*offset] = z[2]; x[3*offset] = z[3];
+  x[4*offset] = z[4]; x[5*offset] = z[5]; x[6*offset] = z[6]; x[7*offset] = z[7];
+}
+
+} // namespace impl
+
 STK_MATH_FORCE_INLINE simd::Double load_aligned(const double* x) {
-  return simd::Double(SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>(x, SIMD_NAMESPACE::element_aligned_tag()));
+  return simd::Double(native_simd(x, SIMD_NAMESPACE::element_aligned_tag()));
 }
 
 STK_MATH_FORCE_INLINE simd::Double load(const double* x) {
   //FIXME: supposed to be un-aligned load...
-  return simd::Double(SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::native>(x, SIMD_NAMESPACE::element_aligned_tag()));
+  return simd::Double(native_simd(x, SIMD_NAMESPACE::element_aligned_tag()));
 }
     
 STK_MATH_FORCE_INLINE simd::Double load(const double* x, const int offset) {
-  simd::Double result;
-  for(int i=0; i<ndoubles; ++i) {
-    result[i] = x[i*offset];
-  }
-  return result; //simd::Double(_mm256_setr_pd(x[0],x[offset],x[2*offset],x[3*offset]));
+  return simd::Double(native_simd(x, offset));
 }
   
 STK_MATH_FORCE_INLINE void store_aligned(double* x, const simd::Double& z) {
@@ -64,9 +95,7 @@ STK_MATH_FORCE_INLINE void store(double* x, const simd::Double& z) {
 }
   
 STK_MATH_FORCE_INLINE void store(double* x, const simd::Double& z, const int offset) {
-  for (int i=0; i < ndoubles; ++i) {
-    x[offset*i] = z[i];
-  }
+  impl::store_strided<ndoubles>(x, z, offset);
 }
 
 } // namespace simd

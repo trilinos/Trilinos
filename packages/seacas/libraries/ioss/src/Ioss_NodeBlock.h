@@ -65,7 +65,7 @@ namespace Ioss {
 
     bool is_nonglobal_nodeblock() const { return properties.exists("IOSS_INTERNAL_CONTAINED_IN"); }
 
-    virtual const GroupingEntity *contained_in() const override
+    const GroupingEntity *contained_in() const override
     {
       if (properties.exists("IOSS_INTERNAL_CONTAINED_IN")) {
         auto ge = properties.get("IOSS_INTERNAL_CONTAINED_IN").get_pointer();

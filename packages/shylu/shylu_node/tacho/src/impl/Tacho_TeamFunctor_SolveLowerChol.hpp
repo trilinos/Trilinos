@@ -103,6 +103,7 @@ namespace Tacho {
 
           if (n_m > 0) {
             // update
+            member.team_barrier();
             UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
             UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
             Gemv<Trans::ConjTranspose,GemvAlgoType>
@@ -168,6 +169,7 @@ namespace Tacho {
 
           if (n_m > 0) {
             // solve offdiag
+            member.team_barrier();
             UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
             auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
             Gemv<Trans::ConjTranspose,GemvAlgoType>

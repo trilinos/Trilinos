@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -229,10 +229,10 @@ namespace Ioss {
       // Create full path to the output file at this point if it doesn't
       // exist...
       if (isParallel) {
-	Ioss::FileInfo::create_path(DBFilename, util().communicator());
+        Ioss::FileInfo::create_path(DBFilename, util().communicator());
       }
       else {
-	Ioss::FileInfo::create_path(DBFilename);
+        Ioss::FileInfo::create_path(DBFilename);
       }
     }
   }
@@ -326,13 +326,18 @@ namespace Ioss {
     if (using_dw()) {      // We are about to write to a output database in BB
       Ioss::FileInfo path{filename};
       Ioss::FileInfo bb_file{get_dwPath() + path.tailname()};
-      if (bb_file.exists() &&
-          !bb_file.is_writable()) { // already existing file which has been closed
-        // If we can't write to the file on the BB, then it is a file which
-        // is being staged by datawarp system over to the permanent filesystem.
-        // Wait until staging has finished...
-        // stage wait returns 0 = success, -ENOENT or -errno
+      if (bb_file.exists() && !bb_file.is_writable()) {
+        // already existing file which has been closed If we can't
+        // write to the file on the BB, then it is a file which is
+        // being staged by datawarp system over to the permanent
+        // filesystem.  Wait until staging has finished...  stage wait
+        // returns 0 = success, -ENOENT or -errno
 #if defined SEACAS_HAVE_DATAWARP
+#if IOSS_DEBUG_OUTPUT
+        if (myProcessor == 0) {
+          fmt::print(stderr, "DW: dw_wait_file_stage({});\n", bb_file.filename());
+        }
+#endif
         int dwret = dw_wait_file_stage(bb_file.filename().c_str());
         if (dwret < 0) {
           std::ostringstream errmsg;
@@ -360,8 +365,38 @@ namespace Ioss {
     if (using_dw()) {
       if (!using_parallel_io() || (using_parallel_io() && myProcessor == 0)) {
 #if defined SEACAS_HAVE_DATAWARP
+        int complete = 0, pending = 0, deferred = 0, failed = 0;
+        dw_query_file_stage(get_dwname().c_str(), &complete, &pending, &deferred, &failed);
+#if IOSS_DEBUG_OUTPUT
+        auto initial = std::chrono::high_resolution_clock::now();
+        fmt::print(stderr, "Query: {}, {}, {}, {}\n", complete, pending, deferred, failed);
+#endif
+        if (pending > 0) {
+          int dwret = dw_wait_file_stage(get_dwname().c_str());
+          if (dwret < 0) {
+            std::ostringstream errmsg;
+            fmt::print(errmsg, "ERROR: failed waiting for file stage `{}`: {}\n", get_dwname(),
+                       std::strerror(-dwret));
+            IOSS_ERROR(errmsg);
+          }
+#if IOSS_DEBUG_OUTPUT
+          dw_query_file_stage(get_dwname().c_str(), &complete, &pending, &deferred, &failed);
+          fmt::print(stderr, "Query: {}, {}, {}, {}\n", complete, pending, deferred, failed);
+#endif
+        }
+
+#if IOSS_DEBUG_OUTPUT
+        fmt::print(stderr, "\nDW: BEGIN dw_stage_file_out({}, {}, DW_STAGE_IMMEDIATE);\n",
+                   get_dwname(), get_pfsname());
+#endif
         int ret =
             dw_stage_file_out(get_dwname().c_str(), get_pfsname().c_str(), DW_STAGE_IMMEDIATE);
+
+#if IOSS_DEBUG_OUTPUT
+        auto                          time_now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff     = time_now - initial;
+        fmt::print(stderr, "\nDW: END dw_stage_file_out({})\n", diff.count());
+#endif
         if (ret < 0) {
           std::ostringstream errmsg;
           fmt::print(errmsg, "ERROR: file staging of `{}` to `{}` failed at close: {}\n",
@@ -929,7 +964,7 @@ namespace Ioss {
         IOSS_ERROR(errmsg);
       }
 
-      result = MPI_Waitall(req_cnt, TOPTR(request), TOPTR(status));
+      result = MPI_Waitall(req_cnt, request.data(), status.data());
 
       if (result != MPI_SUCCESS) {
         fmt::print(stderr, "ERROR: MPI_Waitall error on processor {} in {}", util().parallel_rank(),
@@ -991,7 +1026,7 @@ namespace Ioss {
       }
 
       std::vector<unsigned> out_data(element_blocks.size() * bits_size);
-      MPI_Allreduce((void *)TOPTR(data), TOPTR(out_data), static_cast<int>(data.size()),
+      MPI_Allreduce((void *)data.data(), out_data.data(), static_cast<int>(data.size()),
                     MPI_UNSIGNED, MPI_BOR, util().communicator());
 
       offset = 0;

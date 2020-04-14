@@ -199,6 +199,8 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta72"* ]]; then
   export ATDM_CONFIG_KOKKOS_ARCH=Volta72
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-WSM"* ]]; then
   export ATDM_CONFIG_KOKKOS_ARCH=WSM
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"-TX2"* ]]; then
+  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
 else
   export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
   if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then

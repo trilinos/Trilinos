@@ -84,7 +84,8 @@ namespace {
   template <typename T, typename INT> void ex_int_iqsort(T *v, INT iv[], size_t left, size_t right)
   {
     size_t pivot;
-    size_t i, j;
+    size_t i;
+    size_t j;
 
     if (left + EX_QSORT_CUTOFF <= right) {
       pivot = ex_int_median3(v, iv, left, right);

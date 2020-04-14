@@ -68,12 +68,12 @@ namespace Intrepid2
            class OutputFieldType, class InputPointsType>
   struct Hierarchical_HGRAD_LINE_Functor
   {
-    using ScratchSpace       = Kokkos::DefaultExecutionSpace::scratch_memory_space;
+    using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     using PointScratchView   = Kokkos::View<PointScalar*, ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     
-    using TeamPolicy = Kokkos::TeamPolicy<>;
-    using TeamMember = TeamPolicy::member_type;
+    using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+    using TeamMember = typename  TeamPolicy::member_type;
     
     EOperator opType_; // OPERATOR_VALUE or OPERATOR_GRAD
     
@@ -236,12 +236,12 @@ namespace Intrepid2
   : public Basis<ExecutionSpace,OutputScalar,PointScalar>
   {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ordinal_type_array_1d_host;
-    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ordinal_type_array_2d_host;
+    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
     
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::outputViewType outputViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::pointViewType  pointViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::scalarViewType scalarViewType;
+    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType OutputViewType;
+    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType  PointViewType;
+    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
     bool defineVertexFunctions_; // if true, first and second basis functions are x and 1-x.  Otherwise, they are 1 and x.
@@ -361,12 +361,12 @@ namespace Intrepid2
         approximated function space are admissible. When the order of the operator exceeds the
         degree of the basis, the output array is filled with the appropriate number of zeros.
     */
-    virtual void getValues( outputViewType outputValues, const pointViewType  inputPoints,
+    virtual void getValues( OutputViewType outputValues, const PointViewType  inputPoints,
                            const EOperator operatorType = OPERATOR_VALUE ) const override
     {
       auto numPoints = inputPoints.extent_int(0);
       
-      using FunctorType = Hierarchical_HGRAD_LINE_Functor<ExecutionSpace, OutputScalar, PointScalar, outputViewType, pointViewType>;
+      using FunctorType = Hierarchical_HGRAD_LINE_Functor<ExecutionSpace, OutputScalar, PointScalar, OutputViewType, PointViewType>;
       
       FunctorType functor(operatorType, outputValues, inputPoints, polyOrder_, defineVertexFunctions);
       

@@ -56,12 +56,18 @@
 namespace Intrepid2 {
 
   template<typename SpT>
-  template<typename BasisPtrType>
+  template<typename BasisType>
   typename OrientationTools<SpT>::CoeffMatrixDataViewType
-  OrientationTools<SpT>::createCoeffMatrixInternal(BasisPtrType basis) {
+  OrientationTools<SpT>::createCoeffMatrixInternal(const BasisType* basis) {
     const ordinal_type order(basis->getDegree());
     const std::string name(basis->getName());
     CoeffMatrixDataViewType matData;
+
+    using ExecutionSpace  = typename BasisType::ExecutionSpace;
+    using OutputValueType = typename BasisType::OutputValueType;
+    using PointValueType  = typename BasisType::PointValueType;
+
+    using hostExecutionSpace = Kokkos::DefaultHostExecutionSpace;
 
     auto ordinalToTag = basis->getAllDofTags();
     auto tagToOrdinal = basis->getAllDofOrdinal();
@@ -70,22 +76,35 @@ namespace Intrepid2 {
     // High order HGRAD Elements
     //
 
-    if (name == "Intrepid2_HGRAD_QUAD_Cn_FEM") {
+    //std::cout << "Name: " << name << " " << order << std::endl;
+
+    if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
+      && (basis->getFunctionSpace() == FUNCTION_SPACE_HGRAD)) {
       if (order >1) {
         const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 4, numOrts = 2;
-        matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_QUAD_Cn_FEM",
+        matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::"+name,
                                           numEdges,
                                           numOrts,
                                           matDim, 
                                           matDim);
-        
-        init_HGRAD_QUAD_Cn_FEM(matData, order);
+
+        if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_QUAD*>(basis)) {
+            typename NodalBasisFamily<hostExecutionSpace>::HGRAD_QUAD hostBasis(order);
+            init_HGRAD_QUAD(matData, &hostBasis);
+        } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_QUAD*>(basis)) {
+            typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HGRAD_QUAD hostBasis(order);
+            init_HGRAD_QUAD(matData, &hostBasis);
+        } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_QUAD*>(basis)) {
+          typename HierarchicalBasisFamily<hostExecutionSpace>::HGRAD_QUAD hostBasis(order);
+          init_HGRAD_QUAD(matData, &hostBasis);
+        }
       } else {
         // add dummy
         matData = CoeffMatrixDataViewType();
       }
     }
-    else if (name == "Intrepid2_HGRAD_HEX_Cn_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HGRAD)) {
       if (order > 1) {
         const ordinal_type matDim = ordinalToTag(tagToOrdinal(2, 0, 0), 3), numSubcells = 18, numOrts = 8;
         matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_HEX_Cn_FEM",
@@ -94,13 +113,23 @@ namespace Intrepid2 {
                                           matDim, 
                                           matDim);
         
-        init_HGRAD_HEX_Cn_FEM(matData, order);
+        if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_HEX*>(basis)) {
+            typename NodalBasisFamily<hostExecutionSpace>::HGRAD_HEX hostBasis(order);
+            init_HGRAD_HEX(matData, &hostBasis);
+        } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_HEX*>(basis)) {
+            typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HGRAD_HEX hostBasis(order);
+            init_HGRAD_HEX(matData, &hostBasis);
+        } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_HEX*>(basis)) {
+          typename HierarchicalBasisFamily<hostExecutionSpace>::HGRAD_HEX hostBasis(order);
+          init_HGRAD_HEX(matData, &hostBasis);
+        }
       } else {
         // add dummy
         matData = CoeffMatrixDataViewType();
       }
     }
-    else if (name == "Intrepid2_HGRAD_TRI_Cn_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HGRAD)) {
       if (order > 1) {
         const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;      
         matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_TRI_Cn_FEM",
@@ -109,13 +138,15 @@ namespace Intrepid2 {
                                           matDim, 
                                           matDim);
         
-        init_HGRAD_TRI_Cn_FEM(matData, order);
+        Basis_HGRAD_TRI_Cn_FEM<hostExecutionSpace> hostBasis(order);
+        init_HGRAD_TRI(matData, &hostBasis);
       } else {
         // add dummy
         matData = CoeffMatrixDataViewType();
       }        
     } 
-    else if (name == "Intrepid2_HGRAD_TET_Cn_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HGRAD)) {
       const ordinal_type 
         matDim = max(ordinalToTag(tagToOrdinal(1, 0, 0), 3),
                      ordinalToTag(tagToOrdinal(2, 0, 0), 3)),
@@ -126,14 +157,16 @@ namespace Intrepid2 {
                                         matDim, 
                                         matDim);
       
-      init_HGRAD_TET_Cn_FEM(matData, order);
+      Basis_HGRAD_TET_Cn_FEM<hostExecutionSpace> hostBasis(order);
+      init_HGRAD_TET(matData, &hostBasis);
     } 
 
     //
     // High order HCURL Elements
     //
 
-    else if (name == "Intrepid2_HCURL_QUAD_In_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HCURL)) {
       const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 4, numOrts = 2;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_QUAD_In_FEM",
                                         numEdges,
@@ -141,20 +174,46 @@ namespace Intrepid2 {
                                         matDim, 
                                         matDim);
 
-      init_HCURL_QUAD_In_FEM(matData, order);
+      if (name == "Intrepid2_HCURL_QUAD_I1_FEM") {
+        for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
+          init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
+      } else if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_QUAD*>(basis)) {
+          typename NodalBasisFamily<hostExecutionSpace>::HCURL_QUAD hostBasis(order);
+          init_HCURL_QUAD(matData, &hostBasis);
+      } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HCURL_QUAD*>(basis)) {
+          typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HCURL_QUAD hostBasis(order);
+          init_HCURL_QUAD(matData, &hostBasis);
+      } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_QUAD*>(basis)) {
+        typename HierarchicalBasisFamily<hostExecutionSpace>::HCURL_QUAD hostBasis(order);
+        init_HCURL_QUAD(matData, &hostBasis);
+      }
     } 
-    else if (name == "Intrepid2_HCURL_HEX_In_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HCURL)) {
       // if order == 1, there is no face dofs
-      const ordinal_type matDim = ordinalToTag(tagToOrdinal((order < 2 ? 1 : 2), 0, 0), 3), numSubcells = 18, numOrts = 8;
+      const ordinal_type matDim = ordinalToTag(tagToOrdinal((order < 2 ? 1 : 2), 0, 0), 3), numSubcells = (order < 2 ? 12 : 18), numOrts = 8;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_HEX_In_FEM",
                                         numSubcells,
                                         numOrts,
                                         matDim, 
                                         matDim);
 
-      init_HCURL_HEX_In_FEM(matData, order);
+      if (name == "Intrepid2_HCURL_HEX_I1_FEM") {
+        for (ordinal_type edgeId=0;edgeId<numSubcells;++edgeId)
+          init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
+      } else if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_HEX*>(basis)) {
+          typename NodalBasisFamily<hostExecutionSpace>::HCURL_HEX hostBasis(order);
+          init_HCURL_HEX(matData, &hostBasis);
+      } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HCURL_HEX*>(basis)) {
+          typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HCURL_HEX hostBasis(order);
+          init_HCURL_HEX(matData, &hostBasis);
+      } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_HEX*>(basis)) {
+        typename HierarchicalBasisFamily<hostExecutionSpace>::HCURL_HEX hostBasis(order);
+        init_HCURL_HEX(matData, &hostBasis);
+      }
     } 
-    else if (name == "Intrepid2_HCURL_TRI_In_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HCURL)) {
       const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_TRI_In_FEM",
                                         numEdges,
@@ -162,34 +221,62 @@ namespace Intrepid2 {
                                         matDim, 
                                         matDim);
 
-      init_HCURL_TRI_In_FEM(matData, order);
+      if (name == "Intrepid2_HCURL_TRI_I1_FEM") {
+        for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
+          init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
+      } else if (name == "Intrepid2_HCURL_TRI_In_FEM") {
+        Basis_HCURL_TRI_In_FEM<hostExecutionSpace> hostBasis(order);
+        init_HCURL_TRI(matData, &hostBasis);
+      }
     } 
-    else if (name == "Intrepid2_HCURL_TET_In_FEM") {
-      const ordinal_type matDim = ordinalToTag(tagToOrdinal((order < 2 ? 1 : 2), 0, 0), 3), numSubcells = 10, numOrts = 6;
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HCURL)) {
+      const ordinal_type matDim = ordinalToTag(tagToOrdinal((order < 2 ? 1 : 2), 0, 0), 3), numSubcells = (order < 2 ? 6 : 10), numOrts = 6;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_TET_In_FEM",
                                         numSubcells,
                                         numOrts,
                                         matDim, 
                                         matDim);
 
-      init_HCURL_TET_In_FEM(matData, order);
+      if (name == "Intrepid2_HCURL_TET_I1_FEM") {
+        for (ordinal_type edgeId=0;edgeId<numSubcells;++edgeId)
+          init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
+      } else if (name == "Intrepid2_HCURL_TET_In_FEM") {
+        Basis_HCURL_TET_In_FEM<hostExecutionSpace> hostBasis(order);
+        init_HCURL_TET(matData, &hostBasis);
+      }
     } 
 
     //
     // High order HDIV Elements
     //
 
-    else if (name == "Intrepid2_HDIV_QUAD_In_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HDIV)) {
+            // (name == "Intrepid2_HCURL_QUAD_I1_FEM")) {
       const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 4, numOrts = 2;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_QUAD_In_FEM",
+      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_QUAD_In_FEM",
                                         numEdges,
                                         numOrts,
                                         matDim, 
                                         matDim);
 
-      init_HDIV_QUAD_In_FEM(matData, order);
+      if (name == "Intrepid2_HDIV_QUAD_I1_FEM") {
+        for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
+          init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
+      } else if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_QUAD*>(basis)) {
+          typename NodalBasisFamily<hostExecutionSpace>::HDIV_QUAD hostBasis(order);
+          init_HDIV_QUAD(matData, &hostBasis);
+      } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HDIV_QUAD*>(basis)) {
+          typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HDIV_QUAD hostBasis(order);
+          init_HDIV_QUAD(matData, &hostBasis);
+      } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_QUAD*>(basis)) {
+        typename HierarchicalBasisFamily<hostExecutionSpace>::HDIV_QUAD hostBasis(order);
+        init_HDIV_QUAD(matData, &hostBasis);
+      }
     } 
-    else if (name == "Intrepid2_HDIV_HEX_In_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HDIV)) {
       const ordinal_type matDim = ordinalToTag(tagToOrdinal(2, 0, 0), 3), numSubcells = 6, numOrts = 8;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_HEX_In_FEM",
                                         numSubcells,
@@ -197,19 +284,38 @@ namespace Intrepid2 {
                                         matDim, 
                                         matDim);
 
-      init_HDIV_HEX_In_FEM(matData, order);
+      if (name == "Intrepid2_HDIV_HEX_I1_FEM") {
+        for (ordinal_type faceId=0;faceId<numSubcells;++faceId)
+          init_QUAD_FACE_ELEMENT_I1_FEM(matData, faceId);
+      } else if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_HEX*>(basis)) {
+          typename NodalBasisFamily<hostExecutionSpace>::HDIV_HEX hostBasis(order);
+          init_HDIV_HEX(matData, &hostBasis);
+      } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HDIV_HEX*>(basis)) {
+          typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HDIV_HEX hostBasis(order);
+          init_HDIV_HEX(matData, &hostBasis);
+      } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_HEX*>(basis)) {
+        typename HierarchicalBasisFamily<hostExecutionSpace>::HDIV_HEX hostBasis(order);
+        init_HDIV_HEX(matData, &hostBasis);
+      }
     } 
-    else if (name == "Intrepid2_HDIV_TRI_In_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HDIV)) {
       const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_TRI_In_FEM",
                                         numEdges,
                                         numOrts,
                                         matDim, 
                                         matDim);
-      
-      init_HDIV_TRI_In_FEM(matData, order);
+      if (name == "Intrepid2_HDIV_TRI_I1_FEM") {
+        for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
+          init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
+      } else if (name == "Intrepid2_HDIV_TRI_In_FEM") {
+        Basis_HDIV_TRI_In_FEM<hostExecutionSpace> hostBasis(order);
+        init_HDIV_TRI(matData, &hostBasis);
+      }
     } 
-    else if (name == "Intrepid2_HDIV_TET_In_FEM") {
+    else if((basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
+        && (basis->getFunctionSpace() == FUNCTION_SPACE_HDIV)) {
       const ordinal_type matDim = ordinalToTag(tagToOrdinal(2, 0, 0), 3), numSubcells = 4, numOrts = 6;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_TET_In_FEM",
                                         numSubcells,
@@ -217,60 +323,19 @@ namespace Intrepid2 {
                                         matDim, 
                                         matDim);
       
-      init_HDIV_TET_In_FEM(matData, order);
+      if (name == "Intrepid2_HDIV_TET_I1_FEM") {
+        for (ordinal_type faceId=0;faceId<numSubcells;++faceId)
+          init_TRI_FACE_ELEMENT_I1_FEM(matData, faceId);
+      } else if (name == "Intrepid2_HDIV_TET_In_FEM") {
+        Basis_HDIV_TET_In_FEM<hostExecutionSpace> hostBasis(order);
+        init_HDIV_TET(matData, &hostBasis);
+      }
     } 
-
-    //
-    // 2D H(Curl/Div) I1 Elements
-    //
-
-    else if (name == "Intrepid2_HCURL_QUAD_I1_FEM" || 
-             name == "Intrepid2_HDIV_QUAD_I1_FEM") {
-      const ordinal_type matDim = 1, numEdges = 4, numOrts = 2;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_QUAD_I1_FEM",
-                                        numEdges,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-      for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
-        init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
-    }
-    else if (name == "Intrepid2_HCURL_TRI_I1_FEM" || 
-             name == "Intrepid2_HDIV_TRI_I1_FEM") {
-      const ordinal_type matDim = 1, numEdges = 3, numOrts = 2;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_TRI_I1_FEM",
-                                        numEdges,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-      for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
-        init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
-    }
 
     //
     // 3D H(Curl) I1 Elements
     //
 
-    else if (name == "Intrepid2_HCURL_HEX_I1_FEM") {
-      const ordinal_type matDim = 1, numEdges = 12, numOrts = 2;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_HEX_I1_FEM",
-                                        numEdges,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-      for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
-        init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
-    }
-    else if (name == "Intrepid2_HCURL_TET_I1_FEM") {
-      const ordinal_type matDim = 1, numEdges = 6, numOrts = 2;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_TET_I1_FEM",
-                                        numEdges,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-      for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
-        init_EDGE_ELEMENT_I1_FEM(matData, edgeId);
-    }
     else if (name == "Intrepid2_HCURL_WEDGE_I1_FEM") {
       const ordinal_type matDim = 1, numEdges = 9, numOrts = 2;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_WEDGE_I1_FEM",
@@ -286,26 +351,6 @@ namespace Intrepid2 {
     // 3D H(Div) I1 Elements
     //
 
-    else if (name == "Intrepid2_HDIV_HEX_I1_FEM") {
-      const ordinal_type matDim = 1, numFaces = 6, numOrts = 8;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_HEX_I1_FEM",
-                                        numFaces,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-      for (ordinal_type faceId=0;faceId<numFaces;++faceId) 
-        init_QUAD_FACE_ELEMENT_I1_FEM(matData, faceId);
-    }
-    else if (name == "Intrepid2_HDIV_TET_I1_FEM") {
-      const ordinal_type matDim = 1, numFaces = 4, numOrts = 6;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_TET_I1_FEM",
-                                        numFaces,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-      for (ordinal_type faceId=0;faceId<numFaces;++faceId) 
-        init_TRI_FACE_ELEMENT_I1_FEM(matData, faceId);
-    }
     else if (name == "Intrepid2_HDIV_WEDGE_I1_FEM") {
       const ordinal_type matDim = 1, numFaces = 5, numOrts = 8;
       matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_WEDGE_I1_FEM",
@@ -327,34 +372,34 @@ namespace Intrepid2 {
   //
   
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HGRAD_QUAD_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                         const ordinal_type order) {
-    if (order > 1) {
-      Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> lineBasis(order);
-      Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
-      
-      const ordinal_type numEdge = 4, numOrt = 2;
-      for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
-        for (ordinal_type edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-          auto mat = Kokkos::subview(matData, 
-                                     edgeId, edgeOrt,
-                                     Kokkos::ALL(), Kokkos::ALL());
-          Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
-                                                       lineBasis, cellBasis, 
-                                                       edgeId, edgeOrt);
-        }
-    }
+  init_HGRAD_QUAD(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                       BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HGRAD_LINE_Cn_FEM<typename BasisType::ExecutionSpace> lineBasis(order);
+    
+    const ordinal_type numEdge = 4, numOrt = 2;
+    for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
+      for (ordinal_type edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
+        auto mat = Kokkos::subview(matData, 
+                                   edgeId, edgeOrt,
+                                   Kokkos::ALL(), Kokkos::ALL());
+        Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
+                                                     lineBasis, *cellBasis,
+                                                     edgeId, edgeOrt);
+      }
   }
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HCURL_QUAD_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                         const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
-    Basis_HCURL_QUAD_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
+  init_HCURL_QUAD(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                       BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HGRAD_LINE_Cn_FEM<typename BasisType::ExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
     
     const ordinal_type numEdge = 4, numOrt = 2;
     for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
@@ -363,18 +408,19 @@ namespace Intrepid2 {
                                    edgeId, edgeOrt,
                                    Kokkos::ALL(), Kokkos::ALL());
         Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
-                                                     bubbleBasis, cellBasis, 
+                                                     bubbleBasis, *cellBasis,
                                                      edgeId, edgeOrt);
       }
   }
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HDIV_QUAD_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                         const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
-    Basis_HDIV_QUAD_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
+  init_HDIV_QUAD(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                          BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HGRAD_LINE_Cn_FEM<typename BasisType::ExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
     
     const ordinal_type numEdge = 4, numOrt = 2;
     for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
@@ -383,7 +429,7 @@ namespace Intrepid2 {
                                    edgeId, edgeOrt,
                                    Kokkos::ALL(), Kokkos::ALL());
         Impl::OrientationTools::getCoeffMatrix_HDIV(mat,
-                                                    bubbleBasis, cellBasis, 
+                                                    bubbleBasis, *cellBasis,
                                                     edgeId, edgeOrt);
       }
   }
@@ -393,14 +439,14 @@ namespace Intrepid2 {
   //
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HGRAD_HEX_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                        const ordinal_type order) {
-    if (order > 1) {
-      Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> lineBasis(order);
-      Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order);
-      Basis_HGRAD_HEX_Cn_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
+  init_HGRAD_HEX(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                                 BasisType const *cellBasis) {
+      const ordinal_type order(cellBasis->getDegree());
+      Basis_HGRAD_LINE_Cn_FEM<typename BasisType::ExecutionSpace> lineBasis(order);
+      Basis_HGRAD_QUAD_Cn_FEM<typename BasisType::ExecutionSpace> quadBasis(order);
       
       const ordinal_type numEdge = 12, numFace = 6;    
       {
@@ -411,7 +457,7 @@ namespace Intrepid2 {
                                        edgeId, edgeOrt,
                                        Kokkos::ALL(), Kokkos::ALL());
             Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
-                                                         lineBasis, cellBasis, 
+                                                         lineBasis, *cellBasis,
                                                          edgeId, edgeOrt);
           }
       }
@@ -423,21 +469,21 @@ namespace Intrepid2 {
                                        numEdge+faceId, faceOrt,
                                        Kokkos::ALL(), Kokkos::ALL());
             Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
-                                                         quadBasis, cellBasis, 
+                                                         quadBasis, *cellBasis,
                                                          faceId, faceOrt);
           }
       }
-    }
   }
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HCURL_HEX_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                        const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
-    Basis_HCURL_QUAD_In_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order);
-    Basis_HCURL_HEX_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
+  init_HCURL_HEX(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+      BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HGRAD_LINE_Cn_FEM<typename BasisType::ExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HCURL_QUAD_In_FEM<typename BasisType::ExecutionSpace> quadBasis(order);
 
     const ordinal_type numEdge = 12, numFace = 6;    
     {
@@ -448,7 +494,7 @@ namespace Intrepid2 {
                                      edgeId, edgeOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
-                                                       bubbleBasis, cellBasis, 
+                                                       bubbleBasis, *cellBasis,
                                                        edgeId, edgeOrt);
         }
     }
@@ -460,19 +506,20 @@ namespace Intrepid2 {
                                      numEdge+faceId, faceOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
-                                                       quadBasis, cellBasis, 
+                                                       quadBasis, *cellBasis,
                                                        faceId, faceOrt);
         }
     }
   }
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HDIV_HEX_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                       const ordinal_type order) {
-    Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order-1, POINTTYPE_GAUSS);
-    Basis_HDIV_HEX_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
+  init_HDIV_HEX(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+      BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HGRAD_QUAD_Cn_FEM<typename BasisType::ExecutionSpace> quadBasis(order-1, POINTTYPE_GAUSS);
 
     const ordinal_type numFace = 6;    
     {
@@ -483,7 +530,7 @@ namespace Intrepid2 {
                                      faceId, faceOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HDIV(mat,
-                                                      quadBasis, cellBasis, 
+                                                      quadBasis, *cellBasis,
                                                       faceId, faceOrt);
         }
     }
@@ -494,13 +541,13 @@ namespace Intrepid2 {
   //
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HGRAD_TRI_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                        const ordinal_type order) {
-    if (order > 1) {
-      Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> lineBasis(order);
-      Basis_HGRAD_TRI_Cn_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
+  init_HGRAD_TRI(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+      BasisType const *cellBasis) {
+      const ordinal_type order(cellBasis->getDegree());
+      Basis_HGRAD_LINE_Cn_FEM<typename BasisType::ExecutionSpace> lineBasis(order);
       
       const ordinal_type numEdge = 3, numOrt = 2;
       for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
@@ -509,20 +556,20 @@ namespace Intrepid2 {
                                      edgeId, edgeOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
-                                                       lineBasis, cellBasis, 
+                                                       lineBasis, *cellBasis,
                                                        edgeId, edgeOrt);
         }
-    }
   }
 
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HCURL_TRI_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                        const ordinal_type order) {
-    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
-    Basis_HCURL_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
+  init_HCURL_TRI(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+      BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HVOL_LINE_Cn_FEM<typename BasisType::ExecutionSpace> bubbleBasis(order-1);
     
     const ordinal_type numEdge = 3, numOrt = 2;
     for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
@@ -531,18 +578,19 @@ namespace Intrepid2 {
                                    edgeId, edgeOrt,
                                    Kokkos::ALL(), Kokkos::ALL());
         Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
-                                                     bubbleBasis, cellBasis, 
+                                                     bubbleBasis, *cellBasis,
                                                      edgeId, edgeOrt);
       }
   }
   
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HDIV_TRI_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                       const ordinal_type order) {
-    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
-    Basis_HDIV_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
+  init_HDIV_TRI(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+      BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HVOL_LINE_Cn_FEM<typename BasisType::ExecutionSpace> bubbleBasis(order-1);
     
     const ordinal_type numEdge = 3, numOrt = 2;
     for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
@@ -551,7 +599,7 @@ namespace Intrepid2 {
                                    edgeId, edgeOrt,
                                    Kokkos::ALL(), Kokkos::ALL());
         Impl::OrientationTools::getCoeffMatrix_HDIV(mat,
-                                                    bubbleBasis, cellBasis, 
+                                                    bubbleBasis, *cellBasis,
                                                     edgeId, edgeOrt);
       }
   }
@@ -561,14 +609,14 @@ namespace Intrepid2 {
   //
   
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HGRAD_TET_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                        const ordinal_type order) {
-    if (order > 1) {
-      Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> lineBasis(order);
-      Basis_HGRAD_TRI_Cn_FEM<Kokkos::DefaultHostExecutionSpace>  triBasis(order);
-      Basis_HGRAD_TET_Cn_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
+  init_HGRAD_TET(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+      BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+      Basis_HGRAD_LINE_Cn_FEM<typename BasisType::ExecutionSpace> lineBasis(order);
+      Basis_HGRAD_TRI_Cn_FEM<typename BasisType::ExecutionSpace>  triBasis(order);
       
       const ordinal_type numEdge = 6, numFace = 4;    
       {
@@ -579,7 +627,7 @@ namespace Intrepid2 {
                                        edgeId, edgeOrt,
                                        Kokkos::ALL(), Kokkos::ALL());
             Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
-                                                         lineBasis, cellBasis, 
+                                                         lineBasis, *cellBasis,
                                                          edgeId, edgeOrt);
           }
       }
@@ -591,21 +639,21 @@ namespace Intrepid2 {
                                        numEdge+faceId, faceOrt,
                                        Kokkos::ALL(), Kokkos::ALL());
             Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
-                                                         triBasis, cellBasis, 
+                                                         triBasis, *cellBasis,
                                                          faceId, faceOrt);
           }
       }
-    }
   }
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HCURL_TET_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                        const ordinal_type order) {
-    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
-    Basis_HCURL_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order);
-    Basis_HCURL_TET_In_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
+  init_HCURL_TET(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+      BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HVOL_LINE_Cn_FEM<typename BasisType::ExecutionSpace> bubbleBasis(order-1);
+    Basis_HCURL_TRI_In_FEM<typename BasisType::ExecutionSpace> triBasis(order);
       
     const ordinal_type numEdge = 6, numFace = 4;    
     {
@@ -616,7 +664,7 @@ namespace Intrepid2 {
                                      edgeId, edgeOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
-                                                       bubbleBasis, cellBasis, 
+                                                       bubbleBasis, *cellBasis,
                                                        edgeId, edgeOrt);
         }
     }
@@ -628,19 +676,20 @@ namespace Intrepid2 {
                                      numEdge+faceId, faceOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
-                                                       triBasis, cellBasis, 
+                                                       triBasis, *cellBasis,
                                                        faceId, faceOrt);
         }
     }
   }
 
   template<typename SpT>
+  template<typename BasisType>
   void
   OrientationTools<SpT>::
-  init_HDIV_TET_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                       const ordinal_type order) {
-    Basis_HVOL_TRI_Cn_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order-1);
-    Basis_HDIV_TET_In_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
+  init_HDIV_TET(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+      BasisType const *cellBasis) {
+    const ordinal_type order(cellBasis->getDegree());
+    Basis_HVOL_TRI_Cn_FEM<typename BasisType::ExecutionSpace> triBasis(order-1);
     
     const ordinal_type numFace = 4, numOrt = 6;
     for (ordinal_type faceId=0;faceId<numFace;++faceId)
@@ -649,7 +698,7 @@ namespace Intrepid2 {
                                    faceId, faceOrt,
                                    Kokkos::ALL(), Kokkos::ALL());
         Impl::OrientationTools::getCoeffMatrix_HDIV(mat,
-                                                    triBasis, cellBasis, 
+                                                    triBasis, *cellBasis,
                                                     faceId, faceOrt);
       }
   }
@@ -708,9 +757,9 @@ namespace Intrepid2 {
   }
 
   template<typename SpT>
-  template<typename BasisPtrType>
+  template<typename BasisType>
   typename OrientationTools<SpT>::CoeffMatrixDataViewType
-  OrientationTools<SpT>::createCoeffMatrix(BasisPtrType basis) {
+  OrientationTools<SpT>::createCoeffMatrix(const BasisType* basis) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( !basis->requireOrientation(), std::invalid_argument,
                                   ">>> ERROR (OrientationTools::createCoeffMatrix): basis does not require orientations." );

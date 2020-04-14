@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -431,7 +431,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
   */
 
   /* Allocate space for same element type flag array*/
-  if (!(same_elem_type = malloc(num_side_sets * sizeof(int)))) {
+  if (!(same_elem_type = calloc(num_side_sets, sizeof(int)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate space for element type flag "
              "array for file id %d",

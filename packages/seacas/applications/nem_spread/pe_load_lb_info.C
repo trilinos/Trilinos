@@ -98,7 +98,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
 {
 
   int   lb_exoid      = 0;
-  INT   cmap_max_size = 0, *comm_vec;
+  INT   cmap_max_size = 0;
+  INT * comm_vec;
   char  Title[MAX_LINE_LENGTH + 1];
   float version;
 
@@ -303,14 +304,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
     for (int i = 0; i < length_qa; i++) {
       safe_free(reinterpret_cast<void **>(&(qa_record_ptr[i])));
     }
-    safe_free((void **)&qa_record_ptr);
+    safe_free(reinterpret_cast<void **>(&qa_record_ptr));
   }
 
   if (num_inf_rec > 0) {
     for (int i = 0; i < num_inf_rec; i++) {
       safe_free(reinterpret_cast<void **>(&(inf_record_ptr[i])));
     }
-    safe_free((void **)&inf_record_ptr);
+    safe_free(reinterpret_cast<void **>(&inf_record_ptr));
   }
 
   safe_free((void **)&Int_Space);
@@ -441,7 +442,10 @@ void NemSpread<T, INT>::process_lb_data(INT *Integer_Vector, int indx)
  */
 {
   /* Local variables */
-  INT icount = 0, itotal_nodes, itotal_elems, ig_count = 0;
+  INT icount = 0;
+  INT itotal_nodes;
+  INT itotal_elems;
+  INT ig_count = 0;
 
   /***************************** execution begins ******************************/
 
@@ -612,7 +616,11 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
   }
 
   /* Read the title of the LB File and about the size of the mesh */
-  INT num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
+  INT num_nodes;
+  INT num_elem;
+  INT num_elem_blk;
+  INT num_node_sets;
+  INT num_side_sets;
   int error = ex_get_init_global(lb_exoid, &num_nodes, &num_elem, &num_elem_blk, &num_node_sets,
                                  &num_side_sets);
 

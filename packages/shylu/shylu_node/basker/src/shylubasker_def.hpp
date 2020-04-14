@@ -356,12 +356,12 @@ namespace BaskerNS
         vals_crs_transpose(i) = i; // init vals permutation due to transpose
       }
 
+      A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
+      A.scol = 0;
+      A.srow = 0;
+
       if(Options.transpose == BASKER_FALSE)
       {
-        A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
-        A.scol = 0;
-        A.srow = 0;
-
         // NDE: New for Amesos2 CRS mods
         if ( crs_transpose_needed ) {
           matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
@@ -369,12 +369,9 @@ namespace BaskerNS
       }
       else
       {
-        //Will transpose and put in A using little extra
-        //if ( crs_transpose_needed ) {
-        //  matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
-        //}
-        matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A);
-        // NDE: How should transpose be handled special case (when CRS format comes in)? null op, i.e. transpose of transpose yields original input?
+        if ( !crs_transpose_needed ) {
+          matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
+        }
       }
       sort_matrix(A);
 

@@ -71,6 +71,9 @@ typedef MueLu::IndexManager_kokkos<LocalOrdinal,GlobalOrdinal,Node> IndexManager
 #ifdef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::InterfaceAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationAlgorithm;
 #endif
+#ifdef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
+typedef MueLu::InterfaceMappingTransferFactory<LocalOrdinal,GlobalOrdinal,Node> InterfaceMappingTransferFactory;
+#endif
 #ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> IsolatedNodeAggregationAlgorithm;
 #endif

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -306,7 +306,7 @@ namespace Ioss {
   private:
     void verify_field_exists(const std::string &field_name, const std::string &inout) const;
 
-    std::string entityName;
+    std::string entityName{};
 
     DatabaseIO *database_ = nullptr;
 
@@ -467,11 +467,11 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name,
 
   data.resize(field.raw_count() * field.raw_storage()->component_count());
   size_t data_size = data.size() * sizeof(T);
-  auto   retval    = internal_get_field_data(field, TOPTR(data), data_size);
+  auto   retval    = internal_get_field_data(field, data.data(), data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0) {
-    field.transform(TOPTR(data));
+    field.transform(data.data());
   }
 
   return retval;

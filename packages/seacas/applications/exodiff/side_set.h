@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017, 2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -72,13 +72,13 @@ private:
   const char *label() const override { return "Sideset"; }
   const char *short_label() const override { return "sideset"; }
 
-  size_t num_dist_factors;
+  size_t num_dist_factors{0};
 
-  mutable INT *   elmts;
-  mutable INT *   sides;
-  mutable INT *   sideIndex;
-  mutable INT *   dfIndex;
-  mutable double *dist_factors;
+  mutable INT *   elmts{nullptr};
+  mutable INT *   sides{nullptr};
+  mutable INT *   sideIndex{nullptr};
+  mutable INT *   dfIndex{nullptr};
+  mutable double *dist_factors{nullptr};
 
   friend class ExoII_Read<INT>;
 };

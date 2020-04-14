@@ -73,6 +73,8 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_InterfaceMappingTransferFactory.hpp"
+#include "MueLu_InterfaceAggregationFactory.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
@@ -225,6 +227,8 @@ namespace MueLu {
       }
       if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null)));
 
+      if (varName == "DualNodeID2PrimalNodeID")         return SetAndReturnDefaultFactory(varName, rcp(new InterfaceMappingTransferFactory()));
+      if (varName == "CoarseDualNodeID2PrimalNodeID")   return SetAndReturnDefaultFactory(varName, rcp(new InterfaceAggregationFactory()));
 #ifdef HAVE_MUELU_INTREPID2
       // If we're asking for it, find who made P
       if (varName == "pcoarsen: element to node map")                      return GetFactory("P");

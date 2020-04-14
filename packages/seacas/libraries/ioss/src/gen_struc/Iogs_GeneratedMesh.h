@@ -407,7 +407,7 @@ namespace Iogs {
     void show_parameters() const;
     void initialize();
 
-    std::vector<ShellLocation>           sidesets;
+    std::vector<ShellLocation>           sidesets{};
     std::array<std::array<double, 3>, 3> rotmat;
     size_t                               numX{0}, numY{0}, numZ{0};
     size_t                               myNumZ{0}, myStartZ{0};
@@ -416,7 +416,7 @@ namespace Iogs {
     size_t myProcessor{0};
 
     size_t                             timestepCount{0};
-    std::map<Ioss::EntityType, size_t> variableCount;
+    std::map<Ioss::EntityType, size_t> variableCount{};
 
     double offX{0}, offY{0}, offZ{0}; /** Offsets in X, Y, and Z directions */
     double sclX{1}, sclY{1}, sclZ{1}; /** Scale in X, Y, and Z directions

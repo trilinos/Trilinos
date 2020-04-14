@@ -91,7 +91,7 @@ namespace Iocgns {
 
     StructuredZoneData *m_sibling{nullptr};
 
-    std::vector<Ioss::ZoneConnectivity> m_zoneConnectivity;
+    std::vector<Ioss::ZoneConnectivity> m_zoneConnectivity{};
 
     // ========================================================================
     bool is_active() const

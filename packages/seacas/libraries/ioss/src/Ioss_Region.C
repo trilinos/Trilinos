@@ -70,10 +70,10 @@
 #include <vector>
 
 namespace {
-  const std::string id_str() { return std::string("id"); }
-  const std::string db_name_str() { return std::string("db_name"); }
-  const std::string orig_topo_str() { return std::string("original_topology_type"); }
-  const std::string orig_block_order() { return std::string("original_block_order"); }
+  std::string id_str() { return std::string("id"); }
+  std::string db_name_str() { return std::string("db_name"); }
+  std::string orig_topo_str() { return std::string("original_topology_type"); }
+  std::string orig_block_order() { return std::string("original_block_order"); }
 
   template <typename T> size_t get_variable_count(const std::vector<T> &entities)
   {

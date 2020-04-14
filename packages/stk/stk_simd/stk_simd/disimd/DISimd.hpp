@@ -37,7 +37,7 @@
 
 #ifndef SIMD_ALWAYS_INLINE
 //currently necessary to avoid the 'always_inline' defined in simd.hpp
-#define SIMD_ALWAYS_INLINE
+#define SIMD_ALWAYS_INLINE __attribute__((always_inline))
 #endif
 #include "./simd.hpp"
 

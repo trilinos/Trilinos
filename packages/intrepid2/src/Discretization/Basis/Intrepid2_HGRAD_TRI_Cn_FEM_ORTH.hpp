@@ -231,9 +231,6 @@ class Basis_HGRAD_TRI_Cn_FEM_ORTH
     using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
     using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
     using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
-    
-    using outputViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OutputViewType instead","OutputViewType") = OutputViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OutputViewType instead");
-    using pointViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use PointViewType instead","PointViewType") = PointViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use PointViewType instead");
 
   using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 

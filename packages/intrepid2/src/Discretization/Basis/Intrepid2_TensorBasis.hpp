@@ -162,11 +162,11 @@ namespace Intrepid2
   template<class ExecutionSpace, class OutputScalar, class OutputFieldType>
   class TensorViewFunctor
   {
-    using ScratchSpace       = Kokkos::DefaultExecutionSpace::scratch_memory_space;
+    using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     
-    using TeamPolicy = Kokkos::TeamPolicy<>;
-    using TeamMember = TeamPolicy::member_type;
+    using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+    using TeamMember = typename TeamPolicy::member_type;
     
     using TensorViewIteratorType = ::Intrepid2::TensorViewIterator<OutputFieldType, OutputFieldType, OutputFieldType, OutputScalar>;
     using RankCombinationType = typename TensorViewIteratorType::RankCombinationType;
@@ -752,7 +752,7 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "one-operator, two-inputPoints getValues should be overridden by TensorBasis subclasses");
     }
     
-    /** \brief  Evaluation of a tensor FEM basis on a <strong>reference cell</strong>; subclasses should override this.
+    /** \brief  Evaluation of a tensor FEM basis on a <strong>reference cell</strong>.
 
         Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
         points in the <strong>reference cell</strong> for which the basis is defined.
@@ -859,11 +859,11 @@ namespace Intrepid2
   template<class ExecutionSpace, class OutputScalar, class OutputFieldType>
   struct TensorBasis3_Functor
   {
-    using ScratchSpace       = Kokkos::DefaultExecutionSpace::scratch_memory_space;
+    using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     
-    using TeamPolicy = Kokkos::TeamPolicy<>;
-    using TeamMember = TeamPolicy::member_type;
+    using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+    using TeamMember = typename TeamPolicy::member_type;
     
     OutputFieldType  output_; // F,P
     OutputFieldType  input1_; // F1,P[,D] or F1,P1[,D]
@@ -1102,7 +1102,7 @@ namespace Intrepid2
   
   
   template<typename Basis1, typename Basis2, typename Basis3,
-  typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  typename ExecutionSpace=typename Basis1::ExecutionSpace,
   typename OutputScalar = double,
   typename PointScalar  = double>
   class Basis_TensorBasis3

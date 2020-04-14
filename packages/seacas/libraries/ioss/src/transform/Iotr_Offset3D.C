@@ -97,7 +97,7 @@ namespace Iotr {
     assert(field.transformed_storage()->component_count() == 3);
 
     if (field.get_type() == Ioss::Field::REAL) {
-      double *rdata = static_cast<double *>(data);
+      auto *rdata = static_cast<double *>(data);
 
       for (size_t i = 0; i < count * 3; i += 3) {
         rdata[i + 0] += realOffset[0];

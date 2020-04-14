@@ -6,16 +6,18 @@ The class may be used as code in a python program or the executable can be used
 as a standalone program.
 """
 
+from __future__ import print_function
+
 import re
 import sys
 import os
 import copy
 import getopt
 
+
 version = sys.version_info[0] + sys.version_info[1]/10.0
-if version < 2.3:
-    True = 1
-    False = 0
+if version < 2.6:
+    sys.exit("python 2.6 or greater required!")
 
 
 class CompareRule:
@@ -169,7 +171,7 @@ class CompareRule:
                         #Now limit the actions from an include file
                         if (self.include_depth > 0):
                             legal_keywords = {"required":0, "prohibited":0}
-                            if (not legal_keywords.has_key(self.second_column[0])):
+                            if (self.second_column[0] not in legal_keywords):
                                 self.mark_bad("Illegal value for include file: " + \
                                     value)
             return remainder
@@ -261,7 +263,7 @@ class CompareRule:
             reg_exp = nomatch_reg_exp
         try:
             compiled_re = re.compile(reg_exp)
-        except re.error, error_string:
+        except re.error as error_string:
             self.mark_bad( \
                 "The regular expression string \"%s\" is unusable:\n\t%s" \
                 %(reg_exp, error_string))
@@ -832,7 +834,7 @@ class CompareTestOutput:
             list_index, match_object = search_result
             #convert to actual file line numbers
             line_number = list_index
-            if (self.results_lines_index_map.has_key(list_index)):
+            if (list_index in self.results_lines_index_map):
                 line_number = self.results_lines_index_map[list_index]
             #report error 
             error_string = \
@@ -1040,21 +1042,21 @@ class CompareTestOutput:
         Check the command keyword actions dictionary to see if the argument
         string is in the dictionary
         """
-        return self.command_keyword_actions_table.has_key(word)
+        return word in self.command_keyword_actions_table
     
     def legal_control_keyword(self, word):
         """
         Check the command keyword actions dictionary to see if the argument
         string is in the dictionary
         """
-        return self.control_keyword_actions_table.has_key(word)
+        return word in self.control_keyword_actions_table
 
     def legal_modifier_keyword(self, word):
         """
         Check the rule keyword actions dictionary to see if the argument
         string is in the dictionary
         """
-        return self.modifier_keyword_actions_table.has_key(word)
+        return word in self.modifier_keyword_actions_table
     
     
     def read_file(self, filename, data_list, line_index_map, \
@@ -1069,7 +1071,7 @@ class CompareTestOutput:
         """
         #prevent multiple reads of the same file (circular or multiple includes)
         full_filename = os.path.abspath(filename)
-        if (self.files_visited_table.has_key(full_filename) and \
+        if (full_filename in self.files_visited_table and \
             not reread_ok):
             #there were no errors on the read and the information is there...
             #Call it successful.
@@ -1090,7 +1092,7 @@ class CompareTestOutput:
                     line_index_map[list_index] = line_index
             file_obj.close()
             return True
-        except IOError, error:
+        except IOError as error:
             if (self.include_depth > 0):
                 self.report_include_file_error( \
                     "The include file '%s' could not be read:\n\t%s" \
@@ -1199,12 +1201,12 @@ class CompareTestOutput:
         at their respective index. Precede each string with the indent text.
         """
         #Map the list index to the file line number. There should never
-        #be a failure in the has_key test -- its just there for safety
+        #be a failure in the test -- its just there for safety
         reference_line = reference_list_index
-        if (self.reference_lines_index_map.has_key(reference_list_index)):
+        if (reference_list_index in self.reference_lines_index_map):
             reference_line = self.reference_lines_index_map[reference_list_index]
         result_line = result_list_index
-        if (self.results_lines_index_map.has_key(result_list_index)):
+        if (result_list_index in self.results_lines_index_map):
             result_line = self.results_lines_index_map[result_list_index]
         reference_str = "%sReference(%3d): %s" \
                     %(indent_string, reference_line, \
@@ -1370,8 +1372,8 @@ class CompareTestOutput:
         Print the file read error string on both sdtout and stderr and 
         exit program with a return code of SIGIO (23)
         """
-        print self.file_read_error_text
-        print >> sys.stderr, self.file_read_error_text
+        print(self.file_read_error_text)
+        print(self.file_read_error_text, file=sys.stderr)
         sys.exit(23)
         
     def get_error_strings(self):
@@ -1444,9 +1446,9 @@ def print_usage(error_string):
     function was called by the help option.
     """
     if (error_string):
-        print "Command error:\n%s\n" %error_string
-    print "usage: compareTestOutput args result_file_name"
-    print \
+        print("Command error:\n%s\n" %error_string)
+    print("usage: compareTestOutput args result_file_name")
+    print(
     """
 arguments:
     -h, --help:          Print this infomation.
@@ -1454,7 +1456,7 @@ arguments:
     -m, --reference-file :  File that contains the reference copy of the test 
                          results (required)
     -c, --return-code :  The test program return code (optional)
-    """
+    """)
     if (error_string):
         sys.exit(1)
     else:
@@ -1491,7 +1493,7 @@ if __name__ == "__main__":
                     reference_file_name = opt[1]
             if (len(other_args) > 0):
                 result_file_name = other_args[0]
-    except getopt.error, cmd_line_error:
+    except getopt.error as cmd_line_error:
         print_usage(cmd_line_error)
     errorstr = ""
     if (not rule_file_name):
@@ -1508,8 +1510,8 @@ if __name__ == "__main__":
     tester = CompareTestOutput(rule_file_name, reference_file_name, \
                              result_file_name, test_result_code)   
     if (tester.perform_test()):
-        print "Test passed."
+        print("Test passed.")
     else:
-        print tester.get_error_strings()
+        print(tester.get_error_strings())
         #exit with SIGUSR1
         sys.exit(30)

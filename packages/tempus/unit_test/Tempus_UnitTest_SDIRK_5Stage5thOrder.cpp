@@ -35,12 +35,7 @@ using Teuchos::getParametersFromXmlFile;
 
 using Tempus::StepperFactory;
 
-// Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
-
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_5Stage5thOrder, Construction)
@@ -82,10 +77,8 @@ TEUCHOS_UNIT_TEST(SDIRK_5Stage5thOrder, Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_5Stage5thOrder, StepperFactory_Construction)
@@ -93,7 +86,18 @@ TEUCHOS_UNIT_TEST(SDIRK_5Stage5thOrder, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("SDIRK 5 Stage 5th order", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(SDIRK_5Stage5thOrder, StageNumber)
+{
+  auto stepper = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>());
+  int stageNumber = 4;
+  stepper->setStageNumber(stageNumber);
+  int s = stepper->getStageNumber();
+  TEST_COMPARE(s, ==, stageNumber);
+}
 
 
 } // namespace Tempus_Test

@@ -37,8 +37,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_TestUtils_hpp
-#define __TSQR_TestUtils_hpp
+#ifndef TSQR_TESTUTILS_HPP
+#define TSQR_TESTUTILS_HPP
 
 /// \file Tsqr_TestUtils.hpp
 /// \brief Utilities for testing various TSQR components.
@@ -54,54 +54,4 @@ namespace Teuchos {
   class Comm;
 }
 
-namespace TSQR {
-  namespace Test {
-
-    /// \brief Return a Kokkos Node instance with the given parameters.
-    ///
-    /// \param plist [in/out] List of parameters for the Node.  This
-    ///   function reserves the right to modify the input parameter
-    ///   list (for example, to fill in any missing parameters with
-    ///   defaults).  Do not rely on this behavior.
-    template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    {
-      using Teuchos::rcp;
-      using Teuchos::rcp_const_cast;
-
-      return rcp (new NodeType (*plist));
-    }
-
-    /// \class Cons
-    /// \brief Typedef container enabling iteration over compile-time type list.
-    ///
-    /// One can use the typedefs in a Cons to "iterate" recursively
-    /// over a list of types, that is defined at compile time.
-    /// CarType may be any type; these are the "values" in the type
-    /// list.  CdrType must be either a Cons or a NullCons.
-    ///
-    /// The names Cons, Car, and Cdr come from Lisp.  (Don't write
-    /// "Lisp" in all caps, unless you are referring to early versions
-    /// of the language.)  A cons is a list.  If x is a cons, then
-    /// (car x) returns the head of the list, and (cdr x) returns the
-    /// rest of the list.
-    template<class CarType, class CdrType>
-    struct Cons {
-      typedef CarType car_type;
-      typedef CdrType cdr_type;
-    };
-
-    /// \class NullCons
-    /// \brief Base case for \c Cons template recursion.
-    ///
-    /// NullCons doesn't need car_type or cdr_type typedefs.  Classes
-    /// that iterate over a Cons type list should define
-    /// specializations that make sense for a NullCons, if they want
-    /// iteration to work for an empty type list (a NullCons).
-    struct NullCons {};
-
-  } // namespace Test
-} // namespace TSQR
-
-#endif // __TSQR_TestUtils_hpp
+#endif // TSQR_TESTUTILS_HPP

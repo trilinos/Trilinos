@@ -50,16 +50,18 @@ void ch_mergesort(double *vals, int nvals, int *indices, int *space)
   int        flag;          /* has sorting screwed up? */
   int        i;
 
-  for (i = 0; i < nvals; i++)
+  for (i = 0; i < nvals; i++) {
     indices[i] = i;
+  }
 
   recursesort(vals, nvals, indices, space);
 
   if (DEBUG_BPMATCH > 0) {
     flag = FALSE;
     for (i = 1; i < nvals; i++) {
-      if (vals[indices[i - 1]] > vals[indices[i]])
+      if (vals[indices[i - 1]] > vals[indices[i]]) {
         flag = TRUE;
+      }
     }
     if (flag) {
       printf("List improperly sorted in mergesort\n");
@@ -83,18 +85,17 @@ static void recursesort(double *vals, int nvals, int *indices, int *space)
   int i;                /* temporary value */
 
   /* First consider base cases */
-  if (nvals <= 1)
+  if (nvals <= 1) {
     return;
-
-  else if (nvals == 2) {
-    if (vals[indices[0]] <= vals[indices[1]])
-      return;
-    else {
-      i          = indices[0];
-      indices[0] = indices[1];
-      indices[1] = i;
+  }
+  if (nvals == 2) {
+    if (vals[indices[0]] <= vals[indices[1]]) {
       return;
     }
+    i          = indices[0];
+    indices[0] = indices[1];
+    indices[1] = i;
+    return;
   }
 
   else {
@@ -147,6 +148,7 @@ static void merge(double *vals, int *indices, int length1, int length2, int *spa
 
   spaceptr = space;
   index1   = indices;
-  for (n1 = length1 + length2; n1; n1--)
+  for (n1 = length1 + length2; n1; n1--) {
     *index1++ = *spaceptr++;
+  }
 }

@@ -249,7 +249,7 @@ using namespace Intrepid;
      */
     bool GeometryVerifier::isGeometryBad(stk::mesh::BulkData& bulk, bool printTable, std::vector<double> *volume_histogram) //, stk::mesh::Part& mesh_part )
     {
-      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+      const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
       const unsigned p_rank = bulk.parallel_rank();
       bool checkLocalJacobians = m_checkLocalJacobians;
       PerceptMesh eMesh(&meta, &bulk, true);
@@ -299,7 +299,7 @@ using namespace Intrepid;
           if ( stk::mesh::is_auto_declared_part(*part) )
             continue;
 
-          const stk::topology part_cell_topo_data = stk::mesh::MetaData::get(bulk).get_topology(*part);
+          const stk::topology part_cell_topo_data = bulk.mesh_meta_data().get_topology(*part);
           //std::cout << "P[" << p_rank << "] part = " << part->name() << " part_cell_topo_data= " << part_cell_topo_data << " topo-name= "
           //          << (part_cell_topo_data ? part_cell_topo_data->name : "null") << std::endl;
 
@@ -347,8 +347,6 @@ using namespace Intrepid;
               bool isShell = bucket.topology().is_shell();
               unsigned topoDim = spaceDim;
               if (isShell) topoDim = 2;
-
-              //unsigned spatialDimMeta = stk::mesh::MetaData::get(bulk).spatial_dimension();
 
               // Rank-3 array with dimensions (C,N,D) for the node coordinates of 3 traingle cells
               FieldContainer<double> cellNodes(numCells, numNodes, spaceDim);

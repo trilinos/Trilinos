@@ -326,6 +326,8 @@ namespace {
       throw std::runtime_error(errmsg.str());
     }
 
+    field->sync_to_host();
+    field->modify_on_host();
     for (size_t i=0; i < entity_count; ++i) {
       if (mesh.is_valid(entities[i])) {
         T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
@@ -365,6 +367,8 @@ namespace {
     stk::mesh::MetaData &meta = stk::mesh::MetaData::get(*stk_part);
     stk::mesh::Selector selector = (meta.globally_shared_part() | meta.locally_owned_part()) & *stk_part;
 
+    field->sync_to_host();
+    field->modify_on_host();
     for (size_t i=0; i < entity_count; ++i) {
       if (mesh.is_valid(entities[i])) {
         const stk::mesh::Bucket &bucket = mesh.bucket(entities[i]);
@@ -392,9 +396,10 @@ namespace {
 
     std::vector<T> io_field_data(entity_count*field_component_count);
 
+    field->sync_to_host();
     for (size_t i=0; i < entity_count; ++i) {
       if (mesh.is_valid(entities[i]) && mesh.entity_rank(entities[i]) == field->entity_rank()) {
-        T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
+        const T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
         if (fld_data != nullptr) {
           for(size_t j=0; j<field_component_count; ++j) {
             io_field_data[i*field_component_count+j] = fld_data[j];
@@ -2593,6 +2598,7 @@ namespace stk {
               df.reserve(df_size);
               const auto* const nodeFactorVar = get_distribution_factor_field(*part);
               if((nodeFactorVar != nullptr) && (nodeFactorVar->entity_rank() == stk::topology::NODE_RANK)) {
+                  nodeFactorVar->sync_to_host();
                   for(auto& node : nodes) {
                       df.push_back(*(double*) (stk::mesh::field_data(*nodeFactorVar, node)));
                   }
@@ -2941,7 +2947,7 @@ namespace stk {
             names.emplace_back(geName, part);
     }
 
-    void insert_var_names(const Ioss::GroupingEntity *entity, FieldNameToPartVector &names, stk::mesh::MetaData& meta)
+    void insert_var_names(const Ioss::GroupingEntity *entity, FieldNameToPartVector &names, const stk::mesh::MetaData& meta)
     {
         if (stk::io::include_entity(entity)) {
             stk::mesh::Part* part = meta.get_part(entity->name());
@@ -2950,7 +2956,8 @@ namespace stk {
     }
 
     template <typename GroupingEntityVector>
-    FieldNameToPartVector get_grouping_entity_var_names(const GroupingEntityVector &groupingEntities,stk::mesh::MetaData& meta)
+    FieldNameToPartVector get_grouping_entity_var_names(const GroupingEntityVector &groupingEntities,
+                                                        const stk::mesh::MetaData& meta)
     {
         FieldNameToPartVector names;
         for(size_t i=0; i < groupingEntities.size(); i++)
@@ -2959,7 +2966,7 @@ namespace stk {
         return names;
     }
 
-    FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, stk::mesh::MetaData& meta)
+    FieldNameToPartVector get_var_names(Ioss::Region &region, Ioss::EntityType type, const stk::mesh::MetaData& meta)
     {
         switch(type)
         {

@@ -57,7 +57,7 @@ namespace Iotr {
     return new VectorMagnitude();
   }
 
-  VectorMagnitude::VectorMagnitude() {}
+  VectorMagnitude::VectorMagnitude() = default;
 
   const Ioss::VariableType *VectorMagnitude::output_storage(const Ioss::VariableType *in) const
   {
@@ -78,7 +78,7 @@ namespace Iotr {
 
   bool VectorMagnitude::internal_execute(const Ioss::Field &field, void *data)
   {
-    double *rdata = static_cast<double *>(data);
+    auto *rdata = static_cast<double *>(data);
 
     size_t count = field.transformed_count();
     if (field.transformed_storage()->component_count() == 3) {

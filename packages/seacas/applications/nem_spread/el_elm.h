@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -97,4 +97,4 @@
 
 extern int elem_info(int info, int ielem_type, int supp);
 
-extern int get_type(char string[], int nodes, int num_dim);
+extern int get_type(const char string[], int nodes, int num_dim);
