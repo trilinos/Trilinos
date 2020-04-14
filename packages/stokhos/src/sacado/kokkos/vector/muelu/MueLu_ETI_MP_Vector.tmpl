@@ -39,7 +39,9 @@
 // ***********************************************************************
 // @HEADER
 
-#include "MueLu_ConfigDefs.hpp"
+// ETP 4/11/20:  Do not include MueLu_ConfigDefs.hpp because it has Kokkos
+// includes which need to come after the Stokhos includes.
+#include "MueLu_config.hpp"
 
 @CONDITION_NAME@
 
