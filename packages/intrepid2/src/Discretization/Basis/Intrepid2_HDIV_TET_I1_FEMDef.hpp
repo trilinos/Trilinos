@@ -241,7 +241,7 @@ namespace Intrepid2 {
       dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     dofCoords(0,0) =  1.0/3.0;   dofCoords(0,1) =  0.0;       dofCoords(0,2) = 1.0/3.0;
-    dofCoords(1,0) =  1.0/3.0;   dofCoords(1,1) =  1.0/3.0;   dofCoords(1,2) = 1.0/3.0;;
+    dofCoords(1,0) =  1.0/3.0;   dofCoords(1,1) =  1.0/3.0;   dofCoords(1,2) = 1.0/3.0;
     dofCoords(2,0) =  0.0;       dofCoords(2,1) =  1.0/3.0;   dofCoords(2,2) = 1.0/3.0;
     dofCoords(3,0) =  1.0/3.0;   dofCoords(3,1) =  1.0/3.0;   dofCoords(3,2) = 0.0;
 

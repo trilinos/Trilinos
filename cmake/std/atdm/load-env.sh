@@ -56,7 +56,7 @@ fi
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
 
 if [[ $ATDM_CONFIG_SYSTEM_NAME == "" ]] ; then
-  echo "Error, could not determine a system configuration, aborting env loading script!"
+  echo "Error, could not determine a system configuration for hostname='$realHostname', aborting env loading script!"
   return
 fi
 
