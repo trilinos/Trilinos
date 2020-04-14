@@ -7,22 +7,11 @@
 // @HEADER
 
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
 
-#include "Thyra_VectorStdOps.hpp"
-
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
-#include "Tempus_StepperRKButcherTableau.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/VanDerPolModel.hpp"
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
-#include <fstream>
-#include <vector>
 
 namespace Tempus_Unit_Test {
 
@@ -30,19 +19,8 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
-using Teuchos::ParameterList;
-using Teuchos::sublist;
-using Teuchos::getParametersFromXmlFile;
-
-using Tempus::StepperFactory;
-using Tempus::StepperExplicitRK;
-
-// Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
 
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
@@ -56,7 +34,7 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
+  auto modifier = rcp(new Tempus::StepperRKModifierDefault<double>());
 
   bool useFSAL              = stepper->getUseFSALDefault();
   std::string ICConsistency = stepper->getICConsistencyDefault();
@@ -85,7 +63,11 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
 
 
   // Test the set functions.
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+#endif
+  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -95,16 +77,20 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
 
 
   // Full argument list construction.
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   stepper = rcp(new Tempus::StepperERK_General<double>(
     model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded,
     A, b, c, order, order, order, bstar));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+#endif
+  stepper = rcp(new Tempus::StepperERK_General<double>(
+    model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded,
+    A, b, c, order, order, order, bstar, modifier));
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_General, StepperFactory_Construction)
@@ -112,7 +98,14 @@ TEUCHOS_UNIT_TEST(ERK_General, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("General ERK", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ERK_General, AppAction)
+{
+  testExplicitRKAppAction("General ERK", out, success);
+}
 
 
 } // namespace Tempus_Test

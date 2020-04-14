@@ -10,16 +10,20 @@
 #define Tempus_StepperRKBase_hpp
 
 #include "Thyra_VectorBase.hpp"
-#include "Tempus_config.hpp"
+
+#include "Tempus_Stepper.hpp"
 
 
 namespace Tempus {
 
 /** \brief Base class for Runge-Kutta methods, ExplicitRK, DIRK and IMEX.
  *
+ *  Only common RK methods should be implemented in StepperRKBase.  All
+ *  other Stepper methods should be implemented through Stepper,
+ *  StepperExplicit or StepperImplicit.
  */
 template<class Scalar>
-class StepperRKBase
+class StepperRKBase : virtual public Tempus::Stepper<Scalar>
 {
 
 public:
@@ -32,8 +36,8 @@ public:
 
 protected:
 
-  int stageNumber_;    //< The Runge-Kutta stage number.
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
+  int stageNumber_;    //< The Runge-Kutta stage number, {0,...,s-1}.
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > stageX_;
 };
 
 } // namespace Tempus

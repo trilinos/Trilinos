@@ -1,0 +1,93 @@
+<ParameterList name="MueLu">
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <ParameterList name="PairwiseAggregationFact">
+      <Parameter name="factory"                             type="string" value="NotayAggregationFactory"/>
+      <Parameter name="aggregation: ordering"	   	    type="string" value="random"/>
+      <Parameter name="aggregation: compute aggregate qualities" type="bool" value="false"/>
+      <Parameter name="aggregation: pairwise: size"         type="int"    value="2"/>
+      <Parameter name="aggregation: Dirichlet threshold"    type="double" value="4.5"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+      <Parameter name="tentative: build coarse coordinates" type="bool"   value="false"/>
+      <!-- <Parameter name="Aggregates"                          type="string" value="PairwiseAggregationFact"/> -->
+    </ParameterList>
+
+    <ParameterList name="myProlongatorFact">
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+      <Parameter name="sa: damping factor"                  type="double" value="1.33333333"/>
+    </ParameterList>
+
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myAggExport">
+      <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
+      <Parameter name="Aggregates"                          type="string" value="PairwiseAggregationFact"/>
+      <!-- <Parameter name="aggregation: output filename"        type="string" value="structured_aggs"/> -->
+      <Parameter name="aggregation: output filename"        type="string" value="pairwise_aggs_level_%LEVELID"/>
+      <!-- <parameter name="aggregation: output file: agg style" type="string" value="Jacks"/> -->
+      <Parameter name="aggregation: output file: agg style" type="string" value="Convex Hulls"/>
+    </ParameterList>
+
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="AggregationExportFactory"          type="string" value="myAggExport"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Chebyshev">
+      <Parameter name="factory"                             type="string"  value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string"  value="CHEBYSHEV"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="chebyshev: degree"                 type="int"     value="3"/>
+        <!-- 7 in 2D, 20 in 3D -->
+        <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="20"/>
+        <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
+        <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="mySGS">
+      <Parameter name="factory"                             type="string"  value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string"  value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string"  value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"                type="int"     value="1"/>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="3"/>
+    <Parameter name="coarse: max size"                      type="int"      value="10"/>
+    <Parameter name="cycle type"                            type="string"   value="V"/>
+    <Parameter name="verbosity"                             type="string"   value="High"/>
+    <Parameter name="use kokkos refactor"                   type="bool"     value="false"/>
+
+    <ParameterList name="All">
+      <Parameter name="Smoother"                            type="string"   value="mySGS"/>
+      <Parameter name="Aggregates"                          type="string"   value="PairwiseAggregationFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myTentativePFact"/>
+      <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
+      <Parameter name="A"                                   type="string"   value="myRAPFact"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+
+</ParameterList>
