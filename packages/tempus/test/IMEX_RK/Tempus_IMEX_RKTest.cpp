@@ -85,7 +85,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -176,9 +176,9 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
 
-  TEUCHOS_ASSERT( stepperTypes.size() == stepperOrders.size() ); 
-  TEUCHOS_ASSERT( stepperTypes.size() == stepperErrors.size() ); 
-  TEUCHOS_ASSERT( stepperTypes.size() == stepperInitDt.size() ); 
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperOrders.size() );
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperErrors.size() );
+  TEUCHOS_ASSERT( stepperTypes.size() == stepperInitDt.size() );
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {

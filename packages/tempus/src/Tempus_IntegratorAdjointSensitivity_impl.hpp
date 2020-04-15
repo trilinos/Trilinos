@@ -424,7 +424,7 @@ getNonconstParameterList()
 }
 
 template <class Scalar>
-Teuchos::RCP<Tempus::AdjointAuxSensitivityModelEvaluator<Scalar> >
+Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::
 createAdjointModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
@@ -530,23 +530,23 @@ buildSolutionHistory(
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
-  Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorAdjointSensitivity<Scalar>(pList, model));
+  Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorAdjointSensitivity<Scalar>(pList, model));
   return(integrator);
 }
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> >
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity()
 {
-  Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorAdjointSensitivity<Scalar>());
+  Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorAdjointSensitivity<Scalar>());
   return(integrator);
 }
 

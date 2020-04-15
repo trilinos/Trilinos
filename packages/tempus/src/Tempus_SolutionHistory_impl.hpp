@@ -54,6 +54,48 @@ namespace {
 namespace Tempus {
 
 template<class Scalar>
+SolutionHistory<Scalar>::SolutionHistory()
+{
+  using Teuchos::RCP;
+  // Create history, an array of solution states.
+  history_ = rcp(new std::vector<RCP<SolutionState<Scalar> > >);
+
+  this->setParameterList(Teuchos::null);
+
+  if (Teuchos::as<int>(this->getVerbLevel()) >=
+      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"SolutionHistory::SolutionHistory");
+    *out << this->description() << std::endl;
+  }
+}
+
+
+template<class Scalar>
+SolutionHistory<Scalar>::SolutionHistory(
+  std::string                               name,
+  Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history,
+  Teuchos::RCP<Interpolator<Scalar> >       interpolator,
+  StorageType                               storageType,
+  int                                       storageLimit)
+{
+  this->setParameterList(Teuchos::null);
+
+  this->setName(name);
+  history_ = history;
+  this->setStorageType(storageType);
+  this->setStorageLimit(storageLimit);
+
+  if (Teuchos::as<int>(this->getVerbLevel()) >=
+      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"SolutionHistory::SolutionHistory");
+    *out << this->description() << std::endl;
+  }
+}
+
+
+template<class Scalar>
 SolutionHistory<Scalar>::SolutionHistory(
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
@@ -505,15 +547,6 @@ SolutionHistory<Scalar>::unsetParameterList()
   return(temp_plist);
 }
 
-// Nonmember constructor.
-template<class Scalar>
-Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory(
-  Teuchos::RCP<Teuchos::ParameterList> pList)
-{
-  Teuchos::RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(pList));
-  return sh;
-}
-
 template<class Scalar>
 void SolutionHistory<Scalar>::setInterpolator(
  const Teuchos::RCP<Interpolator<Scalar> >& interpolator)
@@ -552,6 +585,49 @@ SolutionHistory<Scalar>::unSetInterpolator()
  Teuchos::RCP<Interpolator<Scalar> > old_interpolator = interpolator_;
  interpolator_ = lagrangeInterpolator<Scalar>();
  return old_interpolator;
+}
+
+// Nonmember constructors.
+// ------------------------------------------------------------------------
+
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistoryPL(
+  Teuchos::RCP<Teuchos::ParameterList> pList)
+{
+  auto sh = rcp(new SolutionHistory<Scalar>(pList));
+  return sh;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+createSolutionHistoryState(const Teuchos::RCP<SolutionState<Scalar> >& state)
+{
+  auto sh = rcp(new SolutionHistory<Scalar>());
+  sh->setName("From createSolutionHistoryState");
+  sh->addState(state);
+  return sh;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+createSolutionHistoryME(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  // Setup initial condition SolutionState --------------------
+  auto state = createSolutionStateME(model);
+  state->setTime    (0.0);
+  state->setIndex   (0);
+  state->setTimeStep(0.0);
+  state->setOrder   (1);
+
+  // Setup SolutionHistory ------------------------------------
+  auto sh = rcp(new SolutionHistory<Scalar>());
+  sh->setName("From createSolutionHistoryME");
+  sh->addState(state);
+
+  return sh;
 }
 
 

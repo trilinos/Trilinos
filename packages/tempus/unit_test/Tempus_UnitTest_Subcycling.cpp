@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST(Subcycling, MaxTimeStepDoesNotChangeDuring_takeStep)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution =rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->addState(icState);
   solutionHistory->initWorkingState();
