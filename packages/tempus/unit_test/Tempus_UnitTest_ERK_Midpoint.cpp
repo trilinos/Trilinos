@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_Midpoint, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_Midpoint, AppAction)
 {
-  testExplicitRKAppAction("RK Explicit Midpoint", out, success);
+  testRKAppAction("RK Explicit Midpoint", out, success);
 }
 
 

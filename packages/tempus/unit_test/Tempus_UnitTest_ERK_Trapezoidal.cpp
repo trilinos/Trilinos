@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_Trapezoidal, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_Trapezoidal, AppAction)
 {
-  testExplicitRKAppAction("RK Explicit Trapezoidal", out, success);
+  testRKAppAction("RK Explicit Trapezoidal", out, success);
 }
 
 
