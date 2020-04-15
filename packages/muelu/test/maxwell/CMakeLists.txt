@@ -51,7 +51,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     ENDIF()
   ENDIF()
 
-  IF (${PACKAGE_NAME}_ENABLE_Epetra AND (NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor))
+  IF (${PACKAGE_NAME}_ENABLE_Epetra)
     TRIBITS_ADD_TEST(
       Maxwell3D
       NAME "Maxwell3D-Epetra"
