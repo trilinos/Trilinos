@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -49,7 +50,7 @@ namespace Test {
 template <class Device, class WorkSpec = size_t>
 struct TestScan {
   typedef Device execution_space;
-  typedef long int value_type;
+  typedef int64_t value_type;
 
   Kokkos::View<int, Device, Kokkos::MemoryTraits<Kokkos::Atomic> > errors;
 
@@ -97,10 +98,12 @@ struct TestScan {
 
     Kokkos::parallel_scan(N, *this);
 
-    long long int total = 0;
+    int64_t total = 0;
     Kokkos::parallel_scan(N, *this, total);
 
-    run_check(size_t((N + 1) * N / 2), size_t(total));
+    // We can't return a value in a constructor so use a lambda as wrapper to
+    // ignore it.
+    [&] { ASSERT_EQ(size_t((N + 1) * N / 2), size_t(total)); }();
     check_error();
   }
 
@@ -127,10 +130,6 @@ struct TestScan {
     for (WorkSpec i = begin; i < end; ++i) {
       (void)TestScan(i);
     }
-  }
-
-  void run_check(const size_t& expected, const size_t& actual) {
-    ASSERT_EQ(expected, actual);
   }
 };
 
