@@ -307,7 +307,7 @@ int main(int narg, char *arg[])
 
   // Row-wise 1D distribution
   gNz.distributeAndApply(1, nMatvecs, xvec, yvec);
-  scalar_t row1DNorm1 = yvec.norm2();
+  scalar_t row1DNorm1 = yvec.norm1();
   scalar_t row1DNorm2 = yvec.norm2();
   scalar_t row1DNormInf = yvec.normInf();
   if (me == 0) 
