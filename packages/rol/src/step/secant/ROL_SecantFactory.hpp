@@ -68,15 +68,17 @@ namespace ROL {
   }
 
   template<class Real>
-  inline ROL::Ptr<Secant<Real> > SecantFactory( ROL::ParameterList &parlist ) {
+  inline ROL::Ptr<Secant<Real> > SecantFactory( ROL::ParameterList &parlist, ESecantMode mode = SECANTMODE_BOTH ) {
     ESecant esec = StringToESecant(
              parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS") );
-    int L  = parlist.sublist("General").sublist("Secant").get("Maximum Storage",10);
-    int BB = parlist.sublist("General").sublist("Secant").get("Barzilai-Borwein",1);
+    int L    = parlist.sublist("General").sublist("Secant").get("Maximum Storage",10);
+    int BB   = parlist.sublist("General").sublist("Secant").get("Barzilai-Borwein",1);
+    bool uds = parlist.sublist("General").sublist("Secant").get("Use Default Scaling",true);
+    Real s   = parlist.sublist("General").sublist("Secant").get("Initial Hessian Scale",1.0);
     switch (esec) {
-      case SECANT_LBFGS:           return ROL::makePtr<lBFGS<Real>>(L);
-      case SECANT_LDFP:            return ROL::makePtr<lDFP<Real>>(L);
-      case SECANT_LSR1:            return ROL::makePtr<lSR1<Real>>(L);
+      case SECANT_LBFGS:           return ROL::makePtr<lBFGS<Real>>(L,uds,s);
+      case SECANT_LDFP:            return ROL::makePtr<lDFP<Real>>(L,uds,s);
+      case SECANT_LSR1:            return ROL::makePtr<lSR1<Real>>(L,uds,s,mode);
       case SECANT_BARZILAIBORWEIN: return ROL::makePtr<BarzilaiBorwein<Real>>(BB);
       default:                     return ROL::nullPtr;
     }

@@ -112,14 +112,14 @@ public:
   virtual ~TrustRegionModel_U() {}
 
   TrustRegionModel_U(ParameterList           &list,
-                   const Ptr<Secant<Real>> &secant = nullPtr)
-    : obj_(nullPtr), x_(nullPtr), g_(nullPtr),
-      secant_(secant) {
+                     const Ptr<Secant<Real>> &secant = nullPtr,
+                     ESecantMode              mode   = SECANTMODE_BOTH)
+    : obj_(nullPtr), x_(nullPtr), g_(nullPtr), secant_(secant) {
     ParameterList &slist = list.sublist("General").sublist("Secant");
     useSecantPrecond_ = slist.get("Use as Preconditioner", false);
     useSecantHessVec_ = slist.get("Use as Hessian",        false);
     if (secant_ == nullPtr) {
-      secant_ = SecantFactory<Real>(list);
+      secant_ = SecantFactory<Real>(list,mode);
     }
   }
 
@@ -131,8 +131,10 @@ public:
   // overloaded virtual function without this using declaration
   using Objective<Real>::update;
 
-  void validate(Objective<Real> &obj, const Vector<Real> &x, const Vector<Real> &g,
-                const ETrustRegionU &etr) {
+  void validate(Objective<Real>    &obj,
+                const Vector<Real> &x,
+                const Vector<Real> &g,
+                ETrustRegionU       etr) {
     if ( !useSecantHessVec_ &&
         (etr == TRUSTREGION_U_DOGLEG || etr == TRUSTREGION_U_DOUBLEDOGLEG) ) {
       try {
