@@ -89,8 +89,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   using map_type = Tpetra::Map<LO, GO, NT>;
   using graph_type = Tpetra::CrsGraph<LO, GO, NT>;
   using packet_type = typename graph_type::packet_type;
-  using device_type = typename NT::device_type;
-  using execution_space = typename device_type::execution_space;
 //  using import_type = Tpetra::Import<LO,GO,NT>;
 
   auto comm = getDefaultComm();
@@ -201,6 +199,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   // comparing graph values, in order to ensure that changes made on
   // device are visible on host.
   A->fillComplete();
+  using device_type = typename NT::device_type;
+  using execution_space = typename device_type::execution_space;
   execution_space().fence ();
 
   auto loc_num_errs = 0;

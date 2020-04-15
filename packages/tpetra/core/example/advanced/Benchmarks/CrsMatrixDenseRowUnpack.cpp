@@ -96,7 +96,11 @@ getTargetRowMapIndices(const LO lclNumRows,
     TEUCHOS_ASSERT(gblRow < indexBase + gblNumRows);
     tgtGids[lid] = gblRow;
   }
-  return std::move(tgtGids);
+  // The original return using std::move (commented out below) returns the
+  // following warning with gcc 9.2.0:
+  // waring: moving a local object in a return statement prevents copy elision [-Wpessimizing-move]
+  //return std::move(tgtGids);
+  return tgtGids;
 }
 
 RCP<const map_type>

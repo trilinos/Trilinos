@@ -48,6 +48,7 @@
 #include "Tpetra_Details_createMirrorView.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Kokkos_Core.hpp"
@@ -556,6 +557,11 @@ unpackAndCombineIntoCrsMatrix(
   using unpack_functor_type =
     UnpackCrsMatrixAndCombineFunctor<LocalMatrix, LocalMap,
                                      BufferDeviceType>;
+
+  ::Tpetra::Details::ProfilingRegion region_unpack_and_combine_into_crs_matrix(
+    "Tpetra::Details::UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsMatrix",
+    "Import/Export"
+  );
   const char prefix[] =
     "Tpetra::Details::UnpackAndCombineCrsMatrixImpl::"
     "unpackAndCombineIntoCrsMatrix: ";
@@ -621,6 +627,7 @@ unpackAndCombineIntoCrsMatrix(
   TEUCHOS_TEST_FOR_EXCEPTION(x_h.first != 0, std::runtime_error,
       prefix << "UnpackCrsMatrixAndCombineFunctor reported error code "
              << x_h.first << " for the first bad row " << x_h.second);
+
 }
 
 template<class LocalMatrix, class BufferDeviceType>
@@ -1170,6 +1177,11 @@ unpackCrsMatrixAndCombineNew(
      "crs_matrix_type::device_type and local_matrix_type::device_type "
      "must be the same.");
 
+  ::Tpetra::Details::ProfilingRegion region_unpack_crs_matrix_and_combine_new(
+    "Tpetra::Details::unpackAndCombineNew",
+    "Import/Export"
+  );
+
   if (numPacketsPerLID.need_sync_device()) {
     numPacketsPerLID.sync_device ();
   }
@@ -1303,9 +1315,14 @@ unpackAndCombineWithOwningPIDsCount (
                                             numPacketsPerLID.size (), true,
                                             "num_packets_per_lid");
 
-  return UnpackAndCombineCrsMatrixImpl::unpackAndCombineWithOwningPIDsCount(
+  ::Tpetra::Details::ProfilingRegion unpack_and_combine_with_owning_pids_count(
+    "Tpetra::Details::unpackAndCombineWithOwningPIDsCount",
+    "Import/Export"
+  );
+  size_t nonzeros = UnpackAndCombineCrsMatrixImpl::unpackAndCombineWithOwningPIDsCount(
       local_matrix, permute_from_lids_d, imports_d,
       num_packets_per_lid_d, numSameIDs);
+  return nonzeros;
 }
 
 /// \brief unpackAndCombineIntoCrsArrays
@@ -1488,6 +1505,11 @@ unpackAndCombineIntoCrsArrays (
     "crs_vals_d::non_const_value_type is std::complex<double>; this should "
     "never happen, since std::complex does not work in Kokkos::View objects.");
 #endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
+
+  ::Tpetra::Details::ProfilingRegion unpack_and_combine_into_crs_arrays(
+    "Tpetra::Details::unpackAndCombineIntoCrsArrays",
+    "Import/Export"
+  );
 
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsArrays(
       local_matrix, local_col_map, import_lids_d, imports_d,
