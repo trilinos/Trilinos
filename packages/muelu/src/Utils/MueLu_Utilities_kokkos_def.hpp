@@ -110,16 +110,6 @@
 
 namespace MueLu {
 
-  template<class ViewType, class execution_space = typename ViewType::execution_space>
-  void kokkos_reverse(ViewType v) {    
-    //    typedef typename Space::execution_space execution_space;
-    int N = (int)v.extent(0);
-    Kokkos::parallel_for("MueLu::Kokkos_reverse::reverse",
-                         Kokkos::RangePolicy<execution_space>(0,N/2),
-                         KOKKOS_LAMBDA(const int & i){
-                           std::swap(v[i],v[N-1-1]);
-                         });    
-  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
