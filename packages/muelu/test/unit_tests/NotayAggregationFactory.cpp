@@ -121,6 +121,7 @@ namespace MueLuTests {
   } // InitialAggregation1D
 
 
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(NotayAggregation, InitialAggregation2D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
@@ -335,34 +336,110 @@ namespace MueLuTests {
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
-    MueLu::Level currentLevel;
-    test_factory::createSingleLevelHierarchy(currentLevel);
-    currentLevel.SetFactoryManager(Teuchos::null);
-    currentLevel.Request("A");
-    currentLevel.Set("A", A);
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-    RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
-    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
-    RCP<NotayAggregationFactory> NAF   = rcp(new NotayAggregationFactory());
-    NAF->SetFactory("Graph", dropFact);
-    NAF->SetFactory("DofsPerNode", dropFact);
-    NAF->SetParameter("aggregation: pairwise: size", Teuchos::ParameterEntry(4));
-    NAF->SetParameter("aggregation: Dirichlet threshold", Teuchos::ParameterEntry(4.1));
+    // Use default ordering
+    {
+      MueLu::Level currentLevel;
+      test_factory::createSingleLevelHierarchy(currentLevel);
+      currentLevel.SetFactoryManager(Teuchos::null);
+      currentLevel.Request("A");
+      currentLevel.Set("A", A);
+      
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      
+      RCP<NotayAggregationFactory> NAF   = rcp(new NotayAggregationFactory());
+      NAF->SetFactory("Graph", dropFact);
+      NAF->SetFactory("DofsPerNode", dropFact);
+      NAF->SetParameter("aggregation: pairwise: size", Teuchos::ParameterEntry(4));
+      NAF->SetParameter("aggregation: Dirichlet threshold", Teuchos::ParameterEntry(4.1));
+      
+      currentLevel.Request("Aggregates", NAF.get());
+      currentLevel.Request(*NAF);
+      NAF->Build(currentLevel);
+      out << "Pairwise aggregation factory is done" << std::endl;
+      RCP<Aggregates> aggregates = currentLevel.Get<RCP<Aggregates> >("Aggregates", NAF.get());
+      out << "Recovered aggregates from muelu level" << std::endl;
+      currentLevel.Release("Aggregates", NAF.get());
+      std::cout << "Testing pairwise aggregates" << std::endl;
+      
+      auto v2a = aggregates->GetVertex2AggId()->getData(0);
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      
+      TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+    }
 
-    currentLevel.Request("Aggregates", NAF.get());
-    currentLevel.Request(*NAF);
-    NAF->Build(currentLevel);
-    out << "Pairwise aggregation factory is done" << std::endl;
-    RCP<Aggregates> aggregates = currentLevel.Get<RCP<Aggregates> >("Aggregates", NAF.get());
-    out << "Recovered aggregates from muelu level" << std::endl;
-    currentLevel.Release("Aggregates", NAF.get());
-    std::cout << "Testing pairwise aggregates" << std::endl;
+    // Use random ordering
+    {
+      MueLu::Level currentLevel;
+      test_factory::createSingleLevelHierarchy(currentLevel);
+      currentLevel.SetFactoryManager(Teuchos::null);
+      currentLevel.Request("A");
+      currentLevel.Set("A", A);
+      
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      
+      RCP<NotayAggregationFactory> NAF   = rcp(new NotayAggregationFactory());
+      NAF->SetFactory("Graph", dropFact);
+      NAF->SetFactory("DofsPerNode", dropFact);
+      NAF->SetParameter("aggregation: pairwise: size", Teuchos::ParameterEntry(4));
+      NAF->SetParameter("aggregation: Dirichlet threshold", Teuchos::ParameterEntry(4.1));
+      NAF->SetParameter("aggregation: ordering", Teuchos::ParameterEntry(std::string("random")));
+      
+      currentLevel.Request("Aggregates", NAF.get());
+      currentLevel.Request(*NAF);
+      NAF->Build(currentLevel);
+      out << "Pairwise aggregation factory is done" << std::endl;
+      RCP<Aggregates> aggregates = currentLevel.Get<RCP<Aggregates> >("Aggregates", NAF.get());
+      out << "Recovered aggregates from muelu level" << std::endl;
+      currentLevel.Release("Aggregates", NAF.get());
+      std::cout << "Testing pairwise aggregates" << std::endl;
+      
+      auto v2a = aggregates->GetVertex2AggId()->getData(0);
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      
+      TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+    }
 
-    auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+    // Use Cuthill-McKee if we have it (requires Kokkos refactor)
+   {
+      MueLu::Level currentLevel;
+      test_factory::createSingleLevelHierarchy(currentLevel);
+      currentLevel.SetFactoryManager(Teuchos::null);
+      currentLevel.Request("A");
+      currentLevel.Set("A", A);
+      
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      
+      RCP<NotayAggregationFactory> NAF   = rcp(new NotayAggregationFactory());
+      NAF->SetFactory("Graph", dropFact);
+      NAF->SetFactory("DofsPerNode", dropFact);
+      NAF->SetParameter("aggregation: pairwise: size", Teuchos::ParameterEntry(4));
+      NAF->SetParameter("aggregation: Dirichlet threshold", Teuchos::ParameterEntry(4.1));
+      NAF->SetParameter("aggregation: ordering", Teuchos::ParameterEntry(std::string("cuthill-mckee")));
+      
+      currentLevel.Request("Aggregates", NAF.get());
+      currentLevel.Request(*NAF);
+      NAF->Build(currentLevel);
+      out << "Pairwise aggregation factory is done" << std::endl;
+      RCP<Aggregates> aggregates = currentLevel.Get<RCP<Aggregates> >("Aggregates", NAF.get());
+      out << "Recovered aggregates from muelu level" << std::endl;
+      currentLevel.Release("Aggregates", NAF.get());
+      std::cout << "Testing pairwise aggregates" << std::endl;
+      
+      auto v2a = aggregates->GetVertex2AggId()->getData(0);
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      
+      TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+    }
 
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
+#endif 
 
   } // BuildNotayAggregates2D
 

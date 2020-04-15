@@ -297,12 +297,12 @@ namespace MueLu {
     /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix
       Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
      */
-    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(Matrix &Op);
+    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(const Matrix &Op);
 
     /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix
       Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
     */
-    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(Matrix &Op);
+    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Matrix &Op);
 
   }; // class Utils
 
@@ -709,12 +709,12 @@ namespace MueLu {
     /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix
       Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
      */
-    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(Matrix &Op);
+    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(const Matrix &Op);
 
     /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix
       Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
     */
-    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(Matrix &Op);
+    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Matrix &Op);
 
   }; // class Utilities (specialization SC=double LO=GO=int)
 

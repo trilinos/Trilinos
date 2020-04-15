@@ -66,6 +66,10 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+#include "MueLu_Utilities_kokkos.hpp"
+#endif
+
 namespace MueLu {
 
   namespace NotayUtils {
@@ -178,16 +182,19 @@ namespace MueLu {
     // SISC 34(3), pp. A2288-2316.
 
     // Handle Ordering
-    // FIXME: Add Cuthill-McKee
     std::string orderingStr = pL.get<std::string>("aggregation: ordering");
     enum {
       O_NATURAL,
       O_RANDOM,
+      O_CUTHILL_MCKEE,
     } ordering;
 
     ordering = O_NATURAL;
     if (orderingStr == "random" ) ordering = O_RANDOM;
     else if(orderingStr == "natural") {}
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+    else if(orderingStr == "cuthill-mckee" || orderingStr == "cm") ordering = O_CUTHILL_MCKEE;
+#endif
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(1,Exceptions::RuntimeError,"Invalid ordering type");
     }
@@ -197,6 +204,14 @@ namespace MueLu {
       orderingVector[i] = i;
     if (ordering == O_RANDOM)
       MueLu::NotayUtils::RandomReorder(orderingVector);
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+    else if (ordering == O_CUTHILL_MCKEE) {
+      RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
+      auto localVector = rcmVector->getData(0);
+      for (LO i = 0; i < numRows; i++)
+        orderingVector[i] = localVector[i];
+    }
+#endif
 
     // Get the party stated
     LO numNonAggregatedNodes = numRows, numDirichletNodes = 0;
