@@ -114,7 +114,12 @@ void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real> &x,
   const Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   // Update objective and constraint.
-  myobj.update(x,true,state_->iter);
+  if (state_->iter == 0) {
+    myobj.update(x,UPDATE_INITIAL,state_->iter);
+  }
+  else {
+    myobj.update(x,UPDATE_ACCEPT,state_->iter);
+  }
   // Compute norm of the gradient of the Lagrangian
   state_->value = myobj.value(x, zerotol);
   myobj.gradient(*state_->gradientVec, x, zerotol);

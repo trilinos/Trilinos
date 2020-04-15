@@ -165,12 +165,16 @@ public:
     conValue_      = primConVec.clone();
   }
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    obj_->update(x,flag,iter);
-    con_->update(x,flag,iter);
-    isValueComputed_ = ((flag || (!flag && iter < 0)) ? false : isValueComputed_);
-    isGradientComputed_ = ((flag || (!flag && iter < 0)) ? false : isGradientComputed_);
-    isConstraintComputed_ = ((flag || (!flag && iter < 0)) ? false : isConstraintComputed_);
+  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+    obj_->update(x,type,iter);
+    con_->update(x,type,iter);
+    // Need to do something smart here
+    isValueComputed_ = false;
+    isGradientComputed_ = false;
+    isConstraintComputed_ = false;
+    //isValueComputed_ = ((flag || (!flag && iter < 0)) ? false : isValueComputed_);
+    //isGradientComputed_ = ((flag || (!flag && iter < 0)) ? false : isGradientComputed_);
+    //isConstraintComputed_ = ((flag || (!flag && iter < 0)) ? false : isConstraintComputed_);
   }
 
   void setScaling(const Real fscale = 1.0, const Real cscale = 1.0) {

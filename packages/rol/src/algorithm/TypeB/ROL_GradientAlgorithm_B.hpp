@@ -57,7 +57,7 @@ class GradientAlgorithm_B : public Algorithm_B<Real> {
 private:
   int maxit_;
   Real alpha0_, alpha0bnd_, rhodec_, rhoinc_, c1_, maxAlpha_;
-  bool useralpha_, usePrevAlpha_, useAdapt_;
+  bool useralpha_, usePrevAlpha_, useAdapt_, normAlpha_;
   int verbosity_;
   bool printHeader_;
 

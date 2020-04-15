@@ -106,7 +106,6 @@ inline Real initialRadius(int &nfval,
                           Objective<Real> &obj,
                           TrustRegionModel_U<Real> &model,
                           const Real delMax,
-                          const int iter,
                           std::ostream &outStream,
                           const bool print = false) {
   const Real zero(0), half(0.5), one(1), two(2), three(3), six(6);
@@ -126,7 +125,7 @@ inline Real initialRadius(int &nfval,
   xcp->scale(-alpha);
   Real gs = xcp->dot(g.dual());
   xcp->plus(x);
-  obj.update(*xcp,false);
+  obj.update(*xcp,UPDATE_TRIAL);
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
   Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
   nfval++;
@@ -159,7 +158,7 @@ inline Real initialRadius(int &nfval,
   if (del <= eps*gnorm) {
     del = one;
   }
-  obj.update(x,true,iter);
+  obj.update(x,UPDATE_REVERT);
   if ( print ) {
     outStream << "  In TrustRegionUtilities::initialRadius"      << std::endl;
     outStream << "    Initial radius:                          " << del << std::endl;

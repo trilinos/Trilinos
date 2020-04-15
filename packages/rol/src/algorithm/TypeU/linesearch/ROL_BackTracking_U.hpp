@@ -85,7 +85,7 @@ public:
     xnew_->set(x); xnew_->axpy(alpha,s);
     // Get objective value at xnew
     Real fold = fval;
-    obj.update(*xnew_,false);
+    obj.update(*xnew_,UPDATE_TRIAL);
     fval = obj.value(*xnew_,tol);
     ls_neval++;
     // Perform backtracking
@@ -94,7 +94,7 @@ public:
       // Update iterate
       xnew_->set(x); xnew_->axpy(alpha,s);
       // Get objective value at xnew
-      obj.update(*xnew_,false);
+      obj.update(*xnew_,UPDATE_TRIAL);
       fval = obj.value(*xnew_,tol);
       ls_neval++;
     }

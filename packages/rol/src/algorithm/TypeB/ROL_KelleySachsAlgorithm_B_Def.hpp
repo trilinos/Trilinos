@@ -105,7 +105,7 @@ void KelleySachsAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
   bnd.project(x);
   state_->iterateVec->set(x);
-  obj.update(x,true,state_->iter);
+  obj.update(x,UPDATE_INITIAL,state_->iter);
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol);
@@ -166,7 +166,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
     bnd.project(x);
 
     // Compute trial objective value
-    obj.update(x,false);
+    obj.update(x,UPDATE_TRIAL);
     ftrial = obj.value(x,ftol); state_->nfval++;
 
     // Compute ratio of acutal and predicted reduction
@@ -202,7 +202,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
       state_->stepVec->axpy(-one,*state_->iterateVec);
       state_->snorm = state_->stepVec->norm();
       x.set(*state_->iterateVec);
-      obj.update(x,false,state_->iter);
+      obj.update(x,UPDATE_REJECT,state_->iter);
       // Decrease trust-region radius
       state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
     }
@@ -223,13 +223,13 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
       pwa2->set(dwa1->dual());
       pwa1->set(x); pwa1->axpy(-alpha/alpha0_,*pwa2);
       bnd.project(*pwa1);
-      obj.update(*pwa1,false);
+      obj.update(*pwa1,UPDATE_TRIAL);
       fnew = obj.value(*pwa1,ftol); state_->nfval++;
       while ((fnew-ftrial) >= mu1_*(state_->value-ftrial)) {
         alpha *= beta_;
         pwa1->set(x); pwa1->axpy(-alpha/alpha0_,*pwa2);
         bnd.project(*pwa1);
-        obj.update(*pwa1,false);
+        obj.update(*pwa1,UPDATE_TRIAL);
         fnew = obj.value(*pwa1,ftol); state_->nfval++;
         if ( cnt >= minit_ ) break;
         cnt++;
@@ -242,7 +242,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
         TRflag_ = TRUtils::TRNAN;
         rho     = -one;
         x.set(*state_->iterateVec);
-        obj.update(x,false,state_->iter);
+        obj.update(x,UPDATE_REJECT,state_->iter);
         // Decrease trust-region radius
         state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
       }
@@ -252,7 +252,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
         state_->iterateVec->set(x);
         state_->value = fnew;
         dwa1->set(*state_->gradientVec);
-        obj.update(x,true,state_->iter);
+        obj.update(x,UPDATE_ACCEPT,state_->iter);
         obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
         // Compute free gradient
         gfree->set(*state_->gradientVec);

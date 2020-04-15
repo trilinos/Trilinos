@@ -229,10 +229,13 @@ public:
     mu_ = mu;
   }
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    obj_->update(x,flag,iter);
-    isValueComputed_ = ((flag || (!flag && iter < 0)) ? false : isValueComputed_);
-    isGradientComputed_ = ((flag || (!flag && iter < 0)) ? false : isGradientComputed_);
+  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+    obj_->update(x,type,iter);
+    // Need to do something smart here
+    isValueComputed_ = false;
+    isGradientComputed_ = false;
+    //isValueComputed_ = ((flag || (!flag && iter < 0)) ? false : isValueComputed_);
+    //isGradientComputed_ = ((flag || (!flag && iter < 0)) ? false : isGradientComputed_);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {

@@ -89,10 +89,11 @@ LinMoreAlgorithm_B<Real>::LinMoreAlgorithm_B(ParameterList &list,
   // Secant Information
   useSecantPrecond_ = list.sublist("General").sublist("Secant").get("Use as Preconditioner", false);
   useSecantHessVec_ = list.sublist("General").sublist("Secant").get("Use as Hessian",        false);
+  ESecantMode mode = SECANTMODE_BOTH;
+  if (useSecantPrecond_ && !useSecantHessVec_)      mode = SECANTMODE_INVERSE;
+  else if (useSecantHessVec_ && !useSecantPrecond_) mode = SECANTMODE_FORWARD;
   // Initialize trust region model
-  model_ = makePtr<TrustRegionModel_U<Real>>(list,secant);
-  useSecantPrecond_ = list.sublist("General").sublist("Secant").get("Use as Preconditioner", false);
-  useSecantHessVec_ = list.sublist("General").sublist("Secant").get("Use as Hessian",        false);
+  model_ = makePtr<TrustRegionModel_U<Real>>(list,secant,mode);
   if (secant == nullPtr) {
     esec_ = StringToESecant(list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
   }
@@ -117,7 +118,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
   proj_->project(x,outStream);
   state_->iterateVec->set(x);
-  obj.update(x,true,state_->iter);
+  obj.update(x,UPDATE_INITIAL,state_->iter);
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol);
@@ -269,7 +270,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     state_->snorm = state_->stepVec->norm();
 
     // Compute trial objective value
-    obj.update(x,false);
+    obj.update(x,UPDATE_TRIAL);
     ftrial = obj.value(x,tol0);
     state_->nfval++;
 
@@ -282,7 +283,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     // Accept/reject step and update trust region radius
     if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS) || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
-      obj.update(x,false,state_->iter);
+      obj.update(x,UPDATE_REJECT,state_->iter);
       if (interpRad_ && (rho < zero && TRflag_ != TRUtils::TRNAN)) {
         // Negative reduction, interpolate to find new trust-region radius
         state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
@@ -296,7 +297,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->value = ftrial;
-      obj.update(x,true,state_->iter);
+      obj.update(x,UPDATE_ACCEPT,state_->iter);
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize *= gamma2_;
       // Compute gradient at new iterate
@@ -492,7 +493,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   const Real zero(0), one(1), two(2);
   Real rho(0), kappa(0), beta(0), sigma(0), alpha(0);
-  Real rtr(0), tnorm(0), rnorm0(0), sMs(0), pMp(0), sMp(0);
+  Real rtr(0), tnorm(0), sMs(0), pMp(0), sMp(0);
   iter = 0; iflag = 0;
   // Initialize step
   w.zero();
@@ -500,11 +501,7 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
   t.set(g); t.scale(-one);
   // Preconditioned residual
   applyFreePrecond(r,t,x,model,bnd,tol0,dwa,pwa);
-  rho    = r.dot(t.dual());
-  rnorm0 = std::sqrt(rho);
-  if ( rnorm0 == zero ) {
-    return zero;
-  }
+  rho = r.dot(t.dual());
   // Initialize direction
   p.set(r);
   pMp = (!hasEcon_ ? rho : p.dot(p)); // If no equality constraint, used preconditioned norm

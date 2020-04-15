@@ -286,11 +286,15 @@ public:
       @param[in]          flag   is true if the iterate has changed.
       @param[in]          iter   is the outer algorithm iterations count.
   */
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    obj_->update(x,flag,iter);
+  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+    obj_->update(x,type,iter);
+    // Need to do something smart here
     isValueComputed_ = false;
-    isGradComputed_  = (flag && iter>0) ? false : isGradComputed_;
+    isGradComputed_  = false;
     isPenEvaluated_  = false;
+    //isValueComputed_ = false;
+    //isGradComputed_  = (flag && iter>0) ? false : isGradComputed_;
+    //isPenEvaluated_  = false;
   }
 
   /** \brief Compute value.
