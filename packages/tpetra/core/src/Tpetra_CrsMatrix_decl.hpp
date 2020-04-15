@@ -841,6 +841,9 @@ namespace Tpetra {
                                   const MultiVector<S2,LO2,GO2,N2> & B,
                                   MultiVector<S2,LO2,GO2,N2> & R);
 
+    // This friend declaration allows for batching of apply calls
+    template <class MatrixArray, class MultiVectorArray> 
+    friend void batchedApply(const MatrixArray &Matrices, const MultiVectorArray &X, MultiVectorArray &Y);
   public:
     //@}
     //! @name Methods for inserting, modifying, or removing entries
