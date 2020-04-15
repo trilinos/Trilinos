@@ -45,6 +45,7 @@
 #define ROL_OBJECTIVE_H
 
 #include "ROL_Vector.hpp"
+#include "ROL_UpdateTypes.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
@@ -78,6 +79,19 @@ class Objective {
 public:
 
   virtual ~Objective() {}
+
+  /** \brief Update objective function. 
+
+      This function updates the objective function at new iterations. 
+      @param[in]          x      is the new iterate. 
+      @param[in]          type   is the type of update requested.
+      @param[in]          iter   is the outer algorithm iterations count.
+  */
+  virtual void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+    ROL_UNUSED(x);
+    ROL_UNUSED(type);
+    ROL_UNUSED(iter);
+  }
 
   /** \brief Update objective function. 
 
