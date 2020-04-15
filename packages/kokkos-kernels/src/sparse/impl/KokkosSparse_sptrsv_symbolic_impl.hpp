@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -45,16 +46,6 @@
 #define KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
 /// \file Kokkos_Sparse_impl_sptrsv_symbolic.hpp
 /// \brief Implementation(s) of sparse triangular solve.
-
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
-    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
-   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
-
- // Enable supernodal sptrsv
- #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-
-#endif
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
@@ -143,7 +134,7 @@ void symbolic_chain_phase(TriSolveHandle &thandle, const NPLViewType &nodes_per_
     // Two updates required - should only occur if chainlinks_length > 0
     // We have found two things: a non-one length chain, and a subsequent one length chain
     if (chain_state == 2) {
-      if (chainlinks_length == 0) { std::runtime_error("MAJOR LOGIC ERROR! TERMINATE!"); }
+      if (chainlinks_length == 0) { throw(std::runtime_error("MAJOR LOGIC ERROR! TERMINATE!")); }
 
       num_chain_entries += 1;
       h_chain_ptr(num_chain_entries) = h_chain_ptr(num_chain_entries-1) + chainlinks_length;
@@ -253,7 +244,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           }
           else if ( col > row ) {
             std::cout << "\nrow = " << row << "  col = " << col << "  offset = " << offset << std::endl;
-            std::runtime_error("SYMB ERROR: Lower tri with colid > rowid - SHOULD NOT HAPPEN!!!");
+            throw(std::runtime_error("SYMB ERROR: Lower tri with colid > rowid - SHOULD NOT HAPPEN!!!"));
           }
         } // end for offset , i.e. cols of this row
 
