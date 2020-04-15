@@ -86,7 +86,13 @@ namespace Tpetra {
          &*Matrices[i]->getDomainMap() != &*compare_domainMap){
         can_batch=false;
       }
-    }      
+    }
+
+    // Do the input vectors match?
+    for(size_type i=1; i<N && can_batch; i++) {
+      if(&*X[i]->getMap() !=  &*X[0]->getMap())
+        can_batch=false;
+    }
     
     if(can_batch) {
       // Batching path: Guarantees an existing importer and N>1
