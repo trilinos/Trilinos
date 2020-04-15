@@ -751,6 +751,38 @@ private:
 		    c_row_view_t rowmapC,
 		    nnz_lno_t maxNumRoughNonzeros
 		  );
+
+  //////////////////////////////////////////////////////////////////////////
+  ///// Jacobi-fused SpGEMM declarations 
+  //////////////////////////////////////////////////////////////////////////
+public:
+
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t,
+            typename b_row_view_t, typename b_nnz_view_t, typename b_scalar_view_t,
+            typename c_row_view_t, typename c_nnz_view_t, typename c_scalar_view_t,
+	    typename dinv_view_t,
+            typename pool_memory_type>
+  struct JacobiSpGEMMSparseAcc;
+
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t,
+            typename b_row_view_t, typename b_nnz_view_t, typename b_scalar_view_t,
+            typename c_row_view_t, typename c_nnz_view_t, typename c_scalar_view_t,
+	    typename dinv_view_t,
+            typename mpool_type>
+  struct JacobiSpGEMMDenseAcc;
+
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t, 
+	    typename dinv_view_t>
+  void KokkosSPGEMM_jacobi_sparseacc(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_, 
+				     typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv, 
+				     KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space);
+
+private:
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t, typename dinv_view_t>
+  void KokkosSPGEMM_jacobi_denseacc(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_,
+				    typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv,
+				    KokkosKernels::Impl::ExecSpaceType my_exec_space);
+
 };
 
 

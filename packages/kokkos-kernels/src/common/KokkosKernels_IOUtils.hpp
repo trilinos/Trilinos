@@ -181,6 +181,8 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   {
     int varianz = (1.0*rand()/INT_MAX-0.5)*row_size_variance;
     rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
+    if(rowPtr[row+1] <= rowPtr[row])   // This makes sure that there is
+      rowPtr[row+1] = rowPtr[row] + 1; // at least one nonzero in the row
   }
   nnz = rowPtr[nrows];
   values = new ScalarType[nnz];
@@ -189,18 +191,35 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   for(OrdinalType row=0;row<nrows;row++)
   {
     ScalarType total_values = 0;
-    for(SizeType k=rowPtr[row] ;k<rowPtr[row+1] - 1;k++)
+    for(SizeType k=rowPtr[row]; k<rowPtr[row+1]-1; k++)
     {
-      OrdinalType pos = row;
-      while (pos == row){
-        pos = ((1.0*rand())/INT_MAX-0.5)*bandwidth+row;
-      }
-      if(pos<0) pos+=ncols;
+      while (true){
+        OrdinalType pos = (1.0*rand()/RAND_MAX-0.5)*bandwidth+row;
+        while(pos < 0)
+	  pos += ncols;
+        while(pos >= ncols)
+	  pos -= ncols;
 
-      if(pos>=ncols) pos-=ncols;
-      colInd[k]= pos;
-      values[k] = 100.0*rand()/INT_MAX-50.0;
-      total_values += Kokkos::Details::ArithTraits<ScalarType>::abs(values[k]);
+        bool is_already_in_the_row = false;
+	if(pos == row)
+	  is_already_in_the_row = true;
+	else
+	{
+	  for(SizeType j = rowPtr[row] ; j<k ;j++){
+	    if (colInd[j] == pos){
+	      is_already_in_the_row = true;
+	      break;
+	    }
+	  }
+	}
+        if (!is_already_in_the_row) {
+
+          colInd[k]= pos;
+          values[k] = 100.0*rand()/RAND_MAX-50.0;
+	  total_values += Kokkos::Details::ArithTraits<ScalarType>::abs(values[k]);
+          break;
+        }
+      }
     }
 
     colInd[rowPtr[row+1] - 1]= row;

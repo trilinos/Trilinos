@@ -14,6 +14,8 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash ga
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash spgemm_symbolic KokkosSparse_spgemm_symbolic KokkosSparse_spgemm_symbolic_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 #spgemm_numeric
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash spgemm_numeric  KokkosSparse_spgemm_numeric  KokkosSparse_spgemm_numeric_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+#spgemm_jacobi
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash spgemm_jacobi  KokkosSparse_spgemm_jacobi  KokkosSparse_spgemm_jacobi_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 
 #trsv
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash trsv KokkosSparse_trsv KokkosSparse_trsv_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}

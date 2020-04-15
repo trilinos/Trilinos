@@ -15,6 +15,11 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spgemm
   SOURCES KokkosSparse_spgemm.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spgemm_jacobi
+  SOURCES KokkosSparse_spgemm_jacobi.cpp
+  )
   
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/spmv)
 

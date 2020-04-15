@@ -46,6 +46,7 @@
 
 #include "KokkosSparse_spgemm_numeric.hpp"
 #include "KokkosSparse_spgemm_symbolic.hpp"
+#include "KokkosSparse_spgemm_jacobi.hpp"
 
 
 #endif
