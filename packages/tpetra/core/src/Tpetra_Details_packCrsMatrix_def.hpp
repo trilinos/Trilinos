@@ -49,6 +49,7 @@
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include <memory>
 #include <sstream>
@@ -733,6 +734,10 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                const bool pack_pids,
                Distributor& /* dist */)
 {
+  ::Tpetra::Details::ProfilingRegion region_pack_crs_matrix(
+    "Tpetra::Details::PackCrsMatrixImpl::packCrsMatrix",
+    "Import/Export"
+  );
   using Kokkos::View;
   typedef BufferDeviceType DT;
   typedef typename DT::execution_space execution_space;
@@ -957,6 +962,10 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   TEUCHOS_ASSERT( ! exportLIDs.need_sync_device () );
   auto exportLIDs_d = exportLIDs.view_device ();
 
+  ::Tpetra::Details::ProfilingRegion region_pack_crs_matrix_new(
+    "Tpetra::Details::packCrsMatrixNew",
+    "Import/Export"
+  );
   PackCrsMatrixImpl::packCrsMatrix<ST,LO,GO,NT,buffer_device_type> (
       sourceMatrix, exports, numPacketsPerLID_d, exportLIDs_d,
       exportPIDs_d, constantNumPackets, pack_pids, distor);

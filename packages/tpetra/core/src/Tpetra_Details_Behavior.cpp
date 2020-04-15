@@ -56,6 +56,7 @@ namespace Details {
 namespace BehaviorDetails {
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
 bool verboseDisabled_ = false;
+bool timingDisabled_ = false;
 }
 
 namespace { // (anonymous)
@@ -271,6 +272,10 @@ namespace { // (anonymous)
     return false;
   }
 
+  constexpr bool timingDefault () {
+    return false;
+  }
+
   constexpr bool assumeMpiIsCudaAwareDefault () {
 #ifdef TPETRA_ASSUME_CUDA_AWARE_MPI
     return true;
@@ -300,6 +305,21 @@ bool Behavior::verbose ()
 
   constexpr char envVarName[] = "TPETRA_VERBOSE";
   constexpr bool defaultValue = verboseDefault ();
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
+}
+
+bool Behavior::timing ()
+{
+  if (BehaviorDetails::timingDisabled_) return false;
+
+  constexpr char envVarName[] = "TPETRA_TIMING";
+  constexpr bool defaultValue = timingDefault ();
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
@@ -358,7 +378,7 @@ size_t Behavior::longRowMinNumEntries ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
-bool Behavior::profilingRegionUseTeuchosTimers () 
+bool Behavior::profilingRegionUseTeuchosTimers ()
 {
   constexpr char envVarName[] = "TPETRA_USE_TEUCHOS_TIMERS";
   constexpr bool defaultValue(false);
@@ -369,7 +389,7 @@ bool Behavior::profilingRegionUseTeuchosTimers ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
-bool Behavior::profilingRegionUseKokkosProfiling () 
+bool Behavior::profilingRegionUseKokkosProfiling ()
 {
   constexpr char envVarName[] = "TPETRA_USE_KOKKOS_PROFILING";
   constexpr bool defaultValue(false);
@@ -415,6 +435,19 @@ void Behavior::disable_verbose_behavior () {
   BehaviorDetails::verboseDisabled_ = true;
 }
 
+bool Behavior::timing (const char name[])
+{
+  if (BehaviorDetails::timingDisabled_) return false;
+
+  constexpr char envVarName[] = "TPETRA_TIMING";
+  constexpr bool defaultValue = false;
+
+  static bool initialized_ = false;
+  return idempotentlyGetNamedEnvironmentVariableAsBool (name,
+                                                        initialized_,
+                                                        envVarName,
+                                                        defaultValue);
+}
 } // namespace Details
 } // namespace Tpetra
 

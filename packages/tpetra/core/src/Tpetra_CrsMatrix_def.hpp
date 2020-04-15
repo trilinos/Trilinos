@@ -7284,6 +7284,11 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
 
+    Details::ProfilingRegion region_upack_row(
+      "Tpetra::CrsMatrix::unpackRow",
+      "Import/Export"
+    );
+
     if (numBytes == 0) {
       // Rows with zero bytes should always have zero entries.
       if (numEnt != 0) {
@@ -7475,6 +7480,7 @@ namespace Tpetra {
            Distributor& dist) const
   {
     // The call to packNew in packAndPrepare catches and handles any exceptions.
+    Details::ProfilingRegion region_pack_new("Tpetra::CrsMatrix::packNew", "Import/Export");
     if (this->isStaticGraph ()) {
       using ::Tpetra::Details::packCrsMatrixNew;
       packCrsMatrixNew (*this, exports, numPacketsPerLID, exportLIDs,
@@ -7902,6 +7908,10 @@ namespace Tpetra {
     const CombineMode combineMode,
     const bool verbose)
   {
+    Details::ProfilingRegion region_unpack_and_combine_impl(
+      "Tpetra::CrsMatrix::unpackAndCombineImpl",
+      "Import/Export"
+    );
     using std::endl;
     const char tfecfFuncName[] = "unpackAndCombineImpl";
     std::unique_ptr<std::string> prefix;
@@ -8018,6 +8028,11 @@ namespace Tpetra {
     if (combineMode == ZERO || numImportLIDs == 0) {
       return; // nothing to do; no need to combine entries
     }
+
+    Details::ProfilingRegion region_unpack_and_combine_impl_non_static(
+      "Tpetra::CrsMatrix::unpackAndCombineImplNonStatic",
+      "Import/Export"
+    );
 
     // We're unpacking on host.  This is read-only host access.
     if (imports.need_sync_host()) {
