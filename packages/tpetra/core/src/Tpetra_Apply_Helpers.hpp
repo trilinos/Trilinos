@@ -52,7 +52,9 @@ namespace Tpetra {
   template <class MatrixArray, class MultiVectorArray> 
   void batchedApply(const MatrixArray &Matrices, 
                     const typename std::remove_pointer<typename MultiVectorArray::value_type>::type &X,
-                    MultiVectorArray &Y) {
+                    MultiVectorArray &Y,
+                    typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type alpha = Teuchos::ScalarTraits< typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type>::one(),
+                    typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type beta  = Teuchos::ScalarTraits< typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type>::zero() ) {
     Tpetra::Details::ProfilingRegion regionImport ("Tpetra::batchedApply");
 
     using size_type   = typename MatrixArray::size_type;
@@ -68,6 +70,8 @@ namespace Tpetra {
 
     const scalar_type ONE  = Teuchos::ScalarTraits<scalar_type>::one();
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero();
+
+    // FIXME: Does not work for replicated Y's
 
     size_type N = Matrices.size();
     if(N==0) return;
@@ -86,7 +90,19 @@ namespace Tpetra {
     }
 
     if(can_batch) {
-      // Batching path: Guarantees an existing importer and N>1
+      /* Batching path: Guarantees an existing importer and N>1 */
+
+      // Special case for alpha = 0
+      if (alpha == ZERO) {
+        if (beta == ZERO) {
+          for(size_type i=0; i<N; i++) Y[i]->putScalar(ZERO);
+        } else if (beta != ONE) {
+          for(size_type i=0; i<N; i++) Y[i]->scale(beta);
+        }
+        return;
+      }
+      
+      const bool Y_is_overwritten = (beta == ZERO);
 
       // Start by importing X to Matrices[0]'s temporary
       RCP<const MV> X_colMap;
@@ -105,36 +121,43 @@ namespace Tpetra {
         // Temporary MV for doExport (if needed),
         RCP<MV> Y_rowMap = Matrices[i]->getRowMapMultiVector(*Y[i]);
         if (!exporter.is_null()) {
-          Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, ONE, ZERO);
-       
-           {
-             Tpetra::Details::ProfilingRegion regionExport ("Tpetra::batchedApply: Export");             
-             Y[i]->putScalar(ZERO);
-             Y[i]->doExport(*Y_rowMap, *exporter, ADD);
-           }
+          Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+          {
+            Tpetra::Details::ProfilingRegion regionExport ("Tpetra::batchedApply: Export");             
+            if (Y_is_overwritten) {
+              Y[i]->putScalar(ZERO);
+            }
+            else {
+              Y[i]->scale (beta);
+            }
+            Y[i]->doExport(*Y_rowMap, *exporter, ADD);
+          }
         }
         else { // Don't do an Export: row Map and range Map are the same.
           // Check for aliasing
           if (! Y[i]->isConstantStride() || X_colMap.getRawPtr() == Y[i]) {
             Y_rowMap = Matrices[i]->getRowMapMultiVector(*Y[i], true);
-            
-            Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, ONE, ZERO);
+            if (beta != ZERO) {
+              Tpetra::deep_copy (*Y_rowMap, *Y[i]);
+            }
+
+            Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
             Tpetra::deep_copy(*Y[i], *Y_rowMap);
           }
           else {
-            Matrices[i]->localApply(*X_colMap, *Y[i], Teuchos::NO_TRANS, ONE, ZERO);
+            Matrices[i]->localApply(*X_colMap, *Y[i], Teuchos::NO_TRANS, alpha, beta);
           }
         }        
       }
     } 
     else {
-      // Non-batching path
+      /* Non-batching path */
       for(size_type i=0; i<N; i++) {
         Matrices[i]->apply(X,*Y[i]);
       }
     }
   }
-
+  
 
 }// namespace Tpetra
 

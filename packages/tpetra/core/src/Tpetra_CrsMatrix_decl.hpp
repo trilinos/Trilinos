@@ -845,7 +845,9 @@ namespace Tpetra {
     template <class MatrixArray, class MultiVectorArray> 
     friend void batchedApply(const MatrixArray &Matrices, 
                              const typename std::remove_pointer<typename MultiVectorArray::value_type>::type & X,
-                             MultiVectorArray &Y);
+                             MultiVectorArray &Y,
+                             typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type alpha,
+                             typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type beta);
   public:
     //@}
     //! @name Methods for inserting, modifying, or removing entries
