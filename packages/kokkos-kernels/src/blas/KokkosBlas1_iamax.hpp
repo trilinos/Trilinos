@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -104,7 +105,7 @@ iamax (const RV& R, const XMV& X,
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::iamax: "
                  "X is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+  static_assert (std::is_same<typename RV::value_type,
                  typename RV::non_const_value_type>::value,
                  "KokkosBlas::iamax: R is const.  "
                  "It must be nonconst, because it is an output argument "
@@ -114,7 +115,7 @@ iamax (const RV& R, const XMV& X,
                  "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
   typedef typename XMV::size_type index_type;
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+  static_assert (std::is_same<typename RV::value_type,
                  index_type>::value,
                  "KokkosBlas::iamax: R must have the type of"
                  "the Xvectors size_type it is an output argument "

@@ -24,7 +24,7 @@ KOKKOSKERNELS_ADD_OPTION(
   ENABLE_THING
   ON
   BOOL
-  "Enable a thing in the configuration"
+  "Enable a thing in the configuration. Default: ON"
 )
 ````
 When running CMake, this will look for a user-provided cache variable `KokkosKernels_ENABLE_THING`.

@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -256,61 +257,14 @@ class MemoryPool {
 
   //--------------------------------------------------------------------------
 
-#ifdef KOKKOS_CUDA_9_DEFAULTED_BUG_WORKAROUND
-  KOKKOS_INLINE_FUNCTION MemoryPool(MemoryPool &&rhs)
-      : m_tracker(std::move(rhs.m_tracker)),
-        m_sb_state_array(std::move(rhs.m_sb_state_array)),
-        m_sb_state_size(std::move(rhs.m_sb_state_size)),
-        m_sb_size_lg2(std::move(rhs.m_sb_size_lg2)),
-        m_max_block_size_lg2(std::move(rhs.m_max_block_size_lg2)),
-        m_min_block_size_lg2(std::move(rhs.m_min_block_size_lg2)),
-        m_sb_count(std::move(rhs.m_sb_count)),
-        m_hint_offset(std::move(rhs.m_hint_offset)),
-        m_data_offset(std::move(rhs.m_data_offset)) {}
-  KOKKOS_INLINE_FUNCTION MemoryPool(const MemoryPool &rhs)
-      : m_tracker(rhs.m_tracker),
-        m_sb_state_array(rhs.m_sb_state_array),
-        m_sb_state_size(rhs.m_sb_state_size),
-        m_sb_size_lg2(rhs.m_sb_size_lg2),
-        m_max_block_size_lg2(rhs.m_max_block_size_lg2),
-        m_min_block_size_lg2(rhs.m_min_block_size_lg2),
-        m_sb_count(rhs.m_sb_count),
-        m_hint_offset(rhs.m_hint_offset),
-        m_data_offset(rhs.m_data_offset) {}
-  KOKKOS_INLINE_FUNCTION MemoryPool &operator=(MemoryPool &&rhs) {
-    m_tracker            = std::move(rhs.m_tracker);
-    m_sb_state_array     = std::move(rhs.m_sb_state_array);
-    m_sb_state_size      = std::move(rhs.m_sb_state_size);
-    m_sb_size_lg2        = std::move(rhs.m_sb_size_lg2);
-    m_max_block_size_lg2 = std::move(rhs.m_max_block_size_lg2);
-    m_min_block_size_lg2 = std::move(rhs.m_min_block_size_lg2);
-    m_sb_count           = std::move(rhs.m_sb_count);
-    m_hint_offset        = std::move(rhs.m_hint_offset);
-    m_data_offset        = std::move(rhs.m_data_offset);
-    return *this;
-  }
-  KOKKOS_INLINE_FUNCTION MemoryPool &operator=(const MemoryPool &rhs) {
-    m_tracker            = rhs.m_tracker;
-    m_sb_state_array     = rhs.m_sb_state_array;
-    m_sb_state_size      = rhs.m_sb_state_size;
-    m_sb_size_lg2        = rhs.m_sb_size_lg2;
-    m_max_block_size_lg2 = rhs.m_max_block_size_lg2;
-    m_min_block_size_lg2 = rhs.m_min_block_size_lg2;
-    m_sb_count           = rhs.m_sb_count;
-    m_hint_offset        = rhs.m_hint_offset;
-    m_data_offset        = rhs.m_data_offset;
-    return *this;
-  }
-#else
-  KOKKOS_INLINE_FUNCTION MemoryPool(MemoryPool &&)      = default;
-  KOKKOS_INLINE_FUNCTION MemoryPool(const MemoryPool &) = default;
-  KOKKOS_INLINE_FUNCTION MemoryPool &operator=(MemoryPool &&) = default;
-  KOKKOS_INLINE_FUNCTION MemoryPool &operator=(const MemoryPool &) = default;
-#endif
+  KOKKOS_DEFAULTED_FUNCTION MemoryPool(MemoryPool &&)      = default;
+  KOKKOS_DEFAULTED_FUNCTION MemoryPool(const MemoryPool &) = default;
+  KOKKOS_DEFAULTED_FUNCTION MemoryPool &operator=(MemoryPool &&) = default;
+  KOKKOS_DEFAULTED_FUNCTION MemoryPool &operator=(const MemoryPool &) = default;
 
   KOKKOS_INLINE_FUNCTION MemoryPool()
       : m_tracker(),
-        m_sb_state_array(0),
+        m_sb_state_array(nullptr),
         m_sb_state_size(0),
         m_sb_size_lg2(0),
         m_max_block_size_lg2(0),
@@ -338,7 +292,7 @@ class MemoryPool {
              const size_t min_total_alloc_size, size_t min_block_alloc_size = 0,
              size_t max_block_alloc_size = 0, size_t min_superblock_size = 0)
       : m_tracker(),
-        m_sb_state_array(0),
+        m_sb_state_array(nullptr),
         m_sb_state_size(0),
         m_sb_size_lg2(0),
         m_max_block_size_lg2(0),
@@ -546,9 +500,9 @@ class MemoryPool {
           "allocation size");
     }
 
-    if (0 == alloc_size) return (void *)0;
+    if (0 == alloc_size) return nullptr;
 
-    void *p = 0;
+    void *p = nullptr;
 
     const uint32_t block_size_lg2 = get_block_size_lg2(alloc_size);
 
@@ -589,7 +543,7 @@ class MemoryPool {
 
     int32_t sb_id = -1;
 
-    volatile uint32_t *sb_state_array = 0;
+    volatile uint32_t *sb_state_array = nullptr;
 
     while (attempt_limit) {
       int32_t hint_sb_id = -1;
@@ -783,7 +737,7 @@ class MemoryPool {
    */
   KOKKOS_INLINE_FUNCTION
   void deallocate(void *p, size_t /* alloc_size */) const noexcept {
-    if (0 == p) return;
+    if (nullptr == p) return;
 
     // Determine which superblock and block
     const ptrdiff_t d =

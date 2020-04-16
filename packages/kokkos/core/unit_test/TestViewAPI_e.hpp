@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -203,13 +204,13 @@ TEST(TEST_CATEGORY, anonymous_space) { test_anonymous_space(); }
 template <class ExecSpace>
 struct TestViewOverloadResolution {
   // Overload based on value_type and rank
-  static int foo(Kokkos::View<const double**, ExecSpace> a) { return 1; }
-  static int foo(Kokkos::View<const int**, ExecSpace> a) { return 2; }
-  static int foo(Kokkos::View<const double***, ExecSpace> a) { return 3; }
+  static int foo(Kokkos::View<const double**, ExecSpace> /*a*/) { return 1; }
+  static int foo(Kokkos::View<const int**, ExecSpace> /*a*/) { return 2; }
+  static int foo(Kokkos::View<const double***, ExecSpace> /*a*/) { return 3; }
 
   // Overload based on compile time dimensions
-  static int bar(Kokkos::View<double * [3], ExecSpace> a) { return 4; }
-  static int bar(Kokkos::View<double * [4], ExecSpace> a) { return 5; }
+  static int bar(Kokkos::View<double * [3], ExecSpace> /*a*/) { return 4; }
+  static int bar(Kokkos::View<double * [4], ExecSpace> /*a*/) { return 5; }
 
   static void test_function_overload() {
     Kokkos::View<double**, typename ExecSpace::execution_space::array_layout,
@@ -239,3 +240,5 @@ TEST(TEST_CATEGORY, view_overload_resolution) {
   TestViewOverloadResolution<TEST_EXECSPACE>::test_function_overload();
 }
 }  // namespace Test
+
+#include <TestViewIsAssignable.hpp>
