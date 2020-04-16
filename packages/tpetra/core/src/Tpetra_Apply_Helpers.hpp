@@ -72,6 +72,7 @@ namespace Tpetra {
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero();
 
     // FIXME: Does not work for replicated Y's
+    // FIXME: Pointer aliasing of X and Y doesn't work, unless you only alias the last Y
 
     size_type N = Matrices.size();
     if(N==0) return;
@@ -153,7 +154,7 @@ namespace Tpetra {
     else {
       /* Non-batching path */
       for(size_type i=0; i<N; i++) {
-        Matrices[i]->apply(X,*Y[i]);
+        Matrices[i]->apply(X,*Y[i],Teuchos::NO_TRANS, alpha, beta);
       }
     }
   }
