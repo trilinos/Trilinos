@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_ForwardEuler, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_ForwardEuler, AppAction)
 {
-  testExplicitRKAppAction("RK Forward Euler", out, success);
+  testRKAppAction("RK Forward Euler", out, success);
 }
 
 

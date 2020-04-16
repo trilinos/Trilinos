@@ -110,16 +110,6 @@
 
 namespace MueLu {
 
-  template<class ViewType, class execution_space = typename ViewType::execution_space>
-  void kokkos_reverse(ViewType v) {    
-    //    typedef typename Space::execution_space execution_space;
-    int N = (int)v.extent(0);
-    Kokkos::parallel_for("MueLu::Kokkos_reverse::reverse",
-                         Kokkos::RangePolicy<execution_space>(0,N/2),
-                         KOKKOS_LAMBDA(const int & i){
-                           std::swap(v[i],v[N-1-1]);
-                         });    
-  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -654,7 +644,7 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
+  Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
     using local_matrix_type = typename Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type;
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
@@ -679,7 +669,7 @@ namespace MueLu {
   }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
+  Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
     using local_matrix_type = typename Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type;
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
@@ -705,25 +695,25 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >
-  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReverseCuthillMcKee(Matrix &Op) {
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReverseCuthillMcKee(const Matrix &Op) {
     return MueLu::ReverseCuthillMcKee<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Op);
   }
 
   template <class Node>
   Teuchos::RCP<Xpetra::Vector<int,int,int,Node> >  
-  Utilities_kokkos<double,int,int,Node>::ReverseCuthillMcKee(Matrix &Op) {
+  Utilities_kokkos<double,int,int,Node>::ReverseCuthillMcKee(const Matrix &Op) {
     return MueLu::ReverseCuthillMcKee<double,int,int,Node>(Op);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >
-  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CuthillMcKee(Matrix &Op) {
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CuthillMcKee(const Matrix &Op) {
     return MueLu::CuthillMcKee<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Op);
   }
 
   template <class Node>
   Teuchos::RCP<Xpetra::Vector<int,int,int,Node> >  
-  Utilities_kokkos<double,int,int,Node>::CuthillMcKee(Matrix &Op) {
+  Utilities_kokkos<double,int,int,Node>::CuthillMcKee(const Matrix &Op) {
     return MueLu::CuthillMcKee<double,int,int,Node>(Op);
   }
 

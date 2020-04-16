@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_Merson45, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_Merson45, AppAction)
 {
-  testExplicitRKAppAction("Merson 4(5) Pair", out, success);
+  testRKAppAction("Merson 4(5) Pair", out, success);
 }
 
 

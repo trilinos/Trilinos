@@ -269,20 +269,6 @@ public:
     }
   }
 
-  /// Set StepperRK member data from the ParameterList.
-  void setStepperERKValues(
-    Teuchos::RCP<StepperExplicitRK<Scalar> > stepper,
-    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
-  {
-    if (stepperPL != Teuchos::null) {
-      stepperPL->validateParametersAndSetDefaults(
-                                              *stepper->getValidParameters());
-      setStepperValues(stepper, stepperPL);
-      stepper->setUseEmbedded(
-        stepperPL->get<bool>("Use Embedded",stepper->getUseEmbeddedDefault()));
-    }
-  }
-
   /// Set solver from ParameterList.
   void setStepperSolverValues(
     Teuchos::RCP<StepperImplicit<Scalar> > stepper,

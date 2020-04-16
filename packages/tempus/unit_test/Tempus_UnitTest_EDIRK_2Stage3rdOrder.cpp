@@ -35,57 +35,15 @@ using Teuchos::getParametersFromXmlFile;
 
 using Tempus::StepperFactory;
 
-// Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
-
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, Construction)
+TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, Default_Construction)
 {
-  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-
-  // Default construction.
-  auto stepper = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>());
-  stepper->setModel(model);
-  stepper->initialize();
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-
-  // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
-  auto solver = rcp(new Thyra::NOXNonlinearSolver());
-  solver->setParameterList(Tempus::defaultSolverParameters());
-
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
-  bool zeroInitialGuess     = stepper->getZeroInitialGuess();
-
-  // Test the set functions.
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setUseEmbedded(useEmbedded);                stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-
-  // Full argument list construction.
-  stepper = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>(
-    model, obs, solver, useFSAL,
-    ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
+  testDIRKAccessorsFullConstruction("EDIRK 2 Stage 3rd order");
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, StepperFactory_Construction)
@@ -93,7 +51,14 @@ TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("EDIRK 2 Stage 3rd order", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, AppAction)
+{
+  testRKAppAction("EDIRK 2 Stage 3rd order", out, success);
+}
 
 
 } // namespace Tempus_Test

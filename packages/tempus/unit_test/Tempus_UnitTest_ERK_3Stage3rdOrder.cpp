@@ -42,7 +42,7 @@ TEUCHOS_UNIT_TEST(ERK_3Stage3rdOrder, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_3Stage3rdOrder, AppAction)
 {
-  testExplicitRKAppAction("RK Explicit 3 Stage 3rd order", out, success);
+  testRKAppAction("RK Explicit 3 Stage 3rd order", out, success);
 }
 
 

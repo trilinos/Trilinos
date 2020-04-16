@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(ERK_5Stage3rdOrderKandG, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_5Stage3rdOrderKandG, AppAction)
 {
-  testExplicitRKAppAction("RK Explicit 5 Stage 3rd order by Kinnmark and Gray", out, success);
+  testRKAppAction("RK Explicit 5 Stage 3rd order by Kinnmark and Gray", out, success);
 }
 
 
