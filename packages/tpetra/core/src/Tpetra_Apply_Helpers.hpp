@@ -45,10 +45,20 @@
 #include "Tpetra_Details_Profiling.hpp"
 
 namespace Tpetra {
-
-  /* Does multiply matrix "apply" calls in a single go.  This allows for removal
-     of duplicated communication. */
-
+  //! @name Methods performing multiple matrix-vector products at once
+  //@{
+  /// \brief Does multiply matrix apply() calls with a single X vector
+  ///
+  /// Computes Y[i] = Matrices[i] * X, for i=1,...,N
+  ///
+  /// This routine only communicates the interprocessor portions of X once,
+  /// if such a thing is possible (aka the ColMap's of the matrices match). 
+  ///
+  /// \param Matrices [in] - [std::vector|Teuchos::Array|Teuchos::ArrayRCP] of Tpetra::CrsMatrix objects.
+  ///                        These matrices can different numbers of rows. 
+  /// \param X [in]        - Tpetra::MultiVector or Tpetra::Vector object.
+  /// \param Y [out]       - [std::vector|Teuchos::Array|Teuchos::ArrayRCP] of Tpetra::MultiVector or Tpetra::Vector objects.
+  ///                        These must have the same number of vectors as X.
   template <class MatrixArray, class MultiVectorArray> 
   void batchedApply(const MatrixArray &Matrices, 
                     const typename std::remove_pointer<typename MultiVectorArray::value_type>::type &X,
@@ -158,8 +168,9 @@ namespace Tpetra {
       }
     }
   }
-  
+  //@}
 
 }// namespace Tpetra
 
 #endif // TPETRA_APPLY_HELPERS_HPP
+
