@@ -50,7 +50,9 @@ namespace Tpetra {
      of duplicated communication. */
 
   template <class MatrixArray, class MultiVectorArray> 
-  void batchedApply(const MatrixArray &Matrices, const MultiVectorArray &X, MultiVectorArray &Y) {
+  void batchedApply(const MatrixArray &Matrices, 
+                    const typename std::remove_pointer<typename MultiVectorArray::value_type>::type &X,
+                    MultiVectorArray &Y) {
     Tpetra::Details::ProfilingRegion regionImport ("Tpetra::batchedApply");
 
     using size_type   = typename MatrixArray::size_type;
@@ -64,6 +66,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp_const_cast;
 
+    const scalar_type ONE  = Teuchos::ScalarTraits<scalar_type>::one();
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero();
 
     size_type N = Matrices.size();
@@ -79,7 +82,7 @@ namespace Tpetra {
     RCP<const map_type> compare_colMap    = Matrices[0]->getColMap();
     RCP<const import_type> importer       = Matrices[0]->getGraph()->getImporter();
     bool can_batch = (importer.is_null() || N==1) ? false :true;
-      
+
     // Do the domain/column maps all match?
     for(size_type i=1; i<N && can_batch; i++) {
       if(&*Matrices[i]->getColMap()    != &*compare_colMap || 
@@ -88,12 +91,6 @@ namespace Tpetra {
       }
     }
 
-    // Do the input vectors match?
-    for(size_type i=1; i<N && can_batch; i++) {
-      if(&*X[i]->getMap() !=  &*X[0]->getMap())
-        can_batch=false;
-    }
-    
     if(can_batch) {
       // Batching path: Guarantees an existing importer and N>1
 
@@ -101,10 +98,10 @@ namespace Tpetra {
       RCP<const MV> X_colMap;
       {
         Tpetra::Details::ProfilingRegion regionImport ("Tpetra::batchedApply: Import");
-        RCP<MV> X_colMapNonConst = Matrices[0]->getColumnMapMultiVector(*X[0]);
+        RCP<MV> X_colMapNonConst = Matrices[0]->getColumnMapMultiVector(X);
 
         // Import from the domain Map MV to the column Map MV.
-        X_colMapNonConst->doImport(*X[0], *importer, INSERT);
+        X_colMapNonConst->doImport(X, *importer, INSERT);
         X_colMap = rcp_const_cast<const MV>(X_colMapNonConst);
       }
 
@@ -114,7 +111,7 @@ namespace Tpetra {
         // Temporary MV for doExport (if needed),
         RCP<MV> Y_rowMap = Matrices[i]->getRowMapMultiVector(*Y[i]);
         if (!exporter.is_null()) {
-          Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, ZERO, ZERO);
+          Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, ONE, ZERO);
        
            {
              Tpetra::Details::ProfilingRegion regionExport ("Tpetra::batchedApply: Export");             
@@ -127,11 +124,11 @@ namespace Tpetra {
           if (! Y[i]->isConstantStride() || X_colMap.getRawPtr() == Y[i]) {
             Y_rowMap = Matrices[i]->getRowMapMultiVector(*Y[i], true);
             
-            Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, ZERO, ZERO);
+            Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, ONE, ZERO);
             Tpetra::deep_copy(*Y[i], *Y_rowMap);
           }
           else {
-            Matrices[i]->localApply(*X_colMap, *Y[i], Teuchos::NO_TRANS, ZERO, ZERO);
+            Matrices[i]->localApply(*X_colMap, *Y[i], Teuchos::NO_TRANS, ONE, ZERO);
           }
         }        
       }
@@ -139,7 +136,7 @@ namespace Tpetra {
     else {
       // Non-batching path
       for(size_type i=0; i<N; i++) {
-        Matrices[i]->apply(*X[i],*Y[i]);
+        Matrices[i]->apply(X,*Y[i]);
       }
     }
 

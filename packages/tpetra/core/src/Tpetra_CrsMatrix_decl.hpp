@@ -843,7 +843,9 @@ namespace Tpetra {
 
     // This friend declaration allows for batching of apply calls
     template <class MatrixArray, class MultiVectorArray> 
-    friend void batchedApply(const MatrixArray &Matrices, const MultiVectorArray &X, MultiVectorArray &Y);
+    friend void batchedApply(const MatrixArray &Matrices, 
+                             const typename std::remove_pointer<typename MultiVectorArray::value_type>::type & X,
+                             MultiVectorArray &Y);
   public:
     //@}
     //! @name Methods for inserting, modifying, or removing entries
