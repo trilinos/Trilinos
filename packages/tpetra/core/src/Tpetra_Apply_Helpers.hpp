@@ -72,12 +72,6 @@ namespace Tpetra {
     size_type N = Matrices.size();
     if(N==0) return;
 
-#if 0
-    // Reference implementation
-    for(size_type i=0; i<N; i++) {
-      Matrices[i]->apply(*X[i],*Y[i]);
-    }
-#else
     RCP<const map_type> compare_domainMap = Matrices[0]->getDomainMap();
     RCP<const map_type> compare_colMap    = Matrices[0]->getColMap();
     RCP<const import_type> importer       = Matrices[0]->getGraph()->getImporter();
@@ -139,10 +133,6 @@ namespace Tpetra {
         Matrices[i]->apply(X,*Y[i]);
       }
     }
-
-
-
-#endif
   }
 
 
