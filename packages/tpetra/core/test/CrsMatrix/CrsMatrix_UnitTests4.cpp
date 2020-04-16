@@ -982,6 +982,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     Scalar ZERO = ST::zero(), ONE = ST::one();
+    Mag MT_ZERO = Teuchos::ScalarTraits<Mag>::zero();
     int nsize=100;
 
     /* Create the identity matrix, three rows per proc */
@@ -1001,7 +1002,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     /* Allocate multivectors */
     MV X(map,2), Y1a(map,2), Y1b(map,2), Y2a(map,2), Y2b(map,2), compare(map,2);
-    Array<Mag> norm(2), exact(2,ZERO);
+    Array<Mag> norm(2), exact(2,MT_ZERO);
     X.putScalar(ONE);
 
     // Do a std::vector version 
