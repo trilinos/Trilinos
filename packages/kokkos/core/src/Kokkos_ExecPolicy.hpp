@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -192,6 +193,7 @@ class RangePolicy : public Impl::PolicyTraits<Properties...> {
   inline void set(const ChunkSize& chunksize, Args... args) {
     m_granularity      = chunksize.value;
     m_granularity_mask = m_granularity - 1;
+    set(args...);
   }
 
  public:
@@ -209,8 +211,8 @@ class RangePolicy : public Impl::PolicyTraits<Properties...> {
  private:
   /** \brief finalize chunk_size if it was set to AUTO*/
   inline void set_auto_chunk_size() {
-    typename traits::index_type concurrency =
-        traits::execution_space::concurrency();
+    int64_t concurrency =
+        static_cast<int64_t>(traits::execution_space::concurrency());
     if (concurrency == 0) concurrency = 1;
 
     if (m_granularity > 0) {
@@ -218,12 +220,14 @@ class RangePolicy : public Impl::PolicyTraits<Properties...> {
         Kokkos::abort("RangePolicy blocking granularity must be power of two");
     }
 
-    member_type new_chunk_size = 1;
-    while (new_chunk_size * 100 * concurrency < m_end - m_begin)
+    int64_t new_chunk_size = 1;
+    while (new_chunk_size * 100 * concurrency <
+           static_cast<int64_t>(m_end - m_begin))
       new_chunk_size *= 2;
     if (new_chunk_size < 128) {
       new_chunk_size = 1;
-      while ((new_chunk_size * 40 * concurrency < m_end - m_begin) &&
+      while ((new_chunk_size * 40 * concurrency <
+              static_cast<int64_t>(m_end - m_begin)) &&
              (new_chunk_size < 128))
         new_chunk_size *= 2;
     }
@@ -482,7 +486,6 @@ struct ScratchRequest {
     level      = level_;
     per_team   = 0;
     per_thread = thread_value.value;
-    ;
   }
 
   inline ScratchRequest(const int& level_, const Impl::PerTeamValue& team_value,
@@ -490,7 +493,6 @@ struct ScratchRequest {
     level      = level_;
     per_team   = team_value.value;
     per_thread = thread_value.value;
-    ;
   }
 
   inline ScratchRequest(const int& level_,
@@ -499,7 +501,6 @@ struct ScratchRequest {
     level      = level_;
     per_team   = team_value.value;
     per_thread = thread_value.value;
-    ;
   }
 };
 

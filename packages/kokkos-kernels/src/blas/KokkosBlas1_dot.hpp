@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -93,31 +94,31 @@ dot (const XVector& x, const YVector& y)
   using dot_type =
     typename Kokkos::Details::InnerProductSpaceTraits<
       typename XVector::non_const_value_type>::dot_type;
-  // Some platforms, such as Mac Clang, seem to get poor accuracy with
-  // float and complex<float>.  Work around some Trilinos test
-  // failures by using a higher-precision type for intermediate dot
-  // product sums.
-  constexpr bool is_complex_float =
-    std::is_same<dot_type, Kokkos::complex<float>>::value;
-  constexpr bool is_real_float = std::is_same<dot_type, float>::value;
-  using result_type = typename std::conditional<is_complex_float,
-    Kokkos::complex<double>,
-    typename std::conditional<is_real_float,
-      double,
-      dot_type
-      >::type
-    >::type;
-  using RVector_Internal = Kokkos::View<result_type,
+  //result_type is usually just dot_type, except:
+  //  if dot_type is float, result_type is double
+  //  if dot_type is complex<float>, result_type is complex<double>
+  //These special cases are to maintain accuracy.
+  using result_type =
+    typename KokkosBlas::Impl::DotAccumulatingScalar<dot_type>::type;
+  using RVector_Internal = Kokkos::View<dot_type,
+    Kokkos::LayoutLeft,
+    Kokkos::HostSpace,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using RVector_Result = Kokkos::View<result_type,
     Kokkos::LayoutLeft,
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   result_type result {};
-  RVector_Internal R = RVector_Internal(&result);
+  RVector_Result R = RVector_Result(&result);
   XVector_Internal X = x;
   YVector_Internal Y = y;
 
-  Impl::Dot<RVector_Internal,XVector_Internal,YVector_Internal>::dot (R,X,Y);
+  //Even though RVector is the template parameter, Dot::dot has an overload that
+  //accepts RVector_Internal (with the special accumulator, if dot_type is 32-bit precision).
+  //Impl::Dot needs to support both cases, and it's easier to do this with overloading than
+  //by extending the ETI to deal with two different scalar types.
+  Impl::DotSpecialAccumulator<RVector_Internal,XVector_Internal,YVector_Internal>::dot(R,X,Y);
   Kokkos::fence();
   // mfh 22 Jan 2020: We need the line below because
   // Kokkos::complex<T> lacks a constructor that takes a
@@ -162,7 +163,7 @@ dot (const RV& R, const XMV& X, const YMV& Y,
                  "X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::dot: "
                  "Y is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+  static_assert (std::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                  "KokkosBlas::dot: R is const.  "
                  "It must be nonconst, because it is an output argument "

@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -47,32 +48,65 @@
 #ifdef HAVE_MKL
 #include <mkl.h>
 
-template<typename AType, typename XType, typename YType>
-void mkl_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
+template<typename Scalar>
+void mkl_matvec_wrapper<Scalar>(
+    int numRows, int numCols, int nnz,
+    Scalar* values, int* rowptrs, int* entries,
+    Scalar* x, Scalar* y)
+{
+  throw std::runtime_error("Can't use cuSPARSE mat-vec for scalar types other than double and float.");
+}
 
+template<>
+void mkl_matvec_wrapper<double>(
+    int numRows, int numCols, int nnz,
+    double* values, int* rowptrs, int* entries,
+    double* x, double* y)
+{
   double s_a = 1.0;
   double s_b = 0.0;
-
   char matdescra[6] = "GLNC0";
   char transa = 'N';
-  int m = A.numRows();
-  int n = x.extent(1);
-  int k = A.numCols();
-  double* x_ptr = (double*)x.data();
-  double* y_ptr = (double*)y.data();
-
   mkl_dcsrmv(&transa,
-             &m, &k,
+             &numRows, &numCols,
              &s_a,
              matdescra,
-             A.values.data(),
-             A.graph.entries.data(),
-             (int*) &A.graph.row_map(0),
-             (int*) &A.graph.row_map(1),
-             x_ptr,
+             values, entries, rowptrs, rowptrs + 1,
+             x,
              &s_b,
-             y_ptr);
+             y);
+}
+
+template<>
+void mkl_matvec_wrapper<float>(
+    int numRows, int numCols, int nnz,
+    float* values, int* rowptrs, int* entries,
+    float* x, float* y)
+{
+  float s_a = 1.0;
+  float s_b = 0.0;
+  char matdescra[6] = "GLNC0";
+  char transa = 'N';
+  mkl_scsrmv(&transa,
+             &numRows, &numCols,
+             &s_a,
+             matdescra,
+             values, entries, rowptrs, rowptrs + 1,
+             x,
+             &s_b,
+             y);
+}
+
+template<typename AType, typename XType, typename YType>
+void mkl_matvec(AType A, XType x, YType y) {
+  typedef AType::non_const_value_type Scalar;
+  mkl_matvec_wrapper<Scalar>(
+      A.cusparse_handle, A.cusparse_descr,
+      A.numRows(), A.numCols(), A.nnz(),
+      A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
+      x.data(), y.data());
 }
 #endif
 
 #endif /* MKL_SPMV_HPP_ */
+

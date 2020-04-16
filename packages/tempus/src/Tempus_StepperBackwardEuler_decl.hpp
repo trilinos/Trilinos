@@ -11,7 +11,10 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperBackwardEulerObserver.hpp"
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperBackwardEulerObserver.hpp"
+#endif
+#include "Tempus_StepperBackwardEulerAppAction.hpp"
 #include "Tempus_StepperOptimizationInterface.hpp"
 
 
@@ -24,9 +27,21 @@ namespace Tempus {
  *  solver (e.g., a non-linear solver, like NOX).
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for Backward Euler is simply,
- *   - Solve \f$\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0\f$ for \f$x_n\f$
- *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$
+ *  The single-timestep algorithm for Backward Euler is
+ *
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
+ *  \caption{Backward Euler}
+ *  \begin{algorithmic}[1]
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \State Compute the predictor (e.g., apply stepper to $x_n$).
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
+ *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *  \end{algorithmic}
+ *  \f}
  *
  *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
@@ -38,7 +53,7 @@ namespace Tempus {
  *    W = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
  *      + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n},
  *  \f]
- *  where \f$ \alpha \equiv frac{\partial \dot{x}_n(x_n) }{\partial x_n}, \f$
+ *  where \f$ \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n}, \f$
  *  and \f$ \beta \equiv \frac{\partial x_n}{\partial x_n} = 1\f$, and
  *  the time derivative for Backward Euler is
  *  \f[
@@ -62,11 +77,12 @@ public:
 
   /** \brief Default constructor.
    *
-   *  Requires subsequent setModel() and initialize()
+   *  Requires subsequent setModel(), setSolver() and initialize()
    *  calls before calling takeStep().
   */
   StepperBackwardEuler();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperBackwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -77,22 +93,38 @@ public:
     std::string ICConsistency,
     bool ICConsistencyCheck,
     bool zeroInitialGuess);
+#endif
+
+  /// Constructor
+  StepperBackwardEuler(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> >& stepperBEAppAction);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return stepperBEObserver_; }
+#endif
+
+    virtual void setAppAction(
+      Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> > appAction);
+
+    virtual Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> > getAppAction() const
+    { return stepperBEAppAction_; }
 
     /// Set the predictor
-    void setPredictor(std::string predictorType);
-    void setPredictor(Teuchos::RCP<Stepper<Scalar> > predictorStepper =
-      Teuchos::null);
+    void setPredictor(std::string predictorType = "None");
+    void setPredictor(Teuchos::RCP<Stepper<Scalar> > predictorStepper);
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -180,8 +212,11 @@ private:
 
 private:
 
-  Teuchos::RCP<Stepper<Scalar> >                      predictorStepper_;
+  Teuchos::RCP<Stepper<Scalar> >                       predictorStepper_;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
+#endif
+  Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> > stepperBEAppAction_;
 
 };
 

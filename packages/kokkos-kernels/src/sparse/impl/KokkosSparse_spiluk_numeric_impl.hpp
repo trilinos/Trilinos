@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -374,14 +375,18 @@ void iluk_numeric ( IlukHandle& thandle,
   using size_type       = typename IlukHandle::size_type;
   using nnz_lno_t       = typename IlukHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using HandleHostEntriesType   = typename IlukHandle::nnz_lno_view_t::HostMirror;
 
   size_type nlevels = thandle.get_num_levels();
   size_type nrows   = thandle.get_nrows();
 
   // Keep this as host View, create device version and copy to back to host
   HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
-  HandleHostEntriesType level_ptr_h = Kokkos::create_mirror_view(level_ptr);
+  //Make level_ptr_h a separate allocation, since it will be accessed on host
+  //between kernel launches. If a mirror were used and level_ptr is in UVM space,
+  //a fence would be required before each access since UVM views can share pages.
+  Kokkos::View<nnz_lno_t*, Kokkos::HostSpace> level_ptr_h(
+      Kokkos::ViewAllocateWithoutInitializing("Host level pointers"),
+      level_ptr.extent(0));
   Kokkos::deep_copy(level_ptr_h, level_ptr);
 
   HandleDeviceEntriesType level_idx = thandle.get_level_idx();

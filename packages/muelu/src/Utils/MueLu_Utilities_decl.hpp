@@ -141,6 +141,9 @@ namespace MueLu {
   template<typename SC,typename LO,typename GO,typename NO>
   RCP<Xpetra::MultiVector<SC, LO, GO, NO> >
   TpetraFEMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::FEMultiVector<SC, LO, GO, NO> >& Vtpetra);
+
+  template<typename SC,typename LO,typename GO,typename NO>
+  void leftRghtDofScalingWithinNode(const Xpetra::Matrix<SC,LO,GO,NO> & Atpetra, size_t blkSize, size_t nSweeps, Teuchos::ArrayRCP<SC> & rowScaling, Teuchos::ArrayRCP<SC> & colScaling);
 #endif
 
   /*!
@@ -953,6 +956,118 @@ namespace MueLu {
 
     RCP<XCrsMatrix> Atmp = rcp(new XTCrsMatrix(Atpetra));
     return rcp(new XCrsMatrixWrap(Atmp));
+  }
+
+  /*! \fn leftRghtDofScalingWithinNode
+    @brief Helper function computes 2k left/right matrix scaling coefficients for PDE system with k x k blocks
+
+    Heuristic algorithm computes rowScaling and colScaling so that one can effectively derive matrices
+    rowScalingMatrix and colScalingMatrix such that the abs(rowsums) and abs(colsums) of 
+
+              rowScalingMatrix * Amat * colScalingMatrix 
+
+    are roughly constant. If D = diag(rowScalingMatrix), then
+
+       D(i:blkSize:end) = rowScaling(i)   for i=1,..,blkSize .
+   
+    diag(colScalingMatrix) is defined analogously. This function only computes rowScaling/colScaling.
+    You will need to copy them into a tpetra vector to use tpetra functions such as leftScale() and rightScale()
+    via some kind of loop such as 
+
+    rghtScaleVec = Teuchos::rcp(new Tpetra::Vector<SC,LO,GO,NO>(tpetraMat->getColMap()));
+    rghtScaleData  = rghtScaleVec->getDataNonConst(0);
+    size_t itemp = 0;
+    for (size_t i = 0; i < tpetraMat->getColMap()->getNodeNumElements(); i++) {
+      rghtScaleData[i] = rghtDofPerNodeScale[itemp++];
+      if (itemp == blkSize) itemp = 0; 
+    }   
+    followed by tpetraMat->rightScale(*rghtScaleVec);
+
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void leftRghtDofScalingWithinNode(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Amat, size_t blkSize, size_t nSweeps, Teuchos::ArrayRCP<Scalar> & rowScaling, Teuchos::ArrayRCP<Scalar> & colScaling) { 
+
+     LocalOrdinal     nBlks = (Amat.getRowMap()->getNodeNumElements())/blkSize;
+  
+     Teuchos::ArrayRCP<Scalar>   rowScaleUpdate(blkSize);
+     Teuchos::ArrayRCP<Scalar>   colScaleUpdate(blkSize);
+  
+  
+     for (size_t i = 0; i < blkSize; i++) rowScaling[i] = 1.0;
+     for (size_t i = 0; i < blkSize; i++) colScaling[i] = 1.0;
+  
+     for (size_t k = 0; k < nSweeps; k++) {
+       LocalOrdinal row = 0;
+       for (size_t i = 0; i < blkSize; i++) rowScaleUpdate[i] = 0.0;
+  
+       for (LocalOrdinal i = 0; i < nBlks; i++) {
+         for (size_t j = 0; j < blkSize; j++) {
+           Teuchos::ArrayView<const LocalOrdinal> cols;
+           Teuchos::ArrayView<const Scalar> vals;
+           Amat.getLocalRowView(row, cols, vals);
+  
+           for (size_t kk = 0; kk < Teuchos::as<size_t>(vals.size()); kk++) {
+             size_t modGuy = (cols[kk]+1)%blkSize;
+             if (modGuy == 0) modGuy = blkSize;
+             modGuy--;
+             rowScaleUpdate[j] += rowScaling[j]*(Teuchos::ScalarTraits<Scalar>::magnitude(vals[kk]))*colScaling[modGuy];
+           }
+           row++;
+         }
+       }
+       // combine information across processors
+       Teuchos::ArrayRCP<Scalar>   tempUpdate(blkSize);
+       Teuchos::reduceAll(*(Amat.getRowMap()->getComm()), Teuchos::REDUCE_SUM, (LocalOrdinal) blkSize, rowScaleUpdate.getRawPtr(), tempUpdate.getRawPtr());
+       for (size_t i = 0; i < blkSize; i++) rowScaleUpdate[i] = tempUpdate[i];
+  
+       /* We want to scale by sqrt(1/rowScaleUpdate), but we'll         */
+       /* normalize things by the minimum rowScaleUpdate. That is, the  */
+       /* largest scaling is always one (as normalization is arbitrary).*/
+  
+       Scalar minUpdate = Teuchos::ScalarTraits<Scalar>::magnitude((rowScaleUpdate[0]/rowScaling[0])/rowScaling[0]);
+  
+       for (size_t i = 1; i < blkSize; i++) {
+          Scalar  temp = (rowScaleUpdate[i]/rowScaling[i])/rowScaling[i]; 
+          if ( Teuchos::ScalarTraits<Scalar>::magnitude(temp) < Teuchos::ScalarTraits<Scalar>::magnitude(minUpdate)) 
+            minUpdate = Teuchos::ScalarTraits<Scalar>::magnitude(temp);
+       }
+       for (size_t i = 0; i < blkSize; i++) rowScaling[i] *= sqrt(minUpdate / rowScaleUpdate[i]);
+  
+       row = 0;
+       for (size_t i = 0; i < blkSize; i++) colScaleUpdate[i] = 0.0;
+  
+       for (LocalOrdinal i = 0; i < nBlks; i++) {
+         for (size_t j = 0; j < blkSize; j++) {
+           Teuchos::ArrayView<const LocalOrdinal> cols;
+           Teuchos::ArrayView<const Scalar> vals;
+           Amat.getLocalRowView(row, cols, vals);
+           for (size_t kk = 0; kk < Teuchos::as<size_t>(vals.size()); kk++) {
+             size_t modGuy = (cols[kk]+1)%blkSize;
+             if (modGuy == 0) modGuy = blkSize;
+             modGuy--;
+             colScaleUpdate[modGuy] += colScaling[modGuy]* (Teuchos::ScalarTraits<Scalar>::magnitude(vals[kk])) *rowScaling[j];
+           }
+           row++;
+         }
+       }
+       Teuchos::reduceAll(*(Amat.getRowMap()->getComm()), Teuchos::REDUCE_SUM, (LocalOrdinal) blkSize, colScaleUpdate.getRawPtr(), tempUpdate.getRawPtr());
+       for (size_t i = 0; i < blkSize; i++) colScaleUpdate[i] = tempUpdate[i];
+  
+       /* We want to scale by sqrt(1/colScaleUpdate), but we'll         */
+       /* normalize things by the minimum colScaleUpdate. That is, the  */
+       /* largest scaling is always one (as normalization is arbitrary).*/
+  
+          
+       minUpdate = Teuchos::ScalarTraits<Scalar>::magnitude((colScaleUpdate[0]/colScaling[0])/colScaling[0]);
+  
+       for (size_t i = 1; i < blkSize; i++) {
+          Scalar  temp = (colScaleUpdate[i]/colScaling[i])/colScaling[i]; 
+          if ( Teuchos::ScalarTraits<Scalar>::magnitude(temp) < Teuchos::ScalarTraits<Scalar>::magnitude(minUpdate)) 
+            minUpdate = Teuchos::ScalarTraits<Scalar>::magnitude(temp);
+       }
+       for (size_t i = 0; i < blkSize; i++) colScaling[i] *= sqrt(minUpdate/colScaleUpdate[i]);
+     }
   }
 
   /*! \fn TpetraCrs_To_XpetraMatrix

@@ -2,10 +2,10 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
+//                        Kokkos v. 3.0
 //              Copyright (2019) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +23,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -97,36 +97,39 @@ struct _parse_impl {
 // backwards
 template <class T, ptrdiff_t... ExtentSpec>
 struct _parse_impl<
-    T*, Experimental::Extents<ExtentSpec...>,
+    T*, Kokkos::Experimental::Extents<ExtentSpec...>,
     typename std::enable_if<_all_remaining_extents_dynamic<T>::value>::type>
-    : _parse_impl<T, Experimental::Extents<Experimental::dynamic_extent,
-                                           ExtentSpec...>> {};
+    : _parse_impl<T, Kokkos::Experimental::Extents<
+                         Kokkos::Experimental::dynamic_extent, ExtentSpec...>> {
+};
 
 // int*(*[x])[y] should still work also (meaning int[][x][][y])
 template <class T, ptrdiff_t... ExtentSpec>
-struct _parse_impl<T*, Experimental::Extents<ExtentSpec...>,
-                   typename std::enable_if<
-                       not _all_remaining_extents_dynamic<T>::value>::type> {
+struct _parse_impl<
+    T*, Kokkos::Experimental::Extents<ExtentSpec...>,
+    typename std::enable_if<!_all_remaining_extents_dynamic<T>::value>::type> {
   using _next = Kokkos::Experimental::AppendExtent<
-      typename _parse_impl<T, Experimental::Extents<ExtentSpec...>, void>::type,
-      Experimental::dynamic_extent>;
+      typename _parse_impl<T, Kokkos::Experimental::Extents<ExtentSpec...>,
+                           void>::type,
+      Kokkos::Experimental::dynamic_extent>;
   using type = typename _next::type;
 };
 
 template <class T, ptrdiff_t... ExtentSpec, unsigned N>
-struct _parse_impl<T[N], Experimental::Extents<ExtentSpec...>, void>
-    : _parse_impl<T, Experimental::Extents<ExtentSpec...,
+struct _parse_impl<T[N], Kokkos::Experimental::Extents<ExtentSpec...>, void>
+    : _parse_impl<
+          T, Kokkos::Experimental::Extents<ExtentSpec...,
                                            ptrdiff_t(N)>  // TODO @pedantic this
                                                           // could be a
                                                           // narrowing cast
-                  > {};
+          > {};
 
 }  // end namespace _parse_view_extents_impl
 
 template <class DataType>
 struct ParseViewExtents {
   using type = typename _parse_view_extents_impl ::_parse_impl<
-      DataType, Experimental::Extents<>>::type;
+      DataType, Kokkos::Experimental::Extents<>>::type;
 };
 
 template <class ValueType, ptrdiff_t Ext>
@@ -135,7 +138,7 @@ struct ApplyExtent {
 };
 
 template <class ValueType>
-struct ApplyExtent<ValueType, Experimental::dynamic_extent> {
+struct ApplyExtent<ValueType, Kokkos::Experimental::dynamic_extent> {
   using type = ValueType*;
 };
 
@@ -150,15 +153,17 @@ struct ApplyExtent<ValueType*, Ext> {
 };
 
 template <class ValueType>
-struct ApplyExtent<ValueType*, Experimental::dynamic_extent> {
+struct ApplyExtent<ValueType*, Kokkos::Experimental::dynamic_extent> {
   using type =
-      typename ApplyExtent<ValueType, Experimental::dynamic_extent>::type*;
+      typename ApplyExtent<ValueType,
+                           Kokkos::Experimental::dynamic_extent>::type*;
 };
 
 template <class ValueType, unsigned N>
-struct ApplyExtent<ValueType[N], Experimental::dynamic_extent> {
+struct ApplyExtent<ValueType[N], Kokkos::Experimental::dynamic_extent> {
   using type =
-      typename ApplyExtent<ValueType, Experimental::dynamic_extent>::type[N];
+      typename ApplyExtent<ValueType,
+                           Kokkos::Experimental::dynamic_extent>::type[N];
 };
 
 }  // end namespace Impl

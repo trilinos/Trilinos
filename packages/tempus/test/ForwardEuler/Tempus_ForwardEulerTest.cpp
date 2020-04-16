@@ -38,16 +38,6 @@ using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
-#define TEST_VANDERPOL
-#define TEST_NUMBER_TIMESTEPS
-#define TEST_VARIABLE_TIMESTEPS
-
-
-#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
@@ -102,10 +92,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
     TEST_ASSERT(pass)
   }
 }
-#endif // TEST_PARAMETERLIST
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, ConstructingFromDefaults)
@@ -142,7 +130,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ConstructingFromDefaults)
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -198,10 +186,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.882508, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.570790, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
@@ -275,8 +261,10 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
       auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+        auto state = Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
@@ -322,10 +310,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
@@ -407,10 +393,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
 
 
-#ifdef TEST_NUMBER_TIMESTEPS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
@@ -455,10 +439,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
     // in the parameter list
     TEST_EQUALITY(numTimeSteps, integrator->getIndex());
 }
-#endif // TEST_NUMBER_TIMESTEPS
 
 
-#ifdef TEST_VARIABLE_TIMESTEPS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, Variable_TimeSteps)
@@ -548,7 +530,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Variable_TimeSteps)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), get_ele(*(x_ref), 0), 1.0e-12);
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), get_ele(*(x_ref), 1), 1.0e-12);
 }
-#endif // TEST_VARIABLE_TIMESTEPS
 
 
 } // namespace Tempus_Test

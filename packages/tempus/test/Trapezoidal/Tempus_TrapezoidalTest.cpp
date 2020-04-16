@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ConstructingFromDefaults)
   auto icSoln = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icSolnDot =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
-  auto icState = rcp(new Tempus::SolutionState<double>(icSoln,icSolnDot));
+  auto icState = Tempus::createSolutionStateX(icSoln,icSolnDot);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -287,8 +287,10 @@ TEUCHOS_UNIT_TEST(Trapezoidal, SinCos)
       auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+        auto state = Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);

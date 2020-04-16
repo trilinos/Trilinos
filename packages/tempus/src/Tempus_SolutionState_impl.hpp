@@ -36,6 +36,7 @@ SolutionState<Scalar>::SolutionState()
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
@@ -95,6 +96,7 @@ SolutionState<Scalar>::SolutionState(
     physicsState_ = Teuchos::rcp(new PhysicsState<Scalar> ());
   }
 }
+#endif
 
 
 template<class Scalar>
@@ -158,6 +160,7 @@ SolutionState<Scalar>::SolutionState(
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -172,6 +175,10 @@ SolutionState<Scalar>::SolutionState(
   metaData_ = metaData_nc_;
 
   MEB::InArgs<Scalar> inArgs = model->getNominalValues();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(inArgs.supports(MEB::IN_ARG_x) == false,
+    std::logic_error,
+    model->description() << "does not support an x solution vector!");
 
   // The solution vector, x, is required (usually).
   x_nc_ = rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgs.get_x());
@@ -215,6 +222,7 @@ SolutionState<Scalar>::SolutionState(
     physicsState_    = physicsState;
   }
 }
+#endif
 
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(const SolutionState<Scalar>& ss_)
@@ -456,6 +464,115 @@ void SolutionState<Scalar>::computeNorms(
   }
 }
 
+
+// Nonmember constructors.
+// ------------------------------------------------------------------------
+
+template<class Scalar>
+Teuchos::RCP<SolutionState<Scalar> > createSolutionStateX(
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot)
+{
+  std::cout << "Called non-const createSolutionStateX" << std::endl;
+  Teuchos::RCP<SolutionStateMetaData<Scalar> >
+    metaData_nc = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
+
+  Teuchos::RCP<StepperState<Scalar> >
+    stepperState_nc = Teuchos::rcp(new StepperState<Scalar>("Default"));
+
+  Teuchos::RCP<PhysicsState<Scalar> >
+    physicsState_nc = Teuchos::rcp(new PhysicsState<Scalar> ());
+
+  Teuchos::RCP<SolutionState<Scalar> > ss = rcp(new SolutionState<Scalar> (
+    metaData_nc, x, xdot, xdotdot, stepperState_nc, physicsState_nc));
+
+  return ss;
+}
+
+template<class Scalar>
+Teuchos::RCP<SolutionState<Scalar> > createSolutionStateX(
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot)
+{
+  std::cout << "Called const createSolutionStateX" << std::endl;
+  Teuchos::RCP<const SolutionStateMetaData<Scalar> >
+    metaData = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
+
+  Teuchos::RCP<const StepperState<Scalar> >
+    stepperState = Teuchos::rcp(new StepperState<Scalar>("Default"));
+
+  Teuchos::RCP<const PhysicsState<Scalar> >
+    physicsState = Teuchos::rcp(new PhysicsState<Scalar> ());
+
+  Teuchos::RCP<SolutionState<Scalar> > ss = rcp(new SolutionState<Scalar> (
+    metaData, x, xdot, xdotdot, stepperState, physicsState));
+
+  return ss;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<SolutionState<Scalar> > createSolutionStateME(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+  const Teuchos::RCP<PhysicsState<Scalar> >& physicsState)
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  using Teuchos::rcp_const_cast;
+
+  auto metaData_nc = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
+  metaData_nc->setSolutionStatus(Status::PASSED);
+
+  MEB::InArgs<Scalar> inArgs = model->getNominalValues();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(inArgs.supports(MEB::IN_ARG_x) == false,
+    std::logic_error,
+    model->description() << "does not support an x solution vector!");
+
+  // The solution vector, x, is required (usually).
+  auto x_nc = rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgs.get_x());
+
+  // The solution derivative, xdot, can be optional provided, based on
+  // application needs.  Here we will base it on "supports" IN_ARG_x_dot.
+  // Depending on the stepper used, a temporary xdot vector may be created
+  // within the Stepper, but not moved to the SolutionState.
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot_nc;
+  if (inArgs.supports(MEB::IN_ARG_x_dot)) {
+    xdot_nc = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x_dot());
+  } else {
+    xdot_nc = Teuchos::null;
+  }
+
+  // Similar as xdot.
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot_nc;
+  if (inArgs.supports(MEB::IN_ARG_x_dot_dot)) {
+    xdotdot_nc =
+      rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgs.get_x_dot_dot());
+  } else {
+    xdotdot_nc = Teuchos::null;
+  }
+
+  Teuchos::RCP<StepperState<Scalar> > stepperState_nc;
+  if (stepperState == Teuchos::null) {
+    stepperState_nc = Teuchos::rcp(new StepperState<Scalar> ()); // Use default
+  } else {
+    stepperState_nc = stepperState;
+  }
+
+  Teuchos::RCP<PhysicsState<Scalar> > physicsState_nc;
+  if (physicsState == Teuchos::null) {
+    physicsState_nc = Teuchos::rcp(new PhysicsState<Scalar> ()); // Use default
+  } else {
+    physicsState_nc = physicsState;
+  }
+
+  Teuchos::RCP<SolutionState<Scalar> > ss = rcp(new SolutionState<Scalar> (
+    metaData_nc, x_nc, xdot_nc, xdotdot_nc, stepperState_nc, physicsState_nc));
+
+  return ss;
+}
 
 } // namespace Tempus
 #endif // Tempus_SolutionState_impl_hpp

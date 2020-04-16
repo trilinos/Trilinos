@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -122,8 +123,6 @@ void graph_color_symbolic(
   gch->set_vertex_colors(colors_out);
 }
 
-
-
 template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
 void graph_color(
     KernelHandle *handle,
@@ -135,96 +134,6 @@ void graph_color(
 {
   graph_color_symbolic(handle, num_rows, num_cols, row_map, entries, is_symmetric);
 }
-
-
-// Distance 2 graph coloring -- serial only --
-// todo: move this over to the Distance2 handle
-template <class KernelHandle,
-          typename lno_row_view_t_, typename lno_nnz_view_t_,
-          typename lno_col_view_t_, typename lno_colnnz_view_t_>
-void graph_compute_distance2_color_serial(
-    KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t num_rows,
-    typename KernelHandle::nnz_lno_t num_cols,
-    lno_row_view_t_ row_map,
-    lno_nnz_view_t_ row_entries,
-    //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
-    lno_col_view_t_ col_map,
-    lno_colnnz_view_t_ col_entries)
-{
-
-  Kokkos::Impl::Timer timer;
-  typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
-
-  ColoringAlgorithm algorithm = gch->get_coloring_algo_type();
-
-  typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
-
-  // typedef typename Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>BaseGraphColoring;
-
-  int num_phases = 0;
-
-  switch (algorithm)
-  {
-    #if 0   // SERIAL shouldn't be in the d2 coloring function since you can get it from graph_color()
-    case COLORING_SERIAL:
-    {
-      color_view_type colors_out = color_view_type("Graph Colors", num_rows);
-      BaseGraphColoring gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
-      gc.d2_color_graph/*<lno_col_view_t_,lno_colnnz_view_t_>*/(colors_out, num_phases, num_cols, col_map, col_entries);
-      gch->set_num_phases(num_phases);
-      gch->set_vertex_colors(colors_out);
-      break;
-    }
-    #endif
-
-    // todo: Remove SERIAL Distance-2 Graph Coloring from this interface
-    //
-    case COLORING_SERIAL2:
-    {
-      color_view_type colors_out = color_view_type("Graph Colors", num_rows);
-      Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
-          gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
-      gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
-      gch->set_num_phases(num_phases);
-      gch->set_vertex_colors(colors_out);
-      break;
-    }
-
-    default:
-    {
-      color_view_type colors_out = color_view_type("Graph Colors", num_rows);
-      Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
-          gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
-      gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
-      gch->set_num_phases(num_phases);
-      gch->set_vertex_colors(colors_out);
-      break;
-    }
-  }
-
-  double coloring_time = timer.seconds();
-  gch->add_to_overall_coloring_time(coloring_time);
-  gch->set_coloring_time(coloring_time);
-}
-
-
-#if defined(KOKKOS_ENABLE_DEPRECATED_CODE)
-template <class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename lno_col_view_t_, typename lno_colnnz_view_t_>
-void d2_graph_color(KernelHandle *handle,
-                    typename KernelHandle::nnz_lno_t num_rows,
-                    typename KernelHandle::nnz_lno_t num_cols,
-                    lno_row_view_t_ row_map,
-                    lno_nnz_view_t_ row_entries,
-                    //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
-                    lno_col_view_t_ col_map,
-                    lno_colnnz_view_t_ col_entries)
-{
-    graph_compute_distance2_color_serial(handle, num_rows, num_cols, row_map, row_entries, col_map, col_entries);
-    std::cout << "Deprecation warning: d2_graph_color() will be replaced with graph_compute_distance2_color_serial()" << std::endl;
-}
-#endif
-
 
 }  // end namespace Experimental
 }  // end namespace KokkosGraph

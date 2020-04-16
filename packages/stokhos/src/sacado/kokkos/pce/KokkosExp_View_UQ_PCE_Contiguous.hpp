@@ -540,7 +540,7 @@ void deep_copy( const View<DT,DP...> & dst ,
   else {
 
     // If views are in the same memory space, copy component-wise
-    if ( Impl::is_same< typename dst_type::memory_space ,
+    if ( std::is_same< typename dst_type::memory_space ,
                         typename src_type::memory_space >::value ) {
       Experimental::Impl::DeepCopyNonContiguous< dst_type , src_type >( dst , src );
     }
