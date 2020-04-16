@@ -54,6 +54,10 @@ namespace Tpetra {
   /// This routine only communicates the interprocessor portions of X once,
   /// if such a thing is possible (aka the ColMap's of the matrices match). 
   ///
+  /// If the Y's are replicated this will not use the reduced communication path.
+  ///
+  /// If X is aliased to any Y but the last one, this routine will throw
+  ///
   /// \param Matrices [in] - [std::vector|Teuchos::Array|Teuchos::ArrayRCP] of Tpetra::CrsMatrix objects.
   ///                        These matrices can different numbers of rows. 
   /// \param X [in]        - Tpetra::MultiVector or Tpetra::Vector object.
@@ -81,16 +85,28 @@ namespace Tpetra {
     const scalar_type ONE  = Teuchos::ScalarTraits<scalar_type>::one();
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero();
 
-    // FIXME: Does not work for replicated Y's
-    // FIXME: Pointer aliasing of X and Y doesn't work, unless you only alias the last Y
-
     size_type N = Matrices.size();
     if(N==0) return;
+    int numRanks = X.getMap()->getComm()->getSize();
 
+    // If X is aliased to any Y but the last one, throw
+    for(size_type i=0; i<N-1; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION( &X == Y[i], std::runtime_error, "Tpetra::batchedApply(): X cannot be aliased to any Y except the final one.");
+    }
+
+    /* Checks for whether the reduced communication path can be used */
     RCP<const map_type> compare_domainMap = Matrices[0]->getDomainMap();
     RCP<const map_type> compare_colMap    = Matrices[0]->getColMap();
     RCP<const import_type> importer       = Matrices[0]->getGraph()->getImporter();
     bool can_batch = (importer.is_null() || N==1) ? false :true;
+
+    // We can't batch with replicated Y's
+    if(numRanks > 1) {
+      for(size_type i=0; i<N && can_batch; i++) {
+        if(!Y[i]->isDistributed())
+          can_batch = false;
+      }
+    }
 
     // Do the domain/column maps all match?
     for(size_type i=1; i<N && can_batch; i++) {
