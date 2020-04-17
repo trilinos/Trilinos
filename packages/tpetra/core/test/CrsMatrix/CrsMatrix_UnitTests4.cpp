@@ -980,6 +980,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     using range_policy = Kokkos::RangePolicy<typename Node::device_type::execution_space>;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    int numRanks = comm->getSize();
 
     Scalar ZERO = ST::zero(), ONE = ST::one();
     Mag MT_ZERO = Teuchos::ScalarTraits<Mag>::zero();
@@ -1030,6 +1031,43 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       compare.norm1(norm());
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
       else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+    }
+
+    // Do a std::vector version w/ a nice combination of options
+    std::vector<Scalar> alpha = {ONE+ONE, ONE, ZERO};
+    std::vector<Scalar> beta  = {ONE+ONE, ONE, ZERO};
+    for(int i=0; i<(int)alpha.size(); i++) {
+      for(int j=0; j<(int)beta.size(); j++) {
+        Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
+        Y1a.putScalar(ZERO);Y1b.putScalar(ZERO);
+        Y2a.putScalar(ZERO);Y2b.putScalar(ZERO);
+        
+        std::vector<MAT*> matrices = {A1.get(),A2.get()};
+        std::vector<MV*>  outvec   = {&Y1b,&Y2b};
+        
+        // Comparison guy
+        A1->apply(X,Y1a,Teuchos::NO_TRANS,alpha[i],beta[j]);
+        A2->apply(X,Y2a,Teuchos::NO_TRANS,alpha[i],beta[j]);
+      
+        // Apply Helpers
+        Tpetra::batchedApply(matrices,X,outvec,alpha[i],beta[j],params);
+      
+        // Check to make sure this guy decided we can batch appropriately
+        bool did_we_batch = params->get<bool>("can batch");
+        bool should_we_batch = (numRanks>1)?true:false;
+        TEST_EQUALITY(did_we_batch,should_we_batch);
+        
+        // Compare
+        compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
+        compare.norm1(norm());
+        if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
+        else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+        
+        compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
+        compare.norm1(norm());
+        if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
+        else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      }
     }
 
     // Teuchos::Array version

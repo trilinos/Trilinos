@@ -49,7 +49,7 @@ namespace Tpetra {
   //@{
   /// \brief Does multiply matrix apply() calls with a single X vector
   ///
-  /// Computes Y[i] = Matrices[i] * X, for i=1,...,N
+  /// Computes Y[i] = beta*Y[i] + alpha * Matrices[i] * X, for i=1,...,N
   ///
   /// This routine only communicates the interprocessor portions of X once,
   /// if such a thing is possible (aka the ColMap's of the matrices match). 
@@ -63,13 +63,21 @@ namespace Tpetra {
   /// \param X [in]        - Tpetra::MultiVector or Tpetra::Vector object.
   /// \param Y [out]       - [std::vector|Teuchos::Array|Teuchos::ArrayRCP] of Tpetra::MultiVector or Tpetra::Vector objects.
   ///                        These must have the same number of vectors as X.
+  /// \param alpha [in]    - alpha parameter.  Defaults to one.
+  /// \param beta [in]    -  beta parameter.  Defaults to zero.
+  /// \param params [in/out] - The "can batch" parameter can either be unset, be true or be false on input.  If it is unset,
+  ///                        maps will be checked with isSameAs() for compatibility.  If true, the map check will be skipped and batching 
+  ///                        will be used if none of the cheap checks fail.  If false, batching will not be used.  This parameter will
+  ///                        be set on output to either true or false depending on if batching was used during this call. Defaults to NULL.
+
   template <class MatrixArray, class MultiVectorArray> 
   void batchedApply(const MatrixArray &Matrices, 
                     const typename std::remove_pointer<typename MultiVectorArray::value_type>::type &X,
                     MultiVectorArray &Y,
                     typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type alpha = Teuchos::ScalarTraits< typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type>::one(),
-                    typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type beta  = Teuchos::ScalarTraits< typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type>::zero() ) {
-    Tpetra::Details::ProfilingRegion regionImport ("Tpetra::batchedApply");
+                    typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type beta  = Teuchos::ScalarTraits< typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type>::zero(),
+                    Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::null) {
+    Tpetra::Details::ProfilingRegion regionTotal ("Tpetra::batchedApply");
 
     using size_type   = typename MatrixArray::size_type;
     using matrix_type = typename std::remove_pointer<typename MatrixArray::value_type>::type;
@@ -95,11 +103,19 @@ namespace Tpetra {
     }
 
     /* Checks for whether the reduced communication path can be used */
-    RCP<const map_type> compare_domainMap = Matrices[0]->getDomainMap();
     RCP<const map_type> compare_colMap    = Matrices[0]->getColMap();
     RCP<const import_type> importer       = Matrices[0]->getGraph()->getImporter();
-    bool can_batch = (importer.is_null() || N==1) ? false :true;
 
+    
+    bool can_batch, check_maps;
+    if(params.is_null() || !params->isParameter("can batch")) {
+      can_batch  = (importer.is_null() || N==1) ? false :true;
+      check_maps = true;
+    }
+    else {
+      can_batch  = (!params->get<bool>("can batch") || importer.is_null() || N==1) ? false : true;
+      check_maps = false;
+    }
     // We can't batch with replicated Y's
     if(numRanks > 1) {
       for(size_type i=0; i<N && can_batch; i++) {
@@ -109,9 +125,8 @@ namespace Tpetra {
     }
 
     // Do the domain/column maps all match?
-    for(size_type i=1; i<N && can_batch; i++) {
-      if(&*Matrices[i]->getColMap()    != &*compare_colMap || 
-         &*Matrices[i]->getDomainMap() != &*compare_domainMap){
+    for(size_type i=1; i<N && check_maps && can_batch; i++) {
+      if(!Matrices[i]->getColMap()->isSameAs(*compare_colMap)) {
         can_batch=false;
       }
     }
@@ -126,6 +141,7 @@ namespace Tpetra {
         } else if (beta != ONE) {
           for(size_type i=0; i<N; i++) Y[i]->scale(beta);
         }
+        if(!params.is_null()) params->set("can batch",true);
         return;
       }
       
@@ -176,12 +192,14 @@ namespace Tpetra {
           }
         }        
       }
+      if(!params.is_null()) params->set("can batch",true);
     } 
     else {
       /* Non-batching path */
       for(size_type i=0; i<N; i++) {
         Matrices[i]->apply(X,*Y[i],Teuchos::NO_TRANS, alpha, beta);
       }
+      if(!params.is_null()) params->set("can batch",false);
     }
   }
   //@}
