@@ -892,10 +892,34 @@ namespace MueLu {
 
 
 
-  /*! Removes the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublists from inList
-    and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level
-    for which non-serializable data was provided.
-    */
+  /*!
+  \bfief Extract non-serializable data from level-specific sublist and move to separate parameter list
+
+  Look through the level-specific sublists form \c inList, extract non-serializable data and move it to \c nonSerialList.
+  Everything else is copied to the \c serialList.
+
+  \note Data is considered "non-serializable" if it is not the same on every rank/processor.
+
+  Non-serializable data to be moved:
+  - Operator "A"
+  - Prolongator "P"
+  - Restrictor "R"
+  - "M"
+  - "Mdiag"
+  - "K"
+  - Nullspace information "Nullspace"
+  - Coordinate information "Coordinates"
+  - "Node Comm"
+  - Primal-to-dual node mapping "DualNodeID2PrimalNodeID"
+  - "pcoarsen: element to node map
+
+  @param[in] inList List with all input parameters/data as provided by the user
+  @param[out] serialList All serializable data from the input list
+  @param[out] nonSerialList All non-serializable, i.e. rank-specific data form the input list
+
+  @return This function returns the level number of the highest level for which non-serializable data was provided.
+
+  */
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
 
 
