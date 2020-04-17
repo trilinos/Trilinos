@@ -664,7 +664,7 @@ struct throw_no_matrix_support_exception {
       return handle_solver_matrix_and_type_support<Cholmod,Matrix,Vector>::apply(A, X, B);
 #endif
 
-#ifdef HAVE_AMESOS2_CUSOLVER
+#if defined (HAVE_AMESOS2_CUSOLVER) && defined (HAVE_AMESOS2_CUSPARSE)
     if(solverName == "amesos2_cusolver" || solverName == "cusolver")
       return handle_solver_matrix_and_type_support<cuSOLVER,Matrix,Vector>::apply(A, X, B);
 #endif
