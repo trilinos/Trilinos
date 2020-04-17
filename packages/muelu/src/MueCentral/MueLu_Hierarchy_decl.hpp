@@ -305,7 +305,7 @@ namespace MueLu {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const; 
+    std::string description() const;
 
     /*! @brief Print the Hierarchy with some verbosity level to a FancyOStream object.
 
@@ -335,7 +335,7 @@ namespace MueLu {
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
 
-    //! force recreation of cached description_ next time description() is called: 
+    //! force recreation of cached description_ next time description() is called:
     void ResetDescription() {
       description_ = "";
     }
@@ -394,7 +394,7 @@ namespace MueLu {
 
     /*!
     @brief Graph dumping
-    
+
     If enabled, we dump the graph on a specified level into a specified file
     */
     bool isDumpingEnabled_;
@@ -410,7 +410,7 @@ namespace MueLu {
     //! Caching (Multi)Vectors used in Hierarchy::Iterate()
     int sizeOfAllocatedLevelMultiVectors_;
     Array<RCP<MultiVector> > residual_, coarseRhs_, coarseX_, coarseImport_, coarseExport_, correction_;
-    
+
 
   }; //class Hierarchy
 
