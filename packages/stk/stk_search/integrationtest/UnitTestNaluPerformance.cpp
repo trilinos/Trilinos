@@ -34,7 +34,7 @@
 
 #include <gtest/gtest.h>
 #include <unit_tests/UnitTestUtils.hpp>
-#include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
+#include "MeshUtilsForBoundingVolumes.hpp"
 #include <stk_unit_test_utils/getOption.h>
 
 namespace
@@ -77,7 +77,7 @@ struct Options
      std::string mSphereFile;
      std::string mVolumeFile;
      bool mCommunicateRangeBoxes;
-     NewSearchMethod mSearchMethod;
+     stk::search::SearchMethod mSearchMethod;
      bool mSpheresFirstThenBoxes;
      bool mTestToGetGoldResults;
 
@@ -103,7 +103,7 @@ struct Options
      void setSearchMethod()
      {
          std::string optionString = "-method";
-         mSearchMethod = KDTREE;
+         mSearchMethod = stk::search::KDTREE;
          std::string searchString = stk::unit_test_util::get_option(optionString, "gtk");
          if ( searchString != "gtk" && searchString != "kdtree")
          {
@@ -165,7 +165,7 @@ void printOptions(const Options& options)
         std::cerr << "Sphere file: " << options.mSphereFile << std::endl;
         std::cerr << "Volume file: " << options.mVolumeFile << std::endl;
         std::cerr << "Search Method: ";
-        if (options.mSearchMethod == KDTREE )
+        if (options.mSearchMethod == stk::search::KDTREE )
         {
             std::cerr << "KDTREE" << std::endl;
         }
@@ -193,11 +193,11 @@ TEST(NaluPerformance, BoxSphereIntersections)
 
     if ( options.mSpheresFirstThenBoxes )
     {
-        stk::search::coarse_search(spheres, domainBoxes, mapSearchMethodToStk(options.mSearchMethod), comm, searchResults, options.mCommunicateRangeBoxes);
+        stk::search::coarse_search(spheres, domainBoxes, options.mSearchMethod, comm, searchResults, options.mCommunicateRangeBoxes);
     }
     else
     {
-        stk::search::coarse_search(domainBoxes, spheres, mapSearchMethodToStk(options.mSearchMethod), comm, searchResults, options.mCommunicateRangeBoxes);
+        stk::search::coarse_search(domainBoxes, spheres, options.mSearchMethod, comm, searchResults, options.mCommunicateRangeBoxes);
     }
 
     double elapsedTime = stk::wall_time() - startTime;
@@ -262,11 +262,11 @@ TEST(NaluPerformance, BoxBoxIntersections)
 
     if ( options.mSpheresFirstThenBoxes )
     {
-        coarse_search_new(spheres, domainBoxes, options.mSearchMethod, comm, searchResults);
+        stk::search::coarse_search(spheres, domainBoxes, options.mSearchMethod, comm, searchResults);
     }
     else
     {
-        coarse_search_new(domainBoxes, spheres, options.mSearchMethod, comm, searchResults);
+        stk::search::coarse_search(domainBoxes, spheres, options.mSearchMethod, comm, searchResults);
     }
 
     double elapsedTime = stk::wall_time() - startTime;
