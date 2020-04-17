@@ -45,3 +45,14 @@ function atdm_match_any_keyword() {
 
   return 1
 }
+
+
+function atdm_match_buildname_keyword() {
+  keyword=$1
+  atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" ${keyword}
+}
+
+
+function atdm_match_any_buildname_keyword() {
+  atdm_match_any_keyword "$ATDM_CONFIG_BUILD_NAME" $@
+}
