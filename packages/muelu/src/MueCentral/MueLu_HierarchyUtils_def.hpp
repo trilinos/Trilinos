@@ -94,7 +94,7 @@ namespace MueLu {
           const std::string& name = it2->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
-                                     name != "Node Comm" &&
+                                     name != "Node Comm" && name != "DualNodeID2PrimalNodeID" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type(") + name + ")");
 
@@ -131,7 +131,11 @@ namespace MueLu {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<const Teuchos::Comm<int> > >(it2->second), NoFactory::get());
           }
-
+          else if(name == "DualNodeID2PrimalNodeID")
+          {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP<std::map<LO, LO>>>(it2->second), NoFactory::get());
+          }
 #ifdef HAVE_MUELU_INTREPID2
           else if (name == "pcoarsen: element to node map")
           {
@@ -187,7 +191,7 @@ namespace MueLu {
           const std::string& name = it2->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R"  && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" && 
-                                     name != "Node Comm" &&
+                                     name != "Node Comm" && name != "DualNodeID2PrimalNodeID" &&
                                      !IsParamValidVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type (") + name + ")");
           if( name == "P" || name == "R" || name == "K" || name == "M") {
@@ -209,6 +213,11 @@ namespace MueLu {
           else if(name == "Node Comm") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<const Teuchos::Comm<int> > >(it2->second), NoFactory::get());
+          }
+          else if(name == "DualNodeID2PrimalNodeID")
+          {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP<std::map<LO, LO>>>(it2->second), NoFactory::get());
           }
 #ifdef HAVE_MUELU_INTREPID2
           else if (name == "pcoarsen: element to node map")
