@@ -37,7 +37,7 @@ fi
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module load sems-intel/18.0.0
     module load sems-openmpi/1.10.5
-    module load sems-netcdf/4.4.1/exo_parallel
+    module load sems-netcdf/4.7.3/parallel
     module load sems-parmetis/4.0.3/64bit_parallel
     module load sems-scotch/6.0.3/nopthread_64bit_parallel
     module load sems-superlu/5.2.1/base

@@ -3,7 +3,7 @@
 
 echo "Using my custom SEMS RHEL6 env for compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
-if [[ "${ATDM_CONFIG_COMPILER}" != "GNU" ]] ; then 
+if [[ "${ATDM_CONFIG_COMPILER}" != "GNU" ]] ; then
   echo "ATDM_CONFIG_COMPILER=${ATDM_CONFIG_COMPILER} not supported!  Only 'gnu' supported currently!"
 fi
 
@@ -18,11 +18,11 @@ module load sems-ninja_fortran/1.8.2
 
 module load sems-gcc/7.2.0
 module load sems-openmpi/1.10.1
-module load sems-netcdf/4.4.1/exo_parallel
-module load sems-hdf5/1.8.12/parallel
+module load sems-netcdf/4.7.3/parallel
+module load sems-hdf5/1.10.6/parallel
 module load sems-zlib/1.2.8/base
 module load sems-boost/1.59.0/base
-module unload sems-python/2.7.9 
+module unload sems-python/2.7.9
 module load sems-superlu/4.3/base
 
 # 2) Set up env vars that will get picked up by ATDMDevEnvSettings.cmake when
