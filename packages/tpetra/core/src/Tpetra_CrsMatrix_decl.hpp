@@ -848,7 +848,7 @@ namespace Tpetra {
                              MultiVectorArray &Y,
                              typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type alpha,
                              typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type beta,
-                             Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::null);
+                             Teuchos::RCP<Teuchos::ParameterList> params);
   public:
     //@}
     //! @name Methods for inserting, modifying, or removing entries
