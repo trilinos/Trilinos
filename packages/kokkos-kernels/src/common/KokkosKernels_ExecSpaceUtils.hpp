@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -57,31 +58,31 @@ template <typename ExecutionSpace>
 inline ExecSpaceType kk_get_exec_space_type(){
   ExecSpaceType exec_space = Exec_SERIAL;
 #if defined( KOKKOS_ENABLE_SERIAL )
-  if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
+  if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
     exec_space = Exec_SERIAL;
   }
 #endif
 
 #if defined( KOKKOS_ENABLE_THREADS )
-  if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
+  if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
     exec_space =  Exec_PTHREADS;
   }
 #endif
 
 #if defined( KOKKOS_ENABLE_OPENMP )
-  if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+  if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
     exec_space = Exec_OMP;
   }
 #endif
 
 #if defined( KOKKOS_ENABLE_CUDA )
-  if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+  if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
     exec_space = Exec_CUDA;
   }
 #endif
 
 #if defined( KOKKOS_ENABLE_QTHREAD)
-  if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+  if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
     exec_space = Exec_QTHREADS;
   }
 #endif
@@ -134,6 +135,42 @@ inline int kk_get_suggested_team_size(const int vector_size, const ExecSpaceType
   else {
     return 1;
   }
+}
+
+// Taken from kokkos perf_test:
+// https://github.com/kokkos/kokkos/blob/3e51447871eaec53ac4adc94d4d5376b7345b360/core/perf_test/PerfTest_ExecSpacePartitioning.cpp#L7-L36
+namespace Experimental {
+
+template <class ExecSpace>
+struct SpaceInstance {
+  static ExecSpace create() { return ExecSpace(); }
+  static void destroy(ExecSpace&) {}
+  static bool overlap() { return false; }
+};
+
+#ifdef KOKKOS_ENABLE_CUDA
+template <>
+struct SpaceInstance<Kokkos::Cuda> {
+  static Kokkos::Cuda create() {
+    cudaStream_t stream;
+    cudaStreamCreate(&stream);
+    return Kokkos::Cuda(stream);
+  }
+  static void destroy(Kokkos::Cuda& space) {
+    cudaStream_t stream = space.cuda_stream();
+    cudaStreamDestroy(stream);
+  }
+  static bool overlap() {
+    bool value          = true;
+    auto local_rank_str = std::getenv("CUDA_LAUNCH_BLOCKING");
+    if (local_rank_str) {
+      value = (std::atoi(local_rank_str) == 0);
+    }
+    return value;
+  }
+};
+#endif
+
 }
 
 }

@@ -1,10 +1,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -22,10 +23,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -173,6 +174,9 @@ struct TestFind {
 
 }  // namespace Impl
 
+// MSVC reports a syntax error for this test.
+// WORKAROUND MSVC
+#ifndef _WIN32
 template <typename Device>
 void test_insert(uint32_t num_nodes, uint32_t num_inserts,
                  uint32_t num_duplicates, bool near) {
@@ -224,6 +228,7 @@ void test_insert(uint32_t num_nodes, uint32_t num_inserts,
     EXPECT_EQ(0u, map.size());
   }
 }
+#endif
 
 template <typename Device>
 void test_failed_insert(uint32_t num_nodes) {
@@ -290,12 +295,17 @@ void test_deep_copy(uint32_t num_nodes) {
   }
 }
 
+// FIXME_HIP deadlock
+#ifndef KOKKOS_ENABLE_HIP
+// WORKAROUND MSVC
+#ifndef _WIN32
 TEST(TEST_CATEGORY, UnorderedMap_insert) {
   for (int i = 0; i < 500; ++i) {
     test_insert<TEST_EXECSPACE>(100000, 90000, 100, true);
     test_insert<TEST_EXECSPACE>(100000, 90000, 100, false);
   }
 }
+#endif
 
 TEST(TEST_CATEGORY, UnorderedMap_failed_insert) {
   for (int i = 0; i < 1000; ++i) test_failed_insert<TEST_EXECSPACE>(10000);
@@ -303,6 +313,19 @@ TEST(TEST_CATEGORY, UnorderedMap_failed_insert) {
 
 TEST(TEST_CATEGORY, UnorderedMap_deep_copy) {
   for (int i = 0; i < 2; ++i) test_deep_copy<TEST_EXECSPACE>(10000);
+}
+#endif
+
+TEST(TEST_CATEGORY, UnorderedMap_valid_empty) {
+  using Key   = int;
+  using Value = int;
+  using Map   = Kokkos::UnorderedMap<Key, Value, TEST_EXECSPACE>;
+
+  Map m{};
+  Map n{};
+  n = Map{m.capacity()};
+  n.rehash(m.capacity());
+  Kokkos::deep_copy(n, m);
 }
 
 }  // namespace Test

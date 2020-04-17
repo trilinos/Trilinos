@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -42,17 +43,13 @@
 */
 #include <iostream>
 #include "KokkosKernels_config.h"
-#if defined(KOKKOSKERNELS_INST_DOUBLE) &&  \
-    defined(KOKKOSKERNELS_INST_OFFSET_INT) && \
-    defined(KOKKOSKERNELS_INST_ORDINAL_INT)
+#include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_multimem_spgemm.hpp"
 
-
-#define SIZE_TYPE int
-#define INDEX_TYPE int
-#define SCALAR_TYPE double
-//double
+typedef default_size_type size_type;
+typedef default_lno_t lno_t;
+typedef default_scalar scalar_t;
 
 void print_options(){
   std::cerr << "Options\n" << std::endl;
@@ -70,42 +67,52 @@ void print_options(){
   std::cerr << "\tVerbose Output: '--verbose'" << std::endl;
 }
 
+static char* getNextArg(int& i, int argc, char** argv)
+{
+  i++;
+  if(i >= argc)
+  {
+    std::cerr << "Error: expected additional command-line argument!\n";
+    exit(1);
+  }
+  return argv[i];
+}
 
 int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv){
   for ( int i = 1 ; i < argc ; ++i ) {
     if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
-      params.use_threads = atoi( argv[++i] );
+      params.use_threads = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
-      params.use_openmp = atoi( argv[++i] );
+      params.use_openmp = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
-      params.use_cuda = atoi( argv[++i] ) + 1;
+      params.use_cuda = atoi(getNextArg(i, argc, argv)) + 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
-      params.repeat = atoi( argv[++i] );
+      params.repeat = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--hashscale" ) ) {
-      params.minhashscale = atoi( argv[++i] );
+      params.minhashscale = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--chunksize" ) ) {
-      params.chunk_size = atoi( argv[++i] ) ;
+      params.chunk_size = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--teamsize" ) ) {
-      params.team_size = atoi( argv[++i] ) ;
+      params.team_size = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--vectorsize" ) ) {
-      params.vector_size  = atoi( argv[++i] ) ;
+      params.vector_size = atoi(getNextArg(i, argc, argv));
     }
 
     else if ( 0 == strcasecmp( argv[i] , "--compression2step" ) ) {
       params.compression2step =  true ;
     }
     else if ( 0 == strcasecmp( argv[i] , "--shmem" ) ) {
-      params.shmemsize =  atoi( argv[++i] ) ;
+      params.shmemsize = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--memspaces" ) ) {
-      int memspaces = atoi( argv[++i] ) ;
+      int memspaces = atoi(getNextArg(i, argc, argv));
       int memspaceinfo = memspaces;
       std::cout << "memspaceinfo:" << memspaceinfo << std::endl;
       if (memspaceinfo & 1){
@@ -149,19 +156,19 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.calculate_read_write_cost = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "--CIF" ) ) {
-      params.coloring_input_file = argv[++i];
+      params.coloring_input_file = getNextArg(i, argc, argv);
     }
     else if ( 0 == strcasecmp( argv[i] , "--COF" ) ) {
-      params.coloring_output_file = argv[++i];
+      params.coloring_output_file = getNextArg(i, argc, argv);
     }
     else if ( 0 == strcasecmp( argv[i] , "--CCO" ) ) {
         //if 0.85 set, if compression does not reduce flops by at least 15% symbolic will run on original matrix.
     	//otherwise, it will compress the graph and run symbolic on compressed one.
-      params.compression_cut_off = atof( argv[++i] ) ;
+      params.compression_cut_off = atof(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--FLHCO" ) ) {
     	//if linear probing is used as hash, what is the max occupancy percantage we allow in the hash.
-        params.first_level_hash_cut_off = atof( argv[++i] ) ;
+        params.first_level_hash_cut_off = atof(getNextArg(i, argc, argv));
     }
 
     else if ( 0 == strcasecmp( argv[i] , "--flop" ) ) {
@@ -173,11 +180,11 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     	//when mkl2 is run, the sort option to use.
     	//7:not to sort the output
     	//8:to sort the output
-        params.mkl_sort_option = atoi( argv[++i] ) ;
+        params.mkl_sort_option = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--mklkeepout" ) ) {
     	//mkl output is not kept.
-        params.mkl_keep_output = atoi( argv[++i] ) ;
+        params.mkl_keep_output = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--checkoutput" ) ) {
     	//check correctness
@@ -185,18 +192,18 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "--amtx" ) ) {
     	//A at C=AxB
-        params.a_mtx_bin_file = argv[++i];
+        params.a_mtx_bin_file = getNextArg(i, argc, argv);
     }
 
     else if ( 0 == strcasecmp( argv[i] , "--bmtx" ) ) {
     	//B at C=AxB.
     	//if not provided, C = AxA will be performed.
-    	params.b_mtx_bin_file = argv[++i];
+    	params.b_mtx_bin_file = getNextArg(i, argc, argv);
     }
     else if ( 0 == strcasecmp( argv[i] , "--cmtx" ) ) {
     	//if provided, C will be written to given file.
     	//has to have ".bin", or ".crs" extension.
-    	params.c_mtx_bin_file = argv[++i];
+    	params.c_mtx_bin_file = getNextArg(i, argc, argv);
     }
     else if ( 0 == strcasecmp( argv[i] , "--dynamic" ) ) {
     	//dynamic scheduling will be used for loops.
@@ -211,7 +218,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     	//this parameter overwrites this.
     	//with cache mode, or CPUs with smaller thread count, where memory bandwidth is not an issue,
     	//this cut-off can be increased to be more than 250,000
-        params.MaxColDenseAcc= atoi( argv[++i] ) ;
+        params.MaxColDenseAcc = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--verbose" ) ) {
     	//print the timing and information about the inner steps.
@@ -220,43 +227,43 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
         params.verbose = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "--algorithm" ) ) {
-      ++i;
+      char* algoStr = getNextArg(i, argc, argv);
 
-      if ( 0 == strcasecmp( argv[i] , "DEFAULT" ) ) {
+      if ( 0 == strcasecmp( algoStr, "DEFAULT" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_KK;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKDEFAULT" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "KKDEFAULT" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_KK;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKSPGEMM" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "KKSPGEMM" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_KK;
       }
 
-      else if ( 0 == strcasecmp( argv[i] , "KKMEM" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "KKMEM" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_KK_MEMORY;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKDENSE" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "KKDENSE" ) ) {
         params.algorithm =  KokkosSparse::SPGEMM_KK_DENSE;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKLP" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "KKLP" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_KK_LP;
       }
-      else if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "MKL" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_MKL;
       }
-      else if ( 0 == strcasecmp( argv[i] , "CUSPARSE" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "CUSPARSE" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_CUSPARSE;
       }
-      else if ( 0 == strcasecmp( argv[i] , "CUSP" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "CUSP" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_CUSP;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKDEBUG" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "KKDEBUG" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_KK_LP;
       }
-      else if ( 0 == strcasecmp( argv[i] , "MKL2" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "MKL2" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_MKL2PHASE;
       }
-      else if ( 0 == strcasecmp( argv[i] , "VIENNA" ) ) {
+      else if ( 0 == strcasecmp( algoStr, "VIENNA" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_VIENNA;
       }
 
@@ -297,18 +304,17 @@ int main (int argc, char ** argv){
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
   Kokkos::print_configuration(std::cout);
 
-
 #if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace>(
+    <size_type, lno_t, scalar_t, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace>(
         params
         );
 #else 
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
+    <size_type, lno_t, scalar_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
         params
         );
 #endif
@@ -319,45 +325,30 @@ int main (int argc, char ** argv){
   if (params.use_cuda) {
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
+    <size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
         params
         );
 #else
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(
+    <size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(
         params
         );
 
 #endif
   }
-#else 
+#endif
+
+#if defined( KOKKOS_ENABLE_SERIAL )
+  //If only serial is enabled (or no other device was specified), run with serial
+  if (!params.use_openmp && !params.use_cuda)
+  {
+    KokkosKernels::Experiment::run_multi_mem_spgemm
+    <size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace>(params);
+  }
 #endif
 
   Kokkos::finalize(); 
 
   return 0;
 }
-
-
-#else
-int main() {
-#if !defined(KOKKOSKERNELS_INST_DOUBLE)
-std::cout  << " not defined KOKKOSKERNELS_INST_DOUBLE"  << std::endl;
-#endif
-
-#if !defined(KOKKOSKERNELS_INST_OFFSET_INT)
-std::cout  << " not defined KOKKOSKERNELS_INST_OFFSET_INT"  << std::endl;
-
-#endif
-
-#if !defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-std::cout  << " not defined KOKKOSKERNELS_INST_ORDINAL_INT"  << std::endl;
-
-#endif
-}
-#endif
-
-
-
-
 
