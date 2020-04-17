@@ -61,9 +61,9 @@ RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, Globa
 {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  validParamList->set<RCP<const FactoryBase>>("A", null, "Generating factory of A");
-  validParamList->set<RCP<const FactoryBase>>("Aggregates", null, "Generating factory of the Aggregates (for block 0,0)");
-  validParamList->set<RCP<const FactoryBase>>("DualNodeID2PrimalNodeID", null, "Generating factory of the DualNodeID2PrimalNodeID map");
+  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of A");
+  validParamList->set<RCP<const FactoryBase>>("Aggregates", Teuchos::null, "Generating factory of the Aggregates (for block 0,0)");
+  validParamList->set<RCP<const FactoryBase>>("DualNodeID2PrimalNodeID", Teuchos::null, "Generating factory of the DualNodeID2PrimalNodeID map");
 
   validParamList->set<LocalOrdinal>("number of DOFs per dual node", Teuchos::ScalarTraits<LocalOrdinal>::one(), "Number of DOFs per dual node");
 
