@@ -221,7 +221,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
       state_->gradientVec->scale(state_->searchSize);
     }
     state_->gnorm = state_->gradientVec->norm()/std::min(fscale_,cscale_);
-    alobj.update(x,UPDATE_ACCEPT,state_->iter);
+    //alobj.update(x,UPDATE_ACCEPT,state_->iter);
 
     // Update evaluation counters
     state_->nfval += alobj.getNumberFunctionEvaluations();

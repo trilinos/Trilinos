@@ -283,7 +283,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     // Accept/reject step and update trust region radius
     if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS) || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
-      obj.update(x,UPDATE_REJECT,state_->iter);
+      obj.update(x,UPDATE_REVERT,state_->iter);
       if (interpRad_ && (rho < zero && TRflag_ != TRUtils::TRNAN)) {
         // Negative reduction, interpolate to find new trust-region radius
         state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,

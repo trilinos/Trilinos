@@ -202,7 +202,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
       state_->stepVec->axpy(-one,*state_->iterateVec);
       state_->snorm = state_->stepVec->norm();
       x.set(*state_->iterateVec);
-      obj.update(x,UPDATE_REJECT,state_->iter);
+      obj.update(x,UPDATE_REVERT,state_->iter);
       // Decrease trust-region radius
       state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
     }
@@ -242,7 +242,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
         TRflag_ = TRUtils::TRNAN;
         rho     = -one;
         x.set(*state_->iterateVec);
-        obj.update(x,UPDATE_REJECT,state_->iter);
+        obj.update(x,UPDATE_REVERT,state_->iter);
         // Decrease trust-region radius
         state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
       }

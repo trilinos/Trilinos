@@ -242,7 +242,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_G<Real>::run( Vector<Real>
     x.axpy(-one,*state_->iterateVec);
     state_->gnorm = x.norm();
     x.set(*state_->iterateVec);
-    alobj.update(x,UPDATE_ACCEPT,state_->iter);
+    //alobj.update(x,UPDATE_ACCEPT,state_->iter);
 
     // Update evaluation counters
     state_->nfval += alobj.getNumberFunctionEvaluations();

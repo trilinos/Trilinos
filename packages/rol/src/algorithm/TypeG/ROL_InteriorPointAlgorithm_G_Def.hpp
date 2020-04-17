@@ -130,10 +130,10 @@ void InteriorPointAlgorithm_G<Real>::updateState(const Vector<Real>           &x
     ipobj.update(x,UPDATE_INITIAL,state_->iter);
     con.update(x,UPDATE_INITIAL,state_->iter);
   }
-  else {
-    ipobj.update(x,UPDATE_ACCEPT,state_->iter);
-    con.update(x,UPDATE_ACCEPT,state_->iter);
-  }
+  //else {
+  //  ipobj.update(x,UPDATE_ACCEPT,state_->iter);
+  //  con.update(x,UPDATE_ACCEPT,state_->iter);
+  //}
   // Compute norm of the gradient of the Lagrangian
   state_->value = ipobj.getObjectiveValue(x, zerotol);
   //state_->gradientVec->set(*ipobj.getObjectiveGradient(x, zerotol));

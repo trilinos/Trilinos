@@ -74,11 +74,16 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class Objective {
+private:
+  Ptr<Vector<Real>> prim_, dual_;
+
 public:
 
   virtual ~Objective() {}
+
+  Objective() : prim_(nullPtr), dual_(nullPtr) {}
 
   /** \brief Update objective function. 
 
@@ -200,12 +205,12 @@ public:
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
       @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
-  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
-                                                         const Vector<Real> &d,
-                                                         const bool printToStream = true,
-                                                         std::ostream & outStream = std::cout,
-                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                                                         const int order = 1 ) {
+  virtual std::vector<std::vector<Real>> checkGradient( const Vector<Real> &x,
+                                                        const Vector<Real> &d,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
+                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                        const int order = 1 ) {
     return checkGradient(x, x.dual(), d, printToStream, outStream, numSteps, order);
   }
 
@@ -231,13 +236,13 @@ public:
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
       @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
-  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
-                                                         const Vector<Real> &g,
-                                                         const Vector<Real> &d,
-                                                         const bool printToStream = true,
-                                                         std::ostream & outStream = std::cout,
-                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                                                         const int order = 1 );
+  virtual std::vector<std::vector<Real>> checkGradient( const Vector<Real> &x,
+                                                        const Vector<Real> &g,
+                                                        const Vector<Real> &d,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
+                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                        const int order = 1 );
 
 
   /** \brief Finite-difference gradient check with specified step sizes.
@@ -260,12 +265,12 @@ public:
       @param[out]     outStream     is the output stream.
       @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
-  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
-                                                         const Vector<Real> &d,
-                                                         const std::vector<Real> &steps,
-                                                         const bool printToStream = true,
-                                                         std::ostream & outStream = std::cout,
-                                                         const int order = 1 ) {
+  virtual std::vector<std::vector<Real>> checkGradient( const Vector<Real> &x,
+                                                        const Vector<Real> &d,
+                                                        const std::vector<Real> &steps,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
+                                                        const int order = 1 ) {
 
     return checkGradient(x, x.dual(), d, steps, printToStream, outStream, order);
 
@@ -294,13 +299,13 @@ public:
       @param[out]     outStream     is the output stream.
       @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
-  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
-                                                         const Vector<Real> &g,
-                                                         const Vector<Real> &d,
-                                                         const std::vector<Real> &steps,
-                                                         const bool printToStream = true,
-                                                         std::ostream & outStream = std::cout,
-                                                         const int order = 1 );
+  virtual std::vector<std::vector<Real>> checkGradient( const Vector<Real> &x,
+                                                        const Vector<Real> &g,
+                                                        const Vector<Real> &d,
+                                                        const std::vector<Real> &steps,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
+                                                        const int order = 1 );
 
   /** \brief Finite-difference Hessian-applied-to-vector check.
 
@@ -322,12 +327,12 @@ public:
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
       @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
-  virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
-                                                        const Vector<Real> &v,
-                                                        const bool printToStream = true,
-                                                        std::ostream & outStream = std::cout,
-                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                                                        const int order = 1 ) {
+  virtual std::vector<std::vector<Real>> checkHessVec( const Vector<Real> &x,
+                                                       const Vector<Real> &v,
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                       const int order = 1 ) {
 
     return checkHessVec(x, x.dual(), v, printToStream, outStream, numSteps, order);
 
@@ -354,13 +359,13 @@ public:
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
       @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
-  virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
-                                                        const Vector<Real> &hv,
-                                                        const Vector<Real> &v,
-                                                        const bool printToStream = true,
-                                                        std::ostream & outStream = std::cout,
-                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                                                        const int order = 1) ;
+  virtual std::vector<std::vector<Real>> checkHessVec( const Vector<Real> &x,
+                                                       const Vector<Real> &hv,
+                                                       const Vector<Real> &v,
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                       const int order = 1) ;
 
 
   /** \brief Finite-difference Hessian-applied-to-vector check with specified step sizes.
@@ -383,12 +388,12 @@ public:
       @param[out]     outStream     is the output stream.
       @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
-  virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
-                                                        const Vector<Real> &v,
-                                                        const std::vector<Real> &steps,
-                                                        const bool printToStream = true,
-                                                        std::ostream & outStream = std::cout,
-                                                        const int order = 1 ) {
+  virtual std::vector<std::vector<Real>> checkHessVec( const Vector<Real> &x,
+                                                       const Vector<Real> &v,
+                                                       const std::vector<Real> &steps,
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int order = 1 ) {
 
     return checkHessVec(x, x.dual(), v, steps, printToStream, outStream, order);
 
@@ -415,13 +420,13 @@ public:
       @param[out]     outStream     is the output stream.
       @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
-  virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
-                                                        const Vector<Real> &hv,
-                                                        const Vector<Real> &v,
-                                                        const std::vector<Real> &steps,
-                                                        const bool printToStream = true,
-                                                        std::ostream & outStream = std::cout,
-                                                        const int order = 1) ;
+  virtual std::vector<std::vector<Real>> checkHessVec( const Vector<Real> &x,
+                                                       const Vector<Real> &hv,
+                                                       const Vector<Real> &v,
+                                                       const std::vector<Real> &steps,
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int order = 1) ;
 
 
   /** \brief Hessian symmetry check.

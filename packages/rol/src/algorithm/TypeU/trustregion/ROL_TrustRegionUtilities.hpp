@@ -125,7 +125,7 @@ inline Real initialRadius(int &nfval,
   xcp->scale(-alpha);
   Real gs = xcp->dot(g.dual());
   xcp->plus(x);
-  obj.update(*xcp,UPDATE_TRIAL);
+  obj.update(*xcp,UPDATE_TEMP);
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
   Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
   nfval++;

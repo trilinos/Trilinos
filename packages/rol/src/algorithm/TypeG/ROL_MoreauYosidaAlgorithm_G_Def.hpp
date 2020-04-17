@@ -127,10 +127,10 @@ void MoreauYosidaAlgorithm_G<Real>::updateState(const Vector<Real>          &x,
     myobj.update(x,UPDATE_INITIAL,state_->iter);
     con.update(x,UPDATE_INITIAL,state_->iter);
   }
-  else {
-    myobj.update(x,UPDATE_ACCEPT,state_->iter);
-    con.update(x,UPDATE_ACCEPT,state_->iter);
-  }
+  //else {
+  //  myobj.update(x,UPDATE_ACCEPT,state_->iter);
+  //  con.update(x,UPDATE_ACCEPT,state_->iter);
+  //}
   // Compute norm of the gradient of the Lagrangian
   state_->value = myobj.getObjectiveValue(x, zerotol);
   myobj.getObjectiveGradient(*state_->gradientVec, x, zerotol);

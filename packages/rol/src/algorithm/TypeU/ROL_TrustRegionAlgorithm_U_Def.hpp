@@ -215,7 +215,7 @@ std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &
     if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS)
         || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
-      obj.update(x,UPDATE_REJECT,state_->iter);
+      obj.update(x,UPDATE_REVERT,state_->iter);
       if (rho < zero && TRflag_ != TRUtils::TRNAN) {
         // Negative reduction, interpolate to find new trust-region radius
         state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
