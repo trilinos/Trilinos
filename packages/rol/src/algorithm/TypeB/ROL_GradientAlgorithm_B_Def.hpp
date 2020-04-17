@@ -133,7 +133,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
   Ptr<Vector<Real>> s = x.clone();
   Real ftrial(0), gs(0), ftrialP(0), alphaP(0), tol(std::sqrt(ROL_EPSILON<Real>()));
   int ls_nfval = 0;
-  bool incAlpha = false;
+  bool incAlpha = false, accept = true;
 
   // Output
   output.push_back(print(true));
@@ -142,6 +142,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
   // Compute steepest descent step
   state_->stepVec->set(state_->gradientVec->dual());
   while (status_->check(*state_)) {
+    accept = true;
     // Perform backtracking line search 
     if (!usePrevAlpha_ && !useAdapt_) state_->searchSize = alpha0_;
     state_->iterateVec->set(x);
@@ -200,11 +201,10 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
         state_->searchSize = alphaP;
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
-        // Final trial step failed
-        obj.update(*state_->iterateVec,UPDATE_REVERT);
         proj_->project(*state_->iterateVec,outStream);
         s->set(*state_->iterateVec);
         s->axpy(-one,x);
+        accept = false;
       }
     }
     else {
@@ -242,7 +242,8 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
     // Compute new value and gradient
     state_->iter++;
     state_->value = ftrial;
-    obj.update(x,UPDATE_ACCEPT,state_->iter);
+    if (accept) obj.update(x,UPDATE_ACCEPT,state_->iter);
+    else        obj.update(x,UPDATE_REVERT,state_->iter);
     obj.gradient(*state_->gradientVec,x,tol);
     state_->ngrad++;
 

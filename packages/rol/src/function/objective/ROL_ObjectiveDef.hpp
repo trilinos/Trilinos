@@ -52,7 +52,7 @@ namespace ROL {
 
 template<typename Real>
 Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol) {
-  if (dual_ == nullPtr) dual_ = g.clone();
+  if (dual_ == nullPtr) dual_ = x.dual().clone();
   gradient(*dual_,x,tol);
   return d.dot(dual_->dual());
   //Real dnorm = d.norm(), zero(0);
@@ -72,15 +72,17 @@ Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Re
 template<typename Real>
 void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
   if (prim_ == nullPtr) prim_ = x.clone();
+  if (basis_ == nullPtr) basis_ = x.clone();
 
   const Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), zero(0), one(1);
   Real f0 = value(x,tol), h(0), xi(0), gi(0);
   g.zero();
   for (int i = 0; i < x.dimension(); i++) {
-    xi = x.dot(*x.basis(i));
+    basis_->set(*x.basis(i));
+    xi = x.dot(*basis_);
     h  = cbrteps * std::max(std::abs(xi),one) * (xi < zero ? -one : one);
-    prim_->set(x); prim_->axpy(h,*x.basis(i));
-    h  = prim_->dot(*ei) - xi;
+    prim_->set(x); prim_->axpy(h,*basis_);
+    h  = prim_->dot(*basis_) - xi;
     update(*prim_,UPDATE_TEMP);
     gi = (value(*prim_,tol) - f0) / h;
     g.axpy(gi,*g.basis(i));

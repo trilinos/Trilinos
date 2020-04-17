@@ -48,8 +48,8 @@ namespace ROL {
 
 enum EUpdateType {
   UPDATE_INITIAL = 0, // Update has not been called before
-  UPDATE_ACCEPT,      // This is the new iterate, trial or revert was called before
-  UPDATE_REVERT,      // Revert to the previous iterate, trial was called before
+  UPDATE_ACCEPT,      // This is the new iterate, trial must be called before
+  UPDATE_REVERT,      // Revert to the previous iterate, trial must be called before
   UPDATE_TRIAL,       // This is a candidate for the next iterate
   UPDATE_TEMP         // For temporary uses including finite difference computations
 };
