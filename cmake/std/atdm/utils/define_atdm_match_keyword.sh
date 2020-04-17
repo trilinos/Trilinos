@@ -31,3 +31,17 @@ function atdm_match_keyword() {
   return 1
 
 }
+
+
+function atdm_match_any_keyword() {
+  input_string=$1 ; shift
+  keyword_array=$@
+
+  for keyword in ${keyword_array[@]} ; do
+    if atdm_match_keyword "${input_string}" ${keyword}; then
+      return 0
+    fi
+  done 
+
+  return 1
+}
