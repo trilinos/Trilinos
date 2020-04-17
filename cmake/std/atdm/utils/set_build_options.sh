@@ -80,7 +80,7 @@ fi
 if [[ "${ATDM_CONFIG_COMPILER}" != "DEFAULT" ]] ; then
   # Custom compile already set
   export ATDM_CONFIG_CUSTOM_COMPILER_SET=1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]]; then
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"default"* ]]; then
   export ATDM_CONFIG_COMPILER=DEFAULT
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-8.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-8.0
