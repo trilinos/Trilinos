@@ -893,7 +893,7 @@ namespace MueLu {
 
 
   /*!
-  \bfief Extract non-serializable data from level-specific sublist and move to separate parameter list
+  \brief Extract non-serializable data from level-specific sublists and move it to a separate parameter list
 
   Look through the level-specific sublists form \c inList, extract non-serializable data and move it to \c nonSerialList.
   Everything else is copied to the \c serialList.
@@ -915,7 +915,7 @@ namespace MueLu {
 
   @param[in] inList List with all input parameters/data as provided by the user
   @param[out] serialList All serializable data from the input list
-  @param[out] nonSerialList All non-serializable, i.e. rank-specific data form the input list
+  @param[out] nonSerialList All non-serializable, i.e. rank-specific data from the input list
 
   @return This function returns the level number of the highest level for which non-serializable data was provided.
 
