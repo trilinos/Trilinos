@@ -820,7 +820,6 @@ namespace
     int spaceDim = cellTopo.getDimension();
     // we do allow ordering to be different.  dofMapToDerived maps from standard field ordinal to the derived.
     // we use getDofCoords() to perform the mapping.
-    using ExecutionSpace         = typename DerivedNodalBasisFamily::Basis::ExecutionSpace;
     using ScalarViewType         = typename DerivedNodalBasisFamily::Basis::ScalarViewType;
     using OrdinalTypeArray1D     = typename DerivedNodalBasisFamily::Basis::OrdinalTypeArray1D;
     using OrdinalTypeArray1DHost = typename OrdinalTypeArray1D::HostMirror;
