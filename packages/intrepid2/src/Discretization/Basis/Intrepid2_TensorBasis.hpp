@@ -929,7 +929,7 @@ namespace Intrepid2
       
       if (!tensorPoints_)
       {
-        if ((input1_.rank() == 2) && (input2_.rank() == 2))
+        if ((input1_.rank() == 2) && (input2_.rank() == 2) && (input3_.rank() == 2))
         {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,numFields2_), [&] (const int& fieldOrdinal2) {
             for (int fieldOrdinal3=0; fieldOrdinal3 < numFields3_; fieldOrdinal3++)
@@ -970,7 +970,7 @@ namespace Intrepid2
               {
                 for (int d=0; d<spaceDim; d++)
                 {
-                  output_(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal,d);
+                  output_(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal,d) * input3_(fieldOrdinal3,pointOrdinal);
                 }
               }
             }
@@ -1000,7 +1000,7 @@ namespace Intrepid2
       }
       else
       {
-        if ((input1_.rank() == 2) && (input2_.rank() == 2))
+        if ((input1_.rank() == 2) && (input2_.rank() == 2) && (input3_.rank() == 2) )
         {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,numFields2_), [&] (const int& fieldOrdinal2) {
             for (int fieldOrdinal3=0; fieldOrdinal3 < numFields3_; fieldOrdinal3++)
@@ -1296,43 +1296,37 @@ namespace Intrepid2
       // copied from the 2-argument TensorBasis implementation:
       
       OutputViewType outputValues1, outputValues2, outputValues3;
-      if (outputValues.rank() == 2)
+
+      //Note: the gradient of HGRAD basis on a line has an output vector of rank 3, the last dimension being of size 1.
+      //      in particular this holds even when computing the divergence of an HDIV basis, which is scalar and has rank 2.
+      if ((spaceDim1 == 1) && (operatorType1 == OPERATOR_VALUE))
       {
+        // use a rank 2 container for basis1
         outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
+      }
+      else
+      {
+        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
+      }
+      if ((spaceDim2 == 1) && (operatorType2 == OPERATOR_VALUE))
+      {
+        // use a rank 2 container for basis2
         outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
+      }
+      else
+      {
+        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
+      }
+      if ((spaceDim3 == 1) && (operatorType3 == OPERATOR_VALUE))
+      {
+        // use a rank 2 container for basis2
         outputValues3 = getMatchingViewWithLabel(outputValues,"output values - basis 3",basisCardinality3,pointCount3);
       }
-      else if (outputValues.rank() == 3)
+      else
       {
-        if (spaceDim1 == 1)
-        {
-          // use a rank 2 container for basis1
-          outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
-        }
-        else
-        {
-          outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
-        }
-        if (spaceDim2 == 1)
-        {
-          // use a rank 2 container for basis2
-          outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
-        }
-        else
-        {
-          outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
-        }
-        if (spaceDim3 == 1)
-        {
-          // use a rank 2 container for basis2
-          outputValues3 = getMatchingViewWithLabel(outputValues,"output values - basis 3",basisCardinality3,pointCount3);
-        }
-        else
-        {
-          outputValues3 = getMatchingViewWithLabel(outputValues,"output values - basis 3",basisCardinality3,pointCount3,spaceDim3);
-        }
+        outputValues3 = getMatchingViewWithLabel(outputValues,"output values - basis 3",basisCardinality3,pointCount3,spaceDim3);
       }
-      
+
       basis1_.getValues(outputValues1,inputPoints1,operatorType1);
       basis2_.getValues(outputValues2,inputPoints2,operatorType2);
       basis3_.getValues(outputValues3,inputPoints3,operatorType3);
