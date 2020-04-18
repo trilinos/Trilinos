@@ -39,7 +39,8 @@ namespace stk {
 
 OptionsSpecification::OptionsSpecification(const std::string& usagePreamble_, unsigned lineLen)
  : usagePreamble(usagePreamble_), lineLength(lineLen), options(),
-   subOptionSpecs(), optionsPlusSubOptions()
+   subOptionSpecs(), optionsPlusSubOptions(),
+   errorOnUnrecognized(false)
 {
 }
 
@@ -49,7 +50,8 @@ OptionsSpecification::OptionsSpecification(const OptionsSpecification& spec)
    lineLength(spec.lineLength),
    options(spec.options),
    subOptionSpecs(spec.subOptionSpecs),
-   optionsPlusSubOptions(spec.optionsPlusSubOptions)
+   optionsPlusSubOptions(spec.optionsPlusSubOptions),
+   errorOnUnrecognized(spec.errorOnUnrecognized)
 {
 }
 
@@ -61,6 +63,7 @@ OptionsSpecification& OptionsSpecification::operator=(const OptionsSpecification
   options = spec.options;
   subOptionSpecs = spec.subOptionSpecs;
   optionsPlusSubOptions = spec.optionsPlusSubOptions;
+  errorOnUnrecognized = spec.errorOnUnrecognized;
   return *this;
 }
 
@@ -70,7 +73,8 @@ OptionsSpecification::OptionsSpecification(OptionsSpecification&& spec)
    lineLength(spec.lineLength),
    options(std::move(spec.options)),
    subOptionSpecs(std::move(spec.subOptionSpecs)),
-   optionsPlusSubOptions(std::move(spec.optionsPlusSubOptions))
+   optionsPlusSubOptions(std::move(spec.optionsPlusSubOptions)),
+   errorOnUnrecognized(spec.errorOnUnrecognized)
 {
 }
 
@@ -82,6 +86,7 @@ OptionsSpecification& OptionsSpecification::operator=(OptionsSpecification&& spe
    options = std::move(spec.options);
    subOptionSpecs = std::move(spec.subOptionSpecs);
    optionsPlusSubOptions = std::move(spec.optionsPlusSubOptions);
+   errorOnUnrecognized = spec.errorOnUnrecognized;
   return *this;
 }
 
@@ -120,7 +125,7 @@ const Option& OptionsSpecification::find_option(const std::string& nameOrAbbrev)
 size_t OptionsSpecification::get_num_positional_options() const {
   size_t numPositionalOptions = 0;
   for(const auto& option : options) {
-    if (option->position >= -1) {
+    if (option->position != INVALID_POSITION) {
       ++numPositionalOptions;
     }
   }
@@ -135,7 +140,7 @@ size_t OptionsSpecification::get_num_positional_options() const {
 const Option& OptionsSpecification::get_positional_option(int position) const
 {
   for(const auto& option : options) {
-    if (option->position == position || option->position == -1) {
+    if (option->position == position) {
       return *option;
     }
   }
