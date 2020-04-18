@@ -91,8 +91,8 @@ namespace Intrepid2 {
         if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_QUAD*>(basis)) {
             typename NodalBasisFamily<hostExecutionSpace>::HGRAD_QUAD hostBasis(order);
             init_HGRAD_QUAD(matData, &hostBasis);
-        } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_QUAD*>(basis)) {
-            typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HGRAD_QUAD hostBasis(order);
+        } else if(dynamic_cast<const typename DerivedNodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_QUAD*>(basis)) {
+            typename DerivedNodalBasisFamily<hostExecutionSpace>::HGRAD_QUAD hostBasis(order);
             init_HGRAD_QUAD(matData, &hostBasis);
         } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_QUAD*>(basis)) {
           typename HierarchicalBasisFamily<hostExecutionSpace>::HGRAD_QUAD hostBasis(order);
@@ -116,8 +116,8 @@ namespace Intrepid2 {
         if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_HEX*>(basis)) {
             typename NodalBasisFamily<hostExecutionSpace>::HGRAD_HEX hostBasis(order);
             init_HGRAD_HEX(matData, &hostBasis);
-        } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_HEX*>(basis)) {
-            typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HGRAD_HEX hostBasis(order);
+        } else if(dynamic_cast<const typename DerivedNodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_HEX*>(basis)) {
+            typename DerivedNodalBasisFamily<hostExecutionSpace>::HGRAD_HEX hostBasis(order);
             init_HGRAD_HEX(matData, &hostBasis);
         } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HGRAD_HEX*>(basis)) {
           typename HierarchicalBasisFamily<hostExecutionSpace>::HGRAD_HEX hostBasis(order);
@@ -180,8 +180,8 @@ namespace Intrepid2 {
       } else if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_QUAD*>(basis)) {
           typename NodalBasisFamily<hostExecutionSpace>::HCURL_QUAD hostBasis(order);
           init_HCURL_QUAD(matData, &hostBasis);
-      } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HCURL_QUAD*>(basis)) {
-          typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HCURL_QUAD hostBasis(order);
+      } else if(dynamic_cast<const typename DerivedNodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_QUAD*>(basis)) {
+          typename DerivedNodalBasisFamily<hostExecutionSpace>::HCURL_QUAD hostBasis(order);
           init_HCURL_QUAD(matData, &hostBasis);
       } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_QUAD*>(basis)) {
         typename HierarchicalBasisFamily<hostExecutionSpace>::HCURL_QUAD hostBasis(order);
@@ -204,8 +204,8 @@ namespace Intrepid2 {
       } else if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_HEX*>(basis)) {
           typename NodalBasisFamily<hostExecutionSpace>::HCURL_HEX hostBasis(order);
           init_HCURL_HEX(matData, &hostBasis);
-      } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HCURL_HEX*>(basis)) {
-          typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HCURL_HEX hostBasis(order);
+      } else if(dynamic_cast<const typename DerivedNodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_HEX*>(basis)) {
+          typename DerivedNodalBasisFamily<hostExecutionSpace>::HCURL_HEX hostBasis(order);
           init_HCURL_HEX(matData, &hostBasis);
       } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HCURL_HEX*>(basis)) {
         typename HierarchicalBasisFamily<hostExecutionSpace>::HCURL_HEX hostBasis(order);
@@ -267,8 +267,8 @@ namespace Intrepid2 {
       } else if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_QUAD*>(basis)) {
           typename NodalBasisFamily<hostExecutionSpace>::HDIV_QUAD hostBasis(order);
           init_HDIV_QUAD(matData, &hostBasis);
-      } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HDIV_QUAD*>(basis)) {
-          typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HDIV_QUAD hostBasis(order);
+      } else if(dynamic_cast<const typename DerivedNodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_QUAD*>(basis)) {
+          typename DerivedNodalBasisFamily<hostExecutionSpace>::HDIV_QUAD hostBasis(order);
           init_HDIV_QUAD(matData, &hostBasis);
       } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_QUAD*>(basis)) {
         typename HierarchicalBasisFamily<hostExecutionSpace>::HDIV_QUAD hostBasis(order);
@@ -290,8 +290,8 @@ namespace Intrepid2 {
       } else if(dynamic_cast<const typename NodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_HEX*>(basis)) {
           typename NodalBasisFamily<hostExecutionSpace>::HDIV_HEX hostBasis(order);
           init_HDIV_HEX(matData, &hostBasis);
-      } else if(dynamic_cast<const typename DerivedNodalBasisFamilyModified<ExecutionSpace, OutputValueType, PointValueType>::HDIV_HEX*>(basis)) {
-          typename DerivedNodalBasisFamilyModified<hostExecutionSpace>::HDIV_HEX hostBasis(order);
+      } else if(dynamic_cast<const typename DerivedNodalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_HEX*>(basis)) {
+          typename DerivedNodalBasisFamily<hostExecutionSpace>::HDIV_HEX hostBasis(order);
           init_HDIV_HEX(matData, &hostBasis);
       } else if(dynamic_cast<const typename HierarchicalBasisFamily<ExecutionSpace, OutputValueType, PointValueType>::HDIV_HEX*>(basis)) {
         typename HierarchicalBasisFamily<hostExecutionSpace>::HDIV_HEX hostBasis(order);
