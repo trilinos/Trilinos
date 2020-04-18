@@ -223,20 +223,39 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): refSubcellPoints dimension (0) does not match to paramPoints dimension(0).");
 #endif
 
+    if(!isSubcellParametrizationSet_)
+      setSubcellParametrization();
 
-    const ordinal_type cellDim = parentCell.getDimension();
-    const ordinal_type numPts  = paramPoints.extent(0);
+    INTREPID2_TEST_FOR_EXCEPTION( subcellDim != 1 &&
+                                  subcellDim != 2, std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): method defined only for 1 and 2-subcells");
+
 
     // Get the subcell map, i.e., the coefficients of the parametrization function for the subcell
-
-    // can i get this map from devices ?
     subcellParamViewType subcellMap;
     getSubcellParametrization( subcellMap,
                                subcellDim,
                                parentCell );
 
-    // subcell parameterization should be small computation (numPts is small) and it should be decorated with
-    // kokkos inline... let's not do this yet
+    // Apply the parametrization map to every point in parameter domain
+    mapToReferenceSubcell( refSubcellPoints, paramPoints, subcellMap, subcellDim, subcellOrd, parentCell.getDimension());
+  }
+
+
+  template<typename SpT>
+  template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
+           typename paramPointValueType, class ...paramPointProperties>
+  void
+  KOKKOS_INLINE_FUNCTION
+  CellTools<SpT>::
+  mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
+                         const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
+                         const subcellParamViewType subcellMap,
+                         const ordinal_type subcellDim,
+                         const ordinal_type subcellOrd,
+                         const ordinal_type parentCellDim ) {
+
+    const ordinal_type numPts  = paramPoints.extent(0);
 
     // Apply the parametrization map to every point in parameter domain
     switch (subcellDim) {
@@ -246,7 +265,7 @@ namespace Intrepid2 {
         const auto v = paramPoints(pt, 1);
 
         // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are affine!
-        for (ordinal_type i=0;i<cellDim;++i)
+        for (ordinal_type i=0;i<parentCellDim;++i)
           refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u +
                                                                      subcellMap(subcellOrd, i, 2)*v );
       }
@@ -255,16 +274,12 @@ namespace Intrepid2 {
     case 1: {
       for (ordinal_type pt=0;pt<numPts;++pt) {
         const auto u = paramPoints(pt, 0);
-        for (ordinal_type i=0;i<cellDim;++i)
+        for (ordinal_type i=0;i<parentCellDim;++i)
           refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u );
       }
       break;
     }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( subcellDim != 1 &&
-                                    subcellDim != 2, std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): method defined only for 1 and 2-subcells");
-    }
+    default: {}
     }
   }
 }
