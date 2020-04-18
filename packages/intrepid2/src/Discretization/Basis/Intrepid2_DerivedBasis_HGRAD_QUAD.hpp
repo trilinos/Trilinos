@@ -101,7 +101,7 @@ namespace Intrepid2
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const override {
-      return (this->getDegree() > 2);
+      return (this->getDofCount(1,0) > 1); //if it has more than 1 DOF per edge, than it needs orientations
     }
     
     using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;

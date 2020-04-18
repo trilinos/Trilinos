@@ -810,6 +810,12 @@ namespace Intrepid2
       return "Intrepid2_IntegratedLegendreBasis_HGRAD_TET";
     }
     
+    /** \brief True if orientation is required
+    */
+    virtual bool requireOrientation() const override {
+      return (this->getDegree() > 2);
+    }
+
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)

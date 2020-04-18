@@ -66,13 +66,19 @@ namespace Intrepid2
   :
   public Basis_TensorBasis<HVOL_LINE, HVOL_LINE>
   {
+    using LineBasis = HVOL_LINE;
+    using TensorBasis = Basis_TensorBasis<LineBasis,LineBasis>;
+
+  public:
+
+   using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;
+   using OutputValueType = typename HVOL_LINE::OutputValueType;
+   using PointValueType  = typename HVOL_LINE::PointValueType;
+
     using OutputViewType = typename HVOL_LINE::OutputViewType;
     using PointViewType  = typename HVOL_LINE::PointViewType ;
     using ScalarViewType = typename HVOL_LINE::ScalarViewType;
     
-    using LineBasis = HVOL_LINE;
-    using TensorBasis = Basis_TensorBasis<LineBasis,LineBasis>;
-  public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
@@ -89,6 +95,22 @@ namespace Intrepid2
         \param [in] polyOrder - the polynomial order to use in both dimensions.
      */
     Basis_Derived_HVOL_QUAD(int polyOrder) : Basis_Derived_HVOL_QUAD(polyOrder,polyOrder) {}
+    
+    /** \brief  Returns basis name
+
+        \return the name of the basis
+    */
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_DerivedBasis_HVOL_QUAD";
+    }
+
+    /** \brief True if orientation is required
+    */
+    virtual bool requireOrientation() const {
+      return false;
+    }
     
     using TensorBasis::getValues;
     
