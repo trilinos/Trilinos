@@ -62,6 +62,11 @@ public:
         add_flag("version,v", "display version information and exit");
     }
 
+    void disallow_unrecognized()
+    {
+      optionsSpec.set_error_on_unrecognized();
+    }
+
     void add_flag(const CommandLineOption &option)
     {
         add_flag(get_option_spec(option), option.description);

@@ -35,7 +35,7 @@
 #ifndef STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 #define STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 
-#include "UnitTestUtils.hpp"
+#include "unit_tests/UnitTestUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/ExodusTranslator.hpp"
 #include "stk_mesh/base/Field.hpp"
@@ -415,37 +415,6 @@ inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::stri
         unsigned id = bulk.identifier(node);
         FloatBox box(x-radius, y-radius, z-radius, x+radius, y+radius, z+radius);
         spheres[i] = std::make_pair(box, Ident(id, bulk.parallel_rank()));
-    }
-}
-
-template <typename Identifier>
-inline void do_kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
-{
-    stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, comm, searchResults);
-}
-
-enum NewSearchMethod { KDTREE };
-inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
-{
-    if ( method == KDTREE )
-    {
-      return stk::search::KDTREE;
-    }
-
-    ThrowRequireMsg(false, __FUNCTION__ << ", Unknown algorithm mysteriously specified");
-    return stk::search::KDTREE;
-}
-
-template <typename Identifier>
-inline void coarse_search_new(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
-{
-    if ( algorithm == KDTREE )
-    {
-        do_kdtree_search(local_domain, local_range, comm, searchResults);
-    }
-    else
-    {
-        throw("Invalid search algorithm: not supported.\n");
     }
 }
 

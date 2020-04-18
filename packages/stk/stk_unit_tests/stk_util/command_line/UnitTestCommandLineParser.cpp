@@ -248,4 +248,28 @@ TEST_F(TwoOptionsOnCommandLine, parseTwoOption_twoArgs)
     EXPECT_EQ(2, parser.get_option_value<int>("twoOpt"));
 }
 
+class DisallowUnrecognized : public ::testing::Test
+{
+protected:
+    static constexpr int argc = 5;
+    const char *argv[argc] = {"exeName", "positionalValue", "--mis-spelled-option", "value", "--option=2"};
+};
+
+TEST_F(DisallowUnrecognized, unrecognizedOption_returnParseError)
+{
+    stk::CommandLineParser parser;
+    parser.add_optional<std::string>({"option" ,"o", "an option"}, "default");
+    add_positional_argument(parser);
+    parser.disallow_unrecognized();
+    EXPECT_EQ(stk::CommandLineParser::ParseError, parser.parse(argc, argv));
+}
+
+TEST_F(DisallowUnrecognized, unrecognizedOption_ignore)
+{
+    stk::CommandLineParser parser;
+    parser.add_optional<std::string>({"option" ,"o", "an option"}, "default");
+    add_positional_argument(parser);
+    EXPECT_EQ(stk::CommandLineParser::ParseComplete, parser.parse(argc, argv));
+}
+
 }

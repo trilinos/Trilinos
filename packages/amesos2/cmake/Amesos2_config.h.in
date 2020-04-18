@@ -124,6 +124,9 @@
 /* Defined if you want to enable amesos2-MUMPS */
 #cmakedefine HAVE_AMESOS2_MUMPS
 
+/* Defined if you want to enable amesos2-cuSPARSE */
+#cmakedefine HAVE_AMESOS2_CUSPARSE
+
 /* Defined if you want to enable amesos2-cuSOLVER */
 #cmakedefine HAVE_AMESOS2_CUSOLVER
 
