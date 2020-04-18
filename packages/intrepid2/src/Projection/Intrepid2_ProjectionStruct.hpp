@@ -76,16 +76,30 @@ namespace Experimental {
 
     The created class is then used with the Projection Tools. See ProjectionTools class for more info.
  */
+
+ordinal_type
+KOKKOS_INLINE_FUNCTION
+range_size(const Kokkos::pair<ordinal_type, ordinal_type>& range) {
+  return range.second - range.first;
+}
+
 template<typename SpT, typename ValueType>
 class ProjectionStruct {
 public:
 
+  enum EvalPointsType {BASIS, TARGET};
+
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
   typedef Kokkos::DynRankView<ValueType,host_space_type> view_type;
-  typedef std::array<std::array<range_type, 12>,4> range_tag;
-  typedef std::array<std::array<view_type, 12>,4> view_tag;
-  typedef std::array<std::array<unsigned, 12>,4> key_tag;
+  typedef Kokkos::View<range_type**,host_space_type> range_tag;
+  static constexpr int numberSubCellDims = 4; //{0 for vertex, 1 for edges, 2 for faces, 3 for volumes}
+  //max of numVertices, numEdges, numFaces for a reference cell.
+  //12 is the number of edges in a Hexahderon.
+  //We'll need to change this if we consider generic polyhedra
+  static constexpr int maxSubCellsCount = 12;
+  typedef std::array<std::array<view_type, maxSubCellsCount>, numberSubCellDims> view_tag;
+  typedef Kokkos::View<unsigned**,host_space_type> key_tag;
 
   /** \brief  Returns number of basis evaluation points
    */
@@ -111,44 +125,30 @@ public:
     return numTargetDerivEvalPoints;
   }
 
-  /** \brief  Returns number of basis evaluation points on a subcell
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
+  /** \brief  Returns the maximum number of derivative evaluation points across all the subcells
+      \param  evalPointType [in] - enum selecting whether the points should be computed for the basis
+                               functions or for the target function
 
-      \return the number of basis evaluation points on the selected subcell
+      \return the maximum number of the derivative evaluation points across all the subcells
    */
-  ordinal_type getNumBasisEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return basisCubPoints[subCellDim][subCellId].extent(0);
+  ordinal_type getMaxNumDerivPoints(const EvalPointsType type) const {
+    if(type == BASIS)
+      return maxNumBasisDerivEvalPoints;
+    else
+      return maxNumTargetDerivEvalPoints;
   }
 
-  /** \brief  Returns number of evaluation points for basis derivatives on a subcell
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
+  /** \brief  Returns the maximum number of evaluation points across all the subcells
+      \param  evalPointType [in] - enum selecting whether the points should be computed for the basis
+                               functions or for the target function
 
-      \return the number of basis derivatives evaluation points on the selected subcell
+      \return the maximum number of the evaluation points across all the subcells
    */
-  ordinal_type getNumBasisDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return basisDerivCubPoints[subCellDim][subCellId].extent(0);
-  }
-
-  /** \brief  Returns number of points where to evaluate the target function on a subcell
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
-
-      \return the number of target evaluation points on the selected subcell
-   */
-  ordinal_type getNumTargetEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return targetCubPoints[subCellDim][subCellId].extent(0);
-  }
-
-  /** \brief  Returns number of points where to evaluate the derivatives of the target function on a subcell
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
-
-      \return the number of target derivatives evaluation points on the selected subcell
-   */
-  ordinal_type getNumTargetDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return targetDerivCubPoints[subCellDim][subCellId].extent(0);
+  ordinal_type getMaxNumEvalPoints(const EvalPointsType type) const {
+    if(type == BASIS)
+      return maxNumBasisEvalPoints;
+    else
+      return maxNumTargetEvalPoints;
   }
 
   /** \brief  Returns the basis evaluation points on a subcell
@@ -167,6 +167,7 @@ public:
     return basisCubPoints[subCellDim][subCellId];
   }
 
+
   /** \brief  Returns the evaluation points for basis derivatives on a subcell
 
       \code
@@ -174,14 +175,15 @@ public:
       D  - spatial dimension
       \endcode
 
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
+      \param  subCellDim  [in]   - dimension of the subcell
+      \param  subCellId   [in]   - ordinal of the subcell defined by cell topology
 
       \return a rank-2 view (P,D) containing the basis derivatives evaluation points on the selected subcell
    */
   view_type getBasisDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return basisDerivCubPoints[subCellDim][subCellId];
   }
+
 
   /** \brief  Returns the points where to evaluate the target function on a subcell
 
@@ -199,6 +201,7 @@ public:
     return targetCubPoints[subCellDim][subCellId];
   }
 
+
   /** \brief  Returns the points where to evaluate the derivatives of the target function on a subcell
 
       \code
@@ -215,6 +218,51 @@ public:
     return targetDerivCubPoints[subCellDim][subCellId];
   }
 
+
+  /** \brief  Returns the basis/target evaluation points on a subcell
+
+      \code
+      P  - num. evaluation points
+      D  - spatial dimension
+      \endcode
+
+      \param  subCellDim    [in]  - dimension of the subcell
+      \param  subCellId     [in]  - ordinal of the subcell defined by cell topology
+      \param  evalPointType [in]  - enum selecting whether the points should be computed for the basis
+                                    functions or for the target function
+
+      \return a rank-2 view (P,D) containing the basis/target function evaluation points on the selected subcell
+   */
+  view_type getEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId, EvalPointsType type) const{
+    if(type == BASIS)
+      return basisCubPoints[subCellDim][subCellId];
+    else
+      return targetCubPoints[subCellDim][subCellId];
+  }
+
+  /** \brief  Returns the evaluation points for basis/target derivatives on a subcell
+
+      \code
+      P  - num. evaluation points
+      D  - spatial dimension
+      \endcode
+
+      \param  subCellDim    [in]  - dimension of the subcell
+      \param  subCellId     [in]  - ordinal of the subcell defined by cell topology
+      \param  evalPointType [in] - enum selecting whether the points should be computed for the basis
+                                   functions or for the target function
+
+      \return a rank-2 view (P,D) containing the basis/target  derivatives evaluation points on the selected subcell
+   */
+  view_type getDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId, EvalPointsType type) const{
+    if(type == BASIS)
+      return basisDerivCubPoints[subCellDim][subCellId];
+    else
+      return targetDerivCubPoints[subCellDim][subCellId];
+  }
+
+
+
   /** \brief  Returns the basis evaluation weights on a subcell
 
       \code
@@ -229,6 +277,7 @@ public:
   view_type getBasisEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return basisCubWeights[subCellDim][subCellId];
   }
+
 
   /** \brief  Returns the basis derivatives evaluation weights on a subcell
 
@@ -245,6 +294,7 @@ public:
     return basisDerivCubWeights[subCellDim][subCellId];
   }
 
+
   /** \brief  Returns the function evaluation weights on a subcell
 
       \code
@@ -259,6 +309,7 @@ public:
   view_type getTargetEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return targetCubWeights[subCellDim][subCellId];
   }
+
 
   /** \brief  Returns the function derivatives evaluation weights on a subcell
 
@@ -275,55 +326,78 @@ public:
     return targetDerivCubWeights[subCellDim][subCellId];
   }
 
-  /** \brief  Returns the range of the basis evaluation points corresponding to a subcell
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
 
-      \return the range of the basis evaluation points corresponding to the selected subcell
+  /** \brief  Returns the range tag of the basis evaluation points subcells
+
+      \return the range tag of the basis evaluation points on subcells
    */
-  range_type getBasisPointsRange(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return basisPointsRange[subCellDim][subCellId];
+  const range_tag getBasisPointsRange() const {
+    return basisPointsRange;
   }
 
-  /** \brief  Returns the range of the basis derivative evaluation points corresponding to a subcell
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
 
-      \return the range of the basis derivative evaluation points corresponding to the selected subcell
+  /** \brief  Returns the range tag of the basis/target evaluation points in subcells
+      \param  evalPointType [in] - enum selecting whether the points should be computed for the basis
+                               functions or for the target function
+      \return the range tag of the basis/target evaluation points on subcells
    */
-  range_type getBasisDerivPointsRange(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return basisDerivPointsRange[subCellDim][subCellId];
+  const range_tag getPointsRange(const EvalPointsType type) const {
+    if(type == BASIS)
+      return basisPointsRange;
+    else
+      return targetPointsRange;
   }
 
-  /** \brief  Returns the range of the target function evaluation points corresponding to a subcell
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
 
-      \return the range of the target function evaluation points corresponding to the selected subcell
+  /** \brief  Returns the range tag of the derivative evaluation points on subcell
+
+      \return the range tag of the basis derivative evaluation points corresponding on subcell
    */
-  range_type getTargetPointsRange(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return targetPointsRange[subCellDim][subCellId];
+  const range_tag getBasisDerivPointsRange() const {
+    return basisDerivPointsRange;
   }
 
-  /** \brief  Returns the range of the target function derivative evaluation points corresponding to a subcell
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
+  /** \brief  Returns the range tag of the basis/target derivative evaluation points on subcells
+      \param  evalPointType [in] - enum selecting whether the points should be computed for the basis
+                               functions or for the target function
 
-      \return the range of the target function derivative evaluation points corresponding to the selected subcell
+      \return the range tag of the basis/target derivative evaluation points on subcells
    */
-  range_type getTargetDerivPointsRange(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return targetDerivPointsRange[subCellDim][subCellId];
+  const range_tag getDerivPointsRange(const EvalPointsType type) const {
+    if(type == BASIS)
+      return basisDerivPointsRange;
+    else
+      return targetDerivPointsRange;
   }
 
-  /** \brief  Returns the key of a subcell topology
-      \param  subCellDim  [in]  - dimension of the subcell
-      \param  subCellId   [in]  - ordinal of the subcell defined by cell topology
 
-      \return the key of the selected subcell
+  /** \brief  Returns the range of the target function evaluation points on subcells
+
+      \return the range of the target function evaluation points corresponding on subcells
    */
-  unsigned getTopologyKey(const ordinal_type subCellDim, const ordinal_type subCellId) {
-    return subCellTopologyKey[subCellDim][subCellId];
+  const range_tag getTargetPointsRange() const {
+    return targetPointsRange;
   }
+
+
+  /** \brief  Returns the range tag of the target function derivative evaluation points on subcells
+
+      \return the range of the target function derivative evaluation points corresponding on subcells
+   */
+  const range_tag getTargetDerivPointsRange() const {
+    return targetDerivPointsRange;
+  }
+
+  /** \brief  Returns the key tag for subcells
+
+      \return the key tag of the selected subcells
+   */
+  const key_tag getTopologyKey() const {
+    return subCellTopologyKey;
+  }
+
+
+
 
   /** \brief  Initialize the ProjectionStruct for L2 projections
       \param  cellBasis       [in]  - basis functions for the projection
@@ -332,6 +406,7 @@ public:
   template<typename BasisPtrType>
   void createL2ProjectionStruct(const BasisPtrType cellBasis,
       const ordinal_type targetCubDegree);
+
 
   /** \brief  Initialize the ProjectionStruct for HGRAD projections
       \param  cellBasis          [in]  - HGRAD basis functions for the projection
@@ -343,6 +418,7 @@ public:
       const ordinal_type targetCubDegree,
       const ordinal_type targetGradCubDegre);
 
+
   /** \brief  Initialize the ProjectionStruct for HCURL projections
       \param  cellBasis          [in]  - HCURL basis functions for the projection
       \param  targetCubDegree    [in]  - degree of the cubature needed to integrate the target function
@@ -352,6 +428,7 @@ public:
   void createHCurlProjectionStruct(const BasisPtrType cellBasis,
       const ordinal_type targetCubDegree,
       const ordinal_type targetCurlCubDegre);
+
 
   /** \brief  Initialize the ProjectionStruct for HDIV projections
       \param  cellBasis          [in]  - HDIV basis functions for the projection
@@ -388,6 +465,10 @@ public:
   ordinal_type numBasisDerivEvalPoints;
   ordinal_type numTargetEvalPoints;
   ordinal_type numTargetDerivEvalPoints;
+  ordinal_type maxNumBasisEvalPoints;
+  ordinal_type maxNumTargetEvalPoints;
+  ordinal_type maxNumBasisDerivEvalPoints;
+  ordinal_type maxNumTargetDerivEvalPoints;
 };
 
 }

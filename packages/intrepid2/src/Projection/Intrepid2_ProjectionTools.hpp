@@ -102,7 +102,10 @@
 
 #include "Intrepid2_ProjectionStruct.hpp"
 
-
+#include "KokkosBatched_QR_Serial_Internal.hpp"
+#include "KokkosBatched_ApplyQ_Serial_Internal.hpp"
+#include "KokkosBatched_Trsv_Serial_Internal.hpp"
+#include "KokkosBatched_Util.hpp"
 
 namespace Intrepid2 {
 
@@ -162,14 +165,23 @@ namespace Experimental {
             performed on the \f$H^1\f$ seminorm and the \f$L^2\f$ norm respectively, instead of on the \f$L^2\f$  and
             \f$H^{-1}\f$ and norms. This requires more regularity of the target function.
 
-    \todo  The implementation is mostly serial and needs to be improved for performance portability
+    \todo  There is room for significant improvement.
+           One could separate the computation of the basis function values and derivatives from the functions getXXXBasisCoeffs,
+           so that they can be stored and reused for projecting other target functions.
+           Similarly one could store all the QR factorizations and reuse them for other target functions.
+           For internal evaluation points (that are not affected by orientation) one could compute the QR factorization on the reference cell
+           and then use on all the cells.
+
+           Note: Other algorithmic improvements could be enabled by accessing the implementation of the orientation tools,
+           however, we preferred the projections to work with any orientation, and assuming only that internal basis functions are not affected by
+           the orientation.
  */
 
 template<typename ExecSpaceType>
 class ProjectionTools {
 public:
 
-  enum EvalPointsType {BASIS, TARGET};
+  using EvalPointsType = typename ProjectionStruct<ExecSpaceType, double>::EvalPointsType;
 
 
   /** \brief  Computes evaluation points for L2 projection
@@ -195,7 +207,7 @@ public:
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
-      const EvalPointsType evalPointType = TARGET
+      const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
   /** \brief  Computes the basis coefficients of the L2 projection of the target function
@@ -257,7 +269,7 @@ public:
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
-      const EvalPointsType evalPointType = TARGET
+      const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
   /** \brief  Computes the basis coefficients of the HGrad projection of the target function
@@ -325,7 +337,7 @@ public:
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
-      const EvalPointsType evalPointType = TARGET
+      const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
   /** \brief  Computes the basis coefficients of the HCurl projection of the target function
@@ -395,7 +407,7 @@ public:
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
-      const EvalPointsType evalPointType = TARGET
+      const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
   /** \brief  Computes the basis coefficients of the HDiv projection of the target function
@@ -458,7 +470,7 @@ public:
       const Kokkos::DynRankView<ortValueType, ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
-      const EvalPointsType evalPointType = TARGET
+      const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
   /** \brief  Computes the basis coefficients of the HVol projection of the target function
@@ -493,6 +505,90 @@ public:
 
 
 
+  /** \brief  Functor to solve a square system A x = b on each cell using QR method implemented in KokkosKernels
+              A is expected to be saddle a point (KKT) matrix of the form [C B; B^T 0],
+              where C has size nxn and B nxm, with n>0, m>=0.
+              B^T is copied from B, so one does not have to define the B^T portion of A.
+              b will contain the solution x.
+              The first n-entries of x are copied into the provided basis coefficients using the provided indexing.
+   */
+  template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
+  struct SolveSystem {
+    ViewType1 basisCoeffs_; // rank-2 view (C,F) containing the basis coefficients on each cell
+    ViewType2 elemMat_;     // rank-3 view (C,P,P) containing the element matrix on each cell
+    ViewType2 elemRhs_;     // rank-2 view (C,P) containing the element rhs on each cell
+    ViewType2 tau_;         // rank-2 view (C,P) used to store the QR factorization
+    ViewType3 w_;           // rank-2 view (C,P) used has a workspace (needs to be of Layout Right)
+
+    const ViewType4 elemDof_; // rank-1 view having dimension n, containing the basis numbering
+    ordinal_type n_, m_;      // basis cardinality and dimension of the constraint of the KKT system
+
+    /** \brief  Functor constructor
+
+        \code
+          C  - num. cells
+          P  - num. evaluation points
+        \endcode
+
+
+        \param  basisCoeffs           [out]     - rank-2 view (C,F) containing the basis coefficients
+        \param  elemMat               [in/out]  - rank-3 view (C,P,P) containing the element matrix of size
+                                                  numCells x (n+m)x(n+m) on each cell
+                                                  it will be overwritten.
+        \param  elemRhs               [in/out]  - rank-2 view (C,P) containing the element rhs on each cell
+                                                  of size numCells x (n+m)
+                                                  it will contain the solution of the system on output
+        \param  tau                   [out]     - rank-2 view (C,P) used to store the QR factorization
+                                                  size: numCells x (n+m)
+        \param  w                     [out]     - rank-2 view (C,P) used has a workspace
+                                                  Layout Right, size: numCells x (n+m)
+        \param  elemDof               [in]      - rank-1 view having dimension n, containing the basis numbering
+        \param  n                     [in]      - ordinal_type, basis cardinality
+        \param  m                     [in]      - ordinal_type, dimension of the constraint of the KKT system
+     */
+    SolveSystem (ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 tau,
+        ViewType3 w,const  ViewType4 elemDof, ordinal_type n, ordinal_type m=0) :
+          basisCoeffs_(basisCoeffs), elemMat_(elemMat), elemRhs_(elemRhs),
+          tau_(tau), w_(w), elemDof_(elemDof), n_(n), m_(m){};
+
+
+    void
+    KOKKOS_INLINE_FUNCTION
+    operator()(const ordinal_type ic) const {
+      auto A = Kokkos::subview(elemMat_, ic, Kokkos::ALL(), Kokkos::ALL());
+      auto b = Kokkos::subview(elemRhs_, ic, Kokkos::ALL());
+      auto tau = Kokkos::subview(tau_, ic, Kokkos::ALL());
+      auto w = Kokkos::subview(w_, ic, Kokkos::ALL());
+
+      for(ordinal_type i=n_; i<n_+m_; ++i)
+        for(ordinal_type j=0; j<n_; ++j)
+          A(i,j) = A(j,i);
+
+      //computing QR of A. QR is saved in A and tau
+      KokkosBatched::SerialQR_Internal::invoke(A.extent(0), A.extent(1),
+          A.data(), A.stride_0(), A.stride_1(), tau.data(), tau.stride_0(), w.data());
+
+      //b'*Q -> b
+      KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+          1, A.extent(0), A.extent(1),
+          A.data(),  A.stride_0(), A.stride_1(),
+          tau.data(), tau.stride_0(),
+          b.data(),  1, b.stride_0(),
+          w.data());
+
+      // R^{-1} b -> b
+      KokkosBatched::SerialTrsvInternalUpper<KokkosBatched::Algo::Trsv::Unblocked>::invoke(false,
+          A.extent(0),
+          1.0,
+          A.data(), A.stride_0(), A.stride_1(),
+          b.data(),  b.stride_0());
+
+      //scattering b into the basis coefficients
+      for(ordinal_type i=0; i<n_; ++i){
+        basisCoeffs_(ic,elemDof_(i)) = b(i);
+      }
+    }
+  };
 };
 }
 }
