@@ -16,10 +16,18 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1-openmpi-4.0.2"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1_openmpi-4.0.2"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5"* ]] \
+  ; then
+  export ATDM_CONFIG_COMPILER=CLANG-5.0.1_OPENMPI-4.0.2
+  # Must list the default clang build last for correct matching of of defaults
+
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1-openmpi-4.0.2"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1_openmpi-4.0.2"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]] \
   ; then
-  export ATDM_CONFIG_COMPILER=CLANG-5.0.1_OPENMPI-4.0.2
+  export ATDM_CONFIG_COMPILER=CLANG-9.0.1_OPENMPI-4.0.2
   # Must list the default clang build last for correct matching of of defaults
 
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0-openmpi-1.10.2"* ]] \
@@ -60,7 +68,8 @@ else
   echo "*** Supported compilers include:"
   echo "***"
   echo "****  clang-5.0.1-openmpi-1.10.2     (DEPRECATED)"
-  echo "****  clang-5.0.1-openmpi-4.0.2      (default, default clang)"
+  echo "****  clang-5.0.1-openmpi-4.0.2      (DEPRECATED)"
+  echo "****  clang-9.0.1-openmpi-4.0.2      (default, default clang)"
   echo "****  gnu-7.2.0-openmpi-1.10.2       (DEPRECATED)"
   echo "****  gnu-7.2.0-openmpi-4.0.2        (default gnu)"
   echo "****  intel-18.0.2-mpich2-3.2        (DEPRECATED)"
