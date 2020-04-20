@@ -39,19 +39,19 @@ snapshot of TriBITS), then install CMake with::
   $ cd <some-scratch-space>/
   $ export TRIBITS_BASE_DIR=<project-base-dir>/cmake/tribits
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py \
-     --install-dir=<INSTALL_BASE_DIR> \
+     --install-dir-base=<INSTALL_BASE_DIR> --cmake-version=X.Y.Z \
      --do-all
 
 This will result in cmake and related CMake tools being installed in
-``<INSTALL_BASE_DIR>/bin/`` (see the instructions printed at the end on how to
-update your ``PATH`` env var).
+``<INSTALL_BASE_DIR>/cmake-X.Y.Z/bin/`` (see the instructions printed at the
+end on how to update your ``PATH`` env var).
 
 To get help for installing CMake with this script use::
 
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py --help
 
-NOTE: you will want to read the help message about how to use sudo to
-install in a privileged location (like the default ``/usr/local/bin``).
+NOTE: you will want to read the help message about how to install CMake to
+share with other users and maintainers and how to install with sudo if needed.
 
 
 Installing Ninja from Source

@@ -46,6 +46,7 @@
 #include "MueLu_Utilities_def.hpp"
 
 #include <string>
+#include <locale>
 
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_Transpose_RowMatrix.h"
@@ -322,6 +323,22 @@ bool IsParamValidVariable(const std::string& name)
        return baseComm;
 #endif
     }
+
+  std::string
+  lowerCase (const std::string& s)
+  {
+    typedef std::string::value_type char_t;
+    typedef std::ctype<char_t> facet_type;
+    const facet_type& facet = std::use_facet<facet_type> (std::locale ());
+
+    const std::string::size_type len = s.size ();
+    std::string s_lc (s);
+    for (std::string::size_type k = 0; k < len; ++k) {
+      s_lc[k] = facet.tolower (s[k]);
+    }
+
+    return s_lc;
+  }
 
 
 } // namespace MueLu

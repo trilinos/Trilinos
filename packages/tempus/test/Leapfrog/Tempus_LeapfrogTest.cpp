@@ -88,7 +88,7 @@ TEUCHOS_UNIT_TEST(Leapfrog, ConstructingFromDefaults)
   auto icX = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icXDotDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
-  auto icState = rcp(new Tempus::SolutionState<double>(icX, icXDot, icXDotDot));
+  auto icState = Tempus::createSolutionStateX<double>(icX, icXDot, icXDotDot);
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -204,8 +204,10 @@ TEUCHOS_UNIT_TEST(Leapfrog, SinCos)
       auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time_i).get_x(),
+        auto state = Tempus::createSolutionStateX(
+          rcp_const_cast<Thyra::VectorBase<double> > (
+            model->getExactSolution(time_i).get_x()),
+          rcp_const_cast<Thyra::VectorBase<double> > (
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);

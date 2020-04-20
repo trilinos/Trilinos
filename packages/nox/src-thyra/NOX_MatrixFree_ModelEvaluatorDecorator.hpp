@@ -31,10 +31,10 @@ namespace NOX {
       outArgs.setModelEvalDescription(this->description());
 
       if (outArgs.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_op))
-      return outArgs;
+      return std::move(outArgs);
 
       outArgs.setSupports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_op,true);
-      return outArgs;
+      return std::move(outArgs);
     }
 
     void evalModelImpl(const ::Thyra::ModelEvaluatorBase::InArgs<ScalarT> &inArgs,

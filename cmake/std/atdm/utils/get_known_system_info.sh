@@ -31,6 +31,17 @@ fi
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info_utils.sh
 
 realHostname=`hostname`
+if [[ "${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}" ]] ; then
+  echo
+  echo "***"
+  echo "*** WARNING: realHostname=$realHostname overriden to value of"
+  echo "*** ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING='${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}'"
+  echo "*** in <trilinos-dir>/cmake/std/atdm/utils/get_known_system_info.sh."
+  echo "*** This variable should only be set for unit testing purposes!"
+  echo "***"
+  echo
+  realHostname=${ATDM_CONFIG_GET_KNOW_SYSTEM_INFO_REAL_HOSTNAME_OVERRIDE_FOR_UNIT_TESTING}
+fi
 #echo "Hostname = '$realHostname'"
 
 #
@@ -52,6 +63,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   mutrino   # Will be repalced by 'ats1'
   waterman
   ats2
+  van1-tx2
   cts1
   tlcc2
   sems-rhel7
@@ -124,16 +136,22 @@ fi
 # matching system type will be selected.
 #
 
-# TLCC2 systems
-if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
-  systemNameTypeMatchedList+=(tlcc2)
-  systemNameTypeMatchedListHostNames[tlcc2]=$SNLCLUSTER
+# ASTRA/Van1-Tx2 systems
+if [[ $SNLSYSTEM == "astra"* ]] ; then
+  systemNameTypeMatchedList+=(van1-tx2)
+  systemNameTypeMatchedListHostNames[van1-tx2]=$SNLCLUSTER
 fi
 
 # CTS1 systems
 if [[ $SNLSYSTEM == "cts1" ]] ; then
   systemNameTypeMatchedList+=(cts1)
   systemNameTypeMatchedListHostNames[cts1]=$SNLCLUSTER
+fi
+
+# TLCC2 systems
+if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
+  systemNameTypeMatchedList+=(tlcc2)
+  systemNameTypeMatchedListHostNames[tlcc2]=$SNLCLUSTER
 fi
 
 # SEMS RHEL6 and RHEL7 systems
@@ -143,6 +161,9 @@ if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
 elif [[ "${SEMS_PLATFORM}" == "rhel7-x86_64" ]] ; then
   systemNameTypeMatchedList+=(sems-rhel7)
   systemNameTypeMatchedListHostNames[sems-rhel7]=sems-rhel7
+elif [[ "${SNLSYSTEM}" == "astra" ]] ; then
+  echo "Don't call get-platform on 'astra' systems" > /dev/null
+  # Above logic avoids an 'ERROR: Unrecognized cluster <name>' on these systems
 elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
   ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
   if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
@@ -210,7 +231,7 @@ fi
 #
 
 if [[ $ATDM_SYSTEM_NAME != "" ]] ; then
-  echo "Hostname '$realHostname' matches known ATDM host '$ATDM_HOSTNAME' and system '$ATDM_SYSTEM_NAME'"
+  echo "Hostname '$realHostname' matches known ATDM host '$realHostname' and system '$ATDM_SYSTEM_NAME'"
   export ATDM_CONFIG_REAL_HOSTNAME=$realHostname
   export ATDM_CONFIG_CDASH_HOSTNAME=$ATDM_HOSTNAME
   export ATDM_CONFIG_SYSTEM_NAME=$ATDM_SYSTEM_NAME

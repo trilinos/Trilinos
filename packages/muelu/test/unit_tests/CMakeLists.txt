@@ -214,7 +214,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${
   APPEND_SET(SOURCES_REGION RegionMatrix.cpp RegionVector.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
+
   APPEND_SET(SOURCES Galeri.cpp)
   APPEND_SET(SOURCES_INTREPID2 Galeri.cpp)
   APPEND_SET(SOURCES_BLOCKED Galeri.cpp)
@@ -411,7 +411,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 
   ENDIF() # Tpetra
 
-ENDIF() # Galeri TMP
+
 
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
 IF (${PACKAGE_NAME}_ENABLE_Epetra)

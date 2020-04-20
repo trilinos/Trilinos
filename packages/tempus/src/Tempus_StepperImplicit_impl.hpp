@@ -124,7 +124,7 @@ void StepperImplicit<Scalar>::setInitialConditions(
       TEUCHOS_TEST_FOR_EXCEPTION(xDotDot == Teuchos::null, std::logic_error,
         "Error - setInitialConditions() requested 'App' for IC consistency,\n"
         "        but 'App' returned a null pointer for xDotDot!\n");
-      Thyra::assign(getStepperXDotDot(initialState).ptr(), *xDotDot);
+      Thyra::assign(this->getStepperXDotDot(initialState).ptr(), *xDotDot);
     }
   }
   else if (icConsistency == "Consistent") {
@@ -228,40 +228,6 @@ void StepperImplicit<Scalar>::setSolver(
 
 
 template<class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar> >
-StepperImplicit<Scalar>::
-getStepperXDot(Teuchos::RCP<SolutionState<Scalar> > state)
-{
-  if (state->getXDot() != Teuchos::null) stepperXDot_ = state->getXDot();
-  // Else use temporary storage stepperXDot_ which should have been set in
-  // setInitialConditions().
-
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDot_ == Teuchos::null, std::logic_error,
-    "Error - stepperXDot_ has not been set in setInitialConditions() or\n"
-    "        can not be set from the state!\n");
-
-  return stepperXDot_;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar> >
-StepperImplicit<Scalar>::
-getStepperXDotDot(Teuchos::RCP<SolutionState<Scalar> > state)
-{
-  if (state->getXDotDot() != Teuchos::null) stepperXDotDot_=state->getXDotDot();
-  // Else use temporary storage stepperXDotDot_ which should have been set in
-  // setInitialConditions().
-
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDotDot_ == Teuchos::null,std::logic_error,
-    "Error - stepperXDotDot_ has not been set in setInitialConditions() or\n"
-    "        can not be set from the state!\n");
-
-  return stepperXDotDot_;
-}
-
-
-template<class Scalar>
 const Thyra::SolveStatus<Scalar>
 StepperImplicit<Scalar>::solveImplicitODE(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x)
@@ -358,8 +324,6 @@ void StepperImplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
   out << "  initialGuess_     = " << initialGuess_ << std::endl;
   out << "  zeroInitialGuess_ = "
       << Teuchos::toString(zeroInitialGuess_) << std::endl;
-  out << "  stepperXDot_      = " << stepperXDot_ << std::endl;
-  out << "  stepperXDotDot_   = " << stepperXDotDot_ << std::endl;
 }
 
 

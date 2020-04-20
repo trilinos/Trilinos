@@ -9,6 +9,7 @@ echo "  ==> `date`"
 echo
 
 echo "Loading env and running ctest -S comamnd to configure, build, and test ..."
+echo
 
 source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/setup_env.sh
 

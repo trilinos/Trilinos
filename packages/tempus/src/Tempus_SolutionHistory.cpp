@@ -16,9 +16,19 @@ namespace Tempus {
 
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SolutionHistory)
 
-  // Non-member ctor
+  // Nonmember constructor from a ParameterList
   template Teuchos::RCP<SolutionHistory<double> >
-  solutionHistory(Teuchos::RCP<Teuchos::ParameterList> shPL);
+  createSolutionHistoryPL(
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  // Nonmember contructor from a SolutionState.
+  template Teuchos::RCP<SolutionHistory<double> >
+  createSolutionHistoryState(const Teuchos::RCP<SolutionState<double> >& state);
+
+  // Nonmember contructor from a Thyra ModelEvaluator.
+  template Teuchos::RCP<SolutionHistory<double> >
+  createSolutionHistoryME(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model);
 
 } // namespace Tempus
 

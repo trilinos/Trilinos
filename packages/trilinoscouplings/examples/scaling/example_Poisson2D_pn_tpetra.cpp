@@ -292,6 +292,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     \param  ProblemType        [in]    problem type
     \param  MLList             [in]    ML parameter list
     \param  A                  [in]    discrete operator matrix
+    \param  nCoord             [in]    Nodal Coordinates
     \param  xexact             [in]    exact solution
     \param  b                  [in]    right-hand-side vector
     \param  uh                 [out]   solution vector
@@ -302,6 +303,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & AMGList,
                                  RCP<crs_matrix_type>   const & A,
+                                 RCP<multivector_type> & nCoord,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
                                  RCP<multivector_type> & uh,
@@ -1131,26 +1133,25 @@ int main(int argc, char *argv[]) {
 
   tm = Teuchos::null;
 
-#ifdef DUMP_DATA_OLD
   /**********************************************************************************/
-  /**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
+  /**** COOORDINATES FOR DISTANCE LAPLACIAN                                       ***/
   /**********************************************************************************/
 
   // Put coordinates in multivector for output
-  Epetra_MultiVector nCoord(globalMapG,dim);
-  Epetra_MultiVector nBound(globalMapG,1);
+  RCP<multivector_type> nCoord = rcp(new multivector_type(globalMapG,dim));
 
   int indOwned = 0;
-  for (int inode=0; inode<numNodes; inode++) {
-    if (nodeIsOwned[inode]) {
-      nCoord[0][indOwned]=nodeCoord(inode,0);
-      nCoord[1][indOwned]=nodeCoord(inode,1);
-      nBound[0][indOwned]=nodeOnBoundary(inode);
+  for (int inode=0; inode<Pn_numNodes; inode++) {
+    if (Pn_nodeIsOwned[inode]) {
+      nCoord->getDataNonConst(0)[indOwned]=nodeCoord(inode,0);
+      nCoord->getDataNonConst(1)[indOwned]=nodeCoord(inode,1);
       indOwned++;
     }
   }
+
+#ifdef DUMP_DATA_OLD
+
   EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
-  EpetraExt::MultiVectorToMatrixMarketFile("nodeOnBound.dat",nBound,0,0,false);
 
   // Put element to node mapping in multivector for output
   Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
@@ -1519,6 +1520,7 @@ int main(int argc, char *argv[]) {
 
   TestMultiLevelPreconditionerLaplace(probType, amgList,
                                       rcpFromRef(StiffMatrix),
+				      nCoord,
 				      exactNodalVals,
                                       rhsVector,            femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol,
@@ -1946,6 +1948,7 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & amgList,
                                  RCP<crs_matrix_type> const &A0,
+                                 RCP<multivector_type> & nCoord,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
                                  RCP<multivector_type> & uh,
@@ -1989,6 +1992,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
     // Multigrid Hierarchy, the easy way  
     RCP<operator_type> A0op = A0;
+    amgList.sublist("user data").set("Coordinates",nCoord);
     Teuchos::RCP<muelu_tpetra_operator> M = MueLu::CreateTpetraPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0op, amgList);
     Problem.setRightPrec(M);
 

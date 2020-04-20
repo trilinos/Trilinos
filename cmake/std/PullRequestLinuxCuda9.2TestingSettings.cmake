@@ -13,13 +13,13 @@ set (CTEST_USE_LAUNCHERS ON CACHE BOOL "Set by default for PR testing")
 
 # Options necessary for CUDA build
 set (TPL_ENABLE_MPI ON CACHE BOOL "Set by default for CUDA PR testing")
-set (Kokkos_ENABLE_Cuda ON CACHE BOOL "Set by default for CUDA PR testing")
-set (Kokkos_ENABLE_Cuda_UVM ON CACHE BOOL "Set by default for CUDA PR testing")
+set (Kokkos_ENABLE_CUDA ON CACHE BOOL "Set by default for CUDA PR testing")
+set (Kokkos_ENABLE_CUDA_UVM ON CACHE BOOL "Set by default for CUDA PR testing")
 set (KOKKOS_ARCH Power8,Kepler37 CACHE STRING "Set by default for CUDA PR testing")
-set (Kokkos_ENABLE_Cuda_Relocatable_Device_Code OFF CACHE BOOL "Set by default for CUDA PR testing")
+set (Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Sacado_ENABLE_HIERARCHICAL_DFAD ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_CXX11_DISPATCH_LAMBDA ON CACHE BOOL "Set by default for CUDA PR testing")
-set (Kokkos_ENABLE_Cuda_Lambda ON CACHE BOOL "Set by default for CUDA PR testing")
+set (Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Phalanx_KOKKOS_DEVICE_TYPE CUDA CACHE STRING "Set by default for CUDA PR testing")
 set (MPI_EXEC_POST_NUMPROCS_FLAGS "-map-by;socket:PE=4" CACHE STRING "Set by default for CUDA PR testing")
 
@@ -33,7 +33,6 @@ set (EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Panzer_ENABLE_FADTYPE "Sacado::Fad::DFad<RealType>" CACHE STRING "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_Debug_Bounds_Check ON CACHE BOOL "Set by default for CUDA PR testing")
 set (KOKKOS_ENABLE_DEBUG ON CACHE BOOL "Set by default for CUDA PR testing")
-set (MueLu_ENABLE_Kokkos_Refactor_Use_By_Default ON CACHE BOOL "Set by default for CUDA PR testing")
 
 # TPL settings specific to CUDA build
 set (TPL_ENABLE_CUDA ON CACHE BOOL "Set by default for CUDA PR testing")

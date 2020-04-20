@@ -12,6 +12,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperBDF2.hpp"
 #include "Tempus_StepperNewmarkImplicitAForm.hpp"
 #include "Tempus_StepperNewmarkImplicitDForm.hpp"
@@ -962,6 +963,7 @@ public:
     return stepper;
   }
 
+
   Teuchos::RCP<StepperDIRK_General<Scalar> >
   createStepperDIRK_General(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -1044,7 +1046,7 @@ public:
     return stepper;
   }
 
-  
+
   Teuchos::RCP<StepperSDIRK_SSPDIRK22<Scalar> >
   createStepperSDIRK_SSPDIRK22(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
@@ -1450,6 +1452,8 @@ private:
       stepperType == "IMEX RK SSP3"      ||
       stepperType == "SSP3_332"          ||
       stepperType == "SSP2_222"          ||
+      stepperType == "SSP2_222_L"        ||
+      stepperType == "SSP2_222_A"        ||
       stepperType == "IMEX RK ARS 233"   ||
       stepperType == "ARS 233"           ||
       stepperType == "General IMEX RK" )

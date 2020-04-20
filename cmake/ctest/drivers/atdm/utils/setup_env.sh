@@ -1,3 +1,5 @@
+set +x
+
 #
 # A) Load the env
 #

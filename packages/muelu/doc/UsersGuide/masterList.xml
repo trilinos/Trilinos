@@ -1,4 +1,3 @@
-
 <masterlist>
 
   <general>
@@ -383,8 +382,36 @@
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
-      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".</description>
+      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".</description>
       <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: number of random vectors</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Determines how many random vectors are smoothed when "unsupported vector smoothing" used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+
+    <parameter>
+      <name>aggregation: number of times to pre or post smooth</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Determines how many times presmoother (or postsmoother if no presmoother set) is invoked when "unsupported vector smoothing" used. Each invocation may include several smoother sweeps.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: penalty parameters</name>
+      <type>Array(double)</type>
+      <default>{12.,-.2,0,0,0} </default>
+      <description>Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
     <parameter>
@@ -429,6 +456,7 @@
       <description>Whether to compute aggregate quality estimates.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
+
 
     <parameter>
       <name>aggregation: brick x size</name>

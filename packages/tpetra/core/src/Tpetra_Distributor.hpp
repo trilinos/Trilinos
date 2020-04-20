@@ -265,6 +265,8 @@ namespace Tpetra {
     /// parameters and their default values.
     void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
+    Teuchos::RCP<Distributor> getReverseDistributor();
+
     /// \brief List of valid Distributor parameters.
     ///
     /// Please see the class documentation for a list of all accepted

@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -47,24 +48,65 @@
 #ifdef HAVE_CUSPARSE
 #include <cusparse.h>
 
-template<typename AType, typename XType, typename YType>
-void cusparse_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
+template<typename Scalar>
+void cusparse_matvec_wrapper(
+    cusparseHandle_t& handle, cusparseMatDescr_t& desc,
+    int numRows, int numCols, int nnz,
+    Scalar* values, int* rowptrs, int* entries,
+    Scalar* x, Scalar* y)
+{
+  throw std::runtime_error("Can't use cuSPARSE mat-vec for scalar types other than double and float.");
+}
 
+template<>
+void cusparse_matvec_wrapper<double>(
+    cusparseHandle_t& handle, cusparseMatDescr_t& descr,
+    int numRows, int numCols, int nnz,
+    double* values, int* rowptrs, int* entries,
+    double* x, double* y)
+{
   double s_a = 1.0;
   double s_b = 0.0;
-
-  cusparseDcsrmv (A.cusparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-                  A.numRows(), A.numCols(),  A.nnz(),
-                  &s_a,
-                  A.cusparse_descr,
-                  A.values.data(),
-                  (const int*) A.graph.row_map.data(),
-                  A.graph.entries.data(),
-                  x.data(),
-                  &s_b,
-                  y.data());
+  cusparseDcsrmv(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      numRows, numCols, nnz,
+      &s_a,
+      descr,
+      values, rowptrs, entries,
+      x,
+      &s_b,
+      y);
 }
-#endif
 
+template<>
+void cusparse_matvec_wrapper<float>(
+    cusparseHandle_t& handle, cusparseMatDescr_t& descr,
+    int numRows, int numCols, int nnz,
+    float* values, int* rowptrs, int* entries,
+    float* x, double* y)
+{
+  float s_a = 1.0f;
+  float s_b = 0.0f;
+  cusparseScsrmv(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      numRows, numCols, nnz,
+      &s_a,
+      descr,
+      values, rowptrs, entries,
+      x,
+      &s_b,
+      y);
+}
+
+template<typename AType, typename XType, typename YType>
+void cusparse_matvec(AType A, XType x, YType y) {
+  typedef AType::non_const_value_type Scalar;
+  //Run cuSPARSE spmv corresponding to scalar type
+  cusparse_matvec_wrapper<Scalar>(
+      A.cusparse_handle, A.cusparse_descr,
+      A.numRows(), A.numCols(), A.nnz(),
+      A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
+      x.data(), y.data());
+}
+
+#endif
 
 #endif /* CUSPARSE_SPMV_HPP_ */

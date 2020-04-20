@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -92,8 +93,7 @@ __inline__ __device__ unsigned int atomic_fetch_sub(volatile double* const dest,
 template <typename T>
 __inline__ __device__ T atomic_fetch_sub(
     volatile T* const dest,
-    typename Kokkos::Impl::enable_if<sizeof(T) == sizeof(int), const T>::type
-        val) {
+    typename std::enable_if<sizeof(T) == sizeof(int), const T>::type val) {
   union U {
     int i;
     T t;
@@ -114,9 +114,9 @@ __inline__ __device__ T atomic_fetch_sub(
 template <typename T>
 __inline__ __device__ T atomic_fetch_sub(
     volatile T* const dest,
-    typename Kokkos::Impl::enable_if<
-        sizeof(T) != sizeof(int) && sizeof(T) == sizeof(unsigned long long int),
-        const T>::type val) {
+    typename std::enable_if<sizeof(T) != sizeof(int) &&
+                                sizeof(T) == sizeof(unsigned long long int),
+                            const T>::type val) {
   union U {
     unsigned long long int i;
     T t;
@@ -137,10 +137,10 @@ __inline__ __device__ T atomic_fetch_sub(
 //----------------------------------------------------------------------------
 
 template <typename T>
-__inline__ __device__ T atomic_fetch_sub(
-    volatile T* const dest,
-    typename Kokkos::Impl::enable_if<(sizeof(T) != 4) && (sizeof(T) != 8),
-                                     const T>::type& val) {
+__inline__ __device__ T
+atomic_fetch_sub(volatile T* const dest,
+                 typename std::enable_if<(sizeof(T) != 4) && (sizeof(T) != 8),
+                                         const T>::type& val) {
   T return_val;
   // This is a way to (hopefully) avoid dead lock in a warp
   int done = 0;
@@ -171,7 +171,7 @@ __inline__ __device__ T atomic_fetch_sub(
 #endif
 #endif
 //----------------------------------------------------------------------------
-#if !defined(KOKKOS_ENABLE_ROCM_ATOMICS)
+#if !defined(KOKKOS_ENABLE_ROCM_ATOMICS) || !defined(KOKKOS_ENABLE_HIP_ATOMICS)
 #if !defined(__CUDA_ARCH__) || defined(KOKKOS_IMPL_CUDA_CLANG_WORKAROUND)
 #if defined(KOKKOS_ENABLE_GNU_ATOMICS) || defined(KOKKOS_ENABLE_INTEL_ATOMICS)
 
@@ -213,8 +213,7 @@ inline unsigned long int atomic_fetch_sub(
 template <typename T>
 inline T atomic_fetch_sub(
     volatile T* const dest,
-    typename Kokkos::Impl::enable_if<sizeof(T) == sizeof(int), const T>::type
-        val) {
+    typename std::enable_if<sizeof(T) == sizeof(int), const T>::type val) {
   union U {
     int i;
     T t;
@@ -237,11 +236,10 @@ inline T atomic_fetch_sub(
 }
 
 template <typename T>
-inline T atomic_fetch_sub(
-    volatile T* const dest,
-    typename Kokkos::Impl::enable_if<sizeof(T) != sizeof(int) &&
-                                         sizeof(T) == sizeof(long),
-                                     const T>::type val) {
+inline T atomic_fetch_sub(volatile T* const dest,
+                          typename std::enable_if<sizeof(T) != sizeof(int) &&
+                                                      sizeof(T) == sizeof(long),
+                                                  const T>::type val) {
 #if defined(KOKKOS_ENABLE_RFO_PREFETCH)
   _mm_prefetch((const char*)dest, _MM_HINT_ET0);
 #endif
@@ -268,8 +266,8 @@ inline T atomic_fetch_sub(
 template <typename T>
 inline T atomic_fetch_sub(
     volatile T* const dest,
-    typename Kokkos::Impl::enable_if<(sizeof(T) != 4) && (sizeof(T) != 8),
-                                     const T>::type& val) {
+    typename std::enable_if<(sizeof(T) != 4) && (sizeof(T) != 8),
+                            const T>::type& val) {
 #if defined(KOKKOS_ENABLE_RFO_PREFETCH)
   _mm_prefetch((const char*)dest, _MM_HINT_ET0);
 #endif
@@ -319,12 +317,6 @@ __inline__ __device__ T atomic_fetch_sub(volatile T* const,
   return T();
 }
 #endif
-
-// Simpler version of atomic_fetch_sub without the fetch
-template <typename T>
-KOKKOS_INLINE_FUNCTION void atomic_sub(volatile T* const dest, const T src) {
-  atomic_fetch_sub(dest, src);
-}
 
 }  // namespace Kokkos
 

@@ -291,6 +291,30 @@ extern "C" {
   void F77_BLAS_MANGLE(zgesv,ZGESV)( int*, int*,
                                      std::complex<double>*, int*, int*,
                                      std::complex<double>*, int*, int* );
+
+  ///
+  /// Trtri
+  ///
+/*
+    HostBlas<float>::trtri(const char uplo, const char diag,
+                           int n, const float *a, int lda) {
+      int info = 0;
+      F77_FUNC_STRTRI(&uplo, 
+                      &diag, &n, 
+                      a, &lda, &info);
+*/
+  void F77_BLAS_MANGLE(strtri,STRTRI)(const char*,
+                                      const char*, int*,
+                                      const float*, int*, int*);
+  void F77_BLAS_MANGLE(dtrtri,DTRTRI)(const char*,
+                                      const char*, int*,
+                                      const double*, int*, int*);
+  void F77_BLAS_MANGLE(ctrtri,CTRTRI)(const char*,
+                                      const char*, int*,
+                                      const std::complex<float>*, int*, int*);
+  void F77_BLAS_MANGLE(ztrtri,ZTRTRI)(const char*,
+                                      const char*, int*,
+                                      const std::complex<double>*, int*, int*);
 }
 
 
@@ -374,6 +398,11 @@ extern "C" {
 #define F77_FUNC_DGESV F77_BLAS_MANGLE(dgesv,DGESV)
 #define F77_FUNC_CGESV F77_BLAS_MANGLE(cgesv,CGESV)
 #define F77_FUNC_ZGESV F77_BLAS_MANGLE(zgesv,ZGESV)
+
+#define F77_FUNC_STRTRI F77_BLAS_MANGLE(strtri,STRTRI)
+#define F77_FUNC_DTRTRI F77_BLAS_MANGLE(dtrtri,DTRTRI)
+#define F77_FUNC_CTRTRI F77_BLAS_MANGLE(ctrtri,CTRTRI)
+#define F77_FUNC_ZTRTRI F77_BLAS_MANGLE(ztrtri,ZTRTRI)
 
 namespace KokkosBlas {
   namespace Impl {
@@ -517,6 +546,16 @@ namespace KokkosBlas {
                      a, &lda, ipiv,
                      b, &ldb, &info);
     }
+    template<>
+    int 
+    HostBlas<float>::trtri(const char uplo, const char diag,
+                           int n, const float *a, int lda) {
+      int info = 0;
+      F77_FUNC_STRTRI(&uplo, 
+                      &diag, &n, 
+                      a, &lda, &info);
+      return info;
+    }
 
     ///
     /// double
@@ -656,6 +695,16 @@ namespace KokkosBlas {
       F77_FUNC_DGESV(&n, &rhs,
                      a, &lda, ipiv,
                      b, &ldb, &info);
+    }
+    template<>
+    int 
+    HostBlas<double>::trtri(const char uplo, const char diag,
+                            int n, const double *a, int lda) {
+      int info = 0;
+      F77_FUNC_DTRTRI(&uplo, 
+                      &diag, &n, 
+                      a, &lda, &info);
+      return info;
     }
 
     /// 
@@ -803,6 +852,16 @@ namespace KokkosBlas {
       F77_FUNC_CGESV(&n, &rhs,
                      a, &lda, ipiv,
                      b, &ldb, &info);
+    }
+    template<>
+    int 
+    HostBlas<std::complex<float> >::trtri(const char uplo, const char diag,
+                                          int n, const std::complex<float> *a, int lda) {
+      int info = 0;
+      F77_FUNC_CTRTRI(&uplo, 
+                      &diag, &n, 
+                      a, &lda, &info);
+      return info;
     }
     
     ///
@@ -952,7 +1011,17 @@ namespace KokkosBlas {
                      a, &lda, ipiv,
                      b, &ldb, &info);
     }
+    template<>
+    int 
+    HostBlas<std::complex<double> >::trtri(const char uplo, const char diag,
+                                           int n, const std::complex<double> *a, int lda) {
+      int info = 0;
+      F77_FUNC_ZTRTRI(&uplo, 
+                      &diag, &n, 
+                      a, &lda, &info);
+      return info;
+    }
 
-  }
-}
-#endif
+  } // namespace Impl
+} // namespace KokkosBlas
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS

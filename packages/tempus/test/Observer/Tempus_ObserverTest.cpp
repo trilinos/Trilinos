@@ -39,14 +39,10 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-#define TEST_INTEGRATOROBSERVERLOGGING
-#define TEST_INTEGRATOROBSERVERCOMPOSITE
-#define TEST_STEPPERRKOBSERVERLOGGING
 
 
 // ************************************************************
 // ************************************************************
-#ifdef TEST_INTEGRATOROBSERVERLOGGING
 TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
 {
   // Read params from .xml file
@@ -160,9 +156,7 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_INTEGRATOROBSERVERLOGGING
 
-#ifdef TEST_INTEGRATOROBSERVERCOMPOSITE
 TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite)
 {
 
@@ -241,146 +235,6 @@ TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite)
   TEST_EQUALITY(
         counters.find(loggingObs2->nameObserveEndIntegrator_     )->second, 1);
 }
-#endif
-
-
-// ************************************************************
-// ************************************************************
-#ifdef TEST_STEPPERRKOBSERVERLOGGING
-TEUCHOS_UNIT_TEST(Observer, StepperRKObserverLogging)
-{
-
-  // number of stages for the RK method
-  const int erkStageCount = 4;
-
-  // Read params from .xml file
-  RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Observer_SinCos.xml");
-
-  // Setup the SinCosModel
-  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  RCP<SinCosModel<double> > model =
-    Teuchos::rcp(new SinCosModel<double> (scm_pl));
-
-  // Setup the Integrator and reset initial time step
-  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-  pl->sublist("Demo Integrator").set("Stepper Name", "Demo RK Stepper");
-  RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>(pl, model);
-
-  RCP<Tempus::StepperRKObserverLogging<double> > loggingObs =
-    Teuchos::rcp(new Tempus::StepperRKObserverLogging<double>);
-
-  const auto stepper_observer =
-      Teuchos::rcp(new Tempus::StepperRKObserverComposite<double>());
-  stepper_observer->clearObservers();
-  stepper_observer->addObserver(loggingObs);
-
-  auto stepper =
-      Teuchos::rcp_dynamic_cast<Tempus::StepperExplicitRK<double> >
-      (integrator->getStepper(), true);
-  stepper->setObserver(stepper_observer);
-  stepper->initialize();
-
-  // Integrate to timeMax
-  bool integratorStatus = integrator->advanceTime();
-  TEST_ASSERT(integratorStatus)
-
-  // Test if at 'Final Time'
-  double time = integrator->getTime();
-  const int numberTimeStep = integrator->getIndex();
-  double timeFinal = pl->sublist("Demo Integrator")
-    .sublist("Time Step Control").get<double>("Final Time");
-  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
-
-  // Construct the reference counter and order for comparison.
-  std::map<std::string,int> refCounters;
-  std::list<std::string> refOrder;
-
-  refCounters[loggingObs->nameObserveBeginTakeStep_           ] = numberTimeStep;
-  refCounters[loggingObs->nameObserveBeginStage_              ] = erkStageCount * numberTimeStep;
-  refCounters[loggingObs->nameObserveBeforeImplicitExplicitly_] = erkStageCount * numberTimeStep;
-  refCounters[loggingObs->nameObserveBeforeSolve_             ] = erkStageCount * numberTimeStep;
-  refCounters[loggingObs->nameObserveAfterSolve_              ] = erkStageCount * numberTimeStep;
-  refCounters[loggingObs->nameObserveBeforeExplicit_          ] = erkStageCount * numberTimeStep;
-  refCounters[loggingObs->nameObserveEndStage_                ] = erkStageCount * numberTimeStep;
-  refCounters[loggingObs->nameObserveEndTakeStep_             ] = numberTimeStep;
-
-  for (int i=0 ; i< numberTimeStep; ++i) {
-    refOrder.push_back(loggingObs->nameObserveBeginTakeStep_ );
-    for (int j=0; j<erkStageCount; ++j){
-      refOrder.push_back(loggingObs->nameObserveBeginStage_ );
-      refOrder.push_back(loggingObs->nameObserveBeforeImplicitExplicitly_ );
-      refOrder.push_back(loggingObs->nameObserveBeforeSolve_ );
-      refOrder.push_back(loggingObs->nameObserveAfterSolve_ );
-      refOrder.push_back(loggingObs->nameObserveBeforeExplicit_ );
-      refOrder.push_back(loggingObs->nameObserveEndStage_ );
-    }
-    refOrder.push_back(loggingObs->nameObserveEndTakeStep_ );
-  }
-
-  const std::map<std::string,int>& counters = *(loggingObs->getCounters());
-  const std::list<std::string>&    order    = *(loggingObs->getOrder());
-
-  // Compare against reference.
-  TEST_EQUALITY(
-      counters.find(loggingObs->nameObserveBeginTakeStep_    )->second,
-      refCounters.find(loggingObs->nameObserveBeginTakeStep_ )->second);
-  TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveBeginStage_     )->second,
-    refCounters.find(loggingObs->nameObserveBeginStage_     )->second);
-  TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveBeforeImplicitExplicitly_ )->second,
-    refCounters.find(loggingObs->nameObserveBeforeImplicitExplicitly_ )->second);
-  TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveBeforeSolve_ )->second,
-    refCounters.find(loggingObs->nameObserveBeforeSolve_ )->second);
-  TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveAfterSolve_ )->second,
-    refCounters.find(loggingObs->nameObserveAfterSolve_ )->second);
-  TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveBeforeExplicit_ )->second,
-    refCounters.find(loggingObs->nameObserveBeforeExplicit_ )->second);
-  TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveEndStage_ )->second,
-    refCounters.find(loggingObs->nameObserveEndStage_ )->second);
-  TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveEndTakeStep_ )->second,
-    refCounters.find(loggingObs->nameObserveEndTakeStep_ )->second);
-
-  TEUCHOS_ASSERT(order.size() == refOrder.size());
-
-  std::list<std::string>::const_iterator orderIter = order.begin();
-  std::list<std::string>::const_iterator refOrderIter = refOrder.begin();
-
-  for ( ; orderIter != order.end(); ++orderIter,++refOrderIter) {
-    TEST_EQUALITY(*orderIter, *refOrderIter);
-  }
-
-  // Test the reset.
-  loggingObs->resetLogCounters();
-  TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveBeginTakeStep_)->second, 0);
-  TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveBeginStage_)->second, 0);
-  TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveBeforeImplicitExplicitly_)->second, 0);
-  TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveBeforeSolve_)->second, 0);
-  TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveAfterSolve_)->second, 0);
-  TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveBeforeExplicit_)->second, 0);
-  TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveEndStage_)->second, 0);
-  TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveEndTakeStep_)->second, 0);
-  TEST_EQUALITY(order.size(), 0);
-
-
-  Teuchos::TimeMonitor::summarize();
-}
-#endif
 
 
 } // namespace Tempus_Test

@@ -212,8 +212,7 @@ void StepperOperatorSplit<Scalar>::initialize()
     TEUCHOS_TEST_FOR_EXCEPTION( model == Teuchos::null, std::logic_error,
       "Error - StepperOperatorSplit::initialize() Could not find "
       "a valid model!\n");
-    tempState_ = rcp(new SolutionState<Scalar>(
-      model, this->getDefaultStepperState()));
+    tempState_ = createSolutionStateME(model, this->getDefaultStepperState());
   }
 
   if (!isOneStepMethod() ) {

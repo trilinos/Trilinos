@@ -140,28 +140,6 @@ spack diy -u cmake kokkos-kernels@{version} ...
 specifying the exact version you want to develop and giving any spec options in `...`.
 This creates a folder `spack-build` where you can `make`.
 
-### Raw Makefiles
-1. Modify example/buildlib/compileKokkosKernelsSimple.sh or
-     example/buildlib/compileKokkosKernels.sh for your environment
-     and run it to generate the required makefiles. 
-    * `KOKKOS_DEVICES` can be as below. You can remove any backend 
-       that you don't need. If cuda backend is used, CXX compiler should point to `${KOKKOS_PATH}/bin/nvcc_wrapper`.
-       If you enable `Cuda`, a host space, either `OpenMP` or `Serial` should be enabled.
-       `KOKKOS_DEVICES=OpenMP,Serial,Cuda`
-
-    * For the best performance give the architecture flag to proper architecture.
-       e.g. KNLs: `KOKKOS_ARCHS=KNL`, `KOKKOS_ARCHS=HSW`. 
-       If you compile for P100 GPUs with Power8 Processor, give both architectures.
-       `KOKKOS_ARCHS=Pascal60,Power8`
-     
-       For the architecture flags, run below command.
-       ````
-       scripts/generate_makefile.bash --help     
-       ````
-
-2. Run `make build-test` to compile the tests.
-
-
 ### Trilinos
 For Trilinos builds with the Cuda backend and complex double enabled with ETI,
 the cmake option below may need to be set to avoid Error 127 errors:

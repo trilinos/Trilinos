@@ -635,7 +635,7 @@ struct ScalarTraits<float>
 #ifdef __sun
     return 0.0f/std::sin(0.0f);
 #else
-    return flt_nan;
+    return std::numeric_limits<float>::quiet_NaN();
 #endif
   }
   static inline bool isnaninf(float x) {
@@ -748,7 +748,7 @@ struct ScalarTraits<double>
 #ifdef __sun
     return 0.0/std::sin(0.0);
 #else
-    return dbl_nan;
+    return std::numeric_limits<double>::quiet_NaN();
 #endif
   }
   static inline bool isnaninf(double x) {

@@ -425,6 +425,7 @@ namespace MueLu {
     Teuchos::RCP<RealValuedMultiVector> Coords_, CoordsH_;
     //! Importer to coarse (1,1) hierarchy
     Teuchos::RCP<const Import> ImporterH_, Importer22_;
+    bool D0_T_R11_colMapsMatch_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
@@ -434,7 +435,7 @@ namespace MueLu {
     int numItersH_, numIters22_;
     std::string mode_;
     //! Temporary memory
-    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_;
+    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_, D0TR11Tmp_;
   };
 
 } // namespace

@@ -60,7 +60,13 @@
         
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
         
-\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".}
+\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".}
+        
+\cbb{aggregation: number of random vectors}{int}{10}{Determines how many random vectors are smoothed when "unsupported vector smoothing" used.}
+        
+\cbb{aggregation: number of times to pre or post smooth}{int}{10}{Determines how many times presmoother (or postsmoother if no presmoother set) is invoked when "unsupported vector smoothing" used. Each invocation may include several smoother sweeps.}
+        
+\cbb{aggregation: penalty parameters}{Array(double)}{{12.,-.2,0,0,0} }{Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.}
         
 \cbb{aggregation: distance laplacian algo}{string}{"default"}{Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
         

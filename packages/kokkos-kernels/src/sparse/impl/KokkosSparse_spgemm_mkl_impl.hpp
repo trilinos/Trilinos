@@ -2,10 +2,11 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
-//                 Copyright 2017 Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -109,13 +110,13 @@ void mkl_symbolic(
     return;
   }
 */
-  if (Kokkos::Impl::is_same<idx, int>::value){
+  if (std::is_same<idx, int>::value){
 
     int *a_xadj = NULL;
     int *b_xadj = NULL;
     int_temp_work_view_t a_xadj_v, b_xadj_v;
 
-    if (Kokkos::Impl::is_same<size_type, int>::value){
+    if (std::is_same<size_type, int>::value){
 
       a_xadj = (int *)row_mapA.data();
       b_xadj = (int *)row_mapB.data();
@@ -167,7 +168,7 @@ void mkl_symbolic(
     sparse_matrix_t B;
     sparse_matrix_t C;
 
-    if (Kokkos::Impl::is_same<value_type, float>::value){
+    if (std::is_same<value_type, float>::value){
 
 
 
@@ -248,7 +249,7 @@ void mkl_symbolic(
         return;
       }
     }
-    else if (Kokkos::Impl::is_same<value_type, double>::value){
+    else if (std::is_same<value_type, double>::value){
 
       /*
       std::cout << "create a" << std::endl;
@@ -421,13 +422,13 @@ void mkl_symbolic(
       return;
     }
 */
-    if (Kokkos::Impl::is_same<idx, int>::value){
+    if (std::is_same<idx, int>::value){
 
       int *a_xadj = NULL;
       int *b_xadj = NULL;
       int_temp_work_view_t a_xadj_v, b_xadj_v;
 
-      if (Kokkos::Impl::is_same<size_type, int>::value){
+      if (std::is_same<size_type, int>::value){
 
         a_xadj = (int *)row_mapA.data();
         b_xadj = (int *)row_mapB.data();
@@ -477,7 +478,7 @@ void mkl_symbolic(
       sparse_matrix_t B;
       sparse_matrix_t C;
 
-      if (Kokkos::Impl::is_same<value_type, float>::value){
+      if (std::is_same<value_type, float>::value){
 
 
 
@@ -558,7 +559,7 @@ void mkl_symbolic(
           return;
         }
       }
-      else if (Kokkos::Impl::is_same<value_type, double>::value){
+      else if (std::is_same<value_type, double>::value){
 
         /*
         std::cout << "create a" << std::endl;
