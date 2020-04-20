@@ -7,40 +7,47 @@
 
 # Custom compiler selection logic
 
-if   [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1-openmpi-4.0.2"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1_openmpi-4.0.2"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]] \
+if atdm_match_any_buildname_keyword \
+    clang-9.0.1-openmpi-4.0.2 \
+    clang-9.0.1_openmpi-4.0.2 \
+    clang-9.0.1 \
+    clang-9 \
+    clang \
+    default \
   ; then
   export ATDM_CONFIG_COMPILER=CLANG-9.0.1_OPENMPI-4.0.2
-  # Must list the default clang build last for correct matching of of defaults
+  # Must list the default clang build last of all the 'clang' builds for
+  # correct matching of of defaults
 
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0-openmpi-4.0.2"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0_openmpi-4.0.2"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]] \
+elif atdm_match_any_buildname_keyword \
+    gnu-7.2.0-openmpi-4.0.2 \
+    gnu-7.2.0_openmpi-4.0.2 \
+    gnu-7.2.0 \
+    gnu-7 \
+    gnu \
   ; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0_OPENMPI-4.0.2
-  # List default "gnu"* build last for correct matching of defaults
+  # List default "gnu"* build last of all the 'gnu' builds for correct
+  # matching of defaults
 
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2-mpich2-3.2"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2_mpich2-3.2"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18"* ]] \
+elif atdm_match_any_buildname_keyword \
+    intel-18.0.2-mpich2-3.2 \
+    intel-18.0.2_mpich2-3.2 \
+    intel-18.0.2 \
+    intel-18 \
   ; then
   export ATDM_CONFIG_COMPILER=INTEL-18.0.2_MPICH2-3.2
 
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-19.0.3-intelmpi-2018.4"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"intel-19.0.3_intelmpi-2018.4"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"intel-19.0.3"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"intel-19"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"intel"* ]] \
+elif atdm_match_any_buildname_keyword \
+    intel-19.0.3-intelmpi-2018.4 \
+    intel-19.0.3_intelmpi-2018.4 \
+    intel-19.0.3 \
+    intel-19 \
+    intel \
   ; then
   export ATDM_CONFIG_COMPILER=INTEL-19.0.3_INTELMPI-2018.4
-  # List default "intel"* build last for correct matching!
+  # List default intel build last of all the 'intel' builds for correct
+  # matching!
 
 else
   echo
