@@ -159,6 +159,8 @@ struct Object
 
 } // namespace <empty>
 
+constexpr double millisecTolerance = 1.e-2; //10 millis for robustness
+
 TEST(UnitTestTimer, UnitTest)
 {
   stk::diag::TimeBlock root_time_block(unitTestTimer());
@@ -175,21 +177,21 @@ TEST(UnitTestTimer, UnitTest)
     std::ostringstream oss;
     oss << x << std::endl;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     lap_timer.lap();
     
     stk::diag::MetricTraits<stk::diag::WallTime>::Type lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    EXPECT_NEAR(0.01, lap_time, 1.0e-3);
+    EXPECT_NEAR(0.02, lap_time, millisecTolerance);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     lap_timer.stop();
     
     lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    EXPECT_NEAR(0.02, lap_time, 1.0e-3);
+    EXPECT_NEAR(0.04, lap_time, millisecTolerance);
   }
 
   {
@@ -362,17 +364,17 @@ TEST(UnitTestTimer, MultipleStarts)
   
   {
     stk::diag::TimeBlock childBlock(childTimer);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
   }
   {
     childTimer.start();
     childTimer.start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
     childTimer.stop();
     childTimer.stop();
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  EXPECT_NEAR(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.02, 2.0e-3);
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  EXPECT_NEAR(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.04, millisecTolerance);
   EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 2u);
   stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 }
@@ -390,13 +392,13 @@ TEST(UnitTestTimer, NestedTimers)
   {
     stk::diag::TimeBlock childBlock(childTimer);
     stk::diag::TimeBlock grandChildBlock(grandChildTimer);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
   {
     stk::diag::TimeBlock lap_timer(grandChildTimer);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
-  EXPECT_GE(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.02);
+  EXPECT_GE(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), (0.1 - millisecTolerance));
   EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 2u);
   stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 }
