@@ -2283,7 +2283,38 @@ namespace MueLu {
     // set parameters
     setParameters(List);
 
-    D0_Matrix_    = D0_Matrix;
+    if (D0_Matrix->getRowMap()->lib() == Xpetra::UseTpetra) {
+      // We will remove boundary conditions from D0, and potentially change maps, so we copy the input.
+      // Fortunately, D0 is quite sparse.
+      // We cannot use the Tpetra copy constructor, since it does not copy the graph.
+
+      RCP<Matrix> D0copy = MatrixFactory::Build(D0_Matrix->getRowMap(), D0_Matrix->getColMap(), 0);
+      RCP<CrsMatrix> D0copyCrs = rcp_dynamic_cast<CrsMatrixWrap>(D0copy,true)->getCrsMatrix();
+      ArrayRCP<const size_t> D0rowptr_RCP;
+      ArrayRCP<const LO>     D0colind_RCP;
+      ArrayRCP<const SC>     D0vals_RCP;
+      rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix,true)->getCrsMatrix()->getAllValues(D0rowptr_RCP,
+                                                                                    D0colind_RCP,
+                                                                                    D0vals_RCP);
+
+      ArrayRCP<size_t> D0copyrowptr_RCP;
+      ArrayRCP<LO>     D0copycolind_RCP;
+      ArrayRCP<SC>     D0copyvals_RCP;
+      D0copyCrs->allocateAllValues(D0vals_RCP.size(),D0copyrowptr_RCP,D0copycolind_RCP,D0copyvals_RCP);
+      D0copyrowptr_RCP.deepCopy(D0rowptr_RCP());
+      D0copycolind_RCP.deepCopy(D0colind_RCP());
+      D0copyvals_RCP.deepCopy(D0vals_RCP());
+      D0copyCrs->setAllValues(D0copyrowptr_RCP,
+                              D0copycolind_RCP,
+                              D0copyvals_RCP);
+      D0copyCrs->expertStaticFillComplete(D0_Matrix->getDomainMap(), D0_Matrix->getRangeMap(),
+                                          rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix,true)->getCrsMatrix()->getCrsGraph()->getImporter(),
+                                          rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix,true)->getCrsMatrix()->getCrsGraph()->getExporter());
+      D0_Matrix_ = D0copy;
+    } else
+      D0_Matrix_ = MatrixFactory::BuildCopy(D0_Matrix);
+
+
     M0inv_Matrix_ = M0inv_Matrix;
     Ms_Matrix_    = Ms_Matrix;
     M1_Matrix_    = M1_Matrix;
