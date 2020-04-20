@@ -110,18 +110,18 @@ struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosC
                                                        const std::string& label = std::string(),
                                                        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void jacobi_A_B_newmatrix_KokkosKernels(Scalar omega,
-                                                           const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
-                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
-                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
-                                                           const LocalOrdinalViewType & Acol2Brow,
-                                                           const LocalOrdinalViewType & Acol2Irow,
-                                                           const LocalOrdinalViewType & Bcol2Ccol,
-                                                           const LocalOrdinalViewType & Icol2Ccol,
-                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
-                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
-                                                           const std::string& label = std::string(),
-                                                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    static inline void jacobi_A_B_newmatrix_KokkosKernels(Scalar omega,
+                                                          const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
+                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+                                                          const LocalOrdinalViewType & Acol2Brow,
+                                                          const LocalOrdinalViewType & Acol2Irow,
+                                                          const LocalOrdinalViewType & Bcol2Ccol,
+                                                          const LocalOrdinalViewType & Icol2Ccol,
+                                                          CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+                                                          Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+                                                          const std::string& label = std::string(),
+                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 };
 
 
@@ -642,6 +642,25 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   Teuchos::RCP<TimeMonitor> MM;
 #endif
 
+  // Check if the diagonal entries exist in debug mode
+  const bool debug = Tpetra::Details::Behavior::debug();
+  if(debug) {
+
+    auto rowMap = Aview.origMatrix->getRowMap();
+    Tpetra::Vector<Scalar> diags(rowMap);
+    Aview.origMatrix->getLocalDiagCopy(diags);
+    size_t diagLength = rowMap->getNodeNumElements();
+    Teuchos::Array<Scalar> diagonal(diagLength);
+    diags.get1dCopy(diagonal());
+
+    for(LocalOrdinal i = 0; i < diagLength; ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(diagonal[i] == Teuchos::ScalarTraits<Scalar>::zero(), 
+				 std::runtime_error, 
+				 "Matrix A has a zero/missing diagonal: " << diagonal[i] << std::endl <<
+				 "KokkosKernels Jacobi-fused SpGEMM requires nonzero diagonal entries in A" << std::endl);
+    }
+  }
+
   // Usings
   using device_t = typename Kokkos::Compat::KokkosCudaWrapperNode::device_type;
   using matrix_t = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode>::local_matrix_type;
@@ -718,7 +737,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
     entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
     valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
   }
-  std::cout << "ENTERED NEW JACOBI" << std::endl; 
+
   KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
 					    Arowptr, Acolind, Avals, false,
 					    Browptr, Bcolind, Bvals, false,
