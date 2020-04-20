@@ -93,15 +93,17 @@ namespace MueLu {
 #elif defined(HAVE_AMESOS_UMFPACK)
       type_ = "Umfpack";
 #else
-      throw Exceptions::RuntimeError("Amesos has been compiled without SuperLU_DIST, SuperLU, Umfpack or Klu. By default, MueLu tries"
-                                     "to use one of these libraries. Amesos must be compiled with one of these solvers,  "
-                                     "or a valid Amesos solver has to be specified explicitly.");
+      this->declareConstructionOutcome(true, "Amesos has been compiled without SuperLU_DIST, SuperLU, Umfpack or Klu. By default, MueLu tries" +
+                                       "to use one of these libraries. Amesos must be compiled with one of these solvers,  " +
+                                       "or a valid Amesos solver has to be specified explicitly.");
+      return;
 #endif
       if (oldtype != "")
         this->GetOStream(Warnings0) << "MueLu::AmesosSmoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
       else
         this->GetOStream(Runtime1) << "MueLu::AmesosSmoother: using \"" << type_ << "\"" << std::endl;
     }
+    this->declareConstructionOutcome(false, "");
   }
 
   template <class Node>
