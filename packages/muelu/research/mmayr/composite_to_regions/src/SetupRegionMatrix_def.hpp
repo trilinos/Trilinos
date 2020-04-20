@@ -235,7 +235,7 @@ void MakeGroupRegionColumnMaps(const int myRank,
     fprintf(stderr,"whichCase not set properly\n");
     exit(1);
   }
-}
+} // MakeGroupRegionColumnMaps
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class widget>
 void MakeGroupExtendedMaps(const int myRank,
@@ -388,7 +388,7 @@ void MakeGroupExtendedMaps(const int myRank,
                                                Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
                                                AComp->getMap()->getComm());
   }
-}
+} // MakeGroupExtendedMaps
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AComp,
@@ -470,7 +470,7 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 
     tm = Teuchos::null;
   }
-}
+} // MakeQuasiregionMatrices
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AComp,
@@ -769,5 +769,51 @@ computeResidual(Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
 
   return regRes;
 } // computeResidual
+
+/*! \brief Compute a matrix vector product \f$Y = beta*Y + alpha*Ax\f$
+ *
+ *  The residual is computed based on matrices and vectors in a regional layout.
+ *  1. Compute y = A*x in regional layout.
+ *  2. Sum interface values of y to account for duplication of interface DOFs.
+ *  3. Compute r = b - y
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatVec(const Scalar alpha,
+            const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMatrix,
+            const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
+            const Scalar beta,
+            const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+            const Teuchos::Array<LocalOrdinal>& regionInterfaceLIDs,
+            RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y) {
+#include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatVec: 1 - local apply")));
+  RCP<const Map> regionInterfaceMap = regionInterfaceImporter->getTargetMap();
+
+  // Step 1: apply the local operator
+  // since in region formate the matrix is block diagonal
+  regionMatrix->apply(*X, *Y, Teuchos::NO_TRANS, alpha, beta);
+
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatVec: 2 - communicate data")));
+
+  // Step 2: preform communication to propagate local interface
+  // values to all the processor that share interfaces.
+  RCP<MultiVector> matvecInterfaceTmp = MultiVectorFactory::Build(regionInterfaceMap, 1);
+  matvecInterfaceTmp->doImport(*Y, *regionInterfaceImporter, Xpetra::INSERT);
+
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatVec: 3 - sum interface contributions")));
+
+  // Step 3: sum all contributions to interface values
+  // on all ranks
+  ArrayRCP<Scalar> YData = Y->getDataNonConst(0);
+  ArrayRCP<Scalar> interfaceData = matvecInterfaceTmp->getDataNonConst(0);
+  for(LO interfaceIdx = 0; interfaceIdx < static_cast<LO>(interfaceData.size()); ++interfaceIdx) {
+    YData[regionInterfaceLIDs[interfaceIdx]] += interfaceData[interfaceIdx];
+  }
+
+  tm = Teuchos::null;
+}
 
 #endif // MUELU_SETUPREGIONMATRIX_DEF_HPP

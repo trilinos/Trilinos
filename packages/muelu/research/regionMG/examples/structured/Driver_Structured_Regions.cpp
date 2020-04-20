@@ -452,12 +452,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   const LO numSend = static_cast<LO>(sendGIDs.size());
 
-  // std::cout << "p=" << myRank << " | numReceive=" << numReceive
-  //           << ", numSend=" << numSend << std::endl;
+  std::cout << "p=" << myRank << " | numSend=" << numSend << std::endl;
+            // << ", numReceive=" << numReceive << std::endl;
   // std::cout << "p=" << myRank << " | receiveGIDs: " << receiveGIDs << std::endl;
   // std::cout << "p=" << myRank << " | receivePIDs: " << receivePIDs << std::endl;
-  // std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
-  // std::cout << "p=" << myRank << " | sendPIDs: " << sendPIDs << std::endl;
+  std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
+  std::cout << "p=" << myRank << " | sendPIDs: " << sendPIDs << std::endl;
 
   // Second we actually fill the send and receive arrays with appropriate data
   // which will allow us to compute the region and composite maps.
@@ -466,25 +466,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   if(useUnstructured) {
     findInterface(numDimensions, rNodesPerDim, boundaryConditions,
                   interfacesDimensions, interfacesLIDs);
+
+    // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
+    //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
+    // std::cout << "p=" << myRank << " | boundaryConditions: " << boundaryConditions << std::endl
+    //           << "p=" << myRank << " | rNodesPerDim: " << rNodesPerDim << std::endl
+    //           << "p=" << myRank << " | interfacesDimensions: " << interfacesDimensions << std::endl
+    //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
   }
 
   interfaceParams->set<int>       ("interfaces: number",               numInterfaces);
   interfaceParams->set<Array<LO> >("interfaces: nodes per dimensions", interfacesDimensions); // nodesPerDimensions);
   interfaceParams->set<Array<LO> >("interfaces: interface nodes",      interfacesLIDs); // interfaceLIDs);
 
-  // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
-  //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
-  // std::cout << "p=" << myRank << " | boundaryConditions: " << boundaryConditions << std::endl
-  //           << "p=" << myRank << " | rNodesPerDim: " << rNodesPerDim << std::endl
-  //           << "p=" << myRank << " | interfacesDimensions: " << interfacesDimensions << std::endl
-  //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
-
-  // std::cout << "p=" << myRank << " | receiveLIDs: " << receiveLIDs() << std::endl;
-  // std::cout << "p=" << myRank << " | sendLIDs: " << sendLIDs() << std::endl;
-  // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
-  // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
+  std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
+  std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceLIDs: " << interfaceLIDs() << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionCoordGIDs: " << quasiRegionCoordGIDs() << std::endl;
+
+  return 0;
 
   // In our very particular case we know that a node is at most shared by 4 (8) regions in 2D (3D) problems.
   // Other geometries will certainly have different constrains and a parallel reduction using MAX
