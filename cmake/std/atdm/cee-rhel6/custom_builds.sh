@@ -23,7 +23,7 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1-openmpi-4.0.2"* ]] \
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1-openmpi-4.0.2"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1_openmpi-4.0.2"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9.0.1"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"clang-9"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]] \
   ; then
