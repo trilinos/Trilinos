@@ -45,7 +45,7 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-19.0.3-intelmpi-2018.4"* ]] \
 else
   echo
   echo "***"
-  echo "*** ERROR: A supported compiler was not selected for 'cee-rhel6' env"
+  echo "*** ERROR: A supported compiler was not selected for 'cee-rhel6' env in buildname '${ATDM_CONFIG_BUILD_NAME}'"
   echo "***"
   echo "*** Supported compilers include:"
   echo "***"
