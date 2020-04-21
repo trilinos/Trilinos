@@ -50,7 +50,6 @@
 
 #include "../../TOOLS/pde.hpp"
 #include "../../TOOLS/fe.hpp"
-#include "hilbert.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
@@ -82,9 +81,8 @@ private:
   // Indexing:  [sideset number][local side id](cell number, value at dof)
   std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> bdryCellDofValues_;
 
-  int order_;
+  int nx_, ny_;
   Real XL_, XU_, YL_, YU_;
-  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> ctrl_wts_;
   bool usePC_;
 
 public:
@@ -115,23 +113,14 @@ public:
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                       // create cubature factory
     cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
 
-    order_ = parlist.sublist("Problem").get("Hilbert Curve Order", 2);
+    nx_ = parlist.sublist("Problem").get("Number of X-Cells", 4);
+    ny_ = parlist.sublist("Problem").get("Number of Y-Cells", 2);
     XL_ = parlist.sublist("Geometry").get("X0", 0.0);
     YL_ = parlist.sublist("Geometry").get("Y0", 0.0);
     XU_ = XL_ + parlist.sublist("Geometry").get("Width",  2.0);
     YU_ = YL_ + parlist.sublist("Geometry").get("Height", 1.0);
     usePC_ = parlist.sublist("Problem").get("Piecewise Constant Controls", true);
   }
-
-//  PDE_adv_diff(const PDE_adv_diff &rpde)
-//    : basisPtr_(rpde.basisPtr_), basisPtrs_(rpde.basisPtrs_),
-//      cellCub_(rpde.cellCub_), volCellNodes_(rpde.volCellNodes_),
-//      bdryCellNodes_(rpde.bdryCellNodes_),
-//      bdryCellLocIds_(rpde.bdryCellLocIds_),
-//      fe_vol_(rpde.fe_vol_), fidx_(rpde.fidx_),
-//      bdryCellDofValues_(rpde.bdryCellDofValues_),
-//      order_(rpde.order_), XL_(rpde.XL_), XU_(rpde.XU_), YL(rpde.YL_),
-//      YU_(rpde.YU_), ctrl_wts_(rpde.ctrl_wts_), usePC_(rpde.usePC_) {}
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
                 const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
@@ -183,15 +172,11 @@ public:
                                                     Intrepid::COMP_CPP, true);
     }
     else {
-      int n = std::pow(2,order_);
-      for (int i = 0; i < n*n; ++i) {
-        *valZ_eval = *ctrl_wts_[i];
-        Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,-(*z_param)[i]);
-        Intrepid::FunctionSpaceTools::integrate<Real>(*res,
-                                                      *valZ_eval,
-                                                      *fe_vol_->NdetJ(),
-                                                      Intrepid::COMP_CPP, true);
-      }
+      addControlOperator(valZ_eval,z_param);
+      Intrepid::FunctionSpaceTools::integrate<Real>(*res,
+                                                    *valZ_eval,
+                                                    *fe_vol_->NdetJ(),
+                                                    Intrepid::COMP_CPP, true);
     }
     // APPLY DIRICHLET CONDITIONS
     int numLocalSideIds = bdryCellLocIds_[0].size();
@@ -306,25 +291,29 @@ public:
       int f = fe_vol_->gradN()->dimension(1);
       int p = fe_vol_->gradN()->dimension(2);
       // ADD CONTROL TERM TO RESIDUAL
-      int n = std::pow(2,order_);
       ROL::Ptr<Intrepid::FieldContainer<Real>> ctrl
         = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-      for (int i = 0; i < n*n; ++i) {
-        jac[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
-        Intrepid::FunctionSpaceTools::integrate<Real>(*jac[i],
-                                                      *ctrl_wts_[i],
-                                                      *fe_vol_->NdetJ(),
-                                                      Intrepid::COMP_CPP, false);
-        Intrepid::RealSpaceTools<Real>::scale(*jac[i],static_cast<Real>(-1));
-        // APPLY DIRICHLET CONDITIONS
-        int numLocalSideIds = bdryCellLocIds_[0].size();
-        for (int j = 0; j < numLocalSideIds; ++j) {
-          int numCellsSide = bdryCellLocIds_[0][j].size();
-          int numBdryDofs = fidx_[j].size();
-          for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[0][j][k];
-            for (int l = 0; l < numBdryDofs; ++l) {
-              (*(jac[i]))(cidx,fidx_[j][l]) = static_cast<Real>(0);
+      ROL::Ptr<Intrepid::FieldContainer<Real>> B
+        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+      for (int i = 0; i < nx_; ++i) {
+        for (int j = 0; j < ny_; ++j) {
+          int ind = i + j*nx_;
+          jac[ind] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
+          addControlJaobian(B,i,j);
+          Intrepid::FunctionSpaceTools::integrate<Real>(*jac[ind],
+                                                        *B,
+                                                        *fe_vol_->NdetJ(),
+                                                        Intrepid::COMP_CPP, false);
+          // APPLY DIRICHLET CONDITIONS
+          int numLocalSideIds = bdryCellLocIds_[0].size();
+          for (int k = 0; k < numLocalSideIds; ++k) {
+            int numCellsSide = bdryCellLocIds_[0][k].size();
+            int numBdryDofs = fidx_[k].size();
+            for (int l = 0; l < numCellsSide; ++l) {
+              int cidx = bdryCellLocIds_[0][k][l];
+              for (int m = 0; m < numBdryDofs; ++m) {
+                (*(jac[ind]))(cidx,fidx_[k][m]) = static_cast<Real>(0);
+              }
             }
           }
         }
@@ -464,9 +453,6 @@ public:
         }
       }
     }
-    if (usePC_) {
-      computeControlWeights();
-    }
   }
 
   const ROL::Ptr<FE<Real>> getFE(void) const {
@@ -474,15 +460,14 @@ public:
   }
 
   void print(void) const {
-    int n = std::pow(2,order_);
-    int x(0), y(0);
     std::ofstream xfile, yfile;
     xfile.open("X.txt");
     yfile.open("Y.txt");
-    for (int i = 0; i < n*n; ++i) {
-      hilbert::d2xy(order_, i, x, y);
-      xfile << x << std::endl;
-      yfile << y << std::endl;
+    for (int i = 0; i < nx_; ++i) {
+      for (int j = 0; j < ny_; ++j) {
+        xfile << i << std::endl;
+        yfile << j << std::endl;
+      }
     }
     xfile.close();
     yfile.close();
@@ -526,36 +511,59 @@ private:
     }
   }
 
-  void computeControlWeights(void) {
+  void addControlOperator(ROL::Ptr<Intrepid::FieldContainer<Real>> &Bz,
+                          const ROL::Ptr<const std::vector<Real>> &z) const {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int p = fe_vol_->gradN()->dimension(2);
     int d = fe_vol_->gradN()->dimension(3);
     std::vector<Real> pt(d);
     Real xl(0), xu(0), yl(0), yu(0);
-    int n = std::pow(2,order_), x(0), y(0), D(0);
-    ctrl_wts_.clear(); ctrl_wts_.resize(n*n);
-    for (int l = 0; l < n*n; ++l) {
-      ctrl_wts_[l] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,p);
-      ctrl_wts_[l]->initialize();
-    }
+    Bz->initialize();
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
         for ( int k = 0; k < d; ++k) {
           pt[k] = (*fe_vol_->cubPts())(i,j,k);
         }
-        for (int l = 0; l < n; ++l) {
-          for (int m = 0; m < n; ++m) {
-            hilbert::xy2d(order_,l,m,D);
-            D = l + m*n;
-            xl = XL_ + static_cast<Real>(l)*(XU_-XL_)/static_cast<Real>(n);
-            xu = XL_ + static_cast<Real>(l+1)*(XU_-XL_)/static_cast<Real>(n);
-            yl = YL_ + static_cast<Real>(m)*(YU_-YL_)/static_cast<Real>(n);
-            yu = YL_ + static_cast<Real>(m+1)*(YU_-YL_)/static_cast<Real>(n);
-            if ( (pt[0] < xu && pt[0] >= xl) && (pt[1] < yu && pt[1] >= yl) ) {
-              (*ctrl_wts_[D])(i,j) = static_cast<Real>(1);
+        for (int l = 0; l < nx_; ++l) {
+          xl = XL_ + static_cast<Real>(l)*(XU_-XL_)/static_cast<Real>(nx_);
+          xu = XL_ + static_cast<Real>(l+1)*(XU_-XL_)/static_cast<Real>(nx_);
+          if ( pt[0] < xu && pt[0] >= xl ) {
+            for (int m = 0; m < ny_; ++m) {
+              int ind = l + m*nx_;
+              yl = YL_ + static_cast<Real>(m)*(YU_-YL_)/static_cast<Real>(ny_);
+              yu = YL_ + static_cast<Real>(m+1)*(YU_-YL_)/static_cast<Real>(ny_);
+              if ( pt[1] < yu && pt[1] >= yl ) {
+                (*Bz)(i,j) -= (*z)[ind];
+              }
             }
           }
+        }
+      }
+    }
+  }
+
+  void addControlJaobian(ROL::Ptr<Intrepid::FieldContainer<Real>> &B,
+                         int l, int m) const {
+    // GET DIMENSIONS
+    int c = fe_vol_->gradN()->dimension(0);
+    int p = fe_vol_->gradN()->dimension(2);
+    int d = fe_vol_->gradN()->dimension(3);
+    std::vector<Real> pt(d);
+    Real xl(0), xu(0), yl(0), yu(0);
+    xl = XL_ + static_cast<Real>(l)*(XU_-XL_)/static_cast<Real>(nx_);
+    xu = XL_ + static_cast<Real>(l+1)*(XU_-XL_)/static_cast<Real>(nx_);
+    yl = YL_ + static_cast<Real>(m)*(YU_-YL_)/static_cast<Real>(ny_);
+    yu = YL_ + static_cast<Real>(m+1)*(YU_-YL_)/static_cast<Real>(ny_);
+    int ind = l + m*nx_;
+    B->initialize();
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        for ( int k = 0; k < d; ++k) {
+          pt[k] = (*fe_vol_->cubPts())(i,j,k);
+        }
+        if ( pt[0] < xu && pt[0] >= xl && pt[1] < yu && pt[1] >= yl ) {
+          (*B)(i,j) = static_cast<Real>(-1);
         }
       }
     }

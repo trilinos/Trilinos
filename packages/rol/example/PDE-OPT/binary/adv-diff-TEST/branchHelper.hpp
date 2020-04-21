@@ -51,7 +51,12 @@ template <class Real>
 class PDEOPT_BranchHelper_PEBBL : public ROL::StdBranchHelper_PEBBL<Real> {
 private:
   ROL::Ptr<const ROL::StdVector<Real>> getParameter(const ROL::Vector<Real> &x) const {
-    return dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
+    try {
+      return ROL::makePtrFromRef(dynamic_cast<const ROL::StdVector<Real>&>(x));
+    }
+    catch (std::exception &e) {
+      return dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
+    }
   }
 
 public:

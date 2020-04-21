@@ -26,6 +26,9 @@ private:
 
 public:
 
+  ROL_PEBBL_Driver(const Ptr<ROL_PEBBL_Branching<Real>> &branching)
+    : branching_(branching) {}
+
   ROL_PEBBL_Driver(const Ptr<OptimizationProblemFactory<Real>> &factory,
                    const Ptr<ParameterList> &parlist,
                    const Ptr<BranchHelper_PEBBL<Real>> &bHelper,
@@ -45,6 +48,15 @@ public:
       branching_->solve();
     }
     return flag;
+  }
+
+  const Ptr<Vector<Real>> getSolution(void) const {
+    if (branching_ != nullPtr) {
+      return dynamic_cast<ROL_PEBBL_Solution<Real>*>(branching_->incumbent)->getVector();
+    }
+    else {
+      return nullPtr;
+    }
   }
 };
 

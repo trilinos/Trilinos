@@ -51,7 +51,12 @@ template <class Real>
 class PDEOPT_Transform_PEBBL : public ROL::StdTransform_PEBBL<Real> {
 private:
   ROL::Ptr<ROL::StdVector<Real>> getParameter(ROL::Vector<Real> &x) const {
-    return dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
+    try {
+      return ROL::makePtrFromRef(dynamic_cast<ROL::StdVector<Real>&>(x));
+    }
+    catch (std::exception &e) {
+      return dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
+    }
   }
 
 public:
