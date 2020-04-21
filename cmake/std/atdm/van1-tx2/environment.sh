@@ -12,13 +12,14 @@ echo "Using ARM ATSE compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_
 #
 
 if   [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] \
+  || [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "TX2" ]] \
   || [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "" ]] \
   ; then
   export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
 else
   echo
   echo "***"
-  echo "*** ERROR: Only one arch is supported this system!  Remove any arch keywords from build name '${ATDM_CONFIG_BUILD_NAME}'"
+  echo "*** ERROR: KOKKOS_ARCH='${ATDM_CONFIG_KOKKOS_ARCH}' was parsed from the the buildname '${ATDM_CONFIG_BUILD_NAME}'.  Only one KOKKOS_ARCH is supported for this system.  Please remove that KOKKOS_ARCH keyword from the buildname!"
   echo "***"
   return
 fi
