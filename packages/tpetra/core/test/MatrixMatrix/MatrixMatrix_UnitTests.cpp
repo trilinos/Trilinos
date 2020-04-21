@@ -1049,13 +1049,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       // Check if all diagonal entries are there, required for KokkosKernels Jacobi
       bool diagExists = true;
       auto rowMap = A->getRowMap();
-      Tpetra::Vector<SC, LO, GO, NT> diags(rowMap);
+      Tpetra::Vector<MT, LO, GO, NT> diags(rowMap);
       A->getLocalDiagCopy(diags);
       size_t diagLength = rowMap->getNodeNumElements();
-      Teuchos::Array<SC> diagonal(diagLength);
+      Teuchos::Array<MT> diagonal(diagLength);
       diags.get1dCopy(diagonal());
 
-      for(LO i = 0; i < diagLength; ++i) {
+      for(size_t i = 0; i < diagLength; ++i) {
 	if(diagonal[i] == Teuchos::ScalarTraits<SC>::zero()) {
 	  diagExists = false;
 	  break;
