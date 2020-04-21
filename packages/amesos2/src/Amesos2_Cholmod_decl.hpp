@@ -284,7 +284,7 @@ private:
   device_int_array device_trsv_perm_;
   mutable device_solve_array_t device_trsv_rhs_;
   mutable device_solve_array_t device_trsv_sol_;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, scalar_type,
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, chol_type,
     DeviceExecSpaceType, DeviceMemSpaceType, DeviceMemSpaceType> kernel_handle_type;
   mutable kernel_handle_type device_khL_;
   mutable kernel_handle_type device_khU_;
