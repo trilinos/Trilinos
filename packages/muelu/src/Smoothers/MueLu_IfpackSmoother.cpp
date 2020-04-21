@@ -62,6 +62,7 @@ namespace MueLu {
   IfpackSmoother<Node>::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
     : type_(type), overlap_(overlap)
   {
+    this->declareConstructionOutcome(false, "");
     SetParameterList(paramList);
   }
 

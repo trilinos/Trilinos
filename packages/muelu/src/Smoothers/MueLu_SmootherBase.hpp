@@ -93,7 +93,21 @@ namespace MueLu {
     //! Compute a rough estimate of the cost to apply this smoother on this MPI rank.  Return Teuchos::OrdinalTraits<size_t>::invalid() if such an estimate cannot be computed.
     virtual size_t getNodeSmootherComplexity() const= 0;
 
+    void declareConstructionOutcome(bool fail, std::string msg) {
+      constructionSuccessful_ = !fail;
+      if (!fail)
+        constructionErrorMsg_ = "";
+      else
+        constructionErrorMsg_ = msg;
+    };
+    bool constructionSuccessful() { return constructionSuccessful_; }
+    std::string constructionErrorMsg() { return constructionErrorMsg_; }
+
     //@}
+
+  private:
+    bool constructionSuccessful_;
+    std::string constructionErrorMsg_;
 
   }; //class SmootherBase
 } //namespace MueLu

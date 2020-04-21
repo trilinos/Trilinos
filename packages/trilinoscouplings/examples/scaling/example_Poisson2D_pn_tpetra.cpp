@@ -295,6 +295,8 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     \param  nCoord             [in]    Nodal Coordinates
     \param  xexact             [in]    exact solution
     \param  b                  [in]    right-hand-side vector
+    \param  maxits             [in]    max iterations
+    \param  tol                [in]    solver tolerance
     \param  uh                 [out]   solution vector
     \param  TotalErrorResidual [out]   error residual
     \param  TotalErrorExactSol [out]   error in uh
@@ -306,6 +308,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & nCoord,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
+				 int maxits,
+				 double tol,	
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
@@ -438,6 +442,18 @@ int main(int argc, char *argv[]) {
   bool optPrintTimings = false;
   clp.setOption("timings", "notimings",  &optPrintTimings,      "print timer summary");
 
+  // If matrixFilename is nonempty, dump the matrix to that file
+  // in MatrixMarket format.
+  std::string matrixFilename;
+  clp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
+		  "generated matrix to that file in MatrixMarket format.");
+  
+  // If coordsFilename is nonempty, dump the coords to that file
+  // in MatrixMarket format.
+  std::string coordsFilename;
+  clp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
+		  "generated coordinates to that file in MatrixMarket format.");
+  
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -1149,24 +1165,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-#ifdef DUMP_DATA_OLD
-
-  EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
-
-  // Put element to node mapping in multivector for output
-  Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
-  Epetra_MultiVector elem2nodeMV(globalMapElem, numNodesPerElem);
-  for (int ielem=0; ielem<numElems; ielem++) {
-    for (int inode=0; inode<numNodesPerElem; inode++) {
-      elem2nodeMV[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2nodeMV,0,0,false);
-
-  if(MyPID==0) {Time.ResetStartTime();}
-
-#endif
-
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
   /**********************************************************************************/
@@ -1305,6 +1303,7 @@ int main(int argc, char *argv[]) {
                      msg
                      );
 
+
 /**********************************************************************************/
 /***************************** STATISTICS (Part III) ******************************/
 /**********************************************************************************/
@@ -1392,6 +1391,18 @@ int main(int argc, char *argv[]) {
   Apply_Dirichlet_BCs(BCNodes,StiffMatrix_aux,*rhsVector_aux,*rhsVector_aux,v);
 
   tm = Teuchos::null;
+
+  // Optionally dump the matrix and/or its coords to files.
+  {
+    typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
+    if (matrixFilename != "") {
+      writer_type::writeSparseFile (matrixFilename, StiffMatrix);
+    }
+    if (coordsFilename != "") {
+      writer_type::writeDenseFile (coordsFilename, nCoord);
+    }
+  }
+
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
@@ -1518,11 +1529,17 @@ int main(int argc, char *argv[]) {
     level1.set("Nullspace",xnullspace);
   }
 
+  int maxits = inputSolverList.get("Maximum Iterations",(int)100);
+  double tol = inputSolverList.get("Convergence Tolerance",(double)1e-10);
+
   TestMultiLevelPreconditionerLaplace(probType, amgList,
                                       rcpFromRef(StiffMatrix),
 				      nCoord,
 				      exactNodalVals,
-                                      rhsVector,            femCoefficients,
+                                      rhsVector,            
+				      maxits,
+				      tol,
+				      femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol,
                                       amgType);
 
@@ -1767,13 +1784,13 @@ template<typename Scalar>
 const Scalar exactSolution(const Scalar& x, const Scalar& y) {
 
   // Patch test: bi-linear function is in the FE space and should be recovered
-  //  return 1. + x + y + x*y;
+    return 1. + x + y + x*y;
 
   // Analytic solution with homogeneous Dirichlet boundary data
-  //return sin(M_PI*x)*sin(M_PI*y)**exp(x+y);
+  //  return sin(M_PI*x)*sin(M_PI*y)**exp(x+y);
 
   // Analytic solution with inhomogeneous Dirichlet boundary data
-  return exp(x + y )/(1. + x*y);
+  //  return exp(x + y )/(1. + x*y);
 }
 
 
@@ -1951,6 +1968,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  RCP<multivector_type> & nCoord,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
+				 int maxIts,
+				 double tol,	
                                  RCP<multivector_type> & uh,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol,
@@ -1958,8 +1977,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 {
 
   //  int mypid = A0->getComm()->getRank();
-  int maxIts = 100;
-  double tol =1e-10;
   RCP<multivector_type> x = rcp(new multivector_type(xexact->getMap(),1));
   //x.PutScalar(0.0);
   //JJH FIXME solve Ax=0

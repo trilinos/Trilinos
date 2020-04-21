@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# A generic git hook proxy.
+# https://git-scm.com/docs/githooks
+
+run() {
+  hook=$1
+  file=$2
+
+  n=$(echo "${file}" |sed "s/^.*${hook}\.//")
+  echo "running ${n} ${hook}"
+  ${file}
+}
+
+die() {
+  hook=$1
+  echo "${hook} hook did not succeed" >&2
+  exit 1
+}
+
+# Redirect output to stderr.
+exec 1>&2
+
+githooks='.githooks'
+basename=$(basename "$0")
+
+for f in $(cd ${githooks} && echo *); do
+  case "${f}" in
+    ${basename}.*)
+      run ${basename} "${githooks}/${f}" || die "${f}"
+      ;;
+  esac
+done
