@@ -24,7 +24,11 @@ using Teuchos::rcp_dynamic_cast;
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_Midpoint, Default_Construction)
 {
-  testExplicitRKAccessorsFullConstruction("RK Explicit Midpoint");
+  auto stepper = rcp(new Tempus::StepperERK_Midpoint<double>());
+  testExplicitRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
 
 
@@ -41,7 +45,9 @@ TEUCHOS_UNIT_TEST(ERK_Midpoint, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_Midpoint, AppAction)
 {
-  testRKAppAction("RK Explicit Midpoint", out, success);
+  auto stepper = rcp(new Tempus::StepperERK_Midpoint<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

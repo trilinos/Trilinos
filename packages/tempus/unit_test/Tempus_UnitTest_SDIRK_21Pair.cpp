@@ -40,7 +40,11 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_21Pair, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("SDIRK 2(1) Pair");
+  auto stepper = rcp(new Tempus::StepperSDIRK_21Pair<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
 
 
@@ -57,7 +61,9 @@ TEUCHOS_UNIT_TEST(SDIRK_21Pair, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_21Pair, AppAction)
 {
-  testRKAppAction("SDIRK 2(1) Pair", out, success);
+  auto stepper = rcp(new Tempus::StepperSDIRK_21Pair<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

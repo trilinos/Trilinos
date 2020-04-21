@@ -36,15 +36,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
-#define TEST_EMBEDDED_VANDERPOL
-#define TEST_STAGE_NUMBER
 
-
-#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
@@ -136,10 +128,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
     }
   }
 }
-#endif // TEST_PARAMETERLIST
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
@@ -236,10 +226,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.841470, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.540303, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
@@ -419,10 +407,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   }
   //Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_SINCOS
 
 
-#ifdef TEST_EMBEDDED_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
@@ -535,10 +521,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_EMBEDDED_VANDERPOL
 
 
-#ifdef TEST_STAGE_NUMBER
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, stage_number)
@@ -613,6 +597,6 @@ TEUCHOS_UNIT_TEST(ExplicitRK, stage_number)
     TEST_EQUALITY( stage_number, erk_stepper->getStageNumber());
   }
 }
-#endif // TEST_STAGE_NUMBER
+
 
 } // namespace Tempus_Test

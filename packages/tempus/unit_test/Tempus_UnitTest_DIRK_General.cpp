@@ -111,6 +111,8 @@ TEUCHOS_UNIT_TEST(DIRK_General, Default_Construction)
     A, b, c, order, order, order, bstar));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
 
 
@@ -127,7 +129,9 @@ TEUCHOS_UNIT_TEST(DIRK_General, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK_General, AppAction)
 {
-  testRKAppAction("General DIRK", out, success);
+  auto stepper = rcp(new Tempus::StepperDIRK_General<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

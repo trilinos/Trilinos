@@ -12,7 +12,6 @@
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
-#include "Tempus_StepperRKModifierDefault.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"
@@ -96,7 +95,7 @@ void StepperDIRK<Scalar>::setup(
   stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
   this->setObserver(Teuchos::null);
 #endif
-  this->setAppAction(Teuchos::null);
+  this->setAppAction(stepperRKAppAction);
   this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
