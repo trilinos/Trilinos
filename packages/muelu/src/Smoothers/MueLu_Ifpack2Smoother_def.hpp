@@ -103,8 +103,9 @@ namespace MueLu {
                                                                             type_ == "LINESMOOTHING_BLOCK RELAXATION"        ||
                                                                             type_ == "LINESMOOTHING_BLOCKRELAXATION"         ||
                                                                             type_ == "TOPOLOGICAL");
-    TEUCHOS_TEST_FOR_EXCEPTION(!isSupported, Exceptions::RuntimeError, "Ifpack2 does not provide the smoother '" << type_ << "'.");
-    SetParameterList(paramList);
+    this->declareConstructionOutcome(!isSupported, "Ifpack2 does not provide the smoother '" + type_ + "'.");
+    if (isSupported)
+      SetParameterList(paramList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

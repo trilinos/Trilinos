@@ -74,16 +74,18 @@ Using white/ride compiler stack GNU to build DEBUG code with Kokkos node type OP
 <a name="build-name-keywords"/>
 
 **[build-name-keywords]** The `<build-name>` argument is a single string of
-the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
-`XXX_<keyword0>_<keyword1>_..._YYY`, either separator is supported) .  The
+keywords of the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
+`XXX_<keyword0>_<keyword1>_..._YYY`, either separator is supported).  The
 typical order and format of this string is:
 
     <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
 
-(but almost any order is supported).  All of these keywords, except for
-`<compiler>` (which can be `default`), are optional.  All of the other
-keywords have reasonable defaults for a given system.  See some examples of
-build name strings [below](#build-name-examples).
+but any order of these keywords is supported.  Also, the keywords are
+case-insensitive All of these keywords, except for `<compiler>` (which can be
+`default`), are optional.  All of the other keywords have default values.  Any
+strings not recognised as keywords are ignored.  (Therefore, mispelling the
+name of a keyword is ignored.) See some examples of build name strings
+[below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
 [`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
@@ -115,23 +117,21 @@ href="#spack-rhel-environment">spack-rhel</a> will attempted to be loaded.
 <a name="kokkos_arch"/>
 
 **`<kokkos_arch>`:** The `<build-name>` string can also contain keywords to
-determine the `KOKKOS_ARCH` option of the build.  This is the case-sensitive
+determine the `KOKKOS_ARCH` option of the build.  This is the case-insensitive
 architecture name that is recognized by the CMake
 [KOKKOS_ARCH](https://trilinos.org/docs/files/TrilinosBuildReference.html#configuring-with-kokkos-and-advanced-back-ends)
 configure option for Trilinos and Kokkos.  Some common supported Kokkos
 architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
 `KNL`.  When a GPU is present, some common Kokkos architecture options include
-`Kepler37` and `Pascal60`.  If one selects a `KOKKOS_ARCH` value that is not
-supported by the current system or selected compiler, then the `load-env.sh`
-script will return an error message listing the value choices for
-`KOKKOS_ARCH` for each supported compiler.
+`Kepler37`, `Pascal60`, and `Volta70`.  (Note that the `KOKKOS_ARCH` keywords
+are case-insensitive and can be `hsw`, 'volta70`, etc.)  If one selects a
+`KOKKOS_ARCH` value that is not supported by the current system or selected
+compiler, then the `load-env.sh` script will return an error message listing
+the valid choices for `KOKKOS_ARCH` for each supported compiler.
 
-Note that currently only a single `KOKKOS_ARCH` value is recognized in the
-`<build-name>` string and it must be proceeded a dash '-' such as with
-`intel-KNL` or `cuda-Kepler37`.  This setup does not currently support
-specifying multiple `KOKKOS_ARCH` values (since there is no example yet where
-that would be needed or useful) but such functionality could be supported in
-the future if needed.
+This setup does not currently support specifying multiple `KOKKOS_ARCH` values
+(since there is no example yet where that would be needed or useful) but such
+functionality could be supported in the future if needed.
 
 <a name="compiler"/>
 
@@ -176,8 +176,8 @@ Kokkos threading / backend model variable `<NODE_TYPE>` (default is
 * `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
 * `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
 
-If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
-automatically set to `CUDA`.
+If the compiler is set as `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.), then
+`<NODE_TYPE>` is automatically set to `CUDA`.
 
 <a name="rdc"/>
 
@@ -250,9 +250,8 @@ checking etc.):
 Secondary Tested packages with disables for packages that the ATDM APPs do not
 use (as specified in the file `ATDMDisables.cmake`):
 
-* `-pt` or `_pt` and the very end of the `<build-name>` string: Allow enable
-  if all PT packages, don't disable any PT packages by default and enable
-  Fortran.
+* `pt`: Allow enable if all PT packages, don't disable any PT packages by
+  default and enable Fortran.
 
 All other strings in `<build-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<build-name>` string is defined in
