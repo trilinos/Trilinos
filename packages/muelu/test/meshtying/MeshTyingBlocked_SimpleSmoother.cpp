@@ -45,6 +45,7 @@
 // @HEADER
 
 // MueLu
+#include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ConfigDefs.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 
@@ -209,17 +210,11 @@ int main(int argc, char *argv[])
   std::string xmlFile = "myXML.xml";
 
   RCP<ParameterList> params = Teuchos::getParametersFromXmlFile(xmlFile);
-  RCP<ParameterList> paramsF, paramsI;
-  paramsF = sublist(params, "Factories");
-  paramsI = sublist(paramsF, "myInterfaceAggs2");
-  paramsI->set<RCP<std::map<LO, LO>>>("DualNodeID2PrimalNodeID - level 0", rcpFromRef(myLagr2Dof));
+  ParameterList& userDataParams = params->sublist("user data");
+  userDataParams.set<RCP<std::map<LO, LO>>>("DualNodeID2PrimalNodeID", rcpFromRef(myLagr2Dof));
 
-  ParameterListInterpreter mueLuFactory(*params, comm);
-  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-  H->GetLevel(0)->Set("A", rcp_dynamic_cast<xpetra_matrix_type>(blockedMatrix));
+  RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(Teuchos::rcp_dynamic_cast<Matrix>(blockedMatrix, true), *params);
   H->IsPreconditioner(true);
-  H->SetDefaultVerbLevel(MueLu::Extreme);
-  mueLuFactory.SetupHierarchy(*H);
 
   // Create the preconditioned GMRES solver
   typedef xpetra_mvector_type MV;
