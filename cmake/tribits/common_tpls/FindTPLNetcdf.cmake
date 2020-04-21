@@ -48,6 +48,10 @@
 SET(REQUIRED_HEADERS netcdf.h)
 SET(REQUIRED_LIBS_NAMES netcdf)
 
+IF (TPL_ENABLE_MPI)
+  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} pnetcdf curl)
+ENDIF()
+
 #
 # Second, search for Netcdf components (if allowed) using the standard
 # FIND_PACKAGE(NetCDF ...).

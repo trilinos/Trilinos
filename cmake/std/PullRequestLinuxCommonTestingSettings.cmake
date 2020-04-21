@@ -98,9 +98,6 @@ SET(HDF5_LIBRARY_DIRS "$ENV{SEMS_HDF5_LIBRARY_PATH}" CACHE PATH "Set by default 
 SET(Netcdf_INCLUDE_DIRS "$ENV{SEMS_NETCDF_INCLUDE_PATH}" CACHE PATH "Set by default for PR testing")
 SET(Netcdf_LIBRARY_DIRS "$ENV{SEMS_NETCDF_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")
 
-SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;curl;hdf5;hdf5_hl;z;dl" CACHE STRING "set in PullRequestLinuxCommonTestingSettings.cmake")
-#SET(TPL_Netcdf_LIBRARIES "-L$ENV{SEMS_NETCDF_ROOT}/lib;-L$ENV{SEMS_HDF5_ROOT}/lib;$ENV{SEMS_NETCDF_ROOT}/lib/libnetcdf.a;$ENV{SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;$ENV{SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;$ENV{SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl" CACHE STRING "Set by default for PR testing")
-
 SET(SuperLU_INCLUDE_DIRS "$ENV{SEMS_SUPERLU_INCLUDE_PATH}" CACHE PATH "Set by default for PR testing")
 SET(SuperLU_LIBRARY_DIRS "$ENV{SEMS_SUPERLU_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")
 
