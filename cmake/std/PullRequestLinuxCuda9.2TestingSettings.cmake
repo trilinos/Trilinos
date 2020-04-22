@@ -65,7 +65,7 @@ IF ("$ENV{PNETCDF_ROOT}" STREQUAL "")
 ELSE()
   SET(PNETCDF_ROOT "$ENV{PNETCDF_ROOT}")
 ENDIF()
-set (TPL_Netcdf_LIBRARIES "-L$ENV{NETCDF_ROOT}/lib;$ENV{NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${TPL_HDF5_LIBRARIES};-lcurl" CACHE STRING "Set by default for CUDA PR testing")
+set (TPL_Netcdf_LIBRARIES "-L$ENV{NETCDF_ROOT}/lib;$ENV{NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${TPL_HDF5_LIBRARIES}" CACHE STRING "Set by default for CUDA PR testing")
 # SuperLU and SuperLUDist is available on ride and could be enabled for the CUDA PR build
 set (TPL_ENABLE_SuperLU OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_ENABLE_SuperLUDist OFF CACHE BOOL "Set by default for CUDA PR testing")
