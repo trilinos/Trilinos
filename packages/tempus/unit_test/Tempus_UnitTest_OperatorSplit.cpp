@@ -17,6 +17,12 @@
 #include "Tempus_UnitTest_Utils.hpp"
 #include "Tempus_StepperRKButcherTableau.hpp"
 
+#include "Tempus_StepperOperatorSplitModifierBase.hpp"
+#include "Tempus_StepperOperatorSplitObserverBase.hpp"
+#include "Tempus_StepperOperatorSplitModifierXBase.hpp"
+#include "Tempus_StepperOperatorSplitModifierDefault.hpp"
+#include "Tempus_StepperOperatorSplitObserver.hpp"
+
 #include "../TestModels/VanDerPol_IMEX_ExplicitModel.hpp"
 #include "../TestModels/VanDerPol_IMEX_ImplicitModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -63,8 +69,12 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
+#ifndef TEMPUS_DEPRECATED_CODE
   auto obs    = rcp(new Tempus::StepperOperatorSplitObserver<double>());
+#endif
 
+  auto modifier = rcp(new Tempus::StepperOperatorSplitModifierDefault<double>());
+  stepper->setAppAction(modifier);
   bool useFSAL              = stepper->getUseFSALDefault();
   std::string ICConsistency = stepper->getICConsistencyDefault();
   bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
@@ -89,9 +99,14 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   subStepperList.push_back(subStepper1);
   subStepperList.push_back(subStepper2);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   stepper = rcp(new Tempus::StepperOperatorSplit<double>(
     models, subStepperList, obs, useFSAL, ICConsistency, ICConsistencyCheck,
     order, order, order));
+#endif
+  stepper = rcp(new Tempus::StepperOperatorSplit<double>(
+    models, subStepperList, modifier, useFSAL, ICConsistency, ICConsistencyCheck,order, order, order));
+
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }

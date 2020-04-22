@@ -18,7 +18,7 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Observer <--> Stepper)
 template<class Scalar> class StepperOperatorSplit;
 
-/** \brief StepperOperatorSplitObserver class for StepperOperatorSplit.
+/** \brief StepperOperatorSplitAppAction class for StepperOperatorSplit.
  *
  * This is a means for application developers to perform tasks
  * during the time steps, e.g.,
@@ -28,7 +28,7 @@ template<class Scalar> class StepperOperatorSplit;
  *   - ...
  *
  * <b>Design Considerations</b>
- *   - StepperOperatorSplitObserver is not stateless!  Developers may touch the
+ *   - StepperOperatorSplitAppAction is not stateless!  Developers may touch the
  *     solution state!  Developers need to be careful not to break the
  *     restart (checkpoint) capability.
  *  Below is the ForwardEuler algorithm and includes the locations where the          
