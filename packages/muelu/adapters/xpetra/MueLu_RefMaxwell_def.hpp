@@ -743,8 +743,11 @@ namespace MueLu {
       GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC nodes of D0" << std::endl;
 
       D0_Matrix_->resumeFill();
-      // Scalar replaceWith = Teuchos::ScalarTraits<SC>::eps();
-      Scalar replaceWith = Teuchos::ScalarTraits<SC>::zero();
+      Scalar replaceWith;
+      if (D0_Matrix_->getRowMap()->lib() == Xpetra::UseEpetra)
+        replaceWith= Teuchos::ScalarTraits<SC>::eps();
+      else
+        replaceWith = Teuchos::ScalarTraits<SC>::zero();
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_) {
         Utilities_kokkos::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
@@ -990,8 +993,11 @@ namespace MueLu {
       GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC edges of D0" << std::endl;
 
       D0_Matrix_->resumeFill();
-      // Scalar replaceWith = Teuchos::ScalarTraits<SC>::eps();
-      Scalar replaceWith = Teuchos::ScalarTraits<SC>::zero();
+      Scalar replaceWith;
+      if (D0_Matrix_->getRowMap()->lib() == Xpetra::UseEpetra)
+        replaceWith= Teuchos::ScalarTraits<SC>::eps();
+      else
+        replaceWith = Teuchos::ScalarTraits<SC>::zero();
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_) {
         Utilities_kokkos::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
