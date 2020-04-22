@@ -92,11 +92,11 @@ namespace Tempus {
  *          \State $\dot{X}_i \leftarrow \bar{f}(\tilde{X},t_{n-1}+c_i\Delta t)$
  *        \EndIf
  *      \Else                          \Comment{Implicit stage.}
+ *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
  *        \If {``Zero initial guess.''}
  *          \State $X \leftarrow 0$
  *            \Comment{Else use previous stage value as initial guess.}
  *        \EndIf
- *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
  *        \State Solve $\mathcal{F}_i(
  *                      \dot{X}_i = \frac{X - \tilde{X}}{a_{ii} \Delta t},
  *                      X, t_{n-1}+c_{i}\Delta t) = 0$ for $X$

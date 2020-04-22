@@ -43,7 +43,7 @@ using Tempus::StepperFactory;
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(BackwardEuler, Construction)
+TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
 {
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
 
@@ -96,6 +96,9 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Construction)
     model, solver, predictorStepper, useFSAL,
     ICConsistency, ICConsistencyCheck, zeroInitialGuess, modifier));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
 
 

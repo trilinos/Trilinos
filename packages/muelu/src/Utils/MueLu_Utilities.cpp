@@ -62,12 +62,6 @@
 
 namespace MueLu {
 
-  /* Removes the following non-serializable data (A,P,R,Nullspace,Coordinates)
-     from level-specific sublists from inList
-     and moves it to nonSerialList.  Everything else is copied to serialList.
-     This function returns the level number of the highest level for which
-     non-serializable data was provided.
-  */
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList) {
     using Teuchos::ParameterList;
 
@@ -93,7 +87,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
           if (name == "A" || name == "P" || name == "R"  || name== "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Coordinates"
-              || name == "Node Comm"
+              || name == "Node Comm" || name == "DualNodeID2PrimalNodeID"
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
               || name == "pcoarsen: element to node map"
 #endif

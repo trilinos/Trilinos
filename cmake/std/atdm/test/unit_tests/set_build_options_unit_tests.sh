@@ -7,6 +7,9 @@ ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${CURRENT_SCRIPTS_DIR}/../..`
 # Test compiler parsing
 #
 
+# Make work on all systems reguardless of ATDM Trilinos env loaded
+unset ATDM_CONFIG_SYSTEM_NAME
+unset ATDM_CONFIG_SYSTEM_DIR
 
 testAllDefaults() {
   ATDM_CONFIG_BUILD_NAME=default
