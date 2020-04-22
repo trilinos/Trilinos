@@ -634,7 +634,7 @@ static void printXMLEscapedString(std::ostream& os, const std::string& str)
 }
 
 double
-StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time, const std::string& prependRoot)
+StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time, const std::string& rootName)
 {
   //Adding an extra indent level, since the <performance-report> header is at indent 0
   int indent = 4 * (print_level + 1);
@@ -655,8 +655,8 @@ StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& 
       os << " ";
     bool leaf = split_names.first.length() > 0;
     os << "<timing name=\"";
-    if(level == 0 && prependRoot.length())
-      printXMLEscapedString(os, prependRoot);
+    if(level == 0 && rootName.length())
+      printXMLEscapedString(os, rootName);
     else
       printXMLEscapedString(os, split_names.second);
     os << "\" value=\"" << sum_[i]/active_[i] << "\"";
