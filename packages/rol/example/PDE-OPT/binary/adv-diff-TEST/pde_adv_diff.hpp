@@ -124,10 +124,10 @@ public:
     usePC_ = parlist.sublist("Problem").get("Piecewise Constant Controls", true);
     if (!usePC_) {
       if (probDim == 2) {
-        basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       }
       else if (probDim == 3) {
-        basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       }
       basisPtrs2_.clear(); basisPtrs2_.push_back(basisPtr2_);
     }
