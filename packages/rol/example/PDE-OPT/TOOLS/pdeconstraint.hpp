@@ -697,7 +697,7 @@ public:
       isH31zero_(false),  isH31notImplemented_(false),
       isH32zero_(false),  isH32notImplemented_(false),
       isH33zero_(false),  isH33notImplemented_(false) {
-    assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
+    assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),pde_->getFields2(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
     solver_ = ROL::makePtr<Solver<Real>>(parlist.sublist("Solver"));
   }

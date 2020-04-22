@@ -305,6 +305,10 @@ public:
     }
   }
 
+  int mapToFieldPattern(int f) const {
+    return mapToFieldPattern_[f];
+  }
+
   void transformToFieldPattern(const ROL::Ptr<Intrepid::FieldContainer<Real> > &array) const {
     if ( array != ROL::nullPtr ) {
       int rank = array->rank();
