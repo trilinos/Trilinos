@@ -223,6 +223,40 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
 }
 
 
+#if defined(HAVE_MUELU_EPETRA)
+
+// Helper functions for compilation purposes
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+struct Matvec_Wrapper{
+  static void UnwrapEpetra(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                           Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& X,
+                           Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& B,
+                           Teuchos::RCP<const Epetra_CrsMatrix>& Aepetra,
+                           Teuchos::RCP<Epetra_MultiVector>& Xepetra,
+                           Teuchos::RCP<Epetra_MultiVector>& Bepetra) {
+    throw std::runtime_error("Template parameter mismatch");
+  }
+};
+
+
+template<class GlobalOrdinal>
+struct Matvec_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
+  static void UnwrapEpetra(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& A,
+                           Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& X,
+                           Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& B,
+                           Teuchos::RCP<const Epetra_CrsMatrix>& Aepetra,
+                           Teuchos::RCP<Epetra_MultiVector>& Xepetra,
+                           Teuchos::RCP<Epetra_MultiVector>& Bepetra) {
+    typedef double SC;
+    typedef int LO;
+    typedef GlobalOrdinal GO;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
+    Aepetra = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
+    Xepetra = Teuchos::rcp(& Xpetra::toEpetra(*X),false);
+    Bepetra = Teuchos::rcp(& Xpetra::toEpetra(*B),false);
+  }
+};
+#endif
 
 //*************************************************************************************
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -271,13 +305,11 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         Btpetra = rcp(& Xpetra::toTpetra(*B),false);
       }
 #endif
-#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT) && !defined(HAVE_MUELU_INST_FLOAT_INT_INT)
+#if defined(HAVE_MUELU_EPETRA)
       Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
       Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
       if(lib==Xpetra::UseEpetra) {
-        Aepetra = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
-        Xepetra = rcp(& Xpetra::toEpetra(*X),false);
-        Bepetra = rcp(& Xpetra::toEpetra(*B),false);
+        Matvec_Wrapper<SC,LO,GO,NO>::UnwrapEpetra(A,X,B,Aepetra,Xepetra,Bepetra);
       }
 #endif
 
