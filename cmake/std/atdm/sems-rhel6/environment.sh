@@ -172,7 +172,6 @@ module load sems-openmpi/1.10.1
 module load sems-netcdf/4.7.3/parallel
 module load sems-hdf5/1.10.6/parallel
 module load sems-zlib/1.2.8/base
-module load sems-boost/1.59.0/base
 module unload sems-python/2.7.9
 module load sems-superlu/4.3/base
 
@@ -186,12 +185,12 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc
 
 export ZLIB_ROOT=${SEMS_ZLIB_ROOT}
-export BOOST_ROOT=${SEMS_BOOST_ROOT}
 export HDF5_ROOT=${SEMS_HDF5_ROOT}
 export NETCDF_ROOT=${SEMS_NETCDF_ROOT}
 
 export ATDM_CONFIG_HDF5_LIBS="${SEMS_HDF5_ROOT}/lib/libhdf5_hl.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_HDF5_ROOT}/lib/libhdf5.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_ZLIB_ROOT}/lib/libz.${ATDM_CONFIG_TPL_LIB_EXT};-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="${SEMS_BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_NETCDF_ROOT}/lib/libnetcdf.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_HDF5_ROOT}/lib/libhdf5.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_ZLIB_ROOT}/lib/libz.${ATDM_CONFIG_TPL_LIB_EXT};-ldl;-lcurl"
+
+export ATDM_CONFIG_NETCDF_LIBS="-L${SEMS_NETCDF_ROOT}/lib;${SEMS_NETCDF_ROOT}/lib/libnetcdf.${ATDM_CONFIG_TPL_LIB_EXT};${SEMS_NETCDF_ROOT}/lib/libpnetcdf.${ATDM_CONFIG_TPL_LIB_EXT};${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 # NOTE: SEMS does not provide a *.a files for PNetCDF so we can't use them in
 # a shared lib build :-(

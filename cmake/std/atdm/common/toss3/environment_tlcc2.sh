@@ -49,7 +49,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module swap mkl/18.0.0.128 mkl/18.0.5.274
     module load gcc/4.9.3
     module unload sems-python/2.7.9
-    export BOOST_ROOT=$SEMS_BOOST_ROOT
     export HDF5_ROOT=$SEMS_HDF5_ROOT
     export NETCDF_ROOT=$SEMS_NETCDF_ROOT
     export YAMLCPP_ROOT=$SEMS_YAML_CPP_ROOT
@@ -68,7 +67,7 @@ fi
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${SEMS_HDF5_ROOT}/lib;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${SEMS_BOOST_ROOT}/lib;-L${SEMS_NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${SEMS_HDF5_ROOT}/lib;${SEMS_BOOST_ROOT}/lib/libboost_program_options.a;${SEMS_BOOST_ROOT}/lib/libboost_system.a;${SEMS_NETCDF_ROOT}/lib/libnetcdf.a;${SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${SEMS_NETCDF_ROOT}/lib;-L${SEMS_HDF5_ROOT}/lib;${SEMS_NETCDF_ROOT}/lib/libnetcdf.a;${SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
 
 # not sure what below does.  It was in the original environment script
 #unset ATTB_ENV
