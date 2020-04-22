@@ -11,7 +11,6 @@
 
 #include "Tempus_SolutionHistory.hpp"
 
-
 namespace Tempus {
 
 // Forward Declaration for recursive includes (this Observer <--> Stepper)
