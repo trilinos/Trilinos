@@ -119,7 +119,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance"
-   ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
+   ARGS "--stacked-timer --solver=MueLu-RefMaxwell --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
    COMM mpi
    NUM_MPI_PROCS 4
    CATEGORIES PERFORMANCE
