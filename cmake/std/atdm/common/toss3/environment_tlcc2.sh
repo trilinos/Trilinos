@@ -51,6 +51,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module unload sems-python/2.7.9
     export HDF5_ROOT=$SEMS_HDF5_ROOT
     export NETCDF_ROOT=$SEMS_NETCDF_ROOT
+    export PNETCDF_ROOT=$SEMS_NETCDF_ROOT
     export YAMLCPP_ROOT=$SEMS_YAML_CPP_ROOT
     export OMPI_CXX=`which icpc`
     export OMPI_CC=`which icc`
@@ -66,8 +67,8 @@ else
 fi
 
 export ATDM_CONFIG_USE_HWLOC=OFF
-export ATDM_CONFIG_HDF5_LIBS="-L${SEMS_HDF5_ROOT}/lib;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${SEMS_NETCDF_ROOT}/lib;-L${SEMS_HDF5_ROOT}/lib;${SEMS_NETCDF_ROOT}/lib/libnetcdf.a;${SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;${SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;${SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 # not sure what below does.  It was in the original environment script
 #unset ATTB_ENV
