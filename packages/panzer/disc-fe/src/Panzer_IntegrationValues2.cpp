@@ -444,17 +444,18 @@ protected:
 
 };
 
-template<typename T>
-void
-convertNormalToRotationMatrix(const T normal[3], T transverse[3], T binormal[3])
-{
+}
 
+template <typename Scalar>
+void IntegrationValues2<Scalar>::
+convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3])
+{
+  using T = Scalar;
+  
   const T n  = sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2]);
 
   // If this fails then the geometry for this cell is probably undefined
   if(n > 0.){
-
-
     // Make sure transverse is not parallel to normal within some margin of error
     transverse[0]=0.;transverse[1]=1.;transverse[2]=0.;
     if(std::fabs(normal[0]*transverse[0]+normal[1]*transverse[1])>0.9){
@@ -494,14 +495,9 @@ convertNormalToRotationMatrix(const T normal[3], T transverse[3], T binormal[3])
     binormal[0] = 0.;
     binormal[1] = 0.;
     binormal[2] = 0.;
-
-    // TEUCHOS_ASSERT(false);
   }
-
 }
-
-}
-
+  
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
 swapQuadraturePoints(int cell,
@@ -788,7 +784,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
           normal[dim] = surface_normals(cell,point,dim);
         }
 
-        convertNormalToRotationMatrix<Scalar>(normal,transverse,binormal);
+        convertNormalToRotationMatrix(normal,transverse,binormal);
 
         for(int dim=0; dim<3; ++dim){
           surface_rotation_matrices(cell,point,0,dim) = normal[dim];
