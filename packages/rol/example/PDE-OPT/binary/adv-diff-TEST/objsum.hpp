@@ -103,6 +103,7 @@ public:
       xdual_ = g.clone();
       initialized_ = true;
     }
+    g.zero();
     misfit_->gradient(g,x,tol);
     g.scale(misCost_);
     penalty_->gradient(*xdual_,x,tol);
@@ -116,6 +117,7 @@ public:
       xdual_ = hv.clone();
       initialized_ = true;
     }
+    hv.zero();
     misfit_->hessVec(hv,v,x,tol);
     hv.scale(misCost_);
     penalty_->hessVec(*xdual_,v,x,tol);

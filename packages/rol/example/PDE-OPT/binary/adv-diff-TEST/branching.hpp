@@ -53,23 +53,31 @@ template<class Real>
 class ADVDIFF_Branching : public ROL::ROL_PEBBL_Branching<Real> {
 private:
   const int method_;
+  ROL::Ptr<ROL::Vector<Real>> z0_;
 
   using ROL::ROL_PEBBL_Branching<Real>::verbosity_;
   using ROL::ROL_PEBBL_Branching<Real>::outStream_;
+  using ROL::ROL_PEBBL_Branching<Real>::parlist_;
 
 public:
-  ADVDIFF_Branching(const ROL::Ptr<ROL::OptimizationProblemFactory<Real>> &factory,
+  ADVDIFF_Branching(const ROL::Ptr<BinaryAdvDiffFactory<Real>>            &factory,
                     const ROL::Ptr<ROL::ParameterList>                    &parlist,
                     const ROL::Ptr<ROL::BranchHelper_PEBBL<Real>>         &bHelper,
                     int                                                    verbosity = 0,
                     const ROL::Ptr<std::ostream>                          &outStream = ROL::nullPtr,
                     int                                                    method = 0)
     : ROL::ROL_PEBBL_Branching<Real>::ROL_PEBBL_Branching(factory,parlist,bHelper,verbosity,outStream),
-      method_(method) {}
+      method_(method) {
+    z0_ = factory->buildSolutionVector();
+  }
 
   pebbl::branchSub* blankSub() {
     return new ADVDIFF_BranchSub<Real>(ROL::makePtrFromRef<ADVDIFF_Branching<Real>>(*this),verbosity_,outStream_,method_);
   }
+
+//  pebbl::solution* iniitalGuess() {
+//
+//  }
 }; // ADVDIFF_Branching
 
 template <class Real>

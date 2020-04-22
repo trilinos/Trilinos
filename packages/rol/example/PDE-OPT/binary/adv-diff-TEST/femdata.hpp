@@ -10,6 +10,7 @@
 #include "pde_adv_diff.hpp"
 #include "qoi_adv_diff.hpp"
 #include "mesh_adv_diff.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
 
 template <class Real>
 class FEMdata {
@@ -18,7 +19,7 @@ private:
   ROL::Ptr<PDE_adv_diff<Real>> pde_;
   ROL::Ptr<Assembler<Real>> assembler_;
   ROL::Ptr<Solver<Real>> solver_;
-  ROL::Ptr<Tpetra::CrsMatrix<>> matJ1_, matJ2_, matH_;
+  ROL::Ptr<Tpetra::CrsMatrix<>> matJ1_, matJ2_, matH_, matJ2t_;
   ROL::Ptr<Tpetra::MultiVector<>> vecG_, vecR_, vecJ3_;
   Real c0_;
 
@@ -46,6 +47,10 @@ public:
 
   const ROL::Ptr<FE<Real>> getFE(void) const {
     return pde_->getFE();
+  }
+
+  const ROL::Ptr<FE<Real>> getFE2(void) const {
+    return pde_->getFE2();
   }
 
   // PDE definitions
@@ -95,7 +100,8 @@ public:
       ROL::Ptr<Tpetra::MultiVector<>> Jvf = getField(Jv);
       ROL::Ptr<const Tpetra::MultiVector<>> vf = getConstField(v);
       if (transpose) {
-        matJ2_->apply(*vf,*Jvf,Teuchos::TRANS);
+        //matJ2_->apply(*vf,*Jvf,Teuchos::TRANS);
+        matJ2t_->apply(*vf,*Jvf);
       }
       else {
         matJ2_->apply(*vf,*Jvf);
@@ -157,7 +163,7 @@ private:
 
     pde_ = ROL::makePtr<PDE_adv_diff<Real>>(list);
     ROL::Ptr<MeshManager<Real>>  mesh = ROL::makePtr<MeshManager_adv_diff<Real>>(list);
-    assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),
+    assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),pde_->getFields2(),
                                                mesh,comm,list,stream);
     assembler_->setCellNodes(*pde_);
     ROL::Ptr<QoI<Real>> qoi = ROL::makePtr<QoI_State_Cost_adv_diff<Real>>(pde_->getFE(),list);
@@ -185,6 +191,8 @@ private:
     }
     else {
       assembler_->assemblePDEJacobian2(matJ2_,pde_,stateZero,controlZero,paramZero);
+      Tpetra::RowMatrixTransposer<> trans(matJ2_);
+      matJ2t_ = trans.createTranspose();
     }
     solver_->setA(matJ1_);
 

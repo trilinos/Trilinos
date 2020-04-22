@@ -67,6 +67,8 @@ private:
   // Finite element basis information
   ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>> basisPtr_;
   std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> basisPtrs_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>> basisPtr2_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> basisPtrs2_;
   // Cell cubature information
   ROL::Ptr<Intrepid::Cubature<Real>> cellCub_;
   // Cell node information
@@ -74,7 +76,7 @@ private:
   std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> bdryCellNodes_;
   std::vector<std::vector<std::vector<int>>> bdryCellLocIds_;
   // Finite element definition
-  ROL::Ptr<FE<Real>> fe_vol_;
+  ROL::Ptr<FE<Real>> fe_vol_, fe_ctrl_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int>> fidx_;
   // Coordinates of degrees freedom on boundary cells.
@@ -120,6 +122,15 @@ public:
     XU_ = XL_ + parlist.sublist("Geometry").get("Width",  2.0);
     YU_ = YL_ + parlist.sublist("Geometry").get("Height", 1.0);
     usePC_ = parlist.sublist("Problem").get("Piecewise Constant Controls", true);
+    if (!usePC_) {
+      if (probDim == 2) {
+        basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      else if (probDim == 3) {
+        basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      basisPtrs2_.clear(); basisPtrs2_.push_back(basisPtr2_);
+    }
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
@@ -164,7 +175,7 @@ public:
 
     // ADD CONTROL TERM TO RESIDUAL
     if (z_coeff != ROL::nullPtr) {
-      fe_vol_->evaluateValue(valZ_eval, z_coeff);
+      fe_ctrl_->evaluateValue(valZ_eval, z_coeff);
       Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,static_cast<Real>(-1));
       Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                     *valZ_eval,
@@ -252,10 +263,15 @@ public:
     if (z_coeff != ROL::nullPtr) {
       // GET DIMENSIONS
       int c = fe_vol_->N()->dimension(0);
-      int f = fe_vol_->N()->dimension(1);
+      int f1 = fe_vol_->N()->dimension(1);
+      int f2 = fe_ctrl_->N()->dimension(1);
       // INITIALIZE RIESZ
-      jac  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
-      *jac = *fe_vol_->massMat();
+      jac  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f1, f2);
+      Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
+                                                    *fe_vol_->N(),
+                                                    *fe_ctrl_->NdetJ(),
+                                                    Intrepid::COMP_CPP, false);
+      //*jac = *fe_vol_->massMat();
       Intrepid::RealSpaceTools<Real>::scale(*jac,static_cast<Real>(-1));
       // APPLY DIRICHLET CONDITIONS
       int numLocalSideIds = bdryCellLocIds_[0].size();
@@ -266,7 +282,7 @@ public:
           int cidx = bdryCellLocIds_[0][j][k];
           for (int l = 0; l < numBdryDofs; ++l) {
             //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-            for (int m = 0; m < f; ++m) {
+            for (int m = 0; m < f2; ++m) {
               (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
             }
           }
@@ -405,15 +421,19 @@ public:
 
   void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
     // GET DIMENSIONS
-    int c = fe_vol_->N()->dimension(0);
-    int f = fe_vol_->N()->dimension(1);
+    int c = fe_ctrl_->N()->dimension(0);
+    int f = fe_ctrl_->N()->dimension(1);
     // INITIALIZE RIESZ
     riesz = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
-    *riesz = *fe_vol_->massMat();
+    *riesz = *fe_ctrl_->massMat();
   }
 
   std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() {
     return basisPtrs_;
+  }
+
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields2() {
+    return basisPtrs2_;
   }
 
   void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &volCellNodes,
@@ -424,6 +444,9 @@ public:
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
     fe_vol_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
+    if (!usePC_) {
+      fe_ctrl_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr2_,cellCub_);
+    }
     // Set local boundary DOFs.
     fidx_ = fe_vol_->getBoundaryDofs();
     // Compute Dirichlet values at DOFs.
@@ -457,6 +480,10 @@ public:
 
   const ROL::Ptr<FE<Real>> getFE(void) const {
     return fe_vol_;
+  }
+
+  const ROL::Ptr<FE<Real>> getFE2(void) const {
+    return fe_ctrl_;
   }
 
   void print(void) const {

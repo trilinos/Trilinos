@@ -52,13 +52,12 @@ public:
 
   void solvePDE(ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
     update(z,false);
-    solve_state_equation(z);
-    u.set(*state_);
+    solve_state_equation(u,z);
   }
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
     nfval_++;
-    solve_state_equation(z);
+    solve_state_equation(*state_,z);
     fem_->applyObjectiveHessian(*dualadjoint_,*state_); // Hu
     dualadjoint_->scale(static_cast<Real>(0.5));        // 0.5 Hu
     fem_->addObjectiveGradient(*dualadjoint_);          // 0.5 Hu + g
@@ -68,17 +67,15 @@ public:
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
     ngrad_++;
-    solve_state_equation(z);
-    solve_adjoint_equation(*state_);
+    solve_state_equation(*state_,z);
+    solve_adjoint_equation(*adjoint_,*state_);
     fem_->applyControlJacobian(g,*adjoint_,true);
   }
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
     nhess_++;
-    solve_state_equation(z);
-    solve_adjoint_equation(*state_);
-    solve_state_sensitivity(v);
-    solve_adjoint_sensitivity(*state_sens_);
+    solve_state_sensitivity(*state_sens_,v);
+    solve_adjoint_sensitivity(*adjoint_sens_,*state_sens_);
     fem_->applyControlJacobian(hv,*adjoint_sens_,true);
   }
 
@@ -109,49 +106,49 @@ public:
 
 private:
 
-  void solve_state_equation(const ROL::Vector<Real> &z) {
+  void solve_state_equation(ROL::Vector<Real> &state, const ROL::Vector<Real> &control) {
     bool isComputed = false;
     if (storage_) {
-      isComputed = stateStore_->get(*state_,ROL::Objective<Real>::getParameter());
+      isComputed = stateStore_->get(state,ROL::Objective<Real>::getParameter());
     }
     if (!isComputed || !storage_) {
-      fem_->applyControlJacobian(*dualadjoint_,z,false);          // Bz
-      fem_->addPDErhs(*dualadjoint_);                             // Bz + f
-      fem_->applyInversePDEJacobian(*state_,*dualadjoint_,false); // inv(A)(Bz + f)
-      state_->scale(static_cast<Real>(-1));                       // -inv(A)(Bz + f)
+      fem_->applyControlJacobian(*dualadjoint_,control,false);  // Bz
+      fem_->addPDErhs(*dualadjoint_);                           // Bz + f
+      fem_->applyInversePDEJacobian(state,*dualadjoint_,false); // inv(A)(Bz + f)
+      state.scale(static_cast<Real>(-1));                       // -inv(A)(Bz + f)
       nstat_++;
       if (storage_) {
-        stateStore_->set(*state_,ROL::Objective<Real>::getParameter());
+        stateStore_->set(state,ROL::Objective<Real>::getParameter());
       }
     }
   }
 
-  void solve_adjoint_equation(const ROL::Vector<Real> &u) {
+  void solve_adjoint_equation(ROL::Vector<Real> &adjoint, const ROL::Vector<Real> &state) {
     bool isComputed = false;
     if (storage_) {
-      isComputed = adjointStore_->get(*adjoint_,ROL::Objective<Real>::getParameter());
+      isComputed = adjointStore_->get(adjoint,ROL::Objective<Real>::getParameter());
     }
     if (!isComputed || !storage_) {
-      fem_->applyObjectiveHessian(*dualadjoint_,*state_);          // Hu
-      fem_->addObjectiveGradient(*dualadjoint_);                   // Hu + g
-      fem_->applyInversePDEJacobian(*adjoint_,*dualadjoint_,true); // inv(A')(Hu + g)
-      adjoint_->scale(static_cast<Real>(-1));                      // -inv(A')(Hu + g)
+      fem_->applyObjectiveHessian(*dualadjoint_,state);          // Hu
+      fem_->addObjectiveGradient(*dualadjoint_);                 // Hu + g
+      fem_->applyInversePDEJacobian(adjoint,*dualadjoint_,true); // inv(A')(Hu + g)
+      adjoint.scale(static_cast<Real>(-1));                      // -inv(A')(Hu + g)
       nadjo_++;
       if (storage_) {
-        adjointStore_->set(*adjoint_,ROL::Objective<Real>::getParameter());
+        adjointStore_->set(adjoint,ROL::Objective<Real>::getParameter());
       }
     }
   }
 
-  void solve_state_sensitivity(const ROL::Vector<Real> &v) {
+  void solve_state_sensitivity(ROL::Vector<Real> &state_sens, const ROL::Vector<Real> &v) {
     fem_->applyControlJacobian(*dualadjoint_,v,false);               // Bv
-    fem_->applyInversePDEJacobian(*state_sens_,*dualadjoint_,false); // inv(A)Bv
+    fem_->applyInversePDEJacobian(state_sens,*dualadjoint_,false); // inv(A)Bv
     nsens_++;
   }
 
-  void solve_adjoint_sensitivity(const ROL::Vector<Real> &v) {
-    fem_->applyObjectiveHessian(*dualadjoint_,v);                     // Hv
-    fem_->applyInversePDEJacobian(*adjoint_sens_,*dualadjoint_,true); // inv(A')Hv
+  void solve_adjoint_sensitivity(ROL::Vector<Real> &adjoint_sens, const ROL::Vector<Real> &state_sens) {
+    fem_->applyObjectiveHessian(*dualadjoint_,state_sens);          // Hv
+    fem_->applyInversePDEJacobian(adjoint_sens,*dualadjoint_,true); // inv(A')Hv
     nsadj_++;
   }
 }; // class Misfit_Objective

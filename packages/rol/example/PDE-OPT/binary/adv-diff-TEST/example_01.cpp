@@ -136,16 +136,19 @@ int main(int argc, char *argv[]) {
     // Print
     bool usePC = parlist->sublist("Problem").get("Piecewise Constant Controls", true);
     std::stringstream uname, zname, xname, yname;
-    uname << "state_"   << nx << "_" << ny << ".txt";
-    zname << "control_" << nx << "_" << ny << ".txt";
-    xname << "X_"       << nx << "_" << ny << ".txt";
-    yname << "Y_"       << nx << "_" << ny << ".txt";
     if (!solveQP) {
-      factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(u)->getVector(),uname.str());
       if (!usePC) {
+        uname << "state.txt";
+        zname << "control.txt";
+        factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(u)->getVector(),uname.str());
         factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(z)->getVector(),zname.str());
       }
       else {
+        uname << "state_"   << nx << "_" << ny << ".txt";
+        zname << "control_" << nx << "_" << ny << ".txt";
+        xname << "X_"       << nx << "_" << ny << ".txt";
+        yname << "Y_"       << nx << "_" << ny << ".txt";
+        factory->getAssembler()->outputTpetraVector(ROL::dynamicPtrCast<ROL::TpetraMultiVector<RealT>>(u)->getVector(),uname.str());
         std::ofstream zfile, xfile, yfile;
         zfile.open(zname.str());
         xfile.open(xname.str());
@@ -165,18 +168,19 @@ int main(int argc, char *argv[]) {
       }
     }
     else {
+      zname << "control_" << nx << "_" << ny << ".txt";
+      xname << "X_"       << nx << "_" << ny << ".txt";
+      yname << "Y_"       << nx << "_" << ny << ".txt";
       std::ofstream zfile, xfile, yfile;
       zfile.open(zname.str());
       xfile.open(xname.str());
       yfile.open(yname.str());
-      int x(0), y(0);
       Teuchos::SerialDenseVector<int,RealT> &zdata = *ROL::dynamicPtrCast<ROL::TeuchosVector<int,RealT>>(z)->getVector();
       for (int j = 0; j < nx; ++j) {
         for (int k = 0; k < ny; ++k) {
           zfile << zdata[j+k*nx] << std::endl;
-          x = j; y = k;
-          xfile << x << std::endl;
-          yfile << y << std::endl;
+          xfile << j << std::endl;
+          yfile << k << std::endl;
         }
       }
       zfile.close();

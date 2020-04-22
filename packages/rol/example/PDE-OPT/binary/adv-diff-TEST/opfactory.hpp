@@ -79,15 +79,15 @@ public:
     std::string costType = pl_.sublist("Problem").get("Control Cost Type", "TV");
     std::vector<ROL::Ptr<QoI<Real>>> qoi_pen(2,ROL::nullPtr);
     if (costType=="TV") {
-      qoi_pen[0] = ROL::makePtr<QoI_TVControl_Cost_adv_diff<Real>>(fem_->getFE(),pl_);
+      qoi_pen[0] = ROL::makePtr<QoI_TVControl_Cost_adv_diff<Real>>(fem_->getFE2(),pl_);
     }
     else if (costType=="L1") {
-      qoi_pen[0] = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(fem_->getFE(),pl_);
+      qoi_pen[0] = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(fem_->getFE2(),pl_);
     }
     else {
-      qoi_pen[0] = ROL::makePtr<QoI_Control_Cost_L2_adv_diff<Real>>(fem_->getFE(),pl_);
+      qoi_pen[0] = ROL::makePtr<QoI_Control_Cost_L2_adv_diff<Real>>(fem_->getFE2(),pl_);
     }
-    qoi_pen[1] = ROL::makePtr<QoI_IntegralityControl_Cost_adv_diff<Real>>(fem_->getFE(),pl_);
+    qoi_pen[1] = ROL::makePtr<QoI_IntegralityControl_Cost_adv_diff<Real>>(fem_->getFE2(),pl_);
     penalty_ = ROL::makePtr<IntegralOptObjective<Real>>(qoi_pen[0],assembler_);
     binary_  = ROL::makePtr<IntegralOptObjective<Real>>(qoi_pen[1],assembler_);
     // Create template control vector
