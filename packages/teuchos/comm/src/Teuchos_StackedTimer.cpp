@@ -656,11 +656,9 @@ StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& 
     bool leaf = split_names.first.length() > 0;
     os << "<timing name=\"";
     if(level == 0 && prependRoot.length())
-    {
       printXMLEscapedString(os, prependRoot);
-      os << ": ";
-    }
-    printXMLEscapedString(os, split_names.second);
+    else
+      printXMLEscapedString(os, split_names.second);
     os << "\" value=\"" << sum_[i]/active_[i] << "\"";
     if(leaf)
       os << "/>\n";
@@ -771,6 +769,12 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
   std::string fullFile;
   //only open the file on rank 0
   if(rank(*comm) == 0) {
+    std::string nameNoSpaces = name;
+    for(char& c : nameNoSpaces)
+    {
+      if(isspace(c))
+        c = '_';
+    }
     if(buildName.length())
     {
       //In filename, replace all whitespace with underscores
@@ -780,15 +784,15 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
         if(isspace(c))
           c = '_';
       }
-      fullFile = watchrDir + '/' + buildNameNoSpaces + "-" + name + '_' + datestamp + ".xml";
+      fullFile = watchrDir + '/' + buildNameNoSpaces + "-" + nameNoSpaces + '_' + datestamp + ".xml";
     }
     else
-      fullFile = watchrDir + '/' + name + '_' + datestamp + ".xml";
+      fullFile = watchrDir + '/' + nameNoSpaces + '_' + datestamp + ".xml";
     std::ofstream os(fullFile);
     std::vector<bool> printed(flat_names_.size(), false);
     os << "<?xml version=\"1.0\"?>\n";
     os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
-    printLevelXML("", 0, os, printed, 0.0, buildName);
+    printLevelXML("", 0, os, printed, 0.0, buildName + ": " + name);
     os << "</performance-report>\n";
   }
   return fullFile;
