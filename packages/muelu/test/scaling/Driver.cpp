@@ -523,7 +523,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
           Teuchos::StackedTimer::OutputOptions options;
           options.output_fraction = options.output_histogram = options.output_minmax = true;
           stacked_timer->report(out2, comm, options);
-          auto xmlOut = stacked_timer->reportWatchrXML(std::string("MueLu Setup+Solve, ") + std::to_string(comm->getSize()) + " ranks", comm);
+          auto xmlOut = stacked_timer->reportWatchrXML(std::string("MueLu Setup-Solve ") + std::to_string(comm->getSize()) + " ranks", comm);
           if(xmlOut.length())
             std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
         }
