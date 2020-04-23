@@ -996,8 +996,8 @@ description () const
     out << "INVALID";
   }
   // Print the approximate # rows per part
-  int approx_rows_per_part = A_->getNodeNumRows()/PartitionerType_->numLocalParts();
-  out <<", blocksize: "<<approx_rows_per_proc;
+  int approx_rows_per_part = A_->getNodeNumRows()/Partitioner_->numLocalParts();
+  out <<", blocksize: "<<approx_rows_per_part;
 
   out << ", overlap: " << OverlapLevel_;
 

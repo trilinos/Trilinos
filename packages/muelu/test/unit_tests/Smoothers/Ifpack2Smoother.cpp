@@ -438,8 +438,9 @@ namespace MueLuTests {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
       Teuchos::ParameterList matrixParams, ifpack2Params;
 
-      matrixParams.set("matrixType","Elasticity2D");
-      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams);
+      matrixParams.set("matrixType","Laplace1D");
+      matrixParams.set("nx",20);// needs to be even
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,Xpetra::UseTpetra);
       A->SetFixedBlockSize(2);
 
       ifpack2Params.set("partitioner: type","linear");

@@ -237,9 +237,9 @@ namespace MueLu {
     // If we're using a linear partitioner and haven't set the # local parts, set it to match the operator's block size
     ParameterList precList = this->GetParameterList();
     if(precList.isParameter("partitioner: type") && precList.get<std::string>("partitioner: type") == "linear" &&
-       !precList.isParameter("partitioner: local parts") {
-         precList.set("partitioner: local parts", (int)A_->getNodeNumRows() / A_->getFixedBlockSize());
-       }
+       !precList.isParameter("partitioner: local parts")) {
+      precList.set("partitioner: local parts", (int)A_->getNodeNumRows() / A_->GetFixedBlockSize());
+    }
        
 
     RCP<Epetra_CrsMatrix> epA = Utilities::Op2NonConstEpetraCrs(A_);
