@@ -109,7 +109,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriKota               packages/TriKota                  ST
   Intrepid              packages/intrepid                 PT
   Intrepid2             packages/intrepid2                PT
-  Compadre              packages/compadre                 EX
+  Compadre              packages/compadre                 ST
   STK                   packages/stk                      PT # Depends on boost
   Percept               packages/percept                  PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
