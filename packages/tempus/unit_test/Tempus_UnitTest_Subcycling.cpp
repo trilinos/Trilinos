@@ -15,6 +15,10 @@
 
 #include "Tempus_StepperFactory.hpp"
 //#include "Tempus_UnitTest_Utils.hpp"
+#include "Tempus_StepperSubcyclingModifierBase.hpp"
+#include "Tempus_StepperSubcyclingObserverBase.hpp"
+#include "Tempus_StepperSubcyclingModifierXBase.hpp"
+#include "Tempus_StepperSubcyclingModifierDefault.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -51,8 +55,11 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto obs    = rcp(new Tempus::StepperSubcyclingObserver<double>());
-  auto solver = rcp(new Thyra::NOXNonlinearSolver());
+#ifndef TEMPUS_DEPRECATED_CODE
+  auto obs       = rcp(new Tempus::StepperSubcyclingObserver<double>());
+#endif
+  auto modifier  = rcp(new Tempus::StepperSubcyclingModifierDefault<double>()); 
+  auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
   bool useFSAL              = stepper->getUseFSALDefault();
@@ -61,7 +68,10 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 
   // Test the set functions
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+#endif
+  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -73,8 +83,14 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   scIntegrator->setStepperWStepper(stepperFE);
   scIntegrator->initialize();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   stepper = rcp(new Tempus::StepperSubcycling<double>(
     model, obs, scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck));
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+#endif
+
+  stepper = rcp(new Tempus::StepperSubcycling<double>(
+    model,scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Test stepper properties.
