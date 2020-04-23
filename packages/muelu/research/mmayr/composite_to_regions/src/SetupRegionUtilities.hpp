@@ -197,7 +197,7 @@ void findInterface(const int numDimensions, Teuchos::Array<LocalOrdinal> nodesPe
       nodeOffset += nodesPerDim[1]*nodesPerDim[0];
     }
   }
-}
+} // findInterface
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -216,7 +216,9 @@ void createRegionData(const int numDimensions,
                       Teuchos::Array<LocalOrdinal>&  rNodesPerDim,
                       Teuchos::Array<GlobalOrdinal>& quasiRegionGIDs,
                       Teuchos::Array<GlobalOrdinal>& quasiRegionCoordGIDs,
-                      Teuchos::Array<LocalOrdinal>&  compositeToRegionLIDs) {
+                      Teuchos::Array<LocalOrdinal>&  compositeToRegionLIDs,
+                      Teuchos::Array<GlobalOrdinal>& interfaceGIDs,
+                      Teuchos::Array<LocalOrdinal>&  interfaceLIDsData) {
 
   using GO = GlobalOrdinal;
   using LO = LocalOrdinal;
@@ -1018,6 +1020,81 @@ void createRegionData(const int numDimensions,
     }
   }
 
+  // Here we gather the interface GIDs (in composite layout)
+  // and the interface LIDs (in region layout) for the local rank
+  interfaceLIDsData.resize(sendGIDs.size() + receiveGIDs.size());
+  interfaceGIDs.resize(sendGIDs.size() + receiveGIDs.size());
+  using size_type = typename Teuchos::Array<GO>::size_type;
+  for(size_type idx = 0; idx < sendGIDs.size(); ++idx) {
+    interfaceGIDs[idx] = sendGIDs[idx];
+    interfaceLIDsData[idx] = compositeToRegionLIDs[sendLIDs[idx]];
+  }
+  for(size_type idx = 0; idx < receiveGIDs.size(); ++idx) {
+    interfaceGIDs[idx + sendGIDs.size()] = receiveGIDs[idx];
+    interfaceLIDsData[idx + sendLIDs.size()] = receiveLIDs[idx];
+  }
+
+  // Have all the GIDs and LIDs we stort them in place with std::sort()
+  // Subsequently we bring unique values to the begin of the array with
+  // std::unique() and delente the duplicates with erase.
+  std::sort(interfaceLIDsData.begin(), interfaceLIDsData.end());
+  interfaceLIDsData.erase(std::unique(interfaceLIDsData.begin(), interfaceLIDsData.end()),
+                          interfaceLIDsData.end());
+  std::sort(interfaceGIDs.begin(), interfaceGIDs.end());
+  interfaceGIDs.erase(std::unique(interfaceGIDs.begin(), interfaceGIDs.end()),
+                      interfaceGIDs.end());
+
 } // createRegionData
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void MakeRegionPerGIDWithGhosts(const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > nodeMap,
+                                const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > dofMap,
+                                const int maxRegPerGID,
+                                const LocalOrdinal numDofsPerNode,
+                                const Teuchos::Array<LocalOrdinal> lNodesPerDir,
+                                const Teuchos::Array<GlobalOrdinal> sendGIDs,
+                                const Teuchos::Array<int> sendPIDs,
+                                Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGID) {
+  using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+  using NO = Node;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+
+  const int myRank = dofMap->getComm()->getRank();
+
+  regionsPerGID = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(dofMap, maxRegPerGID, false);
+
+  { // Scope for regionsPerGIDView
+    Array<ArrayRCP<LO> > regionsPerGIDView(maxRegPerGID);
+    for(int regionIdx = 0; regionIdx < maxRegPerGID; ++regionIdx) {
+      regionsPerGIDView[regionIdx] = regionsPerGID->getDataNonConst(regionIdx);
+    }
+
+    // Initialize all entries to myRank in first column and to -1 in other columns
+    for(LO dofIdx = 0; dofIdx < lNodesPerDir[0]*lNodesPerDir[1]*lNodesPerDir[2]*numDofsPerNode; ++dofIdx) {
+      regionsPerGIDView[0][dofIdx] = myRank;
+      for(int regionIdx = 1; regionIdx < maxRegPerGID; ++regionIdx) {
+        regionsPerGIDView[regionIdx][dofIdx] = -1;
+      }
+    }
+
+    // Now loop over the sendGIDs array to fill entries with values in sendPIDs
+    LO nodeIdx = 0;
+    for(LO sendIdx = 0; sendIdx < static_cast<LO>(sendPIDs.size()); ++sendIdx) {
+      nodeIdx = nodeMap->getLocalElement(sendGIDs[sendIdx]);
+      for(int dof = 0; dof < numDofsPerNode; ++dof) {
+        LO dofIdx = nodeIdx*numDofsPerNode + dof;
+        for(int regionIdx = 1; regionIdx < maxRegPerGID; ++regionIdx) {
+          if(regionsPerGIDView[regionIdx][dofIdx] == -1) {
+            regionsPerGIDView[regionIdx][dofIdx] = sendPIDs[sendIdx];
+            break;
+          }
+        }
+      }
+    }
+  }
+} // MakeRegionPerGIDWithGhosts
 
 #endif // MUELU_SETUPREGIONUTILITIES_HPP

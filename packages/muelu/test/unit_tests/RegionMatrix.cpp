@@ -114,20 +114,25 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
+  Array<GO>  interfaceCompositeGIDs, interfaceRegionGIDs;
+  Array<LO>  interfaceRegionLIDs;
   createRegionData(numDimensions, false, numDofsPerNode,
                    gNodesPerDir(), lNodesPerDir(), procsPerDim(),
                    nodeMap, dofMap,
                    maxRegPerGID, numLocalRegionNodes, boundaryConditions,
                    sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
-                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs);
+                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
+                   interfaceCompositeGIDs, interfaceRegionLIDs);
 
   const int myRank = A->getRowMap()->getComm()->getRank();
   // const LO numSend = static_cast<LO>(sendGIDs.size());
   // std::cout << "p=" << myRank << " | numSend=" << numSend << std::endl;
   // std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
   // std::cout << "p=" << myRank << " | sendPIDs: " << sendPIDs << std::endl;
-  // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
+  std::cout << "p=" << myRank << " | interfaceCompositeGIDs" << interfaceCompositeGIDs << std::endl;
+  std::cout << "p=" << myRank << " | interfaceRegionLIDs" << interfaceRegionLIDs << std::endl;
 
   rowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
                                                           Teuchos::OrdinalTraits<GO>::invalid(),
@@ -142,6 +147,13 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
                                                                  A->getRowMap()->getIndexBase(),
                                                                  A->getRowMap()->getComm());
   revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
+
+  interfaceRegionGIDs.resize(interfaceRegionLIDs.size());
+  for(LO interfaceIdx = 0; interfaceIdx < static_cast<LO>(interfaceRegionLIDs.size()); ++interfaceIdx) {
+    interfaceRegionGIDs[interfaceIdx] =
+      revisedRowMapPerGrp[0]->getGlobalElement(interfaceRegionLIDs[interfaceIdx]);
+  }
+  std::cout << "p=" << myRank << " | interfaceRegionGIDs" << interfaceRegionGIDs << std::endl;
 
   rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
@@ -183,6 +195,8 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
     = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(rowMapPerGrp[0], maxRegPerGID, false);
   RCP<Import> regionsPerGIDImport = ImportFactory::Build(A->getRowMap(), A->getColMap());
   regionsPerGIDWithGhosts->doImport(*regionsPerGID, *rowImportPerGrp[0], Xpetra::INSERT);
+
+  regionsPerGIDWithGhosts->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 
   std::vector<RCP<Matrix> > quasiRegionGrpMats(maxRegPerProc);
   MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), maxRegPerProc,

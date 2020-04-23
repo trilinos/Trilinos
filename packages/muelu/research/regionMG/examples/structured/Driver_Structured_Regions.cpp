@@ -443,12 +443,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
+  Array<GO>  interfaceGIDs;
+  Array<LO>  interfaceLIDsData;
 
   createRegionData(numDimensions, useUnstructured, numDofsPerNode,
                    gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
                    maxRegPerGID, numLocalRegionNodes, boundaryConditions,
                    sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
-                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs);
+                   quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
+                   interfaceGIDs, interfaceLIDsData);
 
   const LO numSend = static_cast<LO>(sendGIDs.size());
 
