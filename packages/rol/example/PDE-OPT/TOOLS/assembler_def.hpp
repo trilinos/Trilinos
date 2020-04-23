@@ -2534,7 +2534,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
       maxEntriesPerRow2 = rowIndexWithMaxEntries2->second;
   }
 
-  matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, myUniqueStateMap_, maxEntriesPerRow1);
+  matJ1Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, maxEntriesPerRow1);
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs1; ++j) {
       matJ1Graph_->insertGlobalIndices(GO(cellDofs1(myCellIds_[i],j)),
@@ -2545,7 +2545,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   matR1Graph_  = matJ1Graph_;
   matH11Graph_ = matJ1Graph_;
 
-  matJ2Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, myUniqueControlMap_, maxEntriesPerRow2);
+  matJ2Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueStateMap_, maxEntriesPerRow2);
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs1; ++j) {
       matJ2Graph_->insertGlobalIndices(GO(cellDofs1(myCellIds_[i],j)),
@@ -2555,7 +2555,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   matJ2Graph_->fillComplete(myUniqueControlMap_,myUniqueStateMap_);
   matH21Graph_ = matJ2Graph_;
 
-  matH12Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueControlMap_, myUniqueStateMap_, maxEntriesPerRow1);
+  matH12Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueControlMap_, maxEntriesPerRow1);
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs2; ++j) {
       matH12Graph_->insertGlobalIndices(GO(cellDofs2(myCellIds_[i],j)),
@@ -2564,7 +2564,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   }
   matH12Graph_->fillComplete(myUniqueStateMap_,myUniqueControlMap_);
 
-  matR2Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueControlMap_, myUniqueControlMap_, maxEntriesPerRow2);
+  matR2Graph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueControlMap_, maxEntriesPerRow2);
   for (int i=0; i<numCells_; ++i) {
     for (int j=0; j<numLocalDofs2; ++j) {
       matR2Graph_->insertGlobalIndices(GO(cellDofs2(myCellIds_[i],j)),
