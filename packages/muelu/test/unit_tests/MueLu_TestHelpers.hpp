@@ -198,7 +198,7 @@ namespace MueLuTests {
         else if (matrixType == "Laplace3D" || matrixType == "Brick3D")
           numGlobalElements = nx*ny*nz;
         else if  (matrixType == "Elasticity3D")
-          numGlobalElements = *3nx*ny*nz;
+          numGlobalElements = 3*nx*ny*nz;
         else {
           std::string msg = matrixType + " is unsupported (in unit testing)";
           throw(MueLu::Exceptions::RuntimeError(msg));
