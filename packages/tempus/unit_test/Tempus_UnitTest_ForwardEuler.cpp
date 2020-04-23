@@ -43,11 +43,8 @@ using Tempus::StepperFactory;
 using Tempus::StepperExplicitRK;
 
 // Comment out any of the following tests to exclude from build/run.
-#define CONSTRUCTION
-#define STEPPERFACTORY_CONSTRUCTION
 
 
-#ifdef CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
@@ -85,11 +82,11 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
     model, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
-#endif // CONSTRUCTION
 
 
-#ifdef STEPPERFACTORY_CONSTRUCTION
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, StepperFactory_Construction)
@@ -97,7 +94,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("Forward Euler", model);
 }
-#endif // STEPPERFACTORY_CONSTRUCTION
 
 
 // ************************************************************

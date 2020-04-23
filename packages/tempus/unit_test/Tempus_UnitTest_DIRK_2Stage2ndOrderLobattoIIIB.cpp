@@ -40,7 +40,11 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK_2Stage2ndOrderLobattoIIIB, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("RK Implicit 2 Stage 2nd order Lobatto IIIB");
+  auto stepper=rcp(new Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
 
 
@@ -57,7 +61,9 @@ TEUCHOS_UNIT_TEST(DIRK_2Stage2ndOrderLobattoIIIB, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK_2Stage2ndOrderLobattoIIIB, AppAction)
 {
-  testRKAppAction("RK Implicit 2 Stage 2nd order Lobatto IIIB", out, success);
+  auto stepper = rcp(new Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

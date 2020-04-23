@@ -57,7 +57,7 @@ namespace Tempus {
  *
  *  \f{algorithm}{
  *  \renewcommand{\thealgorithm}{}
- *  \caption{Explcit RK with the application-action locations indicated.}
+ *  \caption{Explicit RK with the application-action locations indicated.}
  *  \begin{algorithmic}[1]
  *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \State $X \leftarrow x_{n-1}$ \Comment Set initial guess to last timestep.

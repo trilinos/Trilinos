@@ -40,7 +40,11 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("EDIRK 2 Stage 3rd order");
+  auto stepper = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
 
 
@@ -57,7 +61,9 @@ TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, AppAction)
 {
-  testRKAppAction("EDIRK 2 Stage 3rd order", out, success);
+  auto stepper = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

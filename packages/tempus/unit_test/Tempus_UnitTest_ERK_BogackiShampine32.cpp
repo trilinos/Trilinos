@@ -24,7 +24,11 @@ using Teuchos::rcp_dynamic_cast;
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_BogackiShampine32, Default_Construction)
 {
-  testExplicitRKAccessorsFullConstruction("Bogacki-Shampine 3(2) Pair");
+  auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
+  testExplicitRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
 
 
@@ -41,7 +45,9 @@ TEUCHOS_UNIT_TEST(ERK_BogackiShampine32, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_BogackiShampine32, AppAction)
 {
-  testRKAppAction("Bogacki-Shampine 3(2) Pair", out, success);
+  auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

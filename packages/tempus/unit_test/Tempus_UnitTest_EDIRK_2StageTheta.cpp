@@ -40,7 +40,15 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(EDIRK_2StageTheta, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("EDIRK 2 Stage Theta Method");
+  auto stepper = rcp(new Tempus::StepperEDIRK_2StageTheta<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
+  double theta = 0.5;
+  TEUCHOS_ASSERT(stepper->getTheta() == theta);
+  stepper->setTheta(theta); stepper->initialize(); TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+
 }
 
 
@@ -57,7 +65,9 @@ TEUCHOS_UNIT_TEST(EDIRK_2StageTheta, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(EDIRK_2StageTheta, AppAction)
 {
-  testRKAppAction("EDIRK 2 Stage Theta Method", out, success);
+  auto stepper = rcp(new Tempus::StepperEDIRK_2StageTheta<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

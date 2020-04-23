@@ -24,7 +24,11 @@ using Teuchos::rcp_dynamic_cast;
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_ForwardEuler, Default_Construction)
 {
-  testExplicitRKAccessorsFullConstruction("RK Forward Euler");
+  auto stepper = rcp(new Tempus::StepperERK_ForwardEuler<double>());
+  testExplicitRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
 
 
@@ -41,7 +45,9 @@ TEUCHOS_UNIT_TEST(ERK_ForwardEuler, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_ForwardEuler, AppAction)
 {
-  testRKAppAction("RK Forward Euler", out, success);
+  auto stepper = rcp(new Tempus::StepperERK_ForwardEuler<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

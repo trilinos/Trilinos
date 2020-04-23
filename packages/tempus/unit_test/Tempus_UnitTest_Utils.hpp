@@ -61,25 +61,9 @@ void testFactoryConstruction(std::string stepperType,
 
 /** \brief Unit test utility for ExplicitRK Stepper construction and accessors.
  */
-void testExplicitRKAccessorsFullConstruction(std::string stepperType)
+void testExplicitRKAccessorsFullConstruction(
+  const RCP<Tempus::StepperExplicitRK<double> >& stepper)
 {
-  // Default construction.
-  RCP<Tempus::StepperExplicitRK<double> > stepper;
-  if      (stepperType == "RK Explicit 3 Stage 3rd order")          stepper = rcp(new Tempus::StepperERK_3Stage3rdOrder<double>());
-  else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun")  stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderHeun<double>());
-  else if (stepperType == "RK Explicit 3 Stage 3rd order TVD")      stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderTVD<double>());
-  else if (stepperType == "RK Explicit 3/8 Rule")                   stepper = rcp(new Tempus::StepperERK_3_8Rule<double>());
-  else if (stepperType == "RK Explicit 4 Stage 3rd order by Runge") stepper = rcp(new Tempus::StepperERK_4Stage3rdOrderRunge<double>());
-  else if (stepperType == "RK Explicit 4 Stage")                    stepper = rcp(new Tempus::StepperERK_4Stage4thOrder<double>());
-  else if (stepperType == "RK Explicit 5 Stage 3rd order by Kinnmark and Gray") stepper = rcp(new Tempus::StepperERK_5Stage3rdOrderKandG<double>());
-  else if (stepperType == "Bogacki-Shampine 3(2) Pair")             stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  else if (stepperType == "RK Forward Euler")                       stepper = rcp(new Tempus::StepperERK_ForwardEuler<double>());
-  else if (stepperType == "Merson 4(5) Pair")                       stepper = rcp(new Tempus::StepperERK_Merson45<double>());
-  else if (stepperType == "RK Explicit Midpoint")                   stepper = rcp(new Tempus::StepperERK_Midpoint<double>());
-  else if (stepperType == "RK Explicit Trapezoidal")                stepper = rcp(new Tempus::StepperERK_Trapezoidal<double>());
-  else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Error - unknown stepperType = "+stepperType);
-
-
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
   stepper->setModel(model);
   stepper->initialize();
@@ -105,115 +89,116 @@ void testExplicitRKAccessorsFullConstruction(std::string stepperType)
   stepper->setUseEmbedded(useEmbedded);                stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 
+  std::string stepperType = stepper->getStepperType();
   // Full argument list construction.
   if        (stepperType == "RK Explicit 3 Stage 3rd order") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_3Stage3rdOrder<double>(
+    { auto s = rcp(new Tempus::StepperERK_3Stage3rdOrder<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_3Stage3rdOrder<double>(
+    auto s = rcp(new Tempus::StepperERK_3Stage3rdOrder<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderHeun<double>(
+    { auto s = rcp(new Tempus::StepperERK_3Stage3rdOrderHeun<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderHeun<double>(
+    auto s = rcp(new Tempus::StepperERK_3Stage3rdOrderHeun<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Explicit 3 Stage 3rd order TVD") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderTVD<double>(
+    { auto s = rcp(new Tempus::StepperERK_3Stage3rdOrderTVD<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderTVD<double>(
+    auto s = rcp(new Tempus::StepperERK_3Stage3rdOrderTVD<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Explicit 3/8 Rule") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_3_8Rule<double>(
+    { auto s = rcp(new Tempus::StepperERK_3_8Rule<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_3_8Rule<double>(
+    auto s = rcp(new Tempus::StepperERK_3_8Rule<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Explicit 4 Stage 3rd order by Runge") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_4Stage3rdOrderRunge<double>(
+    { auto s = rcp(new Tempus::StepperERK_4Stage3rdOrderRunge<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_4Stage3rdOrderRunge<double>(
+    auto s = rcp(new Tempus::StepperERK_4Stage3rdOrderRunge<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Explicit 4 Stage") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_4Stage4thOrder<double>(
+    { auto s = rcp(new Tempus::StepperERK_4Stage4thOrder<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_4Stage4thOrder<double>(
+    auto s = rcp(new Tempus::StepperERK_4Stage4thOrder<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Explicit 5 Stage 3rd order by Kinnmark and Gray") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_5Stage3rdOrderKandG<double>(
+    { auto s = rcp(new Tempus::StepperERK_5Stage3rdOrderKandG<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_5Stage3rdOrderKandG<double>(
+    auto s = rcp(new Tempus::StepperERK_5Stage3rdOrderKandG<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "Bogacki-Shampine 3(2) Pair") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>(
+    { auto s = rcp(new Tempus::StepperERK_BogackiShampine32<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>(
+    auto s = rcp(new Tempus::StepperERK_BogackiShampine32<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Forward Euler") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_ForwardEuler<double>(
+    { auto s = rcp(new Tempus::StepperERK_ForwardEuler<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_ForwardEuler<double>(
+    auto s = rcp(new Tempus::StepperERK_ForwardEuler<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "Merson 4(5) Pair") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_Merson45<double>(
+    { auto s = rcp(new Tempus::StepperERK_Merson45<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_Merson45<double>(
+    auto s = rcp(new Tempus::StepperERK_Merson45<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Explicit Midpoint") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_Midpoint<double>(
+    { auto s = rcp(new Tempus::StepperERK_Midpoint<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_Midpoint<double>(
+    auto s = rcp(new Tempus::StepperERK_Midpoint<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Explicit Trapezoidal") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperERK_Trapezoidal<double>(
+    { auto s = rcp(new Tempus::StepperERK_Trapezoidal<double>(
       model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperERK_Trapezoidal<double>(
+    auto s = rcp(new Tempus::StepperERK_Trapezoidal<double>(
       model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   }
   else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Error - unknown stepperType = "+stepperType);
 }
@@ -221,32 +206,9 @@ void testExplicitRKAccessorsFullConstruction(std::string stepperType)
 
 /** \brief Unit test utility for ExplicitRK Stepper construction and accessors.
  */
-void testDIRKAccessorsFullConstruction(std::string stepperType)
+void testDIRKAccessorsFullConstruction(
+  const RCP<Tempus::StepperDIRK<double> >& stepper)
 {
-  // Default construction.
-  RCP<Tempus::StepperDIRK<double> > stepper;
-  if      (stepperType == "RK Backward Euler")                      stepper = rcp(new Tempus::StepperDIRK_BackwardEuler<double>());
-  else if (stepperType == "SDIRK 2 Stage 2nd order")                stepper = rcp(new Tempus::StepperSDIRK_2Stage2ndOrder<double>());
-  else if (stepperType == "SDIRK 3 Stage 2nd order")                stepper = rcp(new Tempus::StepperSDIRK_3Stage2ndOrder<double>());
-  else if (stepperType == "SDIRK 2 Stage 3rd order")                stepper = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>());
-  else if (stepperType == "EDIRK 2 Stage 3rd order")                stepper = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>());
-  else if (stepperType == "DIRK 1 Stage Theta Method")              stepper = rcp(new Tempus::StepperDIRK_1StageTheta<double>());
-  else if (stepperType == "EDIRK 2 Stage Theta Method")             stepper = rcp(new Tempus::StepperEDIRK_2StageTheta<double>());
-  else if (stepperType == "RK Trapezoidal Rule")                    stepper = rcp(new Tempus::StepperEDIRK_TrapezoidalRule<double>());
-  else if (stepperType == "RK Implicit Midpoint")                   stepper = rcp(new Tempus::StepperSDIRK_ImplicitMidpoint<double>());
-  else if (stepperType == "SSPDIRK22")                              stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK22<double>());
-  else if (stepperType == "SSPDIRK32")                              stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK32<double>());
-  else if (stepperType == "SSPDIRK23")                              stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK23<double>());
-  else if (stepperType == "SSPDIRK33")                              stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK33<double>());
-  else if (stepperType == "RK Implicit 1 Stage 1st order Radau IA") stepper = rcp(new Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>());
-  else if (stepperType == "RK Implicit 2 Stage 2nd order Lobatto IIIB") stepper = rcp(new Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>());
-  else if (stepperType == "SDIRK 5 Stage 4th order")                stepper = rcp(new Tempus::StepperSDIRK_5Stage4thOrder<double>());
-  else if (stepperType == "SDIRK 3 Stage 4th order")                stepper = rcp(new Tempus::StepperSDIRK_3Stage4thOrder<double>());
-  else if (stepperType == "SDIRK 5 Stage 5th order")                stepper = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>());
-  else if (stepperType == "SDIRK 2(1) Pair")                        stepper = rcp(new Tempus::StepperSDIRK_21Pair<double>());
-  else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Error - unknown stepperType = "+stepperType);
-
-
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
   stepper->setModel(model);
   stepper->initialize();
@@ -277,96 +239,85 @@ void testDIRKAccessorsFullConstruction(std::string stepperType)
   stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 
+  std::string stepperType = stepper->getStepperType();
   // Full argument list construction.
   if      (stepperType == "RK Backward Euler") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperDIRK_BackwardEuler<double>(
+    { auto s = rcp(new Tempus::StepperDIRK_BackwardEuler<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperDIRK_BackwardEuler<double>(
+    auto s = rcp(new Tempus::StepperDIRK_BackwardEuler<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SDIRK 2 Stage 2nd order") {
     double gamma = 0.2928932188134524;
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_2Stage2ndOrder<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_2Stage2ndOrder<double>(
       model, obs, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, gamma));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
     auto s = rcp(new Tempus::StepperSDIRK_2Stage2ndOrder<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier, gamma));
     TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
-    s->setGamma(gamma);
-    s->initialize();
-    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SDIRK 3 Stage 2nd order") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_3Stage2ndOrder<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_3Stage2ndOrder<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_3Stage2ndOrder<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_3Stage2ndOrder<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SDIRK 2 Stage 3rd order") {
     std::string gammaType = "3rd Order A-stable";
     double gamma          = 0.7886751345948128;
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>(
       model, obs, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, gammaType, gamma));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
     auto s = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier, gammaType, gamma));
     TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
-    s->setGammaType(gammaType);
-    s->initialize();
-    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
-    s->setGamma(gamma);
-    s->initialize();
-    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "EDIRK 2 Stage 3rd order") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>(
+    { auto s = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>(
+    auto s = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "DIRK 1 Stage Theta Method") {
     double theta = 0.5;
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperDIRK_1StageTheta<double>(
+    { auto s = rcp(new Tempus::StepperDIRK_1StageTheta<double>(
       model, obs, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess), theta);
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
     auto s = rcp(new Tempus::StepperDIRK_1StageTheta<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier, theta));
     TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
-    s->setTheta(theta);
-    s->initialize();
-    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "EDIRK 2 Stage Theta Method") {
     double theta = 0.5;
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperEDIRK_2StageTheta<double>(
+    { auto s = rcp(new Tempus::StepperEDIRK_2StageTheta<double>(
       model, obs, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, theta));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
     auto s = rcp(new Tempus::StepperEDIRK_2StageTheta<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -377,136 +328,136 @@ void testDIRKAccessorsFullConstruction(std::string stepperType)
     TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Trapezoidal Rule") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperEDIRK_TrapezoidalRule<double>(
+    { auto s = rcp(new Tempus::StepperEDIRK_TrapezoidalRule<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperEDIRK_TrapezoidalRule<double>(
+    auto s = rcp(new Tempus::StepperEDIRK_TrapezoidalRule<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Implicit Midpoint") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_ImplicitMidpoint<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_ImplicitMidpoint<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_ImplicitMidpoint<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_ImplicitMidpoint<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SSPDIRK22") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK22<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_SSPDIRK22<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK22<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_SSPDIRK22<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SSPDIRK32") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK32<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_SSPDIRK32<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK32<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_SSPDIRK32<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SSPDIRK23") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK23<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_SSPDIRK23<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK23<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_SSPDIRK23<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SSPDIRK33") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK33<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_SSPDIRK33<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK33<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_SSPDIRK33<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Implicit 1 Stage 1st order Radau IA") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>(
+    { auto s = rcp(new Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>(
+    auto s = rcp(new Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "RK Implicit 2 Stage 2nd order Lobatto IIIB") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>(
+    { auto s = rcp(new Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>(
+    auto s = rcp(new Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SDIRK 5 Stage 4th order") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_5Stage4thOrder<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_5Stage4thOrder<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_5Stage4thOrder<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_5Stage4thOrder<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SDIRK 3 Stage 4th order") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_3Stage4thOrder<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_3Stage4thOrder<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_3Stage4thOrder<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_3Stage4thOrder<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SDIRK 5 Stage 5th order") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else if (stepperType == "SDIRK 2(1) Pair") {
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper = rcp(new Tempus::StepperSDIRK_21Pair<double>(
+    { auto s = rcp(new Tempus::StepperSDIRK_21Pair<double>(
       model, obs, solver, useFSAL,
       ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized()); }
 #endif
-    stepper = rcp(new Tempus::StepperSDIRK_21Pair<double>(
+    auto s = rcp(new Tempus::StepperSDIRK_21Pair<double>(
       model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
       useEmbedded, zeroInitialGuess, modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+    TEUCHOS_TEST_FOR_EXCEPT(!s->isInitialized());
   } else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Error - unknown stepperType = "+stepperType);
 
 }
@@ -796,52 +747,15 @@ public:
 
 /** \brief Unit test utility for Stepper RK AppAction.
  */
-void testRKAppAction(std::string stepperType,
-                     Teuchos::FancyOStream &out, bool &success)
+void testRKAppAction(
+  const Teuchos::RCP<Tempus::StepperRKBase<double> >& stepper,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
+  Teuchos::FancyOStream &out, bool &success)
 {
-  // Default construction.
-  RCP<Tempus::StepperRKBase<double> > stepper;
-  if      (stepperType == "RK Explicit 3 Stage 3rd order")          stepper = rcp(new Tempus::StepperERK_3Stage3rdOrder<double>());
-  else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun")  stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderHeun<double>());
-  else if (stepperType == "RK Explicit 3 Stage 3rd order TVD")      stepper = rcp(new Tempus::StepperERK_3Stage3rdOrderTVD<double>());
-  else if (stepperType == "RK Explicit 3/8 Rule")                   stepper = rcp(new Tempus::StepperERK_3_8Rule<double>());
-  else if (stepperType == "RK Explicit 4 Stage 3rd order by Runge") stepper = rcp(new Tempus::StepperERK_4Stage3rdOrderRunge<double>());
-  else if (stepperType == "RK Explicit 4 Stage")                    stepper = rcp(new Tempus::StepperERK_4Stage4thOrder<double>());
-  else if (stepperType == "RK Explicit 5 Stage 3rd order by Kinnmark and Gray") stepper = rcp(new Tempus::StepperERK_5Stage3rdOrderKandG<double>());
-  else if (stepperType == "Bogacki-Shampine 3(2) Pair")             stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  else if (stepperType == "RK Forward Euler")                       stepper = rcp(new Tempus::StepperERK_ForwardEuler<double>());
-  else if (stepperType == "General ERK")                            stepper = rcp(new Tempus::StepperERK_General<double>());
-  else if (stepperType == "Merson 4(5) Pair")                       stepper = rcp(new Tempus::StepperERK_Merson45<double>());
-  else if (stepperType == "RK Explicit Midpoint")                   stepper = rcp(new Tempus::StepperERK_Midpoint<double>());
-  else if (stepperType == "RK Explicit Trapezoidal")                stepper = rcp(new Tempus::StepperERK_Trapezoidal<double>());
-  else if (stepperType == "RK Backward Euler")                      stepper = rcp(new Tempus::StepperDIRK_BackwardEuler<double>());
-  else if (stepperType == "SDIRK 2 Stage 2nd order")                stepper = rcp(new Tempus::StepperSDIRK_2Stage2ndOrder<double>());
-  else if (stepperType == "SDIRK 3 Stage 2nd order")                stepper = rcp(new Tempus::StepperSDIRK_3Stage2ndOrder<double>());
-  else if (stepperType == "SDIRK 2 Stage 3rd order")                stepper = rcp(new Tempus::StepperSDIRK_2Stage3rdOrder<double>());
-  else if (stepperType == "EDIRK 2 Stage 3rd order")                stepper = rcp(new Tempus::StepperEDIRK_2Stage3rdOrder<double>());
-  else if (stepperType == "DIRK 1 Stage Theta Method")              stepper = rcp(new Tempus::StepperDIRK_1StageTheta<double>());
-  else if (stepperType == "EDIRK 2 Stage Theta Method")             stepper = rcp(new Tempus::StepperEDIRK_2StageTheta<double>());
-  else if (stepperType == "RK Trapezoidal Rule")                    stepper = rcp(new Tempus::StepperEDIRK_TrapezoidalRule<double>());
-  else if (stepperType == "RK Implicit Midpoint")                   stepper = rcp(new Tempus::StepperSDIRK_ImplicitMidpoint<double>());
-  else if (stepperType == "SSPDIRK22")                              stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK22<double>());
-  else if (stepperType == "SSPDIRK32")                              stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK32<double>());
-  else if (stepperType == "SSPDIRK23")                              stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK23<double>());
-  else if (stepperType == "SSPDIRK33")                              stepper = rcp(new Tempus::StepperSDIRK_SSPDIRK33<double>());
-  else if (stepperType == "RK Implicit 1 Stage 1st order Radau IA") stepper = rcp(new Tempus::StepperDIRK_1Stage1stOrderRadauIA<double>());
-  else if (stepperType == "RK Implicit 2 Stage 2nd order Lobatto IIIB") stepper = rcp(new Tempus::StepperDIRK_2Stage2ndOrderLobattoIIIB<double>());
-  else if (stepperType == "SDIRK 5 Stage 4th order")                stepper = rcp(new Tempus::StepperSDIRK_5Stage4thOrder<double>());
-  else if (stepperType == "SDIRK 3 Stage 4th order")                stepper = rcp(new Tempus::StepperSDIRK_3Stage4thOrder<double>());
-  else if (stepperType == "SDIRK 5 Stage 5th order")                stepper = rcp(new Tempus::StepperSDIRK_5Stage5thOrder<double>());
-  else if (stepperType == "SDIRK 2(1) Pair")                        stepper = rcp(new Tempus::StepperSDIRK_21Pair<double>());
-  else if (stepperType == "General DIRK")                           stepper = rcp(new Tempus::StepperDIRK_General<double>());
-  else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Error - unknown stepperType = "+stepperType);
-
   auto testTypeOrig = stepper->getStepperType();
 
   // Test Modifier.
   {
-    Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
-      rcp(new Tempus_Test::SinCosModel<double>());
     stepper->setModel(model);
     auto modifier = rcp(new StepperRKModifierTest());
     stepper->setAppAction(modifier);
@@ -881,8 +795,6 @@ void testRKAppAction(std::string stepperType,
 
   // Test Observer.
   {
-    Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
-      rcp(new Tempus_Test::SinCosModel<double>());
     stepper->setModel(model);
     auto observer = rcp(new StepperRKObserverTest());
     stepper->setAppAction(observer);
@@ -923,8 +835,6 @@ void testRKAppAction(std::string stepperType,
 
   // Test ModifierX.
   {
-    Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
-      rcp(new Tempus_Test::SinCosModel<double>());
     stepper->setModel(model);
     auto modifierX = rcp(new StepperRKModifierXTest());
     stepper->setAppAction(modifierX);

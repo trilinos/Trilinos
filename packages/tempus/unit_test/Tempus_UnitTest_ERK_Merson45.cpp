@@ -24,7 +24,11 @@ using Teuchos::rcp_dynamic_cast;
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_Merson45, Default_Construction)
 {
-  testExplicitRKAccessorsFullConstruction("Merson 4(5) Pair");
+  auto stepper = rcp(new Tempus::StepperERK_Merson45<double>());
+  testExplicitRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 4);
 }
 
 
@@ -41,7 +45,9 @@ TEUCHOS_UNIT_TEST(ERK_Merson45, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK_Merson45, AppAction)
 {
-  testRKAppAction("Merson 4(5) Pair", out, success);
+  auto stepper = rcp(new Tempus::StepperERK_Merson45<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 
