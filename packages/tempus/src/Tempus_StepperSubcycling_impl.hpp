@@ -359,12 +359,6 @@ void StepperSubcycling<Scalar>::setAppAction(
   }
   this->isInitialized_ = false;
 }
-  /*
-template<class Scalar>
-  Teuchos::RCP<StepperSubcyclingAppAction<Scalar> >
-  StepperSubcycling<Scalar>::getAppAction() const
-  { return stepperSCAppAction_; }
-  */
 
 template<class Scalar>
 void StepperSubcycling<Scalar>::initialize()
