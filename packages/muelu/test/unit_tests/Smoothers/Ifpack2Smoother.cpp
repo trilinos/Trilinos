@@ -439,7 +439,7 @@ namespace MueLuTests {
       Teuchos::ParameterList matrixParams, ifpack2Params;
 
       matrixParams.set("matrixType","Laplace1D");
-      matrixParams.set("nx",20);// needs to be even
+      matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
       Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,Xpetra::UseTpetra);
       A->SetFixedBlockSize(2);
 
