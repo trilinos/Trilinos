@@ -312,6 +312,12 @@ public:
     stateStore_->objectiveUpdate(true);
     adjointStore_->objectiveUpdate(flag);
   }
+  void update( const Vector<Real> &z, EUpdateType type, int iter = -1 ) {
+    updateFlag_ = true;
+    updateIter_ = iter;
+    stateStore_->objectiveUpdate(true);
+    adjointStore_->objectiveUpdate(true);
+  }
 
   /** \brief Given \f$z\in\mathcal{Z}\f$, evaluate the objective function 
              \f$\widehat{J}(z) = J(u(z),z)\f$ where 

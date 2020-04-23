@@ -159,6 +159,10 @@ public:
     update_1(u,flag,iter);
     update_2(z,flag,iter);  
   }
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1 ) {
+    update_1(u,type,iter);
+    update_2(z,type,iter);  
+  }
 
   /** \brief Update constraint functions with respect to Sim variable.  
                 x is the optimization variable, 
@@ -166,6 +170,7 @@ public:
                 iter is the outer algorithm iterations count.
   */
   virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {}
+  virtual void update_1( const Vector<Real> &u, EUpdateType type, int iter = -1 ) {}
 
   /** \brief Update constraint functions with respect to Opt variable.
                 x is the optimization variable, 
@@ -173,6 +178,7 @@ public:
                 iter is the outer algorithm iterations count.
   */
   virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update_2( const Vector<Real> &z, EUpdateType, int iter = -1 ) {}
 
 
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
@@ -899,6 +905,11 @@ public:
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(x));
     update(*(xs.get_1()),*(xs.get_2()),flag,iter);
+  }
+  virtual void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
+    update(*(xs.get_1()),*(xs.get_2()),type,iter);
   }
 
   virtual void value(Vector<Real> &c,
