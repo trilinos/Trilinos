@@ -119,8 +119,9 @@ StepperSubcycling<Scalar>::StepperSubcycling(
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver();
+#endif
   this->setAppAction(stepperSCAppAction);
   scIntegrator_ = scIntegrator;
   this->setSubcyclingPrintDtChanges(false);
