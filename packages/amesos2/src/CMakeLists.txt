@@ -331,6 +331,12 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     Amesos2_Superlu_TypeMap.hpp
     )
 
+IF (${PACKAGE_NAME}_ENABLE_TRIANGULAR_SOLVES)
+  APPEND_SET(HEADERS
+    Amesos2_Superlu_TRSV.hpp
+    )
+ENDIF()
+
   APPEND_SET(SOURCES
     Amesos2_Superlu_TypeMap.cpp
     Amesos2_Superlu.cpp

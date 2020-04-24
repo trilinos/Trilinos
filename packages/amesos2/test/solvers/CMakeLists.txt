@@ -68,6 +68,24 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     COMM serial mpi
     )
 
+  IF (${PACKAGE_NAME}_ENABLE_TRIANGULAR_SOLVES)
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestSuperLUTRSVFiles
+      SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+      SOURCE_FILES superlu_trsv_test.xml
+      EXEDEPS Solver_Test
+      )
+
+    TRIBITS_ADD_TEST(
+      Solver_Test
+      NAME SuperLU_TriangularSolve_Solver_Test
+      ARGS "--xml-params=superlu_trsv_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+
+  ENDIF()
 
 IF (NOT ${PROJECT_NAME}_ENABLE_DEBUG)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

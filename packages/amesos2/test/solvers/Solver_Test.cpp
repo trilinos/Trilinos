@@ -503,9 +503,9 @@ struct solution_checker<Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpac
     size_t num_vecs = true_solution->extent(1);
     Teuchos::Array<mag_t> ts_norms(num_vecs), gs_norms(num_vecs);
     for (size_t k = 0; k < num_vecs; ++k) {
-      ts_norms[k] = KokkosBlas::nrm2_squared(
+      ts_norms[k] = KokkosBlas::nrm2(
         Kokkos::subview(*true_solution, Kokkos::ALL, k));
-      gs_norms[k] = KokkosBlas::nrm2_squared(
+      gs_norms[k] = KokkosBlas::nrm2(
         Kokkos::subview(*given_solution, Kokkos::ALL, k));
     }
 
