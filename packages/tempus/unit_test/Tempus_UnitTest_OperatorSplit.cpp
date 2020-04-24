@@ -119,8 +119,10 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
 TEUCHOS_UNIT_TEST(OperatorSplit, StepperFactory_Construction)
 {
   // Read params from .xml file
+  std::cout << "HEYYYYOO" << std::endl;
   auto pList = getParametersFromXmlFile(
                  "../test/OperatorSplit/Tempus_OperatorSplit_VanDerPol.xml");
+  std::cout << "HEYYYOOO2" << std::endl;
   auto tempusPL  = sublist(pList, "Tempus", true);
   auto stepperPL = sublist(tempusPL, "Demo Stepper", true);
 
