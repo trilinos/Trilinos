@@ -477,11 +477,11 @@ namespace internal {
     return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 && sizeof(T) <= sizeof(double);
   }
 
-  template <typename T> template <typename U> void buffer<T>::append(const U *begin, const U *end)
+  template <typename T> template <typename U> void buffer<T>::append(const U *pbegin, const U *pend)
   {
-    std::size_t new_size = size_ + to_unsigned(end - begin);
+    std::size_t new_size = size_ + to_unsigned(pend - pbegin);
     reserve(new_size);
-    std::uninitialized_copy(begin, end, make_checked(ptr_, capacity_) + size_);
+    std::uninitialized_copy(pbegin, pend, make_checked(ptr_, capacity_) + size_);
     size_ = new_size;
   }
 } // namespace internal
@@ -559,9 +559,9 @@ private:
   // Deallocate memory allocated by the buffer.
   void deallocate()
   {
-    T *data = this->data();
-    if (data != store_)
-      Allocator::deallocate(data, this->capacity());
+    T *pdata = this->data();
+    if (pdata != store_)
+      Allocator::deallocate(pdata, this->capacity());
   }
 
 protected:
@@ -583,20 +583,20 @@ private:
   {
     Allocator &this_alloc = *this, &other_alloc = other;
     this_alloc       = std::move(other_alloc);
-    T *         data = other.data();
-    std::size_t size = other.size(), capacity = other.capacity();
-    if (data == other.store_) {
-      this->set(store_, capacity);
-      std::uninitialized_copy(other.store_, other.store_ + size,
-                              internal::make_checked(store_, capacity));
+    T *         pdata = other.data();
+    std::size_t psize = other.size(), pcapacity = other.capacity();
+    if (pdata == other.store_) {
+      this->set(store_, pcapacity);
+      std::uninitialized_copy(other.store_, other.store_ + psize,
+                              internal::make_checked(store_, pcapacity));
     }
     else {
-      this->set(data, capacity);
+      this->set(pdata, pcapacity);
       // Set pointer to the inline array so that delete is not called
       // when deallocating.
       other.set(other.store_, 0);
     }
-    this->resize(size);
+    this->resize(psize);
   }
 
 public:
@@ -626,16 +626,16 @@ public:
 };
 
 template <typename T, std::size_t SIZE, typename Allocator>
-void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size)
+void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t psize)
 {
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-  if (size > 1000)
+  if (psize > 1000)
     throw std::runtime_error("fuzz mode - won't grow that much");
 #endif
   std::size_t old_capacity = this->capacity();
   std::size_t new_capacity = old_capacity + old_capacity / 2;
-  if (size > new_capacity)
-    new_capacity = size;
+  if (psize > new_capacity)
+    new_capacity = psize;
   T *old_data = this->data();
   T *new_data = std::allocator_traits<Allocator>::allocate(*this, new_capacity);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
@@ -1689,8 +1689,8 @@ namespace internal {
 
   public:
     /** Constructs a ``basic_writer`` object. */
-    explicit basic_writer(Range out, internal::locale_ref loc = internal::locale_ref())
-        : out_(out.begin()), locale_(loc)
+    explicit basic_writer(Range pout, internal::locale_ref loc = internal::locale_ref())
+        : out_(pout.begin()), locale_(loc)
     {
     }
 
@@ -2800,8 +2800,8 @@ public:
     \endrst
    */
   explicit arg_formatter(context_type &ctx, basic_parse_context<char_type> *parse_ctx = nullptr,
-                         format_specs *specs = nullptr)
-      : base(Range(ctx.out()), specs, ctx.locale()), ctx_(ctx), parse_ctx_(parse_ctx)
+                         format_specs *pspecs = nullptr)
+      : base(Range(ctx.out()), pspecs, ctx.locale()), ctx_(ctx), parse_ctx_(parse_ctx)
   {
   }
 
@@ -2849,9 +2849,9 @@ public:
    \endrst
   */
   template <typename... Args>
-  system_error(int error_code, string_view message, const Args &... args) : std::runtime_error("")
+  system_error(int perror_code, string_view message, const Args &... args) : std::runtime_error("")
   {
-    init(error_code, message, make_format_args(args...));
+    init(perror_code, message, make_format_args(args...));
   }
   system_error(const system_error &) = default;
   system_error &operator=(const system_error &) = default;
@@ -3321,10 +3321,10 @@ typename basic_format_context<Range, Char>::format_arg
 basic_format_context<Range, Char>::arg(basic_string_view<char_type> name)
 {
   map_.init(args_);
-  format_arg arg = map_.find(name);
-  if (arg.type() == internal::none_type)
+  format_arg parg = map_.find(name);
+  if (parg.type() == internal::none_type)
     this->on_error("argument not found");
-  return arg;
+  return parg;
 }
 
 template <typename Char, typename ErrorHandler>
