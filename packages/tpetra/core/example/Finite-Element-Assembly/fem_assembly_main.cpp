@@ -117,7 +117,7 @@ int main (int argc, char *argv[])
     StackedTimer::OutputOptions timeReportOpts;
     timeReportOpts.print_warnings = false;
     timer->report(std::cout, comm, timeReportOpts);
-    auto xmlOut = timer->reportWatchrXML("FE_Assembly" + std::to_string(comm->getSize()), comm);
+    auto xmlOut = timer->reportWatchrXML("Tpetra FE Assembly " + std::to_string(comm->getSize()) + " ranks", comm);
     if(xmlOut.length())
       std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
   }
