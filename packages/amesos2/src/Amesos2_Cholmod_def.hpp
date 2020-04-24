@@ -135,6 +135,10 @@ Cholmod<Matrix,Vector>::preOrdering_impl()
     std::runtime_error,
     "Amesos2 cholmod_l_analyze failure in Cholmod preOrdering_impl");
 
+  if(use_triangular_solves_) {
+    triangular_solve_preordering();
+  }
+
   return(0);
 }
 
@@ -485,33 +489,40 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template <class Matrix, class Vector>
 void
-Cholmod<Matrix,Vector>::triangular_solve_factor()
+Cholmod<Matrix,Vector>::triangular_solve_preordering()
 {
 #ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
+  // Create handles for U and U^T solves
+  device_khL_.create_sptrsv_handle(
+    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, data_.L->n, true);
+  device_khU_.create_sptrsv_handle(
+    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, data_.L->n, false);
+
   // extract etree and iperm from CHOLMOD
   long *long_etree = static_cast<long*>(data_.c.Iwork) + 2 * data_.L->n;
-  long *iperm = static_cast<long*>(data_.L->Perm);
   Kokkos::resize(host_trsv_etree_, data_.L->nsuper);
   for (size_t i = 0 ; i < data_.L->nsuper; ++i) { // convert long to int array for trsv API
     host_trsv_etree_(i) = long_etree[i];
   }
 
+  // set etree
+  device_khL_.set_sptrsv_etree(host_trsv_etree_.data());
+  device_khU_.set_sptrsv_etree(host_trsv_etree_.data());
+#endif
+}
+
+template <class Matrix, class Vector>
+void
+Cholmod<Matrix,Vector>::triangular_solve_factor()
+{
+#ifdef HAVE_AMESOS2_TRIANGULAR_SOLVES
   size_t ld_rhs = this->matrixA_->getGlobalNumRows();
   Kokkos::resize(host_trsv_perm_, ld_rhs);
+  long *iperm = static_cast<long*>(data_.L->Perm);
   for (size_t i = 0; i < ld_rhs; i++) { // convert long to int array for trsv API
     host_trsv_perm_(iperm[i]) = i;
   }
   deep_copy_or_assign_view(device_trsv_perm_, host_trsv_perm_); // will use device to permute
-
-  // Create handles for U and U^T solves
-  device_khL_.create_sptrsv_handle(
-    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, ld_rhs, true);
-  device_khU_.create_sptrsv_handle(
-    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, ld_rhs, false);
-
-  // set etree
-  device_khL_.set_sptrsv_etree(host_trsv_etree_.data());
-  device_khU_.set_sptrsv_etree(host_trsv_etree_.data());
 
   // set permutation
   device_khL_.set_sptrsv_perm(host_trsv_perm_.data());

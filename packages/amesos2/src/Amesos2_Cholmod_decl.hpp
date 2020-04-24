@@ -300,6 +300,7 @@ private:
   bool is_contiguous_;
   bool use_triangular_solves_;
 
+  void triangular_solve_preordering();
   void triangular_solve_factor();
 
 public: // for GPU
