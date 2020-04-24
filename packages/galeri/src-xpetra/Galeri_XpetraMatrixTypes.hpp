@@ -104,17 +104,27 @@ namespace Galeri {
     Teuchos::RCP<Matrix>
     Identity(const Teuchos::RCP<const Map>& map, const Scalar a)
     {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
-      for (LocalOrdinal i = 0; i < NumMyElements; i++)
-        mtx->insertGlobalValues(MyGlobalElements[i],
-                                Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
-                                Teuchos::tuple<Scalar>(a));
-      mtx->fillComplete();
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Scaled Identity Generation")));
 
+	for (LocalOrdinal i = 0; i < NumMyElements; i++)
+	  mtx->insertGlobalValues(MyGlobalElements[i],
+				  Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
+				  Teuchos::tuple<Scalar>(a));
+      }
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Scaled Identity fillComplete")));
+	mtx->fillComplete();
+      }
       return mtx;
     }
 
@@ -127,6 +137,10 @@ namespace Galeri {
             const GlobalOrdinal nx,                            // note: nx unused
             const Scalar a, const Scalar b, const Scalar c)
     {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 3);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
@@ -144,52 +158,49 @@ namespace Galeri {
 
       comm->barrier();
 
-      Teuchos::RCP<Teuchos::Time> timer = Teuchos::rcp(new Teuchos::Time("TriDiag global insert"));
-      timer->start(true);
-
       // c a b
-      for (LocalOrdinal i = 0; i < NumMyElements; i++) {
-        if (MyGlobalElements[i] == indexBase) {
-          // off-diagonal for first row
-          Indices[0] = 1 + indexBase;
-          Values [0] = c;
-          NumEntries = 1;
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 1D Generation")));
 
-        } else if (MyGlobalElements[i] == NumGlobalElements + indexBase - 1) {
-          // off-diagonal for last row
-          Indices[0] = NumGlobalElements - 2 + indexBase;
-          Values [0] = b;
-          NumEntries = 1;
+	for (LocalOrdinal i = 0; i < NumMyElements; i++) {
+	  if (MyGlobalElements[i] == indexBase) {
+	    // off-diagonal for first row
+	    Indices[0] = 1 + indexBase;
+	    Values [0] = c;
+	    NumEntries = 1;
+	    
+	  } else if (MyGlobalElements[i] == NumGlobalElements + indexBase - 1) {
+	    // off-diagonal for last row
+	    Indices[0] = NumGlobalElements - 2 + indexBase;
+	    Values [0] = b;
+	    NumEntries = 1;
 
-        } else {
-          // off-diagonal for internal row
-          Indices[0] = MyGlobalElements[i] - 1;
-          Values [0] = b;
-          Indices[1] = MyGlobalElements[i] + 1;
-          Values [1] = c;
-          NumEntries = 2;
-        }
+	  } else {
+	    // off-diagonal for internal row
+	    Indices[0] = MyGlobalElements[i] - 1;
+	    Values [0] = b;
+	    Indices[1] = MyGlobalElements[i] + 1;
+	    Values [1] = c;
+	    NumEntries = 2;
+	  }
 
-        // put the off-diagonal entries
-        // Xpetra wants ArrayViews (sigh)
-        Teuchos::ArrayView<Scalar>        av(&Values [0], NumEntries);
-        Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], NumEntries);
-        mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
+	  // put the off-diagonal entries
+	  // Xpetra wants ArrayViews (sigh)
+	  Teuchos::ArrayView<Scalar>        av(&Values [0], NumEntries);
+	  Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], NumEntries);
+	  mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
 
-        // Put in the diagonal entry
-        mtx->insertGlobalValues(MyGlobalElements[i],
-                                Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
-                                Teuchos::tuple<Scalar>(a));
+	  // Put in the diagonal entry
+	  mtx->insertGlobalValues(MyGlobalElements[i],
+				  Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
+				  Teuchos::tuple<Scalar>(a));
+	}
       }
-
-      timer->stop();
-
-      timer = Teuchos::rcp(new Teuchos::Time("TriDiag fillComplete"));
-      timer->start(true);
-
-      mtx->fillComplete();
-
-      timer->stop();
+      
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 1D fillComplete")));
+	mtx->fillComplete();
+      }
 
       return mtx;
     }
@@ -226,7 +237,7 @@ namespace Galeri {
       //  b a c
       //    d
       {
-	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Matrix Generation")));
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 2D Generation")));
 	for (LocalOrdinal i = 0; i < numMyElements; ++i)  {
 	  size_t n = 0;
 
@@ -278,7 +289,7 @@ namespace Galeri {
       }
 
       {
-	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Matrix FillComplete")));
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 2D FillComplete")));
 	mtx->fillComplete();
       }
 
@@ -298,6 +309,10 @@ namespace Galeri {
            const Scalar z3, const Scalar z4,
            const DirBC DirichletBC = 0, const bool keepBCs = false)
     {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
       LocalOrdinal nnz = 9;
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, nnz);
@@ -314,54 +329,61 @@ namespace Galeri {
       //  z3  e  z4
       //   b  a  c
       //  z1  d  z2
-      for (LocalOrdinal i = 0; i < numMyElements; ++i) {
-        size_t n = 0;
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Star2D generation")));
 
-        center = myGlobalElements[i] - indexBase;
-        GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
+	for (LocalOrdinal i = 0; i < numMyElements; ++i) {
+	  size_t n = 0;
+	  
+	  center = myGlobalElements[i] - indexBase;
+	  GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
 
-        bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
-                           (right == -1 && (DirichletBC & DIR_RIGHT))  ||
-                           (lower == -1 && (DirichletBC & DIR_BOTTOM)) ||
-                           (upper == -1 && (DirichletBC & DIR_TOP));
+	  bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
+	                     (right == -1 && (DirichletBC & DIR_RIGHT))  ||
+                             (lower == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                             (upper == -1 && (DirichletBC & DIR_TOP));
 
-        if (isDirichlet && keepBCs) {
-          // Dirichlet unknown we want to keep
-          inds[n]   = center;
-          vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
+	  if (isDirichlet && keepBCs) {
+	    // Dirichlet unknown we want to keep
+	    inds[n]   = center;
+	    vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
 
-        } else {
-          // See comments about weird in Cross2D
-          if (left  != -1)                { inds[n] = left;    vals[n++] = b;  }
-          if (right != -1)                { inds[n] = right;   vals[n++] = c;  }
-          if (lower != -1)                { inds[n] = lower;   vals[n++] = d;  }
-          if (upper != -1)                { inds[n] = upper;   vals[n++] = e;  }
-          if (left  != -1 && lower != -1) { inds[n] = lower-1; vals[n++] = z1; }
-          if (right != -1 && lower != -1) { inds[n] = lower+1; vals[n++] = z2; }
-          if (left  != -1 && upper != -1) { inds[n] = upper-1; vals[n++] = z3; }
-          if (right != -1 && upper != -1) { inds[n] = upper+1; vals[n++] = z4; }
+	  } else {
+	    // See comments about weird in Cross2D
+	    if (left  != -1)                { inds[n] = left;    vals[n++] = b;  }
+	    if (right != -1)                { inds[n] = right;   vals[n++] = c;  }
+	    if (lower != -1)                { inds[n] = lower;   vals[n++] = d;  }
+	    if (upper != -1)                { inds[n] = upper;   vals[n++] = e;  }
+	    if (left  != -1 && lower != -1) { inds[n] = lower-1; vals[n++] = z1; }
+	    if (right != -1 && lower != -1) { inds[n] = lower+1; vals[n++] = z2; }
+	    if (left  != -1 && upper != -1) { inds[n] = upper-1; vals[n++] = z3; }
+	    if (right != -1 && upper != -1) { inds[n] = upper+1; vals[n++] = z4; }
 
-          // diagonal
-          Scalar z = a;
-          if (IsBoundary2d(center, nx, ny) && !isDirichlet) {
-            // Neumann boundary unknown (diagonal = sum of all offdiagonal)
-            z = Teuchos::ScalarTraits<Scalar>::zero();
-            for (size_t j = 0; j < n; j++)
-              z -= vals[j];
-          }
-          inds[n]   = center + indexBase;
-          vals[n++] = z;
-        }
+	    // diagonal
+	    Scalar z = a;
+	    if (IsBoundary2d(center, nx, ny) && !isDirichlet) {
+	      // Neumann boundary unknown (diagonal = sum of all offdiagonal)
+	      z = Teuchos::ScalarTraits<Scalar>::zero();
+	      for (size_t j = 0; j < n; j++)
+		z -= vals[j];
+	    }
+	    inds[n]   = center + indexBase;
+	    vals[n++] = z;
+	  }
 
-        for (size_t j = 0; j < n; j++)
-          inds[j] += indexBase;
+	  for (size_t j = 0; j < n; j++)
+	    inds[j] += indexBase;
 
-        Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
-        Teuchos::ArrayView<Scalar>        av(&vals[0], n);
-        mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	  Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
+	  Teuchos::ArrayView<Scalar>        av(&vals[0], n);
+	  mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	}
       }
 
-      mtx->fillComplete();
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: star2D fillComplete")));
+	mtx->fillComplete();
+      }
 
       return mtx;
     }
@@ -380,6 +402,10 @@ namespace Galeri {
               const Scalar bb, const Scalar cc, const Scalar dd, const Scalar ee,
               const DirBC DirichletBC = 0, const bool keepBCs = false)
     {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
       LocalOrdinal nnz = 13;
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, nnz);
@@ -398,58 +424,66 @@ namespace Galeri {
       // bb  b  a  c  cc
       //    z1  d  z2
       //        dd
-      for (LocalOrdinal i = 0; i < numMyElements; ++i) {
-        size_t n = 0;
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: bigStar2D Generation")));
 
-        center = myGlobalElements[i] - indexBase;
-        GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper, left2, right2, lower2, upper2);
+	for (LocalOrdinal i = 0; i < numMyElements; ++i) {
+	  size_t n = 0;
 
-        bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
-                           (right == -1 && (DirichletBC & DIR_RIGHT))  ||
-                           (lower == -1 && (DirichletBC & DIR_BOTTOM)) ||
-                           (upper == -1 && (DirichletBC & DIR_TOP));
+	  center = myGlobalElements[i] - indexBase;
+	  GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper, left2, right2, lower2, upper2);
 
-        if (isDirichlet && keepBCs) {
-          // Dirichlet unknown we want to keep
-          inds[n]   = center;
-          vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
+	  bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
+                             (right == -1 && (DirichletBC & DIR_RIGHT))  ||
+                             (lower == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                             (upper == -1 && (DirichletBC & DIR_TOP));
 
-        } else {
-          // See comments about weird in Cross2D
-          if (left   != -1)                { inds[n] = left;      vals[n++] = b ; }
-          if (right  != -1)                { inds[n] = right;     vals[n++] = c ; }
-          if (lower  != -1)                { inds[n] = lower;     vals[n++] = d ; }
-          if (upper  != -1)                { inds[n] = upper;     vals[n++] = e ; }
-          if (left   != -1 && lower != -1) { inds[n] = lower - 1; vals[n++] = z1; }
-          if (right  != -1 && lower != -1) { inds[n] = lower + 1; vals[n++] = z2; }
-          if (left   != -1 && upper != -1) { inds[n] = upper - 1; vals[n++] = z3; }
-          if (right  != -1 && upper != -1) { inds[n] = upper + 1; vals[n++] = z4; }
-          if (left2  != -1)                { inds[n] = left2;     vals[n++] = bb; }
-          if (right2 != -1)                { inds[n] = right2;    vals[n++] = cc; }
-          if (lower2 != -1)                { inds[n] = lower2;    vals[n++] = dd; }
-          if (upper2 != -1)                { inds[n] = upper2;    vals[n++] = ee; }
+	  if (isDirichlet && keepBCs) {
+	    // Dirichlet unknown we want to keep
+	    inds[n]   = center;
+	    vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
 
-          // diagonal
-          Scalar z = a;
-          if (IsBoundary2d(center, nx, ny) && !isDirichlet) {
-            // Neumann boundary unknown (diagonal = sum of all offdiagonal)
-            z = Teuchos::ScalarTraits<Scalar>::zero();
-            for (size_t j = 0; j < n; j++)
-              z -= vals[j];
-          }
-          inds[n]   = center + indexBase;
-          vals[n++] = z;
-        }
+	  } else {
+	    // See comments about weird in Cross2D
+	    if (left   != -1)                { inds[n] = left;      vals[n++] = b ; }
+	    if (right  != -1)                { inds[n] = right;     vals[n++] = c ; }
+	    if (lower  != -1)                { inds[n] = lower;     vals[n++] = d ; }
+	    if (upper  != -1)                { inds[n] = upper;     vals[n++] = e ; }
+	    if (left   != -1 && lower != -1) { inds[n] = lower - 1; vals[n++] = z1; }
+	    if (right  != -1 && lower != -1) { inds[n] = lower + 1; vals[n++] = z2; }
+	    if (left   != -1 && upper != -1) { inds[n] = upper - 1; vals[n++] = z3; }
+	    if (right  != -1 && upper != -1) { inds[n] = upper + 1; vals[n++] = z4; }
+	    if (left2  != -1)                { inds[n] = left2;     vals[n++] = bb; }
+	    if (right2 != -1)                { inds[n] = right2;    vals[n++] = cc; }
+	    if (lower2 != -1)                { inds[n] = lower2;    vals[n++] = dd; }
+	    if (upper2 != -1)                { inds[n] = upper2;    vals[n++] = ee; }
 
-        for (size_t j = 0; j < n; j++)
-          inds[j] += indexBase;
+	    // diagonal
+	    Scalar z = a;
+	    if (IsBoundary2d(center, nx, ny) && !isDirichlet) {
+	      // Neumann boundary unknown (diagonal = sum of all offdiagonal)
+	      z = Teuchos::ScalarTraits<Scalar>::zero();
+	      for (size_t j = 0; j < n; j++)
+		z -= vals[j];
+	    }
+	    inds[n]   = center + indexBase;
+	    vals[n++] = z;
+	  }
 
-        Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
-        Teuchos::ArrayView<Scalar>        av(&vals[0], n);
-        mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	  for (size_t j = 0; j < n; j++)
+	    inds[j] += indexBase;
+
+	  Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
+	  Teuchos::ArrayView<Scalar>        av(&vals[0], n);
+	  mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	}
       }
 
-      mtx->fillComplete();
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: bigStar2D fillComplete")));
+
+	mtx->fillComplete();
+      }
 
       return mtx;
     }
@@ -466,6 +500,10 @@ namespace Galeri {
             const Scalar f, const Scalar g,
             const DirBC DirichletBC = 0, const bool keepBCs = false)
     {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
       LocalOrdinal nnz = 7;
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, nnz);
@@ -483,55 +521,61 @@ namespace Galeri {
       //  b a c
       //    d
       // + f bottom and g top
-      for (LocalOrdinal i = 0; i < numMyElements; ++i) {
-        size_t n = 0;
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 3D generation")));
+	for (LocalOrdinal i = 0; i < numMyElements; ++i) {
+	  size_t n = 0;
 
-        center = myGlobalElements[i] - indexBase;
-        GetNeighboursCartesian3d(center, nx, ny, nz,
-                                 left, right, front, back, bottom, top);
+	  center = myGlobalElements[i] - indexBase;
+	  GetNeighboursCartesian3d(center, nx, ny, nz,
+				   left, right, front, back, bottom, top);
 
-        bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
-                           (right == -1 && (DirichletBC & DIR_RIGHT))  ||
-                           (front == -1 && (DirichletBC & DIR_BOTTOM)) ||
-                           (back  == -1 && (DirichletBC & DIR_TOP))    ||
-                           (front == -1 && (DirichletBC & DIR_FRONT))  ||
-                           (back  == -1 && (DirichletBC & DIR_BACK));
+	  bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
+                             (right == -1 && (DirichletBC & DIR_RIGHT))  ||
+	                     (front == -1 && (DirichletBC & DIR_BOTTOM)) ||
+	                     (back  == -1 && (DirichletBC & DIR_TOP))    ||
+                             (front == -1 && (DirichletBC & DIR_FRONT))  ||
+                             (back  == -1 && (DirichletBC & DIR_BACK));
 
-        if (isDirichlet && keepBCs) {
-          // Dirichlet unknown we want to keep
-          inds[n]   = center;
-          vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
+	  if (isDirichlet && keepBCs) {
+	    // Dirichlet unknown we want to keep
+	    inds[n]   = center;
+	    vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
 
-        } else {
-          // See comments about weird in Cross2D
-          if (left   != -1) { inds[n] = left;   vals[n++] = b; }
-          if (right  != -1) { inds[n] = right;  vals[n++] = c; }
-          if (front  != -1) { inds[n] = front;  vals[n++] = d; }
-          if (back   != -1) { inds[n] = back;   vals[n++] = e; }
-          if (bottom != -1) { inds[n] = bottom; vals[n++] = f; }
-          if (top    != -1) { inds[n] = top;    vals[n++] = g; }
+	  } else {
+	    // See comments about weird in Cross2D
+	    if (left   != -1) { inds[n] = left;   vals[n++] = b; }
+	    if (right  != -1) { inds[n] = right;  vals[n++] = c; }
+	    if (front  != -1) { inds[n] = front;  vals[n++] = d; }
+	    if (back   != -1) { inds[n] = back;   vals[n++] = e; }
+	    if (bottom != -1) { inds[n] = bottom; vals[n++] = f; }
+	    if (top    != -1) { inds[n] = top;    vals[n++] = g; }
 
-          // diagonal
-          Scalar z = a;
-          if (IsBoundary3d(center, nx, ny, nz) && !isDirichlet) {
-            // Neumann boundary unknown (diagonal = sum of all offdiagonal)
-            z = Teuchos::ScalarTraits<Scalar>::zero();
-            for (size_t j = 0; j < n; j++)
-              z -= vals[j];
-          }
-          inds[n]   = center;
-          vals[n++] = z;
-        }
+	    // diagonal
+	    Scalar z = a;
+	    if (IsBoundary3d(center, nx, ny, nz) && !isDirichlet) {
+	      // Neumann boundary unknown (diagonal = sum of all offdiagonal)
+	      z = Teuchos::ScalarTraits<Scalar>::zero();
+	      for (size_t j = 0; j < n; j++)
+		z -= vals[j];
+	    }
+	    inds[n]   = center;
+	    vals[n++] = z;
+	  }
 
-        for (size_t j = 0; j < n; j++)
-          inds[j] += indexBase;
+	  for (size_t j = 0; j < n; j++)
+	    inds[j] += indexBase;
 
-        Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
-        Teuchos::ArrayView<Scalar>        av(&vals[0], n);
-        mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	  Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
+	  Teuchos::ArrayView<Scalar>        av(&vals[0], n);
+	  mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	}
       }
 
-      mtx->fillComplete();
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 3D fillComplete")));
+	mtx->fillComplete();
+      }
 
       return mtx;
     }
@@ -548,6 +592,10 @@ namespace Galeri {
             const Scalar f, const Scalar g,
             const DirBC DirichletBC = 0, const bool keepBCs = false)
     {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
       LocalOrdinal nnz = 27;
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, nnz);
@@ -576,70 +624,75 @@ namespace Galeri {
       //   d  b  d
       //   e  d  e
 
-      for (LocalOrdinal i = 0; i < numMyElements; ++i) {
-        size_t n = 0;
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: 3D 27 point stencil generation")));
+	for (LocalOrdinal i = 0; i < numMyElements; ++i) {
+	  size_t n = 0;
 
-        center = myGlobalElements[i] - indexBase;
-        GetNeighboursCartesian3d(center, nx, ny, nz,
-                                 left, right, front, back, below, above);
+	  center = myGlobalElements[i] - indexBase;
+	  GetNeighboursCartesian3d(center, nx, ny, nz,
+				   left, right, front, back, below, above);
 
-        bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
-                           (right == -1 && (DirichletBC & DIR_RIGHT))  ||
-                           (front == -1 && (DirichletBC & DIR_BOTTOM)) ||
-                           (back  == -1 && (DirichletBC & DIR_TOP))    ||
-                           (front == -1 && (DirichletBC & DIR_FRONT))  ||
-                           (back  == -1 && (DirichletBC & DIR_BACK));
+	  bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
+                             (right == -1 && (DirichletBC & DIR_RIGHT))  ||
+                             (front == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                             (back  == -1 && (DirichletBC & DIR_TOP))    ||
+                             (front == -1 && (DirichletBC & DIR_FRONT))  ||
+                             (back  == -1 && (DirichletBC & DIR_BACK));
 
-        if (isDirichlet && keepBCs) {
-          // Dirichlet unknown we want to keep
-          inds[n]   = center;
-          vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
+	  if (isDirichlet && keepBCs) {
+	    // Dirichlet unknown we want to keep
+	    inds[n]   = center;
+	    vals[n++] = Teuchos::ScalarTraits<Scalar>::one();
 
-        } else {
-          // See comments about weird in Cross2D
+	  } else {
+	    // See comments about weird in Cross2D
 
-          // center plance (centered on center)
-          Fill9PointStencil(center, vals, inds,
-                            n, nx, ny, nz,
-                            b, b, b, b, c, c, c, c,
-                            left, right, front, back);
-          // lower plane (centered on "below")
-          if (below != -1) {
-            inds[n]   = below;
-            vals[n++] = b;
-            Fill9PointStencil(below, vals, inds, n, nx, ny, nz,
-                              d, d, d, d, e, e, e, e);
-          }
-          // upper plane (centered on "upper")
-          if (above != -1) {
-            inds[n]   = above;
-            vals[n++] = b;
-            Fill9PointStencil(above, vals, inds, n, nx, ny, nz,
-                              d, d, d, d, e, e, e, e);
-          }
+	    // center plance (centered on center)
+	    Fill9PointStencil(center, vals, inds,
+			      n, nx, ny, nz,
+			      b, b, b, b, c, c, c, c,
+			      left, right, front, back);
+	    // lower plane (centered on "below")
+	    if (below != -1) {
+	      inds[n]   = below;
+	      vals[n++] = b;
+	      Fill9PointStencil(below, vals, inds, n, nx, ny, nz,
+				d, d, d, d, e, e, e, e);
+	    }
+	    // upper plane (centered on "upper")
+	    if (above != -1) {
+	      inds[n]   = above;
+	      vals[n++] = b;
+	      Fill9PointStencil(above, vals, inds, n, nx, ny, nz,
+				d, d, d, d, e, e, e, e);
+	    }
 
-          // diagonal
-          Scalar z = a;
-          if (IsBoundary3d(center, nx, ny, nz) && !isDirichlet) {
-            // Neumann boundary unknown (diagonal = sum of all offdiagonal)
-            z = Teuchos::ScalarTraits<Scalar>::zero();
-            for (size_t j = 0; j < n; j++)
-              z -= vals[j];
-          }
-          inds[n]   = center;
-          vals[n++] = z;
-        }
+	    // diagonal
+	    Scalar z = a;
+	    if (IsBoundary3d(center, nx, ny, nz) && !isDirichlet) {
+	      // Neumann boundary unknown (diagonal = sum of all offdiagonal)
+	      z = Teuchos::ScalarTraits<Scalar>::zero();
+	      for (size_t j = 0; j < n; j++)
+		z -= vals[j];
+	    }
+	    inds[n]   = center;
+	    vals[n++] = z;
+	  }
 
-        for (size_t j = 0; j < n; j++)
-          inds[j] += indexBase;
+	  for (size_t j = 0; j < n; j++)
+	    inds[j] += indexBase;
 
-        Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
-        Teuchos::ArrayView<Scalar>        av(&vals[0], n);
-        mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	  Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
+	  Teuchos::ArrayView<Scalar>        av(&vals[0], n);
+	  mtx->insertGlobalValues(myGlobalElements[i], iv, av);
+	}
       }
 
-      mtx->fillComplete();
-
+      {
+	Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: 3D 27 point stencil fillComplete")));
+	mtx->fillComplete();
+      }
       return mtx;
     }
 
