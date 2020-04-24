@@ -422,7 +422,7 @@ namespace Tpetra {
     /// doReversePosts() or doReversePostsAndWaits(), the reverse
     /// Distributor will be created automatically if it does not yet
     /// exist.
-    Teuchos::RCP<Distributor> getReverse() const;
+    Teuchos::RCP<Distributor> getReverse(bool create=true) const;
 
     //@}
     //! @name Methods for executing a communication plan
