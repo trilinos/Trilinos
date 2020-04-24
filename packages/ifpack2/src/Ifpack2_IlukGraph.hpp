@@ -282,6 +282,8 @@ void IlukGraph<GraphType>::initialize()
   auto numEntPerRow_d = numEntPerRow.template view<device_type>();
   auto localOverlapGraph = OverlapGraph_->getLocalGraph();
 
+  const auto overalloc = Overalloc_;
+  const auto levelfill = LevelFill_;
   numEntPerRow.sync_device();
   numEntPerRow.modify_device();
   Kokkos::parallel_for("CountOverlapGraphRowEntries",
@@ -290,9 +292,9 @@ void IlukGraph<GraphType>::initialize()
     {
       // Heuristic to get the maximum number of entries per row.
       int RowMaxNumIndices = localOverlapGraph.rowConst(i).length;
-      numEntPerRow_d(i) = (LevelFill_ == 0) ? RowMaxNumIndices  // No additional storage needed
+      numEntPerRow_d(i) = (levelfill == 0) ? RowMaxNumIndices  // No additional storage needed
                                   : ceil(static_cast<double>(RowMaxNumIndices) 
-                                        * pow(Overalloc_,LevelFill_));
+                                        * pow(overalloc, levelfill));
     });
 
   bool insertError;  // No error found yet while inserting entries
@@ -525,7 +527,7 @@ void IlukGraph<GraphType>::initialize()
           Kokkos::RangePolicy<execution_space>(0, NumMyRows),
           KOKKOS_LAMBDA(const int i)
           {
-            numEntPerRow_d(i) = ceil(static_cast<double>(numEntPerRow_d(i)) * Overalloc_);
+            numEntPerRow_d(i) = ceil(static_cast<double>(numEntPerRow_d(i)) * overalloc);
           });
       }
     }
