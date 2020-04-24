@@ -26,11 +26,6 @@ namespace Tempus {
  *  expected that users will NOT modify any of that data.  If the user
  *  wishes to modify the solution and/or stepper data during the
  *  Stepper::takeStep, they should use the Modifier class (with care!).
- *
- *  Below is the OperatorSplit algorithm with the locations of the observe calls
- *  italicized.
- *
- *  TODO:  Add algorithm
  *                                                                                           
  */
 template<class Scalar>

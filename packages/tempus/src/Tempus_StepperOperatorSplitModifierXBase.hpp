@@ -28,10 +28,6 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  Below is the OperatorSplit algorithm with the locations of the ModifierX calls
- *  italicized.
- * 
- *  TODO:  add the algorithm.
  */
 
 template<class Scalar>

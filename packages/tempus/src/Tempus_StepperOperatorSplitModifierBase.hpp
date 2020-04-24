@@ -27,14 +27,7 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability.                                                    
  *  Thus the user should be careful when accessing data through classes                                                           
  *  derived from the default modifier (i.e., USER BEWARE!!).                                                                          
- *                                                                                                                              
- *  \f{algorithm}{                                                                                                               
- *  \renewcommand{\thealgorithm}{}                                                                                                
- *  \caption{OperatorSplit with the locations of the application actions indicated.}                                              
- *  \begin{algorithmic}[1]
- *    \State {TODO}
- *  \end{algorithmic}                                                                                                     
- *  \f}                                                                                                                         
+ *                                                                                                                        
  */
   template<class Scalar>
 class StepperOperatorSplitModifierBase

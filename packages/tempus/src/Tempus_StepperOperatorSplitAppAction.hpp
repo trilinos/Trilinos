@@ -30,17 +30,7 @@ template<class Scalar> class StepperOperatorSplit;
  * <b>Design Considerations</b>
  *   - StepperOperatorSplitAppAction is not stateless!  Developers may touch the
  *     solution state!  Developers need to be careful not to break the
- *     restart (checkpoint) capability.
- *  Below is the ForwardEuler algorithm and includes the locations where the          
- *  application can take actions (in italicized).                                     
- *                                                                                    
- *  \f{algorithm}{                                                                    
- *  \renewcommand{\thealgorithm}{}                                                    
- *  \caption{OperatorSplit with the locations of the application actions indicated.}  
- *  \begin{algorithmic}[1]                                              
- *    \State TODO:  
- *  \end{algorithmic}                                                                 
- *  \f}                                                                               
+ *     restart (checkpoint) capability.                                               
  */
 template<class Scalar>
 class StepperOperatorSplitAppAction
