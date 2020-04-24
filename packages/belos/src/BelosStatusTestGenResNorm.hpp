@@ -542,7 +542,7 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
       if (*p != -1) {
         // Scale the std::vector accordingly
         testvector_[ *p ] =
-            scalevector_[ *p ] != zero? resvector_[ *p ] / scalevalue_ : resvector_[ *p ] / scalevalue_;
+            scalevector_[ *p ] != zero? resvector_[ *p ] / (scalevector_[ *p ] * scalevalue_) : resvector_[ *p ] / scalevalue_;
       }
     }
   }
