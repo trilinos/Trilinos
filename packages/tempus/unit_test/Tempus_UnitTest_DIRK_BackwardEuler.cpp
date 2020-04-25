@@ -40,7 +40,11 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK_BackwardEuler, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("RK Backward Euler");
+  auto stepper = rcp(new Tempus::StepperDIRK_BackwardEuler<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
 
 
@@ -57,7 +61,9 @@ TEUCHOS_UNIT_TEST(DIRK_BackwardEuler, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK_BackwardEuler, AppAction)
 {
-  testRKAppAction("RK Backward Euler", out, success);
+  auto stepper = rcp(new Tempus::StepperDIRK_BackwardEuler<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 

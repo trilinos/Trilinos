@@ -1353,14 +1353,17 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
 
-      bool switched = false;
-      (void)switched;
 #ifndef HAVE_MUELU_ZOLTAN
+      bool switched = false;
       if (partName == "zoltan") {
         this->GetOStream(Warnings0) << "Zoltan interface is not available, trying to switch to Zoltan2" << std::endl;
         partName = "zoltan2";
         switched = true;
       }
+#else
+# ifndef HAVE_MUELU_ZOLTAN
+      bool switched = false;
+# endif
 #endif
 #ifndef HAVE_MUELU_ZOLTAN2
       if (partName == "zoltan2" && !switched) {

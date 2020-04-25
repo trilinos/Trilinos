@@ -37,15 +37,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_PARAMETERLIST
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_SINCOS
-#define TEST_VANDERPOL
-#define TEST_EMBEDDED_DIRK
 
-
-#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK, ParameterList)
@@ -181,10 +173,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
     }
   }
 }
-#endif // TEST_PARAMETERLIST
 
 
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
@@ -281,10 +271,8 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.841470, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.540304, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SINCOS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK, SinCos)
@@ -460,10 +448,8 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
 
   }
 }
-#endif // TEST_SINCOS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
@@ -558,10 +544,8 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
 
 
-#ifdef TEST_EMBEDDED_DIRK
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK, EmbeddedVanDerPol)
@@ -663,7 +647,6 @@ TEUCHOS_UNIT_TEST(DIRK, EmbeddedVanDerPol)
 
    Teuchos::TimeMonitor::summarize();
 }
-#endif
 
 
 } // namespace Tempus_Test

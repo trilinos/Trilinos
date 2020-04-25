@@ -36,12 +36,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-// Comment out any of the following tests to exclude from build/run.
-#define TEST_CONSTRUCTING_FROM_DEFAULTS
-#define TEST_VANDERPOL
 
-
-#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
@@ -105,7 +100,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   integrator->setStepperWStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
-  //integrator->setObserver(...);
   integrator->initialize();
 
 
@@ -132,10 +126,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0),  1.810210, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), -0.754602, 1.0e-4 );
 }
-#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
@@ -283,7 +275,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
   }
   //Teuchos::TimeMonitor::summarize();
 }
-#endif // TEST_VANDERPOL
 
 
 } // namespace Tempus_Test

@@ -126,6 +126,11 @@ namespace MueLu {
 
     RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
 
+    if(!precList.is_null() && precList->isParameter("partitioner: type") && precList->get<std::string>("partitioner: type") == "linear" &&
+       !precList->isParameter("partitioner: local parts")) {
+      precList->set("partitioner: local parts", (int)A_->getNodeNumRows() / A_->GetFixedBlockSize());
+    }
+
     prec_->setParameters(*precList);
 
     paramList.setParameters(*precList); // what about that??
@@ -182,7 +187,6 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     if      (type_ == "SCHWARZ")
@@ -660,7 +664,6 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& /* currentLevel */) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
-
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
     if (!bA.is_null())
       A_ = bA->Merge();

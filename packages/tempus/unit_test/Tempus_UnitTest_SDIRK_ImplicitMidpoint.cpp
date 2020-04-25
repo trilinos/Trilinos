@@ -40,7 +40,11 @@ using Tempus::StepperFactory;
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_ImplicitMidpoint, Default_Construction)
 {
-  testDIRKAccessorsFullConstruction("RK Implicit Midpoint");
+  auto stepper = rcp(new Tempus::StepperSDIRK_ImplicitMidpoint<double>());
+  testDIRKAccessorsFullConstruction(stepper);
+
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
 
 
@@ -57,7 +61,9 @@ TEUCHOS_UNIT_TEST(SDIRK_ImplicitMidpoint, StepperFactory_Construction)
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_ImplicitMidpoint, AppAction)
 {
-  testRKAppAction("RK Implicit Midpoint", out, success);
+  auto stepper = rcp(new Tempus::StepperSDIRK_ImplicitMidpoint<double>());
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testRKAppAction(stepper, model, out, success);
 }
 
 
